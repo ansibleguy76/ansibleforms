@@ -1,0 +1,59 @@
+{
+  "name": "ansible_forms",
+  "version": "1.0.0",
+  "description": "A forms frontend for ansible and awx",
+  "main": "src/server/index.js",
+  "scripts": {
+    "start": "npm run prod",
+    "build": "npm-run-all clean transpile",
+    "server": "node ./dist",
+    "dev": "NODE_ENV=development npm-run-all build server",
+    "prod": "NODE_ENV=production npm-run-all build server",
+    "transpile": "babel ./ --ignore node_modules --out-dir dist --copy-files",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "core-js": "^3.6.5",
+    "axios": "^0.21.1",
+    "bcrypt": "^5.0.1",
+    "cheerio": "^1.0.0-rc.10",
+    "connect-history-api-fallback": "^1.6.0",
+    "express": "^4.17.1",
+    "winston": "^3.3.3",
+    "passport": "^0.4.1",
+    "passport-local": "^1.0.0",
+    "passport-jwt": "^4.0.0",
+    "mysql": "^2.18.1"
+  },
+  "devDependencies": {
+    "@babel/core": "*",
+    "@babel/cli": "*",
+    "@babel/node": "*",
+    "nodemon": "~2.0.12",
+    "rifraf": "~2.0.3",
+    "npm-run-all": "*",
+    "@babel/eslint-parser": "*",
+    "dotenv": "^10.0.0",
+    "eslint": "*",
+    "ldap-authentication": "*",
+    "ldapjs": "*"
+  },
+  "eslintConfig": {
+    "root": true,
+    "env": {
+      "node": true
+    },
+    "extends": [
+      "plugin:vue/essential",
+      "eslint:recommended"
+    ],
+    "parserOptions": {
+      "parser": "babel-eslint"
+    },
+    "rules": {
+      "no-unused-vars": "off"
+    }
+  },
+  "author": "ansibleguy",
+  "license": "ISC"
+}

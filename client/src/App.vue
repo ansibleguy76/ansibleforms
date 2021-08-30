@@ -1,0 +1,101 @@
+<template>
+  <div id="app">
+    <BulmaNav :authenticated="authenticated" :profile="profile" @logout="logout()" />
+    <router-view :formConfig="formConfig" :authenticated="authenticated" :errorMessage="errorMessage" @authenticated="loadFormConfig" @logout="logout()" />
+  </div>
+</template>
+<script>
+  import BulmaNav from './components/BulmaNav.vue'
+  import axios from 'axios'
+  import TokenStorage from './lib/TokenStorage'
+  export default{
+    components:{BulmaNav},
+    name:"AnsibleForms",
+    data(){
+      return{
+        formConfig:undefined,
+        errorMessage:"",
+        profile:"",
+        authenticated:false
+      }
+    },
+    computed: {
+    },
+    beforeMount() {
+      this.checkDatabase()
+    },
+    methods: {
+        refreshAuthenticated(){
+          this.authenticated = TokenStorage.isAuthenticated()
+        },
+        checkDatabase(){
+          var ref=this;
+
+          axios.get('/api/v1/schema')                               // check database
+            .then((result)=>{
+              if(result.data.status=="error"){
+                ref.errorMessage=result.data.message;
+                ref.$router.replace({name:"Schema"}).catch(err => {});
+              }else{
+                this.loadFormConfig()
+              }
+
+            })
+            .catch(function(err){
+              console.log("Failed to check authentication database schema");
+              ref.errorMessage="Failed to check authentication database schema\n\n" + err
+              ref.$router.replace({name:"Error"}).catch(err => {});
+            });
+
+        },
+        loadProfile(){
+          var ref=this;
+          var payload = TokenStorage.getPayload()
+          ref.profile = payload.user.username
+
+        },
+        resetProfile(){
+          this.profile=""
+        },
+        loadFormConfig(){
+          var ref= this;
+
+
+          if(!TokenStorage.isAuthenticated()){
+              console.log("No token found")
+              this.$router.replace({ name: "Login" }).catch(err => {});         // no token found, logout
+          }else{
+
+            axios.get('/api/v1/form',TokenStorage.getAuthentication())                               // load forms
+              .then((result)=>{
+                ref.formConfig=result.data;
+                if(!ref.formConfig.error){
+                  console.log("loaded formConfig");
+                  ref.$router.push({name:"Home"}).catch(err => {});
+                  ref.refreshAuthenticated()
+                  this.loadProfile()
+                }else{
+                    console.log(ref.formConfig.error)
+                    ref.errorMessage="Error in forms.json file\n\n" + ref.formConfig.error
+                    ref.$router.replace({name:"Error"}).catch(err => {});
+                }
+              })
+              .catch(function(err){
+                console.log("Failed in axios call to get forms.json");
+                if(err.response.status!=401){
+                  ref.errorMessage="Could not get forms.json file\n\n" + err
+                  ref.$router.replace({name:"Error"}).catch(err => {});
+                }
+              })
+          }
+        },
+        logout() {
+            TokenStorage.clear()
+            this.formConfig=undefined
+            this.$router.replace({ name: "Login" }).catch(err => {});
+            this.refreshAuthenticated()
+            this.resetProfile()
+        }
+    }
+  }
+</script>
