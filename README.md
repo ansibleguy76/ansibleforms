@@ -1,4 +1,4 @@
-# Ansible Express Vue projects
+# AnsibleForms
 
 ## Intro
 This project has 2 apps
@@ -17,10 +17,10 @@ The client has following fields
 - select
   - enum : manual dropdown
   - query : query dropdown (using sql statement)
-    Query can contain a placeholder with another field $('fieldname')
+    Query can contain a placeholder with another field $(fieldname)
 - expression
   allows to pass a javascript expression
-  Expression can contain a placeholder with another field $('fieldname')
+  Expression can contain a placeholder with another field $(fieldname)
 
 Capabilities
 - group fields
@@ -39,9 +39,10 @@ Capabilities
 - helpmessage
 - label
 - placeholder
-- model : allow to push a value in an object-like format (ex. volume.export_policy.name)
+- model : allow to push a value in an object-like format (ex. host.interface.ip.name), the variables will be automatically in a nested format.
 
 The server app will serve as an api for the query-fields and for invoking the ansible playbook or awx template.
+Authentication is jwt token based (access token and refresh token)
 TODO : implement swagger ui
 
 ## Project download
@@ -61,7 +62,7 @@ cd /srv/ansible_forms
 # grab the code from github
 yum install -y git
 ‌‌git init
-git clone https://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@github.com/CXO-Automation/ansible_express_vuejs.git
+git clone https://github.com/ansibleguy76/ansibleforms.git
 
 # enter projects
 cd ansible_express_vuejs
@@ -74,16 +75,17 @@ yum install -y mariadb-server
 systemctl start mariadb
 systemctl enable mariadb
 mysql_secure_installation
-* the above will be interactive, but choose Netapp12 as root password *
-# import some sample data to start with
-mysql -u root -p -t< ./demo_ansible_express_vuejs.sql > mysql_deployed.txt
+* the above will be interactive, but choose AnsibleForms as root password *
+# import some sample data to get working example forms
+mysql -u root -p -t< ./demo/demo_storage.sql > mysql_deployed.txt
+mysql -u root -p -t< ./demo/demo_cmdb.sql > mysql_deployed.txt
 
 # create a user for remote access / ideally with root access if you want to auto deploy the authentication Schema
 # or create another similar user... sample code below.
 mysql -u root -p
 # create root user / write user.  Will be used to create new users and schema
 # if you create the schema yourself, you could limit this user to the authentication schema
-CREATE USER 'root'@'%' IDENTIFIED BY 'Netapp12';
+CREATE USER 'root'@'%' IDENTIFIED BY 'AnsibleForms';
 GRANT ALL PRIVILEGES ON *.* TO 'root'@'%';
 FLUSH PRIVILEGES;
 ```
@@ -104,6 +106,8 @@ cp .env.example .env.development
 cd ..
 cd server
 cp .env.example .env.development
+cp ./demo/forms.json.example ./demo/forms.json
+```
 
 # modify the .env.development to your needs
 - update forms path and log path
@@ -111,7 +115,10 @@ cp .env.example .env.development
 - set awx connection details
 - set mysql server connection details
 
-```
+# modify the forms.json to your needs
+- add catogories
+- add roles
+- add forms
 
 ### Run both server and client for development
 ```
@@ -134,5 +141,4 @@ docker build -t ansible_forms .
 # note that the below is now binding a local path into app/persistent inside the containerized
 # you can change the source path and choose any path you would like to mount, as long as the forms.json file is there
 docker run -p 8000:8000 -d -t --mount type=bind,source="$(pwd)"/persistent,target=/app/persistent --env-file .env.docker ansible_forms
-docker run -p 8000:8000 -d -t --mount type=bind,source="$(pwd)"/persistent,target=/app/persistent --env-file .env.docker karelverhelst/ansibleforms:latest
 ```

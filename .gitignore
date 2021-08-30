@@ -5,6 +5,7 @@ node_modules
 
 # local env files
 .env.development
+.env.docker
 .env.local
 .env.*.local
 
@@ -16,6 +17,9 @@ pnpm-debug.log*
 
 # remote sycn files
 .remote-sync.json
+
+# forms.json
+forms.json
 
 # Editor directories and files
 .idea

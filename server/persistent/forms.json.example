@@ -49,7 +49,7 @@
       "roles":["public"],
       "description":"Create storage using vanilla ansible and hardcode dropdowns",
       "tileClass":"has-background-success-light",
-      "category":["Provisioning","Ansible"],
+      "category":["Provisioning","Demo"],
       "type":"ansible",
       "playbook":"pilot_play_basic_create.yml",
       "inventory":"storage_inventory.yml",
@@ -286,7 +286,7 @@
             "label":"Concatination Example",
             "default":false,
             "placeholder":"",
-            "expression":"'$(textfield1)' + ' ' + '$(textfield2)'"
+            "expression":"$(textfield1) + ' ' + $(textfield2)"
           },
           {
             "element":"input",
@@ -315,67 +315,29 @@
             "default":false,
             "placeholder":"",
             "expression":"Math.PI"
-          }
-      ]
-    },
-    {
-      "name":"Database query and dependencies",
-      "roles":["public"],
-      "description":"This workflow will show queries and dependencies",
-      "category":["Demo"],
-      "tileClass":"has-background-warning",
-      "playbook":"dummy.yaml",
-      "inventory":"",
-      "type":"ansible",
-      "fields":[
-          {
-            "element":"input",
-            "type":"checkbox",
-            "name":"createstorage",
-            "label":"Storage",
-            "default":false,
-            "placeholder":"Create Storage ?"
           },
           {
-            "element":"input",
-            "type":"checkbox",
-            "name":"showcmdb",
-            "label":"Cmdb",
+            "element":"expression",
+            "name":"new_volume_name",
+            "label":"New volume name",
             "default":false,
-            "placeholder":"Show CMDB information ?"
+            "placeholder":"",
+            "expression":"'$(country)'+'$(city)'+'$(calculation)'"
           },
+
           {
             "element":"select",
             "type":"query",
             "dbConfig":"CONN1",
-            "query":"select name from storage.cluster",
-            "name":"cluster_name",
-            "label":"Select a cluster",
-            "default":"cluster1",
-            "required":true,
-            "model":"storage.cluster",
-            "group":"Storage",
-            "dependencies":[
-              {
-                "name":"createstorage",
-                "values":[true]
-              }
-            ]
-          },
-          {
-            "element":"select",
-            "type":"query",
-            "dbConfig":"CONN1",
-            "query":"select svm.name from storage.svm,storage.cluster where svm.cluster_id=cluster.id and cluster.name='$(cluster_name)'",
-            "name":"svm_name",
-            "label":"Select a svm",
+            "query":"select name from cm_storage.vserver where vserver.type='data'",
+            "name":"vserver_name",
+            "label":"Select a vserver",
             "default":"svm1",
             "required":true,
-            "model":"storage.svm",
             "group":"Storage",
             "dependencies":[
               {
-                "name":"createstorage",
+                "name":"areyousure",
                 "values":[true]
               }
             ]
@@ -383,17 +345,16 @@
           {
             "element":"select",
             "type":"query",
-            "dbConfig":"CONN1",
-            "query":"select volume.name,svm.name 'svm' from storage.volume,storage.svm where volume.svm_id=svm.id and svm.name='$(svm_name)'",
-            "name":"vol_name",
+            "dbConfig":"CONN2",
+            "query":"select volume.name,vserver.name 'vserver' from cm_storage.volume,cm_storage.vserver where volume.vserver_id=vserver.id and vserver.name='$(vserver_name)'",
+            "name":"vol_name2",
             "label":"Select a volume",
-            "default":"vol1",
+            "default":"bel_bru_tom",
             "required":true,
-            "model":"storage.volume",
             "group":"Storage",
             "dependencies":[
               {
-                "name":"createstorage",
+                "name":"areyousure",
                 "values":[true]
               }
             ]
@@ -402,70 +363,15 @@
             "element":"select",
             "type":"query",
             "dbConfig":"CONN1",
-            "query":"select n*50 as name from storage.generator_16 where n>0 and n<10",
+            "query":"select n*50 as name from playground.generator_16 where n>0 and n<10",
             "name":"size_mb",
             "label":"Select a size in MB",
             "default":"50",
             "required":true,
-            "model":"storage.sizemb",
             "group":"Storage",
             "dependencies":[
               {
-                "name":"createstorage",
-                "values":[true]
-              }
-            ]
-          },
-          {
-            "element":"select",
-            "type":"query",
-            "dbConfig":"CONN1",
-            "query":"select name from cmdb.city",
-            "name":"city_name",
-            "label":"Select a city",
-            "default":"Amsterdam",
-            "required":true,
-            "model":"cmdb.city",
-            "group":"CMDB",
-            "dependencies":[
-              {
-                "name":"showcmdb",
-                "values":[true]
-              }
-            ]
-          },
-          {
-            "element":"select",
-            "type":"query",
-            "dbConfig":"CONN1",
-            "query":"select datacenter.name from cmdb.datacenter,cmdb.city where datacenter.city_id=city.id and city.name='$(city_name)'",
-            "name":"datacenter_name",
-            "label":"Select a datacenter",
-            "default":"",
-            "required":true,
-            "model":"cmdb.datacenter",
-            "group":"CMDB",
-            "dependencies":[
-              {
-                "name":"showcmdb",
-                "values":[true]
-              }
-            ]
-          },
-          {
-            "element":"select",
-            "type":"query",
-            "dbConfig":"CONN1",
-            "query":"select resource.name,datacenter.name 'datacenter' from cmdb.resource,cmdb.datacenter where resource.datacenter_id=datacenter.id and datacenter.name='$(datacenter_name)'",
-            "name":"resource_name",
-            "label":"Select a resource",
-            "default":"",
-            "required":true,
-            "model":"cmdb.resource",
-            "group":"CMDB",
-            "dependencies":[
-              {
-                "name":"showcmdb",
+                "name":"areyousure",
                 "values":[true]
               }
             ]
@@ -554,7 +460,7 @@
             "label":"Confirmation",
             "default":false,
             "placeholder":"are you sure?"
-          }
+          }          
       ]
     },
     {

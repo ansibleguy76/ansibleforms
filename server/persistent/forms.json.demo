@@ -1,0 +1,451 @@
+{
+  "categories":[
+    {
+      "name":"Default",
+      "icon":"fa-user"
+    },
+    {
+      "name":"Provisioning",
+      "icon":"fa-pencil"
+    },
+    {
+      "name":"Decommissioning",
+      "icon":"fa-trash-alt"
+    },
+    {
+      "name":"Ansible",
+      "icon":"fa-atom"
+    },
+    {
+      "name":"AWX",
+      "icon":"fa-magic"
+    },
+    {
+      "name":"Demo",
+      "icon":"fa-heart"
+    }
+  ],
+  "roles":[
+    {
+      "name":"admin",
+      "groups":["local/admins","ldap/Domain Admins"]
+    },
+    {
+      "name":"operator",
+      "groups":["local/operators"]
+    },
+    {
+      "name":"demo",
+      "groups":["local/hr"]
+    },
+    {
+      "name":"public",
+      "groups":[]
+    }
+  ],
+  "forms":[
+    {
+      "name":"Create SVM with ansible",
+      "roles":["public"],
+      "description":"This workflow will create a storage virtual machine using vanilla ansible",
+      "tileClass":"has-background-success-light",
+      "category":["Provisioning"],
+      "type":"ansible",
+      "playbook":"pilot_play_basic_create.yml",
+      "inventory":"ontap_inventory.yml",
+      "tags":"source_inventory,create_all",
+      "fields":[
+        {
+          "element":"input",
+          "type":"text",
+          "name":"ontap_cluster_name",
+          "label":"Cluster",
+          "placeholder":"Cluster name",
+          "default":"cluster1",
+          "required":true,
+          "icon":"fa-building"
+        },
+        {
+          "element":"input",
+          "type":"text",
+          "name":"ontap_svm_name",
+          "label":"Svm",
+          "placeholder":"Svm name",
+          "default":"pri_svm_01",
+          "required":true,
+          "icon":"fa-house"
+        },
+        {
+          "element":"select",
+          "type":"enum",
+          "name":"ontap_volume_name",
+          "label":"Volume",
+          "placeholder":"Volume name",
+          "default":"",
+          "values":["pri_svm_01_cifs_001","pri_svm_01_cifs_002","pri_svm_01_cifs_003"],
+          "required":true,
+          "icon":"fa-database"
+        },
+        {
+          "element":"input",
+          "type":"text",
+          "name":"ontap_ip_interface_name",
+          "label":"Interface",
+          "placeholder":"Interface name",
+          "default":"pri_svm_01_mgmt01",
+          "required":true,
+          "icon":"fa-network-wired"
+        }
+      ]
+    },
+    {
+      "name":"Delete SVM with ansible",
+      "roles":["operator"],
+      "description":"This workflow will delete a storage virtual machine using vanilla ansible",
+      "category":["Decommissioning","Ansible"],
+      "tileClass":"has-background-danger-light",
+      "type":"ansible",
+      "playbook":"pilot_play_basic_delete.yml",
+      "inventory":"ontap_inventory.yml",
+      "tags":"delete_all",
+      "fields":[
+        {
+          "element":"input",
+          "type":"text",
+          "name":"ontap_cluster_name",
+          "label":"Cluster",
+          "placeholder":"Cluster name",
+          "default":"cluster1",
+          "required":true,
+          "icon":"fa-building"
+        },
+        {
+          "element":"input",
+          "type":"text",
+          "name":"ontap_svm_name",
+          "label":"Svm",
+          "placeholder":"Svm name",
+          "default":"pri_svm_01",
+          "required":true,
+          "icon":"fa-house"
+        },
+        {
+          "element":"select",
+          "type":"enum",
+          "name":"ontap_volume_name",
+          "label":"Volume",
+          "placeholder":"Volume name",
+          "default":"",
+          "values":["pri_svm_01_cifs_001","pri_svm_01_cifs_002","pri_svm_01_cifs_003"],
+          "required":true,
+          "icon":"fa-database"
+        }
+      ]
+    },
+    {
+      "name":"Create SVM with awx",
+      "description":"Creates a storage virtual machine with AWX",
+      "category":["AWX","Provisioning"],
+      "template":"pilot_play_mirko",
+      "tileClass":"has-background-success-light",
+      "inventory":"",
+      "type":"awx",
+      "tags":"",
+      "fields":[
+        {
+          "element":"input",
+          "type":"text",
+          "name":"ontap_cluster_name",
+          "label":"Cluster",
+          "placeholder":"Cluster name",
+          "default":"cluster1",
+          "required":true,
+          "icon":"fa-building"
+        },
+        {
+          "element":"input",
+          "type":"text",
+          "name":"ontap_svm_name",
+          "label":"Svm",
+          "placeholder":"Svm name",
+          "default":"pri_svm_01",
+          "required":true,
+          "icon":"fa-house"
+        },
+        {
+          "element":"select",
+          "type":"enum",
+          "name":"ontap_volume_name",
+          "label":"Volume",
+          "placeholder":"Volume name",
+          "default":"",
+          "values":["pri_svm_01_cifs_001","pri_svm_01_cifs_002","pri_svm_01_cifs_003"],
+          "required":true,
+          "icon":"fa-database"
+        },
+        {
+          "element":"input",
+          "type":"text",
+          "name":"ontap_ip_interface_name",
+          "label":"Interface",
+          "placeholder":"Interface name",
+          "default":"pri_svm_01_mgmt01",
+          "required":true,
+          "icon":"fa-network-wired"
+        }
+      ]
+    },
+    {
+      "name":"Delete SVM with awx",
+      "roles":["public"],
+      "template":"Demo CXO Delete SVM",
+      "category":["Decommissioning","AWX"],
+      "tileClass":"has-background-danger-light",
+      "inventory":"",
+      "type":"awx",
+      "tags":"",
+      "fields":[
+        {
+          "element":"input",
+          "type":"text",
+          "name":"ontap_cluster_name",
+          "label":"Cluster",
+          "placeholder":"Cluster name",
+          "default":"cluster1",
+          "required":true,
+          "icon":"fa-building"
+        },
+        {
+          "element":"input",
+          "type":"text",
+          "name":"ontap_svm_name",
+          "label":"Svm",
+          "placeholder":"Svm name",
+          "default":"pri_svm_01",
+          "required":true,
+          "icon":"fa-house"
+        },
+        {
+          "element":"select",
+          "type":"enum",
+          "name":"ontap_volume_name",
+          "label":"Volume",
+          "placeholder":"Volume name",
+          "default":"",
+          "values":["pri_svm_01_cifs_001","pri_svm_01_cifs_002","pri_svm_01_cifs_003"],
+          "required":true,
+          "icon":"fa-database"
+        }
+      ]
+    },
+    {
+      "name":"Demo Form Ansible No input",
+      "roles":["public"],
+      "description":"This workflow will kickoff the vanilla ansible dummy playbook, it should always run.",
+      "category":["Demo","Ansible"],
+      "tileClass":"has-background-warning",
+      "playbook":"dummy.yaml",
+      "inventory":"",
+      "type":"ansible",
+      "fields":[]
+    },
+    {
+      "name":"Demo Form Functionality",
+      "roles":["public"],
+      "description":"This workflow will show all form functionality",
+      "category":["Demo"],
+      "tileClass":"has-background-warning",
+      "playbook":"dummy.yaml",
+      "inventory":"",
+      "type":"ansible",
+      "fields":[
+          {
+            "element":"input",
+            "type":"text",
+            "name":"vol_name",
+            "label":"Volume name",
+            "default":"",
+            "required":true,
+            "minLength":4,
+            "maxLength":10,
+            "regex":"^[a-zA-Z]*$",
+            "regexDescription":"Must be alpha numeric"
+          },
+          {
+            "element":"input",
+            "type":"password",
+            "name":"password",
+            "label":"Password",
+            "default":"",
+            "required":true,
+            "minLength":8,
+            "maxLength":20,
+            "regex":"^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\\$%\\^&\\*])",
+            "regexDescription":"Must contain at least 1 numeric, 1 special, 1 upper and 1 lower character",
+            "icon":"fa-lock"
+          },
+          {
+            "element":"input",
+            "type":"password",
+            "name":"password_verify",
+            "label":"Verify Password",
+            "default":"",
+            "sameAs":"password",
+            "icon":"fa-lock"
+          },
+          {
+            "element":"input",
+            "type":"number",
+            "name":"numberfield",
+            "label":"Number",
+            "default":"",
+            "required":true,
+            "minValue":0,
+            "maxValue":10
+          },
+          {
+            "element":"select",
+            "type":"enum",
+            "name":"country",
+            "label":"Country",
+            "default":"belgium",
+            "values":["belgium","netherlands"],
+            "required":true
+          },
+          {
+            "element":"input",
+            "type":"text",
+            "name":"city",
+            "label":"City",
+            "default":"brussels",
+            "required":true
+          },
+          {
+            "element":"expression",
+            "hide":true,
+            "name":"calculation",
+            "label":"Calculation",
+            "default":false,
+            "placeholder":"",
+            "expression":"multiplyNumbers($(numberfield),100)"
+          },
+          {
+            "element":"expression",
+            "name":"new_volume_name",
+            "label":"New volume name",
+            "default":false,
+            "placeholder":"",
+            "expression":"'$(country)'+'$(city)'+'$(calculation)'"
+          },
+          {
+            "element":"select",
+            "type":"enum",
+            "name":"languages",
+            "label":"Languages",
+            "default":[],
+            "values":["english","dutch","french","spanish","german","swedish","chinese"],
+            "multiple":true,
+            "size":4,
+            "required":true,
+            "icon":"fa-flag",
+            "help":"You can select multiple languages if you want !"
+          },
+          {
+            "element":"input",
+            "type":"radio",
+            "name":"numberchoice",
+            "label":"Pick a number",
+            "values":["one","two"],
+            "default":"one",
+            "required":true
+          },
+          {
+            "element":"input",
+            "type":"checkbox",
+            "name":"areyousure",
+            "label":"Confirmation",
+            "default":false,
+            "placeholder":"are you sure?",
+            "dependencies":[
+              {
+                "name":"numberchoice",
+                "values":["two"]
+              }
+            ]
+          },
+          {
+            "element":"select",
+            "type":"query",
+            "dbConfig":"CONN1",
+            "query":"select name from cm_storage.vserver where vserver.type='data'",
+            "name":"vserver_name",
+            "label":"Select a vserver",
+            "default":"svm1",
+            "required":true,
+            "group":"Storage",
+            "dependencies":[
+              {
+                "name":"areyousure",
+                "values":[true]
+              }
+            ]
+          },
+          {
+            "element":"select",
+            "type":"query",
+            "dbConfig":"CONN2",
+            "query":"select volume.name,vserver.name 'vserver' from cm_storage.volume,cm_storage.vserver where volume.vserver_id=vserver.id and vserver.name='$(vserver_name)'",
+            "name":"vol_name2",
+            "label":"Select a volume",
+            "default":"bel_bru_tom",
+            "required":true,
+            "group":"Storage",
+            "dependencies":[
+              {
+                "name":"areyousure",
+                "values":[true]
+              }
+            ]
+          },
+          {
+            "element":"select",
+            "type":"query",
+            "dbConfig":"CONN1",
+            "query":"select n*50 as name from playground.generator_16 where n>0 and n<10",
+            "name":"size_mb",
+            "label":"Select a size in MB",
+            "default":"50",
+            "required":true,
+            "group":"Storage",
+            "dependencies":[
+              {
+                "name":"areyousure",
+                "values":[true]
+              }
+            ]
+          }
+      ]
+    },
+    {
+      "name":"HelloWorld",
+      "roles":["demo"],
+      "description":"This will kick off the HelloWorld template.  It does not expect any variables, so that's cool because it should always run :)",
+      "category":["Demo"],
+      "tileClass":"has-background-success",
+      "template":"HelloWorld",
+      "inventory":"",
+      "type":"awx",
+      "fields":[
+          {
+            "element":"input",
+            "model":"hello.world",
+            "type":"text",
+            "name":"Testfield",
+            "label":"Testfield",
+            "default":"",
+            "required":true
+          }
+      ]
+    }
+  ]
+}
