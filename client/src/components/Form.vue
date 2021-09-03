@@ -27,8 +27,10 @@
                         {{ radiovalue }}
                       </label>
                     </div>
-                    <div :class="{'has-icons-left':!!field.icon}" class="control has-icons-right">
-                      <input v-if="field.type=='expression'" :type="(field.hide) ? 'hidden' : 'text'" :class="{'is-danger':$v.form[field.name].$invalid,'is-loading':dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running'}" v-model="$v.form[field.name].$model" class="input" :name="field.name" readonly :required="field.required" :value="field.default" :placeholder="field.placeholder">
+                    <div :class="{'has-icons-left':!!field.icon}" class="control">
+                      <div v-if="field.type=='expression'" :class="{'is-loading':dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running'}" class="control">
+                        <input :type="(field.hide) ? 'hidden' : 'text'" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" readonly :name="field.name" :required="field.required">
+                      </div>
                       <input v-if="field.type=='text'" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" type="text" :placeholder="field.placeholder" @change="evaluateDynamicFields">
                       <input v-if="field.type=='password'" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" type="password" :placeholder="field.placeholder" @change="evaluateDynamicFields">
                       <input v-if="field.type=='number'" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" type="number" :placeholder="field.placeholder" @change="evaluateDynamicFields">
@@ -142,6 +144,7 @@
           visibility:{
 
           },
+          canSubmit:false,
           validationsLoaded:false,
           timeout:undefined     // determines how long we should show the result of run
         }
@@ -260,11 +263,17 @@
             if(foundfield in ref.form){                                         // does field xxx exist in our form ?
               ref.fieldDependencies[foundfield]=true;                           // mark xxx as dependency
               fieldvalue = ref.form[foundfield];                                // get value of xxx
-              targetflag = ref.dynamicFieldStatus[foundfield];                  // and what is the currect status of xxx, in case it's also dyanmic ?
+              if(foundfield in ref.dynamicFieldStatus){
+                targetflag = ref.dynamicFieldStatus[foundfield];                  // and what is the currect status of xxx, in case it's also dyanmic ?
+              }else{
+                targetflag = "fixed"
+              }
+
             }
 
             // if the variable is viable and not being changed, replace it
-            if(targetflag!="running" && fieldvalue!==undefined){                // valid value ?
+            // console.log(foundfield + "("+fieldvalue+")" + " -> targetflag = " + targetflag)
+            if(((targetflag=="variable")||(targetflag=="fixed")) && fieldvalue!==undefined){                // valid value ?
                 newValue=newValue.replace(foundmatch,fieldvalue);               // replace the placeholder with the value
             }else{
                 newValue=undefined                                              // cannot evaluate yet
@@ -312,8 +321,6 @@
                 Vue.set(ref.dynamicFieldStatus,item.name,"running");            // set as running
                 placeholderCheck = ref.replacePlaceholders(item.expression)     // check and replace placeholders
                 if(placeholderCheck.value!=undefined){                       // expression is clean ?
-                    // console.log("Triggering expression : " + newValue + " - reg : " + reg + " - still vars? : " + stillvars)
-
                     axios.post("/api/v1/expression",{expression:placeholderCheck.value},TokenStorage.getAuthentication())
                       .then((result)=>{
                         var restresult = result.data
@@ -345,7 +352,7 @@
 
 
                 }else{
-                  // console.log(item.name + " is not evaluated yet");
+                  //console.log(item.name + " is not evaluated yet");
                   Vue.set(ref.dynamicFieldStatus,item.name,undefined);
                 }
               } else if(item.type=="query" && flag==undefined){
@@ -402,11 +409,15 @@
           ) // end field loop
           if(watchdog>15){
             clearInterval(ref.interval);
-            ref.$toast.warning("Stopping interval ; too many loops")
+            ref.interval=null;
+            ref.$toast.info("Not all fields can be evaluated")
+            // ref.$toast.warning("Stopping interval ; too many loops")
           }
           if(!hasUnevaluatedFields){
             clearInterval(ref.interval);
-            ref.$toast.info("All fields are found")
+            ref.interval=null;
+            ref.canSubmit=true;
+            //ref.$toast.info("All fields are found")
           }
         },100); // end interval
       },
@@ -422,6 +433,7 @@
       },
       evaluateDynamicFields(event) {
           var ref=this;
+          ref.canSubmit=false;
           var thiselement = event.target.name;
           // if this field is dependency
           if(ref.fieldDependencies[thiselement]){
@@ -431,7 +443,9 @@
             for (var key in this.dynamicFieldStatus){
               // only reset the ones with variables, the fixed ones can keep their value
               if(ref.dynamicFieldStatus[key]=="variable"){
+                // set all variable fields blank and re-evaluate
                 Vue.set(ref.dynamicFieldStatus,key,undefined);
+                Vue.set(ref.form,key,undefined);
               }
             }
             // start interval
@@ -514,27 +528,32 @@
       },
       executeForm(){
         // make sure, no delayed stuff is started.
-        clearInterval(this.interval)
-        clearTimeout(this.timeout)
+        //
+        // clearInterval(this.interval)
+        // clearTimeout(this.timeout)
         var ref=this
         var isValid=true
         // final touch to force validation
         this.$v.form.$touch();
         // loop all fields and check if it valid, skip hidden fields
         this.currentForm.fields.forEach((item, i) => {
-          if(this.visibility[item.name] && this.$v.form[item.name].$invalid){
+          if(this.visibility[item.name] && this.$v.form[item.name].$invalid && this.$v.form[item.name].$model!=undefined){
             isValid=false
           }
         })
         if(!isValid){
-            return
+            ref.$toast.warning("Form contains invalid data")
+            return // do not start if form is invalid
+        }else if(!ref.canSubmit){
+          ref.$toast.warning("Form is still busy, please try again")
+          return // do not start if form is invalid
         }else{
           this.generateJsonOutput()
           // local ansible
           if(this.currentForm.type=="ansible"){
             this.formdata.ansibleInventory = this.currentForm.inventory;
             this.formdata.ansiblePlaybook = this.currentForm.playbook;
-            this.formdata.ansibleTags = this.currentForm.tags;
+            this.formdata.ansibleTags = this.currentForm.tags || "";
             this.ansibleResult.message= "Connecting with ansible ";
             this.ansibleResult.status="info";
             axios.post("/api/v1/ansible",this.formdata,TokenStorage.getAuthentication())
@@ -543,7 +562,7 @@
                   if(result){
                     this.ansibleResult=result.data;
                     if(result.data.data.error!=""){
-                      ref.$toast.error(result.data.data.error)
+                      ref.$toast.warning(result.data.data.error)
                     }
                     clearTimeout(this.timeout)
                     this.timeout = setTimeout(function(){ ref.resetResult() }, 15000);
@@ -573,7 +592,7 @@
                     this.ansibleResult=result.data;
                     if(result.data.data.error!=""){
                       ref.$toast.error(result.data.data.error)
-                    }                    
+                    }
                     // get the jobid
                     var jobid =  this.ansibleResult.data.output.id
                     // don't show the whole json part
@@ -602,7 +621,11 @@
       this.form={}
       // initialize defaults
       this.currentForm.fields.forEach((item, i) => {
-        Vue.set(ref.form,item.name,item.default)
+        if(["expression","query"].includes(item.type)){
+          Vue.set(ref.form,item.name,undefined)
+        }else{
+          Vue.set(ref.form,item.name,item.default)
+        }
         Vue.set(ref.visibility,item.name,true)
       });
       this.$v.form.$reset();

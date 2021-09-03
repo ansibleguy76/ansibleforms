@@ -284,7 +284,7 @@
           },
           {
             "type":"expression",
-            "hide":true,
+            "hide":false,
             "name":"multiply",
             "label":"Multiply Example",
             "default":false,
