@@ -268,9 +268,8 @@
             "type":"expression",
             "hide":false,
             "name":"concatination",
+            "default":"",
             "label":"Concatination Example",
-            "default":false,
-            "placeholder":"",
             "expression":"'$(textfield1)' + ' ' + '$(textfield2)' + $(multiply)"
           },
           {
@@ -286,21 +285,58 @@
             "type":"expression",
             "hide":false,
             "name":"multiply",
+            "default":"",
             "label":"Multiply Example",
-            "default":false,
-            "placeholder":"",
             "expression":"$(numberfield)*100"
           },
           {
             "type":"expression",
             "hide":false,
             "name":"pi",
+            "default":"",
             "label":"The number PI",
-            "default":false,
-            "placeholder":"",
             "expression":"Math.PI"
           }
       ]
+    },
+    {
+      "name":"Database query",
+      "roles":["public"],
+      "description":"This workflow will show queries",
+      "categories":["Demo"],
+      "tileClass":"has-background-warning",
+      "playbook":"dummy.yaml",
+      "inventory":"",
+      "type":"ansible",
+      "fields":[
+          {
+            "type":"query",
+            "dbConfig":"CONN1",
+            "query":"select name from storage.cluster",
+            "name":"cluster_name",
+            "label":"Select a cluster",
+            "default":"cluster1",
+            "required":true
+          },
+          {
+            "type":"query",
+            "dbConfig":"CONN1",
+            "query":"select svm.name from storage.svm,storage.cluster where svm.cluster_id=cluster.id and cluster.name='$(cluster_name)'",
+            "name":"svm_name",
+            "label":"Select a svm",
+            "default":"svm1",
+            "required":true
+          },
+          {
+            "type":"query",
+            "dbConfig":"CONN1",
+            "query":"select volume.name,svm.name 'svm' from storage.volume,storage.svm where volume.svm_id=svm.id and svm.name='$(svm_name)'",
+            "name":"vol_name",
+            "label":"Select a volume",
+            "default":"vol1",
+            "required":true
+          }
+        ]
     },
     {
       "name":"Database query and dependencies",
@@ -334,7 +370,7 @@
             "label":"Select a cluster",
             "default":"cluster1",
             "required":true,
-            "model":"storage.cluster",
+            "model":"storage.cluster.name",
             "group":"Storage",
             "dependencies":[
               {
@@ -351,7 +387,7 @@
             "label":"Select a svm",
             "default":"svm1",
             "required":true,
-            "model":"storage.svm",
+            "model":"storage.cluster.svm.name",
             "group":"Storage",
             "dependencies":[
               {
@@ -368,7 +404,7 @@
             "label":"Select a volume",
             "default":"vol1",
             "required":true,
-            "model":"storage.volume",
+            "model":"storage.cluster.volume.name",
             "group":"Storage",
             "dependencies":[
               {
@@ -385,7 +421,7 @@
             "label":"Select a size in MB",
             "default":"50",
             "required":true,
-            "model":"storage.sizemb",
+            "model":"storage.cluster.volume.sizemb",
             "group":"Storage",
             "dependencies":[
               {
@@ -489,6 +525,15 @@
             "default":"",
             "sameAs":"password",
             "icon":"fa-lock"
+          },
+          {
+            "type":"number",
+            "name":"numberfield",
+            "label":"Number",
+            "default":"1",
+            "required":true,
+            "minValue":0,
+            "maxValue":10
           },
           {
             "type":"enum",

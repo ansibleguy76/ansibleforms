@@ -409,13 +409,11 @@
           ) // end field loop
           if(watchdog>15){
             clearInterval(ref.interval);
-            ref.interval=null;
-            ref.$toast.info("Not all fields can be evaluated")
+            //ref.$toast.info("Not all fields can be evaluated")
             // ref.$toast.warning("Stopping interval ; too many loops")
           }
           if(!hasUnevaluatedFields){
             clearInterval(ref.interval);
-            ref.interval=null;
             ref.canSubmit=true;
             //ref.$toast.info("All fields are found")
           }
@@ -445,7 +443,10 @@
               if(ref.dynamicFieldStatus[key]=="variable"){
                 // set all variable fields blank and re-evaluate
                 Vue.set(ref.dynamicFieldStatus,key,undefined);
-                Vue.set(ref.form,key,undefined);
+                if(key!=thiselement){
+                  Vue.set(ref.form,key,undefined);
+                }
+
               }
             }
             // start interval
