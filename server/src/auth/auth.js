@@ -16,11 +16,8 @@ passport.use(
       try {
         var user = {}
         UserModel.authenticate(username,password,config,function(err,result){
-          if(err){
-            return done(err);
-          }
 
-          if (result===null) {
+          if (err || result===null) {
             logger.debug("No login locally, trying ldap")
             UserModel.checkLdap(username,password,function(err,result){
               if(err){

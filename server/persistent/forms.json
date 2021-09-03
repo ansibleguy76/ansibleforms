@@ -32,7 +32,7 @@
     },
     {
       "name":"operator",
-      "groups":["local/operators"]
+      "groups":["local/operator"]
     },
     {
       "name":"demo",
@@ -271,7 +271,7 @@
             "label":"Concatination Example",
             "default":false,
             "placeholder":"",
-            "expression":"'$(textfield1)' + ' ' + '$(textfield2)'"
+            "expression":"'$(textfield1)' + ' ' + '$(textfield2)' + $(multiply)"
           },
           {
             "type":"number",
@@ -284,7 +284,7 @@
           },
           {
             "type":"expression",
-            "hide":false,
+            "hide":true,
             "name":"multiply",
             "label":"Multiply Example",
             "default":false,
