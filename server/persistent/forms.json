@@ -2,7 +2,7 @@
   "categories":[
     {
       "name":"Default",
-      "icon":"fa-user"
+      "icon":"fa-bars"
     },
     {
       "name":"Provisioning",
@@ -49,14 +49,13 @@
       "roles":["public"],
       "description":"Create storage using vanilla ansible and hardcode dropdowns",
       "tileClass":"has-background-success-light",
-      "category":["Provisioning","Ansible"],
+      "categories":["Provisioning","Ansible"],
       "type":"ansible",
       "playbook":"pilot_play_basic_create.yml",
       "inventory":"storage_inventory.yml",
       "tags":"source_inventory,create_all",
       "fields":[
         {
-          "element":"input",
           "type":"text",
           "name":"cluster_name",
           "label":"Cluster",
@@ -66,7 +65,6 @@
           "icon":"fa-building"
         },
         {
-          "element":"input",
           "type":"text",
           "name":"svm_name",
           "label":"Svm",
@@ -76,7 +74,6 @@
           "icon":"fa-house"
         },
         {
-          "element":"select",
           "type":"enum",
           "name":"volume_name",
           "label":"Volume",
@@ -87,7 +84,6 @@
           "icon":"fa-database"
         },
         {
-          "element":"input",
           "type":"text",
           "name":"ip_interface_name",
           "label":"Interface",
@@ -102,7 +98,7 @@
       "name":"Delete storage with ansible",
       "roles":["operator"],
       "description":"Delete a storage using vanilla ansible",
-      "category":["Decommissioning","Ansible"],
+      "categories":["Decommissioning","Ansible"],
       "tileClass":"has-background-danger-light",
       "type":"ansible",
       "playbook":"pilot_play_basic_delete.yml",
@@ -110,7 +106,6 @@
       "tags":"delete_all",
       "fields":[
         {
-          "element":"input",
           "type":"text",
           "name":"cluster_name",
           "label":"Cluster",
@@ -120,7 +115,6 @@
           "icon":"fa-building"
         },
         {
-          "element":"input",
           "type":"text",
           "name":"svm_name",
           "label":"Svm",
@@ -130,7 +124,6 @@
           "icon":"fa-house"
         },
         {
-          "element":"select",
           "type":"enum",
           "name":"volume_name",
           "label":"Volume",
@@ -144,8 +137,9 @@
     },
     {
       "name":"Create storage with awx",
+      "roles":["public"],
       "description":"Creates a storage with AWX",
-      "category":["AWX","Provisioning"],
+      "categories":["AWX","Provisioning"],
       "template":"create_storage",
       "tileClass":"has-background-success-light",
       "inventory":"",
@@ -153,7 +147,6 @@
       "tags":"",
       "fields":[
         {
-          "element":"input",
           "type":"text",
           "name":"cluster_name",
           "label":"Cluster",
@@ -163,7 +156,6 @@
           "icon":"fa-building"
         },
         {
-          "element":"input",
           "type":"text",
           "name":"svm_name",
           "label":"Svm",
@@ -173,7 +165,6 @@
           "icon":"fa-house"
         },
         {
-          "element":"select",
           "type":"enum",
           "name":"volume_name",
           "label":"Volume",
@@ -184,7 +175,6 @@
           "icon":"fa-database"
         },
         {
-          "element":"input",
           "type":"text",
           "name":"ip_interface_name",
           "label":"Interface",
@@ -199,14 +189,13 @@
       "name":"Delete storage with awx",
       "roles":["public"],
       "template":"Demo delete storage",
-      "category":["Decommissioning","AWX"],
+      "categories":["Decommissioning","AWX"],
       "tileClass":"has-background-danger-light",
       "inventory":"",
       "type":"awx",
       "tags":"",
       "fields":[
         {
-          "element":"input",
           "type":"text",
           "name":"cluster_name",
           "label":"Cluster",
@@ -216,7 +205,6 @@
           "icon":"fa-building"
         },
         {
-          "element":"input",
           "type":"text",
           "name":"svm_name",
           "label":"Svm",
@@ -226,7 +214,6 @@
           "icon":"fa-house"
         },
         {
-          "element":"select",
           "type":"enum",
           "name":"volume_name",
           "label":"Volume",
@@ -242,7 +229,7 @@
       "name":"Demo Form Ansible No input",
       "roles":["public"],
       "description":"This workflow will kickoff the vanilla ansible dummy playbook.",
-      "category":["Demo","Ansible"],
+      "categories":["Demo","Ansible"],
       "tileClass":"has-background-warning",
       "playbook":"dummy.yaml",
       "inventory":"",
@@ -253,14 +240,13 @@
       "name":"Demo Form Functionality Expressions",
       "roles":["public"],
       "description":"This workflow will show expressions",
-      "category":["Demo"],
+      "categories":["Demo"],
       "tileClass":"has-background-warning",
       "playbook":"dummy.yaml",
       "inventory":"",
       "type":"ansible",
       "fields":[
           {
-            "element":"input",
             "type":"text",
             "name":"textfield1",
             "label":"Field 1",
@@ -270,7 +256,6 @@
             "maxLength":10
           },
           {
-            "element":"input",
             "type":"text",
             "name":"textfield2",
             "label":"Field 2",
@@ -280,7 +265,7 @@
             "maxLength":10
           },
           {
-            "element":"expression",
+            "type":"expression",
             "hide":false,
             "name":"concatination",
             "label":"Concatination Example",
@@ -289,7 +274,6 @@
             "expression":"'$(textfield1)' + ' ' + '$(textfield2)'"
           },
           {
-            "element":"input",
             "type":"number",
             "name":"numberfield",
             "label":"Number",
@@ -299,7 +283,7 @@
             "maxValue":10
           },
           {
-            "element":"expression",
+            "type":"expression",
             "hide":false,
             "name":"multiply",
             "label":"Multiply Example",
@@ -308,7 +292,7 @@
             "expression":"$(numberfield)*100"
           },
           {
-            "element":"expression",
+            "type":"expression",
             "hide":false,
             "name":"pi",
             "label":"The number PI",
@@ -322,22 +306,20 @@
       "name":"Database query and dependencies",
       "roles":["public"],
       "description":"This workflow will show queries and dependencies",
-      "category":["Demo"],
+      "categories":["Demo"],
       "tileClass":"has-background-warning",
       "playbook":"dummy.yaml",
       "inventory":"",
       "type":"ansible",
       "fields":[
           {
-            "element":"input",
             "type":"checkbox",
             "name":"createstorage",
             "label":"Storage",
-            "default":false,
+            "default":true,
             "placeholder":"Create Storage ?"
           },
           {
-            "element":"input",
             "type":"checkbox",
             "name":"showcmdb",
             "label":"Cmdb",
@@ -345,7 +327,6 @@
             "placeholder":"Show CMDB information ?"
           },
           {
-            "element":"select",
             "type":"query",
             "dbConfig":"CONN1",
             "query":"select name from storage.cluster",
@@ -363,7 +344,6 @@
             ]
           },
           {
-            "element":"select",
             "type":"query",
             "dbConfig":"CONN1",
             "query":"select svm.name from storage.svm,storage.cluster where svm.cluster_id=cluster.id and cluster.name='$(cluster_name)'",
@@ -381,7 +361,6 @@
             ]
           },
           {
-            "element":"select",
             "type":"query",
             "dbConfig":"CONN1",
             "query":"select volume.name,svm.name 'svm' from storage.volume,storage.svm where volume.svm_id=svm.id and svm.name='$(svm_name)'",
@@ -399,7 +378,6 @@
             ]
           },
           {
-            "element":"select",
             "type":"query",
             "dbConfig":"CONN1",
             "query":"select n*50 as name from storage.generator_16 where n>0 and n<10",
@@ -417,7 +395,6 @@
             ]
           },
           {
-            "element":"select",
             "type":"query",
             "dbConfig":"CONN1",
             "query":"select name from cmdb.city",
@@ -435,7 +412,6 @@
             ]
           },
           {
-            "element":"select",
             "type":"query",
             "dbConfig":"CONN1",
             "query":"select datacenter.name from cmdb.datacenter,cmdb.city where datacenter.city_id=city.id and city.name='$(city_name)'",
@@ -453,7 +429,6 @@
             ]
           },
           {
-            "element":"select",
             "type":"query",
             "dbConfig":"CONN1",
             "query":"select resource.name,datacenter.name 'datacenter' from cmdb.resource,cmdb.datacenter where resource.datacenter_id=datacenter.id and datacenter.name='$(datacenter_name)'",
@@ -476,26 +451,26 @@
       "name":"Demo Form Functionality Simple Fields",
       "roles":["public"],
       "description":"This workflow will show form field examples",
-      "category":["Demo"],
+      "categories":["Demo"],
       "tileClass":"has-background-warning",
       "playbook":"dummy.yaml",
       "inventory":"",
       "type":"ansible",
       "fields":[
           {
-            "element":"input",
             "type":"text",
-            "name":"vol_name",
-            "label":"Volume name",
-            "default":"",
+            "name":"username",
+            "label":"Username",
+            "default":"ansibleguy",
+            "placeholder":"type a username",
             "required":true,
             "minLength":4,
             "maxLength":10,
             "regex":"^[a-zA-Z]*$",
-            "regexDescription":"Must be alpha numeric"
+            "regexDescription":"Must be alpha numeric",
+            "icon":"fa-user"
           },
           {
-            "element":"input",
             "type":"password",
             "name":"password",
             "label":"Password",
@@ -508,7 +483,6 @@
             "icon":"fa-lock"
           },
           {
-            "element":"input",
             "type":"password",
             "name":"password_verify",
             "label":"Verify Password",
@@ -517,7 +491,6 @@
             "icon":"fa-lock"
           },
           {
-            "element":"select",
             "type":"enum",
             "name":"country",
             "label":"Country",
@@ -526,7 +499,6 @@
             "required":true
           },
           {
-            "element":"select",
             "type":"enum",
             "name":"languages",
             "label":"Languages",
@@ -539,7 +511,6 @@
             "help":"You can select multiple languages if you want !"
           },
           {
-            "element":"input",
             "type":"radio",
             "name":"linuxfavourite",
             "label":"Choose your favorite linux flavour",
@@ -548,7 +519,6 @@
             "required":true
           },
           {
-            "element":"input",
             "type":"checkbox",
             "name":"areyousure",
             "label":"Confirmation",
@@ -561,14 +531,13 @@
       "name":"HelloWorld",
       "roles":["demo"],
       "description":"This will kick off the HelloWorld template.  It does not expect any variables, so that's cool because it should always run :)",
-      "category":["Demo"],
+      "categories":["Demo"],
       "tileClass":"has-background-success",
       "template":"HelloWorld",
       "inventory":"",
       "type":"awx",
       "fields":[
           {
-            "element":"input",
             "model":"hello.world",
             "type":"text",
             "name":"Testfield",

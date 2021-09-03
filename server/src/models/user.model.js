@@ -122,10 +122,10 @@ User.authenticate = function (username,password,config,result) {
       dbConn.query(query,username, function (err, res) {
           if(err) {
               logger.error(err)
-              result(err, null);
+              result("Failed to connect to the authentication database", null);
           }
           else{
-              if(res.length > 0){
+              if(res.length > 0 && res[0].password){
                 bcrypt.compare(password,res[0].password,function(err,isSame){
                   if(err){
                     result(err,null)
@@ -135,13 +135,13 @@ User.authenticate = function (username,password,config,result) {
                   }
                 });
               }else{
-                result(null,null);
+                result(`User ${username} not found`,null);
               }
 
           }
       });
     }catch(err){
-        result(err, null);
+        result("Failed to connect to the authentication database", null);
     }
 
 };

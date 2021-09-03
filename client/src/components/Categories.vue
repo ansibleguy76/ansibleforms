@@ -71,8 +71,8 @@
             return this.formConfig.forms
           }else{
             return this.formConfig.forms.filter((item)=>{
-              if(item.category!=undefined){
-                return (item.category.includes(category))  // selected category
+              if(item.categories!=undefined){
+                return (item.categories.includes(category))  // selected category
               }else{
                 // if no category was give, add to Default
                 return (category=="Default")

@@ -25,7 +25,7 @@ Ansible.run = function (playbook,inventory,tags,extraVars, result) {
   exec(command,{cwd:directory}, (error, stdout, stderr) => {
     if (error) {
       logger.error(`exec error: ${error}\n\n`);
-      result(error,null)
+      result(error,null,null)
     }else{
       logger.silly(`stdout: ${stdout}`);
       logger.silly(`stderr: ${stderr}`);

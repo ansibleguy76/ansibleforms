@@ -2,18 +2,10 @@
   <section class="section">
     <BulmaModal v-if="showDelete" title="Comfirm" action="Delete" @click="deleteGroup();showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete Group '{{ group.name}}'</BulmaModal>
     <div class="container">
-      <h1 class="title has-text-info"><i class="fad fa-groups"></i> Groups</h1>
-      <div class="columns" v-if="alert.message!=''">
-        <div class="column is-full">
-          <div class="notification" :class="alert.type">
-            <button class="delete" @click="alert.message=''"></button>
-            {{ alert.message }}
-          </div>
-        </div>
-      </div>
+      <h1 class="title has-text-info"><i class="fad fa-users"></i> Groups</h1>
       <div class="columns">
         <div class="column">
-            <BulmaSelect icon="fa-building" label="Select a group" :list="groupList" valuecol="id" labelcol="name" @change="loadGroup()" v-model="groupItem" />
+            <BulmaSelect icon="fa-users" label="Select a group" :list="groupList" valuecol="id" labelcol="name" @change="loadGroup()" v-model="groupItem" />
             <BulmaButton v-if="groupItem!=undefined" icon="fa-plus" label="New Group" @click="groupItem=undefined;loadGroup()"></BulmaButton>
             <BulmaButton v-if="groupItem!=undefined && groupItem!=1" type="is-danger" icon="fa-trash-alt" label="Delete Group" @click="showDelete=true"></BulmaButton>
         </div>
@@ -65,7 +57,7 @@
           .then((result)=>{
             ref.groupList=result.data.data.output;
           }),function(error){
-            ref.showAlert("is-danger",error.message);
+            ref.$toast.error(error.message);
           };
       },loadGroup(){
         var ref= this;
@@ -77,7 +69,7 @@
               ref.group=result.data.data.output
               ref.group.password=""
             }),function(error){
-              ref.showAlert("is-danger",error.message);
+              ref.$toast.error(error.message);
             };
         }else{
           console.log("No item selected")
@@ -90,14 +82,14 @@
         axios.delete('/api/v1/group/'+this.groupItem,TokenStorage.getAuthentication())
           .then((result)=>{
             if(result.data.status=="error"){
-              ref.showAlert("is-danger",result.data.message + ", " + result.data.data.error);
+              ref.$toast.error(result.data.message + ", " + result.data.data.error);
             }else{
-              ref.showAlert("is-info","Group is removed");
+              ref.$toast.success("Group is removed");
               ref.groupItem=undefined;
               ref.loadAll();
             }
           }),function(error){
-            ref.showAlert("is-danger",error.message);
+            ref.$toast.error(error.message);
           };
       },newGroup(){
         var ref= this;
@@ -105,14 +97,14 @@
           axios.post('/api/v1/group/',this.group,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
-                ref.showAlert("is-danger",result.data.message + ", " + result.data.data.error);
+                ref.$toast.error(result.data.message + ", " + result.data.data.error);
               }else{
                 Vue.set(ref,"groupItem",result.data.data.output)
-                ref.showAlert("is-info","Created group with new id " + result.data.data.output);
+                ref.$toast.success("Created group with new id " + result.data.data.output);
                 ref.loadAll();
               }
             }),function(error){
-              ref.showAlert("is-danger",error.message);
+              ref.$toast.error(error.message);
             };
         }
       },showAlert(type,message){

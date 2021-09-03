@@ -1,4 +1,7 @@
 import Vue from 'vue'
+import Toast from "vue-toastification";
+// Import the CSS or use your own!
+import "vue-toastification/dist/index.css";
 import App from './App.vue'
 import router from "./router"
 import TokenStorage from "./lib/TokenStorage"
@@ -17,7 +20,7 @@ axios.interceptors.response.use( (response) => {
   }else{
     // Logout user if token refresh didn't work or user is disabled
     if (error.config.url == '/api/v1/token' || error.response.message == 'Account is disabled.') {
-      console.log("Refresh failed")
+      this.$toast.warning("Unauthorized.  Access denied.")
       TokenStorage.clear();
       router.push({ name: 'Login' }).catch(err => {});
 
@@ -47,7 +50,8 @@ axios.interceptors.response.use( (response) => {
 
         })
         .catch((error) => {
-          console.log("Failed to retry api call")
+          this.$toast.warning("Unauthorized.  Session timeout.")
+          router.push({ name: 'Login' }).catch(err => {});
           Promise.reject(error);
         });
     }catch(err){
@@ -60,8 +64,14 @@ axios.interceptors.response.use( (response) => {
 });
 
 Vue.config.productionTip = false
-
+import { POSITION } from "vue-toastification";
+const options = {
+    // You can set your default options here
+    position:POSITION.BOTTOM_RIGHT
+};
+Vue.use(Toast,options)
 new Vue({
   router,
   render: h => h(App)
 }).$mount('#app');
+  Vue.component('jsonoutput', {})

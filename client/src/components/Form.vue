@@ -1,74 +1,104 @@
 <template>
   <section class="section has-background-light">
     <div class="container" v-if="formIsReady">
-      <h1 class="title">{{ currentForm.name }}</h1>
-      <div :key="group" v-for="group in fieldgroups" class="mt-4">
-        <div :class="{'box':checkGroupDependencies(group)}">
-          <h3 class="title is-3" v-if="checkGroupDependencies(group)">{{group}}</h3>
-          <div :key="field.name" v-for="field in filterfieldsByGroup(group)">
-            <transition name="slide">
-              <div class="field" v-if="checkDependencies(field)">
-                <label v-if="!field.hide" class="label">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span></label>
-                <label v-if="field.type=='checkbox'" class="checkbox">
-                  <input :checked="field.default" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" :required="field.required" :name="field.name" type="checkbox">
-                  {{ field.placeholder }}
-                </label>
-                <div v-if="field.type=='radio'" >
-                  <label class="radio" :key="radiovalue" v-for="radiovalue in field.values">
-                    <input type="radio" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" :checked="field.default===radiovalue" :value="radiovalue" :name="field.name">
-                    {{ radiovalue }}
-                  </label>
-                </div>
-                <div :class="{'has-icons-left':!!field.icon}" class="control has-icons-right">
-                  <input v-if="field.element=='expression'" :type="(field.hide) ? 'hidden' : 'text'" :class="{'is-danger':$v.form[field.name].$invalid,'is-loading':dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running'}" v-model="$v.form[field.name].$model" class="input" :name="field.name" readonly :required="field.required" :value="field.default" :placeholder="field.placeholder">
-                  <input v-if="field.element=='input' && field.type!='checkbox' && field.type!='radio'" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" :type="field.type" :value="field.default" :placeholder="field.placeholder" @change="evaluateDynamicFields">
-                  <div v-if="field.element=='select' && field.type=='enum' && !field.multiple" class="select">
-                    <select :name="field.name" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" @change="evaluateDynamicFields">
-                      <option v-if="!field.required" value=""></option>
-                      <option v-for="option in field.values" :key="option" :selected="field.default==option" :value="option">{{ option }}</option>
-                    </select>
+      <div class="columns">
+        <div class="column">
+          <h1 class="title">{{ currentForm.name }}</h1>
+          <button @click="generateJsonOutput();showJson=true" class="button is-info is-small">
+            <span class="icon">
+              <i class="fas fa-brackets-curly"></i>
+            </span>
+            <span>Show json output</span>
+          </button>
+          <div :key="group" v-for="group in fieldgroups" class="mt-4">
+            <div :class="{'box':checkGroupDependencies(group)}">
+              <h3 class="title is-3" v-if="checkGroupDependencies(group)">{{group}}</h3>
+              <div :key="field.name" v-for="field in filterfieldsByGroup(group)">
+                <transition name="slide">
+                  <div class="field" v-if="checkDependencies(field,true)">
+                    <label v-if="!field.hide" class="label">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span></label>
+                    <label v-if="field.type=='checkbox'" class="checkbox">
+                      <input :checked="field.default" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" :required="field.required" :name="field.name" type="checkbox">
+                      {{ field.placeholder }}
+                    </label>
+                    <div v-if="field.type=='radio'" >
+                      <label class="radio" :key="radiovalue" v-for="radiovalue in field.values">
+                        <input type="radio" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" :checked="field.default===radiovalue" :value="radiovalue" :name="field.name">
+                        {{ radiovalue }}
+                      </label>
+                    </div>
+                    <div :class="{'has-icons-left':!!field.icon}" class="control has-icons-right">
+                      <input v-if="field.type=='expression'" :type="(field.hide) ? 'hidden' : 'text'" :class="{'is-danger':$v.form[field.name].$invalid,'is-loading':dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running'}" v-model="$v.form[field.name].$model" class="input" :name="field.name" readonly :required="field.required" :value="field.default" :placeholder="field.placeholder">
+                      <input v-if="field.type=='text'" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" type="text" :placeholder="field.placeholder" @change="evaluateDynamicFields">
+                      <input v-if="field.type=='password'" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" type="password" :placeholder="field.placeholder" @change="evaluateDynamicFields">
+                      <input v-if="field.type=='number'" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" type="number" :placeholder="field.placeholder" @change="evaluateDynamicFields">
+                      <div v-if="field.type=='enum' && !field.multiple" class="select">
+                        <select :name="field.name" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" @change="evaluateDynamicFields">
+                          <option v-if="!field.required" value=""></option>
+                          <option v-for="option in field.values" :key="option" :selected="field.default==option" :value="option">{{ option }}</option>
+                        </select>
+                      </div>
+                      <div v-if="field.type=='enum' && field.multiple==true" class="select is-multiple">
+                        <select :name="field.name" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" multiple :size="field.size">
+                          <option v-if="!field.required" value=""></option>
+                          <option v-for="option in field.values" :key="option" :selected="field.default.includes(option)" :value="option">{{ option }}</option>
+                        </select>
+                      </div>
+                      <div v-if="field.type=='query'" class="select" :class="{'is-loading':dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running'}">
+                        <select  :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" :disabled="dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running'" :name="field.name" @change="evaluateDynamicFields">
+                          <option v-if="!field.required" value=""></option>
+                          <option v-for="option in queryresults[field.name]" :key="option.name" :selected="field.default==option.name" :value="option.name">{{ option.name }}</option>
+                        </select>
+                      </div>
+                      <span v-if="!!field.icon" class="icon is-small is-left">
+                        <i class="fas" :class="field.icon"></i>
+                      </span>
+                      <p class="help" v-if="!!field.help">{{ field.help}}</p>
+                      <p class="has-text-danger" v-if="!$v.form[field.name].required">This field is required</p>
+                      <p class="has-text-danger" v-if="'minLength' in $v.form[field.name] && !$v.form[field.name].minLength">Must be at least {{$v.form[field.name].$params.minLength.min}} characters long</p>
+                      <p class="has-text-danger" v-if="'maxLength' in $v.form[field.name] && !$v.form[field.name].maxLength">Can not be more than {{$v.form[field.name].$params.maxLength.max}} characters long</p>
+                      <p class="has-text-danger" v-if="'minValue' in $v.form[field.name] && !$v.form[field.name].minValue">Value cannot be lower than {{$v.form[field.name].$params.minValue.min}}</p>
+                      <p class="has-text-danger" v-if="'maxValue' in $v.form[field.name] && !$v.form[field.name].maxValue">Value cannot be higher than {{$v.form[field.name].$params.maxValue.max}}</p>
+                      <p class="has-text-danger" v-if="'regex' in $v.form[field.name] && !$v.form[field.name].regex">{{$v.form[field.name].$params.regex.description}}</p>
+                      <p class="has-text-danger" v-if="'sameAs' in $v.form[field.name] && !$v.form[field.name].sameAs">Field must be identical to '{{$v.form[field.name].$params.sameAs.eq}}'</p>
+                    </div>
                   </div>
-                  <div v-if="field.element=='select' && field.type=='enum' && field.multiple==true" class="select is-multiple">
-                    <select :name="field.name" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" multiple :size="field.size">
-                      <option v-if="!field.required" value=""></option>
-                      <option v-for="option in field.values" :key="option" :selected="field.default.includes(option)" :value="option">{{ option }}</option>
-                    </select>
-                  </div>
-                  <div v-if="field.element=='select' && field.type=='query'" class="select" :class="{'is-loading':dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running'}">
-                    <select  :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" :disabled="dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running'" :name="field.name" @change="evaluateDynamicFields">
-                      <option v-if="!field.required" value=""></option>
-                      <option v-for="option in queryresults[field.name]" :key="option.name" :selected="field.default==option.name" :value="option.name">{{ option.name }}</option>
-                    </select>
-                  </div>
-                  <span v-if="!!field.icon" class="icon is-small is-left">
-                    <i class="fas" :class="field.icon"></i>
-                  </span>
-                  <p class="help" v-if="!!field.help">{{ field.help}}</p>
-                  <p class="has-text-danger" v-if="!$v.form[field.name].required">This field is required</p>
-                  <p class="has-text-danger" v-if="'minLength' in $v.form[field.name] && !$v.form[field.name].minLength">Must be at least {{$v.form[field.name].$params.minLength.min}} characters long</p>
-                  <p class="has-text-danger" v-if="'maxLength' in $v.form[field.name] && !$v.form[field.name].maxLength">Can not be more than {{$v.form[field.name].$params.maxLength.max}} characters long</p>
-                  <p class="has-text-danger" v-if="'minValue' in $v.form[field.name] && !$v.form[field.name].minValue">Value cannot be lower than {{$v.form[field.name].$params.minValue.min}}</p>
-                  <p class="has-text-danger" v-if="'maxValue' in $v.form[field.name] && !$v.form[field.name].maxValue">Value cannot be higher than {{$v.form[field.name].$params.maxValue.max}}</p>
-                  <p class="has-text-danger" v-if="'regex' in $v.form[field.name] && !$v.form[field.name].regex">{{$v.form[field.name].$params.regex.description}}</p>
-                  <p class="has-text-danger" v-if="'sameAs' in $v.form[field.name] && !$v.form[field.name].sameAs">Field must be identical to '{{$v.form[field.name].$params.sameAs.eq}}'</p>
-                </div>
+                </transition>
               </div>
-            </transition>
+            </div>
+          </div>
+
+          <hr v-if="!!currentForm" />
+          <button v-if="!!currentForm && !ansibleResult.message" class="button is-primary is-fullwidth" @click="executeForm"><span class="icon"><i class="fas fa-play"></i></span><span>Run</span></button>
+          <button v-if="!!ansibleResult.message" class="button is-fullwidth" @click="resetResult()" :class="{ 'has-background-success' : ansibleResult.status=='success', 'has-background-danger' : ansibleResult.status=='error','has-background-info cursor-progress' : ansibleResult.status=='info' }">
+            <span class="icon" v-if="ansibleResult.status=='info'"><i class="fas fa-spinner fa-pulse"></i></span>
+            <span class="icon" v-if="ansibleResult.status!='info'"><i class="fas fa-times"></i></span>
+            <span>{{ ansibleResult.message }}</span>
+          </button>
+          <div v-if="!!ansibleResult.data.output" class="box mt-3">
+            <pre v-if="currentForm.type=='ansible'" v-text="ansibleResult.data.output"></pre>
+            <pre v-if="currentForm.type=='ansible' && ansibleResult.data.error" class="has-text-danger" v-text="ansibleResult.data.error"></pre>
+            <pre v-if="currentForm.type=='awx'" v-html="ansibleResult.data.output"></pre>
           </div>
         </div>
-      </div>
-
-      <hr v-if="!!currentForm" />
-      <button v-if="!!currentForm && !ansibleResult.message" class="button is-primary is-fullwidth" @click="executeForm"><span class="icon"><i class="fas fa-play"></i></span><span>Run</span></button>
-      <button v-if="!!ansibleResult.message" class="button is-fullwidth" @click="resetResult()" :class="{ 'has-background-success' : ansibleResult.status=='success', 'has-background-danger' : ansibleResult.status=='error','has-background-info cursor-progress' : ansibleResult.status=='info' }">
-        <span class="icon" v-if="ansibleResult.status=='info'"><i class="fas fa-spinner fa-pulse"></i></span>
-        <span class="icon" v-if="ansibleResult.status!='info'"><i class="fas fa-times"></i></span>
-        <span>{{ ansibleResult.message }}</span>
-      </button>
-      <div v-if="!!ansibleResult.data.output" class="box mt-3">
-        <pre v-if="currentForm.type=='ansible'" v-text="ansibleResult.data.output"></pre>
-        <pre v-if="currentForm.type=='ansible' && ansibleResult.data.error" class="has-text-danger" v-text="ansibleResult.data.error"></pre>
-        <pre v-if="currentForm.type=='awx'" v-html="ansibleResult.data.output"></pre>
+        <div v-if="showJson" class="column">
+          <h1 class="title">Json output, sent as extravars</h1>
+          <button @click="showJson=false" class="button is-danger is-small">
+            <span class="icon">
+              <i class="fas fa-times"></i>
+            </span>
+            <span>Close</span>
+          </button>
+          <button @click="generateJsonOutput()" class="ml-2 button is-info is-small">
+            <span class="icon">
+              <i class="fas fa-sync"></i>
+            </span>
+            <span>Refresh</span>
+          </button>
+          <div class="box mt-4">
+            <vue-json-pretty :data="formdata"></vue-json-pretty>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -78,12 +108,15 @@
   import axios from 'axios'
   import Vuelidate from 'vuelidate'
   import TokenStorage from './../lib/TokenStorage'
+  import VueJsonPretty from 'vue-json-pretty';
+  import 'vue-json-pretty/lib/styles.css';
   import { required, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
 
   Vue.use(Vuelidate)
 
   export default{
     name:"Form",
+    components:{VueJsonPretty},
     props:{
       currentForm:{type:Object}
     },
@@ -92,6 +125,7 @@
           formdata:{},          // the eventual object sent to the api in the correct hierarchy
           interval:undefined,   // interval how fast fields need to be re-evaluated and refreshed
           showNav: false,
+          showJson: false,
           ansibleResult:{       // holds the output of an execution
             status:"",
             message:"",
@@ -104,6 +138,9 @@
           dynamicFieldStatus:{},    // holds the status of dynamics fields (running=currently being evaluated, variable=depends on others, fixed=only need 1-time lookup)
           queryresults:{},      // holds the results of dynamic dropdown boxes
           form:{                // the form data mapped to the form
+          },
+          visibility:{
+
           },
           validationsLoaded:false,
           timeout:undefined     // determines how long we should show the result of run
@@ -164,14 +201,22 @@
                  el.group === group) || (!("group" in el) && (group==""))
         });
       },
-      checkDependencies(field){
+      checkDependencies(field,reset){
         var ref = this                              // checks if a field can be show, based on the value of other fields
         var result = true
         if("dependencies" in field){
           field.dependencies.forEach((item, i) => {
             if(!item.values.includes(ref.form[item.name])){
-              Vue.set(ref.form,field.name,field.default)
+              if(reset){
+                Vue.set(ref.form,field.name,field.default)
+                Vue.set(ref.visibility,field.name,false)
+                //console.log("Resetting field " + field.name)
+              }
               result=false
+            }else{
+              if(reset){
+                Vue.set(ref.visibility,field.name,true)
+              }
             }
           });
         }
@@ -185,7 +230,7 @@
         var ref=this
         var result = false
         this.filterfieldsByGroup(group).forEach((item, i) => {
-          result = ref.checkDependencies(item)
+          result = ref.checkDependencies(item,false)
         });
         return result
       },
@@ -260,7 +305,7 @@
               // if expression and not processed yet or needs to be reprocessed
               var flag = ref.dynamicFieldStatus[item.name];                     // current field status (running/fixed/variable)
               var placeholderCheck=undefined;                                   // result for a placeholder check
-              if(item.element=="expression" && flag==undefined){                // if expression and not evaluated yet
+              if(item.type=="expression" && flag==undefined){                // if expression and not evaluated yet
                 // console.log("eval expression " + item.name)
                 // set flag running
                 hasUnevaluatedFields=true                                       // set the un-eval flag
@@ -300,11 +345,11 @@
 
 
                 }else{
-                  console.log(item.name + " is not evaluated yet");
+                  // console.log(item.name + " is not evaluated yet");
                   Vue.set(ref.dynamicFieldStatus,item.name,undefined);
                 }
               } else if(item.type=="query" && flag==undefined){
-                console.log("eval query : " + item.name)
+                // console.log("eval query : " + item.name)
                 // set flag running
                 hasUnevaluatedFields=true
                 Vue.set(ref.dynamicFieldStatus,item.name,"running");
@@ -357,11 +402,11 @@
           ) // end field loop
           if(watchdog>15){
             clearInterval(ref.interval);
-            console.log("Stop interval ; too many loops")
+            ref.$toast.warning("Stopping interval ; too many loops")
           }
           if(!hasUnevaluatedFields){
             clearInterval(ref.interval);
-            console.log("Stop interval ; all fields found")
+            ref.$toast.info("All fields are found")
           }
         },100); // end interval
       },
@@ -409,11 +454,15 @@
                 }
                 // if not final status, keep checking after 2s
                 if(this.ansibleResult.status!="success" && this.ansibleResult.status!="error"){
-                  console.log("axios returned : "+result.data.message)
+                  // this.$toast.info(result.data.message)
                   setTimeout(function(){ ref.getAwxJob(id) }, 2000);
                 }else{
                   // if final, remove output after 15s
-                  console.log("axios returned : "+result.data.message)
+                  if(this.ansibleResult.status=="success"){
+                    this.$toast.success(result.data.message)
+                  }else{
+                    this.$toast.error(result.data.message)
+                  }
                   clearTimeout(this.timeout)
                   this.timeout = setTimeout(function(){ ref.resetResult() }, 15000);
                 }
@@ -423,24 +472,18 @@
               }
           })
           .catch(function(err){
-            console.log("Failed in axios call to get awx job");
+            ref.$toast.error("Failed to get awx job");
             if(err.response.status!=401){
               ref.ansibleResult.message="Error in axios call to get awx job\n\n" + err
               ref.ansibleResult.status="error";
             }
           })
       },
-      executeForm(){
-        // make sure, no delayed stuff is started.
-        clearInterval(this.interval)
-        clearTimeout(this.timeout)
+      generateJsonOutput(){
         var ref=this
-        this.$v.form.$touch();
-        if (this.$v.form.$invalid) {
-            return
-        }else{
-          this.formdata={}
-          this.currentForm.fields.forEach((item, i) => {
+        this.formdata={}
+        this.currentForm.fields.forEach((item, i) => {
+          if(this.visibility[item.name]){
             var fieldmodel = item.model
             if(fieldmodel=="" || fieldmodel===undefined){
               // if no model is given, we assign to the root
@@ -465,8 +508,28 @@
 
               },ref.formdata);
             }
-          });
+          }
+        });
 
+      },
+      executeForm(){
+        // make sure, no delayed stuff is started.
+        clearInterval(this.interval)
+        clearTimeout(this.timeout)
+        var ref=this
+        var isValid=true
+        // final touch to force validation
+        this.$v.form.$touch();
+        // loop all fields and check if it valid, skip hidden fields
+        this.currentForm.fields.forEach((item, i) => {
+          if(this.visibility[item.name] && this.$v.form[item.name].$invalid){
+            isValid=false
+          }
+        })
+        if(!isValid){
+            return
+        }else{
+          this.generateJsonOutput()
           // local ansible
           if(this.currentForm.type=="ansible"){
             this.formdata.ansibleInventory = this.currentForm.inventory;
@@ -474,18 +537,25 @@
             this.formdata.ansibleTags = this.currentForm.tags;
             this.ansibleResult.message= "Connecting with ansible ";
             this.ansibleResult.status="info";
-            axios.post("/api/v1/ansible",this.formdata,this.axiosConfig)
+            axios.post("/api/v1/ansible",this.formdata,TokenStorage.getAuthentication())
               .then((result)=>{
                   // show result for 15s
-                  this.ansibleResult=result.data;
-                  clearTimeout(this.timeout)
-                  this.timeout = setTimeout(function(){ ref.resetResult() }, 15000);
+                  if(result){
+                    this.ansibleResult=result.data;
+                    if(result.data.data.error!=""){
+                      ref.$toast.error(result.data.data.error)
+                    }
+                    clearTimeout(this.timeout)
+                    this.timeout = setTimeout(function(){ ref.resetResult() }, 15000);
+                  }else{
+                    ref.$toast.error("Failed to invoke ansible")
+                    ref.resetResult()
+                  }
               })
               .catch(function(err){
-                console.log("Failed in axios call to run ansible");
+                ref.$toast.error("Failed to invoke ansible " + err)
                 if(err.response.status!=401){
-                  ref.ansibleResult.message="Error in axios call to run ansible\n\n" + err
-                  ref.ansibleResult.status="error";
+                  ref.resetResult()
                 }
               })
 
@@ -499,26 +569,29 @@
 
             axios.post("/api/v1/awx",this.formdata,TokenStorage.getAuthentication())
               .then((result)=>{
-
-
-                  this.ansibleResult=result.data;
-                  // get the jobid
-                  var jobid =  this.ansibleResult.data.output.id
-                  // don't show the whole json part
-                  this.ansibleResult.data.output = ""
-                  // wait for 2 seconds, and get the output of the job
-                  setTimeout(function(){ ref.getAwxJob(jobid) }, 2000);
-
+                  if(result){
+                    this.ansibleResult=result.data;
+                    if(result.data.data.error!=""){
+                      ref.$toast.error(result.data.data.error)
+                    }                    
+                    // get the jobid
+                    var jobid =  this.ansibleResult.data.output.id
+                    // don't show the whole json part
+                    this.ansibleResult.data.output = ""
+                    // wait for 2 seconds, and get the output of the job
+                    setTimeout(function(){ ref.getAwxJob(jobid) }, 2000);
+                  }else{
+                    ref.$toast.error("Failed to invoke AWX")
+                    ref.resetResult()
+                  }
               })
               .catch(function(err){
-                console.log("Failed in axios call to run awx");
+                ref.$toast.error("Failed to invoke AWX")
                 if(err.response.status!=401){
-                  ref.ansibleResult.message="Error in axios call to run awx\n\n" + err
-                  ref.ansibleResult.status="error";
+                  ref.resetResult()
                 }
               })
-
-          }
+            }
 
         }
       }
@@ -527,8 +600,10 @@
       this.resetResult();
       var ref=this
       this.form={}
+      // initialize defaults
       this.currentForm.fields.forEach((item, i) => {
         Vue.set(ref.form,item.name,item.default)
+        Vue.set(ref.visibility,item.name,true)
       });
       this.$v.form.$reset();
       this.startDynamicFieldsLoop();

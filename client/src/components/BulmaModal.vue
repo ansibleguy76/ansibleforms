@@ -10,8 +10,8 @@
         <slot></slot>
       </section>
       <footer class="modal-card-foot">
-        <button class="button is-info is-small is-outlined" @click="$emit('click')">{{ action }}</button>
-        <button class="button is-small is-outlined" @click="$emit('cancel')">Cancel</button>
+        <button v-if="action" class="button is-info" @click="$emit('click')">{{ action }}</button>
+        <button class="button" @click="$emit('cancel')">Cancel</button>
       </footer>
     </div>
   </div>

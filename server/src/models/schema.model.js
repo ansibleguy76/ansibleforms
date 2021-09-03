@@ -15,7 +15,7 @@ Schema.hasSchema = function (config,result) {
           if(err) {
               logger.error(err)
               // no connection
-              result(err, null);
+              result("Failed to connect to the authentication database", null);
           }
           else{
               if(res.length > 0){
@@ -25,7 +25,7 @@ Schema.hasSchema = function (config,result) {
                     if(err) {
                         logger.error(err)
                         // no connection, unlikely error
-                        result(err, null);
+                        result("Failed to query the authentication schema", null);
                     }
                     else{
                         if(res.length == 2){

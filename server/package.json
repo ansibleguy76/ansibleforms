@@ -23,7 +23,8 @@
     "passport": "^0.4.1",
     "passport-local": "^1.0.0",
     "passport-jwt": "^4.0.0",
-    "mysql": "^2.18.1"
+    "mysql": "^2.18.1",
+    "ajv": "*"
   },
   "devDependencies": {
     "@babel/core": "*",

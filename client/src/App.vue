@@ -35,14 +35,19 @@
             .then((result)=>{
               if(result.data.status=="error"){
                 ref.errorMessage=result.data.message;
-                ref.$router.replace({name:"Schema"}).catch(err => {});
+                if(ref.errorMessage.includes("Failed to connect")){
+                  ref.errorMessage="Failed to check authentication database schema\n\n" + result.data.message;
+                  ref.$router.replace({name:"Error"}).catch(err => {});
+                }else{
+                  ref.$router.replace({name:"Schema"}).catch(err => {});
+                }
               }else{
                 this.loadFormConfig()
               }
 
             })
             .catch(function(err){
-              console.log("Failed to check authentication database schema");
+              ref.$toast.error("Failed to check authentication database schema");
               ref.errorMessage="Failed to check authentication database schema\n\n" + err
               ref.$router.replace({name:"Error"}).catch(err => {});
             });
@@ -62,26 +67,26 @@
 
 
           if(!TokenStorage.isAuthenticated()){
-              console.log("No token found")
+              this.$toast.error("No token found")
               this.$router.replace({ name: "Login" }).catch(err => {});         // no token found, logout
           }else{
 
-            axios.get('/api/v1/form',TokenStorage.getAuthentication())                               // load forms
+            axios.get(`/api/v1/form?timestamp=${new Date().getTime()}`,TokenStorage.getAuthentication())                               // load forms
               .then((result)=>{
                 ref.formConfig=result.data;
                 if(!ref.formConfig.error){
-                  console.log("loaded formConfig");
+                  this.$toast.success("Valid forms.json loaded")
                   ref.$router.push({name:"Home"}).catch(err => {});
                   ref.refreshAuthenticated()
                   this.loadProfile()
                 }else{
-                    console.log(ref.formConfig.error)
+                    this.$toast.error("Invalid forms.json")
                     ref.errorMessage="Error in forms.json file\n\n" + ref.formConfig.error
                     ref.$router.replace({name:"Error"}).catch(err => {});
                 }
               })
               .catch(function(err){
-                console.log("Failed in axios call to get forms.json");
+                this.$toast.error("Failed to load forms.json file")
                 if(err.response.status!=401){
                   ref.errorMessage="Could not get forms.json file\n\n" + err
                   ref.$router.replace({name:"Error"}).catch(err => {});

@@ -10,7 +10,7 @@
             <div class="notification is-danger" v-if="errorMessage2!=''">
               {{ errorMessage2}}
             </div>
-            <form action="" class="box">
+            <form v-if="errorMessage!='Failed to connect'" action="" class="box">
               <div class="content">
                 If this is the first time setup and you don't have your own schema and tables.<br><br>
                 Would you like me to try and create the schema and tables ?<br>

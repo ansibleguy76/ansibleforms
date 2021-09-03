@@ -13,7 +13,6 @@ The client has following fields
   - password
   - check
   - radio
-  - ... any html input type in fact
 - select
   - enum : manual dropdown
   - query : query dropdown (using sql statement)
@@ -42,7 +41,11 @@ Capabilities
 - model : allow to push a value in an object-like format (ex. host.interface.ip.name), the variables will be automatically in a nested format.
 
 The server app will serve as an api for the query-fields and for invoking the ansible playbook or awx template.
-Authentication is jwt token based (access token and refresh token)
+Authorization is jwt token based (access token and refresh token)
+authentication :
+- local (database)
+- ldap
+
 TODO : implement swagger ui
 
 ## Project download
@@ -116,7 +119,7 @@ cp ./demo/forms.json.example ./demo/forms.json
 - set mysql server connection details
 
 # modify the forms.json to your needs
-- add catogories
+- add categories
 - add roles
 - add forms
 

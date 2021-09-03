@@ -29,7 +29,7 @@ exports.run = function(req, res) {
             if(err){
                restResult.status = "error"
                restResult.message = "error occured while running playbook " + playbook
-               restResult.data.error = err
+               restResult.data.error = err.toString()
             }else{
                restResult.message = "succesfully ran playbook"
                restResult.data.output = stdout

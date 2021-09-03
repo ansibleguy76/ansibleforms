@@ -1,0 +1,463 @@
+{
+    "type": "object",
+    "title": "Ansibleforms Root Schema",
+    "description": "Webforms for AnsibleForms",
+    "required": [
+        "categories",
+        "roles",
+        "forms"
+    ],
+    "properties": {
+        "categories": {
+            "type": "array",
+            "title": "Categories",
+            "description": "A list of categories to group the forms",
+            "contains":{
+                "const":{"name":"Default","icon":"fa-bars"}
+            },
+            "additionalItems": true,
+            "items": {
+				"type": "object",
+				"title": "Category item",
+				"description": "A category item",
+				"required": [
+					"name",
+					"icon"
+				],
+				"properties": {
+					"name": {
+						"$id": "/categories",
+						"type": "string",
+						"title": "Category name",
+						"description": "The category name"
+					},
+					"icon": {
+						"$id": "/icon",
+						"type": "string",
+						"title": "A FontAwesome Icon",
+						"description": "A FontAwesome 5 icon (see https://fontawesome.com/)",
+						"pattern": "^fa-.+"
+					}
+				},
+				"additionalProperties": false
+            }
+        },
+        "roles": {
+            "type": "array",
+            "title": "Roles",
+            "description": "Roles, used for RBAC",
+            "contains":
+              {
+                "const":{"name":"public","groups":[]}
+              }
+            ,
+            "additionalItems": true,
+            "items": {
+				"type": "object",
+				"title": "Role",
+				"description": "A role",
+				"required": [
+					"name",
+					"groups"
+				],
+				"properties": {
+					"name": {
+						"$id": "/role",
+						"type": "string",
+						"title": "Role name",
+						"description": "The role name"
+					},
+					"groups": {
+						"type": "array",
+						"title": "Groups",
+						"description": "A list of groups belonging to a role (local or ldap)",
+						"additionalItems": true,
+						"items": {
+							"type": "string",
+							"title": "Group name",
+							"description": "The groupname, prepended with local/ or ldap/, is case sensitive",
+							"default": "",
+							"pattern":"(\\blocal\\b|\\bldap\\b)\\/.+"
+						}
+					}
+				},
+				"additionalProperties": false
+            }
+        },
+        "forms": {
+            "type": "array",
+            "title": "Forms",
+            "description": "A list of forms",
+            "default": [],
+            "additionalItems": true,
+            "items": {
+				"type": "object",
+				"title": "A form",
+				"description": "A form item, describing all the fields and actions",
+				"required": [
+					"name",
+					"roles",
+					"type",
+					"fields"
+				],
+				"oneOf":[
+					{
+						"properties":{
+							"type":{"enum":["ansible"]},
+							"template": {"not": {}}
+						},
+						"required": ["playbook"]
+					},
+					{
+						"properties":{
+							"type":{"enum":["awx"]},
+							"playbook": {"not": {}}
+						},
+						"required": ["template"]
+					}
+				],
+				"properties": {
+					"name": {
+						"type": "string",
+						"title": "Form name",
+						"description": "The name of the form"
+					},
+					"roles": {
+						"type": "array",
+						"title": "Form Roles",
+						"description": "A list of roles that can execute this form",
+						"additionalItems": true,
+						"items": {
+							"$ref": "/role"
+						}
+					},
+					"description": {
+						"type": "string",
+						"title": "Form description",
+						"description": "The description of a form"
+					},
+					"tileClass": {
+						"type": "string",
+						"title": "The form tile color",
+						"description": "A Bulma background color CSS class to add to the form tile. (see https://bulma.io/documentation/helpers/color-helpers/)",
+						"pattern":"^has-background-.+"
+					},
+					"categories": {
+						"type": "array",
+						"title": "Form categories",
+						"description": "A list of categories where this form is part of",
+						"default": ["Default"],
+						"items":{
+							"$ref": "/categories"
+						}
+					},
+					"type": {
+						"type": "string",
+						"title": "Form type",
+						"description": "The type of form, ansible or awx",
+						"enum":["ansible","awx"]
+					},
+					"playbook": {
+						"type": "string",
+						"title": "Ansible Playbook",
+						"description": "Name of the ansible playbook"
+					},
+					"template": {
+						"type": "string",
+						"title": "Awx Template",
+						"description": "Name of the AWX template"
+					},
+					"inventory": {
+						"type": "string",
+						"title": "Ansible/Awx inventory",
+						"description": "The ansible inventory, referencing the -i flag"
+					},
+					"tags": {
+						"type": "string",
+						"title": "Ansible/Awx Tags",
+						"description": "A comma separated list of ansible tags, referencing the -t flag"
+					},
+					"fields": {
+						"type": "array",
+						"title": "Form fields",
+						"description": "A list of of formfields, which will result into extravars (referencing the -e flag)",
+						"additionalItems": true,
+						"items": {
+							"type": "object",
+							"title": "Form field",
+							"description": "A form field",
+							"required": [
+								"type",
+								"name",
+								"label",
+								"default"
+							],
+							"dependencies" : {
+							  "regexDescription" : ["regex"]
+							},
+							"oneOf":[
+								{
+									"properties":{
+										"type":{"enum":["text","password"]},
+										"query": {"not": {}},
+										"minValue": {"not": {}},
+										"maxValue": {"not": {}},
+										"expression": {"not": {}},
+										"dbConfig": {"not": {}},
+										"hide": {"not": {}},
+										"values": {"not": {}}
+									}
+								},
+								{
+									"properties":{
+										"type":{"enum":["number"]},
+										"query": {"not": {}},
+										"regex": {"not": {}},
+										"regexDescription": {"not": {}},
+										"minLength": {"not": {}},
+										"maxLength": {"not": {}},
+										"expression": {"not": {}},
+										"dbConfig": {"not": {}},
+										"hide": {"not": {}},
+										"values": {"not": {}}
+									}
+								},
+								{
+									"properties":{
+										"type":{"enum":["radio"]},
+										"query": {"not": {}},
+										"regex": {"not": {}},
+										"regexDescription": {"not": {}},
+										"minValue": {"not": {}},
+										"maxValue": {"not": {}},
+										"minLength": {"not": {}},
+										"maxLength": {"not": {}},
+										"expression": {"not": {}},
+										"dbConfig": {"not": {}},
+										"hide": {"not": {}}
+									},
+									"required": ["values"]
+								},
+								{
+									"properties":{
+										"type":{"enum":["checkbox"]},
+										"query": {"not": {}},
+										"regex": {"not": {}},
+										"regexDescription": {"not": {}},
+										"minValue": {"not": {}},
+										"maxValue": {"not": {}},
+										"minLength": {"not": {}},
+										"maxLength": {"not": {}},
+										"expression": {"not": {}},
+										"dbConfig": {"not": {}},
+										"hide": {"not": {}},
+										"values": {"not": {}}
+									}
+								},
+								{
+									"properties":{
+										"type":{"enum":["enum"]},
+										"query": {"not": {}},
+										"regex": {"not": {}},
+										"regexDescription": {"not": {}},
+										"minValue": {"not": {}},
+										"maxValue": {"not": {}},
+										"minLength": {"not": {}},
+										"maxLength": {"not": {}},
+										"expression": {"not": {}},
+										"dbConfig": {"not": {}},
+										"hide": {"not": {}}
+									},
+									"required": ["values"]
+								},
+								{
+									"properties":{
+										"element":{"enum":["select"]},
+										"type":{"enum":["query"]},
+										"values": {"not": {}},
+										"regex": {"not": {}},
+										"regexDescription": {"not": {}},
+										"minValue": {"not": {}},
+										"maxValue": {"not": {}},
+										"minLength": {"not": {}},
+										"maxLength": {"not": {}},
+										"expression": {"not": {}},
+										"hide": {"not": {}}
+									},
+									"required": ["query","dbConfig"]
+								},
+								{
+									"properties":{
+										"type":{"enum":["expression"]},
+										"values": {"not": {}},
+										"regex": {"not": {}},
+										"regexDescription": {"not": {}},
+										"minValue": {"not": {}},
+										"maxValue": {"not": {}},
+										"minLength": {"not": {}},
+										"maxLength": {"not": {}},
+										"dbConfig": {"not": {}}
+									},
+									"required": ["expression","hide"]
+								}
+							],
+							"properties": {
+								"type": {
+									"type": "string",
+									"title": "Formfield type",
+									"description": "The formfield type",
+									"enum": ["text","password","checkbox","enum","query","number","radio","expression"]
+								},
+								"name": {
+									"$id": "/field",
+									"type": "string",
+									"title": "Formfield name",
+									"description": "the name of the formfield"
+								},
+								"label": {
+									"type": "string",
+									"title": "Formfield label",
+									"description": "The label for the formfield"
+								},
+								"placeholder": {
+									"type": "string",
+									"title": "Formfield placeholder",
+									"description": "A placeholder, temporary display value"
+								},
+								"group": {
+									"type": "string",
+									"title": "Formfield group",
+									"description": "The panel group name to visually group fields together"
+								},
+								"default": {
+									"type": ["string","boolean","array","integer"],
+									"title": "Default value",
+									"description": "A default value for the formfield"
+								},
+								"required": {
+									"type": "boolean",
+									"title": "Is required",
+									"description": "A flag whether the formfield is required or not",
+									"default": false
+								},
+								"sameAs": {
+									"$ref": "/field"
+								},
+								"regex": {
+									"type": "string",
+									"title": "Formfield regex",
+									"description": "A regular expression to validate the formfield"
+								},
+								"regexDescription": {
+									"type": "string",
+									"title": "Formfield regex description",
+									"description": "A friendly description if the regular expression does not match"
+								},
+								"minValue": {
+									"type": "integer",
+									"title": "Minimum value",
+									"description": "A minimum value for a numeric formfield"
+								},
+								"maxValue": {
+									"type": "integer",
+									"title": "Maximum value",
+									"description": "A maximum value for a numeric formfield"
+								},
+								"minLength": {
+									"type": "integer",
+									"title": "Minimum string length",
+									"description": "A minimum length for a string formfield"
+								},
+								"maxLength": {
+									"type": "integer",
+									"title": "Maximum string length",
+									"description": "A maximum length for a string formfield"
+								},
+								"expression": {
+									"type": "string",
+									"title": "Javascript expression",
+									"description": "A javascript expression to evaluate, use $(fieldname) to reference another field variable.  Don't forget to add quotes around placeholders if needed."
+								},
+								"query": {
+									"type": "string",
+									"title": "SQL query",
+									"description": "An sql query to populate a dropdown box, use $(fieldname) to reference another field variable.  Don't forget to add quotes around placeholders if needed."
+								},
+								"dbConfig": {
+									"type": "string",
+									"title": "Database configuration",
+									"description": "the name of the database configuration to execute the query.  WITHOUT the DB_ prefix !!.  See environment variable examples"
+								},
+								"model": {
+									"type": "string",
+									"title": "Formfield model",
+									"description": "The json nested object model of the posted formfield.  Each 'dot' is a level deeper.  Use this to create object-like extravars."
+								},
+								"help": {
+									"type": "string",
+									"title": "Formfield helpmessage",
+									"description": "A helpmessage that appears under the formfield"
+								},
+								"values": {
+									"type": "array",
+									"title": "Enumeration values",
+									"description": "A list of predefined values to populated the enumeration field (dropdown)",
+									"items": {
+										"type": "string"
+									}
+								},
+								"multiple": {
+									"type": "boolean",
+									"title": "Is multiple enumeration",
+									"description": "A flag whether multiple selections are allowed in an enumeration",
+									"default": false
+								},
+								"size": {
+									"type": "integer",
+									"title": "The size of a multiple select enumeration field",
+									"description": "A helpmessage that appears under the formfield"
+								},
+								"dependencies": {
+									"type": "array",
+									"title": "Formfield dependencies",
+									"description": "A list of dependencies when to show this formfield",
+									"additionalItems": true,
+									"items": {
+										"type": "object",
+										"title": "Formfield dependency",
+										"description": "A dependency referencing another field and a list of valid values",
+										"properties": {
+											"name":{
+												"$ref": "/field"
+											},
+											"values": {
+												"type": "array",
+												"title": "Dependency values",
+												"description": "A list values that are valid for this dependency",
+												"items": {
+													"type": ["string","integer","boolean"]
+												}
+											}
+										},
+										"additionalProperties": false
+									}
+								},
+								"hide": {
+									"type": "boolean",
+									"title": "Hide expression",
+									"description": "A flag to hide an expression on the form, to evaluate hidden background expressions"
+								},
+								"icon": {
+									"$ref": "/icon"
+								}
+							},
+							"additionalProperties": false
+						}
+					}
+				},
+				"additionalProperties": false
+			}
+        }
+    },
+    "additionalProperties": false
+}
