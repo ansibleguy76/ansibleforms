@@ -46,6 +46,7 @@
     name:"BulmaNav",
     props:{
       authenticated:{type:Boolean},
+      isAdmin:{type:Boolean},
       profile:{type:String},
     },
     data(){
@@ -55,11 +56,7 @@
     },methods:{
       logout(){
         this.$emit("logout");
-      },
-      isAdmin(){
-        var payload = TokenStorage.getPayload()
-        return payload.user.roles.includes("admin")
-      },
+      }
     },mounted(){
     }
   }

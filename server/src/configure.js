@@ -32,7 +32,23 @@ module.exports = app => {
 
   // using json web tokens as middleware
   const authobj = passport.authenticate('jwt', { session: false })
+  const checkAdminMiddleware = (req, res, next) =>  {
+        try{
+          if(!req.user.user.roles.includes("admin")) {
+            var err=new Error("you are not an admin")
+            err.status=401
+            next(err)
+          } else {
+            logger.silly("You are admin, access to user management")
+            next()
+          }
+        }catch(e){
+          var err=new Error("you are not an admin")
+          err.status=401
+          next(err)
+        }
 
+  }
   // import vue routes
   app.use('/api/v1/auth', loginRoutes)
   app.use('/api/v1/schema', schemaRoutes)
@@ -41,8 +57,8 @@ module.exports = app => {
   app.use('/api/v1/ansible', authobj, ansibleRoutes)
   app.use('/api/v1/query', authobj, queryRoutes)
   app.use('/api/v1/expression', authobj, expressionRoutes)
-  app.use('/api/v1/user', authobj, userRoutes)
-  app.use('/api/v1/group', authobj, groupRoutes)  
+  app.use('/api/v1/user', authobj, checkAdminMiddleware, userRoutes)
+  app.use('/api/v1/group', authobj, checkAdminMiddleware, groupRoutes)
   app.use('/api/v1/form', authobj, formRoutes)
 
 }

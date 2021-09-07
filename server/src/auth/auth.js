@@ -60,7 +60,6 @@ passport.use(
 );
 const JWTstrategy = require('passport-jwt').Strategy;
 const ExtractJWT = require('passport-jwt').ExtractJwt;
-
 passport.use(
   new JWTstrategy(
     {
@@ -68,9 +67,9 @@ passport.use(
       // jwtFromRequest: ExtractJWT.fromUrlQueryParameter('secret_token')
       jwtFromRequest: ExtractJWT.fromAuthHeaderAsBearerToken()
     },
-    async (token, done) => {
+    async (jwtPayload, done) => {
       try {
-        return done(null, token);
+        return done(null, jwtPayload);
       } catch (error) {
         logger.debug("error ?")
         done(error);

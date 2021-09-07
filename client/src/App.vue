@@ -1,7 +1,7 @@
 <template>
   <div id="app">
-    <BulmaNav :authenticated="authenticated" :profile="profile" @logout="logout()" />
-    <router-view :formConfig="formConfig" :authenticated="authenticated" :errorMessage="errorMessage" @authenticated="loadFormConfig" @logout="logout()" />
+    <BulmaNav :isAdmin="isAdmin" :authenticated="authenticated" :profile="profile" @logout="logout()" />
+    <router-view :formConfig="formConfig" :isAdmin="isAdmin" :authenticated="authenticated" :errorMessage="errorMessage" @authenticated="loadFormConfig" @logout="logout()" />
   </div>
 </template>
 <script>
@@ -16,7 +16,8 @@
         formConfig:undefined,
         errorMessage:"",
         profile:"",
-        authenticated:false
+        authenticated:false,
+        isAdmin:false
       }
     },
     computed: {
@@ -27,6 +28,11 @@
     methods: {
         refreshAuthenticated(){
           this.authenticated = TokenStorage.isAuthenticated()
+          console.log("checking if is admin")
+          var payload = TokenStorage.getPayload()
+          if(payload.user && payload.user.roles){
+            this.isAdmin=payload.user.roles.includes("admin")
+          }
         },
         checkDatabase(){
           var ref=this;

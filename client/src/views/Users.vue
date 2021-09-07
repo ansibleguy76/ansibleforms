@@ -1,5 +1,5 @@
 <template>
-  <section class="section">
+  <section v-if="isAdmin" class="section">
     <BulmaModal v-if="showDelete" title="Comfirm" action="Delete" @click="deleteUser();showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete User '{{ user.username}}'</BulmaModal>
     <div class="container">
       <h1 class="title has-text-info"><i class="fad fa-user"></i> Users</h1>
@@ -47,6 +47,10 @@
 
   export default{
     name: "Users",
+    props:{
+      authenticated:{type:Boolean},
+      isAdmin:{type:Boolean}
+    },
     components:{BulmaButton,BulmaSelect,BulmaInput,BulmaModal},
     data(){
       return  {
@@ -183,7 +187,11 @@
 
     },
     mounted() { // when the Vue app is booted up, this is run automatically.
-      this.loadAll();
+      if(!this.isAdmin){
+        this.$toast.error("You are not an admin user")
+      }else{
+        this.loadAll();
+      }
     }
   }
 </script>

@@ -196,10 +196,17 @@ User.checkLdap = function(username,password,result){
 
   async function auth() {
     // auth with admin
+    var tls = !!process.env.LDAP_TLS
+
     let options = {
       ldapOpts: {
         url: authConfig.ldapServer,
-        // tlsOptions: { rejectUnauthorized: false }
+        tlsOptions: {
+          // cert: cert,
+          // requestCert: tls,
+          // rejectUnauthorized: rejectUnauthorized,
+          // ca: ca
+        }
       },
       adminDn: authConfig.ldapBindUserDn,
       adminPassword: authConfig.ldapBindUserPassword,
@@ -209,14 +216,38 @@ User.checkLdap = function(username,password,result){
       username: username,
       // starttls: false
     }
-
+    // enable tls/ldaps
+    if(tls){
+      var ca = JSON.parse(`"${process.env.LDAP_CA}"`)
+      var cert = JSON.parse(`"${process.env.LDAP_CERT}"`)
+      var rejectUnauthorized = !process.env.LDAP_IGNORE_CERTIFICATE_ERRORS
+      options.ldapOpts.tlsOptions.requestCert = tls
+      options.ldapOpts.tlsOptions.cert = cert
+      options.ldapOpts.tlsOptions.rejectUnauthorized = rejectUnauthorized
+      options.ldapOpts.tlsOptions.ca = ca
+      logger.debug("use tls : " + tls)
+      logger.debug("reject invalid certificates : " + rejectUnauthorized)
+      logger.silly("certificate : " + cert)
+      logger.silly("ca certificate : " + cert)
+    }
     try{
       logger.debug(`Checking ldap for user ${username}`)
       var user = await authenticate(options)
       result(null,user)
     }catch(err){
-        logger.error(err.message)
-        result(err.message,null)
+        var em =""
+        try{var em = JSON.stringify(err)}catch(e){em = err}
+
+        if(err.admin){
+          if(err.admin.code){
+            em = err.admin.code
+            if(err.admin.code=="UNABLE_TO_VERIFY_LEAF_SIGNATURE"){
+              em = "Unable to verify the certificate"
+            }
+          }
+        }
+        logger.error("Error connecting to ldap : " + em)
+        result("Error connecting to ldap : " + em,null)
     }
 
   }

@@ -1,5 +1,5 @@
 <template>
-  <section class="section">
+  <section v-if="isAdmin" class="section">
     <BulmaModal v-if="showDelete" title="Comfirm" action="Delete" @click="deleteGroup();showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete Group '{{ group.name}}'</BulmaModal>
     <div class="container">
       <h1 class="title has-text-info"><i class="fad fa-users"></i> Groups</h1>
@@ -31,6 +31,10 @@
   Vue.use(Vuelidate)
   export default{
     name:"Groups",
+    props:{
+      authenticated:{type:Boolean},
+      isAdmin:{type:Boolean}
+    },
     components:{BulmaButton,BulmaSelect,BulmaInput,BulmaModal},
     data(){
       return  {
@@ -128,7 +132,11 @@
 
     },
     mounted() { // when the Vue app is booted up, this is run automatically.
-      this.loadAll();
+      if(!this.isAdmin){
+        this.$toast.error("You are not an admin user")
+      }else{
+        this.loadAll();
+      }
     }
   }
 </script>
