@@ -8,7 +8,7 @@ This project has 2 node applications
 The client app will dynamically build the forms (vue.js v2) for ansible/awx, based on a single json file (forms.json).
 The server app (express.js) will cover authentication, background database connections and executing the ansible playbooks or awx templates.
 # Documentation
-[Go to the documentation wiki](/wiki "Wiki")
+[Go to the documentation wiki](wiki "Wiki")
 
 # Requirements
 - node.js capable server or container
