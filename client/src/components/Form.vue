@@ -137,6 +137,7 @@
             }
           },
           dynamicFieldDependencies:{},      // which fields need to be re-evaluated if other fields change
+          defaults:{},
           dynamicFieldStatus:{},    // holds the status of dynamics fields (running=currently being evaluated, variable=depends on others, fixed=only need 1-time lookup)
           queryresults:{},      // holds the results of dynamic dropdown boxes
           form:{                // the form data mapped to the form
@@ -211,20 +212,8 @@
           field.dependencies.forEach((item, i) => {
             if(!item.values.includes(ref.form[item.name])){
               if(reset){
-                Vue.set(ref.form,field.name,field.default)
                 Vue.set(ref.visibility,field.name,false)
-                // if the hidden field is dynamic and variable, we set the status to undefined
-                if(field.name in ref.dynamicFieldStatus && ref.dynamicFieldStatus[field.name]=="variable"){
-                  Vue.set(ref.dynamicFieldStatus,field.name,undefined)
-                }
-                if(field.name in ref.dynamicFieldDependencies){  // are any fields dependent from this field ?
-                  // set all variable ones to dirty
-                  ref.dynamicFieldDependencies[field.name].forEach((item,i) => { // loop all dynamic fields and reset them
-                        Vue.set(ref.dynamicFieldStatus,item,undefined);  // reset statusflag
-                        Vue.set(ref.form,item,ref.currentForm.undefined);                // reset value in the form
-                  })
-                }
-                //console.log("Resetting field " + field.name)
+                ref.resetField(field.name)
               }
               result=false
             }else{
@@ -248,6 +237,25 @@
         });
         return result
       },
+      resetField(field){
+        // reset to default value
+
+        if(field in this.dynamicFieldStatus){
+            if(this.dynamicFieldStatus[field]=="variable"){
+                console.log("resetting field " + field)
+                // reset this field status
+                this.dynamicFieldStatus[field]=undefined
+                Vue.set(this.form,field,undefined)
+            }
+            if(this.dynamicFieldStatus[field]=="fixed"){
+              Vue.set(this.form,field,this.defaults[field])
+            }
+        }else{
+            Vue.set(this.form,field,this.defaults[field])
+        }
+        var event={};event.target={};event.target.name=field
+        this.evaluateDynamicFields(event)
+      },
       // Find variable devDependencies
       findVariableDependencies(){
         var ref=this
@@ -260,6 +268,7 @@
         // create a list of the fields
         this.currentForm.fields.forEach((item,i) => {
           fields.push(item.name)
+          ref.defaults[item.name]=item.default
         })
         this.currentForm.fields.forEach((item,i) => {
           if(["expression","query"].includes(item.type)){
@@ -344,7 +353,7 @@
 
             // if the variable is viable and not being changed, replace it
             // console.log(foundfield + "("+fieldvalue+")" + " -> targetflag = " + targetflag)
-            if(((targetflag=="variable")||(targetflag=="fixed")) && fieldvalue!==undefined){                // valid value ?
+            if(((targetflag=="variable")||(targetflag=="fixed")) && fieldvalue!==undefined && newValue!=undefined){                // valid value ?
                 newValue=newValue.replace(foundmatch,fieldvalue);               // replace the placeholder with the value
             }else{
                 newValue=undefined                                              // cannot evaluate yet
@@ -358,10 +367,6 @@
         }
         return {"hasPlaceholders":hasPlaceholders,"value":newValue}          // return the result
       },
-      stopLoop(){
-        console.log("Stopping loop")
-        clearInterval(this.interval);
-      },
       //----------------------------------------------------------------
       // starts the evaluation of dynamic fields (expression or query)
       //----------------------------------------------------------------
@@ -370,14 +375,12 @@
         var ref=this;                                                           // a reference to 'this'
         var watchdog=0;                                                         // a counter how many times we retry to find a value
         var hasUnevaluatedFields=false;                                         // a flag to check whether a have unevaluated fields
-        clearInterval(this.interval);                                           // before we start the loop, we stop previous loops
         // does the eval every x seconds ; this.interval
         // this is is sequential, however, with async lookup, this can overlap
         // however, since we flag fields as 'running' during async lookups
         // this should not cause issues.
         this.interval = setInterval(function() {
           //console.log("enter loop");
-          watchdog++;                                                           // increase watchdog
           hasUnevaluatedFields=false;                                           // reset flag
           // console.log("-------------------------------")
           ref.currentForm.fields.forEach(
@@ -460,7 +463,7 @@
                         try{
                           Vue.set(ref.dynamicFieldStatus,item.name,undefined);
                         }catch(err){
-                          ref.stopLoop()
+                          ref.$toast("Cannot reset field status " + item.name)
                         }
 
                     })
@@ -471,23 +474,28 @@
                   try{
                     Vue.set(ref.dynamicFieldStatus,item.name,undefined);
                   }catch(err){
-                    ref.stopLoop()
+                    ref.$toast("Cannot reset field status " + item.name)
                   }
-
                 }
               }
             } // end loop function
           ) // end field loop
-          if(watchdog>15 && !hasUnevaluatedFields){
-            clearInterval(ref.interval);
+          if(hasUnevaluatedFields){
             ref.canSubmit=false;
-            //ref.$toast.info("Not all fields can be evaluated")
+            if(watchdog==15){
+              //ref.$toast.info("Not all fields are evaluated ;" + watchdog)
+              watchdog=16
+            }else{
+              watchdog++;                       // increase watchdog
+            }
             // ref.$toast.warning("Stopping interval ; too many loops")
           }
           if(!hasUnevaluatedFields){
-            clearInterval(ref.interval);
             ref.canSubmit=true;
-            //ref.$toast.info("All fields are found")
+            if(watchdog>0){
+              //ref.$toast.info("All fields are found;" + watchdog)
+            }
+            watchdog=0
           }
         },100); // end interval
       },
@@ -507,17 +515,12 @@
           // if this field is dependency
           if(thiselement in ref.dynamicFieldDependencies){  // are any fields dependent from this field ?
             ref.canSubmit=false; // after each dependency reset, we block submitting, untill all fields are resolved
-            // stop interval
-            clearInterval(this.interval); // stop previous running interval, and restart
             // set all variable ones to dirty
             ref.dynamicFieldDependencies[thiselement].forEach((item,i) => { // loop all dynamic fields and reset them
                 // set all variable fields blank and re-evaluate
-
-                  Vue.set(ref.dynamicFieldStatus,item,undefined);  // reset statusflag
-                  Vue.set(ref.form,item,undefined);                // reset value in the form
-
+                Vue.set(ref.dynamicFieldStatus,item,undefined);  // reset statusflag
+                Vue.set(ref.form,item,undefined);                // reset value in the form
             })
-            this.startDynamicFieldsLoop(); // start resolving dynamic fields
           }
       },
       getAwxJob(id){
@@ -597,8 +600,6 @@
       executeForm(){
         // make sure, no delayed stuff is started.
         //
-        // clearInterval(this.interval)
-        // clearTimeout(this.timeout)
         var ref=this
         var isValid=true
         // final touch to force validation
