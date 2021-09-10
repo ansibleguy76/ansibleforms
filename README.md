@@ -8,7 +8,7 @@ This project has 2 node applications
 The client app will dynamically build the forms (vue.js v2) for ansible/awx, based on a single json file (forms.json).
 The server app (express.js) will cover authentication, background database connections and executing the ansible playbooks or awx templates.
 # Documentation
-[Go the documentation wiki](/wiki "Wiki")
+[Go to the documentation wiki](/wiki "Wiki")
 
 # Requirements
 - node.js capable server or container
@@ -38,14 +38,15 @@ The webapplication is based on a
 - Database
   - MySql/MariaDb
 # Capabilities
-- categorize forms
+- Categorize forms
 - Role based access
 - Cascaded dropdowns
-- field dependencies
+- Field dependencies
 - Add icons
 - Fieldfield validations
+- Group fields
 - Nested output modelling (control the form output in a multilevel object)
-- Json web tokens (jwt) (access & refresh)
+- Json web tokens authorization (jwt) (access & refresh)
 - Environment variables
 - Ldap & local authentication
 # How to install

@@ -49,6 +49,7 @@
       "roles":["public"],
       "description":"Create storage using vanilla ansible and hardcode dropdowns",
       "tileClass":"has-background-success-light",
+      "icon":"fa-plus",
       "categories":["Provisioning","Ansible"],
       "type":"ansible",
       "playbook":"pilot_play_basic_create.yml",
@@ -100,6 +101,7 @@
       "description":"Delete a storage using vanilla ansible",
       "categories":["Decommissioning","Ansible"],
       "tileClass":"has-background-danger-light",
+      "icon":"fa-trash",
       "type":"ansible",
       "playbook":"pilot_play_basic_delete.yml",
       "inventory":"inventory.yml",
@@ -142,6 +144,7 @@
       "categories":["AWX","Provisioning"],
       "template":"create_storage",
       "tileClass":"has-background-success-light",
+      "icon":"fa-plus",
       "inventory":"",
       "type":"awx",
       "tags":"",
@@ -191,6 +194,7 @@
       "template":"Demo delete storage",
       "categories":["Decommissioning","AWX"],
       "tileClass":"has-background-danger-light",
+      "icon":"fa-trash",
       "inventory":"",
       "type":"awx",
       "tags":"",
@@ -227,6 +231,7 @@
     },
     {
       "name":"Demo Form Ansible No input",
+      "image":"https://picsum.photos/64",
       "roles":["public"],
       "description":"This workflow will kickoff the vanilla ansible dummy playbook.",
       "categories":["Demo","Ansible"],
@@ -242,6 +247,7 @@
       "description":"This workflow will show expressions",
       "categories":["Demo"],
       "tileClass":"has-background-warning",
+      "icon":"fa-scroll",
       "playbook":"dummy.yaml",
       "inventory":"",
       "type":"ansible",
@@ -304,6 +310,7 @@
       "roles":["public"],
       "description":"This workflow will show queries",
       "categories":["Demo"],
+      "icon":"fa-database",
       "tileClass":"has-background-warning",
       "playbook":"dummy.yaml",
       "inventory":"",
@@ -344,6 +351,7 @@
       "description":"This workflow will show queries and dependencies",
       "categories":["Demo"],
       "tileClass":"has-background-warning",
+      "icon":"fa-link",
       "playbook":"dummy.yaml",
       "inventory":"",
       "type":"ansible",
@@ -480,6 +488,16 @@
                 "values":[true]
               }
             ]
+          },
+          {
+            "type":"expression",
+            "name":"final_resource",
+            "hide":false,
+            "expression":"'$(vol_name) $(resource_name)'",
+            "label":"Final resource",
+            "default":"",
+            "required":true,
+            "model":"final.resource"
           }
       ]
     },
@@ -489,6 +507,7 @@
       "description":"This workflow will show form field examples",
       "categories":["Demo"],
       "tileClass":"has-background-warning",
+      "icon":"fa-text",
       "playbook":"dummy.yaml",
       "inventory":"",
       "type":"ansible",

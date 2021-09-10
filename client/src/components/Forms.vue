@@ -3,8 +3,22 @@
     <div class="columns is-flex-wrap-wrap">
       <div class="column is-4" v-for="form in getForms" :key="form.name">
         <router-link :to="'/form/?form='+encodeURI(form.name)" class="box" :class="getFormClass(form)" >
-          <p class="subtitle">{{ form.name }}</p>
-          <p class="content">{{ form.description }}</p>
+          <article class="media">
+            <div v-if="form.image || form.icon" class="media-left">
+              <figure v-if="form.image" class="image is-64x64">
+                <img :src="form.image" alt="Image">
+              </figure>
+              <span v-if="form.icon" class="icon is-large">
+                <i class="fad fa-3x" :class="form.icon"></i>
+              </span>
+            </div>
+            <div class="media-content">
+              <div class="content">
+                <p class="subtitle">{{ form.name }}</p>
+                <p class="content">{{ form.description }}</p>
+              </div>
+            </div>
+          </article>
         </router-link>
       </div>
     </div>

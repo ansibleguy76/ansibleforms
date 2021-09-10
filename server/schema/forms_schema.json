@@ -136,6 +136,14 @@
 						"title": "Form description",
 						"description": "The description of a form"
 					},
+          "image": {
+						"type": "string",
+						"title": "An square image src url",
+						"description": "A url to a square image or base64 image source string (data:image/png;base64;...)"
+					},
+          "icon": {
+            "$ref": "/icon"
+          },
 					"tileClass": {
 						"type": "string",
 						"title": "The form tile color",

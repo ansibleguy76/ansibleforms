@@ -136,7 +136,7 @@
               error:""
             }
           },
-          fieldDependencies:{}, // holds internal dependencies of fields to know if the form needs re-eval if these are dirty
+          dynamicFieldDependencies:{},      // which fields need to be re-evaluated if other fields change
           dynamicFieldStatus:{},    // holds the status of dynamics fields (running=currently being evaluated, variable=depends on others, fixed=only need 1-time lookup)
           queryresults:{},      // holds the results of dynamic dropdown boxes
           form:{                // the form data mapped to the form
@@ -213,6 +213,17 @@
               if(reset){
                 Vue.set(ref.form,field.name,field.default)
                 Vue.set(ref.visibility,field.name,false)
+                // if the hidden field is dynamic and variable, we set the status to undefined
+                if(field.name in ref.dynamicFieldStatus && ref.dynamicFieldStatus[field.name]=="variable"){
+                  Vue.set(ref.dynamicFieldStatus,field.name,undefined)
+                }
+                if(field.name in ref.dynamicFieldDependencies){  // are any fields dependent from this field ?
+                  // set all variable ones to dirty
+                  ref.dynamicFieldDependencies[field.name].forEach((item,i) => { // loop all dynamic fields and reset them
+                        Vue.set(ref.dynamicFieldStatus,item,undefined);  // reset statusflag
+                        Vue.set(ref.form,item,ref.currentForm.undefined);                // reset value in the form
+                  })
+                }
                 //console.log("Resetting field " + field.name)
               }
               result=false
@@ -236,6 +247,67 @@
           result = ref.checkDependencies(item,false)
         });
         return result
+      },
+      // Find variable devDependencies
+      findVariableDependencies(){
+        var ref=this
+        var watchdog=0
+        var temp={}
+        var finishedFlag=false
+        var foundmatch,foundfield
+        var testRegex = /\$\(([^)]+)\)/g;
+        var fields=[]
+        // create a list of the fields
+        this.currentForm.fields.forEach((item,i) => {
+          fields.push(item.name)
+        })
+        this.currentForm.fields.forEach((item,i) => {
+          if(["expression","query"].includes(item.type)){
+            var matches=item[item.type].matchAll(testRegex);
+            for(var match of matches){
+              foundmatch = match[0];                                              // found $(xxx)
+              foundfield = match[1];                                              // found xxx
+        /*       console.log("found " + foundfield + " in " + item.name) */
+              if(fields.includes(foundfield)){                         // does field xxx exist in our form ?
+        /*       	console.log(foundfield + " is a real field") */
+                if(foundfield in ref.dynamicFieldDependencies){															 // did we declare it before ?
+                  if(ref.dynamicFieldDependencies[foundfield].indexOf(item.name) === -1) {  // allready in there ?
+                      ref.dynamicFieldDependencies[foundfield].push(item.name);												 // push it
+                      if(foundfield==item.name){
+                        ref.$toast.error("You defined a self reference on field '"+foundfield+"'")
+                      }
+                  }
+                }else{
+                  ref.dynamicFieldDependencies[foundfield]=[item.name]
+                  if(foundfield==item.name){
+                    ref.$toast.error("You defined a self reference on field '"+foundfield+"'")
+                  }
+                }
+
+              }
+            }
+          }
+        })
+        while(!finishedFlag){
+          finishedFlag=true
+          temp = JSON.parse(JSON.stringify(ref.dynamicFieldDependencies));   // copy dependencies to temp
+          for (const [key, value] of Object.entries(temp)) {
+             // loop all found dependenies and dig deeper
+             value.forEach((item,i) => {
+               if(item in temp){   // can we go deeper ?
+                 temp[item].forEach((item2,j) => {
+                    if(ref.dynamicFieldDependencies[key].indexOf(item2) === -1) {  // allready in there ?
+                      ref.dynamicFieldDependencies[key].push(item2);												 // push it
+                      if(key==item2){
+                        ref.$toast.error("You defined a self reference on field '"+key+"'")
+                      }
+                      finishedFlag=false
+                    }
+                 })
+               }
+             })
+          }
+        }
       },
       replacePlaceholders(item){
         //---------------------------------------
@@ -261,7 +333,6 @@
             targetflag = undefined
             // mark the field as a dependent field
             if(foundfield in ref.form){                                         // does field xxx exist in our form ?
-              ref.fieldDependencies[foundfield]=true;                           // mark xxx as dependency
               fieldvalue = ref.form[foundfield];                                // get value of xxx
               if(foundfield in ref.dynamicFieldStatus){
                 targetflag = ref.dynamicFieldStatus[foundfield];                  // and what is the currect status of xxx, in case it's also dyanmic ?
@@ -407,8 +478,9 @@
               }
             } // end loop function
           ) // end field loop
-          if(watchdog>15){
+          if(watchdog>15 && !hasUnevaluatedFields){
             clearInterval(ref.interval);
+            ref.canSubmit=false;
             //ref.$toast.info("Not all fields can be evaluated")
             // ref.$toast.warning("Stopping interval ; too many loops")
           }
@@ -431,26 +503,21 @@
       },
       evaluateDynamicFields(event) {
           var ref=this;
-          ref.canSubmit=false;
           var thiselement = event.target.name;
           // if this field is dependency
-          if(ref.fieldDependencies[thiselement]){
+          if(thiselement in ref.dynamicFieldDependencies){  // are any fields dependent from this field ?
+            ref.canSubmit=false; // after each dependency reset, we block submitting, untill all fields are resolved
             // stop interval
-            clearInterval(this.interval);
+            clearInterval(this.interval); // stop previous running interval, and restart
             // set all variable ones to dirty
-            for (var key in this.dynamicFieldStatus){
-              // only reset the ones with variables, the fixed ones can keep their value
-              if(ref.dynamicFieldStatus[key]=="variable"){
+            ref.dynamicFieldDependencies[thiselement].forEach((item,i) => { // loop all dynamic fields and reset them
                 // set all variable fields blank and re-evaluate
-                Vue.set(ref.dynamicFieldStatus,key,undefined);
-                if(key!=thiselement){
-                  Vue.set(ref.form,key,undefined);
-                }
 
-              }
-            }
-            // start interval
-            this.startDynamicFieldsLoop();
+                  Vue.set(ref.dynamicFieldStatus,item,undefined);  // reset statusflag
+                  Vue.set(ref.form,item,undefined);                // reset value in the form
+
+            })
+            this.startDynamicFieldsLoop(); // start resolving dynamic fields
           }
       },
       getAwxJob(id){
@@ -545,7 +612,7 @@
         if(!isValid){
             ref.$toast.warning("Form contains invalid data")
             return // do not start if form is invalid
-        }else if(!ref.canSubmit){
+        }else if(!ref.canSubmit && Object.keys(ref.dynamicFieldStatus).length>0){
           ref.$toast.warning("Form is still busy, please try again")
           return // do not start if form is invalid
         }else{
@@ -620,6 +687,8 @@
       this.resetResult();
       var ref=this
       this.form={}
+      // find all variable dependencies
+      this.findVariableDependencies()
       // initialize defaults
       this.currentForm.fields.forEach((item, i) => {
         if(["expression","query"].includes(item.type)){
