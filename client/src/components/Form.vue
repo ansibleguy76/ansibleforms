@@ -245,11 +245,8 @@
                 console.log("resetting field " + field)
                 // reset this field status
                 this.dynamicFieldStatus[field]=undefined
-                Vue.set(this.form,field,undefined)
             }
-            if(this.dynamicFieldStatus[field]=="fixed"){
-              Vue.set(this.form,field,this.defaults[field])
-            }
+            Vue.set(this.form,field,this.defaults[field])
         }else{
             Vue.set(this.form,field,this.defaults[field])
         }
@@ -692,11 +689,11 @@
       this.findVariableDependencies()
       // initialize defaults
       this.currentForm.fields.forEach((item, i) => {
-        if(["expression","query"].includes(item.type)){
-          Vue.set(ref.form,item.name,undefined)
-        }else{
+        // if(["expression","query"].includes(item.type)){
+        //   Vue.set(ref.form,item.name,undefined)
+        // }else{
           Vue.set(ref.form,item.name,item.default)
-        }
+        // }
         Vue.set(ref.visibility,item.name,true)
       });
       this.$v.form.$reset();
