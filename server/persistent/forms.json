@@ -322,7 +322,7 @@
             "query":"select name from storage.cluster",
             "name":"cluster_name",
             "label":"Select a cluster",
-            "default":"cluster1",
+            "default":"__auto__",
             "required":true
           },
           {
@@ -331,8 +331,8 @@
             "query":"select svm.name from storage.svm,storage.cluster where svm.cluster_id=cluster.id and cluster.name='$(cluster_name)'",
             "name":"svm_name",
             "label":"Select a svm",
-            "default":"svm1",
-            "required":true
+            "default":"__none__",
+            "required":false
           },
           {
             "type":"query",
@@ -340,8 +340,8 @@
             "query":"select volume.name,svm.name 'svm' from storage.volume,storage.svm where volume.svm_id=svm.id and svm.name='$(svm_name)'",
             "name":"vol_name",
             "label":"Select a volume",
-            "default":"vol1",
-            "required":true
+            "default":"__none__",
+            "required":false
           }
         ]
     },
@@ -496,7 +496,7 @@
             "expression":"'$(vol_name) $(resource_name)'",
             "label":"Final resource",
             "default":"",
-            "required":true,
+            "required":false,
             "model":"final.resource"
           }
       ]

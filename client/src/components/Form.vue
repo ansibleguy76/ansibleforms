@@ -71,7 +71,7 @@
           </div>
 
           <hr v-if="!!currentForm" />
-          <button v-if="!!currentForm && !ansibleResult.message" class="button is-primary is-fullwidth" @click="executeForm"><span class="icon"><i class="fas fa-play"></i></span><span>Run</span></button>
+          <button v-if="!!currentForm && !ansibleResult.message" class="button is-primary is-fullwidth" @click="ansibleResult.message='initializing'"><span class="icon"><i class="fas fa-play"></i></span><span>Run</span></button>
           <button v-if="!!ansibleResult.message" class="button is-fullwidth" @click="resetResult()" :class="{ 'has-background-success' : ansibleResult.status=='success', 'has-background-danger' : ansibleResult.status=='error','has-background-info cursor-progress' : ansibleResult.status=='info' }">
             <span class="icon" v-if="ansibleResult.status=='info'"><i class="fas fa-spinner fa-pulse"></i></span>
             <span class="icon" v-if="ansibleResult.status!='info'"><i class="fas fa-times"></i></span>
@@ -382,8 +382,10 @@
                 var placeholderCheck=undefined;                                   // result for a placeholder check
                 if(item.type=="expression" && flag==undefined){                // if expression and not evaluated yet
                   // console.log("eval expression " + item.name)
+                  if(item.required){
+                    hasUnevaluatedFields=true                                       // set the un-eval flag if this is required
+                  }
                   // set flag running
-                  hasUnevaluatedFields=true                                       // set the un-eval flag
                   Vue.set(ref.dynamicFieldStatus,item.name,"running");            // set as running
                   placeholderCheck = ref.replacePlaceholders(item.expression)     // check and replace placeholders
                   if(placeholderCheck.value!=undefined){                       // expression is clean ?
@@ -424,7 +426,10 @@
                 } else if(item.type=="query" && flag==undefined){
                   // console.log("eval query : " + item.name)
                   // set flag running
-                  hasUnevaluatedFields=true
+                  if(item.required){
+                    hasUnevaluatedFields=true
+                  }
+
                   Vue.set(ref.dynamicFieldStatus,item.name,"running");
                   placeholderCheck = ref.replacePlaceholders(item.query)     // check and replace placeholders
                   if(placeholderCheck.value!=undefined){                       // expression is clean ?
@@ -448,10 +453,20 @@
                             // set flag as viable fixed query
                             Vue.set(ref.dynamicFieldStatus,item.name,"fixed");
                           }
-                          if(ref.defaults[item.name]=="__auto__" && ref.queryresults[item.name].length>0){
-                            // console.log("auto default to " + ref.queryresults[item.name][0].name)
-                            Vue.set(ref.form,item.name,ref.queryresults[item.name][0].name);
+                          if(ref.queryresults[item.name].length>0){ // if results ?
+                            if(ref.defaults[item.name]=="__auto__"){
+                              // console.log("auto default to " + ref.queryresults[item.name][0].name)
+                              Vue.set(ref.form,item.name,ref.queryresults[item.name][0].name); // set default to first in list
+                            }else if(ref.defaults[item.name]=="__none__"){
+                              // console.log("auto default to " + ref.queryresults[item.name][0].name)
+                              Vue.set(ref.form,item.name,undefined); // set default to first in list
+                            }else{
+                              Vue.set(ref.form,item.name,ref.defaults[item.name]); // set regular default
+                            }
+                          }else{
+                            Vue.set(ref.form,item.name,undefined); // set undefined, there are no items to select from
                           }
+
                         }
 
                       }).catch(function (err) {
@@ -482,20 +497,39 @@
           ) // end field loop
           if(hasUnevaluatedFields){
             ref.canSubmit=false;
-            if(watchdog==15){
-              //ref.$toast.info("Not all fields are evaluated ;" + watchdog)
-              watchdog=16
-            }else{
-              watchdog++;                       // increase watchdog
-            }
-            // ref.$toast.warning("Stopping interval ; too many loops")
+            watchdog++                       // keeps track of how many loop it takes to evaluate all fields
           }
+
           if(!hasUnevaluatedFields){
             ref.canSubmit=true;
             if(watchdog>0){
-              //ref.$toast.info("All fields are found;" + watchdog)
+              ref.$toast.info("All fields are found")
             }
             watchdog=0
+          }
+          if(ref.ansibleResult.message=="initializing"){ // has a request been made to execute ?
+            // ref.$toast.info("Requesting execution")
+            if(ref.validateForm()){  // form is valid ?
+              ref.ansibleResult.message="stabilizing"
+              // ref.$toast.info("Waiting for form to stabilize")
+              watchdog=0
+            }else{
+              ref.ansibleResult.message="" // reset status, form not valid
+            }
+          }
+          if(ref.ansibleResult.message=="stabilizing"){ // are we waiting to execute ?
+            if(ref.canSubmit){
+              ref.ansibleResult.message="triggering execution"
+              ref.executeForm()
+            }else{
+              // continue to stabilize
+              if(watchdog>15){  // is it taking too long ?
+                ref.ansibleResult.message=""   // stop and reset
+                ref.$toast.warning("It is taking too long to evaluate all fields")
+              }else{
+                // ref.$toast.info("Stabalizing form...")
+              }
+            }
           }
         },100); // end interval
       },
@@ -597,26 +631,46 @@
         });
 
       },
-      executeForm(){
-        // make sure, no delayed stuff is started.
-        //
+      validateForm(){
         var ref=this
         var isValid=true
         // final touch to force validation
         this.$v.form.$touch();
         // loop all fields and check if it valid, skip hidden fields
         this.currentForm.fields.forEach((item, i) => {
-          if(this.visibility[item.name] && this.$v.form[item.name].$invalid && this.$v.form[item.name].$model!=undefined){
+          if(this.visibility[item.name] && this.$v.form[item.name].$invalid){
             isValid=false
           }
         })
         if(!isValid){
             ref.$toast.warning("Form contains invalid data")
-            return // do not start if form is invalid
-        }else if(!ref.canSubmit && Object.keys(ref.dynamicFieldStatus).length>0){
-          ref.$toast.warning("Form is still busy, please try again")
-          return // do not start if form is invalid
+            return false // do not start if form is invalid
         }else{
+          return true
+        }
+      },
+      executeForm(){
+        // make sure, no delayed stuff is started.
+        //
+        var ref=this
+        // var isValid=true
+        // // final touch to force validation
+        // this.$v.form.$touch();
+        // // loop all fields and check if it valid, skip hidden fields
+        // this.currentForm.fields.forEach((item, i) => {
+        //   if(this.visibility[item.name] && this.$v.form[item.name].$invalid && this.$v.form[item.name].$model!=undefined){
+        //     isValid=false
+        //   }
+        // })
+        // if(!isValid){
+        //     ref.$toast.warning("Form contains invalid data")
+        //     return // do not start if form is invalid
+        // }else if(!ref.canSubmit && Object.keys(ref.dynamicFieldStatus).length>0){
+        //   ref.$toast.warning("Form is still busy, please try again")
+        //   return // do not start if form is invalid
+        // }else{
+        if(ref.validateForm){ // final validation
+
           this.generateJsonOutput()
           // local ansible
           if(this.currentForm.type=="ansible"){
@@ -680,8 +734,7 @@
                 }
               })
             }
-
-        }
+         }
       }
     },
     mounted() { // when the Vue app is booted up, this is run automatically.
@@ -692,11 +745,11 @@
       this.findVariableDependencies()
       // initialize defaults
       this.currentForm.fields.forEach((item, i) => {
-        // if(["expression","query"].includes(item.type)){
-        //   Vue.set(ref.form,item.name,undefined)
-        // }else{
+        if(["expression","query"].includes(item.type)){
+          Vue.set(ref.form,item.name,undefined)
+        }else{
           Vue.set(ref.form,item.name,item.default)
-        // }
+        }
         Vue.set(ref.visibility,item.name,true)
       });
       this.$v.form.$reset();
