@@ -602,6 +602,25 @@
       "type":"awx",
       "fields":[
           {
+            "type":"multiquery",
+            "dbConfig":"CONN1",
+            "query":"select name,name name2 from cmdb.city",
+            "name":"city_name",
+            "multiple":true,            
+            "label":"Select a city",
+            "default":"__auto__",
+            "required":true,
+            "icon":"fa-building"
+          },
+          {
+            "type":"expression",
+            "name":"Testmultiquery",
+            "label":"Testmultiquery",
+            "default":"",
+            "required":true,
+            "expression":"'$(city_name)'"
+          },
+          {
             "model":"hello.world",
             "type":"text",
             "name":"Testfield",

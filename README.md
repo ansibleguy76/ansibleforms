@@ -40,7 +40,8 @@ The webapplication is based on a
 # Capabilities
 - Categorize forms
 - Role based access
-- Cascaded dropdowns
+- Cascaded dropdowns (sql)
+- Expressions (javascript)
 - Field dependencies
 - Add icons
 - Fieldfield validations

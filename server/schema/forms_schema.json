@@ -280,8 +280,22 @@
 								},
 								{
 									"properties":{
-										"element":{"enum":["select"]},
 										"type":{"enum":["query"]},
+										"values": {"not": {}},
+										"regex": {"not": {}},
+										"regexDescription": {"not": {}},
+										"minValue": {"not": {}},
+										"maxValue": {"not": {}},
+										"minLength": {"not": {}},
+										"maxLength": {"not": {}},
+										"expression": {"not": {}},
+										"hide": {"not": {}}
+									},
+									"required": ["query","dbConfig"]
+								},
+                {
+									"properties":{
+										"type":{"enum":["multiquery"]},
 										"values": {"not": {}},
 										"regex": {"not": {}},
 										"regexDescription": {"not": {}},
@@ -306,7 +320,7 @@
 										"maxLength": {"not": {}},
 										"dbConfig": {"not": {}}
 									},
-									"required": ["expression","hide"]
+									"required": ["expression"]
 								}
 							],
 							"properties": {
@@ -314,7 +328,7 @@
 									"type": "string",
 									"title": "Formfield type",
 									"description": "The formfield type",
-									"enum": ["text","password","checkbox","enum","query","number","radio","expression"]
+									"enum": ["text","password","checkbox","enum","query","multiquery","number","radio","expression"]
 								},
 								"name": {
 									"$id": "/field",
@@ -417,7 +431,7 @@
 								"multiple": {
 									"type": "boolean",
 									"title": "Is multiple enumeration",
-									"description": "A flag whether multiple selections are allowed in an enumeration",
+									"description": "A flag whether multiple selections are allowed in an enumeration, also works in multiquery fields",
 									"default": false
 								},
 								"size": {
