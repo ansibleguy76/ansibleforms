@@ -16,46 +16,75 @@
               <div :key="field.name" v-for="field in filterfieldsByGroup(group)">
                 <transition name="slide">
                   <div class="field" v-if="checkDependencies(field,true)">
+                    <!-- add field label -->
                     <label v-if="!field.hide" class="label">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span></label>
+                    <!-- type = checkbox -->
                     <label v-if="field.type=='checkbox'" class="checkbox">
                       <input :checked="field.default" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" :required="field.required" :name="field.name" type="checkbox">
                       {{ field.placeholder }}
                     </label>
-                    <BulmaAdvancedSelect v-if="field.type=='multiquery'" :multiple="field.multiple||false" :name="field.name" :values="queryresults[field.name]||[]" :hasError="$v.form[field.name].$invalid" v-model="$v.form[field.name].$model" :icon="field.icon" @ischanged="evaluateDynamicFields(field.name)"></BulmaAdvancedSelect>
+                    <!-- type = query -->
+                    <BulmaAdvancedSelect
+                      v-if="field.type=='query'"
+                      :default="field.default"
+                      :required="field.required||false"
+                      :outputObject="field.outputObject||false"
+                      :multiple="field.multiple||false"
+                      :name="field.name"
+                      :placeholder="field.placeholder||'Select...'"
+                      :values="queryresults[field.name]||[]"
+                      :hasError="$v.form[field.name].$invalid"
+                      :status="dynamicFieldStatus[field.name]"
+                      v-model="$v.form[field.name].$model"
+                      :icon="field.icon"
+                      @ischanged="evaluateDynamicFields(field.name)"
+                      >
+                    </BulmaAdvancedSelect>
+                    <!-- type = radio -->
                     <div v-if="field.type=='radio'" >
                       <label class="radio" :key="radiovalue" v-for="radiovalue in field.values">
                         <input type="radio" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" :checked="field.default===radiovalue" :value="radiovalue" :name="field.name">
                         {{ radiovalue }}
                       </label>
                     </div>
-                    <div :class="{'has-icons-left':!!field.icon && field.type!='multiquery'}" class="control">
+
+                    <div :class="{'has-icons-left':!!field.icon && field.type!='query'}" class="control">
+                      <!-- type = expression -->
                       <div v-if="field.type=='expression'" :class="{'is-loading':dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running'}" class="control">
-                        <input :type="(field.hide||false) ? 'hidden' : 'text'" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" readonly :name="field.name" :required="field.required">
+                        <input :type="(field.hide||false) ? 'hidden' : 'text'" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input has-text-info" readonly :name="field.name" :required="field.required">
                       </div>
+                      <!-- type = text -->
                       <input v-if="field.type=='text'" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" type="text" :placeholder="field.placeholder" @change="evaluateDynamicFields(field.name)">
+                      <!-- type = password -->
                       <input v-if="field.type=='password'" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" type="password" :placeholder="field.placeholder" @change="evaluateDynamicFields(field.name)">
+                      <!-- type = number -->
                       <input v-if="field.type=='number'" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" type="number" :placeholder="field.placeholder" @change="evaluateDynamicFields(field.name)">
+                      <!-- type = enum -->
                       <div v-if="field.type=='enum' && !field.multiple" class="select">
                         <select :name="field.name" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" @change="evaluateDynamicFields(field.name)">
                           <option v-if="!field.required" value=""></option>
                           <option v-for="option in field.values" :key="option" :selected="field.default==option" :value="option">{{ option }}</option>
                         </select>
                       </div>
+                      <!-- type = multiple enum -->
                       <div v-if="field.type=='enum' && (field.multiple||false)==true" class="select is-multiple">
                         <select :name="field.name" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" multiple :size="field.size">
                           <option v-if="!field.required" value=""></option>
                           <option v-for="option in field.values" :key="option" :selected="field.default.includes(option)" :value="option">{{ option }}</option>
                         </select>
                       </div>
-                      <div v-if="field.type=='query'" class="select" :class="{'is-loading':dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running'}">
-                        <select  :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" :disabled="dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running'" :name="field.name" @change="evaluateDynamicFields(field.name)">
+                      <!-- type = query -->
+                      <!-- <div v-if="field.type=='query'" class="select" :class="{'is-loading':dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running'}">
+                        <select  :class="{'is-danger':$v.form[field.name].$invalid}" class="has-text-black" v-model="$v.form[field.name].$model" :disabled="dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running'" :name="field.name" @change="evaluateDynamicFields(field.name)">
                           <option v-if="!field.required" value=""></option>
-                          <option v-for="option in queryresults[field.name]" :key="option.name" :selected="field.default==option.name" :value="option.name">{{ option.name }}</option>
+                          <option v-for="option in queryresults[field.name]" :key="option[querylabels[field.name][0]]" :selected="field.default==option[querylabels[field.name][0]]" :value="option[querylabels[field.name][0]]">{{ option[querylabels[field.name][0]] }}</option>
                         </select>
-                      </div>
-                      <span v-if="!!field.icon && field.type!='multiquery'" class="icon is-small is-left">
+                      </div> -->
+                      <!-- add left icon, but not for query, because that's a component with icon builtin -->
+                      <span v-if="!!field.icon && field.type!='query'" class="icon is-small is-left">
                         <i class="fas" :class="field.icon"></i>
                       </span>
+                      <!-- add help and alerts -->
                       <p class="help" v-if="!!field.help">{{ field.help}}</p>
                       <p class="has-text-danger" v-if="!$v.form[field.name].required">This field is required</p>
                       <p class="has-text-danger" v-if="'minLength' in $v.form[field.name] && !$v.form[field.name].minLength">Must be at least {{$v.form[field.name].$params.minLength.min}} characters long</p>
@@ -142,6 +171,7 @@
           defaults:{},
           dynamicFieldStatus:{},    // holds the status of dynamics fields (running=currently being evaluated, variable=depends on others, fixed=only need 1-time lookup)
           queryresults:{},      // holds the results of dynamic dropdown boxes
+          querylabels:{},       // holds the result labels of dynamic dropdown boxes
           form:{                // the form data mapped to the form
           },
           visibility:{
@@ -263,10 +293,8 @@
           ref.defaults[item.name]=item.default
         })
         this.currentForm.fields.forEach((item,i) => {
-          if(["expression","query","multiquery"].includes(item.type)){
-            var itemtype=item.type
-            if(item.type=="multiquery"){itemtype="query"}
-            var matches=item[itemtype].matchAll(testRegex);
+          if(["expression","query"].includes(item.type)){
+            var matches=item[item.type].matchAll(testRegex);
             for(var match of matches){
               foundmatch = match[0];                                              // found $(xxx)
               foundfield = match[1];                                              // found xxx
@@ -337,11 +365,19 @@
             // mark the field as a dependent field
             if(foundfield in ref.form){                                         // does field xxx exist in our form ?
               fieldvalue = ref.form[foundfield];                                // get value of xxx
-              if(Array.isArray(fieldvalue)){
-                if(fieldvalue.length>0){
-                  fieldvalue=fieldvalue[0][Object.keys(fieldvalue[0])[0]]
-                } else {
-                  fieldvalue=undefined
+              if(fieldvalue){
+                if(Array.isArray(fieldvalue)){   // array ?
+                  if(fieldvalue.length>0){       // not emtpy
+                    if(typeof fieldvalue==="object"){   // array of object ?
+                      fieldvalue=fieldvalue[Object.keys(fieldvalue[0])[0]]  // first item of first column
+                    }else{
+                      fieldvalue=fieldvalue[0]   // first item
+                    }
+                  } else {
+                    fieldvalue=undefined
+                  }
+                }else if(typeof fieldvalue==="object"){   // object ?
+                  fieldvalue=fieldvalue[Object.keys(fieldvalue[0])[0]] // first column
                 }
               }
               if(foundfield in ref.dynamicFieldStatus){
@@ -433,7 +469,7 @@
                     //console.log(item.name + " is not evaluated yet");
                     Vue.set(ref.dynamicFieldStatus,item.name,undefined);
                   }
-                } else if(["query","multiquery"].includes(item.type) && flag==undefined){
+                } else if(["query"].includes(item.type) && flag==undefined){
                   // console.log("eval query : " + item.name)
                   // set flag running
                   if(item.required){
@@ -463,23 +499,23 @@
                             // set flag as viable fixed query
                             Vue.set(ref.dynamicFieldStatus,item.name,"fixed");
                           }
-                          if(ref.queryresults[item.name].length>0){ // if results ?
-                            if(item.type=="query"){
-                              if(ref.defaults[item.name]=="__auto__"){
-                                  var firstlabel = Object.keys(item.name,ref.queryresults[item.name][0])[0]
-                                  Vue.set(ref.form,item.name,ref.queryresults[item.name][0][firstlabel]); // set default to first in list
-                              }else if(ref.defaults[item.name]=="__none__"){
-                                Vue.set(ref.form,item.name,undefined); // set default to undefined
-                              }else{
-                                Vue.set(ref.form,item.name,ref.defaults[item.name]); // set regular default
-                              }
-                            }else{
-                              Vue.set(ref.form,item.name,undefined); // multiquery cannot have defaults
-                            }
-
-                          }else{
-                            Vue.set(ref.form,item.name,undefined); // set undefined, there are no items to select from
-                          }
+                          // if(ref.queryresults[item.name].length>0){ // if results ?
+                          //   // if(item.type=="query"){
+                          //   //   ref.querylabels[item.name]=Object.keys(ref.queryresults[item.name][0]) // store the labels of the query result
+                          //   //   if(ref.defaults[item.name]=="__auto__"){   // if __auto__ get first item from the list
+                          //   //       Vue.set(ref.form,item.name,ref.queryresults[item.name][0][ref.querylabels[item.name][0]]); // set default to first in list
+                          //   //   }else if(ref.defaults[item.name]=="__none__"){  // if __none__ set explicitely to undefined (!="")
+                          //   //     Vue.set(ref.form,item.name,undefined); // set default to undefined
+                          //   //   }else{
+                          //   //     Vue.set(ref.form,item.name,ref.defaults[item.name]); // set regular default is other cases
+                          //   //   }
+                          //   // }else{
+                          //   //   Vue.set(ref.form,item.name,undefined); // multiquery cannot have defaults, so reset value
+                          //   //   ref.querylabels[item.name]=[]          // set querylabels for other items to empty
+                          //   // }
+                          // }else{
+                          //   Vue.set(ref.form,item.name,undefined); // set undefined, there are no items to select from
+                          // }
 
                         }
 
@@ -517,7 +553,7 @@
           if(!hasUnevaluatedFields){
             ref.canSubmit=true;
             if(watchdog>0){
-              ref.$toast.info("All fields are found")
+              //ref.$toast.info("All fields are found")
             }
             watchdog=0
           }
@@ -758,7 +794,7 @@
       this.findVariableDependencies()
       // initialize defaults
       this.currentForm.fields.forEach((item, i) => {
-        if(["expression","query","multiquery"].includes(item.type)){
+        if(["expression","query"].includes(item.type)){
           Vue.set(ref.form,item.name,undefined)
         }else{
           Vue.set(ref.form,item.name,item.default)

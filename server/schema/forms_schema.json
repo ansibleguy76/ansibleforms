@@ -213,7 +213,9 @@
 										"expression": {"not": {}},
 										"dbConfig": {"not": {}},
 										"hide": {"not": {}},
-										"values": {"not": {}}
+										"values": {"not": {}},
+                    "multiple": {"not": {}},
+                    "outputObject": {"not": {}}
 									}
 								},
 								{
@@ -227,7 +229,9 @@
 										"expression": {"not": {}},
 										"dbConfig": {"not": {}},
 										"hide": {"not": {}},
-										"values": {"not": {}}
+										"values": {"not": {}},
+                    "multiple": {"not": {}},
+                    "outputObject": {"not": {}}
 									}
 								},
 								{
@@ -242,7 +246,9 @@
 										"maxLength": {"not": {}},
 										"expression": {"not": {}},
 										"dbConfig": {"not": {}},
-										"hide": {"not": {}}
+										"hide": {"not": {}},
+                    "multiple": {"not": {}},
+                    "outputObject": {"not": {}}
 									},
 									"required": ["values"]
 								},
@@ -259,7 +265,9 @@
 										"expression": {"not": {}},
 										"dbConfig": {"not": {}},
 										"hide": {"not": {}},
-										"values": {"not": {}}
+										"values": {"not": {}},
+                    "multiple": {"not": {}},
+                    "outputObject": {"not": {}}
 									}
 								},
 								{
@@ -274,28 +282,14 @@
 										"maxLength": {"not": {}},
 										"expression": {"not": {}},
 										"dbConfig": {"not": {}},
-										"hide": {"not": {}}
+										"hide": {"not": {}},
+                    "outputObject": {"not": {}}
 									},
 									"required": ["values"]
 								},
-								{
-									"properties":{
-										"type":{"enum":["query"]},
-										"values": {"not": {}},
-										"regex": {"not": {}},
-										"regexDescription": {"not": {}},
-										"minValue": {"not": {}},
-										"maxValue": {"not": {}},
-										"minLength": {"not": {}},
-										"maxLength": {"not": {}},
-										"expression": {"not": {}},
-										"hide": {"not": {}}
-									},
-									"required": ["query","dbConfig"]
-								},
                 {
 									"properties":{
-										"type":{"enum":["multiquery"]},
+										"type":{"enum":["query"]},
 										"values": {"not": {}},
 										"regex": {"not": {}},
 										"regexDescription": {"not": {}},
@@ -318,7 +312,9 @@
 										"maxValue": {"not": {}},
 										"minLength": {"not": {}},
 										"maxLength": {"not": {}},
-										"dbConfig": {"not": {}}
+										"dbConfig": {"not": {}},
+                    "multiple": {"not": {}},
+                    "outputObject": {"not": {}}
 									},
 									"required": ["expression"]
 								}
@@ -328,7 +324,7 @@
 									"type": "string",
 									"title": "Formfield type",
 									"description": "The formfield type",
-									"enum": ["text","password","checkbox","enum","query","multiquery","number","radio","expression"]
+									"enum": ["text","password","checkbox","enum","query","number","radio","expression"]
 								},
 								"name": {
 									"$id": "/field",
@@ -405,10 +401,15 @@
 									"title": "SQL query",
 									"description": "An sql query to populate a dropdown box, use $(fieldname) to reference another field variable.  Don't forget to add quotes around placeholders if needed."
 								},
+                "outputObject": {
+									"type": "boolean",
+									"title": "Returns an object instead of string if type is query",
+									"description": "A query field, can return strings (based on first column) or can return the full record (object)"
+								},
 								"dbConfig": {
 									"type": "string",
 									"title": "Database configuration",
-									"description": "the name of the database configuration to execute the query.  WITHOUT the DB_ prefix !!.  See environment variable examples"
+									"description": "the name of the database configuration to execute the query.  WITHOUT the DB_ prefix !!.  See environment variable examples."
 								},
 								"model": {
 									"type": "string",

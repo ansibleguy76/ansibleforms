@@ -73,7 +73,7 @@
 
 
           if(!TokenStorage.isAuthenticated()){
-              this.$toast.error("No token found")
+              //this.$toast.error("You need to authenticate")
               this.$router.replace({ name: "Login" }).catch(err => {});         // no token found, logout
           }else{
 
@@ -81,21 +81,23 @@
               .then((result)=>{
                 ref.formConfig=result.data;
                 if(!ref.formConfig.error){
-                  this.$toast.success("Valid forms.json loaded")
+                  ref.$toast.success("Valid forms.json loaded")
                   ref.$router.push({name:"Home"}).catch(err => {});
                   ref.refreshAuthenticated()
                   this.loadProfile()
                 }else{
-                    this.$toast.error("Invalid forms.json")
+                    ref.$toast.error("Invalid forms.json")
                     ref.errorMessage="Error in forms.json file\n\n" + ref.formConfig.error
                     ref.$router.replace({name:"Error"}).catch(err => {});
                 }
               })
               .catch(function(err){
-                this.$toast.error("Failed to load forms.json file")
+
                 if(err.response.status!=401){
                   ref.errorMessage="Could not get forms.json file\n\n" + err
                   ref.$router.replace({name:"Error"}).catch(err => {});
+                }else{
+                  ref.$toast.error("Failed to load forms.json file")
                 }
               })
           }

@@ -331,7 +331,7 @@
             "query":"select svm.name from storage.svm,storage.cluster where svm.cluster_id=cluster.id and cluster.name='$(cluster_name)'",
             "name":"svm_name",
             "label":"Select a svm",
-            "default":"__none__",
+            "default":"__auto__",
             "required":false
           },
           {
@@ -341,7 +341,7 @@
             "name":"vol_name",
             "label":"Select a volume",
             "default":"__none__",
-            "required":false
+            "required":true
           }
         ]
     },
@@ -475,7 +475,7 @@
           {
             "type":"query",
             "dbConfig":"CONN1",
-            "query":"select resource.name,datacenter.name 'datacenter' from cmdb.resource,cmdb.datacenter where resource.datacenter_id=datacenter.id and datacenter.name='$(datacenter_name)'",
+            "query":"select resource.name 'resource',datacenter.name 'datacenter' from cmdb.resource,cmdb.datacenter where resource.datacenter_id=datacenter.id and datacenter.name='$(datacenter_name)'",
             "name":"resource_name",
             "label":"Select a resource",
             "default":"__auto__",
@@ -592,6 +592,112 @@
       ]
     },
     {
+      "name":"Query options",
+      "roles":["demo"],
+      "description":"This shows all the query options and combinations.",
+      "categories":["Demo"],
+      "tileClass":"has-background-success",
+      "template":"HelloWorld",
+      "inventory":"",
+      "type":"awx",
+      "fields":[
+          {
+            "type":"query",
+            "dbConfig":"CONN1",
+            "query":"select name from cmdb.city",
+            "name":"city_name0",
+            "multiple":false,
+
+            "default":"__none__",
+            "label":"Simple one column select",
+            "icon":"fa-building",
+            "placeholder":"Select a city"
+          },
+          {
+            "type":"query",
+            "dbConfig":"CONN1",
+            "query":"select name,CONCAT('I love ',name) love from cmdb.city",
+            "name":"city_name1",
+            "multiple":false,
+
+            "default":"__none__",
+            "label":"Multiple columns",
+            "icon":"fa-building"
+          },
+          {
+            "type":"query",
+            "dbConfig":"CONN1",
+            "query":"select name,CONCAT('I love ',name) love from cmdb.city",
+            "name":"city_name2",
+            "multiple":false,
+
+            "label":"Autoselect first item",
+            "default":"__auto__",
+            "icon":"fa-building"
+          },
+          {
+            "type":"query",
+            "dbConfig":"CONN1",
+            "query":"select name,CONCAT('I love ',name) love from cmdb.city",
+            "name":"city_name3",
+            "multiple":false,
+
+            "label":"Required field",
+            "default":"__none__",
+            "required":true,
+            "icon":"fa-building"
+          },
+          {
+            "type":"query",
+            "dbConfig":"CONN1",
+            "query":"select name,CONCAT('I love ',name) love from cmdb.city",
+            "name":"city_name4",
+            "multiple":false,
+            "outputObject":true,
+            "label":"Object output",
+            "default":"__none__",
+            "required":false,
+            "icon":"fa-building"
+          },
+          {
+            "type":"query",
+            "dbConfig":"CONN1",
+            "query":"select name,CONCAT('I love ',name) love from cmdb.city",
+            "name":"city_name5",
+            "multiple":true,
+
+            "label":"Select multiple, flattened output",
+            "default":"__none__",
+            "required":false,
+            "icon":"fa-building"
+          },
+          {
+            "type":"query",
+            "dbConfig":"CONN1",
+            "query":"select name,CONCAT('I love ',name) love from cmdb.city",
+            "name":"city_name6",
+            "multiple":true,
+            "outputObject":true,
+            "label":"Select multiple, object output",
+            "default":"__none__",
+            "required":false,
+            "icon":"fa-building"
+          },
+          {
+            "type":"query",
+            "dbConfig":"CONN1",
+            "query":"select name,CONCAT('I love ',name) love from cmdb.city",
+            "name":"city_name7",
+            "multiple":true,
+            "outputObject":true,
+            "label":"Specific default",
+            "default":"Brussels",
+            "required":false,
+            "icon":"fa-building"
+          }
+      ]
+    },
+    {
       "name":"HelloWorld",
       "roles":["demo"],
       "description":"This will kick off the HelloWorld template.  It does not expect any variables, so that's cool because it should always run :)",
@@ -602,11 +708,12 @@
       "type":"awx",
       "fields":[
           {
-            "type":"multiquery",
+            "type":"query",
             "dbConfig":"CONN1",
             "query":"select name,name name2 from cmdb.city",
             "name":"city_name",
-            "multiple":true,            
+            "multiple":false,
+
             "label":"Select a city",
             "default":"__auto__",
             "required":true,
@@ -614,8 +721,8 @@
           },
           {
             "type":"expression",
-            "name":"Testmultiquery",
-            "label":"Testmultiquery",
+            "name":"Testquery",
+            "label":"Testquery",
             "default":"",
             "required":true,
             "expression":"'$(city_name)'"

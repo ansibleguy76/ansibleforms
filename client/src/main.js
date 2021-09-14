@@ -62,7 +62,6 @@ axios.interceptors.response.use( (response) => {
 
 
 });
-
 Vue.config.productionTip = false
 import { POSITION } from "vue-toastification";
 const options = {
