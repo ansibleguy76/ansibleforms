@@ -92,8 +92,7 @@
                 }
               })
               .catch(function(err){
-
-                if(err.response.status!=401){
+                if(err.response && err.response.status!=401){
                   ref.errorMessage="Could not get forms.json file\n\n" + err
                   ref.$router.replace({name:"Error"}).catch(err => {});
                 }else{

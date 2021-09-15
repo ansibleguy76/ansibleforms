@@ -37,6 +37,8 @@
                       :status="dynamicFieldStatus[field.name]"
                       v-model="$v.form[field.name].$model"
                       :icon="field.icon"
+                      :columns="field.columns||[]"
+                      :valueColumn="field.valueColumn||''"
                       @ischanged="evaluateDynamicFields(field.name)"
                       >
                     </BulmaAdvancedSelect>
@@ -73,13 +75,6 @@
                           <option v-for="option in field.values" :key="option" :selected="field.default.includes(option)" :value="option">{{ option }}</option>
                         </select>
                       </div>
-                      <!-- type = query -->
-                      <!-- <div v-if="field.type=='query'" class="select" :class="{'is-loading':dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running'}">
-                        <select  :class="{'is-danger':$v.form[field.name].$invalid}" class="has-text-black" v-model="$v.form[field.name].$model" :disabled="dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running'" :name="field.name" @change="evaluateDynamicFields(field.name)">
-                          <option v-if="!field.required" value=""></option>
-                          <option v-for="option in queryresults[field.name]" :key="option[querylabels[field.name][0]]" :selected="field.default==option[querylabels[field.name][0]]" :value="option[querylabels[field.name][0]]">{{ option[querylabels[field.name][0]] }}</option>
-                        </select>
-                      </div> -->
                       <!-- add left icon, but not for query, because that's a component with icon builtin -->
                       <span v-if="!!field.icon && field.type!='query'" class="icon is-small is-left">
                         <i class="fas" :class="field.icon"></i>
@@ -171,7 +166,7 @@
           defaults:{},
           dynamicFieldStatus:{},    // holds the status of dynamics fields (running=currently being evaluated, variable=depends on others, fixed=only need 1-time lookup)
           queryresults:{},      // holds the results of dynamic dropdown boxes
-          querylabels:{},       // holds the result labels of dynamic dropdown boxes
+          fieldOptions:{},      // holds a couple of fieldoptions for fast access (valueColumn,ignoreIncomplete, ...)
           form:{                // the form data mapped to the form
           },
           visibility:{
@@ -294,7 +289,7 @@
         })
         this.currentForm.fields.forEach((item,i) => {
           if(["expression","query"].includes(item.type)){
-            var matches=item[item.type].matchAll(testRegex);
+            var matches=(item.expression || item.query).matchAll(testRegex);
             for(var match of matches){
               foundmatch = match[0];                                              // found $(xxx)
               foundfield = match[1];                                              // found xxx
@@ -352,10 +347,11 @@
         var foundmatch=false
         var foundfield=false
         var fieldvalue=""
+        var keys = undefined
         var targetflag=undefined
         var hasPlaceholders = false;
-        var newValue = item                                                     // make a copy of our item
-        matches=item.matchAll(testRegex);
+        var newValue = item.expression                                                     // make a copy of our item
+        matches=(item.expression || item.query).matchAll(testRegex);
 
         for(match of matches){
             foundmatch = match[0];                                              // found $(xxx)
@@ -368,16 +364,25 @@
               if(fieldvalue){
                 if(Array.isArray(fieldvalue)){   // array ?
                   if(fieldvalue.length>0){       // not emtpy
+                    fieldvalue = fieldvalue[0]   // start by taking first item
                     if(typeof fieldvalue==="object"){   // array of object ?
-                      fieldvalue=fieldvalue[Object.keys(fieldvalue[0])[0]]  // first item of first column
-                    }else{
-                      fieldvalue=fieldvalue[0]   // first item
+                      keys = Object.keys(fieldvalue)
+                      if(keys.length>0){
+                        fieldvalue=fieldvalue[ref.fieldOptions[foundfield].valueColumn] || fieldvalue[keys[0]]  // first item of value column (or first column)
+                      } else {
+                        fieldvalue=undefined  // empty object
+                      }
                     }
                   } else {
                     fieldvalue=undefined
                   }
                 }else if(typeof fieldvalue==="object"){   // object ?
-                  fieldvalue=fieldvalue[Object.keys(fieldvalue[0])[0]] // first column
+                  keys = Object.keys(fieldvalue)
+                  if(keys.length>0){
+                    fieldvalue=fieldvalue[ref.fieldOptions[foundfield].valueColumn] || fieldvalue[keys[0]]  // value column (or first column)
+                  } else {
+                    fieldvalue=undefined
+                  }
                 }
               }
               if(foundfield in ref.dynamicFieldStatus){
@@ -390,7 +395,10 @@
 
             // if the variable is viable and not being changed, replace it
             // console.log(foundfield + "("+fieldvalue+")" + " -> targetflag = " + targetflag)
-            if(((targetflag=="variable")||(targetflag=="fixed")) && fieldvalue!==undefined && newValue!=undefined){                // valid value ?
+            if((((targetflag=="variable")||(targetflag=="fixed")) && fieldvalue!==undefined && newValue!=undefined)||((item.ignoreIncomplete||false) && newValue!=undefined)){                // valid value ?
+                if(fieldvalue==undefined){
+                  fieldvalue="__undefined__"   // catch undefined values
+                }
                 newValue=newValue.replace(foundmatch,fieldvalue);               // replace the placeholder with the value
             }else{
                 newValue=undefined                                              // cannot evaluate yet
@@ -401,6 +409,10 @@
         }
         if(retestRegex.test(newValue)){                                         // still placeholders found ?
             newValue=undefined                                                  // cannot evaluate yet
+        }
+        if(newValue!=undefined){
+           newValue=newValue.replace("'__undefined__'","undefined")  // replace undefined values
+           newValue=newValue.replace("__undefined__","undefined")
         }
         return {"hasPlaceholders":hasPlaceholders,"value":newValue}          // return the result
       },
@@ -426,28 +438,31 @@
                 // if expression and not processed yet or needs to be reprocessed
                 var flag = ref.dynamicFieldStatus[item.name];                     // current field status (running/fixed/variable)
                 var placeholderCheck=undefined;                                   // result for a placeholder check
-                if(item.type=="expression" && flag==undefined){                // if expression and not evaluated yet
+                if((item.type=="expression" || (item.type=="query" && item.expression)) && flag==undefined){                // if expression and not evaluated yet
                   // console.log("eval expression " + item.name)
                   if(item.required){
                     hasUnevaluatedFields=true                                       // set the un-eval flag if this is required
                   }
                   // set flag running
                   Vue.set(ref.dynamicFieldStatus,item.name,"running");            // set as running
-                  placeholderCheck = ref.replacePlaceholders(item.expression)     // check and replace placeholders
+                  placeholderCheck = ref.replacePlaceholders(item)     // check and replace placeholders
                   if(placeholderCheck.value!=undefined){                       // expression is clean ?
                       axios.post("/api/v1/expression",{expression:placeholderCheck.value},TokenStorage.getAuthentication())
                         .then((result)=>{
                           var restresult = result.data
                           if(restresult.status=="error"){
-                            // console.log(restresult.data.error)
+                            console.log(restresult.data.error)
                             Vue.set(ref.dynamicFieldStatus,item.name,undefined);
                           }
                           if(restresult.status=="success"){
-                            // console.log("expression for "+item.name+" triggered : result found -> "+ restresult.data.output);
-                            Vue.set(ref.form, item.name, restresult.data.output);
+                            console.log("expression for "+item.name+" triggered : result found -> "+ restresult.data.output);
+                            if(item.type=="expression")
+                              Vue.set(ref.form, item.name, restresult.data.output);
+                            if(item.type=="query")
+                              Vue.set(ref.queryresults, item.name, [].concat(restresult.data.output||[]));
                             if(placeholderCheck.hasPlaceholders){                 // if placeholders were found we set this a variable dynamic field.
                               // set flag as viable variable query
-                              // console.log("Expression found with variables")
+                              console.log("Expression found with variables")
                               Vue.set(ref.dynamicFieldStatus,item.name,"variable");
                             }else{
                               // set flag as viable fixed query
@@ -469,7 +484,7 @@
                     //console.log(item.name + " is not evaluated yet");
                     Vue.set(ref.dynamicFieldStatus,item.name,undefined);
                   }
-                } else if(["query"].includes(item.type) && flag==undefined){
+                } else if(item.type=="query" && item.query && flag==undefined){
                   // console.log("eval query : " + item.name)
                   // set flag running
                   if(item.required){
@@ -477,7 +492,7 @@
                   }
 
                   Vue.set(ref.dynamicFieldStatus,item.name,"running");
-                  placeholderCheck = ref.replacePlaceholders(item.query)     // check and replace placeholders
+                  placeholderCheck = ref.replacePlaceholders(item)     // check and replace placeholders
                   if(placeholderCheck.value!=undefined){                       // expression is clean ?
                     // console.log(newquery);
                     // execute query
@@ -499,24 +514,6 @@
                             // set flag as viable fixed query
                             Vue.set(ref.dynamicFieldStatus,item.name,"fixed");
                           }
-                          // if(ref.queryresults[item.name].length>0){ // if results ?
-                          //   // if(item.type=="query"){
-                          //   //   ref.querylabels[item.name]=Object.keys(ref.queryresults[item.name][0]) // store the labels of the query result
-                          //   //   if(ref.defaults[item.name]=="__auto__"){   // if __auto__ get first item from the list
-                          //   //       Vue.set(ref.form,item.name,ref.queryresults[item.name][0][ref.querylabels[item.name][0]]); // set default to first in list
-                          //   //   }else if(ref.defaults[item.name]=="__none__"){  // if __none__ set explicitely to undefined (!="")
-                          //   //     Vue.set(ref.form,item.name,undefined); // set default to undefined
-                          //   //   }else{
-                          //   //     Vue.set(ref.form,item.name,ref.defaults[item.name]); // set regular default is other cases
-                          //   //   }
-                          //   // }else{
-                          //   //   Vue.set(ref.form,item.name,undefined); // multiquery cannot have defaults, so reset value
-                          //   //   ref.querylabels[item.name]=[]          // set querylabels for other items to empty
-                          //   // }
-                          // }else{
-                          //   Vue.set(ref.form,item.name,undefined); // set undefined, there are no items to select from
-                          // }
-
                         }
 
                       }).catch(function (err) {
@@ -795,6 +792,8 @@
       // initialize defaults
       this.currentForm.fields.forEach((item, i) => {
         if(["expression","query"].includes(item.type)){
+          Vue.set(ref.fieldOptions,item.name,{})
+          Vue.set(ref.fieldOptions[item.name],"valueColumn",item.valueColumn||"")
           Vue.set(ref.form,item.name,undefined)
         }else{
           Vue.set(ref.form,item.name,item.default)

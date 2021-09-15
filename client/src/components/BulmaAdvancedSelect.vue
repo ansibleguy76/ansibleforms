@@ -33,21 +33,22 @@
         <div v-if="values.length>0" class="table-container">
           <table class="table is-hoverable is-narrow">
             <thead v-if="labels.length>1">
-              <tr>
+              <tr :class="sizeClass">
                 <th v-if="multiple" class="is-first">
                   <i v-if="checkAll" @click="multicheck()" class="fal fa-check-square"></i>
                   <i v-else @click="multicheck()" class="fal fa-square"></i>
                 </th>
-                <th class="is-size-7" :key="l" v-for="l in labels">{{ l }}</th>
+                <th :key="l" v-for="l in labels">{{ l }}</th>
               </tr>
             </thead>
             <tbody>
-              <tr :class="{'has-background-info':selected[i],'has-text-white':selected[i]}" :key="i" v-for="v,i in values" @click="select(i)">
-                <td v-if="multiple" class="is-first is-size-7">
+              <tr :class="{'has-background-info':selected[i],'has-text-white':selected[i],sizeClass:sizeClass}" :key="i" v-for="v,i in values" @click="select(i)">
+                <td v-if="multiple" class="is-first">
                   <i v-if="selected[i]" class="fal fa-check-square"></i>
-                  <i v-else class="fal fa-square"></i> <span class="is-size-7 has-text-grey-lighter">{{i}}</span>
+                  <i v-else class="fal fa-square"></i> <span class="has-text-grey-lighter">{{i}}</span>
                 </td>
-                <td class="is-size-7" :key="l" v-for="l in labels">{{ v[l] }}</td>
+                <td :key="l" v-for="l in labels">{{ v[l] }}</td>
+                <td v-if="labels.length==0">{{ v }}</td>
               </tr>
             </tbody>
           </table>
@@ -75,7 +76,10 @@
       name:{type:String,required:true},
       default:{type:String},
       placeholder:{type:String},
-      status:{type:String}
+      status:{type:String},
+      sizeClass:{type:String},
+      columns:{type:Array},
+      valueColumn:{type:String}
     },
     data () {
       return {
@@ -133,7 +137,7 @@
       recalc(){
         var ref=this
         var result = this.values.filter((v,i) => this.selected[i]) // normal, return array of objects
-        var flattenedresult = result.map((item,i) => item[ref.firstLabel])
+        var flattenedresult = result.map((item,i) => ((item)?item[ref.firstLabel] || item:item))
 
         if(this.multiple){ // multiple and outputObject, return simple array
           if(!this.outputObject){
@@ -161,9 +165,9 @@
         var first = result.slice(0,3)
         if(result.length>0){
           if(result.length>3){
-            this.preview = first.map(i => {return i[ref.firstLabel]}).join(', ') + ", ... ("+result.length+" items selected)"
+            this.preview = first.map(i => {return ((i)?i[ref.firstLabel]||i:i)}).join(', ') + ", ... ("+result.length+" items selected)"
           }else{
-            this.preview = first.map(i => {return i[ref.firstLabel]}).join(', ')
+            this.preview = first.map(i => {return ((i)?i[ref.firstLabel]||i:i)}).join(', ')
           }
         }else{
           this.preview = ""
@@ -189,21 +193,45 @@
       },
       getLabels(){
         var ref=this
+        var tmp
         this.preview=""
         if(this.values.length>0){
-          this.labels = Object.keys(this.values[0])
+          if(typeof this.values[0]!=="object"){
+            this.labels = []
+          }else{
+            this.labels = Object.keys(this.values[0])
+            if(this.columns.length>0){
+              this.labels = this.labels.filter((item) => ref.columns.includes(item))
+            }
+          }
           if(this.labels.length>0){
             this.firstLabel = this.labels[0]
           }else{
             this.firstLabel=""
           }
+          if(this.valueColumn!=""){
+            tmp = this.firstLabel
+            this.firstLabel = this.labels.filter((item) => item==ref.valueColumn)
+            if(this.firstLabel.length>0){
+              this.firstLabel=this.firstLabel[0]
+            }else{
+              this.firstLabel=tmp
+            }
+          }
           if(this.default=="__auto__" && this.values.length>0){
             this.select(0) // if __auto__ select the first
           }else if(this.default!="__none__" && this.default!=undefined){ // if a regular default is set, we select it
             this.values.forEach((item,i) => {
-              if(ref.default==item[ref.firstLabel]){
-                this.select(i)
-              }
+
+                if(item && ref.default==(item[ref.firstLabel]||item)){
+                  this.select(i)
+                }
+                if(ref.multiple && Array.isArray(ref.default)){
+                  console.log("is an array default")
+                  if(item && ref.default.includes(item[ref.firstLabel]||item||false)){
+                    this.select(i)
+                  }
+                }
             })
           }else{
             this.recalc()

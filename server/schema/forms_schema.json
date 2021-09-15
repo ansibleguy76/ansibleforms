@@ -302,6 +302,22 @@
 									},
 									"required": ["query","dbConfig"]
 								},
+                {
+									"properties":{
+										"type":{"enum":["query"]},
+										"values": {"not": {}},
+										"regex": {"not": {}},
+										"regexDescription": {"not": {}},
+										"minValue": {"not": {}},
+										"maxValue": {"not": {}},
+										"minLength": {"not": {}},
+										"maxLength": {"not": {}},
+										"query": {"not": {}},
+                    "dbConfig": {"not": {}},
+										"hide": {"not": {}}
+									},
+									"required": ["expression"]
+								},
 								{
 									"properties":{
 										"type":{"enum":["expression"]},
@@ -396,6 +412,11 @@
 									"title": "Javascript expression",
 									"description": "A javascript expression to evaluate, use $(fieldname) to reference another field variable.  Don't forget to add quotes around placeholders if needed."
 								},
+                "ignoreIncomplete": {
+									"type": "boolean",
+									"title": "Ignore incomplete placeholders",
+									"description": "I a javascript expression, ignore undefined values of incomplete placeholders."
+								},
 								"query": {
 									"type": "string",
 									"title": "SQL query",
@@ -403,8 +424,21 @@
 								},
                 "outputObject": {
 									"type": "boolean",
-									"title": "Returns an object instead of string if type is query",
+									"title": "Outputs an object instead of string if type is query",
 									"description": "A query field, can return strings (based on first column) or can return the full record (object)"
+								},
+                "columns": {
+									"type": "array",
+									"title": "The columns to be shown",
+									"description": "A list of column names, in case of multi-column",
+                  "items": {
+										"type": "string"
+									}
+								},
+                "valueColumn": {
+									"type": "string",
+									"title": "Which column hold the value",
+									"description": "When using visualization and placeholder like $(fieldname), which column should we use to select the value."
 								},
 								"dbConfig": {
 									"type": "string",

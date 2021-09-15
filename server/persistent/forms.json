@@ -596,7 +596,7 @@
       "roles":["demo"],
       "description":"This shows all the query options and combinations.",
       "categories":["Demo"],
-      "tileClass":"has-background-success",
+      "tileClass":"has-background-warning",
       "template":"HelloWorld",
       "inventory":"",
       "type":"awx",
@@ -698,6 +698,49 @@
       ]
     },
     {
+      "name":"Expression Queries",
+      "roles":["demo"],
+      "description":"A few samples of the power of expression based queries",
+      "categories":["Demo"],
+      "tileClass":"has-background-warning",
+      "template":"HelloWorld",
+      "inventory":"",
+      "type":"awx",
+      "fields":[
+          {
+            "type":"query",
+            "name":"exp2",
+            "label":"Data from rest api",
+            "default":"__none__",
+            "required":true,
+            "multiple":true,
+            "outputObject":true,
+            "expression":"fn.fnSampleRest2()",
+            "columns":["id","title","completed"],
+            "valueColumn":"title"
+          },
+          {
+            "type":"query",
+            "name":"exp3",
+            "label":"Inline data",
+            "required":true,
+            "multiple":true,
+            "default":"mirko",
+            "expression":"['adrian','mirko','$(exp2)']",
+            "ignoreIncomplete":true
+          },
+          {
+            "type":"query",
+            "name":"exp5",
+            "label":"Read data from file",
+            "required":true,
+            "multiple":true,
+            "default":"__none__",
+            "expression":"fn.fnReadJsonFile('/tmp/sample.json')"
+          }
+      ]
+    },
+    {
       "name":"HelloWorld",
       "roles":["demo"],
       "description":"This will kick off the HelloWorld template.  It does not expect any variables, so that's cool because it should always run :)",
@@ -707,26 +750,6 @@
       "inventory":"",
       "type":"awx",
       "fields":[
-          {
-            "type":"query",
-            "dbConfig":"CONN1",
-            "query":"select name,name name2 from cmdb.city",
-            "name":"city_name",
-            "multiple":false,
-
-            "label":"Select a city",
-            "default":"__auto__",
-            "required":true,
-            "icon":"fa-building"
-          },
-          {
-            "type":"expression",
-            "name":"Testquery",
-            "label":"Testquery",
-            "default":"",
-            "required":true,
-            "expression":"'$(city_name)'"
-          },
           {
             "model":"hello.world",
             "type":"text",

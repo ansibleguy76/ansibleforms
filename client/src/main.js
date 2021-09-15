@@ -50,7 +50,9 @@ axios.interceptors.response.use( (response) => {
 
         })
         .catch((error) => {
-          this.$toast.warning("Unauthorized.  Session timeout.")
+          if(this.$toast){
+            this.$toast.warning("Unauthorized.  Session timeout.")
+          }
           router.push({ name: 'Login' }).catch(err => {});
           Promise.reject(error);
         });
