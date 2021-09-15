@@ -423,6 +423,7 @@
         // console.log("invoking field expressions and queries")
         var ref=this;                                                           // a reference to 'this'
         var watchdog=0;                                                         // a counter how many times we retry to find a value
+        var refreshCounter=0;                                                   // a counter to refresh the json output
         var hasUnevaluatedFields=false;                                         // a flag to check whether a have unevaluated fields
         // does the eval every x seconds ; this.interval
         // this is is sequential, however, with async lookup, this can overlap
@@ -572,11 +573,15 @@
               // continue to stabilize
               if(watchdog>15){  // is it taking too long ?
                 ref.ansibleResult.message=""   // stop and reset
-                ref.$toast.warning("It is taking too long to evaluate all fields")
+                ref.$toast.warning("It is taking too long to evaluate all fields before run")
               }else{
                 // ref.$toast.info("Stabalizing form...")
               }
             }
+          }
+          refreshCounter++;
+          if(refreshCounter%10==0){
+            ref.generateJsonOutput() // refresh json output
           }
         },100); // end interval
       },
