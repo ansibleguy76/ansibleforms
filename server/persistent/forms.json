@@ -709,33 +709,33 @@
       "fields":[
           {
             "type":"query",
-            "name":"exp2",
-            "label":"Data from rest api",
+            "name":"rest",
+            "label":"Data from rest api (properties used : expression,columns,valueColumn)",
             "default":"__none__",
             "required":true,
             "multiple":true,
             "outputObject":true,
             "expression":"fn.fnSampleRest2()",
-            "columns":["id","title","completed"],
+            "columns":["id","completed"],
             "valueColumn":"title"
           },
           {
             "type":"query",
-            "name":"exp3",
-            "label":"Inline data",
+            "name":"inline",
+            "label":"Inline data (properties used : expression,ignoreIncomplete,default=array)",
             "required":true,
             "multiple":true,
-            "default":"mirko",
-            "expression":"['adrian','mirko','$(exp2)']",
+            "default":["ansible","forms"],
+            "expression":"['ansible','forms','$(rest)']",
             "ignoreIncomplete":true
           },
           {
             "type":"query",
-            "name":"exp5",
-            "label":"Read data from file",
+            "name":"file",
+            "label":"Read data from file (properties used : default=__all__)",
             "required":true,
             "multiple":true,
-            "default":"__none__",
+            "default":"__all__",
             "expression":"fn.fnReadJsonFile('/tmp/sample.json')"
           }
       ]

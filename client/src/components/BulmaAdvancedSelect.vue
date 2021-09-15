@@ -74,7 +74,7 @@
       outputObject:{type:Boolean},
       required:{type:Boolean},
       name:{type:String,required:true},
-      default:{type:String},
+      default:{type:[String,Array]},
       placeholder:{type:String},
       status:{type:String},
       sizeClass:{type:String},
@@ -87,7 +87,7 @@
         isActive:false,
         checkAll:false,
         labels:[],
-        firstLabel:"",
+        valueLabel:"",
         preview:"",
         focus:"",
         isLoading:true
@@ -137,7 +137,7 @@
       recalc(){
         var ref=this
         var result = this.values.filter((v,i) => this.selected[i]) // normal, return array of objects
-        var flattenedresult = result.map((item,i) => ((item)?item[ref.firstLabel] || item:item))
+        var flattenedresult = result.map((item,i) => ((item)?item[ref.valueLabel] || item:undefined))
 
         if(this.multiple){ // multiple and outputObject, return simple array
           if(!this.outputObject){
@@ -165,9 +165,9 @@
         var first = result.slice(0,3)
         if(result.length>0){
           if(result.length>3){
-            this.preview = first.map(i => {return ((i)?i[ref.firstLabel]||i:i)}).join(', ') + ", ... ("+result.length+" items selected)"
+            this.preview = first.map(i => {return ((i)?i[ref.valueLabel]||i:"undefined")}).join(', ') + ", ... ("+result.length+" items selected)"
           }else{
-            this.preview = first.map(i => {return ((i)?i[ref.firstLabel]||i:i)}).join(', ')
+            this.preview = first.map(i => {return ((i)?i[ref.valueLabel]||i:"undefined")}).join(', ')
           }
         }else{
           this.preview = ""
@@ -193,42 +193,40 @@
       },
       getLabels(){
         var ref=this
-        var tmp
+        var valueLabels=[]
         this.preview=""
         if(this.values.length>0){
           if(typeof this.values[0]!=="object"){
             this.labels = []
           }else{
             this.labels = Object.keys(this.values[0])
-            if(this.columns.length>0){
-              this.labels = this.labels.filter((item) => ref.columns.includes(item))
-            }
+            valueLabels = this.labels.filter((item) => item==ref.valueColumn)
           }
-          if(this.labels.length>0){
-            this.firstLabel = this.labels[0]
+          if(this.labels.length>0){  // get first label for value
+            this.valueLabel = this.labels[0]
           }else{
-            this.firstLabel=""
+            this.valueLabel=""
           }
-          if(this.valueColumn!=""){
-            tmp = this.firstLabel
-            this.firstLabel = this.labels.filter((item) => item==ref.valueColumn)
-            if(this.firstLabel.length>0){
-              this.firstLabel=this.firstLabel[0]
-            }else{
-              this.firstLabel=tmp
-            }
+          if(valueLabels.length>0){ // if we have a specific value column
+              this.valueLabel=valueLabels[0]  // override
+          }
+          if(this.columns.length>0){ // limit labels to provided columnslist
+            this.labels = this.labels.filter((item) => ref.columns.includes(item))
           }
           if(this.default=="__auto__" && this.values.length>0){
             this.select(0) // if __auto__ select the first
+          }else if(this.default=="__all__"){ // if a regular default is set, we select it
+            this.values.forEach((item,i) => {
+              this.select(i)
+            })
           }else if(this.default!="__none__" && this.default!=undefined){ // if a regular default is set, we select it
             this.values.forEach((item,i) => {
 
-                if(item && ref.default==(item[ref.firstLabel]||item)){
+                if(item && ref.default==(item[ref.valueLabel]||item)){
                   this.select(i)
                 }
                 if(ref.multiple && Array.isArray(ref.default)){
-                  console.log("is an array default")
-                  if(item && ref.default.includes(item[ref.firstLabel]||item||false)){
+                  if(item && ref.default.includes(item[ref.valueLabel]||item||false)){
                     this.select(i)
                   }
                 }

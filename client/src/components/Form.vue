@@ -455,14 +455,14 @@
                             Vue.set(ref.dynamicFieldStatus,item.name,undefined);
                           }
                           if(restresult.status=="success"){
-                            console.log("expression for "+item.name+" triggered : result found -> "+ restresult.data.output);
+                            // console.log("expression for "+item.name+" triggered : result found -> "+ restresult.data.output);
                             if(item.type=="expression")
                               Vue.set(ref.form, item.name, restresult.data.output);
                             if(item.type=="query")
                               Vue.set(ref.queryresults, item.name, [].concat(restresult.data.output||[]));
                             if(placeholderCheck.hasPlaceholders){                 // if placeholders were found we set this a variable dynamic field.
                               // set flag as viable variable query
-                              console.log("Expression found with variables")
+                              // console.log("Expression found with variables")
                               Vue.set(ref.dynamicFieldStatus,item.name,"variable");
                             }else{
                               // set flag as viable fixed query
