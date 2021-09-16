@@ -350,9 +350,8 @@
         var keys = undefined
         var targetflag=undefined
         var hasPlaceholders = false;
-        var newValue = item.expression                                                     // make a copy of our item
+        var newValue = item.expression || item.query                                                    // make a copy of our item
         matches=(item.expression || item.query).matchAll(testRegex);
-
         for(match of matches){
             foundmatch = match[0];                                              // found $(xxx)
             foundfield = match[1];                                              // found xxx
@@ -452,7 +451,7 @@
                         .then((result)=>{
                           var restresult = result.data
                           if(restresult.status=="error"){
-                            console.log(restresult.data.error)
+                            // console.log(restresult.data.error)
                             Vue.set(ref.dynamicFieldStatus,item.name,undefined);
                           }
                           if(restresult.status=="success"){
@@ -486,7 +485,7 @@
                     Vue.set(ref.dynamicFieldStatus,item.name,undefined);
                   }
                 } else if(item.type=="query" && item.query && flag==undefined){
-                  // console.log("eval query : " + item.name)
+                   // console.log("eval query : " + item.name)
                   // set flag running
                   if(item.required){
                     hasUnevaluatedFields=true
@@ -495,18 +494,18 @@
                   Vue.set(ref.dynamicFieldStatus,item.name,"running");
                   placeholderCheck = ref.replacePlaceholders(item)     // check and replace placeholders
                   if(placeholderCheck.value!=undefined){                       // expression is clean ?
-                    // console.log(newquery);
+                     // console.log(placeholderCheck);
                     // execute query
 
                     axios.post("/api/v1/query",{query:placeholderCheck.value,config:item.dbConfig},TokenStorage.getAuthentication())
                       .then((result)=>{
                         var restresult = result.data
                         if(restresult.status=="error"){
-                          // console.log(restresult.data.error)
+                           console.log(restresult.data.error)
                           Vue.set(ref.dynamicFieldStatus,item.name,undefined);
                         }
                         if(restresult.status=="success"){
-                          // console.log("query "+item.name+" triggered : items found -> "+ restresult.data.output.length);
+                           console.log("query "+item.name+" triggered : items found -> "+ restresult.data.output.length);
                           Vue.set(ref.queryresults, item.name, restresult.data.output);
                           if(placeholderCheck.hasPlaceholders){
                             // set flag as viable variable query

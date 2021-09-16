@@ -741,6 +741,50 @@
       ]
     },
     {
+      "name":"Insight 2020",
+      "roles":["demo"],
+      "description":"An example how to start AWX with external data",
+      "categories":["Demo"],
+      "tileClass":"has-background-warning",
+      "template":"HelloWorld",
+      "inventory":"",
+      "type":"awx",
+      "fields":[
+          {
+            "type":"query",
+            "dbConfig":"CONN1",
+            "query":"select name from cmdb.city",
+            "name":"city_name",
+            "label":"Select a city",
+            "default":"__auto__",
+            "required":true,
+            "model":"cmdb.city",
+            "group":"Data coming from MySql CMDB"
+          },
+          {
+            "type":"query",
+            "dbConfig":"CONN1",
+            "query":"SELECT datacenter.name datacenter,city.name city FROM cmdb.datacenter,cmdb.city WHERE datacenter.city_id=city.id AND city.name='$(city_name)'",
+            "name":"datacenter_name",
+            "label":"Select a datacenter",
+            "default":"__auto__",
+            "required":true,
+            "model":"cmdb.datacenter",
+            "group":"Data coming from MySql CMDB"
+          },
+          {
+            "type":"query",
+            "name":"file",
+            "label":"Read data from file (properties used : default=__all__)",
+            "required":true,
+            "multiple":true,
+            "default":"__all__",
+            "expression":"fn.fnReadJsonFile('/tmp/sample.json')",
+            "group":"Data coming from external JSON file"
+          }
+      ]
+    },
+    {
       "name":"HelloWorld",
       "roles":["demo"],
       "description":"This will kick off the HelloWorld template.  It does not expect any variables, so that's cool because it should always run :)",
