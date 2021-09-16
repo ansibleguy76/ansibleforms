@@ -753,19 +753,24 @@
           {
             "type":"query",
             "dbConfig":"CONN1",
-            "query":"select name from cmdb.city",
-            "name":"city_name",
+            "query":"select name,id,short from cmdb.city",
+            "name":"city",
             "label":"Select a city",
             "default":"__auto__",
             "required":true,
             "model":"cmdb.city",
+            "valueColumn":"name",
+            "previewColumn":"short",
+            "columns":["name","short"],
+            "outputObject":true,
+            "multiple":true,
             "group":"Data coming from MySql CMDB"
           },
           {
             "type":"query",
             "dbConfig":"CONN1",
-            "query":"SELECT datacenter.name datacenter,city.name city FROM cmdb.datacenter,cmdb.city WHERE datacenter.city_id=city.id AND city.name='$(city_name)'",
-            "name":"datacenter_name",
+            "query":"SELECT datacenter.name datacenter FROM cmdb.datacenter WHERE datacenter.city_id=$(city.id)",
+            "name":"datacenter",
             "label":"Select a datacenter",
             "default":"__auto__",
             "required":true,
@@ -780,7 +785,7 @@
             "multiple":true,
             "default":"__all__",
             "expression":"fn.fnReadJsonFile('/tmp/sample.json')",
-            "group":"Data coming from external JSON file"
+            "group":"Data coming from external JSON"
           }
       ]
     },

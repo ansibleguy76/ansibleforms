@@ -71,7 +71,6 @@
       icon:{type:String,required:false},
       hasError:{type:Boolean},
       multiple:{type:Boolean},
-      outputObject:{type:Boolean},
       required:{type:Boolean},
       name:{type:String,required:true},
       default:{type:[String,Array]},
@@ -79,7 +78,9 @@
       status:{type:String},
       sizeClass:{type:String},
       columns:{type:Array},
-      valueColumn:{type:String}
+      previewColumn:{type:String},
+      valueColumn:{type:String},
+      placeholderColumn:{stype:String}
     },
     data () {
       return {
@@ -88,6 +89,7 @@
         checkAll:false,
         labels:[],
         valueLabel:"",
+        previewLabel:"",
         preview:"",
         focus:"",
         isLoading:true
@@ -137,37 +139,24 @@
       recalc(){
         var ref=this
         var result = this.values.filter((v,i) => this.selected[i]) // normal, return array of objects
-        var flattenedresult = result.map((item,i) => ((item)?item[ref.valueLabel] || item:undefined))
 
         if(this.multiple){ // multiple and outputObject, return simple array
-          if(!this.outputObject){
-            this.$emit('input', flattenedresult)
-          }else{
             this.$emit('input', result)
-          }
         }else{
-          if(!this.outputObject){
-            if(flattenedresult.length>0)
-              this.$emit('input', flattenedresult[0])
-            else {
-              this.$emit('input', undefined)
-            }
-          }else{
             if(result.length>0)
               this.$emit('input', result[0])
             else{
               this.$emit('input', undefined)
             }
-          }
         }
 
         this.$emit('ischanged')
         var first = result.slice(0,3)
         if(result.length>0){
           if(result.length>3){
-            this.preview = first.map(i => {return ((i)?i[ref.valueLabel]||i:"undefined")}).join(', ') + ", ... ("+result.length+" items selected)"
+            this.preview = first.map(i => {return ((i)?i[ref.previewLabel]||i:"undefined")}).join(', ') + ", ... ("+result.length+" items selected)"
           }else{
-            this.preview = first.map(i => {return ((i)?i[ref.valueLabel]||i:"undefined")}).join(', ')
+            this.preview = first.map(i => {return ((i)?i[ref.previewLabel]||i:"undefined")}).join(', ')
           }
         }else{
           this.preview = ""
@@ -193,25 +182,36 @@
       },
       getLabels(){
         var ref=this
+        var previewLabels=[]
         var valueLabels=[]
         this.preview=""
+        this.previewLabel=""
+        this.valueLabel=""
         if(this.values.length>0){
           if(typeof this.values[0]!=="object"){
             this.labels = []
           }else{
+            // get all labels
             this.labels = Object.keys(this.values[0])
+            if(this.labels.length>0)
+              ref.valueLabel=this.labels[0]
+            // filter preview label
+            previewLabels = this.labels.filter((item) => item==ref.previewColumn)
             valueLabels = this.labels.filter((item) => item==ref.valueColumn)
           }
-          if(this.labels.length>0){  // get first label for value
-            this.valueLabel = this.labels[0]
-          }else{
-            this.valueLabel=""
-          }
-          if(valueLabels.length>0){ // if we have a specific value column
-              this.valueLabel=valueLabels[0]  // override
-          }
+          // reduct labels to the ones we want to show
           if(this.columns.length>0){ // limit labels to provided columnslist
             this.labels = this.labels.filter((item) => ref.columns.includes(item))
+          }
+          // if we found a preview label, use it
+          if(previewLabels.length>0){ // if we have a specific value column
+              this.previewLabel=previewLabels[0]  // set it
+          }else if(this.labels.length>0){  // if we didn't find a preview label, use the first visible label
+            this.previewLabel = this.labels[0]
+          }
+          // if we found a value label, use it
+          if(valueLabels.length>0){ // if we have a specific value column
+              this.valueLabel=valueLabels[0]  // set it
           }
           if(this.default=="__auto__" && this.values.length>0){
             this.select(0) // if __auto__ select the first

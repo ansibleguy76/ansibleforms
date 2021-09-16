@@ -28,7 +28,6 @@
                       v-if="field.type=='query'"
                       :default="field.default"
                       :required="field.required||false"
-                      :outputObject="field.outputObject||false"
                       :multiple="field.multiple||false"
                       :name="field.name"
                       :placeholder="field.placeholder||'Select...'"
@@ -38,7 +37,9 @@
                       v-model="$v.form[field.name].$model"
                       :icon="field.icon"
                       :columns="field.columns||[]"
+                      :previewColumn="field.previewColumn||''"
                       :valueColumn="field.valueColumn||''"
+                      :placeholderColumn="field.placeholderColumn"
                       @ischanged="evaluateDynamicFields(field.name)"
                       >
                     </BulmaAdvancedSelect>
@@ -342,9 +343,11 @@
         var ref = this
         var testRegex = /\$\(([^)]+)\)/g;                                       // a regex to find field placeholders $(xxx)
         var retestRegex = /\$\(([^)]+)\)/g;                                     // the same regex, to retest after, because a regex can only be used once
+        var columnRegex = /(.+)\.(.+)/g;                                        // detect a "." in the field
         var match = undefined
         var matches =undefined
         var foundmatch=false
+        var column=""
         var foundfield=false
         var fieldvalue=""
         var keys = undefined
@@ -355,41 +358,23 @@
         for(match of matches){
             foundmatch = match[0];                                              // found $(xxx)
             foundfield = match[1];                                              // found xxx
+            var tmpArr=columnRegex.exec(foundfield)                             // found aaa.bbb
+            if(tmpArr && tmpArr.length>0){
+              foundfield = tmpArr[1]                                            // aaa
+              column=tmpArr[2]                                                  // bbb
+            }else{
+              column=ref.fieldOptions[foundfield].placeholderColumn             // get placeholder column
+            }
             fieldvalue = ""
             targetflag = undefined
             // mark the field as a dependent field
             if(foundfield in ref.form){                                         // does field xxx exist in our form ?
-              fieldvalue = ref.form[foundfield];                                // get value of xxx
-              if(fieldvalue){
-                if(Array.isArray(fieldvalue)){   // array ?
-                  if(fieldvalue.length>0){       // not emtpy
-                    fieldvalue = fieldvalue[0]   // start by taking first item
-                    if(typeof fieldvalue==="object"){   // array of object ?
-                      keys = Object.keys(fieldvalue)
-                      if(keys.length>0){
-                        fieldvalue=fieldvalue[ref.fieldOptions[foundfield].valueColumn] || fieldvalue[keys[0]]  // first item of value column (or first column)
-                      } else {
-                        fieldvalue=undefined  // empty object
-                      }
-                    }
-                  } else {
-                    fieldvalue=undefined
-                  }
-                }else if(typeof fieldvalue==="object"){   // object ?
-                  keys = Object.keys(fieldvalue)
-                  if(keys.length>0){
-                    fieldvalue=fieldvalue[ref.fieldOptions[foundfield].valueColumn] || fieldvalue[keys[0]]  // value column (or first column)
-                  } else {
-                    fieldvalue=undefined
-                  }
-                }
-              }
+              fieldvalue = ref.getFieldValue(ref.form[foundfield],column,false);// get value of xxx
               if(foundfield in ref.dynamicFieldStatus){
                 targetflag = ref.dynamicFieldStatus[foundfield];                  // and what is the currect status of xxx, in case it's also dyanmic ?
               }else{
                 targetflag = "fixed"
               }
-
             }
 
             // if the variable is viable and not being changed, replace it
@@ -459,7 +444,7 @@
                             if(item.type=="expression")
                               Vue.set(ref.form, item.name, restresult.data.output);
                             if(item.type=="query")
-                              Vue.set(ref.queryresults, item.name, [].concat(restresult.data.output||[]));
+                              Vue.set(ref.queryresults, item.name, [].concat(restresult.data.output??[]));
                             if(placeholderCheck.hasPlaceholders){                 // if placeholders were found we set this a variable dynamic field.
                               // set flag as viable variable query
                               // console.log("Expression found with variables")
@@ -505,7 +490,7 @@
                           Vue.set(ref.dynamicFieldStatus,item.name,undefined);
                         }
                         if(restresult.status=="success"){
-                           console.log("query "+item.name+" triggered : items found -> "+ restresult.data.output.length);
+                           //console.log("query "+item.name+" triggered : items found -> "+ restresult.data.output.length);
                           Vue.set(ref.queryresults, item.name, restresult.data.output);
                           if(placeholderCheck.hasPlaceholders){
                             // set flag as viable variable query
@@ -648,15 +633,48 @@
             }
           })
       },
+      getFieldValue(field,column,keepArray){
+        var keys=undefined
+        var key=undefined
+        var wasArray=false
+        if(field){
+          if(Array.isArray(field)){
+            wasArray=true
+          }else{
+            field = [].concat(field ?? []); // force to array
+          }
+          if(field.length>0){                    // not emtpy
+            if(typeof field[0]==="object"){      // array of objects, analyse first object
+              keys = Object.keys(field[0])    // get properties
+              if(keys.length>0){
+                key = (keys.includes(column))?column:keys[0] // get column, fall back to first
+                field=field.map((item,i) => ((item)?(item[key]??item):undefined))  // flatten array
+              }else{
+                field=(!keepArray)?undefined:field // force undefined if we don't want arrays
+              }
+            } // no else, array is already flattened
+            field=(!wasArray || !keepArray)?field[0]:field // if it wasn't an array, we take first again
+          }else{
+            field=(!keepArray)?undefined:field // force undefined if we don't want arrays
+          }
+        }
+
+        return field
+      },
       generateJsonOutput(){
         var ref=this
         this.formdata={}
         this.currentForm.fields.forEach((item, i) => {
           if(this.visibility[item.name]){
             var fieldmodel = item.model
+            var outputObject = item.outputObject || false
+            var outputValue = this.form[item.name]
+            // if no model is given, we assign to the root
+            if(!outputObject){  // do we need to flatten output ?
+              outputValue=this.getFieldValue(outputValue,item.valueColumn || "",true)
+            }
             if(fieldmodel=="" || fieldmodel===undefined){
-              // if no model is given, we assign to the root
-              this.formdata[item.name]=this.form[item.name]
+              this.formdata[item.name]=outputValue
             }else{
               // convert fieldmodel for actual object
               // svm.lif.name => svm["lif"].name = formvalue
@@ -665,7 +683,7 @@
                 // if last
                 if (level === (arr.length - 1)){
                     // the last piece we assign the value to
-                    master[obj]=ref.form[item.name]
+                    master[obj]=outputValue
                 }else{
                     // initialize first time to object
                     if(master[obj]===undefined){
@@ -798,6 +816,7 @@
         if(["expression","query"].includes(item.type)){
           Vue.set(ref.fieldOptions,item.name,{})
           Vue.set(ref.fieldOptions[item.name],"valueColumn",item.valueColumn||"")
+          Vue.set(ref.fieldOptions[item.name],"placeholderColumn",item.placeholderColumn||"")
           Vue.set(ref.form,item.name,undefined)
         }else{
           Vue.set(ref.form,item.name,item.default)

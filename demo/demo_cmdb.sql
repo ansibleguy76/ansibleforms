@@ -17,14 +17,15 @@ DROP TABLE IF EXISTS `city`;
 CREATE TABLE `city` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `short` varchar(3) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_cmdb_city_natural_key` (`name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
 
 /*Data for the table `city` */
 
-insert  into `city`(`id`,`name`) values (1,'Amsterdam');
-insert  into `city`(`id`,`name`) values (2,'Brussels');
+insert  into `city`(`id`,`name`,`short`) values (1,'Amsterdam','AMS');
+insert  into `city`(`id`,`name`,`short`) values (2,'Brussels','BRU');
 
 /*Table structure for table `datacenter` */
 
@@ -34,6 +35,7 @@ CREATE TABLE `datacenter` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `city_id` int(11) NOT NULL,
   `name` varchar(255) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
+  `short` varchar(3) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_cmdb_datacenter_natural_key` (`city_id`,`name`),
   CONSTRAINT `fk_cmdb_datacenter_city_id` FOREIGN KEY (`city_id`) REFERENCES `city` (`id`) ON DELETE CASCADE
@@ -41,7 +43,7 @@ CREATE TABLE `datacenter` (
 
 /*Data for the table `datacenter` */
 
-insert  into `datacenter`(`id`,`city_id`,`name`) values (1,1,'AM North'),(2,1,'AM South'),(3,2,'BRU West'),(4,2,'BRU East');
+insert  into `datacenter`(`id`,`city_id`,`name`,`short`) values (1,1,'AMS North','AMN'),(2,1,'AMS South'),(3,2,'BRU West'),(4,2,'BRU East');
 
 /*Table structure for table `resource` */
 

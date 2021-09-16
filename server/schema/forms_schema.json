@@ -438,7 +438,17 @@
                 "valueColumn": {
 									"type": "string",
 									"title": "Which column hold the value",
-									"description": "When using visualization and placeholder like $(fieldname), which column should we use to select the value."
+									"description": "Which column should we use to select the output-value."
+								},
+                "previewColumn": {
+									"type": "string",
+									"title": "Which column we must use to preview in the dropdown box",
+									"description": "When using visualization, which column should we use to select the value."
+								},
+                "placeholderColumn": {
+									"type": "string",
+									"title": "Which column we must use to fill placeholders",
+									"description": "When using placeholders lik $(fieldname), which column should we use to select the value for the placeholder."
 								},
 								"dbConfig": {
 									"type": "string",
