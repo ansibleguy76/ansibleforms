@@ -110,8 +110,8 @@ exports.fnRestBasic = async function(action,url,body,env_credential,jqe,sort,map
       data = await axios.post(url,body,axiosConfig);
     }else if(action=="delete"){
       data = await axios.post(url,axiosConfig);
-    }else if(action=="patch"){
-      data = await axios.patch(url,body,axiosConfig);
+    }else if(action=="put"){
+      data = await axios.put(url,body,axiosConfig);
     }
     result=data.data
     if(jqe){

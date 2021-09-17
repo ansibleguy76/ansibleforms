@@ -805,7 +805,7 @@
             "default":"__auto__",
             "required":true,
             "model":"ontap_volume.aggregate",
-            "expression":"fn.fnRestBasic('get','https://$(cluster.fqdn)/api/storage/aggregates?state=online&fields=space&order_by=space.block_storage.available%20desc','','ONTAP','[(.records[] | {name}) + {available:.records[].space.block_storage.available}]','(a, b) => a.available < b.available && 1 || -1','x => {var tmp={};tmp.name=x.name;tmp.available=Math.round(x.available/1024/1024)+\" GB\";return tmp}')",
+            "expression":"fn.fnRestBasic('get','https://$(cluster.fqdn)/api/storage/aggregates?state=online&fields=space&order_by=space.block_storage.available%20desc','','ONTAP','[(.records[] | {name}) + {available:.records[].space.block_storage.available}]','(a, b) => a.available < b.available && 1 || -1','x => {var tmp={};tmp.name=x.name;tmp.available=Math.round(x.available/1024/1024/1024)+\" GB\";return tmp}')",
             "group":"Technical data"
           },
           {
