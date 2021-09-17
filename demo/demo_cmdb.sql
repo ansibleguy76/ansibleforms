@@ -43,7 +43,7 @@ CREATE TABLE `datacenter` (
 
 /*Data for the table `datacenter` */
 
-insert  into `datacenter`(`id`,`city_id`,`name`,`short`) values (1,1,'AMS North','AMN'),(2,1,'AMS South'),(3,2,'BRU West'),(4,2,'BRU East');
+insert  into `datacenter`(`id`,`city_id`,`name`,`short`) values (1,1,'AMS North','AMS'),(2,1,'AMS South','AMS'),(3,2,'BRU West','AMS'),(4,2,'BRU East','AMS');
 
 /*Table structure for table `resource` */
 
