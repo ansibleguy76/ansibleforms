@@ -56,7 +56,8 @@ The webapplication is based on a
 # remove nodejs if needed
 yum remove -y nodejs
 # get repro
-curl -fsSL https://rpm.nodesource.com/setup_16.x | bash -
+yum install -y gcc-c++ make
+curl -sL https://rpm.nodesource.com/setup_14.x | sudo -E bash -
 
 # install nodejs
 yum install -y nodejs
