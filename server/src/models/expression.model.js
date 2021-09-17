@@ -11,7 +11,12 @@ var Expression=function(){
 };
 
 async function doAsync (expr) {
-  return await eval(expr)
+  try{
+    return await eval(expr)
+  }catch(e){
+    return undefined
+  }
+
 }
 
 // execute expression (cannot be a promise)
@@ -19,7 +24,9 @@ Expression.execute = function (expr, result) {
   logger.debug(`Expression: ${expr}`)
   var expression = ""
   try{
-    doAsync(expr).then(function(response){result(null,response)})
+    doAsync(expr).then(function(response){
+      result(null,response)
+    })
     // var r = eval(expression)
     // result(null,r)
   }catch(err){

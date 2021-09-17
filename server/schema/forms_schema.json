@@ -197,8 +197,7 @@
 							"required": [
 								"type",
 								"name",
-								"label",
-								"default"
+								"label"
 							],
 							"dependencies" : {
 							  "regexDescription" : ["regex"]
@@ -367,6 +366,11 @@
 									"type": ["string","boolean","array","integer"],
 									"title": "Default value",
 									"description": "A default value for the formfield"
+								},
+                "noOutput": {
+									"type": ["boolean"],
+									"title": "Do not output",
+									"description": "Prevent field from being outputted"
 								},
 								"required": {
 									"type": "boolean",

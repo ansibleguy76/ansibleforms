@@ -714,10 +714,12 @@
             "default":"__none__",
             "required":true,
             "multiple":true,
-            "outputObject":true,
+            "outputObject":false,
             "expression":"fn.fnSampleRest2()",
-            "columns":["id","completed"],
-            "valueColumn":"title"
+            "columns":["id","title","completed"],
+            "valueColumn":"id",
+            "previewColumn":"title",
+            "placeholderColumn":"title"
           },
           {
             "type":"query",
@@ -725,8 +727,8 @@
             "label":"Inline data (properties used : expression,ignoreIncomplete,default=array)",
             "required":true,
             "multiple":true,
-            "default":["ansible","forms"],
-            "expression":"['ansible','forms','$(rest)']",
+            "default":"__all__",
+            "expression":"['ansible','forms','$(rest.title)']",
             "ignoreIncomplete":true
           },
           {
@@ -741,7 +743,7 @@
       ]
     },
     {
-      "name":"Insight 2020",
+      "name":"Insight 2021",
       "roles":["demo"],
       "description":"An example how to start AWX with external data",
       "categories":["Demo"],
@@ -758,13 +760,11 @@
             "label":"Select a city",
             "default":"__auto__",
             "required":true,
-            "model":"cmdb.city",
             "valueColumn":"name",
             "previewColumn":"short",
             "columns":["name","short"],
-            "outputObject":true,
-            "multiple":true,
-            "group":"Data coming from MySql CMDB"
+            "noOutput":true,
+            "group":"Functional data"
           },
           {
             "type":"query",
@@ -774,18 +774,78 @@
             "label":"Select a datacenter",
             "default":"__auto__",
             "required":true,
-            "model":"cmdb.datacenter",
-            "group":"Data coming from MySql CMDB"
+            "noOutput":true,
+            "group":"Functional data"
           },
           {
             "type":"query",
-            "name":"file",
-            "label":"Read data from file (properties used : default=__all__)",
+            "name":"cluster",
+            "label":"Read cluster mapping from file",
             "required":true,
-            "multiple":true,
-            "default":"__all__",
-            "expression":"fn.fnReadJsonFile('/tmp/sample.json')",
-            "group":"Data coming from external JSON"
+            "model":"ontap_cluster_name",
+            "default":"__auto__",
+            "expression":"fn.fnReadJsonFile('/tmp/mapping.json','.\"$(datacenter)\"')",
+            "valueColumn":"name",
+            "group":"Mapping"
+          },
+          {
+            "type":"query",
+            "name":"svm",
+            "label":"Svm's from rest ontap",
+            "default":"__auto__",
+            "required":true,
+            "model":"ontap_svm_name",
+            "expression":"fn.fnRestBasic('get','https://$(cluster.fqdn)/api/svm/svms?subtype=default','','ONTAP','[.records[].name]')",
+            "group":"Technical data"
+          },
+          {
+            "type":"query",
+            "name":"aggregate",
+            "label":"Aggregates from rest ontap",
+            "default":"__auto__",
+            "required":true,
+            "model":"ontap_volume.aggregate",
+            "expression":"fn.fnRestBasic('get','https://$(cluster.fqdn)/api/storage/aggregates?state=online&fields=space&order_by=space.block_storage.available%20desc','','ONTAP','[(.records[] | {name}) + {available:.records[].space.block_storage.available}]','(a, b) => a.available < b.available && 1 || -1','x => {var tmp={};tmp.name=x.name;tmp.available=Math.round(x.available/1024/1024)+\" GB\";return tmp}')",
+            "group":"Technical data"
+          },
+          {
+            "type":"expression",
+            "name":"volume_list",
+            "label":"Volume from rest ontap",
+            "default":"__auto__",
+            "required":true,
+            "expression":"fn.fnRestBasic('get','https://$(cluster.fqdn)/api/storage/volumes?state=online&svm.name=$(svm)','','ONTAP','[.records[].name]','','')",
+            "group":"Under the hood",
+            "noOutput":true
+          },
+          {
+            "type":"query",
+            "name":"volume_name",
+            "label":"Volumename from expression",
+            "default":"__auto__",
+            "required":true,
+            "model":"ontap_volume.name",
+            "expression":"fn.fnGetNumberedName($(volume_list),'vol#','vol1',false)",
+            "group":"Under the hood"
+          },
+          {
+            "type":"number",
+            "name":"size_gb",
+            "label":"Size in GB",
+            "required":true,
+            "default":1,
+            "minValue":1,
+            "maxValue":5,
+            "group":"Technical data",
+            "noOutput":true
+          },
+          {
+            "type":"expression",
+            "name":"size_mb",
+            "model":"ontap_volume.size_mb",
+            "label":"Size in MB",
+            "expression":"$(size_gb)*1024",
+            "group":"Under the hood"
           }
       ]
     },

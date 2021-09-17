@@ -282,6 +282,7 @@
         var finishedFlag=false
         var foundmatch,foundfield
         var testRegex = /\$\(([^)]+)\)/g;
+        var columnRegex = /(.+)\.(.+)/g;                                        // detect a "." in the field
         var fields=[]
         // create a list of the fields
         this.currentForm.fields.forEach((item,i) => {
@@ -294,6 +295,10 @@
             for(var match of matches){
               foundmatch = match[0];                                              // found $(xxx)
               foundfield = match[1];                                              // found xxx
+              var tmpArr=columnRegex.exec(foundfield)                             // found aaa.bbb
+              if(tmpArr && tmpArr.length>0){
+                foundfield = tmpArr[1]                                            // aaa
+              }
         /*       console.log("found " + foundfield + " in " + item.name) */
               if(fields.includes(foundfield)){                         // does field xxx exist in our form ?
         /*       	console.log(foundfield + " is a real field") */
@@ -363,13 +368,21 @@
               foundfield = tmpArr[1]                                            // aaa
               column=tmpArr[2]                                                  // bbb
             }else{
-              column=ref.fieldOptions[foundfield].placeholderColumn             // get placeholder column
+              if(foundfield in ref.fieldOptions){
+                column=ref.fieldOptions[foundfield].placeholderColumn||""        // get placeholder column
+              }
+
             }
             fieldvalue = ""
             targetflag = undefined
             // mark the field as a dependent field
-            if(foundfield in ref.form){                                         // does field xxx exist in our form ?
-              fieldvalue = ref.getFieldValue(ref.form[foundfield],column,false);// get value of xxx
+            if(foundfield in ref.form){      // does field xxx exist in our form ?
+              if(ref.fieldOptions[foundfield] && ref.fieldOptions[foundfield].type=="expression"){
+                fieldvalue=JSON.stringify(ref.form[foundfield])
+              }else{
+                fieldvalue = ref.getFieldValue(ref.form[foundfield],column,false);// get value of xxx
+              }
+
               if(foundfield in ref.dynamicFieldStatus){
                 targetflag = ref.dynamicFieldStatus[foundfield];                  // and what is the currect status of xxx, in case it's also dyanmic ?
               }else{
@@ -440,7 +453,7 @@
                             Vue.set(ref.dynamicFieldStatus,item.name,undefined);
                           }
                           if(restresult.status=="success"){
-                            // console.log("expression for "+item.name+" triggered : result found -> "+ restresult.data.output);
+                            //console.log("expression for "+item.name+" triggered : result found -> "+ JSON.stringify(restresult.data.output));
                             if(item.type=="expression")
                               Vue.set(ref.form, item.name, restresult.data.output);
                             if(item.type=="query")
@@ -486,7 +499,7 @@
                       .then((result)=>{
                         var restresult = result.data
                         if(restresult.status=="error"){
-                           console.log(restresult.data.error)
+                           //console.log(restresult.data.error)
                           Vue.set(ref.dynamicFieldStatus,item.name,undefined);
                         }
                         if(restresult.status=="success"){
@@ -658,16 +671,15 @@
             field=(!keepArray)?undefined:field // force undefined if we don't want arrays
           }
         }
-
         return field
       },
       generateJsonOutput(){
         var ref=this
         this.formdata={}
         this.currentForm.fields.forEach((item, i) => {
-          if(this.visibility[item.name]){
+          if(this.visibility[item.name] && !item.noOutput){
             var fieldmodel = item.model
-            var outputObject = item.outputObject || false
+            var outputObject = item.outputObject || item.type=="expression" || false
             var outputValue = this.form[item.name]
             // if no model is given, we assign to the root
             if(!outputObject){  // do we need to flatten output ?
@@ -814,12 +826,15 @@
       // initialize defaults
       this.currentForm.fields.forEach((item, i) => {
         if(["expression","query"].includes(item.type)){
-          Vue.set(ref.fieldOptions,item.name,{})
+          Vue.set(ref.fieldOptions,item.name,{})                                // storing some easy to find options
           Vue.set(ref.fieldOptions[item.name],"valueColumn",item.valueColumn||"")
           Vue.set(ref.fieldOptions[item.name],"placeholderColumn",item.placeholderColumn||"")
+          Vue.set(ref.fieldOptions[item.name],"type",item.type)
           Vue.set(ref.form,item.name,undefined)
+        }else if(["checkbox"].includes(item.type)){
+          Vue.set(ref.form,item.name,item.default||false)
         }else{
-          Vue.set(ref.form,item.name,item.default)
+          Vue.set(ref.form,item.name,item.default||"")
         }
         Vue.set(ref.visibility,item.name,true)
       });

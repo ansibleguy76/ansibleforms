@@ -25,6 +25,7 @@
     "passport-jwt": "^4.0.0",
     "mysql": "^2.18.1",
     "ajv": "^6.12.6",
+    "bluebird": "^3.7.2",
     "node-jq": "^2.0.0"
   },
   "devDependencies": {

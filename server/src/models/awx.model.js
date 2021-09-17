@@ -1,11 +1,15 @@
 'use strict';
 // require axios for rest
+const https=require('https')
 const axios = require('axios');
 const cheerio = require('cheerio');
 // require awx config (token and host)
 var awxConfig = require('./../../config/awx.config');
 const logger=require("../lib/logger");
-
+const httpsAgent = new https.Agent({
+  rejectUnauthorized: false,
+})
+axios.defaults.options = httpsAgent
 // prepare axiosConfig
 const axiosConfig = {
   headers: {

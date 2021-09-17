@@ -139,7 +139,6 @@
       recalc(){
         var ref=this
         var result = this.values.filter((v,i) => this.selected[i]) // normal, return array of objects
-
         if(this.multiple){ // multiple and outputObject, return simple array
             this.$emit('input', result)
         }else{
