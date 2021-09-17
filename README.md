@@ -71,7 +71,7 @@ yum install -y git
 git clone https://github.com/ansibleguy76/ansibleforms.git
 
 # enter projects
-cd ansible_forms
+cd ansibleforms
 ```
 ## Install MySql (or skip to use exising one)
 ```
