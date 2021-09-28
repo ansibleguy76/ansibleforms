@@ -41,6 +41,15 @@
                 <th :key="l" v-for="l in labels">{{ l }}</th>
               </tr>
             </thead>
+            <thead v-if="labels.length==1 && multiple">
+              <tr :class="sizeClass">
+                <th v-if="multiple" class="is-first">
+                  <i v-if="checkAll" @click="multicheck()" class="fal fa-check-square"></i>
+                  <i v-else @click="multicheck()" class="fal fa-square"></i>
+                </th>
+                <th>Name</th>
+              </tr>
+            </thead>
             <tbody>
               <tr :class="{'has-background-info':selected[i],'has-text-white':selected[i],sizeClass:sizeClass}" :key="i" v-for="v,i in values" @click="select(i)">
                 <td v-if="multiple" class="is-first">

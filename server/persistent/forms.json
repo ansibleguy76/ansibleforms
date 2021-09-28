@@ -719,7 +719,6 @@
             "columns":["name","email"],
             "valueColumn":"id",
             "previewColumn":"name",
-            "placeholderColumn":"email",
             "help":"Data comes from https://gorest.co.in/public/v1/users"
           },
           {
@@ -731,20 +730,20 @@
             "outputObject":true,
             "multiple":false,
             "expression":"fn.fnRestBasic('get','https://gorest.co.in/public/v1/posts?user_id=$(user.id)','','','[.data[]]')",
-            "columns":["title"],
+            "columns":["id","title"],
             "valueColumn":"id",
-            "previewColumn":"name",
-            "placeholderColumn":"email",
+            "previewColumn":"title",
             "help":"Data comes from https://gorest.co.in/public/v1/posts"
           },
           {
             "type":"query",
             "name":"file",
-            "label":"Read data from file (properties used : default=__all__)",
+            "label":"Read data from json file (properties used : expression,multiple,column,default=__auto__)",
             "required":true,
-            "multiple":true,
-            "default":"__all__",
-            "expression":"fn.fnReadJsonFile('/tmp/sample.json')"
+            "multiple":false,
+            "default":"__auto__",
+            "expression":"fn.fnReadJsonFile('./../server/persistent/forms.json','[.forms[]]')",
+            "columns":["name","type"]
           }
       ]
     },
