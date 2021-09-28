@@ -281,8 +281,6 @@
         var temp={}
         var finishedFlag=false
         var foundmatch,foundfield
-        var testRegex = /\$\(([^)]+)\)/g;
-        var columnRegex = /(.+)\.(.+)/g;                                        // detect a "." in the field
         var fields=[]
         // create a list of the fields
         this.currentForm.fields.forEach((item,i) => {
@@ -291,15 +289,19 @@
         })
         this.currentForm.fields.forEach((item,i) => {
           if(["expression","query"].includes(item.type)){
+            var testRegex = /\$\(([^)]+)\)/g;
             var matches=(item.expression || item.query).matchAll(testRegex);
             for(var match of matches){
               foundmatch = match[0];                                              // found $(xxx)
               foundfield = match[1];                                              // found xxx
+              var columnRegex = /(.+)\.(.+)/g;                                        // detect a "." in the field
               var tmpArr=columnRegex.exec(foundfield)                             // found aaa.bbb
               if(tmpArr && tmpArr.length>0){
+                // console.log("found puntje in " + foundfield + " in " + item.name)
                 foundfield = tmpArr[1]                                            // aaa
+              }else{
+                // console.log("found geen puntje in " + foundfield + " in " + item.name)
               }
-        /*       console.log("found " + foundfield + " in " + item.name) */
               if(fields.includes(foundfield)){                         // does field xxx exist in our form ?
         /*       	console.log(foundfield + " is a real field") */
                 if(foundfield in ref.dynamicFieldDependencies){															 // did we declare it before ?
@@ -377,7 +379,7 @@
             targetflag = undefined
             // mark the field as a dependent field
             if(foundfield in ref.form){      // does field xxx exist in our form ?
-              if(ref.fieldOptions[foundfield] && ref.fieldOptions[foundfield].type=="expression"){
+              if(ref.fieldOptions[foundfield] && ref.fieldOptions[foundfield].type=="expression" && (typeof ref.form[foundfield]=="object")){
                 fieldvalue=JSON.stringify(ref.form[foundfield])
               }else{
                 fieldvalue = ref.getFieldValue(ref.form[foundfield],column,false);// get value of xxx
@@ -605,7 +607,7 @@
             })
           }
       },
-      getAwxJob(id){
+      getAwxJob(id,final){
         var ref = this;
         axios.get("/api/v1/awx/" + id,TokenStorage.getAuthentication())
           .then((result)=>{
@@ -622,16 +624,22 @@
                 // if not final status, keep checking after 2s
                 if(this.ansibleResult.status!="success" && this.ansibleResult.status!="error"){
                   // this.$toast.info(result.data.message)
-                  setTimeout(function(){ ref.getAwxJob(id) }, 2000);
+                  setTimeout(function(){ ref.getAwxJob(id) }, 1000);
                 }else{
-                  // if final, remove output after 15s
-                  if(this.ansibleResult.status=="success"){
-                    this.$toast.success(result.data.message)
+                  if(!final){
+                    // 1 final last call for output
+                    setTimeout(function(){ ref.getAwxJob(id,true) }, 1000);
                   }else{
-                    this.$toast.error(result.data.message)
+                    // if final, remove output after 15s
+                    if(this.ansibleResult.status=="success"){
+                      this.$toast.success(result.data.message)
+                    }else{
+                      this.$toast.error(result.data.message)
+                    }
+                    clearTimeout(this.timeout)
+                    this.timeout = setTimeout(function(){ ref.resetResult() }, 15000);
                   }
-                  clearTimeout(this.timeout)
-                  this.timeout = setTimeout(function(){ ref.resetResult() }, 15000);
+
                 }
               }else{
                 // no data ? check again after 2s

@@ -132,7 +132,7 @@
           this.selected=[]
           this.selected[i]=temp;
           this.isActive=false;
-          this.$refs.input.focus()
+          this.$refs.input.focus({ preventScroll: true })
         }
         this.recalc()
       },
@@ -243,7 +243,7 @@
       setInterval(function(){
         if(ref.focus=="content"){
           ref.focus=""
-          ref.$refs.content.focus()
+          ref.$refs.content.focus({ preventScroll: true })
         }
       }, 100);
     }

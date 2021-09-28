@@ -2,12 +2,12 @@
   "name": "ansible_forms",
   "version": "1.0.0",
   "description": "A forms frontend for ansible and awx",
-  "main": "src/server/index.js",
   "scripts": {
     "start": "npm run prod",
     "build": "npm-run-all clean transpile",
+    "copy": "cp .env.development ./dist/.env.development",
     "server": "node ./dist",
-    "dev": "NODE_ENV=development npm-run-all build server",
+    "dev": "NODE_ENV=development npm-run-all build copy server",
     "prod": "NODE_ENV=production npm-run-all build server",
     "transpile": "babel ./ --ignore node_modules --out-dir dist --copy-files",
     "clean": "rimraf dist"
@@ -26,7 +26,8 @@
     "mysql": "^2.18.1",
     "ajv": "^6.12.6",
     "bluebird": "^3.7.2",
-    "node-jq": "^2.0.0"
+    "node-jq": "^2.0.0",
+    "yaml": "*"
   },
   "devDependencies": {
     "@babel/core": "*",

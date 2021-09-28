@@ -6,6 +6,7 @@ const axios=require("axios")
 const fs = require("fs")
 const logger=require("../lib/logger");
 const jq=require("node-jq")
+const YAML=require("yaml")
 // const { jq } = require('jq.node')
 // const jqn = require("util").promisify(jq)
 exports.fnGetNumberedName=function(names,pattern,value,fillgap){
@@ -21,7 +22,7 @@ exports.fnGetNumberedName=function(names,pattern,value,fillgap){
   }
   if(patternmatch && patternmatch.length==2){
   	nrsequence=patternmatch[1]
-	  regex=pattern.replace(nrsequence,"([0-9]{"+nrsequence.length+"})")
+	  regex="^" + pattern.replace(nrsequence,"([0-9]{"+nrsequence.length+"})") + "$"
     nrs=names.map((item)=>{
       var regexp=new RegExp(regex,"g");
       var matches=regexp.exec(item)
@@ -64,23 +65,10 @@ exports.fnGetNumberedName=function(names,pattern,value,fillgap){
 }
 exports.fnSum = function(a,b) { return a+b };
 exports.fnMultiply = function(a,b) { return a*b };
-exports.fnSampleRest1 = async function() {
-  const data = await axios.get('https://jsonplaceholder.typicode.com/todos/1');
-  return data.data
-};
-exports.fnSampleRest2 = async function() {
-  var response=[]
-  for(let i=0;i<20;i++){
-    const data = await axios.get('https://jsonplaceholder.typicode.com/todos/1');
-    response.push(data.data)
-  }
-
-  return response;
-};
 exports.fnReadJsonFile = async function(path,jqe) {
   let result=[]
   try{
-    let rawdata = fs.readFileSync(path);
+    let rawdata = fs.readFileSync(path,'utf8');
     result = JSON.parse(rawdata)
     if(jqe){
       result=await jq.run(jqe, result, { input:"json",output:"json" })
@@ -90,18 +78,39 @@ exports.fnReadJsonFile = async function(path,jqe) {
   }
   return result
 };
+exports.fnReadYamlFile = async function(path,jqe) {
+  let result=[]
+  try{
+    let rawdata = fs.readFileSync(path,'utf8');
+    result = YAML.parse(rawdata)
+    if(jqe){
+      result=await jq.run(jqe, result, { input:"json",output:"json" })
+    }
+  }catch(e){
+    logger.error("Error in fnReadYamlFile : " + e)
+  }
+  return result
+};
 
 exports.fnRestBasic = async function(action,url,body,env_credential,jqe,sort,map){
   const httpsAgent = new https.Agent({
     rejectUnauthorized: false,
   })
-  const axiosConfig = {
-    headers: {
-      Authorization:"Basic " + Buffer.from(process.env["CUSTOM_"+env_credential+"_USER"] + ':' + process.env["CUSTOM_"+env_credential+"_PASSWORD"]).toString('base64')
-    },
-    httpsAgent:httpsAgent
+  var axiosConfig
+  if(env_credential){
+    axiosConfig = {
+      headers: {
+        Authorization:"Basic " + Buffer.from(process.env["CUSTOM_"+env_credential+"_USER"] + ':' + process.env["CUSTOM_"+env_credential+"_PASSWORD"]).toString('base64')
+      },
+      httpsAgent:httpsAgent
 
+    }
+  }else{
+    axiosConfig = {
+      httpsAgent:httpsAgent
+    }
   }
+
   let result={}
   try{
     if(action=="get"){

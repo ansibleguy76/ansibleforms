@@ -1,0 +1,26 @@
+{
+    "AMS North":[
+        {
+            "name":"cluster1",
+            "fqdn":"cluster1.demo.netapp.com"
+        }
+    ],
+    "AMS South":[
+        {
+            "name":"cluster2",
+            "fqdn":"cluster2.demo.netapp.com"
+        }
+    ],
+    "BRU East":[
+        {
+            "name":"cluster3",
+            "fqdn":"cluster3.demo.netapp.com"
+        }
+    ],
+    "BRU West":[
+        {
+            "name":"cluster1",
+            "fqdn":"cluster1.demo.netapp.com"
+        }
+    ]
+}

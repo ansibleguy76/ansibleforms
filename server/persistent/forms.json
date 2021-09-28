@@ -709,27 +709,33 @@
       "fields":[
           {
             "type":"query",
-            "name":"rest",
-            "label":"Data from rest api (properties used : expression,columns,valueColumn)",
+            "name":"user",
+            "label":"Users - from rest (properties used : expression,columns,valueColumn,default=__auto__)",
             "default":"__none__",
             "required":true,
-            "multiple":true,
-            "outputObject":false,
-            "expression":"fn.fnSampleRest2()",
-            "columns":["id","title","completed"],
+            "outputObject":true,
+            "multiple":false,
+            "expression":"fn.fnRestBasic('get','https://gorest.co.in/public/v1/users','','','[.data[]]')",
+            "columns":["name","email"],
             "valueColumn":"id",
-            "previewColumn":"title",
-            "placeholderColumn":"title"
+            "previewColumn":"name",
+            "placeholderColumn":"email",
+            "help":"Data comes from https://gorest.co.in/public/v1/users"
           },
           {
             "type":"query",
-            "name":"inline",
-            "label":"Inline data (properties used : expression,ignoreIncomplete,default=array)",
+            "name":"post",
+            "label":"Posts - from rest (properties used : expression,columns,valueColumn,default=__auto__)",
+            "default":"__none__",
             "required":true,
-            "multiple":true,
-            "default":"__all__",
-            "expression":"['ansible','forms','$(rest.title)']",
-            "ignoreIncomplete":true
+            "outputObject":true,
+            "multiple":false,
+            "expression":"fn.fnRestBasic('get','https://gorest.co.in/public/v1/posts?user_id=$(user.id)','','','[.data[]]')",
+            "columns":["title"],
+            "valueColumn":"id",
+            "previewColumn":"name",
+            "placeholderColumn":"email",
+            "help":"Data comes from https://gorest.co.in/public/v1/posts"
           },
           {
             "type":"query",
@@ -739,113 +745,6 @@
             "multiple":true,
             "default":"__all__",
             "expression":"fn.fnReadJsonFile('/tmp/sample.json')"
-          }
-      ]
-    },
-    {
-      "name":"Insight 2021",
-      "roles":["demo"],
-      "description":"An example how to start AWX with external data",
-      "categories":["Demo"],
-      "tileClass":"has-background-warning",
-      "template":"HelloWorld",
-      "inventory":"",
-      "type":"awx",
-      "fields":[
-          {
-            "type":"query",
-            "dbConfig":"CONN1",
-            "query":"select name,id,short from cmdb.city",
-            "name":"city",
-            "label":"Select a city",
-            "default":"__auto__",
-            "required":true,
-            "valueColumn":"name",
-            "previewColumn":"short",
-            "columns":["name","short"],
-            "noOutput":true,
-            "group":"Functional data"
-          },
-          {
-            "type":"query",
-            "dbConfig":"CONN1",
-            "query":"SELECT datacenter.name datacenter FROM cmdb.datacenter WHERE datacenter.city_id=$(city.id)",
-            "name":"datacenter",
-            "label":"Select a datacenter",
-            "default":"__auto__",
-            "required":true,
-            "noOutput":true,
-            "group":"Functional data"
-          },
-          {
-            "type":"query",
-            "name":"cluster",
-            "label":"Read cluster mapping from file",
-            "required":true,
-            "model":"ontap_cluster_name",
-            "default":"__auto__",
-            "expression":"fn.fnReadJsonFile('/tmp/mapping.json','.\"$(datacenter)\"')",
-            "valueColumn":"name",
-            "group":"Mapping"
-          },
-          {
-            "type":"query",
-            "name":"svm",
-            "label":"Svm's from rest ontap",
-            "default":"__auto__",
-            "required":true,
-            "model":"ontap_svm_name",
-            "expression":"fn.fnRestBasic('get','https://$(cluster.fqdn)/api/svm/svms?subtype=default','','ONTAP','[.records[].name]')",
-            "group":"Technical data"
-          },
-          {
-            "type":"query",
-            "name":"aggregate",
-            "label":"Aggregates from rest ontap",
-            "default":"__auto__",
-            "required":true,
-            "model":"ontap_volume.aggregate",
-            "expression":"fn.fnRestBasic('get','https://$(cluster.fqdn)/api/storage/aggregates?state=online&fields=space&order_by=space.block_storage.available%20desc','','ONTAP','[(.records[] | {name}) + {available:.records[].space.block_storage.available}]','(a, b) => a.available < b.available && 1 || -1','x => {var tmp={};tmp.name=x.name;tmp.available=Math.round(x.available/1024/1024/1024)+\" GB\";return tmp}')",
-            "group":"Technical data"
-          },
-          {
-            "type":"expression",
-            "name":"volume_list",
-            "label":"Volume from rest ontap",
-            "default":"__auto__",
-            "required":true,
-            "expression":"fn.fnRestBasic('get','https://$(cluster.fqdn)/api/storage/volumes?state=online&svm.name=$(svm)','','ONTAP','[.records[].name]','','')",
-            "group":"Under the hood",
-            "noOutput":true
-          },
-          {
-            "type":"query",
-            "name":"volume_name",
-            "label":"Volumename from expression",
-            "default":"__auto__",
-            "required":true,
-            "model":"ontap_volume.name",
-            "expression":"fn.fnGetNumberedName($(volume_list),'vol#','vol1',false)",
-            "group":"Under the hood"
-          },
-          {
-            "type":"number",
-            "name":"size_gb",
-            "label":"Size in GB",
-            "required":true,
-            "default":1,
-            "minValue":1,
-            "maxValue":5,
-            "group":"Technical data",
-            "noOutput":true
-          },
-          {
-            "type":"expression",
-            "name":"size_mb",
-            "model":"ontap_volume.size_mb",
-            "label":"Size in MB",
-            "expression":"$(size_gb)*1024",
-            "group":"Under the hood"
           }
       ]
     },
