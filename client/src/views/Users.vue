@@ -40,11 +40,6 @@
   import BulmaSelect from './../components/BulmaSelect.vue'
   import BulmaInput from './../components/BulmaInput.vue'
   import BulmaModal from './../components/BulmaModal.vue'
-  import { library } from '@fortawesome/fontawesome-svg-core'
-  import { fas } from '@fortawesome/free-solid-svg-icons'
-  import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-  library.add(fas) // add all solid icons
-  Vue.component('font-awesome-icon', FontAwesomeIcon)
   import TokenStorage from './../lib/TokenStorage'
   import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
 

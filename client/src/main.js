@@ -6,7 +6,14 @@ import App from './App.vue'
 import router from "./router"
 import TokenStorage from "./lib/TokenStorage"
 import axios from "axios"
-import "./../public/assets/main.scss"  // parse scss, including bulma
+// add font awesome
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { fas } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+library.add(fas) // add all solid icons
+Vue.component('font-awesome-icon', FontAwesomeIcon)
+// parse scss, including bulma
+import "./../public/assets/main.scss"
 
 axios.interceptors.response.use( (response) => {
   // Return a successful response back to the calling service

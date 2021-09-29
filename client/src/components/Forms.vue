@@ -27,11 +27,6 @@
 <script>
   import Vue from 'vue'
   import TokenStorage from './../lib/TokenStorage'
-  import { library } from '@fortawesome/fontawesome-svg-core'
-  import { fas } from '@fortawesome/free-solid-svg-icons'
-  import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-  library.add(fas) // add all solid icons
-  Vue.component('font-awesome-icon', FontAwesomeIcon)
   export default{
     name:"FormTiles",
     props:{

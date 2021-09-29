@@ -42,13 +42,6 @@
 <script>
   import Vue from 'vue'
   import TokenStorage from '../lib/TokenStorage'
-  // add fontawesome icons
-  import { library } from '@fortawesome/fontawesome-svg-core'
-  import { faUsers,faUser,faSignOutAlt,faCog } from '@fortawesome/free-solid-svg-icons'
-  import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-  library.add(faUsers,faUser,faSignOutAlt,faCog) // add all required icons
-  Vue.component('font-awesome-icon', FontAwesomeIcon)
-
   export default{
     name:"BulmaNav",
     props:{
