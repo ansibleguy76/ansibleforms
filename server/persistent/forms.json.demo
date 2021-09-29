@@ -2,27 +2,27 @@
   "categories":[
     {
       "name":"Default",
-      "icon":"fa-user"
+      "icon":"user"
     },
     {
       "name":"Provisioning",
-      "icon":"fa-pencil"
+      "icon":"pencil"
     },
     {
       "name":"Decommissioning",
-      "icon":"fa-trash-alt"
+      "icon":"trash-alt"
     },
     {
       "name":"Ansible",
-      "icon":"fa-atom"
+      "icon":"atom"
     },
     {
       "name":"AWX",
-      "icon":"fa-magic"
+      "icon":"magic"
     },
     {
       "name":"Demo",
-      "icon":"fa-heart"
+      "icon":"heart"
     }
   ],
   "roles":[
@@ -63,7 +63,7 @@
           "placeholder":"Cluster name",
           "default":"cluster1",
           "required":true,
-          "icon":"fa-building"
+          "icon":"building"
         },
         {
           "element":"input",
@@ -73,7 +73,7 @@
           "placeholder":"Svm name",
           "default":"pri_svm_01",
           "required":true,
-          "icon":"fa-house"
+          "icon":"house"
         },
         {
           "element":"select",
@@ -84,7 +84,7 @@
           "default":"",
           "values":["pri_svm_01_cifs_001","pri_svm_01_cifs_002","pri_svm_01_cifs_003"],
           "required":true,
-          "icon":"fa-database"
+          "icon":"database"
         },
         {
           "element":"input",
@@ -94,7 +94,7 @@
           "placeholder":"Interface name",
           "default":"pri_svm_01_mgmt01",
           "required":true,
-          "icon":"fa-network-wired"
+          "icon":"network-wired"
         }
       ]
     },
@@ -117,7 +117,7 @@
           "placeholder":"Cluster name",
           "default":"cluster1",
           "required":true,
-          "icon":"fa-building"
+          "icon":"building"
         },
         {
           "element":"input",
@@ -127,7 +127,7 @@
           "placeholder":"Svm name",
           "default":"pri_svm_01",
           "required":true,
-          "icon":"fa-house"
+          "icon":"house"
         },
         {
           "element":"select",
@@ -138,7 +138,7 @@
           "default":"",
           "values":["pri_svm_01_cifs_001","pri_svm_01_cifs_002","pri_svm_01_cifs_003"],
           "required":true,
-          "icon":"fa-database"
+          "icon":"database"
         }
       ]
     },
@@ -160,7 +160,7 @@
           "placeholder":"Cluster name",
           "default":"cluster1",
           "required":true,
-          "icon":"fa-building"
+          "icon":"building"
         },
         {
           "element":"input",
@@ -170,7 +170,7 @@
           "placeholder":"Svm name",
           "default":"pri_svm_01",
           "required":true,
-          "icon":"fa-house"
+          "icon":"house"
         },
         {
           "element":"select",
@@ -181,7 +181,7 @@
           "default":"",
           "values":["pri_svm_01_cifs_001","pri_svm_01_cifs_002","pri_svm_01_cifs_003"],
           "required":true,
-          "icon":"fa-database"
+          "icon":"database"
         },
         {
           "element":"input",
@@ -191,7 +191,7 @@
           "placeholder":"Interface name",
           "default":"pri_svm_01_mgmt01",
           "required":true,
-          "icon":"fa-network-wired"
+          "icon":"network-wired"
         }
       ]
     },
@@ -213,7 +213,7 @@
           "placeholder":"Cluster name",
           "default":"cluster1",
           "required":true,
-          "icon":"fa-building"
+          "icon":"building"
         },
         {
           "element":"input",
@@ -223,7 +223,7 @@
           "placeholder":"Svm name",
           "default":"pri_svm_01",
           "required":true,
-          "icon":"fa-house"
+          "icon":"house"
         },
         {
           "element":"select",
@@ -234,7 +234,7 @@
           "default":"",
           "values":["pri_svm_01_cifs_001","pri_svm_01_cifs_002","pri_svm_01_cifs_003"],
           "required":true,
-          "icon":"fa-database"
+          "icon":"database"
         }
       ]
     },
@@ -282,7 +282,7 @@
             "maxLength":20,
             "regex":"^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\\$%\\^&\\*])",
             "regexDescription":"Must contain at least 1 numeric, 1 special, 1 upper and 1 lower character",
-            "icon":"fa-lock"
+            "icon":"lock"
           },
           {
             "element":"input",
@@ -291,7 +291,7 @@
             "label":"Verify Password",
             "default":"",
             "sameAs":"password",
-            "icon":"fa-lock"
+            "icon":"lock"
           },
           {
             "element":"input",
@@ -347,7 +347,7 @@
             "multiple":true,
             "size":4,
             "required":true,
-            "icon":"fa-flag",
+            "icon":"flag",
             "help":"You can select multiple languages if you want !"
           },
           {

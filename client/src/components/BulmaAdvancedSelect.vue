@@ -18,12 +18,12 @@
           @mousedown="toggle()"
         >
         <span v-if="icon!=undefined" class="icon is-small is-left">
-          <i class="fas" :class="icon"></i>
+          <font-awesome-icon :icon="icon" />
         </span>
         <span class="icon is-small is-right">
-          <i v-if="isLoading" class="fas fa-spinner fa-spin" aria-hidden="true"></i>
-          <i v-else-if="!isActive" class="fas fa-angle-down" aria-hidden="true"></i>
-          <i v-else class="fas fa-angle-right" aria-hidden="true"></i>
+          <font-awesome-icon v-if="isLoading" icon="spinner" spin />
+          <font-awesome-icon v-else-if="!isActive" icon="angle-down" />
+          <font-awesome-icon v-else icon="angle-right" />
         </span>
       </p>
     </div>
@@ -35,8 +35,8 @@
             <thead v-if="labels.length>1">
               <tr :class="sizeClass">
                 <th v-if="multiple" class="is-first">
-                  <i v-if="checkAll" @click="multicheck()" class="fal fa-check-square"></i>
-                  <i v-else @click="multicheck()" class="fal fa-square"></i>
+                  <font-awesome-icon v-if="checkAll" @click="multicheck()" :icon="['fal','check-square']" />
+                  <font-awesome-icon v-else  @click="multicheck()" :icon="['fal','square']" />
                 </th>
                 <th :key="l" v-for="l in labels">{{ l }}</th>
               </tr>
@@ -44,8 +44,8 @@
             <thead v-if="labels.length==1 && multiple">
               <tr :class="sizeClass">
                 <th v-if="multiple" class="is-first">
-                  <i v-if="checkAll" @click="multicheck()" class="fal fa-check-square"></i>
-                  <i v-else @click="multicheck()" class="fal fa-square"></i>
+                  <font-awesome-icon v-if="checkAll" @click="multicheck()" :icon="['fal','check-square']" />
+                  <font-awesome-icon v-else  @click="multicheck()" :icon="['fal','square']" />
                 </th>
                 <th>Name</th>
               </tr>
@@ -53,8 +53,8 @@
             <tbody>
               <tr :class="{'has-background-info':selected[i],'has-text-white':selected[i],sizeClass:sizeClass}" :key="i" v-for="v,i in values" @click="select(i)">
                 <td v-if="multiple" class="is-first">
-                  <i v-if="selected[i]" class="fal fa-check-square"></i>
-                  <i v-else class="fal fa-square"></i> <span class="has-text-grey-lighter">{{i}}</span>
+                  <font-awesome-icon v-if="selected[i]" :icon="['fal','check-square']" />
+                  <font-awesome-icon v-else :icon="['fal','square']" /> <span class="has-text-grey-lighter">{{i}}</span>
                 </td>
                 <td :key="l" v-for="l in labels">{{ v[l] }}</td>
                 <td v-if="labels.length==0">{{ v }}</td>
@@ -68,6 +68,12 @@
 </template>
 <script>
   import Vue from 'vue'
+  import { library } from '@fortawesome/fontawesome-svg-core'
+  import { fas } from '@fortawesome/pro-solid-svg-icons'
+  import { faSquare as falSquare, faCheckSquare as falCheckSquare} from '@fortawesome/pro-light-svg-icons'
+  import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+  library.add(fas,falSquare,falCheckSquare) // add all solid icons
+  Vue.component('font-awesome-icon', FontAwesomeIcon)
   // import BulmaCheckbox from './BulmaCheckbox.vue'
   export default{
     name:"BulmaAdvancedSelect",

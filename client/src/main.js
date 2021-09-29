@@ -6,6 +6,7 @@ import App from './App.vue'
 import router from "./router"
 import TokenStorage from "./lib/TokenStorage"
 import axios from "axios"
+import "./../public/assets/main.scss"  // parse scss, including bulma
 
 axios.interceptors.response.use( (response) => {
   // Return a successful response back to the calling service
@@ -75,4 +76,4 @@ new Vue({
   router,
   render: h => h(App)
 }).$mount('#app');
-  Vue.component('jsonoutput', {})
+Vue.component('jsonoutput', {})

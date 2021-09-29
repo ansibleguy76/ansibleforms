@@ -16,22 +16,22 @@
           <div id="navbarBasicExample" class="navbar-menu" v-bind:class="{ 'is-active' : showNav }">
               <div class="navbar-end">
                   <div class="navbar-item has-dropdown is-hoverable" v-if="isAdmin && authenticated" >
-                      <a class="navbar-link"><span class="icon"><i class="fas fa-cog"></i></span> <span>Settings</span></a>
+                      <a class="navbar-link"><span class="icon"><font-awesome-icon icon="cog" /></span> <span>Settings</span></a>
                       <div class="navbar-dropdown">
                         <router-link class="navbar-item" to="/groups">
-                          <span class="icon"><i class="fas fa-users"></i></span><span>Groups</span>
+                          <span class="icon"><font-awesome-icon icon="users" /></span><span>Groups</span>
                         </router-link>
                         <router-link class="navbar-item" to="/users">
-                          <span class="icon"><i class="fas fa-user"></i></span><span>Users</span>
+                          <span class="icon"><font-awesome-icon icon="user" /></span><span>Users</span>
                         </router-link>
                       </div>
                   </div>
                   <div class="navbar-item" v-if="authenticated">
-                    <span class="icon"><i class="fal fa-user"></i></span> <span>{{ profile}}</span>
+                    <span class="icon"><font-awesome-icon icon="user" /></span> <span>{{ profile}}</span>
                   </div>
                   <div class="navbar-item">
                     <div class="buttons">
-                      <router-link class="button is-light" v-if="authenticated" to="/login" v-on:click.native="logout()" replace><span class="icon"><i class="fas fa-sign-out-alt"></i></span><span>Logout</span></router-link>
+                      <router-link class="button is-light" v-if="authenticated" to="/login" v-on:click.native="logout()" replace><span class="icon"><font-awesome-icon icon="sign-out-alt" /></span><span>Logout</span></router-link>
                     </div>
                   </div>
               </div>
@@ -42,6 +42,13 @@
 <script>
   import Vue from 'vue'
   import TokenStorage from '../lib/TokenStorage'
+  // add fontawesome icons
+  import { library } from '@fortawesome/fontawesome-svg-core'
+  import { faUsers,faUser,faSignOutAlt,faCog } from '@fortawesome/pro-solid-svg-icons'
+  import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+  library.add(faUsers,faUser,faSignOutAlt,faCog) // add all required icons
+  Vue.component('font-awesome-icon', FontAwesomeIcon)
+
   export default{
     name:"BulmaNav",
     props:{

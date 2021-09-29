@@ -4,7 +4,7 @@
     <p class="control has-icons-left">
       <input class="input" @keyup.enter="$emit('enterClicked')"  :readonly="readonly" v-focus="focus" :type="type" :value="value" :class="{'is-danger':hasError}" @input="$emit('input', $event.target.value)" :placeholder="placeholder">
       <span class="icon is-left">
-        <i class="fas" :class="icon"></i>
+        <font-awesome-icon :icon="icon" />
       </span>
     </p>
     <p class="has-text-danger" v-for="e in errors" :key="e.label" :class="{'is-hidden':!e.if}">{{ e.label }}</p>
@@ -13,6 +13,11 @@
 <script>
 
   import Vue from 'vue'
+  import { library } from '@fortawesome/fontawesome-svg-core'
+  import { fas } from '@fortawesome/pro-solid-svg-icons'
+  import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+  library.add(fas) // add all solid icons
+  Vue.component('font-awesome-icon', FontAwesomeIcon)
   Vue.directive('focus', {
     // When the bound element is inserted into the DOM...
     inserted: function (el,binding) {

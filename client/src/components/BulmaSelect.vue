@@ -9,7 +9,7 @@
             </select>
           </div>
           <span class="icon is-left">
-            <i class="fas" :class="icon"></i>
+            <font-awesome-icon :icon="icon" />
           </span>
       </div>
       <p class="has-text-danger" v-for="e in errors" :key="e.label" :class="{'is-hidden':!e.if}">{{ e.label }}</p>
@@ -17,6 +17,11 @@
 </template>
 <script>
   import Vue from 'vue'
+  import { library } from '@fortawesome/fontawesome-svg-core'
+  import { fas } from '@fortawesome/pro-solid-svg-icons'
+  import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+  library.add(fas) // add all solid icons
+  Vue.component('font-awesome-icon', FontAwesomeIcon)
   export default{
     name:"BulmaSelect",
     props:{

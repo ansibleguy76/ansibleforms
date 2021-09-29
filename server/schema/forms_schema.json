@@ -13,7 +13,7 @@
             "title": "Categories",
             "description": "A list of categories to group the forms",
             "contains":{
-                "const":{"name":"Default","icon":"fa-bars"}
+                "const":{"name":"Default","icon":"bars"}
             },
             "additionalItems": true,
             "items": {
@@ -35,8 +35,7 @@
 						"$id": "/icon",
 						"type": "string",
 						"title": "A FontAwesome Icon",
-						"description": "A FontAwesome 5 icon (see https://fontawesome.com/)",
-						"pattern": "^fa-.+"
+						"description": "A FontAwesome 5 icon (see https://fontawesome.com/)"
 					}
 				},
 				"additionalProperties": false

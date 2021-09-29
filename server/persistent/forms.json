@@ -2,27 +2,27 @@
   "categories":[
     {
       "name":"Default",
-      "icon":"fa-bars"
+      "icon":"bars"
     },
     {
       "name":"Provisioning",
-      "icon":"fa-pencil"
+      "icon":"pencil"
     },
     {
       "name":"Decommissioning",
-      "icon":"fa-trash-alt"
+      "icon":"trash-alt"
     },
     {
       "name":"Ansible",
-      "icon":"fa-atom"
+      "icon":"atom"
     },
     {
       "name":"AWX",
-      "icon":"fa-magic"
+      "icon":"magic"
     },
     {
       "name":"Demo",
-      "icon":"fa-heart"
+      "icon":"heart"
     }
   ],
   "roles":[
@@ -49,7 +49,7 @@
       "roles":["public"],
       "description":"Create storage using vanilla ansible and hardcode dropdowns",
       "tileClass":"has-background-success-light",
-      "icon":"fa-plus",
+      "icon":"plus",
       "categories":["Provisioning","Ansible"],
       "type":"ansible",
       "playbook":"pilot_play_basic_create.yml",
@@ -63,7 +63,7 @@
           "placeholder":"Cluster name",
           "default":"cluster1",
           "required":true,
-          "icon":"fa-building"
+          "icon":"building"
         },
         {
           "type":"text",
@@ -72,7 +72,7 @@
           "placeholder":"Svm name",
           "default":"pri_svm_01",
           "required":true,
-          "icon":"fa-house"
+          "icon":"house"
         },
         {
           "type":"enum",
@@ -82,7 +82,7 @@
           "default":"",
           "values":["pri_svm_01_cifs_001","pri_svm_01_cifs_002","pri_svm_01_cifs_003"],
           "required":true,
-          "icon":"fa-database"
+          "icon":"database"
         },
         {
           "type":"text",
@@ -91,7 +91,7 @@
           "placeholder":"Interface name",
           "default":"pri_svm_01_mgmt01",
           "required":true,
-          "icon":"fa-network-wired"
+          "icon":"network-wired"
         }
       ]
     },
@@ -101,7 +101,7 @@
       "description":"Delete a storage using vanilla ansible",
       "categories":["Decommissioning","Ansible"],
       "tileClass":"has-background-danger-light",
-      "icon":"fa-trash",
+      "icon":"trash",
       "type":"ansible",
       "playbook":"pilot_play_basic_delete.yml",
       "inventory":"inventory.yml",
@@ -114,7 +114,7 @@
           "placeholder":"Cluster name",
           "default":"cluster1",
           "required":true,
-          "icon":"fa-building"
+          "icon":"building"
         },
         {
           "type":"text",
@@ -123,7 +123,7 @@
           "placeholder":"Svm name",
           "default":"pri_svm_01",
           "required":true,
-          "icon":"fa-house"
+          "icon":"house"
         },
         {
           "type":"enum",
@@ -133,7 +133,7 @@
           "default":"",
           "values":["pri_svm_01_cifs_001","pri_svm_01_cifs_002","pri_svm_01_cifs_003"],
           "required":true,
-          "icon":"fa-database"
+          "icon":"database"
         }
       ]
     },
@@ -144,7 +144,7 @@
       "categories":["AWX","Provisioning"],
       "template":"create_storage",
       "tileClass":"has-background-success-light",
-      "icon":"fa-plus",
+      "icon":"plus",
       "inventory":"",
       "type":"awx",
       "tags":"",
@@ -156,7 +156,7 @@
           "placeholder":"Cluster name",
           "default":"cluster1",
           "required":true,
-          "icon":"fa-building"
+          "icon":"building"
         },
         {
           "type":"text",
@@ -165,7 +165,7 @@
           "placeholder":"Svm name",
           "default":"pri_svm_01",
           "required":true,
-          "icon":"fa-house"
+          "icon":"house"
         },
         {
           "type":"enum",
@@ -175,7 +175,7 @@
           "default":"",
           "values":["pri_svm_01_cifs_001","pri_svm_01_cifs_002","pri_svm_01_cifs_003"],
           "required":true,
-          "icon":"fa-database"
+          "icon":"database"
         },
         {
           "type":"text",
@@ -184,7 +184,7 @@
           "placeholder":"Interface name",
           "default":"pri_svm_01_mgmt01",
           "required":true,
-          "icon":"fa-network-wired"
+          "icon":"network-wired"
         }
       ]
     },
@@ -194,7 +194,7 @@
       "template":"Demo delete storage",
       "categories":["Decommissioning","AWX"],
       "tileClass":"has-background-danger-light",
-      "icon":"fa-trash",
+      "icon":"trash",
       "inventory":"",
       "type":"awx",
       "tags":"",
@@ -206,7 +206,7 @@
           "placeholder":"Cluster name",
           "default":"cluster1",
           "required":true,
-          "icon":"fa-building"
+          "icon":"building"
         },
         {
           "type":"text",
@@ -215,7 +215,7 @@
           "placeholder":"Svm name",
           "default":"pri_svm_01",
           "required":true,
-          "icon":"fa-house"
+          "icon":"house"
         },
         {
           "type":"enum",
@@ -225,7 +225,7 @@
           "default":"",
           "values":["pri_svm_01_cifs_001","pri_svm_01_cifs_002","pri_svm_01_cifs_003"],
           "required":true,
-          "icon":"fa-database"
+          "icon":"database"
         }
       ]
     },
@@ -247,7 +247,7 @@
       "description":"This workflow will show expressions",
       "categories":["Demo"],
       "tileClass":"has-background-warning",
-      "icon":"fa-scroll",
+      "icon":"scroll",
       "playbook":"dummy.yaml",
       "inventory":"",
       "type":"ansible",
@@ -310,7 +310,7 @@
       "roles":["public"],
       "description":"This workflow will show queries",
       "categories":["Demo"],
-      "icon":"fa-database",
+      "icon":"database",
       "tileClass":"has-background-warning",
       "playbook":"dummy.yaml",
       "inventory":"",
@@ -351,7 +351,7 @@
       "description":"This workflow will show queries and dependencies",
       "categories":["Demo"],
       "tileClass":"has-background-warning",
-      "icon":"fa-link",
+      "icon":"link",
       "playbook":"dummy.yaml",
       "inventory":"",
       "type":"ansible",
@@ -507,7 +507,7 @@
       "description":"This workflow will show form field examples",
       "categories":["Demo"],
       "tileClass":"has-background-warning",
-      "icon":"fa-text",
+      "icon":"text",
       "playbook":"dummy.yaml",
       "inventory":"",
       "type":"ansible",
@@ -523,7 +523,7 @@
             "maxLength":10,
             "regex":"^[a-zA-Z]*$",
             "regexDescription":"Must be alpha numeric",
-            "icon":"fa-user"
+            "icon":"user"
           },
           {
             "type":"password",
@@ -535,7 +535,7 @@
             "maxLength":20,
             "regex":"^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\\$%\\^&\\*])",
             "regexDescription":"Must contain at least 1 numeric, 1 special, 1 upper and 1 lower character",
-            "icon":"fa-lock"
+            "icon":"lock"
           },
           {
             "type":"password",
@@ -543,7 +543,7 @@
             "label":"Verify Password",
             "default":"",
             "sameAs":"password",
-            "icon":"fa-lock"
+            "icon":"lock"
           },
           {
             "type":"number",
@@ -571,7 +571,7 @@
             "multiple":true,
             "size":4,
             "required":true,
-            "icon":"fa-flag",
+            "icon":"flag",
             "help":"You can select multiple languages if you want !"
           },
           {
@@ -610,7 +610,7 @@
 
             "default":"__none__",
             "label":"Simple one column select",
-            "icon":"fa-building",
+            "icon":"building",
             "placeholder":"Select a city"
           },
           {
@@ -622,7 +622,7 @@
 
             "default":"__none__",
             "label":"Multiple columns",
-            "icon":"fa-building"
+            "icon":"building"
           },
           {
             "type":"query",
@@ -633,7 +633,7 @@
 
             "label":"Autoselect first item",
             "default":"__auto__",
-            "icon":"fa-building"
+            "icon":"building"
           },
           {
             "type":"query",
@@ -645,7 +645,7 @@
             "label":"Required field",
             "default":"__none__",
             "required":true,
-            "icon":"fa-building"
+            "icon":"building"
           },
           {
             "type":"query",
@@ -657,7 +657,7 @@
             "label":"Object output",
             "default":"__none__",
             "required":false,
-            "icon":"fa-building"
+            "icon":"building"
           },
           {
             "type":"query",
@@ -669,7 +669,7 @@
             "label":"Select multiple, flattened output",
             "default":"__none__",
             "required":false,
-            "icon":"fa-building"
+            "icon":"building"
           },
           {
             "type":"query",
@@ -681,7 +681,7 @@
             "label":"Select multiple, object output",
             "default":"__none__",
             "required":false,
-            "icon":"fa-building"
+            "icon":"building"
           },
           {
             "type":"query",
@@ -693,7 +693,7 @@
             "label":"Specific default",
             "default":"Brussels",
             "required":false,
-            "icon":"fa-building"
+            "icon":"building"
           }
       ]
     },

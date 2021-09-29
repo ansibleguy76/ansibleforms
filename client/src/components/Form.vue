@@ -6,9 +6,9 @@
           <h1 class="title">{{ currentForm.name }}</h1>
           <button @click="generateJsonOutput();showJson=true" class="button is-info is-small">
             <span class="icon">
-              <i class="fas fa-brackets-curly"></i>
+              <font-awesome-icon icon="brackets-curly" />
             </span>
-            <span>Show json output</span>
+            <span>Show Extravars</span>
           </button>
           <div :key="group" v-for="group in fieldgroups" class="mt-4">
             <div :class="{'box':checkGroupDependencies(group)}">
@@ -78,7 +78,7 @@
                       </div>
                       <!-- add left icon, but not for query, because that's a component with icon builtin -->
                       <span v-if="!!field.icon && field.type!='query'" class="icon is-small is-left">
-                        <i class="fas" :class="field.icon"></i>
+                        <font-awesome-icon :icon="field.icon" />
                       </span>
                       <!-- add help and alerts -->
                       <p class="help" v-if="!!field.help">{{ field.help}}</p>
@@ -97,10 +97,10 @@
           </div>
 
           <hr v-if="!!currentForm" />
-          <button v-if="!!currentForm && !ansibleResult.message" class="button is-primary is-fullwidth" @click="ansibleResult.message='initializing'"><span class="icon"><i class="fas fa-play"></i></span><span>Run</span></button>
+          <button v-if="!!currentForm && !ansibleResult.message" class="button is-primary is-fullwidth" @click="ansibleResult.message='initializing'"><span class="icon"><font-awesome-icon icon="play" /></span><span>Run</span></button>
           <button v-if="!!ansibleResult.message" class="button is-fullwidth" @click="resetResult()" :class="{ 'has-background-success' : ansibleResult.status=='success', 'has-background-danger' : ansibleResult.status=='error','has-background-info cursor-progress' : ansibleResult.status=='info' }">
-            <span class="icon" v-if="ansibleResult.status=='info'"><i class="fas fa-spinner fa-pulse"></i></span>
-            <span class="icon" v-if="ansibleResult.status!='info'"><i class="fas fa-times"></i></span>
+            <span class="icon" v-if="ansibleResult.status=='info'"><font-awesome-icon icon="spinner" spin /></span>
+            <span class="icon" v-if="ansibleResult.status!='info'"><font-awesome-icon icon="times" /></span>
             <span>{{ ansibleResult.message }}</span>
           </button>
           <div v-if="!!ansibleResult.data.output" class="box mt-3">
@@ -110,16 +110,16 @@
           </div>
         </div>
         <div v-if="showJson" class="column">
-          <h1 class="title">Json output, sent as extravars</h1>
+          <h1 class="title">Extravars</h1>
           <button @click="showJson=false" class="button is-danger is-small">
             <span class="icon">
-              <i class="fas fa-times"></i>
+              <font-awesome-icon icon="times" />
             </span>
             <span>Close</span>
           </button>
           <button @click="generateJsonOutput()" class="ml-2 button is-info is-small">
             <span class="icon">
-              <i class="fas fa-sync"></i>
+              <font-awesome-icon icon="sync" />
             </span>
             <span>Refresh</span>
           </button>
@@ -138,6 +138,11 @@
   import TokenStorage from './../lib/TokenStorage'
   import VueJsonPretty from 'vue-json-pretty';
   import BulmaAdvancedSelect from './BulmaAdvancedSelect.vue'
+  import { library } from '@fortawesome/fontawesome-svg-core'
+  import { fas } from '@fortawesome/pro-solid-svg-icons'
+  import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+  library.add(fas) // add all solid icons
+  Vue.component('font-awesome-icon', FontAwesomeIcon)
   import 'vue-json-pretty/lib/styles.css';
   import { required, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
 
@@ -637,7 +642,7 @@
                       this.$toast.error(result.data.message)
                     }
                     clearTimeout(this.timeout)
-                    this.timeout = setTimeout(function(){ ref.resetResult() }, 15000);
+                    // this.timeout = setTimeout(function(){ ref.resetResult() }, 15000);
                   }
 
                 }
@@ -741,22 +746,6 @@
         // make sure, no delayed stuff is started.
         //
         var ref=this
-        // var isValid=true
-        // // final touch to force validation
-        // this.$v.form.$touch();
-        // // loop all fields and check if it valid, skip hidden fields
-        // this.currentForm.fields.forEach((item, i) => {
-        //   if(this.visibility[item.name] && this.$v.form[item.name].$invalid && this.$v.form[item.name].$model!=undefined){
-        //     isValid=false
-        //   }
-        // })
-        // if(!isValid){
-        //     ref.$toast.warning("Form contains invalid data")
-        //     return // do not start if form is invalid
-        // }else if(!ref.canSubmit && Object.keys(ref.dynamicFieldStatus).length>0){
-        //   ref.$toast.warning("Form is still busy, please try again")
-        //   return // do not start if form is invalid
-        // }else{
         if(ref.validateForm){ // final validation
 
           this.generateJsonOutput()
@@ -776,7 +765,7 @@
                       ref.$toast.warning(result.data.data.error)
                     }
                     clearTimeout(this.timeout)
-                    this.timeout = setTimeout(function(){ ref.resetResult() }, 15000);
+                    // this.timeout = setTimeout(function(){ ref.resetResult() }, 15000);
                   }else{
                     ref.$toast.error("Failed to invoke ansible")
                     ref.resetResult()

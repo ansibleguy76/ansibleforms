@@ -5,8 +5,8 @@
         <div class="columns is-centered">
           <div class="column is-5-tablet is-4-desktop is-3-widescreen">
             <div class="box">
-              <BulmaInput icon="fa-user" focus="true" v-model="user.username" label="Username" placeholder="Username" :required="true" :hasError="$v.user.username.$invalid" :errors="[]" />
-              <BulmaInput icon="fa-lock" v-model="user.password" @enterClicked="login()" label="Password" type="password" placeholder="***********" :required="true" :hasError="$v.user.password.$invalid" :errors="[]" />
+              <BulmaInput icon="user" focus="true" v-model="user.username" label="Username" placeholder="Username" :required="true" :hasError="$v.user.username.$invalid" :errors="[]" />
+              <BulmaInput icon="lock" v-model="user.password" @enterClicked="login()" label="Password" type="password" placeholder="***********" :required="true" :hasError="$v.user.password.$invalid" :errors="[]" />
               <div class="field">
                 <button class="button is-success" @click="login()">
                   Login

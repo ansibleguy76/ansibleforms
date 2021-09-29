@@ -7,7 +7,7 @@
       <div class="control">
         <div class="level">
           <div class="level-left">
-            <span class="icon mr-3"><i class="fas fa-layer-group" aria-hidden="true"></i></span>
+            <span class="icon mr-3"><font-awesome-icon icon="layer-group" /></span>
             <span>All</span>
           </div>
           <div class="level-right">
@@ -20,7 +20,7 @@
       <div class="control">
         <div class="level">
           <div class="level-left">
-            <span class="icon mr-3"><i class="fas" :class="category.icon" aria-hidden="true"></i></span>
+            <span class="icon mr-3"><font-awesome-icon :icon="category.icon" /></span>
             <span>{{ category.name }}</span>
           </div>
           <div class="level-right">
@@ -34,6 +34,12 @@
 <script>
   import Vue from 'vue'
   import TokenStorage from './../lib/TokenStorage'
+  // add font awesome
+  import { library } from '@fortawesome/fontawesome-svg-core'
+  import { fas } from '@fortawesome/pro-solid-svg-icons'
+  import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+  library.add(fas) // add all solid icons
+  Vue.component('font-awesome-icon', FontAwesomeIcon)
   export default{
     name:"Categories",
     props:{

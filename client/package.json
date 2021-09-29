@@ -19,7 +19,15 @@
     "vuelidate": "^0.7.6",
     "vue-router": "^3.5.2",
     "vue-toastification" : "1.7.11",
-    "vue-json-pretty" : "1.8.1"
+    "vue-json-pretty" : "1.8.1",
+    "bulma" : "*",
+    "@fortawesome/fontawesome-svg-core":"^1.2.36",
+    "@fortawesome/pro-solid-svg-icons":"^5",
+    "@fortawesome/pro-regular-svg-icons":"^5",
+    "@fortawesome/pro-light-svg-icons":"^5",
+    "@fortawesome/pro-duotone-svg-icons":"^5",
+    "@fortawesome/vue-fontawesome":"2.0.2"
+
   },
   "devDependencies": {
     "@vue/cli": "~4.5.13",
@@ -30,7 +38,9 @@
     "eslint": "^6.7.2",
     "eslint-plugin-vue": "^6.2.2",
     "vue-template-compiler": "^2.6.11",
-    "nodemon": "~2.0.12"
+    "nodemon": "~2.0.12",
+    "node-sass" :"^5.0.0",
+    "sass-loader":"10.1.1"
   },
   "eslintConfig": {
     "root": true,

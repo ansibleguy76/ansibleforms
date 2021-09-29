@@ -2,16 +2,16 @@
   <section v-if="isAdmin" class="section">
     <BulmaModal v-if="showDelete" title="Comfirm" action="Delete" @click="deleteGroup();showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete Group '{{ group.name}}'</BulmaModal>
     <div class="container">
-      <h1 class="title has-text-info"><i class="fad fa-users"></i> Groups</h1>
+      <h1 class="title has-text-info"><font-awesome-icon icon="users" /> Groups</h1>
       <div class="columns">
         <div class="column">
-            <BulmaSelect icon="fa-users" label="Select a group" :list="groupList" valuecol="id" labelcol="name" @change="loadGroup()" v-model="groupItem" />
-            <BulmaButton v-if="groupItem!=undefined" icon="fa-plus" label="New Group" @click="groupItem=undefined;loadGroup()"></BulmaButton>
-            <BulmaButton v-if="groupItem!=undefined && groupItem!=1" type="is-danger" icon="fa-trash-alt" label="Delete Group" @click="showDelete=true"></BulmaButton>
+            <BulmaSelect icon="users" label="Select a group" :list="groupList" valuecol="id" labelcol="name" @change="loadGroup()" v-model="groupItem" />
+            <BulmaButton v-if="groupItem!=undefined" icon="plus" label="New Group" @click="groupItem=undefined;loadGroup()"></BulmaButton>
+            <BulmaButton v-if="groupItem!=undefined && groupItem!=1" type="is-danger" icon="trash-alt" label="Delete Group" @click="showDelete=true"></BulmaButton>
         </div>
         <div class="column is-three-quarters">
-          <BulmaInput icon="fa-group" v-model="group.name" label="Groupname" :readonly="groupItem!==undefined" placeholder="Groupname" :required="true" :hasError="$v.group.name.$invalid" :errors="[]" />
-          <BulmaButton v-if="groupItem==undefined" icon="fa-save" label="Create Group" @click="newGroup()"></BulmaButton>
+          <BulmaInput icon="group" v-model="group.name" label="Groupname" :readonly="groupItem!==undefined" placeholder="Groupname" :required="true" :hasError="$v.group.name.$invalid" :errors="[]" />
+          <BulmaButton v-if="groupItem==undefined" icon="save" label="Create Group" @click="newGroup()"></BulmaButton>
         </div>
       </div>
     </div>
@@ -25,6 +25,11 @@
   import BulmaSelect from './../components/BulmaSelect.vue'
   import BulmaInput from './../components/BulmaInput.vue'
   import BulmaModal from './../components/BulmaModal.vue'
+  import { library } from '@fortawesome/fontawesome-svg-core'
+  import { fas } from '@fortawesome/pro-solid-svg-icons'
+  import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+  library.add(fas) // add all solid icons
+  Vue.component('font-awesome-icon', FontAwesomeIcon)
   import TokenStorage from './../lib/TokenStorage'
   import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
 
