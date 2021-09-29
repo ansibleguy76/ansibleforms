@@ -9,7 +9,7 @@
                 <img :src="form.image" alt="Image">
               </figure>
               <span v-if="form.icon" class="icon is-large">
-                <font-awesome-icon class="fa-3x" :icon="['fad',form.icon]" />
+                <font-awesome-icon class="fa-3x has-text-grey" :icon="form.icon" />
               </span>
             </div>
             <div class="media-content">
@@ -28,9 +28,9 @@
   import Vue from 'vue'
   import TokenStorage from './../lib/TokenStorage'
   import { library } from '@fortawesome/fontawesome-svg-core'
-  import { fad } from '@fortawesome/pro-duotone-svg-icons'
+  import { fas } from '@fortawesome/free-solid-svg-icons'
   import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-  library.add(fad) // add all solid icons
+  library.add(fas) // add all solid icons
   Vue.component('font-awesome-icon', FontAwesomeIcon)
   export default{
     name:"FormTiles",

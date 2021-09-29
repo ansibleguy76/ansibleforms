@@ -35,8 +35,8 @@
             <thead v-if="labels.length>1">
               <tr :class="sizeClass">
                 <th v-if="multiple" class="is-first">
-                  <font-awesome-icon v-if="checkAll" @click="multicheck()" :icon="['fal','check-square']" />
-                  <font-awesome-icon v-else  @click="multicheck()" :icon="['fal','square']" />
+                  <font-awesome-icon v-if="checkAll" @click="multicheck()" icon="check-square" />
+                  <font-awesome-icon v-else  @click="multicheck()" icon="square" />
                 </th>
                 <th :key="l" v-for="l in labels">{{ l }}</th>
               </tr>
@@ -44,8 +44,8 @@
             <thead v-if="labels.length==1 && multiple">
               <tr :class="sizeClass">
                 <th v-if="multiple" class="is-first">
-                  <font-awesome-icon v-if="checkAll" @click="multicheck()" :icon="['fal','check-square']" />
-                  <font-awesome-icon v-else  @click="multicheck()" :icon="['fal','square']" />
+                  <font-awesome-icon v-if="checkAll" @click="multicheck()" icon="check-square" />
+                  <font-awesome-icon v-else  @click="multicheck()" icon="square" />
                 </th>
                 <th>Name</th>
               </tr>
@@ -53,8 +53,8 @@
             <tbody>
               <tr :class="{'has-background-info':selected[i],'has-text-white':selected[i],sizeClass:sizeClass}" :key="i" v-for="v,i in values" @click="select(i)">
                 <td v-if="multiple" class="is-first">
-                  <font-awesome-icon v-if="selected[i]" :icon="['fal','check-square']" />
-                  <font-awesome-icon v-else :icon="['fal','square']" /> <span class="has-text-grey-lighter">{{i}}</span>
+                  <font-awesome-icon v-if="selected[i]" icon="check-square" />
+                  <font-awesome-icon v-else icon="square" /> <span class="has-text-grey-lighter">{{i}}</span>
                 </td>
                 <td :key="l" v-for="l in labels">{{ v[l] }}</td>
                 <td v-if="labels.length==0">{{ v }}</td>
@@ -69,10 +69,9 @@
 <script>
   import Vue from 'vue'
   import { library } from '@fortawesome/fontawesome-svg-core'
-  import { fas } from '@fortawesome/pro-solid-svg-icons'
-  import { faSquare as falSquare, faCheckSquare as falCheckSquare} from '@fortawesome/pro-light-svg-icons'
+  import { fas } from '@fortawesome/free-solid-svg-icons'
   import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-  library.add(fas,falSquare,falCheckSquare) // add all solid icons
+  library.add(fas) // add all solid icons
   Vue.component('font-awesome-icon', FontAwesomeIcon)
   // import BulmaCheckbox from './BulmaCheckbox.vue'
   export default{

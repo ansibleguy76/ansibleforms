@@ -36,7 +36,7 @@
   import TokenStorage from './../lib/TokenStorage'
   // add font awesome
   import { library } from '@fortawesome/fontawesome-svg-core'
-  import { fas } from '@fortawesome/pro-solid-svg-icons'
+  import { fas } from '@fortawesome/free-solid-svg-icons'
   import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
   library.add(fas) // add all solid icons
   Vue.component('font-awesome-icon', FontAwesomeIcon)
