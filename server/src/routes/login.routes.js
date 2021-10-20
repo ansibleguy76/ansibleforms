@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 var authConfig = require('../../config/auth.config.js')
 const logger=require("../lib/logger");
 const router = express.Router()
+const User = require("../models/user.model.js")
 
 router.post(
   '/login',
@@ -33,7 +34,14 @@ router.post(
 
               const token = jwt.sign({user}, authConfig.secret,{ expiresIn: authConfig.jwtExpiration});
               const refreshtoken = jwt.sign({user}, authConfig.secret,{ expiresIn: authConfig.jwtRefreshExpiration});
-              logger.debug("Storing refreshtoken in memory for user " + user.username)
+              logger.debug("Storing refreshtoken in database for user " + user.username)
+              User.storeToken(user.username,user.type,refreshtoken,"AUTH",function(err,result){
+                if(err){
+                  logger.error(err)
+                }else{
+                  logger.debug(result)
+                }
+              })
               authConfig.jwtStore[refreshtoken]=user.username
               return res.json({ token,refreshtoken });
             }

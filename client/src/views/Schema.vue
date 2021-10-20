@@ -18,7 +18,7 @@
                 <table class="table is-bordered is-striped">
                   <tbody>
                     <tr><th>Databaseschema</th><td>authentication</td></tr>
-                    <tr><th>Tables</th><td>users, groups</td></tr>
+                    <tr><th>Tables</th><td>users, groups, tokens</td></tr>
                     <tr><th>Users</th><td>admin (pw = AnsibleForms!123)</td></tr>
                     <tr><th>Groups</th><td>admins</td></tr>
                   </tbody>

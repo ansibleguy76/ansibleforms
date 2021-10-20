@@ -2,6 +2,7 @@
 const jwt = require("jsonwebtoken")
 var authConfig = require('../../config/auth.config.js')
 const logger=require("../lib/logger");
+const User=require("../models/user.model.js")
 
 exports.refresh = function(req, res) {
     var refreshtoken = req.body.refreshtoken
@@ -14,27 +15,33 @@ exports.refresh = function(req, res) {
         var jwtPayload=jwt.decode(refreshtoken)
         if(jwtPayload.user){
           var username=jwtPayload.user.username
-          if(authConfig.jwtStore[refreshtoken]==username){
-            // logger.debug("refresh token is valid " + refreshtoken + " - " + authConfig.jwtStore[refreshtoken])
-            logger.debug("removing refreshtoken")
-            delete authConfig.jwtStore[refreshtoken]
-            var body = jwtPayload.user
-            if(new Date(jwtPayload.exp*1000)>new Date()){
-              // logger.debug("refresh token is not expired")
-              const token = jwt.sign({ user: body }, authConfig.secret,{ expiresIn: authConfig.jwtExpiration});
-              const refreshtoken = jwt.sign({ user: body }, authConfig.secret,{ expiresIn: authConfig.jwtRefreshExpiration});
-              logger.debug("storing new refreshtoken")
-              authConfig.jwtStore[refreshtoken]=username
-              res.json({ token,refreshtoken });
+          var username_type=jwtPayload.user.type
+          User.checkToken(username,username_type,refreshtoken,"AUTH",function(err,result){
+            if(err){
+              logger.error(err)
+              res.status(400).send({ error:true, message: 'Refresh token is unknown' });
             }else{
-              logger.error("Refresh token is expired")
-              res.status(400).send({ error:true, message: 'Refresh token is expired' });
-            }
-          }else{
-            logger.error("Unknown refreshtoken")
-            res.status(400).send({ error:true, message: 'Refresh token is unknown' });
-          }
+                // logger.debug("refresh token is valid " + refreshtoken + " - " + authConfig.jwtStore[refreshtoken])
+                var body = jwtPayload.user
+                if(new Date(jwtPayload.exp*1000)>new Date()){
+                  // logger.debug("refresh token is not expired")
+                  const token = jwt.sign({ user: body }, authConfig.secret,{ expiresIn: authConfig.jwtExpiration});
+                  const refreshtoken = jwt.sign({ user: body }, authConfig.secret,{ expiresIn: authConfig.jwtRefreshExpiration});
+                  User.storeToken(username,username_type,refreshtoken,"AUTH",function(err,resnewtoken){
+                    if(err){
+                      logger.error("Failed to store new token")
+                    }else{
+                      logger.debug("Token is renewed and stored")
+                      res.json({ token,refreshtoken });
+                    }
+                  })
 
+                }else{
+                  logger.error("Refresh token is expired")
+                  res.status(400).send({ error:true, message: 'Refresh token is expired' });
+                }
+            }
+          })
         }else{
           logger.error("Invalid refresh token")
           res.status(401).send({ error:true, message: 'Invalid refresh token' });

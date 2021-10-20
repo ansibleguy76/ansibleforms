@@ -2,6 +2,7 @@ import Vue from 'vue'
 import Toast from "vue-toastification";
 // Import the CSS or use your own!
 import "vue-toastification/dist/index.css";
+import { POSITION } from "vue-toastification";
 import App from './App.vue'
 import router from "./router"
 import TokenStorage from "./lib/TokenStorage"
@@ -15,7 +16,11 @@ library.add(far,fas) // add all solid icons
 Vue.component('font-awesome-icon', FontAwesomeIcon)
 // parse scss, including bulma
 import "./../public/assets/main.scss"
-
+const options = {
+    // You can set your default options here
+    position:POSITION.BOTTOM_RIGHT
+};
+Vue.use(Toast,options)
 axios.interceptors.response.use( (response) => {
   // Return a successful response back to the calling service
   return response;
@@ -44,24 +49,28 @@ axios.interceptors.response.use( (response) => {
       return TokenStorage.getNewToken()
         .then((token) => {
           // console.log("Refresh done")
-          console.log("Retrying axios")
-          // New request with new token
-          const config = error.config;
-          config.headers['Authorization'] = `Bearer ${token}`;
+            console.log("Retrying axios")
+            // New request with new token
+            const config = error.config;
+            config.headers['Authorization'] = `Bearer ${token}`;
 
-          return new Promise((resolve, reject) => {
-            axios.request(config).then(response => {
-              resolve(response);
-            }).catch((error) => {
-              reject(error);
-            })
-          });
-
+            return new Promise((resolve, reject) => {
+              axios.request(config).then(response => {
+                if(response.error){
+                  Promise.reject(error);
+                  reject(error);
+                  router.push({ name: 'Login' }).catch(err => {});
+                }else{
+                  resolve(response);
+                }
+              }).catch((error) => {
+                Promise.reject(error);
+                reject(error);
+                router.push({ name: 'Login' }).catch(err => {});
+              })
+            });
         })
         .catch((error) => {
-          if(this.$toast){
-            this.$toast.warning("Unauthorized.  Session timeout.")
-          }
           router.push({ name: 'Login' }).catch(err => {});
           Promise.reject(error);
         });
@@ -69,17 +78,8 @@ axios.interceptors.response.use( (response) => {
       console.log("Error")
     }
   }
-
-
-
 });
 Vue.config.productionTip = false
-import { POSITION } from "vue-toastification";
-const options = {
-    // You can set your default options here
-    position:POSITION.BOTTOM_RIGHT
-};
-Vue.use(Toast,options)
 new Vue({
   router,
   render: h => h(App)

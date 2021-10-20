@@ -145,6 +145,80 @@ User.authenticate = function (username,password,config,result) {
     }
 
 };
+User.storeToken = function (username,username_type,refresh_token,config,result) {
+    var dbConn = require('./../../config/db.mysql.config')(config);
+    var record = {}
+    record.username = username
+    record.username_type= username_type
+    record.refresh_token = refresh_token
+    logger.debug(`Adding token for ${record.username} (${record.username_type})`)
+    try{
+      dbConn.query("INSERT INTO authentication.`tokens` set ? ON DUPLICATE KEY UPDATE username=VALUES(username),username_type=VALUES(username_type),refresh_token=VALUES(refresh_token)", record,  function (err, res) {
+          if(err) {
+              logger.error(err)
+              result(err, null);
+          }
+          else{
+              // logger.debug(res)
+              result(null, "Token saved");
+          }
+      });
+    }catch(err){
+      result("Failed to insert token in database",null)
+    }
+};
+User.deleteToken = function (username,username_type,config,result) {
+    var dbConn = require('./../../config/db.mysql.config')(config);
+    logger.debug(`Deleting token for user ${username} (${username_type})`)
+    var query = "DELETE FROM authentication.`tokens` WHERE username=? AND username_type=?"
+    logger.debug(query)
+    try{
+      dbConn.query(query,[username,username_type], function (err, res) {
+          if(err) {
+              logger.error(err)
+              result("Failed to connect to the authentication database : " + err, null);
+          }else{
+            result(null,"Token removed")
+          }
+      });
+    }catch(err){
+        result("Failed to connect to the authentication database. " + err, null);
+    }
+};
+User.checkToken = function (username,username_type,refresh_token,config,result) {
+    var dbConn = require('./../../config/db.mysql.config')(config);
+    logger.debug(`Checking token for user ${username} (${username_type})`)
+    var query = "SELECT refresh_token FROM authentication.`tokens` WHERE username=? AND username_type=?"
+    logger.debug(query)
+    try{
+      dbConn.query(query,[username,username_type], function (err, res) {
+          if(err) {
+              logger.error(err)
+              result("Failed to connect to the authentication database : " + err, null);
+          }
+          else{
+              if(res.length == 1){
+                if(res[0].refresh_token==refresh_token){
+                    result(null,"Refresh token is OK");
+                }else{
+                    User.deleteToken(username,username_type,config,function(err,res){
+                      if(err){
+                        logger.error("Failed to remove token for " + username)
+                      }else{
+                        logger.debug("Removed token for " + username)
+                      }
+                      result(`User ${username} (${username_type}) gave a wrong refresh token, token is revoked`,null);
+                    })
+                }
+              }else{
+                result(`User ${username} (${username_type}) not found`,null);
+              }
+          }
+      });
+    }catch(err){
+        result("Failed to connect to the authentication database. " + err, null);
+    }
+};
 User.getRoles = function(user,groupObj){
   var roles = ["public"]
   var groupMatch=""

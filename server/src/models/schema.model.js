@@ -19,7 +19,7 @@ Schema.hasSchema = function (config,result) {
           }
           else{
               if(res.length > 0){
-                logger.debug(`Checking table 'users' in schema 'authentication'`)
+                logger.debug(`Checking table 'users','groups' and 'tokens' in schema 'authentication'`)
                 var query = "SHOW TABLES FROM `authentication`;"
                 dbConn.query(query, function (err, res) {
                     if(err) {
@@ -28,10 +28,10 @@ Schema.hasSchema = function (config,result) {
                         result("Failed to query the authentication schema", null);
                     }
                     else{
-                        if(res.length == 2){
+                        if(res.length == 3){
                           result(null,{status:"success",message:`schema 'authentication' and tables are present`})
                         }else{
-                          logger.warn(`Tables 'users' and/or 'groups' are not ok`)
+                          logger.warn(`Tables 'users', 'groups' or 'tokens' are not ok`)
                           result(null,{status:"error",message:`schema 'authentication' is present, but some tables are not`});
                         }
                     }
@@ -71,6 +71,13 @@ Schema.create = function (config,result) {
                         KEY `FK_users_group` (`group_id`),\
                         CONSTRAINT `FK_users_group` FOREIGN KEY (`group_id`) REFERENCES `groups` (`id`) ON DELETE CASCADE ON UPDATE CASCADE\
                     ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;\
+                    DROP TABLE IF EXISTS `tokens`;\
+                    CREATE TABLE `tokens` (\
+                      `username` varchar(250) NOT NULL,\
+                      `username_type` varchar(5) NOT NULL,\
+                      `refresh_token` text DEFAULT NULL,\
+                      PRIMARY KEY (`username`,`username_type`)\
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;\
                     INSERT INTO authentication.groups(name) VALUES('admins');\
                     INSERT INTO authentication.users(username,password,group_id) VALUES('admin','$2b$10$Z/W0HXNBk2aLR4yVLkq5L..C8tXg.G.o1vkFr8D2lw8JSgWRCNiCa',1)"
 
@@ -84,10 +91,10 @@ Schema.create = function (config,result) {
             else{
 
                 if(res.length > 0){
-                  logger.info(`Created schema 'authentication' and table 'users'`)
-                  result(null,`Created schema 'authentication' and table 'users'`)
+                  logger.info(`Created schema 'authentication' and table 'users','groups','tokens'`)
+                  result(null,`Created schema 'authentication' and table 'users','groups','tokens'`)
                 }else{
-                  result(`Failed to create schema 'authentication' and/or table 'users'`,null)
+                  result(`Failed to create schema 'authentication' and/or table 'users','groups','tokens'`,null)
                 }
 
             }

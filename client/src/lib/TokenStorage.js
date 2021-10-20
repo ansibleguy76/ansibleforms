@@ -30,17 +30,23 @@ var TokenStorage = {
   getNewToken() {
     return new Promise((resolve, reject) => {
       try{
+        console.log("Getting new token from server...")
         axios
           .post('/api/v1/token', { refreshtoken: this.getRefreshToken() })
           .then(response => {
+            if(response.error){
+              console.log("Getting token was error from server")
+              resolve(response.message)
+            }else{
+              this.storeToken(response.data.token);
+              this.storeRefreshToken(response.data.refreshtoken);
+              resolve(response.data.token);
+            }
 
-            this.storeToken(response.data.token);
-            this.storeRefreshToken(response.data.refreshtoken);
-
-            resolve(response.data.token);
           })
           .catch((error) => {
-            reject(error);
+            console.log("Axios gave error. " + error)
+            reject("Error : " + error)
           });
       }catch(err){
         console.log("Error")
