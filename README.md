@@ -89,7 +89,7 @@ GRANT ALL PRIVILEGES ON *.* TO 'root'@'%';
 FLUSH PRIVILEGES;
 ```
 Note : You can create multiple users and lock down the database as you please, however if the webapplication cannot find the authentication database, it will try to create it.  So you might want to give enough privileges.
-## import some sample data for testing (optional)
+## Import some sample data for testing (optional)
 ```
 mysql -u root -p -t< ./demo/demo_storage.sql > mysql_deployed.txt
 mysql -u root -p -t< ./demo/demo_cmdb.sql > mysql_deployed.txt
@@ -112,13 +112,13 @@ cd server
 cp .env.example .env.development
 cp ./demo/forms.json.example ./demo/forms.json
 ```
-## modify the .env.development to your needs
+## Modify the .env.development to your needs
 - update forms path and log path
 - set ansible path
 - set awx connection details
 - set mysql server connection details
 
-## modify the forms.json to your needs
+## Modify the forms.json to your needs
 - add categories
 - add roles
 - add forms
