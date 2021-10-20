@@ -95,15 +95,18 @@ mysql -u root -p -t< ./demo/demo_storage.sql > mysql_deployed.txt
 mysql -u root -p -t< ./demo/demo_cmdb.sql > mysql_deployed.txt
 ```
 ## Project init
+First we install all nodejs dependencies for both client & server
 ```
-# install nodejs dependencies in both client and server subprojects
 cd server
 npm install
 cd ..
 cd client
 npm install
 cd ..
-
+```
+Second we prep our environment variables.  An environment variable file contains the configuration of this application, such as http/s settings, ldap settings, database connections, log settings, ...
+This application comes with an .env.example file that you must copy (.env.development or .env.production) and adjust to your needs.  You can maintain both development and production file to test if you have different dev & prod environments and settings.
+```
 # prepare development environment variables
 cd client
 cp .env.example .env.development
@@ -112,68 +115,94 @@ cd server
 cp .env.example .env.development
 cp ./demo/forms.json.example ./demo/forms.json
 ```
-## Modify the .env.development to your needs
+## Modify the .env.development (or .env.production) to your needs
 - update forms path and log path
 - set ansible path
 - set awx connection details
 - set mysql server connection details
 
 ## Modify the forms.json to your needs
+The forms.json file describes all your forms in a json format.  It must be available in the server application.  By default it's under /server/persistent, but if you choose to run this application containerized, then the file is best fit on a mountpath or persistent volume.  So set the location of the forms.json file correctly in the environment file.  In the file, make to proper changes, refer to the wiki documentation for all details.
+
 - add categories
 - add roles
 - add forms
 
 # How to run
-## Run both server and client for development
+## In development
+First of all one must understand that this application has both a client and server side.
+The client side is build with vue2 and compiles in a single html, css & js script file.
+The server side is build with express (must also be compiled) and runs the api's and database connections.
+
+All behavior and how things are started using the 'npm run command' is in the package.json file (one for client and one for server).  There are several methods like 'build, bundle, start, ...' depending on what you want to do.
+### Run both server and client for development
+When you test a vue2 application (client application), it typically spins up a temporary Express webserver, which is useless if you also have a server application, which would not but running in this case.  Therefor we have added a vue.config.js file which also starts our server code in that temp express server.  Now we start our client app in development, along with the server code.
 ```
 cd client
 npm run start
 
 # this will kickoff nodemon and vue-cli-service serve, but using vue.config.js, it spins up a custom express server, wich runs our api's
 ```
-## Run compiled in development
+### Run compiled in development
+If are done testing, you can compile the client code and have it embedded into the server code.  And then spin up the server application.  the command 'npm run bundle' will compile the client code and copy it under /views in the server application.  You can then start the server application with 'npm run dev', and as you will see in the package.json, it will build, copy the environment file and start the server application in dev mode.
+
+First we compile the client code, and bundle it in the server code
 ```
-# compile the client code and bundle in the server code
 cd client
 npm run bundle
-# goto server code
+```
+Then we run the server code in development mode.  'npm run dev' will also copy the .env.development file into the ./dist folder, so make sure it's there !
+```
 cd ..
 cd server
-# copy a proper environment variable
-cp .env.example ./dist/.env.development # and adjust the file accordingly
-# build the code and run
 npm run dev
 ```
-## Run with PM2
+## Run in production
+### Run with PM2
+Running the application in the commandline, makes it fragile when something goes wrong.  We need an environment where the nodejs application can run when logged of, where it can be monitored and even restarted in case of a crash.  That's were PM2 comes in. (https://pm2.keymetrics.io/)
 ```
 # install PM2 globally
 npm install -g pm2
-# compile the client code and bundle in the server code
+```
+We again compile the client code and bundle it in the server code
+```
 cd client
 npm run bundle
-# goto server code
+```
+We now compile the server code, but don't start it.
+```
 cd ..
 cd server
 # build the code
-npm run prod
-# copy a proper environment variable
-cp .env.example ./dist/.env.production # and adjust the file accordingly
-# run server code with PM2
+npm run build
+```
+Then we copy a production ready environment file. (change it to fit your production environment)
+```
+cp .env.example ./dist/.env.production #
+```
+Then we start it in PM2.  
+```
+cd dist
 NODE_ENV=production pm2 restart index.js --name ansibleforms --env .env.production
 ```
-## Run with docker
+### Run with docker
+If you want to containerize the application, this code comes with a Dockerfile holding the steps to build the image. (examine 'Dockerfile').
+
+First compile the client code and bundle with server code
 ```
-# compile the client code and bundle in the server code
 cd client
 npm run bundle
+```
+Then install docker-ce !!
+The build the docker image.  
+```
 cd ..
-# this will build and bundle the client app in to the application
 cd server
-# install docker-ce !!!
-# build the docker image, a 'Dockerfile' is present
 docker build -t ansible_forms .
-# note that the below is now binding a local path into app/persistent inside the containerized
-# you can change the source path and choose any path you would like to mount, as long as the forms.json file is there
-# copy .env.docker.example to .env.docker and adjust accordingly
+```
+We now start the docker container.
+Note that we have deployed the solution in the ./app folder inside the docker.  So make sure that forms.json is reachable from within the docker image either using a mount path or persistent volume.
+Make sure you have .env.docker file that contains all environment variables.  You can copy a sample from .env.docker.example
+```
 docker run -p 8000:8000 -d -t --mount type=bind,source="$(pwd)"/persistent,target=/app/persistent --env-file .env.docker ansible_forms
 ```
