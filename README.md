@@ -204,3 +204,10 @@ Make sure you have `.env.docker` file that contains all environment variables.  
 ```
 docker run -p 8000:8000 -d -t --mount type=bind,source="$(pwd)"/persistent,target=/app/persistent --env-file .env.docker ansible_forms
 ```
+# First time run
+## Create authentication database
+The first you surf to the webapplication, it will ask you if it should create the authentication schema.  
+## Admin user
+The default admin user is :
+- username : admin
+- password : AnsibleForms!123
