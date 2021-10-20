@@ -161,7 +161,7 @@ cp .env.example ./dist/.env.production # and adjust the file accordingly
 # run server code with PM2
 NODE_ENV=production pm2 restart index.js --name ansibleforms --env .env.production
 ```
-### Run with docker
+## Run with docker
 ```
 # compile the client code and bundle in the server code
 cd client
