@@ -89,7 +89,7 @@ GRANT ALL PRIVILEGES ON *.* TO 'root'@'%';
 FLUSH PRIVILEGES;
 ```
 Note : You can create multiple users and lock down the database as you please, however if the webapplication cannot find the authentication database, it will try to create it.  So you might want to give enough privileges.
-## import some sample data to for testing (optional)
+## import some sample data for testing (optional)
 ```
 mysql -u root -p -t< ./demo/demo_storage.sql > mysql_deployed.txt
 mysql -u root -p -t< ./demo/demo_cmdb.sql > mysql_deployed.txt
@@ -123,14 +123,15 @@ cp ./demo/forms.json.example ./demo/forms.json
 - add roles
 - add forms
 
-### Run both server and client for development
+# How to run
+## Run both server and client for development
 ```
 cd client
 npm run start
 
 # this will kickoff nodemon and vue-cli-service serve, but using vue.config.js, it spins up a custom express server, wich runs our api's
 ```
-### Run compiled in development
+## Run compiled in development
 ```
 # compile the client code and bundle in the server code
 cd client
@@ -143,7 +144,7 @@ cp .env.example ./dist/.env.development # and adjust the file accordingly
 # build the code and run
 npm run dev
 ```
-### Run with PM2
+## Run with PM2
 ```
 # install PM2 globally
 npm install -g pm2
@@ -169,6 +170,7 @@ cd ..
 # this will build and bundle the client app in to the application
 cd server
 # install docker-ce !!!
+# build the docker image, a 'Dockerfile' is present
 docker build -t ansible_forms .
 # note that the below is now binding a local path into app/persistent inside the containerized
 # you can change the source path and choose any path you would like to mount, as long as the forms.json file is there
