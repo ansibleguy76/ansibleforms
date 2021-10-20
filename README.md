@@ -44,7 +44,7 @@ The webapplication is based on a
 - Expressions (javascript)
 - Field dependencies
 - Add icons
-- Fieldfield validations
+- Field validations
 - Group fields
 - Nested output modelling (control the form output in a multilevel object)
 - Json web tokens authorization (jwt) (access & refresh)
