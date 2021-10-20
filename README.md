@@ -63,15 +63,15 @@ curl -sL https://rpm.nodesource.com/setup_14.x | sudo -E bash -
 yum install -y nodejs
 
 # create holder folder (can be custom)
-mkdir /srv/ansible_forms
-cd /srv/ansible_forms
+mkdir /srv/apps
+cd /srv/apps
 
 # grab the code from github
 yum install -y git
 ‌‌git init
 git clone https://github.com/ansibleguy76/ansibleforms.git
 
-# enter projects
+# enter the app project
 cd ansibleforms
 ```
 ## Install MySql (or skip to use exising one)
