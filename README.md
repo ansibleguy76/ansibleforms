@@ -99,17 +99,19 @@ First we install all nodejs dependencies for both client & server
 ```
 cd server
 npm install
+
 cd ..
 cd client
 npm install
+
 cd ..
 ```
 Second we prep our environment variables.  An environment variable file contains the configuration of this application, such as http(s) settings, ldap settings, database connections, log settings, ...
 This application comes with an `.env.example` file that you must copy to `.env.development` or `.env.production` and adjust to your needs.  You can maintain both development and production file to test if you have different dev & prod environments and settings.
 ```
-# prepare development environment variables
 cd client
 cp .env.example .env.development
+
 cd ..
 cd server
 cp .env.example .env.development
@@ -159,7 +161,6 @@ npm run dev
 ### Run with PM2
 Running the application in the commandline, makes it fragile when something goes wrong.  We need an environment where the nodejs application can run when logged of, where it can be monitored and even restarted in case of a crash.  That's were PM2 comes in. (https://pm2.keymetrics.io/)
 ```
-# install PM2 globally
 npm install -g pm2
 ```
 We again compile the client code and bundle it in the server code
@@ -171,7 +172,6 @@ We now compile the server code, but don't start it.
 ```
 cd ..
 cd server
-# build the code
 npm run build
 ```
 Then we copy a production ready environment file. (change it to fit your production environment)
