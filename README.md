@@ -104,7 +104,7 @@ cd client
 npm install
 cd ..
 ```
-Second we prep our environment variables.  An environment variable file contains the configuration of this application, such as http/s settings, ldap settings, database connections, log settings, ...
+Second we prep our environment variables.  An environment variable file contains the configuration of this application, such as http(s) settings, ldap settings, database connections, log settings, ...
 This application comes with an .env.example file that you must copy (.env.development or .env.production) and adjust to your needs.  You can maintain both development and production file to test if you have different dev & prod environments and settings.
 ```
 # prepare development environment variables
@@ -113,14 +113,13 @@ cp .env.example .env.development
 cd ..
 cd server
 cp .env.example .env.development
-cp ./demo/forms.json.example ./demo/forms.json
+cp ./persistent/forms.json.example ./persistent/forms.json
 ```
 ## Modify the .env.development (or .env.production) to your needs
 - update forms path and log path
 - set ansible path
 - set awx connection details
 - set mysql server connection details
-
 ## Modify the forms.json to your needs
 The forms.json file describes all your forms in a json format.  It must be available in the server application.  By default it's under /server/persistent, but if you choose to run this application containerized, then the file is best fit on a mountpath or persistent volume.  So set the location of the forms.json file correctly in the environment file.  In the file, make to proper changes, refer to the wiki documentation for all details.
 
