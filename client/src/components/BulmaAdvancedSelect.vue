@@ -35,8 +35,8 @@
             <thead v-if="labels.length>1">
               <tr :class="sizeClass">
                 <th v-if="multiple" class="is-first">
-                  <font-awesome-icon v-if="checkAll" @click="multicheck()" icon="check-square" />
-                  <font-awesome-icon v-else  @click="multicheck()" icon="square" />
+                  <font-awesome-icon v-if="checkAll" @click="multicheck()" :icon="['far','check-square']" />
+                  <font-awesome-icon v-else  @click="multicheck()" :icon="['far','square']" />
                 </th>
                 <th :key="l" v-for="l in labels">{{ l }}</th>
               </tr>
@@ -44,8 +44,8 @@
             <thead v-if="labels.length==1 && multiple">
               <tr :class="sizeClass">
                 <th v-if="multiple" class="is-first">
-                  <font-awesome-icon v-if="checkAll" @click="multicheck()" icon="check-square" />
-                  <font-awesome-icon v-else  @click="multicheck()" icon="square" />
+                  <font-awesome-icon v-if="checkAll" @click="multicheck()" :icon="['far','check-square']" />
+                  <font-awesome-icon v-else  @click="multicheck()" :icon="['far','square']" />
                 </th>
                 <th>Name</th>
               </tr>
@@ -53,8 +53,8 @@
             <tbody>
               <tr :class="{'has-background-info':selected[i],'has-text-white':selected[i],sizeClass:sizeClass}" :key="i" v-for="v,i in values" @click="select(i)">
                 <td v-if="multiple" class="is-first">
-                  <font-awesome-icon v-if="selected[i]" icon="check-square" />
-                  <font-awesome-icon v-else icon="square" /> <span class="has-text-grey-lighter">{{i}}</span>
+                  <font-awesome-icon v-if="selected[i]" :icon="['far','check-square']" />
+                  <font-awesome-icon v-else :icon="['far','square']" /> <span class="has-text-grey-lighter">{{i}}</span>
                 </td>
                 <td :key="l" v-for="l in labels">{{ v[l] }}</td>
                 <td v-if="labels.length==0">{{ v }}</td>

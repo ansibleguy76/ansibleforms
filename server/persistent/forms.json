@@ -507,7 +507,7 @@
       "description":"This workflow will show form field examples",
       "categories":["Demo"],
       "tileClass":"has-background-warning",
-      "icon":"text",
+      "icon":"comment",
       "playbook":"dummy.yaml",
       "inventory":"",
       "type":"ansible",

@@ -6,7 +6,7 @@
           <h1 class="title">{{ currentForm.name }}</h1>
           <button @click="generateJsonOutput();showJson=true" class="button is-info is-small">
             <span class="icon">
-              <font-awesome-icon icon="brackets-curly" />
+              <font-awesome-icon icon="eye" />
             </span>
             <span>Show Extravars</span>
           </button>
@@ -98,7 +98,7 @@
 
           <hr v-if="!!currentForm" />
           <button v-if="!!currentForm && !ansibleResult.message" class="button is-primary is-fullwidth" @click="ansibleResult.message='initializing'"><span class="icon"><font-awesome-icon icon="play" /></span><span>Run</span></button>
-          <button v-if="!!ansibleResult.message" class="button is-fullwidth" @click="resetResult()" :class="{ 'has-background-success' : ansibleResult.status=='success', 'has-background-danger' : ansibleResult.status=='error','has-background-info cursor-progress' : ansibleResult.status=='info' }">
+          <button v-if="!!ansibleResult.message" class="button is-fullwidth" @click="resetResult()" :class="{ 'has-background-success' : ansibleResult.status=='success', 'has-background-danger' : ansibleResult.status=='error','has-background-info has-text-light cursor-progress' : ansibleResult.status=='info' }">
             <span class="icon" v-if="ansibleResult.status=='info'"><font-awesome-icon icon="spinner" spin /></span>
             <span class="icon" v-if="ansibleResult.status!='info'"><font-awesome-icon icon="times" /></span>
             <span>{{ ansibleResult.message }}</span>
@@ -108,6 +108,10 @@
             <pre v-if="currentForm.type=='ansible' && ansibleResult.data.error" class="has-text-danger" v-text="ansibleResult.data.error"></pre>
             <pre v-if="currentForm.type=='awx'" v-html="ansibleResult.data.output"></pre>
           </div>
+          <button v-if="!!ansibleResult.data.output" class="button has-background-danger has-text-light" @click="resetResult()">
+            <span class="icon"><font-awesome-icon icon="times" /></span>
+            <span>Close output</span>
+          </button>
         </div>
         <div v-if="showJson" class="column">
           <h1 class="title">Extravars</h1>

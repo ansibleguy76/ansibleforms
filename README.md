@@ -130,8 +130,37 @@ npm run start
 
 # this will kickoff nodemon and vue-cli-service serve, but using vue.config.js, it spins up a custom express server, wich runs our api's
 ```
-
-### Run docker
+### Run compiled in development
+```
+# compile the client code and bundle in the server code
+cd client
+npm run bundle
+# goto server code
+cd ..
+cd server
+# copy a proper environment variable
+cp .env.example ./dist/.env.development # and adjust the file accordingly
+# build the code and run
+npm run dev
+```
+### Run with PM2
+```
+# install PM2 globally
+npm install -g pm2
+# compile the client code and bundle in the server code
+cd client
+npm run bundle
+# goto server code
+cd ..
+cd server
+# build the code
+npm run prod
+# copy a proper environment variable
+cp .env.example ./dist/.env.production # and adjust the file accordingly
+# run server code with PM2
+NODE_ENV=production pm2 restart index.js --name ansibleforms --env .env.production
+```
+### Run with docker
 ```
 # compile the client code and bundle in the server code
 cd client
@@ -143,5 +172,6 @@ cd server
 docker build -t ansible_forms .
 # note that the below is now binding a local path into app/persistent inside the containerized
 # you can change the source path and choose any path you would like to mount, as long as the forms.json file is there
+# copy .env.docker.example to .env.docker and adjust accordingly
 docker run -p 8000:8000 -d -t --mount type=bind,source="$(pwd)"/persistent,target=/app/persistent --env-file .env.docker ansible_forms
 ```
