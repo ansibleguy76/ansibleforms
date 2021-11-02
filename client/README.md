@@ -15,7 +15,7 @@ This will compile the vue code to the ./dist folder
 npm run build
 ```
 ## Bundle into server code
-This will build and copy the dist folder to the server folder.  You can can run 'npm run start' in the server folder.
+This will build and copy the dist folder to the server folder.  You can then run 'npm run start' in the server folder.
 ```
 npm run bundle
 ```

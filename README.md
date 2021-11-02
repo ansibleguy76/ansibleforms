@@ -73,6 +73,8 @@ git clone https://github.com/ansibleguy76/ansibleforms.git
 
 # enter the app project
 cd ansibleforms
+
+# verify that you have 2 subfolder
 ```
 ## Install MySql (or skip to use exising one)
 ```
@@ -91,7 +93,6 @@ FLUSH PRIVILEGES;
 Note : You can create multiple users and lock down the database as you please, however if the webapplication cannot find the authentication database, it will try to create it.  So you might want to give enough privileges.
 ## Import some sample data for testing (optional)
 ```
-mysql -u root -p -t< ./demo/demo_storage.sql > mysql_deployed.txt
 mysql -u root -p -t< ./demo/demo_cmdb.sql > mysql_deployed.txt
 ```
 ## Project init
