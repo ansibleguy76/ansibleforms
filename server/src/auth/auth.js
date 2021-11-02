@@ -5,6 +5,8 @@ const authConfig = require('../../config/auth.config.js')
 const logger=require("../lib/logger");
 
 var config="AUTH"
+
+// create username / password login strategy
 passport.use(
   'login',
   new localStrategy(
@@ -15,9 +17,11 @@ passport.use(
     async (username, password, done) => {
       try {
         var user = {}
+        // authentication against database first
         UserModel.authenticate(username,password,config,function(err,result){
-
+          // if error ?
           if (err || result===null) {
+            // trying against ldap
             logger.debug("No login locally, trying ldap")
             UserModel.checkLdap(username,password,function(err,result){
               if(err){
@@ -44,8 +48,10 @@ passport.use(
             });
 
           }else if(!result.isValid) {
+            // user found in db, but wrong pw
             return done(null, false, { message: 'Wrong Password'});
           }else{
+            // user ok in db
             user.username = result.user.username
             user.type = 'local'
             user.roles = UserModel.getRoles(user,result.user.groups)
@@ -58,6 +64,7 @@ passport.use(
     }
   )
 );
+// add strategy for token
 const JWTstrategy = require('passport-jwt').Strategy;
 const ExtractJWT = require('passport-jwt').ExtractJwt;
 passport.use(
