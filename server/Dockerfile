@@ -20,6 +20,9 @@ COPY . .
 # Invoke the build script to transpile code to js
 RUN npm run build
 
+# Remove persistent subfolder
+RUN rm -rf ./dist/persistent
+
 # Final stage
 
 
