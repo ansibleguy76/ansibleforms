@@ -181,7 +181,7 @@ cp .env.example ./dist/.env.production
 Then we start it in PM2.  
 ```
 cd dist
-NODE_ENV=production pm2 restart ecosystem.config.js --name ansibleforms --env .env.production
+pm2 start ecosystem.config.js --env production
 ```
 ### Run with docker
 If you want to containerize the application, this code comes with a Dockerfile holding the steps to build the image. (examine `Dockerfile`).
