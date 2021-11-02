@@ -176,12 +176,12 @@ npm run build
 ```
 Then we copy a production ready environment file. (change it to fit your production environment)
 ```
-cp .env.example ./dist/.env.production #
+cp .env.example ./dist/.env.production
 ```
 Then we start it in PM2.  
 ```
 cd dist
-NODE_ENV=production pm2 restart index.js --name ansibleforms --env .env.production
+NODE_ENV=production pm2 restart ecosystem.config.js --name ansibleforms --env .env.production
 ```
 ### Run with docker
 If you want to containerize the application, this code comes with a Dockerfile holding the steps to build the image. (examine `Dockerfile`).

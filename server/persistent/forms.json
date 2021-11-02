@@ -563,6 +563,44 @@
       ]
     },
     {
+      "name":"Expression Queries Ontap",
+      "roles":["demo"],
+      "description":"A few samples of the power of expression based queries",
+      "categories":["Demo"],
+      "tileClass":"has-background-warning",
+      "template":"HelloWorld",
+      "inventory":"",
+      "type":"awx",
+      "fields":[
+        {
+          "type":"query",
+          "name":"cluster",
+          "label":"Cluster",
+          "default":"__none__",
+          "required":true,
+          "outputObject":true,
+          "multiple":false,
+          "expression":"fn.fnRestBasic('get','https://172.16.0.88/api/datacenter/cluster/clusters','','ONTAP','[.records[]]')",
+          "columns":["name","management_ip"],
+          "valueColumn":"management_ip",
+          "previewColumn":"name"
+        },
+          {
+            "type":"query",
+            "name":"svm",
+            "label":"Svm",
+            "default":"__none__",
+            "required":true,
+            "outputObject":true,
+            "multiple":false,
+            "expression":"fn.fnRestBasic('get','https://$(cluster.management_ip)/api/svm/svms?subtype=default','','ONTAP','[.records[]]')",
+            "columns":["name"],
+            "valueColumn":"name",
+            "previewColumn":"name"
+          }
+      ]
+    },
+    {
       "name":"HelloWorld",
       "roles":["demo"],
       "description":"This will kick off the HelloWorld template.  It does not expect any variables, so that's cool because it should always run :)",
