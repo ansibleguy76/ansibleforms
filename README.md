@@ -197,13 +197,14 @@ Then build the docker image (it will use `Dockerfile`)
 ```
 cd ..
 cd server
-docker build -t ansible_forms .
+docker build -t ansibleforms .
 ```
 We now start the docker container.
 Note that we have deployed the solution in the `./app` folder inside the docker.  So make sure that `forms.json` is reachable from within the docker image either using a mount path or persistent volume.
 Make sure you have `.env.docker` file that contains all environment variables.  You can copy a sample from `.env.docker.example`
+The dockerfile also installs ansible and some python dependencies which are interesting.  In the `forms.json` file, make sure to set the ansible path to the persistent directoy so it can find your playbooks.
 ```
-docker run -p 8443:8443 -d -t --mount type=bind,source="$(pwd)"/persistent,target=/app/persistent --env-file .env.docker ansible_forms
+docker run -p 8443:8443 -d -t --mount type=bind,source="$(pwd)"/persistent,target=/app/persistent --env-file .env.docker ansibleforms
 ```
 # First time run
 ## Create authentication database

@@ -1,4 +1,4 @@
-FROM node:16-alpine AS node
+FROM node:14-alpine AS node
 
 
 # Builder stage
@@ -45,6 +45,24 @@ COPY --from=builder /app/dist ./dist
 
 # Open desired port
 # EXPOSE 8000
+
+# install ansible
+RUN apk add ansible
+
+# upgrade pip
+RUN /usr/bin/python3.8 -m pip install --upgrade pip
+
+# install some python dependencies
+RUN pip3 install --upgrade requests six
+RUN apk add --update --no-cache --virtual .build-deps g++ gcc libxml2-dev libxslt-dev python-dev
+RUN apk add --no-cache libxslt
+RUN pip3 install --no-cache-dir lxml
+RUN apk del .build-deps
+RUN pip3 install --upgrade netapp_lib
+
+# run ansible galaxy modules
+RUN ansible-galaxy collection install netapp.ontap
+RUN ansible-galaxy collection install netapp.um
 
 # Use js files to run the application
 ENTRYPOINT ["node", "./dist/index.js"]
