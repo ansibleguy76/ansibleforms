@@ -5,7 +5,7 @@ const passport = require('passport');
 module.exports = app => {
   // load the .env.development file ; it loads a bunch of environment variables
   // we are not doing this for production, where the variables are coming from the actual environment
-  if (process.env.NODE_ENV !== 'production'){
+  if (process.env.NODE_ENV !== 'production' || process.env.FORCE_DOTENV){
       console.log(`Importing .env file : ${__dirname}/../.env.${process.env.NODE_ENV}` )
       require('dotenv').config({ path: `${__dirname}/../.env.${process.env.NODE_ENV}` })
   }
