@@ -62,7 +62,7 @@ RUN pip3 install --upgrade netapp_lib
 
 # run ansible galaxy modules
 RUN ansible-galaxy collection install netapp.ontap
-RUN ansible-galaxy collection install netapp.um
+RUN ansible-galaxy collection install netapp.um_info
 
 # Use js files to run the application
 ENTRYPOINT ["node", "./dist/index.js"]
