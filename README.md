@@ -184,7 +184,31 @@ Then we start it in PM2.
 cd dist
 pm2 start ecosystem.config.js --env production
 ```
-### Run with docker
+Once started
+```
+# pm2 status
+┌─────┬─────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id  │ name            │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├─────┼─────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0   │ ansibleforms    │ default     │ 1.0.0   │ fork    │ 3104     │ 8s     │ 0    │ online    │ 0%       │ 57.1mb   │ root     │ enabled  │
+└─────┴─────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+```
+### Run with docker with docker hub image
+If you want, you can use the latest build from docker hub (https://hub.docker.com/repository/docker/ansibleguy/ansibleforms)
+Note that we have deployed the solution in the `./app` folder inside the docker.  So if you want your `forms.json`, your, logs, certificates and playbook reachable from within the docker image, you have to use a mount path or persistent volume.
+Make sure you have your environment variable set (see `.env.docker.example` file) that contains all environment variables.  
+The image contains ansible and python3.  In the environment variables, make sure to set the ansible, certificate and log path to the persistent directoy so it can find your playbooks, write your logs and find your .  The below command is merely an example, correct the ports, the mount points and the environment file.  You can also deploy this with kubernetes for example.  
+```
+docker run -p 8443:8443 -d -t --mount type=bind,source="/srv/apps/ansibleforms/server/persistent,target=/app/persistent --name ansibleforms --env-file .env.docker ansibleguy/ansibleforms
+```
+Once started :
+```
+docker ps
+CONTAINER ID   IMAGE                     COMMAND                  CREATED         STATUS         PORTS                                       NAMES
+d91f7b05b67e   ansibleguy/ansibleforms   "node ./dist/index.js"   7 seconds ago   Up 6 seconds   0.0.0.0:8443->8443/tcp, :::8443->8443/tcp   ansibleforms
+```
+
+### Run with docker with local built image
 If you want to containerize the application, this code comes with a Dockerfile holding the steps to build the image. (examine `Dockerfile`).
 
 First compile the client code and bundle with server code
@@ -202,9 +226,15 @@ docker build -t ansibleforms .
 We now start the docker container.
 Note that we have deployed the solution in the `./app` folder inside the docker.  So make sure that `forms.json` is reachable from within the docker image either using a mount path or persistent volume.
 Make sure you have `.env.docker` file that contains all environment variables.  You can copy a sample from `.env.docker.example`
-The dockerfile also installs ansible and some python dependencies which are interesting.  In the `forms.json` file, make sure to set the ansible path to the persistent directoy so it can find your playbooks.
+The dockerfile also installs ansible and some python dependencies which are interesting.  In the `.env.docker` file, make sure to set the ansible path to the persistent directoy so it can find your playbooks.
 ```
 docker run -p 8443:8443 -d -t --mount type=bind,source="$(pwd)"/persistent,target=/app/persistent --name ansibleforms --env-file .env.docker ansibleforms
+```
+Once the image is started :
+```
+# docker ps
+CONTAINER ID   IMAGE          COMMAND                  CREATED          STATUS          PORTS                                       NAMES
+c6e07a8f728b   ansibleforms   "node ./dist/index.js"   25 minutes ago   Up 25 minutes   0.0.0.0:8443->8443/tcp, :::8443->8443/tcp   ansibleforms
 ```
 # First time run
 ## Create authentication database
