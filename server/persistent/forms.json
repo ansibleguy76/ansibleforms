@@ -619,6 +619,40 @@
             "required":true
           }
       ]
+    },
+    {
+      "name":"Ontap test",
+      "roles":["demo"],
+      "description":"Test ontap libs and vmware libs",
+      "categories":["Demo"],
+      "tileClass":"has-background-success",
+      "playbook":"ontap_test.yaml",
+      "inventory":"",
+      "tags":"debug",
+      "type":"ansible",
+      "fields":[
+          {
+            "type":"text",
+            "name":"netapp_username",
+            "label":"Ontap username",
+            "default":"admin",
+            "required":true
+          },
+          {
+            "type":"password",
+            "name":"netapp_password",
+            "label":"Ontap password",
+            "default":"Netapp12",
+            "required":true
+          },
+          {
+            "type":"text",
+            "name":"cluster",
+            "label":"Cluster",
+            "default":"172.16.0.36",
+            "required":true
+          }
+      ]
     }
   ]
 }

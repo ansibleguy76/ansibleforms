@@ -1,0 +1,35 @@
+---
+- hosts: localhost
+  gather_facts: false
+  collections:
+    - netapp.ontap
+    - ansible.builtin
+  vars:
+    login: &login
+      username: "{{ netapp_username }}"
+      password: "{{ netapp_password }}"
+      hostname: "{{ cluster }}"
+      https: true
+      validate_certs: false
+  name: "Gather facts"
+  tasks:
+  - name: Test
+    debug:
+      msg: "{{ cluster }}"
+    tags: always
+  - name: Gather info about LUNs
+    na_ontap_info:
+      state: info
+      gather_subset: lun_info
+      <<: *login
+    register: luninformation
+    tags: always
+  # - name: Extract disk list
+  #   set_fact:
+  #     lun_list: "{{ (luninformation.ontap_info.lun_info.values() | list) }}"
+  #   tags: always
+  # - name: Print disk list
+  #   debug:
+  #     msg:
+  #      - "{{ lun_list }}"
+  #   tags: debug

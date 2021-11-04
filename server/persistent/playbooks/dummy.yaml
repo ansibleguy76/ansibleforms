@@ -1,0 +1,10 @@
+---
+- name: This is a hello-world example
+  hosts: localhost
+  tasks:
+    - name: Output 'Welcome'.
+      debug:
+        msg: "Hi there and welcome to ansible"
+    - name: Output ansible version
+      debug:
+        msg: "{{ ansible_distribution }} - {{ ansible_distribution_version }}"
