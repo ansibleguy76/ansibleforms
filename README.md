@@ -199,7 +199,7 @@ Note that we have deployed the solution in the `./app` folder inside the docker.
 Make sure you have your environment variable set (see `.env.docker.example` file) that contains all environment variables.  
 The image contains ansible and python3.  In the environment variables, make sure to set the ansible, certificate and log path to the persistent directoy so it can find your playbooks, write your logs and find your .  The below command is merely an example, correct the ports, the mount points and the environment file.  You can also deploy this with kubernetes for example.  
 ```
-docker run -p 8443:8443 -d -t --mount type=bind,source="/srv/apps/ansibleforms/server/persistent,target=/app/persistent --name ansibleforms --env-file .env.docker ansibleguy/ansibleforms
+docker run -p 8443:8443 -d -t --mount type=bind,source=/srv/apps/ansibleforms/server/persistent,target=/app/persistent --name ansibleforms --env-file .env.docker ansibleguy/ansibleforms
 ```
 Once started :
 ```
