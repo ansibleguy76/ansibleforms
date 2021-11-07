@@ -1,17 +1,15 @@
 'use strict';
 const logger=require("../lib/logger");
+const mysql=require("../lib/mysql")
 
 //group object create
 var Group=function(group){
     this.name = group.name;
 };
-Group.create = function (record,config, result) {
-    var dbConn = require('./../../config/db.mysql.config')(config);
-
+Group.create = function (record, result) {
     logger.debug(`Creating group ${record.name}`)
-    dbConn.query("INSERT INTO authentication.`groups` set ?", record, function (err, res) {
+    mysql.query("ANSIBLEFORMS_DATABASE","INSERT INTO AnsibleForms.`groups` set ?", record, function (err, res) {
         if(err) {
-            logger.error(err)
             result(err, null);
         }
         else{
@@ -20,13 +18,10 @@ Group.create = function (record,config, result) {
     });
 
 };
-Group.update = function (record,id,config, result) {
-    var dbConn = require('./../../config/db.mysql.config')(config);
-
+Group.update = function (record,id, result) {
     logger.debug(`Updating group ${record.name}`)
-    dbConn.query("UPDATE authentication.`groups` set ? WHERE name=?", [record,id], function (err, res) {
+    mysql.query("ANSIBLEFORMS_DATABASE","UPDATE AnsibleForms.`groups` set ? WHERE name=?", [record,id], function (err, res) {
         if(err) {
-            //lib/logger.error(err)
             result(err, null);
         }
         else{
@@ -34,16 +29,14 @@ Group.update = function (record,id,config, result) {
         }
     });
 };
-Group.delete = function(id,config, result){
-    var dbConn = require('./../../config/db.mysql.config')(config);
+Group.delete = function(id, result){
     if(id==1){
       logger.warn("Some is trying to remove the admins groups !")
       result("You cannot delete group 'admins'",null)
     }else{
       logger.debug(`Deleting group ${id}`)
-      dbConn.query("DELETE FROM authentication.`groups` WHERE id = ? AND name<>'admins'", [id], function (err, res) {
+      mysql.query("ANSIBLEFORMS_DATABASE","DELETE FROM AnsibleForms.`groups` WHERE id = ? AND name<>'admins'", [id], function (err, res) {
           if(err) {
-              logger.error(err)
               result(err, null);
           }
           else{
@@ -53,14 +46,12 @@ Group.delete = function(id,config, result){
     }
 
 };
-Group.findAll = function (config,result) {
-    var dbConn = require('./../../config/db.mysql.config')(config);
+Group.findAll = function (result) {
     logger.debug("Finding all groups")
-    var query = "SELECT * FROM authentication.`groups` limit 20;"
+    var query = "SELECT * FROM AnsibleForms.`groups` limit 20;"
     try{
-      dbConn.query(query, function (err, res) {
+      mysql.query("ANSIBLEFORMS_DATABASE",query,null, function (err, res) {
           if(err) {
-              logger.error(err)
               result(err, null);
           }
           else{
@@ -71,14 +62,12 @@ Group.findAll = function (config,result) {
       result(err, null);
     }
 };
-Group.findById = function (id,config,result) {
-    var dbConn = require('./../../config/db.mysql.config')(config);
+Group.findById = function (id,result) {
     logger.debug(`Finding group ${id}`)
-    var query = "SELECT * FROM authentication.`groups` WHERE id=?;"
+    var query = "SELECT * FROM AnsibleForms.`groups` WHERE id=?;"
     try{
-      dbConn.query(query,id, function (err, res) {
+      mysql.query("ANSIBLEFORMS_DATABASE",query,id, function (err, res) {
           if(err) {
-              logger.error(err)
               result(err, null);
           }
           else{

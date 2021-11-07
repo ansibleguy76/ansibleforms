@@ -4,8 +4,6 @@ const UserModel = require('./../models/user.model');
 const authConfig = require('../../config/auth.config.js')
 const logger=require("../lib/logger");
 
-var config="AUTH"
-
 // create username / password login strategy
 passport.use(
   'login',
@@ -18,7 +16,7 @@ passport.use(
       try {
         var user = {}
         // authentication against database first
-        UserModel.authenticate(username,password,config,function(err,result){
+        UserModel.authenticate(username,password,function(err,result){
           // if error ?
           if (err || result===null) {
             // trying against ldap

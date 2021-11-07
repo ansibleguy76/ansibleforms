@@ -1,13 +1,16 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const passport = require('passport');
+const appConfig = require('../config/app.config')
+
+
 
 module.exports = app => {
   // load the .env.development file ; it loads a bunch of environment variables
   // we are not doing this for production, where the variables are coming from the actual environment
-  if (process.env.NODE_ENV !== 'production' || process.env.FORCE_DOTENV){
-      console.log(`Importing .env file : ${__dirname}/../.env.${process.env.NODE_ENV}` )
-      require('dotenv').config({ path: `${__dirname}/../.env.${process.env.NODE_ENV}` })
+  if (appConfig.nodeEnvironment !== 'production' || appConfig.forceDotEnv ){
+      console.log(`Importing .env file : ${__dirname}/../.env.${appConfig.nodeEnvironment}` )
+      require('dotenv').config({ path: `${__dirname}/../.env.${appConfig.nodeEnvironment}` })
   }
   const logger = require('./lib/logger');
   require('./auth/auth');
@@ -25,6 +28,8 @@ module.exports = app => {
   const expressionRoutes = require('./routes/expression.routes')
   const userRoutes = require('./routes/user.routes')
   const groupRoutes = require('./routes/group.routes')
+  const ldapRoutes = require('./routes/ldap.routes')
+  const credentialRoutes = require('./routes/credential.routes')
   const formRoutes = require('./routes/form.routes')
   const loginRoutes = require('./routes/login.routes')
   const schemaRoutes = require('./routes/schema.routes')
@@ -59,27 +64,7 @@ module.exports = app => {
   app.use('/api/v1/expression', authobj, expressionRoutes)
   app.use('/api/v1/user', authobj, checkAdminMiddleware, userRoutes)
   app.use('/api/v1/group', authobj, checkAdminMiddleware, groupRoutes)
+  app.use('/api/v1/ldap', authobj, checkAdminMiddleware, ldapRoutes)
+  app.use('/api/v1/credential', authobj, checkAdminMiddleware, credentialRoutes)
   app.use('/api/v1/form', authobj, formRoutes)
-
 }
-/*
-  create express app => in production !!
-  https://dennisreimann.de/articles/vue-cli-serve-express.html
-  the app is dev is started using package.json
-  npm start => triggers nodemon --exec 'vue-cli-service serve'
-  nodemon will restart the server upon changes
-  vue-cli-service will run a dev express server (hence no listener in this file)
-  the vue.config.js will preload this configure.js file and spin up the backend server with all the awxRoutes
-
-  but in production.  we build the vue application frontend
-  using npm run build => which will compile the vue app
-  this will create a dist folder
-  and in production we start node ./
-  this starts index.js which starts the real express server and then points to the dist folder instead.
-
-  in dev you can also start it like this
-  NODE_ENV=development node ./ => it will then load the dotenv .env.development filename
-  in production however, no env file is loaded an you must provide all environment variables upon start
-
-
-*/

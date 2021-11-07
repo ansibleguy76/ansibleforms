@@ -4,7 +4,7 @@ const User = require('../models/user.model');
 var RestResult = require('../models/restResult.model');
 
 exports.hasSchema = function(req, res) {
-    Schema.hasSchema("AUTH", function(err, schema) {
+    Schema.hasSchema(function(err, schema) {
         if (err){
             res.json(new RestResult("error",err,null,null))
         }else{
@@ -13,7 +13,7 @@ exports.hasSchema = function(req, res) {
     });
 };
 exports.create = function(req, res) {
-    Schema.create("AUTH", function(err, result) {
+    Schema.create(function(err, result) {
         if (err){
             res.json(new RestResult("error",err,null,null))
         }else{

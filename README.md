@@ -90,7 +90,7 @@ CREATE USER 'root'@'%' IDENTIFIED BY 'AnsibleForms';
 GRANT ALL PRIVILEGES ON *.* TO 'root'@'%';
 FLUSH PRIVILEGES;
 ```
-Note : You can create multiple users and lock down the database as you please, however if the webapplication cannot find the authentication database, it will try to create it.  So you might want to give enough privileges.
+Note : You can create multiple users and lock down the database as you please, however if the webapplication cannot find the AnsibleForms database, it will try to create it.  So you might want to give enough privileges.
 ## Import some sample data for testing (optional)
 ```
 mysql -u root -p -t< ./demo/demo_cmdb.sql > mysql_deployed.txt
@@ -237,8 +237,8 @@ CONTAINER ID   IMAGE          COMMAND                  CREATED          STATUS  
 c6e07a8f728b   ansibleforms   "node ./dist/index.js"   25 minutes ago   Up 25 minutes   0.0.0.0:8443->8443/tcp, :::8443->8443/tcp   ansibleforms
 ```
 # First time run
-## Create authentication database
-The first you surf to the webapplication, it will ask you if it should create the authentication schema.  
+## Create AnsibleForms database
+The first time you surf to the webapplication, it will ask you if it should create the AnsibleForms schema.  
 ## Admin user
 The default admin user is :
 - username : admin

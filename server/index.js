@@ -5,12 +5,11 @@ const https = require('https');
 const http = require('http');
 const app = express()
 const configureAPI = require('./src/configure')
+const appConfig = require('./config/app.config')
 configureAPI(app)
 
 const httpsConfig = require('./config/https.config');
 const logger = require('./src/lib/logger');
-
-const { PORT = 3000 } = process.env
 
 // UI
 const publicPath = resolve(__dirname, './views')
@@ -29,4 +28,4 @@ if(httpsConfig.https){
 }
 
 // Go
-httpServer.listen(PORT, () => logger.info(`App running on port ${PORT}!`))
+httpServer.listen(appConfig.port, () => logger.info(`App running on port ${appConfig.port}!`))

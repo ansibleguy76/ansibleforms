@@ -1,10 +1,21 @@
 'use strict';
 const bcrypt = require('bcrypt');
 const logger=require("../lib/logger");
-const authConfig = require('../../config/auth.config.js')
+const authConfig = require('../../config/auth.config')
 const helpers = require('../lib/common.js')
+const appConfig = require('../../config/app.config')
+const Ldap = require('./ldap.model')
+const mysql = require('../lib/mysql')
 
-
+// ldapServer: process.env.LDAP_SERVER,
+// ldapBindUserDn: process.env.LDAP_BIND_USER_DN,
+// ldapBindUserPassword: process.env.LDAP_BIND_USER_PASSWORD,
+// ldapSearchBase: process.env.LDAP_SEARCH_BASE,
+// ldapUsernameAttribute: process.env.LDAP_USERNAME_ATTRIBUTE,
+// ldapTls: (process.env.LDAP_TLS=="1") || false,
+// ldapTlsCa: JSON.parse(`"${process.env.LDAP_CA}"`),
+// ldapTlsCert: JSON.parse(`"${process.env.LDAP_CERT}"`),
+// ldapTlsRejectUnauthorized: !(process.env.LDAP_IGNORE_CERTIFICATE_ERRORS || false),
 
 //user object create
 var User=function(user){
@@ -12,8 +23,7 @@ var User=function(user){
     this.password = user.password;
     this.group_id = user.group_id;
 };
-User.create = function (record,config, result) {
-    var dbConn = require('./../../config/db.mysql.config')(config);
+User.create = function (record, result) {
     bcrypt.hash(record.password, 10,function(err,hash){
       if(err){
         logger.error("error creating hash : " + err)
@@ -21,9 +31,8 @@ User.create = function (record,config, result) {
       }else{
         record.password = hash
         logger.debug(`Creating user ${record.username}`)
-        dbConn.query("INSERT INTO authentication.`users` set ?", record, function (err, res) {
+        mysql.query("ANSIBLEFORMS_DATABASE","INSERT INTO AnsibleForms.`users` set ?", record, function (err, res) {
             if(err) {
-                logger.error(err)
                 result(err, null);
             }
             else{
@@ -33,8 +42,7 @@ User.create = function (record,config, result) {
       }
     });
 };
-User.update = function (record,id,config, result) {
-    var dbConn = require('./../../config/db.mysql.config')(config);
+User.update = function (record,id, result) {
     if(id==1 && record.group_id!=1){
       result("You cannot change the 'admin' user out of the 'admins' group.",null)
     }else{
@@ -45,7 +53,7 @@ User.update = function (record,id,config, result) {
         }else{
           record.password = hash
           logger.debug(`Updating user ${record.username}`)
-          dbConn.query("UPDATE authentication.`users` set ? WHERE id=?", [record,id], function (err, res) {
+          mysql.query("ANSIBLEFORMS_DATABASE","UPDATE AnsibleForms.`users` set ? WHERE id=?", [record,id], function (err, res) {
               if(err) {
                   //lib/logger.error(err)
                   result(err, null);
@@ -59,13 +67,12 @@ User.update = function (record,id,config, result) {
     }
 
 };
-User.delete = function(id,config, result){
-    var dbConn = require('./../../config/db.mysql.config')(config);
+User.delete = function(id, result){
     if(id==1){
       result("You cannot delete user 'admin'",null)
     }else{
       logger.debug(`Deleting user ${id}`)
-      dbConn.query("DELETE FROM authentication.`users` WHERE id = ? AND username<>'admin'", [id], function (err, res) {
+      mysql.query("ANSIBLEFORMS_DATABASE","DELETE FROM AnsibleForms.`users` WHERE id = ? AND username<>'admin'", [id], function (err, res) {
           if(err) {
               logger.error(err)
               result(err, null);
@@ -77,14 +84,12 @@ User.delete = function(id,config, result){
     }
 
 };
-User.findAll = function (config,result) {
-    var dbConn = require('./../../config/db.mysql.config')(config);
+User.findAll = function (result) {
     logger.debug("Finding all users")
-    var query = "SELECT * FROM authentication.`users` limit 20;"
+    var query = "SELECT * FROM AnsibleForms.`users` limit 20;"
     try{
-      dbConn.query(query, function (err, res) {
+      mysql.query("ANSIBLEFORMS_DATABASE",query,null, function (err, res) {
           if(err) {
-              logger.error(err)
               result(err, null);
           }
           else{
@@ -95,14 +100,11 @@ User.findAll = function (config,result) {
       result(err, null);
     }
 };
-User.findById = function (id,config,result) {
-    var dbConn = require('./../../config/db.mysql.config')(config);
+User.findById = function (id,result) {
     logger.debug(`Finding user ${id}`)
-    var query = "SELECT * FROM authentication.`users` WHERE id=?;"
     try{
-      dbConn.query(query,id, function (err, res) {
+      mysql.query("ANSIBLEFORMS_DATABASE","SELECT * FROM AnsibleForms.`users` WHERE id=?;",id, function (err, res) {
           if(err) {
-              logger.error(err)
               result(err, null);
           }
           else{
@@ -113,16 +115,13 @@ User.findById = function (id,config,result) {
       result(err, null);
     }
 };
-User.authenticate = function (username,password,config,result) {
-    var dbConn = require('./../../config/db.mysql.config')(config);
+User.authenticate = function (username,password,result) {
     logger.debug(`Checking password for user ${username}`)
-    var query = "SELECT `username`,`password`,GROUP_CONCAT(groups.name) `groups` FROM authentication.`users`,authentication.`groups` WHERE `users`.group_id=`groups`.id AND username=?;"
-    logger.debug(query)
+    var query = "SELECT `username`,`password`,GROUP_CONCAT(groups.name) `groups` FROM AnsibleForms.`users`,AnsibleForms.`groups` WHERE `users`.group_id=`groups`.id AND username=?;"
     try{
-      dbConn.query(query,username, function (err, res) {
+      mysql.query("ANSIBLEFORMS_DATABASE",query,username, function (err, res) {
           if(err) {
-              logger.error(err)
-              result("Failed to connect to the authentication database", null);
+              result(err, null);
           }
           else{
               if(res.length > 0 && res[0].password){
@@ -141,25 +140,22 @@ User.authenticate = function (username,password,config,result) {
           }
       });
     }catch(err){
-        result("Failed to connect to the authentication database", null);
+        result("Failed to connect to the AnsibleForms database", null);
     }
 
 };
-User.storeToken = function (username,username_type,refresh_token,config,result) {
-    var dbConn = require('./../../config/db.mysql.config')(config);
+User.storeToken = function (username,username_type,refresh_token,result) {
     var record = {}
     record.username = username
     record.username_type= username_type
     record.refresh_token = refresh_token
     logger.debug(`Adding token for ${record.username} (${record.username_type})`)
     try{
-      dbConn.query("INSERT INTO authentication.`tokens` set ? ON DUPLICATE KEY UPDATE username=VALUES(username),username_type=VALUES(username_type),refresh_token=VALUES(refresh_token)", record,  function (err, res) {
+      mysql.query("ANSIBLEFORMS_DATABASE","INSERT INTO AnsibleForms.`tokens` set ? ON DUPLICATE KEY UPDATE username=VALUES(username),username_type=VALUES(username_type),refresh_token=VALUES(refresh_token)", record,  function (err, res) {
           if(err) {
-              logger.error(err)
               result(err, null);
           }
           else{
-              // logger.debug(res)
               result(null, "Token saved");
           }
       });
@@ -167,41 +163,33 @@ User.storeToken = function (username,username_type,refresh_token,config,result) 
       result("Failed to insert token in database",null)
     }
 };
-User.deleteToken = function (username,username_type,config,result) {
-    var dbConn = require('./../../config/db.mysql.config')(config);
+User.deleteToken = function (username,username_type,result) {
     logger.debug(`Deleting token for user ${username} (${username_type})`)
-    var query = "DELETE FROM authentication.`tokens` WHERE username=? AND username_type=?"
-    logger.debug(query)
     try{
-      dbConn.query(query,[username,username_type], function (err, res) {
+      mysql.query("ANSIBLEFORMS_DATABASE","DELETE FROM AnsibleForms.`tokens` WHERE username=? AND username_type=?",[username,username_type], function (err, res) {
           if(err) {
-              logger.error(err)
-              result("Failed to connect to the authentication database : " + err, null);
+              result(err, null);
           }else{
             result(null,"Token removed")
           }
       });
     }catch(err){
-        result("Failed to connect to the authentication database. " + err, null);
+        result("Failed to connect to the AnsibleForms database. " + err, null);
     }
 };
-User.checkToken = function (username,username_type,refresh_token,config,result) {
-    var dbConn = require('./../../config/db.mysql.config')(config);
+User.checkToken = function (username,username_type,refresh_token,result) {
     logger.debug(`Checking token for user ${username} (${username_type})`)
-    var query = "SELECT refresh_token FROM authentication.`tokens` WHERE username=? AND username_type=?"
-    logger.debug(query)
     try{
-      dbConn.query(query,[username,username_type], function (err, res) {
+      mysql.query("ANSIBLEFORMS_DATABASE","SELECT refresh_token FROM AnsibleForms.`tokens` WHERE username=? AND username_type=?",[username,username_type], function (err, res) {
           if(err) {
-              logger.error(err)
-              result("Failed to connect to the authentication database : " + err, null);
+              result("Failed to connect to the AnsibleForms database : " + err, null);
           }
           else{
               if(res.length == 1){
                 if(res[0].refresh_token==refresh_token){
                     result(null,"Refresh token is OK");
                 }else{
-                    User.deleteToken(username,username_type,config,function(err,res){
+                    User.deleteToken(username,username_type,function(err,res){
                       if(err){
                         logger.error("Failed to remove token for " + username)
                       }else{
@@ -216,7 +204,7 @@ User.checkToken = function (username,username_type,refresh_token,config,result) 
           }
       });
     }catch(err){
-        result("Failed to connect to the authentication database. " + err, null);
+        result("Failed to connect to the AnsibleForms database. " + err, null);
     }
 };
 User.getRoles = function(user,groupObj){
@@ -225,8 +213,8 @@ User.getRoles = function(user,groupObj){
   var group=""
   var groups = []
   logger.debug("loading forms file")
-  helpers.nocache(process.env.FORMS_PATH)
-  var forms = require(process.env.FORMS_PATH)
+  helpers.nocache(appConfig.formsPath)
+  var forms = require(appConfig.formsPath)
   // ldap type
   if(user.type=="ldap"){
     if(groupObj.memberOf){
@@ -267,12 +255,12 @@ User.getRoles = function(user,groupObj){
 }
 User.checkLdap = function(username,password,result){
   const { authenticate } = require('ldap-authentication')
-
-  async function auth() {
+  async function auth(ldapConfig) {
     // auth with admin
+    var badCertificates=false
     let options = {
       ldapOpts: {
-        url: authConfig.ldapServer,
+        url: ((ldapConfig.enable_tls==1)?"ldaps":"ldap") + "://" + ldapConfig.server + ":" + ldapConfig.port,
         tlsOptions: {
           // cert: cert,
           // requestCert: tls,
@@ -280,48 +268,79 @@ User.checkLdap = function(username,password,result){
           // ca: ca
         }
       },
-      adminDn: authConfig.ldapBindUserDn,
-      adminPassword: authConfig.ldapBindUserPassword,
+      adminDn: ldapConfig.bind_user_dn,
+      adminPassword: ldapConfig.bind_user_pw,
       userPassword: password,
-      userSearchBase: authConfig.ldapSearchBase,
-      usernameAttribute: authConfig.ldapUsernameAttribute,
+      userSearchBase: ldapConfig.search_base,
+      usernameAttribute: ldapConfig.username_attribute,
       username: username,
       // starttls: false
     }
-    // enable tls/ldaps
-    if(authConfig.ldapTls){
-      options.ldapOpts.tlsOptions.requestCert = authConfig.ldapTls
-      options.ldapOpts.tlsOptions.cert = authConfig.ldapTlsCert
-      options.ldapOpts.tlsOptions.rejectUnauthorized = authConfig.ldapTlsRejectUnauthorized
-      options.ldapOpts.tlsOptions.ca = authConfig.ldapTlsCa
-      logger.debug("use tls : " + authConfig.ldapTls)
-      logger.debug("reject invalid certificates : " + authConfig.ldapTlsRejectUnauthorized)
-      logger.silly("certificate : " + authConfig.ldapTlsCert)
-      logger.silly("ca certificate : " + authConfig.ldapTlsCa)
+    // ldap-authentication has bad cert check, so we check first !!
+    if(ldapConfig.enable_tls && !(ldapConfig.ignore_certs==1)){
+      if(!helpers.checkCertificate(ldapConfig.cert)){
+        badCertificates=true
+      }
+      if(!helpers.checkCertificate(ldapConfig.ca_bundle)){
+        badCertificates=true
+      }
+    }else{
+      ldapConfig.cert=""
+      ldapConfig.ca_bundle=""
     }
-    try{
-      logger.debug(`Checking ldap for user ${username}`)
-      var user = await authenticate(options)
-      result(null,user)
-    }catch(err){
-        var em =""
-        try{var em = JSON.stringify(err)}catch(e){em = err}
+    // enable tls/ldaps
+    if(ldapConfig.enable_tls==1){
+      options.ldapOpts.tlsOptions.requestCert = (ldapConfig.enable_tls==1)
+      if(ldapConfig.cert!=""){
+        options.ldapOpts.tlsOptions.cert = ldapConfig.cert
+      }
+      if(ldapConfig.ca_bundle!=""){
+        options.ldapOpts.tlsOptions.ca = ldapConfig.ldapTlsCa
+      }
+      options.ldapOpts.tlsOptions.rejectUnauthorized = !(ldapConfig.ignore_certs==1)
+      logger.debug("use tls : " + (ldapConfig.enable_tls==1))
+      logger.debug("reject invalid certificates : " + !(ldapConfig.ignore_certs==1))
+    }
 
-        if(err.admin){
-          if(err.admin.code){
-            em = err.admin.code
-            if(err.admin.code=="UNABLE_TO_VERIFY_LEAF_SIGNATURE"){
-              em = "Unable to verify the certificate"
+    if(badCertificates){
+      result("Certificate is not valid",null)
+    }else{
+      try{
+        logger.debug(`Checking ldap for user ${username}`)
+        logger.silly(options)
+        var user = await authenticate(options)
+        result(null,user)
+      }catch(err){
+          var em =""
+          try{var em = JSON.stringify(err)}catch(e){em = err}
+
+          if(err.admin){
+            if(err.admin.code){
+              em = err.admin.code
+              if(err.admin.code=="UNABLE_TO_VERIFY_LEAF_SIGNATURE"){
+                em = "Unable to verify the certificate"
+              }
+              if(err.admin.code==49){
+                em = "Wrong binding credentials"
+              }
             }
           }
-        }
-        logger.error("Error connecting to ldap : " + em)
-        result("Error connecting to ldap : " + em,null)
+          logger.error("Error connecting to ldap : " + em)
+          result("Error connecting to ldap : " + em,null)
+      }
     }
-
   }
-  auth()
-
+  Ldap.find(function(err,res){
+    if(res){
+      if(res.enable==1){
+        auth(res)
+      }else{
+        logger.debug("Ldap is disabled")
+      }
+    }else{
+      logger.debug("No ldap configured or not enabled")
+    }
+  })
 }
 
 

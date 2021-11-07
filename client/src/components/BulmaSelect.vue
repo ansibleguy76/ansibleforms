@@ -20,7 +20,7 @@
   export default{
     name:"BulmaSelect",
     props:{
-      value:{type:[String,Number],default:"-1"},
+      value:{type:[String,Number,Array],default:"-1"},
       val:{type:[String,Number],default:"-1"},
       required:{type:Boolean,default:false},
       icon:{type:String,default:''},

@@ -11,8 +11,8 @@
               <ul>
                 <li>Make sure you have a valid forms.json file</li>
                 <li>Check your environment variables</li>
-                <li>Make sure you have a MySQL database running for local authentication</li>
-                <li>If the authentication schema is not present, <br>
+                <li>Make sure you have a MySQL database running</li>
+                <li>If the AnsibleForms schema is not present, <br>
                   provide root access so I can create it</li>
                 <li>Double check firewalls, hostname, username and password</li>
               </ul>

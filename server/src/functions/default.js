@@ -7,6 +7,8 @@ const fs = require("fs")
 const logger=require("../lib/logger");
 const jq=require("node-jq")
 const YAML=require("yaml")
+const credentialModel = require("../models/credential.model")
+// const getCred = require("util").promisify(credentialModel.findByName)
 // const { jq } = require('jq.node')
 // const jqn = require("util").promisify(jq)
 exports.fnGetNumberedName=function(names,pattern,value,fillgap){
@@ -92,15 +94,21 @@ exports.fnReadYamlFile = async function(path,jqe) {
   return result
 };
 
-exports.fnRestBasic = async function(action,url,body,env_credential,jqe,sort,map){
+exports.fnRestBasic = async function(action,url,body,credential,jqe,sort,map){
   const httpsAgent = new https.Agent({
     rejectUnauthorized: false,
   })
   var axiosConfig
-  if(env_credential){
+  if(credential){
+    try{
+      restCreds = await credentialModel.findByName(credential)
+    }catch(e){
+      logger.error(e)
+    }
+
     axiosConfig = {
       headers: {
-        Authorization:"Basic " + Buffer.from(process.env["CUSTOM_"+env_credential+"_USER"] + ':' + process.env["CUSTOM_"+env_credential+"_PASSWORD"]).toString('base64')
+        Authorization:"Basic " + Buffer.from(restCreds.user + ':' + restCreds.password).toString('base64')
       },
       httpsAgent:httpsAgent
 

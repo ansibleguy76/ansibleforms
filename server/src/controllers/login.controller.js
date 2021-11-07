@@ -1,9 +1,9 @@
 'use strict';
 var RestResult = require('../models/restResult.model');
-const User = require("../models/user.model.js")
+const User = require("../models/user.model")
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
-var authConfig = require('../../config/auth.config.js')
+var authConfig = require('../../config/auth.config')
 const logger=require("../lib/logger");
 
 exports.login = async function(req, res,next) {
@@ -11,7 +11,7 @@ exports.login = async function(req, res,next) {
       'login',
       async (err, user, info) => {
         try {
-          
+
           if (err || !user) {
             var error={token:""}
             if(err){
@@ -34,7 +34,7 @@ exports.login = async function(req, res,next) {
               const token = jwt.sign({user}, authConfig.secret,{ expiresIn: authConfig.jwtExpiration});
               const refreshtoken = jwt.sign({user}, authConfig.secret,{ expiresIn: authConfig.jwtRefreshExpiration});
               logger.debug("Storing refreshtoken in database for user " + user.username)
-              User.storeToken(user.username,user.type,refreshtoken,"AUTH",function(err,result){
+              User.storeToken(user.username,user.type,refreshtoken,function(err,result){
                 if(err){
                   logger.error(err)
                 }else{

@@ -1,6 +1,6 @@
 'use strict';
 const jwt = require("jsonwebtoken")
-var authConfig = require('../../config/auth.config.js')
+var authConfig = require('../../config/auth.config')
 const logger=require("../lib/logger");
 const User=require("../models/user.model.js")
 
@@ -16,7 +16,7 @@ exports.refresh = function(req, res) {
         if(jwtPayload.user){
           var username=jwtPayload.user.username
           var username_type=jwtPayload.user.type
-          User.checkToken(username,username_type,refreshtoken,"AUTH",function(err,result){
+          User.checkToken(username,username_type,refreshtoken,function(err,result){
             if(err){
               logger.error(err)
               res.status(400).send({ error:true, message: 'Refresh token is unknown' });
@@ -27,7 +27,7 @@ exports.refresh = function(req, res) {
                   // logger.debug("refresh token is not expired")
                   const token = jwt.sign({ user: body }, authConfig.secret,{ expiresIn: authConfig.jwtExpiration});
                   const refreshtoken = jwt.sign({ user: body }, authConfig.secret,{ expiresIn: authConfig.jwtRefreshExpiration});
-                  User.storeToken(username,username_type,refreshtoken,"AUTH",function(err,resnewtoken){
+                  User.storeToken(username,username_type,refreshtoken,function(err,resnewtoken){
                     if(err){
                       logger.error("Failed to store new token")
                     }else{

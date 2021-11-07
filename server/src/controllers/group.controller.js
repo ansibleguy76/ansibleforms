@@ -3,7 +3,7 @@ const Group = require('../models/group.model');
 var RestResult = require('../models/restResult.model');
 
 exports.findAll = function(req, res) {
-    Group.findAll("AUTH", function(err, group) {
+    Group.findAll(function(err, group) {
         if (err){
           res.json(new RestResult("error","failed to find groups",null,err))
         }else{
@@ -17,7 +17,7 @@ exports.create = function(req, res) {
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
         res.status(400).send({ error:true, message: 'Please provide all required fields' });
     }else{
-        Group.create(new_group, "AUTH",function(err, group) {
+        Group.create(new_group, function(err, group) {
             if (err){
               res.json(new RestResult("error","failed to create group",null,err))
             }else{
@@ -27,7 +27,7 @@ exports.create = function(req, res) {
     }
 };
 exports.findById = function(req, res) {
-    Group.findById(req.params.id, "AUTH", function(err, group) {
+    Group.findById(req.params.id, function(err, group) {
         if (err){
             res.json(new RestResult("error","failed to find group",null,err))
         }else{
@@ -44,7 +44,7 @@ exports.update = function(req, res) {
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
         res.status(400).send({ error:true, message: 'Please provide all required fields' });
     }else{
-        Group.update(new Group(req.body),req.params.id, "AUTH", function(err, group) {
+        Group.update(new Group(req.body),req.params.id, function(err, group) {
             if (err){
                 res.json(new RestResult("error","failed to update group",null,err))
             }else{
@@ -54,7 +54,7 @@ exports.update = function(req, res) {
     }
 };
 exports.delete = function(req, res) {
-    Group.delete( req.params.id,"AUTH", function(err, group) {
+    Group.delete( req.params.id,function(err, group) {
         if (err){
             res.json(new RestResult("error","failed to delete group",null,err))
         }else{

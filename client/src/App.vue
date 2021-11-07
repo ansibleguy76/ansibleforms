@@ -42,7 +42,7 @@
               if(result.data.status=="error"){
                 ref.errorMessage=result.data.message;
                 if(ref.errorMessage.includes("Failed to connect")){
-                  ref.errorMessage="Failed to check authentication database schema\n\n" + result.data.message;
+                  ref.errorMessage="Failed to check AnsibleForms database schema\n\n" + result.data.message;
                   ref.$router.replace({name:"Error"}).catch(err => {});
                 }else{
                   ref.$router.replace({name:"Schema"}).catch(err => {});
@@ -53,8 +53,8 @@
 
             })
             .catch(function(err){
-              ref.$toast.error("Failed to check authentication database schema");
-              ref.errorMessage="Failed to check authentication database schema\n\n" + err
+              ref.$toast.error("Failed to check AnsibleForms database schema");
+              ref.errorMessage="Failed to check AnsibleForms database schema\n\n" + err
               ref.$router.replace({name:"Error"}).catch(err => {});
             });
 

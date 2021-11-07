@@ -5,12 +5,12 @@
       <h1 class="title has-text-info"><font-awesome-icon icon="users" /> Groups</h1>
       <div class="columns">
         <div class="column">
-            <BulmaSelect icon="users" label="Select a group" :list="groupList" valuecol="id" labelcol="name" @change="loadGroup()" v-model="groupItem" />
+            <BulmaSelect icon="users" label="Select a group" size="10" :list="groupList" valuecol="id" labelcol="name" @change="loadGroup()" v-model="groupItem" />
             <BulmaButton v-if="groupItem!=undefined" icon="plus" label="New Group" @click="groupItem=undefined;loadGroup()"></BulmaButton>
             <BulmaButton v-if="groupItem!=undefined && groupItem!=1" type="is-danger" icon="trash-alt" label="Delete Group" @click="showDelete=true"></BulmaButton>
         </div>
         <div class="column is-three-quarters">
-          <BulmaInput icon="group" v-model="group.name" label="Groupname" :readonly="groupItem!==undefined" placeholder="Groupname" :required="true" :hasError="$v.group.name.$invalid" :errors="[]" />
+          <BulmaInput icon="users" v-model="group.name" label="Groupname" :readonly="groupItem!==undefined" placeholder="Groupname" :required="true" :hasError="$v.group.name.$invalid" :errors="[]" />
           <BulmaButton v-if="groupItem==undefined" icon="save" label="Create Group" @click="newGroup()"></BulmaButton>
         </div>
       </div>

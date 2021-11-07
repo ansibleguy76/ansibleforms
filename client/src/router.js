@@ -7,6 +7,8 @@ import ErrorVue from './views/Error.vue'
 import Schema from './views/Schema.vue'
 import Groups from './views/Groups.vue'
 import Users from './views/Users.vue'
+import Ldap from './views/Ldap.vue'
+import Credentials from './views/Credentials.vue'
 
 Vue.use(Router);
 export default new Router({
@@ -46,6 +48,16 @@ export default new Router({
         path:"/users",
         name:"Users",
         component:Users
+      },
+      {
+        path:"/ldap",
+        name:"Ldap",
+        component:Ldap
+      },
+      {
+        path:"/credentials",
+        name:"Credentials",
+        component:Credentials
       }
   ]
 })

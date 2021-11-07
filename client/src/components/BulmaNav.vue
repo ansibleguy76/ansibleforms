@@ -24,6 +24,12 @@
                         <router-link class="navbar-item" to="/users">
                           <span class="icon"><font-awesome-icon icon="user" /></span><span>Users</span>
                         </router-link>
+                        <router-link class="navbar-item" to="/ldap">
+                          <span class="icon"><font-awesome-icon icon="id-card" /></span><span>Ldap</span>
+                        </router-link>
+                        <router-link class="navbar-item" to="/credentials">
+                          <span class="icon"><font-awesome-icon icon="lock" /></span><span>Credentials</span>
+                        </router-link>
                       </div>
                   </div>
                   <div class="navbar-item" v-if="authenticated">
