@@ -28,7 +28,8 @@
     "bluebird": "^3.7.2",
     "node-jq": "^2.0.0",
     "yaml": "*",
-    "cert-info":"*"
+    "cert-info":"*",
+    "crypto":"*"
   },
   "devDependencies": {
     "@babel/core": "*",

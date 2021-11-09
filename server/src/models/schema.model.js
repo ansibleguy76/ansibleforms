@@ -69,7 +69,7 @@ Schema.create = function (result) {
                 `id` int(11) NOT NULL AUTO_INCREMENT,\
                 `name` varchar(250) NOT NULL,\
                 `user` varchar(250) NOT NULL,\
-                `password` varchar(250) NOT NULL,\
+                `password` text NOT NULL,\
                 `host` varchar(250) DEFAULT NULL,\
                 `description` text NOT NULL,\
                 PRIMARY KEY (`id`),\
@@ -84,7 +84,7 @@ Schema.create = function (result) {
                 `cert` text DEFAULT NULL,\
                 `ca_bundle` text DEFAULT NULL,\
                 `bind_user_dn` varchar(250) DEFAULT NULL,\
-                `bind_user_pw` varchar(250) DEFAULT NULL,\
+                `bind_user_pw` text DEFAULT NULL,\
                 `search_base` varchar(250) DEFAULT NULL,\
                 `username_attribute` varchar(250) DEFAULT NULL,\
                 `enable` tinyint(4) DEFAULT NULL\

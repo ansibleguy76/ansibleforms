@@ -1,13 +1,14 @@
 'use strict';
 const logger=require("../lib/logger");
 const mysql=require("../lib/mysql");
+const {encrypt,decrypt}=require("../lib/crypto")
 
 //credential object create
 var Credential=function(credential){
     this.name = credential.name;
     this.host = credential.host;
     this.user = credential.user;
-    this.password = credential.password;
+    this.password = encrypt(credential.password);
     this.description = credential.description;
 };
 Credential.create = function (record, result) {
@@ -77,6 +78,13 @@ Credential.findById = function (id,result) {
         }
         else{
           if(res.length>0){
+            try{
+              res[0].password = decrypt(res[0].password)
+            }catch(e){
+              logger.error("Failed to decrypt the password.  Did the secretkey change ?")
+              res[0].password = ""
+            }
+
             result(null, res);
           }else{
             result("No credential found named " + name,null)
@@ -102,6 +110,12 @@ Credential.findByName = function (name) {
                   // so we convert the DataRowPacket to normal javascript object.  We also remove array.
                   // we also assume we find the credential, hence we throw an error if it's not found.
                   res[0].multipleStatements = true
+                  try{
+                    res[0].password = decrypt(res[0].password)
+                  }catch(e){
+                    logger.error("Failed to decrypt the password.  Did the secretkey change ?")
+                    res[0].password = ""
+                  }
                   resolve(JSON.parse(JSON.stringify(res[0])))
                 }else{
                   reject(new Error("No credential found named " + name),null)

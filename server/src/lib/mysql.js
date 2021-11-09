@@ -1,5 +1,6 @@
 //- MYSQL Module
 const logger = require('./logger');
+const {decrypt} = require('./crypto')
 try{
     var mysql = require('mysql');
 }catch(err){
@@ -39,14 +40,20 @@ function getMySqlCredential(connection_name,callback){
   logger.debug("["+connection_name+"] Getting connection credentials from database")
   var query = "SELECT host,name,user,password FROM AnsibleForms.`credentials` WHERE name=?;"
   mySqlConnections["ANSIBLEFORMS_DATABASE"].getConnection(function(errconnection,connection){
-    executeMySqlQuery("ANSIBLEFORMS_DATABASE",query,connection_name,function(err,result){
+    executeMySqlQuery("ANSIBLEFORMS_DATABASE",query,connection_name,function(err,res){
       if(err){
         callback(err,null)
       }else{
-        if(result.length>0){
+        if(res.length>0){
           logger.silly("["+connection_name+"] Credentials are found, creating new pool")
-          result[0].multipleStatements=true
-          callback(null,JSON.parse(JSON.stringify(result[0])))
+          res[0].multipleStatements=true
+          try{
+            res[0].password = decrypt(res[0].password)
+          }catch(e){
+            logger.error("Failed to decrypt the password.  Did the secretkey change ?")
+            res[0].password = ""
+          }
+          callback(null,JSON.parse(JSON.stringify(res[0])))
         }else{
           callback("No credentials found for " + connection_name)
         }

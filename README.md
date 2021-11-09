@@ -35,6 +35,7 @@ The webapplication is based on a
   - mysql (mysql connection)
   - connect-history-api-fallback (history api)
   - ajv (json schema validation)
+  - crypto (credential encrypt/decrypt)
 - Database
   - MySql/MariaDb
 # Capabilities

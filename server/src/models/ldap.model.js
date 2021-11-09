@@ -1,7 +1,8 @@
 'use strict';
 const logger=require("../lib/logger");
-const dbConfig=require("../../config/db.config")
+const mysql=require("../lib/mysql")
 const Helpers=require("../lib/common")
+const {encrypt,decrypt} = require("../lib/crypto")
 
 //ldap object create
 var Ldap=function(ldap){
@@ -12,7 +13,7 @@ var Ldap=function(ldap){
     this.cert = ldap.cert;
     this.ca_bundle = ldap.ca_bundle;
     this.bind_user_dn = ldap.bind_user_dn;
-    this.bind_user_pw = ldap.bind_user_pw;
+    this.bind_user_pw = encrypt(ldap.bind_user_pw);
     this.search_base = ldap.search_base;
     this.username_attribute = ldap.username_attribute;
     this.enable = (ldap.enable)?1:0;
@@ -36,7 +37,18 @@ Ldap.find = function (result) {
               result(err, null);
           }
           else{
+            if(res.length>0){
+              try{
+                res[0].bind_user_pw=decrypt(res[0].bind_user_pw)
+              }catch(e){
+                logger.error("Couldn't decrypt ldap binding password, did the secretkey change ?")
+                res[0].bind_user_pw=""
+              }
               result(null, res[0]);
+            }else{
+              logger.error("No ldap record in the database, something is wrong")
+            }
+
           }
       });
     }catch(err){
@@ -61,7 +73,7 @@ Ldap.check = function(ldapConfig,result){
         }
       },
       adminDn: ldapConfig.bind_user_dn,
-      adminPassword: ldapConfig.bind_user_pw,
+      adminPassword: decrypt(ldapConfig.bind_user_pw),
       userPassword: "aaa",
       userSearchBase: ldapConfig.search_base,
       usernameAttribute: ldapConfig.username_attribute,
