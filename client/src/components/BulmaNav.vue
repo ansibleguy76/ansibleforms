@@ -25,7 +25,10 @@
                           <span class="icon"><font-awesome-icon icon="user" /></span><span>Users</span>
                         </router-link>
                         <router-link class="navbar-item" to="/ldap">
-                          <span class="icon"><font-awesome-icon icon="id-card" /></span><span>Ldap</span>
+                          <span class="icon"><font-awesome-icon icon="id-card" /></span><span>Ldap Connection</span>
+                        </router-link>
+                        <router-link class="navbar-item" to="/awx">
+                          <span class="icon"><font-awesome-icon icon="star" /></span><span>Awx Connection</span>
                         </router-link>
                         <router-link class="navbar-item" to="/credentials">
                           <span class="icon"><font-awesome-icon icon="lock" /></span><span>Credentials</span>

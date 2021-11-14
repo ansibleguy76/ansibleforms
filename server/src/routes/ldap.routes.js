@@ -6,6 +6,6 @@ router.get('/', ldapController.find);
 // Set ldap
 router.put('/', ldapController.update);
 // Test ldap
-router.post('/', ldapController.check);
+router.post('/check/', ldapController.check);
 
 module.exports = router

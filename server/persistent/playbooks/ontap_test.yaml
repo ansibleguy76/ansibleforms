@@ -20,16 +20,15 @@
   - name: Gather info about LUNs
     na_ontap_info:
       state: info
-      gather_subset: lun_info
+      gather_subset: volume_info
       <<: *login
-    register: luninformation
+    register: volinfo
     tags: always
-  # - name: Extract disk list
-  #   set_fact:
-  #     lun_list: "{{ (luninformation.ontap_info.lun_info.values() | list) }}"
-  #   tags: always
-  # - name: Print disk list
-  #   debug:
-  #     msg:
-  #      - "{{ lun_list }}"
-  #   tags: debug
+  - name: Print volume list
+    debug:
+      msg:
+       - "Looping {{ item.key }}"
+    loop: "{{ volinfo.ontap_info.volume_info | dict2items }}"
+    loop_control:
+      label: "{{ item.key }}"
+    tags: debug

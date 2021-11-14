@@ -91,7 +91,7 @@
       },
       testLdap(){
         var ref= this;
-        axios.post('/api/v1/ldap/',this.ldap,TokenStorage.getAuthentication())
+        axios.post('/api/v1/ldap/check/',this.ldap,TokenStorage.getAuthentication())
           .then((result)=>{
             if(result.data.status=="error"){
               ref.$toast.error(result.data.message + ", " + result.data.data.error);

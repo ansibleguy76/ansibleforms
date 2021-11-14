@@ -3,126 +3,265 @@
 const https=require('https')
 const axios = require('axios');
 const cheerio = require('cheerio');
-// require awx config (token and host)
-var awxConfig = require('./../../config/awx.config');
 const logger=require("../lib/logger");
+const mysql=require("../lib/mysql")
+const Helpers=require("../lib/common")
+const {encrypt,decrypt} = require("../lib/crypto")
+const NodeCache = require("node-cache")
+
+const cache = new NodeCache({
+    stdTTL: 3600,
+    checkperiod: (3600 * 0.5)
+});
+
 const httpsAgent = new https.Agent({
   rejectUnauthorized: false,
 })
 axios.defaults.options = httpsAgent
-// prepare axiosConfig
-const axiosConfig = {
-  headers: {
-    Authorization:"Bearer " + awxConfig.token
-  }
-}
-//awx object create - not used, but you could create an instance with it
-var Awx=function(){
 
+var Awx=function(awx){
+    this.uri = awx.uri;
+    this.token = encrypt(awx.token);
+};
+
+Awx.getConfig = function(result){
+  var awxConfig=cache.get("awxConfig")
+  if(awxConfig==undefined){
+    Awx.find(function(err,res){
+      if(err){
+        logger.error(err)
+        result(`failed to get AWX configuration`,null)
+      }else{
+        cache.set("awxConfig",res)
+        logger.silly("Cached awxConfig from database")
+        result(null,res)
+      }
+    })
+  }else{
+    // logger.silly("Getting awxConfig from cache")
+    result(null,awxConfig)
+  }
+};
+//awx object create
+Awx.update = function (record, result) {
+    logger.debug(`Updating awx ${record.name}`)
+    mysql.query("ANSIBLEFORMS_DATABASE","UPDATE AnsibleForms.`awx` set ?", record, function (err, res) {
+        if(err) {
+            result(err, null);
+        }
+        else{
+            cache.delete("awxConfig")
+            result(null, res);
+        }
+    });
+};
+Awx.find = function (result) {
+    var query = "SELECT * FROM AnsibleForms.`awx` limit 1;"
+    try{
+      mysql.query("ANSIBLEFORMS_DATABASE",query, function (err, res) {
+          if(err) {
+              result(err, null);
+          }
+          else{
+            if(res.length>0){
+              try{
+                res[0].token=decrypt(res[0].token)
+              }catch(e){
+                logger.error("Couldn't decrypt awx token, did the secretkey change ?")
+                res[0].token=""
+              }
+              result(null, res[0]);
+            }else{
+              logger.error("No awx record in the database, something is wrong")
+            }
+
+          }
+      });
+    }catch(err){
+      logger.error("error querying awx config")
+      result(err, null);
+    }
 };
 // launch awx job template
 Awx.launch = function (template,inventory,tags,extraVars, result) {
 
-  // prep the post data
-  var postdata = {
-    extra_vars:extraVars,
-    job_tags:tags
-  }
-  var message=""
-  logger.debug(`launching job template ${template.name}`)
-  // post
-  if(template.related===undefined){
-    message=`Failed to launch, no launch attibute found for template ${template.name}`
-    logger.error(message)
-    result(message)
-  }else{
-    axios.post(awxConfig.uri + template.related.launch,postdata,axiosConfig)
-      .then((axiosresult)=>{
-        var job = axiosresult.data
-        if(job){
-          logger.debug(`success, job id = ${job.id}`)
-          result(null,job)
-        }else{
-          message=`could not launch job template ${template.name}`
-          logger.error(message)
-          result(message,null)
-        }
-      })
-      .catch(function (error) {
-        logger.error(error.message)
-        result(`failed to launch ${template.name}`)
-      })
+  Awx.getConfig(function(err,res){
 
+    if(err){
+      logger.error(err)
+      result(`failed to get AWX configuration`)
+    }else{
+      // prep the post data
+      var postdata = {
+        extra_vars:extraVars,
+        job_tags:tags
+      }
+      var message=""
+      logger.debug(`launching job template ${template.name}`)
+      // post
+      if(template.related===undefined){
+        message=`Failed to launch, no launch attibute found for template ${template.name}`
+        logger.error(message)
+        result(message)
+      }else{
+        // prepare axiosConfig
+        const axiosConfig = {
+          headers: {
+            Authorization:"Bearer " + res.token
+          }
+        }
+        axios.post(res.uri + template.related.launch,postdata,axiosConfig)
+          .then((axiosresult)=>{
+            var job = axiosresult.data
+            if(job){
+              logger.debug(`success, job id = ${job.id}`)
+              result(null,job)
+            }else{
+              message=`could not launch job template ${template.name}`
+              logger.error(message)
+              result(message,null)
+            }
+          })
+          .catch(function (error) {
+            logger.error(error.message)
+            result(`failed to launch ${template.name}`)
+          })
+      }
     }
+  })
 };
 
 // find a job by id
 Awx.findJobById = function (id, result) {
-  var message=""
-  logger.debug(`searching for job with id ${id}`)
-  axios.get(awxConfig.uri + "/api/v2/jobs/" + id + "/",axiosConfig)
-    .then((axiosresult)=>{
-      var job = axiosresult.data;
-      if(job){
-        result(null,job)
-      }else{
-        message=`could not find job with id ${id}`
-        logger.error(message)
-        result(message,null)
+  Awx.getConfig(function(err,res){
+    if(err){
+      logger.error(err)
+      result(`failed to get AWX configuration`)
+    }else{
+      var message=""
+      logger.debug(`searching for job with id ${id}`)
+      // prepare axiosConfig
+      const axiosConfig = {
+        headers: {
+          Authorization:"Bearer " + res.token
+        }
       }
-    })
-    .catch(function (error) {
-      logger.error(error.message)
-    })
+      axios.get(res.uri + "/api/v2/jobs/" + id + "/",axiosConfig)
+        .then((axiosresult)=>{
+          var job = axiosresult.data;
+          if(job){
+            result(null,job)
+          }else{
+            message=`could not find job with id ${id}`
+            logger.error(message)
+            result(message,null)
+          }
+        })
+        .catch(function (error) {
+          logger.error(error.message)
+          result(error,null)
+        })
+    }
+  })
+
 };
 
 // get the job output
 Awx.findJobStdout = function (job, result) {
-  var message=""
-  if(job.related===undefined){
-    result(null,"")
-  }else{
-    axios.get(awxConfig.uri + job.related.stdout + "?format=html",axiosConfig)
-      .then((axiosresult)=>{
-        var jobstdout = axiosresult.data;
-        const $ = cheerio.load(jobstdout)
-        if(jobstdout){
-          result(null,$('pre').html())
-        }else{
-          message=`could not find job output for job id ${job.id}`
-          logger.error(message)
-          result(message,"")
+  Awx.getConfig(function(err,res){
+
+    if(err){
+      logger.error(err)
+      result(`failed to get AWX configuration`)
+    }else{
+      var message=""
+      if(job.related===undefined){
+        result(null,"")
+      }else{
+        // prepare axiosConfig
+        const axiosConfig = {
+          headers: {
+            Authorization:"Bearer " + res.token
+          }
         }
-      })
-      .catch(function (error) {
-        logger.error(error.message)
-        result(error.message,"")
-      })
-  }
-
+        axios.get(res.uri + job.related.stdout + "?format=html",axiosConfig)
+          .then((axiosresult)=>{
+            var jobstdout = axiosresult.data;
+            const $ = cheerio.load(jobstdout)
+            if(jobstdout){
+              result(null,$('pre').html())
+            }else{
+              message=`could not find job output for job id ${job.id}`
+              logger.error(message)
+              result(message,"")
+            }
+          })
+          .catch(function (error) {
+            logger.error(error.message)
+            result(error.message,"")
+          })
+      }
+    }
+  })
 };
+// check connection
+Awx.check = function (awxConfig,result) {
 
-// find a jobtemplate by name
-Awx.findJobTemplateByName = function (name,result) {
-  var message=""
-  logger.debug(`searching job template ${name}`)
+  logger.debug(`Checking AWX connection`)
+  // prepare axiosConfig
+  const axiosConfig = {
+    headers: {
+      Authorization:"Bearer " + decrypt(awxConfig.token)
+    }
+  }
   axios.get(awxConfig.uri + "/api/v2/job_templates/",axiosConfig)
     .then((axiosresult)=>{
-      var job_template = axiosresult.data.results.find(function(jt, index) {
-        if(jt.name == name)
-          return true;
-      });
-      if(job_template){
-        result(null,job_template)
-      }else{
-        message=`could not find job template ${name}`
-        logger.error(message)
-        result(message,null)
+      if(axiosresult.data.results){
+        result(null,"Awx Connection is OK")
       }
     })
     .catch(function (error) {
       logger.error(error.message)
       result(error.message,null)
     })
+
+};
+// find a jobtemplate by name
+Awx.findJobTemplateByName = function (name,result) {
+  Awx.find(function(err,res){
+
+    if(err){
+      logger.error(err)
+      result(`failed to get AWX configuration`)
+    }else{
+      var message=""
+      logger.debug(`searching job template ${name}`)
+      // prepare axiosConfig
+      const axiosConfig = {
+        headers: {
+          Authorization:"Bearer " + res.token
+        }
+      }
+      axios.get(res.uri + "/api/v2/job_templates/",axiosConfig)
+        .then((axiosresult)=>{
+          var job_template = axiosresult.data.results.find(function(jt, index) {
+            if(jt.name == name)
+              return true;
+          });
+          if(job_template){
+            result(null,job_template)
+          }else{
+            message=`could not find job template ${name}`
+            logger.error(message)
+            result(message,null)
+          }
+        })
+        .catch(function (error) {
+          logger.error(error.message)
+          result(error.message,null)
+        })
+    }
+  })
+
 };
 module.exports= Awx;

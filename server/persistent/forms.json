@@ -54,7 +54,65 @@
       "playbook":"dummy.yaml",
       "inventory":"",
       "type":"ansible",
-      "fields":[]
+      "fields":[
+        {
+          "type":"text",
+          "name":"naam1",
+          "label":"Naam van mirko",
+          "default":"mirko",
+          "required":true,
+          "minLength":4,
+          "maxLength":10,
+          "model":"mirko.name",
+          "group":"Mirko"
+        },
+        {
+          "type":"number",
+          "name":"leeftijd1",
+          "label":"Leeftijd van Mirko",
+          "default":"45",
+          "required":true,
+          "model":"mirko.age",
+          "group":"Mirko"
+        },
+        {
+          "type":"text",
+          "name":"naam2",
+          "label":"Naam van tonny",
+          "default":"tonny",
+          "required":true,
+          "minLength":4,
+          "maxLength":10,
+          "model":"tonny.name",
+          "group":"Tonny"
+        },
+        {
+          "type":"number",
+          "name":"leeftijd2",
+          "label":"Leeftijd van Tonny",
+          "default":"59",
+          "required":true,
+          "model":"tonny.age",
+          "group":"Tonny"
+        },
+        {
+          "type":"expression",
+          "name":"men",
+          "label":"Onze Mannen",
+          "required":true,
+          "model":"men.names",
+          "expression":"'$(naam1) en $(naam2)'",
+          "hide":true
+        },
+        {
+          "type":"expression",
+          "name":"men2",
+          "label":"Onze Mannen",
+          "required":true,
+          "model":"men.cool",
+          "expression":"fn.fnGetNumberedName(['server0001','server0002','server0005','server0099'],'server####','server0001',false)"
+        }
+      ]
     },
     {
       "name":"Demo Form Functionality Expressions",
@@ -308,7 +366,7 @@
             "type":"expression",
             "name":"final_resource",
             "hide":false,
-            "expression":"'$(vol_name) $(resource_name)'",
+            "expression":"'$(vol_name)-$(resource_name)'.replace('vol','lol')",
             "label":"Final resource",
             "default":"",
             "required":false,
@@ -372,6 +430,7 @@
           {
             "type":"enum",
             "name":"country",
+            "model":"country.name",
             "label":"Country",
             "default":"belgium",
             "values":["belgium","netherlands"],
@@ -381,6 +440,7 @@
             "type":"enum",
             "name":"languages",
             "label":"Languages",
+            "model":"country.languages",
             "default":[],
             "values":["english","dutch","french","spanish","german","swedish","chinese"],
             "multiple":true,

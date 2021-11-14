@@ -3,6 +3,7 @@ var db_config = {
   host: process.env["DB_HOST"] || "localhost",
   user: process.env["DB_USER"] || "root",
   password: process.env["DB_PASSWORD"] || "AnsibleForms",
-  multipleStatements: true  
+  multipleStatements: true,
+  connectionLimit: 100
 };
 module.exports = db_config;

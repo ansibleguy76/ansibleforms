@@ -613,9 +613,12 @@
       },
       getAwxJob(id,final){
         var ref = this;
-        axios.get("/api/v1/awx/" + id,TokenStorage.getAuthentication())
+        // console.log("=============================")
+        // console.log("getting awx job")
+        axios.get("/api/v1/awx/job/" + id,TokenStorage.getAuthentication())
           .then((result)=>{
               // if we have decent data
+              // console.log("job result - " + JSON.stringify(result))
               if(result.data.data!==undefined){
                 // import the data if output returned
                 if(result.data.data.output!=""){
@@ -647,10 +650,12 @@
                 }
               }else{
                 // no data ? check again after 2s
+                // console.log("geen data")
                 setTimeout(function(){ ref.getAwxJob(id) }, 1000);
               }
           })
           .catch(function(err){
+            console.log("error getting awx job " + err)
             ref.$toast.error("Failed to get awx job");
             if(err.response.status!=401){
               ref.ansibleResult.message="Error in axios call to get awx job\n\n" + err
@@ -785,7 +790,7 @@
             this.ansibleResult.message= "Connecting with awx ";
             this.ansibleResult.status="info";
 
-            axios.post("/api/v1/awx",this.formdata,TokenStorage.getAuthentication())
+            axios.post("/api/v1/awx/launch/",this.formdata,TokenStorage.getAuthentication())
               .then((result)=>{
                   if(result){
                     this.ansibleResult=result.data;

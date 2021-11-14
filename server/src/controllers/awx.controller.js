@@ -4,7 +4,6 @@ var RestResult = require('../models/restResult.model');
 const logger=require("../lib/logger");
 
 exports.getJob = function(req,res){
-
     // return the awx job with stdout
     Awx.findJobById(req.params.id,function(err,job){
        if(err){
@@ -30,7 +29,6 @@ exports.getJob = function(req,res){
 
            // get stdout
            Awx.findJobStdout(job,function(err,jobstdout){
-
               if(err){
                  restResult.data.error = err
               }if(job.status=="failed"){
@@ -46,6 +44,16 @@ exports.getJob = function(req,res){
     })
 
 }
+exports.check = function(req, res) {
+  Awx.check(new Awx(req.body),function(err, awx) {
+    if(err){
+      res.json(new RestResult("error",err))
+    }else{
+      res.json(new RestResult("success",awx))
+    }
+  });
+
+};
 exports.launch = function(req, res) {
     //handles null error
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
@@ -91,5 +99,27 @@ exports.launch = function(req, res) {
               }
           })
         }
+    }
+};
+exports.find = function(req, res) {
+    Awx.find(function(err, awx) {
+        if (err){
+          res.json(new RestResult("error","Failed to find awx",null,err))
+        }else{
+          res.json(new RestResult("success","Awx found",awx,""));
+        }
+    });
+};
+exports.update = function(req, res) {
+    if(req.body.constructor === Object && Object.keys(req.body).length === 0){
+        res.status(400).send({ error:true, message: 'Please provide all required fields' });
+    }else{
+        Awx.update(new Awx(req.body), function(err, awx) {
+            if (err){
+                res.json(new RestResult("error","Failed to update awx",null,err))
+            }else{
+                res.json(new RestResult("success","Awx updated",null,""));
+            }
+        });
     }
 };

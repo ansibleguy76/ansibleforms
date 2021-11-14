@@ -8,6 +8,7 @@ import Schema from './views/Schema.vue'
 import Groups from './views/Groups.vue'
 import Users from './views/Users.vue'
 import Ldap from './views/Ldap.vue'
+import Awx from './views/Awx.vue'
 import Credentials from './views/Credentials.vue'
 
 Vue.use(Router);
@@ -53,6 +54,11 @@ export default new Router({
         path:"/ldap",
         name:"Ldap",
         component:Ldap
+      },
+      {
+        path:"/awx",
+        name:"Awx",
+        component:Awx
       },
       {
         path:"/credentials",

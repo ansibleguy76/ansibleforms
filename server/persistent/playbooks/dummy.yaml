@@ -7,4 +7,7 @@
         msg: "Hi there and welcome to ansible"
     - name: Output ansible version
       debug:
-        msg: "{{ ansible_distribution }} - {{ ansible_distribution_version }}"
+        msg: "{{ mirko.name }} - {{ tonny.name }}"
+    - name: Output ansible version
+      debug:
+        msg: "{{ mirko.age }} - {{ tonny.age }}"

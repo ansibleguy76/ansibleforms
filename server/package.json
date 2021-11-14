@@ -29,7 +29,8 @@
     "node-jq": "^2.0.0",
     "yaml": "*",
     "cert-info":"*",
-    "crypto":"*"
+    "crypto":"*",
+    "node-cache":"*"
   },
   "devDependencies": {
     "@babel/core": "*",
