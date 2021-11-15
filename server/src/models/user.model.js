@@ -7,16 +7,6 @@ const appConfig = require('../../config/app.config')
 const Ldap = require('./ldap.model')
 const mysql = require('../lib/mysql')
 
-// ldapServer: process.env.LDAP_SERVER,
-// ldapBindUserDn: process.env.LDAP_BIND_USER_DN,
-// ldapBindUserPassword: process.env.LDAP_BIND_USER_PASSWORD,
-// ldapSearchBase: process.env.LDAP_SEARCH_BASE,
-// ldapUsernameAttribute: process.env.LDAP_USERNAME_ATTRIBUTE,
-// ldapTls: (process.env.LDAP_TLS=="1") || false,
-// ldapTlsCa: JSON.parse(`"${process.env.LDAP_CA}"`),
-// ldapTlsCert: JSON.parse(`"${process.env.LDAP_CERT}"`),
-// ldapTlsRejectUnauthorized: !(process.env.LDAP_IGNORE_CERTIFICATE_ERRORS || false),
-
 //user object create
 var User=function(user){
     this.username = user.username;
