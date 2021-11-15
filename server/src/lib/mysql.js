@@ -3,12 +3,8 @@ const logger = require('./logger');
 const {decrypt} = require('./crypto')
 const NodeCache = require('node-cache')
 const dbConfig = require('../../config/db.config')
+const mysql = require('mysql');
 
-try{
-    var mysql = require('mysql');
-}catch(err){
-    logger.warn("Cannot find `mysql` module. Is it installed ? Try `npm install mysql` or `npm install`.");
-}
 
 const mySqlPools = new NodeCache({
     stdTTL: 3600,
@@ -27,11 +23,11 @@ function getPool(name,connectionConfig){
     logger.silly("["+name+"] unknown, creating new")
     // is it the default connection, create from config
     if(name=="ANSIBLEFORMS_DATABASE"){
-      logger.silly("["+name+"] is default, creating from db config")
+      logger.silly("["+name+"] is default pool, creating from db config")
       connectionConfig=dbConfig
     }
     connectionConfig.multipleStatements=true
-    connectionConfig.connectionLimit=100
+    connectionConfig.connectionLimit=20
     // logger.silly("["+name+"] creating pool")
     pool = mysql.createPool(connectionConfig)
     // save in cache
@@ -45,23 +41,23 @@ function getPool(name,connectionConfig){
 //-
 // use this library
 function executeMySqlQuery(connection_name,query,vars,callback){
-  // logger.silly("query : " + query)
-  // logger.silly("["+connection_name+"] Getting connection")
+  logger.silly("query : " + query)
+  logger.silly("["+connection_name+"] Getting connection")
   mySqlPools.get(connection_name).getConnection(function(connerr,conn){
     if(connerr){
       callback("Failed to get connection for " + connection_name + ". " + connerr,null)
     }else{
       // logger.silly("get connection")
       conn.query(query,vars,function(err,result){
-        // logger.silly("query done ; releasing connection")
-        conn.release()
         if(err){
           logger.error("["+connection_name+"] Failed : " + query)
           callback("Failed to query. " + err,null)
         }else{
-          // logger.silly("["+connection_name+"] " + JSON.stringify(result))
+          logger.silly("["+connection_name+"] " + JSON.stringify(result))
           callback(null,result)
         }
+        logger.silly("query done ; releasing connection")
+        conn.release()
       })
     }
   })
@@ -94,7 +90,7 @@ function getMySqlCredential(connection_name,callback){
 
 MySql.query=function(connection_name,query,vars,callback){
 
-  // logger.silly("["+connection_name+"] Connection is requested, trying cache")
+  logger.silly("["+connection_name+"] Connection is requested, trying cache")
   var defaultPool = getPool("ANSIBLEFORMS_DATABASE",null)
   if(mySqlPools.get(connection_name)==undefined){
     logger.silly("["+connection_name+"] First time connection")
@@ -127,7 +123,7 @@ MySql.query=function(connection_name,query,vars,callback){
       })
     }
   }else{
-    // logger.silly("["+connection_name+"] Using existing pool from cache")
+    logger.silly("["+connection_name+"] Using existing pool from cache")
     executeMySqlQuery(connection_name,query,vars,function(err,result){
       if(err){
         callback(err,null)

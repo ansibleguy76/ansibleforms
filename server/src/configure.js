@@ -23,6 +23,7 @@ module.exports = app => {
   app.use(express.static(__dirname + '/public',{index: 'index.html'}));
   // import api routes
   const awxRoutes = require('./routes/awx.routes')
+  const jobRoutes = require('./routes/job.routes')
   const awxAdminRoutes = require('./routes/awxadmin.routes')
   const ansibleRoutes = require('./routes/ansible.routes')
   const queryRoutes = require('./routes/query.routes')
@@ -60,6 +61,7 @@ module.exports = app => {
   app.use('/api/v1/schema', schemaRoutes)
   app.use('/api/v1/token', tokenRoutes)
   app.use('/api/v1/awx', authobj, awxRoutes)
+  app.use('/api/v1/job', authobj,checkAdminMiddleware, jobRoutes)
   app.use('/api/v1/ansible', authobj, ansibleRoutes)
   app.use('/api/v1/query', authobj, queryRoutes)
   app.use('/api/v1/expression', authobj, expressionRoutes)

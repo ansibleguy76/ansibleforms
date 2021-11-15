@@ -2,6 +2,8 @@
 const ansibleConfig = require('./../../config/ansible.config');
 const logger=require("../lib/logger")
 const {exec} = require('child_process');
+const Job = require("./job.model")
+
 //awx object create - not used but as instance for later
 var Ansible=function(){
 
@@ -22,17 +24,45 @@ Ansible.run = function (playbook,inventory,tags,extraVars, result) {
   var directory = ansibleConfig.path
   logger.debug(`Executing playbook, ${directory} > ${command}`)
 
-  exec(command,{cwd:directory}, (error, stdout, stderr) => {
-    if (error) {
-      logger.error(`exec error: ${error}\n\n`);
-      result(error,null,null)
+  var process = exec(command,{cwd:directory});
+  Job.create(new Job({command:command,status:"running"}),function(error,jobid){
+    if(error){
+      logger.error(error)
+      result(error,null)
     }else{
-      logger.silly(`stdout: ${stdout}`);
-      logger.silly(`stderr: ${stderr}`);
-      result(null,stdout,stderr)
+      result(null,{id:jobid})
+      logger.silly(`Job id ${jobid} is created`)
+      process.stdout.on('data',function(data){
+        Job.createOutput({output:data,output_type:"stdout",job_id:jobid},function(error,res){
+          if(error){
+            logger.error(error)
+          }
+        })
+      })
+      process.stderr.on('data',function(data){
+        Job.createOutput({output:data,output_type:"stderr",job_id:jobid},function(error,res){
+          if(error){
+            logger.error(error)
+          }
+        })
+      })
+      process.on('exit',function(data){
+        Job.update({status:"success"},jobid,function(error,res){
+          if(error){
+            logger.error(error)
+          }
+        })
+      })
+      process.on('error',function(data){
+        Job.update({status:"failed"},jobid,function(error,res){
+          if(error){
+            logger.error(error)
+          }
+        })
+      })
     }
+  })
 
-  });
 
 };
 module.exports= Ansible;

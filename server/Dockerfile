@@ -50,11 +50,11 @@ COPY --from=builder /app/dist ./dist
 RUN apk add ansible
 
 # upgrade pip
-RUN /usr/bin/python3.8 -m pip install --upgrade pip
+RUN apk add py3-pip
 
 # install some python dependencies
-RUN pip3 install --upgrade requests six
-RUN apk add --update --no-cache --virtual .build-deps g++ gcc libxml2-dev libxslt-dev python-dev
+RUN pip3 install requests six
+RUN apk add --update --no-cache --virtual .build-deps g++ gcc libxml2-dev libxslt-dev python3-dev
 RUN apk add --no-cache libxslt
 RUN pip3 install --no-cache-dir lxml
 RUN apk del .build-deps

@@ -39,7 +39,7 @@ Credential.update = function (record,id, result) {
             result(err, null);
         }
         else{
-            cache.delete(record.name)
+            cache.del(record.name)
             result(null, res);
         }
     });

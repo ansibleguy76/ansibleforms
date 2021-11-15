@@ -20,7 +20,6 @@
   - name: Gather info about LUNs
     na_ontap_info:
       state: info
-      gather_subset: volume_info
       <<: *login
     register: volinfo
     tags: always
@@ -28,7 +27,7 @@
     debug:
       msg:
        - "Looping {{ item.key }}"
-    loop: "{{ volinfo.ontap_info.volume_info | dict2items }}"
+    loop: "{{ volinfo.ontap_info | dict2items }}"
     loop_control:
       label: "{{ item.key }}"
     tags: debug

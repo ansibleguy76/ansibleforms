@@ -104,8 +104,7 @@
             <span>{{ ansibleResult.message }}</span>
           </button>
           <div v-if="!!ansibleResult.data.output" class="box mt-3">
-            <pre v-if="currentForm.type=='ansible'" v-text="ansibleResult.data.output"></pre>
-            <pre v-if="currentForm.type=='ansible' && ansibleResult.data.error" class="has-text-danger" v-text="ansibleResult.data.error"></pre>
+            <pre v-if="currentForm.type=='ansible'" v-html="ansibleResult.data.output"></pre>
             <pre v-if="currentForm.type=='awx'" v-html="ansibleResult.data.output"></pre>
           </div>
           <button v-if="!!ansibleResult.data.output" class="button has-background-danger has-text-light" @click="resetResult()">
@@ -631,11 +630,11 @@
                 // if not final status, keep checking after 2s
                 if(this.ansibleResult.status!="success" && this.ansibleResult.status!="error"){
                   // this.$toast.info(result.data.message)
-                  setTimeout(function(){ ref.getAwxJob(id) }, 1000);
+                  setTimeout(function(){ ref.getAwxJob(id) }, 2000);
                 }else{
                   if(!final){
                     // 1 final last call for output
-                    setTimeout(function(){ ref.getAwxJob(id,true) }, 1000);
+                    setTimeout(function(){ ref.getAwxJob(id,true) }, 2000);
                   }else{
                     // if final, remove output after 15s
                     if(this.ansibleResult.status=="success"){
@@ -651,7 +650,7 @@
               }else{
                 // no data ? check again after 2s
                 // console.log("geen data")
-                setTimeout(function(){ ref.getAwxJob(id) }, 1000);
+                setTimeout(function(){ ref.getAwxJob(id) }, 2000);
               }
           })
           .catch(function(err){
@@ -659,6 +658,58 @@
             ref.$toast.error("Failed to get awx job");
             if(err.response.status!=401){
               ref.ansibleResult.message="Error in axios call to get awx job\n\n" + err
+              ref.ansibleResult.status="error";
+            }
+          })
+      },
+      getAnsibleJob(id,final){
+        var ref = this;
+        // console.log("=============================")
+        // console.log("getting awx job")
+        axios.get("/api/v1/ansible/job/" + id,TokenStorage.getAuthentication())
+          .then((result)=>{
+              // if we have decent data
+              // console.log("job result - " + JSON.stringify(result))
+              if(result.data.data!==undefined){
+                // import the data if output returned
+                if(result.data.data.output!=""){
+                  this.ansibleResult=result.data;
+                }else{
+                  // else, just import message & status
+                  this.ansibleResult.status = result.data.status
+                  this.ansibleResult.message = result.data.message
+                }
+                // if not final status, keep checking after 2s
+                if(this.ansibleResult.status!="success" && this.ansibleResult.status!="error"){
+                  // this.$toast.info(result.data.message)
+                  setTimeout(function(){ ref.getAnsibleJob(id) }, 2000);
+                }else{
+                  if(!final){
+                    // 1 final last call for output
+                    setTimeout(function(){ ref.getAnsibleJob(id,true) }, 2000);
+                  }else{
+                    // if final, remove output after 15s
+                    if(this.ansibleResult.status=="success"){
+                      this.$toast.success(result.data.message)
+                    }else{
+                      this.$toast.error(result.data.message)
+                    }
+                    clearTimeout(this.timeout)
+                    // this.timeout = setTimeout(function(){ ref.resetResult() }, 15000);
+                  }
+
+                }
+              }else{
+                // no data ? check again after 2s
+                // console.log("geen data")
+                setTimeout(function(){ ref.getAnsibleJob(id) }, 2000);
+              }
+          })
+          .catch(function(err){
+            console.log("error getting ansible job " + err)
+            ref.$toast.error("Failed to get ansible job");
+            if(err.response.status!=401){
+              ref.ansibleResult.message="Error in axios call to get ansible job\n\n" + err
               ref.ansibleResult.status="error";
             }
           })
@@ -760,20 +811,23 @@
             this.formdata.ansibleTags = this.currentForm.tags || "";
             this.ansibleResult.message= "Connecting with ansible ";
             this.ansibleResult.status="info";
-            axios.post("/api/v1/ansible",this.formdata,TokenStorage.getAuthentication())
+            axios.post("/api/v1/ansible/launch",this.formdata,TokenStorage.getAuthentication())
               .then((result)=>{
-                  // show result for 15s
-                  if(result){
-                    this.ansibleResult=result.data;
-                    if(result.data.data.error!=""){
-                      ref.$toast.warning(result.data.data.error)
-                    }
-                    clearTimeout(this.timeout)
-                    // this.timeout = setTimeout(function(){ ref.resetResult() }, 15000);
-                  }else{
-                    ref.$toast.error("Failed to invoke ansible")
-                    ref.resetResult()
+                if(result){
+                  this.ansibleResult=result.data;
+                  if(result.data.data.error!=""){
+                    ref.$toast.error(result.data.data.error)
                   }
+                  // get the jobid
+                  var jobid =  this.ansibleResult.data.output.id
+                  // don't show the whole json part
+                  this.ansibleResult.data.output = ""
+                  // wait for 2 seconds, and get the output of the job
+                  setTimeout(function(){ ref.getAnsibleJob(jobid) }, 2000);
+                }else{
+                  ref.$toast.error("Failed to invoke AWX")
+                  ref.resetResult()
+                }
               })
               .catch(function(err){
                 ref.$toast.error("Failed to invoke ansible " + err)

@@ -1,5 +1,6 @@
 'use strict';
 const Ansible = require('../models/ansible.model');
+const Job = require('../models/job.model');
 var RestResult = require('../models/restResult.model');
 const logger=require("../lib/logger");
 
@@ -15,7 +16,7 @@ exports.run = function(req, res) {
         var tags = req.body.ansibleTags;
         var extraVars = JSON.stringify(req.body);
 
-        var restResult = new RestResult("success","","","")
+        var restResult = new RestResult("info","","","")
 
         if(!playbook){
           // wrong implementation -> send 400 error
@@ -25,15 +26,15 @@ exports.run = function(req, res) {
           logger.debug("extravars : " + extraVars)
           logger.debug("inventory : " + inventory)
           logger.debug("tags : " + tags)
-          Ansible.run(playbook,inventory,tags,extraVars,function(err,stdout,stderr){
+          Ansible.run(playbook,inventory,tags,extraVars,function(err,out){
             if(err){
                restResult.status = "error"
                restResult.message = "error occured while running playbook " + playbook
                restResult.data.error = err.toString()
             }else{
-               restResult.message = "succesfully ran playbook"
-               restResult.data.output = stdout
-               restResult.data.error = stderr
+               restResult.message = "succesfully launched playbook"
+               restResult.data.output = out
+
             }
             // send response
             res.json(restResult);
@@ -41,4 +42,31 @@ exports.run = function(req, res) {
         }
 
     }
+};
+exports.getJob = function(req, res) {
+    Job.findById(req.params.id, function(err, job) {
+        if (err){
+            res.json(new RestResult("error","failed to find job",null,err))
+        }else{
+            if(job.length>0){
+              var restResult = new RestResult("info","job is running",null,null)
+              var jobStatus = job[0].status
+              var message = ""
+              var status = ""
+              if(jobStatus=="success"){
+                restResult.status = "success"
+                restResult.message = "job ran successfully"
+              }
+              if(jobStatus=="failed"){
+                restResult.status = "error"
+                restResult.message = "job failed"
+              }
+              restResult.data.output = job[0].output
+              res.json(restResult);
+            }else{
+              res.json(new RestResult("error","failed to find job",null,"No such job"))
+            }
+
+        }
+    });
 };

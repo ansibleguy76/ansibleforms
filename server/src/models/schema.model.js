@@ -20,7 +20,7 @@ Schema.hasSchema = function (result) {
               result("Failed to query tables in the AnsibleForms schema. " + err, null);
           }
           else{
-              if(res.length == 6){
+              if(res.length == 8){
                 result(null,{status:"success",message:`schema 'AnsibleForms' and tables are present`})
               }else{
                 logger.warn(`Tables are not ok`)
