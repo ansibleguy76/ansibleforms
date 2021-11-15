@@ -94,6 +94,24 @@ Schema.create = function (result) {
                 `uri` varchar(250) NOT NULL,\
                 `token` varchar(250) NOT NULL\
               ) ENGINE=InnoDB DEFAULT CHARSET=utf8;\
+              DROP TABLE IF EXISTS `job_output`;\
+              DROP TABLE IF EXISTS `jobs`;\
+              CREATE TABLE `jobs` (\
+                `id` int(11) NOT NULL AUTO_INCREMENT,\
+                `command` longtext DEFAULT NULL,\
+                `status` varchar(20) DEFAULT NULL,\
+                PRIMARY KEY (`id`)\
+              ) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8;\
+              CREATE TABLE `job_output` (\
+                `id` int(11) NOT NULL AUTO_INCREMENT,\
+                `output` longtext DEFAULT NULL,\
+                `timestamp` time NOT NULL DEFAULT current_timestamp(),\
+                `output_type` varchar(10) NOT NULL,\
+                `job_id` int(11) NOT NULL,\
+                PRIMARY KEY (`id`),\
+                KEY `FK_job_output_jobs` (`job_id`),\
+                CONSTRAINT `FK_job_output_jobs` FOREIGN KEY (`job_id`) REFERENCES `jobs` (`id`) ON DELETE CASCADE ON UPDATE CASCADE\
+              ) ENGINE=InnoDB AUTO_INCREMENT=1650 DEFAULT CHARSET=utf8;\
               INSERT INTO AnsibleForms.groups(name) VALUES('admins');\
               INSERT INTO AnsibleForms.awx(uri,token) VALUES('','');\
               INSERT INTO AnsibleForms.users(username,password,group_id) VALUES('admin','$2b$10$Z/W0HXNBk2aLR4yVLkq5L..C8tXg.G.o1vkFr8D2lw8JSgWRCNiCa',1);\
