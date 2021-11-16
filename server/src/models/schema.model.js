@@ -108,6 +108,7 @@ Schema.create = function (result) {
                 `timestamp` time NOT NULL DEFAULT current_timestamp(),\
                 `output_type` varchar(10) NOT NULL,\
                 `job_id` int(11) NOT NULL,\
+                `order` int(11) NOT NULL,\
                 PRIMARY KEY (`id`),\
                 KEY `FK_job_output_jobs` (`job_id`),\
                 CONSTRAINT `FK_job_output_jobs` FOREIGN KEY (`job_id`) REFERENCES `jobs` (`id`) ON DELETE CASCADE ON UPDATE CASCADE\

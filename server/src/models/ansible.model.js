@@ -26,6 +26,7 @@ Ansible.run = function (playbook,inventory,tags,extraVars, result) {
 
   var process = exec(command,{cwd:directory});
   Job.create(new Job({command:command,status:"running"}),function(error,jobid){
+    var counter=0
     if(error){
       logger.error(error)
       result(error,null)
@@ -33,14 +34,14 @@ Ansible.run = function (playbook,inventory,tags,extraVars, result) {
       result(null,{id:jobid})
       logger.silly(`Job id ${jobid} is created`)
       process.stdout.on('data',function(data){
-        Job.createOutput({output:data,output_type:"stdout",job_id:jobid},function(error,res){
+        Job.createOutput({output:data,output_type:"stdout",job_id:jobid,order:++counter},function(error,res){
           if(error){
             logger.error(error)
           }
         })
       })
       process.stderr.on('data',function(data){
-        Job.createOutput({output:data,output_type:"stderr",job_id:jobid},function(error,res){
+        Job.createOutput({output:data,output_type:"stderr",job_id:jobid,order:++counter},function(error,res){
           if(error){
             logger.error(error)
           }
