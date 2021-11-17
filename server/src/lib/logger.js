@@ -35,10 +35,10 @@ const transports = [
     level:loggerConfig.consolelevel
   }),
   new winston.transports.File({
-    filename: loggerConfig.errorPath,
+    filename: loggerConfig.path + "/ansibleforms.errors.log",
     level: 'error',
   }),
-  new winston.transports.File({ filename: loggerConfig.path }),
+  new winston.transports.File({ filename: loggerConfig.path + "/ansibleforms.log" }),
 ]
 
 const Logger = winston.createLogger({
