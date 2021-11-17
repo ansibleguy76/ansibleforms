@@ -6,7 +6,7 @@
     },
     {
       "name":"Provisioning",
-      "icon":"pencil"
+      "icon":"pencil-alt"
     },
     {
       "name":"Decommissioning",
