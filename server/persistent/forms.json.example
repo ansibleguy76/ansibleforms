@@ -121,66 +121,6 @@
             "default":false,
             "placeholder":"",
             "expression":"Math.PI"
-          },
-          {
-            "element":"expression",
-            "name":"new_volume_name",
-            "label":"New volume name",
-            "default":false,
-            "placeholder":"",
-            "expression":"'$(country)'+'$(city)'+'$(calculation)'"
-          },
-
-          {
-            "element":"select",
-            "type":"query",
-            "dbConfig":"CONN1",
-            "query":"select name from cm_storage.vserver where vserver.type='data'",
-            "name":"vserver_name",
-            "label":"Select a vserver",
-            "default":"svm1",
-            "required":true,
-            "group":"Storage",
-            "dependencies":[
-              {
-                "name":"areyousure",
-                "values":[true]
-              }
-            ]
-          },
-          {
-            "element":"select",
-            "type":"query",
-            "dbConfig":"CONN2",
-            "query":"select volume.name,vserver.name 'vserver' from cm_storage.volume,cm_storage.vserver where volume.vserver_id=vserver.id and vserver.name='$(vserver_name)'",
-            "name":"vol_name2",
-            "label":"Select a volume",
-            "default":"bel_bru_tom",
-            "required":true,
-            "group":"Storage",
-            "dependencies":[
-              {
-                "name":"areyousure",
-                "values":[true]
-              }
-            ]
-          },
-          {
-            "element":"select",
-            "type":"query",
-            "dbConfig":"CONN1",
-            "query":"select n*50 as name from playground.generator_16 where n>0 and n<10",
-            "name":"size_mb",
-            "label":"Select a size in MB",
-            "default":"50",
-            "required":true,
-            "group":"Storage",
-            "dependencies":[
-              {
-                "name":"areyousure",
-                "values":[true]
-              }
-            ]
           }
       ]
     },
@@ -272,7 +212,7 @@
     {
       "name":"HelloWorld",
       "roles":["demo"],
-      "description":"This will kick off the HelloWorld template.  It does not expect any variables, so that's cool because it should always run :)",
+      "description":"This will kick off the HelloWorld template.  You can install it in AWX.  It does not expect any variables, so that's cool because it should always run :)",
       "category":["Demo"],
       "tileClass":"has-background-success",
       "template":"HelloWorld",
