@@ -53,22 +53,8 @@ The webapplication is based on a
 - Ldap & local authentication
 
 # How to install and run
-## Run with docker with docker hub image
-If you don't want the hassle of a build.  Run a docker image directly from docker hub.
-
-If you want, you can use the latest build from docker hub (https://hub.docker.com/repository/docker/ansibleguy/ansibleforms)
-Note that we have deployed the solution in the `/app` folder inside the docker.  So if you want your `forms.json`, your, logs, certificates and playbook reachable from within the docker image, you have to use a mount path or persistent volume and make sure it's mounted under `/app/dist/persistent`.  
-Make sure you have your environment variables set.  Most variables fall back to defaults, but the MySQL database connection is mandatory.  The image contains ansible and python3.  The below command is merely an example. An example of a forms.json you can find here (https://github.com/ansibleguy76/ansibleforms/tree/main/server/persistent). 
-```
-docker run -p 8000:8000 -d -t --mount type=bind,source=/srv/apps/ansibleforms/server/persistent,target=/app/dist/persistent --name ansibleforms -e DB_HOST=192.168.0.1 -e DB_USER=root -e DB_PASSWORD=password ansibleguy/ansibleforms
-```
-Once started :
-```
-docker ps
-CONTAINER ID   IMAGE                     COMMAND                  CREATED         STATUS         PORTS                                       NAMES
-d91f7b05b67e   ansibleguy/ansibleforms   "node ./dist/index.js"   7 seconds ago   Up 6 seconds   0.0.0.0:8000->8000/tcp, :::8000->8000/tcp   ansibleforms
-```
 ## Install MySql (or skip to use exising one)
+The application needs a MySQL (or MariaDb) server.  You can have your own pick, run in docker, run remote, run locally.  Just make sure it is accessible and set the environment variables in the application to connect to it.
 ```
 cd ..
 yum install -y mariadb-server
@@ -82,10 +68,29 @@ CREATE USER 'root'@'%' IDENTIFIED BY 'AnsibleForms';
 GRANT ALL PRIVILEGES ON *.* TO 'root'@'%';
 FLUSH PRIVILEGES;
 ```
-Note : You can create multiple users and lock down the database as you please, however if the webapplication cannot find the AnsibleForms database, it will try to create it.  So you might want to give enough privileges.
+Note : The first time, the webapplication will ask to create the database and tables. So you might want to give enough privileges.
+
+In (https://github.com/ansibleguy76/ansibleforms/tree/main/demo) you can find a demo sql file that will create some extra demo tables in case you want to your forms to grab data from a database and you want a first test drive.
 ```
 mysql -u root -p -t< ./demo/demo_cmdb.sql > mysql_deployed.txt
 ```
+## Run with docker with docker hub image
+If you don't want to go through the hassle of a build.  Run a docker image directly from docker hub.
+
+If you want, you can use the latest build from docker hub (https://hub.docker.com/repository/docker/ansibleguy/ansibleforms)
+Note that we have deployed the solution in the `/app` folder inside the docker.  So if you want your `forms.json`, your, logs, certificates and playbook reachable from within the docker image, you have to use a mount path or persistent volume and make sure it's mounted under `/app/dist/persistent`.  
+Make sure you have your environment variables set.  Most variables fall back to defaults, but the MySQL database connection is mandatory.  The image contains ansible and python3.  The below command is merely an example. An example of a forms.json you can find here (https://github.com/ansibleguy76/ansibleforms/tree/main/server/persistent).
+```
+docker run -p 8000:8000 -d -t --mount type=bind,source=/srv/apps/ansibleforms/server/persistent,target=/app/dist/persistent --name ansibleforms -e DB_HOST=192.168.0.1 -e DB_USER=root -e DB_PASSWORD=password ansibleguy/ansibleforms
+```
+Once started :
+```
+docker ps
+CONTAINER ID   IMAGE                     COMMAND                  CREATED         STATUS         PORTS                                       NAMES
+d91f7b05b67e   ansibleguy/ansibleforms   "node ./dist/index.js"   7 seconds ago   Up 6 seconds   0.0.0.0:8000->8000/tcp, :::8000->8000/tcp   ansibleforms
+```
+# How to run a custom build
+If you are familiar with Node js, you can download the code and build and run this locally, using PM2 for example.
 ## Project download
 ```
 # remove nodejs if needed
@@ -137,11 +142,9 @@ cp ./persistent/forms.json.example ./persistent/forms.json
 ## Modify the .env.development (or .env.production) to your needs
 - enable https if needed and set the certificate
 - update forms path and log path
-- set ansible path
-- set awx connection details
 - set mysql server connection details
 ## Modify the forms.json to your needs
-The `forms.json` file describes all your forms in a json format.  It must be available in the server application.  By default it's under `/server/persistent`, but if you choose to run this application containerized, then the file is best fit on a mountpath or persistent volume.  So set the location of the `forms.json` file correctly in the environment file.  In the file, make the proper changes, refer to the wiki documentation for all details.
+The `forms.json` file describes all your forms in a json format.  It must be available in the server application.  By default the webapp will search under `/server/persistent` In the file, make the proper changes, check the wiki documentation for all details.
 
 - add categories
 - add roles
