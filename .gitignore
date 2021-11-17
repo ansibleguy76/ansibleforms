@@ -21,6 +21,9 @@ pnpm-debug.log*
 # forms.json
 forms.json
 
+# ontap stuff
+ontap*.yaml
+
 # Editor directories and files
 .idea
 .vscode
