@@ -96,7 +96,7 @@ Job.findAll = function (result) {
 Job.findById = function (id,result) {
     logger.debug(`Finding job ${id}`)
     try{
-      mysql.query("ANSIBLEFORMS_DATABASE","SELECT `status`,output,`timestamp`,output_type FROM AnsibleForms.`jobs` INNER JOIN AnsibleForms.`job_output` ON jobs.id=job_output.job_id WHERE jobs.id=? ORDER by job_output.order;",id, function (err, res) {
+      mysql.query("ANSIBLEFORMS_DATABASE","SELECT `status`,COALESCE(output,'') output,COALESCE(`timestamp`,'') `timestamp`,COALESCE(output_type,'stdout') output_type FROM AnsibleForms.`jobs` LEFT JOIN AnsibleForms.`job_output` ON jobs.id=job_output.job_id WHERE jobs.id=? ORDER by job_output.order;",id, function (err, res) {
           if(err) {
               result(err, null);
           }
