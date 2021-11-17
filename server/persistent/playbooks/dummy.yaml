@@ -5,9 +5,3 @@
     - name: Output 'Welcome'.
       debug:
         msg: "Hi there and welcome to ansible"
-    - name: Output ansible version
-      debug:
-        msg: "{{ mirko.name }} - {{ tonny.name }}"
-    - name: Output ansible version
-      debug:
-        msg: "{{ mirko.age }} - {{ tonny.age }}"
