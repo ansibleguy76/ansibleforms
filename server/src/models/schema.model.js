@@ -71,6 +71,7 @@ Schema.create = function (result) {
                 `user` varchar(250) NOT NULL,\
                 `password` text NOT NULL,\
                 `host` varchar(250) DEFAULT NULL,\
+                `port` int(11) DEFAULT NULL,\
                 `description` text NOT NULL,\
                 PRIMARY KEY (`id`),\
                 UNIQUE KEY `uk_AnsibleForms_credentials_natural_key` (`name`)\
@@ -105,7 +106,7 @@ Schema.create = function (result) {
               CREATE TABLE `job_output` (\
                 `id` int(11) NOT NULL AUTO_INCREMENT,\
                 `output` longtext DEFAULT NULL,\
-                `timestamp` time NOT NULL DEFAULT current_timestamp(),\
+                `timestamp` datetime NOT NULL DEFAULT current_timestamp(),\
                 `output_type` varchar(10) NOT NULL,\
                 `job_id` int(11) NOT NULL,\
                 `order` int(11) NOT NULL,\

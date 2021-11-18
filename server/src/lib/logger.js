@@ -32,7 +32,7 @@ const format = winston.format.combine(
 const transports = [
   new winston.transports.Console({
     stderrLevels: ["error"],
-    level:loggerConfig.consolelevel
+    level:loggerConfig.consolelevel || "info"
   }),
   new winston.transports.File({
     filename: loggerConfig.path + "/ansibleforms.errors.log",
@@ -42,7 +42,7 @@ const transports = [
 ]
 
 const Logger = winston.createLogger({
-  level: loggerConfig.level || "warn",
+  level: loggerConfig.level || "info",
   levels,
   format,
   transports,

@@ -1,4 +1,5 @@
 const fs = require("fs")
+
 var log_config = {
   level: process.env.LOG_LEVEL || "info",
   path: process.env.LOG_PATH || (__dirname + '/../persistent/logs'),

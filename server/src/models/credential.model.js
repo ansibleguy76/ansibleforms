@@ -14,6 +14,7 @@ const cache = new NodeCache({
 var Credential=function(credential){
     this.name = credential.name;
     this.host = credential.host;
+    this.port = credential.port;
     this.user = credential.user;
     this.password = encrypt(credential.password);
     this.description = credential.description;
@@ -110,7 +111,7 @@ Credential.findByName = function (name) {
         logger.silly(`Finding credential ${name}`)
         var cred = cache.get(name)
         if(cred==undefined){
-          var query = "SELECT host,name,user,password FROM AnsibleForms.`credentials` WHERE name=?;"
+          var query = "SELECT host,port,name,user,password FROM AnsibleForms.`credentials` WHERE name=?;"
           mysql.query("ANSIBLEFORMS_DATABASE",query,name, function (err, res) {
               if(err) {
                   reject(err,null);
