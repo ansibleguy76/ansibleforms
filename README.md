@@ -1,47 +1,17 @@
 # Intro
 Ansible forms is a lightweight node.js webapplication to generate userfriendly and pretty forms to kickoff ansible playbooks or awx (ansible tower) templates.
 
-This project has 2 node applications
-- A client app in vue
-- A server app in express
-
-The client app will dynamically build the forms (vue.js v2) for ansible/awx, based on a single yaml file (forms.yaml).
-The server app (express.js) will cover authentication, background database connections and executing the ansible playbooks or awx templates.
-# Documentation
+# Configuration / documentation
 [Go to the documentation wiki](https://github.com/ansibleguy76/ansibleforms/wiki "Wiki")
 
 # Requirements
 - node.js capable server or container
-- MySql/MariaDb server to cover local authentication
+- MySql/MariaDb server to cover local authentication (can be containerized)
 
-# Technologies
-The webapplication is based on a
-- Frontend
-  - vue (core)
-  - vue-router (navigation)
-  - axios (api calls)
-  - vuelidate (form validation)
-  - vue-toastification (alerting)
-  - vue-json-pretty (json formatter)
-  - bulma.io (responsive css framework)
-  - FontAwesome (icon font library)
-- Backend
-  - express (core)
-  - winston (logging)
-  - axios (api calls)
-  - bcrypt (password hashing)
-  - cheerio (html parser)
-  - passport (authentication/authorization)
-  - mysql (mysql connection)
-  - connect-history-api-fallback (history api)
-  - ajv (json schema validation)
-  - crypto (credential encrypt/decrypt)
-- Database
-  - MySql/MariaDb
 # Capabilities
 - Categorize forms
 - Role based access
-- Cascaded dropdowns (sql)
+- Cascaded dropdowns (sql / rest / javascript)
 - Expressions (javascript)
 - Field dependencies
 - Add icons
@@ -53,7 +23,13 @@ The webapplication is based on a
 - Ldap & local authentication
 
 # How to install and run
-## Install MySql (or skip to use exising one)
+## Use docker compose
+
+Follow this procedure (https://github.com/ansibleguy76/ansibleforms-docker)
+
+## Install manually
+Installing it manually requires more linux and sysadmin skills.
+### Install MySql (or skip to use exising one)
 The application needs a MySQL (or MariaDb) server.  You can have your own pick, run in docker, run remote, run locally.  Just make sure it is accessible and set the environment variables in the application to connect to it.
 ```
 cd ..
@@ -74,7 +50,7 @@ In (https://github.com/ansibleguy76/ansibleforms/tree/main/demo) you can find a 
 ```
 mysql -u root -p -t< ./demo/demo_cmdb.sql > mysql_deployed.txt
 ```
-## Run with docker with docker hub image
+### Run with docker with docker hub image
 If you don't want to go through the hassle of a build.  Run a docker image directly from docker hub.
 
 If you want, you can use the latest build from docker hub (https://hub.docker.com/repository/docker/ansibleguy/ansibleforms)
@@ -91,6 +67,12 @@ d91f7b05b67e   ansibleguy/ansibleforms   "node ./dist/index.js"   7 seconds ago 
 ```
 # How to run a custom build
 If you are familiar with Node js, you can download the code and build and run this locally, using PM2 for example.
+This project has 2 node applications
+- A client app in vue
+- A server app in express
+
+The client app will dynamically build the forms (vue.js v2) for ansible/awx, based on a single yaml file (forms.yaml).
+The server app (express.js) will cover authentication, background database connections and executing the ansible playbooks or awx templates.
 ## Project download
 ```
 # remove nodejs if needed
@@ -140,7 +122,7 @@ cp .env.example .env.development
 cp ./persistent/forms.yaml.example ./persistent/forms.yaml
 ```
 ## Modify the .env.development (or .env.production) to your needs
-- enable https if needed and set the certificate
+- enable https if needed and set the certificates (the code comes with self signed certficates)
 - update forms path and log path
 - set mysql server connection details
 ## Modify the forms.yaml to your needs
@@ -219,3 +201,28 @@ The first time you surf to the webapplication, it will ask you if it should crea
 The default admin user is :
 - username : admin
 - password : AnsibleForms!123
+
+# Technologies
+The webapplication is based on a
+- Frontend
+  - vue (core)
+  - vue-router (navigation)
+  - axios (api calls)
+  - vuelidate (form validation)
+  - vue-toastification (alerting)
+  - vue-json-pretty (json formatter)
+  - bulma.io (responsive css framework)
+  - FontAwesome (icon font library)
+- Backend
+  - express (core)
+  - winston (logging)
+  - axios (api calls)
+  - bcrypt (password hashing)
+  - cheerio (html parser)
+  - passport (authentication/authorization)
+  - mysql (mysql connection)
+  - connect-history-api-fallback (history api)
+  - ajv (json schema validation)
+  - crypto (credential encrypt/decrypt)
+- Database
+  - MySql/MariaDb
