@@ -23,7 +23,7 @@ Ansible forms is a lightweight node.js webapplication to generate userfriendly a
 - Ldap & local authentication
 
 # How to install and run
-## Use docker compose
+## Use docker compose (recommended)
 
 Follow this procedure (https://github.com/ansibleguy76/ansibleforms-docker)
 
