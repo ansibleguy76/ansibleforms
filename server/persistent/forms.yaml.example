@@ -1,0 +1,200 @@
+---
+categories:
+- name: Default
+  icon: user
+- name: Provisioning
+  icon: pencil-alt
+- name: Decommissioning
+  icon: trash-alt
+- name: Ansible
+  icon: atom
+- name: AWX
+  icon: magic
+- name: Demo
+  icon: heart
+roles:
+- name: admin
+  groups:
+  - local/admins
+  - ldap/Domain Admins
+- name: operator
+  groups:
+  - local/operators
+- name: demo
+  groups:
+  - local/demo
+- name: public
+  groups: []
+forms:
+- name: Demo Form Ansible No input
+  roles:
+  - public
+  description: This workflow will kickoff the vanilla ansible dummy playbook.
+  category:
+  - Demo
+  - Ansible
+  tileClass: has-background-warning
+  playbook: dummy.yaml
+  inventory: ''
+  type: ansible
+  fields: []
+- name: Demo Form Functionality Expressions
+  roles:
+  - public
+  description: This workflow will show expressions
+  category:
+  - Demo
+  tileClass: has-background-warning
+  playbook: dummy.yaml
+  inventory: ''
+  type: ansible
+  fields:
+  - element: input
+    type: text
+    name: textfield1
+    label: Field 1
+    default: ''
+    required: true
+    minLength: 4
+    maxLength: 10
+  - element: input
+    type: text
+    name: textfield2
+    label: Field 2
+    default: ''
+    required: true
+    minLength: 4
+    maxLength: 10
+  - element: expression
+    hide: false
+    name: concatination
+    label: Concatination Example
+    default: false
+    placeholder: ''
+    expression: "$(textfield1) + ' ' + $(textfield2)"
+  - element: input
+    type: number
+    name: numberfield
+    label: Number
+    default: '1'
+    required: true
+    minValue: 0
+    maxValue: 10
+  - element: expression
+    hide: false
+    name: multiply
+    label: Multiply Example
+    default: false
+    placeholder: ''
+    expression: "$(numberfield)*100"
+  - element: expression
+    hide: false
+    name: pi
+    label: The number PI
+    default: false
+    placeholder: ''
+    expression: Math.PI
+- name: Demo Form Functionality Simple Fields
+  roles:
+  - public
+  description: This workflow will show form field examples
+  category:
+  - Demo
+  tileClass: has-background-warning
+  playbook: dummy.yaml
+  inventory: ''
+  type: ansible
+  fields:
+  - element: input
+    type: text
+    name: vol_name
+    label: Volume name
+    default: ''
+    required: true
+    minLength: 4
+    maxLength: 10
+    regex: "^[a-zA-Z]*$"
+    regexDescription: Must be alpha numeric
+  - element: input
+    type: password
+    name: password
+    label: Password
+    default: ''
+    required: true
+    minLength: 8
+    maxLength: 20
+    regex: "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\\$%\\^&\\*])"
+    regexDescription: Must contain at least 1 numeric, 1 special, 1 upper and 1 lower
+      character
+    icon: lock
+  - element: input
+    type: password
+    name: password_verify
+    label: Verify Password
+    default: ''
+    sameAs: password
+    icon: lock
+  - element: select
+    type: enum
+    name: country
+    label: Country
+    default: belgium
+    values:
+    - belgium
+    - netherlands
+    required: true
+  - element: select
+    type: enum
+    name: languages
+    label: Languages
+    default: []
+    values:
+    - english
+    - dutch
+    - french
+    - spanish
+    - german
+    - swedish
+    - chinese
+    multiple: true
+    size: 4
+    required: true
+    icon: flag
+    help: You can select multiple languages if you want !
+  - element: input
+    type: radio
+    name: linuxfavourite
+    label: Choose your favorite linux flavour
+    values:
+    - CentOS
+    - Ubuntu
+    - Red Hat
+    - Debian
+    default: CentOS
+    required: true
+  - element: input
+    type: checkbox
+    name: areyousure
+    label: Confirmation
+    default: false
+    placeholder: are you sure?
+- name: HelloWorld
+  roles:
+  - demo
+  description: This will kick off the HelloWorld template.  You can install it in
+    AWX.  It does not expect any variables, so that's cool because it should always
+    run :)
+  category:
+  - Demo
+  tileClass: has-background-success
+  template: HelloWorld
+  inventory: ''
+  type: awx
+  fields:
+  - element: input
+    model: hello.world
+    type: text
+    name: Testfield
+    label: Testfield
+    default: ''
+    required: true
