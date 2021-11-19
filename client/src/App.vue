@@ -81,22 +81,22 @@
               .then((result)=>{
                 ref.formConfig=result.data;
                 if(!ref.formConfig.error){
-                  ref.$toast.success("Valid forms.json loaded")
+                  ref.$toast.success("Valid forms.yaml loaded")
                   ref.$router.push({name:"Home"}).catch(err => {});
                   ref.refreshAuthenticated()
                   this.loadProfile()
                 }else{
-                    ref.$toast.error("Invalid forms.json")
-                    ref.errorMessage="Error in forms.json file\n\n" + ref.formConfig.error
+                    ref.$toast.error("Invalid forms.yaml")
+                    ref.errorMessage="Error in forms.yaml file\n\n" + ref.formConfig.error
                     ref.$router.replace({name:"Error"}).catch(err => {});
                 }
               })
               .catch(function(err){
                 if(err.response && err.response.status!=401){
-                  ref.errorMessage="Could not get forms.json file\n\n" + err
+                  ref.errorMessage="Could not get forms.yaml file\n\n" + err
                   ref.$router.replace({name:"Error"}).catch(err => {});
                 }else{
-                  ref.$toast.error("Failed to load forms.json file")
+                  ref.$toast.error("Failed to load forms.yaml file")
                 }
               })
           }

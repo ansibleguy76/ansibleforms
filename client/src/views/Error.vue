@@ -9,7 +9,7 @@
               This is the end of the line I'm afraid.<br>
               You'll need to fix a few things, here are some hints:<br>
               <ul>
-                <li>Make sure you have a valid forms.json file</li>
+                <li>Make sure you have a valid forms.yaml file</li>
                 <li>Check your environment variables</li>
                 <li>Make sure you have a MySQL database running</li>
                 <li>If the AnsibleForms schema is not present, <br>

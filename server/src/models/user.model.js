@@ -2,9 +2,9 @@
 const bcrypt = require('bcrypt');
 const logger=require("../lib/logger");
 const authConfig = require('../../config/auth.config')
-const helpers = require('../lib/common.js')
 const appConfig = require('../../config/app.config')
 const Ldap = require('./ldap.model')
+const Form = require('./form.model')
 const mysql = require('../lib/mysql')
 
 //user object create
@@ -202,9 +202,12 @@ User.getRoles = function(user,groupObj){
   var groupMatch=""
   var group=""
   var groups = []
-  logger.debug("loading forms file")
-  helpers.nocache(appConfig.formsPath)
-  var forms = require(appConfig.formsPath)
+  var forms=undefined
+  try{
+    forms = Form.load()
+  }catch(e){
+    logger.error(e)
+  }
   // ldap type
   if(user.type=="ldap"){
     if(groupObj.memberOf){

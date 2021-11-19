@@ -3,8 +3,6 @@ var Helpers = function(){
 
 }
 
-Helpers.nocache= function(module) {require("fs").watchFile(require("path").resolve(module), () => {delete require.cache[require.resolve(module)]})}
-
 // this is needed because ldap-authentication has missage try catch
 Helpers.checkCertificateBase64=function(cert){
   var b64 = cert.replace(/(\r\n|\n|\r)/gm, "").replace(/\-{5}[^\-]+\-{5}/gm,"")

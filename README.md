@@ -5,7 +5,7 @@ This project has 2 node applications
 - A client app in vue
 - A server app in express
 
-The client app will dynamically build the forms (vue.js v2) for ansible/awx, based on a single json file (forms.json).
+The client app will dynamically build the forms (vue.js v2) for ansible/awx, based on a single yaml file (forms.yaml).
 The server app (express.js) will cover authentication, background database connections and executing the ansible playbooks or awx templates.
 # Documentation
 [Go to the documentation wiki](https://github.com/ansibleguy76/ansibleforms/wiki "Wiki")
@@ -78,8 +78,8 @@ mysql -u root -p -t< ./demo/demo_cmdb.sql > mysql_deployed.txt
 If you don't want to go through the hassle of a build.  Run a docker image directly from docker hub.
 
 If you want, you can use the latest build from docker hub (https://hub.docker.com/repository/docker/ansibleguy/ansibleforms)
-Note that we have deployed the solution in the `/app` folder inside the docker.  So if you want your `forms.json`, your, logs, certificates and playbook reachable from within the docker image, you have to use a mount path or persistent volume and make sure it's mounted under `/app/dist/persistent`.  
-Make sure you have your environment variables set.  Most variables fall back to defaults, but the MySQL database connection is mandatory.  The image contains ansible and python3.  The below command is merely an example. An example of a forms.json you can find here (https://github.com/ansibleguy76/ansibleforms/tree/main/server/persistent).
+Note that we have deployed the solution in the `/app` folder inside the docker.  So if you want your `forms.yaml`, your, logs, certificates and playbook reachable from within the docker image, you have to use a mount path or persistent volume and make sure it's mounted under `/app/dist/persistent`.  
+Make sure you have your environment variables set.  Most variables fall back to defaults, but the MySQL database connection is mandatory.  The image contains ansible and python3.  The below command is merely an example. An example of a forms.yaml you can find here (https://github.com/ansibleguy76/ansibleforms/tree/main/server/persistent).
 ```
 docker run -p 8000:8000 -d -t --mount type=bind,source=/srv/apps/ansibleforms/server/persistent,target=/app/dist/persistent --name ansibleforms -e DB_HOST=192.168.0.1 -e DB_USER=root -e DB_PASSWORD=password ansibleguy/ansibleforms
 ```
@@ -137,14 +137,14 @@ cp .env.example .env.development
 cd ..
 cd server
 cp .env.example .env.development
-cp ./persistent/forms.json.example ./persistent/forms.json
+cp ./persistent/forms.yaml.example ./persistent/forms.yaml
 ```
 ## Modify the .env.development (or .env.production) to your needs
 - enable https if needed and set the certificate
 - update forms path and log path
 - set mysql server connection details
-## Modify the forms.json to your needs
-The `forms.json` file describes all your forms in a json format.  It must be available in the server application.  By default the webapp will search under `/server/persistent` In the file, make the proper changes, check the wiki documentation for all details.
+## Modify the forms.yaml to your needs
+The `forms.yaml` file describes all your forms in a yaml format.  It must be available in the server application.  By default the webapp will search under `/server/persistent` In the file, make the proper changes, check the wiki documentation for all details.
 
 - add categories
 - add roles

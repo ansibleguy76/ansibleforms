@@ -18,8 +18,8 @@ pnpm-debug.log*
 # remote sycn files
 .remote-sync.json
 
-# forms.json
-forms.json
+# forms.yaml
+forms.yaml
 
 # ontap stuff
 ontap*.yaml
