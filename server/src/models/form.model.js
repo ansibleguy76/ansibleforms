@@ -22,7 +22,7 @@ Form.load = function() {
       forms = YAML.parse(rawdata)
     }catch(e){
       logger.error("Error reading the forms.yaml file : " + e)
-      Throw(`Error reading the forms.yaml file : ${e}`)
+      throw `Error reading the forms.yaml file : ${e}`
     }
     if(forms){
       var schema = require("../../schema/forms_schema.json")
@@ -30,7 +30,7 @@ Form.load = function() {
       const valid = ajv.validate(schema, forms)
       if (!valid){
         logger.error(ajv.errors)
-        Throw(`${JSON.stringify(ajv.errors)}`)
+        throw `${JSON.stringify(ajv.errors)}`
       }else{
         logger.debug("Valid forms.yaml")
         return forms
@@ -38,7 +38,7 @@ Form.load = function() {
     }
   }catch(err){
     logger.error(err.toString())
-    Throw(err.toString())
+    throw new Error(err.toString())
   }
 
 
