@@ -4,6 +4,9 @@
       <div class="columns">
         <div class="column">
           <h1 class="title">{{ currentForm.name }}</h1>
+          <article v-if="help" class="message">
+            <div class="message-body forcecss" v-html="help"></div>
+          </article>
           <button @click="generateJsonOutput();showJson=true" class="button is-info is-small">
             <span class="icon">
               <font-awesome-icon icon="eye" />
@@ -141,6 +144,7 @@
   import TokenStorage from './../lib/TokenStorage'
   import VueJsonPretty from 'vue-json-pretty';
   import BulmaAdvancedSelect from './BulmaAdvancedSelect.vue'
+  import MarkdownIt from 'markdown-it';
   import 'vue-json-pretty/lib/styles.css';
   import { required, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
 
@@ -210,6 +214,14 @@
       return obj
     },
     computed: {
+      help(){
+        if(this.currentForm.help){
+          var md = new MarkdownIt();
+          return md.render(this.currentForm.help)
+        }else{
+          return false
+        }
+      },
       formIsReady(){
         return this.validationsLoaded && this.currentForm
       },
@@ -899,6 +911,18 @@
   }
 </script>
 <style scoped>
+.forcecss>h1{
+  font-size:1.4em!important;
+  font-weight:bold!important;
+}
+.forcecss>h2{
+  font-size:1.3em!important;
+  font-weight:bold!important;
+}
+.forcecss>h3{
+  font-size:1.2em!important;
+  font-weight:bold!important;
+}
 .cursor-progress{
   cursor:progress;
 }

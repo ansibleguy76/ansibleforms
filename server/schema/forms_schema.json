@@ -184,6 +184,11 @@
 						"title": "Ansible/Awx Tags",
 						"description": "A comma separated list of ansible tags, referencing the -t flag"
 					},
+          "help": {
+						"type": "string",
+						"title": "Helpmessage",
+						"description": "A helpmessage to explain the form"
+					},
 					"fields": {
 						"type": "array",
 						"title": "Form fields",
