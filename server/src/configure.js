@@ -36,6 +36,7 @@ module.exports = app => {
   const loginRoutes = require('./routes/login.routes')
   const schemaRoutes = require('./routes/schema.routes')
   const tokenRoutes = require('./routes/token.routes')
+  const configRoutes = require('./routes/config.routes')
 
   // using json web tokens as middleware
   const authobj = passport.authenticate('jwt', { session: false })
@@ -70,5 +71,6 @@ module.exports = app => {
   app.use('/api/v1/ldap', authobj, checkAdminMiddleware, ldapRoutes)
   app.use('/api/v1/awx', authobj, checkAdminMiddleware, awxAdminRoutes)
   app.use('/api/v1/credential', authobj, checkAdminMiddleware, credentialRoutes)
+  app.use('/api/v1/config', authobj, checkAdminMiddleware, configRoutes)  
   app.use('/api/v1/form', authobj, formRoutes)
 }

@@ -15,6 +15,10 @@
 
           <div id="navbarBasicExample" class="navbar-menu" v-bind:class="{ 'is-active' : showNav }">
               <div class="navbar-end">
+                <router-link class="navbar-item" to="/designer" v-if="isAdmin && authenticated">
+                  <span class="icon"><font-awesome-icon icon="edit" /></span><span>Designer</span>
+                </router-link>
+
                   <div class="navbar-item has-dropdown is-hoverable" v-if="isAdmin && authenticated" >
                       <a class="navbar-link"><span class="icon"><font-awesome-icon icon="cog" /></span> <span>Settings</span></a>
                       <div class="navbar-dropdown">

@@ -9,6 +9,7 @@ import Groups from './views/Groups.vue'
 import Users from './views/Users.vue'
 import Ldap from './views/Ldap.vue'
 import Awx from './views/Awx.vue'
+import Designer from './views/Designer.vue'
 import Credentials from './views/Credentials.vue'
 
 Vue.use(Router);
@@ -64,6 +65,11 @@ export default new Router({
         path:"/credentials",
         name:"Credentials",
         component:Credentials
+      },
+      {
+        path:"/designer",
+        name:"Designer",
+        component:Designer
       }
   ]
 })
