@@ -3,8 +3,8 @@
     <div class="container" v-if="formIsReady">
       <div class="columns">
         <div class="column">
-          <h1 class="title">{{ currentForm.name }}</h1>
-          <article v-if="currentForm.help" class="message is-info">
+          <h1 class="title">{{ currentForm.name }} <a v-if="currentForm.help" class="tag is-info" @click="showHelp=!showHelp"><span v-if="showHelp">Hide help</span><span v-else>Show help</span></a></h1>
+          <article v-if="currentForm.help && showHelp" class="message is-info">
             <div class="message-body content"><VueShowdown :markdown="currentForm.help" flavor="github" :options="{ghCodeBlocks:true}" /></div>
           </article>
           <button @click="generateJsonOutput();showJson=true" class="button is-info is-small">
@@ -183,7 +183,8 @@
           },
           canSubmit:false,
           validationsLoaded:false,
-          timeout:undefined     // determines how long we should show the result of run
+          timeout:undefined,     // determines how long we should show the result of run
+          showHelp:true
         }
     },
     validations() {     // a dynamic assignment of vuelidate validations, based on the form json
