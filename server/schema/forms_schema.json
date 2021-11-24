@@ -459,9 +459,26 @@
 									"description": "When using placeholders lik $(fieldname), which column should we use to select the value for the placeholder."
 								},
 								"dbConfig": {
-									"type": "string",
+									"type": "object",
 									"title": "Database configuration",
-									"description": "the name of the database configuration to execute the query.  WITHOUT the DB_ prefix !!.  See environment variable examples."
+									"description": "the name of the database configuration to execute the query.  WITHOUT the DB_ prefix !!.  See environment variable examples.",
+                  "required": [
+                      "name",
+                      "type"
+                  ],
+                  "properties": {
+                    "name": {
+    									"type": "string",
+    									"title": "Name of the connection credentials",
+    									"description": "Name of the connection credentials"
+    								},
+    								"type": {
+    									"type": "string",
+                      "enum": ["mysql","mssql"],
+    									"title": "Name of the connection type",
+    									"description": "Can be MYSQL and MSSQL"
+    								}
+                  }
 								},
 								"model": {
 									"type": "string",

@@ -6,7 +6,12 @@ var log_config = {
   consolelevel: process.env.LOG_CONSOLE_LEVEL || "info"
 };
 if ( !fs.existsSync( log_config.path ) ) {
+  try{
     // Create the directory if it does not exist
     fs.mkdirSync( log_config.path );
+  }catch(err){
+    throw "Failed to create the path for the log files"
+  }
+
 }
 module.exports = log_config

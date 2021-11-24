@@ -25,10 +25,12 @@
     "passport-jwt": "^4.0.0",
     "mysql": "^2.18.1",
     "ajv": "^6.12.6",
+    "ajv-error-parser": "*",
     "bluebird": "^3.7.2",
     "node-jq": "^2.0.0",
     "yaml": "*",
     "cert-info":"*",
+    "mssql":"*",
     "crypto":"*",
     "node-cache":"*"
   },

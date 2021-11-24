@@ -5,11 +5,19 @@ const NodeCache = require('node-cache')
 const dbConfig = require('../../config/db.config')
 const mysql = require('mysql');
 
-
-const mySqlPools = new NodeCache({
+// creating caching mechanisme to keep connectionpool cached
+// we don't want them alive forever
+const mySqlPoolCache = new NodeCache({
     stdTTL: 3600,
     checkperiod: (3600 * 0.5)
 });
+
+// close the pool on expire
+mySqlPoolCache.on( "expired", function( name, pool ){
+    logger.silly("["+name+"] connectionpool is expired, closing pool")
+    pool.end()
+});
+
 
 var MySql = function(){
 
@@ -17,11 +25,11 @@ var MySql = function(){
 function getPool(name,connectionConfig){
   var pool
   // get pool from cache
-  pool = mySqlPools.get(name)
+  pool = mySqlPoolCache.get(name)
   // not in cache ?
   if(pool==undefined){
     logger.silly("["+name+"] unknown, creating new")
-    // is it the default connection, create from config
+    // is it the default connection, create from config (environment variables)
     if(name=="ANSIBLEFORMS_DATABASE"){
       logger.silly("["+name+"] is default pool, creating from db config")
       connectionConfig=dbConfig
@@ -31,8 +39,8 @@ function getPool(name,connectionConfig){
     // logger.silly("["+name+"] creating pool")
     pool = mysql.createPool(connectionConfig)
     // save in cache
-    // logger.silly("["+name+"] caching pool")
-    mySqlPools.set(name,pool)
+    logger.silly("["+name+"] pool created and caching")
+    mySqlPoolCache.set(name,pool)
   }
   return pool
 }
@@ -43,8 +51,11 @@ function getPool(name,connectionConfig){
 function executeMySqlQuery(connection_name,query,vars,callback){
   logger.silly("query : " + query)
   logger.silly("["+connection_name+"] Getting connection")
-  mySqlPools.get(connection_name).getConnection(function(connerr,conn){
+  mySqlPoolCache.get(connection_name).getConnection(function(connerr,conn){
     if(connerr){
+      logger.error("["+connection_name+"] Failed to get connection : " + connerr)
+      logger.info("["+connection_name+"] Removing connection from cache after fail")
+      mySqlPoolCache.del(connection_name)
       callback("Failed to get connection for " + connection_name + ". " + connerr,null)
     }else{
       // logger.silly("get connection")
@@ -63,7 +74,8 @@ function executeMySqlQuery(connection_name,query,vars,callback){
   })
 }
 
-function getMySqlCredential(connection_name,callback){
+// get credential from database
+MySql.getCredential =function(connection_name,callback){
   logger.debug("["+connection_name+"] Getting connection credentials from database")
   var query = "SELECT host,name,user,password FROM AnsibleForms.`credentials` WHERE name=?;"
   getPool("ANSIBLEFORMS_DATABASE").getConnection(function(errconnection,connection){
@@ -89,18 +101,20 @@ function getMySqlCredential(connection_name,callback){
 }
 
 MySql.query=function(connection_name,query,vars,callback){
-
-  logger.silly("["+connection_name+"] Connection is requested, trying cache")
   var defaultPool = getPool("ANSIBLEFORMS_DATABASE",null)
-  if(mySqlPools.get(connection_name)==undefined){
-    logger.silly("["+connection_name+"] First time connection")
+  // does the pool exist already, if not let's add it
+  if(mySqlPoolCache.get(connection_name)==undefined){
+    // a non default pool ?
     if(connection_name !== "ANSIBLEFORMS_DATABASE"){
       try{
-        getMySqlCredential(connection_name,function(errcreds,creds){
+        // get credentials
+        MySql.getCredential(connection_name,function(errcreds,creds){
           if(errcreds){
             callback(errcreds,null)
           }else{
+            // get the pool (is a sync function, no callback needed)
             var pool = getPool(connection_name,creds)
+            // execute the query
             executeMySqlQuery(connection_name,query,vars,function(err,result){
               if(err){
                 callback(err,null)

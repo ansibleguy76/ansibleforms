@@ -43,14 +43,14 @@ Form.load = function() {
 Form.validate = function(forms){
   if(forms){
     var schema = require("../../schema/forms_schema.json")
-    logger.debug("validating forms.yaml against schema")
+    logger.silly("validating forms.yaml against schema")
     const valid = ajv.validate(schema, forms)
     if (!valid){
       var ajvMessages = AJVErrorParser.parseErrors(ajv.errors)
       logger.error(ajvMessages)
       throw `${ajvMessages.join("\r\n")}`
     }else{
-      logger.debug("Valid forms.yaml")
+      logger.silly("Valid forms.yaml")
       return forms
     }
   }
