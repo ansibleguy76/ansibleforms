@@ -5,7 +5,7 @@
         <div class="column">
           <h1 class="title">{{ currentForm.name }}</h1>
           <article v-if="help" class="message">
-            <div class="message-body forcecss" v-html="help"></div>
+            <div class="message-body content" v-html="help"></div>
           </article>
           <button @click="generateJsonOutput();showJson=true" class="button is-info is-small">
             <span class="icon">
@@ -911,18 +911,6 @@
   }
 </script>
 <style scoped>
-.forcecss>h1{
-  font-size:1.4em!important;
-  font-weight:bold!important;
-}
-.forcecss>h2{
-  font-size:1.3em!important;
-  font-weight:bold!important;
-}
-.forcecss>h3{
-  font-size:1.2em!important;
-  font-weight:bold!important;
-}
 .cursor-progress{
   cursor:progress;
 }
