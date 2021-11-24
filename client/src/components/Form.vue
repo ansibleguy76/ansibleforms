@@ -4,8 +4,8 @@
       <div class="columns">
         <div class="column">
           <h1 class="title">{{ currentForm.name }}</h1>
-          <article v-if="help" class="message">
-            <div class="message-body content" v-html="help"></div>
+          <article v-if="currentForm.help" class="message is-info">
+            <div class="message-body content"><VueShowdown :markdown="currentForm.help" flavor="github" :options="{ghCodeBlocks:true}" /></div>
           </article>
           <button @click="generateJsonOutput();showJson=true" class="button is-info is-small">
             <span class="icon">
@@ -144,11 +144,12 @@
   import TokenStorage from './../lib/TokenStorage'
   import VueJsonPretty from 'vue-json-pretty';
   import BulmaAdvancedSelect from './BulmaAdvancedSelect.vue'
-  import MarkdownIt from 'markdown-it';
   import 'vue-json-pretty/lib/styles.css';
+  import VueShowdown from 'vue-showdown';
   import { required, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
 
   Vue.use(Vuelidate)
+  Vue.use(VueShowdown)
 
   export default{
     name:"Form",
@@ -214,14 +215,6 @@
       return obj
     },
     computed: {
-      help(){
-        if(this.currentForm.help){
-          var md = new MarkdownIt();
-          return md.render(this.currentForm.help)
-        }else{
-          return false
-        }
-      },
       formIsReady(){
         return this.validationsLoaded && this.currentForm
       },

@@ -29,3 +29,19 @@
 // $input-border-color: transparent;
 // $input-shadow: none;
 @import '~bulma';
+
+article.message table {
+  tr:last-child {
+    th,td{
+      border-bottom-width:1px;
+    }
+  }
+  td,th{
+    border-width:1px;
+    color:#363636;
+    border-color:#ccc;
+  }
+}
+article.message p {
+  color:#363636
+}

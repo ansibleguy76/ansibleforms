@@ -23,7 +23,7 @@
     "bulma" : "*",
     "vue2-code-editor" : "*",
     "yaml": "*",
-    "markdown-it": "*",
+    "vue-showdown": "2.4.1",
     "@fortawesome/fontawesome-svg-core":"^1.2.36",
     "@fortawesome/free-solid-svg-icons":"^5",
     "@fortawesome/free-regular-svg-icons":"^5",
