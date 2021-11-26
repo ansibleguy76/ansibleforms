@@ -209,7 +209,7 @@
           }
           // reduct labels to the ones we want to show
           if(this.columns.length>0){ // limit labels to provided columnslist
-            this.labels = this.labels.filter((item) => ref.columns.includes(item))
+            this.labels = this.columns.filter((item) => ref.labels.includes(item))
           }
           // if we found a preview label, use it
           if(previewLabels.length>0){ // if we have a specific value column

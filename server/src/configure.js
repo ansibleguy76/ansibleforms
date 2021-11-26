@@ -62,7 +62,7 @@ module.exports = app => {
   app.use('/api/v1/schema', schemaRoutes)
   app.use('/api/v1/token', tokenRoutes)
   app.use('/api/v1/awx', authobj, awxRoutes)
-  app.use('/api/v1/job', authobj,checkAdminMiddleware, jobRoutes)
+  app.use('/api/v1/job', authobj, jobRoutes)
   app.use('/api/v1/ansible', authobj, ansibleRoutes)
   app.use('/api/v1/query', authobj, queryRoutes)
   app.use('/api/v1/expression', authobj, expressionRoutes)
@@ -71,6 +71,6 @@ module.exports = app => {
   app.use('/api/v1/ldap', authobj, checkAdminMiddleware, ldapRoutes)
   app.use('/api/v1/awx', authobj, checkAdminMiddleware, awxAdminRoutes)
   app.use('/api/v1/credential', authobj, checkAdminMiddleware, credentialRoutes)
-  app.use('/api/v1/config', authobj, checkAdminMiddleware, configRoutes)  
+  app.use('/api/v1/config', authobj, checkAdminMiddleware, configRoutes)
   app.use('/api/v1/form', authobj, formRoutes)
 }

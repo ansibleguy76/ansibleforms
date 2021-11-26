@@ -22,6 +22,8 @@
     "vue-json-pretty" : "1.8.1",
     "bulma" : "*",
     "vue2-code-editor" : "*",
+    "vue-bulma-paginate" : "*",
+    "vue-moment" : "*",
     "yaml": "*",
     "vue-showdown": "2.4.1",
     "@fortawesome/fontawesome-svg-core":"^1.2.36",

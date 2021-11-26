@@ -11,6 +11,7 @@ import Ldap from './views/Ldap.vue'
 import Awx from './views/Awx.vue'
 import Designer from './views/Designer.vue'
 import Credentials from './views/Credentials.vue'
+import Jobs from './views/Jobs.vue'
 
 Vue.use(Router);
 export default new Router({
@@ -70,6 +71,11 @@ export default new Router({
         path:"/designer",
         name:"Designer",
         component:Designer
+      },
+      {
+        path:"/jobs",
+        name:"JobLogs",
+        component:Jobs
       }
   ]
 })

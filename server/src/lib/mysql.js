@@ -35,7 +35,7 @@ function getPool(name,connectionConfig){
       connectionConfig=dbConfig
     }
     connectionConfig.multipleStatements=true
-    connectionConfig.connectionLimit=10
+    connectionConfig.connectionLimit=100
     connectionConfig.waitForConnections=true
     connectionConfig.queueLimit=0
     // logger.silly("["+name+"] creating pool")
@@ -57,7 +57,7 @@ function executeMySqlQuery(connection_name,query,vars,callback){
     if(connerr){
       logger.error("["+connection_name+"] Failed to get connection : " + connerr)
       // logger.info("["+connection_name+"] Removing connection from cache after fail")
-      mySqlPoolCache.del(connection_name)
+      // mySqlPoolCache.del(connection_name)
       callback("Failed to get connection for " + connection_name + ". " + connerr,null)
     }else{
       // logger.silly("get connection")

@@ -3,6 +3,8 @@ const router = express.Router()
 const ansibleController =   require('../controllers/ansible.controller');
 
 // run a playbook
-router.post('/launch', ansibleController.run);
+router.post('/launch/', ansibleController.run);
 router.get('/job/:id', ansibleController.getJob);
+router.put('/job/:id', ansibleController.updateJob);
+router.post('/job/:id/abort/', ansibleController.abortJob);
 module.exports = router

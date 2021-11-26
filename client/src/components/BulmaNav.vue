@@ -15,6 +15,9 @@
 
           <div id="navbarBasicExample" class="navbar-menu" v-bind:class="{ 'is-active' : showNav }">
               <div class="navbar-end">
+                <router-link class="navbar-item" to="/jobs">
+                  <span class="icon"><font-awesome-icon icon="history" /></span><span>Job history</span>
+                </router-link>
                 <router-link class="navbar-item" to="/designer" v-if="isAdmin && authenticated">
                   <span class="icon"><font-awesome-icon icon="edit" /></span><span>Designer</span>
                 </router-link>

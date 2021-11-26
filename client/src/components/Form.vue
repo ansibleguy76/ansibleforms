@@ -101,11 +101,28 @@
 
           <hr v-if="!!currentForm" />
           <button v-if="!!currentForm && !ansibleResult.message" class="button is-primary is-fullwidth" @click="ansibleResult.message='initializing'"><span class="icon"><font-awesome-icon icon="play" /></span><span>Run</span></button>
-          <button v-if="!!ansibleResult.message" class="button is-fullwidth" @click="resetResult()" :class="{ 'has-background-success' : ansibleResult.status=='success', 'has-background-danger' : ansibleResult.status=='error','has-background-info has-text-light cursor-progress' : ansibleResult.status=='info' }">
-            <span class="icon" v-if="ansibleResult.status=='info'"><font-awesome-icon icon="spinner" spin /></span>
-            <span class="icon" v-if="ansibleResult.status!='info'"><font-awesome-icon icon="times" /></span>
-            <span>{{ ansibleResult.message }}</span>
-          </button>
+          <div class="columns">
+            <div class="column">
+              <button v-if="!!ansibleResult.message" class="button is-fullwidth" @click="resetResult()" :class="{ 'has-background-success' : ansibleResult.status=='success', 'has-background-warning' : ansibleResult.status=='warning', 'has-background-danger' : ansibleResult.status=='error','has-background-info has-text-light cursor-progress' : ansibleResult.status=='info' }">
+                <span class="icon" v-if="ansibleResult.status=='info'"><font-awesome-icon icon="spinner" spin /></span>
+                <span class="icon" v-if="ansibleResult.status!='info'"><font-awesome-icon icon="times" /></span>
+                <span>{{ ansibleResult.message }}</span>
+              </button>
+            </div>
+            <div class="column" v-if="currentForm.type=='ansible' && ansibleResult.status=='info' && !abortTriggered">
+              <button  class="button is-fullwidth has-background-warning" @click="abortAnsibleJob(ansibleJobId)">
+                <span class="icon"><font-awesome-icon icon="times" /></span>
+                <span>Abort Job</span>
+              </button>
+            </div>
+            <div class="column" v-if="currentForm.type=='awx' && ansibleResult.status=='info' && !abortTriggered">
+              <button  class="button is-fullwidth has-background-warning" @click="abortAwxJob(awxJobId)">
+                <span class="icon"><font-awesome-icon icon="times" /></span>
+                <span>Abort Job</span>
+              </button>
+            </div>
+          </div>
+
           <div v-if="!!ansibleResult.data.output" class="box mt-3">
             <pre v-if="currentForm.type=='ansible'" v-html="ansibleResult.data.output"></pre>
             <pre v-if="currentForm.type=='awx'" v-html="ansibleResult.data.output"></pre>
@@ -184,7 +201,10 @@
           canSubmit:false,
           validationsLoaded:false,
           timeout:undefined,     // determines how long we should show the result of run
-          showHelp:true
+          showHelp:true,
+          ansibleJobId:undefined,
+          awxJobId:undefined,
+          abortTriggered:false
         }
     },
     validations() {     // a dynamic assignment of vuelidate validations, based on the form json
@@ -359,7 +379,6 @@
         var ref = this
         var testRegex = /\$\(([^)]+)\)/g;                                       // a regex to find field placeholders $(xxx)
         var retestRegex = /\$\(([^)]+)\)/g;                                     // the same regex, to retest after, because a regex can only be used once
-        var columnRegex = /(.+)\.(.+)/g;                                        // detect a "." in the field
         var match = undefined
         var matches =undefined
         var foundmatch=false
@@ -370,10 +389,14 @@
         var targetflag=undefined
         var hasPlaceholders = false;
         var newValue = item.expression || item.query                                                    // make a copy of our item
+        // console.log("item = " + newValue)
         matches=(item.expression || item.query).matchAll(testRegex);
+        // console.log("matches : " + matches.length)
         for(match of matches){
+            // console.log("-> match : " + match[0] + "->" + match[1])
             foundmatch = match[0];                                              // found $(xxx)
             foundfield = match[1];                                              // found xxx
+            var columnRegex = /(.+)\.(.+)/g;                                        // detect a "." in the field
             var tmpArr=columnRegex.exec(foundfield)                             // found aaa.bbb
             if(tmpArr && tmpArr.length>0){
               foundfield = tmpArr[1]                                            // aaa
@@ -402,7 +425,7 @@
             }
 
             // if the variable is viable and not being changed, replace it
-            // console.log(foundfield + "("+fieldvalue+")" + " -> targetflag = " + targetflag)
+            console.log(foundfield + "("+fieldvalue+")" + " -> targetflag = " + targetflag)
             if((((targetflag=="variable")||(targetflag=="fixed")) && fieldvalue!==undefined && newValue!=undefined)||((item.ignoreIncomplete||false) && newValue!=undefined)){                // valid value ?
                 if(fieldvalue==undefined){
                   fieldvalue="__undefined__"   // catch undefined values
@@ -634,7 +657,7 @@
                   this.ansibleResult.message = result.data.message
                 }
                 // if not final status, keep checking after 2s
-                if(this.ansibleResult.status!="success" && this.ansibleResult.status!="error"){
+                if(this.ansibleResult.status!="success" && this.ansibleResult.status!="error" && this.ansibleResult.status!="warning"){
                   // this.$toast.info(result.data.message)
                   setTimeout(function(){ ref.getAwxJob(id) }, 2000);
                 }else{
@@ -642,14 +665,15 @@
                     // 1 final last call for output
                     setTimeout(function(){ ref.getAwxJob(id,true) }, 2000);
                   }else{
-                    // if final, remove output after 15s
+                    this.abortTriggered=false
                     if(this.ansibleResult.status=="success"){
                       this.$toast.success(result.data.message)
+                    }else if(this.ansibleResult.status=="warning"){
+                      this.$toast.warning(result.data.message)
                     }else{
                       this.$toast.error(result.data.message)
                     }
                     clearTimeout(this.timeout)
-                    // this.timeout = setTimeout(function(){ ref.resetResult() }, 15000);
                   }
 
                 }
@@ -666,6 +690,22 @@
               ref.ansibleResult.message="Error in axios call to get awx job\n\n" + err
               ref.ansibleResult.status="error";
             }
+          })
+      },
+      abortAnsibleJob(id){
+        var ref=this
+        this.$toast.warning("Aborting job " + id);
+        axios.post("/api/v1/ansible/job/" + id + "/abort",{},TokenStorage.getAuthentication())
+          .then((result)=>{
+            ref.abortTriggered=true
+          })
+      },
+      abortAwxJob(id){
+        var ref=this
+        this.$toast.warning("Aborting job " + id);
+        axios.post("/api/v1/awx/job/" + id + "/abort",{},TokenStorage.getAuthentication())
+          .then((result)=>{
+            ref.abortTriggered=true
           })
       },
       getAnsibleJob(id,final){
@@ -686,7 +726,7 @@
                   this.ansibleResult.message = result.data.message
                 }
                 // if not final status, keep checking after 2s
-                if(this.ansibleResult.status!="success" && this.ansibleResult.status!="error"){
+                if(this.ansibleResult.status!="success" && this.ansibleResult.status!="error" && this.ansibleResult.status!="warning"){
                   // this.$toast.info(result.data.message)
                   setTimeout(function(){ ref.getAnsibleJob(id) }, 2000);
                 }else{
@@ -695,8 +735,11 @@
                     setTimeout(function(){ ref.getAnsibleJob(id,true) }, 2000);
                   }else{
                     // if final, remove output after 15s
+                    this.abortTriggered=false
                     if(this.ansibleResult.status=="success"){
                       this.$toast.success(result.data.message)
+                    }else if(this.ansibleResult.status=="warning"){
+                      this.$toast.warning(result.data.message)
                     }else{
                       this.$toast.error(result.data.message)
                     }
@@ -826,12 +869,13 @@
                   }
                   // get the jobid
                   var jobid =  this.ansibleResult.data.output.id
+                  ref.ansibleJobId=jobid
                   // don't show the whole json part
                   this.ansibleResult.data.output = ""
                   // wait for 2 seconds, and get the output of the job
                   setTimeout(function(){ ref.getAnsibleJob(jobid) }, 2000);
                 }else{
-                  ref.$toast.error("Failed to invoke AWX")
+                  ref.$toast.error("Failed to invoke ansible")
                   ref.resetResult()
                 }
               })
@@ -859,6 +903,7 @@
                     }
                     // get the jobid
                     var jobid =  this.ansibleResult.data.output.id
+                    ref.awxJobId=jobid
                     // don't show the whole json part
                     this.ansibleResult.data.output = ""
                     // wait for 2 seconds, and get the output of the job

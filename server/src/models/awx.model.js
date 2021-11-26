@@ -83,6 +83,52 @@ Awx.find = function (result) {
     }
 };
 // launch awx job template
+Awx.abortJob = function (id, result) {
+
+  Awx.getConfig(function(err,res){
+
+    if(err){
+      logger.error(err)
+      result(`failed to get AWX configuration`)
+    }else{
+      // prep the post data
+      var postdata = {
+      }
+      var message=""
+      logger.debug(`aborting awx job ${id}`)
+      const axiosConfig = {
+        headers: {
+          Authorization:"Bearer " + res.token
+        }
+      }
+      axios.get(res.uri + "/api/v2/jobs/" + id + "/cancel/",axiosConfig)
+        .then((axiosresult)=>{
+          var job = axiosresult.data
+          if(job && job.can_cancel){
+              logger.debug(`can cancel job id = ${id}`)
+              axios.post(res.uri + "/api/v2/jobs/" + id + "/cancel/",postdata,axiosConfig)
+                .then((axiosresult)=>{
+                  job = axiosresult.data
+                  result(job,null)
+                })
+                .catch(function (error) {
+                  logger.error(error.message)
+                  result(`failed to abort awx job ${id}`)
+                })
+          }else{
+              message=`cannot cancel job id ${id}`
+              logger.error(message)
+              result(message,null)
+          }
+        })
+        .catch(function (error) {
+          logger.error(error.message)
+          result(`failed to abort awx job ${id}`)
+        })
+    }
+  })
+};
+// launch awx job template
 Awx.launch = function (template,inventory,tags,extraVars, result) {
 
   Awx.getConfig(function(err,res){

@@ -43,6 +43,24 @@ exports.run = function(req, res) {
 
     }
 };
+exports.updateJob = function(req, res) {
+    Job.update(new Job(req.body),req.params.id, function(err, job) {
+        if (err){
+            res.json(new RestResult("error","failed to update job",null,err))
+        }else{
+            res.json(new RestResult("success","job updated",null,""));
+        }
+    });
+};
+exports.abortJob = function(req, res) {
+    Job.update({status:"abort"},req.params.id, function(err, job) {
+        if (err){
+            res.json(new RestResult("error","failed to abort job",null,err))
+        }else{
+            res.json(new RestResult("success","job aborted",null,""));
+        }
+    });
+};
 exports.getJob = function(req, res) {
     Job.findById(req.params.id, function(err, job) {
         if (err){
@@ -61,12 +79,15 @@ exports.getJob = function(req, res) {
                 restResult.status = "error"
                 restResult.message = "job failed"
               }
+              if(jobStatus=="aborted"){
+                restResult.status = "warning"
+                restResult.message = "job aborted"
+              }
               restResult.data.output = job[0].output
               res.json(restResult);
             }else{
               res.json(new RestResult("error","failed to find job",null,"No such job"))
             }
-
         }
     });
 };

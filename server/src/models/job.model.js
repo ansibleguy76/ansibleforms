@@ -13,6 +13,9 @@ var Job=function(job){
     if(job.status && job.status!=""){
       this.status = job.status;
     }
+    if(job.end && job.end!=""){
+      this.end = job.end;
+    }
 };
 Job.create = function (record, result) {
   logger.debug(`Creating job`)
@@ -48,7 +51,7 @@ Job.update = function (record,id, result) {
 Job.createOutput = function (record, result) {
   // logger.silly(`Creating job output`)
   try{
-    mysql.query("ANSIBLEFORMS_DATABASE","INSERT INTO AnsibleForms.`job_output` set ?", record, function (err, res) {
+    mysql.query("ANSIBLEFORMS_DATABASE","INSERT INTO AnsibleForms.`job_output` set ?;SELECT status FROM AnsibleForms.`jobs` WHERE id=?;", [record,record.job_id], function (err, res) {
         if(err) {
             result(err, null);
         }
@@ -79,7 +82,7 @@ Job.delete = function(id, result){
 };
 Job.findAll = function (result) {
     logger.debug("Finding all jobs")
-    var query = "SELECT * FROM AnsibleForms.`jobs` limit 20 ORDER BY id DESC;"
+    var query = "SELECT * FROM AnsibleForms.`jobs` ORDER BY id DESC LIMIT 500;"
     try{
       mysql.query("ANSIBLEFORMS_DATABASE",query,null, function (err, res) {
           if(err) {
