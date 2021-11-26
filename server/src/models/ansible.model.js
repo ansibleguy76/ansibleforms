@@ -62,14 +62,6 @@ Ansible.run = function (playbook,inventory,tags,extraVars, result) {
           }
         })
       })
-      child.stderr.on('data',function(data){
-        Job.createOutput({output:data,output_type:"stderr",job_id:jobid,order:++counter},function(error,res){
-          if(error){
-            logger.error(error)
-          }else{
-          }
-        })
-      })
       child.on('exit',function(data){
         if(child.signalCode=='SIGTERM'){
           Job.createOutput({output:"Playbook was aborted by operator",output_type:"stderr",job_id:jobid,order:++counter},function(error,res){
