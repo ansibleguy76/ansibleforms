@@ -99,7 +99,8 @@ Schema.create = function (result) {
               DROP TABLE IF EXISTS `jobs`;\
               CREATE TABLE `jobs` (\
                 `id` int(11) NOT NULL AUTO_INCREMENT,\
-                `command` longtext DEFAULT NULL,\
+                `form` varchar(250) DEFAULT NULL,\
+                `playbook` varchar(250) DEFAULT NULL,\
                 `status` varchar(20) DEFAULT NULL,\
                 `start` datetime NOT NULL DEFAULT current_timestamp(),\
                 `end` datetime DEFAULT NULL,\

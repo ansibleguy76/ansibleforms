@@ -855,6 +855,7 @@
           this.generateJsonOutput()
           // local ansible
           if(this.currentForm.type=="ansible"){
+            this.formdata.ansibleForm = this.currentForm.name;
             this.formdata.ansibleInventory = this.currentForm.inventory;
             this.formdata.ansiblePlaybook = this.currentForm.playbook;
             this.formdata.ansibleTags = this.currentForm.tags || "";

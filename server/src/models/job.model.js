@@ -7,8 +7,11 @@ const mysql = require('../lib/mysql')
 
 //job object create
 var Job=function(job){
-    if(job.command && job.command!=""){
-      this.command = job.command;
+    if(job.form && job.form!=""){
+      this.form = job.form;
+    }
+    if(job.playbook && job.playbook!=""){
+      this.playbook = job.playbook;
     }
     if(job.status && job.status!=""){
       this.status = job.status;

@@ -1,0 +1,28 @@
+---
+- name: backup ansibleforms
+  hosts: localhost
+  become: yes
+  tasks:
+  - name: set backup folder name
+    set_fact:
+      backupfolder: "{{ data_folder }}/backups/{{ ansible_date_time.date }}-{{ ansible_date_time.time }}"
+  - name: Create backup folder
+    file:
+      path: "{{ backupfolder }}"
+      owner: root
+      group: mysql
+      mode: '0774'
+      state: directory
+  - name: Back up all databases
+    no_log: true
+    mysql_db:
+      state: dump
+      name: AnsibleForms
+      target: '{{ backupfolder }}/ansibleforms.sql'
+      login_host: "{{ mysql_host}}"
+      login_user: "{{ mysql_user }}"
+      login_password: "{{ mysql_password }}"
+  - name: Backup forms.yaml
+    copy:
+      src: "{{ data_folder }}/forms.yaml"
+      dest: "{{ backupfolder }}/forms.yaml"

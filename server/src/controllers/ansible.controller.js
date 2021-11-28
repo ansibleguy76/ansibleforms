@@ -11,6 +11,7 @@ exports.run = function(req, res) {
         res.json(new RestResult("error","no data was sent","",""));
     }else{
         // get the form data
+        var form = req.body.ansibleForm;
         var playbook = req.body.ansiblePlaybook;
         var inventory = req.body.ansibleInventory;
         var tags = req.body.ansibleTags;
@@ -26,7 +27,7 @@ exports.run = function(req, res) {
           logger.debug("extravars : " + extraVars)
           logger.debug("inventory : " + inventory)
           logger.debug("tags : " + tags)
-          Ansible.run(playbook,inventory,tags,extraVars,function(err,out){
+          Ansible.run(form,playbook,inventory,tags,extraVars,function(err,out){
             if(err){
                restResult.status = "error"
                restResult.message = "error occured while running playbook " + playbook

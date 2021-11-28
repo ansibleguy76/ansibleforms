@@ -12,16 +12,20 @@
       <div>
         <table v-if="isLoaded" class="table is-bordered is-fullwidth">
           <thead>
-            <tr class="has-text-centered">
+            <tr class="has-text-left">
               <th style="width:100px">id</th>
+              <th>form</th>
+              <th>playbook</th>
               <th>status</th>
               <th>start time</th>
               <th>end time</th>
             </tr>
           </thead>
           <tbody>
-          <tr v-for="j in displayedJobs" :key="j.id" class="is-clickable has-text-centered" @click="loadOutput(j.id)" :class="{'has-background-success-light':(j.status=='success' && j.id!=jobId),'has-background-danger-light':(j.status=='error' && j.id!=jobId),'has-background-warning-light':(j.status=='aborted' && j.id!=jobId),'has-background-info':j.id==jobId,'has-text-white':j.id==jobId}">
+          <tr v-for="j in displayedJobs" :key="j.id" class="is-clickable has-text-left" @click="loadOutput(j.id)" :class="{'has-background-success-light':(j.status=='success' && j.id!=jobId),'has-background-danger-light':(j.status=='error' && j.id!=jobId),'has-background-warning-light':(j.status=='aborted' && j.id!=jobId),'has-background-info':j.id==jobId,'has-text-white':j.id==jobId}">
             <td>{{j.id}}</td>
+            <td>{{j.form}}</td>
+            <td>{{j.playbook}}</td>
             <td>{{j.status}}</td>
             <td>{{j.start | moment('YYYY-MM-DD HH:mm:ss')}}</td>
             <td>{{j.end | moment('YYYY-MM-DD HH:mm:ss')}}</td>

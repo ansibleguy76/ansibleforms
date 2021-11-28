@@ -11,7 +11,7 @@ var Ansible=function(){
 };
 
 // run a playbook
-Ansible.run = function (playbook,inventory,tags,extraVars, result) {
+Ansible.run = function (form,playbook,inventory,tags,extraVars, result) {
 
   // prepare my ansible command
   var command = `ansible-playbook -e '${extraVars}'`
@@ -26,7 +26,7 @@ Ansible.run = function (playbook,inventory,tags,extraVars, result) {
   logger.debug(`Executing playbook, ${directory} > ${command}`)
 
   var child = exec(command,{cwd:directory});
-  Job.create(new Job({command:command,status:"running"}),function(error,jobid){
+  Job.create(new Job({form:form,playbook:playbook,status:"running"}),function(error,jobid){
     var counter=0
     if(error){
       logger.error(error)
