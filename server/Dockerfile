@@ -21,6 +21,7 @@ RUN apk add --update --no-cache --virtual .build-deps g++ gcc libxml2-dev libxsl
 RUN apk add --no-cache libxslt
 RUN pip3 install --no-cache-dir lxml
 RUN apk del .build-deps
+RUN pip3 install PyMySQL
 RUN pip3 install netapp_lib
 RUN pip3 install solidfire-sdk-python
 
