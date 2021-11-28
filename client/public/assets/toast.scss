@@ -1,0 +1,11 @@
+// Override the variables or import a file that overrides them
+
+// Import the regular Vue Toastification stylesheets (or create your own)
+@import "variables";
+@import "toast_variables";
+@import "vue-toastification/src/scss/_toastContainer";
+@import "vue-toastification/src/scss/_toast";
+@import "vue-toastification/src/scss/_closeButton";
+@import "vue-toastification/src/scss/_progressBar";
+@import "vue-toastification/src/scss/_icon";
+@import "vue-toastification/src/scss/animations/_bounce";
