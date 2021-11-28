@@ -35,7 +35,7 @@ function getPool(name,connectionConfig){
       connectionConfig=dbConfig
     }
     connectionConfig.multipleStatements=true
-    connectionConfig.connectionLimit=20
+    connectionConfig.connectionLimit=10
     connectionConfig.waitForConnections=true
     connectionConfig.queueLimit=0
     logger.debug("["+name+"] creating pool")
