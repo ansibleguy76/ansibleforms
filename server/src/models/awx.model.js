@@ -6,6 +6,7 @@ const cheerio = require('cheerio');
 const logger=require("../lib/logger");
 const mysql=require("../lib/mysql")
 const Helpers=require("../lib/common")
+const YAML=require("yaml")
 const {encrypt,decrypt} = require("../lib/crypto")
 const NodeCache = require("node-cache")
 
@@ -176,7 +177,7 @@ Awx.launch = function (template,inventory,tags,extraVars, result) {
             var message=`failed to launch ${template.name}`
             if(error.response){
                 logger.error(error.response.data)
-                message+="\r\n" + JSON.stringify(error.response.data)
+                message+="\r\n" + YAML.stringify(error.response.data)
             }else{
                 logger.error(error)
             }

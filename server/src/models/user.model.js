@@ -5,6 +5,7 @@ const authConfig = require('../../config/auth.config')
 const appConfig = require('../../config/app.config')
 const Ldap = require('./ldap.model')
 const Form = require('./form.model')
+const YAML = require('yaml')
 const mysql = require('../lib/mysql')
 
 //user object create
@@ -305,7 +306,7 @@ User.checkLdap = function(username,password,result){
         result(null,user)
       }catch(err){
           var em =""
-          try{var em = JSON.stringify(err)}catch(e){em = err}
+          try{var em = YAML.stringify(err)}catch(e){em = err}
 
           if(err.admin){
             if(err.admin.code){

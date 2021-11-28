@@ -2,6 +2,7 @@
 const logger=require("../lib/logger");
 const mysql=require("../lib/mysql")
 const Helpers=require("../lib/common")
+const YAML=require("yaml")
 const {encrypt,decrypt} = require("../lib/crypto")
 
 //ldap object create
@@ -116,7 +117,7 @@ Ldap.check = function(ldapConfig,result){
         result(null,user)
       }catch(err){
           var em =""
-          try{var em = JSON.stringify(err)}catch(e){em = err}
+          try{var em = YAML.stringify(err)}catch(e){em = err}
           if(err.admin){
             if(err.admin.code){
               em = err
