@@ -1,7 +1,14 @@
 <template>
   <section class="section">
     <div class="container">
-      <h1 class="title has-text-info"><font-awesome-icon icon="history" /> Job history</h1>
+      <h1 class="title has-text-info"><font-awesome-icon icon="history" /> Job history
+        <button @click="loadJobs" class="button is-primary is-small is-pulled-right">
+          <span class="icon">
+            <font-awesome-icon icon="sync-alt" />
+          </span>
+          <span>Refresh</span>
+        </button>
+      </h1>
       <div>
         <table v-if="isLoaded" class="table is-bordered is-fullwidth">
           <thead>
@@ -45,6 +52,13 @@
           </ul>
         </nav>
         <div v-if="jobOutput" class="box mt-3">
+          <button @click="loadOutput(jobId)" v-if="jobId" class="button is-primary is-small is-pulled-right">
+            <span class="icon">
+              <font-awesome-icon icon="sync-alt" />
+            </span>
+            <span>Refresh</span>
+          </button>
+          <br><br>
           <pre v-html="jobOutput"></pre>
         </div>
       </div>
@@ -73,7 +87,8 @@
         buttonsShown:7,
         pages: [],
         isLoaded:false,
-        jobOutput:""
+        jobOutput:"",
+        jobId:undefined
       }
     },
     methods:{
@@ -108,6 +123,7 @@
       },
       loadOutput(id){
         var ref=this
+        this.jobId=id
         axios.get("/api/v1/ansible/job/" + id,TokenStorage.getAuthentication())
           .then((result)=>{
               if(result.data.data!==undefined){

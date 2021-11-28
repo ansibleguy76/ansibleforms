@@ -159,6 +159,7 @@ Awx.launch = function (template,inventory,tags,extraVars, result) {
             Authorization:"Bearer " + res.token
           }
         }
+        logger.silly("Lauching awx with data : " + JSON.stringify(postdata))
         axios.post(res.uri + template.related.launch,postdata,axiosConfig)
           .then((axiosresult)=>{
             var job = axiosresult.data
@@ -172,8 +173,14 @@ Awx.launch = function (template,inventory,tags,extraVars, result) {
             }
           })
           .catch(function (error) {
-            logger.error(error.message)
-            result(`failed to launch ${template.name}`)
+            var message=`failed to launch ${template.name}`
+            if(error.response){
+                logger.error(error.response.data)
+                message+="\r\n" + JSON.stringify(error.response.data)
+            }else{
+                logger.error(error)
+            }
+            result(message)
           })
       }
     }

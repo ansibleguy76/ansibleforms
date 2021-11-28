@@ -8,8 +8,8 @@ const mysql = require('mysql');
 // creating caching mechanisme to keep connectionpool cached
 // we don't want them alive forever
 const mySqlPoolCache = new NodeCache({
-    stdTTL: 3600,
-    checkperiod: (3600 * 0.5)
+    stdTTL: 1800,
+    checkperiod: (1800 * 0.5)
 });
 
 // close the pool on expire
@@ -35,10 +35,10 @@ function getPool(name,connectionConfig){
       connectionConfig=dbConfig
     }
     connectionConfig.multipleStatements=true
-    connectionConfig.connectionLimit=100
+    connectionConfig.connectionLimit=20
     connectionConfig.waitForConnections=true
     connectionConfig.queueLimit=0
-    // logger.silly("["+name+"] creating pool")
+    logger.debug("["+name+"] creating pool")
     pool = mysql.createPool(connectionConfig)
     // save in cache
     logger.silly("["+name+"] pool created and caching")
@@ -62,6 +62,7 @@ function executeMySqlQuery(connection_name,query,vars,callback){
     }else{
       // logger.silly("get connection")
       conn.query(query,vars,function(err,result){
+        conn.release()
         if(err){
           logger.error("["+connection_name+"] Failed : " + query)
           callback("Failed to query. " + err,null)
@@ -69,8 +70,6 @@ function executeMySqlQuery(connection_name,query,vars,callback){
           logger.silly("["+connection_name+"] " + JSON.stringify(result))
           callback(null,result)
         }
-        logger.silly("query done ; releasing connection")
-        conn.release()
       })
     }
   })
