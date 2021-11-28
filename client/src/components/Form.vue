@@ -900,14 +900,15 @@
                     this.ansibleResult=result.data;
                     if(result.data.data.error!=""){
                       ref.$toast.error(result.data.data.error)
+                    }else{
+                      // get the jobid
+                      var jobid =  this.ansibleResult.data.output.id
+                      ref.awxJobId=jobid
+                      // don't show the whole json part
+                      this.ansibleResult.data.output = ""
+                      // wait for 2 seconds, and get the output of the job
+                      setTimeout(function(){ ref.getAwxJob(jobid) }, 2000);
                     }
-                    // get the jobid
-                    var jobid =  this.ansibleResult.data.output.id
-                    ref.awxJobId=jobid
-                    // don't show the whole json part
-                    this.ansibleResult.data.output = ""
-                    // wait for 2 seconds, and get the output of the job
-                    setTimeout(function(){ ref.getAwxJob(jobid) }, 2000);
                   }else{
                     ref.$toast.error("Failed to invoke AWX")
                     ref.resetResult()

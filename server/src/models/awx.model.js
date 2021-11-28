@@ -142,6 +142,9 @@ Awx.launch = function (template,inventory,tags,extraVars, result) {
         extra_vars:extraVars,
         job_tags:tags
       }
+      if(inventory){
+        postdata.inventory=inventory.id
+      }
       var message=""
       logger.debug(`launching job template ${template.name}`)
       // post
@@ -288,7 +291,7 @@ Awx.findJobTemplateByName = function (name,result) {
           Authorization:"Bearer " + res.token
         }
       }
-      axios.get(res.uri + "/api/v2/job_templates/",axiosConfig)
+      axios.get(res.uri + "/api/v2/job_templates/?name=" + encodeURI(name),axiosConfig)
         .then((axiosresult)=>{
           var job_template = axiosresult.data.results.find(function(jt, index) {
             if(jt.name == name)
@@ -298,6 +301,44 @@ Awx.findJobTemplateByName = function (name,result) {
             result(null,job_template)
           }else{
             message=`could not find job template ${name}`
+            logger.error(message)
+            result(message,null)
+          }
+        })
+        .catch(function (error) {
+          logger.error(error.message)
+          result(error.message,null)
+        })
+    }
+  })
+
+};
+// find a jobtemplate by name
+Awx.findInventoryByName = function (name,result) {
+  Awx.find(function(err,res){
+
+    if(err){
+      logger.error(err)
+      result(`failed to get AWX configuration`)
+    }else{
+      var message=""
+      logger.debug(`searching inventory ${name}`)
+      // prepare axiosConfig
+      const axiosConfig = {
+        headers: {
+          Authorization:"Bearer " + res.token
+        }
+      }
+      axios.get(res.uri + "/api/v2/inventories/?name=" + encodeURI(name),axiosConfig)
+        .then((axiosresult)=>{
+          var inventory = axiosresult.data.results.find(function(jt, index) {
+            if(jt.name == name)
+              return true;
+          });
+          if(inventory){
+            result(null,inventory)
+          }else{
+            message=`could not find inventory ${name}`
             logger.error(message)
             result(message,null)
           }
