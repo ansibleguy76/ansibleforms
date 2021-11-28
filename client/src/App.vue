@@ -81,7 +81,7 @@
               .then((result)=>{
                 ref.formConfig=result.data;
                 if(!ref.formConfig.error){
-                  ref.$toast.success("Valid forms.yaml loaded")
+                  // ref.$toast.success("Valid forms.yaml loaded")
                   ref.$router.push({name:"Home"}).catch(err => {});
                   ref.refreshAuthenticated()
                   this.loadProfile()
