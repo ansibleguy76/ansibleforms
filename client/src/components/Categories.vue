@@ -1,5 +1,5 @@
 <template>
-  <nav class="panel is-info" v-if="formConfig!=undefined">
+  <nav class="panel is-primary" v-if="formConfig!=undefined">
     <p class="panel-heading">
       Categories
     </p>
