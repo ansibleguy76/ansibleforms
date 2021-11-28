@@ -12,17 +12,15 @@
       <div>
         <table v-if="isLoaded" class="table is-bordered is-fullwidth">
           <thead>
-            <tr>
-              <th style="width:120px;"></th>
-              <th>id</th>
+            <tr class="has-text-centered">
+              <th style="width:100px">id</th>
               <th>status</th>
               <th>start time</th>
               <th>end time</th>
             </tr>
           </thead>
           <tbody>
-          <tr v-for="j in displayedJobs" :key="j.id" :class="{'has-background-success-light':j.status=='success','has-background-danger-light':j.status=='error','has-background-warning-light':j.status=='aborted'}">
-            <td class="is-clickable has-text-centered" @click="loadOutput(j.id)"><span class="icon"><font-awesome-icon icon="eye" /></span></td>
+          <tr v-for="j in displayedJobs" :key="j.id" class="is-clickable has-text-centered" @click="loadOutput(j.id)" :class="{'has-background-success-light':(j.status=='success' && j.id!=jobId),'has-background-danger-light':(j.status=='error' && j.id!=jobId),'has-background-warning-light':(j.status=='aborted' && j.id!=jobId),'has-background-info':j.id==jobId,'has-text-white':j.id==jobId}">
             <td>{{j.id}}</td>
             <td>{{j.status}}</td>
             <td>{{j.start | moment('YYYY-MM-DD HH:mm:ss')}}</td>
@@ -52,13 +50,14 @@
           </ul>
         </nav>
         <div v-if="jobOutput" class="box mt-3">
-          <button @click="loadOutput(jobId)" v-if="jobId" class="button is-primary is-small is-pulled-right">
-            <span class="icon">
-              <font-awesome-icon icon="sync-alt" />
-            </span>
-            <span>Refresh</span>
-          </button>
-          <br><br>
+          <h3 class="subtitle">Job output for job {{jobId}}
+            <button @click="loadOutput(jobId)" v-if="jobId" class="button is-primary is-small is-pulled-right">
+              <span class="icon">
+                <font-awesome-icon icon="sync-alt" />
+              </span>
+              <span>Refresh</span>
+            </button>
+          </h3>
           <pre v-html="jobOutput"></pre>
         </div>
       </div>
