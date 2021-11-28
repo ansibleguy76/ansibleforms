@@ -1,19 +1,19 @@
 <template>
-  <nav class="navbar is-info is-spaced has-shadow" role="navigation" aria-label="main navigation">
+  <nav class="navbar is-primary is-spaced has-shadow" role="navigation" aria-label="main navigation">
       <div class="container">
           <div class="navbar-brand">
           <a class="navbar-item" href="/">
               <img src="/assets/img/logo_ansible_forms_full_white.svg" />
           </a>
 
-          <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbarBasicExample" v-on:click="showNav = !showNav" v-bind:class="{ 'is-active' : showNav }">
+          <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbarAnsibleForms" v-on:click="showNav = !showNav" v-bind:class="{ 'is-active' : showNav }">
               <span aria-hidden="true"></span>
               <span aria-hidden="true"></span>
               <span aria-hidden="true"></span>
           </a>
           </div>
 
-          <div id="navbarBasicExample" class="navbar-menu" v-bind:class="{ 'is-active' : showNav }">
+          <div id="navbarAnsibleForms" class="navbar-menu" v-bind:class="{ 'is-active' : showNav }">
               <div class="navbar-end">
                 <router-link class="navbar-item" to="/jobs">
                   <span class="icon"><font-awesome-icon icon="history" /></span><span>Job history</span>

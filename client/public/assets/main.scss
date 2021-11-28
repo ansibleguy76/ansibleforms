@@ -4,31 +4,9 @@
 // you can change all the looks if you want
 // https://bulma.io/documentation/customize/variables/
 
-// Import a Google Font
-// @import url('https://fonts.googleapis.com/css?family=Nunito:400,700');
-//
-// // Set your brand colors
-// $purple: #8A4D76;
-// $pink: #FA7C91;
-// $brown: #757763;
-// $beige-light: #D0D1CD;
-// $beige-lighter: #EFF0EB;
-//
-// // Update Bulma's global variables
-// $family-sans-serif: "Nunito", sans-serif;
-// $grey-dark: $brown;
-// $grey-light: $beige-light;
-// $primary: $purple;
-// $link: $pink;
-// $widescreen-enabled: true;
-// $fullhd-enabled: true;
-//
-// // Update some of Bulma's component variables
-// $body-background-color: $beige-lighter;
-// $control-border-width: 2px;
-// $input-border-color: transparent;
-// $input-shadow: none;
-@import '~bulma';
+@import "variables";
+@import "bulma";
+@import "overrides";
 
 article.message table {
   tr:last-child {
