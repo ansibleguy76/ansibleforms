@@ -105,7 +105,7 @@ Schema.create = function (result) {
                 `start` datetime NOT NULL DEFAULT current_timestamp(),\
                 `end` datetime DEFAULT NULL,\
                 `user` varchar(250) DEFAULT NULL,\
-                'user_type' varchar(10) DEFAULT NULL,\
+                `user_type` varchar(10) DEFAULT NULL,\
                 PRIMARY KEY (`id`)\
               ) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8;\
               CREATE TABLE `job_output` (\
