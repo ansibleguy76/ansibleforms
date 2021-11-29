@@ -61,6 +61,8 @@
                       </div>
                       <!-- type = text -->
                       <input v-if="field.type=='text'" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" type="text" :placeholder="field.placeholder" @change="evaluateDynamicFields(field.name)">
+                      <!-- type = text -->
+                      <input v-if="field.type=='credential'" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" type="text" :placeholder="field.placeholder" @change="evaluateDynamicFields(field.name)">
                       <!-- type = password -->
                       <input v-if="field.type=='password'" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" type="password" :placeholder="field.placeholder" @change="evaluateDynamicFields(field.name)">
                       <!-- type = number -->
@@ -850,18 +852,26 @@
         // make sure, no delayed stuff is started.
         //
         var ref=this
+        var postdata={}
         if(ref.validateForm){ // final validation
 
           this.generateJsonOutput()
           // local ansible
           if(this.currentForm.type=="ansible"){
-            this.formdata.ansibleForm = this.currentForm.name;
-            this.formdata.ansibleInventory = this.currentForm.inventory;
-            this.formdata.ansiblePlaybook = this.currentForm.playbook;
-            this.formdata.ansibleTags = this.currentForm.tags || "";
+            postdata.ansibleExtraVars = this.formdata
+            postdata.ansibleForm = this.currentForm.name;
+            postdata.ansibleInventory = this.currentForm.inventory;
+            postdata.ansiblePlaybook = this.currentForm.playbook;
+            postdata.ansibleTags = this.currentForm.tags || "";
+            postdata.ansibleCredentials = {}
+            this.currentForm.fields
+              .filter(f => f.asCredential==true)
+              .forEach(f => {
+                postdata.ansibleCredentials[f.name]=this.formdata[f.name]
+              })
             this.ansibleResult.message= "Connecting with ansible ";
             this.ansibleResult.status="info";
-            axios.post("/api/v1/ansible/launch",this.formdata,TokenStorage.getAuthentication())
+            axios.post("/api/v1/ansible/launch",postdata,TokenStorage.getAuthentication())
               .then((result)=>{
                 if(result){
                   this.ansibleResult=result.data;

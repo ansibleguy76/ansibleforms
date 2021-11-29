@@ -10,6 +10,19 @@ var Ansible=function(){
 
 };
 
+function hasError(data){
+  if(data.match(/^fatal:/)){
+    return true
+  }
+  if(data.match(/FAILED!/)){
+    return true
+  }
+  if(data.match(/failed=[1-9]/)){
+    return true
+  }
+  return false
+}
+
 // run a playbook
 Ansible.run = function (form,playbook,inventory,tags,extraVars,user, result) {
   // prepare my ansible command
@@ -22,11 +35,12 @@ Ansible.run = function (form,playbook,inventory,tags,extraVars,user, result) {
   }
   command += ` ${playbook}`
   var directory = ansibleConfig.path
-  logger.debug(`Executing playbook, ${directory} > ${command}`)
+  logger.silly(`Executing playbook, ${directory} > ${command}`)
 
   var child = exec(command,{cwd:directory});
   Job.create(new Job({form:form,playbook:playbook,user:user.username,user_type:user.type,status:"running"}),function(error,jobid){
     var counter=0
+    var jobstatus = "success"
     if(error){
       logger.error(error)
       result(error,null)
@@ -34,6 +48,9 @@ Ansible.run = function (form,playbook,inventory,tags,extraVars,user, result) {
       result(null,{id:jobid})
       logger.silly(`Job id ${jobid} is created`)
       child.stdout.on('data',function(data){
+        if(hasError(data)){
+          jobstatus="failed"
+        }
         Job.createOutput({output:data,output_type:"stdout",job_id:jobid,order:++counter},function(error,res){
           if(error){
             logger.error(error)
@@ -52,6 +69,9 @@ Ansible.run = function (form,playbook,inventory,tags,extraVars,user, result) {
           if(error){
             logger.error(error)
           }else{
+            if(hasError(data)){
+              jobstatus="failed"
+            }
             if(res.length==2){
               if(res[1][0].status=="abort"){
                 logger.warn("Abort is requested, killing child")
@@ -74,7 +94,7 @@ Ansible.run = function (form,playbook,inventory,tags,extraVars,user, result) {
             })
           })
         }else{
-          Job.update({status:"success",end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid,function(error,res){
+          Job.update({status:jobstatus,end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid,function(error,res){
             if(error){
               logger.error(error)
             }

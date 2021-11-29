@@ -234,6 +234,7 @@
 										"hide": {"not": {}},
 										"values": {"not": {}},
                     "multiple": {"not": {}},
+                    "asCredential": {"not": {}},
                     "outputObject": {"not": {}}
 									}
 								},
@@ -251,6 +252,7 @@
 										"dbConfig": {"not": {}},
 										"hide": {"not": {}},
                     "multiple": {"not": {}},
+                    "asCredential": {"not": {}},
                     "outputObject": {"not": {}}
 									},
 									"required": ["values"]
@@ -270,6 +272,7 @@
 										"hide": {"not": {}},
 										"values": {"not": {}},
                     "multiple": {"not": {}},
+                    "asCredential": {"not": {}},
                     "outputObject": {"not": {}}
 									}
 								},
@@ -375,6 +378,11 @@
 									"type": ["boolean"],
 									"title": "Do not output",
 									"description": "Prevent field from being outputted"
+								},
+                "asCredential": {
+									"type": ["boolean"],
+									"title": "Handle as credential",
+									"description": "Will evaluate the value as a credential name"
 								},
 								"required": {
 									"type": "boolean",

@@ -2,9 +2,15 @@
 const Ansible = require('../models/ansible.model');
 const Job = require('../models/job.model');
 var RestResult = require('../models/restResult.model');
+const Credential = require('../models/credential.model');
 const logger=require("../lib/logger");
+const dbConfig = require('../../config/db.config')
 
-exports.run = function(req, res) {
+async function getCredential(name){
+
+}
+
+exports.run = async function(req, res) {
     //handles null error
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
         // wrong implementation -> send 400 error
@@ -15,7 +21,19 @@ exports.run = function(req, res) {
         var playbook = req.body.ansiblePlaybook;
         var inventory = req.body.ansibleInventory;
         var tags = req.body.ansibleTags;
-        var extraVars = JSON.stringify(req.body);
+        for (const [key, value] of Object.entries(req.body.ansibleCredentials)) {
+          if(value=="__self__"){
+            req.body.ansibleExtraVars[key]={
+              host:dbConfig.host,
+              user:dbConfig.user,
+              port:dbConfig.port,
+              password:dbConfig.password
+            }
+          }else{
+            req.body.ansibleExtraVars[key]=await Credential.findByName(value)
+          }
+        }
+        var extraVars = JSON.stringify(req.body.ansibleExtraVars);
         var user = req.user.user
 
         var restResult = new RestResult("info","","","")
@@ -25,9 +43,9 @@ exports.run = function(req, res) {
           res.json(new RestResult("error","no ansiblePlaybook","","ansiblePlaybook is a required field"));
         }else{
           logger.info("Running playbook : " + playbook)
-          logger.debug("extravars : " + extraVars)
-          logger.debug("inventory : " + inventory)
-          logger.debug("tags : " + tags)
+          logger.silly("extravars : " + extraVars)
+          logger.silly("inventory : " + inventory)
+          logger.silly("tags : " + tags)
           Ansible.run(form,playbook,inventory,tags,extraVars,user,function(err,out){
             if(err){
                restResult.status = "error"

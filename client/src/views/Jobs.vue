@@ -23,7 +23,7 @@
             </tr>
           </thead>
           <tbody>
-          <tr v-for="j in displayedJobs" :key="j.id" class="is-clickable has-text-left" @click="loadOutput(j.id)" :class="{'has-background-success-light':(j.status=='success' && j.id!=jobId),'has-background-danger-light':(j.status=='error' && j.id!=jobId),'has-background-warning-light':(j.status=='aborted' && j.id!=jobId),'has-background-info':j.id==jobId,'has-text-white':j.id==jobId}">
+          <tr v-for="j in displayedJobs" :key="j.id" class="is-clickable has-text-left" @click="loadOutput(j.id)" :class="{'has-background-success-light':(j.status=='success' && j.id!=jobId),'has-background-danger':(j.status=='failed' && j.id!=jobId),'has-background-warning':(j.status=='aborted' && j.id!=jobId),'has-background-info':j.id==jobId,'has-text-white':j.id==jobId}">
             <td>{{j.id}}</td>
             <td>{{j.form}}</td>
             <td>{{j.playbook}}</td>
