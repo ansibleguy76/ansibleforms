@@ -17,6 +17,7 @@ exports.run = async function(req, res) {
         res.json(new RestResult("error","no data was sent","",""));
     }else{
         // get the form data
+        var restResult = new RestResult("info","","","")
         var form = req.body.ansibleForm;
         var playbook = req.body.ansiblePlaybook;
         var inventory = req.body.ansibleInventory;
@@ -41,7 +42,7 @@ exports.run = async function(req, res) {
         var extraVars = JSON.stringify(req.body.ansibleExtraVars);
         var user = req.user.user
 
-        var restResult = new RestResult("info","","","")
+
 
         if(!playbook){
           // wrong implementation -> send 400 error
