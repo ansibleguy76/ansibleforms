@@ -16,6 +16,7 @@ exports.run = function(req, res) {
         var inventory = req.body.ansibleInventory;
         var tags = req.body.ansibleTags;
         var extraVars = JSON.stringify(req.body);
+        var user = req.user.user
 
         var restResult = new RestResult("info","","","")
 
@@ -27,7 +28,7 @@ exports.run = function(req, res) {
           logger.debug("extravars : " + extraVars)
           logger.debug("inventory : " + inventory)
           logger.debug("tags : " + tags)
-          Ansible.run(form,playbook,inventory,tags,extraVars,function(err,out){
+          Ansible.run(form,playbook,inventory,tags,extraVars,user,function(err,out){
             if(err){
                restResult.status = "error"
                restResult.message = "error occured while running playbook " + playbook

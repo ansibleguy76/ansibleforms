@@ -7,18 +7,18 @@ const mysql = require('../lib/mysql')
 
 //job object create
 var Job=function(job){
-    if(job.form && job.form!=""){
+    if(job.form && job.form!=""){ // first time insert
       this.form = job.form;
-    }
-    if(job.playbook && job.playbook!=""){
       this.playbook = job.playbook;
+      this.user = job.user;
+      this.user_type = job.user_type;
     }
-    if(job.status && job.status!=""){
+    if(job.status && job.status!=""){ // allow single status update
       this.status = job.status;
     }
-    if(job.end && job.end!=""){
+    if(job.end && job.end!=""){ // allow single status update
       this.end = job.end;
-    }
+    }    
 };
 Job.create = function (record, result) {
   logger.debug(`Creating job`)

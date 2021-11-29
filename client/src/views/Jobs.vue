@@ -19,6 +19,7 @@
               <th>status</th>
               <th>start time</th>
               <th>end time</th>
+              <th>user</th>
             </tr>
           </thead>
           <tbody>
@@ -29,6 +30,7 @@
             <td>{{j.status}}</td>
             <td>{{j.start | moment('YYYY-MM-DD HH:mm:ss')}}</td>
             <td>{{j.end | moment('YYYY-MM-DD HH:mm:ss')}}</td>
+            <td>{{j.user}} ({{j.user_type}})</td>
           </tr>
           </tbody>
         </table>

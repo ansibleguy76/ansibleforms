@@ -10,9 +10,42 @@ var Expression=function(){
 
 };
 
+function sanitizeExpression(expr){
+  var sanitized=expr
+  // first we check if the expression has errors
+  if(sanitized.match(/\r|\n/)){
+    logger.error("Abuse attempt of eval function, attempt to have multilines")
+    // return "'ACCESS DENIED, no multiline expressions allowed'"
+    return undefined
+  }
+  // then we remove all harmless strings
+  sanitized = sanitized.replace(/(["'])(?:(?=(\\?))\2.)*?\1/g,"")
+  // we check if ";" is present, no multi commands
+  if(sanitized.match(/;/)){
+    logger.error("Abuse attempt of eval function, attempt to have multi expression")
+    // return "'ACCESS DENIED, no multiple expressions allowed'"
+    return undefined
+  }
+  // if contains process.env
+  if(sanitized.match(/process\.env/)){
+    logger.error("Abuse attempt of eval function, attempt to get environment variables")
+    // return "'ACCESS DENIED, no access to environment variables (process.env)'"
+    return undefined
+  }
+  // if contains "(" and not starting with fn.fn
+  if(sanitized.match(/\(/)){
+    if(!sanitized.match(/^fn\.fn.*/g)){
+      logger.error("Abuse attempt of eval function, using custom functions")
+      // return "'ACCESS DENIED, no custom functions allowed'"
+      return undefined
+    }
+  }
+  return expr
+}
+
 async function doAsync (expr) {
   try{
-    return await eval(expr)
+    return await eval(sanitizeExpression(expr))
   }catch(e){
     return undefined
   }
