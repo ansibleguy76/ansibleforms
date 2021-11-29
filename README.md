@@ -1,5 +1,5 @@
 ![]( wiki/screenshot_forms.jpg)
-[More screenshot](https://github.com/ansibleguy76/ansibleforms/wiki/GUI)
+[More screenshots](https://github.com/ansibleguy76/ansibleforms/wiki/GUI)
 # Intro
 Ansible forms is a lightweight node.js webapplication to generate userfriendly and pretty forms to kickoff ansible playbooks or awx (ansible tower) templates.
 
