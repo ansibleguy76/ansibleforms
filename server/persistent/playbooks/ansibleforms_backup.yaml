@@ -5,7 +5,7 @@
   tasks:
   - name: set backup folder name
     set_fact:
-      backupfolder: "{{ data_folder }}/backups/{{ ansible_date_time.date }}-{{ ansible_date_time.time }}"
+      backupfolder: "{{ persistent_folder }}/backups/{{ ansible_date_time.date }}-{{ ansible_date_time.time }}"
   - name: Create backup folder
     file:
       path: "{{ backupfolder }}"
@@ -15,6 +15,7 @@
       state: directory
   - name: Back up all databases
     mysql_db:
+      no_log: true
       state: dump
       name: AnsibleForms
       target: '{{ backupfolder }}/ansibleforms.sql'
@@ -24,5 +25,5 @@
       login_password: "{{ mysql_credential.password }}"
   - name: Backup forms.yaml
     copy:
-      src: "{{ data_folder }}/forms.yaml"
+      src: "{{ persistent_folder }}/forms.yaml"
       dest: "{{ backupfolder }}/forms.yaml"
