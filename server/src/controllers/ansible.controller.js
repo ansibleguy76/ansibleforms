@@ -30,7 +30,12 @@ exports.run = async function(req, res) {
               password:dbConfig.password
             }
           }else{
-            req.body.ansibleExtraVars[key]=await Credential.findByName(value)
+            try{
+              req.body.ansibleExtraVars[key]=await Credential.findByName(value)
+            }catch(err){
+              logger.error(err)
+            }
+
           }
         }
         var extraVars = JSON.stringify(req.body.ansibleExtraVars);
