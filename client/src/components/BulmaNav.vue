@@ -15,7 +15,7 @@
 
           <div id="navbarAnsibleForms" class="navbar-menu" v-bind:class="{ 'is-active' : showNav }">
               <div class="navbar-end">
-                <router-link class="navbar-item" to="/jobs">
+                <router-link class="navbar-item" to="/jobs" v-if="authenticated">
                   <span class="icon"><font-awesome-icon icon="history" /></span><span>Job history</span>
                 </router-link>
                 <router-link class="navbar-item" to="/designer" v-if="isAdmin && authenticated">
