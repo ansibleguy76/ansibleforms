@@ -1,11 +1,11 @@
 //- MYSQL Module
 const logger = require('./logger');
-const client = require('mysql');
+const {Client} = require('pg');
 const Credential = require('../models/credential.model')
 
-MySql = {}
+Postgres = {}
 
-MySql.query=async function(connection_name,query,callback){
+Postgres.query=async function(connection_name,query,callback){
   // does the pool exist already, if not let's add it
   logger.debug("["+connection_name+"] running query : " + query)
   var config=undefined
@@ -15,16 +15,22 @@ MySql.query=async function(connection_name,query,callback){
     callback(null,null)
   }
   if(config){
-    config.multipleStatements=true
+    var client = new Client(config)
     try{
-      var conn = client.createConnection(config)
-      conn.query(query,function(err,result){
+      await client.connect()
+    }catch(err){
+      callback(err,null)
+      return;
+    }
+    try{
+      client.query(query,function(err,result){
         logger.silly("["+connection_name+"] Closing connection")
+        client.end()
         if(err){
           callback(err,null)
         }else{
           logger.silly("["+connection_name+"] query result : " + JSON.stringify(result))
-          callback(null,result)
+          callback(null,result.rows)
         }
       })
     }catch(err){
@@ -37,4 +43,4 @@ MySql.query=async function(connection_name,query,callback){
     callback(null,null)
   }
 };
-module.exports = MySql
+module.exports = Postgres

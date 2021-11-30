@@ -1,6 +1,6 @@
 //- MYSQL Module
 const logger = require('./logger');
-const sql = require('mssql');
+const client = require('mssql');
 const Credential = require('../models/credential.model')
 
 Sql = {}
@@ -25,19 +25,28 @@ Sql.query=async function(connection_name,query,callback){
         }
     };
 
-    sql.connect(config, err => {
+    client.connect(config, function(err,conn){
       if(err){
         callback(err,null)
       }else{
-        new sql.Request().query(query, (err, result) => {
-          if(err){
-            logger.silly("["+connection_name+"] query error : " + err)
-            callback(err,null)
-          }else{
-            logger.silly("["+connection_name+"] query result : " + JSON.stringify(result))
-            callback(null,result.recordset)
-          }
-        })
+        try{
+          conn.query(query, (err, result) => {
+            conn.close()
+            logger.silly("["+connection_name+"] Closing connection")
+            if(err){
+              logger.silly("["+connection_name+"] query error : " + err)
+              callback(err,null)
+            }else{
+              logger.silly("["+connection_name+"] query result : " + JSON.stringify(result))
+              callback(null,result.recordset)
+            }
+          })
+        }catch(err){
+          conn.close()
+          logger.silly("["+connection_name+"] Closing connection")
+          callback(err,null)
+        }
+
       }
     })
 

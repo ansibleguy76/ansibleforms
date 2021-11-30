@@ -25,15 +25,18 @@
     "passport-jwt": "^4.0.0",
     "mysql": "^2.18.1",
     "ajv": "^6.12.6",
-    "ajv-error-parser": "*",
+    "ajv-error-parser": "^1.0.7",
     "bluebird": "^3.7.2",
     "node-jq": "^2.0.0",
-    "moment": "*",
-    "yaml": "*",
-    "cert-info":"*",
-    "mssql":"*",
-    "crypto":"*",
-    "node-cache":"*"
+    "moment": "^2.29.1",
+    "yaml": "^1.10.2",
+    "cert-info":"^1.5.1",
+    "mssql":"^7.3.0",
+    "crypto":"^1.0.1",
+    "pg":"^8.7.1",
+    "node-cache":"^5.1.2",
+    "ldap-authentication": "^2.2.7",
+    "ldapjs": "^2.3.0"    
   },
   "devDependencies": {
     "@babel/core": "*",
@@ -44,9 +47,7 @@
     "npm-run-all": "*",
     "@babel/eslint-parser": "*",
     "dotenv": "^10.0.0",
-    "eslint": "*",
-    "ldap-authentication": "*",
-    "ldapjs": "*"
+    "eslint": "*"
   },
   "eslintConfig": {
     "root": true,
