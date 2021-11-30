@@ -46,21 +46,16 @@ Credential.update = function (record,id, result) {
     });
 };
 Credential.delete = function(id, result){
-    if(id==1){
-      logger.warn("Some is trying to remove the admins credentials !")
-      result("You cannot delete credential 'admins'",null)
-    }else{
-      logger.debug(`Deleting credential ${id}`)
-      mysql.query("DELETE FROM AnsibleForms.`credentials` WHERE id = ? AND name<>'admins'", [id], function (err, res) {
-          if(err) {
-              result(err, null);
-          }
-          else{
-              result(null, res);
-          }
-      });
-    }
 
+    logger.debug(`Deleting credential ${id}`)
+    mysql.query("DELETE FROM AnsibleForms.`credentials` WHERE id = ? AND name<>'admins'", [id], function (err, res) {
+        if(err) {
+            result(err, null);
+        }
+        else{
+            result(null, res);
+        }
+    });
 };
 Credential.findAll = function (result) {
     logger.debug("Finding all credentials")
