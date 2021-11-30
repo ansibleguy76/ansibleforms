@@ -6,7 +6,7 @@ const appConfig = require('../../config/app.config')
 const Ldap = require('./ldap.model')
 const Form = require('./form.model')
 const YAML = require('yaml')
-const mysql = require('../lib/mysql')
+const mysql = require('./db.model')
 
 //user object create
 var User=function(user){
@@ -22,7 +22,7 @@ User.create = function (record, result) {
       }else{
         record.password = hash
         logger.debug(`Creating user ${record.username}`)
-        mysql.query("ANSIBLEFORMS_DATABASE","INSERT INTO AnsibleForms.`users` set ?", record, function (err, res) {
+        mysql.query("INSERT INTO AnsibleForms.`users` set ?", record, function (err, res) {
             if(err) {
                 result(err, null);
             }
@@ -44,7 +44,7 @@ User.update = function (record,id, result) {
         }else{
           record.password = hash
           logger.debug(`Updating user ${record.username}`)
-          mysql.query("ANSIBLEFORMS_DATABASE","UPDATE AnsibleForms.`users` set ? WHERE id=?", [record,id], function (err, res) {
+          mysql.query("UPDATE AnsibleForms.`users` set ? WHERE id=?", [record,id], function (err, res) {
               if(err) {
                   //lib/logger.error(err)
                   result(err, null);
@@ -63,7 +63,7 @@ User.delete = function(id, result){
       result("You cannot delete user 'admin'",null)
     }else{
       logger.debug(`Deleting user ${id}`)
-      mysql.query("ANSIBLEFORMS_DATABASE","DELETE FROM AnsibleForms.`users` WHERE id = ? AND username<>'admin'", [id], function (err, res) {
+      mysql.query("DELETE FROM AnsibleForms.`users` WHERE id = ? AND username<>'admin'", [id], function (err, res) {
           if(err) {
               logger.error(err)
               result(err, null);
@@ -79,7 +79,7 @@ User.findAll = function (result) {
     logger.debug("Finding all users")
     var query = "SELECT * FROM AnsibleForms.`users` limit 20;"
     try{
-      mysql.query("ANSIBLEFORMS_DATABASE",query,null, function (err, res) {
+      mysql.query(query,null, function (err, res) {
           if(err) {
               result(err, null);
           }
@@ -94,7 +94,7 @@ User.findAll = function (result) {
 User.findById = function (id,result) {
     logger.debug(`Finding user ${id}`)
     try{
-      mysql.query("ANSIBLEFORMS_DATABASE","SELECT * FROM AnsibleForms.`users` WHERE id=?;",id, function (err, res) {
+      mysql.query("SELECT * FROM AnsibleForms.`users` WHERE id=?;",id, function (err, res) {
           if(err) {
               result(err, null);
           }
@@ -110,7 +110,7 @@ User.authenticate = function (username,password,result) {
     logger.debug(`Checking password for user ${username}`)
     var query = "SELECT `username`,`password`,GROUP_CONCAT(groups.name) `groups` FROM AnsibleForms.`users`,AnsibleForms.`groups` WHERE `users`.group_id=`groups`.id AND username=?;"
     try{
-      mysql.query("ANSIBLEFORMS_DATABASE",query,username, function (err, res) {
+      mysql.query(query,username, function (err, res) {
           if(err) {
               result(err, null);
           }
@@ -142,7 +142,7 @@ User.storeToken = function (username,username_type,refresh_token,result) {
     record.refresh_token = refresh_token
     logger.debug(`Adding token for ${record.username} (${record.username_type})`)
     try{
-      mysql.query("ANSIBLEFORMS_DATABASE","INSERT INTO AnsibleForms.`tokens` set ? ON DUPLICATE KEY UPDATE username=VALUES(username),username_type=VALUES(username_type),refresh_token=VALUES(refresh_token)", record,  function (err, res) {
+      mysql.query("INSERT INTO AnsibleForms.`tokens` set ? ON DUPLICATE KEY UPDATE username=VALUES(username),username_type=VALUES(username_type),refresh_token=VALUES(refresh_token)", record,  function (err, res) {
           if(err) {
               result(err, null);
           }
@@ -157,7 +157,7 @@ User.storeToken = function (username,username_type,refresh_token,result) {
 User.deleteToken = function (username,username_type,result) {
     logger.debug(`Deleting token for user ${username} (${username_type})`)
     try{
-      mysql.query("ANSIBLEFORMS_DATABASE","DELETE FROM AnsibleForms.`tokens` WHERE username=? AND username_type=?",[username,username_type], function (err, res) {
+      mysql.query("DELETE FROM AnsibleForms.`tokens` WHERE username=? AND username_type=?",[username,username_type], function (err, res) {
           if(err) {
               result(err, null);
           }else{
@@ -171,7 +171,7 @@ User.deleteToken = function (username,username_type,result) {
 User.checkToken = function (username,username_type,refresh_token,result) {
     logger.debug(`Checking token for user ${username} (${username_type})`)
     try{
-      mysql.query("ANSIBLEFORMS_DATABASE","SELECT refresh_token FROM AnsibleForms.`tokens` WHERE username=? AND username_type=?",[username,username_type], function (err, res) {
+      mysql.query("SELECT refresh_token FROM AnsibleForms.`tokens` WHERE username=? AND username_type=?",[username,username_type], function (err, res) {
           if(err) {
               result("Failed to connect to the AnsibleForms database : " + err, null);
           }

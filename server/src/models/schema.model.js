@@ -1,21 +1,20 @@
 'use strict';
 const bcrypt = require('bcrypt');
 const logger=require("../lib/logger");
-const dbConfig = require("../../config/db.config")
-const mysql = require("../lib/mysql")
+const mysql = require("./db.model")
 //user object create
 var Schema=function(){
 };
 
 Schema.hasSchema = function (result) {
-  mysql.query("ANSIBLEFORMS_DATABASE",`SHOW DATABASES LIKE 'AnsibleForms'`,null, function (err, res) {
+  mysql.query(`SHOW DATABASES LIKE 'AnsibleForms'`,null, function (err, res) {
     if(err) {
       result("Failed to query databases in AnsibleForms MySql. " + err, null);
     }
     else{
       if(res.length > 0){
         logger.debug(`Checking tables in schema 'AnsibleForms'`)
-        mysql.query("ANSIBLEFORMS_DATABASE","SHOW TABLES FROM `AnsibleForms`;",null,function(err,res){
+        mysql.query("SHOW TABLES FROM `AnsibleForms`;",null,function(err,res){
           if(err) {
               result("Failed to query tables in the AnsibleForms schema. " + err, null);
           }
@@ -124,7 +123,7 @@ Schema.create = function (result) {
               INSERT INTO AnsibleForms.users(username,password,group_id) VALUES('admin','$2b$10$Z/W0HXNBk2aLR4yVLkq5L..C8tXg.G.o1vkFr8D2lw8JSgWRCNiCa',1);\
               INSERT INTO AnsibleForms.ldap(server,port,ignore_certs,enable_tls,cert,ca_bundle,bind_user_dn,bind_user_pw,search_base,username_attribute,enable) VALUES('',389,1,0,'','','','','','sAMAccountName',0);"
 
-  mysql.query("ANSIBLEFORMS_DATABASE",query,null, function (err, res) {
+  mysql.query(query,null, function (err, res) {
     if(err) {
       result(err, null);
     }

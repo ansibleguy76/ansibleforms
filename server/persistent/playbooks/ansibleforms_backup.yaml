@@ -14,8 +14,8 @@
       mode: '0774'
       state: directory
   - name: Back up all databases
+    no_log: true
     mysql_db:
-      no_log: true
       state: dump
       name: AnsibleForms
       target: '{{ backupfolder }}/ansibleforms.sql'

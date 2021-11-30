@@ -3,7 +3,7 @@ const logger=require("../lib/logger");
 const authConfig = require('../../config/auth.config')
 const helpers = require('../lib/common.js')
 const appConfig = require('../../config/app.config')
-const mysql = require('../lib/mysql')
+const mysql = require('./db.model')
 
 //job object create
 var Job=function(job){
@@ -18,12 +18,12 @@ var Job=function(job){
     }
     if(job.end && job.end!=""){ // allow single status update
       this.end = job.end;
-    }    
+    }
 };
 Job.create = function (record, result) {
   logger.debug(`Creating job`)
   try{
-    mysql.query("ANSIBLEFORMS_DATABASE","INSERT INTO AnsibleForms.`jobs` set ?", record, function (err, res) {
+    mysql.query("INSERT INTO AnsibleForms.`jobs` set ?", record, function (err, res) {
         if(err) {
             result(err, null);
         }
@@ -38,7 +38,7 @@ Job.create = function (record, result) {
 Job.update = function (record,id, result) {
   logger.silly(`Updating job ${id}`)
   try{
-    mysql.query("ANSIBLEFORMS_DATABASE","UPDATE AnsibleForms.`jobs` set ? WHERE id=?", [record,id], function (err, res) {
+    mysql.query("UPDATE AnsibleForms.`jobs` set ? WHERE id=?", [record,id], function (err, res) {
         if(err) {
             //lib/logger.error(err)
             result(err, null);
@@ -54,7 +54,7 @@ Job.update = function (record,id, result) {
 Job.createOutput = function (record, result) {
   // logger.silly(`Creating job output`)
   try{
-    mysql.query("ANSIBLEFORMS_DATABASE","INSERT INTO AnsibleForms.`job_output` set ?;SELECT status FROM AnsibleForms.`jobs` WHERE id=?;", [record,record.job_id], function (err, res) {
+    mysql.query("INSERT INTO AnsibleForms.`job_output` set ?;SELECT status FROM AnsibleForms.`jobs` WHERE id=?;", [record,record.job_id], function (err, res) {
         if(err) {
             result(err, null);
         }
@@ -70,7 +70,7 @@ Job.createOutput = function (record, result) {
 Job.delete = function(id, result){
   logger.debug(`Deleting job ${id}`)
   try{
-    mysql.query("ANSIBLEFORMS_DATABASE","DELETE FROM AnsibleForms.`jobs` WHERE id = ? AND jobname<>'admin'", [id], function (err, res) {
+    mysql.query("DELETE FROM AnsibleForms.`jobs` WHERE id = ? AND jobname<>'admin'", [id], function (err, res) {
         if(err) {
             logger.error(err)
             result(err, null);
@@ -87,7 +87,7 @@ Job.findAll = function (result) {
     logger.debug("Finding all jobs")
     var query = "SELECT * FROM AnsibleForms.`jobs` ORDER BY id DESC LIMIT 500;"
     try{
-      mysql.query("ANSIBLEFORMS_DATABASE",query,null, function (err, res) {
+      mysql.query(query,null, function (err, res) {
           if(err) {
               result(err, null);
           }
@@ -102,7 +102,7 @@ Job.findAll = function (result) {
 Job.findById = function (id,result) {
     logger.debug(`Finding job ${id}`)
     try{
-      mysql.query("ANSIBLEFORMS_DATABASE","SELECT `status`,COALESCE(output,'') output,COALESCE(`timestamp`,'') `timestamp`,COALESCE(output_type,'stdout') output_type FROM AnsibleForms.`jobs` LEFT JOIN AnsibleForms.`job_output` ON jobs.id=job_output.job_id WHERE jobs.id=? ORDER by job_output.order;",id, function (err, res) {
+      mysql.query("SELECT `status`,COALESCE(output,'') output,COALESCE(`timestamp`,'') `timestamp`,COALESCE(output_type,'stdout') output_type FROM AnsibleForms.`jobs` LEFT JOIN AnsibleForms.`job_output` ON jobs.id=job_output.job_id WHERE jobs.id=? ORDER by job_output.order;",id, function (err, res) {
           if(err) {
               result(err, null);
           }

@@ -1,6 +1,6 @@
 'use strict';
 const logger=require("../lib/logger");
-const mysql=require("../lib/mysql");
+const mysql=require("./db.model");
 const {encrypt,decrypt}=require("../lib/crypto")
 const NodeCache = require("node-cache")
 
@@ -22,7 +22,7 @@ var Credential=function(credential){
 
 Credential.create = function (record, result) {
     logger.debug(`Creating credential ${record.name}`)
-    mysql.query("ANSIBLEFORMS_DATABASE","INSERT INTO AnsibleForms.`credentials` set ?", record, function (err, res) {
+    mysql.query("INSERT INTO AnsibleForms.`credentials` set ?", record, function (err, res) {
         if(err) {
             result(err, null);
         }
@@ -34,7 +34,7 @@ Credential.create = function (record, result) {
 };
 Credential.update = function (record,id, result) {
     logger.debug(`Updating credential ${record.name}`)
-    mysql.query("ANSIBLEFORMS_DATABASE","UPDATE AnsibleForms.`credentials` set ? WHERE id=?", [record,id], function (err, res) {
+    mysql.query("UPDATE AnsibleForms.`credentials` set ? WHERE id=?", [record,id], function (err, res) {
         if(err) {
             //lib/logger.error(err)
             result(err, null);
@@ -51,7 +51,7 @@ Credential.delete = function(id, result){
       result("You cannot delete credential 'admins'",null)
     }else{
       logger.debug(`Deleting credential ${id}`)
-      mysql.query("ANSIBLEFORMS_DATABASE","DELETE FROM AnsibleForms.`credentials` WHERE id = ? AND name<>'admins'", [id], function (err, res) {
+      mysql.query("DELETE FROM AnsibleForms.`credentials` WHERE id = ? AND name<>'admins'", [id], function (err, res) {
           if(err) {
               result(err, null);
           }
@@ -66,7 +66,7 @@ Credential.findAll = function (result) {
     logger.debug("Finding all credentials")
     var query = "SELECT * FROM AnsibleForms.`credentials` limit 20;"
     try{
-      mysql.query("ANSIBLEFORMS_DATABASE",query, function (err, res) {
+      mysql.query(query, function (err, res) {
           if(err) {
               result(err, null);
           }
@@ -82,7 +82,7 @@ Credential.findById = function (id,result) {
     logger.debug(`Finding credential ${id}`)
     var query = "SELECT * FROM AnsibleForms.`credentials` WHERE id=?;"
     try{
-      mysql.query("ANSIBLEFORMS_DATABASE",query,id, function (err, res) {
+      mysql.query(query,id, function (err, res) {
         if(err) {
             result(err, null);
         }
@@ -112,7 +112,7 @@ Credential.findByName = function (name) {
         var cred = cache.get(name)
         if(cred==undefined){
           var query = "SELECT host,port,name,user,password FROM AnsibleForms.`credentials` WHERE name=?;"
-          mysql.query("ANSIBLEFORMS_DATABASE",query,name, function (err, res) {
+          mysql.query(query,name, function (err, res) {
               if(err) {
                   reject(err,null);
               }

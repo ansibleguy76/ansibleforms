@@ -1,6 +1,6 @@
 'use strict';
 const logger=require("../lib/logger");
-const mysql=require("../lib/mysql")
+const mysql=require("./db.model")
 const Helpers=require("../lib/common")
 const YAML=require("yaml")
 const {encrypt,decrypt} = require("../lib/crypto")
@@ -21,7 +21,7 @@ var Ldap=function(ldap){
 };
 Ldap.update = function (record, result) {
     logger.debug(`Updating ldap ${record.name}`)
-    mysql.query("ANSIBLEFORMS_DATABASE","UPDATE AnsibleForms.`ldap` set ?", record, function (err, res) {
+    mysql.query("UPDATE AnsibleForms.`ldap` set ?", record, function (err, res) {
         if(err) {
             result(err, null);
         }
@@ -33,7 +33,7 @@ Ldap.update = function (record, result) {
 Ldap.find = function (result) {
     var query = "SELECT * FROM AnsibleForms.`ldap` limit 1;"
     try{
-      mysql.query("ANSIBLEFORMS_DATABASE",query, function (err, res) {
+      mysql.query(query, function (err, res) {
           if(err) {
               result(err, null);
           }

@@ -1,6 +1,6 @@
 'use strict';
 const logger=require("../lib/logger");
-const mysql=require("../lib/mysql")
+const mysql=require("./db.model")
 
 //group object create
 var Group=function(group){
@@ -8,7 +8,7 @@ var Group=function(group){
 };
 Group.create = function (record, result) {
     logger.debug(`Creating group ${record.name}`)
-    mysql.query("ANSIBLEFORMS_DATABASE","INSERT INTO AnsibleForms.`groups` set ?", record, function (err, res) {
+    mysql.query("INSERT INTO AnsibleForms.`groups` set ?", record, function (err, res) {
         if(err) {
             result(err, null);
         }
@@ -20,7 +20,7 @@ Group.create = function (record, result) {
 };
 Group.update = function (record,id, result) {
     logger.debug(`Updating group ${record.name}`)
-    mysql.query("ANSIBLEFORMS_DATABASE","UPDATE AnsibleForms.`groups` set ? WHERE name=?", [record,id], function (err, res) {
+    mysql.query("UPDATE AnsibleForms.`groups` set ? WHERE name=?", [record,id], function (err, res) {
         if(err) {
             result(err, null);
         }
@@ -35,7 +35,7 @@ Group.delete = function(id, result){
       result("You cannot delete group 'admins'",null)
     }else{
       logger.debug(`Deleting group ${id}`)
-      mysql.query("ANSIBLEFORMS_DATABASE","DELETE FROM AnsibleForms.`groups` WHERE id = ? AND name<>'admins'", [id], function (err, res) {
+      mysql.query("DELETE FROM AnsibleForms.`groups` WHERE id = ? AND name<>'admins'", [id], function (err, res) {
           if(err) {
               result(err, null);
           }
@@ -50,7 +50,7 @@ Group.findAll = function (result) {
     logger.debug("Finding all groups")
     var query = "SELECT * FROM AnsibleForms.`groups` limit 20;"
     try{
-      mysql.query("ANSIBLEFORMS_DATABASE",query,null, function (err, res) {
+      mysql.query(query,null, function (err, res) {
           if(err) {
               result(err, null);
           }
@@ -66,7 +66,7 @@ Group.findById = function (id,result) {
     logger.debug(`Finding group ${id}`)
     var query = "SELECT * FROM AnsibleForms.`groups` WHERE id=?;"
     try{
-      mysql.query("ANSIBLEFORMS_DATABASE",query,id, function (err, res) {
+      mysql.query(query,id, function (err, res) {
           if(err) {
               result(err, null);
           }

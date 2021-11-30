@@ -4,7 +4,7 @@ const https=require('https')
 const axios = require('axios');
 const cheerio = require('cheerio');
 const logger=require("../lib/logger");
-const mysql=require("../lib/mysql")
+const mysql=require("./db.model")
 const Helpers=require("../lib/common")
 const YAML=require("yaml")
 const {encrypt,decrypt} = require("../lib/crypto")
@@ -46,12 +46,12 @@ Awx.getConfig = function(result){
 //awx object create
 Awx.update = function (record, result) {
     logger.debug(`Updating awx ${record.name}`)
-    mysql.query("ANSIBLEFORMS_DATABASE","UPDATE AnsibleForms.`awx` set ?", record, function (err, res) {
+    mysql.query("UPDATE AnsibleForms.`awx` set ?", record, function (err, res) {
         if(err) {
             result(err, null);
         }
         else{
-            cache.delete("awxConfig")
+            cache.del("awxConfig")
             result(null, res);
         }
     });
@@ -59,7 +59,7 @@ Awx.update = function (record, result) {
 Awx.find = function (result) {
     var query = "SELECT * FROM AnsibleForms.`awx` limit 1;"
     try{
-      mysql.query("ANSIBLEFORMS_DATABASE",query, function (err, res) {
+      mysql.query(query, function (err, res) {
           if(err) {
               result(err, null);
           }

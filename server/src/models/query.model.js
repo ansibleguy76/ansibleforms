@@ -8,6 +8,7 @@ var Query=function(){
 
 };
 Query.findAll = function (query,config,result) {
+
     logger.silly(`[${config.type}][${config.name}] Running query ${query}`)
     if(config.type=="mssql"){  // use SQL connection pool
       sql.query(config.name,query, function (err, res) {
@@ -19,7 +20,7 @@ Query.findAll = function (query,config,result) {
           }
       });
     }else if(config.type=="mysql"){  // use MYSQL connection pool
-      mysql.query(config.name,query,null, function (err, res) {
+      mysql.query(config.name,query, function (err, res) {
           if(err) {
               result(null, null);
           }
@@ -28,5 +29,6 @@ Query.findAll = function (query,config,result) {
           }
       });
     }
+
 };
 module.exports= Query;
