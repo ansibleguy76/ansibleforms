@@ -482,7 +482,7 @@
     								},
     								"type": {
     									"type": "string",
-                      "enum": ["mysql","mssql","postgres"],
+                      "enum": ["mysql","mssql","postgres","mongodb"],
     									"title": "Name of the connection type",
     									"description": "Can be mysql, mssql and postgres"
     								}

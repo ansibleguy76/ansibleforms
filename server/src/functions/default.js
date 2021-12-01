@@ -8,9 +8,7 @@ const logger=require("../lib/logger");
 const jq=require("node-jq")
 const YAML=require("yaml")
 const credentialModel = require("../models/credential.model")
-// const getCred = require("util").promisify(credentialModel.findByName)
-// const { jq } = require('jq.node')
-// const jqn = require("util").promisify(jq)
+
 exports.fnGetNumberedName=function(names,pattern,value,fillgap){
   var nr=null
   var nrsequence

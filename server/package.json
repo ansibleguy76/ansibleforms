@@ -32,11 +32,12 @@
     "yaml": "^1.10.2",
     "cert-info":"^1.5.1",
     "mssql":"^7.3.0",
+    "mongodb":"^4.2.1",
     "crypto":"^1.0.1",
     "pg":"^8.7.1",
     "node-cache":"^5.1.2",
     "ldap-authentication": "^2.2.7",
-    "ldapjs": "^2.3.0"    
+    "ldapjs": "^2.3.0"
   },
   "devDependencies": {
     "@babel/core": "*",

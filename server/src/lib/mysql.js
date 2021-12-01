@@ -13,28 +13,36 @@ MySql.query=async function(connection_name,query,callback){
     config = await Credential.findByName(connection_name)
   }catch(e){
     callback(null,null)
+    return;
   }
-  if(config){
-    config.multipleStatements=true
-    try{
-      var conn = client.createConnection(config)
-      conn.query(query,function(err,result){
-        logger.silly("["+connection_name+"] Closing connection")
-        if(err){
-          callback(err,null)
-        }else{
-          logger.silly("["+connection_name+"] query result : " + JSON.stringify(result))
-          callback(null,result)
-        }
-      })
-    }catch(err){
-      logger.error("["+connection_name+"] " + err)
-      callback(null,null)
-    }
 
-  }else{
-    logger.error("["+connection_name+"] Empty config for mysql connection")
+  config.multipleStatements=true
+  var conn
+  try{
+    var conn = client.createConnection(config)
+  }catch(err){
+    logger.error("["+connection_name+"] Connection error : " + err)
+    callback(null,null)
+    return;
+  }
+  try{
+    conn.query(query,function(err,result){
+      logger.silly("["+connection_name+"] Closing connection")
+      conn.end()
+      if(err){
+        logger.error("["+connection_name+"] Query error : " + err)
+        callback(err,null)
+      }else{
+        logger.silly("["+connection_name+"] query result : " + JSON.stringify(result))
+        callback(null,result)
+      }
+    })
+  }catch(err){
+    logger.silly("["+connection_name+"] Closing connection")
+    conn.end()    
+    logger.error("["+connection_name+"] " + err)
     callback(null,null)
   }
+
 };
 module.exports = MySql
