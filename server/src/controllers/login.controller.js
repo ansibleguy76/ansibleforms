@@ -28,7 +28,10 @@ exports.login = async function(req, res,next) {
             user,
             { session: false },
             async (error) => {
-              if (error) return next(error);
+              if (error){
+                logger.error(error)
+                return next(error);
+              } 
               logger.debug(JSON.stringify(user))
 
               const token = jwt.sign({user}, authConfig.secret,{ expiresIn: authConfig.jwtExpiration});
@@ -46,6 +49,7 @@ exports.login = async function(req, res,next) {
             }
           );
         } catch (error) {
+          logger.error(error)
           return next(error);
         }
       }

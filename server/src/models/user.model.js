@@ -112,12 +112,14 @@ User.authenticate = function (username,password,result) {
     try{
       mysql.query(query,username, function (err, res) {
           if(err) {
+              logger.error("Error querying user : " + err)
               result(err, null);
           }
           else{
               if(res.length > 0 && res[0].password){
                 bcrypt.compare(password,res[0].password,function(err,isSame){
                   if(err){
+                    logger.error("Error comparing passwords : " + err)
                     result(err,null)
                   }else{
                     logger.debug(`match = ${isSame}`)
