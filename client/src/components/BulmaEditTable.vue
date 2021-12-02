@@ -1,10 +1,10 @@
 <template>
     <div>
-        <BulmaModal v-if="showEdit" title="Edit" action="Save" @click="saveItem()" @close="showEdit=false" @cancel="showEdit=false">
+        <BulmaModal v-if="showEdit" :title="action" action="Save" @click="saveItem()" @close="showEdit=false" @cancel="showEdit=false">
           <div v-for="field,index in tableFields" :key="field.name" class="field mt-3">
 
               <!-- add field label -->
-              <label class="label">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span></label>
+              <label class="label has-text-primary">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span></label>
               <!-- type = checkbox -->
               <label v-if="field.type=='checkbox'" class="checkbox">
                 <input v-if="field.type=='checkbox'" :autofocus="index==0" :checked="editedItem[field.name]" v-model="editedItem[field.name]" :name="field.name" type="checkbox">
@@ -177,14 +177,14 @@
               this.tableFields.forEach((item, i) => {
                 Vue.set(ref.editedItem,item.name,item.default)
               });
-              this.action="add";
+              this.action="Add";
               this.editIndex=index;
               this.showEdit=true;
             },
             editItem: function(index){
               var ref=this
               this.editedItem=this.rows[index];
-              this.action="edit";
+              this.action="Edit";
               this.editIndex=index;
               this.showEdit=true;
             },
@@ -194,7 +194,7 @@
             },
             saveItem:function(){
               if(!this.$v.editedItem.$invalid){
-                if(this.action=="add"){
+                if(this.action=="Add"){
                   if(this.editIndex<0){
                     this.rows.push(this.editedItem)
                   }else{
@@ -281,3 +281,8 @@
     }
 
 </script>
+<style scoped>
+.select, .select select{
+  width:100%;
+}
+</style>

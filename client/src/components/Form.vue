@@ -20,7 +20,7 @@
                 <transition name="slide">
                   <div class="field mt-3" v-if="checkDependencies(field,true)">
                     <!-- add field label -->
-                    <label v-if="!field.hide" class="label">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span></label>
+                    <label v-if="!field.hide" class="label has-text-primary">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span></label>
                     <!-- type = checkbox -->
                     <label v-if="field.type=='checkbox'" class="checkbox">
                       <input :checked="field.default" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" :required="field.required" :name="field.name" type="checkbox">
