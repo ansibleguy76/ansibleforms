@@ -53,7 +53,7 @@
                         {{ radiovalue }}
                       </label>
                     </div>
-
+                    <BulmaEditTable v-if="field.type=='table'" :tableFields="field.tableFields" :click="false" tableClass="table is-striped is-bordered is-narrow" v-model="$v.form[field.name].$model" />
                     <div :class="{'has-icons-left':!!field.icon && field.type!='query'}" class="control">
                       <!-- type = expression -->
                       <div v-if="field.type=='expression'" :class="{'is-loading':dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running'}" class="control">
@@ -79,6 +79,7 @@
                           <option v-for="option in field.values" :key="option" :selected="field.default.includes(option)" :value="option">{{ option }}</option>
                         </select>
                       </div>
+
                       <!-- add left icon, but not for query, because that's a component with icon builtin -->
                       <span v-if="!!field.icon && field.type!='query'" class="icon is-small is-left">
                         <font-awesome-icon :icon="field.icon" />
@@ -161,6 +162,7 @@
   import TokenStorage from './../lib/TokenStorage'
   import VueJsonPretty from 'vue-json-pretty';
   import BulmaAdvancedSelect from './BulmaAdvancedSelect.vue'
+  import BulmaEditTable from './BulmaEditTable.vue'
   import 'vue-json-pretty/lib/styles.css';
   import VueShowdown from 'vue-showdown';
   import { required, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
@@ -170,7 +172,7 @@
 
   export default{
     name:"Form",
-    components:{VueJsonPretty,BulmaAdvancedSelect},
+    components:{VueJsonPretty,BulmaAdvancedSelect,BulmaEditTable},
     props:{
       currentForm:{type:Object}
     },
@@ -796,7 +798,7 @@
         this.currentForm.fields.forEach((item, i) => {
           if(this.visibility[item.name] && !item.noOutput){
             var fieldmodel = item.model
-            var outputObject = item.outputObject || item.type=="expression" || false
+            var outputObject = item.outputObject || item.type=="expression" || item.type=="table" || false
             var outputValue = this.form[item.name]
             // if no model is given, we assign to the root
             if(!outputObject){  // do we need to flatten output ?

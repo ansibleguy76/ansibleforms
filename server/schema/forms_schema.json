@@ -339,6 +339,25 @@
                     "outputObject": {"not": {}}
 									},
 									"required": ["expression"]
+								},
+                {
+									"properties":{
+										"type":{"enum":["table"]},
+										"values": {"not": {}},
+										"regex": {"not": {}},
+										"regexDescription": {"not": {}},
+										"minValue": {"not": {}},
+										"maxValue": {"not": {}},
+										"minLength": {"not": {}},
+										"maxLength": {"not": {}},
+										"dbConfig": {"not": {}},
+                    "multiple": {"not": {}},
+                    "outputObject": {"not": {}},
+                    "expression": {"not": {}},
+                    "icon": {"not": {}},
+                    "default": {"not": {}}
+									},
+									"required": ["tableFields"]
 								}
 							],
 							"properties": {
@@ -346,7 +365,7 @@
 									"type": "string",
 									"title": "Formfield type",
 									"description": "The formfield type",
-									"enum": ["text","password","checkbox","enum","query","number","radio","expression"]
+									"enum": ["text","password","checkbox","enum","query","number","radio","expression","table"]
 								},
 								"name": {
 									"$id": "/field",
@@ -549,7 +568,141 @@
 								},
 								"icon": {
 									"$ref": "/icon"
-								}
+								},
+                "tableFields": {
+                  "type": "array",
+                  "title": "Table fields",
+                  "description": "A list of of table fields",
+                  "additionalItems": true,
+                  "items": {
+                    "type": "object",
+                    "title": "Table field",
+                    "description": "A table field",
+                    "required": [
+                      "type",
+                      "name",
+                      "label"
+                    ],
+                    "oneOf":[
+                      {
+                        "properties":{
+                          "type":{"enum":["text"]},
+                          "minValue": {"not": {}},
+                          "maxValue": {"not": {}}
+                        }
+                      },
+                      {
+                        "properties":{
+                          "type":{"enum":["number"]},
+                          "regex": {"not": {}},
+                          "regexDescription": {"not": {}},
+                          "minLength": {"not": {}},
+                          "maxLength": {"not": {}}
+                        }
+                      },
+                      {
+                        "properties":{
+                          "type":{"enum":["checkbox"]},
+                          "regex": {"not": {}},
+                          "regexDescription": {"not": {}},
+                          "minValue": {"not": {}},
+                          "maxValue": {"not": {}},
+                          "minLength": {"not": {}},
+                          "maxLength": {"not": {}}
+                        }
+                      },
+                      {
+                        "properties":{
+                          "type":{"enum":["enum"]},
+                          "regex": {"not": {}},
+                          "regexDescription": {"not": {}},
+                          "minValue": {"not": {}},
+                          "maxValue": {"not": {}},
+                          "minLength": {"not": {}},
+                          "maxLength": {"not": {}}
+                        },
+                        "required": ["values"]
+                      }
+                    ],
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "title": "Formfield type",
+                        "description": "The formfield type",
+                        "enum": ["text","password","checkbox","enum","query","number","radio","expression","table"]
+                      },
+                      "name": {
+                        "$id": "/field",
+                        "type": "string",
+                        "title": "field name",
+                        "description": "the name of the table field"
+                      },
+                      "label": {
+                        "type": "string",
+                        "title": "Formfield label",
+                        "description": "The label for the table field"
+                      },
+                      "placeholder": {
+                        "type": "string",
+                        "title": "table field placeholder",
+                        "description": "A placeholder, temporary display value"
+                      },
+                      "default": {
+                        "type": ["string","boolean","array","integer"],
+                        "title": "Default value",
+                        "description": "A default value for the formfield"
+                      },
+                      "required": {
+                        "type": "boolean",
+                        "title": "Is required",
+                        "description": "A flag whether the formfield is required or not",
+                        "default": false
+                      },
+                      "regex": {
+                        "type": "string",
+                        "title": "Formfield regex",
+                        "description": "A regular expression to validate the formfield"
+                      },
+                      "regexDescription": {
+                        "type": "string",
+                        "title": "Formfield regex description",
+                        "description": "A friendly description if the regular expression does not match"
+                      },
+                      "minValue": {
+                        "type": "integer",
+                        "title": "Minimum value",
+                        "description": "A minimum value for a numeric formfield"
+                      },
+                      "maxValue": {
+                        "type": "integer",
+                        "title": "Maximum value",
+                        "description": "A maximum value for a numeric formfield"
+                      },
+                      "minLength": {
+                        "type": "integer",
+                        "title": "Minimum string length",
+                        "description": "A minimum length for a string formfield"
+                      },
+                      "maxLength": {
+                        "type": "integer",
+                        "title": "Maximum string length",
+                        "description": "A maximum length for a string formfield"
+                      },
+                      "values": {
+                        "type": "array",
+                        "title": "Enumeration values",
+                        "description": "A list of predefined values to populated the enumeration field (dropdown)",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "icon": {
+                        "$ref": "/icon"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                }
 							},
 							"additionalProperties": false
 						}
