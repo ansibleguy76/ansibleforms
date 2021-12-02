@@ -18,7 +18,7 @@
               <h3 class="title is-3" v-if="checkGroupDependencies(group)">{{group}}</h3>
               <div :key="field.name" v-for="field in filterfieldsByGroup(group)">
                 <transition name="slide">
-                  <div class="field" v-if="checkDependencies(field,true)">
+                  <div class="field mt-3" v-if="checkDependencies(field,true)">
                     <!-- add field label -->
                     <label v-if="!field.hide" class="label">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span></label>
                     <!-- type = checkbox -->

@@ -1,7 +1,7 @@
 <template>
     <div>
         <BulmaModal v-if="showEdit" title="Edit" action="Save" @click="saveItem()" @close="showEdit=false" @cancel="showEdit=false">
-          <div v-for="field,index in tableFields" :key="field.name" class="field">
+          <div v-for="field,index in tableFields" :key="field.name" class="field mt-3">
 
               <!-- add field label -->
               <label class="label">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span></label>
@@ -10,15 +10,20 @@
                 <input v-if="field.type=='checkbox'" :autofocus="index==0" :checked="editedItem[field.name]" v-model="editedItem[field.name]" :name="field.name" type="checkbox">
                 {{ field.placeholder }}
               </label>
-              <p :class="{'has-icons-left':!!field.icon}" class="control">
+              <div :class="{'has-icons-left':!!field.icon}" class="control">
                 <input v-if="field.type=='text'" :autofocus="index==0" :class="{'is-danger':$v.editedItem[field.name].$invalid}" class="input" type="text" v-model="$v.editedItem[field.name].$model" :placeholder="field.placeholder" :name="field.name">
                 <input v-if="field.type=='number'" :autofocus="index==0" class="input" type="number" v-model="editedItem[field.name]" :placeholder="field.placeholder" :name="field.name">
-
+                <div v-if="field.type=='enum'" class="select">
+                  <select :name="field.name" :class="{'is-danger':$v.editedItem[field.name].$invalid}" v-model="$v.editedItem[field.name].$model">
+                    <option v-if="!field.required" value=""></option>
+                    <option v-for="option in field.values" :key="option" :selected="field.default==option" :value="option">{{ option }}</option>
+                  </select>
+                </div>
                 <!-- add left icon, but not for query, because that's a component with icon builtin -->
                 <span v-if="!!field.icon && field.type!='query'" class="icon is-small is-left">
                   <font-awesome-icon :icon="field.icon" />
                 </span>
-              </p>
+              </div>
 
               <p class="has-text-danger" v-if="!$v.editedItem[field.name].required">This field is required</p>
               <p class="has-text-danger" v-if="'minLength' in $v.editedItem[field.name] && !$v.editedItem[field.name].minLength">Must be at least {{$v.editedItem[field.name].$params.minLength.min}} characters long</p>
