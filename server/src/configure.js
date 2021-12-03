@@ -1,4 +1,7 @@
 const express = require('express');
+const cors = require('cors')
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('./swagger.json');
 const bodyParser = require('body-parser');
 const passport = require('passport');
 const appConfig = require('../config/app.config')
@@ -6,6 +9,7 @@ const appConfig = require('../config/app.config')
 
 
 module.exports = app => {
+  app.use(cors())
   // load the .env.development file ; it loads a bunch of environment variables
   // we are not doing this for production, where the variables are coming from the actual environment
   if (appConfig.nodeEnvironment !== 'production' || appConfig.forceDotEnv ){
@@ -55,9 +59,9 @@ module.exports = app => {
           err.status=401
           next(err)
         }
-
   }
   // import vue routes
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
   app.use('/api/v1/auth', loginRoutes)
   app.use('/api/v1/schema', schemaRoutes)
   app.use('/api/v1/token', tokenRoutes)

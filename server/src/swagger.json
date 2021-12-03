@@ -1,0 +1,237 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "This is the swagger interface for AnsibleForms.",
+    "version": "1.0.0",
+    "title": "AnsibleForms",
+    "contact": {
+      "email": "info@ansibleforms.com"
+    }
+  },
+  "host": "172.16.50.1:3000",
+  "basePath": "/api/v1",
+  "tags": [
+    {
+      "name": "auth",
+      "description": "Authenticate to the api"
+    },
+    {
+      "name": "ansible",
+      "description": "Operations on ansible and job history"
+    }
+  ],
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "summary": "Get authorization bearer token",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "400": {
+            "description": "Invalid username/password supplied"
+          }
+        }
+      }
+    },
+    "/ansible/launch": {
+      "post": {
+        "tags": [
+          "ansible"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "form payload",
+            "schema": {
+              "type": "object",
+              "required": [
+                "playbook"
+              ],
+              "properties": {
+                "ansiblePlaybook": {
+                  "type": "string"
+                },
+                "ansibleForm": {
+                  "type": "object"
+                },
+                "ansibleInventory": {
+                  "type": "string"
+                },
+                "ansibleTags": {
+                  "type": "string",
+                  "description": "Comma separated list of tags"
+                }
+              }
+            }
+          }
+        ],
+        "summary": "Launch playbook",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "/ansible/jobs": {
+      "get": {
+        "tags": [
+          "ansible"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get jobs",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "/ansible/job/{jobId}": {
+      "get": {
+        "tags": [
+          "ansible"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "jobId",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the job to get."
+          },
+          {
+            "in": "query",
+            "name": "text",
+            "type": "boolean",
+            "required": false,
+            "description": "Get plain text output."
+          }
+        ],
+        "summary": "Get job output",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "/ansible/job/{jobId}/abort": {
+      "post": {
+        "tags": [
+          "ansible"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "jobId",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the job to abort."
+          }
+        ],
+        "summary": "Abort job",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "basicAuth": {
+      "type": "basic"
+    },
+    "bearerAuth": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
+    }
+  }
+}

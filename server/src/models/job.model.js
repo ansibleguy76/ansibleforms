@@ -99,8 +99,8 @@ Job.findAll = function (result) {
       result(err, null);
     }
 };
-Job.findById = function (id,result) {
-    logger.debug(`Finding job ${id}`)
+Job.findById = function (id,text,result) {
+    logger.debug(`Finding job ${id} | ${text}` )
     try{
       mysql.query("SELECT `status`,COALESCE(output,'') output,COALESCE(`timestamp`,'') `timestamp`,COALESCE(output_type,'stdout') output_type FROM AnsibleForms.`jobs` LEFT JOIN AnsibleForms.`job_output` ON jobs.id=job_output.job_id WHERE jobs.id=? ORDER by job_output.order;",id, function (err, res) {
           if(err) {
@@ -114,34 +114,37 @@ Job.findById = function (id,result) {
                 var addedTimestamp=false
                 var output2=[]
                 var record = el.output.trim('\r\n')
-                if(el.output_type=="stderr"){
-                  // mark errors
-                  record = "<span class='has-text-danger'>"+record+"</span>"
-                }else{
-                  // mark play / task lines as bold
-                  if(record.match(/^([A-Z]*) \[([^\]]*)\] (\**)$/gm)){
-                    record = "<strong>" + record + "</strong>"
+                if(!text){
+                  if(el.output_type=="stderr"){
+                    // mark errors
+                    record = "<span class='has-text-danger'>"+record+"</span>"
+                  }else{
+                    // mark play / task lines as bold
+                    if(record.match(/^([A-Z]*) \[([^\]]*)\] (\**)$/gm)){
+                      record = "<strong>" + record + "</strong>"
+                    }
+                    // mark succes lines
+                    if(record.match(/^(ok): \[([^\]]*)\].*/gm)){
+                      record = "<span class='has-text-success'>" + record + "</span>"
+                    }
+                    // mark change lines
+                    if(record.match(/^(changed): \[([^\]]*)\].*/gm)){
+                      record = "<span class='has-text-warning'>" + record + "</span>"
+                    }
+                    // mark skip lines
+                    if(record.match(/^(skipping): \[([^\]]*)\].*/gm)){
+                      record = "<span class='has-text-grey'>" + record + "</span>"
+                    }
+                    // summary line ?
+                    record=record.replace(/(ok=[1-9]+)/g, "<span class='tag is-success'>$1</span>")
+                                .replace(/(changed=[1-9]+)/g, "<span class='tag is-warning'>$1</span>")
+                                .replace(/(failed=[1-9]+)/g, "<span class='tag is-warning'>$1</span>")
+                                .replace(/(unreachable=[1-9]+)/g, "<span class='tag is-warning'>$1</span>")
                   }
-                  // mark succes lines
-                  if(record.match(/^(ok): \[([^\]]*)\].*/gm)){
-                    record = "<span class='has-text-success'>" + record + "</span>"
-                  }
-                  // mark change lines
-                  if(record.match(/^(changed): \[([^\]]*)\].*/gm)){
-                    record = "<span class='has-text-warning'>" + record + "</span>"
-                  }
-                  // mark skip lines
-                  if(record.match(/^(skipping): \[([^\]]*)\].*/gm)){
-                    record = "<span class='has-text-grey'>" + record + "</span>"
-                  }
-                  // summary line ?
-                  record=record.replace(/(ok=[1-9]+)/g, "<span class='tag is-success'>$1</span>")
-                              .replace(/(changed=[1-9]+)/g, "<span class='tag is-warning'>$1</span>")
-                              .replace(/(failed=[1-9]+)/g, "<span class='tag is-warning'>$1</span>")
-                              .replace(/(unreachable=[1-9]+)/g, "<span class='tag is-warning'>$1</span>")
                 }
+
                 record.replace('\r\n','\n').split('\n').forEach(function(el2,i){
-                  if(el2!="" && !addedTimestamp){
+                  if(el2!="" && !addedTimestamp && !text){
                     el2+=" <span class='tag is-info is-light'>"+el.timestamp+"</span>"
                     addedTimestamp=true
                   }

@@ -8,7 +8,7 @@ const logger=require("../lib/logger");
 
 exports.login = async function(req, res,next) {
     passport.authenticate(
-      'login',
+      'basic',
       async (err, user, info) => {
         try {
 
@@ -31,7 +31,7 @@ exports.login = async function(req, res,next) {
               if (error){
                 logger.error(error)
                 return next(error);
-              } 
+              }
               logger.debug(JSON.stringify(user))
 
               const token = jwt.sign({user}, authConfig.secret,{ expiresIn: authConfig.jwtExpiration});

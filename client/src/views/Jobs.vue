@@ -99,7 +99,7 @@
     methods:{
       loadJobs(){
         var ref= this;
-        axios.get(`/api/v1/job?timestamp=${new Date().getTime()}`,TokenStorage.getAuthentication())                               // load forms
+        axios.get(`/api/v1/ansible/jobs?timestamp=${new Date().getTime()}`,TokenStorage.getAuthentication())                               // load forms
           .then((result)=>{
             ref.jobs=result.data.data.output;
             this.setPages();

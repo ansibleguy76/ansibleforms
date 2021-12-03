@@ -88,7 +88,7 @@ exports.abortJob = function(req, res) {
     });
 };
 exports.getJob = function(req, res) {
-    Job.findById(req.params.id, function(err, job) {
+    Job.findById(req.params.id,req.query.text||false, function(err, job) {
         if (err){
             res.json(new RestResult("error","failed to find job",null,err))
         }else{
@@ -115,5 +115,24 @@ exports.getJob = function(req, res) {
               res.json(new RestResult("error","failed to find job",null,"No such job"))
             }
         }
+    });
+};
+exports.findAllJobs = function(req, res) {
+    Job.findAll(function(err, job) {
+        if (err){
+          res.json(new RestResult("error","failed to find jobs",null,err))
+        }else{
+          res.json(new RestResult("success","jobs found",job,""));
+        }
+    });
+};
+exports.deleteJob = function(req, res) {
+    Job.delete( req.params.id, function(err, job) {
+        if (err){
+            res.json(new RestResult("error","failed to delete job",null,err))
+        }else{
+            res.json(new RestResult("success","job deleted",null,""));
+        }
+
     });
 };

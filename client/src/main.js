@@ -3,6 +3,11 @@ import Toast from "vue-toastification";
 // Import the CSS or use your own!
 import "./../public/assets/toast.scss";
 import { POSITION } from "vue-toastification";
+const options = {
+    // You can set your default options here
+    position:POSITION.BOTTOM_RIGHT
+};
+Vue.use(Toast,options)
 import App from './App.vue'
 import router from "./router"
 import TokenStorage from "./lib/TokenStorage"
@@ -16,11 +21,7 @@ library.add(far,fas) // add all solid icons
 Vue.component('font-awesome-icon', FontAwesomeIcon)
 // parse scss, including bulma
 import "./../public/assets/main.scss"
-const options = {
-    // You can set your default options here
-    position:POSITION.BOTTOM_RIGHT
-};
-Vue.use(Toast,options)
+
 axios.interceptors.response.use( (response) => {
   // Return a successful response back to the calling service
   return response;

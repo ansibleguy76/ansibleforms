@@ -45,7 +45,11 @@
 
               if (!this.$v.user.$invalid) {
                 console.log("Logging in")
-                axios.post("/api/v1/auth/login",this.user)
+                var basicAuth = 'Basic ' + btoa(this.user.username + ':' + this.user.password);
+                var postconfig={
+                  headers:{'Authorization':basicAuth}
+                }
+                axios.post("/api/v1/auth/login",{},postconfig)
                   .then((result)=>{
                     if(result.data.token){
                       console.log("Login success, storing tokens")

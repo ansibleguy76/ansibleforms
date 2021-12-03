@@ -1,17 +1,13 @@
 const passport = require('passport');
-const localStrategy = require('passport-local').Strategy;
+const basicStrategy = require('passport-http').BasicStrategy;
 const UserModel = require('./../models/user.model');
 const authConfig = require('../../config/auth.config.js')
 const logger=require("../lib/logger");
 
 // create username / password login strategy
 passport.use(
-  'login',
-  new localStrategy(
-    {
-      usernameField: 'username',
-      passwordField: 'password'
-    },
+  'basic',
+  new basicStrategy(
     async (username, password, done) => {
       try {
         var user = {}
