@@ -859,15 +859,15 @@
           // local ansible
           if(this.currentForm.type=="ansible"){
             postdata.ansibleExtraVars = this.formdata
-            postdata.ansibleForm = this.currentForm.name;
+            postdata.formName = this.currentForm.name;
             postdata.ansibleInventory = this.currentForm.inventory;
             postdata.ansiblePlaybook = this.currentForm.playbook;
             postdata.ansibleTags = this.currentForm.tags || "";
-            postdata.ansibleCredentials = {}
+            postdata.credentials = {}
             this.currentForm.fields
               .filter(f => f.asCredential==true)
               .forEach(f => {
-                postdata.ansibleCredentials[f.name]=this.formdata[f.name]
+                postdata.credentials[f.name]=this.formdata[f.name]
               })
             this.ansibleResult.message= "Connecting with ansible ";
             this.ansibleResult.status="info";
@@ -899,13 +899,19 @@
 
           // remote awx
           }else if(this.currentForm.type=="awx"){
-            this.formdata.awxInventory = this.currentForm.inventory;
-            this.formdata.awxJobTemplate = this.currentForm.template;
-            this.formdata.awxJobTags = this.currentForm.tags;
+            postdata.awxExtraVars = this.formdata
+            postdata.awxInventory = this.currentForm.inventory;
+            postdata.awxTemplate = this.currentForm.template;
+            postdata.awxTags = this.currentForm.tags;
             this.ansibleResult.message= "Connecting with awx ";
             this.ansibleResult.status="info";
-
-            axios.post("/api/v1/awx/launch/",this.formdata,TokenStorage.getAuthentication())
+            postdata.credentials = {}
+            this.currentForm.fields
+              .filter(f => f.asCredential==true)
+              .forEach(f => {
+                postdata.credentials[f.name]=this.formdata[f.name]
+              })
+            axios.post("/api/v1/awx/launch/",postdata,TokenStorage.getAuthentication())
               .then((result)=>{
                   if(result){
                     this.ansibleResult=result.data;

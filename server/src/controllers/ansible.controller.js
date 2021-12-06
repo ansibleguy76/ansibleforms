@@ -18,11 +18,11 @@ exports.run = async function(req, res) {
     }else{
         // get the form data
         var restResult = new RestResult("info","","","")
-        var form = req.body.ansibleForm;
+        var form = req.body.formName;
         var playbook = req.body.ansiblePlaybook;
         var inventory = req.body.ansibleInventory;
         var tags = req.body.ansibleTags;
-        for (const [key, value] of Object.entries(req.body.ansibleCredentials)) {
+        for (const [key, value] of Object.entries(req.body.credentials)) {
           if(value=="__self__"){
             req.body.ansibleExtraVars[key]={
               host:dbConfig.host,
@@ -79,7 +79,7 @@ exports.updateJob = function(req, res) {
     });
 };
 exports.abortJob = function(req, res) {
-    Job.update({status:"abort"},req.params.id, function(err, job) {
+    Job.abort(req.params.id, function(err, job) {
         if (err){
             res.json(new RestResult("error","failed to abort job",null,err))
         }else{

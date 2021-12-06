@@ -14,7 +14,7 @@
       mode: '0774'
       state: directory
   - name: Back up all databases
-    no_log: true
+    # no_log: true
     mysql_db:
       state: dump
       name: AnsibleForms

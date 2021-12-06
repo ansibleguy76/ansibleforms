@@ -1,0 +1,27 @@
+---
+- name: cleanup ansibleforms jobs
+  hosts: localhost
+  vars:
+    login: &login
+      login_host: "{{ mysql_credential.host}}"
+      login_port: "{{ mysql_credential.port}}"
+      login_user: "{{ mysql_credential.user }}"
+      login_password: "{{ mysql_credential.password }}"
+  tasks:
+  - name: Get current job
+    # no_log: true
+    community.mysql.mysql_query:
+      query: SELECT id FROM AnsibleForms.jobs ORDER BY id DESC limit 1
+      <<: *login
+    register: result
+  - name: Remove jobs
+    # no_log: true
+    community.mysql.mysql_query:
+      query: DELETE FROM AnsibleForms.jobs WHERE id<>%(current_job_id)s
+      named_args:
+        current_job_id: "{{result.query_result[0][0].id}}"
+      <<: *login
+    register: result
+  - name: print result
+    debug:
+      msg: "{{ result }}"

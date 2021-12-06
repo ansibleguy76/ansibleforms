@@ -75,10 +75,10 @@ Ldap.check = function(ldapConfig,result){
       },
       adminDn: ldapConfig.bind_user_dn,
       adminPassword: decrypt(ldapConfig.bind_user_pw),
-      userPassword: "aaa",
+      userPassword: "dummypassword_for_check",
       userSearchBase: ldapConfig.search_base,
       usernameAttribute: ldapConfig.username_attribute,
-      username: "aaa",
+      username: "dummyuser_for_check",
       // starttls: false
     }
     // ldap-authentication has bad cert check, so we check first !!

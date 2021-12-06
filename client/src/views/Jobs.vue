@@ -1,5 +1,6 @@
 <template>
   <section class="section">
+    <BulmaModal v-if="showDelete" title="Comfirm" action="Delete" @click="deleteJob(tempJobId);showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete job '{{ tempJobId }}'</BulmaModal>
     <div class="container">
       <h1 class="title has-text-info"><font-awesome-icon icon="history" /> Job history
         <button @click="loadJobs" class="button is-primary is-small is-pulled-right">
@@ -10,9 +11,10 @@
         </button>
       </h1>
       <div>
-        <table v-if="isLoaded" class="table is-bordered is-fullwidth">
+        <table v-if="isLoaded" class="table is-bordered is-narrow">
           <thead>
             <tr class="has-text-left">
+              <th style="width:100px" v-if="isAdmin">Action</th>
               <th style="width:100px">id</th>
               <th>form</th>
               <th>playbook</th>
@@ -23,18 +25,19 @@
             </tr>
           </thead>
           <tbody>
-          <tr v-for="j in displayedJobs" :key="j.id" class="is-clickable has-text-left" @click="loadOutput(j.id)" :class="{'has-background-success-light':(j.status=='success' && j.id!=jobId),'has-background-danger':(j.status=='failed' && j.id!=jobId),'has-background-warning':(j.status=='aborted' && j.id!=jobId),'has-background-info':j.id==jobId,'has-text-white':j.id==jobId}">
-            <td>{{j.id}}</td>
-            <td>{{j.form}}</td>
-            <td>{{j.playbook}}</td>
-            <td>{{j.status}}</td>
-            <td>{{j.start | moment('YYYY-MM-DD HH:mm:ss')}}</td>
-            <td>{{j.end | moment('YYYY-MM-DD HH:mm:ss')}}</td>
-            <td>{{j.user}} ({{j.user_type}})</td>
+          <tr v-for="j in displayedJobs" :key="j.id" :class="{'has-background-success-light':(j.status=='success' && j.id!=jobId),'has-background-danger':(j.status=='failed' && j.id!=jobId),'has-background-warning':(j.status=='aborted' && j.id!=jobId),'has-background-info':j.id==jobId,'has-text-white':j.id==jobId}">
+            <td v-if="isAdmin" class="has-background-info-light"><span class="icon has-text-danger is-clickable" @click="tempJobId=j.id;showDelete=true" title="Delete job"><font-awesome-icon icon="trash-alt" /></span></td>
+            <td class="is-clickable has-text-left" @click="loadOutput(j.id)">{{j.id}}</td>
+            <td class="is-clickable has-text-left" @click="loadOutput(j.id)">{{j.form}}</td>
+            <td class="is-clickable has-text-left" @click="loadOutput(j.id)">{{j.playbook}}</td>
+            <td class="is-clickable has-text-left" @click="loadOutput(j.id)">{{j.status}}</td>
+            <td class="is-clickable has-text-left" @click="loadOutput(j.id)">{{j.start | moment('YYYY-MM-DD HH:mm:ss')}}</td>
+            <td class="is-clickable has-text-left" @click="loadOutput(j.id)">{{j.end | moment('YYYY-MM-DD HH:mm:ss')}}</td>
+            <td class="is-clickable has-text-left" @click="loadOutput(j.id)">{{j.user}} ({{j.user_type}})</td>
           </tr>
           </tbody>
         </table>
-        <nav v-if="isLoaded" class="pagination" role="pagination" aria-label="pagination">
+        <nav v-if="isLoaded && jobs.length>perPage" class="pagination" role="pagination" aria-label="pagination">
           <a class="pagination-previous" v-if="page != 1" @click="page--">Previous</a>
           <a class="pagination-next" @click="page++" v-if="page < pages.length">Next page</a>
           <ul class="pagination-list">
@@ -73,7 +76,7 @@
 <script>
   import Vue from 'vue'
   import axios from 'axios'
-  import BulmaButton from './../components/BulmaButton.vue'
+  import BulmaModal from './../components/BulmaModal.vue'
   import moment from 'vue-moment'
   import TokenStorage from './../lib/TokenStorage'
 
@@ -82,8 +85,9 @@
   export default{
     name: "Jobs",
     props:{
+      isAdmin:{type:Boolean}
     },
-    components:{},
+    components:{BulmaModal},
     data(){
       return  {
         jobs : [],
@@ -93,7 +97,9 @@
         pages: [],
         isLoaded:false,
         jobOutput:"",
-        jobId:undefined
+        jobId:undefined,
+        tempJobId:undefined,
+        showDelete:false
       }
     },
     methods:{
@@ -142,6 +148,26 @@
           .catch(function(err){
             console.log("error getting ansible job " + err)
             ref.$toast.error("Failed to get job output");
+          })
+      },
+      deleteJob(id){
+        var ref=this
+        this.jobId=id
+        axios.delete("/api/v1/ansible/job/" + id,TokenStorage.getAuthentication())
+          .then((result)=>{
+              console.log(result)
+              if(result.data.status=="success"){
+                ref.jobOutput=result.data.data.output;
+                ref.$toast.success("Job "+id+" is deleted");
+                this.loadJobs()
+                this.tempJobId=undefined
+              }else{
+                ref.$toast.error("Failed to delete job "+id);
+              }
+          })
+          .catch(function(err){
+            console.log("error deleting ansible job " + err)
+            ref.$toast.error("Failed to delete job");
           })
       }
     },

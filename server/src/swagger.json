@@ -1,14 +1,13 @@
 {
   "swagger": "2.0",
   "info": {
-    "description": "This is the swagger interface for AnsibleForms.",
+    "description": "This is the swagger interface for AnsibleForms.\r\nUse the `/auth/login` api with basic authentication to obtain a JWT token.\r\nThen use the access token, prefixed with the word '**Bearer**' to use all other api's.\r\nNote that the access token is limited in time.  You can then either login again and get a new set of tokens or use the `/token` api and the refresh token to obtain a new set (preferred).",
     "version": "1.0.0",
     "title": "AnsibleForms",
     "contact": {
       "email": "info@ansibleforms.com"
     }
   },
-  "host": "172.16.50.1:3000",
   "basePath": "/api/v1",
   "tags": [
     {
@@ -18,9 +17,42 @@
     {
       "name": "ansible",
       "description": "Operations on ansible and job history"
+    },
+    {
+      "name": "awx",
+      "description": "Operations on awx template jobs"
+    },
+    {
+      "name": "awx config",
+      "description": "Operations on awx configuration"
+    },
+    {
+      "name": "forms config",
+      "description": "Operations on forms configuration"
+    },
+    {
+      "name": "ldap config",
+      "description": "Operations on ldap configuration"
+    },
+    {
+      "name": "credentials",
+      "description": "Operations on credentials"
+    },
+    {
+      "name": "users",
+      "description": "Operations about users"
+    },
+    {
+      "name": "groups",
+      "description": "Operations about groups"
+    },
+    {
+      "name": "tokens",
+      "description": "Operations about tokens"
     }
   ],
   "schemes": [
+    "https",
     "http"
   ],
   "paths": {
@@ -42,11 +74,12 @@
           "200": {
             "description": "successful operation",
             "schema": {
-              "type": "string"
+              "type": "object",
+              "example": {
+                "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoiQWRtaW5pc3RyYXRvciIsInR5cGUiOiJsZGFwIiwicm9sZXMiOlsicHVibGljIiwiYWRtaW4iXX0sImlhdCI6MTYzODc4Nzk3OSwiZXhwIjoxNjM4Nzg5Nzc5fQ.7QA4n3JlPVuatTY7e1dKLQbB4PlW72Jkep_oRe9kevM",
+                "refreshtoken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoiQWRtaW5pc3RyYXRvciIsInR5cGUiOiJsZGFwIiwicm9sZXMiOlsicHVibGljIiwiYWRtaW4iXX0sImlhdCI6MTYzODc4Nzk3OSwiZXhwIjoxNjM4ODc0Mzc5fQ.ku8-MOflGvdMNR7fZkGn28zSDaG4i2QClqOy4P35zYA"
+              }
             }
-          },
-          "400": {
-            "description": "Invalid username/password supplied"
           }
         }
       }
@@ -71,24 +104,35 @@
                 "playbook"
               ],
               "properties": {
-                "ansiblePlaybook": {
-                  "type": "string"
+                "formName": {
+                  "type": "string",
+                  "example": "Create Virtual Machine"
                 },
-                "ansibleForm": {
-                  "type": "object"
+                "ansiblePlaybook": {
+                  "type": "string",
+                  "example": "create_vm.yaml"
+                },
+                "ansibleExtravars": {
+                  "type": "object",
+                  "example": "{'name':'vm1','datacenter':'dc1','cluster':'cluster1'}"
                 },
                 "ansibleInventory": {
-                  "type": "string"
+                  "type": "string",
+                  "example": "vcenter.domain.local"
                 },
                 "ansibleTags": {
                   "type": "string",
-                  "description": "Comma separated list of tags"
+                  "example": "create,vmware"
+                },
+                "credentials": {
+                  "type": "object",
+                  "example": "{'vcenterCredentials':'VCENTER'}"
                 }
               }
             }
           }
         ],
-        "summary": "Launch playbook",
+        "summary": "Launch Ansible playbook",
         "produces": [
           "application/json"
         ],
@@ -96,13 +140,24 @@
           "200": {
             "description": "successful operation",
             "schema": {
-              "type": "string"
+              "type": "object",
+              "example": {
+                "status": "info",
+                "message": "succesfully launched playbook",
+                "data": {
+                  "output": {
+                    "id": 91
+                  },
+                  "error": ""
+                }
+              }
             }
           },
           "401": {
             "description": "unauthorized",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
             }
           }
         }
@@ -118,7 +173,7 @@
             "bearerAuth": []
           }
         ],
-        "summary": "Get jobs",
+        "summary": "Get Ansible jobs history",
         "produces": [
           "application/json"
         ],
@@ -126,13 +181,63 @@
           "200": {
             "description": "successful operation",
             "schema": {
-              "type": "string"
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "jobs found",
+                "data": {
+                  "output": [
+                    {
+                      "id": 91,
+                      "form": "Nou seggg",
+                      "playbook": "dummy.yaml",
+                      "status": "success",
+                      "start": "2021-12-06T09:53:49.000Z",
+                      "end": "2021-12-06T10:53:50.000Z",
+                      "user": "Administrator",
+                      "user_type": "ldap"
+                    },
+                    {
+                      "id": 90,
+                      "form": "Backup Ansibleforms",
+                      "playbook": "ansibleforms_backup.yaml",
+                      "status": "success",
+                      "start": "2021-12-06T09:52:14.000Z",
+                      "end": "2021-12-06T10:52:17.000Z",
+                      "user": "Administrator",
+                      "user_type": "ldap"
+                    },
+                    {
+                      "id": 89,
+                      "form": "Demo Form Ansible No input",
+                      "playbook": "dummy.yaml",
+                      "status": "success",
+                      "start": "2021-12-06T09:52:07.000Z",
+                      "end": "2021-12-06T10:52:08.000Z",
+                      "user": "Administrator",
+                      "user_type": "ldap"
+                    },
+                    {
+                      "id": 88,
+                      "form": "Cleanup Ansibleforms Jobs",
+                      "playbook": "ansibleforms_job_cleanup.yaml",
+                      "status": "success",
+                      "start": "2021-12-06T09:18:17.000Z",
+                      "end": "2021-12-06T10:18:19.000Z",
+                      "user": "Administrator",
+                      "user_type": "ldap"
+                    }
+                  ],
+                  "error": ""
+                }
+              }
             }
           },
           "401": {
             "description": "unauthorized",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
             }
           }
         }
@@ -164,7 +269,7 @@
             "description": "Get plain text output."
           }
         ],
-        "summary": "Get job output",
+        "summary": "Get Ansible job output",
         "produces": [
           "application/json"
         ],
@@ -172,13 +277,68 @@
           "200": {
             "description": "successful operation",
             "schema": {
-              "type": "string"
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "job ran successfully",
+                "data": {
+                  "output": "[WARNING]: Unable to parse\r\n/root/ansible_forms/server/persistent/playbooks/string as an inventory source\r\n\r\n[WARNING]: No inventory was parsed, only implicit localhost is available\r\n\r\n[WARNING]: provided hosts list is empty, only localhost is available. Note that\r\nthe implicit localhost does not match 'all'\r\n\r\nPLAY [This is a hello-world example] *******************************************\r\n\r\nTASK [Gathering Facts] *********************************************************\r\n\r\nok: [localhost]\r\n\r\nPLAY RECAP *********************************************************************\r\nlocalhost                  : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0\r\n\r\n",
+                  "error": ""
+                }
+              }
             }
           },
           "401": {
             "description": "unauthorized",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "ansible"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "jobId",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the job to delete."
+          }
+        ],
+        "summary": "Delete Ansible job from history",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "job deleted",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
             }
           }
         }
@@ -203,7 +363,7 @@
             "description": "Numeric ID of the job to abort."
           }
         ],
-        "summary": "Abort job",
+        "summary": "Abort Ansible job",
         "produces": [
           "application/json"
         ],
@@ -211,13 +371,1850 @@
           "200": {
             "description": "successful operation",
             "schema": {
-              "type": "string"
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "job aborted",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
             }
           },
           "401": {
             "description": "unauthorized",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/awx/launch": {
+      "post": {
+        "tags": [
+          "awx"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "form payload",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "awxTemplate": {
+                  "type": "string",
+                  "example": "Create VM"
+                },
+                "awxExtravars": {
+                  "type": "object",
+                  "example": "{'name':'vm1','datacenter':'dc1','cluster':'cluster1'}"
+                },
+                "awxInventory": {
+                  "type": "string",
+                  "example": "vcenter.domain.local"
+                },
+                "awxTags": {
+                  "type": "string",
+                  "example": "create,vmware"
+                },
+                "credentials": {
+                  "type": "object",
+                  "example": "{'vcenterCredentials':'VCENTER'}"
+                }
+              }
+            }
+          }
+        ],
+        "summary": "Launch AWX template",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "info",
+                "message": "successfully launched jobtemplate HelloWorld",
+                "data": {
+                  "output": {
+                    "job": 557,
+                    "ignored_fields": {},
+                    "id": 557,
+                    "type": "job",
+                    "url": "/api/v2/jobs/557/",
+                    "related": {
+                      "created_by": "/api/v2/users/1/",
+                      "modified_by": "/api/v2/users/1/",
+                      "labels": "/api/v2/jobs/557/labels/",
+                      "inventory": "/api/v2/inventories/1/",
+                      "project": "/api/v2/projects/9/",
+                      "organization": "/api/v2/organizations/1/",
+                      "credentials": "/api/v2/jobs/557/credentials/",
+                      "unified_job_template": "/api/v2/job_templates/10/",
+                      "stdout": "/api/v2/jobs/557/stdout/",
+                      "job_events": "/api/v2/jobs/557/job_events/",
+                      "job_host_summaries": "/api/v2/jobs/557/job_host_summaries/",
+                      "activity_stream": "/api/v2/jobs/557/activity_stream/",
+                      "notifications": "/api/v2/jobs/557/notifications/",
+                      "create_schedule": "/api/v2/jobs/557/create_schedule/",
+                      "job_template": "/api/v2/job_templates/10/",
+                      "cancel": "/api/v2/jobs/557/cancel/",
+                      "relaunch": "/api/v2/jobs/557/relaunch/"
+                    },
+                    "summary_fields": {
+                      "organization": {
+                        "id": 1,
+                        "name": "Default",
+                        "description": ""
+                      },
+                      "inventory": {
+                        "id": 1,
+                        "name": "Demo Inventory",
+                        "description": "",
+                        "has_active_failures": false,
+                        "total_hosts": 1,
+                        "hosts_with_active_failures": 0,
+                        "total_groups": 0,
+                        "has_inventory_sources": false,
+                        "total_inventory_sources": 0,
+                        "inventory_sources_with_failures": 0,
+                        "organization_id": 1,
+                        "kind": ""
+                      },
+                      "project": {
+                        "id": 9,
+                        "name": "HelloWorld",
+                        "description": "",
+                        "status": "successful",
+                        "scm_type": "git"
+                      },
+                      "job_template": {
+                        "id": 10,
+                        "name": "HelloWorld",
+                        "description": ""
+                      },
+                      "unified_job_template": {
+                        "id": 10,
+                        "name": "HelloWorld",
+                        "description": "",
+                        "unified_job_type": "job"
+                      },
+                      "created_by": {
+                        "id": 1,
+                        "username": "admin",
+                        "first_name": "",
+                        "last_name": ""
+                      },
+                      "modified_by": {
+                        "id": 1,
+                        "username": "admin",
+                        "first_name": "",
+                        "last_name": ""
+                      },
+                      "user_capabilities": {
+                        "delete": true,
+                        "start": true
+                      },
+                      "labels": {
+                        "count": 0,
+                        "results": []
+                      },
+                      "credentials": []
+                    },
+                    "created": "2021-12-06T11:07:07.097286Z",
+                    "modified": "2021-12-06T11:07:07.129828Z",
+                    "name": "HelloWorld",
+                    "description": "",
+                    "job_type": "run",
+                    "inventory": 1,
+                    "project": 9,
+                    "playbook": "helloworld.yml",
+                    "scm_branch": "",
+                    "forks": 0,
+                    "limit": "",
+                    "verbosity": 0,
+                    "extra_vars": "{\"hello\": {\"world\": \"test\"}}",
+                    "job_tags": "",
+                    "force_handlers": false,
+                    "skip_tags": "",
+                    "start_at_task": "",
+                    "timeout": 0,
+                    "use_fact_cache": false,
+                    "organization": 1,
+                    "unified_job_template": 10,
+                    "launch_type": "manual",
+                    "status": "pending",
+                    "failed": false,
+                    "started": null,
+                    "finished": null,
+                    "canceled_on": null,
+                    "elapsed": 0,
+                    "job_args": "",
+                    "job_cwd": "",
+                    "job_env": {},
+                    "job_explanation": "",
+                    "execution_node": "",
+                    "controller_node": "",
+                    "result_traceback": "",
+                    "event_processing_finished": false,
+                    "job_template": 10,
+                    "passwords_needed_to_start": [],
+                    "allow_simultaneous": false,
+                    "artifacts": {},
+                    "scm_revision": "",
+                    "instance_group": null,
+                    "diff_mode": false,
+                    "job_slice_number": 0,
+                    "job_slice_count": 1,
+                    "webhook_service": "",
+                    "webhook_credential": null,
+                    "webhook_guid": ""
+                  },
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/awx/job/{jobId}": {
+      "get": {
+        "tags": [
+          "awx"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "jobId",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the job to get."
+          }
+        ],
+        "summary": "Get AWX job output",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "job ran successfully",
+                "data": {
+                  "output": "PLAY [Hello World!] ************************************************************\r\n\r\nTASK [Gathering Facts] *********************************************************\r\n<span class=\"ansi32\">ok: [localhost]</span>\r\n\r\nTASK [Hello World!] ************************************************************\r\n<span class=\"ansi33\">changed: [localhost]</span>\r\n\r\nPLAY RECAP *********************************************************************\r\n<span class=\"ansi33\">localhost</span>                  : <span class=\"ansi32\">ok=2   </span> <span class=\"ansi33\">changed=1   </span> unreachable=0    failed=0    skipped=0    rescued=0    ignored=0",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/awx/job/{jobId}/abort": {
+      "post": {
+        "tags": [
+          "awx"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "jobId",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the job to abort."
+          }
+        ],
+        "summary": "Abort AWX job",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "warning",
+                "message": "aborted job id 559",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/awx": {
+      "get": {
+        "tags": [
+          "awx config"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get AWX configuration",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "Awx found",
+                "data": {
+                  "output": {
+                    "uri": "http://10.0.0.1",
+                    "token": "***** secret awx token *****"
+                  },
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "awx config"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "form payload",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "uri": {
+                  "type": "string",
+                  "example": "https://10.0.0.1"
+                },
+                "token": {
+                  "type": "string",
+                  "example": "MySecretTokenForAWX"
+                }
+              }
+            }
+          }
+        ],
+        "summary": "Set AWX configuration",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "Awx updated",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/awx/check": {
+      "post": {
+        "tags": [
+          "awx config"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "form payload",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "uri": {
+                  "type": "string",
+                  "example": "https://10.0.0.1"
+                },
+                "token": {
+                  "type": "string",
+                  "example": "MySecretTokenForAWX"
+                }
+              }
+            }
+          }
+        ],
+        "summary": "Test AWX configuration",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "Awx Connection is OK",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/config": {
+      "get": {
+        "tags": [
+          "forms config"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get forms configuration",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "categories": [
+                  {
+                    "name": "Default",
+                    "icon": "bars"
+                  },
+                  {
+                    "name": "Maintenance",
+                    "icon": "cogs"
+                  }
+                ],
+                "roles": [
+                  {
+                    "name": "admin",
+                    "groups": [
+                      "local/admins",
+                      "ldap/Domain Admins"
+                    ]
+                  },
+                  {
+                    "name": "operator",
+                    "groups": [
+                      "local/operator"
+                    ]
+                  },
+                  {
+                    "name": "demo",
+                    "groups": [
+                      "local/demo"
+                    ]
+                  },
+                  {
+                    "name": "public",
+                    "groups": []
+                  }
+                ],
+                "forms": [
+                  {
+                    "name": "Demo Form Ansible No input",
+                    "roles": [
+                      "public"
+                    ],
+                    "description": "This workflow will kickoff the vanilla ansible dummy playbook.",
+                    "categories": [
+                      "Demo",
+                      "Ansible"
+                    ],
+                    "tileClass": "has-background-warning-light",
+                    "playbook": "dummy.yaml",
+                    "inventory": "",
+                    "type": "ansible",
+                    "fields": []
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "forms config"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "forms config",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "categories": {
+                  "type": "object",
+                  "example": [
+                    {
+                      "name": "Default",
+                      "icon": "bars"
+                    },
+                    {
+                      "name": "Maintenance",
+                      "icon": "cogs"
+                    }
+                  ]
+                },
+                "roles": {
+                  "type": "object",
+                  "example": [
+                    {
+                      "name": "admin",
+                      "groups": [
+                        "local/admins",
+                        "ldap/Domain Admins"
+                      ]
+                    },
+                    {
+                      "name": "operator",
+                      "groups": [
+                        "local/operator"
+                      ]
+                    },
+                    {
+                      "name": "demo",
+                      "groups": [
+                        "local/demo"
+                      ]
+                    },
+                    {
+                      "name": "public",
+                      "groups": []
+                    }
+                  ]
+                },
+                "forms": {
+                  "type": "object",
+                  "example": [
+                    {
+                      "name": "Demo Form Ansible No input",
+                      "roles": [
+                        "public"
+                      ],
+                      "description": "This workflow will kickoff the vanilla ansible dummy playbook.",
+                      "categories": [
+                        "Demo",
+                        "Ansible"
+                      ],
+                      "tileClass": "has-background-warning-light",
+                      "playbook": "dummy.yaml",
+                      "inventory": "",
+                      "type": "ansible",
+                      "fields": []
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ],
+        "summary": "Set forms configuration",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "forms saved",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/config/check": {
+      "post": {
+        "tags": [
+          "forms config"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "ldap config",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "categories": {
+                  "type": "object",
+                  "example": [
+                    {
+                      "name": "Default",
+                      "icon": "bars"
+                    },
+                    {
+                      "name": "Maintenance",
+                      "icon": "cogs"
+                    }
+                  ]
+                },
+                "roles": {
+                  "type": "object",
+                  "example": [
+                    {
+                      "name": "admin",
+                      "groups": [
+                        "local/admins",
+                        "ldap/Domain Admins"
+                      ]
+                    },
+                    {
+                      "name": "operator",
+                      "groups": [
+                        "local/operator"
+                      ]
+                    },
+                    {
+                      "name": "demo",
+                      "groups": [
+                        "local/demo"
+                      ]
+                    },
+                    {
+                      "name": "public",
+                      "groups": []
+                    }
+                  ]
+                },
+                "forms": {
+                  "type": "object",
+                  "example": [
+                    {
+                      "name": "Demo Form Ansible No input",
+                      "roles": [
+                        "public"
+                      ],
+                      "description": "This workflow will kickoff the vanilla ansible dummy playbook.",
+                      "categories": [
+                        "Demo",
+                        "Ansible"
+                      ],
+                      "tileClass": "has-background-warning-light",
+                      "playbook": "dummy.yaml",
+                      "inventory": "",
+                      "type": "ansible",
+                      "fields": []
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ],
+        "summary": "Validate forms configuration",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "new forms config is valid",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/ldap": {
+      "get": {
+        "tags": [
+          "ldap config"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get ldap configuration",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "Ldap found",
+                "data": {
+                  "output": {
+                    "server": "ldapserver",
+                    "port": 636,
+                    "ignore_certs": 1,
+                    "enable_tls": 1,
+                    "cert": "",
+                    "ca_bundle": "",
+                    "bind_user_dn": "cn=Administrator,cn=Users,dc=slash,dc=local",
+                    "bind_user_pw": "*** password ***",
+                    "search_base": "dc=domain,dc=local",
+                    "username_attribute": "sAMAccountName",
+                    "enable": 1
+                  },
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "ldap config"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "ldap config",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "server": {
+                  "type": "string",
+                  "example": "ad.domain.local"
+                },
+                "port": {
+                  "type": "integer",
+                  "example": 636
+                },
+                "ignore_certs": {
+                  "type": "boolean",
+                  "example": true
+                },
+                "enable_tls": {
+                  "type": "boolean",
+                  "example": true
+                },
+                "cert": {
+                  "type": "string",
+                  "example": "-----BEGIN CERTIFICATE-----\r\nMIICUTCCAf...QQGEw\r\n-----END CERTIFICATE-----"
+                },
+                "ca_bundle": {
+                  "type": "string",
+                  "example": "-----BEGIN CERTIFICATE-----\r\nMIICUTCCAf...QQGEw\r\n-----END CERTIFICATE-----"
+                },
+                "bind_user_dn": {
+                  "type": "string",
+                  "example": "cn=Administrator, cn=Users, dc=domain, dc=local"
+                },
+                "bind_user_pw": {
+                  "type": "string",
+                  "example": "MyPassword01!"
+                },
+                "username_attribute": {
+                  "type": "string",
+                  "example": "sAMAccountName"
+                },
+                "enable": {
+                  "type": "boolean",
+                  "example": true
+                }
+              }
+            }
+          }
+        ],
+        "summary": "Set ldap configuration",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "Ldap updated",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/ldap/check": {
+      "post": {
+        "tags": [
+          "ldap config"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "ldap config",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "server": {
+                  "type": "string",
+                  "example": "ad.domain.local"
+                },
+                "port": {
+                  "type": "integer",
+                  "example": 636
+                },
+                "ignore_certs": {
+                  "type": "boolean",
+                  "example": true
+                },
+                "enable_tls": {
+                  "type": "boolean",
+                  "example": true
+                },
+                "cert": {
+                  "type": "string",
+                  "example": "-----BEGIN CERTIFICATE-----\r\nMIICUTCCAf...QQGEw\r\n-----END CERTIFICATE-----"
+                },
+                "ca_bundle": {
+                  "type": "string",
+                  "example": "-----BEGIN CERTIFICATE-----\r\nMIICUTCCAf...QQGEw\r\n-----END CERTIFICATE-----"
+                },
+                "bind_user_dn": {
+                  "type": "string",
+                  "example": "cn=Administrator, cn=Users, dc=domain, dc=local"
+                },
+                "bind_user_pw": {
+                  "type": "string",
+                  "example": "MyPassword01!"
+                },
+                "username_attribute": {
+                  "type": "string",
+                  "example": "sAMAccountName"
+                }
+              }
+            }
+          }
+        ],
+        "summary": "Check ldap configuration",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "Ldap updated",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/credential": {
+      "get": {
+        "tags": [
+          "credentials"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get list of credentials",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "credentials found",
+                "data": {
+                  "output": [
+                    {
+                      "id": 1,
+                      "name": "CONN1",
+                      "user": "root",
+                      "host": "172.16.50.1",
+                      "port": 3306,
+                      "description": "Localconnection"
+                    },
+                    {
+                      "id": 2,
+                      "name": "CONN2",
+                      "user": "sa",
+                      "host": "172.16.50.2",
+                      "port": 1433,
+                      "description": "mssql test"
+                    },
+                    {
+                      "id": 3,
+                      "name": "CONN3",
+                      "user": "postgres",
+                      "host": "172.16.50.3",
+                      "port": 5432,
+                      "description": "Postgres test"
+                    },
+                    {
+                      "id": 4,
+                      "name": "CONN4",
+                      "user": "root",
+                      "host": "172.16.50.4",
+                      "port": 27017,
+                      "description": "mongodb"
+                    }
+                  ],
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "credentials"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "form payload",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "example": "cmdb"
+                },
+                "host": {
+                  "type": "string",
+                  "example": "10.0.0.1"
+                },
+                "port": {
+                  "type": "integer",
+                  "example": "3306"
+                },
+                "user": {
+                  "type": "string",
+                  "example": "root"
+                },
+                "password": {
+                  "type": "string",
+                  "example": "MyPassword01!"
+                },
+                "description": {
+                  "type": "string",
+                  "example": "Mysql credentials to cmdb"
+                }
+              }
+            }
+          }
+        ],
+        "summary": "Create new credential",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "credential added",
+                "data": {
+                  "output": 6,
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/credential/{credentialId}": {
+      "get": {
+        "tags": [
+          "credentials"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get a credential",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "credentialId",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the credential to get."
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "found credential",
+                "data": {
+                  "output": {
+                    "id": 2,
+                    "name": "cmdb",
+                    "user": "root",
+                    "password": "MySecretPassword01!",
+                    "host": "172.16.50.1",
+                    "port": 3306,
+                    "description": "Mysql connection for cmdb"
+                  },
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "credentials"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update a credential",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "credentialId",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the credential to update."
+          },
+          {
+            "in": "body",
+            "name": "Form Payload",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "user": {
+                  "type": "string",
+                  "example": "root"
+                },
+                "password": {
+                  "type": "string",
+                  "example": "MyPassword01!"
+                },
+                "host": {
+                  "type": "string",
+                  "example": "172.16.50.1"
+                },
+                "port": {
+                  "type": "string",
+                  "example": 3306
+                },
+                "description": {
+                  "type": "string",
+                  "example": "Mysql connection for cmdb"
+                }
+              }
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "credential updated",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "credentials"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete a credential",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "credentialId",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the credential to delete."
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "credential deleted",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/user": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get list of users",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "users found",
+                "data": {
+                  "output": [
+                    {
+                      "id": 1,
+                      "username": "admin",
+                      "group_id": 1
+                    },
+                    {
+                      "id": 2,
+                      "username": "operator1",
+                      "group_id": 2
+                    }
+                  ],
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "form payload",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "username": {
+                  "type": "string",
+                  "example": "operator1"
+                },
+                "password": {
+                  "type": "string",
+                  "example": "MyPassword01!"
+                },
+                "password2": {
+                  "type": "string",
+                  "example": "MyPassword01!"
+                },
+                "group_id": {
+                  "type": "integer",
+                  "example": 2
+                }
+              }
+            }
+          }
+        ],
+        "summary": "Create new user",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "user added",
+                "data": {
+                  "output": 2,
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/user/{userId}": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get a user",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the user to get."
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "found user",
+                "data": {
+                  "output": {
+                    "id": 2,
+                    "username": "operator1",
+                    "group_id": 2
+                  },
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update a user",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the user to update."
+          },
+          {
+            "in": "body",
+            "name": "Form Payload",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "password": {
+                  "type": "string",
+                  "example": "MyPassword01!"
+                },
+                "password2": {
+                  "type": "string",
+                  "example": "MyPassword01!"
+                },
+                "group_id": {
+                  "type": "integer",
+                  "example": 2
+                }
+              }
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "user updated",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete a user",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the user to delete."
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "user deleted",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/group": {
+      "get": {
+        "tags": [
+          "groups"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get list of groups",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "groups found",
+                "data": {
+                  "output": [
+                    {
+                      "id": 1,
+                      "name": "admins"
+                    },
+                    {
+                      "id": 2,
+                      "name": "operators"
+                    }
+                  ],
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "groups"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "form payload",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "example": "operators"
+                }
+              }
+            }
+          }
+        ],
+        "summary": "Create new group",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "group added",
+                "data": {
+                  "output": 2,
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/group/{groupId}": {
+      "get": {
+        "tags": [
+          "groups"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get a group",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "groupId",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the group to get."
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "found group",
+                "data": {
+                  "output": {
+                    "id": 2,
+                    "name": "operators"
+                  },
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "groups"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete a group",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "groupId",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the group to delete."
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "group deleted",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/token": {
+      "post": {
+        "tags": [
+          "tokens"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "form payload",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "refreshtoken": {
+                  "type": "string",
+                  "example": "**** your refresh token ****"
+                }
+              }
+            }
+          }
+        ],
+        "summary": "Refresh tokens",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoiQWRtaW5pc3RyYXRvciIsInR5cGUiOiJsZGFwIiwicm9sZXMiOlsicHVibGljIiwiYWRtaW4iXX0sImlhdCI6MTYzODgwNjM3MCwiZXhwIjoxNjM4ODA4MTcwfQ.Q0dZCAVcVH6r7j_oUTzAoKp7OyR4kYi-NDxPB1v8-UA",
+                "refreshtoken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoiQWRtaW5pc3RyYXRvciIsInR5cGUiOiJsZGFwIiwicm9sZXMiOlsicHVibGljIiwiYWRtaW4iXX0sImlhdCI6MTYzODgwNjM3MCwiZXhwIjoxNjM4ODkyNzcwfQ.ZIMquso87x8FD5XytyWDi-eMXr2OJBUeXfBGMwk5w04"
+              }
             }
           }
         }

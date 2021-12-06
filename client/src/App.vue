@@ -77,7 +77,7 @@
               this.$router.replace({ name: "Login" }).catch(err => {});         // no token found, logout
           }else{
 
-            axios.get(`/api/v1/form?timestamp=${new Date().getTime()}`,TokenStorage.getAuthentication())                               // load forms
+            axios.get(`/api/v1/config?timestamp=${new Date().getTime()}`,TokenStorage.getAuthentication())                               // load forms
               .then((result)=>{
                 ref.formConfig=result.data;
                 if(!ref.formConfig.error){

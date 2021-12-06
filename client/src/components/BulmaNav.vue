@@ -48,6 +48,9 @@
                   <div class="navbar-item">
                     <div class="buttons">
                       <router-link class="button is-light" v-if="authenticated" to="/login" v-on:click.native="logout()" replace><span class="icon"><font-awesome-icon icon="sign-out-alt" /></span><span>Logout</span></router-link>
+                      <a class="button is-light is-primary" href="/api-docs" target="_blank">
+                        <span class="icon"><font-awesome-icon icon="code" /></span><span>Api docs</span>
+                      </a>
                     </div>
                   </div>
               </div>

@@ -51,6 +51,26 @@ Job.update = function (record,id, result) {
     result(err, null);
   }
 };
+Job.abort = function (id, result) {
+  logger.silly(`Updating job ${id}`)
+  try{
+    mysql.query("UPDATE AnsibleForms.`jobs` set status='abort' WHERE id=? AND status='running'", [id], function (err, res) {
+        if(err) {
+            //lib/logger.error(err)
+            result(err, null);
+        }
+        else{
+            if(res.changedRows==1){
+                result(null, res);
+            }else{
+                result("This job cannot be aborted",null)
+            }
+        }
+    });
+  }catch(err){
+    result(err, null);
+  }
+};
 Job.createOutput = function (record, result) {
   // logger.silly(`Creating job output`)
   try{
@@ -70,7 +90,7 @@ Job.createOutput = function (record, result) {
 Job.delete = function(id, result){
   logger.debug(`Deleting job ${id}`)
   try{
-    mysql.query("DELETE FROM AnsibleForms.`jobs` WHERE id = ? AND jobname<>'admin'", [id], function (err, res) {
+    mysql.query("DELETE FROM AnsibleForms.`jobs` WHERE id = ?", [id], function (err, res) {
         if(err) {
             logger.error(err)
             result(err, null);

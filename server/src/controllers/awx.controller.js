@@ -68,16 +68,33 @@ exports.check = function(req, res) {
   });
 
 };
-exports.launch = function(req, res) {
+exports.launch = async function(req, res) {
     //handles null error
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
         res.status(400).json(RestResult("error","no data was sent","",""));
     }else{
         // get the form data
-        var jobTemplateName = req.body.awxJobTemplate;
+        var jobTemplateName = req.body.awxTemplate;
         var inventory = req.body.awxInventory;
-        var jobTags = req.body.awxJobTags;
-        var extraVars = JSON.stringify(req.body);
+        var jobTags = req.body.awxTags;
+        for (const [key, value] of Object.entries(req.body.credentials)) {
+          if(value=="__self__"){
+            req.body.awxExtraVars[key]={
+              host:dbConfig.host,
+              user:dbConfig.user,
+              port:dbConfig.port,
+              password:dbConfig.password
+            }
+          }else{
+            try{
+              req.body.awxExtraVars[key]=await Credential.findByName(value)
+            }catch(err){
+              logger.error(err)
+            }
+
+          }
+        }
+        var extraVars = JSON.stringify(req.body.awxExtraVars);
 
         logger.info("Running template : " + jobTemplateName)
         logger.debug("extravars : " + extraVars)

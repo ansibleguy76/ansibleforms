@@ -15,7 +15,7 @@
           <BulmaInput icon="lock" v-model="credential.password" type="password" label="Password" placeholder="Password" :required="true" :hasError="$v.credential.password.$invalid" :errors="[]" />
           <BulmaInput icon="server" v-model="credential.host" label="Host" placeholder="Host" :required="true" :hasError="$v.credential.host.$invalid" :errors="[]" />
           <BulmaInput icon="door-closed" v-model="credential.port" label="Port" placeholder="3306" :required="true" :hasError="$v.credential.port.$invalid" :errors="[]" />
-          <BulmaInput icon="info-circle" v-model="credential.description" label="Host" placeholder="Description" :required="true" :hasError="$v.credential.description.$invalid" :errors="[]" />
+          <BulmaInput icon="info-circle" v-model="credential.description" label="Description" placeholder="Description" :required="true" :hasError="$v.credential.description.$invalid" :errors="[]" />
           <BulmaButton v-if="credentialItem==undefined" icon="save" label="Create Credential" @click="newCredential()"></BulmaButton>
           <BulmaButton v-if="credentialItem!=undefined" icon="save" label="Update Credential" @click="updateCredential()"></BulmaButton>
         </div>

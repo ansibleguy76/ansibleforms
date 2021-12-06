@@ -59,7 +59,7 @@ Credential.delete = function(id, result){
 };
 Credential.findAll = function (result) {
     logger.debug("Finding all credentials")
-    var query = "SELECT * FROM AnsibleForms.`credentials` limit 20;"
+    var query = "SELECT id,name,user,host,port,description FROM AnsibleForms.`credentials`;"
     try{
       mysql.query(query, function (err, res) {
           if(err) {
