@@ -114,7 +114,7 @@
                 },
                 "ansibleExtravars": {
                   "type": "object",
-                  "example": "{'name':'vm1','datacenter':'dc1','cluster':'cluster1'}"
+                  "example": {"name":"vm1","datacenter":"dc1","cluster":"cluster1"}
                 },
                 "ansibleInventory": {
                   "type": "string",
@@ -126,7 +126,7 @@
                 },
                 "credentials": {
                   "type": "object",
-                  "example": "{'vcenterCredentials':'VCENTER'}"
+                  "example": {"vcenterCredentials":"VCENTER"}
                 }
               }
             }
@@ -189,7 +189,7 @@
                   "output": [
                     {
                       "id": 91,
-                      "form": "Nou seggg",
+                      "form": "Dummy form",
                       "playbook": "dummy.yaml",
                       "status": "success",
                       "start": "2021-12-06T09:53:49.000Z",
