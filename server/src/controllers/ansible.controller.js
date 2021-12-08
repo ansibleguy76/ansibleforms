@@ -22,21 +22,23 @@ exports.run = async function(req, res) {
         var playbook = req.body.ansiblePlaybook;
         var inventory = req.body.ansibleInventory;
         var tags = req.body.ansibleTags;
-        for (const [key, value] of Object.entries(req.body.credentials)) {
-          if(value=="__self__"){
-            req.body.ansibleExtraVars[key]={
-              host:dbConfig.host,
-              user:dbConfig.user,
-              port:dbConfig.port,
-              password:dbConfig.password
-            }
-          }else{
-            try{
-              req.body.ansibleExtraVars[key]=await Credential.findByName(value)
-            }catch(err){
-              logger.error(err)
-            }
+        if(req.body.credentials){
+          for (const [key, value] of Object.entries(req.body.credentials)) {
+            if(value=="__self__"){
+              req.body.ansibleExtraVars[key]={
+                host:dbConfig.host,
+                user:dbConfig.user,
+                port:dbConfig.port,
+                password:dbConfig.password
+              }
+            }else{
+              try{
+                req.body.ansibleExtraVars[key]=await Credential.findByName(value)
+              }catch(err){
+                logger.error(err)
+              }
 
+            }
           }
         }
         var extraVars = JSON.stringify(req.body.ansibleExtraVars);

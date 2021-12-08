@@ -308,7 +308,12 @@ User.checkLdap = function(username,password,result){
         result(null,user)
       }catch(err){
           var em =""
-          try{var em = YAML.stringify(err)}catch(e){em = err}
+          if(err.message){
+            em=err.message
+          }else{
+            try{em = YAML.stringify(err)}catch(e){em = err}
+          }
+
 
           if(err.admin){
             if(err.admin.code){
@@ -322,7 +327,7 @@ User.checkLdap = function(username,password,result){
             }
           }
           logger.error("Error connecting to ldap : " + em)
-          result("Error connecting to ldap : " + em,null)
+          result("Ldap : " + em,null)
       }
     }
   }

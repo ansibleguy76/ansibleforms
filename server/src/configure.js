@@ -5,6 +5,7 @@ const swaggerDocument = require('./swagger.json');
 const bodyParser = require('body-parser');
 const passport = require('passport');
 const appConfig = require('../config/app.config')
+const checkAdminMiddleware = require('./lib/common').checkAdminMiddleware
 
 
 
@@ -27,7 +28,6 @@ module.exports = app => {
   app.use(express.static(__dirname + '/public',{index: 'index.html'}));
   // import api routes
   const awxRoutes = require('./routes/awx.routes')
-  const awxAdminRoutes = require('./routes/awxadmin.routes')
   const ansibleRoutes = require('./routes/ansible.routes')
   const queryRoutes = require('./routes/query.routes')
   const expressionRoutes = require('./routes/expression.routes')
@@ -43,22 +43,7 @@ module.exports = app => {
 
   // using json web tokens as middleware
   const authobj = passport.authenticate('jwt', { session: false })
-  const checkAdminMiddleware = (req, res, next) =>  {
-        try{
-          if(!req.user.user.roles.includes("admin")) {
-            var err=new Error("you are not an admin")
-            err.status=401
-            next(err)
-          } else {
-            logger.silly("You are admin, access to user management")
-            next()
-          }
-        }catch(e){
-          var err=new Error("you are not an admin")
-          err.status=401
-          next(err)
-        }
-  }
+
   // import vue routes
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
   app.use('/api/v1/auth', loginRoutes)
@@ -71,8 +56,6 @@ module.exports = app => {
   app.use('/api/v1/user', authobj, checkAdminMiddleware, userRoutes)
   app.use('/api/v1/group', authobj, checkAdminMiddleware, groupRoutes)
   app.use('/api/v1/ldap', authobj, checkAdminMiddleware, ldapRoutes)
-  app.use('/api/v1/awx', authobj, checkAdminMiddleware, awxAdminRoutes)
   app.use('/api/v1/credential', authobj, checkAdminMiddleware, credentialRoutes)
-  app.use('/api/v1/config', authobj, checkAdminMiddleware, configRoutes)
-  app.use('/api/v1/config', authobj, formRoutes)
+  app.use('/api/v1/config', authobj, configRoutes)
 }

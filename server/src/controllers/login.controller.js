@@ -9,17 +9,13 @@ const logger=require("../lib/logger");
 exports.login = async function(req, res,next) {
     passport.authenticate(
       'basic',
-      async (err, user, info) => {
+      async (err, user) => {
         try {
-
           if (err || !user) {
             var error={token:""}
             if(err){
               logger.debug(err)
               error.message=err
-            }else{
-              logger.debug(info.message)
-              error.message=info.message;
             }
             return res.json(error);
           }

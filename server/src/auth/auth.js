@@ -36,20 +36,22 @@ passport.use(
                 user.type = 'ldap'
                 user.roles = UserModel.getRoles(user,result)
                 logger.debug("ldap login is ok => " + user.username)
-                return done(null, user, { message: 'Logged in successfully with LDAP authentication'});
+                return done(null, user);
               }
 
             });
 
           }else if(!result.isValid) {
             // user found in db, but wrong pw
-            return done(null, false, { message: 'Wrong Password'});
+            return done("Wrong password")
+            //return done(null, false, { message: 'Wrong Password'});
           }else{
             // user ok in db
             user.username = result.user.username
             user.type = 'local'
             user.roles = UserModel.getRoles(user,result.user.groups)
-            return done(null, user, { message: 'Logged in successfully with local authentication'});
+            logger.debug("local login is ok => " + user.username)
+            return done(null, user);
           }
         });
       } catch (error) {

@@ -17,6 +17,9 @@ function hasError(data){
   if(data.match(/FAILED!/)){
     return true
   }
+  if(data.match(/ERROR!/)){
+    return true
+  }
   if(data.match(/failed=[1-9]/)){
     return true
   }

@@ -77,23 +77,26 @@ exports.launch = async function(req, res) {
         var jobTemplateName = req.body.awxTemplate;
         var inventory = req.body.awxInventory;
         var jobTags = req.body.awxTags;
-        for (const [key, value] of Object.entries(req.body.credentials)) {
-          if(value=="__self__"){
-            req.body.awxExtraVars[key]={
-              host:dbConfig.host,
-              user:dbConfig.user,
-              port:dbConfig.port,
-              password:dbConfig.password
-            }
-          }else{
-            try{
-              req.body.awxExtraVars[key]=await Credential.findByName(value)
-            }catch(err){
-              logger.error(err)
-            }
+        if(req.body.credentials){
+          for (const [key, value] of Object.entries(req.body.credentials)) {
+            if(value=="__self__"){
+              req.body.awxExtraVars[key]={
+                host:dbConfig.host,
+                user:dbConfig.user,
+                port:dbConfig.port,
+                password:dbConfig.password
+              }
+            }else{
+              try{
+                req.body.awxExtraVars[key]=await Credential.findByName(value)
+              }catch(err){
+                logger.error(err)
+              }
 
+            }
           }
         }
+
         var extraVars = JSON.stringify(req.body.awxExtraVars);
 
         logger.info("Running template : " + jobTemplateName)

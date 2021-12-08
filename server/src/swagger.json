@@ -415,7 +415,7 @@
                 },
                 "awxExtravars": {
                   "type": "object",
-                  "example": "{'name':'vm1','datacenter':'dc1','cluster':'cluster1'}"
+                  "example": {"name":"vm1","datacenter":"dc1","cluster":"cluster1"}
                 },
                 "awxInventory": {
                   "type": "string",
@@ -427,7 +427,7 @@
                 },
                 "credentials": {
                   "type": "object",
-                  "example": "{'vcenterCredentials':'VCENTER'}"
+                  "example": {"vcenterCredentials":"VCENTER"}
                 }
               }
             }

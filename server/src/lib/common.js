@@ -1,4 +1,6 @@
 const certinfo=require("cert-info")
+const restResult=require("../models/restResult.model")
+const logger=require("./logger")
 var Helpers = function(){
 
 }
@@ -22,5 +24,16 @@ Helpers.checkCertificate=function(cert){
     }
   }
 }
-
+Helpers.checkAdminMiddleware = (req, res, next) =>  {
+      try{
+        if(!req.user.user.roles.includes("admin")) {
+          res.status(401).json(new restResult("error","you are not an admin"))
+        } else {
+          logger.silly("You are admin, access to user management")
+          next()
+        }
+      }catch(e){
+        res.status(401).json(new restResult("error","you are not an admin"))
+      }
+}
 module.exports = Helpers
