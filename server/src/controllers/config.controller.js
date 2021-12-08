@@ -19,12 +19,12 @@ exports.save = function(req,res){
     try{
       var forms = Form.save(newConfig)
       if(forms) {
-        res.json(new RestResult("success","forms saved",null,""));
+        res.json(new RestResult("success","Config saved",null,""));
       }else{
-        res.json(new RestResult("error","failed to save forms",null,"Failed to save forms"))
+        res.json(new RestResult("error","Failed to save forms",null,"Failed to save forms"))
       }
     }catch(err){
-      res.json(new RestResult("error","failed to save forms",null,err))
+      res.json(new RestResult("error","Failed to save forms",null,err))
     }
   }
 }
@@ -40,12 +40,12 @@ exports.validate = function(req,res){
       // validate against json schema
       formsConfig = Form.validate(formsConfig)
       if(formsConfig) {
-        res.json(new RestResult("success","new forms config is valid",null,""));
+        res.json(new RestResult("success","Config is valid",null,""));
       }else{
-        res.json(new RestResult("error","failed to validate new forms config",null,"Failed to validate new forms config"))
+        res.json(new RestResult("error","Failed to validate new forms config",null,"Failed to validate new forms config"))
       }
     }catch(err){
-      res.json(new RestResult("error","failed to validate new forms config",null,err))
+      res.json(new RestResult("error","Failed to validate new forms config",null,err))
     }
   }
 }

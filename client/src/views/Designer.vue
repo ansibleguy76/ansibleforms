@@ -72,7 +72,7 @@
           .then((result)=>{
             ref.formConfig=YAML.stringify(result.data);
             if(!ref.formConfig.error){
-              ref.$toast.success("Valid forms.yaml loaded")
+              // ref.$toast.success("Valid forms.yaml loaded")
             }else{
                 ref.$toast.error("Invalid forms.yaml")
                 ref.errorMessage="Error in forms.yaml file\n\n" + ref.formConfig.error
