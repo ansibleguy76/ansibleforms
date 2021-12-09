@@ -2,7 +2,6 @@ module.exports = {
   secret: process.env.ACCESS_TOKEN_SECRET || "j6fz%Q9S2YJC?x|u",
   jwtExpiration: process.env.ACCESS_TOKEN_EXPIRATION || "30m",
   jwtRefreshExpiration: process.env.ACCESS_TOKEN_REFRESH_EXPIRATION || "24h",
-  jwtStore: {},
   ldapErrorRegex:".*, data ([^,]*),.*",
   ldapErrors:{
     "52e":"Wrong password",

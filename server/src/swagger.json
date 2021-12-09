@@ -2182,11 +2182,6 @@
         "tags": [
           "tokens"
         ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
         "parameters": [
           {
             "in": "body",

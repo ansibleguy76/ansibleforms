@@ -10,6 +10,7 @@ exports.findAll = function(req,res){
     res.json({error:error})
   }
 }
+
 exports.save = function(req,res){
   const newConfig = new Form(req.body);
   //handles null error

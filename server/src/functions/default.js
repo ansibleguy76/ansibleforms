@@ -117,7 +117,7 @@ exports.fnRestBasic = async function(action,url,body,credential,jqe,sort,map){
     }
   }
 
-  let result={}
+  let result=[]
   try{
     if(action=="get"){
       data = await axios.get(url,axiosConfig);

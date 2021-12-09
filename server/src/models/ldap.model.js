@@ -117,7 +117,11 @@ Ldap.check = function(ldapConfig,result){
         result(null,user)
       }catch(err){
           var em =""
-          try{var em = YAML.stringify(err)}catch(e){em = err}
+          if(err.message){
+            em = err.message
+          }else{
+            try{ em = YAML.stringify(err)}catch(e){em = err}
+          }
           if(err.admin){
             if(err.admin.code){
               em = err

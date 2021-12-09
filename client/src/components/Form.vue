@@ -427,7 +427,7 @@
             }
 
             // if the variable is viable and not being changed, replace it
-            console.log(foundfield + "("+fieldvalue+")" + " -> targetflag = " + targetflag)
+            //console.log(foundfield + "("+fieldvalue+")" + " -> targetflag = " + targetflag)
             if((((targetflag=="variable")||(targetflag=="fixed")) && fieldvalue!==undefined && newValue!=undefined)||((item.ignoreIncomplete||false) && newValue!=undefined)){                // valid value ?
                 if(fieldvalue==undefined){
                   fieldvalue="__undefined__"   // catch undefined values
@@ -786,6 +786,7 @@
               }
             } // no else, array is already flattened
             field=(!wasArray || !keepArray)?field[0]:field // if it wasn't an array, we take first again
+
           }else{
             field=(!keepArray)?undefined:field // force undefined if we don't want arrays
           }

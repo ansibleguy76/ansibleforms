@@ -2,14 +2,20 @@ const express = require('express')
 const router = express.Router()
 const awxController =   require('../controllers/awx.controller');
 const checkAdminMiddleware = require('../lib/common.js').checkAdminMiddleware;
-// Retrieve awx config
+
+// admin routes for awx (config/gui)
+// get awx config
 router.get('/',checkAdminMiddleware, awxController.find);
-// Set awx config
+// set awx config
 router.put('/',checkAdminMiddleware, awxController.update);
-// Test awx config
+// check awx config
 router.post('/check/',checkAdminMiddleware, awxController.check);
-// run a template
+
+// action routes for awx (no admin)
+// launch template
 router.post('/launch/', awxController.launch);
+// abort single job
 router.post('/job/:id/abort/', awxController.abortJob);
+// get single job
 router.get('/job/:id', awxController.getJob);
 module.exports = router

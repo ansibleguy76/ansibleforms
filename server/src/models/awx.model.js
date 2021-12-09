@@ -10,6 +10,7 @@ const YAML=require("yaml")
 const {encrypt,decrypt} = require("../lib/crypto")
 const NodeCache = require("node-cache")
 
+// we store the awx config for 1 hour (no need to go to database each time)
 const cache = new NodeCache({
     stdTTL: 3600,
     checkperiod: (3600 * 0.5)
@@ -20,11 +21,13 @@ const httpsAgent = new https.Agent({
 })
 axios.defaults.options = httpsAgent
 
+// constructor for awx config
 var Awx=function(awx){
     this.uri = awx.uri;
     this.token = encrypt(awx.token);
 };
 
+// get the awx config from cache or database (=wrapper function)
 Awx.getConfig = function(result){
   var awxConfig=cache.get("awxConfig")
   if(awxConfig==undefined){
@@ -43,7 +46,7 @@ Awx.getConfig = function(result){
     result(null,awxConfig)
   }
 };
-//awx object create
+//awx object create (it's an update; during schema creation we add a record)
 Awx.update = function (record, result) {
     logger.debug(`Updating awx ${record.name}`)
     mysql.query("UPDATE AnsibleForms.`awx` set ?", record, function (err, res) {
@@ -56,6 +59,7 @@ Awx.update = function (record, result) {
         }
     });
 };
+// get awx config from database
 Awx.find = function (result) {
     var query = "SELECT * FROM AnsibleForms.`awx` limit 1;"
     try{
@@ -83,7 +87,7 @@ Awx.find = function (result) {
       result(err, null);
     }
 };
-// launch awx job template
+// abort awx job template
 Awx.abortJob = function (id, result) {
 
   Awx.getConfig(function(err,res){
@@ -92,9 +96,7 @@ Awx.abortJob = function (id, result) {
       logger.error(err)
       result(`failed to get AWX configuration`)
     }else{
-      // prep the post data
-      var postdata = {
-      }
+
       var message=""
       logger.debug(`aborting awx job ${id}`)
       const axiosConfig = {
@@ -102,12 +104,13 @@ Awx.abortJob = function (id, result) {
           Authorization:"Bearer " + res.token
         }
       }
+      // we first need to check if we CAN cancel
       axios.get(res.uri + "/api/v2/jobs/" + id + "/cancel/",axiosConfig)
         .then((axiosresult)=>{
           var job = axiosresult.data
           if(job && job.can_cancel){
               logger.debug(`can cancel job id = ${id}`)
-              axios.post(res.uri + "/api/v2/jobs/" + id + "/cancel/",postdata,axiosConfig)
+              axios.post(res.uri + "/api/v2/jobs/" + id + "/cancel/",{},axiosConfig)
                 .then((axiosresult)=>{
                   job = axiosresult.data
                   result(job,null)
@@ -143,6 +146,7 @@ Awx.launch = function (template,inventory,tags,extraVars, result) {
         extra_vars:extraVars,
         job_tags:tags
       }
+      // inventory needs to be looked up first
       if(inventory){
         postdata.inventory=inventory.id
       }

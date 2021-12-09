@@ -1,9 +1,10 @@
 const express = require('express')
 const router = express.Router()
 const schemaController =   require('../controllers/schema.controller');
-// Retrieve all users
 
+// check the database schema
 router.get('/', schemaController.hasSchema);
+// create the database schema
 router.post('/', schemaController.create);
 
 module.exports = router

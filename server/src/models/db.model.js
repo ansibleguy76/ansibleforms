@@ -20,7 +20,7 @@ MySql.query=async function(query,vars,callback){
   }
   try{
     conn.query(query,vars,function(err,result){
-      logger.silly("[ansibleforms] Closing connection")
+      // logger.silly("[ansibleforms] Closing connection")
       conn.end()
       if(err){
         logger.error("[ansibleforms] Query error : " + err)
@@ -31,7 +31,7 @@ MySql.query=async function(query,vars,callback){
       }
     })
   }catch(err){
-    logger.silly("[ansibleforms] Closing connection")
+    // logger.silly("[ansibleforms] Closing connection")
     conn.end()
     logger.error("[ansibleforms] " + err)
     callback(null,null)

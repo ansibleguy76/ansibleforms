@@ -452,6 +452,11 @@
 									"title": "Ignore incomplete placeholders",
 									"description": "I a javascript expression, ignore undefined values of incomplete placeholders."
 								},
+                "runLocal": {
+									"type": "boolean",
+									"title": "run evaluations locally",
+									"description": "Run javascript expression locally"
+								},                
 								"query": {
 									"type": "string",
 									"title": "SQL query",

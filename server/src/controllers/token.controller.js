@@ -1,27 +1,29 @@
 'use strict';
+const RestResult = require('../models/restResult.model')
 const jwt = require("jsonwebtoken")
 var authConfig = require('../../config/auth.config')
 const logger=require("../lib/logger");
-const User=require("../models/user.model.js")
+const User=require("../models/user.model")
 
 exports.refresh = function(req, res) {
+
+    // get the refresh token
     var refreshtoken = req.body.refreshtoken
-    logger.debug("requesting access token")
+    logger.debug("requesting refresh token")
     //handles null error
     if(!refreshtoken){
         logger.error("no refresh token is provided")
         res.status(400).send({ error:true, message: 'Please provide a refresh token' });
     }else{
         var jwtPayload=jwt.decode(refreshtoken)
-        if(jwtPayload.user){
+        if(jwtPayload && jwtPayload.user){
           var username=jwtPayload.user.username
           var username_type=jwtPayload.user.type
           User.checkToken(username,username_type,refreshtoken,function(err,result){
             if(err){
               logger.error(err)
-              res.status(400).send({ error:true, message: 'Refresh token is unknown' });
+              res.status(401).send({ error:true, message: 'Refresh token is unknown' });
             }else{
-                // logger.debug("refresh token is valid " + refreshtoken + " - " + authConfig.jwtStore[refreshtoken])
                 var body = jwtPayload.user
                 if(new Date(jwtPayload.exp*1000)>new Date()){
                   // logger.debug("refresh token is not expired")
@@ -38,7 +40,7 @@ exports.refresh = function(req, res) {
 
                 }else{
                   logger.error("Refresh token is expired")
-                  res.status(400).send({ error:true, message: 'Refresh token is expired' });
+                  res.status(401).send({ error:true, message: 'Refresh token is expired' });
                 }
             }
           })
