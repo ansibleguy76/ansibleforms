@@ -484,6 +484,7 @@
 
                       // allow local run in browser
                       if(item.runLocal){
+                        console.log("Running local expression : " + placeholderCheck.value)
                         var result
                         try{
                           result=eval(placeholderCheck.value)
@@ -500,11 +501,12 @@
                             Vue.set(ref.dynamicFieldStatus,item.name,"fixed");  // if this dynamic field was a 1 time evaluation, set as fixed
                           }
                         }catch(err){
+                          console.log("Local eval failed : " + err)
                           try{
                             Vue.set(ref.dynamicFieldStatus,item.name,undefined);
                           }catch(err){
                             ref.stopLoop()
-                          }                          
+                          }
                         }
 
                       }else{
