@@ -481,37 +481,66 @@
                   Vue.set(ref.dynamicFieldStatus,item.name,"running");            // set as running
                   placeholderCheck = ref.replacePlaceholders(item)     // check and replace placeholders
                   if(placeholderCheck.value!=undefined){                       // expression is clean ?
-                      axios.post("/api/v1/expression",{expression:placeholderCheck.value},TokenStorage.getAuthentication())
-                        .then((result)=>{
-                          var restresult = result.data
-                          if(restresult.status=="error"){
-                            // console.log(restresult.data.error)
-                            Vue.set(ref.dynamicFieldStatus,item.name,undefined);
-                          }
-                          if(restresult.status=="success"){
-                            //console.log("expression for "+item.name+" triggered : result found -> "+ JSON.stringify(restresult.data.output));
-                            if(item.type=="expression")
-                              Vue.set(ref.form, item.name, restresult.data.output);
-                            if(item.type=="query")
-                              Vue.set(ref.queryresults, item.name, [].concat(restresult.data.output??[]));
-                            if(placeholderCheck.hasPlaceholders){                 // if placeholders were found we set this a variable dynamic field.
-                              // set flag as viable variable query
-                              // console.log("Expression found with variables")
-                              Vue.set(ref.dynamicFieldStatus,item.name,"variable");
-                            }else{
-                              // set flag as viable fixed query
-                              Vue.set(ref.dynamicFieldStatus,item.name,"fixed");  // if this dynamic field was a 1 time evaluation, set as fixed
-                            }
-                          }
 
-                        }).catch(function (error) {
-                              // console.log('Error ' + error.message)
-                              try{
-                                Vue.set(ref.dynamicFieldStatus,item.name,undefined);
-                              }catch(err){
-                                ref.stopLoop()
+                      // allow local run in browser
+                      if(item.runLocal){
+                        var result
+                        try{
+                          result=eval(placeholderCheck.value)
+                          if(item.type=="expression")
+                            Vue.set(ref.form, item.name, result);
+                          if(item.type=="query")
+                            Vue.set(ref.queryresults, item.name, [].concat(result??[]));
+                          if(placeholderCheck.hasPlaceholders){                 // if placeholders were found we set this a variable dynamic field.
+                            // set flag as viable variable query
+                            // console.log("Expression found with variables")
+                            Vue.set(ref.dynamicFieldStatus,item.name,"variable");
+                          }else{
+                            // set flag as viable fixed query
+                            Vue.set(ref.dynamicFieldStatus,item.name,"fixed");  // if this dynamic field was a 1 time evaluation, set as fixed
+                          }
+                        }catch(err){
+                          try{
+                            Vue.set(ref.dynamicFieldStatus,item.name,undefined);
+                          }catch(err){
+                            ref.stopLoop()
+                          }                          
+                        }
+
+                      }else{
+                        axios.post("/api/v1/expression",{expression:placeholderCheck.value},TokenStorage.getAuthentication())
+                          .then((result)=>{
+                            var restresult = result.data
+                            if(restresult.status=="error"){
+                              // console.log(restresult.data.error)
+                              Vue.set(ref.dynamicFieldStatus,item.name,undefined);
+                            }
+                            if(restresult.status=="success"){
+                              //console.log("expression for "+item.name+" triggered : result found -> "+ JSON.stringify(restresult.data.output));
+                              if(item.type=="expression")
+                                Vue.set(ref.form, item.name, restresult.data.output);
+                              if(item.type=="query")
+                                Vue.set(ref.queryresults, item.name, [].concat(restresult.data.output??[]));
+                              if(placeholderCheck.hasPlaceholders){                 // if placeholders were found we set this a variable dynamic field.
+                                // set flag as viable variable query
+                                // console.log("Expression found with variables")
+                                Vue.set(ref.dynamicFieldStatus,item.name,"variable");
+                              }else{
+                                // set flag as viable fixed query
+                                Vue.set(ref.dynamicFieldStatus,item.name,"fixed");  // if this dynamic field was a 1 time evaluation, set as fixed
                               }
-                        })
+                            }
+
+                          }).catch(function (error) {
+                                // console.log('Error ' + error.message)
+                                try{
+                                  Vue.set(ref.dynamicFieldStatus,item.name,undefined);
+                                }catch(err){
+                                  ref.stopLoop()
+                                }
+                          })
+                      }
+
 
 
                   }else{
