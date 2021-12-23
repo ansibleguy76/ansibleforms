@@ -34,17 +34,15 @@ Installing it manually requires more linux and sysadmin skills.
 ### Install MySql (or skip to use exising one)
 The application needs a MySQL (or MariaDb) server.  You can have your own pick, run in docker, run remote, run locally.  Just make sure it is accessible and set the environment variables in the application to connect to it.
 ```
-cd ..
-yum install -y mariadb-server
-systemctl start mariadb
-systemctl enable mariadb
-mysql_secure_installation
-* the above will be interactive, but choose AnsibleForms as root password *
-# create a user for remote access
-mysql -u root -p
-CREATE USER 'root'@'%' IDENTIFIED BY 'AnsibleForms';
-GRANT ALL PRIVILEGES ON *.* TO 'root'@'%';
-FLUSH PRIVILEGES;
+wget https://dev.mysql.com/get/mysql57-community-release-el7-9.noarch.rpm
+sudo rpm -ivh mysql57-community-release-el7-9.noarch.rpm
+sudo yum install mysql-server
+sudo systemctl start mysqld
+sudo grep 'temporary password' /var/log/mysqld.log
+sudo mysql_secure_installation
+* the above will be interactive
+* do NOT disallow remote access
+* set new password of choice
 ```
 Note : The first time, the webapplication will ask to create the database and tables. So you might want to give enough privileges.
 
