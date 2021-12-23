@@ -1,11 +1,12 @@
-// load our custom app config
-const appConfig = require('./config/app.config')
-
 // load our api logic based on express
 const express = require('express')
 const app = express()
+// run configure
 const configureAPI = require('./src/configure')
 configureAPI(app)
+
+// load our custom app config
+const appConfig = require('./config/app.config')
 
 // set the start directory to load our vue app (frontend/gui)
 const { resolve } = require('path')

@@ -9,19 +9,21 @@ const swaggerDocument = require('./swagger.json');
 const bodyParser = require('body-parser');
 // a plugin to help with authentication and authorization
 const passport = require('passport');
-// our personal app settings
-const appConfig = require('../config/app.config')
 // a small custom middleware to check whether the user is administrator
 const checkAdminMiddleware = require('./lib/common').checkAdminMiddleware
+// load the .env.development file ; it loads a bunch of environment variables
+// we are not doing this for production, where the variables are coming from the actual environment
+if (process.NODE_ENV !== 'production' || process.env.FORCE_DOTENV==1 ){
+    console.log(`Importing .env file : ${__dirname}/../.env.${process.NODE_ENV}` )
+    require('dotenv').config({ path: `${__dirname}/../.env.${process.NODE_ENV}` })
+}
+
+// our personal app settings
+const appConfig = require('../config/app.config')
 
 // start the app
 module.exports = app => {
-  // load the .env.development file ; it loads a bunch of environment variables
-  // we are not doing this for production, where the variables are coming from the actual environment
-  if (appConfig.nodeEnvironment !== 'production' || appConfig.forceDotEnv ){
-      console.log(`Importing .env file : ${__dirname}/../.env.${appConfig.nodeEnvironment}` )
-      require('dotenv').config({ path: `${__dirname}/../.env.${appConfig.nodeEnvironment}` })
-  }
+
   // we use 2 authentications/authorization strategies
   // - basic : to get jwt tokens
   // - jwt : to use the jwt tokens

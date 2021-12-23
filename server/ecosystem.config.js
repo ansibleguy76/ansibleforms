@@ -8,7 +8,6 @@ module.exports = {
     env_production: {
        NODE_ENV: "production",
        FORCE_DOTENV: 1
-    },
-    watch: '.'
+    }
   }]
 };
