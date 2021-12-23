@@ -41,7 +41,6 @@ module.exports = app => {
   const groupRoutes = require('./routes/group.routes')
   const ldapRoutes = require('./routes/ldap.routes')
   const credentialRoutes = require('./routes/credential.routes')
-  const formRoutes = require('./routes/form.routes')
   const loginRoutes = require('./routes/login.routes')
   const schemaRoutes = require('./routes/schema.routes')
   const tokenRoutes = require('./routes/token.routes')
