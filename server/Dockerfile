@@ -31,6 +31,10 @@ RUN ansible-galaxy collection install netapp.ontap -p /usr/share/ansible/collect
 RUN ansible-galaxy collection install netapp.elementsw -p /usr/share/ansible/collections
 RUN ansible-galaxy collection install netapp.um_info -p /usr/share/ansible/collections
 
+# add ssh
+RUN apk add openssh
+RUN mkdir -p ~/.ssh
+
 ##################################################
 # builder stage
 # intermediate build to compile application
