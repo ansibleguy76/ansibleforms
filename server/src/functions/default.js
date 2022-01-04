@@ -76,6 +76,42 @@ exports.fnJq=async function(input,jqe){
 exports.fnCopy=function(input){
     return input
 },
+exports.fnMap=function(input,map){
+  let result=input
+  if(!Array.isArray){
+    logger.warn("Warning in fnMap : input is not an array")
+    return result
+  }
+  if(!map){
+    logger.warn("Warning in fnMap : map code not provided")
+    return result
+  }
+
+  try{
+    result = eval("result.map("+map+")")
+  }catch(e){
+    logger.error("Error in fnMap : " + e)
+  }
+  return result
+}
+exports.fnSort=function(input,sort){
+  let result=input
+  if(!Array.isArray){
+    logger.warn("Warning in fnSort : input is not an array")
+    return result
+  }
+  if(!sort){
+    logger.warn("Warning in fnSort : sort code not provided")
+    return result
+  }
+
+  try{
+    result = eval("result.sort("+sort+")")
+  }catch(e){
+    logger.error("Error in fnSort : " + e)
+  }
+  return result
+}
 exports.fnSum = function(a,b) { return a+b };
 exports.fnMultiply = function(a,b) { return a*b };
 exports.fnReadJsonFile = async function(path,jqe) {
