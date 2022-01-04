@@ -63,10 +63,23 @@ exports.fnGetNumberedName=function(names,pattern,value,fillgap){
 	  return value
   }
 }
+exports.fnJq=async function(input,jqe){
+    const jq = require('node-jq')
+    let result=undefined
+    try{
+      result=await jq.run(jqe, input, { input:"json",output:"json" })
+    }catch(e){
+      logger.error("Error in fnJq : " + e)
+    }
+    return result
+}
+exports.fnCopy=function(input){
+    return input
+},
 exports.fnSum = function(a,b) { return a+b };
 exports.fnMultiply = function(a,b) { return a*b };
 exports.fnReadJsonFile = async function(path,jqe) {
-  let result=[]
+  let result=undefined
   try{
     let rawdata = fs.readFileSync(path,'utf8');
     result = JSON.parse(rawdata)
@@ -79,7 +92,7 @@ exports.fnReadJsonFile = async function(path,jqe) {
   return result
 };
 exports.fnReadYamlFile = async function(path,jqe) {
-  let result=[]
+  let result=undefined
   try{
     let rawdata = fs.readFileSync(path,'utf8');
     result = YAML.parse(rawdata)

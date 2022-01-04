@@ -23,7 +23,7 @@
                     <label v-if="!field.hide" class="label has-text-primary">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span></label>
                     <!-- type = checkbox -->
                     <label v-if="field.type=='checkbox'" class="checkbox">
-                      <input :checked="field.default" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" :required="field.required" :name="field.name" type="checkbox">
+                      <input :checked="field.default" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" :required="field.required" :name="field.name" type="checkbox">
                       {{ field.placeholder }}
                     </label>
                     <!-- type = query -->
@@ -49,7 +49,7 @@
                     <!-- type = radio -->
                     <div v-if="field.type=='radio'" >
                       <label class="radio" :key="radiovalue" v-for="radiovalue in field.values">
-                        <input type="radio" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" :checked="field.default===radiovalue" :value="radiovalue" :name="field.name">
+                        <input type="radio" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" :checked="field.default===radiovalue" :value="radiovalue" :name="field.name">
                         {{ radiovalue }}
                       </label>
                     </div>
@@ -57,24 +57,24 @@
                     <div :class="{'has-icons-left':!!field.icon && field.type!='query'}" class="control">
                       <!-- type = expression -->
                       <div v-if="field.type=='expression'" :class="{'is-loading':dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running'}" class="control">
-                        <input :type="(field.hide||false) ? 'hidden' : 'text'" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input has-text-info" readonly :name="field.name" :required="field.required">
+                        <input :type="(field.hide||false) ? 'hidden' : 'text'" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input has-text-info" readonly :name="field.name" :required="field.required">
                       </div>
                       <!-- type = text -->
-                      <input v-if="field.type=='text'" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" type="text" :placeholder="field.placeholder" @change="evaluateDynamicFields(field.name)">
+                      <input v-if="field.type=='text'" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" type="text" :placeholder="field.placeholder" @change="evaluateDynamicFields(field.name)">
                       <!-- type = password -->
-                      <input v-if="field.type=='password'" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" type="password" :placeholder="field.placeholder" @change="evaluateDynamicFields(field.name)">
+                      <input v-if="field.type=='password'" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" type="password" :placeholder="field.placeholder" @change="evaluateDynamicFields(field.name)">
                       <!-- type = number -->
-                      <input v-if="field.type=='number'" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" type="number" :placeholder="field.placeholder" @change="evaluateDynamicFields(field.name)">
+                      <input v-if="field.type=='number'" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" type="number" :placeholder="field.placeholder" @change="evaluateDynamicFields(field.name)">
                       <!-- type = enum -->
                       <div v-if="field.type=='enum' && !field.multiple" class="select">
-                        <select :name="field.name" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" @change="evaluateDynamicFields(field.name)">
+                        <select :name="field.name" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" @change="evaluateDynamicFields(field.name)">
                           <option v-if="!field.required" value=""></option>
                           <option v-for="option in field.values" :key="option" :selected="field.default==option" :value="option">{{ option }}</option>
                         </select>
                       </div>
                       <!-- type = multiple enum -->
                       <div v-if="field.type=='enum' && (field.multiple||false)==true" class="select is-multiple">
-                        <select :name="field.name" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" multiple :size="field.size">
+                        <select :name="field.name" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" multiple :size="field.size">
                           <option v-if="!field.required" value=""></option>
                           <option v-for="option in field.values" :key="option" :selected="field.default.includes(option)" :value="option">{{ option }}</option>
                         </select>
@@ -258,6 +258,9 @@
       }
     },
     methods:{
+      inputFocus(e){
+        e.preventDefault();
+      },
       filterfieldsByGroup(group){                   // creates a list of field per group
         return this.currentForm.fields.filter(function (el) {
           return ("group" in el &&
@@ -428,11 +431,18 @@
 
             // if the variable is viable and not being changed, replace it
             //console.log(foundfield + "("+fieldvalue+")" + " -> targetflag = " + targetflag)
+            // console.log(foundfield + " -> targetflag = " + targetflag)
             if((((targetflag=="variable")||(targetflag=="fixed")) && fieldvalue!==undefined && newValue!=undefined)||((item.ignoreIncomplete||false) && newValue!=undefined)){                // valid value ?
                 if(fieldvalue==undefined){
                   fieldvalue="__undefined__"   // catch undefined values
                 }
+                if(typeof fieldvalue==='object' || Array.isArray(fieldvalue)){
+                  fieldvalue = JSON.stringify(fieldvalue) // if object, we need to stringify it
+                }
+                // console.log("replacing placeholder")
                 newValue=newValue.replace(foundmatch,fieldvalue);               // replace the placeholder with the value
+                // console.log("replaced")
+                // console.log(item.name + " -> " + newValue)
             }else{
                 newValue=undefined                                              // cannot evaluate yet
                 // we have a placeholder but it's value is not ready yet... will be for next loop
@@ -481,7 +491,6 @@
                   Vue.set(ref.dynamicFieldStatus,item.name,"running");            // set as running
                   placeholderCheck = ref.replacePlaceholders(item)     // check and replace placeholders
                   if(placeholderCheck.value!=undefined){                       // expression is clean ?
-
                       // allow local run in browser
                       if(item.runLocal){
                         console.log("Running local expression : " + placeholderCheck.value)
@@ -546,7 +555,7 @@
 
 
                   }else{
-                    //console.log(item.name + " is not evaluated yet");
+                    // console.log(item.name + " is not evaluated yet");
                     Vue.set(ref.dynamicFieldStatus,item.name,undefined);
                   }
                 } else if(item.type=="query" && item.query && flag==undefined){
