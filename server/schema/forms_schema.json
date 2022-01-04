@@ -214,7 +214,7 @@
 										"minValue": {"not": {}},
 										"maxValue": {"not": {}},
 										"expression": {"not": {}},
-										"runLocal": {"not": {}},                          
+										"runLocal": {"not": {}},
 										"dbConfig": {"not": {}},
 										"hide": {"not": {}},
 										"values": {"not": {}},
@@ -418,15 +418,67 @@
 								"sameAs": {
 									"$ref": "/field"
 								},
-								"regex": {
-									"type": "string",
-									"title": "Formfield regex",
-									"description": "A regular expression to validate the formfield"
+    					  "regex": {
+                  "anyOf": [
+                      {
+                        "type": "string",
+      									"title": "Formfield regex",
+      									"description": "A regular expression to validate the formfield"
+                      },
+                      {
+                        "type": "object",
+                        "title": "regex Validation",
+                        "description": "validate if field by regex",
+                        "required": [
+                            "expression"
+                        ],
+                        "properties": {
+                          "expression": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                  ]
 								},
 								"regexDescription": {
 									"type": "string",
 									"title": "Formfield regex description",
 									"description": "A friendly description if the regular expression does not match"
+								},
+                "notIn": {
+									"type": "object",
+									"title": "notIn Validation",
+									"description": "validate if field is not in other field (array)",
+                  "required": [
+                      "field"
+                  ],
+                  "properties": {
+                    "field": {
+    									"$ref": "/field"
+    								},
+    								"description": {
+    									"type": "string"
+    								}
+                  }
+								},
+                "in": {
+									"type": "object",
+									"title": "In Validation",
+									"description": "validate if field is in other field (array)",
+                  "required": [
+                      "field"
+                  ],
+                  "properties": {
+                    "field": {
+    									"$ref": "/field"
+    								},
+    								"description": {
+    									"type": "string"
+    								}
+                  }
 								},
 								"minValue": {
 									"type": "integer",
