@@ -189,6 +189,9 @@
 						"title": "Helpmessage",
 						"description": "A helpmessage to explain the form"
 					},
+          "showHelp": {
+						"type": "boolean"
+					},          
 					"fields": {
 						"type": "array",
 						"title": "Form fields",

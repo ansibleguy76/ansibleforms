@@ -127,8 +127,9 @@ forms:
         required: true
         minLength: 4
         maxLength: 10
-        regex: ^[a-zA-Z]*$
-        regexDescription: Must be alpha numeric
+        regex:
+          expression: ^[a-zA-Z]*$
+          description: Must be alpha numeric
         icon: user
       - type: password
         name: password
@@ -137,8 +138,9 @@ forms:
         required: true
         minLength: 8
         maxLength: 20
-        regex: ^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])
-        regexDescription: Must contain at least 1 numeric, 1 special, 1 upper and 1
+        regex:
+          expression: ^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])
+          description: Must contain at least 1 numeric, 1 special, 1 upper and 1
           lower character
         icon: lock
       - type: password

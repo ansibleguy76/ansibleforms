@@ -3,7 +3,7 @@
     <div class="container" v-if="formIsReady">
       <div class="columns">
         <div class="column">
-          <h1 class="title">{{ currentForm.name }} <a v-if="currentForm.help" class="tag is-info" @click="showHelp=!showHelp"><span v-if="showHelp">Hide help</span><span v-else>Show help</span></a></h1>
+          <h1 class="title">{{ currentForm.name }} <a v-if="currentForm.help" class="tag is-info" @click="showHelp=!showHelp"><span class="icon"><font-awesome-icon icon="question-circle" /></span><span v-if="showHelp">Hide help</span><span v-else>Show help</span></a></h1>
           <article v-if="currentForm.help && showHelp" class="message is-info">
             <div class="message-body content"><VueShowdown :markdown="currentForm.help" flavor="github" :options="{ghCodeBlocks:true}" /></div>
           </article>
@@ -205,7 +205,7 @@
           canSubmit:false,
           validationsLoaded:false,
           timeout:undefined,     // determines how long we should show the result of run
-          showHelp:true,
+          showHelp:false,
           ansibleJobId:undefined,
           awxJobId:undefined,
           abortTriggered:false
@@ -1039,6 +1039,9 @@
         }
         Vue.set(ref.visibility,item.name,true)
       });
+      if(this.currentForm.showHelp && this.currentForm.showHelp===true){
+        this.showHelp=true
+      }
       this.$v.form.$reset();
       this.startDynamicFieldsLoop();
     }
