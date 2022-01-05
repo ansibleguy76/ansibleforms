@@ -16,89 +16,89 @@
           <div :key="group" v-for="group in fieldgroups" class="mt-4">
             <div :class="{'box':checkGroupDependencies(group)}">
               <h3 class="title is-3" v-if="checkGroupDependencies(group)">{{group}}</h3>
-              <div :key="field.name" v-for="field in filterfieldsByGroup(group)">
-                <transition name="slide">
-                  <div class="field mt-3" v-if="checkDependencies(field,true)">
-                    <!-- add field label -->
-                    <label v-if="!field.hide" class="label has-text-primary">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span></label>
-                    <!-- type = checkbox -->
-                    <label v-if="field.type=='checkbox'" class="checkbox">
-                      <input :checked="field.default" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" :required="field.required" :name="field.name" type="checkbox">
-                      {{ field.placeholder }}
-                    </label>
-                    <!-- type = query -->
-                    <BulmaAdvancedSelect
-                      v-if="field.type=='query'"
-                      :default="field.default"
-                      :required="field.required||false"
-                      :multiple="field.multiple||false"
-                      :name="field.name"
-                      :placeholder="field.placeholder||'Select...'"
-                      :values="queryresults[field.name]||[]"
-                      :hasError="$v.form[field.name].$invalid"
-                      :status="dynamicFieldStatus[field.name]"
-                      v-model="$v.form[field.name].$model"
-                      :icon="field.icon"
-                      :columns="field.columns||[]"
-                      :previewColumn="field.previewColumn||''"
-                      :valueColumn="field.valueColumn||''"
-                      :placeholderColumn="field.placeholderColumn"
-                      @ischanged="evaluateDynamicFields(field.name)"
-                      >
-                    </BulmaAdvancedSelect>
-                    <!-- type = radio -->
-                    <div v-if="field.type=='radio'" >
-                      <label class="radio" :key="radiovalue" v-for="radiovalue in field.values">
-                        <input type="radio" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" :checked="field.default===radiovalue" :value="radiovalue" :name="field.name">
-                        {{ radiovalue }}
+                <div :key="field.name" v-for="field in filterfieldsByGroup(group)">
+                  <transition name="slide">
+                    <div class="field mt-3" v-if="checkDependencies(field,true)">
+                      <!-- add field label -->
+                      <label class="label has-text-primary">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span></label>
+                      <!-- type = checkbox -->
+                      <label v-if="field.type=='checkbox'" class="checkbox">
+                        <input :checked="field.default" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" :required="field.required" :name="field.name" type="checkbox">
+                        {{ field.placeholder }}
                       </label>
-                    </div>
-                    <BulmaEditTable v-if="field.type=='table'" :tableFields="field.tableFields" :click="false" tableClass="table is-striped is-bordered is-narrow" v-model="$v.form[field.name].$model" />
-                    <div :class="{'has-icons-left':!!field.icon && field.type!='query'}" class="control">
-                      <!-- type = expression -->
-                      <div v-if="field.type=='expression'" :class="{'is-loading':dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running'}" class="control">
-                        <input :type="(field.hide||false) ? 'hidden' : 'text'" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input has-text-info" readonly :name="field.name" :required="field.required">
+                      <!-- type = query -->
+                      <BulmaAdvancedSelect
+                        v-if="field.type=='query'"
+                        :default="field.default"
+                        :required="field.required||false"
+                        :multiple="field.multiple||false"
+                        :name="field.name"
+                        :placeholder="field.placeholder||'Select...'"
+                        :values="queryresults[field.name]||[]"
+                        :hasError="$v.form[field.name].$invalid"
+                        :status="dynamicFieldStatus[field.name]"
+                        v-model="$v.form[field.name].$model"
+                        :icon="field.icon"
+                        :columns="field.columns||[]"
+                        :previewColumn="field.previewColumn||''"
+                        :valueColumn="field.valueColumn||''"
+                        :placeholderColumn="field.placeholderColumn"
+                        @ischanged="evaluateDynamicFields(field.name)"
+                        >
+                      </BulmaAdvancedSelect>
+                      <!-- type = radio -->
+                      <div v-if="field.type=='radio'" >
+                        <label class="radio" :key="radiovalue" v-for="radiovalue in field.values">
+                          <input type="radio" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" :checked="field.default===radiovalue" :value="radiovalue" :name="field.name">
+                          {{ radiovalue }}
+                        </label>
                       </div>
-                      <!-- type = text -->
-                      <input v-if="field.type=='text'" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" type="text" :placeholder="field.placeholder" @change="evaluateDynamicFields(field.name)">
-                      <!-- type = password -->
-                      <input v-if="field.type=='password'" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" type="password" :placeholder="field.placeholder" @change="evaluateDynamicFields(field.name)">
-                      <!-- type = number -->
-                      <input v-if="field.type=='number'" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" type="number" :placeholder="field.placeholder" @change="evaluateDynamicFields(field.name)">
-                      <!-- type = enum -->
-                      <div v-if="field.type=='enum' && !field.multiple" class="select">
-                        <select :name="field.name" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" @change="evaluateDynamicFields(field.name)">
-                          <option v-if="!field.required" value=""></option>
-                          <option v-for="option in field.values" :key="option" :selected="field.default==option" :value="option">{{ option }}</option>
-                        </select>
-                      </div>
-                      <!-- type = multiple enum -->
-                      <div v-if="field.type=='enum' && (field.multiple||false)==true" class="select is-multiple">
-                        <select :name="field.name" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" multiple :size="field.size">
-                          <option v-if="!field.required" value=""></option>
-                          <option v-for="option in field.values" :key="option" :selected="field.default.includes(option)" :value="option">{{ option }}</option>
-                        </select>
-                      </div>
+                      <BulmaEditTable v-if="field.type=='table'" :tableFields="field.tableFields" :click="false" tableClass="table is-striped is-bordered is-narrow" v-model="$v.form[field.name].$model" />
+                      <div :class="{'has-icons-left':!!field.icon && field.type!='query'}" class="control">
+                        <!-- type = expression -->
+                        <div v-if="field.type=='expression'" :class="{'is-loading':dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running'}" class="control">
+                          <input type="text" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input has-text-info" readonly :name="field.name" :required="field.required">
+                        </div>
+                        <!-- type = text -->
+                        <input v-if="field.type=='text'" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" type="text" :placeholder="field.placeholder" @change="evaluateDynamicFields(field.name)">
+                        <!-- type = password -->
+                        <input v-if="field.type=='password'" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" type="password" :placeholder="field.placeholder" @change="evaluateDynamicFields(field.name)">
+                        <!-- type = number -->
+                        <input v-if="field.type=='number'" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" type="number" :placeholder="field.placeholder" @change="evaluateDynamicFields(field.name)">
+                        <!-- type = enum -->
+                        <div v-if="field.type=='enum' && !field.multiple" class="select">
+                          <select :name="field.name" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" @change="evaluateDynamicFields(field.name)">
+                            <option v-if="!field.required" value=""></option>
+                            <option v-for="option in field.values" :key="option" :selected="field.default==option" :value="option">{{ option }}</option>
+                          </select>
+                        </div>
+                        <!-- type = multiple enum -->
+                        <div v-if="field.type=='enum' && (field.multiple||false)==true" class="select is-multiple">
+                          <select :name="field.name" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" multiple :size="field.size">
+                            <option v-if="!field.required" value=""></option>
+                            <option v-for="option in field.values" :key="option" :selected="field.default.includes(option)" :value="option">{{ option }}</option>
+                          </select>
+                        </div>
 
-                      <!-- add left icon, but not for query, because that's a component with icon builtin -->
-                      <span v-if="!!field.icon && field.type!='query'" class="icon is-small is-left">
-                        <font-awesome-icon :icon="field.icon" />
-                      </span>
-                      <!-- add help and alerts -->
-                      <p class="help" v-if="!!field.help">{{ field.help}}</p>
-                      <p class="has-text-danger" v-if="!$v.form[field.name].required">This field is required</p>
-                      <p class="has-text-danger" v-if="'minLength' in $v.form[field.name] && !$v.form[field.name].minLength">Must be at least {{$v.form[field.name].$params.minLength.min}} characters long</p>
-                      <p class="has-text-danger" v-if="'maxLength' in $v.form[field.name] && !$v.form[field.name].maxLength">Can not be more than {{$v.form[field.name].$params.maxLength.max}} characters long</p>
-                      <p class="has-text-danger" v-if="'minValue' in $v.form[field.name] && !$v.form[field.name].minValue">Value cannot be lower than {{$v.form[field.name].$params.minValue.min}}</p>
-                      <p class="has-text-danger" v-if="'maxValue' in $v.form[field.name] && !$v.form[field.name].maxValue">Value cannot be higher than {{$v.form[field.name].$params.maxValue.max}}</p>
-                      <p class="has-text-danger" v-if="'regex' in $v.form[field.name] && !$v.form[field.name].regex">{{$v.form[field.name].$params.regex.description}}</p>
-                      <p class="has-text-danger" v-if="'notIn' in $v.form[field.name] && !$v.form[field.name].notIn">{{$v.form[field.name].$params.notIn.description}}</p>
-                      <p class="has-text-danger" v-if="'in' in $v.form[field.name] && !$v.form[field.name].in">{{$v.form[field.name].$params.in.description}}</p>
-                      <p class="has-text-danger" v-if="'sameAs' in $v.form[field.name] && !$v.form[field.name].sameAs">Field must be identical to '{{$v.form[field.name].$params.sameAs.eq}}'</p>
+                        <!-- add left icon, but not for query, because that's a component with icon builtin -->
+                        <span v-if="!!field.icon && field.type!='query'" class="icon is-small is-left">
+                          <font-awesome-icon :icon="field.icon" />
+                        </span>
+                        <!-- add help and alerts -->
+                        <p class="help" v-if="!!field.help">{{ field.help}}</p>
+                        <p class="has-text-danger" v-if="!$v.form[field.name].required">This field is required</p>
+                        <p class="has-text-danger" v-if="'minLength' in $v.form[field.name] && !$v.form[field.name].minLength">Must be at least {{$v.form[field.name].$params.minLength.min}} characters long</p>
+                        <p class="has-text-danger" v-if="'maxLength' in $v.form[field.name] && !$v.form[field.name].maxLength">Can not be more than {{$v.form[field.name].$params.maxLength.max}} characters long</p>
+                        <p class="has-text-danger" v-if="'minValue' in $v.form[field.name] && !$v.form[field.name].minValue">Value cannot be lower than {{$v.form[field.name].$params.minValue.min}}</p>
+                        <p class="has-text-danger" v-if="'maxValue' in $v.form[field.name] && !$v.form[field.name].maxValue">Value cannot be higher than {{$v.form[field.name].$params.maxValue.max}}</p>
+                        <p class="has-text-danger" v-if="'regex' in $v.form[field.name] && !$v.form[field.name].regex">{{$v.form[field.name].$params.regex.description}}</p>
+                        <p class="has-text-danger" v-if="'notIn' in $v.form[field.name] && !$v.form[field.name].notIn">{{$v.form[field.name].$params.notIn.description}}</p>
+                        <p class="has-text-danger" v-if="'in' in $v.form[field.name] && !$v.form[field.name].in">{{$v.form[field.name].$params.in.description}}</p>
+                        <p class="has-text-danger" v-if="'sameAs' in $v.form[field.name] && !$v.form[field.name].sameAs">Field must be identical to '{{$v.form[field.name].$params.sameAs.eq}}'</p>
+                      </div>
                     </div>
-                  </div>
-                </transition>
-              </div>
+                  </transition>
+                </div>
             </div>
           </div>
 
@@ -297,8 +297,10 @@
       },
       filterfieldsByGroup(group){                   // creates a list of field per group
         return this.currentForm.fields.filter(function (el) {
-          return ("group" in el &&
-                 el.group === group) || (!("group" in el) && (group==""))
+          return (
+            (("group" in el && el.group === group)
+              || !("group" in el) && (group==""))
+            && el.hide!==true)
         });
       },
       checkDependencies(field,reset){
