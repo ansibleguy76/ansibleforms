@@ -3,7 +3,7 @@
     <div class="container" v-if="formIsReady">
       <div class="columns">
         <div class="column">
-          <h1 class="title">{{ currentForm.name }} <a v-if="currentForm.help" class="tag is-info" @click="showHelp=!showHelp"><span class="icon"><font-awesome-icon icon="question-circle" /></span><span v-if="showHelp">Hide help</span><span v-else>Show help</span></a></h1>
+          <h1 class="title">{{ currentForm.name }} <span v-if="currentForm.help" class="tag is-info is-clickable" @click="showHelp=!showHelp"><span class="icon"><font-awesome-icon icon="question-circle" /></span><span v-if="showHelp">Hide help</span><span v-else>Show help</span></span></h1>
           <article v-if="currentForm.help && showHelp" class="message is-info">
             <div class="message-body content"><VueShowdown :markdown="currentForm.help" flavor="github" :options="{ghCodeBlocks:true}" /></div>
           </article>
