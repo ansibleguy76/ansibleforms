@@ -45,7 +45,7 @@
 
 
   export default {
-      name: 'Error',
+      name: 'Schema',
       props:{
         schema:{type:Object},
         errorMessage:{type:String}
