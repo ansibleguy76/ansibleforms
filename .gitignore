@@ -20,6 +20,7 @@ pnpm-debug.log*
 
 # forms.yaml
 forms.yaml
+*.personal
 
 # ontap stuff
 ontap*.yaml
