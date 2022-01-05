@@ -22,10 +22,9 @@
                       <!-- add field label -->
                       <label class="label has-text-primary">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span></label>
                       <!-- type = checkbox -->
-                      <label v-if="field.type=='checkbox'" class="checkbox">
-                        <input :checked="field.default" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" :required="field.required" :name="field.name" type="checkbox">
-                        {{ field.placeholder }}
-                      </label>
+                      <div v-if="field.type=='checkbox'">
+                        <BulmaCheckRadio checktype="checkbox" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="field.placeholder" />
+                      </div>
                       <!-- type = query -->
                       <BulmaAdvancedSelect
                         v-if="field.type=='query'"
@@ -48,10 +47,7 @@
                       </BulmaAdvancedSelect>
                       <!-- type = radio -->
                       <div v-if="field.type=='radio'" >
-                        <label class="radio" :key="radiovalue" v-for="radiovalue in field.values">
-                          <input type="radio" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" :checked="field.default===radiovalue" :value="radiovalue" :name="field.name">
-                          {{ radiovalue }}
-                        </label>
+                        <BulmaCheckRadio :val="radiovalue" checktype="radio" v-for="radiovalue in field.values" :key="field.name+'_'+radiovalue" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="radiovalue" />
                       </div>
                       <BulmaEditTable v-if="field.type=='table'" :tableFields="field.tableFields" :click="false" tableClass="table is-striped is-bordered is-narrow" v-model="$v.form[field.name].$model" />
                       <div :class="{'has-icons-left':!!field.icon && field.type!='query'}" class="control">
@@ -164,6 +160,7 @@
   import TokenStorage from './../lib/TokenStorage'
   import VueJsonPretty from 'vue-json-pretty';
   import BulmaAdvancedSelect from './BulmaAdvancedSelect.vue'
+  import BulmaCheckRadio from './BulmaCheckRadio.vue'
   import BulmaEditTable from './BulmaEditTable.vue'
   import 'vue-json-pretty/lib/styles.css';
   import VueShowdown from 'vue-showdown';
@@ -174,7 +171,7 @@
 
   export default{
     name:"Form",
-    components:{VueJsonPretty,BulmaAdvancedSelect,BulmaEditTable},
+    components:{VueJsonPretty,BulmaAdvancedSelect,BulmaEditTable,BulmaCheckRadio},
     props:{
       currentForm:{type:Object}
     },
@@ -221,9 +218,17 @@
         var field
         var regexObj
         var description
-        attrs.required=requiredIf(function(form){
-          return !!ff.required
-        })
+        if(ff.type!='checkbox'){
+          attrs.required=requiredIf(function(){
+            return !!ff.required
+          })
+        }
+        if(ff.type=='checkbox'){
+          attrs.required=helpers.withParams(
+              {description: "This field is required"},
+              (value) => !helpers.req(value) || value==true
+          )
+        }
         if("minValue" in ff){ attrs.minValue=minValue(ff.minValue)}
         if("maxValue" in ff){ attrs.maxValue=maxValue(ff.maxValue)}
         if("minLength" in ff){ attrs.minLength=minLength(ff.minLength)}

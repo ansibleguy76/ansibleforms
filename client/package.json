@@ -21,6 +21,7 @@
     "vue-toastification" : "1.7.11",
     "vue-json-pretty" : "1.8.1",
     "bulma" : "*",
+    "bulma-checkradio": "*",
     "vue2-code-editor" : "*",
     "vue-bulma-paginate" : "*",
     "vue-moment" : "*",
@@ -42,7 +43,7 @@
     "eslint-plugin-vue": "^6.2.2",
     "vue-template-compiler": "^2.6.11",
     "nodemon": "~2.0.12",
-    "node-sass" :"^5.0.0",
+    "sass" :"*",
     "sass-loader":"10.1.1"
   },
   "eslintConfig": {

@@ -4,7 +4,7 @@
       <h1 class="title has-text-info"><font-awesome-icon icon="id-card" /> Ldap</h1>
       <div class="columns">
         <div class="column">
-          <BulmaCheckbox v-model="ldap.enable" label="Enable Ldap" /> <BulmaCheckbox v-if="ldap.enable" v-model="ldap.enable_tls" label="Enable Tls" />
+          <BulmaCheckbox checktype="checkbox" v-model="ldap.enable" label="Enable Ldap" /> <BulmaCheckbox v-if="ldap.enable" checktype="checkbox" v-model="ldap.enable_tls" label="Enable Tls" />
           <div v-if="ldap.enable">
             <BulmaInput icon="server" v-model="ldap.server" label="Server" placeholder="ldap.domain.local" :required="true" :hasError="$v.ldap.server.$invalid" :errors="[]" />
             <BulmaInput icon="arrows-alt-v" type="number" v-model="ldap.port" label="Port" placeholder="389" :required="true" :hasError="$v.ldap.port.$invalid" :errors="[]" />
@@ -17,7 +17,7 @@
           </div>
         </div>
         <div v-if="ldap.enable_tls && ldap.enable" class="column">
-          <BulmaCheckbox v-model="ldap.ignore_certs" label="Ignore Certificate Errors" />
+          <BulmaCheckbox checktype="checkbox" v-model="ldap.ignore_certs" label="Ignore Certificate Errors" />
           <BulmaTextArea v-if="!ldap.ignore_certs" v-model="ldap.cert" label="Ldap Certificate" placeholder="-----BEGIN CERTIFICATE-----" :hasError="$v.ldap.cert.$invalid" :errors="[]" />
           <BulmaTextArea v-if="!ldap.ignore_certs" v-model="ldap.ca_bundle" label="Ca Bundle" placeholder="-----BEGIN CERTIFICATE-----" :hasError="$v.ldap.ca_bundle.$invalid" :errors="[]" />
         </div>
@@ -31,7 +31,7 @@
   import Vuelidate from 'vuelidate'
   import BulmaButton from './../components/BulmaButton.vue'
   import BulmaInput from './../components/BulmaInput.vue'
-  import BulmaCheckbox from './../components/BulmaCheckbox.vue'
+  import BulmaCheckbox from './../components/BulmaCheckRadio.vue'
   import BulmaTextArea from './../components/BulmaTextArea.vue'
   import TokenStorage from './../lib/TokenStorage'
   import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
