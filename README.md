@@ -24,16 +24,16 @@ Ansible forms is a lightweight node.js webapplication to generate userfriendly a
 - Environment variables
 - Ldap & local authentication
 
-# How to install and run
+# How to install and run in docker
 ## Use docker compose (recommended)
 
 Follow this procedure (https://github.com/ansibleguy76/ansibleforms-docker)
 
-## Install manually
+## Install docker image manually
 Installing it manually requires more linux and sysadmin skills.
 ### Install MySql (or skip to use exising one)
 The application needs a MySQL (or MariaDb) server.  You can have your own pick, run in docker, run remote, run locally.  Just make sure it is accessible and set the environment variables in the application to connect to it.  
-The code below is for centos7, lookup the procedure for your own linux flavour.
+The code below is to install natively in centos7, lookup the procedure for your own linux flavour.
 ```
 wget https://dev.mysql.com/get/mysql57-community-release-el7-9.noarch.rpm
 sudo rpm -ivh mysql57-community-release-el7-9.noarch.rpm
@@ -47,11 +47,11 @@ sudo mysql_secure_installation
 ```
 Note : The first time, the webapplication will ask to create the database and tables. So you might want to give enough privileges.
 
-### Run with docker with docker hub image
-If you don't want to go through the hassle of a build.  Run a docker image directly from docker hub.
+### Get image from docker hub
+If you don't want to go through the hassle of a dockerbuild.  Run a docker image directly from docker hub.
 
 If you want, you can use the latest build from docker hub (https://hub.docker.com/repository/docker/ansibleguy/ansibleforms)
-Note that we have deployed the solution in the `/app` folder inside the docker.  So if you want your `forms.yaml`, your, logs, certificates and playbook reachable from within the docker image, you have to use a mount path or persistent volume and make sure it's mounted under `/app/dist/persistent`.  
+Note that we have deployed the solution in the `/app` folder inside the docker.  So if you want your `forms.yaml`, logs, certificates and playbooks reachable from within the docker image, you have to use a mount path or persistent volume and make sure it's mounted under `/app/dist/persistent`.  
 Make sure you have your environment variables set.  Most variables fall back to defaults, but the MySQL database connection is mandatory.  The image contains ansible and python3.  The below command is merely an example. An example of a forms.yaml you can find here (https://github.com/ansibleguy76/ansibleforms/tree/main/server/persistent).
 ```
 docker run -p 8000:8000 -d -t --mount type=bind,source=/srv/apps/ansibleforms/server/persistent,target=/app/dist/persistent --name ansibleforms -e DB_HOST=192.168.0.1 -e DB_USER=root -e DB_PASSWORD=password ansibleguy/ansibleforms
