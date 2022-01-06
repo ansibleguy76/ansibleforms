@@ -25,7 +25,7 @@
     "passport-http": "~0.3.0",
     "passport-jwt": "~4.0.0",
     "mysql": "~2.18.1",
-    "ajv": "~8.8.2",
+    "ajv": "~6.12.6",
     "ajv-error-parser": "~1.0.7",
     "bluebird": "~3.7.2",
     "node-jq": "~2.1.0",

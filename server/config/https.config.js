@@ -4,7 +4,6 @@ var privatekey=undefined
 var certificate=undefined
 
 if(process.env.HTTPS=="1"){
-  logger.error("Https enabled")
   try{
     privatekey = fs.readFileSync(process.env.HTTPS_KEY || (__dirname + '/../persistent/certificates/key.pem'))
     certificate = fs.readFileSync(process.env.HTTPS_CERT || (__dirname + '/../persistent/certificates/cert.pem'))

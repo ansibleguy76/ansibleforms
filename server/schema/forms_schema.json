@@ -1,7 +1,5 @@
 {
   "type": "object",
-  "title": "Ansibleforms Root Schema",
-  "description": "Webforms for AnsibleForms",
   "required": [
     "categories",
     "roles",
@@ -10,8 +8,6 @@
   "properties": {
     "categories": {
       "type": "array",
-      "title": "Categories",
-      "description": "A list of categories to group the forms",
       "contains": {
         "const": {
           "name": "Default",
@@ -20,8 +16,6 @@
       },
       "items": {
         "type": "object",
-        "title": "Category item",
-        "description": "A category item",
         "required": [
           "name",
           "icon"
@@ -29,15 +23,11 @@
         "properties": {
           "name": {
             "$id": "/categories",
-            "type": "string",
-            "title": "Category name",
-            "description": "The category name"
+            "type": "string"
           },
           "icon": {
             "$id": "/icon",
-            "type": "string",
-            "title": "A FontAwesome Icon",
-            "description": "A FontAwesome 5 icon (see https://fontawesome.com/)"
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -45,8 +35,6 @@
     },
     "roles": {
       "type": "array",
-      "title": "Roles",
-      "description": "Roles, used for RBAC",
       "contains": {
         "const": {
           "name": "public",
@@ -55,8 +43,6 @@
       },
       "items": {
         "type": "object",
-        "title": "Role",
-        "description": "A role",
         "required": [
           "name",
           "groups"
@@ -64,18 +50,12 @@
         "properties": {
           "name": {
             "$id": "/role",
-            "type": "string",
-            "title": "Role name",
-            "description": "The role name"
+            "type": "string"
           },
           "groups": {
             "type": "array",
-            "title": "Groups",
-            "description": "A list of groups belonging to a role (local or ldap)",
             "items": {
               "type": "string",
-              "title": "Group name",
-              "description": "The groupname, prepended with local/ or ldap/, is case sensitive",
               "default": "",
               "pattern": "(\\blocal\\b|\\bldap\\b)\\/.+"
             }
@@ -86,13 +66,9 @@
     },
     "forms": {
       "type": "array",
-      "title": "Forms",
-      "description": "A list of forms",
       "default": [],
       "items": {
         "type": "object",
-        "title": "A form",
-        "description": "A form item, describing all the fields and actions",
         "required": [
           "name",
           "roles",
@@ -124,41 +100,29 @@
         ],
         "properties": {
           "name": {
-            "type": "string",
-            "title": "Form name",
-            "description": "The name of the form"
+            "type": "string"
           },
           "roles": {
             "type": "array",
-            "title": "Form Roles",
-            "description": "A list of roles that can execute this form",
             "items": {
               "$ref": "/role"
             }
           },
           "description": {
-            "type": "string",
-            "title": "Form description",
-            "description": "The description of a form"
+            "type": "string"
           },
           "image": {
-            "type": "string",
-            "title": "An square image src url",
-            "description": "A url to a square image or base64 image source string (data:image/png;base64;...)"
+            "type": "string"
           },
           "icon": {
             "$ref": "/icon"
           },
           "tileClass": {
             "type": "string",
-            "title": "The form tile color",
-            "description": "A Bulma background color CSS class to add to the form tile. (see https://bulma.io/documentation/helpers/color-helpers/)",
             "pattern": "^has-background-.+"
           },
           "categories": {
             "type": "array",
-            "title": "Form categories",
-            "description": "A list of categories where this form is part of",
             "default": ["Default"],
             "items": {
               "$ref": "/categories"
@@ -166,46 +130,30 @@
           },
           "type": {
             "type": "string",
-            "title": "Form type",
-            "description": "The type of form, ansible or awx",
             "enum": ["ansible", "awx"]
           },
           "playbook": {
-            "type": "string",
-            "title": "Ansible Playbook",
-            "description": "Name of the ansible playbook"
+            "type": "string"
           },
           "template": {
-            "type": "string",
-            "title": "Awx Template",
-            "description": "Name of the AWX template"
+            "type": "string"
           },
           "inventory": {
-            "type": "string",
-            "title": "Ansible/Awx inventory",
-            "description": "The ansible inventory, referencing the -i flag"
+            "type": "string"
           },
           "tags": {
-            "type": "string",
-            "title": "Ansible/Awx Tags",
-            "description": "A comma separated list of ansible tags, referencing the -t flag"
+            "type": "string"
           },
           "help": {
-            "type": "string",
-            "title": "Helpmessage",
-            "description": "A helpmessage to explain the form"
+            "type": "string"
           },
           "showHelp": {
             "type": "boolean"
           },
           "fields": {
             "type": "array",
-            "title": "Form fields",
-            "description": "A list of of formfields, which will result into extravars (referencing the -e flag)",
             "items": {
               "type": "object",
-              "title": "Form field",
-              "description": "A form field",
               "required": [
                 "type",
                 "name",
@@ -608,50 +556,37 @@
               "properties": {
                 "type": {
                   "type": "string",
-                  "title": "Formfield type",
-                  "description": "The formfield type",
                   "enum": ["text", "password", "checkbox", "enum", "query", "number", "radio", "expression", "table"]
                 },
                 "name": {
                   "$id": "/formfield",
-                  "type": "string",
-                  "title": "Formfield name",
-                  "description": "the name of the formfield"
+                  "type": "string"
                 },
                 "label": {
-                  "type": "string",
-                  "title": "Formfield label",
-                  "description": "The label for the formfield"
+                  "type": "string"
                 },
                 "placeholder": {
-                  "type": "string",
-                  "title": "Formfield placeholder",
-                  "description": "A placeholder, temporary display value"
+                  "type": "string"
                 },
                 "group": {
-                  "type": "string",
-                  "title": "Formfield group",
-                  "description": "The panel group name to visually group fields together"
+                  "type": "string"
                 },
                 "default": {
-                  "type": ["string", "boolean", "array", "integer"],
-                  "title": "Default value",
-                  "description": "A default value for the formfield"
+                  "anyOf": [
+                    {"type":"string"},
+                    {"type":"boolean"},
+                    {"type":"array"},
+                    {"type":"integer"}
+                  ]
                 },
                 "noOutput": {
-                  "type": ["boolean"],
-                  "title": "Do not output",
-                  "description": "Prevent field from being outputted"
+                  "type": "boolean"
                 },
                 "asCredential": {
-                  "type": ["boolean"],
-                  "title": "Handle as credential",
-                  "description": "Will evaluate the value as a credential name"
+                  "type": "boolean"
                 },
                 "required": {
                   "type": "boolean",
-                  "title": "Is required",
-                  "description": "A flag whether the formfield is required or not",
                   "default": false
                 },
                 "sameAs": {
@@ -659,14 +594,10 @@
                 },
                 "regex": {
                   "anyOf": [{
-                      "type": "string",
-                      "title": "Formfield regex",
-                      "description": "A regular expression to validate the formfield"
+                      "type": "string"
                     },
                     {
                       "type": "object",
-                      "title": "regex Validation",
-                      "description": "validate if field by regex",
                       "required": [
                         "expression"
                       ],
@@ -682,14 +613,10 @@
                   ]
                 },
                 "regexDescription": {
-                  "type": "string",
-                  "title": "Formfield regex description",
-                  "description": "A friendly description if the regular expression does not match"
+                  "type": "string"
                 },
                 "notIn": {
                   "type": "object",
-                  "title": "notIn Validation",
-                  "description": "validate if field is not in other field (array)",
                   "required": [
                     "field"
                   ],
@@ -704,8 +631,6 @@
                 },
                 "in": {
                   "type": "object",
-                  "title": "In Validation",
-                  "description": "validate if field is in other field (array)",
                   "required": [
                     "field"
                   ],
@@ -719,142 +644,104 @@
                   }
                 },
                 "minValue": {
-                  "type": "integer",
-                  "title": "Minimum value",
-                  "description": "A minimum value for a numeric formfield"
+                  "type": "integer"
                 },
                 "maxValue": {
-                  "type": "integer",
-                  "title": "Maximum value",
-                  "description": "A maximum value for a numeric formfield"
+                  "type": "integer"
                 },
                 "minLength": {
-                  "type": "integer",
-                  "title": "Minimum string length",
-                  "description": "A minimum length for a string formfield"
+                  "type": "integer"
                 },
                 "maxLength": {
-                  "type": "integer",
-                  "title": "Maximum string length",
-                  "description": "A maximum length for a string formfield"
+                  "type": "integer"
                 },
                 "expression": {
-                  "type": "string",
-                  "title": "Javascript expression",
-                  "description": "A javascript expression to evaluate, use $(fieldname) to reference another field variable.  Don't forget to add quotes around placeholders if needed."
+                  "type": "string"
                 },
                 "ignoreIncomplete": {
-                  "type": "boolean",
-                  "title": "Ignore incomplete placeholders",
-                  "description": "I a javascript expression, ignore undefined values of incomplete placeholders."
+                  "type": "boolean"
                 },
                 "runLocal": {
-                  "type": "boolean",
-                  "title": "run evaluations locally",
-                  "description": "Run javascript expression locally"
+                  "type": "boolean"
                 },
                 "query": {
-                  "type": "string",
-                  "title": "SQL query",
-                  "description": "An sql query to populate a dropdown box, use $(fieldname) to reference another field variable.  Don't forget to add quotes around placeholders if needed."
+                  "type": "string"
                 },
                 "outputObject": {
-                  "type": "boolean",
-                  "title": "Outputs an object instead of string if type is query",
-                  "description": "A query field, can return strings (based on first column) or can return the full record (object)"
+                  "type": "boolean"
                 },
                 "columns": {
                   "type": "array",
-                  "title": "The columns to be shown",
-                  "description": "A list of column names, in case of multi-column",
                   "items": {
                     "type": "string"
                   }
                 },
                 "valueColumn": {
-                  "type": "string",
-                  "title": "Which column hold the value",
-                  "description": "Which column should we use to select the output-value."
+                  "type": "string"
                 },
                 "previewColumn": {
-                  "type": "string",
-                  "title": "Which column we must use to preview in the dropdown box",
-                  "description": "When using visualization, which column should we use to select the value."
+                  "type": "string"
                 },
                 "placeholderColumn": {
-                  "type": "string",
-                  "title": "Which column we must use to fill placeholders",
-                  "description": "When using placeholders lik $(fieldname), which column should we use to select the value for the placeholder."
+                  "type": "string"
                 },
                 "dbConfig": {
                   "type": "object",
-                  "title": "Database configuration",
-                  "description": "the name of the database configuration to execute the query.  WITHOUT the DB_ prefix !!.  See environment variable examples.",
                   "required": [
                     "name",
                     "type"
                   ],
                   "properties": {
                     "name": {
-                      "type": "string",
-                      "title": "Name of the connection credentials",
-                      "description": "Name of the connection credentials"
+                      "type": "string"
                     },
                     "type": {
                       "type": "string",
-                      "enum": ["mysql", "mssql", "postgres", "mongodb"],
-                      "title": "Name of the connection type",
-                      "description": "Can be mysql, mssql and postgres"
+                      "enum": ["mysql", "mssql", "postgres", "mongodb"]
                     }
                   }
                 },
                 "model": {
-                  "type": "string",
-                  "title": "Formfield model",
-                  "description": "The json nested object model of the posted formfield.  Each 'dot' is a level deeper.  Use this to create object-like extravars."
+                  "type": "string"
                 },
                 "help": {
-                  "type": "string",
-                  "title": "Formfield helpmessage",
-                  "description": "A helpmessage that appears under the formfield"
+                  "type": "string"
                 },
                 "values": {
                   "type": "array",
-                  "title": "Enumeration values",
-                  "description": "A list of predefined values to populated the enumeration field (dropdown)",
                   "items": {
                     "type": "string"
                   }
                 },
                 "multiple": {
                   "type": "boolean",
-                  "title": "Is multiple enumeration",
-                  "description": "A flag whether multiple selections are allowed in an enumeration, also works in multiquery fields",
                   "default": false
                 },
                 "size": {
-                  "type": "integer",
-                  "title": "The size of a multiple select enumeration field",
-                  "description": "A helpmessage that appears under the formfield"
+                  "type": "integer"
                 },
                 "dependencies": {
                   "type": "array",
-                  "title": "Formfield dependencies",
-                  "description": "A list of dependencies when to show this formfield",
                   "items": {
                     "type": "object",
-                    "title": "Formfield dependency",
-                    "description": "A dependency referencing another field and a list of valid values",
                     "properties": {
                       "name": {
                         "$ref": "/formfield"
                       },
                       "values": {
                         "type": "array",
-                        "title": "Dependency values",
-                        "description": "A list values that are valid for this dependency",
                         "items": {
-                          "type": ["string", "integer", "boolean"]
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "integer"
+                            },
+                            {
+                              "type": "boolean"
+                            }
+                          ]
                         }
                       }
                     },
@@ -862,21 +749,15 @@
                   }
                 },
                 "hide": {
-                  "type": "boolean",
-                  "title": "Hide expression",
-                  "description": "A flag to hide an expression on the form, to evaluate hidden background expressions"
+                  "type": "boolean"
                 },
                 "icon": {
                   "$ref": "/icon"
                 },
                 "tableFields": {
                   "type": "array",
-                  "title": "Table fields",
-                  "description": "A list of of table fields",
                   "items": {
                     "type": "object",
-                    "title": "Table field",
-                    "description": "A table field",
                     "required": [
                       "type",
                       "name",
@@ -969,70 +850,57 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "title": "Formfield type",
-                        "description": "The formfield type",
                         "enum": ["text", "password", "checkbox", "enum", "query", "number", "radio", "expression", "table"]
                       },
                       "name": {
-                        "type": "string",
-                        "title": "field name",
-                        "description": "the name of the table field"
+                        "type": "string"
                       },
                       "label": {
-                        "type": "string",
-                        "title": "Formfield label",
-                        "description": "The label for the table field"
+                        "type": "string"
                       },
                       "placeholder": {
-                        "type": "string",
-                        "title": "table field placeholder",
-                        "description": "A placeholder, temporary display value"
+                        "type": "string"
                       },
                       "default": {
-                        "type": ["string", "boolean", "array", "integer"],
-                        "title": "Default value",
-                        "description": "A default value for the formfield"
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "boolean"
+                          },
+                          {
+                            "type": "array"
+                          },
+                          {
+                            "type": "integer"
+                          }
+                        ]
                       },
                       "required": {
                         "type": "boolean",
-                        "title": "Is required",
-                        "description": "A flag whether the formfield is required or not",
                         "default": false
                       },
                       "regex": {
-                        "type": "string",
-                        "title": "Formfield regex",
-                        "description": "A regular expression to validate the formfield"
+                        "type": "string"
                       },
                       "regexDescription": {
-                        "type": "string",
-                        "title": "Formfield regex description",
-                        "description": "A friendly description if the regular expression does not match"
+                        "type": "string"
                       },
                       "minValue": {
-                        "type": "integer",
-                        "title": "Minimum value",
-                        "description": "A minimum value for a numeric formfield"
+                        "type": "integer"
                       },
                       "maxValue": {
-                        "type": "integer",
-                        "title": "Maximum value",
-                        "description": "A maximum value for a numeric formfield"
+                        "type": "integer"
                       },
                       "minLength": {
-                        "type": "integer",
-                        "title": "Minimum string length",
-                        "description": "A minimum length for a string formfield"
+                        "type": "integer"
                       },
                       "maxLength": {
-                        "type": "integer",
-                        "title": "Maximum string length",
-                        "description": "A maximum length for a string formfield"
+                        "type": "integer"
                       },
                       "values": {
                         "type": "array",
-                        "title": "Enumeration values",
-                        "description": "A list of predefined values to populated the enumeration field (dropdown)",
                         "items": {
                           "type": "string"
                         }
