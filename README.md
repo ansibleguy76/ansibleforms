@@ -32,7 +32,8 @@ Follow this procedure (https://github.com/ansibleguy76/ansibleforms-docker)
 ## Install manually
 Installing it manually requires more linux and sysadmin skills.
 ### Install MySql (or skip to use exising one)
-The application needs a MySQL (or MariaDb) server.  You can have your own pick, run in docker, run remote, run locally.  Just make sure it is accessible and set the environment variables in the application to connect to it.
+The application needs a MySQL (or MariaDb) server.  You can have your own pick, run in docker, run remote, run locally.  Just make sure it is accessible and set the environment variables in the application to connect to it.  
+The code below is for centos7, lookup the procedure for your own linux flavour.
 ```
 wget https://dev.mysql.com/get/mysql57-community-release-el7-9.noarch.rpm
 sudo rpm -ivh mysql57-community-release-el7-9.noarch.rpm
@@ -46,10 +47,6 @@ sudo mysql_secure_installation
 ```
 Note : The first time, the webapplication will ask to create the database and tables. So you might want to give enough privileges.
 
-In (https://github.com/ansibleguy76/ansibleforms/tree/main/demo) you can find a demo sql file that will create some extra demo tables in case you want to your forms to grab data from a database and you want a first test drive.
-```
-mysql -u root -p -t< ./demo/demo_cmdb.sql > mysql_deployed.txt
-```
 ### Run with docker with docker hub image
 If you don't want to go through the hassle of a build.  Run a docker image directly from docker hub.
 
