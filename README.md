@@ -202,24 +202,10 @@ The default admin user is :
 # Technologies
 The webapplication is based on a
 - Frontend
-  - vue (core)
-  - vue-router (navigation)
-  - axios (api calls)
-  - vuelidate (form validation)
-  - vue-toastification (alerting)
-  - vue-json-pretty (json formatter)
+  - vue 2
   - bulma.io (responsive css framework)
   - FontAwesome (icon font library)
 - Backend
-  - express (core)
-  - winston (logging)
-  - axios (api calls)
-  - bcrypt (password hashing)
-  - cheerio (html parser)
-  - passport (authentication/authorization)
-  - mysql (mysql connection)
-  - connect-history-api-fallback (history api)
-  - ajv (json schema validation)
-  - crypto (credential encrypt/decrypt)
+  - express (nodejs)
 - Database
   - MySql/MariaDb

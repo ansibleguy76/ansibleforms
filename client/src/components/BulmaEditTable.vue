@@ -136,6 +136,8 @@
           }
           this.tableFields.forEach((ff, i) => {
             var attrs = {}
+            var regexObj
+            var description
             attrs.required=requiredIf(function(){
               return !!ff.required
             })
@@ -144,12 +146,22 @@
             if("minLength" in ff){ attrs.minLength=minLength(ff.minLength)}
             if("maxLength" in ff){ attrs.maxLength=maxLength(ff.maxLength)}
             if("regex" in ff){
-              var regexObj = new RegExp(ff.regex)
-              var description = (ff.regexDescription!==undefined)?ff.regexDescription:"The value must match regular expression : " + ff.regex
-              attrs.regex = helpers.withParams(
-                  {description: description,type:"regex"},
-                  (value) => !helpers.req(value) || regexObj.test(value)
-              )
+              if(typeof ff.regex == 'object'){
+                regexObj = new RegExp(ff.regex.expression)
+                description = (ff.regex.description!==undefined)?ff.regex.description:"The value must match regular expression : " + ff.regex.expression
+                attrs.regex = helpers.withParams(
+                    {description: description,type:"regex"},
+                    (value) => !helpers.req(value) || regexObj.test(value)
+                )
+                console.log(attrs.regex)
+              }else{
+                regexObj = new RegExp(ff.regex)
+                description = (ff.regexDescription!==undefined)?ff.regexDescription:"The value must match regular expression : " + ff.regex
+                attrs.regex = helpers.withParams(
+                    {description: description,type:"regex"},
+                    (value) => !helpers.req(value) || regexObj.test(value)
+                )
+              }
             }
             obj.editedItem[ff.name]=attrs
           });

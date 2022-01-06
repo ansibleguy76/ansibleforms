@@ -593,7 +593,8 @@
                   "$ref": "/formfield"
                 },
                 "regex": {
-                  "anyOf": [{
+                  "anyOf": [
+                    {
                       "type": "string"
                     },
                     {
@@ -882,7 +883,25 @@
                         "default": false
                       },
                       "regex": {
-                        "type": "string"
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "object",
+                            "required": [
+                              "expression"
+                            ],
+                            "properties": {
+                              "expression": {
+                                "type": "string"
+                              },
+                              "description": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        ]
                       },
                       "regexDescription": {
                         "type": "string"

@@ -236,7 +236,7 @@
         if("regex" in ff){
           if(typeof ff.regex == 'object'){
             regexObj = new RegExp(ff.regex.expression)
-            description = (ff.regex.description!==undefined)?ff.regex.description:"The value must match regular expression1 : " + ff.regex.expression
+            description = (ff.regex.description!==undefined)?ff.regex.description:"The value must match regular expression : " + ff.regex.expression
             attrs.regex = helpers.withParams(
                 {description: description,type:"regex"},
                 (value) => !helpers.req(value) || regexObj.test(value)
