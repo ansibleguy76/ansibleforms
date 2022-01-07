@@ -4,8 +4,8 @@
       <div class="container">
         <div class="columns is-centered">
           <div class="column is-5-tablet is-6-desktop is-6-widescreen">
-            <div class="notification is-warning-light box content" v-if="errorMessage!=''">
-              <strong>{{ errorMessage}}</strong><br><br>
+            <div class="notification has-background-warning-light box content" v-if="errorMessage!=''">
+              <strong v-html="errorMessageHtml"></strong><br><br>
               This is the end of the line I'm afraid.<br>
               You'll need to fix a few things, here are some hints:<br>
               <ul>
@@ -29,12 +29,18 @@
 
   export default {
       props:{
-        errorMessage:{type:String}
+        errorMessage:{type:String},
+        errorData:{type:Object}
       },
       name: 'Error',
       data() {
           return {
           }
+      },
+      computed:{
+        errorMessageHtml(){
+          return this.errorMessage.replaceAll("\n","<br>").replace("Error: ","")
+        }
       },
       methods: {
 

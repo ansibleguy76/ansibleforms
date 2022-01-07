@@ -8,7 +8,7 @@ exports.hasSchema = function(req, res) {
         if (err){
             res.json(new RestResult("error",err,null,null))
         }else{
-            res.json(new RestResult(schema.status,schema.message,null,""));
+            res.json(new RestResult(schema.status,schema.message,schema.data.success,schema.data.failed));
         }
     });
 };

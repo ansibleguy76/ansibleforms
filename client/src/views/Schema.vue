@@ -4,17 +4,14 @@
       <div class="container">
         <div class="columns is-centered">
           <div class="column is-6-tablet is-6-desktop is-6-widescreen">
-            <div class="notification is-info" v-if="errorMessage!=''">
-              {{ errorMessage}}
-            </div>
-            <div class="notification is-danger" v-if="errorMessage2!=''">
-              {{ errorMessage2}}
-            </div>
-            <form v-if="errorMessage!='Failed to connect'" action="" class="box">
+            <div class="notification is-danger" v-if="errorMessage!=''" v-text="errorMessage"></div>
+            <div class="notification is-success" v-if="success!=''" v-html="success"></div>
+            <div class="notification is-warning" v-if="failed!=''" v-html="failed"></div>
+            <form action="" class="box">
               <div class="content">
                 If this is the first time setup and you don't have your own schema and tables.<br><br>
                 Would you like me to try and create the schema and tables ?<br>
-                I would create the following :<br><br>
+                I would create the following : <br><br>
                 <table class="table is-bordered is-striped">
                   <tbody>
                     <tr><th>Databaseschema</th><td>AnsibleForms</td></tr>
@@ -25,11 +22,9 @@
                 </table>
               </div>
               <div class="field">
-
                 <button class="button is-success" @click="create()">
-                  Create
+                  <span class="icon"><font-awesome-icon icon="magic" /></span><span>Create</span>
                 </button>
-
               </div>
             </form>
           </div>
@@ -48,12 +43,16 @@
       name: 'Schema',
       props:{
         schema:{type:Object},
-        errorMessage:{type:String}
+        errorMessage:{type:String},
+        errorData:{type:Object}
       },
       data() {
           return {
-            errorMessage2:""
           }
+      },
+      computed:{
+        success(){return this.errorData.output.join('<br>')},
+        failed(){return this.errorData.error.join('<br>')}
       },
       methods: {
           create() {

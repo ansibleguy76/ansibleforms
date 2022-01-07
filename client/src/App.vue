@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <BulmaNav :isAdmin="isAdmin" :authenticated="authenticated" :profile="profile" @logout="logout()" />
-    <router-view :formConfig="formConfig" :isAdmin="isAdmin" :authenticated="authenticated" :errorMessage="errorMessage" @authenticated="loadFormConfig" @logout="logout()" />
+    <router-view :formConfig="formConfig" :isAdmin="isAdmin" :authenticated="authenticated" :errorMessage="errorMessage" :errorData="errorData" @authenticated="loadFormConfig" @logout="logout()" />
   </div>
 </template>
 <script>
@@ -15,6 +15,7 @@
       return{
         formConfig:undefined,
         errorMessage:"",
+        errorData:{success:[],failed:[]},
         profile:"",
         authenticated:false,
         isAdmin:false
@@ -41,10 +42,13 @@
             .then((result)=>{
               if(result.data.status=="error"){
                 ref.errorMessage=result.data.message;
-                if(ref.errorMessage.includes("Failed to connect")){
-                  ref.errorMessage="Failed to check AnsibleForms database schema\n\n" + result.data.message;
+                ref.errorData=result.data.data;
+                if(!ref.errorMessage)ref.errorMessage="Unknown error"
+                if(typeof ref.errorMessage=="object"){ref.errorMessage=ref.errorMessage.message}
+                if(ref.errorMessage.startsWith("ERROR")){ // actual error, send to error page
+                  ref.errorMessage="Failed to check AnsibleForms database schema\n\n" + ref.errorMessage;
                   ref.$router.replace({name:"Error"}).catch(err => {});
-                }else{
+                }else{ // not a real error, send to schema page
                   ref.$router.replace({name:"Schema"}).catch(err => {});
                 }
               }else{

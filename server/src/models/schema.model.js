@@ -2,127 +2,136 @@
 const bcrypt = require('bcrypt');
 const logger=require("../lib/logger");
 const mysql = require("./db.model")
+const fs = require('fs');
 //user object create
 var Schema=function(){
 };
+function handleError(n){
+  logger.error(n)
+  throw(n)
+}
 
-Schema.hasSchema = function (result) {
-  mysql.query(`SHOW DATABASES LIKE 'AnsibleForms'`,null, function (err, res) {
-    if(err) {
-      result("Failed to query databases in AnsibleForms MySql. " + err, null);
-    }
-    else{
-      if(res.length > 0){
-        logger.debug(`Checking tables in schema 'AnsibleForms'`)
-        mysql.query("SHOW TABLES FROM `AnsibleForms`;",null,function(err,res){
-          if(err) {
-              result("Failed to query tables in the AnsibleForms schema. " + err, null);
+function checkSchema(){
+  var message
+  var db="AnsibleForms"
+  logger.silly("checking schema " + db)
+  var sql = `SHOW DATABASES LIKE '${db}'`
+  return new Promise((resolve,reject) => {
+      mysql.query(sql,null,function(err,res){
+        if(err){
+          message=`Schema '${db}' query error\n` + err
+          logger.warn(message)
+          reject("ERROR : " + message)
+        }else{
+          if(res){
+            if(res.length>0){
+              message=`Schema '${db}' is present`
+              logger.silly(message)
+              resolve(message)
+            }else{
+              message=`Schema '${db}' is not present`
+              logger.warn(message)
+              reject(message)
+            }
+          }else{
+            message=`ERROR : Unexpected result from MySql when searching for schema '${db}'`
+            logger.error(message)
+            reject(message)
           }
-          else{
-              if(res.length == 8){
-                result(null,{status:"success",message:`schema 'AnsibleForms' and tables are present`})
-              }else{
-                logger.warn(`Tables are not ok`)
-                result(null,{status:"error",message:`schema 'AnsibleForms' is present, but some tables are not`});
-              }
-          }
-        })
-      }else{
-        logger.warn(`Schema AnsibleForms' is not ok`)
-        result(null,{status:"error",message:`schema 'AnsibleForms' is not present`});
-      }
-    }
+        }
+      })
   })
 }
+function checkTable(table){
+  var message
+  var db="AnsibleForms"
+  logger.silly("checking table " + table)
+  var sql = `SHOW TABLES FROM ${db} WHERE Tables_in_${db}='${table}'`
+  return new Promise((resolve,reject) => {
+      mysql.query(sql,null,function(err,res){
+        if(err){
+          message=`Table '${table}' query error\n` + err
+          logger.silly(err)
+          reject("ERROR : " + message)
+        }else{
+          if(res){
+            if(res.length>0){
+              message=`Table '${table}' is present`
+              logger.debug(message)
+              resolve(message)
+            }else{
+              message=`Table '${table}' is not present`
+              logger.warn(message)
+              reject(message)
+            }
+          }else{
+            message=`ERROR : Unexpected result from MySql when searching for table '${table}'`
+            reject(message)
+          }
+        }
+      })
+  })
+}
+function reflect(promise){
+    return promise.then(function(v){ return {v:v, status: "fulfilled" }},
+                        function(e){ return {e:e, status: "rejected" }});
+}
+function checkAll(){
+  var messages=[]
+  var success=[]
+  var failed=[]
+  var tablePromises=[]
+  return checkSchema() // schema
+    .then((res)=>{     // if success
+      messages.push(res); // add schema result
+      success.push(res);  // add schema success
+      // check all tables as promise
+      tablePromises.push(checkTable("credentials"))
+      tablePromises.push(checkTable("groups"))
+      tablePromises.push(checkTable("job_output"))
+      tablePromises.push(checkTable("jobs"))
+      tablePromises.push(checkTable("ldap"))
+      tablePromises.push(checkTable("tokens"))
+      tablePromises.push(checkTable("users"))
+      tablePromises.push(checkTable("awx"))
+      // wait for all results
+      return Promise.all(tablePromises.map(reflect)) // map succes status
+    },handleError) // stop if schema does not exist or other error (db connect failed ?)
+    .then((results)=>{ // all table results are back
+        // separate success from failed
+        results.map(x => {
+          if(x.status === "fulfilled")
+            success.push(x.v)
+          if(x.status === "rejected")
+            failed.push(x.e)
+        })
+        messages=messages.concat(success).concat(failed); // overal message
+        if(failed.length==0){
+          return {message:messages,data:{success:success,failed:failed}} // return success
+        }else {
+          throw({message:messages,data:{success:success,failed:failed}}) // throw failed
+        }
+      },
+      handleError
+    )
+}
+Schema.hasSchema = function(result){
+  checkAll()
+    .then((res)=>{
+      result(null,{status:"success",message:"Schema and tables are ok",data:res.data}) // fail
+    })
+    .catch((res)=>{
+      if(typeof res=="object"){ // actual schema issue
+        result(null,{status:"error",message:"Schema and/or tables are not ok",data:res.data}) // fail
+      }else{
+        result(res,null) // fail (db connect ?)
+      }
+    }).catch((e)=>{logger.error(e)}) // final catch
+}
 Schema.create = function (result) {
-  logger.info(`Try to create database schema 'AnsibleForms' and tables`)
-  var query="CREATE DATABASE /*!32312 IF NOT EXISTS*/`AnsibleForms` /*!40100 DEFAULT CHARACTER SET utf8 */;\
-              USE `AnsibleForms`;\
-              DROP TABLE IF EXISTS `groups`;\
-              CREATE TABLE `groups`(\
-                `id` int(11) NOT NULL AUTO_INCREMENT,\
-                `name` varchar(255) NOT NULL,\
-                  PRIMARY KEY (`id`),\
-                  UNIQUE KEY `uk_AnsibleForms_groups_natural_key` (`name`)\
-              ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;\
-              DROP TABLE IF EXISTS `users`;\
-              CREATE TABLE `users`(\
-                `id` int(11) NOT NULL AUTO_INCREMENT,\
-                `username` varchar(255) NOT NULL,\
-                `password` varchar(255) NOT NULL,\
-                `group_id` int(11) NOT NULL,\
-                  PRIMARY KEY (`id`),\
-                  UNIQUE KEY `uk_AnsibleForms_users_natural_key` (`username`),\
-                  KEY `FK_users_group` (`group_id`),\
-                  CONSTRAINT `FK_users_group` FOREIGN KEY (`group_id`) REFERENCES `groups` (`id`) ON DELETE CASCADE ON UPDATE CASCADE\
-              ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;\
-              DROP TABLE IF EXISTS `tokens`;\
-              CREATE TABLE `tokens` (\
-                `username` varchar(250) NOT NULL,\
-                `username_type` varchar(5) NOT NULL,\
-                `refresh_token` text DEFAULT NULL,\
-                PRIMARY KEY (`username`,`username_type`)\
-              ) ENGINE=InnoDB DEFAULT CHARSET=utf8;\
-              DROP TABLE IF EXISTS `credentials`;\
-              CREATE TABLE `credentials` (\
-                `id` int(11) NOT NULL AUTO_INCREMENT,\
-                `name` varchar(250) NOT NULL,\
-                `user` varchar(250) NOT NULL,\
-                `password` text NOT NULL,\
-                `host` varchar(250) DEFAULT NULL,\
-                `port` int(11) DEFAULT NULL,\
-                `description` text NOT NULL,\
-                PRIMARY KEY (`id`),\
-                UNIQUE KEY `uk_AnsibleForms_credentials_natural_key` (`name`)\
-              ) ENGINE=InnoDB DEFAULT CHARSET=utf8;\
-              DROP TABLE IF EXISTS `ldap`;\
-              CREATE TABLE `ldap` (\
-                `server` varchar(250) DEFAULT NULL,\
-                `port` int(11) DEFAULT NULL,\
-                `ignore_certs` tinyint(4) DEFAULT NULL,\
-                `enable_tls` tinyint(4) DEFAULT NULL,\
-                `cert` text DEFAULT NULL,\
-                `ca_bundle` text DEFAULT NULL,\
-                `bind_user_dn` varchar(250) DEFAULT NULL,\
-                `bind_user_pw` text DEFAULT NULL,\
-                `search_base` varchar(250) DEFAULT NULL,\
-                `username_attribute` varchar(250) DEFAULT NULL,\
-                `enable` tinyint(4) DEFAULT NULL\
-              ) ENGINE=InnoDB DEFAULT CHARSET=utf8;\
-              DROP TABLE IF EXISTS `awx`;\
-              CREATE TABLE `awx` (\
-                `uri` varchar(250) NOT NULL,\
-                `token` varchar(250) NOT NULL\
-              ) ENGINE=InnoDB DEFAULT CHARSET=utf8;\
-              DROP TABLE IF EXISTS `job_output`;\
-              DROP TABLE IF EXISTS `jobs`;\
-              CREATE TABLE `jobs` (\
-                `id` int(11) NOT NULL AUTO_INCREMENT,\
-                `form` varchar(250) DEFAULT NULL,\
-                `playbook` varchar(250) DEFAULT NULL,\
-                `status` varchar(20) DEFAULT NULL,\
-                `start` datetime NOT NULL DEFAULT current_timestamp(),\
-                `end` datetime DEFAULT NULL,\
-                `user` varchar(250) DEFAULT NULL,\
-                `user_type` varchar(10) DEFAULT NULL,\
-                PRIMARY KEY (`id`)\
-              ) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8;\
-              CREATE TABLE `job_output` (\
-                `id` int(11) NOT NULL AUTO_INCREMENT,\
-                `output` longtext DEFAULT NULL,\
-                `timestamp` datetime NOT NULL DEFAULT current_timestamp(),\
-                `output_type` varchar(10) NOT NULL,\
-                `job_id` int(11) NOT NULL,\
-                `order` int(11) NOT NULL,\
-                PRIMARY KEY (`id`),\
-                KEY `FK_job_output_jobs` (`job_id`),\
-                CONSTRAINT `FK_job_output_jobs` FOREIGN KEY (`job_id`) REFERENCES `jobs` (`id`) ON DELETE CASCADE ON UPDATE CASCADE\
-              ) ENGINE=InnoDB AUTO_INCREMENT=1650 DEFAULT CHARSET=utf8;\
-              INSERT INTO AnsibleForms.groups(name) VALUES('admins');\
-              INSERT INTO AnsibleForms.awx(uri,token) VALUES('','');\
-              INSERT INTO AnsibleForms.users(username,password,group_id) VALUES('admin','$2b$10$Z/W0HXNBk2aLR4yVLkq5L..C8tXg.G.o1vkFr8D2lw8JSgWRCNiCa',1);\
-              INSERT INTO AnsibleForms.ldap(server,port,ignore_certs,enable_tls,cert,ca_bundle,bind_user_dn,bind_user_pw,search_base,username_attribute,enable) VALUES('',389,1,0,'','','','','','sAMAccountName',0);"
-
+  logger.info(`Trying to create database schema 'AnsibleForms' and tables`)
+  const buffer=fs.readFileSync(`${__dirname}/../db/create_schema_and_tables.sql`)
+  const query=buffer.toString();
   mysql.query(query,null, function (err, res) {
     if(err) {
       result(err, null);

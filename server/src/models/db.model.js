@@ -7,8 +7,7 @@ dbConfig.multipleStatements=true
 
 MySql = {}
 
-MySql.query=async function(query,vars,callback){
-  // does the pool exist already, if not let's add it
+MySql.query=function(query,vars,callback){
   logger.debug("[ansibleforms] running query : " + query)
   var conn
   try{
@@ -38,4 +37,6 @@ MySql.query=async function(query,vars,callback){
   }
 
 };
+
+
 module.exports = MySql
