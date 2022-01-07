@@ -51,8 +51,20 @@
           }
       },
       computed:{
-        success(){return this.errorData.output.join('<br>')},
-        failed(){return this.errorData.error.join('<br>')}
+        success(){
+          if(Array.isArray(this.errorData.output)){
+            return this.errorData.output.join('<br>')
+          }else {
+            return this.errorData.output
+          }
+        },
+        failed(){
+          if(Array.isArray(this.errorData.error)){
+            return this.errorData.error.join('<br>')
+          }else {
+            return this.errorData.error
+          }
+        }
       },
       methods: {
           create() {
