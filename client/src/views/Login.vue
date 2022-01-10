@@ -9,7 +9,7 @@
               <BulmaInput icon="lock" v-model="user.password" @enterClicked="login()" label="Password" type="password" placeholder="***********" :required="true" :hasError="$v.user.password.$invalid" :errors="[]" />
               <div class="field">
                 <button class="button is-success" @click="login()">
-                  Login
+                  <span class="icon"><font-awesome-icon icon="sign-in-alt" /></span><span>Login</span>
                 </button>
               </div>
             </div>

@@ -23,7 +23,7 @@
                 </router-link>
 
                 <div class="navbar-item has-dropdown is-hoverable" v-if="isAdmin && authenticated" >
-                  <a class="navbar-link"><span class="icon"><font-awesome-icon icon="cog" /></span> <span>Settings</span></a>
+                  <a class="navbar-link"><span class="icon"><font-awesome-icon icon="cog" /></span></a>
                   <div class="navbar-dropdown">
                     <router-link class="navbar-item" to="/groups">
                       <span class="icon"><font-awesome-icon icon="users" /></span><span>Groups</span>
@@ -42,17 +42,11 @@
                     </router-link>
                   </div>
                 </div>
-                <div class="navbar-item has-dropdown is-hoverable" v-if="authenticated">
-                  <a class="navbar-link"><span class="icon"><font-awesome-icon icon="user" /></span> <span>{{ profile}}</span></a>
-                  <div class="navbar-dropdown">
-                    <router-link class="navbar-item" to="/login" v-on:click.native="logout()" replace><span class="icon"><font-awesome-icon icon="sign-out-alt" /></span><span>Logout</span></router-link>
-                  </div>
-                </div>
                 <div class="navbar-item has-dropdown is-hoverable" v-if="authenticated" >
-                  <a class="navbar-link"><span class="icon"><font-awesome-icon icon="question-circle" /></span> <span>About</span></a>
-                  <div class="navbar-dropdown">
+                  <a class="navbar-link"><span class="icon"><font-awesome-icon icon="question-circle" /></span></a>
+                  <div class="navbar-dropdown is-right">
                     <a class="navbar-item" href="https://www.ansibleforms.com/" target="_blank">
-                      <span class="icon"><font-awesome-icon icon="globe" /></span><span>Website</span>
+                      <span class="icon"><font-awesome-icon icon="globe" /></span><span>Documentation</span>
                     </a>
                     <a class="navbar-item" href="/api-docs" target="_blank">
                       <span class="icon"><font-awesome-icon icon="code" /></span><span>Api docs</span>
@@ -61,6 +55,15 @@
                     <div class="navbar-item">
                       <span class="icon"><font-awesome-icon icon="code-branch" /></span><span>Version {{version}}</span>
                     </div>
+                  </div>
+                </div>
+                <div class="navbar-item has-dropdown is-hoverable" v-if="authenticated">
+                  <a class="navbar-link"><span class="icon"><font-awesome-icon icon="user" /></span> <span>{{ profile}}</span></a>
+                  <div class="navbar-dropdown">
+                    <router-link class="navbar-item" to="/profile" v-if="isAdmin && authenticated">
+                      <span class="icon"><font-awesome-icon icon="key" /></span><span>Change password</span>
+                    </router-link>                    
+                    <router-link class="navbar-item" to="/login" v-on:click.native="logout()" replace><span class="icon"><font-awesome-icon icon="sign-out-alt" /></span><span>Logout</span></router-link>
                   </div>
                 </div>
               </div>

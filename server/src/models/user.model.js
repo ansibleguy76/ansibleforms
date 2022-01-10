@@ -10,9 +10,16 @@ const mysql = require('./db.model')
 
 //user object create
 var User=function(user){
-    this.username = user.username;
-    this.password = user.password;
-    this.group_id = user.group_id;
+    if(user.username!=undefined){
+      this.username = user.username;
+    }
+    if(user.password!=undefined){
+      this.password = user.password;
+    }
+    if(user.group_id!=undefined){
+      this.group_id = user.group_id;
+    }
+
 };
 User.create = function (record, result) {
     bcrypt.hash(record.password, 10,function(err,hash){
@@ -34,7 +41,7 @@ User.create = function (record, result) {
     });
 };
 User.update = function (record,id, result) {
-    if(id==1 && record.group_id!=1){
+    if(id==1 && record.group_id!=undefined && record.group_id!=1){
       result("You cannot change the 'admin' user out of the 'admins' group.",null)
     }else{
       bcrypt.hash(record.password, 10,function(err,hash){
@@ -43,7 +50,7 @@ User.update = function (record,id, result) {
           result(err,null)
         }else{
           record.password = hash
-          logger.debug(`Updating user ${record.username}`)
+          logger.debug(`Updating user ${(record.username)?record.username:id}`)
           mysql.query("UPDATE AnsibleForms.`users` set ? WHERE id=?", [record,id], function (err, res) {
               if(err) {
                   //lib/logger.error(err)
@@ -108,7 +115,7 @@ User.findById = function (id,result) {
 };
 User.authenticate = function (username,password,result) {
     logger.debug(`Checking password for user ${username}`)
-    var query = "SELECT `username`,`password`,GROUP_CONCAT(groups.name) `groups` FROM AnsibleForms.`users`,AnsibleForms.`groups` WHERE `users`.group_id=`groups`.id AND username=?;"
+    var query = "SELECT users.id,`username`,`password`,GROUP_CONCAT(groups.name) `groups` FROM AnsibleForms.`users`,AnsibleForms.`groups` WHERE `users`.group_id=`groups`.id AND username=?;"
     try{
       mysql.query(query,username, function (err, res) {
           if(err) {

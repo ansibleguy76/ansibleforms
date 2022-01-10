@@ -48,6 +48,7 @@ passport.use(
           }else{
             // user ok in db
             user.username = result.user.username
+            user.id = result.user.id
             user.type = 'local'
             user.roles = UserModel.getRoles(user,result.user.groups)
             logger.debug("local login is ok => " + user.username)

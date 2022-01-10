@@ -1,0 +1,7 @@
+.topbar-wrapper img[alt="Swagger UI"] {
+    content: url('/assets/img/logo_ansible_forms_full_white.svg');
+}
+
+.topbar{
+  background-color: #45b2d3!important;
+}

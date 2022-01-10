@@ -40,6 +40,9 @@ exports.findById = function(req, res) {
         }
     });
 };
+exports.find = function(req, res) {
+    res.json(new RestResult("success","found user",req.user.user,""));
+};
 exports.findByToken = function(req, res) {
     User.findById(req.user.user.username, function(err, user) {
         if (err){
@@ -54,6 +57,8 @@ exports.findByToken = function(req, res) {
     });
 };
 exports.update = function(req, res) {
+    // don't tamper with username
+    delete req.body.username
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
         res.status(400).send({ error:true, message: 'Please provide all required fields' });
     }else{
@@ -65,6 +70,26 @@ exports.update = function(req, res) {
             }
         });
     }
+};
+exports.changePassword = function(req, res) {
+  if(req.user.user.type=="local" && req.user.user.id){
+    // make sure then don't tamper with the group or username
+    delete req.body.group_id
+    delete req.body.username
+    if(req.body.constructor === Object && Object.keys(req.body).length === 0){
+        res.status(400).send({ error:true, message: 'Please provide all required fields' });
+    }else{
+        User.update(new User(req.body),req.user.user.id, function(err, user) {
+            if (err){
+                res.json(new RestResult("error","failed to change password",null,err))
+            }else{
+                res.json(new RestResult("success","password changed",null,""));
+            }
+        });
+    }
+  }else{
+    res.json(new RestResult("error","you can't change the password for an ldap user",null,err))
+  }
 };
 exports.delete = function(req, res) {
     User.delete( req.params.id, function(err, user) {

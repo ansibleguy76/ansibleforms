@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "description": "This is the swagger interface for AnsibleForms.\r\nUse the `/auth/login` api with basic authentication to obtain a JWT token.\r\nThen use the access token, prefixed with the word '**Bearer**' to use all other api's.\r\nNote that the access token is limited in time.  You can then either login again and get a new set of tokens or use the `/token` api and the refresh token to obtain a new set (preferred).",
-    "version": "1.0.0",
+    "version": "1.1.7",
     "title": "AnsibleForms",
     "contact": {
       "email": "info@ansibleforms.com"
@@ -13,6 +13,10 @@
     {
       "name": "auth",
       "description": "Authenticate to the api"
+    },
+    {
+      "name": "profile",
+      "description": "Operations on profile"
     },
     {
       "name": "ansible",
@@ -53,8 +57,15 @@
     {
       "name": "version",
       "description": "Get application version"
+    },
+    {
+      "name": "expression",
+      "description": "Invoke an expression query"
+    },
+    {
+      "name": "query",
+      "description": "Invoke an database query"
     }
-
   ],
   "schemes": [
     "https",
@@ -84,6 +95,105 @@
                 "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoiQWRtaW5pc3RyYXRvciIsInR5cGUiOiJsZGFwIiwicm9sZXMiOlsicHVibGljIiwiYWRtaW4iXX0sImlhdCI6MTYzODc4Nzk3OSwiZXhwIjoxNjM4Nzg5Nzc5fQ.7QA4n3JlPVuatTY7e1dKLQbB4PlW72Jkep_oRe9kevM",
                 "refreshtoken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoiQWRtaW5pc3RyYXRvciIsInR5cGUiOiJsZGFwIiwicm9sZXMiOlsicHVibGljIiwiYWRtaW4iXX0sImlhdCI6MTYzODc4Nzk3OSwiZXhwIjoxNjM4ODc0Mzc5fQ.ku8-MOflGvdMNR7fZkGn28zSDaG4i2QClqOy4P35zYA"
               }
+            }
+          }
+        }
+      }
+    },
+    "/profile": {
+      "get": {
+        "tags": [
+          "profile"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Who am I",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "found user",
+                "data": {
+                  "output": {
+                    "username": "admin",
+                    "id": 1,
+                    "type": "local",
+                    "roles": [
+                      "public",
+                      "admin"
+                    ]
+                  },
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "profile"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Change password",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "Form Payload",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "password": {
+                  "type": "string",
+                  "example": "MyPassword01!"
+                }
+              }
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "password changed",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
             }
           }
         }
@@ -1779,10 +1889,6 @@
                   "type": "string",
                   "example": "MyPassword01!"
                 },
-                "password2": {
-                  "type": "string",
-                  "example": "MyPassword01!"
-                },
                 "group_id": {
                   "type": "integer",
                   "example": 2
@@ -2245,6 +2351,164 @@
                 "data": {
                   "output": "",
                   "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/expression": {
+      "post": {
+        "tags": [
+          "expression"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "form payload",
+            "schema": {
+              "type": "object",
+              "required": [
+                "expression"
+              ],
+              "properties": {
+                "expression": {
+                  "type": "string",
+                  "example": "fn.fnRestBasic('get','https://gorest.co.in/public/v1/users','','','[.data[]]')"
+                }
+              }
+            }
+          }
+        ],
+        "summary": "Invoke expression query",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "successfully executed expression fn.fnRestBasic('get','https://gorest.co.in/public/v1/users','','','[.data[]]')",
+                "data": {
+                  "output": [
+                      {
+                          "id": 2514,
+                          "name": "sss",
+                          "email": "a@a.com",
+                          "gender": "female",
+                          "status": "active"
+                      },
+                      {
+                          "id": 2058,
+                          "name": "Z57KQEB51",
+                          "email": "f3d3ulp9fiwj@gmail.com",
+                          "gender": "male",
+                          "status": "active"
+                      }
+                  ],
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/query": {
+      "post": {
+        "tags": [
+          "query"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "form payload",
+            "schema": {
+              "type": "object",
+              "required": [
+                "config",
+                "query"
+              ],
+              "properties": {
+                "config":{
+                  "type": "object",
+                  "example": {
+                    "name": "MSSQL",
+                    "type": "mssql"
+                  }
+                },
+                "query": {
+                  "type": "string",
+                  "example": "select * FROM cmdb.dbo.city;"
+                }
+              }
+            }
+          }
+        ],
+        "summary": "Invoke database query",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "query ran successfully",
+                "data": {
+                    "output": [
+                        {
+                            "name": "london",
+                            "country": "UK"
+                        },
+                        {
+                            "name": "paris",
+                            "country": "FRANCE"
+                        },
+                        {
+                            "name": "brussels",
+                            "country": "BELGIUM"
+                        },
+                        {
+                            "name": "amsterdam",
+                            "country": "HOLLAND"
+                        },
+                        {
+                            "name": "berlin",
+                            "country": "GERMANY"
+                        }
+                    ],
+                    "error": ""
                 }
               }
             }

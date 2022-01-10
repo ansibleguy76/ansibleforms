@@ -12,6 +12,7 @@ import Awx from './views/Awx.vue'
 import Designer from './views/Designer.vue'
 import Credentials from './views/Credentials.vue'
 import Jobs from './views/Jobs.vue'
+import Profile from './views/Profile.vue'
 
 Vue.use(Router);
 export default new Router({
@@ -31,6 +32,11 @@ export default new Router({
         path:"/login",
         name:"Login",
         component:Login
+      },
+      {
+        path:"/profile",
+        name:"Profile",
+        component:Profile
       },
       {
         path:"/error",

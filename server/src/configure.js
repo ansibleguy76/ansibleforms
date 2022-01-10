@@ -48,16 +48,30 @@ module.exports = app => {
   const tokenRoutes = require('./routes/token.routes')
   const configRoutes = require('./routes/config.routes')
   const versionRoutes = require('./routes/version.routes')
+  const profileRoutes = require('./routes/profile.routes')
 
   // using json web tokens as middleware
   const authobj = passport.authenticate('jwt', { session: false })
 
   // api routes for browser only (no cors)
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+  const swaggerOptions = {
+    customSiteTitle: "Ansibleforms Swagger UI",
+    customfavIcon: "/favicon.svg",
+    customCssUrl: "/assets/css/swagger.css",
+    docExpansion:"none"
+  }
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument,swaggerOptions));
   app.use('/api/v1/schema', schemaRoutes)
-  app.use('/api/v1/query', authobj, queryRoutes)
-  app.use('/api/v1/expression', authobj, expressionRoutes)
-  app.use('/api/v1/version', authobj, versionRoutes)
+
+  // api routes for querying
+  app.use('/api/v1/query',cors(), authobj, queryRoutes)
+  app.use('/api/v1/expression',cors(), authobj, expressionRoutes)
+
+  // api route for version
+  app.use('/api/v1/version',cors(), authobj, versionRoutes)
+
+  // api route for profile
+  app.use('/api/v1/profile',cors(), authobj, profileRoutes)
 
   // api routes for authorization
   app.use('/api/v1/auth',cors(), loginRoutes)

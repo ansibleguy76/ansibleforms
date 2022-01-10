@@ -16,7 +16,7 @@
           <BulmaSelect icon="users" label="Select a group" :list="groupList" valuecol="id" :required="true" :hasError="$v.user.group_id.$invalid" labelcol="name" v-model="user.group_id" :errors="[]" />
           <BulmaButton v-if="userItem==undefined" icon="save" label="Create User" @click="newUser()"></BulmaButton>
           <BulmaButton v-if="userItem!=undefined" icon="save" label="Update User" @click="updateUser(false)"></BulmaButton>
-          <article v-if="userItem!=undefined && !passwordChanged" class="message is-info">
+          <article v-if="userItem!=undefined && !passwordChanged" class="message is-warning">
             <div class="message-header">
               <p>Change password</p>
             </div>
