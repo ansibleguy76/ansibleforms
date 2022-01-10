@@ -18,12 +18,12 @@
               <h3 class="title is-3" v-if="checkGroupDependencies(group)">{{group}}</h3>
                 <div :key="field.name" v-for="field in filterfieldsByGroup(group)">
                   <transition name="slide">
-                    <div class="field mt-3" v-if="checkDependencies(field,true)">
+                    <div class="field mt-3" v-if="checkDependencies(field,false)">
                       <!-- add field label -->
                       <label class="label has-text-primary">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span></label>
                       <!-- type = checkbox -->
                       <div v-if="field.type=='checkbox'">
-                        <BulmaCheckRadio checktype="checkbox" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="field.placeholder" />
+                        <BulmaCheckRadio checktype="checkbox" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="field.placeholder" @change="evaluateDynamicFields(field.name)" />
                       </div>
                       <!-- type = query -->
                       <BulmaAdvancedSelect
@@ -47,30 +47,65 @@
                       </BulmaAdvancedSelect>
                       <!-- type = radio -->
                       <div v-if="field.type=='radio'" >
-                        <BulmaCheckRadio :val="radiovalue" checktype="radio" v-for="radiovalue in field.values" :key="field.name+'_'+radiovalue" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="radiovalue" />
+                        <BulmaCheckRadio :val="radiovalue" checktype="radio" v-for="radiovalue in field.values" :key="field.name+'_'+radiovalue" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="radiovalue"  @change="evaluateDynamicFields(field.name)" />
                       </div>
                       <BulmaEditTable v-if="field.type=='table'" :tableFields="field.tableFields" :click="false" tableClass="table is-striped is-bordered is-narrow" v-model="$v.form[field.name].$model" />
                       <div :class="{'has-icons-left':!!field.icon && field.type!='query'}" class="control">
                         <!-- type = expression -->
                         <div v-if="field.type=='expression'" :class="{'is-loading':dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running'}" class="control">
-                          <input type="text" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input has-text-info" readonly :name="field.name" :required="field.required">
+                          <input type="text"
+                            @focus="inputFocus"
+                            :class="{'is-danger':$v.form[field.name].$invalid}"
+                            v-model="$v.form[field.name].$model"
+                            class="input has-text-info"
+                            readonly
+                            :name="field.name"
+                            :required="field.required">
                         </div>
-                        <!-- type = text -->
-                        <input v-if="field.type=='text'" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" type="text" :placeholder="field.placeholder" @change="evaluateDynamicFields(field.name)">
-                        <!-- type = password -->
-                        <input v-if="field.type=='password'" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" type="password" :placeholder="field.placeholder" @change="evaluateDynamicFields(field.name)">
+                        <!-- type = text or password-->
+                        <input v-if="field.type=='text' || field.type=='password'"
+                          @focus="inputFocus"
+                          :class="{'is-danger':$v.form[field.name].$invalid}"
+                          v-model="$v.form[field.name].$model"
+                          class="input" :name="field.name"
+                          v-bind="field.attrs"
+                          :required="field.required"
+                          :type="field.type"
+                          :placeholder="field.placeholder"
+                          @change="evaluateDynamicFields(field.name)">
                         <!-- type = number -->
-                        <input v-if="field.type=='number'" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" class="input" :name="field.name" v-bind="field.attrs" :required="field.required" type="number" :placeholder="field.placeholder" @change="evaluateDynamicFields(field.name)">
+                        <input v-if="field.type=='number'"
+                          @focus="inputFocus"
+                          :class="{'is-danger':$v.form[field.name].$invalid}"
+                          v-model="$v.form[field.name].$model"
+                          class="input"
+                          :name="field.name"
+                          v-bind="field.attrs"
+                          :required="field.required"
+                          type="number"
+                          :placeholder="field.placeholder"
+                          @change="evaluateDynamicFields(field.name)">
                         <!-- type = enum -->
                         <div v-if="field.type=='enum' && !field.multiple" class="select">
-                          <select :name="field.name" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" @change="evaluateDynamicFields(field.name)">
+                          <select
+                            :name="field.name"
+                            @focus="inputFocus"
+                            :class="{'is-danger':$v.form[field.name].$invalid}"
+                            v-model="$v.form[field.name].$model"
+                            @change="evaluateDynamicFields(field.name)">
                             <option v-if="!field.required" value=""></option>
                             <option v-for="option in field.values" :key="option" :selected="field.default==option" :value="option">{{ option }}</option>
                           </select>
                         </div>
                         <!-- type = multiple enum -->
                         <div v-if="field.type=='enum' && (field.multiple||false)==true" class="select is-multiple">
-                          <select :name="field.name" @focus="inputFocus" :class="{'is-danger':$v.form[field.name].$invalid}" v-model="$v.form[field.name].$model" multiple :size="field.size">
+                          <select
+                            :name="field.name"
+                            @focus="inputFocus"
+                            :class="{'is-danger':$v.form[field.name].$invalid}"
+                            v-model="$v.form[field.name].$model"
+                            multiple
+                            :size="field.size">
                             <option v-if="!field.required" value=""></option>
                             <option v-for="option in field.values" :key="option" :selected="field.default.includes(option)" :value="option">{{ option }}</option>
                           </select>
@@ -315,12 +350,18 @@
           field.dependencies.forEach((item, i) => {
             if(!item.values.includes(ref.form[item.name])){
               if(reset){
-                Vue.set(ref.visibility,field.name,false)
+                if(ref.visibility[field.name]){
+                  // console.log(`[${item.name}]->[${field.name}] Setting visibility to false`)
+                  Vue.set(ref.visibility,field.name,false)
+                }
               }
               result=false
             }else{
               if(reset){
-                Vue.set(ref.visibility,field.name,true)
+                if(!ref.visibility[field.name]){
+                  // console.log(`[${item.name}]->[${field.name}] Setting visibility to true`)
+                  Vue.set(ref.visibility,field.name,true)
+                }
               }
             }
           });
@@ -534,7 +575,7 @@
                   if(placeholderCheck.value!=undefined){                       // expression is clean ?
                       // allow local run in browser
                       if(item.runLocal){
-                        console.log("Running local expression : " + placeholderCheck.value)
+                        //console.log("Running local expression : " + placeholderCheck.value)
                         var result
                         try{
                           result=eval(placeholderCheck.value)
@@ -551,7 +592,7 @@
                             Vue.set(ref.dynamicFieldStatus,item.name,"fixed");  // if this dynamic field was a 1 time evaluation, set as fixed
                           }
                         }catch(err){
-                          console.log("Local eval failed : " + err)
+                          //console.log("Local eval failed : " + err)
                           try{
                             Vue.set(ref.dynamicFieldStatus,item.name,undefined);
                           }catch(err){
@@ -878,6 +919,7 @@
         var ref=this
         this.formdata={}
         this.currentForm.fields.forEach((item, i) => {
+          this.checkDependencies(item,true) // hide field based on dependency
           if(this.visibility[item.name] && !item.noOutput){
             var fieldmodel = item.model
             var outputObject = item.outputObject || item.type=="expression" || item.type=="table" || false

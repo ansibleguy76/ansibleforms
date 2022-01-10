@@ -22,6 +22,7 @@
         },
         set(value) {
           this.$emit('input', value)
+          this.$emit('change')
         }
       }
     },
