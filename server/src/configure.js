@@ -47,6 +47,7 @@ module.exports = app => {
   const schemaRoutes = require('./routes/schema.routes')
   const tokenRoutes = require('./routes/token.routes')
   const configRoutes = require('./routes/config.routes')
+  const versionRoutes = require('./routes/version.routes')
 
   // using json web tokens as middleware
   const authobj = passport.authenticate('jwt', { session: false })
@@ -56,6 +57,7 @@ module.exports = app => {
   app.use('/api/v1/schema', schemaRoutes)
   app.use('/api/v1/query', authobj, queryRoutes)
   app.use('/api/v1/expression', authobj, expressionRoutes)
+  app.use('/api/v1/version', authobj, versionRoutes)
 
   // api routes for authorization
   app.use('/api/v1/auth',cors(), loginRoutes)

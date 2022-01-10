@@ -1,6 +1,6 @@
 {
   "name": "ansible_forms",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "description": "A forms frontend for ansible and awx",
   "scripts": {
     "start": "npm run prod",
@@ -50,7 +50,8 @@
     "rifraf": "~2.0.3",
     "npm-run-all": "*",
     "dotenv": "~10.0.0",
-    "eslint": "~6.8.0"
+    "eslint": "~6.8.0",
+    "semantic-release": "~18.0.1"
   },
   "eslintConfig": {
     "root": true,

@@ -49,7 +49,12 @@
     {
       "name": "tokens",
       "description": "Operations about tokens"
+    },
+    {
+      "name": "version",
+      "description": "Get application version"
     }
+
   ],
   "schemes": [
     "https",
@@ -2210,6 +2215,45 @@
                 "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoiQWRtaW5pc3RyYXRvciIsInR5cGUiOiJsZGFwIiwicm9sZXMiOlsicHVibGljIiwiYWRtaW4iXX0sImlhdCI6MTYzODgwNjM3MCwiZXhwIjoxNjM4ODA4MTcwfQ.Q0dZCAVcVH6r7j_oUTzAoKp7OyR4kYi-NDxPB1v8-UA",
                 "refreshtoken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoiQWRtaW5pc3RyYXRvciIsInR5cGUiOiJsZGFwIiwicm9sZXMiOlsicHVibGljIiwiYWRtaW4iXX0sImlhdCI6MTYzODgwNjM3MCwiZXhwIjoxNjM4ODkyNzcwfQ.ZIMquso87x8FD5XytyWDi-eMXr2OJBUeXfBGMwk5w04"
               }
+            }
+          }
+        }
+      }
+    },
+    "/version": {
+      "get": {
+        "tags": [
+          "version"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get version",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "1.1.6",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
             }
           }
         }

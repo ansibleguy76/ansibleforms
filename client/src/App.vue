@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <BulmaNav :isAdmin="isAdmin" :authenticated="authenticated" :profile="profile" @logout="logout()" />
+    <BulmaNav :isAdmin="isAdmin" :authenticated="authenticated" :profile="profile" @logout="logout()" :version="version" />
     <router-view :formConfig="formConfig" :isAdmin="isAdmin" :authenticated="authenticated" :errorMessage="errorMessage" :errorData="errorData" @authenticated="loadFormConfig" @logout="logout()" />
   </div>
 </template>
@@ -18,22 +18,37 @@
         errorData:{success:[],failed:[]},
         profile:"",
         authenticated:false,
-        isAdmin:false
+        isAdmin:false,
+        version:"unknown"
       }
     },
     computed: {
     },
     beforeMount() {
+      this.loadVersion()
       this.checkDatabase()
     },
     methods: {
         refreshAuthenticated(){
           this.authenticated = TokenStorage.isAuthenticated()
-          console.log("checking if is admin")
+          // console.log("checking if is admin")
           var payload = TokenStorage.getPayload()
           if(payload.user && payload.user.roles){
             this.isAdmin=payload.user.roles.includes("admin")
           }
+        },
+        loadVersion(){
+          var ref=this;
+
+          axios.get('/api/v1/version')                               // check database
+            .then((result)=>{
+              if(result.data.status=="success"){
+                ref.version=result.data.message
+              }
+            })
+            .catch(function(err){
+              // silent fail
+            });
         },
         checkDatabase(){
           var ref=this;
@@ -67,7 +82,6 @@
           var ref=this;
           var payload = TokenStorage.getPayload()
           ref.profile = payload.user.username
-
         },
         resetProfile(){
           this.profile=""
