@@ -50,8 +50,7 @@
     "rifraf": "~2.0.3",
     "npm-run-all": "*",
     "dotenv": "~10.0.0",
-    "eslint": "~6.8.0",
-    "semantic-release": "~18.0.1"
+    "eslint": "~6.8.0"
   },
   "eslintConfig": {
     "root": true,
