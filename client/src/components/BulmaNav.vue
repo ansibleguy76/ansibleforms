@@ -58,9 +58,9 @@
                   </div>
                 </div>
                 <div class="navbar-item has-dropdown is-hoverable" v-if="authenticated">
-                  <a class="navbar-link"><span class="icon"><font-awesome-icon icon="user" /></span> <span>{{ profile}}</span></a>
+                  <a class="navbar-link"><span class="icon"><font-awesome-icon icon="user" /></span> <span>{{ profile.username }}</span></a>
                   <div class="navbar-dropdown">
-                    <router-link class="navbar-item" to="/profile" v-if="isAdmin && authenticated">
+                    <router-link class="navbar-item" to="/profile" v-if="authenticated && profile.type=='local' && profile.id">
                       <span class="icon"><font-awesome-icon icon="key" /></span><span>Change password</span>
                     </router-link>
                     <router-link class="navbar-item" to="/login" v-on:click.native="logout()" replace><span class="icon"><font-awesome-icon icon="sign-out-alt" /></span><span>Logout</span></router-link>
@@ -79,7 +79,7 @@
     props:{
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean},
-      profile:{type:String},
+      profile:{type:Object},
       version:{type:String}
     },
     data(){

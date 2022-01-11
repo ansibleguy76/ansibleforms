@@ -16,7 +16,7 @@
         formConfig:undefined,
         errorMessage:"",
         errorData:{success:[],failed:[]},
-        profile:"",
+        profile:{},
         authenticated:false,
         isAdmin:false,
         version:"unknown"
@@ -81,10 +81,10 @@
         loadProfile(){
           var ref=this;
           var payload = TokenStorage.getPayload()
-          ref.profile = payload.user.username
+          ref.profile = payload.user
         },
         resetProfile(){
-          this.profile=""
+          this.profile={}
         },
         loadFormConfig(){
           var ref= this;

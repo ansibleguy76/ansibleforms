@@ -68,7 +68,7 @@ module.exports = app => {
   app.use('/api/v1/expression',cors(), authobj, expressionRoutes)
 
   // api route for version
-  app.use('/api/v1/version',cors(), authobj, versionRoutes)
+  app.use('/api/v1/version',cors(), versionRoutes)
 
   // api route for profile
   app.use('/api/v1/profile',cors(), authobj, profileRoutes)
