@@ -115,6 +115,7 @@ exports.fnSort=function(input,sort){
 exports.fnSum = function(a,b) { return a+b };
 exports.fnMultiply = function(a,b) { return a*b };
 exports.fnReadJsonFile = async function(path,jqe) {
+  if(!path)return undefined
   let result=undefined
   try{
     let rawdata = fs.readFileSync(path,'utf8');
@@ -128,6 +129,7 @@ exports.fnReadJsonFile = async function(path,jqe) {
   return result
 };
 exports.fnReadYamlFile = async function(path,jqe) {
+  if(!path)return undefined
   let result=undefined
   try{
     let rawdata = fs.readFileSync(path,'utf8');
@@ -140,30 +142,32 @@ exports.fnReadYamlFile = async function(path,jqe) {
   }
   return result
 };
-
 exports.fnRestBasic = async function(action,url,body,credential,jqe,sort,map){
-  const httpsAgent = new https.Agent({
-    rejectUnauthorized: false,
-  })
-  var axiosConfig
+  var headers={}
   if(credential){
     try{
       restCreds = await credentialModel.findByName(credential)
     }catch(e){
       logger.error(e)
     }
-
-    axiosConfig = {
-      headers: {
-        Authorization:"Basic " + Buffer.from(restCreds.user + ':' + restCreds.password).toString('base64')
-      },
-      httpsAgent:httpsAgent
-
-    }
-  }else{
-    axiosConfig = {
-      httpsAgent:httpsAgent
-    }
+    headers.Authorization="Basic " + Buffer.from(restCreds.user + ':' + restCreds.password).toString('base64')
+  }
+  return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort,map)
+}
+exports.fnRestAdvanced = async function(action,url,body,headers,jqe,sort,map){
+  if(!action || !url){
+    logger.warning("[fnRest] No action or url defined")
+    return undefined
+  }
+  const httpsAgent = new https.Agent({
+    rejectUnauthorized: false,
+  })
+  var axiosConfig = {
+    headers: {},
+    httpsAgent:httpsAgent
+  }
+  if(headers){
+    axiosConfig.headers=headers
   }
 
   let result=[]
@@ -182,10 +186,20 @@ exports.fnRestBasic = async function(action,url,body,credential,jqe,sort,map){
       result=await jq.run(jqe, result, { input:"json",output:"json" })
     }
     if(sort){
-      result = eval("result.sort("+sort+")")
+      if(Array.isArray(result)){
+        result = eval("result.sort("+sort+")")
+      }else{
+        logger.debug("Skipping sort eval, no array")
+      }
+
     }
     if(map){
-      result = eval("result.map("+map+")")
+      if(Array.isArray(result)){
+        result = eval("result.map("+map+")")
+      }else{
+        logger.debug("Skipping map eval, no array")
+      }
+
     }
   }catch(e){
     logger.error("Error in fnRestBasic : " + e)
@@ -194,5 +208,11 @@ exports.fnRestBasic = async function(action,url,body,credential,jqe,sort,map){
   return result
 
 }
-
+exports.fnRestJwt = async function(action,url,body,token,jqe,sort,map){
+  var headers={}
+  if(token){
+    headers.Authorization="Bearer " + token
+  }
+  return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort,map)
+}
 // etc
