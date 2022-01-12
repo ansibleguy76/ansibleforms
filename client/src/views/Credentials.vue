@@ -7,7 +7,7 @@
         <div class="column">
             <BulmaSelect icon="lock" label="Select a credential" size="10" :list="credentialList" valuecol="id" labelcol="name" @change="loadCredential()" v-model="credentialItem" />
             <BulmaButton v-if="credentialItem!=undefined" icon="plus" label="New Credential" @click="credentialItem=undefined;loadCredential()"></BulmaButton>
-            <BulmaButton v-if="credentialItem!=undefined && credentialItem!=1" type="is-danger" icon="trash-alt" label="Delete Credential" @click="showDelete=true"></BulmaButton>
+            <BulmaButton v-if="credentialItem!=undefined" type="is-danger" icon="trash-alt" label="Delete Credential" @click="showDelete=true"></BulmaButton>
         </div>
         <div class="column is-three-quarters">
           <BulmaInput icon="heading" v-model="credential.name" label="Name" placeholder="Name" :readonly="credentialItem!==undefined" :required="true" :hasError="$v.credential.name.$invalid" :errors="[]" />
