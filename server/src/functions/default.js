@@ -112,8 +112,6 @@ exports.fnSort=function(input,sort){
   }
   return result
 }
-exports.fnSum = function(a,b) { return a+b };
-exports.fnMultiply = function(a,b) { return a*b };
 exports.fnReadJsonFile = async function(path,jqe) {
   if(!path)return undefined
   let result=undefined

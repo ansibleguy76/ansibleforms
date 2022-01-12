@@ -1,6 +1,7 @@
 'use strict';
 
 const fn=require('./../functions/default.js')
+const fnc=require('./../functions/custom.js')
 // use as fn.xxxxx (where xxxxx is you own function name)
 
 
@@ -34,7 +35,7 @@ function sanitizeExpression(expr){
   }
   // if contains "(" and not starting with fn.fn
   if(sanitized.match(/\(/)){
-    if(!sanitized.match(/^fn\.fn.*/g)){
+    if(!sanitized.match(/^fnc{0,1}\.+/g)){
       logger.error("Abuse attempt of eval function, using custom functions")
       // return "'ACCESS DENIED, no custom functions allowed'"
       return undefined
