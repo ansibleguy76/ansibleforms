@@ -28,7 +28,7 @@ function hasError(data){
 }
 
 // run a playbook
-Ansible.run = function (form,playbook,inventory,tags,extraVars,user, result) {
+Ansible.run = function (form,playbook,inventory,tags,check,diff,extraVars,user, result) {
   // prepare my ansible command
   var command = `ansible-playbook -e '${extraVars}'`
   if(inventory){
@@ -36,6 +36,12 @@ Ansible.run = function (form,playbook,inventory,tags,extraVars,user, result) {
   }
   if(tags){
     command += ` -t '${tags}'`
+  }
+  if(check){
+    command += ` --check`
+  }
+  if(diff){
+    command += ` --diff`
   }
   command += ` ${playbook}`
   var directory = ansibleConfig.path

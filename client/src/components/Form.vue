@@ -115,18 +115,19 @@
                         <span v-if="!!field.icon && field.type!='query'" class="icon is-small is-left">
                           <font-awesome-icon :icon="field.icon" />
                         </span>
-                        <!-- add help and alerts -->
-                        <p class="help" v-if="!!field.help">{{ field.help}}</p>
-                        <p class="has-text-danger" v-if="!$v.form[field.name].required">This field is required</p>
-                        <p class="has-text-danger" v-if="'minLength' in $v.form[field.name] && !$v.form[field.name].minLength">Must be at least {{$v.form[field.name].$params.minLength.min}} characters long</p>
-                        <p class="has-text-danger" v-if="'maxLength' in $v.form[field.name] && !$v.form[field.name].maxLength">Can not be more than {{$v.form[field.name].$params.maxLength.max}} characters long</p>
-                        <p class="has-text-danger" v-if="'minValue' in $v.form[field.name] && !$v.form[field.name].minValue">Value cannot be lower than {{$v.form[field.name].$params.minValue.min}}</p>
-                        <p class="has-text-danger" v-if="'maxValue' in $v.form[field.name] && !$v.form[field.name].maxValue">Value cannot be higher than {{$v.form[field.name].$params.maxValue.max}}</p>
-                        <p class="has-text-danger" v-if="'regex' in $v.form[field.name] && !$v.form[field.name].regex">{{$v.form[field.name].$params.regex.description}}</p>
-                        <p class="has-text-danger" v-if="'notIn' in $v.form[field.name] && !$v.form[field.name].notIn">{{$v.form[field.name].$params.notIn.description}}</p>
-                        <p class="has-text-danger" v-if="'in' in $v.form[field.name] && !$v.form[field.name].in">{{$v.form[field.name].$params.in.description}}</p>
-                        <p class="has-text-danger" v-if="'sameAs' in $v.form[field.name] && !$v.form[field.name].sameAs">Field must be identical to '{{$v.form[field.name].$params.sameAs.eq}}'</p>
                       </div>
+                      <!-- add help and alerts -->
+                      <p class="help" v-if="!!field.help">{{ field.help}}</p>
+                      <p class="has-text-danger" v-if="$v.form[field.name].required==false">This field is required</p>
+                      <p class="has-text-danger" v-if="'minLength' in $v.form[field.name] && !$v.form[field.name].minLength">Must be at least {{$v.form[field.name].$params.minLength.min}} characters long</p>
+                      <p class="has-text-danger" v-if="'maxLength' in $v.form[field.name] && !$v.form[field.name].maxLength">Can not be more than {{$v.form[field.name].$params.maxLength.max}} characters long</p>
+                      <p class="has-text-danger" v-if="'minValue' in $v.form[field.name] && !$v.form[field.name].minValue">Value cannot be lower than {{$v.form[field.name].$params.minValue.min}}</p>
+                      <p class="has-text-danger" v-if="'maxValue' in $v.form[field.name] && !$v.form[field.name].maxValue">Value cannot be higher than {{$v.form[field.name].$params.maxValue.max}}</p>
+                      <p class="has-text-danger" v-if="'regex' in $v.form[field.name] && !$v.form[field.name].regex">{{$v.form[field.name].$params.regex.description}}</p>
+                      <p class="has-text-danger" v-if="'notIn' in $v.form[field.name] && !$v.form[field.name].notIn">{{$v.form[field.name].$params.notIn.description}}</p>
+                      <p class="has-text-danger" v-if="'in' in $v.form[field.name] && !$v.form[field.name].in">{{$v.form[field.name].$params.in.description}}</p>
+                      <p class="has-text-danger" v-if="'sameAs' in $v.form[field.name] && !$v.form[field.name].sameAs">Field must be identical to '{{$v.form[field.name].$params.sameAs.eq}}'</p>
+
                     </div>
                   </transition>
                 </div>
@@ -258,10 +259,10 @@
             return !!ff.required
           })
         }
-        if(ff.type=='checkbox'){
+        if(ff.type=='checkbox' && ff.required){
           attrs.required=helpers.withParams(
               {description: "This field is required"},
-              (value) => !helpers.req(value) || value==true
+              (value) => (!helpers.req(value) || value==true)
           )
         }
         if("minValue" in ff){ attrs.minValue=minValue(ff.minValue)}
@@ -985,6 +986,8 @@
             postdata.ansibleExtraVars = this.formdata
             postdata.formName = this.currentForm.name;
             postdata.ansibleInventory = this.currentForm.inventory;
+            postdata.ansibleCheck = this.currentForm.check;
+            postdata.ansibleDiff = this.currentForm.diff;
             postdata.ansiblePlaybook = this.currentForm.playbook;
             postdata.ansibleTags = this.currentForm.tags || "";
             postdata.credentials = {}
@@ -1025,6 +1028,8 @@
           }else if(this.currentForm.type=="awx"){
             postdata.awxExtraVars = this.formdata
             postdata.awxInventory = this.currentForm.inventory;
+            postdata.awxCheck = this.currentForm.check;
+            postdata.awxDiff = this.currentForm.diff;
             postdata.awxTemplate = this.currentForm.template;
             postdata.awxTags = this.currentForm.tags;
             this.ansibleResult.message= "Connecting with awx ";

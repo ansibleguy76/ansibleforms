@@ -21,6 +21,8 @@ exports.run = async function(req, res) {
         var form = req.body.formName;
         var playbook = req.body.ansiblePlaybook;
         var inventory = req.body.ansibleInventory;
+        var check = req.body.ansibleCheck || req.body.ansibleExtraVars.__check__;
+        var diff = req.body.ansibleDiff || req.body.ansibleExtraVars.__diff__;
         var tags = req.body.ansibleTags;
         if(req.body.credentials){
           for (const [key, value] of Object.entries(req.body.credentials)) {
@@ -53,8 +55,10 @@ exports.run = async function(req, res) {
           logger.info("Running playbook : " + playbook)
           logger.silly("extravars : " + extraVars)
           logger.silly("inventory : " + inventory)
+          logger.silly("check : " + check)
+          logger.silly("diff : " + diff)
           logger.silly("tags : " + tags)
-          Ansible.run(form,playbook,inventory,tags,extraVars,user,function(err,out){
+          Ansible.run(form,playbook,inventory,tags,check,diff,extraVars,user,function(err,out){
             if(err){
                restResult.status = "error"
                restResult.message = "error occured while running playbook " + playbook

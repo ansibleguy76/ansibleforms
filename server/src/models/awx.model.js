@@ -133,7 +133,7 @@ Awx.abortJob = function (id, result) {
   })
 };
 // launch awx job template
-Awx.launch = function (template,inventory,tags,extraVars, result) {
+Awx.launch = function (template,inventory,tags,check,diff,extraVars, result) {
 
   Awx.getConfig(function(err,res){
 
@@ -150,11 +150,24 @@ Awx.launch = function (template,inventory,tags,extraVars, result) {
       if(inventory){
         postdata.inventory=inventory.id
       }
+      if(check){
+        postdata.job_type="check"
+      }else{
+        postdata.job_type="run"
+      }
+      if(diff){
+        postdata.diff_mode=true
+      }else{
+        postdata.diff_mode=false
+      }
+      if(tags){
+        postdata.job_tags=tags
+      }
       var message=""
       logger.debug(`launching job template ${template.name}`)
       // post
       if(template.related===undefined){
-        message=`Failed to launch, no launch attibute found for template ${template.name}`
+        message=`Failed to launch, no launch attribute found for template ${template.name}`
         logger.error(message)
         result(message)
       }else{

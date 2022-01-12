@@ -144,6 +144,12 @@
           "tags": {
             "type": "string"
           },
+          "check": {
+            "type": "boolean"
+          },
+          "diff": {
+            "type": "boolean"
+          },
           "help": {
             "type": "string"
           },
