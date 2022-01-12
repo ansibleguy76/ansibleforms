@@ -17,7 +17,7 @@ const cache = new NodeCache({
 });
 
 const httpsAgent = new https.Agent({
-  rejectUnauthorized: false,
+  rejectUnauthorized: false
 })
 axios.defaults.options = httpsAgent
 
@@ -102,7 +102,8 @@ Awx.abortJob = function (id, result) {
       const axiosConfig = {
         headers: {
           Authorization:"Bearer " + res.token
-        }
+        },
+        httpsAgent: httpsAgent
       }
       // we first need to check if we CAN cancel
       axios.get(res.uri + "/api/v2/jobs/" + id + "/cancel/",axiosConfig)
@@ -175,7 +176,8 @@ Awx.launch = function (template,inventory,tags,check,diff,extraVars, result) {
         const axiosConfig = {
           headers: {
             Authorization:"Bearer " + res.token
-          }
+          },
+          httpsAgent: httpsAgent
         }
         logger.silly("Lauching awx with data : " + JSON.stringify(postdata))
         axios.post(res.uri + template.related.launch,postdata,axiosConfig)
@@ -218,7 +220,8 @@ Awx.findJobById = function (id, result) {
       const axiosConfig = {
         headers: {
           Authorization:"Bearer " + res.token
-        }
+        },
+        httpsAgent: httpsAgent
       }
       axios.get(res.uri + "/api/v2/jobs/" + id + "/",axiosConfig)
         .then((axiosresult)=>{
@@ -256,7 +259,8 @@ Awx.findJobStdout = function (job, result) {
         const axiosConfig = {
           headers: {
             Authorization:"Bearer " + res.token
-          }
+          },
+          httpsAgent: httpsAgent
         }
         axios.get(res.uri + job.related.stdout + "?format=html",axiosConfig)
           .then((axiosresult)=>{
@@ -283,10 +287,12 @@ Awx.check = function (awxConfig,result) {
 
   logger.debug(`Checking AWX connection`)
   // prepare axiosConfig
+
   const axiosConfig = {
     headers: {
       Authorization:"Bearer " + decrypt(awxConfig.token)
-    }
+    },
+    httpsAgent: httpsAgent
   }
   axios.get(awxConfig.uri + "/api/v2/job_templates/",axiosConfig)
     .then((axiosresult)=>{
@@ -314,7 +320,8 @@ Awx.findJobTemplateByName = function (name,result) {
       const axiosConfig = {
         headers: {
           Authorization:"Bearer " + res.token
-        }
+        },
+        httpsAgent: httpsAgent
       }
       axios.get(res.uri + "/api/v2/job_templates/?name=" + encodeURI(name),axiosConfig)
         .then((axiosresult)=>{
@@ -349,10 +356,14 @@ Awx.findInventoryByName = function (name,result) {
       var message=""
       logger.debug(`searching inventory ${name}`)
       // prepare axiosConfig
+      const httpsAgent = new https.Agent({
+        rejectUnauthorized: false
+      })
       const axiosConfig = {
         headers: {
           Authorization:"Bearer " + res.token
-        }
+        },
+        httpsAgent:httpsAgent
       }
       axios.get(res.uri + "/api/v2/inventories/?name=" + encodeURI(name),axiosConfig)
         .then((axiosresult)=>{
