@@ -82,6 +82,7 @@
       name:{type:String,required:true},
       defaultValue:{type:[String,Array]},
       placeholder:{type:String},
+      icon:{type:String},
       sizeClass:{type:String},
       columns:{type:Array},
       previewColumn:{type:String},

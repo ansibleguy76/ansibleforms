@@ -37,6 +37,7 @@
                         :hasError="$v.form[field.name].$invalid"
                         :isLoading="!['fixed','variable'].includes(dynamicFieldStatus[field.name])"
                         v-model="$v.form[field.name].$model"
+                        :icon="field.icon"
                         :columns="field.columns||[]"
                         :pctColumns="field.pctColumns||[]"
                         :previewColumn="field.previewColumn||''"
