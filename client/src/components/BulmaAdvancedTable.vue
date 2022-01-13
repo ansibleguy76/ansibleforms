@@ -114,8 +114,7 @@
           var temp = !this.selected[i]  // if single just clear and invert selection
           this.selected=[]
           this.selected[i]=temp;
-          // this.isActive=false;
-          // this.$refs.input.focus({ preventScroll: true })
+          this.$emit('isSelected');
         }
         this.recalc()
       },
@@ -216,8 +215,7 @@
             this.recalc()
           }
         }
-        // this.$refs.input.blur()
-        // this.$refs.content.blur()
+
       }
     },
     mounted(){

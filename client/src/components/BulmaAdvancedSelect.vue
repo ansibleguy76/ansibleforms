@@ -43,6 +43,7 @@
             :previewColumn="previewColumn||''"
             :valueColumn="valueColumn||''"
             @isChanged="$emit('isChanged')"
+            @isSelected="close()"
            />
         </div>
       </div>
@@ -116,6 +117,7 @@
     methods:{
       close(){
         this.isActive=false
+        this.$refs.input.focus({ preventScroll: true })
       },
       toggle(){
         var ref=this
@@ -133,6 +135,8 @@
           ref.$refs.content.focus({ preventScroll: true })
         }
       }, 100);
+      this.$refs.input.blur()
+      this.$refs.content.blur()
     }
   }
 </script>
