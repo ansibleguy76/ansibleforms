@@ -136,7 +136,7 @@ exports.fnSort=function(input,sort){
   }
   return result
 }
-exports.fnReadJsonFile = async function(path,jqe=null,sort=null) {
+exports.fnReadJsonFile = async function(path,jqe=null) {
   if(!path)return undefined
   let result=undefined
   try{
@@ -148,10 +148,9 @@ exports.fnReadJsonFile = async function(path,jqe=null,sort=null) {
   }catch(e){
     logger.error("Error in fnReadJsonFile : " + e)
   }
-  if(sort)result=exports.fnSort(result,sort)
   return result
 };
-exports.fnReadYamlFile = async function(path,jqe=null,sort=null) {
+exports.fnReadYamlFile = async function(path,jqe=null) {
   logger.debug("entering readyaml")
   if(!path)return undefined
   let result=undefined
@@ -164,7 +163,6 @@ exports.fnReadYamlFile = async function(path,jqe=null,sort=null) {
   }catch(e){
     logger.error("Error in fnReadYamlFile : " + e)
   }
-  if(sort)result=exports.fnSort(result,sort)
   return result
 };
 exports.fnRestBasic = async function(action,url,body,credential=null,jqe=null,sort=null){
