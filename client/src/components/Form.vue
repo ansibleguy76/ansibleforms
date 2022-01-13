@@ -371,7 +371,6 @@
         var ref=this
         var result=false
         this.filterfieldsByGroup(group).forEach((item, i) => {
-          console.log(group + " - " + item.name)
           if(ref.visibility[item.name]){
             result=true
           }
