@@ -1,0 +1,7 @@
+def fn2KB: ./1024;
+def fn2MB: ./1024/1024;
+def fn2GB: ./1024/1024/1024;
+def fnRound0: .*1.0 + 0.5|floor/1.0;
+def fnRound1: .*10.0 + 0.5|floor/10.0;
+def fnRound2: .*100.0 + 0.5|floor/100.0;
+def fnRound: .*100.0 + 0.5|floor/100.0;

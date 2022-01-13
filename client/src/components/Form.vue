@@ -18,7 +18,7 @@
               <h3 class="title is-3" v-if="checkGroupDependencies(group)">{{group}}</h3>
                 <div :key="field.name" v-for="field in filterfieldsByGroup(group)">
                   <transition name="slide">
-                    <div class="field mt-3" v-if="checkDependencies(field,false)">
+                    <div class="field mt-3" v-if="visibility[field.name]">
                       <!-- add field label -->
                       <label class="label has-text-primary">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span></label>
                       <!-- type = checkbox -->
@@ -28,21 +28,21 @@
                       <!-- type = query -->
                       <BulmaAdvancedSelect
                         v-if="field.type=='query'"
-                        :default="field.default"
+                        :defaultValue="field.default"
                         :required="field.required||false"
                         :multiple="field.multiple||false"
                         :name="field.name"
                         :placeholder="field.placeholder||'Select...'"
                         :values="queryresults[field.name]||[]"
                         :hasError="$v.form[field.name].$invalid"
-                        :status="dynamicFieldStatus[field.name]"
+                        :isLoading="!['fixed','variable'].includes(dynamicFieldStatus[field.name])"
                         v-model="$v.form[field.name].$model"
-                        :icon="field.icon"
                         :columns="field.columns||[]"
+                        :pctColumns="field.pctColumns||[]"
                         :previewColumn="field.previewColumn||''"
                         :valueColumn="field.valueColumn||''"
-                        :placeholderColumn="field.placeholderColumn"
                         @ischanged="evaluateDynamicFields(field.name)"
+                        :sticky="field.sticky||false"
                         >
                       </BulmaAdvancedSelect>
                       <!-- type = radio -->
@@ -344,25 +344,19 @@
             && el.hide!==true)
         });
       },
-      checkDependencies(field,reset){
-        var ref = this                              // checks if a field can be show, based on the value of other fields
-        var result = true
+      checkDependencies(field){
+        var ref = this
+        var result=true                          // checks if a field can be show, based on the value of other fields
         if("dependencies" in field){
           field.dependencies.forEach((item, i) => {
             if(!item.values.includes(ref.form[item.name])){
-              if(reset){
-                if(ref.visibility[field.name]){
-                  // console.log(`[${item.name}]->[${field.name}] Setting visibility to false`)
-                  Vue.set(ref.visibility,field.name,false)
-                }
+              if(ref.visibility[field.name]){
+                Vue.set(ref.visibility,field.name,false)
               }
-              result=false
+              result =false
             }else{
-              if(reset){
-                if(!ref.visibility[field.name]){
-                  // console.log(`[${item.name}]->[${field.name}] Setting visibility to true`)
-                  Vue.set(ref.visibility,field.name,true)
-                }
+              if(!ref.visibility[field.name]){
+                Vue.set(ref.visibility,field.name,true)
               }
             }
           });
@@ -375,9 +369,12 @@
       //----------------------------------------------------------------
       checkGroupDependencies(group){
         var ref=this
-        var result = false
+        var result=false
         this.filterfieldsByGroup(group).forEach((item, i) => {
-          result = ref.checkDependencies(item,false)
+          console.log(group + " - " + item.name)
+          if(ref.visibility[item.name]){
+            result=true
+          }
         });
         return result
       },
@@ -561,6 +558,7 @@
           // console.log("-------------------------------")
           ref.currentForm.fields.forEach(
             function(item,index){
+              ref.checkDependencies(item)
               if(ref.visibility[item.name]){  // only if they are visible
                 // if expression and not processed yet or needs to be reprocessed
                 var flag = ref.dynamicFieldStatus[item.name];                     // current field status (running/fixed/variable)
@@ -920,7 +918,7 @@
         var ref=this
         this.formdata={}
         this.currentForm.fields.forEach((item, i) => {
-          this.checkDependencies(item,true) // hide field based on dependency
+          // this.checkDependencies(item) // hide field based on dependency
           if(this.visibility[item.name] && !item.noOutput){
             var fieldmodel = item.model
             var outputObject = item.outputObject || item.type=="expression" || item.type=="table" || false

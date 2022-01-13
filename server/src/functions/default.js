@@ -7,9 +7,19 @@ const fs = require("fs")
 const logger=require("../lib/logger");
 const jq=require("node-jq")
 const YAML=require("yaml")
+const {firstBy,thenBy}=require("thenby")
 const credentialModel = require("../models/credential.model")
+// import definitions as strings
+require.extensions['.definitions'] = function (module, filename) {
+    module.exports = fs.readFileSync(filename, 'utf8');
+};
+// import jq definitions
+var jqDef = require("./jq.definitions")
+jqDef+= require("./jq.custom.definitions")
+jqDef=jqDef.replace(/(\r\n|\n|\r)/gm, "");
+logger.silly("jq definitions loaded : " + jqDef)
 
-exports.fnGetNumberedName=function(names,pattern,value,fillgap){
+exports.fnGetNumberedName=function(names,pattern,value,fillgap=false){
   var nr=null
   var nrsequence
   var regex
@@ -66,8 +76,12 @@ exports.fnGetNumberedName=function(names,pattern,value,fillgap){
 exports.fnJq=async function(input,jqe){
     const jq = require('node-jq')
     let result=undefined
+    if(!jqe){
+      logger.warn("[fnJq] jq is empty")
+      return result
+    }
     try{
-      result=await jq.run(jqe, input, { input:"json",output:"json" })
+      result=await jq.run(jqDef+jqe, input, { input:"json",output:"json" })
     }catch(e){
       logger.error("Error in fnJq : " + e)
     }
@@ -76,71 +90,84 @@ exports.fnJq=async function(input,jqe){
 exports.fnCopy=function(input){
     return input
 },
-exports.fnMap=function(input,map){
-  let result=input
-  if(!Array.isArray){
-    logger.warn("Warning in fnMap : input is not an array")
-    return result
-  }
-  if(!map){
-    logger.warn("Warning in fnMap : map code not provided")
-    return result
-  }
-
-  try{
-    result = eval("result.map("+map+")")
-  }catch(e){
-    logger.error("Error in fnMap : " + e)
-  }
-  return result
-}
 exports.fnSort=function(input,sort){
   let result=input
-  if(!Array.isArray){
+  if(!Array.isArray(input)){
     logger.warn("Warning in fnSort : input is not an array")
     return result
   }
   if(!sort){
-    logger.warn("Warning in fnSort : sort code not provided")
+    logger.warn("Warning in fnSort : sort list not provided")
     return result
   }
-
+  logger.silly("[fnSort] sorting result")
+  // force sort to array
+  var o = [].concat(sort || [])
+  // convert sort to thenBy values
+  var order=o.map((e)=>{
+          var ks,k,v,t
+          t=typeof e
+          // if string, return the string
+          if(t=="string")return [e]
+          // if object
+          if(t=="object"){
+              // get keys
+              ks=Object.keys(e)
+              // if empty object, return empty
+              if(!ks)return []
+              // get first key
+              k=(ks)[0];
+              // get value of key
+              v=e[k];
+              // empty key : flat array ; use 0
+              if(k=="")k=0
+              // if value if empty, return key, otherwise return key and value
+              return (v)?[k,v]:[k]
+          }
+      })
+  // console.log(order)
+  var first = order[0]
+  var rest = order.slice(1)
+  let s = rest.reduce((a, e) => a.thenBy(...e), firstBy(...first));
   try{
-    result = eval("result.sort("+sort+")")
+    result.sort(s)
   }catch(e){
-    logger.error("Error in fnSort : " + e)
+    logger.error("[fnSort] error in fnSort")
   }
   return result
 }
-exports.fnReadJsonFile = async function(path,jqe) {
+exports.fnReadJsonFile = async function(path,jqe=null,sort=null) {
   if(!path)return undefined
   let result=undefined
   try{
     let rawdata = fs.readFileSync(path,'utf8');
     result = JSON.parse(rawdata)
     if(jqe){
-      result=await jq.run(jqe, result, { input:"json",output:"json" })
+      result=await jq.run(jqDef+jqe, result, { input:"json",output:"json" })
     }
   }catch(e){
     logger.error("Error in fnReadJsonFile : " + e)
   }
+  if(sort)result=exports.fnSort(result,sort)
   return result
 };
-exports.fnReadYamlFile = async function(path,jqe) {
+exports.fnReadYamlFile = async function(path,jqe=null,sort=null) {
+  logger.debug("entering readyaml")
   if(!path)return undefined
   let result=undefined
   try{
     let rawdata = fs.readFileSync(path,'utf8');
     result = YAML.parse(rawdata)
     if(jqe){
-      result=await jq.run(jqe, result, { input:"json",output:"json" })
+      result=await jq.run(jqDef+jqe, result, { input:"json",output:"json" })
     }
   }catch(e){
     logger.error("Error in fnReadYamlFile : " + e)
   }
+  if(sort)result=exports.fnSort(result,sort)
   return result
 };
-exports.fnRestBasic = async function(action,url,body,credential,jqe,sort,map){
+exports.fnRestBasic = async function(action,url,body,credential=null,jqe=null,sort=null){
   var headers={}
   if(credential){
     try{
@@ -150,7 +177,7 @@ exports.fnRestBasic = async function(action,url,body,credential,jqe,sort,map){
     }
     headers.Authorization="Basic " + Buffer.from(restCreds.user + ':' + restCreds.password).toString('base64')
   }
-  return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort,map)
+  return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort)
 }
 exports.fnRestAdvanced = async function(action,url,body,headers,jqe,sort,map){
   if(!action || !url){
@@ -181,24 +208,9 @@ exports.fnRestAdvanced = async function(action,url,body,headers,jqe,sort,map){
     }
     result=data.data
     if(jqe){
-      result=await jq.run(jqe, result, { input:"json",output:"json" })
+      result=await jq.run(jqDef+jqe, result, { input:"json",output:"json" })
     }
-    if(sort){
-      if(Array.isArray(result)){
-        result = eval("result.sort("+sort+")")
-      }else{
-        logger.debug("Skipping sort eval, no array")
-      }
-
-    }
-    if(map){
-      if(Array.isArray(result)){
-        result = eval("result.map("+map+")")
-      }else{
-        logger.debug("Skipping map eval, no array")
-      }
-
-    }
+    if(sort)result=exports.fnSort(result,sort)
   }catch(e){
     logger.error("Error in fnRestBasic : " + e)
   }
@@ -206,7 +218,7 @@ exports.fnRestAdvanced = async function(action,url,body,headers,jqe,sort,map){
   return result
 
 }
-exports.fnRestJwt = async function(action,url,body,token,jqe,sort,map){
+exports.fnRestJwt = async function(action,url,body,token,jqe=null,sort=null){
   var headers={}
   if(token){
     headers.Authorization="Bearer " + token

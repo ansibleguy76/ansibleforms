@@ -80,9 +80,7 @@
               "type": {
                 "enum": ["ansible"]
               },
-              "template": {
-                "not": {}
-              }
+              "template": {"not":{}}
             },
             "required": ["playbook"]
           },
@@ -91,29 +89,21 @@
               "type": {
                 "enum": ["awx"]
               },
-              "playbook": {
-                "not": {}
-              }
+              "playbook": {"not":{}}
             },
             "required": ["template"]
           }
         ],
         "properties": {
-          "name": {
-            "type": "string"
-          },
+          "name": {"type": "string"},
           "roles": {
             "type": "array",
             "items": {
               "$ref": "/role"
             }
           },
-          "description": {
-            "type": "string"
-          },
-          "image": {
-            "type": "string"
-          },
+          "description": {"type": "string"},
+          "image": {"type": "string"},
           "icon": {
             "$ref": "/icon"
           },
@@ -132,30 +122,14 @@
             "type": "string",
             "enum": ["ansible", "awx"]
           },
-          "playbook": {
-            "type": "string"
-          },
-          "template": {
-            "type": "string"
-          },
-          "inventory": {
-            "type": "string"
-          },
-          "tags": {
-            "type": "string"
-          },
-          "check": {
-            "type": "boolean"
-          },
-          "diff": {
-            "type": "boolean"
-          },
-          "help": {
-            "type": "string"
-          },
-          "showHelp": {
-            "type": "boolean"
-          },
+          "playbook": {"type": "string"},
+          "template": {"type": "string"},
+          "inventory": {"type": "string"},
+          "tags": {"type": "string"},
+          "check": {"type": "boolean"},
+          "diff": {"type": "boolean"},
+          "help": {"type": "string"},
+          "showHelp": {"type": "boolean"},
           "fields": {
             "type": "array",
             "items": {
@@ -173,36 +147,16 @@
                     "type": {
                       "enum": ["text", "password"]
                     },
-                    "query": {
-                      "not": {}
-                    },
-                    "minValue": {
-                      "not": {}
-                    },
-                    "maxValue": {
-                      "not": {}
-                    },
-                    "expression": {
-                      "not": {}
-                    },
-                    "runLocal": {
-                      "not": {}
-                    },
-                    "dbConfig": {
-                      "not": {}
-                    },
-                    "hide": {
-                      "not": {}
-                    },
-                    "values": {
-                      "not": {}
-                    },
-                    "multiple": {
-                      "not": {}
-                    },
-                    "outputObject": {
-                      "not": {}
-                    }
+                    "query": {"not":{}},
+                    "minValue": {"not":{}},
+                    "maxValue": {"not":{}},
+                    "expression": {"not":{}},
+                    "runLocal": {"not":{}},
+                    "dbConfig": {"not":{}},
+                    "hide": {"not":{}},
+                    "values": {"not":{}},
+                    "multiple": {"not":{}},
+                    "outputObject": {"not":{}}
                   }
                 },
                 {
@@ -210,45 +164,19 @@
                     "type": {
                       "enum": ["number"]
                     },
-                    "query": {
-                      "not": {}
-                    },
-                    "regex": {
-                      "not": {}
-                    },
-                    "regexDescription": {
-                      "not": {}
-                    },
-                    "minLength": {
-                      "not": {}
-                    },
-                    "maxLength": {
-                      "not": {}
-                    },
-                    "expression": {
-                      "not": {}
-                    },
-                    "runLocal": {
-                      "not": {}
-                    },
-                    "dbConfig": {
-                      "not": {}
-                    },
-                    "hide": {
-                      "not": {}
-                    },
-                    "values": {
-                      "not": {}
-                    },
-                    "multiple": {
-                      "not": {}
-                    },
-                    "asCredential": {
-                      "not": {}
-                    },
-                    "outputObject": {
-                      "not": {}
-                    }
+                    "query": {"not":{}},
+                    "regex": {"not":{}},
+                    "regexDescription": {"not":{}},
+                    "minLength": {"not":{}},
+                    "maxLength": {"not":{}},
+                    "expression": {"not":{}},
+                    "runLocal": {"not":{}},
+                    "dbConfig": {"not":{}},
+                    "hide": {"not":{}},
+                    "values": {"not":{}},
+                    "multiple": {"not":{}},
+                    "asCredential": {"not":{}},
+                    "outputObject": {"not":{}}
                   }
                 },
                 {
@@ -256,48 +184,20 @@
                     "type": {
                       "enum": ["radio"]
                     },
-                    "query": {
-                      "not": {}
-                    },
-                    "regex": {
-                      "not": {}
-                    },
-                    "regexDescription": {
-                      "not": {}
-                    },
-                    "minValue": {
-                      "not": {}
-                    },
-                    "maxValue": {
-                      "not": {}
-                    },
-                    "minLength": {
-                      "not": {}
-                    },
-                    "maxLength": {
-                      "not": {}
-                    },
-                    "expression": {
-                      "not": {}
-                    },
-                    "runLocal": {
-                      "not": {}
-                    },
-                    "dbConfig": {
-                      "not": {}
-                    },
-                    "hide": {
-                      "not": {}
-                    },
-                    "multiple": {
-                      "not": {}
-                    },
-                    "asCredential": {
-                      "not": {}
-                    },
-                    "outputObject": {
-                      "not": {}
-                    }
+                    "query": {"not":{}},
+                    "regex": {"not":{}},
+                    "regexDescription": {"not":{}},
+                    "minValue": {"not":{}},
+                    "maxValue": {"not":{}},
+                    "minLength": {"not":{}},
+                    "maxLength": {"not":{}},
+                    "expression": {"not":{}},
+                    "runLocal": {"not":{}},
+                    "dbConfig": {"not":{}},
+                    "hide": {"not":{}},
+                    "multiple": {"not":{}},
+                    "asCredential": {"not":{}},
+                    "outputObject": {"not":{}}
                   },
                   "required": ["values"]
                 },
@@ -306,51 +206,21 @@
                     "type": {
                       "enum": ["checkbox"]
                     },
-                    "query": {
-                      "not": {}
-                    },
-                    "regex": {
-                      "not": {}
-                    },
-                    "regexDescription": {
-                      "not": {}
-                    },
-                    "minValue": {
-                      "not": {}
-                    },
-                    "maxValue": {
-                      "not": {}
-                    },
-                    "minLength": {
-                      "not": {}
-                    },
-                    "maxLength": {
-                      "not": {}
-                    },
-                    "expression": {
-                      "not": {}
-                    },
-                    "runLocal": {
-                      "not": {}
-                    },
-                    "dbConfig": {
-                      "not": {}
-                    },
-                    "hide": {
-                      "not": {}
-                    },
-                    "values": {
-                      "not": {}
-                    },
-                    "multiple": {
-                      "not": {}
-                    },
-                    "asCredential": {
-                      "not": {}
-                    },
-                    "outputObject": {
-                      "not": {}
-                    }
+                    "query": {"not":{}},
+                    "regex": {"not":{}},
+                    "regexDescription": {"not":{}},
+                    "minValue": {"not":{}},
+                    "maxValue": {"not":{}},
+                    "minLength": {"not":{}},
+                    "maxLength": {"not":{}},
+                    "expression": {"not":{}},
+                    "runLocal": {"not":{}},
+                    "dbConfig": {"not":{}},
+                    "hide": {"not":{}},
+                    "values": {"not":{}},
+                    "multiple": {"not":{}},
+                    "asCredential": {"not":{}},
+                    "outputObject": {"not":{}}
                   }
                 },
                 {
@@ -358,42 +228,18 @@
                     "type": {
                       "enum": ["enum"]
                     },
-                    "query": {
-                      "not": {}
-                    },
-                    "regex": {
-                      "not": {}
-                    },
-                    "regexDescription": {
-                      "not": {}
-                    },
-                    "minValue": {
-                      "not": {}
-                    },
-                    "maxValue": {
-                      "not": {}
-                    },
-                    "minLength": {
-                      "not": {}
-                    },
-                    "maxLength": {
-                      "not": {}
-                    },
-                    "expression": {
-                      "not": {}
-                    },
-                    "runLocal": {
-                      "not": {}
-                    },
-                    "dbConfig": {
-                      "not": {}
-                    },
-                    "hide": {
-                      "not": {}
-                    },
-                    "outputObject": {
-                      "not": {}
-                    }
+                    "query": {"not":{}},
+                    "regex": {"not":{}},
+                    "regexDescription": {"not":{}},
+                    "minValue": {"not":{}},
+                    "maxValue": {"not":{}},
+                    "minLength": {"not":{}},
+                    "maxLength": {"not":{}},
+                    "expression": {"not":{}},
+                    "runLocal": {"not":{}},
+                    "dbConfig": {"not":{}},
+                    "hide": {"not":{}},
+                    "outputObject": {"not":{}}
                   },
                   "required": ["values"]
                 },
@@ -402,36 +248,16 @@
                     "type": {
                       "enum": ["query"]
                     },
-                    "values": {
-                      "not": {}
-                    },
-                    "regex": {
-                      "not": {}
-                    },
-                    "regexDescription": {
-                      "not": {}
-                    },
-                    "minValue": {
-                      "not": {}
-                    },
-                    "maxValue": {
-                      "not": {}
-                    },
-                    "minLength": {
-                      "not": {}
-                    },
-                    "maxLength": {
-                      "not": {}
-                    },
-                    "expression": {
-                      "not": {}
-                    },
-                    "runLocal": {
-                      "not": {}
-                    },
-                    "hide": {
-                      "not": {}
-                    }
+                    "values": {"not":{}},
+                    "regex": {"not":{}},
+                    "regexDescription": {"not":{}},
+                    "minValue": {"not":{}},
+                    "maxValue": {"not":{}},
+                    "minLength": {"not":{}},
+                    "maxLength": {"not":{}},
+                    "expression": {"not":{}},
+                    "runLocal": {"not":{}},
+                    "hide": {"not":{}}
                   },
                   "required": ["query", "dbConfig"]
                 },
@@ -440,36 +266,16 @@
                     "type": {
                       "enum": ["query"]
                     },
-                    "values": {
-                      "not": {}
-                    },
-                    "regex": {
-                      "not": {}
-                    },
-                    "regexDescription": {
-                      "not": {}
-                    },
-                    "minValue": {
-                      "not": {}
-                    },
-                    "maxValue": {
-                      "not": {}
-                    },
-                    "minLength": {
-                      "not": {}
-                    },
-                    "maxLength": {
-                      "not": {}
-                    },
-                    "query": {
-                      "not": {}
-                    },
-                    "dbConfig": {
-                      "not": {}
-                    },
-                    "hide": {
-                      "not": {}
-                    }
+                    "values": {"not":{}},
+                    "regex": {"not":{}},
+                    "regexDescription": {"not":{}},
+                    "minValue": {"not":{}},
+                    "maxValue": {"not":{}},
+                    "minLength": {"not":{}},
+                    "maxLength": {"not":{}},
+                    "query": {"not":{}},
+                    "dbConfig": {"not":{}},
+                    "hide": {"not":{}}
                   },
                   "required": ["expression"]
                 },
@@ -478,36 +284,16 @@
                     "type": {
                       "enum": ["expression"]
                     },
-                    "values": {
-                      "not": {}
-                    },
-                    "regex": {
-                      "not": {}
-                    },
-                    "regexDescription": {
-                      "not": {}
-                    },
-                    "minValue": {
-                      "not": {}
-                    },
-                    "maxValue": {
-                      "not": {}
-                    },
-                    "minLength": {
-                      "not": {}
-                    },
-                    "maxLength": {
-                      "not": {}
-                    },
-                    "dbConfig": {
-                      "not": {}
-                    },
-                    "multiple": {
-                      "not": {}
-                    },
-                    "outputObject": {
-                      "not": {}
-                    }
+                    "values": {"not":{}},
+                    "regex": {"not":{}},
+                    "regexDescription": {"not":{}},
+                    "minValue": {"not":{}},
+                    "maxValue": {"not":{}},
+                    "minLength": {"not":{}},
+                    "maxLength": {"not":{}},
+                    "dbConfig": {"not":{}},
+                    "multiple": {"not":{}},
+                    "outputObject": {"not":{}}
                   },
                   "required": ["expression"]
                 },
@@ -516,45 +302,19 @@
                     "type": {
                       "enum": ["table"]
                     },
-                    "values": {
-                      "not": {}
-                    },
-                    "regex": {
-                      "not": {}
-                    },
-                    "regexDescription": {
-                      "not": {}
-                    },
-                    "minValue": {
-                      "not": {}
-                    },
-                    "maxValue": {
-                      "not": {}
-                    },
-                    "minLength": {
-                      "not": {}
-                    },
-                    "maxLength": {
-                      "not": {}
-                    },
-                    "dbConfig": {
-                      "not": {}
-                    },
-                    "multiple": {
-                      "not": {}
-                    },
-                    "outputObject": {
-                      "not": {}
-                    },
-                    "expression": {
-                      "not": {}
-                    },
-                    "icon": {
-                      "not": {}
-                    },
-                    "default": {
-                      "not": {}
-                    }
+                    "values": {"not":{}},
+                    "regex": {"not":{}},
+                    "regexDescription": {"not":{}},
+                    "minValue": {"not":{}},
+                    "maxValue": {"not":{}},
+                    "minLength": {"not":{}},
+                    "maxLength": {"not":{}},
+                    "dbConfig": {"not":{}},
+                    "multiple": {"not":{}},
+                    "outputObject": {"not":{}},
+                    "expression": {"not":{}},
+                    "icon": {"not":{}},
+                    "default": {"not":{}}
                   },
                   "required": ["tableFields"]
                 }
@@ -568,29 +328,18 @@
                   "$id": "/formfield",
                   "type": "string"
                 },
-                "label": {
-                  "type": "string"
-                },
-                "placeholder": {
-                  "type": "string"
-                },
-                "group": {
-                  "type": "string"
-                },
+                "label": {"type": "string"},
+                "placeholder": {"type": "string"},
+                "group": {"type": "string"},
                 "default": {
-                  "anyOf": [
-                    {"type":"string"},
-                    {"type":"boolean"},
-                    {"type":"array"},
-                    {"type":"integer"}
+                  "anyOf": [{"type": "string"},
+                    {"type": "boolean"},
+                    {"type": "array"},
+                    {"type": "integer"}
                   ]
                 },
-                "noOutput": {
-                  "type": "boolean"
-                },
-                "asCredential": {
-                  "type": "boolean"
-                },
+                "noOutput": {"type": "boolean"},
+                "asCredential": {"type": "boolean"},
                 "required": {
                   "type": "boolean",
                   "default": false
@@ -599,29 +348,20 @@
                   "$ref": "/formfield"
                 },
                 "regex": {
-                  "anyOf": [
-                    {
-                      "type": "string"
-                    },
+                  "anyOf": [{"type": "string"},
                     {
                       "type": "object",
                       "required": [
                         "expression"
                       ],
                       "properties": {
-                        "expression": {
-                          "type": "string"
-                        },
-                        "description": {
-                          "type": "string"
-                        }
+                        "expression": {"type": "string"},
+                        "description": {"type": "string"}
                       }
                     }
                   ]
                 },
-                "regexDescription": {
-                  "type": "string"
-                },
+                "regexDescription": {"type": "string"},
                 "notIn": {
                   "type": "object",
                   "required": [
@@ -631,9 +371,7 @@
                     "field": {
                       "$ref": "/formfield"
                     },
-                    "description": {
-                      "type": "string"
-                    }
+                    "description": {"type": "string"}
                   }
                 },
                 "in": {
@@ -645,53 +383,30 @@
                     "field": {
                       "$ref": "/formfield"
                     },
-                    "description": {
-                      "type": "string"
-                    }
+                    "description": {"type": "string"}
                   }
                 },
-                "minValue": {
-                  "type": "integer"
-                },
-                "maxValue": {
-                  "type": "integer"
-                },
-                "minLength": {
-                  "type": "integer"
-                },
-                "maxLength": {
-                  "type": "integer"
-                },
-                "expression": {
-                  "type": "string"
-                },
-                "ignoreIncomplete": {
-                  "type": "boolean"
-                },
-                "runLocal": {
-                  "type": "boolean"
-                },
-                "query": {
-                  "type": "string"
-                },
-                "outputObject": {
-                  "type": "boolean"
-                },
+                "minValue": {"type": "integer"},
+                "maxValue": {"type": "integer"},
+                "minLength": {"type": "integer"},
+                "maxLength": {"type": "integer"},
+                "expression": {"type": "string"},
+                "ignoreIncomplete": {"type": "boolean"},
+                "runLocal": {"type": "boolean"},
+                "query": {"type": "string"},
+                "outputObject": {"type": "boolean"},
                 "columns": {
                   "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
+                  "items": {"type": "string"}
                 },
-                "valueColumn": {
-                  "type": "string"
+                "pctColumns": {
+                  "type": "array",
+                  "items": {"type": "string"}
                 },
-                "previewColumn": {
-                  "type": "string"
-                },
-                "placeholderColumn": {
-                  "type": "string"
-                },
+                "sticky": {"type": "boolean"},      
+                "valueColumn": {"type": "string"},
+                "previewColumn": {"type": "string"},
+                "placeholderColumn": {"type": "string"},
                 "dbConfig": {
                   "type": "object",
                   "required": [
@@ -699,34 +414,24 @@
                     "type"
                   ],
                   "properties": {
-                    "name": {
-                      "type": "string"
-                    },
+                    "name": {"type": "string"},
                     "type": {
                       "type": "string",
                       "enum": ["mysql", "mssql", "postgres", "mongodb"]
                     }
                   }
                 },
-                "model": {
-                  "type": "string"
-                },
-                "help": {
-                  "type": "string"
-                },
+                "model": {"type": "string"},
+                "help": {"type": "string"},
                 "values": {
                   "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
+                  "items": {"type": "string"}
                 },
                 "multiple": {
                   "type": "boolean",
                   "default": false
                 },
-                "size": {
-                  "type": "integer"
-                },
+                "size": {"type": "integer"},
                 "dependencies": {
                   "type": "array",
                   "items": {
@@ -738,16 +443,9 @@
                       "values": {
                         "type": "array",
                         "items": {
-                          "anyOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "integer"
-                            },
-                            {
-                              "type": "boolean"
-                            }
+                          "anyOf": [{"type": "string"},
+                            {"type": "integer"},
+                            {"type": "boolean"}
                           ]
                         }
                       }
@@ -755,9 +453,7 @@
                     "additionalProperties": false
                   }
                 },
-                "hide": {
-                  "type": "boolean"
-                },
+                "hide": {"type": "boolean"},
                 "icon": {
                   "$ref": "/icon"
                 },
@@ -775,12 +471,8 @@
                           "type": {
                             "enum": ["text"]
                           },
-                          "minValue": {
-                            "not": {}
-                          },
-                          "maxValue": {
-                            "not": {}
-                          }
+                          "minValue": {"not":{}},
+                          "maxValue": {"not":{}}
                         }
                       },
                       {
@@ -788,18 +480,10 @@
                           "type": {
                             "enum": ["number"]
                           },
-                          "regex": {
-                            "not": {}
-                          },
-                          "regexDescription": {
-                            "not": {}
-                          },
-                          "minLength": {
-                            "not": {}
-                          },
-                          "maxLength": {
-                            "not": {}
-                          }
+                          "regex": {"not":{}},
+                          "regexDescription": {"not":{}},
+                          "minLength": {"not":{}},
+                          "maxLength": {"not":{}}
                         }
                       },
                       {
@@ -807,24 +491,12 @@
                           "type": {
                             "enum": ["checkbox"]
                           },
-                          "regex": {
-                            "not": {}
-                          },
-                          "regexDescription": {
-                            "not": {}
-                          },
-                          "minValue": {
-                            "not": {}
-                          },
-                          "maxValue": {
-                            "not": {}
-                          },
-                          "minLength": {
-                            "not": {}
-                          },
-                          "maxLength": {
-                            "not": {}
-                          }
+                          "regex": {"not":{}},
+                          "regexDescription": {"not":{}},
+                          "minValue": {"not":{}},
+                          "maxValue": {"not":{}},
+                          "minLength": {"not":{}},
+                          "maxLength": {"not":{}}
                         }
                       },
                       {
@@ -832,24 +504,12 @@
                           "type": {
                             "enum": ["enum"]
                           },
-                          "regex": {
-                            "not": {}
-                          },
-                          "regexDescription": {
-                            "not": {}
-                          },
-                          "minValue": {
-                            "not": {}
-                          },
-                          "maxValue": {
-                            "not": {}
-                          },
-                          "minLength": {
-                            "not": {}
-                          },
-                          "maxLength": {
-                            "not": {}
-                          }
+                          "regex": {"not":{}},
+                          "regexDescription": {"not":{}},
+                          "minValue": {"not":{}},
+                          "maxValue": {"not":{}},
+                          "minLength": {"not":{}},
+                          "maxLength": {"not":{}}
                         },
                         "required": ["values"]
                       }
@@ -859,29 +519,14 @@
                         "type": "string",
                         "enum": ["text", "password", "checkbox", "enum", "query", "number", "radio", "expression", "table"]
                       },
-                      "name": {
-                        "type": "string"
-                      },
-                      "label": {
-                        "type": "string"
-                      },
-                      "placeholder": {
-                        "type": "string"
-                      },
+                      "name": {"type": "string"},
+                      "label": {"type": "string"},
+                      "placeholder": {"type": "string"},
                       "default": {
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "boolean"
-                          },
-                          {
-                            "type": "array"
-                          },
-                          {
-                            "type": "integer"
-                          }
+                        "anyOf": [{"type": "string"},
+                          {"type": "boolean"},
+                          {"type": "array"},
+                          {"type": "integer"}
                         ]
                       },
                       "required": {
@@ -889,46 +534,27 @@
                         "default": false
                       },
                       "regex": {
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
+                        "anyOf": [{"type": "string"},
                           {
                             "type": "object",
                             "required": [
                               "expression"
                             ],
                             "properties": {
-                              "expression": {
-                                "type": "string"
-                              },
-                              "description": {
-                                "type": "string"
-                              }
+                              "expression": {"type": "string"},
+                              "description": {"type": "string"}
                             }
                           }
                         ]
                       },
-                      "regexDescription": {
-                        "type": "string"
-                      },
-                      "minValue": {
-                        "type": "integer"
-                      },
-                      "maxValue": {
-                        "type": "integer"
-                      },
-                      "minLength": {
-                        "type": "integer"
-                      },
-                      "maxLength": {
-                        "type": "integer"
-                      },
+                      "regexDescription": {"type": "string"},
+                      "minValue": {"type": "integer"},
+                      "maxValue": {"type": "integer"},
+                      "minLength": {"type": "integer"},
+                      "maxLength": {"type": "integer"},
                       "values": {
                         "type": "array",
-                        "items": {
-                          "type": "string"
-                        }
+                        "items": {"type": "string"}
                       },
                       "icon": {
                         "$ref": "/icon"
