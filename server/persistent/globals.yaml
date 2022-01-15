@@ -1,0 +1,153 @@
+general:
+  aiqum: 172.16.0.88
+
+# networks:
+#   - name: prodnas
+#     combinations:
+#       - company: Company 1
+#         environment: Production
+#         location: Site A
+#         subnet: 10.1.1.0/24
+#         gateway: 10.1.1.254
+#         brocadcastdoamin: vlan-1
+#         iprange:
+#         - 10.1.1.100
+#         - 10.1.1.121
+#         - 10.1.1.133
+#         - 10.1.1.117
+#         - 10.1.1.156
+#   - name: drnas
+#     combinations:
+#       - company: Company 1
+#         environment: Production
+#         location: Site A
+#         subnet: 10.1.3.0/24
+#         gateway: 10.1.3.254
+#         brocadcastdoamin: vlan-3
+#         iprange:
+#         - 10.1.3.100
+#         - 10.1.3.121
+#         - 10.1.3.133
+#         - 10.1.3.117
+#         - 10.1.3.156
+
+# services list
+services:
+  # - SAN:
+  #   - COM2:
+  #     - Prod:
+  #       - Site 1:
+
+  #         Site 2:
+
+  #       Test:
+  #       - Site 3:
+
+  #         Site 4:
+
+  #     COM3:
+  #     - Prod3:
+  #       - Site 1:
+  #         Site 2:
+  #       Test:
+  #       - Site 3:
+  #         Site 4:
+
+  - NAS:  # service
+    - Company 1: #company
+      - Production: #environemnt
+        - Site A: #site
+          - prod:  #copy
+              clusters:
+                - cluster1: [nas1]
+                  cluster2: []
+              snapshotpolicy:
+                name: sp
+                dynamicschedule: true
+                schedule: ['daily','weekly']
+                prefix: ['daily','weekly']
+                count: [24,4]
+                snapmirror_label: ['daily','weekly']
+              efficiency:
+                enable_compression: true
+                enable_cross_volume_background_dedupe: true
+                enable_cross_volume_inline_dedupe: true
+                enable_data_compaction: true
+                enable_inline_compression: true
+                enable_inline_dedupe: true
+                schedule: daily
+                dynamicschedule: true
+                duration: 3
+              cifsaccess: false
+
+            dr1:
+              sizeratio: 1.5
+              #svmnamesuffix: ""
+              volnamesuffix: "_dr1"
+              fixed_relationship_for_prod:
+                cluster1_nas1:
+                  cluster: cluster1
+                  svm: nas1_dr1
+              clusters:
+                - cluster1: [svm1]
+                  cluster2: [svm4]
+              source:
+                copy: prod
+                policy:
+                  name: MirrorAllSnapshots
+                dynamicschedule: true
+                schedule: daily
+
+            dr2:
+              sizeratio: 1.5
+              volnamesuffix: "_dr2"
+              fixed_relationship_for_prod:
+                cluster1_nas1:
+                  cluster: cluster1
+                  svm: nas1_dr2
+              clusters:
+                - cluster2: [svm3]
+              source:
+                copy: dr1
+                policy:
+                  name: MirrorAllSnapshots
+                dynamicschedule: true
+                schedule: daily
+
+            b2d1:
+              sizeratio: 2.5
+              volnamesuffix: ""
+              fixed_relationship_for_prod:
+                cluster1_nas1:
+                  cluster: cluster1
+                  svm: nas1_b2d1
+              clusters:
+                - cluster2: [svm9]
+              source:
+                copy: prod
+                policy:
+                  name: 90daily
+                  snapmirror_label: ['daily']
+                  keep: [90]
+                  policy_type: async_mirror
+                dynamicschedule: true
+                schedule: daily
+
+            b2d2:
+              sizeratio: 2.5
+              volnamesuffix: ""
+              fixed_relationship_for_prod:
+                cluster1_nas1:
+                  cluster: cluster1
+                  svm: nas1_b2d2
+              clusters:
+                - cluster2: [svm10]
+              source:
+                copy: b2d1
+                policy:
+                  name: 120daily
+                  snapmirror_label: ['daily']
+                  keep: [120]
+                  policy_type: async_mirror
+                dynamicschedule: true
+                schedule: daily

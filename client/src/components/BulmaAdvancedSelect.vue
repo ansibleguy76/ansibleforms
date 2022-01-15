@@ -42,7 +42,7 @@
             :pctColumns="pctColumns||[]"
             :previewColumn="previewColumn||''"
             :valueColumn="valueColumn||''"
-            @isChanged="$emit('isChanged')"
+            @ischanged="$emit('ischanged')"
             @isSelected="close()"
            />
         </div>
@@ -135,8 +135,8 @@
           ref.$refs.content.focus({ preventScroll: true })
         }
       }, 100);
-      this.$refs.input.blur()
-      this.$refs.content.blur()
+      // this.$refs.input.blur()
+      // this.$refs.content.blur()
     }
   }
 </script>
