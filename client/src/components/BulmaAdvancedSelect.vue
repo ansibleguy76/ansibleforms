@@ -60,7 +60,7 @@
         :pctColumns="pctColumns||[]"
         :previewColumn="previewColumn||''"
         :valueColumn="valueColumn||''"
-        @isChanged="$emit('isChanged')"
+        @ischanged="$emit('ischanged')"
        />
     </div>
   </div>
