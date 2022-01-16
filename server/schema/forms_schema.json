@@ -302,19 +302,34 @@
                       "enum": ["expression"]
                     },
                     "values": {"not":{}},
-                    "regex": {"not":{}},
                     "regexDescription": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
                     "sticky": {"not":{}},
                     "pctColumns": {"not":{}},
-                    "minLength": {"not":{}},
-                    "maxLength": {"not":{}},
                     "dbConfig": {"not":{}},
                     "multiple": {"not":{}},
                     "outputObject": {"not":{}}
                   },
                   "required": ["expression"]
+                },
+                {
+                  "properties": {
+                    "type": {
+                      "enum": ["expression"]
+                    },
+                    "values": {"not":{}},
+                    "regexDescription": {"not":{}},
+                    "minValue": {"not":{}},
+                    "maxValue": {"not":{}},
+                    "expression": {"not":{}},
+                    "sticky": {"not":{}},
+                    "pctColumns": {"not":{}},
+                    "multiple": {"not":{}},
+                    "runLocal": {"not":{}},
+                    "outputObject": {"not":{}}                    
+                  },
+                  "required": ["query", "dbConfig"]
                 },
                 {
                   "properties": {
@@ -426,7 +441,7 @@
                   "items": {"type": "string"}
                 },
                 "sticky": {"type": "boolean"},
-                "editable": {"type": "boolean"},                 
+                "editable": {"type": "boolean"},
                 "valueColumn": {"type": "string"},
                 "previewColumn": {"type": "string"},
                 "placeholderColumn": {"type": "string"},

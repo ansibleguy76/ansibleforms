@@ -353,7 +353,7 @@
         e.preventDefault();
       },
       setExpressionFieldEditable(fieldname,value){
-        if(typeof this.$v.form[fieldname].$model=='string'){
+        if(typeof this.$v.form[fieldname].$model=='string' || this.$v.form[fieldname].$model==undefined){
           Vue.set(this.fieldOptions[fieldname],'editable',value)   // flag editable
         }else{
           this.$toast.warning("You can only edit string expression fields.")
@@ -589,7 +589,7 @@
                 // if expression and not processed yet or needs to be reprocessed
                 var flag = ref.dynamicFieldStatus[item.name];                     // current field status (running/fixed/variable)
                 var placeholderCheck=undefined;                                   // result for a placeholder check
-                if((item.type=="expression" || (item.type=="query" && item.expression)) && flag==undefined){                // if expression and not evaluated yet
+                if(((item.type=="expression" && item.expression) || (item.type=="query" && item.expression)) && flag==undefined){                // if expression and not evaluated yet
                   // console.log("eval expression " + item.name)
                   if(item.required){
                     hasUnevaluatedFields=true                                       // set the un-eval flag if this is required
@@ -665,7 +665,7 @@
                     // console.log(item.name + " is not evaluated yet");
                     Vue.set(ref.dynamicFieldStatus,item.name,undefined);
                   }
-                } else if(item.type=="query" && item.query && flag==undefined){
+                } else if(((item.type=="query" && item.query) || (item.type=="expression" && item.query)) && flag==undefined){
                    // console.log("eval query : " + item.name)
                   // set flag running
                   if(item.required){
@@ -687,7 +687,11 @@
                         }
                         if(restresult.status=="success"){
                            //console.log("query "+item.name+" triggered : items found -> "+ restresult.data.output.length);
-                          Vue.set(ref.queryresults, item.name, restresult.data.output);
+                          if(item.type=="query"){
+                            Vue.set(ref.queryresults, item.name, restresult.data.output);
+                          }else{
+                            Vue.set(ref.form, item.name, restresult.data.output);
+                          }
                           if(placeholderCheck.hasPlaceholders){
                             // set flag as viable variable query
                             Vue.set(ref.dynamicFieldStatus,item.name,"variable");
