@@ -20,7 +20,22 @@
                   <transition name="slide">
                     <div class="field mt-3" v-if="visibility[field.name]">
                       <!-- add field label -->
-                      <label class="label has-text-primary">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span></label>
+                      <label class="label has-text-primary">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span>
+                        <span
+                          class="icon is-clickable has-text-success"
+                          @click="setExpressionFieldEditable(field.name,true)"
+                          v-if="field.editable && field.type=='expression' && !fieldOptions[field.name].editable"
+                        >
+                          <font-awesome-icon icon="pencil-alt" />
+                        </span>
+                        <span
+                          class="icon is-clickable has-text-danger"
+                          @click="setExpressionFieldEditable(field.name,false)"
+                          v-if="field.editable && field.type=='expression' && fieldOptions[field.name].editable"
+                        >
+                          <font-awesome-icon icon="times" />
+                        </span>
+                      </label>
                       <!-- type = checkbox -->
                       <div v-if="field.type=='checkbox'">
                         <BulmaCheckRadio checktype="checkbox" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="field.placeholder" @change="evaluateDynamicFields(field.name)" />
@@ -56,10 +71,10 @@
                         <div v-if="field.type=='expression'" :class="{'is-loading':dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running'}" class="control">
                           <input type="text"
                             @focus="inputFocus"
-                            :class="{'is-danger':$v.form[field.name].$invalid}"
+                            :class="{'is-danger':$v.form[field.name].$invalid,'has-text-info':!fieldOptions[field.name].editable}"
                             v-model="$v.form[field.name].$model"
-                            class="input has-text-info"
-                            readonly
+                            class="input"
+                            :readonly="!fieldOptions[field.name].editable"
                             :name="field.name"
                             :required="field.required">
                         </div>
@@ -336,6 +351,17 @@
     methods:{
       inputFocus(e){
         e.preventDefault();
+      },
+      setExpressionFieldEditable(fieldname,value){
+        if(typeof this.$v.form[fieldname].$model=='string'){
+          Vue.set(this.fieldOptions[fieldname],'editable',value)   // flag editable
+        }else{
+          this.$toast.warning("You can only edit string expression fields.")
+        }
+        if(!value){
+          Vue.set(this.dynamicFieldStatus,fieldname,undefined);  // reset statusflag
+          Vue.set(this.form,fieldname,undefined);                // reset value in the form
+        }
       },
       filterfieldsByGroup(group){                   // creates a list of field per group
         return this.currentForm.fields.filter(function (el) {
@@ -757,8 +783,10 @@
             // set all variable ones to dirty
             ref.dynamicFieldDependencies[field].forEach((item,i) => { // loop all dynamic fields and reset them
                 // set all variable fields blank and re-evaluate
-                Vue.set(ref.dynamicFieldStatus,item,undefined);  // reset statusflag
-                Vue.set(ref.form,item,undefined);                // reset value in the form
+                if(!ref.fieldOptions[item].editable){
+                  Vue.set(ref.dynamicFieldStatus,item,undefined);  // reset statusflag
+                  Vue.set(ref.form,item,undefined);                // reset value in the form
+                }
             })
           }
       },
