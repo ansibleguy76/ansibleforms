@@ -113,6 +113,21 @@ User.findById = function (id,result) {
       result(err, null);
     }
 };
+User.findByUsername = function (username,result) {
+    logger.debug(`Finding user ${username}`)
+    try{
+      mysql.query("SELECT * FROM AnsibleForms.`users` WHERE username=?;",username, function (err, res) {
+          if(err) {
+              result(err, null);
+          }
+          else{
+              result(null, res);
+          }
+      });
+    }catch(err){
+      result(err, null);
+    }
+};
 User.authenticate = function (username,password,result) {
     logger.debug(`Checking password for user ${username}`)
     var query = "SELECT users.id,`username`,`password`,GROUP_CONCAT(groups.name) `groups` FROM AnsibleForms.`users`,AnsibleForms.`groups` WHERE `users`.group_id=`groups`.id AND username=?;"

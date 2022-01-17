@@ -2,7 +2,7 @@ const express = require('express')
 const router = express.Router()
 const credentialController =   require('../controllers/credential.controller');
 // Retrieve all credentials
-router.get('/', credentialController.findAll);
+router.get('/', credentialController.find);
 // Create a new credential
 router.post('/', credentialController.create);
 // Retrieve a single credential with id

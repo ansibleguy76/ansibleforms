@@ -2,7 +2,16 @@
 const Group = require('../models/group.model');
 var RestResult = require('../models/restResult.model');
 
-exports.findAll = function(req, res) {
+exports.find = function(req, res) {
+  if(req.query.name){
+    Group.findByName(req.query.name,function(err, group) {
+        if (err){
+          res.json(new RestResult("error","failed to find group",null,err))
+        }else{
+          res.json(new RestResult("success","group found",group,""));
+        }
+    });    
+  }else{
     Group.findAll(function(err, group) {
         if (err){
           res.json(new RestResult("error","failed to find groups",null,err))
@@ -10,6 +19,8 @@ exports.findAll = function(req, res) {
           res.json(new RestResult("success","groups found",group,""));
         }
     });
+  }
+
 };
 exports.create = function(req, res) {
     const new_group = new Group(req.body);

@@ -92,6 +92,33 @@ Credential.findById = function (id,result) {
 
             result(null, res);
           }else{
+            result("No credential found with id " + id,null)
+          }
+        }
+      });
+    }catch(err){
+      result(err, null);
+    }
+};
+Credential.findByName2 = function (name,result) {
+    logger.debug(`Finding credential ${name}`)
+    var query = "SELECT * FROM AnsibleForms.`credentials` WHERE name=?;"
+    try{
+      mysql.query(query,name, function (err, res) {
+        if(err) {
+            result(err, null);
+        }
+        else{
+          if(res.length>0){
+            try{
+              res[0].password = decrypt(res[0].password)
+            }catch(e){
+              logger.error("Failed to decrypt the password.  Did the secretkey change ?")
+              res[0].password = ""
+            }
+
+            result(null, res);
+          }else{
             result("No credential found named " + name,null)
           }
         }

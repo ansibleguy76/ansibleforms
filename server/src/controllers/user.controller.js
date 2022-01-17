@@ -2,7 +2,16 @@
 const User = require('../models/user.model');
 var RestResult = require('../models/restResult.model');
 
-exports.findAll = function(req, res) {
+exports.find = function(req, res) {
+  if(req.query.username){
+    User.findByUsername(req.query.username,function(err, user) {
+        if (err){
+          res.json(new RestResult("error","failed to find user",null,err))
+        }else{
+          res.json(new RestResult("success","user found",user,""));
+        }
+    });
+  }else{
     User.findAll(function(err, user) {
         if (err){
           res.json(new RestResult("error","failed to find users",null,err))
@@ -10,6 +19,8 @@ exports.findAll = function(req, res) {
           res.json(new RestResult("success","users found",user,""));
         }
     });
+  }
+
 };
 exports.create = function(req, res) {
     const new_user = new User(req.body);

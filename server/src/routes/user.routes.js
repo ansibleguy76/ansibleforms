@@ -2,7 +2,7 @@ const express = require('express')
 const router = express.Router()
 const userController =   require('../controllers/user.controller');
 // Retrieve all users
-router.get('/', userController.findAll);
+router.get('/', userController.find);
 // Create a new user
 router.post('/', userController.create);
 // Retrieve a single user with id

@@ -78,5 +78,21 @@ Group.findById = function (id,result) {
       result(err, null);
     }
 };
+Group.findByName = function (name,result) {
+    logger.debug(`Finding group ${name}`)
+    var query = "SELECT * FROM AnsibleForms.`groups` WHERE name=?;"
+    try{
+      mysql.query(query,name, function (err, res) {
+          if(err) {
+              result(err, null);
+          }
+          else{
+              result(null, res);
+          }
+      });
+    }catch(err){
+      result(err, null);
+    }
+};
 
 module.exports= Group;

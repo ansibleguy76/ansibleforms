@@ -2,7 +2,16 @@
 const Credential = require('../models/credential.model');
 var RestResult = require('../models/restResult.model');
 
-exports.findAll = function(req, res) {
+exports.find = function(req, res) {
+  if(req.query.name){
+    Credential.findByName2(req.query.name,function(err, credential) {
+        if (err){
+          res.json(new RestResult("error","failed to find credentials",null,err))
+        }else{
+          res.json(new RestResult("success","credentials found",credential,""));
+        }
+    });
+  }else{
     Credential.findAll(function(err, credential) {
         if (err){
           res.json(new RestResult("error","failed to find credentials",null,err))
@@ -10,6 +19,8 @@ exports.findAll = function(req, res) {
           res.json(new RestResult("success","credentials found",credential,""));
         }
     });
+  }
+
 };
 exports.create = function(req, res) {
     const new_credential = new Credential(req.body);

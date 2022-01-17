@@ -2,7 +2,7 @@ const express = require('express')
 const router = express.Router()
 const groupController =   require('../controllers/group.controller');
 // Retrieve all groups
-router.get('/', groupController.findAll);
+router.get('/', groupController.find);
 // Create a new group
 router.post('/', groupController.create);
 // Retrieve a single group with id
