@@ -115,7 +115,7 @@
             if(result.data.status=="error"){
               ref.$toast.error(result.data.message + ", " + result.data.data.error);
             }else{
-              ref.showAlert("is-info","User is removed");
+              ref.$toast.success("User is removed");
               ref.userItem=undefined;
               ref.loadAll();
             }

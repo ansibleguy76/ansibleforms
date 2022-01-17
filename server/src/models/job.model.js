@@ -153,13 +153,14 @@ Job.findById = function (id,text,result) {
                     }
                     // mark skip lines
                     if(record.match(/^(skipping): \[([^\]]*)\].*/gm)){
-                      record = "<span class='has-text-grey'>" + record + "</span>"
+                      record = "<span class='has-text-info'>" + record + "</span>"
                     }
                     // summary line ?
                     record=record.replace(/(ok=[1-9]+)/g, "<span class='tag is-success'>$1</span>")
                                 .replace(/(changed=[1-9]+)/g, "<span class='tag is-warning'>$1</span>")
                                 .replace(/(failed=[1-9]+)/g, "<span class='tag is-warning'>$1</span>")
                                 .replace(/(unreachable=[1-9]+)/g, "<span class='tag is-warning'>$1</span>")
+                                .replace(/(skipped=[1-9]+)/g, "<span class='tag is-info'>$1</span>")
                   }
                 }
 
