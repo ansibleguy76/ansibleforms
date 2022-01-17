@@ -2,7 +2,7 @@
 const User = require('../models/user.model');
 var RestResult = require('../models/restResult.model');
 
-exports.find = function(req, res) {
+exports.findAllOr1 = function(req, res) {
   if(req.query.username){
     User.findByUsername(req.query.username,function(err, user) {
         if (err){
