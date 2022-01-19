@@ -40,6 +40,13 @@ exports.refresh = function(req, res) {
 
                 }else{
                   logger.error("Refresh token is expired")
+                  User.deleteToken(username,username_type,refreshtoken,function(err,res){
+                    if(err){
+                      logger.error("Failed to remove token for " + username)
+                    }else{
+                      logger.debug("Removed token for " + username)
+                    }
+                  })
                   res.status(401).send({ error:true, message: 'Refresh token is expired' });
                 }
             }

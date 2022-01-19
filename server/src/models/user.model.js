@@ -166,7 +166,7 @@ User.storeToken = function (username,username_type,refresh_token,result) {
     record.refresh_token = refresh_token
     logger.debug(`Adding token for ${record.username} (${record.username_type})`)
     try{
-      mysql.query("INSERT INTO AnsibleForms.`tokens` set ? ON DUPLICATE KEY UPDATE username=VALUES(username),username_type=VALUES(username_type),refresh_token=VALUES(refresh_token)", record,  function (err, res) {
+      mysql.query("INSERT INTO AnsibleForms.`tokens` set ?", record,  function (err, res) {
           if(err) {
               result(err, null);
           }
@@ -178,10 +178,11 @@ User.storeToken = function (username,username_type,refresh_token,result) {
       result("Failed to insert token in database",null)
     }
 };
-User.deleteToken = function (username,username_type,result) {
-    logger.debug(`Deleting token for user ${username} (${username_type})`)
+User.deleteToken = function (username,username_type,refresh_token,result) {
+    logger.debug(`Deleting token for user ${username} (${username_type}) - ${refresh_token}`)
     try{
-      mysql.query("DELETE FROM AnsibleForms.`tokens` WHERE username=? AND username_type=?",[username,username_type], function (err, res) {
+      User.cleanupTokens()
+      mysql.query("DELETE FROM AnsibleForms.`tokens` WHERE username=? AND username_type=? AND refresh_token=?",[username,username_type,refresh_token], function (err, res) {
           if(err) {
               result(err, null);
           }else{
@@ -192,27 +193,41 @@ User.deleteToken = function (username,username_type,result) {
         result("Failed to connect to the AnsibleForms database. " + err, null);
     }
 };
+User.cleanupTokens = function() {
+    logger.debug(`Deleting tokens older than a month`)
+    try{
+      mysql.query("DELETE FROM AnsibleForms.`tokens` WHERE timestamp < NOW() - INTERVAL 30 DAY",null, function (err, res) {
+          if(err) {
+            logger.error("Cleanup tokens failed")
+          }else{
+            logger.info("Cleanup tokens finished")
+          }
+      });
+    }catch(err){
+        logger.error("Failed to connect to the AnsibleForms database. " + err, null);
+    }
+};
 User.checkToken = function (username,username_type,refresh_token,result) {
     logger.debug(`Checking token for user ${username} (${username_type})`)
     try{
-      mysql.query("SELECT refresh_token FROM AnsibleForms.`tokens` WHERE username=? AND username_type=?",[username,username_type], function (err, res) {
+      mysql.query("SELECT refresh_token FROM AnsibleForms.`tokens` WHERE username=? AND username_type=? AND refresh_token=?",[username,username_type,refresh_token], function (err, res) {
           if(err) {
               result("Failed to connect to the AnsibleForms database : " + err, null);
           }
           else{
               if(res.length == 1){
-                if(res[0].refresh_token==refresh_token){
+                // if(res[0].refresh_token==refresh_token){
                     result(null,"Refresh token is OK");
-                }else{
-                    User.deleteToken(username,username_type,function(err,res){
-                      if(err){
-                        logger.error("Failed to remove token for " + username)
-                      }else{
-                        logger.debug("Removed token for " + username)
-                      }
-                      result(`User ${username} (${username_type}) gave a wrong refresh token, token is revoked`,null);
-                    })
-                }
+                // }else{
+                //     User.deleteToken(username,username_type,function(err,res){
+                //       if(err){
+                //         logger.error("Failed to remove token for " + username)
+                //       }else{
+                //         logger.debug("Removed token for " + username)
+                //       }
+                //       result(`User ${username} (${username_type}) gave a wrong refresh token, token is revoked`,null);
+                //     })
+                // }
               }else{
                 result(`User ${username} (${username_type}) not found`,null);
               }

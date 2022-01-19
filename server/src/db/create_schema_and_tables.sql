@@ -24,7 +24,7 @@ CREATE TABLE `tokens` (
   `username` varchar(250) NOT NULL,
   `username_type` varchar(5) NOT NULL,
   `refresh_token` text DEFAULT NULL,
-  PRIMARY KEY (`username`,`username_type`)
+  `timestamp` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 DROP TABLE IF EXISTS `credentials`;
 CREATE TABLE `credentials` (
@@ -55,7 +55,9 @@ CREATE TABLE `ldap` (
 DROP TABLE IF EXISTS `awx`;
 CREATE TABLE `awx` (
   `uri` varchar(250) NOT NULL,
-  `token` varchar(250) NOT NULL
+  `token` varchar(250) NOT NULL,
+  `ignore_certs` tinyint(4) DEFAULT NULL,
+  `ca_bundle` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 DROP TABLE IF EXISTS `job_output`;
 DROP TABLE IF EXISTS `jobs`;

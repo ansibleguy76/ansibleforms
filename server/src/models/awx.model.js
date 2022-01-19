@@ -15,16 +15,23 @@ const cache = new NodeCache({
     stdTTL: 3600,
     checkperiod: (3600 * 0.5)
 });
-
 const httpsAgent = new https.Agent({
   rejectUnauthorized: false
 })
-axios.defaults.options = httpsAgent
+function getHttpsAgent(awxConfig){
+  // logger.silly("config : " + awxConfig)
+  return new https.Agent({
+    rejectUnauthorized: !awxConfig.ignore_certs,
+    ca: awxConfig.ca_bundle
+  })
+}
 
 // constructor for awx config
 var Awx=function(awx){
     this.uri = awx.uri;
     this.token = encrypt(awx.token);
+    this.ignore_certs = (awx.ignore_certs)?1:0;
+    this.ca_bundle = awx.ca_bundle;
 };
 
 // get the awx config from cache or database (=wrapper function)
@@ -90,7 +97,7 @@ Awx.find = function (result) {
 // abort awx job template
 Awx.abortJob = function (id, result) {
 
-  Awx.getConfig(function(err,res){
+  Awx.getConfig(function(err,awxConfig){
 
     if(err){
       logger.error(err)
@@ -101,17 +108,17 @@ Awx.abortJob = function (id, result) {
       logger.debug(`aborting awx job ${id}`)
       const axiosConfig = {
         headers: {
-          Authorization:"Bearer " + res.token
+          Authorization:"Bearer " + awxConfig.token
         },
-        httpsAgent: httpsAgent
+        httpsAgent: getHttpsAgent(awxConfig)
       }
       // we first need to check if we CAN cancel
-      axios.get(res.uri + "/api/v2/jobs/" + id + "/cancel/",axiosConfig)
+      axios.get(awxConfig.uri + "/api/v2/jobs/" + id + "/cancel/",axiosConfig)
         .then((axiosresult)=>{
           var job = axiosresult.data
           if(job && job.can_cancel){
               logger.debug(`can cancel job id = ${id}`)
-              axios.post(res.uri + "/api/v2/jobs/" + id + "/cancel/",{},axiosConfig)
+              axios.post(awxConfig.uri + "/api/v2/jobs/" + id + "/cancel/",{},axiosConfig)
                 .then((axiosresult)=>{
                   job = axiosresult.data
                   result(job,null)
@@ -136,7 +143,7 @@ Awx.abortJob = function (id, result) {
 // launch awx job template
 Awx.launch = function (template,inventory,tags,check,diff,extraVars, result) {
 
-  Awx.getConfig(function(err,res){
+  Awx.getConfig(function(err,awxConfig){
 
     if(err){
       logger.error(err)
@@ -175,12 +182,12 @@ Awx.launch = function (template,inventory,tags,check,diff,extraVars, result) {
         // prepare axiosConfig
         const axiosConfig = {
           headers: {
-            Authorization:"Bearer " + res.token
+            Authorization:"Bearer " + awxConfig.token
           },
-          httpsAgent: httpsAgent
+          httpsAgent: getHttpsAgent(awxConfig)
         }
         logger.silly("Lauching awx with data : " + JSON.stringify(postdata))
-        axios.post(res.uri + template.related.launch,postdata,axiosConfig)
+        axios.post(awxConfig.uri + template.related.launch,postdata,axiosConfig)
           .then((axiosresult)=>{
             var job = axiosresult.data
             if(job){
@@ -209,7 +216,7 @@ Awx.launch = function (template,inventory,tags,check,diff,extraVars, result) {
 
 // find a job by id
 Awx.findJobById = function (id, result) {
-  Awx.getConfig(function(err,res){
+  Awx.getConfig(function(err,awxConfig){
     if(err){
       logger.error(err)
       result(`failed to get AWX configuration`)
@@ -219,11 +226,11 @@ Awx.findJobById = function (id, result) {
       // prepare axiosConfig
       const axiosConfig = {
         headers: {
-          Authorization:"Bearer " + res.token
+          Authorization:"Bearer " + awxConfig.token
         },
-        httpsAgent: httpsAgent
+        httpsAgent: getHttpsAgent(awxConfig)
       }
-      axios.get(res.uri + "/api/v2/jobs/" + id + "/",axiosConfig)
+      axios.get(awxConfig.uri + "/api/v2/jobs/" + id + "/",axiosConfig)
         .then((axiosresult)=>{
           var job = axiosresult.data;
           if(job){
@@ -245,7 +252,7 @@ Awx.findJobById = function (id, result) {
 
 // get the job output
 Awx.findJobStdout = function (job, result) {
-  Awx.getConfig(function(err,res){
+  Awx.getConfig(function(err,awxConfig){
 
     if(err){
       logger.error(err)
@@ -258,11 +265,11 @@ Awx.findJobStdout = function (job, result) {
         // prepare axiosConfig
         const axiosConfig = {
           headers: {
-            Authorization:"Bearer " + res.token
+            Authorization:"Bearer " + awxConfig.token
           },
-          httpsAgent: httpsAgent
+          httpsAgent: getHttpsAgent(awxConfig)
         }
-        axios.get(res.uri + job.related.stdout + "?format=html",axiosConfig)
+        axios.get(awxConfig.uri + job.related.stdout + "?format=html",axiosConfig)
           .then((axiosresult)=>{
             var jobstdout = axiosresult.data;
             const $ = cheerio.load(jobstdout)
@@ -287,12 +294,12 @@ Awx.check = function (awxConfig,result) {
 
   logger.debug(`Checking AWX connection`)
   // prepare axiosConfig
-
+  logger.debug(awxConfig)
   const axiosConfig = {
     headers: {
       Authorization:"Bearer " + decrypt(awxConfig.token)
     },
-    httpsAgent: httpsAgent
+    httpsAgent: getHttpsAgent(awxConfig)
   }
   axios.get(awxConfig.uri + "/api/v2/job_templates/",axiosConfig)
     .then((axiosresult)=>{
@@ -308,8 +315,8 @@ Awx.check = function (awxConfig,result) {
 };
 // find a jobtemplate by name
 Awx.findJobTemplateByName = function (name,result) {
-  Awx.find(function(err,res){
-
+  Awx.getConfig(function(err,awxConfig){
+    // logger.silly(awxConfig)
     if(err){
       logger.error(err)
       result(`failed to get AWX configuration`)
@@ -319,11 +326,11 @@ Awx.findJobTemplateByName = function (name,result) {
       // prepare axiosConfig
       const axiosConfig = {
         headers: {
-          Authorization:"Bearer " + res.token
+          Authorization:"Bearer " + awxConfig.token
         },
-        httpsAgent: httpsAgent
+        httpsAgent: getHttpsAgent(awxConfig)
       }
-      axios.get(res.uri + "/api/v2/job_templates/?name=" + encodeURI(name),axiosConfig)
+      axios.get(awxConfig.uri + "/api/v2/job_templates/?name=" + encodeURI(name),axiosConfig)
         .then((axiosresult)=>{
           var job_template = axiosresult.data.results.find(function(jt, index) {
             if(jt.name == name)
@@ -347,7 +354,7 @@ Awx.findJobTemplateByName = function (name,result) {
 };
 // find a jobtemplate by name
 Awx.findInventoryByName = function (name,result) {
-  Awx.find(function(err,res){
+  Awx.getConfig(function(err,awxConfig){
 
     if(err){
       logger.error(err)
@@ -361,11 +368,11 @@ Awx.findInventoryByName = function (name,result) {
       })
       const axiosConfig = {
         headers: {
-          Authorization:"Bearer " + res.token
+          Authorization:"Bearer " + awxConfig.token
         },
         httpsAgent:httpsAgent
       }
-      axios.get(res.uri + "/api/v2/inventories/?name=" + encodeURI(name),axiosConfig)
+      axios.get(awxConfig.uri + "/api/v2/inventories/?name=" + encodeURI(name),axiosConfig)
         .then((axiosresult)=>{
           var inventory = axiosresult.data.results.find(function(jt, index) {
             if(jt.name == name)

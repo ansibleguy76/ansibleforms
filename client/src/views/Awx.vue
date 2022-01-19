@@ -2,10 +2,18 @@
   <section v-if="isAdmin" class="section">
     <div class="container">
       <h1 class="title has-text-info"><font-awesome-icon icon="id-card" /> Awx</h1>
-      <BulmaInput icon="globe" v-model="awx.uri" label="Uri" placeholder="https://awx.domain.local" :required="true" :hasError="$v.awx.uri.$invalid" :errors="[]" />
-      <BulmaInput icon="lock" v-model="awx.token" label="Token" placeholder="Token" :required="true" :hasError="$v.awx.token.$invalid" :errors="[]" />
-      <BulmaButton icon="save" label="Update Awx" @click="updateAwx()"></BulmaButton>
-      <BulmaButton icon="check" label="Test Awx" @click="testAwx()"></BulmaButton>
+      <div class="columns">
+        <div class="column">
+          <BulmaInput icon="globe" v-model="awx.uri" label="Uri" placeholder="https://awx.domain.local" :required="true" :hasError="$v.awx.uri.$invalid" :errors="[]" />
+          <BulmaInput icon="lock" v-model="awx.token" label="Token" placeholder="Token" :required="true" :hasError="$v.awx.token.$invalid" :errors="[]" />
+          <BulmaButton icon="save" label="Update Awx" @click="updateAwx()"></BulmaButton>
+          <BulmaButton icon="check" label="Test Awx" @click="testAwx()"></BulmaButton>
+        </div>
+        <div class="column">
+          <BulmaCheckbox checktype="checkbox" v-model="awx.ignore_certs" label="Ignore Certificate Errors" />
+          <BulmaTextArea v-if="!awx.ignore_certs" v-model="awx.ca_bundle" label="Ca Bundle" placeholder="-----BEGIN CERTIFICATE-----" :hasError="$v.awx.ca_bundle.$invalid" :errors="[]" />
+        </div>
+      </div>
     </div>
   </section>
 </template>
@@ -15,6 +23,8 @@
   import Vuelidate from 'vuelidate'
   import BulmaButton from './../components/BulmaButton.vue'
   import BulmaInput from './../components/BulmaInput.vue'
+  import BulmaCheckbox from './../components/BulmaCheckRadio.vue'
+  import BulmaTextArea from './../components/BulmaTextArea.vue'
   import TokenStorage from './../lib/TokenStorage'
   import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
 
@@ -26,12 +36,14 @@
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean}
     },
-    components:{BulmaButton,BulmaInput},
+    components:{BulmaButton,BulmaInput,BulmaCheckbox,BulmaTextArea},
     data(){
       return  {
           awx:{
             uri:"",
-            token:""
+            token:"",
+            ignore_certs:true,
+            ca_bundle:""
           }
         }
     },
@@ -83,6 +95,11 @@
         },
         token: {
           required
+        },
+        ca_bundle:{
+          requiredIf:requiredIf(function(){
+            return !this.ignore_certs
+          })
         }
       }
     },

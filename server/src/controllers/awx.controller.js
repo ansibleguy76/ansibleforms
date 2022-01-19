@@ -124,7 +124,7 @@ exports.launch = async function(req, res) {
                 // send response
                 res.json(restResult)
               }else{
-                  logger.silly("Found jobtemplate, id = " + inventory)
+                  logger.silly("Found jobtemplate, id = " + jobTemplate.id)
                   if(inventory){
                     Awx.findInventoryByName(inventory,function(err,inventory){
                       if (err){
