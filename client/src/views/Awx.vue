@@ -5,7 +5,7 @@
       <div class="columns">
         <div class="column">
           <BulmaInput icon="globe" v-model="awx.uri" label="Uri" placeholder="https://awx.domain.local" :required="true" :hasError="$v.awx.uri.$invalid" :errors="[]" />
-          <BulmaInput icon="lock" v-model="awx.token" label="Token" placeholder="Token" :required="true" :hasError="$v.awx.token.$invalid" :errors="[]" />
+          <BulmaInput icon="lock" type="password" v-model="awx.token" label="Token" placeholder="Token" :required="true" :hasError="$v.awx.token.$invalid" :errors="[]" />
           <BulmaButton icon="save" label="Update Awx" @click="updateAwx()"></BulmaButton>
           <BulmaButton icon="check" label="Test Awx" @click="testAwx()"></BulmaButton>
         </div>
