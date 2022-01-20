@@ -1,0 +1,42 @@
+name: Tag Release
+on:
+    push:
+        branches: [ main ]
+jobs:
+    tag_release:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check out code
+              uses: actions/checkout@v2
+            - name: Initialize mandatory git config
+              run: |
+                  git config user.name "GitHub Actions"
+                  git config user.email noreply@github.com
+            - name: Setup release information
+              #get version name from app_versions.gradle file (5.6.2)
+              run: |
+                  versionName=`sed '2q;d' app_versions.gradle | cut -d "=" -f2 | xargs`
+                  export VERSION_NAME=$versionName
+                  echo "::set-env name=VERSION_NAME::$VERSION_NAME"
+            - name: Extract release notes
+              id: extract_release_notes
+              uses: ffurrer2/extract-release-notes@v1
+            - name: Create Release
+              id: create_release
+              uses: actions/create-release@v1
+              # env:
+                    # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                tag_name: ${{ env.VERSION_NAME }}
+                release_name: v${{ env.VERSION_NAME }}
+                body: ${{ steps.extract_release_notes.outputs.release_notes }}
+                draft: false
+                prerelease: false
+            # - name: Slack notify
+            #   uses: rtCamp/action-slack-notify@master
+            #   env:
+            #     SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_OVER_APP }}
+            #     SLACK_CHANNEL: #over-ansibleforms
+            #     SLACK_TITLE: 🚨 Version ${{ env.VERSION_NAME }} is being blablabla
+            #     SLACK_MESSAGE: ${{ steps.extract_release_notes.outputs.release_notes }}
+            #     MSG_MINIMAL: true
