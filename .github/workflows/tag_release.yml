@@ -5,6 +5,8 @@ on:
 jobs:
     tag_release:
         runs-on: ubuntu-latest
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
         steps:
             - name: Check out code
               uses: actions/checkout@v2
