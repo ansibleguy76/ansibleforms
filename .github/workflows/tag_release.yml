@@ -7,10 +7,7 @@ jobs:
         runs-on: ubuntu-latest
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
-<<<<<<< HEAD
-=======
 
->>>>>>> 2bba9f2ce55d72c9cb7a865f3524aebacb21aeb2
         steps:
             - name: Check out code
               uses: actions/checkout@v2
