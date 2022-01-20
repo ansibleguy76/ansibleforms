@@ -5,6 +5,8 @@ on:
 jobs:
     tag_release:
         runs-on: ubuntu-latest
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
         steps:
             - name: Check out code
               uses: actions/checkout@v2
@@ -24,8 +26,8 @@ jobs:
             - name: Create Release
               id: create_release
               uses: actions/create-release@v1
-              # env:
-                    # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              env:
+                    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               with:
                 tag_name: ${{ env.VERSION_NAME }}
                 release_name: v${{ env.VERSION_NAME }}
