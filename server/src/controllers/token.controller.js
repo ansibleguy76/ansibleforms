@@ -16,7 +16,7 @@ exports.refresh = function(req, res) {
         res.status(400).send({ error:true, message: 'Please provide a refresh token' });
     }else{
         var jwtPayload=jwt.decode(refreshtoken)
-        if(jwtPayload && jwtPayload.user){
+        if(jwtPayload && jwtPayload.user && jwtPayload.refresh){
           var username=jwtPayload.user.username
           var username_type=jwtPayload.user.type
           User.checkToken(username,username_type,refreshtoken,function(err,result){
@@ -27,8 +27,8 @@ exports.refresh = function(req, res) {
                 var body = jwtPayload.user
                 if(new Date(jwtPayload.exp*1000)>new Date()){
                   // logger.debug("refresh token is not expired")
-                  const token = jwt.sign({ user: body }, authConfig.secret,{ expiresIn: authConfig.jwtExpiration});
-                  const refreshtoken = jwt.sign({ user: body }, authConfig.secret,{ expiresIn: authConfig.jwtRefreshExpiration});
+                  const token = jwt.sign({ user: body,access:true }, authConfig.secret,{ expiresIn: authConfig.jwtExpiration});
+                  const refreshtoken = jwt.sign({ user: body,refresh:true }, authConfig.secret,{ expiresIn: authConfig.jwtRefreshExpiration});
                   User.storeToken(username,username_type,refreshtoken,function(err,resnewtoken){
                     if(err){
                       logger.error("Failed to store new token")

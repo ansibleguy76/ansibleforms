@@ -73,10 +73,14 @@ passport.use(
     },
     async (jwtPayload, done) => {
       try {
-        return done(null, jwtPayload);
+        if(jwtPayload.access){
+          return done(null, jwtPayload);
+        }else {
+          done(null, false,{message:'Bad accesstoken'})
+        }
       } catch (error) {
         logger.debug("error ?")
-        done(error);
+        done(error,false,{message:'Unknown JWT error'});
       }
     }
   )
