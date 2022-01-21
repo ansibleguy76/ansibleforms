@@ -68,7 +68,7 @@
                       <BulmaEditTable v-if="field.type=='table'" :tableFields="field.tableFields" :click="false" tableClass="table is-striped is-bordered is-narrow" v-model="$v.form[field.name].$model" />
                       <div :class="{'has-icons-left':!!field.icon && field.type!='query'}" class="control">
                         <!-- type = expression -->
-                        <div v-if="field.type=='expression'" :class="{'is-loading':(dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running') &! fieldOptions[field.name].editable}" class="control">
+                        <div v-if="field.type=='expression'" :class="{'is-loading':dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running'}" class="control">
                           <input type="text"
                             @focus="inputFocus"
                             :class="{'is-danger':$v.form[field.name].$invalid,'has-text-info':!fieldOptions[field.name].editable}"
@@ -76,9 +76,7 @@
                             class="input"
                             :readonly="!fieldOptions[field.name].editable"
                             :name="field.name"
-                            :required="field.required"
-                            @change="evaluateDynamicFields(field.name)"
-                            >
+                            :required="field.required">
                         </div>
                         <!-- type = text or password-->
                         <input v-if="field.type=='text' || field.type=='password'"
@@ -355,15 +353,14 @@
         e.preventDefault();
       },
       setExpressionFieldEditable(fieldname,value){
-        if(typeof this.$v.form[fieldname].$model=='string' || typeof this.$v.form[fieldname].$model=='number' || this.$v.form[fieldname].$model==undefined){
+        if(typeof this.$v.form[fieldname].$model=='string' || this.$v.form[fieldname].$model==undefined){
           Vue.set(this.fieldOptions[fieldname],'editable',value)   // flag editable
         }else{
           this.$toast.warning("You can only edit string expression fields.")
         }
         if(!value){
-          this.resetField(fieldname)
-          // Vue.set(this.dynamicFieldStatus,fieldname,undefined);  // reset statusflag
-          // Vue.set(this.form,fieldname,undefined);                // reset value in the form
+          Vue.set(this.dynamicFieldStatus,fieldname,undefined);  // reset statusflag
+          Vue.set(this.form,fieldname,undefined);                // reset value in the form
         }
       },
       filterfieldsByGroup(group){                   // creates a list of field per group
@@ -407,31 +404,15 @@
         });
         return result
       },
-      resetField(fieldname){
+      resetField(field){
         // reset to default value
         // reset this field status
-        // console.log(`[${fieldname}] reset`)
-        if(fieldname in this.dynamicFieldStatus){
-          this.dynamicFieldStatus[fieldname]=undefined
+        if(field in this.dynamicFieldStatus){
+          this.dynamicFieldStatus[field]=undefined
         }
-        Vue.set(this.form,fieldname,this.defaults[fieldname])
-        this.evaluateDynamicFields(fieldname)
-      },
-      defaultField(fieldname){
-        // reset to default value
-        // reset this field status
-        // console.log(`[${fieldname}] default`)
-        var prevState=this.dynamicFieldStatus[fieldname]
-        if(fieldname in this.dynamicFieldStatus && this.defaults[fieldname]){
-          this.dynamicFieldStatus[fieldname]="default"
-        }else{
-          this.dynamicFieldStatus[fieldname]=undefined
-        }
-        Vue.set(this.form,fieldname,this.defaults[fieldname])
-        // don't evaluate again, the default didn't change
-        if(prevState!="default"){
-          this.evaluateDynamicFields(fieldname)
-        }
+        Vue.set(this.form,field,this.defaults[field])
+
+        this.evaluateDynamicFields(field)
       },
       // Find variable devDependencies
       findVariableDependencies(){
@@ -555,43 +536,34 @@
             }
 
             // if the variable is viable and not being changed, replace it
-            // console.log(foundfield + "("+fieldvalue+")" + " -> targetflag = " + targetflag)
+            //console.log(foundfield + "("+fieldvalue+")" + " -> targetflag = " + targetflag)
             // console.log(foundfield + " -> targetflag = " + targetflag)
-            if(((targetflag=="variable"||targetflag=="fixed"||targetflag=="default") && fieldvalue!==undefined && newValue!=undefined)||((item.ignoreIncomplete||false) && newValue!=undefined)){                // valid value ?
+            if((((targetflag=="variable")||(targetflag=="fixed")) && fieldvalue!==undefined && newValue!=undefined)||((item.ignoreIncomplete||false) && newValue!=undefined)){                // valid value ?
                 if(fieldvalue==undefined){
                   fieldvalue="__undefined__"   // catch undefined values
                 }
-                fieldvalue=ref.stringifyValue(fieldvalue)
-                 // console.log("replacing placeholder")
+                if(typeof fieldvalue==='object' || Array.isArray(fieldvalue)){
+                  fieldvalue = JSON.stringify(fieldvalue) // if object, we need to stringify it
+                }
+                // console.log("replacing placeholder")
                 newValue=newValue.replace(foundmatch,fieldvalue);               // replace the placeholder with the value
-                 // console.log("replaced")
-                 // console.log(item.name + " -> " + newValue)
+                // console.log("replaced")
+                // console.log(item.name + " -> " + newValue)
             }else{
-                // if(item.alwaysEval){
-                //   newValue=newValue.replace(foundmatch,"undefined");               // replace the placeholder with undefined
-                // }else{
-                  newValue=ref.stringifyValue(item.default)      // cannot evaluate yet
-                  // we have a placeholder but it's value is not ready yet... will be for next loop
-                  // console.log("dependency ("+foundfield+") is not ready (" + targetflag + " : " + fieldvalue + ")")
-                // }
+                newValue=undefined                                              // cannot evaluate yet
+                // we have a placeholder but it's value is not ready yet... will be for next loop
+                // console.log("dependency ("+foundfield+") is not ready (" + targetflag + " : " + fieldvalue + ")")
             }
             hasPlaceholders=true;
         }
         if(retestRegex.test(newValue)){                                         // still placeholders found ?
-            newValue=ref.stringifyValue(item.default)                           // cannot evaluate yet
+            newValue=undefined                                                  // cannot evaluate yet
         }
         if(newValue!=undefined){
            newValue=newValue.replace("'__undefined__'","undefined")  // replace undefined values
            newValue=newValue.replace("__undefined__","undefined")
         }
         return {"hasPlaceholders":hasPlaceholders,"value":newValue}          // return the result
-      },
-      stringifyValue(fieldvalue){
-        if(typeof fieldvalue==='object' || Array.isArray(fieldvalue)){
-          return JSON.stringify(fieldvalue) // if object, we need to stringify it
-        }else{
-          return fieldvalue
-        }
       },
       //----------------------------------------------------------------
       // starts the evaluation of dynamic fields (expression or query)
@@ -617,18 +589,15 @@
                 // if expression and not processed yet or needs to be reprocessed
                 var flag = ref.dynamicFieldStatus[item.name];                     // current field status (running/fixed/variable)
                 var placeholderCheck=undefined;                                   // result for a placeholder check
-                if(((item.type=="expression" && item.expression) || (item.type=="query" && item.expression)) && (flag==undefined || flag=="default")){                // if expression and not evaluated yet
+                if(((item.type=="expression" && item.expression) || (item.type=="query" && item.expression)) && flag==undefined){                // if expression and not evaluated yet
                   // console.log("eval expression " + item.name)
-                  // console.log(`[${item.name}][${flag}] : ok !! let do it`)
                   if(item.required){
                     hasUnevaluatedFields=true                                       // set the un-eval flag if this is required
                   }
                   // set flag running
                   Vue.set(ref.dynamicFieldStatus,item.name,"running");            // set as running
                   placeholderCheck = ref.replacePlaceholders(item)     // check and replace placeholders
-                  // console.log(`[${item.name}] 1 : ${placeholderCheck.value}`)
                   if(placeholderCheck.value!=undefined){                       // expression is clean ?
-                      // console.log(`[${item.name}] 2 : ${placeholderCheck.value}`)
                       // allow local run in browser
                       if(item.runLocal){
                         //console.log("Running local expression : " + placeholderCheck.value)
@@ -643,7 +612,6 @@
                             // set flag as viable variable query
                             // console.log("Expression found with variables")
                             Vue.set(ref.dynamicFieldStatus,item.name,"variable");
-                            //
                           }else{
                             // set flag as viable fixed query
                             Vue.set(ref.dynamicFieldStatus,item.name,"fixed");  // if this dynamic field was a 1 time evaluation, set as fixed
@@ -651,8 +619,7 @@
                         }catch(err){
                           //console.log("Local eval failed : " + err)
                           try{
-                            ref.defaultField(item.name)
-
+                            Vue.set(ref.dynamicFieldStatus,item.name,undefined);
                           }catch(err){
                             ref.stopLoop()
                           }
@@ -674,21 +641,18 @@
                                 Vue.set(ref.queryresults, item.name, [].concat(restresult.data.output??[]));
                               if(placeholderCheck.hasPlaceholders){                 // if placeholders were found we set this a variable dynamic field.
                                 // set flag as viable variable query
-                                // console.log(`[${item.name}] : variable`)
+                                // console.log("Expression found with variables")
                                 Vue.set(ref.dynamicFieldStatus,item.name,"variable");
                               }else{
                                 // set flag as viable fixed query
                                 Vue.set(ref.dynamicFieldStatus,item.name,"fixed");  // if this dynamic field was a 1 time evaluation, set as fixed
                               }
-                              // console.log(item.name + " is now resolved ("+restresult.data.output+"), let's cascade")
-                              //ref.evaluateDynamicFields(item.name)
-
                             }
 
                           }).catch(function (error) {
                                 // console.log('Error ' + error.message)
                                 try{
-                                  ref.defaultField(item.name)
+                                  Vue.set(ref.dynamicFieldStatus,item.name,undefined);
                                 }catch(err){
                                   ref.stopLoop()
                                 }
@@ -699,7 +663,7 @@
 
                   }else{
                     // console.log(item.name + " is not evaluated yet");
-                    ref.defaultField(item.name)
+                    Vue.set(ref.dynamicFieldStatus,item.name,undefined);
                   }
                 } else if(((item.type=="query" && item.query) || (item.type=="expression" && item.query)) && flag==undefined){
                    // console.log("eval query : " + item.name)
@@ -740,7 +704,7 @@
                       }).catch(function (err) {
                           // console.log('Error ' + err.message)
                           try{
-                            ref.defaultField(item.name)
+                            Vue.set(ref.dynamicFieldStatus,item.name,undefined);
                           }catch(err){
                             ref.$toast("Cannot reset field status " + item.name)
                           }
@@ -758,10 +722,9 @@
                   }
                 }
               }else{  // not visible field
-                 ref.defaultField(item.name)
+                 ref.resetField(item.name)
 
               }
-
             } // end loop function
           ) // end field loop
           if(hasUnevaluatedFields){
@@ -816,14 +779,13 @@
           }
         };
       },
-      evaluateDynamicFields(fieldname) {
+      evaluateDynamicFields(field) {
           var ref=this;
-          // console.log('evaldynfields triggered for ' + fieldname)
           // if this field is dependency
-          if(fieldname in ref.dynamicFieldDependencies){  // are any fields dependent from this field ?
+          if(field in ref.dynamicFieldDependencies){  // are any fields dependent from this field ?
             ref.canSubmit=false; // after each dependency reset, we block submitting, untill all fields are resolved
             // set all variable ones to dirty
-            ref.dynamicFieldDependencies[fieldname].forEach((item,i) => { // loop all dynamic fields and reset them
+            ref.dynamicFieldDependencies[field].forEach((item,i) => { // loop all dynamic fields and reset them
                 // set all variable fields blank and re-evaluate
                 if(!ref.fieldOptions[item].editable){
                   Vue.set(ref.dynamicFieldStatus,item,undefined);  // reset statusflag
@@ -1151,7 +1113,7 @@
           Vue.set(ref.fieldOptions[item.name],"valueColumn",item.valueColumn||"")
           Vue.set(ref.fieldOptions[item.name],"placeholderColumn",item.placeholderColumn||"")
           Vue.set(ref.fieldOptions[item.name],"type",item.type)
-          Vue.set(ref.form,item.name,item.default)
+          Vue.set(ref.form,item.name,undefined)
         }else if(["checkbox"].includes(item.type)){
           Vue.set(ref.form,item.name,item.default||false)
         }else{
