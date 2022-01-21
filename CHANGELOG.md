@@ -6,17 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+-   Secured JWT tokens even more
+
+### Fixed
+-   Fixed editable expression bug
+-   Token issue
 
 ## [2.1.5] - 2022-01-20
 ### Added
 
 -   Start with changelog
+-   Start with version releases
 ## [2.1.4] - 2022-01-20
 ### Changed
 
 -   Hide AWX token
 -   Add AWX ca-bundle for certificate verification
 -   JWT tokens, allow multiple devices
+-   Expression field can be `editable`
 
 ## [2.1.2] - 2022-01-17
 
