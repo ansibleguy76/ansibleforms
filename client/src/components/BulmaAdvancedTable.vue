@@ -274,7 +274,7 @@
   }
 </script>
 <style scoped>
-.table td{
+.table td,.table th{
   max-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
