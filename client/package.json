@@ -21,6 +21,7 @@
     "vue-toastification" : "1.7.14",
     "vue-json-pretty" : "1.8.2",
     "bulma" : "*",
+    "bulma-quickview" : "*",
     "bulma-checkradio": "~2.1.3",
     "vue2-code-editor" : "*",
     "vue-bulma-paginate" : "*",
