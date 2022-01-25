@@ -1,5 +1,6 @@
 <template>
   <div>
+    <p v-if="queryfilter" class="has-text-info"><span class="icon is-size-7"><font-awesome-icon icon="search" /></span> <span>{{ queryfilter}}</span></p>
     <div v-if="!sticky" class="dropdown is-fullwidth" :class="{'is-active':isActive && !isLoading}">
       <div class="dropdown-trigger">
         <p class="control has-icons-right" :class="{'has-icons-left':icon!=undefined}">
@@ -17,6 +18,7 @@
             @keydown.tab="close()"
             @keydown.space="toggle()"
             @mousedown="toggle()"
+            @keydown="doFilter"
           >
           <span v-if="icon!=undefined" class="icon is-small is-left">
             <font-awesome-icon :icon="icon" />
@@ -29,7 +31,7 @@
         </p>
       </div>
       <div class="dropdown-menu" id="dropdown-menu" role="menu">
-        <div class="dropdown-content" ref="content" tabindex="0" @keydown.esc="close()" @keydown.tab="close()" @blur="close()">
+        <div class="dropdown-content" ref="content" tabindex="0" @keydown.esc="close()" @keydown.tab="close()" @blur="close()" @keydown="doFilter">
           <BulmaAdvancedTable
             :defaultValue="defaultValue"
             :required="required||false"
@@ -42,13 +44,15 @@
             :pctColumns="pctColumns||[]"
             :previewColumn="previewColumn||''"
             :valueColumn="valueColumn||''"
+            :queryfilter="queryfilter"
             @ischanged="$emit('ischanged')"
             @isSelected="close()"
+            @filtering="doFilter"
            />
         </div>
       </div>
     </div>
-    <div class="inputborder mb-2 p-2" :class="{'hasError':hasError}" v-else>
+    <div class="inputborder mb-2 p-2" :class="{'hasError':hasError}" v-else @keydown="doFilter" tabindex="0">
       <BulmaAdvancedTable
         :defaultValue="defaultValue"
         :required="required||false"
@@ -60,6 +64,7 @@
         :pctColumns="pctColumns||[]"
         :previewColumn="previewColumn||''"
         :valueColumn="valueColumn||''"
+        :queryfilter="queryfilter"
         @ischanged="$emit('ischanged')"
        />
     </div>
@@ -100,7 +105,8 @@
         valueLabel:"",
         previewLabel:"",
         preview:"",
-        focus:""
+        focus:"",
+        queryfilter:""
       }
     },
     computed: {
@@ -118,12 +124,29 @@
       close(){
         this.isActive=false
         this.$refs.input.focus({ preventScroll: true })
+        // this.queryfilter=""
       },
       toggle(){
         var ref=this
         this.isActive=!this.isActive
         if(this.isActive){
           this.$nextTick(()=>{ref.focus="content"})
+        }
+      },
+      doFilter(event){
+        var ref=this
+        if(event.key.length==1){
+          this.queryfilter+=event.key
+          this.isActive=true
+          this.$nextTick(()=>{ref.focus="content"})
+        }
+        if(event.key=="Escape"){
+          this.queryfilter=""
+        }
+        if(event.key=="Backspace"){
+          if(this.queryfilter){
+            this.queryfilter=this.queryfilter.slice(0,-1)
+          }
         }
       }
     },

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+-   Keydown responsiveness on text fields (property `keydown`)
+-   Add filtering to query fields
+
 ## [2.1.6] - 2022-01-25
 
 ### Added

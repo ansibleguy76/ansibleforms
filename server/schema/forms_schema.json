@@ -202,6 +202,7 @@
                     "pctColumns": {"not":{}},
                     "expression": {"not":{}},
                     "runLocal": {"not":{}},
+                    "keydown": {"not":{}},
                     "dbConfig": {"not":{}},
                     "hide": {"not":{}},
                     "multiple": {"not":{}},
@@ -227,6 +228,7 @@
                     "editable": {"not":{}},
                     "pctColumns": {"not":{}},
                     "runLocal": {"not":{}},
+                    "keydown": {"not":{}},
                     "dbConfig": {"not":{}},
                     "hide": {"not":{}},
                     "values": {"not":{}},
@@ -252,6 +254,7 @@
                     "pctColumns": {"not":{}},
                     "expression": {"not":{}},
                     "runLocal": {"not":{}},
+                    "keydown": {"not":{}},
                     "dbConfig": {"not":{}},
                     "hide": {"not":{}},
                     "outputObject": {"not":{}}
@@ -272,6 +275,7 @@
                     "maxLength": {"not":{}},
                     "editable": {"not":{}},
                     "expression": {"not":{}},
+                    "keydown": {"not":{}},
                     "runLocal": {"not":{}},
                     "hide": {"not":{}}
                   },
@@ -291,6 +295,7 @@
                     "minLength": {"not":{}},
                     "maxLength": {"not":{}},
                     "query": {"not":{}},
+                    "keydown": {"not":{}},
                     "dbConfig": {"not":{}},
                     "hide": {"not":{}}
                   },
@@ -309,6 +314,7 @@
                     "pctColumns": {"not":{}},
                     "dbConfig": {"not":{}},
                     "multiple": {"not":{}},
+                    "keydown": {"not":{}},
                     "outputObject": {"not":{}}
                   },
                   "required": ["expression"]
@@ -327,7 +333,8 @@
                     "pctColumns": {"not":{}},
                     "multiple": {"not":{}},
                     "runLocal": {"not":{}},
-                    "outputObject": {"not":{}}                    
+                    "keydown": {"not":{}},
+                    "outputObject": {"not":{}}
                   },
                   "required": ["query", "dbConfig"]
                 },
@@ -350,6 +357,7 @@
                     "multiple": {"not":{}},
                     "outputObject": {"not":{}},
                     "expression": {"not":{}},
+                    "keydown": {"not":{}},
                     "icon": {"not":{}},
                     "default": {"not":{}}
                   },
@@ -429,6 +437,7 @@
                 "maxLength": {"type": "integer"},
                 "expression": {"type": "string"},
                 "ignoreIncomplete": {"type": "boolean"},
+                "keydown": {"type": "boolean"},
                 "runLocal": {"type": "boolean"},
                 "query": {"type": "string"},
                 "outputObject": {"type": "boolean"},

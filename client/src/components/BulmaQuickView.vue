@@ -1,5 +1,5 @@
 <template>
-  <transition name="slide-fade">
+  <transition name="slide-fade" appear>
     <div class="quickview is-active">
       <header class="quickview-header is-vcentered">
         <p class="has-text-weight-bold is-size-4">{{ title }}</p>
@@ -36,16 +36,8 @@
   }
 </script>
 <style scoped>
-
-/* .slide-fade-enter-active,
-.slide-fade-leave-active {
-  transition: all .3s cubic-bezier(1.0, 0.5, 0.8, 1.0);
-}
-.slide-fade-enter, .slide-fade-leave-to {
-  transform: translateX(100%);
-} */
 .slide-fade-enter-active, .slide-fade-leave-active {
-  transform: translateX(-100%);
+  transform: translateX(0%);
   transition: all 0.4s ease-in-out;
 }
 .slide-fade-enter, .slide-fade-leave-to {

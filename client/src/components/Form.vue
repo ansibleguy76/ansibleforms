@@ -99,6 +99,7 @@
                           :required="field.required"
                           :type="field.type"
                           :placeholder="field.placeholder"
+                          @keydown="(field.keydown)?evaluateDynamicFields(field.name):null"
                           @change="evaluateDynamicFields(field.name)">
                         <!-- type = number -->
                         <input v-if="field.type=='number'"

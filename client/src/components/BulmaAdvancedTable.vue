@@ -1,8 +1,9 @@
 <template>
   <div>
-    <p v-if="values.length==0">No data</p>
-    <div v-if="values.length>0" class="table-container">
-      <table class="table is-hoverable is-narrow">
+    <p v-if="values.length==0" class="pl-3">No data</p>
+    <p v-if="values.length>0 && filtered.length==0" class="pl-3">Filter returns no results</p>
+    <div v-if="filtered.length>0" class="table-container">
+      <table class="table is-hoverable">
         <thead v-if="labels.length>1">
           <tr :class="sizeClass">
             <th v-if="multiple" class="is-first">
@@ -22,16 +23,16 @@
           </tr>
         </thead>
         <tbody>
-          <tr :class="{'has-background-info':selected[i],'has-text-white':selected[i],sizeClass:sizeClass}" :key="i" v-for="v,i in values" @click="select(i)">
+          <tr :class="{'has-background-info':selected[v.index],'has-text-white':selected[v.index],sizeClass:sizeClass}" :key="v.index" v-for="v in filtered" @click="select(v.index)">
             <td v-if="multiple" class="is-first">
-              <font-awesome-icon v-if="selected[i]" :icon="['far','check-square']" />
-              <font-awesome-icon v-else :icon="['far','square']" /> <span class="has-text-grey-lighter">{{i}}</span>
+              <font-awesome-icon v-if="selected[v.index]" :icon="['far','check-square']" />
+              <font-awesome-icon v-else :icon="['far','square']" /> <span class="has-text-grey-lighter">{{v.index}}</span>
             </td>
             <template  v-for="l in labels">
-            <td v-if="isPctColumn(l)" :key="l" v-html="getProgressHtml(v[l])"></td>
-            <td v-else v-text="v[l]" :key="l"></td>
+            <td v-if="isPctColumn(l)" :key="l" v-html="getProgressHtml(v.value[l])"></td>
+            <td v-else v-html="highlightFilter(v.value[l],l)" :key="l"></td>
             </template>
-            <td v-if="labels.length==0">{{ v }}</td>
+            <td v-if="labels.length==0" v-html="highlightFilter(v.value)"></td>
           </tr>
         </tbody>
       </table>
@@ -56,12 +57,12 @@
       columns:{type:Array},
       previewColumn:{type:String},
       valueColumn:{type:String},
-      pctColumns:{type:Array}
+      pctColumns:{type:Array},
+      queryfilter:{type:String}
     },
     data () {
       return {
         selected:{},
-        checkAll:false,
         labels:[],
         valueLabel:"",
         previewLabel:"",
@@ -71,6 +72,34 @@
       }
     },
     computed: {
+      selectedItems(){
+        return this.values.filter((v,i) => this.selected[i])
+      },
+      checkAll(){
+        var ref=this
+        var all=true
+        var BreakException = {};
+        try{
+          this.filtered.forEach((item)=>{
+            if(!ref.selected[item.index]){
+              all=false
+            }
+          })
+        }catch (e) {
+          if (e !== BreakException) throw e;
+        }
+        return all
+      },
+      filtered(){
+        var ref=this
+        return this.values.reduce(function(filtered, item,i) {
+          var found = ((item)?item[ref.previewLabel]||item:"").toString().toLowerCase().includes(ref.queryfilter.toLowerCase())
+          if(found){
+            filtered.push({index:i,value:item})
+          }
+          return filtered;
+        }, []);
+      }
     },
     watch: {                    // we watch the values prop for changes... each time we reset the data and grab the labels
       values: {
@@ -82,6 +111,30 @@
       }
     },
     methods:{
+      htmlEncode(v){
+          return v.toString().replace(/[\u00A0-\u9999<>\&]/g, function(i) { //eslint-disable-line
+            return '&#'+i.charCodeAt(0)+';';
+          });
+      },
+      highlightFilter(v,label=undefined){
+        var s=v+""
+        if(label && label!=this.previewLabel){
+          return this.htmlEncode(s)
+        }
+        var index;
+        var search=this.queryfilter;
+        var l=search.length
+        var p1,p2,p3
+        if(v && this.queryfilter){
+          index=s.toLowerCase().indexOf(search.toLowerCase())
+          p1=s.slice(0,index)
+          p2=s.slice(index,index+l)
+          p3=s.slice(index+l)
+          return `${this.htmlEncode(p1)}<span class='has-text-weight-bold'>${this.htmlEncode(p2)}</span>${this.htmlEncode(p3)}`
+        }else{
+          return v
+        }
+      },
       // close(){
       //   this.isActive=false
       // },
@@ -120,24 +173,23 @@
       },
       recalc(){
         var ref=this
-        var result = this.values.filter((v,i) => this.selected[i]) // normal, return array of objects
+        var l = this.selectedItems.length
         this.$emit('ischanged')
-        var first = result.slice(0,3)
-        if(result.length>0){
-          if(result.length>3){
-            this.preview = first.map(i => {return ((i)?i[ref.previewLabel]||i:"undefined")}).join(', ') + ", ... ("+result.length+" items selected)"
+        var first = this.selectedItems.slice(0,3)
+        if(l>0){
+          if(l>3){
+            this.preview = first.map(i => {return ((i)?i[ref.previewLabel]||i:"undefined")}).join(', ') + ", ... ("+l+" items selected)"
           }else{
             this.preview = first.map(i => {return ((i)?i[ref.previewLabel]||i:"undefined")}).join(', ')
           }
         }else{
           this.preview = ""
         }
-        this.checkAll=(result.length==this.values.length)
         if(this.multiple){ // multiple and outputObject, return simple array
-            this.$emit('input', {values:result,preview:this.preview})
+            this.$emit('input', {values:this.selectedItems,preview:this.preview})
         }else{
-            if(result.length>0)
-              this.$emit('input', {values:result[0],preview:this.preview})
+            if(l>0)
+              this.$emit('input', {values:this.selectedItems[0],preview:this.preview})
             else{
               this.$emit('input', {values:undefined,preview:this.preview})
             }
@@ -146,17 +198,16 @@
       multicheck(){
         var ref=this
         if(!this.checkAll){
-          this.checkAll=true
-          ref.values.forEach((item,i) => {Vue.set(ref.selected,i,true)})
+          ref.filtered.forEach((item) => {Vue.set(ref.selected,item.index,true)})
         }else{
-          ref.reset()
+          ref.filtered.forEach((item) => {Vue.set(ref.selected,item.index,false)})
         }
         this.recalc()
       },
       reset(){
         var ref=this
-        this.values.forEach((item,i) => {
-          Vue.set(ref.selected,i,false)
+        this.filtered.forEach((item) => {
+          Vue.set(ref.selected,item.index,false)
         })
 
       },
@@ -224,6 +275,9 @@
 </script>
 <style scoped>
 .table td{
+  max-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 table tbody {
@@ -243,6 +297,7 @@ table tbody tr {
   cursor:pointer;
 }
 table thead th.is-first,table tbody td.is-first{
-  width:4em;
+  width:4em!important;
+  max-width:4em!important;
 }
 </style>
