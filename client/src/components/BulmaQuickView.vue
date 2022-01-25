@@ -12,7 +12,7 @@
         </div>
       </div>
 
-      <footer class="quickview-footer">
+      <footer v-if="footer" class="quickview-footer">
         <p>{{ footer }}</p>
       </footer>
     </div>

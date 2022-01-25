@@ -16,7 +16,7 @@
             </span>
             <span>Show Extravars</span>
           </button>
-          <button v-if="warnings" @click="showWarnings=!showWarnings" class="button is-small is-outlined is-warning">
+          <button v-if="warnings.length>0" @click="showWarnings=!showWarnings" class="button is-small is-outlined is-warning">
             <span class="icon">
               <font-awesome-icon icon="exclamation-triangle" />
             </span>
