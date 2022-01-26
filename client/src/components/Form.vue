@@ -76,7 +76,7 @@
                       <!-- type = query -->
                       <div v-if="field.type=='query'">
                         <BulmaAdvancedSelect
-                          v-if="!fieldOptions[field.name].viewable"
+                          v-show="!fieldOptions[field.name].viewable"
                           :defaultValue="field.default"
                           :required="field.required||false"
                           :multiple="field.multiple||false"
@@ -95,7 +95,7 @@
                           :sticky="field.sticky||false"
                           >
                         </BulmaAdvancedSelect>
-                        <div v-else class="box limit-height">
+                        <div v-if="fieldOptions[field.name].viewable" class="box limit-height">
                           <vue-json-pretty :data="queryresults[field.name]||[]"></vue-json-pretty>
                         </div>
                       </div>
@@ -175,7 +175,7 @@
                         </div>
 
                         <!-- add left icon, but not for query, because that's a component with icon builtin -->
-                        <span v-if="!!field.icon && field.type!='query'" class="icon is-small is-left">
+                        <span v-if="!!field.icon && field.type!='query' && !(field.type=='expression' && fieldOptions[field.name].viewable)" class="icon is-small is-left">
                           <font-awesome-icon :icon="field.icon" />
                         </span>
                       </div>
