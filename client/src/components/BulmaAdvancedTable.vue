@@ -41,6 +41,7 @@
 </template>
 <script>
   import Vue from 'vue'
+  import h from './../lib/Helpers'
   export default{
     name:"BulmaAdvancedTable",
     props: {
@@ -111,15 +112,10 @@
       }
     },
     methods:{
-      htmlEncode(v){
-          return v.toString().replace(/[\u00A0-\u9999<>\&]/g, function(i) { //eslint-disable-line
-            return '&#'+i.charCodeAt(0)+';';
-          });
-      },
       highlightFilter(v,label=undefined){
         var s=v+""
         if(label && label!=this.previewLabel){
-          return this.htmlEncode(s)
+          return h.htmlEncode(s)
         }
         var index;
         var search=this.queryfilter;
@@ -130,7 +126,7 @@
           p1=s.slice(0,index)
           p2=s.slice(index,index+l)
           p3=s.slice(index+l)
-          return `${this.htmlEncode(p1)}<span class='has-text-weight-bold'>${this.htmlEncode(p2)}</span>${this.htmlEncode(p3)}`
+          return `${h.htmlEncode(p1)}<span class='has-text-weight-bold'>${h.htmlEncode(p2)}</span>${h.htmlEncode(p3)}`
         }else{
           return v
         }
@@ -270,6 +266,8 @@
       }
     },
     mounted(){
+      this.reset();
+      this.getLabels();
     }
   }
 </script>

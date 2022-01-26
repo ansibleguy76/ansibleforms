@@ -158,6 +158,7 @@
                     "pctColumns": {"not":{}},
                     "hide": {"not":{}},
                     "values": {"not":{}},
+                    "isHtml": {"not":{}},
                     "multiple": {"not":{}},
                     "outputObject": {"not":{}}
                   }
@@ -181,6 +182,7 @@
                     "hide": {"not":{}},
                     "values": {"not":{}},
                     "multiple": {"not":{}},
+                    "isHtml": {"not":{}},
                     "asCredential": {"not":{}},
                     "outputObject": {"not":{}}
                   }
@@ -203,6 +205,7 @@
                     "expression": {"not":{}},
                     "runLocal": {"not":{}},
                     "keydown": {"not":{}},
+                    "isHtml": {"not":{}},
                     "dbConfig": {"not":{}},
                     "hide": {"not":{}},
                     "multiple": {"not":{}},
@@ -229,6 +232,7 @@
                     "pctColumns": {"not":{}},
                     "runLocal": {"not":{}},
                     "keydown": {"not":{}},
+                    "isHtml": {"not":{}},
                     "dbConfig": {"not":{}},
                     "hide": {"not":{}},
                     "values": {"not":{}},
@@ -255,6 +259,7 @@
                     "expression": {"not":{}},
                     "runLocal": {"not":{}},
                     "keydown": {"not":{}},
+                    "isHtml": {"not":{}},
                     "dbConfig": {"not":{}},
                     "hide": {"not":{}},
                     "outputObject": {"not":{}}
@@ -276,6 +281,7 @@
                     "editable": {"not":{}},
                     "expression": {"not":{}},
                     "keydown": {"not":{}},
+                    "isHtml": {"not":{}},
                     "runLocal": {"not":{}},
                     "hide": {"not":{}}
                   },
@@ -296,6 +302,7 @@
                     "maxLength": {"not":{}},
                     "query": {"not":{}},
                     "keydown": {"not":{}},
+                    "isHtml": {"not":{}},
                     "dbConfig": {"not":{}},
                     "hide": {"not":{}}
                   },
@@ -358,6 +365,7 @@
                     "outputObject": {"not":{}},
                     "expression": {"not":{}},
                     "keydown": {"not":{}},
+                    "isHtml": {"not":{}},
                     "icon": {"not":{}},
                     "default": {"not":{}}
                   },
@@ -438,6 +446,7 @@
                 "expression": {"type": "string"},
                 "ignoreIncomplete": {"type": "boolean"},
                 "keydown": {"type": "boolean"},
+                "isHtml": {"type": "boolean"},
                 "runLocal": {"type": "boolean"},
                 "query": {"type": "string"},
                 "outputObject": {"type": "boolean"},

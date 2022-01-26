@@ -30,19 +30,43 @@
                     <div class="field mt-3" v-if="visibility[field.name]">
                       <!-- add field label -->
                       <label class="label has-text-primary">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span>
-                        <span
-                          class="icon is-clickable has-text-success"
-                          @click="setExpressionFieldEditable(field.name,true)"
-                          v-if="field.editable && field.type=='expression' && !fieldOptions[field.name].editable"
-                        >
-                          <font-awesome-icon icon="pencil-alt" />
-                        </span>
-                        <span
-                          class="icon is-clickable has-text-danger"
-                          @click="setExpressionFieldEditable(field.name,false)"
-                          v-if="field.editable && field.type=='expression' && fieldOptions[field.name].editable"
-                        >
-                          <font-awesome-icon icon="times" />
+                        <span class="is-pulled-right">
+                          <span
+                            class="icon is-clickable has-text-success"
+                            @click="setExpressionFieldEditable(field.name,true)"
+                            v-if="field.editable && field.type=='expression' && !fieldOptions[field.name].editable && !fieldOptions[field.name].viewable"
+                          >
+                            <font-awesome-icon icon="pencil-alt" />
+                          </span>
+                          <span
+                            class="icon is-clickable has-text-danger"
+                            @click="setExpressionFieldEditable(field.name,false)"
+                            v-if="field.editable && field.type=='expression' && fieldOptions[field.name].editable && !fieldOptions[field.name].viewable"
+                          >
+                            <font-awesome-icon icon="times" />
+                          </span>
+                          <span
+                            class="icon is-clickable has-text-success"
+                            @click="setExpressionFieldViewable(field.name,true)"
+                            v-if="(field.type=='expression' || field.type=='query') && !fieldOptions[field.name].viewable && !fieldOptions[field.name].editable"
+                          >
+                            <font-awesome-icon icon="eye" />
+                          </span>
+                          <span
+                            class="icon is-clickable has-text-info"
+                            @click="clip($v.form[field.name].$model)"
+                            v-if="(field.type=='expression' || field.type=='query') && fieldOptions[field.name].viewable && !fieldOptions[field.name].editable"
+                          >
+                            <font-awesome-icon icon="copy" />
+                          </span>
+                          <span
+                            class="icon is-clickable has-text-danger"
+                            @click="setExpressionFieldViewable(field.name,false)"
+                            v-if="(field.type=='expression' || field.type=='query') && fieldOptions[field.name].viewable && !fieldOptions[field.name].editable"
+                          >
+                            <font-awesome-icon icon="times" />
+                          </span>
+
                         </span>
                       </label>
                       <!-- type = checkbox -->
@@ -50,26 +74,31 @@
                         <BulmaCheckRadio checktype="checkbox" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="field.placeholder" @change="evaluateDynamicFields(field.name)" />
                       </div>
                       <!-- type = query -->
-                      <BulmaAdvancedSelect
-                        v-if="field.type=='query'"
-                        :defaultValue="field.default"
-                        :required="field.required||false"
-                        :multiple="field.multiple||false"
-                        :name="field.name"
-                        :placeholder="field.placeholder||'Select...'"
-                        :values="queryresults[field.name]||[]"
-                        :hasError="$v.form[field.name].$invalid"
-                        :isLoading="!['fixed','variable'].includes(dynamicFieldStatus[field.name])"
-                        v-model="$v.form[field.name].$model"
-                        :icon="field.icon"
-                        :columns="field.columns||[]"
-                        :pctColumns="field.pctColumns||[]"
-                        :previewColumn="field.previewColumn||''"
-                        :valueColumn="field.valueColumn||''"
-                        @ischanged="evaluateDynamicFields(field.name)"
-                        :sticky="field.sticky||false"
-                        >
-                      </BulmaAdvancedSelect>
+                      <div v-if="field.type=='query'">
+                        <BulmaAdvancedSelect
+                          v-if="!fieldOptions[field.name].viewable"
+                          :defaultValue="field.default"
+                          :required="field.required||false"
+                          :multiple="field.multiple||false"
+                          :name="field.name"
+                          :placeholder="field.placeholder||'Select...'"
+                          :values="queryresults[field.name]||[]"
+                          :hasError="$v.form[field.name].$invalid"
+                          :isLoading="!['fixed','variable'].includes(dynamicFieldStatus[field.name])"
+                          v-model="$v.form[field.name].$model"
+                          :icon="field.icon"
+                          :columns="field.columns||[]"
+                          :pctColumns="field.pctColumns||[]"
+                          :previewColumn="field.previewColumn||''"
+                          :valueColumn="field.valueColumn||''"
+                          @ischanged="evaluateDynamicFields(field.name)"
+                          :sticky="field.sticky||false"
+                          >
+                        </BulmaAdvancedSelect>
+                        <div v-else class="box limit-height">
+                          <vue-json-pretty :data="queryresults[field.name]||[]"></vue-json-pretty>
+                        </div>
+                      </div>
                       <!-- type = radio -->
                       <div v-if="field.type=='radio'" >
                         <BulmaCheckRadio :val="radiovalue" checktype="radio" v-for="radiovalue in field.values" :key="field.name+'_'+radiovalue" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="radiovalue"  @change="evaluateDynamicFields(field.name)" />
@@ -78,16 +107,22 @@
                       <div :class="{'has-icons-left':!!field.icon && field.type!='query'}" class="control">
                         <!-- type = expression -->
                         <div v-if="field.type=='expression'" :class="{'is-loading':(dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running') &! fieldOptions[field.name].editable}" class="control">
-                          <input type="text"
-                            @focus="inputFocus"
-                            :class="{'is-danger':$v.form[field.name].$invalid,'has-text-info':!fieldOptions[field.name].editable}"
-                            v-model="$v.form[field.name].$model"
-                            class="input"
-                            :readonly="!fieldOptions[field.name].editable"
-                            :name="field.name"
-                            :required="field.required"
-                            @change="evaluateDynamicFields(field.name)"
-                            >
+                          <div v-if="!fieldOptions[field.name].viewable">
+                            <input v-if="fieldOptions[field.name].editable" type="text"
+                              @focus="inputFocus"
+                              :class="{'is-danger':$v.form[field.name].$invalid,'has-text-info':!fieldOptions[field.name].editable}"
+                              v-model="$v.form[field.name].$model"
+                              class="input"
+                              :name="field.name"
+                              :required="field.required"
+                              @change="evaluateDynamicFields(field.name)"
+                              >
+                            <p v-if="!fieldOptions[field.name].editable && !field.isHtml" class="input has-text-info" :class="{'is-danger':$v.form[field.name].$invalid}" v-text="stringify($v.form[field.name].$model)"></p>
+                            <p v-if="!fieldOptions[field.name].editable && field.isHtml" class="input has-text-info" :class="{'is-danger':$v.form[field.name].$invalid}" v-html="stringify($v.form[field.name].$model)"></p>
+                          </div>
+                          <div v-else class="box limit-height">
+                            <vue-json-pretty :data="$v.form[field.name].$model"></vue-json-pretty>
+                          </div>
                         </div>
                         <!-- type = text or password-->
                         <input v-if="field.type=='text' || field.type=='password'"
@@ -209,6 +244,12 @@
             </span>
             <span>Refresh</span>
           </button>
+          <button @click="clip(formdata)" class="ml-2 button is-success is-small">
+            <span class="icon">
+              <font-awesome-icon icon="copy" />
+            </span>
+            <span>Copy to clipboard</span>
+          </button>
           <div class="box mt-4">
             <vue-json-pretty :data="formdata"></vue-json-pretty>
           </div>
@@ -227,6 +268,7 @@
   import BulmaQuickView from './BulmaQuickView.vue'
   import BulmaCheckRadio from './BulmaCheckRadio.vue'
   import BulmaEditTable from './BulmaEditTable.vue'
+  import Copy from 'copy-to-clipboard'
   import 'vue-json-pretty/lib/styles.css';
   import VueShowdown from 'vue-showdown';
   import { required, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
@@ -377,6 +419,25 @@
         if(!value){
           this.resetField(fieldname)
         }
+      },
+      setExpressionFieldViewable(fieldname,value){
+        Vue.set(this.fieldOptions[fieldname],'viewable',value)   // flag editable
+      },
+      stringify(v){
+        if(v){
+          return v.toString()
+        }else{
+          return v
+        }
+      },
+      clip(v){
+        try{
+          Copy(JSON.stringify(v))
+          this.$toast.success("Copied to clipboard")
+        }catch(e){
+          this.$toast.error("Error copying to clipboard : \n" + e)
+        }
+
       },
       filterfieldsByGroup(group){                   // creates a list of field per group
         return this.currentForm.fields.filter(function (el) {
@@ -1266,6 +1327,11 @@ pre{
   white-space: -pre-wrap;      /* Opera 4-6 */
   white-space: -o-pre-wrap;    /* Opera 7 */
   word-wrap: break-word;       /* Internet Explorer 5.5+ */
+}
+.limit-height{
+  max-height:300px;
+  overflow-y:scroll;
+  overflow-x:hidden;
 }
 .cursor-progress{
   cursor:progress;

@@ -20,6 +20,7 @@
     "vue-router": "~3.5.2",
     "vue-toastification" : "1.7.14",
     "vue-json-pretty" : "1.8.2",
+    "copy-to-clipboard" : "*",    
     "bulma" : "*",
     "bulma-quickview" : "*",
     "bulma-checkradio": "~2.1.3",
