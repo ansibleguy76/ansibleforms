@@ -103,7 +103,7 @@
                       <div v-if="field.type=='radio'" >
                         <BulmaCheckRadio :val="radiovalue" checktype="radio" v-for="radiovalue in field.values" :key="field.name+'_'+radiovalue" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="radiovalue"  @change="evaluateDynamicFields(field.name)" />
                       </div>
-                      <BulmaEditTable v-if="field.type=='table'" :tableFields="field.tableFields" :click="false" tableClass="table is-striped is-bordered is-narrow" v-model="$v.form[field.name].$model" />
+                      <BulmaEditTable v-if="field.type=='table'" :dynamicFieldStatus="dynamicFieldStatus" :form="form" :tableFields="field.tableFields" :click="false" tableClass="table is-striped is-bordered is-narrow" v-model="$v.form[field.name].$model" />
                       <div :class="{'has-icons-left':!!field.icon && field.type!='query'}" class="control">
                         <!-- type = expression -->
                         <div v-if="field.type=='expression'" :class="{'is-loading':(dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running') &! fieldOptions[field.name].editable}" class="control">
@@ -425,6 +425,12 @@
       },
       stringify(v){
         if(v){
+          if(Array.isArray(v)){
+            return "[ Array ]"
+          }
+          if(typeof v=="object"){
+            return "{ Object }"
+          }
           return v.toString()
         }else{
           return v

@@ -1,7 +1,7 @@
 <template>
   <div class="modal is-active">
     <div class="modal-background"></div>
-    <div class="modal-card">
+    <div class="modal-card" :class="type">
       <header class="modal-card-head">
         <p class="modal-card-title">{{ title }}</p>
         <button class="delete" aria-label="close" @click="$emit('close')"></button>
@@ -20,10 +20,17 @@
   import Vue from 'vue'
   export default{
     name:"BulmaModal",
-    props:['title','action'],
+    props:['title','action','type'],
     data(){
       return{
       }
     }
   }
 </script>
+<style scoped>
+.large {
+  height:95vh!important;
+  width:70vw!important;
+}
+
+</style>

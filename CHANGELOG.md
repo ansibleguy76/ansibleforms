@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Keydown responsiveness on text fields (property `keydown`)
 -   Add filtering to query fields
 -   Add view of objects and query results
+-   Add queryfield-option in table field
 
 ## [2.1.6] - 2022-01-25
 

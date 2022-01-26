@@ -210,9 +210,9 @@ exports.fnRestAdvanced = async function(action,url,body,headers,jqe,sort,map){
     }
     if(sort)result=exports.fnSort(result,sort)
   }catch(e){
-    logger.error("Error in fnRestBasic : " + e)
+    logger.error("Error in fnRestAdvanced : " + e)
   }
-  logger.silly("Basic rest result : " + JSON.stringify(result))
+  logger.silly("Rest result : " + JSON.stringify(result))
   return result
 
 }

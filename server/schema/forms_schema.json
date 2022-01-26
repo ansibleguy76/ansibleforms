@@ -528,7 +528,13 @@
                             "enum": ["text"]
                           },
                           "minValue": {"not":{}},
-                          "maxValue": {"not":{}}
+                          "maxValue": {"not":{}},
+                          "values": {"not":{}},
+                          "from": {"not":{}},
+                          "columns": {"not":{}},
+                          "pctColumns": {"not":{}},
+                          "previewColumn": {"not":{}},
+                          "valueColumn": {"not":{}}
                         }
                       },
                       {
@@ -539,7 +545,13 @@
                           "regex": {"not":{}},
                           "regexDescription": {"not":{}},
                           "minLength": {"not":{}},
-                          "maxLength": {"not":{}}
+                          "maxLength": {"not":{}},
+                          "values": {"not":{}},
+                          "from": {"not":{}},
+                          "columns": {"not":{}},
+                          "pctColumns": {"not":{}},
+                          "previewColumn": {"not":{}},
+                          "valueColumn": {"not":{}}
                         }
                       },
                       {
@@ -552,7 +564,13 @@
                           "minValue": {"not":{}},
                           "maxValue": {"not":{}},
                           "minLength": {"not":{}},
-                          "maxLength": {"not":{}}
+                          "maxLength": {"not":{}},
+                          "values": {"not":{}},
+                          "from": {"not":{}},
+                          "columns": {"not":{}},
+                          "pctColumns": {"not":{}},
+                          "previewColumn": {"not":{}},
+                          "valueColumn": {"not":{}}
                         }
                       },
                       {
@@ -565,19 +583,40 @@
                           "minValue": {"not":{}},
                           "maxValue": {"not":{}},
                           "minLength": {"not":{}},
-                          "maxLength": {"not":{}}
+                          "maxLength": {"not":{}},
+                          "from": {"not":{}},
+                          "columns": {"not":{}},
+                          "pctColumns": {"not":{}},
+                          "previewColumn": {"not":{}},
+                          "valueColumn": {"not":{}}
                         },
                         "required": ["values"]
+                      },
+                      {
+                        "properties": {
+                          "type": {
+                            "enum": ["query"]
+                          },
+                          "regex": {"not":{}},
+                          "regexDescription": {"not":{}},
+                          "minValue": {"not":{}},
+                          "maxValue": {"not":{}},
+                          "minLength": {"not":{}},
+                          "maxLength": {"not":{}},
+                          "values": {"not":{}}
+                        },
+                        "required": ["from"]
                       }
                     ],
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["text", "password", "checkbox", "enum", "query", "number", "radio", "expression", "table"]
+                        "enum": ["text", "password", "checkbox", "enum", "query", "number"]
                       },
                       "name": {"type": "string"},
                       "label": {"type": "string"},
                       "placeholder": {"type": "string"},
+                      "from": {"type": "string"},
                       "default": {
                         "anyOf": [{"type": "string"},
                           {"type": "boolean"},
@@ -614,7 +653,17 @@
                       },
                       "icon": {
                         "$ref": "/icon"
-                      }
+                      },
+                      "columns": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                      },
+                      "pctColumns": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                      },
+                      "valueColumn": {"type": "string"},
+                      "previewColumn": {"type": "string"}
                     },
                     "additionalProperties": false
                   }
