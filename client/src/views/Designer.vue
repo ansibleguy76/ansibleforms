@@ -1,5 +1,5 @@
 <template>
-  <section v-if="isAdmin" class="section">
+  <section v-if="isAdmin" class="section" @keydown.ctrl.83.prevent.stop="save()">
     <div class="container">
       <h1 class="title has-text-info"><font-awesome-icon icon="edit" /> Designer</h1>
       <div class="columns">

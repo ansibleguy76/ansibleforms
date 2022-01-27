@@ -59,6 +59,7 @@
       previewColumn:{type:String},
       valueColumn:{type:String},
       pctColumns:{type:Array},
+      filterColumns:{type:Array},
       queryfilter:{type:String}
     },
     data () {
@@ -94,7 +95,39 @@
       filtered(){
         var ref=this
         return this.values.reduce(function(filtered, item,i) {
-          var found = ((item)?item[ref.previewLabel]||item:"").toString().toLowerCase().includes(ref.queryfilter.toLowerCase())
+          var found=false
+          if(ref.queryfilter){
+            var cols=[]
+            // if filtercolumns, use them
+            if(ref.filterColumns.length>0){
+              cols=ref.filterColumns
+            }else{
+              // if not, take the previewLabel
+              if(ref.previewLabel){
+                cols.push(ref.previewLabel)
+              }else{
+                // if not don't filter, pass all
+                found=true
+              }
+            }
+            // if the item exists
+            if(item){
+              // go over all filterColumns
+              cols.forEach((col, i) => {
+                // if the column is present
+                if(item[col]){
+                  // check if the value contains our filter
+                  found=item[col].toString().toLowerCase().includes(ref.queryfilter.toLowerCase())
+                }else{
+                  // no item, always pass
+                  found=true
+                }
+              });
+            }
+          }else{
+            found=true
+          }
+          // var found = ((item)?item[ref.previewLabel]||item:"").toString().toLowerCase().includes(ref.queryfilter.toLowerCase())
           if(found){
             filtered.push({index:i,value:item})
           }
@@ -114,7 +147,15 @@
     methods:{
       highlightFilter(v,label=undefined){
         var s=v+""
-        if(label && label!=this.previewLabel){
+        var cols=[]
+        if(this.filterColumns.length>0){
+          cols=this.filterColumns
+        }else{
+          if(this.previewLabel){
+            cols.push(this.previewLabel)
+          }
+        }
+        if(label && !cols.includes(label)){
           return h.htmlEncode(s)
         }
         var index;
@@ -131,16 +172,6 @@
           return v
         }
       },
-      // close(){
-      //   this.isActive=false
-      // },
-      // toggle(){
-      //   var ref=this
-      //   this.isActive=!this.isActive
-      //   if(this.isActive){
-      //     this.$nextTick(()=>{ref.focus="content"})
-      //   }
-      // },
       isPctColumn(label){
         return this.pctColumns.includes(label)
       },
@@ -220,8 +251,7 @@
           }else{
             // get all labels
             this.labels = Object.keys(this.values[0])
-            if(this.labels.length>0)
-              ref.valueLabel=this.labels[0]
+
             // filter preview label
             previewLabels = this.labels.filter((item) => item==ref.previewColumn)
             valueLabels = this.labels.filter((item) => item==ref.valueColumn)
@@ -239,6 +269,9 @@
           // if we found a value label, use it
           if(valueLabels.length>0){ // if we have a specific value column
               this.valueLabel=valueLabels[0]  // set it
+          }else{
+            if(this.labels.length>0)
+              ref.valueLabel=this.labels[0]
           }
           if(this.defaultValue=="__auto__" && this.values.length>0){
             this.select(0) // if __auto__ select the first
@@ -249,10 +282,10 @@
           }else if(this.defaultValue!="__none__" && this.defaultValue!=undefined){ // if a regular default is set, we select it
             this.values.forEach((item,i) => {
 
-                if(item && ref.default==(item[ref.valueLabel]||item)){
+                if(item && ref.defaultValue==(item[ref.valueLabel]||item)){
                   this.select(i)
                 }
-                if(ref.multiple && Array.isArray(ref.default)){
+                if(ref.multiple && Array.isArray(ref.defaultValue)){
                   if(item && ref.default.includes(item[ref.valueLabel]||item||false)){
                     this.select(i)
                   }

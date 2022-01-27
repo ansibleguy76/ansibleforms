@@ -21,7 +21,7 @@
                 </div>
                 <BulmaAdvancedSelect
                   v-if="field.type=='query'"
-                  :defaultValue="field.default"
+                  :defaultValue="stringify($v.editedItem[field.name].$model,field)||field.default||''"
                   :required="field.required||false"
                   :multiple="false"
                   :name="field.name"
@@ -33,6 +33,7 @@
                   :icon="field.icon"
                   :columns="field.columns||[]"
                   :pctColumns="field.pctColumns||[]"
+                  :filterColumns="field.filterColumns||[]"
                   :previewColumn="field.previewColumn||''"
                   :valueColumn="field.valueColumn||''"
                   :sticky="false"
@@ -89,7 +90,7 @@
                     </td>
                     <slot name="table-body" :row="row">
                         <template v-for="field in tableFields">
-                          <td v-if="field.type!='checkbox'" :key="'table-cell-' + field.name + '-' + index" :class="field.bodyClass"> {{ row[field.name] }} </td>
+                          <td v-if="field.type!='checkbox'" :key="'table-cell-' + field.name + '-' + index" :class="field.bodyClass"> {{ stringify(row[field.name],field) }} </td>
                           <td v-else :key="'table-cell-' + field.name + '-' + index" :class="field.bodyClass"><font-awesome-icon :icon="(row[field.name])?['far','check-square']:['far','square']" /></td>
                         </template>
                     </slot>
@@ -209,7 +210,38 @@
             }
         },
         methods:{
-
+            getValueLabel(field){
+              if(field){
+                if(field.valueColumn){
+                  return field.valueColumn
+                }
+                if(field.columns && field.columns.length>0){
+                  return field.columns[0]
+                }
+                if(Object.keys(field) && Object.keys(field).length>0){
+                  return Object.keys(field)[0]
+                }
+              }else{
+                return undefined
+              }
+            },
+            stringify(v,field=undefined){
+              var valueLabel
+              if(v){
+                if(Array.isArray(v)){
+                  return "[ Array ]"
+                }
+                if(typeof v=="object"){
+                  valueLabel=this.getValueLabel(field)
+                  if(valueLabel)
+                    return v[valueLabel]
+                  return "{ Object }"
+                }
+                return v.toString()
+              }else{
+                return v
+              }
+            },
             addItem: function(index){
               var ref=this
               this.editedItem={};
@@ -232,6 +264,17 @@
               this.$emit('input', this.rows)
             },
             saveItem:function(){
+              var ref=this
+              this.tableFields.forEach((item)=>{
+                if(item.type=="query"){
+                  if(!item.outputObject){
+                    var valueLabel=this.getValueLabel(item)
+                    if(valueLabel){
+                      ref.editedItem[item.name]=ref.editedItem[item.name][valueLabel]
+                    }
+                  }
+                }
+              })
               if(!this.$v.editedItem.$invalid){
                 if(this.action=="Add"){
                   if(this.editIndex<0){

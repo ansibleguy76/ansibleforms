@@ -42,6 +42,7 @@
             v-model="selected"
             :columns="columns||[]"
             :pctColumns="pctColumns||[]"
+            :filterColumns="filterColumns||[]"
             :previewColumn="previewColumn||''"
             :valueColumn="valueColumn||''"
             :queryfilter="queryfilter"
@@ -62,6 +63,7 @@
         v-model="selected"
         :columns="columns||[]"
         :pctColumns="pctColumns||[]"
+        :filterColumns="filterColumns||[]"
         :previewColumn="previewColumn||''"
         :valueColumn="valueColumn||''"
         :queryfilter="queryfilter"
@@ -94,6 +96,7 @@
       previewColumn:{type:String},
       valueColumn:{type:String},
       pctColumns:{type:Array},
+      filterColumns:{type:Array},
       sticky:{type:Boolean}
     },
     data () {
@@ -154,8 +157,10 @@
       var ref=this
       setInterval(function(){
         if(ref.focus=="content"){
-          ref.focus=""
-          ref.$refs.content.focus({ preventScroll: true })
+          if(ref.$refs.content){
+            ref.focus=""
+            ref.$refs.content.focus({ preventScroll: true })
+          }
         }
       }, 100);
       // this.$refs.input.blur()

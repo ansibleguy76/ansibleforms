@@ -89,13 +89,14 @@
                           :icon="field.icon"
                           :columns="field.columns||[]"
                           :pctColumns="field.pctColumns||[]"
+                          :filterColumns="field.filterColumns||[]"
                           :previewColumn="field.previewColumn||''"
                           :valueColumn="field.valueColumn||''"
                           @ischanged="evaluateDynamicFields(field.name)"
                           :sticky="field.sticky||false"
                           >
                         </BulmaAdvancedSelect>
-                        <div v-if="fieldOptions[field.name].viewable" class="box limit-height">
+                        <div @dblclick="setExpressionFieldViewable(field.name,false)" v-if="fieldOptions[field.name].viewable" class="box limit-height mb-3">
                           <vue-json-pretty :data="queryresults[field.name]||[]"></vue-json-pretty>
                         </div>
                       </div>
@@ -117,10 +118,10 @@
                               :required="field.required"
                               @change="evaluateDynamicFields(field.name)"
                               >
-                            <p v-if="!fieldOptions[field.name].editable && !field.isHtml" class="input has-text-info" :class="{'is-danger':$v.form[field.name].$invalid}" v-text="stringify($v.form[field.name].$model)"></p>
-                            <p v-if="!fieldOptions[field.name].editable && field.isHtml" class="input has-text-info" :class="{'is-danger':$v.form[field.name].$invalid}" v-html="stringify($v.form[field.name].$model)"></p>
+                            <p @dblclick="setExpressionFieldViewable(field.name,true)" v-if="!fieldOptions[field.name].editable && !field.isHtml" class="input has-text-info" :class="{'is-danger':$v.form[field.name].$invalid}" v-text="stringify($v.form[field.name].$model)"></p>
+                            <p @dblclick="setExpressionFieldViewable(field.name,true)" v-if="!fieldOptions[field.name].editable && field.isHtml" class="input has-text-info" :class="{'is-danger':$v.form[field.name].$invalid}" v-html="stringify($v.form[field.name].$model)"></p>
                           </div>
-                          <div v-else class="box limit-height">
+                          <div @dblclick="setExpressionFieldViewable(field.name,false)" v-else class="box limit-height mb-3">
                             <vue-json-pretty :data="$v.form[field.name].$model"></vue-json-pretty>
                           </div>
                         </div>
@@ -578,6 +579,8 @@
                   }
                 }
 
+              }else{
+                ref.warnings.push(`<span class="has-text-warning">'${item.name}' has a reference to unknown field '${foundfield}'</span><br><span>Your form might not function as expected</span>`)
               }
             }
           }

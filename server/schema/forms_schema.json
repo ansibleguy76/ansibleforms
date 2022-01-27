@@ -156,6 +156,7 @@
                     "sticky": {"not":{}},
                     "editable": {"not":{}},
                     "pctColumns": {"not":{}},
+                    "filterColumns": {"not":{}},
                     "hide": {"not":{}},
                     "values": {"not":{}},
                     "isHtml": {"not":{}},
@@ -177,6 +178,7 @@
                     "sticky": {"not":{}},
                     "editable": {"not":{}},
                     "pctColumns": {"not":{}},
+                    "filterColumns": {"not":{}},
                     "runLocal": {"not":{}},
                     "dbConfig": {"not":{}},
                     "hide": {"not":{}},
@@ -202,6 +204,7 @@
                     "sticky": {"not":{}},
                     "editable": {"not":{}},
                     "pctColumns": {"not":{}},
+                    "filterColumns": {"not":{}},
                     "expression": {"not":{}},
                     "runLocal": {"not":{}},
                     "keydown": {"not":{}},
@@ -230,6 +233,7 @@
                     "sticky": {"not":{}},
                     "editable": {"not":{}},
                     "pctColumns": {"not":{}},
+                    "filterColumns": {"not":{}},
                     "runLocal": {"not":{}},
                     "keydown": {"not":{}},
                     "isHtml": {"not":{}},
@@ -256,6 +260,7 @@
                     "sticky": {"not":{}},
                     "editable": {"not":{}},
                     "pctColumns": {"not":{}},
+                    "filterColumns": {"not":{}},
                     "expression": {"not":{}},
                     "runLocal": {"not":{}},
                     "keydown": {"not":{}},
@@ -319,6 +324,7 @@
                     "maxValue": {"not":{}},
                     "sticky": {"not":{}},
                     "pctColumns": {"not":{}},
+                    "filterColumns": {"not":{}},
                     "dbConfig": {"not":{}},
                     "multiple": {"not":{}},
                     "keydown": {"not":{}},
@@ -338,6 +344,7 @@
                     "expression": {"not":{}},
                     "sticky": {"not":{}},
                     "pctColumns": {"not":{}},
+                    "filterColumns": {"not":{}},
                     "multiple": {"not":{}},
                     "runLocal": {"not":{}},
                     "keydown": {"not":{}},
@@ -359,6 +366,7 @@
                     "sticky": {"not":{}},
                     "editable": {"not":{}},
                     "pctColumns": {"not":{}},
+                    "filterColumns": {"not":{}},
                     "maxLength": {"not":{}},
                     "dbConfig": {"not":{}},
                     "multiple": {"not":{}},
@@ -458,6 +466,10 @@
                   "type": "array",
                   "items": {"type": "string"}
                 },
+                "filterColumns": {
+                  "type": "array",
+                  "items": {"type": "string"}
+                },
                 "sticky": {"type": "boolean"},
                 "editable": {"type": "boolean"},
                 "valueColumn": {"type": "string"},
@@ -531,8 +543,10 @@
                           "maxValue": {"not":{}},
                           "values": {"not":{}},
                           "from": {"not":{}},
+                          "outputObject": {"not":{}},
                           "columns": {"not":{}},
                           "pctColumns": {"not":{}},
+                          "filterColumns": {"not":{}},
                           "previewColumn": {"not":{}},
                           "valueColumn": {"not":{}}
                         }
@@ -548,8 +562,10 @@
                           "maxLength": {"not":{}},
                           "values": {"not":{}},
                           "from": {"not":{}},
+                          "outputObject": {"not":{}},
                           "columns": {"not":{}},
                           "pctColumns": {"not":{}},
+                          "filterColumns": {"not":{}},
                           "previewColumn": {"not":{}},
                           "valueColumn": {"not":{}}
                         }
@@ -567,8 +583,10 @@
                           "maxLength": {"not":{}},
                           "values": {"not":{}},
                           "from": {"not":{}},
+                          "outputObject": {"not":{}},
                           "columns": {"not":{}},
                           "pctColumns": {"not":{}},
+                          "filterColumns": {"not":{}},
                           "previewColumn": {"not":{}},
                           "valueColumn": {"not":{}}
                         }
@@ -585,8 +603,10 @@
                           "minLength": {"not":{}},
                           "maxLength": {"not":{}},
                           "from": {"not":{}},
+                          "outputObject": {"not":{}},
                           "columns": {"not":{}},
                           "pctColumns": {"not":{}},
+                          "filterColumns": {"not":{}},
                           "previewColumn": {"not":{}},
                           "valueColumn": {"not":{}}
                         },
@@ -662,8 +682,16 @@
                         "type": "array",
                         "items": {"type": "string"}
                       },
+                      "filterColumns": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                      },
                       "valueColumn": {"type": "string"},
-                      "previewColumn": {"type": "string"}
+                      "previewColumn": {"type": "string"},
+                      "outputObject": {
+                        "type": "boolean",
+                        "default": false
+                      }
                     },
                     "additionalProperties": false
                   }
@@ -676,6 +704,7 @@
         "additionalProperties": false
       }
     }
+
   },
   "additionalProperties": false
 }
