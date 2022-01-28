@@ -2,11 +2,17 @@
 const appConfig = require('./../../config/app.config');
 const logger=require("../lib/logger")
 const fs=require("fs")
+const os=require("os")
+const fse=require("fs-extra")
 const YAML=require("yaml")
 const Ajv = require('ajv');
 const ajv = new Ajv()
 const path=require("path")
 const AJVErrorParser = require('ajv-error-parser');
+
+function getFormsDir(){
+  return path.join(path.dirname(appConfig.formsPath),"/forms");
+}
 
 ajv.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
 //awx object create - not used but as instance for later
@@ -16,7 +22,6 @@ var Form=function(data){
 
 // run a playbook
 Form.load = function() {
-
   logger.debug(`Loading ${appConfig.formsPath}`)
   var forms=undefined
   var rawdata=undefined
@@ -72,15 +77,16 @@ Form.load = function() {
   formfiles.forEach((item, i) => {
       logger.debug(`merging file ${item.name}`)
       try{
-        if(Array.isArray(item.value)){
-          logger.silly("is array, merging")
-          forms.forms=forms.forms.concat(item.value)
-        }else{
-          if(typeof item.value=="object"){
-            logger.silly("is object, adding")
-            forms.forms.push(item.value)
-          }
-        }
+          var existing = forms.forms.map(x => x.name);
+          [].concat(item.value||[]).forEach((f, i) => {
+            if(!existing.includes(f.name)){
+              logger.silly(`adding form ${f.name}`)
+              f.source=item.name
+              forms.forms.push(f)
+            }else{
+              logger.warn(`skipping existing form ${f.name}`)
+            }
+          });
       }catch(e){
         logger.error(`failed to merge file '${item.name}' into forms.yaml.\n${e}`)
       }
@@ -121,11 +127,72 @@ Form.parse = function(data){
   }
   return formsConfig
 }
+
 Form.save = function(data){
   var formsConfig = Form.parse(data)
   formsConfig = Form.validate(formsConfig)
-  logger.debug("Saving forms.yaml")
-  fs.writeFileSync(appConfig.formsPath,YAML.stringify(formsConfig));
+  logger.debug("Saving forms")
+  var files={}
+
+  // filter source-forms out of forms and move to files
+  formsConfig.forms = formsConfig.forms.filter(item => {
+    var src = item.source
+    if(src){
+      if(!files[src]){
+        files[src]=[]
+      }
+      files[src].push(item)
+      return false
+    }else{
+      return true
+    }
+  })
+
+  let tmpDir;
+  const appPrefix = 'ansibleforms';
+  try {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), appPrefix));
+    var formsdir=getFormsDir()
+    var backupformsdir=formsdir+".bak"
+    for (const [file, forms] of Object.entries(files)) {
+      var tmpfile=path.join(tmpDir,file)
+      var formnames=forms.map(x => x.name)
+      if(forms.length==1){
+        logger.silly(`saving single form '${forms[0].name}' to '${tmpfile}'`)
+        fs.writeFileSync(tmpfile,YAML.stringify(forms[0]));
+      }
+      if(forms.length>1){
+        logger.silly(`saving forms ${formnames} to '${tmpfile}'`)
+        fs.writeFileSync(tmpfile,YAML.stringify(forms));
+      }
+    }
+    logger.silly(`Removing backup directory '${backupformsdir}'`)
+    fse.removeSync(backupformsdir)
+    logger.silly(`Moving forms directory '${formsdir}'->'${backupformsdir}'`)
+    fse.moveSync(formsdir,backupformsdir)
+    logger.silly(`Moving tmp directory '${tmpDir}'->'${formsdir}'`)
+    fse.moveSync(tmpDir,formsdir)
+    logger.silly(`Writing base file '${appConfig.formsPath}'`)
+    fs.writeFileSync(appConfig.formsPath,YAML.stringify(formsConfig));
+  }
+  catch(e) {
+    // handle error
+    var msg=`Failed to save forms. ${e}`
+    logger.error(msg)
+    throw msg
+  }
+  finally {
+    try {
+      if (tmpDir) {
+        logger.silly(`Cleaning up folder '${tmpDir}'`)
+        //fs.rmSync(tmpDir, { recursive: true });
+      }
+    }
+    catch (e) {
+      console.error(`An error has occurred while removing the temp folder at ${tmpDir}. Please remove it manually. Error: ${e}`);
+    }
+  }
+
   return true
 }
 module.exports= Form;

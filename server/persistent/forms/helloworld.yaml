@@ -1,0 +1,29 @@
+name: HelloWorld
+showHelp: true
+help: >
+  This form starts the template `HelloWorld` on AWX.
+
+
+  To make this work, you need an AWX installed with the `HelloWorld` project imported.
+
+  In the `settings`-menu on AnsibleForms, add the AWX connection.
+roles:
+  - demo
+description: This will kick off the HelloWorld template in AWX.  You can have it
+  installed on AWX from github.  It does not expect any variables, so that's
+  cool because it should always run :)
+icon: smile-wink
+categories:
+  - Demo
+  - AWX
+tileClass: has-background-success-light
+template: HelloWorld
+inventory: ""
+type: awx
+fields:
+  - model: hello.world
+    type: text
+    name: Testfield
+    label: Testfield
+    default: ""
+    required: true

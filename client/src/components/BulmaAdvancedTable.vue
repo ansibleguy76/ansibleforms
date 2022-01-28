@@ -99,30 +99,34 @@
           if(ref.queryfilter){
             var cols=[]
             // if filtercolumns, use them
+
             if(ref.filterColumns.length>0){
               cols=ref.filterColumns
             }else{
               // if not, take the previewLabel
               if(ref.previewLabel){
                 cols.push(ref.previewLabel)
-              }else{
-                // if not don't filter, pass all
-                found=true
               }
             }
             // if the item exists
             if(item){
               // go over all filterColumns
-              cols.forEach((col, i) => {
-                // if the column is present
-                if(item[col]){
-                  // check if the value contains our filter
-                  found=item[col].toString().toLowerCase().includes(ref.queryfilter.toLowerCase())
-                }else{
-                  // no item, always pass
-                  found=true
-                }
-              });
+              if(cols.length>0){
+                cols.forEach((col, i) => {
+                  // if the column is present
+                  if(item[col]){
+                    // check if the value contains our filter
+                    found=item[col].toString().toLowerCase().includes(ref.queryfilter.toLowerCase())
+                  }else{
+                    // no item, always pass
+                    found=true
+                  }
+                });
+              }else{
+                // normal array
+                found=item.toString().toLowerCase().includes(ref.queryfilter.toLowerCase())
+              }
+
             }
           }else{
             found=true

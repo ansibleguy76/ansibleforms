@@ -129,6 +129,7 @@
           "check": {"type": "boolean"},
           "diff": {"type": "boolean"},
           "help": {"type": "string"},
+          "source": {"type": "string"},
           "showHelp": {"type": "boolean"},
           "fields": {
             "type": "array",
