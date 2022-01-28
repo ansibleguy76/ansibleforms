@@ -97,9 +97,6 @@
           required
         },
         ca_bundle:{
-          requiredIf:requiredIf(function(){
-            return !this.ignore_certs
-          })
         }
       }
     },

@@ -188,15 +188,17 @@
         }
       },
       warnings(){
-        var result=[]
+        var warnings=[]
         var names = this.idmapping.map(x => x.name)
         var dups=names.filter((item, index) => names.indexOf(item) !== index)
-        var empties=names.filter((item, index) => !item)
+        var empties=this.idmapping.filter((item, index) => !item.name)
         var parsing=this.idmapping.filter((item) => item.source=="Parsing issues")
-        result=result.concat(dups.map(x => `<span class="has-text-warning">Form '${x}' has duplicates</span><br><span>Each form must have a unique name</span>`))
-        result=result.concat(empties.map(x => `<span class="has-text-warning">Empty Formname</span><br><span>Each form must have a unique name</span>`))
-        result=result.concat(parsing.map(x => `<span class="has-text-warning">Form '${x.name}' has bad YAML and cannot be parsed</span><br><span>${x.issue}</span>`))
-        return result
+        var badsource=this.idmapping.filter((item) => (item.source && (!(item.source.endsWith('.yaml')||item.source.endsWith('.yml'))||item.source.includes('/'))))
+        warnings=warnings.concat(dups.map(x => `<span class="has-text-warning">Form '${x}' has duplicates</span><br><span>Each form must have a unique name</span>`))
+        warnings=warnings.concat(empties.map(x => `<span class="has-text-warning">Empty Formname</span><br><span>Each form must have a unique name</span>`))
+        warnings=warnings.concat(parsing.map(x => `<span class="has-text-warning">Form '${x.name}' has bad YAML and cannot be parsed</span><br><span>${x.issue}</span>`))
+        warnings=warnings.concat(badsource.map(x => `<span class="has-text-warning">Form '${x.name}' has a bad 'source' property</span><br><span>A source should be valid a .yaml file.  No deep-paths are allowed.<br>Remove the source to keep it in the base file.</span>`))
+        return warnings
       }
     },
     data(){
