@@ -153,7 +153,9 @@ Form.save = function(data){
   try {
     tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), appPrefix));
     var formsdir=getFormsDir()
-    var backupformsdir=formsdir+".bak"
+    var today=new Date()
+    var timestamp=today.toISOString().replace(/[-:TZ\.]/g,'')
+    var backupformsdir=formsdir+"."+timestamp
     for (const [file, forms] of Object.entries(files)) {
       var tmpfile=path.join(tmpDir,file)
       var formnames=forms.map(x => x.name)
@@ -166,14 +168,37 @@ Form.save = function(data){
         fs.writeFileSync(tmpfile,YAML.stringify(forms));
       }
     }
-    logger.silly(`Removing backup directory '${backupformsdir}'`)
-    fse.removeSync(backupformsdir)
+
+
+    var oldfolders = fs.readdirSync(path.dirname(appConfig.formsPath))
+    if(oldfolders){
+      // filter only yaml
+      oldfolders=oldfolders.filter((item)=>item.match(/forms\.[0-9]{17}/g)).map((item)=>item.substring(0,14))
+      // read files
+      oldfolders.forEach((item, i) => {
+        var yr=item.substring(6,10)
+        var m=item.substring(10,12)
+        var d=item.substring(12,14)
+        var dt=Date.parse(yr+"-"+m+"-"+d)
+        var refdt=new Date(new Date().setDate(today.getDate() - 10)).getTime();
+        if(dt<=refdt){
+          logger.silly(`Cleanup old backup folder '${item}'`)
+          fse.removeSync(path.join(formsdir,item))
+        }
+      });
+    }
+
     logger.silly(`Moving forms directory '${formsdir}'->'${backupformsdir}'`)
-    fse.moveSync(formsdir,backupformsdir)
-    logger.silly(`Moving tmp directory '${tmpDir}'->'${formsdir}'`)
-    fse.moveSync(tmpDir,formsdir)
+    fse.removeSync(backupformsdir) // just in case, remove it (unlikely hit)
+    fse.ensureDirSync(backupformsdir) // make backupdir
+    fse.copySync(formsdir,backupformsdir) // make backup
+
+    logger.silly(`Copy tmp directory '${tmpDir}'->'${formsdir}'`)
+    fse.emptyDirSync(formsdir) // empty formsdir
+    fse.copySync(tmpDir,formsdir) // copy from temp
+
     logger.silly(`Writing base file '${appConfig.formsPath}'`)
-    fs.writeFileSync(appConfig.formsPath,YAML.stringify(formsConfig));
+    fs.writeFileSync(appConfig.formsPath,YAML.stringify(formsConfig)); // write basefile
   }
   catch(e) {
     // handle error

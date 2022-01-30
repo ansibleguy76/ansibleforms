@@ -1,5 +1,5 @@
 <template>
-    <Form v-if="currentForm" :token="token" :currentForm="currentForm" />
+    <Form v-if="currentForm" :token="token" :key="componentKey" @rerender="rerender" :currentForm="currentForm" />
 </template>
 <script>
   import Vue from 'vue'
@@ -14,6 +14,7 @@
     },
     data(){
       return  {
+        componentKey:0
       }
     },
     computed: {
@@ -28,6 +29,9 @@
     watch: {
     },
     methods:{
+      rerender(){
+        this.componentKey++;
+      }
     },
     mounted() {
     }

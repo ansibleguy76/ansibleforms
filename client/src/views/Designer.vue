@@ -1,5 +1,5 @@
 <template>
-  <section v-if="isAdmin && loaded" class="section" @keydown.ctrl.83.prevent.stop="save()" @keypress="formDirty=true">
+  <section v-if="isAdmin && loaded" class="section" @keydown.ctrl.83.prevent.stop="save()" @keypress="formDirty=true" @keyup.delete="formDirty=true">
     <BulmaQuickView v-if="warnings && showWarnings" title="Form warnings" footer="" @close="showWarnings=false">
         <p v-for="w,i in warnings" :key="'warning'+i" class="mb-3" v-html="w"></p>
     </BulmaQuickView>

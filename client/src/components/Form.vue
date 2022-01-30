@@ -16,6 +16,12 @@
             </span>
             <span>Show Extravars</span>
           </button>
+          <button @click="$emit('rerender')" class="button is-warning is-small mr-3">
+            <span class="icon">
+              <font-awesome-icon icon="redo" />
+            </span>
+            <span>Reload This Form</span>
+          </button>
           <button v-if="warnings.length>0" @click="showWarnings=!showWarnings" class="button is-small is-outlined is-warning">
             <span class="icon">
               <font-awesome-icon icon="exclamation-triangle" />
