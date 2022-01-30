@@ -155,7 +155,8 @@ Form.save = function(data){
     var formsdir=getFormsDir()
     var today=new Date()
     var timestamp=today.toISOString().replace(/[-:TZ\.]/g,'')
-    var backupformsdir=formsdir+"."+timestamp
+    var backupformsdir=formsdir+".bak."+timestamp
+    var backupformsfile=appConfig.formsPath+".bak."+timestamp
     for (const [file, forms] of Object.entries(files)) {
       var tmpfile=path.join(tmpDir,file)
       var formnames=forms.map(x => x.name)
@@ -173,21 +174,23 @@ Form.save = function(data){
     var oldfolders = fs.readdirSync(path.dirname(appConfig.formsPath))
     if(oldfolders){
       // filter only yaml
-      oldfolders=oldfolders.filter((item)=>item.match(/forms\.[0-9]{17}/g)).map((item)=>item.substring(0,14))
+      oldfolders=oldfolders.filter((item)=>item.match(/\.bak\.[0-9]{17}/g))
       // read files
-      oldfolders.forEach((item, i) => {
-        var yr=item.substring(6,10)
-        var m=item.substring(10,12)
-        var d=item.substring(12,14)
+      oldfolders.forEach((file, i) => {
+        var item=file.substring(file.length-17)
+        var yr=item.substring(0,4)
+        var m=item.substring(4,6)
+        var d=item.substring(6,8)
         var dt=Date.parse(yr+"-"+m+"-"+d)
         var refdt=new Date(new Date().setDate(today.getDate() - 10)).getTime();
         if(dt<=refdt){
-          logger.silly(`Cleanup old backup folder '${item}'`)
-          fse.removeSync(path.join(formsdir,item))
+          logger.silly(`Cleanup old backup '${file}'`)
+          fse.removeSync(path.join(path.dirname(appConfig.formsPath),file))
         }
       });
     }
 
+    fse.copySync(appConfig.formsPath,backupformsfile)
     logger.silly(`Moving forms directory '${formsdir}'->'${backupformsdir}'`)
     fse.removeSync(backupformsdir) // just in case, remove it (unlikely hit)
     fse.ensureDirSync(backupformsdir) // make backupdir
