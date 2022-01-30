@@ -124,13 +124,13 @@
           required
         },
         cert:{
-          requiredIf:requiredIf(function(){
-            return this.enable_tls
+          requiredIf:requiredIf(function(ldap){
+            return ldap.enable_tls && !ldap.ignore_certs
           })
         },
         ca_bundle:{
-          requiredIf:requiredIf(function(){
-            return this.enable_tls
+          requiredIf:requiredIf(function(ldap){
+            return ldap.enable_tls && !ldap.ignore_certs
           })
         }
 

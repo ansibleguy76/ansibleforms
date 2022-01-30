@@ -97,6 +97,9 @@
           required
         },
         ca_bundle:{
+          required:requiredIf(function(awx){
+            return !awx.ignore_certs
+          })
         }
       }
     },

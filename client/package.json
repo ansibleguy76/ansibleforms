@@ -28,6 +28,7 @@
     "vue-bulma-paginate" : "*",
     "vue-moment" : "*",
     "yaml": "*",
+    "thenby": "*",
     "vue-showdown": "2.4.1",
     "@fortawesome/fontawesome-svg-core":"~1.2.36",
     "@fortawesome/free-solid-svg-icons":"~5",

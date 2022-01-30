@@ -1,9 +1,10 @@
 <template>
-  <section v-if="isAdmin && loaded" class="section" @keydown.ctrl.83.prevent.stop="save()">
+  <section v-if="isAdmin && loaded" class="section" @keydown.ctrl.83.prevent.stop="save()" @keypress="formDirty=true">
     <BulmaQuickView v-if="warnings && showWarnings" title="Form warnings" footer="" @close="showWarnings=false">
         <p v-for="w,i in warnings" :key="'warning'+i" class="mb-3" v-html="w"></p>
     </BulmaQuickView>
     <BulmaModal v-if="showDelete" title="Comfirm" action="Delete" @click="deleteThisForm();showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete form '{{ currentFormName}}'</BulmaModal>
+    <BulmaModal v-if="showDirty" title="Unsaved Changes" action="Close without saving" @click="showDirty=false;next(true)" @close="showDirty=false;next(false)" @cancel="showDirty=false;next(false)">Are you sure you want to leave the designer ?<br>You have unsaved changes.</BulmaModal>
     <div class="container">
       <div class="is-pulled-right">
         <button v-if="warnings.length>0" @click="showWarnings=!showWarnings" class="button is-outlined is-warning mr-3">
@@ -12,11 +13,11 @@
           </span>
           <span class="mr-1">{{(showWarnings)?'Hide':'This design has'}} Warnings </span>
         </button>
-        <button class="button is-info mr-3" @click="validate()">
+        <button class="button is-info mr-3" :disabled="warnings.length>0 || !formConfig || !formDirty" @click="validate()">
           <span class="icon"><font-awesome-icon icon="check" /></span>
           <span>Validate</span>
         </button>
-        <button class="button is-success" @click="save()">
+        <button class="button is-success" :disabled="warnings.length>0 || !formConfig || !formDirty" @click="save()">
           <span class="icon"><font-awesome-icon icon="save" /></span>
           <span>Save</span>
         </button>
@@ -158,10 +159,9 @@
         }catch{
           return ""
         }
-
       },
       files(){
-        return this.formsObj.map(x => x.source).filter((v, i, a) => a.indexOf(v) === i);
+        return this.formsObj.map(x => x.source).filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => a.localeCompare(b, undefined, {sensitivity: 'base'}))
       },
       idmapping(){
         // a map from "form_x" => form.name & form.source
@@ -207,11 +207,14 @@
         roles:"",
         forms:{},
         currentTab:"Forms",
+        formDirty:false,
         currentForm:undefined,
         tabs:["Categories","Roles","Forms"],
         loaded:false,
         showDelete: false,
         showWarnings: false,
+        showDirty:false,
+        next:undefined,
         formtemplate:{
           name: "New Form",
           type: "ansible",
@@ -236,7 +239,7 @@
         }
       },
       formnames(file){
-        return this.idmapping.filter(x => x.source===file)
+        return this.idmapping.filter(x => x.source===file).sort((a, b) => (a.name||"").toLowerCase() > (b.name||"").toLowerCase() && 1 || -1)
       },
       formExists(name){
         var result=false
@@ -315,6 +318,7 @@
              ref.$toast.error(result.data.data.error);
            }else{
              ref.$toast.success(result.data.message);
+             ref.formDirty=false
            }
          }),function(error){
            ref.$toast.error(error.message);
@@ -333,6 +337,14 @@
         this.$toast.error("You are not an admin user")
       }else{
         this.loadAll();
+      }
+    },
+    beforeRouteLeave (to, from , next) {
+      if(this.formDirty){
+        this.next=next
+        this.showDirty=true
+      }else{
+        next(true)
       }
     }
   }
