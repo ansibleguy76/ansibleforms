@@ -104,11 +104,7 @@
       }
     },
     mounted() { // when the Vue app is booted up, this is run automatically.
-      if(!this.isAdmin){
-        this.$toast.error("You are not an admin user")
-      }else{
         this.loadAwx();
-      }
     }
   }
 </script>

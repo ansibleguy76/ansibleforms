@@ -4,7 +4,17 @@
         <p v-for="w,i in warnings" :key="'warning'+i" class="mb-3" v-html="w"></p>
     </BulmaQuickView>
     <BulmaModal v-if="showDelete" title="Comfirm" action="Delete" @click="deleteThisForm();showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete form '{{ currentFormName}}'</BulmaModal>
-    <BulmaModal v-if="showDirty" title="Unsaved Changes" action="Close without saving" @click="showDirty=false;next(true)" @close="showDirty=false;next(false)" @cancel="showDirty=false;next(false)">Are you sure you want to leave the designer ?<br>You have unsaved changes.</BulmaModal>
+    <BulmaModal
+      v-if="showDirty"
+      title="Unsaved Changes"
+      action="Close without saving"
+      actionSuccess="Save and Close"
+      @click="showDirty=false;next(true)"
+      @clickSuccess="showDirty=false;save(true)"
+      @close="showDirty=false;next(false)"
+      @cancel="showDirty=false;next(false)">
+        Are you sure you want to leave the designer ?<br>You have unsaved changes.
+    </BulmaModal>
     <div class="container">
       <div class="is-pulled-right">
         <button v-if="warnings.length>0" @click="showWarnings=!showWarnings" class="button is-outlined is-warning mr-3">
@@ -309,7 +319,7 @@
          };
 
       },
-      save() {
+      save(close=false) {
        var ref= this;
 
        axios.post('/api/v1/config/',{forms:this.formConfig},TokenStorage.getAuthentication())
@@ -319,6 +329,9 @@
            }else{
              ref.$toast.success(result.data.message);
              ref.formDirty=false
+             if(close){
+               this.next(true)
+             }
            }
          }),function(error){
            ref.$toast.error(error.message);
@@ -333,11 +346,7 @@
       }
     },
     mounted() { // when the Vue app is booted up, this is run automatically.
-      if(!this.isAdmin){
-        this.$toast.error("You are not an admin user")
-      }else{
         this.loadAll();
-      }
     },
     beforeRouteLeave (to, from , next) {
       if(this.formDirty){
@@ -346,6 +355,13 @@
       }else{
         next(true)
       }
+    },
+    beforeMount() {
+      window.addEventListener("beforeunload", event => {
+        if (!this.formDirty) return
+        event.preventDefault()
+        event.returnValue = ""
+      })
     }
   }
 </script>

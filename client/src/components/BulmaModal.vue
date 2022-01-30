@@ -11,6 +11,8 @@
       </section>
       <footer class="modal-card-foot">
         <button v-if="action" class="button is-info" @click="$emit('click')">{{ action }}</button>
+        <button v-if="actionSuccess" class="button is-success" @click="$emit('clickSuccess')">{{ actionSuccess }}</button>
+        <button v-if="actionDanger" class="button is-success" @click="$emit('clickDanger')">{{ actionDanger }}</button>
         <button class="button" @click="$emit('cancel')">Cancel</button>
       </footer>
     </div>
@@ -20,7 +22,7 @@
   import Vue from 'vue'
   export default{
     name:"BulmaModal",
-    props:['title','action','type'],
+    props:['title','action','actionSuccess','actionDanger','type'],
     data(){
       return{
       }

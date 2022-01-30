@@ -2,9 +2,9 @@
   <nav class="navbar is-primary is-spaced has-shadow" role="navigation" aria-label="main navigation">
       <div class="container">
           <div class="navbar-brand">
-          <a class="navbar-item" href="/">
+          <router-link class="navbar-item" to="/">
               <img src="/assets/img/logo_ansible_forms_full_white.svg" />
-          </a>
+          </router-link>
 
           <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbarAnsibleForms" v-on:click="showNav = !showNav" v-bind:class="{ 'is-active' : showNav }">
               <span aria-hidden="true"></span>
