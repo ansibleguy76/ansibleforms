@@ -1,5 +1,5 @@
 <template>
-  <section v-if="isAdmin && loaded" class="section" @keydown.ctrl.83.prevent.stop="save()" @keypress="formDirty=true" @keyup.delete="formDirty=true">
+  <section v-if="isAdmin && loaded" class="section">
     <BulmaQuickView v-if="warnings && showWarnings" title="Form warnings" footer="" @close="showWarnings=false">
         <p v-for="w,i in warnings" :key="'warning'+i" class="mb-3" v-html="w"></p>
     </BulmaQuickView>
@@ -23,7 +23,7 @@
           </span>
           <span class="mr-1">{{(showWarnings)?'Hide':'This design has'}} Warnings </span>
         </button>
-        <button class="button is-info mr-3" :disabled="warnings.length>0 || !formConfig || !formDirty" @click="validate()">
+        <button class="button is-info mr-3" :disabled="!formConfig" @click="validate()">
           <span class="icon"><font-awesome-icon icon="check" /></span>
           <span>Validate</span>
         </button>
@@ -49,6 +49,8 @@
             theme="monokai"
             width="100%"
             height="60vh"
+            :lazymodel="true"
+            @dirty="formDirty=true"
             :options="{
               enableBasicAutocompletion: true,
               enableLiveAutocompletion: false,
@@ -59,7 +61,7 @@
               tabSize: 2,
               wrap:false,
               showPrintMargin: false,
-              showGutter: true,
+              showGutter: true
             }"
           />
       </div>
@@ -71,6 +73,8 @@
             theme="monokai"
             width="100%"
             height="60vh"
+            :lazymodel="true"
+            @dirty="formDirty=true"
             :options="{
               enableBasicAutocompletion: true,
               enableLiveAutocompletion: false,
@@ -81,7 +85,7 @@
               tabSize: 2,
               wrap:false,
               showPrintMargin: false,
-              showGutter: true,
+              showGutter: true
             }"
           />
       </div>
@@ -95,6 +99,9 @@
                 theme="monokai"
                 width="100%"
                 height="60vh"
+                tabindex=0
+                :lazymodel="true"
+                @dirty="formDirty=true"
                 :options="{
                     enableBasicAutocompletion: true,
                     enableLiveAutocompletion: false,
@@ -105,7 +112,7 @@
                     tabSize: 2,
                     wrap:false,
                     showPrintMargin: false,
-                    showGutter: true,
+                    showGutter: true
                 }"
               />
           </div>
@@ -137,7 +144,7 @@
   import axios from 'axios'
   import YAML from 'yaml'
   import TokenStorage from './../lib/TokenStorage'
-  import VueCodeEditor from 'vue2-code-editor';
+  import VueCodeEditor from './../components/VueCodeEditor';
   import BulmaQuickView from './../components/BulmaQuickView.vue'
   import BulmaModal from './../components/BulmaModal.vue'
   import Form from './../lib/Form'
@@ -163,6 +170,38 @@
             return {name:x,source:"Parsing issues"}
           }
         })
+      },
+      categoriesObj(){
+        if(this.categories){
+          try{
+            var result=YAML.parse(this.categories)
+            if(Array.isArray(result) && result.length>0 && result[0].name && result[0].icon){
+              return result
+            }else {
+              throw "parsing issue"
+            }
+          }catch{
+            return undefined
+          }
+        }else{
+          return [{name:'Default',icon:'bars'}]
+        }
+      },
+      rolesObj(){
+        if(this.roles){
+          try{
+            var result=YAML.parse(this.roles)
+            if(Array.isArray(result) && result.length>0 && result[0].name && result[0].groups){
+              return result
+            }else {
+              throw "parsing issue"
+            }
+          }catch{
+            return undefined
+          }
+        }else{
+          return [{name:'admin',groups:['local/admins']},{name:'public',groups:[]}]
+        }
       },
       formConfig(){
         try{
@@ -209,6 +248,12 @@
         warnings=warnings.concat(empties.map(x => `<span class="has-text-warning">Empty Formname</span><br><span>Each form must have a unique name</span>`))
         warnings=warnings.concat(parsing.map(x => `<span class="has-text-warning">Form '${x.name}' has bad YAML and cannot be parsed</span><br><span>${x.issue}</span>`))
         warnings=warnings.concat(badsource.map(x => `<span class="has-text-warning">Form '${x.name}' has a bad 'source' property</span><br><span>A source should be valid a .yaml file.  No deep-paths are allowed.<br>Remove the source to keep it in the base file.</span>`))
+        if(!this.categoriesObj){
+          warnings.push(`<span class="has-text-warning">Bad categories</span>`)
+        }
+        if(!this.rolesObj){
+          warnings.push(`<span class="has-text-warning">Bad roles</span>`)
+        }
         return warnings
       }
     },
@@ -260,6 +305,7 @@
         }
         return result
       },
+
       addForm(file=undefined){
         if(!this.formExists("New Form")){
           var newform=this.formtemplate
