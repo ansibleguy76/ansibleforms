@@ -29,6 +29,7 @@
       asCredential: true
       required: true
       hide: true
+  source: maintenance.yaml
 - name: Cleanup Ansibleforms Jobs
   showHelp: true
   help: |
@@ -73,3 +74,4 @@
         - name: areyousure
           values:
             - true
+  source: maintenance.yaml

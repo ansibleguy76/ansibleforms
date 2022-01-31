@@ -140,6 +140,7 @@
   import VueCodeEditor from 'vue2-code-editor';
   import BulmaQuickView from './../components/BulmaQuickView.vue'
   import BulmaModal from './../components/BulmaModal.vue'
+  import Form from './../lib/Form'
 
   export default{
     name: "Designer",
@@ -278,32 +279,19 @@
         Vue.delete(this.forms,this.currentForm)
         this.selectfirst()
       },
-      loadAll(){
-        this.loadForms();
-      },loadForms(){
+      loadForms(){
         var ref= this;
-        axios.get(`/api/v1/config?timestamp=${new Date().getTime()}`,TokenStorage.getAuthentication())                               // load forms
-          .then((result)=>{
-            if(!result.data.error){
-              ref.categories=YAML.stringify(result.data.categories);
-              ref.roles=YAML.stringify(result.data.roles);
-              result.data.forms.forEach((item, i) => {
-                Vue.set(ref.forms,"form_"+i,YAML.stringify(item))
-              });
-              ref.selectfirst()
-              ref.loaded=true
-            }else{
-                ref.$toast.error("Invalid forms.yaml")
-                ref.errorMessage="Error in forms.yaml file\n\n" + result.data.error
-            }
-          })
-          .catch(function(err){
-            if(err.response && err.response.status!=401){
-              ref.errorMessage="Could not get forms.yaml file\n\n" + err
-            }else{
-              ref.$toast.error("Failed to load forms.yaml file")
-            }
-          })
+        Form.load(function(formConfig){
+          ref.categories=YAML.stringify(formConfig.categories);
+          ref.roles=YAML.stringify(formConfig.roles);
+          formConfig.forms.forEach((item, i) => {
+            Vue.set(ref.forms,"form_"+i,YAML.stringify(item))
+          });
+          ref.selectfirst()
+          ref.loaded=true
+        },function(err){
+          ref.$toast.error(err)
+        })
       },
       validate() {
        var ref= this;
@@ -317,7 +305,6 @@
          }),function(error){
            ref.$toast.error(error.message);
          };
-
       },
       save(close=false) {
        var ref= this;
@@ -346,7 +333,7 @@
       }
     },
     mounted() { // when the Vue app is booted up, this is run automatically.
-        this.loadAll();
+        this.loadForms();
     },
     beforeRouteLeave (to, from , next) {
       if(this.formDirty){

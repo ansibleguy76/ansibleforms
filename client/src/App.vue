@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <BulmaNav :isAdmin="isAdmin" :authenticated="authenticated" :profile="profile" @logout="logout()" :version="version" />
-    <router-view :formConfig="formConfig" :isAdmin="isAdmin" :authenticated="authenticated" :errorMessage="errorMessage" :errorData="errorData" @authenticated="loadFormConfig" @logout="logout()" />
+    <router-view :isAdmin="isAdmin" :authenticated="authenticated" :errorMessage="errorMessage" :errorData="errorData" @authenticated="login()" @logout="logout()" />
   </div>
 </template>
 <script>
@@ -67,7 +67,7 @@
                   ref.$router.replace({name:"Schema"}).catch(err => {});
                 }
               }else{
-                this.loadFormConfig()
+                this.login()
               }
 
             })
@@ -86,37 +86,15 @@
         resetProfile(){
           this.profile={}
         },
-        loadFormConfig(){
+        login(){
           var ref= this;
-
-
           if(!TokenStorage.isAuthenticated()){
-              //this.$toast.error("You need to authenticate")
-              this.$router.replace({ name: "Login" }).catch(err => {});         // no token found, logout
+            //this.$toast.error("You need to authenticate")
+            this.$router.replace({ name: "Login" }).catch(err => {});         // no token found, logout
           }else{
-
-            axios.get(`/api/v1/config?timestamp=${new Date().getTime()}`,TokenStorage.getAuthentication())                               // load forms
-              .then((result)=>{
-                ref.formConfig=result.data;
-                if(!ref.formConfig.error){
-                  // ref.$toast.success("Valid forms.yaml loaded")
-                  ref.$router.push({name:"Home"}).catch(err => {});
-                  ref.refreshAuthenticated()
-                  this.loadProfile()
-                }else{
-                    ref.$toast.error("Invalid forms.yaml")
-                    ref.errorMessage="Error in forms.yaml file\n\n" + ref.formConfig.error
-                    ref.$router.replace({name:"Error"}).catch(err => {});
-                }
-              })
-              .catch(function(err){
-                if(err.response && err.response.status!=401){
-                  ref.errorMessage="Could not get forms.yaml file\n\n" + err
-                  ref.$router.replace({name:"Error"}).catch(err => {});
-                }else{
-                  ref.$toast.error("Failed to load forms.yaml file")
-                }
-              })
+            this.$router.push({name:"Home"}).catch(err => {});
+            this.refreshAuthenticated()
+            this.loadProfile()
           }
         },
         logout() {

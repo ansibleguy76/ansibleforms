@@ -182,8 +182,8 @@ Form.save = function(data){
         var m=item.substring(4,6)
         var d=item.substring(6,8)
         var dt=Date.parse(yr+"-"+m+"-"+d)
-        var refdt=new Date(new Date().setDate(today.getDate() - 10)).getTime();
-        if(dt<=refdt){
+        var refdt=new Date(new Date().setDate(today.getDate() - 10)).getTime(); // make reference date of 10 days old
+        if(dt<refdt){ // date is older than 10 days ?
           logger.silly(`Cleanup old backup '${file}'`)
           fse.removeSync(path.join(path.dirname(appConfig.formsPath),file))
         }

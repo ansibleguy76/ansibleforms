@@ -27,3 +27,4 @@ fields:
     label: Testfield
     default: ""
     required: true
+source: helloworld.yaml
