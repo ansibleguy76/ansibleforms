@@ -920,7 +920,7 @@
                   }
                 }
               }else{  // not visible field
-                if(item.type=="expression"){
+                if(item.type=="expression" && item.expression){
                   ref.defaultField(item.name)
                 }else{
                   ref.resetField(item.name)
