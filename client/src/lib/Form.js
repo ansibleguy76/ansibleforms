@@ -15,8 +15,12 @@ var Form = {
       .catch(function(err){
         if(err.response && err.response.status!=401){
           error("Could not get forms.yaml file\n\n" + err)
-        }else{
-          error("Failed to load forms.yaml file")
+        }
+        if(err.response && err.response.status==401){
+          error(err)
+        }
+        if(!err.response){
+          error("Could not get forms.yaml file")
         }
       })
   }

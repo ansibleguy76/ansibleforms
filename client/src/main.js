@@ -48,7 +48,7 @@ axios.interceptors.response.use( (response) => {
       router.push({ name: 'Login' }).catch(err => {});
 
       return new Promise((resolve, reject) => {
-        reject(error);
+        reject(message);
       });
     }
 

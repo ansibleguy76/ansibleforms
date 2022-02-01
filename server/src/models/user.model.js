@@ -236,6 +236,7 @@ User.getRoles = function(user,groupObj){
     forms = Form.load()
   }catch(e){
     logger.error(e)
+    return roles
   }
   // ldap type
   if(user.type=="ldap"){

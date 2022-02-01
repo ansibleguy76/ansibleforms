@@ -37,7 +37,9 @@
           ref.componentKey++;
         },function(err){
           ref.$toast.error(err)
-          ref.$router.replace({name:"Error"}).catch(err => {});
+          if(ref.$route.name!="Login"){
+            ref.$router.replace({name:"Error"}).catch(err => {});
+          }
         })
       }
     },
