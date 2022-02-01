@@ -727,18 +727,12 @@
                  // console.log("replaced")
                  // console.log(item.name + " -> " + newValue)
             }else{
-                // if(item.alwaysEval){
-                //   newValue=newValue.replace(foundmatch,"undefined");               // replace the placeholder with undefined
-                // }else{
-                  newValue=ref.stringifyValue(item.default)      // cannot evaluate yet
-                  // we have a placeholder but it's value is not ready yet... will be for next loop
-                  // console.log("dependency ("+foundfield+") is not ready (" + targetflag + " : " + fieldvalue + ")")
-                // }
+                newValue=undefined      // cannot evaluate yet
             }
             hasPlaceholders=true;
         }
         if(retestRegex.test(newValue)){                                         // still placeholders found ?
-            newValue=ref.stringifyValue(item.default)                           // cannot evaluate yet
+            newValue=undefined                           // cannot evaluate yet
         }
         if(newValue!=undefined){
            newValue=newValue.replace("'__undefined__'","undefined")  // replace undefined values
@@ -880,7 +874,11 @@
                         var restresult = result.data
                         if(restresult.status=="error"){
                            //console.log(restresult.data.error)
-                           ref.resetField(item.name)
+                           if(item.type=="expression"){
+                             ref.defaultField(item.name)
+                           }else{
+                             ref.resetField(item.name)
+                           }
                         }
                         if(restresult.status=="success"){
                            //console.log("query "+item.name+" triggered : items found -> "+ restresult.data.output.length);
@@ -902,7 +900,11 @@
                       }).catch(function (err) {
                           // console.log('Error ' + err.message)
                           try{
-                            ref.resetField(item.name)
+                            if(item.type=="expression"){
+                              ref.defaultField(item.name)
+                            }else{
+                              ref.resetField(item.name)
+                            }
                           }catch(err){
                             ref.$toast("Cannot reset field status " + item.name)
                           }
@@ -913,19 +915,22 @@
                   }else{
                     //console.log(item.name + " is not evaluated yet");
                     try{
-                      ref.resetField(item.name)
+                      if(item.type=="expression"){
+                        ref.defaultField(item.name)
+                      }else{
+                        ref.resetField(item.name)
+                      }
                     }catch(err){
                       ref.$toast("Cannot reset field status " + item.name)
                     }
                   }
                 }
               }else{  // not visible field
-                if(item.type=="expression" && item.expression){
+                if(item.type=="expression"){
                   ref.defaultField(item.name)
                 }else{
                   ref.resetField(item.name)
                 }
-
               }
 
             } // end loop function
