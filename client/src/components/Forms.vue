@@ -60,7 +60,7 @@
           }else{
             return false
           }
-        })
+        }).sort((a, b) => (a.name||"").toLowerCase() > (b.name||"").toLowerCase() && 1 || -1)
       },
       // filter all the forms per category
       filterForms(category){
