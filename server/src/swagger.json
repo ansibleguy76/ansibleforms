@@ -1221,6 +1221,13 @@
             "type": "string",
             "required": true,
             "description": "The backup name"
+          },
+          {
+            "in": "query",
+            "name": "backupBeforeRestore",
+            "type": "boolean",
+            "required": false,
+            "description": "Make a backup of the current forms before restore"
           }
         ],
         "summary": "Restores forms configuration",

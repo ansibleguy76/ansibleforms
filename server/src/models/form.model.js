@@ -285,14 +285,15 @@ Form.save = function(data){
 
   return true
 }
-Form.restore = function(backupName){
+Form.restore = function(backupName,backupBeforeRestore){
   logger.debug(`Restoring backup '${backupName}'`)
   var tmpbackup
   try {
     // first backup current
     tmpbackup=Form.backup()
     Form.restoreBackup(backupName)
-    Form.remove(tmpbackup)
+    if(!backupBeforeRestore)
+      Form.remove(tmpbackup)
     return true
   }catch(e){
     logger.error("Failed to restore '${backupName}'." + e)

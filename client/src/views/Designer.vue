@@ -25,7 +25,7 @@
         <BulmaAdvancedSelect
           :required="true"
           :multiple="false"
-          name="Choose a backup"
+          name="restore"
           placeholder="Select a backup"
           :values="backups"
           :hasError="!backupToRestore"
@@ -39,6 +39,8 @@
           :sticky="true"
           >
         </BulmaAdvancedSelect>
+
+        <BulmaCheckRadio checktype="checkbox" v-model="backupBeforeRestore" name="backupBeforeRestore" label="Make a backup before restore ?" />
     </BulmaModal>
     <div class="container">
       <div class="is-pulled-right">
@@ -203,6 +205,7 @@
   import BulmaQuickView from './../components/BulmaQuickView.vue'
   import BulmaModal from './../components/BulmaModal.vue'
   import BulmaAdvancedSelect from './../components/BulmaAdvancedSelect.vue'
+  import BulmaCheckRadio from './../components/BulmaCheckRadio.vue'
   import Helpers from './../lib/Helpers'
   import Form from './../lib/Form'
 
@@ -212,7 +215,7 @@
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean}
     },
-    components:{VueCodeEditor,BulmaModal,BulmaQuickView,BulmaAdvancedSelect},
+    components:{VueCodeEditor,BulmaModal,BulmaQuickView,BulmaAdvancedSelect,BulmaCheckRadio},
     data(){
       return  {
         categories:"",
@@ -229,6 +232,7 @@
         showRestore:false,
         backups:[],
         backupToRestore:undefined,
+        backupBeforeRestore:false,
         next:undefined,
         formtemplate:{
           name: "New Form",
@@ -428,11 +432,12 @@
       },
       restore(){
         var ref= this;
-        Form.restore(this.backupToRestore.file,function(result){
+        Form.restore(this.backupToRestore.file,this.backupBeforeRestore,function(result){
           ref.showRestore=false
           ref.$toast.success(result)
           ref.backupToRestore=undefined
           ref.loadForms()
+          ref.loadBackups()
         },function(err){
           ref.$toast.error(err)
         })

@@ -46,8 +46,8 @@ var Form = {
         }
       })
   },
-  restore(backupName,success,error){
-    axios.post(`/api/v1/config/restore/${backupName}`,TokenStorage.getAuthentication())                               // load forms
+  restore(backupName,backupBeforeRestore,success,error){
+    axios.post(`/api/v1/config/restore/${backupName}?backupBeforeRestore=${backupBeforeRestore}`,TokenStorage.getAuthentication())                               // load forms
       .then((result)=>{
         if(result.data.status=="success"){
           success(result.data.message)

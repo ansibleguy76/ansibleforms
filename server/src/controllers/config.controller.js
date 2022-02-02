@@ -22,8 +22,9 @@ exports.backups = function(req,res){
 exports.restore = function(req,res){
     try{
       var backupName=req.params.backupName
+      var backupBeforeRestore=(req.query.backupBeforeRestore=="true")?true:false
       if(backupName){
-        var restore = Form.restore(backupName)
+        var restore = Form.restore(backupName,backupBeforeRestore)
         if(restore) {
           res.json(new RestResult("success","Backup is restored",null,""));
         }else{
