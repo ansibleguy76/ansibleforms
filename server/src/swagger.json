@@ -1158,6 +1158,100 @@
         }
       }
     },
+    "/config/backups":{
+      "get": {
+        "tags": [
+          "forms config"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get forms backups",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "array",
+              "example": [
+                  {
+                    "file": "forms.yaml.bak.20220202211155442",
+                    "date": "2022-02-02 21:11:55"
+                  },
+                  {
+                    "file": "forms.yaml.bak.20220202210424591",
+                    "date": "2022-02-02 21:04:24"
+                  },
+                  {
+                    "file": "forms.yaml.bak.20220202154024068",
+                    "date": "2022-02-02 15:40:24"
+                  }
+                ]
+
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/config/restore/{backupName}": {
+      "post": {
+        "tags": [
+          "forms config"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "backupName",
+            "type": "string",
+            "required": true,
+            "description": "The backup name"
+          }
+        ],
+        "summary": "Restores forms configuration",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "Backup is restored",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
     "/config/check": {
       "post": {
         "tags": [

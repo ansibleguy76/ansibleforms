@@ -15,6 +15,31 @@
       @cancel="showDirty=false;next(false)">
         Are you sure you want to leave the designer ?<br>You have unsaved changes.
     </BulmaModal>
+    <BulmaModal
+      v-if="showRestore"
+      title="Restore backup"
+      actionSuccess="Restore"
+      @clickSuccess="restore"
+      @close="showRestore=false"
+      @cancel="showRestore=false">
+        <BulmaAdvancedSelect
+          :required="true"
+          :multiple="false"
+          name="Choose a backup"
+          placeholder="Select a backup"
+          :values="backups"
+          :hasError="!backupToRestore"
+          :isLoading="!backups"
+          v-model="backupToRestore"
+          icon="undo"
+          :columns="['file','date']"
+          :filterColumns="['file','date']"
+          previewColumn="file"
+          valueColumn="file"
+          :sticky="true"
+          >
+        </BulmaAdvancedSelect>
+    </BulmaModal>
     <div class="container">
       <div class="is-pulled-right">
         <transition name="pop" appear>
@@ -29,9 +54,13 @@
           <span class="icon"><font-awesome-icon icon="check" /></span>
           <span>Validate</span>
         </button>
-        <button class="button is-success" ref="saveButton" :disabled="warnings.length>0 || !formConfig || !formDirty" @click="save()">
+        <button class="button is-success mr-3" ref="saveButton" :disabled="warnings.length>0 || !formConfig || !formDirty" @click="save()">
           <span class="icon"><font-awesome-icon icon="save" /></span>
           <span>Save</span>
+        </button>
+        <button class="button is-warning" ref="restoreButton" @click="showRestore=true;backupToRestore=undefined">
+          <span class="icon"><font-awesome-icon icon="undo" /></span>
+          <span>Restore</span>
         </button>
       </div>
       <div>
@@ -173,6 +202,7 @@
   import VueCodeEditor from './../components/VueCodeEditor';
   import BulmaQuickView from './../components/BulmaQuickView.vue'
   import BulmaModal from './../components/BulmaModal.vue'
+  import BulmaAdvancedSelect from './../components/BulmaAdvancedSelect.vue'
   import Helpers from './../lib/Helpers'
   import Form from './../lib/Form'
 
@@ -182,7 +212,7 @@
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean}
     },
-    components:{VueCodeEditor,BulmaModal,BulmaQuickView},
+    components:{VueCodeEditor,BulmaModal,BulmaQuickView,BulmaAdvancedSelect},
     data(){
       return  {
         categories:"",
@@ -196,6 +226,9 @@
         showDelete: false,
         showWarnings: false,
         showDirty:false,
+        showRestore:false,
+        backups:[],
+        backupToRestore:undefined,
         next:undefined,
         formtemplate:{
           name: "New Form",
@@ -308,10 +341,10 @@
         warnings=warnings.concat(parsing.map(x => `<span class="has-text-warning">Form '${x.name}' has bad YAML and cannot be parsed</span><br><span>${x.issue}</span>`))
         warnings=warnings.concat(badsource.map(x => `<span class="has-text-warning">Form '${x.name}' has a bad 'source' property</span><br><span>A source should be valid a .yaml file.  No deep-paths are allowed.<br>Remove the source to keep it in the base file.</span>`))
         if(!this.categoriesObj){
-          warnings.push(`<span class="has-text-warning">Bad categories</span>`)
+          warnings.push(`<span class="has-text-warning">Bad categories</span><span>Unable to parse categories as valid YAML</span>`)
         }
         if(!this.rolesObj){
-          warnings.push(`<span class="has-text-warning">Bad roles</span>`)
+          warnings.push(`<span class="has-text-warning">Bad roles</span><span>Unable to parse roles as valid YAML</span>`)
         }
         // check field dups
         if(this.formsObj){
@@ -383,6 +416,27 @@
           ref.$toast.error(err)
         })
       },
+      loadBackups(){
+        var ref= this;
+        Form.backups(function(backups){
+          ref.backups=backups
+          ref.selectfirst()
+          ref.loaded=true
+        },function(err){
+          ref.$toast.error(err)
+        })
+      },
+      restore(){
+        var ref= this;
+        Form.restore(this.backupToRestore.file,function(result){
+          ref.showRestore=false
+          ref.$toast.success(result)
+          ref.backupToRestore=undefined
+          ref.loadForms()
+        },function(err){
+          ref.$toast.error(err)
+        })
+      },
       validate() {
        var ref= this;
        axios.post('/api/v1/config/check',{forms:this.formConfig},TokenStorage.getAuthentication())
@@ -410,6 +464,8 @@
                  ref.formDirty=false
                  if(close){
                    this.next(true)
+                 }else{
+                   ref.loadBackups()
                  }
                }
              }),function(error){
@@ -436,6 +492,7 @@
     },
     mounted() { // when the Vue app is booted up, this is run automatically.
         this.loadForms();
+        this.loadBackups();
     },
     beforeRouteLeave (to, from , next) {
       if(this.formDirty){
