@@ -17,17 +17,19 @@
     </BulmaModal>
     <div class="container">
       <div class="is-pulled-right">
-        <button v-if="warnings.length>0" @click="showWarnings=!showWarnings" class="button is-outlined is-warning mr-3">
-          <span class="icon">
-            <font-awesome-icon icon="exclamation-triangle" />
-          </span>
-          <span class="mr-1">{{(showWarnings)?'Hide':'This design has'}} Warnings </span>
-        </button>
+        <transition name="pop" appear>
+          <button v-if="warnings.length>0" @click="showWarnings=!showWarnings" class="button is-outlined is-warning mr-3">
+            <span class="icon">
+              <font-awesome-icon icon="exclamation-triangle" />
+            </span>
+            <span class="mr-1">{{(showWarnings)?'Hide':'This design has'}} Warnings </span>
+          </button>
+        </transition>
         <button class="button is-info mr-3" :disabled="!formConfig" @click="validate()">
           <span class="icon"><font-awesome-icon icon="check" /></span>
           <span>Validate</span>
         </button>
-        <button class="button is-success" :disabled="warnings.length>0 || !formConfig || !formDirty" @click="save()">
+        <button class="button is-success" ref="saveButton" :disabled="warnings.length>0 || !formConfig || !formDirty" @click="save()">
           <span class="icon"><font-awesome-icon icon="save" /></span>
           <span>Save</span>
         </button>
@@ -63,6 +65,14 @@
               showPrintMargin: false,
               showGutter: true
             }"
+            :commands="[
+                {
+                    name: 'save',
+                    bindKey: { win: 'Ctrl-s', mac: 'Command-s' },
+                    exec: null,
+                    readOnly: true,
+                },
+            ]"
           />
       </div>
       <div v-if="currentTab=='Roles'">
@@ -87,6 +97,14 @@
               showPrintMargin: false,
               showGutter: true
             }"
+            :commands="[
+                {
+                    name: 'save',
+                    bindKey: { win: 'Ctrl-s', mac: 'Command-s' },
+                    exec: save,
+                    readOnly: true
+                }
+            ]"
           />
       </div>
       <div v-if="currentTab=='Forms'">
@@ -114,6 +132,14 @@
                     showPrintMargin: false,
                     showGutter: true
                 }"
+                :commands="[
+                    {
+                        name: 'save',
+                        bindKey: { win: 'Ctrl-s', mac: 'Command-s' },
+                        exec: save,
+                        readOnly: true,
+                    },
+                ]"
               />
           </div>
           <div class="column is-one-third">
@@ -147,6 +173,7 @@
   import VueCodeEditor from './../components/VueCodeEditor';
   import BulmaQuickView from './../components/BulmaQuickView.vue'
   import BulmaModal from './../components/BulmaModal.vue'
+  import Helpers from './../lib/Helpers'
   import Form from './../lib/Form'
 
   export default{
@@ -156,6 +183,37 @@
       isAdmin:{type:Boolean}
     },
     components:{VueCodeEditor,BulmaModal,BulmaQuickView},
+    data(){
+      return  {
+        categories:"",
+        roles:"",
+        forms:{},
+        currentTab:"Forms",
+        formDirty:false,
+        currentForm:undefined,
+        tabs:["Categories","Roles","Forms"],
+        loaded:false,
+        showDelete: false,
+        showWarnings: false,
+        showDirty:false,
+        next:undefined,
+        formtemplate:{
+          name: "New Form",
+          type: "ansible",
+          playbook: "dummy.yaml",
+          description: "",
+          roles: ["public"],
+          categories: [],
+          tileClass: "has-background-info-light",
+          icon: "bullseye",
+          fields: [{
+            name: "field1",
+            type: "text",
+            label: "field1"
+          }]
+        }
+      }
+    },
     computed:{
       formsObj(){
         return Object.keys(this.forms).map(x => {
@@ -238,12 +296,13 @@
         }
       },
       warnings(){
+        var ref=this
         var warnings=[]
         var names = this.idmapping.map(x => x.name)
         var dups=names.filter((item, index) => names.indexOf(item) !== index)
         var empties=this.idmapping.filter((item, index) => !item.name)
         var parsing=this.idmapping.filter((item) => item.source=="Parsing issues")
-        var badsource=this.idmapping.filter((item) => (item.source && (!(item.source.endsWith('.yaml')||item.source.endsWith('.yml'))||item.source.includes('/'))))
+        var badsource=this.idmapping.filter((item) => (item.source && !item.source=="Parsing issues" && (!(item.source.endsWith('.yaml')||item.source.endsWith('.yml'))||item.source.includes('/'))))
         warnings=warnings.concat(dups.map(x => `<span class="has-text-warning">Form '${x}' has duplicates</span><br><span>Each form must have a unique name</span>`))
         warnings=warnings.concat(empties.map(x => `<span class="has-text-warning">Empty Formname</span><br><span>Each form must have a unique name</span>`))
         warnings=warnings.concat(parsing.map(x => `<span class="has-text-warning">Form '${x.name}' has bad YAML and cannot be parsed</span><br><span>${x.issue}</span>`))
@@ -254,40 +313,25 @@
         if(!this.rolesObj){
           warnings.push(`<span class="has-text-warning">Bad roles</span>`)
         }
+        // check field dups
+        if(this.formsObj){
+          this.formsObj.forEach(item=>{
+            var fields=[]
+            if(item.fields){
+              item.fields.forEach(item2 => {
+                fields.push(item2.name)
+              })
+              var dups = Helpers.findDuplicates(fields)
+              dups.forEach((item2,i)=>{
+                 warnings.push(`<span class="has-text-warning">'${item2}' in form '${item.name}' has duplicates</span><br><span>Each field must have a unique name</span>`)
+              })
+            }
+          })
+        }
         return warnings
       }
     },
-    data(){
-      return  {
-        categories:"",
-        roles:"",
-        forms:{},
-        currentTab:"Forms",
-        formDirty:false,
-        currentForm:undefined,
-        tabs:["Categories","Roles","Forms"],
-        loaded:false,
-        showDelete: false,
-        showWarnings: false,
-        showDirty:false,
-        next:undefined,
-        formtemplate:{
-          name: "New Form",
-          type: "ansible",
-          playbook: "dummy.yaml",
-          description: "",
-          roles: ["public"],
-          categories: [],
-          tileClass: "has-background-info-light",
-          icon: "bullseye",
-          fields: [{
-            name: "field1",
-            type: "text",
-            label: "field1"
-          }]
-        }
-      }
-    },
+
     methods:{
       selectfirst(){
         if(Object.keys(this.forms).length>0){
@@ -354,21 +398,33 @@
       },
       save(close=false) {
        var ref= this;
-
-       axios.post('/api/v1/config/',{forms:this.formConfig},TokenStorage.getAuthentication())
-         .then((result)=>{
-           if(result.data.status=="error"){
-             ref.$toast.error(result.data.data.error);
+       this.$refs.saveButton.focus()
+       this.$nextTick(()=>{
+         if(ref.warnings.length==0 && ref.formConfig && ref.formDirty){
+           axios.post('/api/v1/config/',{forms:ref.formConfig},TokenStorage.getAuthentication())
+             .then((result)=>{
+               if(result.data.status=="error"){
+                 ref.$toast.error(result.data.data.error);
+               }else{
+                 ref.$toast.success(result.data.message);
+                 ref.formDirty=false
+                 if(close){
+                   this.next(true)
+                 }
+               }
+             }),function(error){
+               ref.$toast.error(error.message);
+             };
+         }else{
+           if(ref.warnings.length>0 || !ref.formConfig){
+             ref.$toast.warning("Fix the warnings first")
            }else{
-             ref.$toast.success(result.data.message);
-             ref.formDirty=false
-             if(close){
-               this.next(true)
-             }
+             ref.$toast.warning("No changes, nothing to save")
            }
-         }),function(error){
-           ref.$toast.error(error.message);
-         };
+         }
+       })
+
+
 
       },
       editorInit: function () {
@@ -407,5 +463,14 @@
   }
   .is-not-clickable{
     cursor:normal!important;
+  }
+  .pop-enter-active,
+  .pop-leave-active {
+    transform: scale(1.2);
+    transition: all 0.2s ease-in-out;
+  }
+  .pop-enter,
+  .pop-leave-to {
+    transform: scale(1);
   }
 </style>

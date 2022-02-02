@@ -71,6 +71,7 @@ module.exports = {
         let theme = this.theme || 'chrome';
 
         require('brace/ext/emmet');
+        require('brace/ext/searchbox');
 
         let editor = vm.editor = ace.edit(this.$el);
 

@@ -22,12 +22,14 @@
             </span>
             <span>Reload This Form</span>
           </button>
-          <button v-if="warnings.length>0" @click="showWarnings=!showWarnings" class="button is-small is-outlined is-warning">
-            <span class="icon">
-              <font-awesome-icon icon="exclamation-triangle" />
-            </span>
-            <span class="mr-1">{{(showWarnings)?'Hide':'This form has'}} Warnings </span>
-          </button>
+          <transition name="pop" appear>
+            <button v-if="warnings.length>0" @click="showWarnings=!showWarnings" class="button is-small is-outlined is-warning">
+              <span class="icon">
+                <font-awesome-icon icon="exclamation-triangle" />
+              </span>
+              <span class="mr-1">{{(showWarnings)?'Hide':'This form has'}} Warnings </span>
+            </button>
+          </transition>
           <div :key="group" v-for="group in fieldgroups" class="mt-4">
             <div :class="{'box':checkGroupDependencies(group)}">
               <h3 class="title is-3" v-if="checkGroupDependencies(group)">{{group}}</h3>
@@ -275,6 +277,7 @@
   import BulmaQuickView from './BulmaQuickView.vue'
   import BulmaCheckRadio from './BulmaCheckRadio.vue'
   import BulmaEditTable from './BulmaEditTable.vue'
+  import Helpers from './../lib/Helpers'
   import Copy from 'copy-to-clipboard'
   import 'vue-json-pretty/lib/styles.css';
   import VueShowdown from 'vue-showdown';
@@ -335,15 +338,21 @@
         var field
         var regexObj
         var description
-        if(ff.type!='checkbox'){
+        if(ff.type!='checkbox' && ff.type!='expression'){
           attrs.required=requiredIf(function(){
             return !!ff.required
           })
         }
+        if(ff.type=="expression" && ff.required){
+          attrs.required=helpers.withParams(
+              {description: "This field is required"},
+              (value) => (value!=undefined && value!=null)
+          )
+        }
         if(ff.type=='checkbox' && ff.required){
           attrs.required=helpers.withParams(
               {description: "This field is required"},
-              (value) => (!helpers.req(value) || value==true)
+              (value) => (value==true)
           )
         }
         if("minValue" in ff){ attrs.minValue=minValue(ff.minValue)}
@@ -531,9 +540,6 @@
         }
         return result
       },
-      findDuplicates(arry){
-        return arry.filter((item, index) => arry.indexOf(item) !== index)
-      },
       // Find variable devDependencies
       findVariableDependencies(){
         var ref=this
@@ -547,7 +553,7 @@
           fields.push(item.name)
           ref.defaults[item.name]=item.default
         })
-        var dups = this.findDuplicates(fields)
+        var dups = Helpers.findDuplicates(fields)
         dups.forEach((item,i)=>{
           ref.warnings.push(`<span class="has-text-warning">'${item}' has duplicates</span><br><span>Each field must have a unique name</span>`)
           ref.$toast.error("You have duplicates for field '"+item+"'")
@@ -1337,6 +1343,9 @@
       this.$v.form.$reset();
       this.findVariableDependentOf()
       this.startDynamicFieldsLoop();
+    },
+    beforeDestroy(){
+      clearInterval(this.interval)
     }
   }
 </script>
@@ -1412,6 +1421,15 @@ pre{
 .slide-enter, .slide-leave-to {
    overflow: hidden;
    max-height: 0;
+}
+.pop-enter-active,
+.pop-leave-active {
+  transform: scale(1.2);
+  transition: all 0.2s ease-in-out;
+}
+.pop-enter,
+.pop-leave-to {
+  transform: scale(1);
 }
 pre::v-deep .ansi1 { font-weight: bold; }
 pre::v-deep .ansi3 { font-weight: italic; }

@@ -4,6 +4,9 @@ var Helpers = {
         return '&#'+i.charCodeAt(0)+';';
       });
   },
+  findDuplicates(arry){
+    return arry.filter((item, index) => arry.indexOf(item) !== index)
+  },  
 };
 
 export default Helpers
