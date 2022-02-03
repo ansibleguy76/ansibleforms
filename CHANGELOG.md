@@ -65,6 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   JWT tokens, allow multiple devices
 -   Expression field can be `editable`
 
+
 ## [2.1.2] - 2022-01-17
 
 ### Added
@@ -129,12 +130,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
+
 [Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/2.2.0...HEAD
 
 [2.2.0]: https://github.com/ansibleguy76/ansibleforms/compare/2.1.6...2.2.0
-
 [2.1.6]: https://github.com/ansibleguy76/ansibleforms/compare/2.1.5...2.1.6
-
-[2.1.6]: https://github.com/ansibleguy76/ansibleforms/compare/2.1.5...2.1.6
-
 [2.1.5]: https://github.com/ansibleguy76/ansibleforms/compare/2.1.4...2.1.5
