@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.0] - 2022-02-03
+
 ### Added
+
 -   Keydown responsiveness on text fields (property `keydown`)
 -   filtering to query fields (tune with `filterColumns` property)
 -   view of objects and query results
@@ -22,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Added constants section in forms.yaml (key-value pairs in yaml format)
 
 ### Fixed
+
 -   Bad required validation when expression had default empty object or array
 -   Interval kept running in the background
 
@@ -125,7 +129,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/2.1.6...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/2.2.0...HEAD
+
+[2.2.0]: https://github.com/ansibleguy76/ansibleforms/compare/2.1.6...2.2.0
 
 [2.1.6]: https://github.com/ansibleguy76/ansibleforms/compare/2.1.5...2.1.6
 
