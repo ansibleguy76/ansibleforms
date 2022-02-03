@@ -314,6 +314,7 @@
           fieldOptions:{},      // holds a couple of fieldoptions for fast access (valueColumn,ignoreIncomplete, ...)
           warnings:[],          // holds form warnings.
           showWarnings:false,
+          constants:{},
           form:{                // the form data mapped to the form
           },
           visibility:{
@@ -592,7 +593,8 @@
                 }
 
               }else{
-                ref.warnings.push(`<span class="has-text-warning">'${item.name}' has a reference to unknown field '${foundfield}'</span><br><span>Your form might not function as expected</span>`)
+                if(!Object.keys(ref.constants).includes(foundfield))
+                  ref.warnings.push(`<span class="has-text-warning">'${item.name}' has a reference to unknown field '${foundfield}'</span><br><span>Your form might not function as expected</span>`)
               }
             }
           }
@@ -1337,6 +1339,11 @@
         }
         Vue.set(ref.visibility,item.name,true)
       });
+      if(ref.constants){
+        Object.keys(ref.constants).forEach((item)=>{
+          Vue.set(ref.form,item,ref.constants[item])
+        })
+      }
       if(this.currentForm.showHelp && this.currentForm.showHelp===true){
         this.showHelp=true
       }

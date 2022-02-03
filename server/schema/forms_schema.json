@@ -64,6 +64,9 @@
         "additionalProperties": false
       }
     },
+    "constants":{
+      "type": "object"
+    },
     "forms": {
       "type": "array",
       "default": [],

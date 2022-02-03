@@ -138,6 +138,38 @@
             ]"
           />
       </div>
+      <div v-if="currentTab=='Constants'">
+        <VueCodeEditor
+            v-model="constants"
+            @init="editorInit"
+            lang="yaml"
+            theme="monokai"
+            width="100%"
+            height="60vh"
+            :lazymodel="true"
+            @dirty="formDirty=true"
+            :options="{
+              enableBasicAutocompletion: true,
+              enableLiveAutocompletion: false,
+              fontSize: 14,
+              highlightActiveLine: true,
+              enableSnippets: false,
+              showLineNumbers: true,
+              tabSize: 2,
+              wrap:false,
+              showPrintMargin: false,
+              showGutter: true
+            }"
+            :commands="[
+                {
+                    name: 'save',
+                    bindKey: { win: 'Ctrl-s', mac: 'Command-s' },
+                    exec: save,
+                    readOnly: true
+                }
+            ]"
+          />
+      </div>
       <div v-if="currentTab=='Forms'">
         <div class="columns">
           <div class="column">
@@ -220,11 +252,12 @@
       return  {
         categories:"",
         roles:"",
+        constants:"",
         forms:{},
         currentTab:"Forms",
         formDirty:false,
         currentForm:undefined,
-        tabs:["Categories","Roles","Forms"],
+        tabs:["Categories","Roles","Constants","Forms"],
         loaded:false,
         showDelete: false,
         showWarnings: false,
@@ -240,6 +273,7 @@
           playbook: "dummy.yaml",
           description: "",
           roles: ["public"],
+          constants: {},
           categories: [],
           tileClass: "has-background-info-light",
           icon: "bullseye",
@@ -298,9 +332,21 @@
           return [{name:'admin',groups:['local/admins']},{name:'public',groups:[]}]
         }
       },
+      constantsObj(){
+        if(this.constants){
+          try{
+            var result=YAML.parse(this.constants)
+            return result
+          }catch{
+            return undefined
+          }
+        }else{
+          return {}
+        }
+      },
       formConfig(){
         try{
-          return YAML.stringify({categories: YAML.parse(this.categories),roles: YAML.parse(this.roles),forms: this.formsObj})
+          return YAML.stringify({categories: YAML.parse(this.categories),roles: YAML.parse(this.roles),constants: YAML.parse(this.constants),forms: this.formsObj})
         }catch{
           return ""
         }
@@ -349,6 +395,9 @@
         }
         if(!this.rolesObj){
           warnings.push(`<span class="has-text-warning">Bad roles</span><span>Unable to parse roles as valid YAML</span>`)
+        }
+        if(!this.constantsObj){
+          warnings.push(`<span class="has-text-warning">Bad constants</span><span>Unable to parse constants as valid YAML</span>`)
         }
         // check field dups
         if(this.formsObj){
@@ -411,6 +460,11 @@
         Form.load(function(formConfig){
           ref.categories=YAML.stringify(formConfig.categories);
           ref.roles=YAML.stringify(formConfig.roles);
+          if(formConfig.constants){
+            ref.constants=YAML.stringify(formConfig.constants);
+          }else{
+            ref.constants=""
+          }
           formConfig.forms.forEach((item, i) => {
             Vue.set(ref.forms,"form_"+i,YAML.stringify(item))
           });
