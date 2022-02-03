@@ -9,15 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 -   Keydown responsiveness on text fields (property `keydown`)
--   Add filtering to query fields (tune with `filterColumns` property)
--   Add view of objects and query results
--   Add queryfield-option in table field (`type: query` + `from`-property)
--   Add search-replace-box in editor (`ctrl-f` or `ctrl-h`)
+-   filtering to query fields (tune with `filterColumns` property)
+-   view of objects and query results
+-   queryfield-option in table field (`type: query` + `from`-property)
+-   search-replace-box in editor (`ctrl-f` or `ctrl-h`)
 -   Forms.yaml can be extended with more yaml files in `/forms` subdir.
--   Added auto backup on save (from editor)
+-   auto backup on save (from editor)
+-   restore backup (from editor)
 -   Editor can now edit a single form
 -   Added warnings in editor and form
 -   Expression can be html (`isHtml` property)
+-   Added constants section in forms.yaml (key-value pairs in yaml format)
 
 ### Fixed
 -   Bad required validation when expression had default empty object or array

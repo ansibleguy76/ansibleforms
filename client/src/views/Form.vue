@@ -1,5 +1,5 @@
 <template>
-    <Form v-if="currentForm" :token="token" :key="componentKey" @rerender="load" :currentForm="currentForm" />
+    <Form v-if="currentForm" :constants="formConfig.constants||{}" :token="token" :key="componentKey" @rerender="load" :currentForm="currentForm" />
 </template>
 <script>
   import Vue from 'vue'

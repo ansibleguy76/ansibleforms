@@ -290,7 +290,8 @@
     name:"Form",
     components:{VueJsonPretty,BulmaAdvancedSelect,BulmaEditTable,BulmaCheckRadio,BulmaQuickView},
     props:{
-      currentForm:{type:Object}
+      currentForm:{type:Object},
+      constants:{type:Object}
     },
     data(){
       return  {
@@ -314,7 +315,6 @@
           fieldOptions:{},      // holds a couple of fieldoptions for fast access (valueColumn,ignoreIncomplete, ...)
           warnings:[],          // holds form warnings.
           showWarnings:false,
-          constants:{},
           form:{                // the form data mapped to the form
           },
           visibility:{
@@ -593,7 +593,7 @@
                 }
 
               }else{
-                if(!Object.keys(ref.constants).includes(foundfield))
+                if(!Object.keys(ref.form).includes(foundfield))
                   ref.warnings.push(`<span class="has-text-warning">'${item.name}' has a reference to unknown field '${foundfield}'</span><br><span>Your form might not function as expected</span>`)
               }
             }
@@ -1322,8 +1322,6 @@
       this.resetResult();
       var ref=this
       this.form={}
-      // find all variable dependencies
-      this.findVariableDependencies()
       // initialize defaults
       this.currentForm.fields.forEach((item, i) => {
         if(["expression","query"].includes(item.type)){
@@ -1348,6 +1346,8 @@
         this.showHelp=true
       }
       this.$v.form.$reset();
+      // find all variable dependencies
+      this.findVariableDependencies()      
       this.findVariableDependentOf()
       this.startDynamicFieldsLoop();
     },
