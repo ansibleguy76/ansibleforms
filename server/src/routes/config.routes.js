@@ -6,6 +6,8 @@ const checkAdminMiddleware = require('../lib/common.js').checkAdminMiddleware;
 // designer routes only (admin !!)
 router.post('/', checkAdminMiddleware, configController.save);
 router.post('/check', checkAdminMiddleware, configController.validate);
+router.post('/restore/:backupName', checkAdminMiddleware, configController.restore);
+router.get('/backups', checkAdminMiddleware, configController.backups);
 
 // get the config (no admin)
 router.get('/', configController.findAll);

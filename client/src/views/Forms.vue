@@ -17,15 +17,16 @@
 <script>
   import Vue from 'vue'
   import Categories from './../components/Categories.vue'
+  import Form from './../lib/Form'
   import Forms from './../components/Forms.vue'
   export default{
     components:{Categories,Forms},
+    name:"AFForms",
     props:{
-      formConfig:{type:[Object,String]}
     },
     data(){
       return  {
-          // formConfig:{},                                                        // the form configdata
+          formConfig:{},                                                        // the form configdata
       }
     },
     computed: {
@@ -35,9 +36,15 @@
     methods:{
     },
     mounted() { // when the Vue app is booted up, this is run automatically.
-      if(this.formConfig==undefined){
-        this.$router.replace({name:"Login"});
-      }
+      var ref=this
+      Form.load(function(formConfig){
+        ref.formConfig=formConfig
+      },function(err){
+        ref.$toast.error(err)
+        if(ref.$route.name!="Login"){
+          ref.$router.replace({name:"Error"}).catch(err => {});
+        }
+      })
     }
   }
 </script>

@@ -64,6 +64,9 @@
         "additionalProperties": false
       }
     },
+    "constants":{
+      "type": "object"
+    },
     "forms": {
       "type": "array",
       "default": [],
@@ -129,6 +132,7 @@
           "check": {"type": "boolean"},
           "diff": {"type": "boolean"},
           "help": {"type": "string"},
+          "source": {"type": "string"},
           "showHelp": {"type": "boolean"},
           "fields": {
             "type": "array",
@@ -156,8 +160,10 @@
                     "sticky": {"not":{}},
                     "editable": {"not":{}},
                     "pctColumns": {"not":{}},
+                    "filterColumns": {"not":{}},
                     "hide": {"not":{}},
                     "values": {"not":{}},
+                    "isHtml": {"not":{}},
                     "multiple": {"not":{}},
                     "outputObject": {"not":{}}
                   }
@@ -176,11 +182,13 @@
                     "sticky": {"not":{}},
                     "editable": {"not":{}},
                     "pctColumns": {"not":{}},
+                    "filterColumns": {"not":{}},
                     "runLocal": {"not":{}},
                     "dbConfig": {"not":{}},
                     "hide": {"not":{}},
                     "values": {"not":{}},
                     "multiple": {"not":{}},
+                    "isHtml": {"not":{}},
                     "asCredential": {"not":{}},
                     "outputObject": {"not":{}}
                   }
@@ -200,8 +208,11 @@
                     "sticky": {"not":{}},
                     "editable": {"not":{}},
                     "pctColumns": {"not":{}},
+                    "filterColumns": {"not":{}},
                     "expression": {"not":{}},
                     "runLocal": {"not":{}},
+                    "keydown": {"not":{}},
+                    "isHtml": {"not":{}},
                     "dbConfig": {"not":{}},
                     "hide": {"not":{}},
                     "multiple": {"not":{}},
@@ -226,7 +237,10 @@
                     "sticky": {"not":{}},
                     "editable": {"not":{}},
                     "pctColumns": {"not":{}},
+                    "filterColumns": {"not":{}},
                     "runLocal": {"not":{}},
+                    "keydown": {"not":{}},
+                    "isHtml": {"not":{}},
                     "dbConfig": {"not":{}},
                     "hide": {"not":{}},
                     "values": {"not":{}},
@@ -250,8 +264,11 @@
                     "sticky": {"not":{}},
                     "editable": {"not":{}},
                     "pctColumns": {"not":{}},
+                    "filterColumns": {"not":{}},
                     "expression": {"not":{}},
                     "runLocal": {"not":{}},
+                    "keydown": {"not":{}},
+                    "isHtml": {"not":{}},
                     "dbConfig": {"not":{}},
                     "hide": {"not":{}},
                     "outputObject": {"not":{}}
@@ -272,6 +289,8 @@
                     "maxLength": {"not":{}},
                     "editable": {"not":{}},
                     "expression": {"not":{}},
+                    "keydown": {"not":{}},
+                    "isHtml": {"not":{}},
                     "runLocal": {"not":{}},
                     "hide": {"not":{}}
                   },
@@ -291,6 +310,8 @@
                     "minLength": {"not":{}},
                     "maxLength": {"not":{}},
                     "query": {"not":{}},
+                    "keydown": {"not":{}},
+                    "isHtml": {"not":{}},
                     "dbConfig": {"not":{}},
                     "hide": {"not":{}}
                   },
@@ -307,8 +328,10 @@
                     "maxValue": {"not":{}},
                     "sticky": {"not":{}},
                     "pctColumns": {"not":{}},
+                    "filterColumns": {"not":{}},
                     "dbConfig": {"not":{}},
                     "multiple": {"not":{}},
+                    "keydown": {"not":{}},
                     "outputObject": {"not":{}}
                   },
                   "required": ["expression"]
@@ -325,9 +348,11 @@
                     "expression": {"not":{}},
                     "sticky": {"not":{}},
                     "pctColumns": {"not":{}},
+                    "filterColumns": {"not":{}},
                     "multiple": {"not":{}},
                     "runLocal": {"not":{}},
-                    "outputObject": {"not":{}}                    
+                    "keydown": {"not":{}},
+                    "outputObject": {"not":{}}
                   },
                   "required": ["query", "dbConfig"]
                 },
@@ -345,11 +370,14 @@
                     "sticky": {"not":{}},
                     "editable": {"not":{}},
                     "pctColumns": {"not":{}},
+                    "filterColumns": {"not":{}},
                     "maxLength": {"not":{}},
                     "dbConfig": {"not":{}},
                     "multiple": {"not":{}},
                     "outputObject": {"not":{}},
                     "expression": {"not":{}},
+                    "keydown": {"not":{}},
+                    "isHtml": {"not":{}},
                     "icon": {"not":{}},
                     "default": {"not":{}}
                   },
@@ -429,6 +457,8 @@
                 "maxLength": {"type": "integer"},
                 "expression": {"type": "string"},
                 "ignoreIncomplete": {"type": "boolean"},
+                "keydown": {"type": "boolean"},
+                "isHtml": {"type": "boolean"},
                 "runLocal": {"type": "boolean"},
                 "query": {"type": "string"},
                 "outputObject": {"type": "boolean"},
@@ -437,6 +467,10 @@
                   "items": {"type": "string"}
                 },
                 "pctColumns": {
+                  "type": "array",
+                  "items": {"type": "string"}
+                },
+                "filterColumns": {
                   "type": "array",
                   "items": {"type": "string"}
                 },
@@ -510,7 +544,15 @@
                             "enum": ["text"]
                           },
                           "minValue": {"not":{}},
-                          "maxValue": {"not":{}}
+                          "maxValue": {"not":{}},
+                          "values": {"not":{}},
+                          "from": {"not":{}},
+                          "outputObject": {"not":{}},
+                          "columns": {"not":{}},
+                          "pctColumns": {"not":{}},
+                          "filterColumns": {"not":{}},
+                          "previewColumn": {"not":{}},
+                          "valueColumn": {"not":{}}
                         }
                       },
                       {
@@ -521,7 +563,15 @@
                           "regex": {"not":{}},
                           "regexDescription": {"not":{}},
                           "minLength": {"not":{}},
-                          "maxLength": {"not":{}}
+                          "maxLength": {"not":{}},
+                          "values": {"not":{}},
+                          "from": {"not":{}},
+                          "outputObject": {"not":{}},
+                          "columns": {"not":{}},
+                          "pctColumns": {"not":{}},
+                          "filterColumns": {"not":{}},
+                          "previewColumn": {"not":{}},
+                          "valueColumn": {"not":{}}
                         }
                       },
                       {
@@ -534,7 +584,15 @@
                           "minValue": {"not":{}},
                           "maxValue": {"not":{}},
                           "minLength": {"not":{}},
-                          "maxLength": {"not":{}}
+                          "maxLength": {"not":{}},
+                          "values": {"not":{}},
+                          "from": {"not":{}},
+                          "outputObject": {"not":{}},
+                          "columns": {"not":{}},
+                          "pctColumns": {"not":{}},
+                          "filterColumns": {"not":{}},
+                          "previewColumn": {"not":{}},
+                          "valueColumn": {"not":{}}
                         }
                       },
                       {
@@ -547,19 +605,42 @@
                           "minValue": {"not":{}},
                           "maxValue": {"not":{}},
                           "minLength": {"not":{}},
-                          "maxLength": {"not":{}}
+                          "maxLength": {"not":{}},
+                          "from": {"not":{}},
+                          "outputObject": {"not":{}},
+                          "columns": {"not":{}},
+                          "pctColumns": {"not":{}},
+                          "filterColumns": {"not":{}},
+                          "previewColumn": {"not":{}},
+                          "valueColumn": {"not":{}}
                         },
                         "required": ["values"]
+                      },
+                      {
+                        "properties": {
+                          "type": {
+                            "enum": ["query"]
+                          },
+                          "regex": {"not":{}},
+                          "regexDescription": {"not":{}},
+                          "minValue": {"not":{}},
+                          "maxValue": {"not":{}},
+                          "minLength": {"not":{}},
+                          "maxLength": {"not":{}},
+                          "values": {"not":{}}
+                        },
+                        "required": ["from"]
                       }
                     ],
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["text", "password", "checkbox", "enum", "query", "number", "radio", "expression", "table"]
+                        "enum": ["text", "password", "checkbox", "enum", "query", "number"]
                       },
                       "name": {"type": "string"},
                       "label": {"type": "string"},
                       "placeholder": {"type": "string"},
+                      "from": {"type": "string"},
                       "default": {
                         "anyOf": [{"type": "string"},
                           {"type": "boolean"},
@@ -596,6 +677,24 @@
                       },
                       "icon": {
                         "$ref": "/icon"
+                      },
+                      "columns": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                      },
+                      "pctColumns": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                      },
+                      "filterColumns": {
+                        "type": "array",
+                        "items": {"type": "string"}
+                      },
+                      "valueColumn": {"type": "string"},
+                      "previewColumn": {"type": "string"},
+                      "outputObject": {
+                        "type": "boolean",
+                        "default": false
                       }
                     },
                     "additionalProperties": false
@@ -609,6 +708,7 @@
         "additionalProperties": false
       }
     }
+
   },
   "additionalProperties": false
 }

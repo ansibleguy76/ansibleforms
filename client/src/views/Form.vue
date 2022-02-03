@@ -1,19 +1,21 @@
 <template>
-    <Form v-if="currentForm" :token="token" :currentForm="currentForm" />
+    <Form v-if="currentForm" :constants="formConfig.constants||{}" :token="token" :key="componentKey" @rerender="load" :currentForm="currentForm" />
 </template>
 <script>
   import Vue from 'vue'
   import axios from 'axios'
   import Form from './../components/Form.vue'
+  import FormLib from './../lib/Form'
   export default{
     name:"FormContainer",
     components:{Form},
     props:{
-      formConfig:{type:Object},
       token:{type:String}
     },
     data(){
       return  {
+        componentKey:0,
+        formConfig:undefined
       }
     },
     computed: {
@@ -28,8 +30,21 @@
     watch: {
     },
     methods:{
+      load(){
+        var ref=this
+        FormLib.load(function(formConfig){
+          ref.formConfig=formConfig
+          ref.componentKey++;
+        },function(err){
+          ref.$toast.error(err)
+          if(ref.$route.name!="Login"){
+            ref.$router.replace({name:"Error"}).catch(err => {});
+          }
+        })
+      }
     },
-    mounted() {
+    mounted() { // when the Vue app is booted up, this is run automatically.
+      this.load()
     }
   }
 </script>

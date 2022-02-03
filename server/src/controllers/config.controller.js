@@ -11,6 +11,32 @@ exports.findAll = function(req,res){
   }
 }
 
+exports.backups = function(req,res){
+  try{
+    var backups = Form.backups()
+    res.json(backups)
+  }catch(error){
+    res.json({error:error})
+  }
+}
+exports.restore = function(req,res){
+    try{
+      var backupName=req.params.backupName
+      var backupBeforeRestore=(req.query.backupBeforeRestore=="true")?true:false
+      if(backupName){
+        var restore = Form.restore(backupName,backupBeforeRestore)
+        if(restore) {
+          res.json(new RestResult("success","Backup is restored",null,""));
+        }else{
+          res.json(new RestResult("error",`Failed to restore '${req.params.backupName}'`,null,"Failed to restore forms"))
+        }
+      }else{
+        res.json(new RestResult("error",`Failed to restore, no backup name provided`,null,"Failed to restore forms"))
+      }
+    }catch(err){
+      res.json(new RestResult("error","Failed to restore forms",null,err))
+    }
+}
 exports.save = function(req,res){
   const newConfig = new Form(req.body);
   //handles null error

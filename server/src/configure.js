@@ -29,10 +29,8 @@ module.exports = app => {
   // - jwt : to use the jwt tokens
   require('./auth/auth');
 
-  // parse requests of content-type - application/x-www-form-urlencoded
-  app.use(bodyParser.urlencoded({ extended: true }))
-  // parse requests of content-type - application/json
-  app.use(bodyParser.json());
+  app.use(bodyParser.json({limit: '50mb'}));
+  app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 
   // import api routes
   const awxRoutes = require('./routes/awx.routes')

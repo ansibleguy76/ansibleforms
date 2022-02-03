@@ -1,6 +1,6 @@
 <template>
     <div>
-        <BulmaModal v-if="showEdit" :title="action" action="Save" @click="saveItem()" @close="showEdit=false" @cancel="showEdit=false">
+        <BulmaModal type="large" v-if="showEdit" :title="action" action="Save" @click="saveItem()" @close="showEdit=false" @cancel="showEdit=false">
           <div v-for="field,index in tableFields" :key="field.name" class="field mt-3">
 
               <!-- add field label -->
@@ -19,6 +19,26 @@
                     <option v-for="option in field.values" :key="option" :selected="field.default==option" :value="option">{{ option }}</option>
                   </select>
                 </div>
+                <BulmaAdvancedSelect
+                  v-if="field.type=='query'"
+                  :defaultValue="stringify($v.editedItem[field.name].$model,field)||field.default||''"
+                  :required="field.required||false"
+                  :multiple="false"
+                  :name="field.name"
+                  :placeholder="field.placeholder||'Select...'"
+                  :values="form[field.from]||[]"
+                  :hasError="$v.editedItem[field.name].$invalid"
+                  :isLoading="!['fixed','variable'].includes(dynamicFieldStatus[field.from])"
+                  v-model="$v.editedItem[field.name].$model"
+                  :icon="field.icon"
+                  :columns="field.columns||[]"
+                  :pctColumns="field.pctColumns||[]"
+                  :filterColumns="field.filterColumns||[]"
+                  :previewColumn="field.previewColumn||''"
+                  :valueColumn="field.valueColumn||''"
+                  :sticky="false"
+                  >
+                </BulmaAdvancedSelect>
                 <!-- add left icon, but not for query, because that's a component with icon builtin -->
                 <span v-if="!!field.icon && field.type!='query'" class="icon is-small is-left">
                   <font-awesome-icon :icon="field.icon" />
@@ -70,7 +90,7 @@
                     </td>
                     <slot name="table-body" :row="row">
                         <template v-for="field in tableFields">
-                          <td v-if="field.type!='checkbox'" :key="'table-cell-' + field.name + '-' + index" :class="field.bodyClass"> {{ row[field.name] }} </td>
+                          <td v-if="field.type!='checkbox'" :key="'table-cell-' + field.name + '-' + index" :class="field.bodyClass"> {{ stringify(row[field.name],field) }} </td>
                           <td v-else :key="'table-cell-' + field.name + '-' + index" :class="field.bodyClass"><font-awesome-icon :icon="(row[field.name])?['far','check-square']:['far','square']" /></td>
                         </template>
                     </slot>
@@ -92,12 +112,13 @@
     import Vue from 'vue'
     import BulmaModal from './BulmaModal.vue'
     import Vuelidate from 'vuelidate'
+    import BulmaAdvancedSelect from './BulmaAdvancedSelect'
     import { required,minValue,maxValue,minLength,maxLength, helpers,requiredIf } from 'vuelidate/lib/validators'
 
     Vue.use(Vuelidate)
     export default{
         name:'BulmaEditTable',
-        components:{BulmaModal},
+        components:{BulmaModal,BulmaAdvancedSelect},
         props:{
             tableFields: {
                 type: Array,
@@ -112,6 +133,14 @@
                 required: false,
                 type: Boolean,
                 default: false
+            },
+            form:{
+              required: true,
+              type: Object
+            },
+            dynamicFieldStatus:{
+              required: true,
+              type: Object
             }
         },
         data: function(){
@@ -153,7 +182,6 @@
                     {description: description,type:"regex"},
                     (value) => !helpers.req(value) || regexObj.test(value)
                 )
-                console.log(attrs.regex)
               }else{
                 regexObj = new RegExp(ff.regex)
                 description = (ff.regexDescription!==undefined)?ff.regexDescription:"The value must match regular expression : " + ff.regex
@@ -182,7 +210,38 @@
             }
         },
         methods:{
-
+            getValueLabel(field){
+              if(field){
+                if(field.valueColumn){
+                  return field.valueColumn
+                }
+                if(field.columns && field.columns.length>0){
+                  return field.columns[0]
+                }
+                if(Object.keys(field) && Object.keys(field).length>0){
+                  return Object.keys(field)[0]
+                }
+              }else{
+                return undefined
+              }
+            },
+            stringify(v,field=undefined){
+              var valueLabel
+              if(v){
+                if(Array.isArray(v)){
+                  return "[ Array ]"
+                }
+                if(typeof v=="object"){
+                  valueLabel=this.getValueLabel(field)
+                  if(valueLabel)
+                    return v[valueLabel]
+                  return "{ Object }"
+                }
+                return v.toString()
+              }else{
+                return v
+              }
+            },
             addItem: function(index){
               var ref=this
               this.editedItem={};
@@ -205,6 +264,17 @@
               this.$emit('input', this.rows)
             },
             saveItem:function(){
+              var ref=this
+              this.tableFields.forEach((item)=>{
+                if(item.type=="query"){
+                  if(!item.outputObject){
+                    var valueLabel=this.getValueLabel(item)
+                    if(valueLabel){
+                      ref.editedItem[item.name]=ref.editedItem[item.name][valueLabel]
+                    }
+                  }
+                }
+              })
               if(!this.$v.editedItem.$invalid){
                 if(this.action=="Add"){
                   if(this.editIndex<0){

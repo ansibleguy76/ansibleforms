@@ -1,5 +1,5 @@
 <template>
-  <article class="tile is-child box">
+  <article class="tile is-child box" v-if="formConfig && formConfig.forms">
     <div class="columns is-flex-wrap-wrap">
       <div class="column is-4" v-for="form in getForms" :key="form.name">
         <router-link :to="'/form/?form='+encodeURI(form.name)" class="box" :class="getFormClass(form)" >
@@ -60,7 +60,7 @@
           }else{
             return false
           }
-        })
+        }).sort((a, b) => (a.name||"").toLowerCase() > (b.name||"").toLowerCase() && 1 || -1)
       },
       // filter all the forms per category
       filterForms(category){

@@ -124,13 +124,13 @@
           required
         },
         cert:{
-          requiredIf:requiredIf(function(){
-            return this.enable_tls
+          requiredIf:requiredIf(function(ldap){
+            return ldap.enable_tls && !ldap.ignore_certs
           })
         },
         ca_bundle:{
-          requiredIf:requiredIf(function(){
-            return this.enable_tls
+          requiredIf:requiredIf(function(ldap){
+            return ldap.enable_tls && !ldap.ignore_certs
           })
         }
 
@@ -138,11 +138,7 @@
 
     },
     mounted() { // when the Vue app is booted up, this is run automatically.
-      if(!this.isAdmin){
-        this.$toast.error("You are not an admin user")
-      }else{
         this.loadLdap();
-      }
     }
   }
 </script>

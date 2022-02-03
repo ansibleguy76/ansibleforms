@@ -13,8 +13,17 @@ import Designer from './views/Designer.vue'
 import Credentials from './views/Credentials.vue'
 import Jobs from './views/Jobs.vue'
 import Profile from './views/Profile.vue'
-
+import TokenStorage from './lib/TokenStorage.js'
 Vue.use(Router);
+const checkAdmin=(to, from, next) => {
+  var payload = TokenStorage.getPayload()
+  if(payload.user && payload.user.roles && payload.user.roles.includes("admin")){
+    next()
+  }else{
+    console.log("You are not an admin user")
+  }
+}
+
 export default new Router({
   linkExactActiveClass: 'is-active',
   routes: [
@@ -51,32 +60,38 @@ export default new Router({
       {
         path:"/groups",
         name:"Groups",
-        component:Groups
+        component:Groups,
+        beforeEnter: checkAdmin
       },
       {
         path:"/users",
         name:"Users",
-        component:Users
+        component:Users,
+        beforeEnter: checkAdmin
       },
       {
         path:"/ldap",
         name:"Ldap",
-        component:Ldap
+        component:Ldap,
+        beforeEnter: checkAdmin
       },
       {
         path:"/awx",
         name:"Awx",
-        component:Awx
+        component:Awx,
+        beforeEnter: checkAdmin
       },
       {
         path:"/credentials",
         name:"Credentials",
-        component:Credentials
+        component:Credentials,
+        beforeEnter: checkAdmin
       },
       {
         path:"/designer",
         name:"Designer",
-        component:Designer
+        component:Designer,
+        beforeEnter: checkAdmin
       },
       {
         path:"/jobs",

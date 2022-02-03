@@ -16,12 +16,20 @@
             </span>
             <span>Show Extravars</span>
           </button>
-          <button v-if="warnings.length>0" @click="showWarnings=!showWarnings" class="button is-small is-outlined is-warning">
+          <button @click="$emit('rerender')" class="button is-warning is-small mr-3">
             <span class="icon">
-              <font-awesome-icon icon="exclamation-triangle" />
+              <font-awesome-icon icon="redo" />
             </span>
-            <span class="mr-1">{{(showWarnings)?'Hide':'This form has'}} Warnings </span>
+            <span>Reload This Form</span>
           </button>
+          <transition name="pop" appear>
+            <button v-if="warnings.length>0" @click="showWarnings=!showWarnings" class="button is-small is-outlined is-warning">
+              <span class="icon">
+                <font-awesome-icon icon="exclamation-triangle" />
+              </span>
+              <span class="mr-1">{{(showWarnings)?'Hide':'This form has'}} Warnings </span>
+            </button>
+          </transition>
           <div :key="group" v-for="group in fieldgroups" class="mt-4">
             <div :class="{'box':checkGroupDependencies(group)}">
               <h3 class="title is-3" v-if="checkGroupDependencies(group)">{{group}}</h3>
@@ -30,19 +38,43 @@
                     <div class="field mt-3" v-if="visibility[field.name]">
                       <!-- add field label -->
                       <label class="label has-text-primary">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span>
-                        <span
-                          class="icon is-clickable has-text-success"
-                          @click="setExpressionFieldEditable(field.name,true)"
-                          v-if="field.editable && field.type=='expression' && !fieldOptions[field.name].editable"
-                        >
-                          <font-awesome-icon icon="pencil-alt" />
-                        </span>
-                        <span
-                          class="icon is-clickable has-text-danger"
-                          @click="setExpressionFieldEditable(field.name,false)"
-                          v-if="field.editable && field.type=='expression' && fieldOptions[field.name].editable"
-                        >
-                          <font-awesome-icon icon="times" />
+                        <span class="is-pulled-right">
+                          <span
+                            class="icon is-clickable has-text-success"
+                            @click="setExpressionFieldEditable(field.name,true)"
+                            v-if="field.editable && field.type=='expression' && !fieldOptions[field.name].editable && !fieldOptions[field.name].viewable"
+                          >
+                            <font-awesome-icon icon="pencil-alt" />
+                          </span>
+                          <span
+                            class="icon is-clickable has-text-danger"
+                            @click="setExpressionFieldEditable(field.name,false)"
+                            v-if="field.editable && field.type=='expression' && fieldOptions[field.name].editable && !fieldOptions[field.name].viewable"
+                          >
+                            <font-awesome-icon icon="times" />
+                          </span>
+                          <span
+                            class="icon is-clickable has-text-success"
+                            @click="setExpressionFieldViewable(field.name,true)"
+                            v-if="(field.type=='expression' || field.type=='query') && !fieldOptions[field.name].viewable && !fieldOptions[field.name].editable"
+                          >
+                            <font-awesome-icon icon="eye" />
+                          </span>
+                          <span
+                            class="icon is-clickable has-text-info"
+                            @click="clip($v.form[field.name].$model)"
+                            v-if="(field.type=='expression' || field.type=='query') && fieldOptions[field.name].viewable && !fieldOptions[field.name].editable"
+                          >
+                            <font-awesome-icon icon="copy" />
+                          </span>
+                          <span
+                            class="icon is-clickable has-text-danger"
+                            @click="setExpressionFieldViewable(field.name,false)"
+                            v-if="(field.type=='expression' || field.type=='query') && fieldOptions[field.name].viewable && !fieldOptions[field.name].editable"
+                          >
+                            <font-awesome-icon icon="times" />
+                          </span>
+
                         </span>
                       </label>
                       <!-- type = checkbox -->
@@ -50,44 +82,56 @@
                         <BulmaCheckRadio checktype="checkbox" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="field.placeholder" @change="evaluateDynamicFields(field.name)" />
                       </div>
                       <!-- type = query -->
-                      <BulmaAdvancedSelect
-                        v-if="field.type=='query'"
-                        :defaultValue="field.default"
-                        :required="field.required||false"
-                        :multiple="field.multiple||false"
-                        :name="field.name"
-                        :placeholder="field.placeholder||'Select...'"
-                        :values="queryresults[field.name]||[]"
-                        :hasError="$v.form[field.name].$invalid"
-                        :isLoading="!['fixed','variable'].includes(dynamicFieldStatus[field.name])"
-                        v-model="$v.form[field.name].$model"
-                        :icon="field.icon"
-                        :columns="field.columns||[]"
-                        :pctColumns="field.pctColumns||[]"
-                        :previewColumn="field.previewColumn||''"
-                        :valueColumn="field.valueColumn||''"
-                        @ischanged="evaluateDynamicFields(field.name)"
-                        :sticky="field.sticky||false"
-                        >
-                      </BulmaAdvancedSelect>
+                      <div v-if="field.type=='query'">
+                        <BulmaAdvancedSelect
+                          v-show="!fieldOptions[field.name].viewable"
+                          :defaultValue="field.default"
+                          :required="field.required||false"
+                          :multiple="field.multiple||false"
+                          :name="field.name"
+                          :placeholder="field.placeholder||'Select...'"
+                          :values="queryresults[field.name]||[]"
+                          :hasError="$v.form[field.name].$invalid"
+                          :isLoading="!['fixed','variable'].includes(dynamicFieldStatus[field.name])"
+                          v-model="$v.form[field.name].$model"
+                          :icon="field.icon"
+                          :columns="field.columns||[]"
+                          :pctColumns="field.pctColumns||[]"
+                          :filterColumns="field.filterColumns||[]"
+                          :previewColumn="field.previewColumn||''"
+                          :valueColumn="field.valueColumn||''"
+                          @ischanged="evaluateDynamicFields(field.name)"
+                          :sticky="field.sticky||false"
+                          >
+                        </BulmaAdvancedSelect>
+                        <div @dblclick="setExpressionFieldViewable(field.name,false)" v-if="fieldOptions[field.name].viewable" class="box limit-height mb-3">
+                          <vue-json-pretty :data="queryresults[field.name]||[]"></vue-json-pretty>
+                        </div>
+                      </div>
                       <!-- type = radio -->
                       <div v-if="field.type=='radio'" >
                         <BulmaCheckRadio :val="radiovalue" checktype="radio" v-for="radiovalue in field.values" :key="field.name+'_'+radiovalue" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="radiovalue"  @change="evaluateDynamicFields(field.name)" />
                       </div>
-                      <BulmaEditTable v-if="field.type=='table'" :tableFields="field.tableFields" :click="false" tableClass="table is-striped is-bordered is-narrow" v-model="$v.form[field.name].$model" />
+                      <BulmaEditTable v-if="field.type=='table'" :dynamicFieldStatus="dynamicFieldStatus" :form="form" :tableFields="field.tableFields" :click="false" tableClass="table is-striped is-bordered is-narrow" v-model="$v.form[field.name].$model" />
                       <div :class="{'has-icons-left':!!field.icon && field.type!='query'}" class="control">
                         <!-- type = expression -->
                         <div v-if="field.type=='expression'" :class="{'is-loading':(dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running') &! fieldOptions[field.name].editable}" class="control">
-                          <input type="text"
-                            @focus="inputFocus"
-                            :class="{'is-danger':$v.form[field.name].$invalid,'has-text-info':!fieldOptions[field.name].editable}"
-                            v-model="$v.form[field.name].$model"
-                            class="input"
-                            :readonly="!fieldOptions[field.name].editable"
-                            :name="field.name"
-                            :required="field.required"
-                            @change="evaluateDynamicFields(field.name)"
-                            >
+                          <div v-if="!fieldOptions[field.name].viewable">
+                            <input v-if="fieldOptions[field.name].editable" type="text"
+                              @focus="inputFocus"
+                              :class="{'is-danger':$v.form[field.name].$invalid,'has-text-info':!fieldOptions[field.name].editable}"
+                              v-model="$v.form[field.name].$model"
+                              class="input"
+                              :name="field.name"
+                              :required="field.required"
+                              @change="evaluateDynamicFields(field.name)"
+                              >
+                            <p @dblclick="setExpressionFieldViewable(field.name,true)" v-if="!fieldOptions[field.name].editable && !field.isHtml" class="input has-text-info" :class="{'is-danger':$v.form[field.name].$invalid}" v-text="stringify($v.form[field.name].$model)"></p>
+                            <p @dblclick="setExpressionFieldViewable(field.name,true)" v-if="!fieldOptions[field.name].editable && field.isHtml" class="input has-text-info" :class="{'is-danger':$v.form[field.name].$invalid}" v-html="stringify($v.form[field.name].$model)"></p>
+                          </div>
+                          <div @dblclick="setExpressionFieldViewable(field.name,false)" v-else class="box limit-height mb-3">
+                            <vue-json-pretty :data="$v.form[field.name].$model"></vue-json-pretty>
+                          </div>
                         </div>
                         <!-- type = text or password-->
                         <input v-if="field.type=='text' || field.type=='password'"
@@ -99,6 +143,7 @@
                           :required="field.required"
                           :type="field.type"
                           :placeholder="field.placeholder"
+                          @keydown="(field.keydown)?evaluateDynamicFields(field.name):null"
                           @change="evaluateDynamicFields(field.name)">
                         <!-- type = number -->
                         <input v-if="field.type=='number'"
@@ -139,7 +184,7 @@
                         </div>
 
                         <!-- add left icon, but not for query, because that's a component with icon builtin -->
-                        <span v-if="!!field.icon && field.type!='query'" class="icon is-small is-left">
+                        <span v-if="!!field.icon && field.type!='query' && !(field.type=='expression' && fieldOptions[field.name].viewable)" class="icon is-small is-left">
                           <font-awesome-icon :icon="field.icon" />
                         </span>
                       </div>
@@ -208,6 +253,12 @@
             </span>
             <span>Refresh</span>
           </button>
+          <button @click="clip(formdata)" class="ml-2 button is-success is-small">
+            <span class="icon">
+              <font-awesome-icon icon="copy" />
+            </span>
+            <span>Copy to clipboard</span>
+          </button>
           <div class="box mt-4">
             <vue-json-pretty :data="formdata"></vue-json-pretty>
           </div>
@@ -226,6 +277,8 @@
   import BulmaQuickView from './BulmaQuickView.vue'
   import BulmaCheckRadio from './BulmaCheckRadio.vue'
   import BulmaEditTable from './BulmaEditTable.vue'
+  import Helpers from './../lib/Helpers'
+  import Copy from 'copy-to-clipboard'
   import 'vue-json-pretty/lib/styles.css';
   import VueShowdown from 'vue-showdown';
   import { required, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
@@ -237,7 +290,8 @@
     name:"Form",
     components:{VueJsonPretty,BulmaAdvancedSelect,BulmaEditTable,BulmaCheckRadio,BulmaQuickView},
     props:{
-      currentForm:{type:Object}
+      currentForm:{type:Object},
+      constants:{type:Object}
     },
     data(){
       return  {
@@ -285,15 +339,21 @@
         var field
         var regexObj
         var description
-        if(ff.type!='checkbox'){
+        if(ff.type!='checkbox' && ff.type!='expression'){
           attrs.required=requiredIf(function(){
             return !!ff.required
           })
         }
+        if(ff.type=="expression" && ff.required){
+          attrs.required=helpers.withParams(
+              {description: "This field is required"},
+              (value) => (value!=undefined && value!=null)
+          )
+        }
         if(ff.type=='checkbox' && ff.required){
           attrs.required=helpers.withParams(
               {description: "This field is required"},
-              (value) => (!helpers.req(value) || value==true)
+              (value) => (value==true)
           )
         }
         if("minValue" in ff){ attrs.minValue=minValue(ff.minValue)}
@@ -377,6 +437,31 @@
           this.resetField(fieldname)
         }
       },
+      setExpressionFieldViewable(fieldname,value){
+        Vue.set(this.fieldOptions[fieldname],'viewable',value)   // flag editable
+      },
+      stringify(v){
+        if(v){
+          if(Array.isArray(v)){
+            return "[ Array ]"
+          }
+          if(typeof v=="object"){
+            return "{ Object }"
+          }
+          return v.toString()
+        }else{
+          return v
+        }
+      },
+      clip(v){
+        try{
+          Copy(JSON.stringify(v))
+          this.$toast.success("Copied to clipboard")
+        }catch(e){
+          this.$toast.error("Error copying to clipboard : \n" + e)
+        }
+
+      },
       filterfieldsByGroup(group){                   // creates a list of field per group
         return this.currentForm.fields.filter(function (el) {
           return (
@@ -456,9 +541,6 @@
         }
         return result
       },
-      findDuplicates(arry){
-        return arry.filter((item, index) => arry.indexOf(item) !== index)
-      },
       // Find variable devDependencies
       findVariableDependencies(){
         var ref=this
@@ -472,7 +554,7 @@
           fields.push(item.name)
           ref.defaults[item.name]=item.default
         })
-        var dups = this.findDuplicates(fields)
+        var dups = Helpers.findDuplicates(fields)
         dups.forEach((item,i)=>{
           ref.warnings.push(`<span class="has-text-warning">'${item}' has duplicates</span><br><span>Each field must have a unique name</span>`)
           ref.$toast.error("You have duplicates for field '"+item+"'")
@@ -510,6 +592,9 @@
                   }
                 }
 
+              }else{
+                if(!Object.keys(ref.form).includes(foundfield))
+                  ref.warnings.push(`<span class="has-text-warning">'${item.name}' has a reference to unknown field '${foundfield}'</span><br><span>Your form might not function as expected</span>`)
               }
             }
           }
@@ -650,18 +735,12 @@
                  // console.log("replaced")
                  // console.log(item.name + " -> " + newValue)
             }else{
-                // if(item.alwaysEval){
-                //   newValue=newValue.replace(foundmatch,"undefined");               // replace the placeholder with undefined
-                // }else{
-                  newValue=ref.stringifyValue(item.default)      // cannot evaluate yet
-                  // we have a placeholder but it's value is not ready yet... will be for next loop
-                  // console.log("dependency ("+foundfield+") is not ready (" + targetflag + " : " + fieldvalue + ")")
-                // }
+                newValue=undefined      // cannot evaluate yet
             }
             hasPlaceholders=true;
         }
         if(retestRegex.test(newValue)){                                         // still placeholders found ?
-            newValue=ref.stringifyValue(item.default)                           // cannot evaluate yet
+            newValue=undefined                           // cannot evaluate yet
         }
         if(newValue!=undefined){
            newValue=newValue.replace("'__undefined__'","undefined")  // replace undefined values
@@ -803,7 +882,11 @@
                         var restresult = result.data
                         if(restresult.status=="error"){
                            //console.log(restresult.data.error)
-                           ref.resetField(item.name)
+                           if(item.type=="expression"){
+                             ref.defaultField(item.name)
+                           }else{
+                             ref.resetField(item.name)
+                           }
                         }
                         if(restresult.status=="success"){
                            //console.log("query "+item.name+" triggered : items found -> "+ restresult.data.output.length);
@@ -825,7 +908,11 @@
                       }).catch(function (err) {
                           // console.log('Error ' + err.message)
                           try{
-                            ref.resetField(item.name)
+                            if(item.type=="expression"){
+                              ref.defaultField(item.name)
+                            }else{
+                              ref.resetField(item.name)
+                            }
                           }catch(err){
                             ref.$toast("Cannot reset field status " + item.name)
                           }
@@ -836,7 +923,11 @@
                   }else{
                     //console.log(item.name + " is not evaluated yet");
                     try{
-                      ref.resetField(item.name)
+                      if(item.type=="expression"){
+                        ref.defaultField(item.name)
+                      }else{
+                        ref.resetField(item.name)
+                      }
                     }catch(err){
                       ref.$toast("Cannot reset field status " + item.name)
                     }
@@ -848,7 +939,6 @@
                 }else{
                   ref.resetField(item.name)
                 }
-
               }
 
             } // end loop function
@@ -1232,8 +1322,6 @@
       this.resetResult();
       var ref=this
       this.form={}
-      // find all variable dependencies
-      this.findVariableDependencies()
       // initialize defaults
       this.currentForm.fields.forEach((item, i) => {
         if(["expression","query"].includes(item.type)){
@@ -1249,12 +1337,22 @@
         }
         Vue.set(ref.visibility,item.name,true)
       });
+      if(ref.constants){
+        Object.keys(ref.constants).forEach((item)=>{
+          Vue.set(ref.form,item,ref.constants[item])
+        })
+      }
       if(this.currentForm.showHelp && this.currentForm.showHelp===true){
         this.showHelp=true
       }
       this.$v.form.$reset();
+      // find all variable dependencies
+      this.findVariableDependencies()      
       this.findVariableDependentOf()
       this.startDynamicFieldsLoop();
+    },
+    beforeDestroy(){
+      clearInterval(this.interval)
     }
   }
 </script>
@@ -1265,6 +1363,11 @@ pre{
   white-space: -pre-wrap;      /* Opera 4-6 */
   white-space: -o-pre-wrap;    /* Opera 7 */
   word-wrap: break-word;       /* Internet Explorer 5.5+ */
+}
+.limit-height{
+  max-height:300px;
+  overflow-y:scroll;
+  overflow-x:hidden;
 }
 .cursor-progress{
   cursor:progress;
@@ -1325,6 +1428,15 @@ pre{
 .slide-enter, .slide-leave-to {
    overflow: hidden;
    max-height: 0;
+}
+.pop-enter-active,
+.pop-leave-active {
+  transform: scale(1.2);
+  transition: all 0.2s ease-in-out;
+}
+.pop-enter,
+.pop-leave-to {
+  transform: scale(1);
 }
 pre::v-deep .ansi1 { font-weight: bold; }
 pre::v-deep .ansi3 { font-weight: italic; }
