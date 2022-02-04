@@ -16,6 +16,9 @@
             </span>
             <span>Show Extravars</span>
           </button>
+          <span v-if="isAdmin" class="icon is-clickable is-pulled-right" :class="{'has-text-success':!showHidden,'has-text-danger':showHidden}" @click="showHidden=!showHidden">
+              <font-awesome-icon :icon="(showHidden?'search-minus':'search-plus')" />
+          </span>
           <button @click="$emit('rerender')" class="button is-warning is-small mr-3">
             <span class="icon">
               <font-awesome-icon icon="redo" />
@@ -291,7 +294,8 @@
     components:{VueJsonPretty,BulmaAdvancedSelect,BulmaEditTable,BulmaCheckRadio,BulmaQuickView},
     props:{
       currentForm:{type:Object},
-      constants:{type:Object}
+      constants:{type:Object},
+      isAdmin:{type:Boolean}
     },
     data(){
       return  {
@@ -324,6 +328,7 @@
           validationsLoaded:false,
           timeout:undefined,     // determines how long we should show the result of run
           showHelp:false,
+          showHidden:false,
           ansibleJobId:undefined,
           awxJobId:undefined,
           abortTriggered:false
@@ -463,11 +468,12 @@
 
       },
       filterfieldsByGroup(group){                   // creates a list of field per group
+        var ref=this
         return this.currentForm.fields.filter(function (el) {
           return (
             (("group" in el && el.group === group)
               || !("group" in el) && (group==""))
-            && el.hide!==true)
+            && (el.hide!==true || ref.showHidden))
         });
       },
       checkDependencies(field){

@@ -1,5 +1,5 @@
 <template>
-    <Form v-if="currentForm" :constants="formConfig.constants||{}" :token="token" :key="componentKey" @rerender="load" :currentForm="currentForm" />
+    <Form v-if="currentForm" :isAdmin="isAdmin" :constants="formConfig.constants||{}" :token="token" :key="componentKey" @rerender="load" :currentForm="currentForm" />
 </template>
 <script>
   import Vue from 'vue'
@@ -10,7 +10,8 @@
     name:"FormContainer",
     components:{Form},
     props:{
-      token:{type:String}
+      token:{type:String},
+      isAdmin:{type:Boolean}
     },
     data(){
       return  {
