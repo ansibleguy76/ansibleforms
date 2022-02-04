@@ -62,7 +62,7 @@
                           </span>
                           <span
                             class="icon is-clickable has-text-info"
-                            @click="clip($v.form[field.name].$model)"
+                            @click="clip((field.type=='expression')?$v.form[field.name].$model:queryresults[field.name])"
                             v-if="(field.type=='expression' || field.type=='query') && fieldOptions[field.name].viewable && !fieldOptions[field.name].editable"
                           >
                             <font-awesome-icon icon="copy" />
@@ -1347,7 +1347,7 @@
       }
       this.$v.form.$reset();
       // find all variable dependencies
-      this.findVariableDependencies()      
+      this.findVariableDependencies()
       this.findVariableDependentOf()
       this.startDynamicFieldsLoop();
     },
