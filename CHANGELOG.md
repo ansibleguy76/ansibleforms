@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+-   Toggle hidden fields for admins
+
 ### Fixed
 -   Ignore error if no forms subdir exists
 -   Allow empty constants in designer (must be object bug)
