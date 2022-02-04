@@ -183,10 +183,12 @@ Form.backup = function(){
   Form.removeOld(10)
   logger.silly(`Copying forms file '${appConfig.formsPath}'->'${backupformsfile}'`)
   fse.copySync(appConfig.formsPath,backupformsfile)
-  logger.silly(`Copying forms directory '${formsdir}'->'${backupformsdir}'`)
-  fse.removeSync(backupformsdir) // just in case, remove it (unlikely hit)
-  fse.ensureDirSync(backupformsdir) // make backupdir
-  fse.copySync(formsdir,backupformsdir) // make backup
+  if(fs.existsSync(formsdir)){
+    logger.silly(`Copying forms directory '${formsdir}'->'${backupformsdir}'`)
+    fse.removeSync(backupformsdir) // just in case, remove it (unlikely hit)
+    fse.ensureDirSync(backupformsdir) // make backupdir
+    fse.copySync(formsdir,backupformsdir) // make backup
+  }
   return backupfile
 }
 Form.remove = function(backupName){
