@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 -   Toggle hidden fields for admins
+-   Allow expression debug for admins
 
 ### Fixed
 -   Ignore error if no forms subdir exists
