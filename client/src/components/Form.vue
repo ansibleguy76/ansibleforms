@@ -48,7 +48,7 @@
                             @click="setExpressionFieldDebug(field.name,!fieldOptions[field.name].debug)"
                             v-if="field.expression && isAdmin"
                           >
-                            <font-awesome-icon :icon="(showHidden?'search-minus':'search-plus')" />
+                            <font-awesome-icon :icon="(fieldOptions[field.name].debug?'search-minus':'search-plus')" />
                           </span>
                           <span
                             class="icon is-clickable has-text-success"
@@ -88,26 +88,24 @@
 
                         </span>
                       </label>
-                      <transition name="bounce" appear>
-                        <div class="mb-3"
-                          @click="clip(field.expression,true)"
-                          v-if="field.expression && fieldOptions[field.name].debug">
-                          <highlight-code
-                            lang="javascript"
-                            :code="field.expression"
-                          />
-                        </div>
-                      </transition>
-                      <transition name="bounce" appear>
-                        <div class="mb-3"
-                          @click="clip(fieldOptions[field.name].expressionEval,true)"
-                          v-if="field.expression && fieldOptions[field.name].debug && dynamicFieldStatus[field.name]!='fixed'">
-                          <highlight-code
-                            lang="javascript"
-                            :code="fieldOptions[field.name].expressionEval"
-                          />
-                        </div>
-                      </transition>
+                      <div class="mb-3"
+                        @click="clip(field.expression,true)"
+                        v-if="field.expression && fieldOptions[field.name].debug">
+                        <highlight-code
+                          lang="javascript"
+                          :code="field.expression"
+                        />
+                      </div>
+
+                      <div class="mb-3"
+                        @click="clip(fieldOptions[field.name].expressionEval,true)"
+                        v-if="field.expression && fieldOptions[field.name].debug && dynamicFieldStatus[field.name]!='fixed'">
+                        <highlight-code
+                          lang="javascript"
+                          :code="fieldOptions[field.name].expressionEval"
+                        />
+                      </div>
+
                       <!-- type = checkbox -->
                       <div v-if="field.type=='checkbox'">
                         <BulmaCheckRadio checktype="checkbox" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="field.placeholder" @change="evaluateDynamicFields(field.name)" />
@@ -135,11 +133,11 @@
                           :sticky="field.sticky||false"
                           >
                         </BulmaAdvancedSelect>
-                        <transition name="bounce" appear>
-                          <div @dblclick="setExpressionFieldViewable(field.name,false)" v-if="fieldOptions[field.name].viewable" class="box limit-height mb-3">
-                            <vue-json-pretty :data="queryresults[field.name]||[]"></vue-json-pretty>
-                          </div>
-                        </transition>
+
+                        <div @dblclick="setExpressionFieldViewable(field.name,false)" v-if="fieldOptions[field.name].viewable" class="box limit-height mb-3">
+                          <vue-json-pretty :data="queryresults[field.name]||[]"></vue-json-pretty>
+                        </div>
+
                       </div>
                       <!-- type = radio -->
                       <div v-if="field.type=='radio'" >
@@ -162,11 +160,11 @@
                             <p @dblclick="setExpressionFieldViewable(field.name,true)" v-if="!fieldOptions[field.name].editable && !field.isHtml" class="input has-text-info" :class="{'is-danger':$v.form[field.name].$invalid}" v-text="stringify($v.form[field.name].$model)"></p>
                             <p @dblclick="setExpressionFieldViewable(field.name,true)" v-if="!fieldOptions[field.name].editable && field.isHtml" class="input has-text-info" :class="{'is-danger':$v.form[field.name].$invalid}" v-html="stringify($v.form[field.name].$model)"></p>
                           </div>
-                          <transition v-else  name="bounce" appear>
-                            <div @dblclick="setExpressionFieldViewable(field.name,false)"  class="box limit-height mb-3">
-                              <vue-json-pretty :data="$v.form[field.name].$model"></vue-json-pretty>
-                            </div>
-                          </transition>
+
+                          <div @dblclick="setExpressionFieldViewable(field.name,false)" v-else  class="box limit-height mb-3">
+                            <vue-json-pretty :data="$v.form[field.name].$model"></vue-json-pretty>
+                          </div>
+
                         </div>
                         <!-- type = text or password-->
                         <input v-if="field.type=='text' || field.type=='password'"
