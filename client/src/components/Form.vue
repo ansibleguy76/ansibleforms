@@ -89,7 +89,7 @@
                         </span>
                       </label>
                       <div class="mb-3"
-                        @click="clip(field.expression,true)"
+                        @dblclick="clip(field.expression,true)"
                         v-if="field.expression && fieldOptions[field.name].debug">
                         <highlight-code
                           lang="javascript"
@@ -98,7 +98,7 @@
                       </div>
 
                       <div class="mb-3"
-                        @click="clip(fieldOptions[field.name].expressionEval,true)"
+                        @dblclick="clip(fieldOptions[field.name].expressionEval,true)"
                         v-if="field.expression && fieldOptions[field.name].debug && dynamicFieldStatus[field.name]!='fixed'">
                         <highlight-code
                           lang="javascript"
