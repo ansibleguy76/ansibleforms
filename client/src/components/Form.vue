@@ -5,7 +5,7 @@
     </BulmaQuickView>
     <div class="container" v-if="formIsReady">
       <div class="columns">
-        <div class="column">
+        <div class="column is-clipped">
           <h1 class="title">{{ currentForm.name }} <span v-if="currentForm.help" class="tag is-info is-clickable" @click="showHelp=!showHelp"><span class="icon"><font-awesome-icon icon="question-circle" /></span><span v-if="showHelp">Hide help</span><span v-else>Show help</span></span></h1>
           <article v-if="currentForm.help && showHelp" class="message is-info">
             <div class="message-body content"><VueShowdown :markdown="currentForm.help" flavor="github" :options="{ghCodeBlocks:true}" /></div>
@@ -42,6 +42,14 @@
                       <!-- add field label -->
                       <label class="label has-text-primary">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span>
                         <span class="is-pulled-right">
+                          <span
+                            class="icon is-clickable"
+                            :class="{'has-text-success':!fieldOptions[field.name].debug,'has-text-danger':fieldOptions[field.name].debug}"
+                            @click="setExpressionFieldDebug(field.name,!fieldOptions[field.name].debug)"
+                            v-if="field.expression && isAdmin"
+                          >
+                            <font-awesome-icon :icon="(showHidden?'search-minus':'search-plus')" />
+                          </span>
                           <span
                             class="icon is-clickable has-text-success"
                             @click="setExpressionFieldEditable(field.name,true)"
@@ -80,6 +88,26 @@
 
                         </span>
                       </label>
+                      <transition name="bounce" appear>
+                        <div class="mb-3"
+                          @click="clip(field.expression,true)"
+                          v-if="field.expression && fieldOptions[field.name].debug">
+                          <highlight-code
+                            lang="javascript"
+                            :code="field.expression"
+                          />
+                        </div>
+                      </transition>
+                      <transition name="bounce" appear>
+                        <div class="mb-3"
+                          @click="clip(fieldOptions[field.name].expressionEval,true)"
+                          v-if="field.expression && fieldOptions[field.name].debug && dynamicFieldStatus[field.name]!='fixed'">
+                          <highlight-code
+                            lang="javascript"
+                            :code="fieldOptions[field.name].expressionEval"
+                          />
+                        </div>
+                      </transition>
                       <!-- type = checkbox -->
                       <div v-if="field.type=='checkbox'">
                         <BulmaCheckRadio checktype="checkbox" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="field.placeholder" @change="evaluateDynamicFields(field.name)" />
@@ -107,9 +135,11 @@
                           :sticky="field.sticky||false"
                           >
                         </BulmaAdvancedSelect>
-                        <div @dblclick="setExpressionFieldViewable(field.name,false)" v-if="fieldOptions[field.name].viewable" class="box limit-height mb-3">
-                          <vue-json-pretty :data="queryresults[field.name]||[]"></vue-json-pretty>
-                        </div>
+                        <transition name="bounce" appear>
+                          <div @dblclick="setExpressionFieldViewable(field.name,false)" v-if="fieldOptions[field.name].viewable" class="box limit-height mb-3">
+                            <vue-json-pretty :data="queryresults[field.name]||[]"></vue-json-pretty>
+                          </div>
+                        </transition>
                       </div>
                       <!-- type = radio -->
                       <div v-if="field.type=='radio'" >
@@ -132,9 +162,11 @@
                             <p @dblclick="setExpressionFieldViewable(field.name,true)" v-if="!fieldOptions[field.name].editable && !field.isHtml" class="input has-text-info" :class="{'is-danger':$v.form[field.name].$invalid}" v-text="stringify($v.form[field.name].$model)"></p>
                             <p @dblclick="setExpressionFieldViewable(field.name,true)" v-if="!fieldOptions[field.name].editable && field.isHtml" class="input has-text-info" :class="{'is-danger':$v.form[field.name].$invalid}" v-html="stringify($v.form[field.name].$model)"></p>
                           </div>
-                          <div @dblclick="setExpressionFieldViewable(field.name,false)" v-else class="box limit-height mb-3">
-                            <vue-json-pretty :data="$v.form[field.name].$model"></vue-json-pretty>
-                          </div>
+                          <transition v-else  name="bounce" appear>
+                            <div @dblclick="setExpressionFieldViewable(field.name,false)"  class="box limit-height mb-3">
+                              <vue-json-pretty :data="$v.form[field.name].$model"></vue-json-pretty>
+                            </div>
+                          </transition>
                         </div>
                         <!-- type = text or password-->
                         <input v-if="field.type=='text' || field.type=='password'"
@@ -242,7 +274,7 @@
             <span>Close output</span>
           </button>
         </div>
-        <div v-if="showJson" class="column">
+        <div v-if="showJson" class="column is-clipped">
           <h1 class="title">Extravars</h1>
           <button @click="showJson=false" class="button is-danger is-small">
             <span class="icon">
@@ -262,7 +294,7 @@
             </span>
             <span>Copy to clipboard</span>
           </button>
-          <div class="box mt-4">
+          <div class="box mt-4 is-limited">
             <vue-json-pretty :data="formdata"></vue-json-pretty>
           </div>
         </div>
@@ -280,6 +312,12 @@
   import BulmaQuickView from './BulmaQuickView.vue'
   import BulmaCheckRadio from './BulmaCheckRadio.vue'
   import BulmaEditTable from './BulmaEditTable.vue'
+
+  import 'highlight.js/styles/monokai-sublime.css'
+  import VueHighlightJS from 'vue-highlight.js';
+  import javascript from 'highlight.js/lib/languages/javascript';
+  import vue from 'vue-highlight.js/lib/languages/vue';
+
   import Helpers from './../lib/Helpers'
   import Copy from 'copy-to-clipboard'
   import 'vue-json-pretty/lib/styles.css';
@@ -288,6 +326,12 @@
 
   Vue.use(Vuelidate)
   Vue.use(VueShowdown)
+  Vue.use(VueHighlightJS, {
+    // Register only languages that you want
+      languages: {
+        javascript
+      }
+    });
 
   export default{
     name:"Form",
@@ -445,6 +489,9 @@
       setExpressionFieldViewable(fieldname,value){
         Vue.set(this.fieldOptions[fieldname],'viewable',value)   // flag editable
       },
+      setExpressionFieldDebug(fieldname,value){
+        Vue.set(this.fieldOptions[fieldname],'debug',value)   // flag editable
+      },
       stringify(v){
         if(v){
           if(Array.isArray(v)){
@@ -458,9 +505,14 @@
           return v
         }
       },
-      clip(v){
+      clip(v,doNotStringify=false){
         try{
-          Copy(JSON.stringify(v))
+          if(doNotStringify){
+            Copy(v)
+          }else{
+            Copy(JSON.stringify(v))
+          }
+
           this.$toast.success("Copied to clipboard")
         }catch(e){
           this.$toast.error("Error copying to clipboard : \n" + e)
@@ -794,6 +846,7 @@
                   // set flag running
                   ref.setFieldStatus(item.name,"running",false)
                   placeholderCheck = ref.replacePlaceholders(item)     // check and replace placeholders
+                  Vue.set(ref.fieldOptions[item.name],"expressionEval",placeholderCheck.value||"undefined")
                   // console.log(`[${item.name}] 1 : ${placeholderCheck.value}`)
                   if(placeholderCheck.value!=undefined){                       // expression is clean ?
                       // console.log(`[${item.name}] 2 : ${placeholderCheck.value}`)
@@ -1370,6 +1423,14 @@ pre{
   white-space: -o-pre-wrap;    /* Opera 7 */
   word-wrap: break-word;       /* Internet Explorer 5.5+ */
 }
+.is-limited {
+  text-overflow: ellipsis;
+  width:100%;
+  overflow: hidden;
+}
+.is-nowrap{
+  white-space:nowrap;
+}
 .limit-height{
   max-height:300px;
   overflow-y:scroll;
@@ -1396,9 +1457,6 @@ pre{
 @keyframes bounce-in {
   0% {
     transform: scale(0);
-  }
-  50% {
-    transform: scale(1.5);
   }
   100% {
     transform: scale(1);
