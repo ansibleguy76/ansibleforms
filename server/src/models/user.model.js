@@ -210,13 +210,24 @@ User.cleanupTokens = function() {
 User.checkToken = function (username,username_type,refresh_token,result) {
     logger.debug(`Checking token for user ${username} (${username_type})`)
     try{
-      mysql.query("SELECT refresh_token FROM AnsibleForms.`tokens` WHERE username=? AND username_type=? AND refresh_token=? LIMIT 1",[username,username_type,refresh_token], function (err, res) {
+      mysql.query("SELECT refresh_token FROM AnsibleForms.`tokens` WHERE username=? AND username_type=? AND refresh_token=?",[username,username_type,refresh_token], function (err, res) {
           if(err) {
               result("Failed to connect to the AnsibleForms database : " + err, null);
           }
           else{
-              if(res.length >0){
-                result(null,"Refresh token is OK");
+              if(res.length == 1){
+                // if(res[0].refresh_token==refresh_token){
+                    result(null,"Refresh token is OK");
+                // }else{
+                //     User.deleteToken(username,username_type,function(err,res){
+                //       if(err){
+                //         logger.error("Failed to remove token for " + username)
+                //       }else{
+                //         logger.debug("Removed token for " + username)
+                //       }
+                //       result(`User ${username} (${username_type}) gave a wrong refresh token, token is revoked`,null);
+                //     })
+                // }
               }else{
                 result(`User ${username} (${username_type}) not found`,null);
               }
