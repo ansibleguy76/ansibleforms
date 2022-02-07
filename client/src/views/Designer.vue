@@ -346,7 +346,7 @@
       },
       formConfig(){
         try{
-          return YAML.stringify({categories: YAML.parse(this.categories),roles: YAML.parse(this.roles),constants: YAML.parse(this.constants),forms: this.formsObj})
+          return YAML.stringify({categories: YAML.parse(this.categories),roles: YAML.parse(this.roles),constants: this.constantsObj,forms: this.formsObj})
         }catch{
           return ""
         }

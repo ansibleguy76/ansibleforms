@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.1] - 2022-02-07
+
+### Added
+
+-   Toggle hidden fields for admins
+-   Allow expression debug for admins
+
+### Fixed
+
+-   Ignore error if no forms subdir exists
+-   Allow empty constants in designer (must be object bug)
+
 ## [2.2.0] - 2022-02-03
 
 ### Added
@@ -64,7 +76,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Add AWX ca-bundle for certificate verification
 -   JWT tokens, allow multiple devices
 -   Expression field can be `editable`
-
 
 ## [2.1.2] - 2022-01-17
 
@@ -130,9 +141,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/2.2.1...HEAD
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/2.2.0...HEAD
+[2.2.1]: https://github.com/ansibleguy76/ansibleforms/compare/2.2.0...2.2.1
 
 [2.2.0]: https://github.com/ansibleguy76/ansibleforms/compare/2.1.6...2.2.0
+
 [2.1.6]: https://github.com/ansibleguy76/ansibleforms/compare/2.1.5...2.1.6
+
+[2.1.6]: https://github.com/ansibleguy76/ansibleforms/compare/2.1.5...2.1.6
+
 [2.1.5]: https://github.com/ansibleguy76/ansibleforms/compare/2.1.4...2.1.5
