@@ -547,7 +547,7 @@
             if(column){
               value=ref.getFieldValue(ref.form[fieldname],column,false)
             }else{
-              value=ref.form[field]
+              value=ref.form[fieldname]
             }
             if(!item.values.includes(value)){
               if(ref.visibility[field.name]){
