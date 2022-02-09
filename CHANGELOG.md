@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-   function fnCredentials(name) to get credentials
+-   function fnRestJwtSecure to pass a credential name, the password will become the token
+
 ## [2.2.2] - 2022-02-09
 
 ### Fixed

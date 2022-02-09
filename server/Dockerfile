@@ -20,6 +20,7 @@ RUN pip3 install requests six
 RUN apk add --update --no-cache --virtual .build-deps g++ gcc libxml2-dev libxslt-dev python3-dev
 RUN apk add --no-cache libxslt
 RUN apk add --no-cache mysql-client
+RUN apk add --no-cache curl
 RUN pip3 install --no-cache-dir lxml
 RUN apk del .build-deps
 RUN pip3 install PyMySQL
