@@ -532,7 +532,7 @@
         if("dependencies" in field){
           field.dependencies.forEach((item, i) => {
             var value=undefined
-            var column=undefined
+            var column=""
             var fieldname=item.name
             var columnRegex = /(.+)\.(.+)/g;                                        // detect a "." in the field
             var tmpArr=columnRegex.exec(field)                             // found aaa.bbb
@@ -547,7 +547,7 @@
             if(column){
               value=ref.getFieldValue(ref.form[fieldname],column,false)
             }else{
-              value=ref.form[field]
+              value=ref.form[fieldname]
             }
             if(!item.values.includes(value)){
               if(ref.visibility[field.name]){
