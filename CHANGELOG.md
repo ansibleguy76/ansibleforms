@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+-   Dropdown box gets clipped at the bottom (was new bug since 2.2.1)
+-   Dependencies either with valueColumn or dot-notation
+
 ## [2.2.1] - 2022-02-07
 
 ### Added

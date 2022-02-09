@@ -531,7 +531,25 @@
         var result=true                          // checks if a field can be show, based on the value of other fields
         if("dependencies" in field){
           field.dependencies.forEach((item, i) => {
-            if(!item.values.includes(ref.form[item.name])){
+            var value=undefined
+            var column=undefined
+            var fieldname=item.name
+            var columnRegex = /(.+)\.(.+)/g;                                        // detect a "." in the field
+            var tmpArr=columnRegex.exec(field)                             // found aaa.bbb
+            if(tmpArr && tmpArr.length>0){
+              fieldname = tmpArr[1]                                            // aaa
+              column=tmpArr[2]                                                  // bbb
+            }else{
+              if(fieldname in ref.fieldOptions){
+                column=ref.fieldOptions[fieldname].valueColumn||""        // get placeholder column
+              }
+            }
+            if(column){
+              value=ref.getFieldValue(ref.form[fieldname],column,false)
+            }else{
+              value=ref.form[field]
+            }
+            if(!item.values.includes(value)){
               if(ref.visibility[field.name]){
                 Vue.set(ref.visibility,field.name,false)
               }
@@ -759,7 +777,6 @@
               if(foundfield in ref.fieldOptions){
                 column=ref.fieldOptions[foundfield].placeholderColumn||""        // get placeholder column
               }
-
             }
             fieldvalue = ""
             targetflag = undefined
