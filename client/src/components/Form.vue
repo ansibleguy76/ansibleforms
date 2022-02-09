@@ -5,7 +5,7 @@
     </BulmaQuickView>
     <div class="container" v-if="formIsReady">
       <div class="columns">
-        <div class="column is-clipped">
+        <div class="column is-clipped-horizontal">
           <h1 class="title">{{ currentForm.name }} <span v-if="currentForm.help" class="tag is-info is-clickable" @click="showHelp=!showHelp"><span class="icon"><font-awesome-icon icon="question-circle" /></span><span v-if="showHelp">Hide help</span><span v-else>Show help</span></span></h1>
           <article v-if="currentForm.help && showHelp" class="message is-info">
             <div class="message-body content"><VueShowdown :markdown="currentForm.help" flavor="github" :options="{ghCodeBlocks:true}" /></div>
@@ -272,7 +272,7 @@
             <span>Close output</span>
           </button>
         </div>
-        <div v-if="showJson" class="column is-clipped">
+        <div v-if="showJson" class="column is-clipped-horizontal">
           <h1 class="title">Extravars</h1>
           <button @click="showJson=false" class="button is-danger is-small">
             <span class="icon">
@@ -1420,6 +1420,9 @@ pre{
   white-space: -pre-wrap;      /* Opera 4-6 */
   white-space: -o-pre-wrap;    /* Opera 7 */
   word-wrap: break-word;       /* Internet Explorer 5.5+ */
+}
+.is-clipped-horizontal{
+  overflox-x:hidden;
 }
 .is-limited {
   text-overflow: ellipsis;
