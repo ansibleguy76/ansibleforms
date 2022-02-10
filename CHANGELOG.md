@@ -10,7 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 -   function fnCredentials(name) to get credentials
--   function fnRestJwtSecure to pass a credential name, the password will become the token
+-   function fnRestJwtSecure to pass a credential name, the password of the credentials is assumed the token
+-   Add noLog property to fields (mainly for expression and query)
+-   Add noLog parameters to fnRest functions to block rest results in the logs
+
+### fixed
+
+-   A clipping visualization improvement
 
 ## [2.2.2] - 2022-02-09
 
