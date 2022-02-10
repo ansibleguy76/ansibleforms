@@ -134,7 +134,10 @@
                           >
                         </BulmaAdvancedSelect>
 
-                        <div @dblclick="setExpressionFieldViewable(field.name,false)" v-if="fieldOptions[field.name].viewable" class="box limit-height mb-3">
+                        <div
+                          @dblclick="setExpressionFieldViewable(field.name,false)"
+                          v-if="fieldOptions[field.name].viewable"
+                          class="box limit-height is-limited mb-3">
                           <vue-json-pretty :data="queryresults[field.name]||[]"></vue-json-pretty>
                         </div>
 
@@ -161,7 +164,10 @@
                             <p @dblclick="setExpressionFieldViewable(field.name,true)" v-if="!fieldOptions[field.name].editable && field.isHtml" class="input has-text-info" :class="{'is-danger':$v.form[field.name].$invalid}" v-html="stringify($v.form[field.name].$model)"></p>
                           </div>
 
-                          <div @dblclick="setExpressionFieldViewable(field.name,false)" v-else  class="box limit-height mb-3">
+                          <div
+                            @dblclick="setExpressionFieldViewable(field.name,false)"
+                            v-else
+                            class="box limit-height is-limited mb-3">
                             <vue-json-pretty :data="$v.form[field.name].$model"></vue-json-pretty>
                           </div>
 
@@ -1453,7 +1459,7 @@ pre{
 .limit-height{
   max-height:300px;
   overflow-y:scroll;
-  overflow-x:hidden;
+  overflow-x:clip;
 }
 .cursor-progress{
   cursor:progress;
