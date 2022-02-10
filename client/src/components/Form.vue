@@ -1439,7 +1439,8 @@ pre{
   word-wrap: break-word;       /* Internet Explorer 5.5+ */
 }
 .is-clipped-horizontal{
-  overflox-x:hidden;
+  overflow-x: clip;
+  overflow-y: visible;
 }
 .is-limited {
   text-overflow: ellipsis;
