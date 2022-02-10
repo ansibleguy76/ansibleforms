@@ -10,7 +10,7 @@
             <span class="icon mr-3"><font-awesome-icon icon="layer-group" /></span>
             <span>All</span>
           </div>
-          <div class="level-right">
+          <div class="level-right is-hidden-mobile">
             <span class="tag is-primary is-medium">{{countFormsByCategory('')}}</span>
           </div>
         </div>
@@ -23,7 +23,7 @@
             <span class="icon mr-3"><font-awesome-icon :icon="category.icon" /></span>
             <span>{{ category.name }}</span>
           </div>
-          <div class="level-right">
+          <div class="level-right is-hidden-mobile">
             <span class="tag is-primary is-medium">{{countFormsByCategory(category.name)}}</span>
           </div>
         </div>
