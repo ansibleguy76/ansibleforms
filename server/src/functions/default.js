@@ -164,33 +164,30 @@ exports.fnReadYamlFile = async function(path,jqe=null) {
   }
   return result
 };
-exports.fnCredentials = async function(name,noLog=false){
+exports.fnCredentials = async function(name){
   var result=undefined
   if(name){
     try{
-      result = await credentialModel.findByName(name,noLog)
+      result = await credentialModel.findByName(name)
     }catch(e){
       logger.error(e)
     }
   }
   return result
 }
-exports.fnRestBasic = async function(action,url,body,credential=null,jqe=null,sort=null,noLog=false){
+exports.fnRestBasic = async function(action,url,body,credential=null,jqe=null,sort=null){
   var headers={}
   if(credential){
     try{
-      restCreds = await exports.fnCredentials(credential,noLog)
+      restCreds = await exports.fnCredentials(credential)
     }catch(e){
       logger.error(e)
     }
     headers.Authorization="Basic " + Buffer.from(restCreds.user + ':' + restCreds.password).toString('base64')
   }
-  return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort,noLog)
+  return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort)
 }
-exports.fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort=null,noLog=false){
-  if(noLog){
-    logger.silly("[fnRest] No logging requested")
-  }
+exports.fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort=null){
   if(!action || !url){
     logger.warning("[fnRest] No action or url defined")
     return undefined
@@ -205,8 +202,6 @@ exports.fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort
   if(typeof headers=="object"){
     axiosConfig.headers=headers
   }
-  if(!noLog)
-    logger.silly("[fnRest] config : " + JSON.stringify(axiosConfig))
 
   let result=[]
   try{
@@ -227,24 +222,22 @@ exports.fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort
   }catch(e){
     logger.error("Error in fnRestAdvanced : " + e)
   }
-  if(!noLog)
-    logger.silly("Rest result : " + JSON.stringify(result))
   return result
 
 }
-exports.fnRestJwt = async function(action,url,body,token,jqe=null,sort=null,noLog=false){
+exports.fnRestJwt = async function(action,url,body,token,jqe=null,sort=null){
   var headers={}
   if(token){
     headers.Authorization="Bearer " + token
   }
-  return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort,noLog)
+  return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort)
 }
-exports.fnRestJwtSecure = async function(action,url,body,tokenname,jqe=null,sort=null,noLog=false){
+exports.fnRestJwtSecure = async function(action,url,body,tokenname,jqe=null,sort=null){
   var headers={}
   if(tokenname){
     var token = await exports.fnCredentials(tokenname)
     headers.Authorization="Bearer " + token.password
   }
-  return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort,noLog)
+  return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort)
 }
 // etc
