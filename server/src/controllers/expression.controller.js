@@ -9,9 +9,10 @@ exports.execute = function(req, res) {
     }else{
         // get the form data
         var expression = req.body.expression;
+        var noLog = (req.query.noLog == "true");
         var restResult = new RestResult("success","")
 
-        Expression.execute(expression, function(err, result) {
+        Expression.execute(expression,noLog, function(err, result) {
             if (err){
               restResult.status = "error"
               restResult.message = "failed to execute expression " + expression

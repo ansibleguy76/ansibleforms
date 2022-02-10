@@ -6,8 +6,6 @@ const Credential = require('../models/credential.model')
 Mssql = {}
 
 Mssql.query=async function(connection_name,query,callback){
-  // does the pool exist already, if not let's add it
-  logger.debug("["+connection_name+"] running query : " + query)
   var creds=undefined
   try{
     creds = await Credential.findByName(connection_name)
@@ -39,7 +37,7 @@ Mssql.query=async function(connection_name,query,callback){
             logger.error("["+connection_name+"] query error : " + err)
             callback(null,null)
           }else{
-            logger.silly("["+connection_name+"] query result : " + JSON.stringify(result))
+            // logger.silly("["+connection_name+"] query result : " + JSON.stringify(result))
             callback(null,result.recordset)
           }
         })

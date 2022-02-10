@@ -457,6 +457,7 @@
                 "maxLength": {"type": "integer"},
                 "expression": {"type": "string"},
                 "ignoreIncomplete": {"type": "boolean"},
+                "noLog": {"type": "boolean"},
                 "keydown": {"type": "boolean"},
                 "isHtml": {"type": "boolean"},
                 "runLocal": {"type": "boolean"},

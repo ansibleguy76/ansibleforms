@@ -10,7 +10,8 @@ exports.findAll = function(req, res) {
   }else{
       if(req.body.config){
         var config = req.body.config
-        Query.findAll(req.body.query,config, function(err, resultset) {
+        var noLog = (req.query.noLog == "true")
+        Query.findAll(req.body.query,config,noLog, function(err, resultset) {
             if (err){
                res.json(new RestResult("error","failed run query",null,err))
             }else{

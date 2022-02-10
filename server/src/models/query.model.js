@@ -9,15 +9,22 @@ const mongodb=require("../lib/mongodb")
 var Query=function(){
 
 };
-Query.findAll = function (query,config,result) {
+Query.findAll = function (query,config,noLog,result) {
+  if(noLog){
+    logger.debug(`[${config.type}][${config.name}] Running query : noLog is applied`)
+  }else{
+    logger.debug(`[${config.type}][${config.name}] Running query ${query}`)
+  }
 
-    logger.silly(`[${config.type}][${config.name}] Running query ${query}`)
     if(config.type=="mssql"){  // use mssql connection lib
       mssql.query(config.name,query, function (err, res) {
           if(err) {
               result(null, null);
           }
           else{
+              if(!noLog){
+                logger.silly(`[${config.name}] query result : ${JSON.stringify(res)}`)
+              }
               result(null, res);
           }
       });
@@ -27,6 +34,9 @@ Query.findAll = function (query,config,result) {
               result(null, null);
           }
           else{
+            if(!noLog){
+              logger.silly(`[${config.name}] query result : ${JSON.stringify(res)}`)
+            }
               result(null, res);
           }
       });
@@ -36,6 +46,9 @@ Query.findAll = function (query,config,result) {
               result(null, null);
           }
           else{
+            if(!noLog){
+              logger.silly(`[${config.name}] query result : ${JSON.stringify(res)}`)
+            }
               result(null, res);
           }
       });
@@ -45,6 +58,9 @@ Query.findAll = function (query,config,result) {
               result(null, null);
           }
           else{
+            if(!noLog){
+              logger.silly(`[${config.name}] query result : ${JSON.stringify(res)}`)
+            }
               result(null, res);
           }
       });

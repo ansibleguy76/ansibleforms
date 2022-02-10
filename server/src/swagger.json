@@ -2522,7 +2522,15 @@
                 }
               }
             }
-          }
+          },
+          {
+            "in": "query",
+            "name": "noLog",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Disable logging"
+          }             
         ],
         "summary": "Invoke expression query",
         "produces": [
@@ -2602,6 +2610,14 @@
                 }
               }
             }
+          },
+          {
+            "in": "query",
+            "name": "noLog",
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Disable logging"
           }
         ],
         "summary": "Invoke database query",

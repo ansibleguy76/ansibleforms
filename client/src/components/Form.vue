@@ -897,7 +897,7 @@
                         }
 
                       }else{
-                        axios.post("/api/v1/expression",{expression:placeholderCheck.value},TokenStorage.getAuthentication())
+                        axios.post("/api/v1/expression?noLog="+(!!item.noLog),{expression:placeholderCheck.value},TokenStorage.getAuthentication())
                           .then((result)=>{
                             var restresult = result.data
                             if(restresult.status=="error"){
@@ -957,7 +957,7 @@
                      // console.log(placeholderCheck);
                     // execute query
 
-                    axios.post("/api/v1/query",{query:placeholderCheck.value,config:item.dbConfig},TokenStorage.getAuthentication())
+                    axios.post("/api/v1/query?noLog="+(!!item.noLog),{query:placeholderCheck.value,config:item.dbConfig},TokenStorage.getAuthentication())
                       .then((result)=>{
                         var restresult = result.data
                         if(restresult.status=="error"){

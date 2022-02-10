@@ -164,30 +164,33 @@ exports.fnReadYamlFile = async function(path,jqe=null) {
   }
   return result
 };
-exports.fnCredentials = async function(name){
+exports.fnCredentials = async function(name,noLog=false){
   var result=undefined
   if(name){
     try{
-      result = await credentialModel.findByName(name)
+      result = await credentialModel.findByName(name,noLog)
     }catch(e){
       logger.error(e)
     }
   }
   return result
 }
-exports.fnRestBasic = async function(action,url,body,credential=null,jqe=null,sort=null){
+exports.fnRestBasic = async function(action,url,body,credential=null,jqe=null,sort=null,noLog=false){
   var headers={}
   if(credential){
     try{
-      restCreds = await exports.fnCredentials(credential)
+      restCreds = await exports.fnCredentials(credential,noLog)
     }catch(e){
       logger.error(e)
     }
     headers.Authorization="Basic " + Buffer.from(restCreds.user + ':' + restCreds.password).toString('base64')
   }
-  return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort)
+  return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort,noLog)
 }
-exports.fnRestAdvanced = async function(action,url,body,headers,jqe,sort,noLog){
+exports.fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort=null,noLog=false){
+  if(noLog){
+    logger.silly("[fnRest] No logging requested")
+  }
   if(!action || !url){
     logger.warning("[fnRest] No action or url defined")
     return undefined
@@ -199,7 +202,7 @@ exports.fnRestAdvanced = async function(action,url,body,headers,jqe,sort,noLog){
     headers: {},
     httpsAgent:httpsAgent
   }
-  if(headers){
+  if(typeof headers=="object"){
     axiosConfig.headers=headers
   }
   if(!noLog)
