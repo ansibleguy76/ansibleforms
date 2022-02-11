@@ -9,7 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
--   allow field named ___inventory___ to have array to launch multiple inventories
+-   Allow field named ___inventory___ to have array to launch multiple inventories
+-   Add new validation validIf
+
+### Fixed
+
+-   Fixed a bug in notIn and in validation
+
+### Changed
+
+-   Upgrade from fontawesome 5 to 6
 
 ## [2.2.3] - 2022-02-11
 

@@ -143,9 +143,6 @@
                 "name",
                 "label"
               ],
-              "dependencies": {
-                "regexDescription": ["regex"]
-              },
               "oneOf": [{
                   "properties": {
                     "type": {
@@ -174,8 +171,6 @@
                       "enum": ["number"]
                     },
                     "query": {"not":{}},
-                    "regex": {"not":{}},
-                    "regexDescription": {"not":{}},
                     "minLength": {"not":{}},
                     "maxLength": {"not":{}},
                     "expression": {"not":{}},
@@ -200,7 +195,6 @@
                     },
                     "query": {"not":{}},
                     "regex": {"not":{}},
-                    "regexDescription": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
                     "minLength": {"not":{}},
@@ -228,7 +222,6 @@
                     },
                     "query": {"not":{}},
                     "regex": {"not":{}},
-                    "regexDescription": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
                     "minLength": {"not":{}},
@@ -256,7 +249,6 @@
                     },
                     "query": {"not":{}},
                     "regex": {"not":{}},
-                    "regexDescription": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
                     "minLength": {"not":{}},
@@ -282,7 +274,6 @@
                     },
                     "values": {"not":{}},
                     "regex": {"not":{}},
-                    "regexDescription": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
                     "minLength": {"not":{}},
@@ -303,7 +294,6 @@
                     },
                     "values": {"not":{}},
                     "regex": {"not":{}},
-                    "regexDescription": {"not":{}},
                     "editable": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
@@ -323,7 +313,6 @@
                       "enum": ["expression"]
                     },
                     "values": {"not":{}},
-                    "regexDescription": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
                     "sticky": {"not":{}},
@@ -342,7 +331,6 @@
                       "enum": ["expression"]
                     },
                     "values": {"not":{}},
-                    "regexDescription": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
                     "expression": {"not":{}},
@@ -363,7 +351,6 @@
                     },
                     "values": {"not":{}},
                     "regex": {"not":{}},
-                    "regexDescription": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
                     "minLength": {"not":{}},
@@ -412,21 +399,28 @@
                 "sameAs": {
                   "$ref": "/formfield"
                 },
-                "regex": {
-                  "anyOf": [{"type": "string"},
-                    {
-                      "type": "object",
-                      "required": [
-                        "expression"
-                      ],
-                      "properties": {
-                        "expression": {"type": "string"},
-                        "description": {"type": "string"}
-                      }
+                "validIf": {
+                    "type": "object",
+                    "required": [
+                      "field",
+                      "description"
+                    ],
+                    "properties": {
+                      "field": {"type": "string"},
+                      "description": {"type": "string"}
                     }
-                  ]
                 },
-                "regexDescription": {"type": "string"},
+                "regex": {
+                    "type": "object",
+                    "required": [
+                      "expression",
+                      "description"
+                    ],
+                    "properties": {
+                      "expression": {"type": "string"},
+                      "description": {"type": "string"}
+                    }
+                },
                 "notIn": {
                   "type": "object",
                   "required": [
@@ -561,8 +555,6 @@
                           "type": {
                             "enum": ["number"]
                           },
-                          "regex": {"not":{}},
-                          "regexDescription": {"not":{}},
                           "minLength": {"not":{}},
                           "maxLength": {"not":{}},
                           "values": {"not":{}},
@@ -581,7 +573,6 @@
                             "enum": ["checkbox"]
                           },
                           "regex": {"not":{}},
-                          "regexDescription": {"not":{}},
                           "minValue": {"not":{}},
                           "maxValue": {"not":{}},
                           "minLength": {"not":{}},
@@ -602,7 +593,6 @@
                             "enum": ["enum"]
                           },
                           "regex": {"not":{}},
-                          "regexDescription": {"not":{}},
                           "minValue": {"not":{}},
                           "maxValue": {"not":{}},
                           "minLength": {"not":{}},
@@ -623,7 +613,6 @@
                             "enum": ["query"]
                           },
                           "regex": {"not":{}},
-                          "regexDescription": {"not":{}},
                           "minValue": {"not":{}},
                           "maxValue": {"not":{}},
                           "minLength": {"not":{}},
@@ -654,20 +643,16 @@
                         "default": false
                       },
                       "regex": {
-                        "anyOf": [{"type": "string"},
-                          {
-                            "type": "object",
-                            "required": [
-                              "expression"
-                            ],
-                            "properties": {
-                              "expression": {"type": "string"},
-                              "description": {"type": "string"}
-                            }
+                          "type": "object",
+                          "required": [
+                            "expression",
+                            "description"
+                          ],
+                          "properties": {
+                            "expression": {"type": "string"},
+                            "description": {"type": "string"}
                           }
-                        ]
                       },
-                      "regexDescription": {"type": "string"},
                       "minValue": {"type": "integer"},
                       "maxValue": {"type": "integer"},
                       "minLength": {"type": "integer"},

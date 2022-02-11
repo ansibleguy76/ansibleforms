@@ -235,6 +235,7 @@
                       <p class="has-text-danger" v-if="'minValue' in $v.form[field.name] && !$v.form[field.name].minValue">Value cannot be lower than {{$v.form[field.name].$params.minValue.min}}</p>
                       <p class="has-text-danger" v-if="'maxValue' in $v.form[field.name] && !$v.form[field.name].maxValue">Value cannot be higher than {{$v.form[field.name].$params.maxValue.max}}</p>
                       <p class="has-text-danger" v-if="'regex' in $v.form[field.name] && !$v.form[field.name].regex">{{$v.form[field.name].$params.regex.description}}</p>
+                      <p class="has-text-danger" v-if="'validIf' in $v.form[field.name] && !$v.form[field.name].validIf">{{$v.form[field.name].$params.validIf.description}}</p>
                       <p class="has-text-danger" v-if="'notIn' in $v.form[field.name] && !$v.form[field.name].notIn">{{$v.form[field.name].$params.notIn.description}}</p>
                       <p class="has-text-danger" v-if="'in' in $v.form[field.name] && !$v.form[field.name].in">{{$v.form[field.name].$params.in.description}}</p>
                       <p class="has-text-danger" v-if="'sameAs' in $v.form[field.name] && !$v.form[field.name].sameAs">Field must be identical to '{{$v.form[field.name].$params.sameAs.eq}}'</p>
@@ -414,41 +415,33 @@
         if("minLength" in ff){ attrs.minLength=minLength(ff.minLength)}
         if("maxLength" in ff){ attrs.maxLength=maxLength(ff.maxLength)}
         if("regex" in ff){
-          if(typeof ff.regex == 'object'){
-            regexObj = new RegExp(ff.regex.expression)
-            description = (ff.regex.description!==undefined)?ff.regex.description:"The value must match regular expression : " + ff.regex.expression
-            attrs.regex = helpers.withParams(
-                {description: description,type:"regex"},
-                (value) => !helpers.req(value) || regexObj.test(value)
-            )
-          }else{
-            regexObj = new RegExp(ff.regex)
-            description = (ff.regexDescription!==undefined)?ff.regexDescription:"The value must match regular expression : " + ff.regex
-            attrs.regex = helpers.withParams(
-                {description: description,type:"regex"},
-                (value) => !helpers.req(value) || regexObj.test(value)
-            )
-          }
+          regexObj = new RegExp(ff.regex.expression)
+          description = ff.regex.description
+          attrs.regex = helpers.withParams(
+              {description: description,type:"regex"},
+              (value) => !helpers.req(value) || regexObj.test(value)
+          )
+        }
+        if("validIf" in ff){
+          description = ff.validIf.description
+          attrs.validIf = helpers.withParams(
+              {description: description,type:"validIf"},
+              (value) => !helpers.req(value) || self.form[ff.validIf.field]
+          )
         }
         if("notIn" in ff){
-          field = self.form[ff.notIn.field]
-          if(field!=undefined && Array.isArray(field)){
-            description = (ff.notIn.description!==undefined)?ff.notIn.description:"The value must not be in field '" + ff.notIn.field + "'"
-            attrs.notIn = helpers.withParams(
-                {description: description,type:"notIn"},
-                (value) => !helpers.req(value) || !field.includes(value)
-            )
-          }
+          description = ff.notIn.description
+          attrs.notIn = helpers.withParams(
+              {description: description,type:"notIn"},
+              (value) => !helpers.req(value) || (self.form[ff.notIn.field]!=undefined && Array.isArray(self.form[ff.notIn.field]) && !self.form[ff.notIn.field].includes(value))
+          )
         }
         if("in" in ff){
-          field = self.form[ff.in.field]
-          if(field!=undefined && Array.isArray(field)){
-            description = (ff.in.description!==undefined)?ff.in.description:"The value must not be in field '" + ff.in.field + "'"
-            attrs.in = helpers.withParams(
-                {description: description,type:"notIn"},
-                (value) => !helpers.req(value) || field.includes(value)
-            )
-          }
+          description = ff.in.description
+          attrs.in = helpers.withParams(
+              {description: description,type:"in"},
+              (value) => !helpers.req(value) || (self.form[ff.in.field]!=undefined && Array.isArray(self.form[ff.in.field]) && self.form[ff.in.field].includes(value))
+          )
         }
         if("sameAs" in ff){ attrs.sameAs=sameAs(ff.sameAs)}
         obj.form[ff.name]=attrs

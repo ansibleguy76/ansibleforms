@@ -175,21 +175,12 @@
             if("minLength" in ff){ attrs.minLength=minLength(ff.minLength)}
             if("maxLength" in ff){ attrs.maxLength=maxLength(ff.maxLength)}
             if("regex" in ff){
-              if(typeof ff.regex == 'object'){
                 regexObj = new RegExp(ff.regex.expression)
-                description = (ff.regex.description!==undefined)?ff.regex.description:"The value must match regular expression : " + ff.regex.expression
+                description = ff.regex.description
                 attrs.regex = helpers.withParams(
                     {description: description,type:"regex"},
                     (value) => !helpers.req(value) || regexObj.test(value)
                 )
-              }else{
-                regexObj = new RegExp(ff.regex)
-                description = (ff.regexDescription!==undefined)?ff.regexDescription:"The value must match regular expression : " + ff.regex
-                attrs.regex = helpers.withParams(
-                    {description: description,type:"regex"},
-                    (value) => !helpers.req(value) || regexObj.test(value)
-                )
-              }
             }
             obj.editedItem[ff.name]=attrs
           });
