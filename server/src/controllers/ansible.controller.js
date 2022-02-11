@@ -20,7 +20,19 @@ exports.run = async function(req, res) {
         var restResult = new RestResult("info","","","")
         var form = req.body.formName;
         var playbook = req.body.ansiblePlaybook;
-        var inventory = req.body.ansibleInventory;
+        var inventory = []
+        if(req.body.ansibleInventory){
+          inventory.push(req.body.ansibleInventory)
+        }
+        if(req.body.ansibleExtraVars["__inventory__"]){
+            ([].concat(req.body.ansibleExtraVars["__inventory__"])).forEach((item, i) => {
+              if(typeof item=="string"){
+                inventory.push(item)
+              }else{
+                logger.warning("Non-string inventory entry")
+              }
+            });
+        }
         var check = req.body.ansibleCheck || req.body.ansibleExtraVars.__check__;
         var diff = req.body.ansibleDiff || req.body.ansibleExtraVars.__diff__;
         var tags = req.body.ansibleTags;

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-   allow field named ___inventory___ to have array to launch multiple inventories
+
 ## [2.2.3] - 2022-02-11
 
 ### Added

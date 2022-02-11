@@ -31,9 +31,10 @@ function hasError(data){
 Ansible.run = function (form,playbook,inventory,tags,check,diff,extraVars,user, result) {
   // prepare my ansible command
   var command = `ansible-playbook -e '${extraVars}'`
-  if(inventory){
-    command += ` -i '${inventory}'`
-  }
+  inventory.forEach((item, i) => {
+    command += ` -i '${item}'`
+  });
+
   if(tags){
     command += ` -t '${tags}'`
   }
