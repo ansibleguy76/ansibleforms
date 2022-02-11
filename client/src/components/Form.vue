@@ -236,10 +236,10 @@
                       <p class="has-text-danger" v-if="'maxValue' in $v.form[field.name] && !$v.form[field.name].maxValue">Value cannot be higher than {{$v.form[field.name].$params.maxValue.max}}</p>
                       <p class="has-text-danger" v-if="'regex' in $v.form[field.name] && !$v.form[field.name].regex">{{$v.form[field.name].$params.regex.description}}</p>
                       <p class="has-text-danger" v-if="'validIf' in $v.form[field.name] && !$v.form[field.name].validIf">{{$v.form[field.name].$params.validIf.description}}</p>
+                      <p class="has-text-danger" v-if="'validIfNot' in $v.form[field.name] && !$v.form[field.name].validIfNot">{{$v.form[field.name].$params.validIfNot.description}}</p>
                       <p class="has-text-danger" v-if="'notIn' in $v.form[field.name] && !$v.form[field.name].notIn">{{$v.form[field.name].$params.notIn.description}}</p>
                       <p class="has-text-danger" v-if="'in' in $v.form[field.name] && !$v.form[field.name].in">{{$v.form[field.name].$params.in.description}}</p>
                       <p class="has-text-danger" v-if="'sameAs' in $v.form[field.name] && !$v.form[field.name].sameAs">Field must be identical to '{{$v.form[field.name].$params.sameAs.eq}}'</p>
-
                     </div>
                   </transition>
                 </div>
@@ -427,6 +427,13 @@
           attrs.validIf = helpers.withParams(
               {description: description,type:"validIf"},
               (value) => !helpers.req(value) || self.form[ff.validIf.field]
+          )
+        }
+        if("validIfNot" in ff){
+          description = ff.validIfNot.description
+          attrs.validIfNot = helpers.withParams(
+              {description: description,type:"validIfNot"},
+              (value) => !helpers.req(value) || !self.form[ff.validIfNot.field]
           )
         }
         if("notIn" in ff){

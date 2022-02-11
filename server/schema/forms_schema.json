@@ -410,6 +410,17 @@
                       "description": {"type": "string"}
                     }
                 },
+                "validIfNot": {
+                    "type": "object",
+                    "required": [
+                      "field",
+                      "description"
+                    ],
+                    "properties": {
+                      "field": {"type": "string"},
+                      "description": {"type": "string"}
+                    }
+                },
                 "regex": {
                     "type": "object",
                     "required": [
@@ -424,7 +435,8 @@
                 "notIn": {
                   "type": "object",
                   "required": [
-                    "field"
+                    "field",
+                    "description"
                   ],
                   "properties": {
                     "field": {
@@ -436,7 +448,8 @@
                 "in": {
                   "type": "object",
                   "required": [
-                    "field"
+                    "field",
+                    "description"
                   ],
                   "properties": {
                     "field": {
