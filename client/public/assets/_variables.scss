@@ -1,45 +1,31 @@
 ////////////////////////////////////////////////
-// LITERA
+// LUMEN
 ////////////////////////////////////////////////
-$grey-darker: #363636;
-$grey-dark: #373a3c;
-$grey: #55595c;
-$grey-light: #818a91;
-$grey-lighter: #d9dee2;
 
-$orange: #f0ad4e;
-$yellow: #ffd500;
-$green: #02b875;
-$blue: #45b2d3;
-$red: #d9534f;
-
-$link: #4582ec !default;
-$primary: $blue !default;
+$orange: #ff851b;
+$green: #28b62c;
+$blue: #5bb7db;
+$red: #ff4136;
 $danger: $red;
-$warning: $orange;
+$primary: #158cba !default;
 
-$subtitle-color: $grey;
+$info-invert: #fff;
 
-$family-heading: "Raleway", "Lucida Grande", "Lucida Sans Unicode",
-  "Lucida Sans", Geneva, Arial, sans-serif;
+$family-sans-serif: "Source Sans Pro", "Helvetica Neue", Helvetica, Arial,
+  sans-serif;
 
-$body-size: 15px;
+$thickness: 4px;
 
-$family-serif: Georgia, Cambria, "Times New Roman", Times, serif;
+$pagination-current-border: darken($primary, 5);
 
-$navbar-height: 5rem;
-$navbar-item-hover-color: $link;
-$navbar-item-hover-background-color: transparent;
-$navbar-item-active-color: $link;
-$navbar-item-active-background-color: transparent;
+$navbar-item-active-color: $primary;
 
-$navbar-dropdown-item-hover-color: $link;
-$navbar-dropdown-item-hover-background-color: transparent;
-$navbar-dropdown-item-active-color: $link;
-$navbar-dropdown-item-active-background-color: transparent;
+$dropdown-content-shadow: 0 0 0 1px #dbdbdb, 0 #{$thickness} 0 1px #dbdbdb;
 
-$bulmaswatch-import-font: true !default;
+$navbar-dropdown-boxed-shadow: $dropdown-content-shadow;
 
-$box-shadow: 0 0 1px $grey-light;
+$bulmaswatch-import-font: false !default;
 
-$control-height: 2.273em;
+$box-shadow: none;
+
+$control-height: 2.25em;

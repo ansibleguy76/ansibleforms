@@ -26,7 +26,7 @@
             <span>Reload This Form</span>
           </button>
           <transition name="pop" appear>
-            <button v-if="warnings.length>0" @click="showWarnings=!showWarnings" class="button is-small is-outlined is-warning">
+            <button v-if="warnings.length>0" @click="showWarnings=!showWarnings" class="button is-small is-light is-warning">
               <span class="icon">
                 <font-awesome-icon icon="exclamation-triangle" />
               </span>
@@ -286,12 +286,12 @@
             </span>
             <span>Close</span>
           </button>
-          <button @click="generateJsonOutput()" class="ml-2 button is-info is-small">
+          <!-- <button @click="generateJsonOutput()" class="ml-2 button is-info is-small">
             <span class="icon">
               <font-awesome-icon icon="sync" />
             </span>
             <span>Refresh</span>
-          </button>
+          </button> -->
           <button @click="clip(formdata)" class="ml-2 button is-success is-small">
             <span class="icon">
               <font-awesome-icon icon="copy" />
@@ -636,7 +636,7 @@
         })
         var dups = Helpers.findDuplicates(fields)
         dups.forEach((item,i)=>{
-          ref.warnings.push(`<span class="has-text-warning">'${item}' has duplicates</span><br><span>Each field must have a unique name</span>`)
+          ref.warnings.push(`<span class="has-text-warning-dark">'${item}' has duplicates</span><br><span>Each field must have a unique name</span>`)
           ref.$toast.error("You have duplicates for field '"+item+"'")
         })
         this.currentForm.fields.forEach((item,i) => {
@@ -660,21 +660,21 @@
                   if(ref.dynamicFieldDependencies[foundfield].indexOf(item.name) === -1) {  // allready in there ?
                       ref.dynamicFieldDependencies[foundfield].push(item.name);												 // push it
                       if(foundfield==item.name){
-                        ref.warnings.push(`<span class="has-text-warning">'${foundfield}' has a self reference</span><br><span>This will cause a racing condition</span>`)
+                        ref.warnings.push(`<span class="has-text-warning-dark">'${foundfield}' has a self reference</span><br><span>This will cause a racing condition</span>`)
                         ref.$toast.error("You defined a self reference on field '"+foundfield+"'")
                       }
                   }
                 }else{
                   ref.dynamicFieldDependencies[foundfield]=[item.name]
                   if(foundfield==item.name){
-                    ref.warnings.push(`<span class="has-text-warning">'${foundfield}' has a self reference</span><br><span>This will cause a racing condition</span>`)
+                    ref.warnings.push(`<span class="has-text-warning-dark">'${foundfield}' has a self reference</span><br><span>This will cause a racing condition</span>`)
                     ref.$toast.error("You defined a self reference on field '"+foundfield+"'")
                   }
                 }
 
               }else{
                 if(!Object.keys(ref.form).includes(foundfield))
-                  ref.warnings.push(`<span class="has-text-warning">'${item.name}' has a reference to unknown field '${foundfield}'</span><br><span>Your form might not function as expected</span>`)
+                  ref.warnings.push(`<span class="has-text-warning-dark">'${item.name}' has a reference to unknown field '${foundfield}'</span><br><span>Your form might not function as expected</span>`)
               }
             }
           }
@@ -690,7 +690,7 @@
                     if(ref.dynamicFieldDependencies[key].indexOf(item2) === -1) {  // allready in there ?
                       ref.dynamicFieldDependencies[key].push(item2);												 // push it
                       if(key==item2){
-                        ref.warnings.push(`<span class="has-text-warning">'${key}' has a self reference</span><br><span>This will cause a racing condition</span>`)
+                        ref.warnings.push(`<span class="has-text-warning-dark">'${key}' has a self reference</span><br><span>This will cause a racing condition</span>`)
                         ref.$toast.error("You defined a self reference on field '"+key+"'")
                       }
                       finishedFlag=false
@@ -740,7 +740,7 @@
                 // console.log(`${item.name} - ${foundfield}`)
                 if((ref.defaults[item.name]!=undefined) && ref.fieldOptions[foundfield] && (ref.fieldOptions[foundfield].type=="expression") && (ref.defaults[foundfield]!=undefined)){
                   foundDependentDefaults=true
-                  ref.warnings.push(`<span class="has-text-warning">'${item.name}' has a default, referencing field '${foundfield}' which also has a default</span><br><span>Try to avoid dependent fields with both a default</span>`)
+                  ref.warnings.push(`<span class="has-text-warning-dark">'${item.name}' has a default, referencing field '${foundfield}' which also has a default</span><br><span>Try to avoid dependent fields with both a default</span>`)
                 }
               }
             }

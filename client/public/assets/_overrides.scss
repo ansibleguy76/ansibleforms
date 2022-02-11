@@ -1,32 +1,95 @@
 // Overrides
-@if $bulmaswatch-import-font {
-  @import url("https://fonts.googleapis.com/css?family=Raleway:400,700&display=swap");
+// @if $bulmaswatch-import-font {
+//   @import url("https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,400italic&display=swap");
+// }
+@font-face {
+  font-family: "Source Sans Pro";
+  src: url("/assets/fonts/SourceSansPro-Regular.ttf");
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Source Sans Pro";
+  src: url("/assets/fonts/SourceSansPro-Italic.ttf");
+  font-weight: 400;
+  font-style: italic;
+}
+@font-face {
+  font-family: "Source Sans Pro";
+  src: url("/assets/fonts/SourceSansPro-Bold.ttf");
+  font-weight: 700;
+  font-style: normal;
+}
+@font-face {
+  font-family: "Source Sans Pro";
+  src: url("/assets/fonts/SourceSansPro-Light.ttf");
+  font-weight: 300;
 }
 
-a {
-  transition: all 200ms ease;
+.box {
+  border-style: solid;
+  border-width: 1px 1px $thickness 1px;
+  border-color: $border;
 }
 
 .button {
-  padding-left: 1em;
-  padding-right: 1em;
-  border-radius: 50px;
+  height: $control-height + 0.398em;
+}
 
-  &.is-small {
-    border-radius: 40px;
-    font-size: 0.85rem;
+.button {
+  transition: all 300ms ease;
+  border-style: solid;
+  border-width: 1px 1px $thickness 1px;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  font-weight: bold;
+
+  &.is-hovered,
+  &:hover {
+    border-bottom-width: $thickness - 1;
   }
-}
-
-.button {
-  transition: all 200ms ease;
 
   &.is-active,
   &.is-focused,
   &:active,
   &:focus {
-    box-shadow: 0 0 0 2px rgba($button-active-border-color, 0.3);
+    box-shadow: none;
   }
+  @each $name, $pair in $colors {
+    $color: nth($pair, 1);
+    $color-invert: nth($pair, 2);
+
+    &.is-#{$name} {
+      border-color: darken($color, 5);
+
+      &.is-hovered,
+      &:hover {
+        border-color: darken($color, 10) !important;
+      }
+
+      &.is-active,
+      &.is-focused,
+      &:active,
+      &:focus {
+        border-color: darken($color, 10);
+        box-shadow: $input-focus-box-shadow-size rgba($color, 0.25);
+      }
+    }
+  }
+}
+
+.input,
+.textarea {
+  box-shadow: inset 0 0.125em 0 rgba($black, 0.075);
+
+  &.is-active,
+  &.is-focused,
+  &:active,
+  &:focus {
+    box-shadow: inset 0 0.125em 0 rgba($black, 0.075),
+      $input-focus-box-shadow-size $input-focus-box-shadow-color;
+  }
+
   @each $name, $pair in $colors {
     $color: nth($pair, 1);
     $color-invert: nth($pair, 2);
@@ -36,79 +99,152 @@ a {
       &.is-focused,
       &:active,
       &:focus {
-        box-shadow: 0 0 0 2px rgba($color, 0.3);
+        border-color: darken($color, 10);
+        box-shadow: inset 0 0.125em 0 rgba($black, 0.075),
+          $input-focus-box-shadow-size rgba($color, 0.25);
       }
     }
   }
 }
 
-.content {
-  font-size: 1.1rem;
-  font-family: $family-serif;
+.select:after {
+  margin-top: -0.575em;
+}
 
-  .button {
-    font-family: $family-sans-serif;
+.select select {
+  border-width: 1px 1px $thickness 1px;
+  &:not([multiple]) {
+    height: calc(#{$control-height} + #{$thickness});
   }
 }
 
-.card-header-title,
-.menu-label,
-.message-header,
-.modal-card-title,
-.panel-heading,
-.subtitle,
-.title,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-weight: 700;
-  font-family: $family-heading;
-}
-
-blockquote {
-  font-style: italic;
-}
-
-.input,
-.textarea {
-  transition: all 200ms ease;
-  box-shadow: none;
-}
-
-.notification {
+.file {
+  .file-cta,
+  .file-name {
+    border-width: 1px 1px $thickness 1px;
+    position: unset;
+  }
+  &.has-name .file-name {
+    border-left-width: 0;
+  }
+  &.is-boxed.has-name .file-name {
+    border-width: 1px 1px $thickness 1px;
+  }
   @each $name, $pair in $colors {
     $color: nth($pair, 1);
     $color-invert: nth($pair, 2);
 
     &.is-#{$name} {
-      a:not(.button) {
-        color: $color-invert;
-        text-decoration: underline;
+      .file-cta {
+        border-color: darken($color, 5);
+      }
+      &.is-hovered,
+      &:hover {
+        .file-cta {
+          border-color: darken($color, 10);
+        }
       }
     }
   }
 }
 
-.navbar {
-  border: 1px solid $border;
+.notification {
+  border-style: solid;
+  border-width: 1px 1px $thickness 1px;
+  border-color: $border;
+  @each $name, $pair in $colors {
+    $color: nth($pair, 1);
+
+    &.is-#{$name} {
+      border-color: darken($color, 5);
+    }
+  }
+}
+
+.progress {
+  border-radius: $radius-large;
+}
+
+.card {
+  box-shadow: none;
+  border-style: solid;
+  border-width: 1px 1px $thickness 1px;
+  border-color: $border;
+  background-color: rgba($grey-lighter, 0.075);
+  border-radius: $radius;
+
+  .card-image {
+    img {
+      border-radius: $radius $radius 0 0;
+    }
+  }
+
+  .card-header {
+    box-shadow: none;
+    border-bottom: 1px solid $grey-lighter;
+    border-radius: $radius $radius 0 0;
+  }
+}
+
+.message {
+  .message-body {
+    border-style: solid;
+    border-width: 1px 1px $thickness 1px;
+  }
 }
 
 .hero {
   .navbar {
     border: none;
-    box-shadow: 0 1px 0 rgba($border, 0.25);
+    box-shadow: 0 $thickness 0 $border;
+  }
+  @each $name, $pair in $colors {
+    $color: nth($pair, 1);
+    $color-invert: nth($pair, 2);
+
+    &.is-#{$name} {
+      .navbar {
+        box-shadow: 0 $thickness 0 darken($color, 5);
+      }
+    }
+  }
+  @include until($navbar-breakpoint) {
+    .navbar-menu {
+      box-shadow: none;
+    }
   }
 }
 
-.card {
-  $card-border-color: $grey-darker;
-  box-shadow: 0 0 1px $grey-light;
+.navbar {
+  border: solid $border;
+  border-width: 1px 1px $thickness 1px;
+  @each $name, $pair in $colors {
+    $color: nth($pair, 1);
+    $color-invert: nth($pair, 2);
 
-  .card-header {
-    box-shadow: none;
-    border-bottom: 1px solid $grey-lighter;
+    &.is-#{$name} {
+      border-color: darken($color, 5);
+    }
+  }
+  .navbar-dropdown {
+    box-shadow: $navbar-dropdown-boxed-shadow;
+    top: 101%;
+  }
+}
+
+.pagination-link,
+.pagination-next,
+.pagination-previous {
+  border-width: 1px 1px $thickness 1px;
+}
+
+.tabs {
+  &.is-boxed li.is-active a {
+    border-top-width: $thickness;
+  }
+
+  &.tabs.is-toggle li.is-active a {
+    box-shadow: inset 0 -#{$thickness} 0 darken($link, 10);
+    border-color: darken($link, 10);
   }
 }
