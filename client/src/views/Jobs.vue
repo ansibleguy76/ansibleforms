@@ -25,7 +25,7 @@
             </tr>
           </thead>
           <tbody>
-          <tr v-for="j in displayedJobs" :key="j.id" :class="{'has-background-success-light':(j.status=='success' && j.id!=jobId),'has-background-danger':(j.status=='failed' && j.id!=jobId),'has-background-warning':(j.status=='aborted' && j.id!=jobId),'has-background-info':j.id==jobId,'has-text-white':j.id==jobId}">
+          <tr v-for="j in displayedJobs" :key="j.id" :class="{'has-background-success-light':(j.status=='success' && j.id!=jobId),'has-background-danger-light':(j.status=='failed' && j.id!=jobId),'has-background-warning':(j.status=='aborted' && j.id!=jobId),'has-background-info':j.id==jobId,'has-text-white':j.id==jobId}">
             <td v-if="isAdmin" class="has-background-info-light"><span class="icon has-text-danger is-clickable" @click="tempJobId=j.id;showDelete=true" title="Delete job"><font-awesome-icon icon="trash-alt" /></span></td>
             <td class="is-clickable has-text-left" @click="loadOutput(j.id)">{{j.id}}</td>
             <td class="is-clickable has-text-left" @click="loadOutput(j.id)">{{j.form}}</td>

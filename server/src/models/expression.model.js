@@ -54,8 +54,13 @@ async function doAsync (expr) {
 }
 
 // execute expression (cannot be a promise)
-Expression.execute = function (expr, result) {
-  logger.debug(`Expression: ${expr}`)
+Expression.execute = function (expr,noLog, result) {
+  if(noLog){
+    logger.debug('Expression: noLog is applied')
+  }else{
+    logger.debug(`Expression: ${expr}`)
+  }
+
   var expression = ""
   try{
     doAsync(expr).then(function(response){

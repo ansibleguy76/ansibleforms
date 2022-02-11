@@ -1,6 +1,7 @@
 'use strict';
 const Expression = require('../models/expression.model');
 var RestResult = require('../models/restResult.model');
+const logger=require("../lib/logger")
 
 exports.execute = function(req, res) {
     //handles null error
@@ -9,9 +10,10 @@ exports.execute = function(req, res) {
     }else{
         // get the form data
         var expression = req.body.expression;
+        var noLog = (req.query.noLog == "true");
         var restResult = new RestResult("success","")
 
-        Expression.execute(expression, function(err, result) {
+        Expression.execute(expression,noLog, function(err, result) {
             if (err){
               restResult.status = "error"
               restResult.message = "failed to execute expression " + expression
@@ -21,6 +23,13 @@ exports.execute = function(req, res) {
             }else{
               restResult.message = "successfully executed expression " + expression
               restResult.data.output = result
+              if(!noLog){
+                try{
+                  logger.silly(`expression result : ${JSON.stringify(result)}`)
+                }catch(e){
+                  //
+                }
+              }
               res.json(restResult)
             }
         })

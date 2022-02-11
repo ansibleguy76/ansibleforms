@@ -26,7 +26,7 @@
             <span>Reload This Form</span>
           </button>
           <transition name="pop" appear>
-            <button v-if="warnings.length>0" @click="showWarnings=!showWarnings" class="button is-small is-outlined is-warning">
+            <button v-if="warnings.length>0" @click="showWarnings=!showWarnings" class="button is-small is-light is-warning">
               <span class="icon">
                 <font-awesome-icon icon="exclamation-triangle" />
               </span>
@@ -134,7 +134,10 @@
                           >
                         </BulmaAdvancedSelect>
 
-                        <div @dblclick="setExpressionFieldViewable(field.name,false)" v-if="fieldOptions[field.name].viewable" class="box limit-height mb-3">
+                        <div
+                          @dblclick="setExpressionFieldViewable(field.name,false)"
+                          v-if="fieldOptions[field.name].viewable"
+                          class="box limit-height is-limited mb-3">
                           <vue-json-pretty :data="queryresults[field.name]||[]"></vue-json-pretty>
                         </div>
 
@@ -161,7 +164,10 @@
                             <p @dblclick="setExpressionFieldViewable(field.name,true)" v-if="!fieldOptions[field.name].editable && field.isHtml" class="input has-text-info" :class="{'is-danger':$v.form[field.name].$invalid}" v-html="stringify($v.form[field.name].$model)"></p>
                           </div>
 
-                          <div @dblclick="setExpressionFieldViewable(field.name,false)" v-else  class="box limit-height mb-3">
+                          <div
+                            @dblclick="setExpressionFieldViewable(field.name,false)"
+                            v-else
+                            class="box limit-height is-limited mb-3">
                             <vue-json-pretty :data="$v.form[field.name].$model"></vue-json-pretty>
                           </div>
 
@@ -280,12 +286,12 @@
             </span>
             <span>Close</span>
           </button>
-          <button @click="generateJsonOutput()" class="ml-2 button is-info is-small">
+          <!-- <button @click="generateJsonOutput()" class="ml-2 button is-info is-small">
             <span class="icon">
               <font-awesome-icon icon="sync" />
             </span>
             <span>Refresh</span>
-          </button>
+          </button> -->
           <button @click="clip(formdata)" class="ml-2 button is-success is-small">
             <span class="icon">
               <font-awesome-icon icon="copy" />
@@ -532,7 +538,7 @@
         if("dependencies" in field){
           field.dependencies.forEach((item, i) => {
             var value=undefined
-            var column=undefined
+            var column=""
             var fieldname=item.name
             var columnRegex = /(.+)\.(.+)/g;                                        // detect a "." in the field
             var tmpArr=columnRegex.exec(field)                             // found aaa.bbb
@@ -630,7 +636,7 @@
         })
         var dups = Helpers.findDuplicates(fields)
         dups.forEach((item,i)=>{
-          ref.warnings.push(`<span class="has-text-warning">'${item}' has duplicates</span><br><span>Each field must have a unique name</span>`)
+          ref.warnings.push(`<span class="has-text-warning-dark">'${item}' has duplicates</span><br><span>Each field must have a unique name</span>`)
           ref.$toast.error("You have duplicates for field '"+item+"'")
         })
         this.currentForm.fields.forEach((item,i) => {
@@ -654,21 +660,21 @@
                   if(ref.dynamicFieldDependencies[foundfield].indexOf(item.name) === -1) {  // allready in there ?
                       ref.dynamicFieldDependencies[foundfield].push(item.name);												 // push it
                       if(foundfield==item.name){
-                        ref.warnings.push(`<span class="has-text-warning">'${foundfield}' has a self reference</span><br><span>This will cause a racing condition</span>`)
+                        ref.warnings.push(`<span class="has-text-warning-dark">'${foundfield}' has a self reference</span><br><span>This will cause a racing condition</span>`)
                         ref.$toast.error("You defined a self reference on field '"+foundfield+"'")
                       }
                   }
                 }else{
                   ref.dynamicFieldDependencies[foundfield]=[item.name]
                   if(foundfield==item.name){
-                    ref.warnings.push(`<span class="has-text-warning">'${foundfield}' has a self reference</span><br><span>This will cause a racing condition</span>`)
+                    ref.warnings.push(`<span class="has-text-warning-dark">'${foundfield}' has a self reference</span><br><span>This will cause a racing condition</span>`)
                     ref.$toast.error("You defined a self reference on field '"+foundfield+"'")
                   }
                 }
 
               }else{
                 if(!Object.keys(ref.form).includes(foundfield))
-                  ref.warnings.push(`<span class="has-text-warning">'${item.name}' has a reference to unknown field '${foundfield}'</span><br><span>Your form might not function as expected</span>`)
+                  ref.warnings.push(`<span class="has-text-warning-dark">'${item.name}' has a reference to unknown field '${foundfield}'</span><br><span>Your form might not function as expected</span>`)
               }
             }
           }
@@ -684,7 +690,7 @@
                     if(ref.dynamicFieldDependencies[key].indexOf(item2) === -1) {  // allready in there ?
                       ref.dynamicFieldDependencies[key].push(item2);												 // push it
                       if(key==item2){
-                        ref.warnings.push(`<span class="has-text-warning">'${key}' has a self reference</span><br><span>This will cause a racing condition</span>`)
+                        ref.warnings.push(`<span class="has-text-warning-dark">'${key}' has a self reference</span><br><span>This will cause a racing condition</span>`)
                         ref.$toast.error("You defined a self reference on field '"+key+"'")
                       }
                       finishedFlag=false
@@ -734,7 +740,7 @@
                 // console.log(`${item.name} - ${foundfield}`)
                 if((ref.defaults[item.name]!=undefined) && ref.fieldOptions[foundfield] && (ref.fieldOptions[foundfield].type=="expression") && (ref.defaults[foundfield]!=undefined)){
                   foundDependentDefaults=true
-                  ref.warnings.push(`<span class="has-text-warning">'${item.name}' has a default, referencing field '${foundfield}' which also has a default</span><br><span>Try to avoid dependent fields with both a default</span>`)
+                  ref.warnings.push(`<span class="has-text-warning-dark">'${item.name}' has a default, referencing field '${foundfield}' which also has a default</span><br><span>Try to avoid dependent fields with both a default</span>`)
                 }
               }
             }
@@ -891,7 +897,7 @@
                         }
 
                       }else{
-                        axios.post("/api/v1/expression",{expression:placeholderCheck.value},TokenStorage.getAuthentication())
+                        axios.post("/api/v1/expression?noLog="+(!!item.noLog),{expression:placeholderCheck.value},TokenStorage.getAuthentication())
                           .then((result)=>{
                             var restresult = result.data
                             if(restresult.status=="error"){
@@ -951,7 +957,7 @@
                      // console.log(placeholderCheck);
                     // execute query
 
-                    axios.post("/api/v1/query",{query:placeholderCheck.value,config:item.dbConfig},TokenStorage.getAuthentication())
+                    axios.post("/api/v1/query?noLog="+(!!item.noLog),{query:placeholderCheck.value,config:item.dbConfig},TokenStorage.getAuthentication())
                       .then((result)=>{
                         var restresult = result.data
                         if(restresult.status=="error"){
@@ -1439,7 +1445,8 @@ pre{
   word-wrap: break-word;       /* Internet Explorer 5.5+ */
 }
 .is-clipped-horizontal{
-  overflox-x:hidden;
+  overflow-x: clip;
+  overflow-y: visible;
 }
 .is-limited {
   text-overflow: ellipsis;
@@ -1452,7 +1459,7 @@ pre{
 .limit-height{
   max-height:300px;
   overflow-y:scroll;
-  overflow-x:hidden;
+  overflow-x:clip;
 }
 .cursor-progress{
   cursor:progress;

@@ -45,7 +45,7 @@
     <div class="container">
       <div class="is-pulled-right">
         <transition name="pop" appear>
-          <button v-if="warnings.length>0" @click="showWarnings=!showWarnings" class="button is-outlined is-warning mr-3">
+          <button v-if="warnings.length>0" @click="showWarnings=!showWarnings" class="button is-light is-warning mr-3">
             <span class="icon">
               <font-awesome-icon icon="exclamation-triangle" />
             </span>
@@ -386,18 +386,18 @@
         var empties=this.idmapping.filter((item, index) => !item.name)
         var parsing=this.idmapping.filter((item) => item.source=="Parsing issues")
         var badsource=this.idmapping.filter((item) => (item.source && !item.source=="Parsing issues" && (!(item.source.endsWith('.yaml')||item.source.endsWith('.yml'))||item.source.includes('/'))))
-        warnings=warnings.concat(dups.map(x => `<span class="has-text-warning">Form '${x}' has duplicates</span><br><span>Each form must have a unique name</span>`))
-        warnings=warnings.concat(empties.map(x => `<span class="has-text-warning">Empty Formname</span><br><span>Each form must have a unique name</span>`))
-        warnings=warnings.concat(parsing.map(x => `<span class="has-text-warning">Form '${x.name}' has bad YAML and cannot be parsed</span><br><span>${x.issue}</span>`))
-        warnings=warnings.concat(badsource.map(x => `<span class="has-text-warning">Form '${x.name}' has a bad 'source' property</span><br><span>A source should be valid a .yaml file.  No deep-paths are allowed.<br>Remove the source to keep it in the base file.</span>`))
+        warnings=warnings.concat(dups.map(x => `<span class="has-text-warning-dark">Form '${x}' has duplicates</span><br><span>Each form must have a unique name</span>`))
+        warnings=warnings.concat(empties.map(x => `<span class="has-text-warning-dark">Empty Formname</span><br><span>Each form must have a unique name</span>`))
+        warnings=warnings.concat(parsing.map(x => `<span class="has-text-warning-dark">Form '${x.name}' has bad YAML and cannot be parsed</span><br><span>${x.issue}</span>`))
+        warnings=warnings.concat(badsource.map(x => `<span class="has-text-warning-dark">Form '${x.name}' has a bad 'source' property</span><br><span>A source should be valid a .yaml file.  No deep-paths are allowed.<br>Remove the source to keep it in the base file.</span>`))
         if(!this.categoriesObj){
-          warnings.push(`<span class="has-text-warning">Bad categories</span><span>Unable to parse categories as valid YAML</span>`)
+          warnings.push(`<span class="has-text-warning-dark">Bad categories</span><span>Unable to parse categories as valid YAML</span>`)
         }
         if(!this.rolesObj){
-          warnings.push(`<span class="has-text-warning">Bad roles</span><span>Unable to parse roles as valid YAML</span>`)
+          warnings.push(`<span class="has-text-warning-dark">Bad roles</span><span>Unable to parse roles as valid YAML</span>`)
         }
         if(!this.constantsObj){
-          warnings.push(`<span class="has-text-warning">Bad constants</span><span>Unable to parse constants as valid YAML</span>`)
+          warnings.push(`<span class="has-text-warning-dark">Bad constants</span><span>Unable to parse constants as valid YAML</span>`)
         }
         // check field dups
         if(this.formsObj){
@@ -409,7 +409,7 @@
               })
               var dups = Helpers.findDuplicates(fields)
               dups.forEach((item2,i)=>{
-                 warnings.push(`<span class="has-text-warning">'${item2}' in form '${item.name}' has duplicates</span><br><span>Each field must have a unique name</span>`)
+                 warnings.push(`<span class="has-text-warning-dark">'${item2}' in form '${item.name}' has duplicates</span><br><span>Each field must have a unique name</span>`)
               })
             }
           })
