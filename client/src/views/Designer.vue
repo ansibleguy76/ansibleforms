@@ -478,7 +478,6 @@
         var ref= this;
         Form.backups(function(backups){
           ref.backups=backups
-          ref.selectfirst()
           ref.loaded=true
         },function(err){
           ref.$toast.error(err)
