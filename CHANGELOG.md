@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.3] - 2022-02-11
+
 ### Added
 
 -   function fnCredentials(name) to get credentials
@@ -159,7 +161,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/2.2.2...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/2.2.3...HEAD
+
+[2.2.3]: https://github.com/ansibleguy76/ansibleforms/compare/2.2.2...2.2.3
 
 [2.2.2]: https://github.com/ansibleguy76/ansibleforms/compare/2.2.1...2.2.2
 
