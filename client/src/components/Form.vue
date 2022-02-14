@@ -67,21 +67,21 @@
                           <span
                             class="icon is-clickable has-text-success"
                             @click="setExpressionFieldViewable(field.name,true)"
-                            v-if="(field.type=='expression' || field.type=='query') && !fieldOptions[field.name].viewable && !fieldOptions[field.name].editable"
+                            v-if="['expression','query','table'].includes(field.type) && !fieldOptions[field.name].viewable && !fieldOptions[field.name].editable"
                           >
                             <font-awesome-icon icon="eye" />
                           </span>
                           <span
                             class="icon is-clickable has-text-info"
                             @click="clip((field.type=='expression')?$v.form[field.name].$model:queryresults[field.name])"
-                            v-if="(field.type=='expression' || field.type=='query') && fieldOptions[field.name].viewable && !fieldOptions[field.name].editable"
+                            v-if="['expression','query','table'].includes(field.type) && fieldOptions[field.name].viewable && !fieldOptions[field.name].editable"
                           >
                             <font-awesome-icon icon="copy" />
                           </span>
                           <span
                             class="icon is-clickable has-text-danger"
                             @click="setExpressionFieldViewable(field.name,false)"
-                            v-if="(field.type=='expression' || field.type=='query') && fieldOptions[field.name].viewable && !fieldOptions[field.name].editable"
+                            v-if="['expression','query','table'].includes(field.type) && fieldOptions[field.name].viewable && !fieldOptions[field.name].editable"
                           >
                             <font-awesome-icon icon="times" />
                           </span>
@@ -146,21 +146,29 @@
                       <div v-if="field.type=='radio'" >
                         <BulmaCheckRadio :val="radiovalue" checktype="radio" v-for="radiovalue in field.values" :key="field.name+'_'+radiovalue" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="radiovalue"  @change="evaluateDynamicFields(field.name)" />
                       </div>
-                      <BulmaEditTable
-                        v-if="field.type=='table'"
-                        :dynamicFieldStatus="dynamicFieldStatus"
-                        :form="form"
-                        :tableFields="field.tableFields"
-                        :click="false"
-                        tableClass="table is-striped is-bordered is-narrow"
-                        :allowInsert="field.allowInsert && true"
-                        :allowDelete="field.allowDelete && true"
-                        :deleteMarker="field.deleteMarker || ''"
-                        :insertMarker="field.insertMarker || ''"
-                        :readonlyColumns="field.readonlyColumns || []"
-                        :isLoading="!['fixed','variable'].includes(dynamicFieldStatus[field.name]) && (field.expression!=undefined || field.query!=undefined)"
-                        :values="form[field.name]||[]"
-                        v-model="$v.form[field.name].$model" />
+                      <div v-if="field.type=='table'">
+                        <BulmaEditTable
+                          v-show="!fieldOptions[field.name].viewable"
+                          :dynamicFieldStatus="dynamicFieldStatus"
+                          :form="form"
+                          :tableFields="field.tableFields"
+                          :click="false"
+                          tableClass="table is-striped is-bordered is-narrow"
+                          :allowInsert="field.allowInsert && true"
+                          :allowDelete="field.allowDelete && true"
+                          :deleteMarker="field.deleteMarker || ''"
+                          :insertMarker="field.insertMarker || ''"
+                          :readonlyColumns="field.readonlyColumns || []"
+                          :isLoading="!['fixed','variable'].includes(dynamicFieldStatus[field.name]) && (field.expression!=undefined || field.query!=undefined)"
+                          :values="form[field.name]||[]"
+                          v-model="$v.form[field.name].$model" />
+                        <div
+                          @dblclick="setExpressionFieldViewable(field.name,false)"
+                          v-if="fieldOptions[field.name].viewable"
+                          class="box limit-height is-limited mb-3">
+                          <vue-json-pretty :data="$v.form[field.name].$model"></vue-json-pretty>
+                        </div>
+                      </div>
                       <div :class="{'has-icons-left':!!field.icon && field.type!='query'}" class="control">
                         <!-- type = expression -->
                         <div v-if="field.type=='expression'" :class="{'is-loading':(dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running') &! fieldOptions[field.name].editable}" class="control">
