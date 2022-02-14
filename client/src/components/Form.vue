@@ -146,7 +146,21 @@
                       <div v-if="field.type=='radio'" >
                         <BulmaCheckRadio :val="radiovalue" checktype="radio" v-for="radiovalue in field.values" :key="field.name+'_'+radiovalue" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="radiovalue"  @change="evaluateDynamicFields(field.name)" />
                       </div>
-                      <BulmaEditTable v-if="field.type=='table'" :dynamicFieldStatus="dynamicFieldStatus" :form="form" :tableFields="field.tableFields" :click="false" tableClass="table is-striped is-bordered is-narrow" v-model="$v.form[field.name].$model" />
+                      <BulmaEditTable
+                        v-if="field.type=='table'"
+                        :dynamicFieldStatus="dynamicFieldStatus"
+                        :form="form"
+                        :tableFields="field.tableFields"
+                        :click="false"
+                        tableClass="table is-striped is-bordered is-narrow"
+                        :allowInsert="field.allowInsert && true"
+                        :allowDelete="field.allowDelete && true"
+                        :deleteMarker="field.deleteMarker || ''"
+                        :insertMarker="field.insertMarker || ''"
+                        :readonlyColumns="field.readonlyColumns || []"
+                        :isLoading="!['fixed','variable'].includes(dynamicFieldStatus[field.name]) && (field.expression || field.query)"
+                        :values="form[field.name]||[]"
+                        v-model="$v.form[field.name].$model" />
                       <div :class="{'has-icons-left':!!field.icon && field.type!='query'}" class="control">
                         <!-- type = expression -->
                         <div v-if="field.type=='expression'" :class="{'is-loading':(dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running') &! fieldOptions[field.name].editable}" class="control">
@@ -592,14 +606,21 @@
       },
       defaultField(fieldname){
         // reset to default value
-        // console.log(`[${fieldname}] default`)
-        if(this.defaults[fieldname]!=undefined){
-          this.setFieldStatus(fieldname,"default")
+        try{
+          console.log(`[${fieldname}] default`)
+          if(this.defaults[fieldname]!=undefined){
+            this.setFieldStatus(fieldname,"default")
+          }
+          else{
+            this.setFieldStatus(fieldname,undefined)
+          }
+
+          Vue.set(this.form,fieldname,this.defaults[fieldname])
+        }catch(e){
+          console.log(e)
+          throw e
         }
-        else{
-          this.setFieldStatus(fieldname,undefined)
-        }
-        Vue.set(this.form,fieldname,this.defaults[fieldname])
+
       },
       setFieldStatus(fieldname,status,reeval=true){
         // console.log(`[${fieldname}] ----> ${status}`)
@@ -621,6 +642,12 @@
         }
         return result
       },
+      initiateDefaults(){
+        var ref=this
+        this.currentForm.fields.forEach((item,i) => {
+          ref.defaults[item.name]=item.default
+        })
+      },
       // Find variable devDependencies
       findVariableDependencies(){
         var ref=this
@@ -632,7 +659,6 @@
         // create a list of the fields
         this.currentForm.fields.forEach((item,i) => {
           fields.push(item.name)
-          ref.defaults[item.name]=item.default
         })
         var dups = Helpers.findDuplicates(fields)
         dups.forEach((item,i)=>{
@@ -640,9 +666,9 @@
           ref.$toast.error("You have duplicates for field '"+item+"'")
         })
         this.currentForm.fields.forEach((item,i) => {
-          if(["expression","query"].includes(item.type)){
+          if(["expression","query","table"].includes(item.type)){
             var testRegex = /\$\(([^)]+)\)/g;
-            var matches=(item.expression || item.query).matchAll(testRegex);
+            var matches=(item.expression || item.query || "").matchAll(testRegex);
             for(var match of matches){
               foundmatch = match[0];                                              // found $(xxx)
               foundfield = match[1];                                              // found xxx
@@ -834,6 +860,10 @@
           return fieldvalue
         }
       },
+      stopLoop(error){
+        clearInterval(this.interval)
+        this.$toast.error("Expression interval stopped !\n"+error)
+      },
       //----------------------------------------------------------------
       // starts the evaluation of dynamic fields (expression or query)
       //----------------------------------------------------------------
@@ -858,7 +888,7 @@
                 // if expression and not processed yet or needs to be reprocessed
                 var flag = ref.dynamicFieldStatus[item.name];                     // current field status (running/fixed/variable)
                 var placeholderCheck=undefined;                                   // result for a placeholder check
-                if(((item.type=="expression" && item.expression) || (item.type=="query" && item.expression)) && (flag==undefined || ref.hasDefaultDependencies(item.name) )){                // if expression and not evaluated yet
+                if(item.expression && (flag==undefined || ref.hasDefaultDependencies(item.name))){                // if expression and not evaluated yet
                   // console.log("eval expression " + item.name)
                   // console.log(`[${item.name}][${flag}] : evaluating`)
                   if(item.required){
@@ -892,7 +922,7 @@
                           try{
                             ref.defaultField(item.name)
                           }catch(err){
-                            ref.stopLoop()
+                            ref.stopLoop("Defaulting " + item.name)
                           }
                         }
 
@@ -908,6 +938,7 @@
                               // console.log("expression for "+item.name+" triggered : result found -> "+ JSON.stringify(restresult.data.output));
                               if(item.type=="expression") Vue.set(ref.form, item.name, restresult.data.output);
                               if(item.type=="query") Vue.set(ref.queryresults, item.name, [].concat(restresult.data.output??[]));
+                              if(item.type=="table") Vue.set(ref.form, item.name, [].concat(restresult.data.output??[]));
 
                               // expression returned undefined, so lets set to default if we have one
                               if(restresult.data.output==undefined && (item.default!=undefined)){
@@ -934,7 +965,7 @@
                                 try{
                                   ref.defaultField(item.name)
                                 }catch(err){
-                                  ref.stopLoop()
+                                  ref.stopLoop("Defaulting " + item.name)
                                 }
                           })
                       }
@@ -945,7 +976,7 @@
                     // console.log(item.name + " is not evaluated yet");
                     ref.defaultField(item.name)
                   }
-                } else if(((item.type=="query" && item.query) || (item.type=="expression" && item.query)) && flag==undefined){
+                } else if(item.query && flag==undefined){
                    // console.log("eval query : " + item.name)
                   // set flag running
                   if(item.required){
@@ -1404,12 +1435,15 @@
       this.form={}
       // initialize defaults
       this.currentForm.fields.forEach((item, i) => {
-        if(["expression","query"].includes(item.type)){
+        if(["expression","query","table"].includes(item.type)){
           Vue.set(ref.fieldOptions,item.name,{})                                // storing some easy to find options
           Vue.set(ref.fieldOptions[item.name],"valueColumn",item.valueColumn||"")
           Vue.set(ref.fieldOptions[item.name],"placeholderColumn",item.placeholderColumn||"")
           Vue.set(ref.fieldOptions[item.name],"type",item.type)
           Vue.set(ref.form,item.name,item.default)
+          if(item.type=="table"){
+            Vue.set(ref.form,item.name,[])
+          }
         }else if(["checkbox"].includes(item.type)){
           Vue.set(ref.form,item.name,item.default||false)
         }else{
@@ -1427,9 +1461,10 @@
       }
       this.$v.form.$reset();
       // find all variable dependencies
+      this.initiateDefaults()
       this.findVariableDependencies()
       this.findVariableDependentOf()
-      this.startDynamicFieldsLoop();
+      this.startDynamicFieldsLoop()
     },
     beforeDestroy(){
       clearInterval(this.interval)
