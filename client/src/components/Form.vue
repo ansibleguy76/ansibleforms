@@ -152,6 +152,7 @@
                           :dynamicFieldStatus="dynamicFieldStatus"
                           :form="form"
                           :tableFields="field.tableFields"
+                          :hasError="$v.form[field.name].$invalid"
                           :click="false"
                           tableClass="table is-striped is-bordered is-narrow"
                           :allowInsert="field.allowInsert && true"
@@ -161,6 +162,7 @@
                           :readonlyColumns="field.readonlyColumns || []"
                           :isLoading="!['fixed','variable'].includes(dynamicFieldStatus[field.name]) && (field.expression!=undefined || field.query!=undefined)"
                           :values="form[field.name]||[]"
+                          @input="evaluateDynamicFields(field.name)"
                           v-model="$v.form[field.name].$model" />
                         <div
                           @dblclick="setExpressionFieldViewable(field.name,false)"
@@ -615,7 +617,6 @@
       defaultField(fieldname){
         // reset to default value
         try{
-          console.log(`[${fieldname}] default`)
           if(this.defaults[fieldname]!=undefined){
             this.setFieldStatus(fieldname,"default")
           }
@@ -822,7 +823,7 @@
             targetflag = undefined
             // mark the field as a dependent field
             if(foundfield in ref.form){      // does field xxx exist in our form ?
-              if(ref.fieldOptions[foundfield] && ref.fieldOptions[foundfield].type=="expression" && (typeof ref.form[foundfield]=="object")){
+              if(ref.fieldOptions[foundfield] && ["expression","table"].includes(ref.fieldOptions[foundfield].type) && (typeof ref.form[foundfield]=="object")){
                 fieldvalue=JSON.stringify(ref.form[foundfield])
               }else{
                 fieldvalue = ref.getFieldValue(ref.form[foundfield],column,false);// get value of xxx

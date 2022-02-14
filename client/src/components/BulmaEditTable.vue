@@ -56,7 +56,8 @@
 
           </div>
         </BulmaModal>
-        <table :class="tableClass">
+        <div>
+          <table :class="getTableClass">
             <thead>
                 <tr>
                     <th>Actions</th>
@@ -138,6 +139,7 @@
                 </template>
             </tbody>
         </table>
+      </div>
     </div>
 </template>
 
@@ -182,7 +184,8 @@
             allowDelete:{type: Boolean, default: true},
             deleteMarker:{type: String, default: ""},
             insertMarker:{type: String, default: ""},
-            readonlyColumns:{type: Array}
+            readonlyColumns:{type: Array},
+            hasError:{type: Boolean}
         },
         data: function(){
             return {
@@ -257,9 +260,17 @@
         computed: {
             filterRow: function () {
                 return this.tableFields.findIndex( (e) => e.filterable ) >= 0;
-            }
+            },
+            getTableClass(){
+                var tmp=this.tableClass
+                if(this.hasError){
+                  tmp+=" hasError"
+                }
+                return tmp
+            },
         },
         methods:{
+
             getValueLabel(field){
               if(field){
                 if(field.valueColumn){
@@ -437,4 +448,9 @@
 .select, .select select{
   width:100%;
 }
+
+.hasError{
+  border:2px solid red!important;
+}
+
 </style>
