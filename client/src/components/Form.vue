@@ -158,7 +158,7 @@
                         :deleteMarker="field.deleteMarker || ''"
                         :insertMarker="field.insertMarker || ''"
                         :readonlyColumns="field.readonlyColumns || []"
-                        :isLoading="!['fixed','variable'].includes(dynamicFieldStatus[field.name]) && (field.expression || field.query)"
+                        :isLoading="!['fixed','variable'].includes(dynamicFieldStatus[field.name]) && (field.expression!=undefined || field.query!=undefined)"
                         :values="form[field.name]||[]"
                         v-model="$v.form[field.name].$model" />
                       <div :class="{'has-icons-left':!!field.icon && field.type!='query'}" class="control">
