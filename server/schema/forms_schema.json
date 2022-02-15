@@ -140,8 +140,7 @@
               "type": "object",
               "required": [
                 "type",
-                "name",
-                "label"
+                "name"
               ],
               "oneOf": [{
                   "properties": {
@@ -163,6 +162,7 @@
                     "allowInsert": {"not":{}},
                     "deleteMarker": {"not":{}},
                     "insertMarker": {"not":{}},
+                    "refresh": {"not":{}},
                     "readonlyColumns": {"not":{}},
                     "values": {"not":{}},
                     "isHtml": {"not":{}},
@@ -188,6 +188,7 @@
                     "hide": {"not":{}},
                     "values": {"not":{}},
                     "multiple": {"not":{}},
+                    "refresh": {"not":{}},
                     "allowDelete": {"not":{}},
                     "allowInsert": {"not":{}},
                     "deleteMarker": {"not":{}},
@@ -216,6 +217,7 @@
                     "expression": {"not":{}},
                     "runLocal": {"not":{}},
                     "keydown": {"not":{}},
+                    "refresh": {"not":{}},
                     "isHtml": {"not":{}},
                     "dbConfig": {"not":{}},
                     "hide": {"not":{}},
@@ -250,6 +252,7 @@
                     "keydown": {"not":{}},
                     "isHtml": {"not":{}},
                     "dbConfig": {"not":{}},
+                    "refresh": {"not":{}},
                     "hide": {"not":{}},
                     "values": {"not":{}},
                     "allowDelete": {"not":{}},
@@ -280,6 +283,7 @@
                     "expression": {"not":{}},
                     "runLocal": {"not":{}},
                     "keydown": {"not":{}},
+                    "refresh": {"not":{}},
                     "allowDelete": {"not":{}},
                     "allowInsert": {"not":{}},
                     "deleteMarker": {"not":{}},
@@ -405,6 +409,7 @@
                     "filterColumns": {"not":{}},
                     "maxLength": {"not":{}},
                     "multiple": {"not":{}},
+                    "refresh": {"not":{}},
                     "outputObject": {"not":{}},
                     "keydown": {"not":{}},
                     "isHtml": {"not":{}},
@@ -509,6 +514,7 @@
                 "ignoreIncomplete": {"type": "boolean"},
                 "noLog": {"type": "boolean"},
                 "keydown": {"type": "boolean"},
+                "refresh": {"type": ["boolean","string"]},
                 "isHtml": {"type": "boolean"},
                 "runLocal": {"type": "boolean"},
                 "query": {"type": "string"},

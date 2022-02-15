@@ -155,7 +155,7 @@
         this.jobId=id
         axios.delete("/api/v1/ansible/job/" + id,TokenStorage.getAuthentication())
           .then((result)=>{
-              console.log(result)
+              // console.log(result)
               if(result.data.status=="success"){
                 ref.jobOutput=result.data.data.output;
                 ref.$toast.success("Job "+id+" is deleted");

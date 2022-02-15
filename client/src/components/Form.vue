@@ -40,8 +40,21 @@
                   <transition name="slide">
                     <div class="field mt-3" v-if="visibility[field.name]">
                       <!-- add field label -->
-                      <label class="label has-text-primary">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span>
+                      <label class="label" :class="{'has-text-primary':!field.hide,'has-text-grey':field.hide}">{{ field.label || field.name }} <span v-if="field.required" class="has-text-danger">*</span>
                         <span class="is-pulled-right">
+                          <span
+                            @click="setFieldStatus(field.name,undefined)" 
+                            v-if="fieldOptions[field.name].refresh"
+                            class="tag is-link icon-text is-clickable">
+                            <span>{{fieldOptions[field.name].refresh}}</span>
+                            <span class="icon"><font-awesome-icon icon="arrow-rotate-right" spin /></span>
+                          </span>
+                          <span v-if="(field.expression!=undefined || field.query!=undefined) && field.refresh &! fieldOptions[field.name].refresh"
+                            class="icon is-clickable has-text-link"
+                            @click="setFieldStatus(field.name,undefined)"
+                          >
+                            <font-awesome-icon icon="arrow-rotate-right" />
+                          </span>
                           <span
                             class="icon is-clickable"
                             :class="{'has-text-success':!fieldOptions[field.name].debug,'has-text-danger':fieldOptions[field.name].debug}"
@@ -1075,6 +1088,17 @@
                 }
               }
 
+              // see if it is time to refresh
+              if(item.refresh && typeof item.refresh=="string"){
+                var match=item.refresh.match(/([0-9]+)s/g)
+                if(match){
+                  var secs=parseInt(match[0])
+                  if(refreshCounter%(10*secs)==0){
+                    ref.setFieldStatus(item.name,undefined)
+                  }
+                }
+              }
+
             } // end loop function
           ) // end field loop
           if(hasUnevaluatedFields){
@@ -1117,6 +1141,7 @@
           if(refreshCounter%10==0){
             ref.generateJsonOutput() // refresh json output
           }
+
         },100); // end interval
       },
       resetResult(){
@@ -1461,6 +1486,10 @@
           Vue.set(ref.fieldOptions[item.name],"valueColumn",item.valueColumn||"")
           Vue.set(ref.fieldOptions[item.name],"placeholderColumn",item.placeholderColumn||"")
           Vue.set(ref.fieldOptions[item.name],"type",item.type)
+          // if interval refresh
+          if(item.refresh && typeof item.refresh=='string' && /[0-9]+s/.test(item.refresh)){
+            Vue.set(ref.fieldOptions[item.name],"refresh",item.refresh)
+          }
           Vue.set(ref.form,item.name,item.default)
           if(item.type=="table"){
             Vue.set(ref.form,item.name,[])
