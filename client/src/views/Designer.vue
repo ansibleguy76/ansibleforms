@@ -273,7 +273,6 @@
           playbook: "dummy.yaml",
           description: "",
           roles: ["public"],
-          constants: {},
           categories: [],
           tileClass: "has-background-info-light",
           icon: "bullseye",
