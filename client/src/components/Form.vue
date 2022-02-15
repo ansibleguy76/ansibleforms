@@ -163,6 +163,7 @@
                           :isLoading="!['fixed','variable'].includes(dynamicFieldStatus[field.name]) && (field.expression!=undefined || field.query!=undefined)"
                           :values="form[field.name]||[]"
                           @input="evaluateDynamicFields(field.name)"
+                          @warning="addTableWarnings(field.name,...arguments)"
                           v-model="$v.form[field.name].$model" />
                         <div
                           @dblclick="setExpressionFieldViewable(field.name,false)"
@@ -621,12 +622,18 @@
             this.setFieldStatus(fieldname,"default")
           }
           else{
-            this.setFieldStatus(fieldname,undefined)
+            var prevState=this.dynamicFieldStatus[fieldname]
+            if(prevState=="running"){
+              this.setFieldStatus(fieldname,undefined,false)
+            }else{
+              this.setFieldStatus(fieldname,undefined)
+            }
+
           }
 
           Vue.set(this.form,fieldname,this.defaults[fieldname])
         }catch(e){
-          console.log(e)
+          console.log("Error: " + e)
           throw e
         }
 
@@ -656,6 +663,11 @@
         this.currentForm.fields.forEach((item,i) => {
           ref.defaults[item.name]=item.default
         })
+      },
+      addTableWarnings(name,data){
+        var c=(data.length>1)?"Columns":"Column"
+        var i=(data.length>1)?"are":"is"
+        this.warnings.push(`<span class="has-text-warning-dark">Table '${name}' has missing data</span><br><span>${c} '${data}' ${i} missing.</span>`)
       },
       // Find variable devDependencies
       findVariableDependencies(){
@@ -790,8 +802,8 @@
         // replace placeholders if possible
         //---------------------------------------
         var ref = this
-        var testRegex = /\$\(([^)]+)\)/g;                                       // a regex to find field placeholders $(xxx)
-        var retestRegex = /\$\(([^)]+)\)/g;                                     // the same regex, to retest after, because a regex can only be used once
+        var testRegex = /\$\(([^)]+)\)/g                                        // a regex to find field placeholders $(xxx)
+        var retestRegex = /\$\(([^)]+)\)/g                                      // the same regex, to retest after, because a regex can only be used once
         var match = undefined
         var matches =undefined
         var foundmatch=false
@@ -803,8 +815,9 @@
         var hasPlaceholders = false;
         var newValue = item.expression || item.query                                                    // make a copy of our item
         // console.log("item = " + newValue)
-        matches=(item.expression || item.query).matchAll(testRegex);
-        // console.log("matches : " + matches.length)
+        // console.log(typeof newValue)
+        // console.log(testRegex)
+        matches=[...newValue.matchAll(testRegex)]
         for(match of matches){
             // console.log("-> match : " + match[0] + "->" + match[1])
             foundmatch = match[0];                                              // found $(xxx)
@@ -844,7 +857,7 @@
                   fieldvalue="__undefined__"   // catch undefined values
                 }
                 fieldvalue=ref.stringifyValue(fieldvalue)
-                 // console.log("replacing placeholder")
+                // console.log("replacing placeholder")
                 newValue=newValue.replace(foundmatch,fieldvalue);               // replace the placeholder with the value
                  // console.log("replaced")
                  // console.log(item.name + " -> " + newValue)
@@ -912,7 +925,7 @@
                       // console.log(`[${item.name}] 2 : ${placeholderCheck.value}`)
                       // allow local run in browser
                       if(item.runLocal){
-                        //console.log("Running local expression : " + placeholderCheck.value)
+                        // console.log("Running local expression : " + placeholderCheck.value)
                         var result
                         try{
                           result=eval(placeholderCheck.value)
@@ -1056,7 +1069,8 @@
               }else{  // not visible field
                 if(item.type=="expression"){
                   ref.defaultField(item.name)
-                }else{
+                }else if(item.type=="query" || item.type=="table"){
+                  // console.log("resetting " + item.name)
                   ref.resetField(item.name)
                 }
               }
@@ -1126,8 +1140,6 @@
                 // set all variable fields blank and re-evaluate
                 if(!ref.fieldOptions[item].editable){
                   ref.resetField(item)
-                  // ref.setFieldStatus(item,undefined)
-                  // Vue.set(ref.form,item,undefined);                // reset value in the form
                 }
             })
           }
