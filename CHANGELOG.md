@@ -9,10 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
--   Allow field named ___inventory___ to have array to launch multiple inventories
+-   Allow field named \_\_inventory\_\_ to have array to launch multiple inventories (ansible only)
 -   Add new validation validIf and validIfNot
--   Add refresh on expressions and queries
--   Add table enhancements (query + expression, markers and allowDelete/Insert)
+-   Add new refresh property on expressions and queries
+-   Add table enhancements (prepopulate with query + expression, add delete/insertMarkers and allowDelete/Insert)
 
 ### Fixed
 
@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Fixed (dependency + expression) bug
 -   Fixed execute bug (read proper exit code)
 -   Fixed Warning color to orange
+-   Removed constants from new form in designer
 
 ### Changed
 
