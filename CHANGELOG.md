@@ -9,10 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
--   Allow field named \_\_inventory\_\_ to have array to launch multiple inventories (ansible only)
--   Add new validation validIf and validIfNot
--   Add new refresh property on expressions and queries
--   Add table enhancements (prepopulate with query + expression, add delete/insertMarkers and allowDelete/Insert)
+-   Allow field named \_\_inventory\_\_ to have array to launch against multiple inventories (ansible only)
+-   Add new validation `validIf` and `validIfNot`.  Use an expression field as validation.
+-   Add new `refresh` property to manually or auto refresh expression/query fields.
+-   Add table enhancements
+    - prepopulate with `query` and `expression`
+    - insertMarker and deleteMarker (to mark deleted or new records)
+    - allowDelete and allowInsert (to allow insert/delete)
+    - readonlyField
+    With this table feature you can now load existing data and use table to modify it.  
+    The allowInsert set to false will focus on modification only.  
+    The deleteMarker set to value of choice, will allow you to use ansible `absent` for deleted records.  
+    Read the wiki for more details.
 
 ### Fixed
 
@@ -25,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 -   Upgrade from fontawesome 5 to 6
+-   Label is no longer a required property
 
 ## [2.2.3] - 2022-02-11
 
