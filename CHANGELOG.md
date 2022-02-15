@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Fixed a bug in notIn and in validation
 -   Fixed (dependency + expression) bug
+-   Fixed execute bug (read proper exit code)
+-   Fixed Warning color to orange
 
 ### Changed
 
