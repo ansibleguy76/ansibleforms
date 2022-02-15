@@ -43,8 +43,8 @@
                       <label class="label" :class="{'has-text-primary':!field.hide,'has-text-grey':field.hide}">{{ field.label || field.name }} <span v-if="field.required" class="has-text-danger">*</span>
                         <span class="is-pulled-right">
                           <span
-                            @click="setFieldStatus(field.name,undefined)" 
-                            v-if="fieldOptions[field.name].refresh"
+                            @click="setFieldStatus(field.name,undefined)"
+                            v-if="fieldOptions[field.name] && fieldOptions[field.name].refresh"
                             class="tag is-link icon-text is-clickable">
                             <span>{{fieldOptions[field.name].refresh}}</span>
                             <span class="icon"><font-awesome-icon icon="arrow-rotate-right" spin /></span>
