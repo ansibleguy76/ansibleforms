@@ -7,20 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.2.4] - 2022-02-15
+
 ### Added
 
 -   Allow field named \_\_inventory\_\_ to have array to launch against multiple inventories (ansible only)
 -   Add new validation `validIf` and `validIfNot`.  Use an expression field as validation.
 -   Add new `refresh` property to manually or auto refresh expression/query fields.
 -   Add table enhancements
-    - prepopulate with `query` and `expression`
-    - insertMarker and deleteMarker (to mark deleted or new records)
-    - allowDelete and allowInsert (to allow insert/delete)
-    - readonlyField
-    With this table feature you can now load existing data and use table to modify it.  
-    The allowInsert set to false will focus on modification only.  
-    The deleteMarker set to value of choice, will allow you to use ansible `absent` for deleted records.  
-    Read the wiki for more details.
+    -   prepopulate with `query` and `expression`
+    -   insertMarker and deleteMarker (to mark deleted or new records)
+    -   allowDelete and allowInsert (to allow insert/delete)
+    -   readonlyField
+        With this table feature you can now load existing data and use table to modify it.  
+        The allowInsert set to false will focus on modification only.  
+        The deleteMarker set to value of choice, will allow you to use ansible `absent` for deleted records.  
+        Read the wiki for more details.
 
 ### Fixed
 
@@ -189,7 +191,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/2.2.3...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/2.2.4...HEAD
+
+[2.2.4]: https://github.com/ansibleguy76/ansibleforms/compare/2.2.3...2.2.4
 
 [2.2.3]: https://github.com/ansibleguy76/ansibleforms/compare/2.2.2...2.2.3
 
