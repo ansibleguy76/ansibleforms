@@ -6,7 +6,14 @@ var Helpers = {
   },
   findDuplicates(arry){
     return arry.filter((item, index) => arry.indexOf(item) !== index)
-  },  
+  },
+  findMissing(needles,haystack){
+    if(needles || needles.length>0){
+      return haystack.filter(x => !needles.includes(x))
+    }else {
+      return []
+    }
+  }
 };
 
 export default Helpers
