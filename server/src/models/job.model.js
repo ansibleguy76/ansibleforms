@@ -137,7 +137,12 @@ Job.findById = function (id,text,result) {
                 if(!text){
                   if(el.output_type=="stderr"){
                     // mark errors
-                    record = "<span class='has-text-danger'>"+record+"</span>"
+                    if(record.match(/^\[WARNING\].*/gm)){
+                      record = "<span class='has-text-warning'>"+record+"</span>"
+                    }else{
+                      record = "<span class='has-text-danger'>"+record+"</span>"
+                    }
+
                   }else{
                     // mark play / task lines as bold
                     if(record.match(/^([A-Z]*) \[([^\]]*)\] (\**)$/gm)){

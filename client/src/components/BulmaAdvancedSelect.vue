@@ -195,6 +195,6 @@
   border-radius: 4px;
 }
 .hasError{
-  border-color: red!important;
+  border-color: #ea4141!important;
 }
 </style>

@@ -457,7 +457,7 @@
 }
 
 .hasError{
-  border:2px solid red!important;
+  border:2px solid #ea4141!important;
 }
 
 </style>
