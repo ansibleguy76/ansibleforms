@@ -148,6 +148,7 @@
     import BulmaModal from './BulmaModal.vue'
     import Vuelidate from 'vuelidate'
     import BulmaAdvancedSelect from './BulmaAdvancedSelect'
+    import Helpers from './../lib/Helpers.js'
     import BulmaCheckRadio from './BulmaCheckRadio'
     import { required,minValue,maxValue,minLength,maxLength, helpers,requiredIf } from 'vuelidate/lib/validators'
 
@@ -239,10 +240,17 @@
                 }else{
                   this.showedRows = undefined
                 }
-
             },
             values: function(){
               this.rows=this.values
+              if(this.values && this.values.length>0){
+                var fields = this.tableFields.map(x => x.name)
+                var data = Object.keys(this.values[0])
+                var missing = Helpers.findMissing(data,fields)
+                if(missing.length>0){
+                  this.$emit('warning',missing)
+                }
+              }
             }
         },
         mounted: function () {
@@ -270,7 +278,6 @@
             },
         },
         methods:{
-
             getValueLabel(field){
               if(field){
                 if(field.valueColumn){
