@@ -11,10 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Allow field named ___inventory___ to have array to launch multiple inventories
 -   Add new validation validIf and validIfNot
+-   Add refresh on expressions and queries
+-   Add table enhancements (query + expression, markers and allowDelete/Insert)
 
 ### Fixed
 
 -   Fixed a bug in notIn and in validation
+-   Fixed (dependency + expression) bug
 
 ### Changed
 
