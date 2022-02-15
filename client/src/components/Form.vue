@@ -1,30 +1,40 @@
 <template>
   <section class="section has-background-light">
+    <!-- warnings pane -->
     <BulmaQuickView v-if="warnings && showWarnings" title="Form warnings" footer="" @close="showWarnings=false">
         <p v-for="w,i in warnings" :key="'warning'+i" class="mb-3" v-html="w"></p>
     </BulmaQuickView>
+
     <div class="container" v-if="formIsReady">
       <div class="columns">
+        <!-- form column -->
         <div class="column is-clipped-horizontal">
+          <!-- form title -->
           <h1 class="title">{{ currentForm.name }} <span v-if="currentForm.help" class="tag is-info is-clickable" @click="showHelp=!showHelp"><span class="icon"><font-awesome-icon icon="question-circle" /></span><span v-if="showHelp">Hide help</span><span v-else>Show help</span></span></h1>
+          <!-- help pane -->
           <article v-if="currentForm.help && showHelp" class="message is-info">
             <div class="message-body content"><VueShowdown :markdown="currentForm.help" flavor="github" :options="{ghCodeBlocks:true}" /></div>
           </article>
-          <button @click="generateJsonOutput();showJson=true" class="button is-info is-small mr-3">
+          <!-- top form buttons -->
+          <!-- show extra vars -->
+          <button @click="generateJsonOutput();showExtraVars=true" class="button is-info is-small mr-3">
             <span class="icon">
               <font-awesome-icon icon="eye" />
             </span>
             <span>Show Extravars</span>
           </button>
+          <!-- debug button - show hidden expressions -->
           <span v-if="isAdmin" class="icon is-clickable is-pulled-right" :class="{'has-text-success':!showHidden,'has-text-danger':showHidden}" @click="showHidden=!showHidden">
               <font-awesome-icon :icon="(showHidden?'search-minus':'search-plus')" />
           </span>
+          <!-- reload button -->
           <button @click="$emit('rerender')" class="button is-warning is-small mr-3">
             <span class="icon">
               <font-awesome-icon icon="redo" />
             </span>
             <span>Reload This Form</span>
           </button>
+          <!-- warnings button -->
           <transition name="pop" appear>
             <button v-if="warnings.length>0" @click="showWarnings=!showWarnings" class="button is-small is-light is-warning">
               <span class="icon">
@@ -33,15 +43,35 @@
               <span class="mr-1">{{(showWarnings)?'Hide':'This form has'}} Warnings </span>
             </button>
           </transition>
+          <!-- groups -->
           <div :key="group" v-for="group in fieldgroups" class="mt-4">
             <div :class="{'box':checkGroupDependencies(group)}">
+              <!-- group title -->
               <h3 class="title is-3" v-if="checkGroupDependencies(group)">{{group}}</h3>
+                <!-- field loop -->
                 <div :key="field.name" v-for="field in filterfieldsByGroup(group)">
                   <transition name="slide">
                     <div class="field mt-3" v-if="visibility[field.name]">
-                      <!-- add field label -->
-                      <label class="label has-text-primary">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span>
+                      <!-- field label -->
+                      <label class="label" :class="{'has-text-primary':!field.hide,'has-text-grey':field.hide}">{{ field.label || field.name }} <span v-if="field.required" class="has-text-danger">*</span>
+                        <!-- field buttons -->
                         <span class="is-pulled-right">
+                          <!-- refresh auto -->
+                          <span
+                            @click="setFieldStatus(field.name,undefined)"
+                            v-if="fieldOptions[field.name] && fieldOptions[field.name].refresh"
+                            class="tag is-link icon-text is-clickable">
+                            <span>{{fieldOptions[field.name].refresh}}</span>
+                            <span class="icon"><font-awesome-icon icon="arrow-rotate-right" spin /></span>
+                          </span>
+                          <!-- refresh manual -->
+                          <span v-if="(field.expression!=undefined || field.query!=undefined) && field.refresh &! fieldOptions[field.name].refresh"
+                            class="icon is-clickable has-text-link"
+                            @click="setFieldStatus(field.name,undefined)"
+                          >
+                            <font-awesome-icon icon="arrow-rotate-right" />
+                          </span>
+                          <!-- enable field debug -->
                           <span
                             class="icon is-clickable"
                             :class="{'has-text-success':!fieldOptions[field.name].debug,'has-text-danger':fieldOptions[field.name].debug}"
@@ -50,6 +80,7 @@
                           >
                             <font-awesome-icon :icon="(fieldOptions[field.name].debug?'search-minus':'search-plus')" />
                           </span>
+                          <!-- expression edit buttons -->
                           <span
                             class="icon is-clickable has-text-success"
                             @click="setExpressionFieldEditable(field.name,true)"
@@ -64,30 +95,34 @@
                           >
                             <font-awesome-icon icon="times" />
                           </span>
+                          <!-- raw content buttons -->
+                          <!-- show -->
                           <span
                             class="icon is-clickable has-text-success"
                             @click="setExpressionFieldViewable(field.name,true)"
-                            v-if="(field.type=='expression' || field.type=='query') && !fieldOptions[field.name].viewable && !fieldOptions[field.name].editable"
+                            v-if="['expression','query','table'].includes(field.type) && !fieldOptions[field.name].viewable && !fieldOptions[field.name].editable"
                           >
                             <font-awesome-icon icon="eye" />
                           </span>
+                          <!-- copy -->
                           <span
                             class="icon is-clickable has-text-info"
                             @click="clip((field.type=='expression')?$v.form[field.name].$model:queryresults[field.name])"
-                            v-if="(field.type=='expression' || field.type=='query') && fieldOptions[field.name].viewable && !fieldOptions[field.name].editable"
+                            v-if="['expression','query','table'].includes(field.type) && fieldOptions[field.name].viewable && !fieldOptions[field.name].editable"
                           >
                             <font-awesome-icon icon="copy" />
                           </span>
+                          <!-- close -->
                           <span
                             class="icon is-clickable has-text-danger"
                             @click="setExpressionFieldViewable(field.name,false)"
-                            v-if="(field.type=='expression' || field.type=='query') && fieldOptions[field.name].viewable && !fieldOptions[field.name].editable"
+                            v-if="['expression','query','table'].includes(field.type) && fieldOptions[field.name].viewable && !fieldOptions[field.name].editable"
                           >
                             <font-awesome-icon icon="times" />
                           </span>
-
                         </span>
                       </label>
+                      <!-- debug expression view -->
                       <div class="mb-3"
                         @dblclick="clip(field.expression,true)"
                         v-if="field.expression && fieldOptions[field.name].debug">
@@ -96,7 +131,7 @@
                           :code="field.expression"
                         />
                       </div>
-
+                      <!-- evaluated debug expression view -->
                       <div class="mb-3"
                         @dblclick="clip(fieldOptions[field.name].expressionEval,true)"
                         v-if="field.expression && fieldOptions[field.name].debug && dynamicFieldStatus[field.name]!='fixed'">
@@ -105,7 +140,7 @@
                           :code="fieldOptions[field.name].expressionEval"
                         />
                       </div>
-
+                      <!-- START FIELD BUILD -->
                       <!-- type = checkbox -->
                       <div v-if="field.type=='checkbox'">
                         <BulmaCheckRadio checktype="checkbox" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="field.placeholder" @change="evaluateDynamicFields(field.name)" />
@@ -133,7 +168,7 @@
                           :sticky="field.sticky||false"
                           >
                         </BulmaAdvancedSelect>
-
+                        <!-- raw query data -->
                         <div
                           @dblclick="setExpressionFieldViewable(field.name,false)"
                           v-if="fieldOptions[field.name].viewable"
@@ -146,7 +181,35 @@
                       <div v-if="field.type=='radio'" >
                         <BulmaCheckRadio :val="radiovalue" checktype="radio" v-for="radiovalue in field.values" :key="field.name+'_'+radiovalue" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="radiovalue"  @change="evaluateDynamicFields(field.name)" />
                       </div>
-                      <BulmaEditTable v-if="field.type=='table'" :dynamicFieldStatus="dynamicFieldStatus" :form="form" :tableFields="field.tableFields" :click="false" tableClass="table is-striped is-bordered is-narrow" v-model="$v.form[field.name].$model" />
+                      <!-- type = table -->
+                      <div v-if="field.type=='table'">
+                        <BulmaEditTable
+                          v-show="!fieldOptions[field.name].viewable"
+                          :dynamicFieldStatus="dynamicFieldStatus"
+                          :form="form"
+                          :tableFields="field.tableFields"
+                          :hasError="$v.form[field.name].$invalid"
+                          :click="false"
+                          tableClass="table is-striped is-bordered is-narrow"
+                          :allowInsert="field.allowInsert && true"
+                          :allowDelete="field.allowDelete && true"
+                          :deleteMarker="field.deleteMarker || ''"
+                          :insertMarker="field.insertMarker || ''"
+                          :readonlyColumns="field.readonlyColumns || []"
+                          :isLoading="!['fixed','variable'].includes(dynamicFieldStatus[field.name]) && (field.expression!=undefined || field.query!=undefined)"
+                          :values="form[field.name]||[]"
+                          @input="evaluateDynamicFields(field.name)"
+                          @warning="addTableWarnings(field.name,...arguments)"
+                          v-model="$v.form[field.name].$model" />
+                        <!-- raw table data -->
+                        <div
+                          @dblclick="setExpressionFieldViewable(field.name,false)"
+                          v-if="fieldOptions[field.name].viewable"
+                          class="box limit-height is-limited mb-3">
+                          <vue-json-pretty :data="$v.form[field.name].$model"></vue-json-pretty>
+                        </div>
+                      </div>
+                      <!-- fields with icons -->
                       <div :class="{'has-icons-left':!!field.icon && field.type!='query'}" class="control">
                         <!-- type = expression -->
                         <div v-if="field.type=='expression'" :class="{'is-loading':(dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running') &! fieldOptions[field.name].editable}" class="control">
@@ -163,14 +226,13 @@
                             <p @dblclick="setExpressionFieldViewable(field.name,true)" v-if="!fieldOptions[field.name].editable && !field.isHtml" class="input has-text-info" :class="{'is-danger':$v.form[field.name].$invalid}" v-text="stringify($v.form[field.name].$model)"></p>
                             <p @dblclick="setExpressionFieldViewable(field.name,true)" v-if="!fieldOptions[field.name].editable && field.isHtml" class="input has-text-info" :class="{'is-danger':$v.form[field.name].$invalid}" v-html="stringify($v.form[field.name].$model)"></p>
                           </div>
-
+                          <!-- expression raw data -->
                           <div
                             @dblclick="setExpressionFieldViewable(field.name,false)"
                             v-else
                             class="box limit-height is-limited mb-3">
                             <vue-json-pretty :data="$v.form[field.name].$model"></vue-json-pretty>
                           </div>
-
                         </div>
                         <!-- type = text or password-->
                         <input v-if="field.type=='text' || field.type=='password'"
@@ -221,13 +283,12 @@
                             <option v-for="option in field.values" :key="option" :selected="field.default.includes(option)" :value="option">{{ option }}</option>
                           </select>
                         </div>
-
                         <!-- add left icon, but not for query, because that's a component with icon builtin -->
                         <span v-if="!!field.icon && field.type!='query' && !(field.type=='expression' && fieldOptions[field.name].viewable)" class="icon is-small is-left">
                           <font-awesome-icon :icon="field.icon" />
                         </span>
                       </div>
-                      <!-- add help and alerts -->
+                      <!-- add help and validation alerts -->
                       <p class="help" v-if="!!field.help">{{ field.help}}</p>
                       <p class="has-text-danger" v-if="$v.form[field.name].required==false">This field is required</p>
                       <p class="has-text-danger" v-if="'minLength' in $v.form[field.name] && !$v.form[field.name].minLength">Must be at least {{$v.form[field.name].$params.minLength.min}} characters long</p>
@@ -235,32 +296,37 @@
                       <p class="has-text-danger" v-if="'minValue' in $v.form[field.name] && !$v.form[field.name].minValue">Value cannot be lower than {{$v.form[field.name].$params.minValue.min}}</p>
                       <p class="has-text-danger" v-if="'maxValue' in $v.form[field.name] && !$v.form[field.name].maxValue">Value cannot be higher than {{$v.form[field.name].$params.maxValue.max}}</p>
                       <p class="has-text-danger" v-if="'regex' in $v.form[field.name] && !$v.form[field.name].regex">{{$v.form[field.name].$params.regex.description}}</p>
+                      <p class="has-text-danger" v-if="'validIf' in $v.form[field.name] && !$v.form[field.name].validIf">{{$v.form[field.name].$params.validIf.description}}</p>
+                      <p class="has-text-danger" v-if="'validIfNot' in $v.form[field.name] && !$v.form[field.name].validIfNot">{{$v.form[field.name].$params.validIfNot.description}}</p>
                       <p class="has-text-danger" v-if="'notIn' in $v.form[field.name] && !$v.form[field.name].notIn">{{$v.form[field.name].$params.notIn.description}}</p>
                       <p class="has-text-danger" v-if="'in' in $v.form[field.name] && !$v.form[field.name].in">{{$v.form[field.name].$params.in.description}}</p>
                       <p class="has-text-danger" v-if="'sameAs' in $v.form[field.name] && !$v.form[field.name].sameAs">Field must be identical to '{{$v.form[field.name].$params.sameAs.eq}}'</p>
-
                     </div>
                   </transition>
                 </div>
             </div>
           </div>
-
+          <!-- job buttons -->
           <hr v-if="!!currentForm" />
+          <!-- play button -->
           <button v-if="!!currentForm && !ansibleResult.message" class="button is-primary is-fullwidth" @click="ansibleResult.message='initializing'"><span class="icon"><font-awesome-icon icon="play" /></span><span>Run</span></button>
           <div class="columns">
+            <!-- progress/close button -->
             <div class="column">
-              <button v-if="!!ansibleResult.message" class="button is-fullwidth" @click="resetResult()" :class="{ 'has-background-success' : ansibleResult.status=='success', 'has-background-warning' : ansibleResult.status=='warning', 'has-background-danger' : ansibleResult.status=='error','has-background-info has-text-light cursor-progress' : ansibleResult.status=='info' }">
+              <button v-if="!!ansibleResult.message" class="button is-fullwidth has-text-light" @click="resetResult()" :class="{ 'has-background-success' : ansibleResult.status=='success', 'has-background-warning' : ansibleResult.status=='warning', 'has-background-danger' : ansibleResult.status=='error','has-background-info cursor-progress' : ansibleResult.status=='info' }">
                 <span class="icon" v-if="ansibleResult.status=='info'"><font-awesome-icon icon="spinner" spin /></span>
                 <span class="icon" v-if="ansibleResult.status!='info'"><font-awesome-icon icon="times" /></span>
                 <span>{{ ansibleResult.message }}</span>
               </button>
             </div>
+            <!-- abort ansible button -->
             <div class="column" v-if="currentForm.type=='ansible' && ansibleResult.status=='info' && !abortTriggered">
               <button  class="button is-fullwidth has-background-warning" @click="abortAnsibleJob(ansibleJobId)">
                 <span class="icon"><font-awesome-icon icon="times" /></span>
                 <span>Abort Job</span>
               </button>
             </div>
+            <!-- abort awx button -->
             <div class="column" v-if="currentForm.type=='awx' && ansibleResult.status=='info' && !abortTriggered">
               <button  class="button is-fullwidth has-background-warning" @click="abortAwxJob(awxJobId)">
                 <span class="icon"><font-awesome-icon icon="times" /></span>
@@ -268,36 +334,35 @@
               </button>
             </div>
           </div>
-
+          <!-- output result -->
           <div v-if="!!ansibleResult.data.output" class="box mt-3">
             <pre v-if="currentForm.type=='ansible'" v-html="ansibleResult.data.output"></pre>
             <pre v-if="currentForm.type=='awx'" v-html="ansibleResult.data.output"></pre>
           </div>
+          <!-- close output button -->
           <button v-if="!!ansibleResult.data.output" class="button has-background-danger has-text-light" @click="resetResult()">
             <span class="icon"><font-awesome-icon icon="times" /></span>
             <span>Close output</span>
           </button>
         </div>
-        <div v-if="showJson" class="column is-clipped-horizontal">
+        <!-- extra vars column -->
+        <div v-if="showExtraVars" class="column is-clipped-horizontal">
           <h1 class="title">Extravars</h1>
-          <button @click="showJson=false" class="button is-danger is-small">
+          <!-- close extravar view button -->
+          <button @click="showExtraVars=false" class="button is-danger is-small">
             <span class="icon">
               <font-awesome-icon icon="times" />
             </span>
             <span>Close</span>
           </button>
-          <!-- <button @click="generateJsonOutput()" class="ml-2 button is-info is-small">
-            <span class="icon">
-              <font-awesome-icon icon="sync" />
-            </span>
-            <span>Refresh</span>
-          </button> -->
+          <!-- copy extravars button -->
           <button @click="clip(formdata)" class="ml-2 button is-success is-small">
             <span class="icon">
               <font-awesome-icon icon="copy" />
             </span>
             <span>Copy to clipboard</span>
           </button>
+          <!-- extravars raw -->
           <div class="box mt-4 is-limited">
             <vue-json-pretty :data="formdata"></vue-json-pretty>
           </div>
@@ -317,6 +382,7 @@
   import BulmaCheckRadio from './BulmaCheckRadio.vue'
   import BulmaEditTable from './BulmaEditTable.vue'
 
+  // load javascript highlight, for debug view
   import 'highlight.js/styles/monokai-sublime.css'
   import VueHighlightJS from 'vue-highlight.js';
   import javascript from 'highlight.js/lib/languages/javascript';
@@ -349,8 +415,7 @@
       return  {
           formdata:{},          // the eventual object sent to the api in the correct hierarchy
           interval:undefined,   // interval how fast fields need to be re-evaluated and refreshed
-          showNav: false,
-          showJson: false,
+          showExtraVars: false, // flag to show/hide extravars
           ansibleResult:{       // holds the output of an execution
             status:"",
             message:"",
@@ -360,29 +425,26 @@
             }
           },
           dynamicFieldDependencies:{},      // which fields need to be re-evaluated if other fields change
-          dynamicFieldDependentOf:{},
-          defaults:{},
-          dynamicFieldStatus:{},    // holds the status of dynamics fields (running=currently being evaluated, variable=depends on others, fixed=only need 1-time lookup)
-          queryresults:{},      // holds the results of dynamic dropdown boxes
-          fieldOptions:{},      // holds a couple of fieldoptions for fast access (valueColumn,ignoreIncomplete, ...)
-          warnings:[],          // holds form warnings.
-          showWarnings:false,
-          form:{                // the form data mapped to the form
-          },
-          visibility:{
-
-          },
-          canSubmit:false,
-          validationsLoaded:false,
-          timeout:undefined,     // determines how long we should show the result of run
-          showHelp:false,
-          showHidden:false,
-          ansibleJobId:undefined,
-          awxJobId:undefined,
-          abortTriggered:false
+          dynamicFieldDependentOf:{},       // which fields are dependend from others
+          defaults:{},              // holds default info per field
+          dynamicFieldStatus:{},    // holds the status of dynamics fields (running=currently being evaluated, variable=depends on others, fixed=only need 1-time lookup, default=has defaulted, undefined=trigger eval/query)
+          queryresults:{},          // holds the results of dynamic dropdown boxes
+          fieldOptions:{},          // holds a couple of fieldoptions for fast access (valueColumn,ignoreIncomplete, ...), only for expression,query and table
+          warnings:[],              // holds form warnings.
+          showWarnings:false,       // flag to show/hide warnings
+          form:{},                  // the form data mapped to the form -> hold the real data
+          visibility:{},            // holds which fields are visiable or not
+          canSubmit:false,          // flag must be true to enable submit - allows to finish background queries - has a watchdog in case not possible
+          validationsLoaded:false,  // ready flag if field validations are ready, we don't show the form otherwise
+          timeout:undefined,        // determines how long we should show the result of run
+          showHelp:false,           // flag to show/hide form help
+          showHidden:false,         // flag to show/hide hidden field / = debug mode
+          ansibleJobId:undefined,   // holds the current ansible jobid
+          awxJobId:undefined,       // holds the current awx jobid
+          abortTriggered:false      // flag abort is triggered
         }
     },
-    validations() {     // a dynamic assignment of vuelidate validations, based on the form json
+    validations() {     // a dynamic assignment of vuelidate validations, based on the form yaml
       var self=this
       var obj = {
         form:{}
@@ -392,17 +454,20 @@
         var field
         var regexObj
         var description
+        // required validation for simple fields
         if(ff.type!='checkbox' && ff.type!='expression'){
           attrs.required=requiredIf(function(){
             return !!ff.required
           })
         }
+        // required validation for expression field
         if(ff.type=="expression" && ff.required){
           attrs.required=helpers.withParams(
               {description: "This field is required"},
               (value) => (value!=undefined && value!=null)
           )
         }
+        // required validation for checkbox (MUST be true)
         if(ff.type=='checkbox' && ff.required){
           attrs.required=helpers.withParams(
               {description: "This field is required"},
@@ -413,54 +478,62 @@
         if("maxValue" in ff){ attrs.maxValue=maxValue(ff.maxValue)}
         if("minLength" in ff){ attrs.minLength=minLength(ff.minLength)}
         if("maxLength" in ff){ attrs.maxLength=maxLength(ff.maxLength)}
+        // regex validation
         if("regex" in ff){
-          if(typeof ff.regex == 'object'){
-            regexObj = new RegExp(ff.regex.expression)
-            description = (ff.regex.description!==undefined)?ff.regex.description:"The value must match regular expression : " + ff.regex.expression
-            attrs.regex = helpers.withParams(
-                {description: description,type:"regex"},
-                (value) => !helpers.req(value) || regexObj.test(value)
-            )
-          }else{
-            regexObj = new RegExp(ff.regex)
-            description = (ff.regexDescription!==undefined)?ff.regexDescription:"The value must match regular expression : " + ff.regex
-            attrs.regex = helpers.withParams(
-                {description: description,type:"regex"},
-                (value) => !helpers.req(value) || regexObj.test(value)
-            )
-          }
+          regexObj = new RegExp(ff.regex.expression)
+          description = ff.regex.description
+          attrs.regex = helpers.withParams(
+              {description: description,type:"regex"},
+              (value) => !helpers.req(value) || regexObj.test(value)
+          )
         }
+        // validation based on value of another field
+        if("validIf" in ff){
+          description = ff.validIf.description
+          attrs.validIf = helpers.withParams(
+              {description: description,type:"validIf"},
+              (value) => !helpers.req(value) || !!self.form[ff.validIf.field]
+          )
+        }
+        // validation based on negated value of another field
+        if("validIfNot" in ff){
+          description = ff.validIfNot.description
+          attrs.validIfNot = helpers.withParams(
+              {description: description,type:"validIfNot"},
+              (value) => !helpers.req(value) || !self.form[ff.validIfNot.field]
+          )
+        }
+        // field must not be in array (other field)
         if("notIn" in ff){
-          field = self.form[ff.notIn.field]
-          if(field!=undefined && Array.isArray(field)){
-            description = (ff.notIn.description!==undefined)?ff.notIn.description:"The value must not be in field '" + ff.notIn.field + "'"
-            attrs.notIn = helpers.withParams(
-                {description: description,type:"notIn"},
-                (value) => !helpers.req(value) || !field.includes(value)
-            )
-          }
+          description = ff.notIn.description
+          attrs.notIn = helpers.withParams(
+              {description: description,type:"notIn"},
+              (value) => !helpers.req(value) || (self.form[ff.notIn.field]!=undefined && Array.isArray(self.form[ff.notIn.field]) && !self.form[ff.notIn.field].includes(value))
+          )
         }
+        // field must be in array (other field)
         if("in" in ff){
-          field = self.form[ff.in.field]
-          if(field!=undefined && Array.isArray(field)){
-            description = (ff.in.description!==undefined)?ff.in.description:"The value must not be in field '" + ff.in.field + "'"
-            attrs.in = helpers.withParams(
-                {description: description,type:"notIn"},
-                (value) => !helpers.req(value) || field.includes(value)
-            )
-          }
+          description = ff.in.description
+          attrs.in = helpers.withParams(
+              {description: description,type:"in"},
+              (value) => !helpers.req(value) || (self.form[ff.in.field]!=undefined && Array.isArray(self.form[ff.in.field]) && self.form[ff.in.field].includes(value))
+          )
         }
+        // field must be identical as other field
         if("sameAs" in ff){ attrs.sameAs=sameAs(ff.sameAs)}
         obj.form[ff.name]=attrs
       });
+      // flag validations are ready
       Vue.set(this,"validationsLoaded",true)
       return obj
     },
     computed: {
+      // form loaded and validation ready
       formIsReady(){
         return this.validationsLoaded && this.currentForm
       },
-      fieldgroups(){      // computed list of the field-groups (to generate fieldform-sections)
+      // computed list of the field-groups (to generate fieldform-sections)
+      fieldgroups(){
         // make groupname array with empty at start
         if(this.currentForm.fields){
           return this.currentForm.fields.reduce(function(pV,cV,cI){
@@ -473,13 +546,14 @@
         }else{
           return []
         }
-
       }
     },
     methods:{
+      // prevent default focus
       inputFocus(e){
         e.preventDefault();
       },
+      // flags expression field as editable
       setExpressionFieldEditable(fieldname,value){
         if(typeof this.$v.form[fieldname].$model=='string' || typeof this.$v.form[fieldname].$model=='number' || this.$v.form[fieldname].$model==undefined){
           Vue.set(this.fieldOptions[fieldname],'editable',value)   // flag editable
@@ -490,12 +564,15 @@
           this.resetField(fieldname)
         }
       },
+      // flags expression raw output view
       setExpressionFieldViewable(fieldname,value){
         Vue.set(this.fieldOptions[fieldname],'viewable',value)   // flag editable
       },
+      // flags expression debug view
       setExpressionFieldDebug(fieldname,value){
         Vue.set(this.fieldOptions[fieldname],'debug',value)   // flag editable
       },
+      // forces any type to visible string
       stringify(v){
         if(v){
           if(Array.isArray(v)){
@@ -509,6 +586,7 @@
           return v
         }
       },
+      // copy to clipboard
       clip(v,doNotStringify=false){
         try{
           if(doNotStringify){
@@ -516,14 +594,13 @@
           }else{
             Copy(JSON.stringify(v))
           }
-
           this.$toast.success("Copied to clipboard")
         }catch(e){
           this.$toast.error("Error copying to clipboard : \n" + e)
         }
-
       },
-      filterfieldsByGroup(group){                   // creates a list of field per group
+      // creates a list of fields per group
+      filterfieldsByGroup(group){
         var ref=this
         return this.currentForm.fields.filter(function (el) {
           return (
@@ -532,6 +609,7 @@
             && (el.hide!==true || ref.showHidden))
         });
       },
+      // check if a field must be shown based on dependencies
       checkDependencies(field){
         var ref = this
         var result=true                          // checks if a field can be show, based on the value of other fields
@@ -540,14 +618,14 @@
             var value=undefined
             var column=""
             var fieldname=item.name
-            var columnRegex = /(.+)\.(.+)/g;                                        // detect a "." in the field
+            var columnRegex = /(.+)\.(.+)/g;                               // detect a "." in the field
             var tmpArr=columnRegex.exec(field)                             // found aaa.bbb
             if(tmpArr && tmpArr.length>0){
-              fieldname = tmpArr[1]                                            // aaa
-              column=tmpArr[2]                                                  // bbb
+              fieldname = tmpArr[1]                                        // aaa
+              column=tmpArr[2]                                             // bbb
             }else{
               if(fieldname in ref.fieldOptions){
-                column=ref.fieldOptions[fieldname].valueColumn||""        // get placeholder column
+                column=ref.fieldOptions[fieldname].valueColumn||""         // get placeholder column
               }
             }
             if(column){
@@ -583,6 +661,7 @@
         });
         return result
       },
+      // reset value of field - only for expression/query
       resetField(fieldname){
         // reset to default value
         // reset this field status
@@ -590,25 +669,48 @@
         this.setFieldStatus(fieldname,undefined)
         Vue.set(this.form,fieldname,this.defaults[fieldname])
       },
+      // load default value in field
       defaultField(fieldname){
         // reset to default value
-        // console.log(`[${fieldname}] default`)
-        if(this.defaults[fieldname]!=undefined){
-          this.setFieldStatus(fieldname,"default")
+        try{
+          // if there is a default, set "default" status
+          if(this.defaults[fieldname]!=undefined){
+            this.setFieldStatus(fieldname,"default")
+          }
+          else{
+            // if no default, set to undefined
+            var prevState=this.dynamicFieldStatus[fieldname]
+            if(prevState=="running"){
+              // if the field was running, don't re-eval, we just did that
+              this.setFieldStatus(fieldname,undefined,false)
+            }else{
+              // if the field was something diff, re-eval
+              this.setFieldStatus(fieldname,undefined,true)
+            }
+          }
+          // set default value
+          Vue.set(this.form,fieldname,this.defaults[fieldname])
+        }catch(e){
+          // this error should not hit, unless we have a bug
+          console.log("Error: " + e)
+          throw e
         }
-        else{
-          this.setFieldStatus(fieldname,undefined)
-        }
-        Vue.set(this.form,fieldname,this.defaults[fieldname])
       },
+      // set dynamic field status, only for expressions,query and table
       setFieldStatus(fieldname,status,reeval=true){
         // console.log(`[${fieldname}] ----> ${status}`)
         var prevState=this.dynamicFieldStatus[fieldname]
         Vue.set(this.dynamicFieldStatus,fieldname,status)
         if(reeval && (prevState!=status)){
+          // re-evaluate if need
           this.evaluateDynamicFields(fieldname)
         }
       },
+      // if 2 dependend fields (parent-child) both have defaults
+      // this can potentially be an issue.
+      // parent could fall back to default before the child is evaluated
+      // we track this status and loop a continuous loop on the parent
+      // if the parent cannot be resolved however, this becomes an infinite loop => we flag this as warning
       hasDefaultDependencies(fieldname){
         var ref=this
         var result=false
@@ -621,7 +723,23 @@
         }
         return result
       },
+      // first time run, load all the default values
+      initiateDefaults(){
+        var ref=this
+        this.currentForm.fields.forEach((item,i) => {
+          ref.defaults[item.name]=item.default
+        })
+      },
+      // add warnings for bad table values
+      // a table is expecting a data format
+      // we flag a warning if the data provided is missing columns
+      addTableWarnings(name,data){
+        var c=(data.length>1)?"Columns":"Column"
+        var i=(data.length>1)?"are":"is"
+        this.warnings.push(`<span class="has-text-warning-dark">Table '${name}' has missing data</span><br><span>${c} '${data}' ${i} missing.</span>`)
+      },
       // Find variable devDependencies
+      // we analyse which fields are dependent on others
       findVariableDependencies(){
         var ref=this
         var watchdog=0
@@ -632,27 +750,28 @@
         // create a list of the fields
         this.currentForm.fields.forEach((item,i) => {
           fields.push(item.name)
-          ref.defaults[item.name]=item.default
         })
+        // whilst checking, we also check if fields are unique
         var dups = Helpers.findDuplicates(fields)
         dups.forEach((item,i)=>{
           ref.warnings.push(`<span class="has-text-warning-dark">'${item}' has duplicates</span><br><span>Each field must have a unique name</span>`)
           ref.$toast.error("You have duplicates for field '"+item+"'")
         })
+        // do the analysis
         this.currentForm.fields.forEach((item,i) => {
-          if(["expression","query"].includes(item.type)){
+          if(["expression","query","table"].includes(item.type)){
             var testRegex = /\$\(([^)]+)\)/g;
-            var matches=(item.expression || item.query).matchAll(testRegex);
+            var matches=(item.expression || item.query || "").matchAll(testRegex);
             for(var match of matches){
               foundmatch = match[0];                                              // found $(xxx)
               foundfield = match[1];                                              // found xxx
-              var columnRegex = /(.+)\.(.+)/g;                                        // detect a "." in the field
+              var columnRegex = /(.+)\.(.+)/g;                                    // detect a "." in the field
               var tmpArr=columnRegex.exec(foundfield)                             // found aaa.bbb
               if(tmpArr && tmpArr.length>0){
-                // console.log("found puntje in " + foundfield + " in " + item.name)
+                // console.log("found dot in " + foundfield + " in " + item.name)
                 foundfield = tmpArr[1]                                            // aaa
               }else{
-                // console.log("found geen puntje in " + foundfield + " in " + item.name)
+                // console.log("found no in " + foundfield + " in " + item.name)
               }
               if(fields.includes(foundfield)){                         // does field xxx exist in our form ?
                 // console.log(foundfield + " is a real field")
@@ -660,6 +779,7 @@
                   if(ref.dynamicFieldDependencies[foundfield].indexOf(item.name) === -1) {  // allready in there ?
                       ref.dynamicFieldDependencies[foundfield].push(item.name);												 // push it
                       if(foundfield==item.name){
+                        // we capture self references
                         ref.warnings.push(`<span class="has-text-warning-dark">'${foundfield}' has a self reference</span><br><span>This will cause a racing condition</span>`)
                         ref.$toast.error("You defined a self reference on field '"+foundfield+"'")
                       }
@@ -667,12 +787,14 @@
                 }else{
                   ref.dynamicFieldDependencies[foundfield]=[item.name]
                   if(foundfield==item.name){
+                    // we capture self references
                     ref.warnings.push(`<span class="has-text-warning-dark">'${foundfield}' has a self reference</span><br><span>This will cause a racing condition</span>`)
                     ref.$toast.error("You defined a self reference on field '"+foundfield+"'")
                   }
                 }
 
               }else{
+                // we capture bad references
                 if(!Object.keys(ref.form).includes(foundfield))
                   ref.warnings.push(`<span class="has-text-warning-dark">'${item.name}' has a reference to unknown field '${foundfield}'</span><br><span>Your form might not function as expected</span>`)
               }
@@ -690,6 +812,7 @@
                     if(ref.dynamicFieldDependencies[key].indexOf(item2) === -1) {  // allready in there ?
                       ref.dynamicFieldDependencies[key].push(item2);												 // push it
                       if(key==item2){
+                        // we capture self references
                         ref.warnings.push(`<span class="has-text-warning-dark">'${key}' has a self reference</span><br><span>This will cause a racing condition</span>`)
                         ref.$toast.error("You defined a self reference on field '"+key+"'")
                       }
@@ -701,6 +824,7 @@
           }
         }
       },
+      // search which fields are dependent of others
       findVariableDependentOf(){
         var ref=this
         var watchdog=0
@@ -723,10 +847,10 @@
               var columnRegex = /(.+)\.(.+)/g;                                        // detect a "." in the field
               var tmpArr=columnRegex.exec(foundfield)                             // found aaa.bbb
               if(tmpArr && tmpArr.length>0){
-                // console.log("found puntje in " + foundfield + " in " + item.name)
+                // console.log("found dot in " + foundfield + " in " + item.name)
                 foundfield = tmpArr[1]                                            // aaa
               }else{
-                // console.log("found geen puntje in " + foundfield + " in " + item.name)
+                // console.log("found no dot in " + foundfield + " in " + item.name)
               }
               if(fields.includes(foundfield)){                         // does field xxx exist in our form ?
                 // console.log(foundfield + " is a real field")
@@ -738,25 +862,23 @@
                   ref.dynamicFieldDependentOf[item.name]=[foundfield]
                 }
                 // console.log(`${item.name} - ${foundfield}`)
+                // track the dependent default => = potentially bad
                 if((ref.defaults[item.name]!=undefined) && ref.fieldOptions[foundfield] && (ref.fieldOptions[foundfield].type=="expression") && (ref.defaults[foundfield]!=undefined)){
-                  foundDependentDefaults=true
                   ref.warnings.push(`<span class="has-text-warning-dark">'${item.name}' has a default, referencing field '${foundfield}' which also has a default</span><br><span>Try to avoid dependent fields with both a default</span>`)
                 }
               }
             }
           }
         })
-        if(foundDependentDefaults){
-          //ref.$toast.error("You should avoid having dependent expression defaults.\nIt can lead to infinite expression evalutations.")
-        }
       },
+      // replace $() placeholders
       replacePlaceholders(item){
         //---------------------------------------
         // replace placeholders if possible
         //---------------------------------------
         var ref = this
-        var testRegex = /\$\(([^)]+)\)/g;                                       // a regex to find field placeholders $(xxx)
-        var retestRegex = /\$\(([^)]+)\)/g;                                     // the same regex, to retest after, because a regex can only be used once
+        var testRegex = /\$\(([^)]+)\)/g                                        // a regex to find field placeholders $(xxx)
+        var retestRegex = /\$\(([^)]+)\)/g                                      // the same regex, to retest after, because a regex can only be used once
         var match = undefined
         var matches =undefined
         var foundmatch=false
@@ -768,8 +890,9 @@
         var hasPlaceholders = false;
         var newValue = item.expression || item.query                                                    // make a copy of our item
         // console.log("item = " + newValue)
-        matches=(item.expression || item.query).matchAll(testRegex);
-        // console.log("matches : " + matches.length)
+        // console.log(typeof newValue)
+        // console.log(testRegex)
+        matches=[...newValue.matchAll(testRegex)] // force match array
         for(match of matches){
             // console.log("-> match : " + match[0] + "->" + match[1])
             foundmatch = match[0];                                              // found $(xxx)
@@ -788,15 +911,18 @@
             targetflag = undefined
             // mark the field as a dependent field
             if(foundfield in ref.form){      // does field xxx exist in our form ?
-              if(ref.fieldOptions[foundfield] && ref.fieldOptions[foundfield].type=="expression" && (typeof ref.form[foundfield]=="object")){
+              if(ref.fieldOptions[foundfield] && ["expression","table"].includes(ref.fieldOptions[foundfield].type) && (typeof ref.form[foundfield]=="object")){
+                // objects and array should be stringified
                 fieldvalue=JSON.stringify(ref.form[foundfield])
               }else{
+                // other fields, grab a valid value
                 fieldvalue = ref.getFieldValue(ref.form[foundfield],column,false);// get value of xxx
               }
-
+              // get dynamic field status
               if(foundfield in ref.dynamicFieldStatus){
                 targetflag = ref.dynamicFieldStatus[foundfield];                  // and what is the currect status of xxx, in case it's also dyanmic ?
               }else{
+                // if simple field
                 targetflag = "fixed"
               }
             }
@@ -809,7 +935,7 @@
                   fieldvalue="__undefined__"   // catch undefined values
                 }
                 fieldvalue=ref.stringifyValue(fieldvalue)
-                 // console.log("replacing placeholder")
+                // console.log("replacing placeholder")
                 newValue=newValue.replace(foundmatch,fieldvalue);               // replace the placeholder with the value
                  // console.log("replaced")
                  // console.log(item.name + " -> " + newValue)
@@ -827,12 +953,18 @@
         }
         return {"hasPlaceholders":hasPlaceholders,"value":newValue}          // return the result
       },
+      // stringify value if needed
       stringifyValue(fieldvalue){
         if(typeof fieldvalue==='object' || Array.isArray(fieldvalue)){
           return JSON.stringify(fieldvalue) // if object, we need to stringify it
         }else{
           return fieldvalue
         }
+      },
+      // any case of unexpected errors (=bugs), stop loop
+      stopLoop(error){
+        clearInterval(this.interval)
+        this.$toast.error("Expression interval stopped !\n"+error)
       },
       //----------------------------------------------------------------
       // starts the evaluation of dynamic fields (expression or query)
@@ -843,8 +975,8 @@
         var watchdog=0;                                                         // a counter how many times we retry to find a value
         var refreshCounter=0;                                                   // a counter to refresh the json output
         var hasUnevaluatedFields=false;                                         // a flag to check whether a have unevaluated fields
-        // does the eval every x seconds ; this.interval
-        // this is is sequential, however, with async lookup, this can overlap
+        // does the eval every x milliseconds ; this.interval
+        // this is sequential, however, with async lookup, this can overlap
         // however, since we flag fields as 'running' during async lookups
         // this should not cause issues.
         this.interval = setInterval(function() {
@@ -858,7 +990,7 @@
                 // if expression and not processed yet or needs to be reprocessed
                 var flag = ref.dynamicFieldStatus[item.name];                     // current field status (running/fixed/variable)
                 var placeholderCheck=undefined;                                   // result for a placeholder check
-                if(((item.type=="expression" && item.expression) || (item.type=="query" && item.expression)) && (flag==undefined || ref.hasDefaultDependencies(item.name) )){                // if expression and not evaluated yet
+                if(item.expression && (flag==undefined || ref.hasDefaultDependencies(item.name))){                // if expression and not evaluated yet
                   // console.log("eval expression " + item.name)
                   // console.log(`[${item.name}][${flag}] : evaluating`)
                   if(item.required){
@@ -873,7 +1005,7 @@
                       // console.log(`[${item.name}] 2 : ${placeholderCheck.value}`)
                       // allow local run in browser
                       if(item.runLocal){
-                        //console.log("Running local expression : " + placeholderCheck.value)
+                        // console.log("Running local expression : " + placeholderCheck.value)
                         var result
                         try{
                           result=eval(placeholderCheck.value)
@@ -892,7 +1024,7 @@
                           try{
                             ref.defaultField(item.name)
                           }catch(err){
-                            ref.stopLoop()
+                            ref.stopLoop("Defaulting " + item.name)
                           }
                         }
 
@@ -908,6 +1040,7 @@
                               // console.log("expression for "+item.name+" triggered : result found -> "+ JSON.stringify(restresult.data.output));
                               if(item.type=="expression") Vue.set(ref.form, item.name, restresult.data.output);
                               if(item.type=="query") Vue.set(ref.queryresults, item.name, [].concat(restresult.data.output??[]));
+                              if(item.type=="table") Vue.set(ref.form, item.name, [].concat(restresult.data.output??[]));
 
                               // expression returned undefined, so lets set to default if we have one
                               if(restresult.data.output==undefined && (item.default!=undefined)){
@@ -934,7 +1067,7 @@
                                 try{
                                   ref.defaultField(item.name)
                                 }catch(err){
-                                  ref.stopLoop()
+                                  ref.stopLoop("Defaulting " + item.name)
                                 }
                           })
                       }
@@ -945,7 +1078,7 @@
                     // console.log(item.name + " is not evaluated yet");
                     ref.defaultField(item.name)
                   }
-                } else if(((item.type=="query" && item.query) || (item.type=="expression" && item.query)) && flag==undefined){
+                } else if(item.query && flag==undefined){
                    // console.log("eval query : " + item.name)
                   // set flag running
                   if(item.required){
@@ -1016,8 +1149,20 @@
               }else{  // not visible field
                 if(item.type=="expression"){
                   ref.defaultField(item.name)
-                }else{
+                }else if(item.type=="query" || item.type=="table"){
+                  // console.log("resetting " + item.name)
                   ref.resetField(item.name)
+                }
+              }
+
+              // see if it is time to refresh
+              if(item.refresh && typeof item.refresh=="string"){
+                var match=item.refresh.match(/([0-9]+)s/g)
+                if(match){
+                  var secs=parseInt(match[0])
+                  if(refreshCounter%(10*secs)==0){
+                    ref.setFieldStatus(item.name,undefined)
+                  }
                 }
               }
 
@@ -1063,8 +1208,10 @@
           if(refreshCounter%10==0){
             ref.generateJsonOutput() // refresh json output
           }
+
         },100); // end interval
       },
+      // reset form status
       resetResult(){
         this.ansibleResult={
           status:"",
@@ -1075,6 +1222,7 @@
           }
         };
       },
+      // trigger this when a field has changed and we need to see if it has an impact.
       evaluateDynamicFields(fieldname) {
           var ref=this;
           // console.log(`[${fieldname}] eval trigger`)
@@ -1085,13 +1233,13 @@
             ref.dynamicFieldDependencies[fieldname].forEach((item,i) => { // loop all dynamic fields and reset them
                 // set all variable fields blank and re-evaluate
                 if(!ref.fieldOptions[item].editable){
+                  // all dependent fields we reset, so they can be re-evaluated
                   ref.resetField(item)
-                  // ref.setFieldStatus(item,undefined)
-                  // Vue.set(ref.form,item,undefined);                // reset value in the form
                 }
             })
           }
       },
+      // get awx job output
       getAwxJob(id,final){
         var ref = this;
         // console.log("=============================")
@@ -1145,6 +1293,7 @@
             }
           })
       },
+      // trigger an ansible job abort
       abortAnsibleJob(id){
         var ref=this
         this.$toast.warning("Aborting job " + id);
@@ -1153,6 +1302,7 @@
             ref.abortTriggered=true
           })
       },
+      // trigger an aw job abort
       abortAwxJob(id){
         var ref=this
         this.$toast.warning("Aborting job " + id);
@@ -1161,6 +1311,7 @@
             ref.abortTriggered=true
           })
       },
+      // get ansible job output
       getAnsibleJob(id,final){
         var ref = this;
         // console.log("=============================")
@@ -1216,6 +1367,10 @@
             }
           })
       },
+      // get the value of a field
+      // can be many things and more complex than you think
+      // if a records is selected in a query for example
+      // the value can be the valueColumn, ....
       getFieldValue(field,column,keepArray){
         var keys=undefined
         var key=undefined
@@ -1244,6 +1399,7 @@
         }
         return field
       },
+      // generate the form json output
       generateJsonOutput(){
         var ref=this
         this.formdata={}
@@ -1283,6 +1439,7 @@
         });
 
       },
+      // validate form before submit
       validateForm(){
         var ref=this
         var isValid=true
@@ -1301,6 +1458,7 @@
           return true
         }
       },
+      // execute the form
       executeForm(){
         // make sure, no delayed stuff is started.
         //
@@ -1398,18 +1556,26 @@
          }
       }
     },
+    // start form app
     mounted() { // when the Vue app is booted up, this is run automatically.
       this.resetResult();
       var ref=this
       this.form={}
       // initialize defaults
       this.currentForm.fields.forEach((item, i) => {
-        if(["expression","query"].includes(item.type)){
+        if(["expression","query","table"].includes(item.type)){
           Vue.set(ref.fieldOptions,item.name,{})                                // storing some easy to find options
           Vue.set(ref.fieldOptions[item.name],"valueColumn",item.valueColumn||"")
           Vue.set(ref.fieldOptions[item.name],"placeholderColumn",item.placeholderColumn||"")
           Vue.set(ref.fieldOptions[item.name],"type",item.type)
+          // if interval refresh store that for easy access
+          if(item.refresh && typeof item.refresh=='string' && /[0-9]+s/.test(item.refresh)){
+            Vue.set(ref.fieldOptions[item.name],"refresh",item.refresh)
+          }
           Vue.set(ref.form,item.name,item.default)
+          if(item.type=="table"){
+            Vue.set(ref.form,item.name,[])
+          }
         }else if(["checkbox"].includes(item.type)){
           Vue.set(ref.form,item.name,item.default||false)
         }else{
@@ -1417,20 +1583,27 @@
         }
         Vue.set(ref.visibility,item.name,true)
       });
+      // initiate the constants
       if(ref.constants){
         Object.keys(ref.constants).forEach((item)=>{
           Vue.set(ref.form,item,ref.constants[item])
         })
       }
+      // see if the help should be show initially
       if(this.currentForm.showHelp && this.currentForm.showHelp===true){
         this.showHelp=true
       }
+      // reset the form
       this.$v.form.$reset();
-      // find all variable dependencies
+      // set all defaults
+      this.initiateDefaults()
+      // find all variable dependencies (in both ways)
       this.findVariableDependencies()
       this.findVariableDependentOf()
-      this.startDynamicFieldsLoop();
+      // start dynamic field loop (= infinite)
+      this.startDynamicFieldsLoop()
     },
+    // before exit, we stop the interval, as it would not stop otherwise
     beforeDestroy(){
       clearInterval(this.interval)
     }

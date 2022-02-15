@@ -8,7 +8,7 @@
             class="input"
             ref="input"
             :class="{'is-danger':hasError}"
-            readonly
+            :readonly="!disabled"
             type="text"
             :value="(isLoading)?'':preview"
             :placeholder="(isLoading)?'Loading...':placeholder"
@@ -19,6 +19,7 @@
             @keydown.space="toggle()"
             @mousedown="toggle()"
             @keydown="doFilter"
+            :disabled="disabled"
           >
           <span v-if="icon!=undefined" class="icon is-small is-left">
             <font-awesome-icon :icon="icon" />
@@ -97,7 +98,8 @@
       valueColumn:{type:String},
       pctColumns:{type:Array},
       filterColumns:{type:Array},
-      sticky:{type:Boolean}
+      sticky:{type:Boolean},
+      disabled:{type:Boolean}
     },
     data () {
       return {
@@ -130,6 +132,7 @@
         // this.queryfilter=""
       },
       toggle(){
+        if(this.disabled)return
         var ref=this
         this.isActive=!this.isActive
         if(this.isActive){
@@ -192,6 +195,6 @@
   border-radius: 4px;
 }
 .hasError{
-  border-color: red!important;
+  border-color: #ea4141!important;
 }
 </style>

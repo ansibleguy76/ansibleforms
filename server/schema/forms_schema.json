@@ -140,12 +140,8 @@
               "type": "object",
               "required": [
                 "type",
-                "name",
-                "label"
+                "name"
               ],
-              "dependencies": {
-                "regexDescription": ["regex"]
-              },
               "oneOf": [{
                   "properties": {
                     "type": {
@@ -162,6 +158,12 @@
                     "pctColumns": {"not":{}},
                     "filterColumns": {"not":{}},
                     "hide": {"not":{}},
+                    "allowDelete": {"not":{}},
+                    "allowInsert": {"not":{}},
+                    "deleteMarker": {"not":{}},
+                    "insertMarker": {"not":{}},
+                    "refresh": {"not":{}},
+                    "readonlyColumns": {"not":{}},
                     "values": {"not":{}},
                     "isHtml": {"not":{}},
                     "multiple": {"not":{}},
@@ -174,8 +176,6 @@
                       "enum": ["number"]
                     },
                     "query": {"not":{}},
-                    "regex": {"not":{}},
-                    "regexDescription": {"not":{}},
                     "minLength": {"not":{}},
                     "maxLength": {"not":{}},
                     "expression": {"not":{}},
@@ -188,6 +188,12 @@
                     "hide": {"not":{}},
                     "values": {"not":{}},
                     "multiple": {"not":{}},
+                    "refresh": {"not":{}},
+                    "allowDelete": {"not":{}},
+                    "allowInsert": {"not":{}},
+                    "deleteMarker": {"not":{}},
+                    "insertMarker": {"not":{}},
+                    "readonlyColumns": {"not":{}},
                     "isHtml": {"not":{}},
                     "asCredential": {"not":{}},
                     "outputObject": {"not":{}}
@@ -200,7 +206,6 @@
                     },
                     "query": {"not":{}},
                     "regex": {"not":{}},
-                    "regexDescription": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
                     "minLength": {"not":{}},
@@ -212,9 +217,15 @@
                     "expression": {"not":{}},
                     "runLocal": {"not":{}},
                     "keydown": {"not":{}},
+                    "refresh": {"not":{}},
                     "isHtml": {"not":{}},
                     "dbConfig": {"not":{}},
                     "hide": {"not":{}},
+                    "allowDelete": {"not":{}},
+                    "allowInsert": {"not":{}},
+                    "deleteMarker": {"not":{}},
+                    "insertMarker": {"not":{}},
+                    "readonlyColumns": {"not":{}},
                     "multiple": {"not":{}},
                     "asCredential": {"not":{}},
                     "outputObject": {"not":{}}
@@ -228,7 +239,6 @@
                     },
                     "query": {"not":{}},
                     "regex": {"not":{}},
-                    "regexDescription": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
                     "minLength": {"not":{}},
@@ -242,8 +252,14 @@
                     "keydown": {"not":{}},
                     "isHtml": {"not":{}},
                     "dbConfig": {"not":{}},
+                    "refresh": {"not":{}},
                     "hide": {"not":{}},
                     "values": {"not":{}},
+                    "allowDelete": {"not":{}},
+                    "allowInsert": {"not":{}},
+                    "deleteMarker": {"not":{}},
+                    "insertMarker": {"not":{}},
+                    "readonlyColumns": {"not":{}},
                     "multiple": {"not":{}},
                     "asCredential": {"not":{}},
                     "outputObject": {"not":{}}
@@ -256,7 +272,6 @@
                     },
                     "query": {"not":{}},
                     "regex": {"not":{}},
-                    "regexDescription": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
                     "minLength": {"not":{}},
@@ -268,6 +283,12 @@
                     "expression": {"not":{}},
                     "runLocal": {"not":{}},
                     "keydown": {"not":{}},
+                    "refresh": {"not":{}},
+                    "allowDelete": {"not":{}},
+                    "allowInsert": {"not":{}},
+                    "deleteMarker": {"not":{}},
+                    "insertMarker": {"not":{}},
+                    "readonlyColumns": {"not":{}},
                     "isHtml": {"not":{}},
                     "dbConfig": {"not":{}},
                     "hide": {"not":{}},
@@ -282,7 +303,6 @@
                     },
                     "values": {"not":{}},
                     "regex": {"not":{}},
-                    "regexDescription": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
                     "minLength": {"not":{}},
@@ -290,6 +310,11 @@
                     "editable": {"not":{}},
                     "expression": {"not":{}},
                     "keydown": {"not":{}},
+                    "allowDelete": {"not":{}},
+                    "allowInsert": {"not":{}},
+                    "deleteMarker": {"not":{}},
+                    "insertMarker": {"not":{}},
+                    "readonlyColumns": {"not":{}},
                     "isHtml": {"not":{}},
                     "runLocal": {"not":{}},
                     "hide": {"not":{}}
@@ -303,7 +328,6 @@
                     },
                     "values": {"not":{}},
                     "regex": {"not":{}},
-                    "regexDescription": {"not":{}},
                     "editable": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
@@ -311,6 +335,11 @@
                     "maxLength": {"not":{}},
                     "query": {"not":{}},
                     "keydown": {"not":{}},
+                    "allowDelete": {"not":{}},
+                    "allowInsert": {"not":{}},
+                    "deleteMarker": {"not":{}},
+                    "insertMarker": {"not":{}},
+                    "readonlyColumns": {"not":{}},
                     "isHtml": {"not":{}},
                     "dbConfig": {"not":{}},
                     "hide": {"not":{}}
@@ -323,7 +352,6 @@
                       "enum": ["expression"]
                     },
                     "values": {"not":{}},
-                    "regexDescription": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
                     "sticky": {"not":{}},
@@ -331,6 +359,11 @@
                     "filterColumns": {"not":{}},
                     "dbConfig": {"not":{}},
                     "multiple": {"not":{}},
+                    "allowDelete": {"not":{}},
+                    "allowInsert": {"not":{}},
+                    "deleteMarker": {"not":{}},
+                    "insertMarker": {"not":{}},
+                    "readonlyColumns": {"not":{}},
                     "keydown": {"not":{}},
                     "outputObject": {"not":{}}
                   },
@@ -342,7 +375,6 @@
                       "enum": ["expression"]
                     },
                     "values": {"not":{}},
-                    "regexDescription": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
                     "expression": {"not":{}},
@@ -351,6 +383,11 @@
                     "filterColumns": {"not":{}},
                     "multiple": {"not":{}},
                     "runLocal": {"not":{}},
+                    "allowDelete": {"not":{}},
+                    "allowInsert": {"not":{}},
+                    "deleteMarker": {"not":{}},
+                    "insertMarker": {"not":{}},
+                    "readonlyColumns": {"not":{}},
                     "keydown": {"not":{}},
                     "outputObject": {"not":{}}
                   },
@@ -363,7 +400,6 @@
                     },
                     "values": {"not":{}},
                     "regex": {"not":{}},
-                    "regexDescription": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
                     "minLength": {"not":{}},
@@ -372,10 +408,9 @@
                     "pctColumns": {"not":{}},
                     "filterColumns": {"not":{}},
                     "maxLength": {"not":{}},
-                    "dbConfig": {"not":{}},
                     "multiple": {"not":{}},
+                    "refresh": {"not":{}},
                     "outputObject": {"not":{}},
-                    "expression": {"not":{}},
                     "keydown": {"not":{}},
                     "isHtml": {"not":{}},
                     "icon": {"not":{}},
@@ -412,25 +447,44 @@
                 "sameAs": {
                   "$ref": "/formfield"
                 },
-                "regex": {
-                  "anyOf": [{"type": "string"},
-                    {
-                      "type": "object",
-                      "required": [
-                        "expression"
-                      ],
-                      "properties": {
-                        "expression": {"type": "string"},
-                        "description": {"type": "string"}
-                      }
+                "validIf": {
+                    "type": "object",
+                    "required": [
+                      "field",
+                      "description"
+                    ],
+                    "properties": {
+                      "field": {"type": "string"},
+                      "description": {"type": "string"}
                     }
-                  ]
                 },
-                "regexDescription": {"type": "string"},
+                "validIfNot": {
+                    "type": "object",
+                    "required": [
+                      "field",
+                      "description"
+                    ],
+                    "properties": {
+                      "field": {"type": "string"},
+                      "description": {"type": "string"}
+                    }
+                },
+                "regex": {
+                    "type": "object",
+                    "required": [
+                      "expression",
+                      "description"
+                    ],
+                    "properties": {
+                      "expression": {"type": "string"},
+                      "description": {"type": "string"}
+                    }
+                },
                 "notIn": {
                   "type": "object",
                   "required": [
-                    "field"
+                    "field",
+                    "description"
                   ],
                   "properties": {
                     "field": {
@@ -442,7 +496,8 @@
                 "in": {
                   "type": "object",
                   "required": [
-                    "field"
+                    "field",
+                    "description"
                   ],
                   "properties": {
                     "field": {
@@ -459,6 +514,7 @@
                 "ignoreIncomplete": {"type": "boolean"},
                 "noLog": {"type": "boolean"},
                 "keydown": {"type": "boolean"},
+                "refresh": {"type": ["boolean","string"]},
                 "isHtml": {"type": "boolean"},
                 "runLocal": {"type": "boolean"},
                 "query": {"type": "string"},
@@ -474,6 +530,14 @@
                 "filterColumns": {
                   "type": "array",
                   "items": {"type": "string"}
+                },
+                "allowDelete": {"type": "boolean"},
+                "allowInsert": {"type": "boolean"},
+                "deleteMarker": {"type": "string"},
+                "insertMarker": {"type": "string"},
+                "readonlyColumns": {
+                  "type": "array",
+                  "items": { "type": "string" }
                 },
                 "sticky": {"type": "boolean"},
                 "editable": {"type": "boolean"},
@@ -561,8 +625,6 @@
                           "type": {
                             "enum": ["number"]
                           },
-                          "regex": {"not":{}},
-                          "regexDescription": {"not":{}},
                           "minLength": {"not":{}},
                           "maxLength": {"not":{}},
                           "values": {"not":{}},
@@ -581,7 +643,6 @@
                             "enum": ["checkbox"]
                           },
                           "regex": {"not":{}},
-                          "regexDescription": {"not":{}},
                           "minValue": {"not":{}},
                           "maxValue": {"not":{}},
                           "minLength": {"not":{}},
@@ -602,7 +663,6 @@
                             "enum": ["enum"]
                           },
                           "regex": {"not":{}},
-                          "regexDescription": {"not":{}},
                           "minValue": {"not":{}},
                           "maxValue": {"not":{}},
                           "minLength": {"not":{}},
@@ -623,7 +683,6 @@
                             "enum": ["query"]
                           },
                           "regex": {"not":{}},
-                          "regexDescription": {"not":{}},
                           "minValue": {"not":{}},
                           "maxValue": {"not":{}},
                           "minLength": {"not":{}},
@@ -654,20 +713,16 @@
                         "default": false
                       },
                       "regex": {
-                        "anyOf": [{"type": "string"},
-                          {
-                            "type": "object",
-                            "required": [
-                              "expression"
-                            ],
-                            "properties": {
-                              "expression": {"type": "string"},
-                              "description": {"type": "string"}
-                            }
+                          "type": "object",
+                          "required": [
+                            "expression",
+                            "description"
+                          ],
+                          "properties": {
+                            "expression": {"type": "string"},
+                            "description": {"type": "string"}
                           }
-                        ]
                       },
-                      "regexDescription": {"type": "string"},
                       "minValue": {"type": "integer"},
                       "maxValue": {"type": "integer"},
                       "minLength": {"type": "integer"},

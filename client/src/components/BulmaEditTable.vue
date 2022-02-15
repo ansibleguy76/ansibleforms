@@ -6,15 +6,16 @@
               <!-- add field label -->
               <label class="label has-text-primary">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span></label>
               <!-- type = checkbox -->
-              <label v-if="field.type=='checkbox'" class="checkbox">
-                <input v-if="field.type=='checkbox'" :autofocus="index==0" :checked="editedItem[field.name]" v-model="editedItem[field.name]" :name="field.name" type="checkbox">
+              <BulmaCheckRadio v-if="field.type=='checkbox'" checktype="checkbox" :disabled="action=='Edit' && readonlyColumns.includes(field.name)" v-model="editedItem[field.name]" :name="field.name" :label="field.placeholder"/>
+              <!-- <label v-if="field.type=='checkbox'" class="checkbox">
+                <input v-if="field.type=='checkbox'" :disabled="readonlyColumns.includes(field.name)" :autofocus="index==0" :checked="editedItem[field.name]" v-model="editedItem[field.name]" :name="field.name" type="checkbox">
                 {{ field.placeholder }}
-              </label>
+              </label> -->
               <div :class="{'has-icons-left':!!field.icon}" class="control">
-                <input v-if="field.type=='text'" :autofocus="index==0" :class="{'is-danger':$v.editedItem[field.name].$invalid}" class="input" type="text" v-model="$v.editedItem[field.name].$model" :placeholder="field.placeholder" :name="field.name">
-                <input v-if="field.type=='number'" :autofocus="index==0" class="input" type="number" v-model="editedItem[field.name]" :placeholder="field.placeholder" :name="field.name">
+                <input v-if="field.type=='text'" :disabled="action=='Edit' && readonlyColumns.includes(field.name)" :autofocus="index==0" :class="{'is-danger':$v.editedItem[field.name].$invalid}" class="input" type="text" v-model="$v.editedItem[field.name].$model" :placeholder="field.placeholder" :name="field.name">
+                <input v-if="field.type=='number'" :disabled="action=='Edit' && readonlyColumns.includes(field.name)" :autofocus="index==0" class="input" type="number" v-model="editedItem[field.name]" :placeholder="field.placeholder" :name="field.name">
                 <div v-if="field.type=='enum'" class="select">
-                  <select :name="field.name" :class="{'is-danger':$v.editedItem[field.name].$invalid}" v-model="$v.editedItem[field.name].$model">
+                  <select :name="field.name" :disabled="action=='Edit' && readonlyColumns.includes(field.name)" :class="{'is-danger':$v.editedItem[field.name].$invalid}" v-model="$v.editedItem[field.name].$model">
                     <option v-if="!field.required" value=""></option>
                     <option v-for="option in field.values" :key="option" :selected="field.default==option" :value="option">{{ option }}</option>
                   </select>
@@ -37,6 +38,7 @@
                   :previewColumn="field.previewColumn||''"
                   :valueColumn="field.valueColumn||''"
                   :sticky="false"
+                  :disabled="action=='Edit' && readonlyColumns.includes(field.name)"
                   >
                 </BulmaAdvancedSelect>
                 <!-- add left icon, but not for query, because that's a component with icon builtin -->
@@ -54,7 +56,8 @@
 
           </div>
         </BulmaModal>
-        <table :class="tableClass">
+        <div>
+          <table :class="getTableClass">
             <thead>
                 <tr>
                     <th>Actions</th>
@@ -82,29 +85,61 @@
                     <td :key="'table-filter-' + field.name" v-else :class="field.bodyClass"></td>
                   </template>
                 </tr>
-                <tr v-for="row,index in showedRows" :key="'table-row-' + index" @click="rowClick(row)">
-                    <td>
-                      <span class="icon is-clickable has-text-success" @click="addItem(index)"><font-awesome-icon icon="plus-square" /></span>
-                      <span class="icon is-clickable has-text-warning" @click="editItem(index)"><font-awesome-icon icon="pencil-alt" /></span>
-                      <span class="icon is-clickable has-text-danger" @click="removeItem(index)"><font-awesome-icon icon="times" /></span>
-                    </td>
-                    <slot name="table-body" :row="row">
-                        <template v-for="field in tableFields">
-                          <td v-if="field.type!='checkbox'" :key="'table-cell-' + field.name + '-' + index" :class="field.bodyClass"> {{ stringify(row[field.name],field) }} </td>
-                          <td v-else :key="'table-cell-' + field.name + '-' + index" :class="field.bodyClass"><font-awesome-icon :icon="(row[field.name])?['far','check-square']:['far','square']" /></td>
-                        </template>
-                    </slot>
-                </tr>
-                <tr>
-                    <td><span class="icon is-clickable has-text-success" @click="addItem(-1)"><font-awesome-icon icon="plus-square" /></span></td>
-                    <slot name="table-body">
-                        <template v-for="field in tableFields">
-                          <td class="has-background-grey-lighter" :key="'table-cell-' + field.name"></td>
-                        </template>
-                    </slot>
-                </tr>
+                <template v-if="!isLoading">
+                  <tr class="is-unselectable" v-for="row,index in showedRows" :key="'table-row-' + index" @click="rowClick(row)">
+                    <template v-if="deleteMarker && row[deleteMarker]">
+                      <td>
+                        <span class="icon has-text-grey-lighter"><font-awesome-icon icon="plus-square" /></span>
+                        <span class="icon has-text-grey-lighter"><font-awesome-icon icon="pencil-alt" /></span>
+                        <span class="icon is-clickable has-text-success" @click="undoRemoveItem(index)"><font-awesome-icon icon="undo" /></span>
+                      </td>
+                      <slot name="table-body" :row="row">
+                          <template v-for="field in tableFields">
+                            <td class="has-text-grey-lighter" v-if="field.type!='checkbox'" :key="'table-cell-' + field.name + '-' + index" :class="field.bodyClass"> {{ stringify(row[field.name],field) }} </td>
+                            <td class="has-text-grey-lighter" v-else :key="'table-cell-' + field.name + '-' + index" :class="field.bodyClass"><font-awesome-icon :icon="(row[field.name])?['far','check-square']:['far','square']" /></td>
+                          </template>
+                      </slot>
+                    </template>
+                    <template v-else>
+                      <td>
+                        <span class="icon is-clickable has-text-success" v-if="allowInsert" @click="addItem(index)"><font-awesome-icon icon="plus-square" /></span>
+                        <span class="icon is-clickable has-text-warning" @click="editItem(index)"><font-awesome-icon icon="pencil-alt" /></span>
+                        <span class="icon is-clickable has-text-danger" v-if="allowDelete || row[insert_marker]" @click="removeItem(index)"><font-awesome-icon icon="times" /></span>
+                        <span class="icon is-clickable has-text-grey-lighter" v-else><font-awesome-icon icon="times" /></span>
+                      </td>
+                      <slot name="table-body" :row="row">
+                          <template v-for="field in tableFields">
+                            <td v-if="field.type!='checkbox'" :key="'table-cell-' + field.name + '-' + index" :class="field.bodyClass"> {{ stringify(row[field.name],field) }} </td>
+                            <td v-else :key="'table-cell-' + field.name + '-' + index" :class="field.bodyClass"><font-awesome-icon :icon="(row[field.name])?['far','check-square']:['far','square']" /></td>
+                          </template>
+                      </slot>
+                    </template>
+                  </tr>
+                  <tr v-if="allowInsert">
+                      <td>
+                        <span class="icon is-clickable has-text-success" @click="addItem(-1)"><font-awesome-icon icon="plus-square" /></span>
+                      </td>
+
+                      <slot name="table-body">
+                          <template v-for="field in tableFields">
+                            <td class="has-background-grey-lighter" :key="'table-cell-' + field.name"></td>
+                          </template>
+                      </slot>
+                  </tr>
+                </template>
+                <template v-else>
+                  <tr>
+                      <td class="has-text-grey-lighter"><font-awesome-icon icon="spinner" spin /></td>
+                      <slot name="table-body">
+                          <template v-for="field in tableFields">
+                            <td class="has-background-grey-lighter" :key="'table-cell-' + field.name"></td>
+                          </template>
+                      </slot>
+                  </tr>
+                </template>
             </tbody>
         </table>
+      </div>
     </div>
 </template>
 
@@ -113,12 +148,14 @@
     import BulmaModal from './BulmaModal.vue'
     import Vuelidate from 'vuelidate'
     import BulmaAdvancedSelect from './BulmaAdvancedSelect'
+    import Helpers from './../lib/Helpers.js'
+    import BulmaCheckRadio from './BulmaCheckRadio'
     import { required,minValue,maxValue,minLength,maxLength, helpers,requiredIf } from 'vuelidate/lib/validators'
 
     Vue.use(Vuelidate)
     export default{
         name:'BulmaEditTable',
-        components:{BulmaModal,BulmaAdvancedSelect},
+        components:{BulmaModal,BulmaAdvancedSelect,BulmaCheckRadio},
         props:{
             tableFields: {
                 type: Array,
@@ -141,7 +178,15 @@
             dynamicFieldStatus:{
               required: true,
               type: Object
-            }
+            },
+            values: {},
+            isLoading:{type: Boolean},
+            allowInsert:{type: Boolean, default: true},
+            allowDelete:{type: Boolean, default: true},
+            deleteMarker:{type: String, default: ""},
+            insertMarker:{type: String, default: ""},
+            readonlyColumns:{type: Array},
+            hasError:{type: Boolean}
         },
         data: function(){
             return {
@@ -149,19 +194,20 @@
                     field: '',
                     desc: true
                 },
-                rows: [],
+                rows: undefined,
                 filters: [],
                 showedRows: [],
                 editedItem:{},
                 showEdit:false,
                 action:"",
-                editIndex:-1
+                editIndex:-1,
+                insert_marker:undefined
             }
         },
         validations() {     // a dynamic assignment of vuelidate validations, based on the form json
 
           var obj = {
-            editedItem:{}
+            editedItem:{},
           }
           this.tableFields.forEach((ff, i) => {
             var attrs = {}
@@ -175,21 +221,12 @@
             if("minLength" in ff){ attrs.minLength=minLength(ff.minLength)}
             if("maxLength" in ff){ attrs.maxLength=maxLength(ff.maxLength)}
             if("regex" in ff){
-              if(typeof ff.regex == 'object'){
                 regexObj = new RegExp(ff.regex.expression)
-                description = (ff.regex.description!==undefined)?ff.regex.description:"The value must match regular expression : " + ff.regex.expression
+                description = ff.regex.description
                 attrs.regex = helpers.withParams(
                     {description: description,type:"regex"},
                     (value) => !helpers.req(value) || regexObj.test(value)
                 )
-              }else{
-                regexObj = new RegExp(ff.regex)
-                description = (ff.regexDescription!==undefined)?ff.regexDescription:"The value must match regular expression : " + ff.regex
-                attrs.regex = helpers.withParams(
-                    {description: description,type:"regex"},
-                    (value) => !helpers.req(value) || regexObj.test(value)
-                )
-              }
             }
             obj.editedItem[ff.name]=attrs
           });
@@ -198,16 +235,47 @@
         },
         watch: {
             rows: function(){
-                this.showedRows = JSON.parse(JSON.stringify(this.rows));
+                if(this.rows){
+                  this.showedRows = JSON.parse(JSON.stringify(this.rows));
+                }else{
+                  this.showedRows = undefined
+                }
+            },
+            values: function(){
+              this.rows=this.values
+              if(this.values && this.values.length>0){
+                var fields = this.tableFields.map(x => x.name)
+                var data = Object.keys(this.values[0])
+                var missing = Helpers.findMissing(data,fields)
+                if(missing.length>0){
+                  this.$emit('warning',missing)
+                }
+              }
             }
         },
         mounted: function () {
+          this.insert_marker=this.insertMarker
+          if((this.deleteMarker || !this.allowDelete) && (!this.insert_marker || this.insert_marker.length==0)){
+            this.insert_marker="__inserted__"
+          }
+          this.rows=this.values
+          if(this.rows){
             this.showedRows = JSON.parse(JSON.stringify(this.rows));
+          }else{
+            this.showedRows = undefined
+          }
         },
         computed: {
             filterRow: function () {
                 return this.tableFields.findIndex( (e) => e.filterable ) >= 0;
-            }
+            },
+            getTableClass(){
+                var tmp=this.tableClass
+                if(this.hasError){
+                  tmp+=" hasError"
+                }
+                return tmp
+            },
         },
         methods:{
             getValueLabel(field){
@@ -260,7 +328,23 @@
               this.showEdit=true;
             },
             removeItem: function(index){
-              this.rows.splice(index,1)
+              if(!this.deleteMarker){
+                this.rows.splice(index,1)
+              }else{
+                var tmp = this.rows[index]
+                if(tmp[this.insert_marker]){
+                  this.rows.splice(index,1)
+                }else{
+                  Vue.set(tmp,this.deleteMarker,true)
+                  Vue.set(this.rows,index,tmp)
+                }
+              }
+              this.$emit('input', this.rows)
+            },
+            undoRemoveItem: function(index){
+              var tmp = this.rows[index]
+              delete tmp[this.deleteMarker]
+              Vue.set(this.rows,index,tmp)
               this.$emit('input', this.rows)
             },
             saveItem:function(){
@@ -277,6 +361,10 @@
               })
               if(!this.$v.editedItem.$invalid){
                 if(this.action=="Add"){
+                  if(this.insert_marker){
+                    Vue.set(this.editedItem,this.insert_marker,true)
+                  }
+
                   if(this.editIndex<0){
                     this.rows.push(this.editedItem)
                   }else{
@@ -367,4 +455,9 @@
 .select, .select select{
   width:100%;
 }
+
+.hasError{
+  border:2px solid #ea4141!important;
+}
+
 </style>

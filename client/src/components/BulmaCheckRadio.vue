@@ -1,6 +1,6 @@
 <template>
   <span>
-      <input :type="checktype" :id="_uid" class="is-checkradio" :class="type" :value="val" v-model="checked" focus="prevent">
+      <input :type="checktype" :id="_uid" class="is-checkradio" :disabled="disabled" :class="type" :value="val" v-model="checked" focus="prevent">
       <label :for="_uid"> {{ label }}</label>
   </span>
 </template>
@@ -10,7 +10,7 @@
   import "../../public/assets/bulma_checkradio.scss"
   export default{
     name:"BulmaRadio",
-    props: ['type','value', 'val','label','checktype'],
+    props: ['type','value', 'val','label','checktype','disabled'],
     data () {
       return {
       }

@@ -10,30 +10,14 @@ var Ansible=function(){
 
 };
 
-// single regex checks on ansible output to see if an error occured
-function hasError(data){
-  if(data.match(/^fatal:/)){
-    return true
-  }
-  if(data.match(/FAILED!/)){
-    return true
-  }
-  if(data.match(/ERROR!/)){
-    return true
-  }
-  if(data.match(/failed=[1-9]/)){
-    return true
-  }
-  return false
-}
-
 // run a playbook
 Ansible.run = function (form,playbook,inventory,tags,check,diff,extraVars,user, result) {
   // prepare my ansible command
   var command = `ansible-playbook -e '${extraVars}'`
-  if(inventory){
-    command += ` -i '${inventory}'`
-  }
+  inventory.forEach((item, i) => {
+    command += ` -i '${item}'`
+  });
+
   if(tags){
     command += ` -t '${tags}'`
   }
@@ -66,9 +50,6 @@ Ansible.run = function (form,playbook,inventory,tags,check,diff,extraVars,user, 
 
       // add output eventlistener to the process to save output
       child.stdout.on('data',function(data){
-        if(hasError(data)){
-          jobstatus="failed"
-        }
         // save the output ; but whilst saving, we quickly check the status to detect abort
         Job.createOutput({output:data,output_type:"stdout",job_id:jobid,order:++counter},function(error,res){
           if(error){
@@ -86,9 +67,6 @@ Ansible.run = function (form,playbook,inventory,tags,check,diff,extraVars,user, 
       })
       // add error eventlistener to the process to save output
       child.stderr.on('data',function(data){
-        if(hasError(data)){
-          jobstatus="failed"
-        }
         // save the output ; but whilst saving, we quickly check the status to detect abort
         Job.createOutput({output:data,output_type:"stderr",job_id:jobid,order:++counter},function(error,res){
           if(error){
@@ -119,6 +97,10 @@ Ansible.run = function (form,playbook,inventory,tags,check,diff,extraVars,user, 
             })
           })
         }else{ // if the exit was natural; set the jobstatus (either success or failed)
+          if(data!=0){
+            jobstatus="failed"
+            logger.error(`[${jobid}] Failed with code ${data}`)
+          }
           Job.update({status:jobstatus,end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid,function(error,res){
             if(error){
               logger.error(error)
