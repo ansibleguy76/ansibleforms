@@ -45,7 +45,7 @@
           </transition>
           <!-- groups -->
           <div :key="group" v-for="group in fieldgroups" class="mt-4">
-            <div :class="{'box':checkGroupDependencies(group)}">
+            <div :class="getGroupClass(group)">
               <!-- group title -->
               <h3 class="title is-3" v-if="checkGroupDependencies(group)">{{group}}</h3>
                 <!-- field loop -->
@@ -659,6 +659,19 @@
             result=true
           }
         });
+        return result
+      },
+      // get group class
+      getGroupClass(group){
+        var result=[]
+        if(this.checkGroupDependencies(group)){
+          result.push('box')
+          if(group){
+            var bg = this.currentForm?.groups[group]
+            if(bg)
+              result.push(bg)
+          }
+        }
         return result
       },
       // reset value of field - only for expression/query

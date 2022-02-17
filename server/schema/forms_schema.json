@@ -135,18 +135,10 @@
           "source": {"type": "string"},
           "showHelp": {"type": "boolean"},
           "groups": {
-              "type": "object",
-              "required": [
-                "name",
-                "backgroundClass"
-              ],
-              "properties": {
-                "name": {"type": "string"},
-                "backgroundClass": {
-                  "type": "string",
-                  "pattern": "^has-background-.+"
-                }
-              }
+            "type" : "object",
+            "additionalProperties" : {
+                "type" : "string"
+            }
           },
           "fields": {
             "type": "array",
