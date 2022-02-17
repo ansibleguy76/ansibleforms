@@ -52,9 +52,9 @@
                       <span class="icon"><font-awesome-icon icon="code" /></span><span>Api docs</span>
                     </a>
                     <hr class="navbar-divider">
-                    <div class="navbar-item">
-                      <span class="icon"><font-awesome-icon icon="code-branch" /></span><span>Version {{version}}</span>
-                    </div>
+                    <a class="navbar-item" @click="$emit('about')">
+                      <span class="icon"><font-awesome-icon icon="code-branch" /></span><span>About v{{version}}</span>
+                    </a>
                   </div>
                 </div>
                 <div class="navbar-item has-dropdown is-hoverable" v-if="authenticated">

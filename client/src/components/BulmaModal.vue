@@ -10,7 +10,8 @@
         <slot></slot>
       </section>
       <footer class="modal-card-foot">
-        <button v-if="action" class="button is-info" @click="$emit('click')">{{ action }}</button>
+        <a v-if="href" target="_blank" class="button is-info" :href="href"><span  v-if="icon" class="icon"><font-awesome-icon :icon="icon" /></span><span>{{ action }}</span></a>
+        <button v-if="action && !href" class="button is-info" @click="$emit('click')"><span  v-if="icon" class="icon"><font-awesome-icon :icon="icon" /></span><span>{{ action }}</span></button>
         <button v-if="actionSuccess" class="button is-success" @click="$emit('clickSuccess')">{{ actionSuccess }}</button>
         <button v-if="actionDanger" class="button is-success" @click="$emit('clickDanger')">{{ actionDanger }}</button>
         <button class="button" @click="$emit('cancel')">Cancel</button>
@@ -22,7 +23,7 @@
   import Vue from 'vue'
   export default{
     name:"BulmaModal",
-    props:['title','action','actionSuccess','actionDanger','type'],
+    props:['title','href','icon','action','actionSuccess','actionDanger','type'],
     data(){
       return{
       }

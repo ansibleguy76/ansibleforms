@@ -82,7 +82,7 @@
                           </span>
                           <!-- expression edit buttons -->
                           <span
-                            class="icon is-clickable has-text-success"
+                            class="icon is-clickable has-text-warning"
                             @click="setExpressionFieldEditable(field.name,true)"
                             v-if="field.editable && field.type=='expression' && !fieldOptions[field.name].editable && !fieldOptions[field.name].viewable"
                           >
@@ -340,7 +340,7 @@
             <pre v-if="currentForm.type=='awx'" v-html="ansibleResult.data.output"></pre>
           </div>
           <!-- close output button -->
-          <button v-if="!!ansibleResult.data.output" class="button has-background-danger has-text-light" @click="resetResult()">
+          <button v-if="!!ansibleResult.data.output" class="button has-text-light" :class="{ 'has-background-success' : ansibleResult.status=='success', 'has-background-warning' : ansibleResult.status=='warning', 'has-background-danger' : ansibleResult.status=='error'}" @click="resetResult()">
             <span class="icon"><font-awesome-icon icon="times" /></span>
             <span>Close output</span>
           </button>
