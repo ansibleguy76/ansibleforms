@@ -340,7 +340,7 @@
             <pre v-if="currentForm.type=='awx'" v-html="ansibleResult.data.output"></pre>
           </div>
           <!-- close output button -->
-          <button v-if="!!ansibleResult.data.output" class="button has-text-light" :class="{ 'has-background-success' : ansibleResult.status=='success', 'has-background-warning' : ansibleResult.status=='warning', 'has-background-danger' : ansibleResult.status=='error'}" @click="resetResult()">
+          <button v-if="!!ansibleResult.data.output" class="button has-text-light" :class="{ 'has-background-success' : ansibleResult.status=='success', 'has-background-warning' : ansibleResult.status=='warning', 'has-background-danger' : ansibleResult.status=='error','has-background-info' : ansibleResult.status=='info'}" @click="resetResult()">
             <span class="icon"><font-awesome-icon icon="times" /></span>
             <span>Close output</span>
           </button>
