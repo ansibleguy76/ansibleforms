@@ -138,6 +138,7 @@
             "type" : "object",
             "additionalProperties" : {
                 "type" : "string"
+                "pattern": "^has-background-.+"
             }
           },
           "fields": {
