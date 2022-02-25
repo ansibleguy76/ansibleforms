@@ -83,7 +83,8 @@
               "type": {
                 "enum": ["ansible"]
               },
-              "template": {"not":{}}
+              "template": {"not":{}},
+              "repo": {"not":{}}
             },
             "required": ["playbook"]
           },
@@ -92,9 +93,20 @@
               "type": {
                 "enum": ["awx"]
               },
-              "playbook": {"not":{}}
+              "playbook": {"not":{}},
+              "repo": {"not":{}}
             },
             "required": ["template"]
+          },
+          {
+            "properties": {
+              "type": {
+                "enum": ["git"]
+              },
+              "playbook": {"not":{}},
+              "template": {"not":{}}
+            },
+            "required": ["repo"]
           }
         ],
         "properties": {
@@ -123,10 +135,15 @@
           },
           "type": {
             "type": "string",
-            "enum": ["ansible", "awx"]
+            "enum": ["ansible", "awx", "git"]
           },
           "playbook": {"type": "string"},
+          "key": {"type": "string"},
           "template": {"type": "string"},
+          "repo": {
+            "type": "object",
+            "additionalProperties": true
+          },
           "inventory": {"type": "string"},
           "tags": {"type": "string"},
           "check": {"type": "boolean"},
@@ -134,11 +151,10 @@
           "help": {"type": "string"},
           "source": {"type": "string"},
           "showHelp": {"type": "boolean"},
-          "groups": {
+          "fieldGroupClasses": {
             "type" : "object",
             "additionalProperties" : {
                 "type" : "string"
-                "pattern": "^has-background-.+"
             }
           },
           "fields": {

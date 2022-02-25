@@ -1,7 +1,7 @@
 'use strict';
 const logger=require("../lib/logger");
 const authConfig = require('../../config/auth.config')
-const helpers = require('../lib/common.js')
+const Helpers = require('../lib/common.js')
 const appConfig = require('../../config/app.config')
 const mysql = require('./db.model')
 
@@ -9,9 +9,11 @@ const mysql = require('./db.model')
 var Job=function(job){
     if(job.form && job.form!=""){ // first time insert
       this.form = job.form;
-      this.playbook = job.playbook;
+      this.target = job.target;
       this.user = job.user;
       this.user_type = job.user_type;
+      this.job_type = job.job_type;
+      this.extravars = Helpers.logSafe(job.extravars);
     }
     if(job.status && job.status!=""){ // allow single status update
       this.status = job.status;
@@ -105,7 +107,7 @@ Job.delete = function(id, result){
 };
 Job.findAll = function (result) {
     logger.debug("Finding all jobs")
-    var query = "SELECT * FROM AnsibleForms.`jobs` ORDER BY id DESC LIMIT 500;"
+    var query = "SELECT id,form,target,status,start,end,user,user_type,job_type FROM AnsibleForms.`jobs` ORDER BY id DESC LIMIT 500;"
     try{
       mysql.query(query,null, function (err, res) {
           if(err) {
@@ -122,63 +124,73 @@ Job.findAll = function (result) {
 Job.findById = function (id,text,result) {
     logger.debug(`Finding job ${id} | ${text}` )
     try{
-      mysql.query("SELECT `status`,COALESCE(output,'') output,COALESCE(`timestamp`,'') `timestamp`,COALESCE(output_type,'stdout') output_type FROM AnsibleForms.`jobs` LEFT JOIN AnsibleForms.`job_output` ON jobs.id=job_output.job_id WHERE jobs.id=? ORDER by job_output.order;",id, function (err, res) {
+      // get normal data
+      mysql.query("SELECT `status`,`extravars`,`job_type` FROM AnsibleForms.`jobs` WHERE jobs.id=?;",id, function (err, res) {
           if(err) {
               result(err, null);
           }
           else{
+            var status=res[0].status
+            var extravars=res[0].extravars
+            var output=[]
             if(res.length>0){
-              var status=res[0].status
-              var output=[]
-              res.forEach(function(el){
-                var addedTimestamp=false
-                var output2=[]
-                var record = el.output.trim('\r\n')
-                if(!text){
-                  if(el.output_type=="stderr"){
-                    // mark errors
-                    if(record.match(/^\[WARNING\].*/gm)){
-                      record = "<span class='has-text-warning'>"+record+"</span>"
-                    }else{
-                      record = "<span class='has-text-danger'>"+record+"</span>"
-                    }
-
-                  }else{
-                    // mark play / task lines as bold
-                    if(record.match(/^([A-Z]*) \[([^\]]*)\] (\**)$/gm)){
-                      record = "<strong>" + record + "</strong>"
-                    }
-                    // mark succes lines
-                    if(record.match(/^(ok): \[([^\]]*)\].*/gm)){
-                      record = "<span class='has-text-success'>" + record + "</span>"
-                    }
-                    // mark change lines
-                    if(record.match(/^(changed): \[([^\]]*)\].*/gm)){
-                      record = "<span class='has-text-warning'>" + record + "</span>"
-                    }
-                    // mark skip lines
-                    if(record.match(/^(skipping): \[([^\]]*)\].*/gm)){
-                      record = "<span class='has-text-info'>" + record + "</span>"
-                    }
-                    // summary line ?
-                    record=record.replace(/(ok=[1-9]+[0-9]*)/g, "<span class='tag is-success'>$1</span>")
-                                .replace(/(changed=[1-9]+[0-9]*)/g, "<span class='tag is-warning'>$1</span>")
-                                .replace(/(failed=[1-9]+[0-9]*)/g, "<span class='tag is-warning'>$1</span>")
-                                .replace(/(unreachable=[1-9]+[0-9]*)/g, "<span class='tag is-warning'>$1</span>")
-                                .replace(/(skipped=[1-9]+[0-9]*)/g, "<span class='tag is-info'>$1</span>")
-                  }
+              // get output summary
+              mysql.query("SELECT COALESCE(output,'') output,COALESCE(`timestamp`,'') `timestamp`,COALESCE(output_type,'stdout') output_type FROM AnsibleForms.`job_output` WHERE job_id=? ORDER by job_output.order;",id, function (err, res) {
+                if(err) {
+                    result(err, null);
                 }
+                else{
+                  res.forEach(function(el){
+                    var addedTimestamp=false
+                    var output2=[]
+                    var record = el.output.trim('\r\n')
+                    if(!text){
+                      if(el.output_type=="stderr"){
+                        // mark errors
+                        if(record.match(/^\[WARNING\].*/gm)){
+                          record = "<span class='has-text-warning'>"+record+"</span>"
+                        }else{
+                          record = "<span class='has-text-danger'>"+record+"</span>"
+                        }
 
-                record.replace('\r\n','\n').split('\n').forEach(function(el2,i){
-                  if(el2!="" && !addedTimestamp && !text){
-                    el2+=" <span class='tag is-info is-light'>"+el.timestamp+"</span>"
-                    addedTimestamp=true
-                  }
-                  output2.push(el2)
-                })
-                output.push(output2.join("\r\n"))
+                      }else{
+                        // mark play / task lines as bold
+                        if(record.match(/^([A-Z]*) \[([^\]]*)\] (\**)$/gm)){
+                          record = "<strong>" + record + "</strong>"
+                        }
+                        // mark succes lines
+                        if(record.match(/^(ok): \[([^\]]*)\].*/gm)){
+                          record = "<span class='has-text-success'>" + record + "</span>"
+                        }
+                        // mark change lines
+                        if(record.match(/^(changed): \[([^\]]*)\].*/gm)){
+                          record = "<span class='has-text-warning'>" + record + "</span>"
+                        }
+                        // mark skip lines
+                        if(record.match(/^(skipping): \[([^\]]*)\].*/gm)){
+                          record = "<span class='has-text-info'>" + record + "</span>"
+                        }
+                        // summary line ?
+                        record=record.replace(/(ok=[1-9]+[0-9]*)/g, "<span class='tag is-success'>$1</span>")
+                                    .replace(/(changed=[1-9]+[0-9]*)/g, "<span class='tag is-warning'>$1</span>")
+                                    .replace(/(failed=[1-9]+[0-9]*)/g, "<span class='tag is-warning'>$1</span>")
+                                    .replace(/(unreachable=[1-9]+[0-9]*)/g, "<span class='tag is-warning'>$1</span>")
+                                    .replace(/(skipped=[1-9]+[0-9]*)/g, "<span class='tag is-info'>$1</span>")
+                      }
+                    }
+
+                    record.replace('\r\n','\n').split('\n').forEach(function(el2,i){
+                      if(el2!="" && !addedTimestamp && !text){
+                        el2+=" <span class='tag is-info is-light'>"+el.timestamp+"</span>"
+                        addedTimestamp=true
+                      }
+                      output2.push(el2)
+                    })
+                    output.push(output2.join("\r\n"))
+                  })
+                  result(null, [{status:status,extravars:extravars,output:output.join('\r\n\r\n')}]);
+                }
               })
-              result(null, [{status:status,output:output.join('\r\n\r\n')}]);
             }else{
               result(null, []);
             }

@@ -524,6 +524,10 @@
             "schema": {
               "type": "object",
               "properties": {
+                "formName": {
+                  "type": "string",
+                  "example": "Create VM"
+                },
                 "awxTemplate": {
                   "type": "string",
                   "example": "Create VM"

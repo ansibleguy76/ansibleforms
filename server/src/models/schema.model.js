@@ -132,6 +132,45 @@ function addColumn(table,name,fieldtype,nullable,defaultvalue){
       })
   })
 }
+function renameColumn(table,name,newname,fieldtype){
+  var message
+  var db="AnsibleForms"
+  var checksql = `SHOW COLUMNS FROM ${db}.${table} WHERE Field='${newname}'`
+  var sql = `ALTER TABLE ${db}.${table} CHANGE \`${name}\` \`${newname}\` ${fieldtype}`
+  logger.silly(`rename column '${name}'->'${newname}' on table '${table}'`)
+  return new Promise((resolve,reject) => {
+      mysql.query(checksql,null,function(checkerr,checkres){
+        if(checkerr){
+          message=`rename column '${name}'->'${newname}' check failed on '${table}'\n` + checkerr
+          logger.error(checkerr)
+          reject(message)
+        }else{
+          if(checkres.length==0){
+            mysql.query(sql,null,function(err,res){
+              if(err){
+                message=`rename column '${name}'->'${newname}' failed on '${table}'\n` + err
+                logger.error(message)
+                reject(message)
+              }else{
+                if(res){
+                  message=`renamed column '${name}'->'${newname}' on '${table}'`
+                  logger.warn(message)
+                  resolve(message)
+                }else{
+                  message=`ERROR : Unexpected result from MySql when renaming column '${name}'->'${newname}' on table '${table}'`
+                  reject(message)
+                }
+              }
+            })
+          }else{
+            message=`Column '${name}' is already present on '${table}'`
+            logger.debug(message)
+            resolve(message)
+          }
+        }
+      })
+  })
+}
 function checkTable(table){
   var message
   var db="AnsibleForms"
@@ -176,6 +215,9 @@ function patchAll(){
   tablePromises.push(addColumn("tokens","timestamp","datetime",false,"current_timestamp()")) // add timestamp for cleanup
   tablePromises.push(addColumn("awx","ignore_certs","tinyint(4)",true,"1")) // add for awx certficate validation
   tablePromises.push(addColumn("awx","ca_bundle","text",true,"NULL")) // add for awx certficate validation
+  tablePromises.push(addColumn("jobs","job_type","varchar(20)",true,"NULL")) // add for git addition
+  tablePromises.push(addColumn("jobs","extravars","mediumtext",true,"NULL")) // add for extravars
+  tablePromises.push(renameColumn("jobs","playbook","target","VARCHAR(250)")) // add for extravars
   return Promise.all(tablePromises.map(reflect))
     .then((results)=>{ // all table results are back
         // separate success from failed

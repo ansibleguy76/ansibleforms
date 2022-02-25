@@ -6,6 +6,7 @@ const cheerio = require('cheerio');
 const logger=require("../lib/logger");
 const mysql=require("./db.model")
 const Helpers=require("../lib/common")
+const Exec=require("../lib/exec")
 const YAML=require("yaml")
 const {encrypt,decrypt} = require("../lib/crypto")
 const NodeCache = require("node-cache")
@@ -141,7 +142,7 @@ Awx.abortJob = function (id, result) {
   })
 };
 // launch awx job template
-Awx.launch = function (template,inventory,tags,check,diff,extraVars, result) {
+Awx.launch = function (form,template,inventory,tags,check,diff,extraVars,user, result) {
 
   Awx.getConfig(function(err,awxConfig){
 
@@ -187,27 +188,35 @@ Awx.launch = function (template,inventory,tags,check,diff,extraVars, result) {
           httpsAgent: getHttpsAgent(awxConfig)
         }
         logger.silly("Lauching awx with data : " + JSON.stringify(postdata))
-        axios.post(awxConfig.uri + template.related.launch,postdata,axiosConfig)
-          .then((axiosresult)=>{
-            var job = axiosresult.data
-            if(job){
-              logger.debug(`success, job id = ${job.id}`)
-              result(null,job)
-            }else{
-              message=`could not launch job template ${template.name}`
-              logger.error(message)
-              result(message,null)
-            }
-          })
-          .catch(function (error) {
-            var message=`failed to launch ${template.name}`
-            if(error.response){
-                logger.error(error.response.data)
-                message+="\r\n" + YAML.stringify(error.response.data)
-            }else{
-                logger.error(error)
-            }
-            result(message)
+        var metaData = {form:form,target:template.name,inventory:inventory,tags:tags,check:check,diff:diff,job_type:'awx',extravars:extraVars,user:user}
+        Exec.runCommand(null,metaData,function(){},function(jobid,counter){
+          axios.post(awxConfig.uri + template.related.launch,postdata,axiosConfig)
+            .then((axiosresult)=>{
+              var job = axiosresult.data
+              if(job){
+                logger.debug(`success, job id = ${job.id}`)
+                // log in joblog
+                Exec.endCommand(jobid,counter,"stdout","success",`Launched template ${template.name} with jobid ${job.id}, check AWX logs for details`)
+                result(null,job)
+              }else{
+                message=`could not launch job template ${template.name}`
+                Exec.endCommand(jobid,counter,"stdout","success",`Failed to launch template ${template.name}`)
+                logger.error(message)
+                result(message,null)
+              }
+            })
+            .catch(function (error) {
+              var message=`failed to launch ${template.name}`
+              if(error.response){
+                  logger.error(error.response.data)
+                  message+="\r\n" + YAML.stringify(error.response.data)
+                  Exec.endCommand(jobid,counter,"stdout","success",`Failed to launch template ${template.name}. ${message}`)
+              }else{
+                  logger.error(error)
+                  Exec.endCommand(jobid,counter,"stdout","success",`Failed to launch template ${template.name}. ${error}`)
+              }
+              result(message)
+            })
           })
       }
     }

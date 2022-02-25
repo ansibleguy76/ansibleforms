@@ -74,11 +74,13 @@ exports.launch = async function(req, res) {
         res.status(400).json(RestResult("error","no data was sent","",""));
     }else{
         // get the form data
+        var form = req.body.formName;
         var jobTemplateName = req.body.awxTemplate;
         var inventory = req.body.awxInventory;
         var check = req.body.awxCheck || req.body.awxExtraVars.__check__;
         var diff = req.body.awxDiff || req.body.awxExtraVars.__diff__;
         var jobTags = req.body.awxTags;
+        var user = req.user.user
         if(req.body.credentials){
           for (const [key, value] of Object.entries(req.body.credentials)) {
             if(value=="__self__"){
@@ -134,7 +136,7 @@ exports.launch = async function(req, res) {
                         res.json(restResult)
                       }else{
                         logger.silly("Found inventory, id = " + inventory.id)
-                        Awx.launch(jobTemplate,inventory,jobTags,check,diff,extraVars,function(err,job){
+                        Awx.launch(form,jobTemplate,inventory,jobTags,check,diff,extraVars,user,function(err,job){
                             if (err){
                               restResult.status = "error"
                               restResult.message = "failed to launch jobtemplate " + jobTemplate.name
@@ -148,7 +150,7 @@ exports.launch = async function(req, res) {
                       }
                     })
                   }else{
-                    Awx.launch(jobTemplate,undefined,jobTags,check,diff,extraVars,function(err,job){
+                    Awx.launch(form,jobTemplate,undefined,jobTags,check,diff,extraVars,user,function(err,job){
                         if (err){
                           restResult.status = "error"
                           restResult.message = "failed to launch jobtemplate " + jobTemplate.name

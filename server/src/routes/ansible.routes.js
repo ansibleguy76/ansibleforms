@@ -3,7 +3,7 @@ const router = express.Router()
 const ansibleController =   require('../controllers/ansible.controller');
 
 // run a playbook
-router.post('/launch/', ansibleController.run);
+router.post('/launch/', ansibleController.launch);
 // get a single job
 router.get('/job/:id', ansibleController.getJob);
 // change a single job (status changes)

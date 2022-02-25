@@ -6,11 +6,7 @@ const Credential = require('../models/credential.model');
 const logger=require("../lib/logger");
 const dbConfig = require('../../config/db.config')
 
-async function getCredential(name){
-
-}
-
-exports.run = async function(req, res) {
+exports.launch = async function(req, res) {
     //handles null error
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
         // wrong implementation -> send 400 error
@@ -127,7 +123,7 @@ exports.getJob = function(req, res) {
                 restResult.status = "warning"
                 restResult.message = "job aborted"
               }
-              restResult.data.output = job[0].output
+              restResult.data = job[0]
               res.json(restResult);
             }else{
               res.json(new RestResult("error","failed to find job",null,"No such job"))

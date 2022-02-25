@@ -36,4 +36,11 @@ Helpers.checkAdminMiddleware = (req, res, next) =>  {
         res.status(401).json(new restResult("error","you are not an admin"))
       }
 }
+Helpers.logSafe = (v)=>{
+  if(!v){
+    return ""
+  }
+  return v.replace(/"password":"[^"]+"/g,'"password":"**NOLOG**"')
+}
+
 module.exports = Helpers

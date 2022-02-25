@@ -64,12 +64,14 @@ DROP TABLE IF EXISTS `jobs`;
 CREATE TABLE `jobs` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `form` varchar(250) DEFAULT NULL,
-  `playbook` varchar(250) DEFAULT NULL,
+  `target` varchar(250) DEFAULT NULL,
   `status` varchar(20) DEFAULT NULL,
   `start` datetime NOT NULL DEFAULT current_timestamp(),
   `end` datetime DEFAULT NULL,
   `user` varchar(250) DEFAULT NULL,
   `user_type` varchar(10) DEFAULT NULL,
+  `job_type` varchar(20) DEFAULT NULL,
+  `extravars` mediumtext DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8;
 CREATE TABLE `job_output` (
