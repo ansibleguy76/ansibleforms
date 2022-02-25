@@ -17,7 +17,8 @@
               <th style="width:100px" v-if="isAdmin">Action</th>
               <th style="width:100px">id</th>
               <th>form</th>
-              <th>playbook</th>
+              <th>job type</th>
+              <th>target</th>
               <th>status</th>
               <th>start time</th>
               <th>end time</th>
@@ -29,7 +30,8 @@
             <td v-if="isAdmin" class="has-background-info-light"><span class="icon has-text-danger is-clickable" @click="tempJobId=j.id;showDelete=true" title="Delete job"><font-awesome-icon icon="trash-alt" /></span></td>
             <td class="is-clickable has-text-left" @click="loadOutput(j.id)">{{j.id}}</td>
             <td class="is-clickable has-text-left" @click="loadOutput(j.id)">{{j.form}}</td>
-            <td class="is-clickable has-text-left" @click="loadOutput(j.id)">{{j.playbook}}</td>
+            <td class="is-clickable has-text-left" @click="loadOutput(j.id)">{{j.job_type || "ansible" }}</td>
+            <td class="is-clickable has-text-left" @click="loadOutput(j.id)">{{j.target}}</td>
             <td class="is-clickable has-text-left" @click="loadOutput(j.id)">{{j.status}}</td>
             <td class="is-clickable has-text-left" @click="loadOutput(j.id)">{{j.start | moment('YYYY-MM-DD HH:mm:ss')}}</td>
             <td class="is-clickable has-text-left" @click="loadOutput(j.id)">{{j.end | moment('YYYY-MM-DD HH:mm:ss')}}</td>
@@ -58,17 +60,50 @@
             </li>
           </ul>
         </nav>
-        <div v-if="jobOutput" class="box mt-3">
-          <h3 class="subtitle">Job output for job {{jobId}}
-            <button @click="loadOutput(jobId)" v-if="jobId" class="button is-primary is-small is-pulled-right">
+        <div v-if="jobId"  class="columns">
+          <div class="column">
+            <h3 class="subtitle">Job output for job {{jobId}} <span class="tag is-info mr-1 ml-3">{{ job.job_type || 'ansible'}}</span><span class="tag" :class="{'is-success':job.status=='success','is-danger':job.status=='failed'}">{{ job.status }}</span></h3>
+            <button @click="showExtraVars=true" class="button is-info is-small mr-3">
+              <span class="icon">
+                <font-awesome-icon icon="eye" />
+              </span>
+              <span>Show Extravars</span>
+            </button>
+            <button @click="loadOutput(jobId)" v-if="jobId" class="button is-primary is-small">
               <span class="icon">
                 <font-awesome-icon icon="sync-alt" />
               </span>
               <span>Refresh</span>
             </button>
-          </h3>
-          <pre v-html="jobOutput"></pre>
+            <div class="box mt-3">
+              <pre v-html="job.output"></pre>
+            </div>
+          </div>
+
+          <!-- extra vars column -->
+          <div v-if="showExtraVars" class="column is-clipped-horizontal">
+            <h3 class="subtitle">Extravars</h3>
+            <!-- close extravar view button -->
+            <button @click="showExtraVars=false" class="button is-danger is-small">
+              <span class="icon">
+                <font-awesome-icon icon="times" />
+              </span>
+              <span>Close</span>
+            </button>
+            <!-- copy extravars button -->
+            <button @click="clip(job.extravars)" class="ml-2 button is-success is-small">
+              <span class="icon">
+                <font-awesome-icon icon="copy" />
+              </span>
+              <span>Copy to clipboard</span>
+            </button>
+            <!-- extravars raw -->
+            <div class="box mt-4 is-limited">
+              <vue-json-pretty :data="job.extravars"></vue-json-pretty>
+            </div>
+          </div>
         </div>
+
       </div>
     </div>
   </section>
@@ -79,7 +114,9 @@
   import BulmaModal from './../components/BulmaModal.vue'
   import moment from 'vue-moment'
   import TokenStorage from './../lib/TokenStorage'
-
+  import VueJsonPretty from 'vue-json-pretty';
+  import Copy from 'copy-to-clipboard'
+  import 'vue-json-pretty/lib/styles.css';
   Vue.use(moment)
 
   export default{
@@ -87,7 +124,7 @@
     props:{
       isAdmin:{type:Boolean}
     },
-    components:{BulmaModal},
+    components:{BulmaModal,VueJsonPretty},
     data(){
       return  {
         jobs : [],
@@ -96,13 +133,23 @@
         buttonsShown:7,
         pages: [],
         isLoaded:false,
-        jobOutput:"",
+        job:undefined,
         jobId:undefined,
+        showExtraVars:false,
         tempJobId:undefined,
         showDelete:false
       }
     },
     methods:{
+      // copy to clipboard
+      clip(v){
+        try{
+          Copy(v)
+          this.$toast.success("Copied to clipboard")
+        }catch(e){
+          this.$toast.error("Error copying to clipboard : \n" + e)
+        }
+      },
       loadJobs(){
         var ref= this;
         axios.get(`/api/v1/ansible/jobs?timestamp=${new Date().getTime()}`,TokenStorage.getAuthentication())                               // load forms
@@ -140,8 +187,9 @@
           .then((result)=>{
               if(result.data.data!==undefined){
                 // import the data if output returned
-                if(result.data.data.output!=""){
-                  ref.jobOutput=result.data.data.output;
+                ref.job=result.data.data;
+                if(ref.job.extravars){
+                  ref.job.extravars=JSON.parse(ref.job.extravars)
                 }
               }
           })
@@ -217,6 +265,18 @@
   }
   .select, .select select{
     width:100%;
+  }
+  .is-clipped-horizontal{
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+  .is-limited {
+    text-overflow: ellipsis;
+    width:100%;
+    overflow: hidden;
+  }
+  .is-nowrap{
+    white-space:nowrap;
   }
   pre{
     white-space: pre-wrap;       /* Since CSS 2.1 */
