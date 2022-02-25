@@ -32,7 +32,7 @@
         <span  v-if="!showEasterEgg" class="icon is-pulled-right has-text-grey-lighter"><font-awesome-icon @dblclick="showEasterEgg=true" icon="egg" /></span>
         <div v-if="showEasterEgg" class="tags has-addons is-unselectable">
           <span class="tag is-dark">Special thanks to</span>
-          <span class="tag is-warning">A. Bronder, H. Marko, S. Mer</span>
+          <span class="tag is-warning">{{ thanks.join(', ')}}</span>
         </div>
     </BulmaModal>
     <BulmaNav :isAdmin="isAdmin" @about="showAbout=true" :authenticated="authenticated" :profile="profile" @logout="logout()" :version="version" />
@@ -57,7 +57,15 @@
         isAdmin:false,
         version:"unknown",
         showAbout:false,
-        showEasterEgg:false
+        showEasterEgg:false,
+        thanks:[
+          "A. Bronder",
+          "H. Marko",
+          "S. Mer",
+          "J. Szkudlarek",
+          "J. Burkle",
+          "A. Mikhaylov"
+        ]
       }
     },
     computed: {
