@@ -1,6 +1,7 @@
 <template>
   <section class="section has-background-light">
     <!-- warnings pane -->
+    <BulmaPageloader v-if="!formIsReady">{{ loadMessage }}</BulmaPageloader>
     <BulmaQuickView v-if="warnings && showWarnings" title="Form warnings" footer="" @close="showWarnings=false">
         <p v-for="w,i in warnings" :key="'warning'+i" class="mb-3" v-html="w"></p>
     </BulmaQuickView>
@@ -336,7 +337,7 @@
           </div>
           <!-- output result -->
           <div v-if="!!ansibleResult.data.output" class="box mt-3">
-            <pre v-if="currentForm.type=='ansible'" v-html="ansibleResult.data.output"></pre>
+            <pre v-if="currentForm.type=='ansible' || currentForm.type=='git'" v-html="ansibleResult.data.output"></pre>
             <pre v-if="currentForm.type=='awx'" v-html="ansibleResult.data.output"></pre>
           </div>
           <!-- close output button -->
@@ -379,6 +380,7 @@
   import VueJsonPretty from 'vue-json-pretty';
   import BulmaAdvancedSelect from './BulmaAdvancedSelect.vue'
   import BulmaQuickView from './BulmaQuickView.vue'
+  import BulmaPageloader from './BulmaPageloader.vue'
   import BulmaCheckRadio from './BulmaCheckRadio.vue'
   import BulmaEditTable from './BulmaEditTable.vue'
 
@@ -405,7 +407,7 @@
 
   export default{
     name:"Form",
-    components:{VueJsonPretty,BulmaAdvancedSelect,BulmaEditTable,BulmaCheckRadio,BulmaQuickView},
+    components:{VueJsonPretty,BulmaAdvancedSelect,BulmaEditTable,BulmaCheckRadio,BulmaQuickView,BulmaPageloader},
     props:{
       currentForm:{type:Object},
       constants:{type:Object},
@@ -436,6 +438,8 @@
           visibility:{},            // holds which fields are visiable or not
           canSubmit:false,          // flag must be true to enable submit - allows to finish background queries - has a watchdog in case not possible
           validationsLoaded:false,  // ready flag if field validations are ready, we don't show the form otherwise
+          pretasksFinished:false,   // ready flag for form pre tasks (git => git pull)
+          loadMessage:"Loading form...",
           timeout:undefined,        // determines how long we should show the result of run
           showHelp:false,           // flag to show/hide form help
           showHidden:false,         // flag to show/hide hidden field / = debug mode
@@ -525,12 +529,13 @@
       });
       // flag validations are ready
       Vue.set(this,"validationsLoaded",true)
+
       return obj
     },
     computed: {
       // form loaded and validation ready
       formIsReady(){
-        return this.validationsLoaded && this.currentForm
+        return this.validationsLoaded && this.currentForm && this.pretasksFinished
       },
       // computed list of the field-groups (to generate fieldform-sections)
       fieldgroups(){
@@ -666,8 +671,8 @@
         var result=[]
         if(this.checkGroupDependencies(group)){
           result.push('box')
-          if(group){
-            var bg = this.currentForm?.groups[group]
+          if(group && this.currentForm.fieldGroupClasses){
+            var bg = this.currentForm.fieldGroupClasses[group]
             if(bg)
               result.push(bg)
           }
@@ -1022,7 +1027,9 @@
                         var result
                         try{
                           result=eval(placeholderCheck.value)
-                          Vue.set(ref.form, item.name, result);
+                          if(item.type=="expression") Vue.set(ref.form, item.name, result);
+                          if(item.type=="query") Vue.set(ref.queryresults, item.name, [].concat(result));
+                          if(item.type=="table") Vue.set(ref.form, item.name, [].concat(result));
                           if(placeholderCheck.hasPlaceholders){                 // if placeholders were found we set this a variable dynamic field.
                             // set flag as viable variable query
                             // console.log("Expression found with variables")
@@ -1482,7 +1489,11 @@
           this.generateJsonOutput()
           // local ansible
           if(this.currentForm.type=="ansible"){
-            postdata.ansibleExtraVars = this.formdata
+            if(this.currentForm.key && this.formdata[this.currentForm.key]){
+              postdata.ansibleExtraVars = this.formdata[this.currentForm.key]
+            }else{
+              postdata.ansibleExtraVars = this.formdata
+            }
             postdata.formName = this.currentForm.name;
             postdata.ansibleInventory = this.currentForm.inventory;
             postdata.ansibleCheck = this.currentForm.check;
@@ -1525,7 +1536,12 @@
 
           // remote awx
           }else if(this.currentForm.type=="awx"){
-            postdata.awxExtraVars = this.formdata
+            if(this.currentForm.key && this.formdata[this.currentForm.key]){
+              postdata.awxExtraVars = this.formdata[this.currentForm.key]
+            }else{
+              postdata.awxExtraVars = this.formdata
+            }
+            postdata.formName = this.currentForm.name;
             postdata.awxInventory = this.currentForm.inventory;
             postdata.awxCheck = this.currentForm.check;
             postdata.awxDiff = this.currentForm.diff;
@@ -1565,6 +1581,43 @@
                   ref.resetResult()
                 }
               })
+            }
+            // git
+            else if(this.currentForm.type=="git"){
+              if(this.currentForm.key && this.formdata[this.currentForm.key]){
+                postdata.gitExtraVars = this.formdata[this.currentForm.key]
+              }else{
+                postdata.gitExtraVars = this.formdata
+              }
+              postdata.formName = this.currentForm.name;
+              postdata.gitRepo = this.currentForm.repo;
+              this.ansibleResult.message= "Pushing to git";
+              this.ansibleResult.status="info";
+              axios.post("/api/v1/git/push",postdata,TokenStorage.getAuthentication())
+                .then((result)=>{
+                  if(result){
+                    this.ansibleResult=result.data;
+                    if(result.data.data.error!=""){
+                      ref.$toast.error(result.data.data.error)
+                    }
+                    // get the jobid
+                    var jobid =  this.ansibleResult.data.output.id
+                    ref.ansibleJobId=jobid
+                    // don't show the whole json part
+                    this.ansibleResult.data.output = ""
+                    // wait for 2 seconds, and get the output of the job
+                    setTimeout(function(){ ref.getAnsibleJob(jobid) }, 2000);
+                  }else{
+                    ref.$toast.error("Failed to push to git")
+                    ref.resetResult()
+                  }
+                })
+                .catch(function(err){
+                  ref.$toast.error("Failed to push to git " + err)
+                  if(err.response.status!=401){
+                    ref.resetResult()
+                  }
+                })
             }
          }
       }
@@ -1613,8 +1666,41 @@
       // find all variable dependencies (in both ways)
       this.findVariableDependencies()
       this.findVariableDependentOf()
-      // start dynamic field loop (= infinite)
-      this.startDynamicFieldsLoop()
+
+      // set as ready
+      // if our type is git, we need to first pull git
+      if(this.currentForm.type!="git"){
+        this.pretasksFinished=true
+        // start dynamic field loop (= infinite)
+        this.startDynamicFieldsLoop()
+      }else{
+        var postdata={}
+        postdata.gitRepo = this.currentForm.repo;
+        this.loadMessage = "Pulling from git..."
+        axios.post("/api/v1/git/pull",postdata,TokenStorage.getAuthentication())
+          .then((result)=>{
+            if(result){
+
+              if(result.data.status=="error"){
+                ref.$toast.error(result.data.message)
+              }else{
+                ref.$toast.success(result.data.message)
+              }
+
+            }else{
+              ref.$toast.error("Failed to pull from git")
+            }
+            ref.pretasksFinished=true
+            // start dynamic field loop (= infinite)
+            this.startDynamicFieldsLoop()
+          })
+          .catch(function(err){
+            ref.$toast.error("Failed to pull from git " + err)
+            ref.pretasksFinished=true
+            // start dynamic field loop (= infinite)
+            this.startDynamicFieldsLoop()
+          })
+      }
     },
     // before exit, we stop the interval, as it would not stop otherwise
     beforeDestroy(){
