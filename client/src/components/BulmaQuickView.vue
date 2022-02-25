@@ -22,7 +22,7 @@
   import Vue from 'vue'
   import "../../public/assets/bulma_quickview.scss"
   export default{
-    name:"BulmaButton",
+    name:"BulmaQuickView",
     props:{
       title:{type:String},
       footer:{type:String}
