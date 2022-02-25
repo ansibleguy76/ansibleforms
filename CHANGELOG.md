@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 -   About + GPL License
+-   Added new type : push to git
+-   Added property `key` : allow extravars to be specific key
+-   Added extravars to joblog
+-   Added awx to joblog
+
+### Fixed
+
+-   Allow local expressions for query
 
 ## [2.2.4] - 2022-02-15
 
