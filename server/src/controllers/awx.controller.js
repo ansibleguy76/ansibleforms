@@ -48,16 +48,6 @@ exports.getJob = function(req,res){
     })
 
 }
-exports.abortJob = function(req,res){
-    // return the awx job with stdout
-    Awx.abortJob(req.params.id,function(err,result){
-       if(err){
-          res.json(new RestResult("error","could not abort job with id " + req.params.id,"",err))
-       }else{
-         res.json(new RestResult("warning","aborted job id " + req.params.id,"",err))
-       }
-    })
-}
 exports.check = function(req, res) {
   Awx.check(new Awx(req.body),function(err, awx) {
     if(err){

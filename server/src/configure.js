@@ -34,9 +34,10 @@ module.exports = app => {
 
   // import api routes
   const awxRoutes = require('./routes/awx.routes')
+  const jobRoutes = require('./routes/job.routes')
   const ansibleRoutes = require('./routes/ansible.routes')
   const gitRoutes = require('./routes/git.routes')
-  const workflowRoutes = require('./routes/workflow.routes')  
+  const workflowRoutes = require('./routes/workflow.routes')
   const queryRoutes = require('./routes/query.routes')
   const expressionRoutes = require('./routes/expression.routes')
   const userRoutes = require('./routes/user.routes')
@@ -84,6 +85,7 @@ module.exports = app => {
   app.use('/api/v1/workflow',cors(), authobj, gitRoutes)
 
   // api routes for admin management
+  app.use('/api/v1/job',cors(), authobj, jobRoutes)
   app.use('/api/v1/user',cors(), authobj, checkAdminMiddleware, userRoutes)
   app.use('/api/v1/group',cors(), authobj, checkAdminMiddleware, groupRoutes)
   app.use('/api/v1/ldap',cors(), authobj, checkAdminMiddleware, ldapRoutes)

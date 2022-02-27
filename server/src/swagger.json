@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "description": "This is the swagger interface for AnsibleForms.\r\nUse the `/auth/login` api with basic authentication to obtain a JWT token.\r\nThen use the access token, prefixed with the word '**Bearer**' to use all other api's.\r\nNote that the access token is limited in time.  You can then either login again and get a new set of tokens or use the `/token` api and the refresh token to obtain a new set (preferred).",
-    "version": "2.2.5",
+    "version": "3.0.0",
     "title": "AnsibleForms",
     "contact": {
       "email": "info@ansibleforms.com"
@@ -65,6 +65,10 @@
     {
       "name": "query",
       "description": "Invoke an database query"
+    },
+    {
+      "name": "jobs",
+      "description": "Operations about jobs"
     }
   ],
   "schemes": [
@@ -278,17 +282,17 @@
         }
       }
     },
-    "/ansible/jobs": {
+    "/job": {
       "get": {
         "tags": [
-          "ansible"
+          "jobs"
         ],
         "security": [
           {
             "bearerAuth": []
           }
         ],
-        "summary": "Get Ansible jobs history",
+        "summary": "Get jobs history",
         "produces": [
           "application/json"
         ],
@@ -358,10 +362,10 @@
         }
       }
     },
-    "/ansible/job/{jobId}": {
+    "/job/{jobId}": {
       "get": {
         "tags": [
-          "ansible"
+          "jobs"
         ],
         "security": [
           {
@@ -384,7 +388,7 @@
             "description": "Get plain text output."
           }
         ],
-        "summary": "Get Ansible job output",
+        "summary": "Get job output",
         "produces": [
           "application/json"
         ],
@@ -459,10 +463,10 @@
         }
       }
     },
-    "/ansible/job/{jobId}/abort": {
+    "/job/{jobId}/abort": {
       "post": {
         "tags": [
-          "ansible"
+          "jobs"
         ],
         "security": [
           {
@@ -478,7 +482,7 @@
             "description": "Numeric ID of the job to abort."
           }
         ],
-        "summary": "Abort Ansible job",
+        "summary": "Abort job",
         "produces": [
           "application/json"
         ],
@@ -562,241 +566,14 @@
             "schema": {
               "type": "object",
               "example": {
-                "status": "info",
-                "message": "successfully launched jobtemplate HelloWorld",
-                "data": {
-                  "output": {
-                    "job": 557,
-                    "ignored_fields": {},
-                    "id": 557,
-                    "type": "job",
-                    "url": "/api/v2/jobs/557/",
-                    "related": {
-                      "created_by": "/api/v2/users/1/",
-                      "modified_by": "/api/v2/users/1/",
-                      "labels": "/api/v2/jobs/557/labels/",
-                      "inventory": "/api/v2/inventories/1/",
-                      "project": "/api/v2/projects/9/",
-                      "organization": "/api/v2/organizations/1/",
-                      "credentials": "/api/v2/jobs/557/credentials/",
-                      "unified_job_template": "/api/v2/job_templates/10/",
-                      "stdout": "/api/v2/jobs/557/stdout/",
-                      "job_events": "/api/v2/jobs/557/job_events/",
-                      "job_host_summaries": "/api/v2/jobs/557/job_host_summaries/",
-                      "activity_stream": "/api/v2/jobs/557/activity_stream/",
-                      "notifications": "/api/v2/jobs/557/notifications/",
-                      "create_schedule": "/api/v2/jobs/557/create_schedule/",
-                      "job_template": "/api/v2/job_templates/10/",
-                      "cancel": "/api/v2/jobs/557/cancel/",
-                      "relaunch": "/api/v2/jobs/557/relaunch/"
-                    },
-                    "summary_fields": {
-                      "organization": {
-                        "id": 1,
-                        "name": "Default",
-                        "description": ""
-                      },
-                      "inventory": {
-                        "id": 1,
-                        "name": "Demo Inventory",
-                        "description": "",
-                        "has_active_failures": false,
-                        "total_hosts": 1,
-                        "hosts_with_active_failures": 0,
-                        "total_groups": 0,
-                        "has_inventory_sources": false,
-                        "total_inventory_sources": 0,
-                        "inventory_sources_with_failures": 0,
-                        "organization_id": 1,
-                        "kind": ""
-                      },
-                      "project": {
-                        "id": 9,
-                        "name": "HelloWorld",
-                        "description": "",
-                        "status": "successful",
-                        "scm_type": "git"
-                      },
-                      "job_template": {
-                        "id": 10,
-                        "name": "HelloWorld",
-                        "description": ""
-                      },
-                      "unified_job_template": {
-                        "id": 10,
-                        "name": "HelloWorld",
-                        "description": "",
-                        "unified_job_type": "job"
-                      },
-                      "created_by": {
-                        "id": 1,
-                        "username": "admin",
-                        "first_name": "",
-                        "last_name": ""
-                      },
-                      "modified_by": {
-                        "id": 1,
-                        "username": "admin",
-                        "first_name": "",
-                        "last_name": ""
-                      },
-                      "user_capabilities": {
-                        "delete": true,
-                        "start": true
-                      },
-                      "labels": {
-                        "count": 0,
-                        "results": []
-                      },
-                      "credentials": []
-                    },
-                    "created": "2021-12-06T11:07:07.097286Z",
-                    "modified": "2021-12-06T11:07:07.129828Z",
-                    "name": "HelloWorld",
-                    "description": "",
-                    "job_type": "run",
-                    "inventory": 1,
-                    "project": 9,
-                    "playbook": "helloworld.yml",
-                    "scm_branch": "",
-                    "forks": 0,
-                    "limit": "",
-                    "verbosity": 0,
-                    "extra_vars": "{\"hello\": {\"world\": \"test\"}}",
-                    "job_tags": "",
-                    "force_handlers": false,
-                    "skip_tags": "",
-                    "start_at_task": "",
-                    "timeout": 0,
-                    "use_fact_cache": false,
-                    "organization": 1,
-                    "unified_job_template": 10,
-                    "launch_type": "manual",
-                    "status": "pending",
-                    "failed": false,
-                    "started": null,
-                    "finished": null,
-                    "canceled_on": null,
-                    "elapsed": 0,
-                    "job_args": "",
-                    "job_cwd": "",
-                    "job_env": {},
-                    "job_explanation": "",
-                    "execution_node": "",
-                    "controller_node": "",
-                    "result_traceback": "",
-                    "event_processing_finished": false,
-                    "job_template": 10,
-                    "passwords_needed_to_start": [],
-                    "allow_simultaneous": false,
-                    "artifacts": {},
-                    "scm_revision": "",
-                    "instance_group": null,
-                    "diff_mode": false,
-                    "job_slice_number": 0,
-                    "job_slice_count": 1,
-                    "webhook_service": "",
-                    "webhook_credential": null,
-                    "webhook_guid": ""
-                  },
-                  "error": ""
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "unauthorized",
-            "schema": {
-              "type": "string",
-              "example": "Authorize with a valid Bearer access token"
-            }
-          }
-        }
-      }
-    },
-    "/awx/job/{jobId}": {
-      "get": {
-        "tags": [
-          "awx"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "jobId",
-            "type": "integer",
-            "required": true,
-            "description": "Numeric ID of the job to get."
-          }
-        ],
-        "summary": "Get AWX job output",
-        "produces": [
-          "application/json"
-        ],
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "schema": {
-              "type": "object",
-              "example": {
-                "status": "success",
-                "message": "job ran successfully",
-                "data": {
-                  "output": "PLAY [Hello World!] ************************************************************\r\n\r\nTASK [Gathering Facts] *********************************************************\r\n<span class=\"ansi32\">ok: [localhost]</span>\r\n\r\nTASK [Hello World!] ************************************************************\r\n<span class=\"ansi33\">changed: [localhost]</span>\r\n\r\nPLAY RECAP *********************************************************************\r\n<span class=\"ansi33\">localhost</span>                  : <span class=\"ansi32\">ok=2   </span> <span class=\"ansi33\">changed=1   </span> unreachable=0    failed=0    skipped=0    rescued=0    ignored=0",
-                  "error": ""
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "unauthorized",
-            "schema": {
-              "type": "string",
-              "example": "Authorize with a valid Bearer access token"
-            }
-          }
-        }
-      }
-    },
-    "/awx/job/{jobId}/abort": {
-      "post": {
-        "tags": [
-          "awx"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "in": "path",
-            "name": "jobId",
-            "type": "integer",
-            "required": true,
-            "description": "Numeric ID of the job to abort."
-          }
-        ],
-        "summary": "Abort AWX job",
-        "produces": [
-          "application/json"
-        ],
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "schema": {
-              "type": "object",
-              "example": {
-                "status": "warning",
-                "message": "aborted job id 559",
-                "data": {
-                  "output": "",
-                  "error": ""
-                }
+              	"status": "info",
+              	"message": "successfully launched jobtemplate HelloWorld",
+              	"data": {
+              		"output": {
+              			"id": 176
+              		},
+              		"error": ""
+              	}
               }
             }
           },

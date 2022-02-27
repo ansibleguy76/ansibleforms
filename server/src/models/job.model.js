@@ -4,6 +4,7 @@ const authConfig = require('../../config/auth.config')
 const Helpers = require('../lib/common.js')
 const appConfig = require('../../config/app.config')
 const mysql = require('./db.model')
+const moment= require('moment')
 
 //job object create
 var Job=function(job){
@@ -13,6 +14,7 @@ var Job=function(job){
       this.user = job.user;
       this.user_type = job.user_type;
       this.job_type = job.job_type;
+      this.start = moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')
       this.extravars = Helpers.logSafe(job.extravars);
     }
     if(job.status && job.status!=""){ // allow single status update
@@ -76,15 +78,35 @@ Job.abort = function (id, result) {
 Job.createOutput = function (record, result) {
   // logger.silly(`Creating job output`)
   try{
-    mysql.query("INSERT INTO AnsibleForms.`job_output` set ?;SELECT status FROM AnsibleForms.`jobs` WHERE id=?;", [record,record.job_id], function (err, res) {
-        if(err) {
-            result(err, null);
-        }
-        else{
-            result(null, res);
-        }
-        // UPDATE AnsibleForms.`jobs` set status='running' WHERE id=?;
-    });
+    if(record.output){
+      // insert output and return status in 1 go
+      mysql.query("INSERT INTO AnsibleForms.`job_output` set ?;SELECT status FROM AnsibleForms.`jobs` WHERE id=?;", [record,record.job_id], function (err, res) {
+          if(err) {
+              result(err, null);
+          }
+          else{
+
+            if(res.length==2){
+              result(null, res[1][0].status);
+            }else{
+              result("Failed to get job status",null)
+            }
+          }
+          // UPDATE AnsibleForms.`jobs` set status='running' WHERE id=?;
+      });
+    }else{
+      // no output, just return status
+      mysql.query("SELECT status FROM AnsibleForms.`jobs` WHERE id=?;", record.job_id, function (err, res) {
+          if(err) {
+              result(err, null);
+          }
+          else{
+              result(null, res[0].status);
+          }
+          // UPDATE AnsibleForms.`jobs` set status='running' WHERE id=?;
+      });
+    }
+
   }catch(err){
     result(err, null);
   }
@@ -132,7 +154,9 @@ Job.findById = function (id,text,result) {
           else{
             var status=res[0].status
             var extravars=res[0].extravars
+            var job_type=res[0].job_type
             var output=[]
+            var line
             if(res.length>0){
               // get output summary
               mysql.query("SELECT COALESCE(output,'') output,COALESCE(`timestamp`,'') `timestamp`,COALESCE(output_type,'stdout') output_type FROM AnsibleForms.`job_output` WHERE job_id=? ORDER by job_output.order;",id, function (err, res) {
@@ -143,43 +167,88 @@ Job.findById = function (id,text,result) {
                   res.forEach(function(el){
                     var addedTimestamp=false
                     var output2=[]
-                    var record = el.output.trim('\r\n')
+                    var lineoutput=[]
+                    var matchfound=false
+                    var record = el.output.trim('\r\n').replace(/\r/g,'')
                     if(!text){
-                      if(el.output_type=="stderr"){
-                        // mark errors
-                        if(record.match(/^\[WARNING\].*/gm)){
-                          record = "<span class='has-text-warning'>"+record+"</span>"
+                      var lines = record.split('\n')
+                      var previousformat=""
+                      lines.forEach((line,i)=>{
+                        matchfound=false
+                        if(el.output_type=="stderr"){
+                          // mark errors
+                          if(line.match(/^\[WARNING\].*/g) || previousformat=="warning"){
+                            previousformat="warning"
+                            matchfound=true
+                            line = "<span class='has-text-warning'>"+line+"</span>"
+                          }else{
+                            previousformat="danger"
+                            matchfound=true
+                            line = "<span class='has-text-danger'>"+line+"</span>"
+                          }
+                          lineoutput.push(line)
                         }else{
-                          record = "<span class='has-text-danger'>"+record+"</span>"
-                        }
+                          if(line.match(/^\[WARNING\].*/g)){
+                            previousformat="warning"
+                            matchfound=true
+                            line = "<span class='has-text-warning'>"+line+"</span>"
+                          }
+                          if(line.match(/^\[ERROR\].*/g)){
+                            previousformat="danger"
+                            matchfound=true
+                            line = "<span class='has-text-danger'>"+line+"</span>"
+                          }
+                          // mark play / task lines as bold
+                          if(line.match(/^([A-Z\s]*)[^\*]*(\*+)$/g)){
+                            previousformat=""
+                            matchfound=true
+                            if(i>1){
+                              line = "<strong>" + line + "</strong>"
+                            }else{
+                              // it's a fresh line/// ansible output assumed
+                              line = "\n<strong>" + line + "</strong>"
+                            }
+                          }
 
-                      }else{
-                        // mark play / task lines as bold
-                        if(record.match(/^([A-Z]*) \[([^\]]*)\] (\**)$/gm)){
-                          record = "<strong>" + record + "</strong>"
+                          // mark succes lines
+                          if(line.match(/^(ok): \[([^\]]*)\].*/g)){
+                            matchfound=true
+                            previousformat="success"
+                            line = "<span class='has-text-success'>" + line + "</span>"
+                          }
+                          // mark change lines
+                          if(line.match(/^(changed): \[([^\]]*)\].*/g)){
+                            previousformat="warning"
+                            matchfound=true
+                            line = "<span class='has-text-warning'>" + line + "</span>"
+                          }
+                          // mark skip lines
+                          if(line.match(/^(skipping): \[([^\]]*)\].*/g)){
+                            previousformat="info"
+                            matchfound=true
+                            line = "<span class='has-text-info'>" + line + "</span>"
+                          }
+                          // if line continues on next line, give same format
+                          if(!matchfound && previousformat){
+                            line = `<span class='has-text-${previousformat}'>${line}</span>`
+                          }
+                          // summary line ?
+                          if(line.match('ok=.*changed.*')){
+                            matchfound=true
+                            previousformat=""
+                            line=line.replace(/(ok=[1-9]+[0-9]*)/g, "<span class='tag is-success'>$1</span>")
+                                        .replace(/(changed=[1-9]+[0-9]*)/g, "<span class='tag is-warning'>$1</span>")
+                                        .replace(/(failed=[1-9]+[0-9]*)/g, "<span class='tag is-warning'>$1</span>")
+                                        .replace(/(unreachable=[1-9]+[0-9]*)/g, "<span class='tag is-warning'>$1</span>")
+                                        .replace(/(skipped=[1-9]+[0-9]*)/g, "<span class='tag is-info'>$1</span>")
+                          }
+
+                          lineoutput.push(line)
                         }
-                        // mark succes lines
-                        if(record.match(/^(ok): \[([^\]]*)\].*/gm)){
-                          record = "<span class='has-text-success'>" + record + "</span>"
-                        }
-                        // mark change lines
-                        if(record.match(/^(changed): \[([^\]]*)\].*/gm)){
-                          record = "<span class='has-text-warning'>" + record + "</span>"
-                        }
-                        // mark skip lines
-                        if(record.match(/^(skipping): \[([^\]]*)\].*/gm)){
-                          record = "<span class='has-text-info'>" + record + "</span>"
-                        }
-                        // summary line ?
-                        record=record.replace(/(ok=[1-9]+[0-9]*)/g, "<span class='tag is-success'>$1</span>")
-                                    .replace(/(changed=[1-9]+[0-9]*)/g, "<span class='tag is-warning'>$1</span>")
-                                    .replace(/(failed=[1-9]+[0-9]*)/g, "<span class='tag is-warning'>$1</span>")
-                                    .replace(/(unreachable=[1-9]+[0-9]*)/g, "<span class='tag is-warning'>$1</span>")
-                                    .replace(/(skipped=[1-9]+[0-9]*)/g, "<span class='tag is-info'>$1</span>")
-                      }
+                      })
                     }
-
-                    record.replace('\r\n','\n').split('\n').forEach(function(el2,i){
+                    line=lineoutput.join('\n')
+                    line.split('\n').forEach(function(el2,i){
                       if(el2!="" && !addedTimestamp && !text){
                         el2+=" <span class='tag is-info is-light'>"+el.timestamp+"</span>"
                         addedTimestamp=true
@@ -187,8 +256,9 @@ Job.findById = function (id,text,result) {
                       output2.push(el2)
                     })
                     output.push(output2.join("\r\n"))
+
                   })
-                  result(null, [{status:status,extravars:extravars,output:output.join('\r\n\r\n')}]);
+                  result(null, [{status:status,extravars:extravars,job_type:job_type,output:output.join('\r\n')}]);
                 }
               })
             }else{

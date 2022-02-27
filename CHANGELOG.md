@@ -18,6 +18,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 -   Allow local expressions for query
+-   Wrong timezone timestamp in joblog
+
+### Removed
+
+-   Awx and ansible get job api => is now native job api
+-   Awx and ansible joboutput => is now native job output
+-   Ansible and awx job aboort => is now native job abort
 
 ## [2.2.4] - 2022-02-15
 

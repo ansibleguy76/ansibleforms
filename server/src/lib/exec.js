@@ -81,16 +81,14 @@ Exec.executeCommand = (cmd,jobid,counter,success,failed,aborted,setStatus=true) 
     // add output eventlistener to the process to save output
     child.stdout.on('data',function(data){
       // save the output ; but whilst saving, we quickly check the status to detect abort
-      Job.createOutput({output:data,output_type:"stdout",job_id:jobid,order:++counter},function(error,res){
+      Job.createOutput({output:data,output_type:"stdout",job_id:jobid,order:++counter},function(error,status){
         if(error){
           logger.error(error)
         }else{
           // if abort request found ; kill the process
-          if(res.length==2){
-            if(res[1][0].status=="abort"){
-              logger.warn("Abort is requested, killing child")
-              process.kill(child.pid,"SIGTERM");
-            }
+          if(status=="abort"){
+            logger.warn("Abort is requested, killing child")
+            process.kill(child.pid,"SIGTERM");
           }
         }
       })
@@ -98,16 +96,14 @@ Exec.executeCommand = (cmd,jobid,counter,success,failed,aborted,setStatus=true) 
     // add error eventlistener to the process to save output
     child.stderr.on('data',function(data){
       // save the output ; but whilst saving, we quickly check the status to detect abort
-      Job.createOutput({output:data,output_type:"stderr",job_id:jobid,order:++counter},function(error,res){
+      Job.createOutput({output:data,output_type:"stderr",job_id:jobid,order:++counter},function(error,status){
         if(error){
           logger.error(error)
         }else{
           // if abort request found ; kill the process
-          if(res.length==2){
-            if(res[1][0].status=="abort"){
-              logger.warn("Abort is requested, killing child")
-              process.kill(child.pid,"SIGTERM");
-            }
+          if(status=="abort"){
+            logger.warn("Abort is requested, killing child")
+            process.kill(child.pid,"SIGTERM");
           }
         }
       })
@@ -138,15 +134,21 @@ Exec.executeCommand = (cmd,jobid,counter,success,failed,aborted,setStatus=true) 
     Exec.endCommand(jobid,counter,"stderr","failed",`${task} failed : `+e,failed,setStatus)
   }
 }
-Exec.printCommand = (data,type,jobid,counter,next) => {
-    Job.createOutput({output:data,output_type:type,job_id:jobid,order:++counter},function(error,res){
+Exec.printCommand = (data,type,jobid,counter,next,abort) => {
+    Job.createOutput({output:data,output_type:type,job_id:jobid,order:++counter},function(error,status){
+      var aborted=false
       if(error){
         logger.error(error)
+      }else{
+        // if abort request found ; kill the process
+        if(status=="abort" && abort){
+            aborted=true
+            abort(jobid,counter)
+        }
       }
       if(next)next(jobid,counter)
     })
 }
-
 Exec.runCommand = (command,metaData,result,success,failed,aborted,setStatus=true) => {
   var counter=0
   // create a new job in the database

@@ -5,6 +5,8 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const logger=require("../lib/logger");
 const mysql=require("./db.model")
+const Job=require("./job.model")
+const moment=require("moment")
 const Helpers=require("../lib/common")
 const Exec=require("../lib/exec")
 const YAML=require("yaml")
@@ -96,13 +98,13 @@ Awx.find = function (result) {
     }
 };
 // abort awx job template
-Awx.abortJob = function (id, result) {
+Awx.abortJob = function (id, next) {
 
   Awx.getConfig(function(err,awxConfig){
 
     if(err){
       logger.error(err)
-      result(`failed to get AWX configuration`)
+      next(`failed to get AWX configuration`)
     }else{
 
       var message=""
@@ -115,28 +117,28 @@ Awx.abortJob = function (id, result) {
       }
       // we first need to check if we CAN cancel
       axios.get(awxConfig.uri + "/api/v2/jobs/" + id + "/cancel/",axiosConfig)
-        .then((axiosresult)=>{
-          var job = axiosresult.data
+        .then((axiosnext)=>{
+          var job = axiosnext.data
           if(job && job.can_cancel){
               logger.debug(`can cancel job id = ${id}`)
               axios.post(awxConfig.uri + "/api/v2/jobs/" + id + "/cancel/",{},axiosConfig)
-                .then((axiosresult)=>{
-                  job = axiosresult.data
-                  result(job,null)
+                .then((axiosnext)=>{
+                  job = axiosnext.data
+                  next(job)
                 })
                 .catch(function (error) {
                   logger.error(error.message)
-                  result(`failed to abort awx job ${id}`)
+                  next(`failed to abort awx job ${id}`)
                 })
           }else{
               message=`cannot cancel job id ${id}`
               logger.error(message)
-              result(message,null)
+              next(message)
           }
         })
         .catch(function (error) {
           logger.error(error.message)
-          result(`failed to abort awx job ${id}`)
+          next(`failed to abort awx job ${id}`)
         })
     }
   })
@@ -189,18 +191,31 @@ Awx.launch = function (form,template,inventory,tags,check,diff,extraVars,user, r
         }
         logger.silly("Lauching awx with data : " + JSON.stringify(postdata))
         var metaData = {form:form,target:template.name,inventory:inventory,tags:tags,check:check,diff:diff,job_type:'awx',extravars:extraVars,user:user}
-        Exec.runCommand(null,metaData,function(){},function(jobid,counter){
+        Exec.runCommand(null,metaData,result,function(jobid,counter){
           axios.post(awxConfig.uri + template.related.launch,postdata,axiosConfig)
             .then((axiosresult)=>{
               var job = axiosresult.data
               if(job){
                 logger.debug(`success, job id = ${job.id}`)
                 // log in joblog
-                Exec.endCommand(jobid,counter,"stdout","success",`Launched template ${template.name} with jobid ${job.id}, check AWX logs for details`)
-                result(null,job)
+                //Exec.endCommand(jobid,counter,"stdout","success",`Launched template ${template.name} with jobid ${job.id}, check AWX logs for details`)
+                // track outcome in the background
+                Exec.printCommand(`Launched template ${template.name} with jobid ${job.id}`,"stdout",jobid,counter,(jobid,counter)=>{
+                  Awx.trackJob(job,jobid,counter,function(j,jobid,counter){
+                    Exec.endCommand(jobid,counter,"stdout","success",`Successfully completed template ${template.name}`)
+                  },function(e,jobid,counter){
+                    var status="failed"
+                    var message=`Template ${template.name} completed with status ${e}`
+                    if(e=="canceled"){
+                      status="aborted"
+                      message=`Template ${template.name} was aborted`
+                    }
+                    Exec.endCommand(jobid,counter,"stderr",status,message)
+                  })
+                })
               }else{
                 message=`could not launch job template ${template.name}`
-                Exec.endCommand(jobid,counter,"stdout","success",`Failed to launch template ${template.name}`)
+                Exec.endCommand(jobid,counter,"stderr","failed",`Failed to launch template ${template.name}`)
                 logger.error(message)
                 result(message,null)
               }
@@ -210,10 +225,10 @@ Awx.launch = function (form,template,inventory,tags,check,diff,extraVars,user, r
               if(error.response){
                   logger.error(error.response.data)
                   message+="\r\n" + YAML.stringify(error.response.data)
-                  Exec.endCommand(jobid,counter,"stdout","success",`Failed to launch template ${template.name}. ${message}`)
+                  Exec.endCommand(jobid,counter,"stderr","success",`Failed to launch template ${template.name}. ${message}`)
               }else{
                   logger.error(error)
-                  Exec.endCommand(jobid,counter,"stdout","success",`Failed to launch template ${template.name}. ${error}`)
+                  Exec.endCommand(jobid,counter,"stderr","success",`Failed to launch template ${template.name}. ${error}`)
               }
               result(message)
             })
@@ -222,16 +237,15 @@ Awx.launch = function (form,template,inventory,tags,check,diff,extraVars,user, r
     }
   })
 };
-
-// find a job by id
-Awx.findJobById = function (id, result) {
+// loop awx job status until finished
+Awx.trackJob = function (job,jobid,counter, success,failed,previousoutput) {
   Awx.getConfig(function(err,awxConfig){
     if(err){
       logger.error(err)
-      result(`failed to get AWX configuration`)
+      failed(`failed to get AWX configuration`,jobid,counter)
     }else{
       var message=""
-      logger.debug(`searching for job with id ${id}`)
+      logger.debug(`searching for job with id ${job.id}`)
       // prepare axiosConfig
       const axiosConfig = {
         headers: {
@@ -239,30 +253,57 @@ Awx.findJobById = function (id, result) {
         },
         httpsAgent: getHttpsAgent(awxConfig)
       }
-      axios.get(awxConfig.uri + "/api/v2/jobs/" + id + "/",axiosConfig)
+      axios.get(awxConfig.uri + job.url,axiosConfig)
         .then((axiosresult)=>{
-          var job = axiosresult.data;
-          if(job){
-            result(null,job)
+          var j = axiosresult.data;
+          if(j){
+            logger.silly(`awx job status : ` + j.status)
+            Awx.getJobTextOutput(job,(o)=>{
+                var output=o
+                // AWX has incremental output, but we always need to substract previous output
+                // if previous output is part of this one, substract it (for awx output)
+                if(output && previousoutput && output.indexOf(previousoutput)==0){
+                  output = output.substring(previousoutput.length)
+                }
+                Exec.printCommand(output,"stdout",jobid,counter,(jobid,counter)=>{
+                  if(j.finished){
+                    if(j.status==="successful"){
+                      success(j,jobid,counter)
+                    }else{
+                      failed(j.status,jobid,counter)
+                    }
+                  }else{
+                    // not finished, try again
+                    setTimeout(()=>{Awx.trackJob(j,jobid,counter,success,failed,o)},1000)
+                  }
+                },(jobid,counter)=>{
+                   Exec.printCommand("Abort requested","stderr",jobid,counter)
+                   Job.update({status:"aborting",end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid,function(error,res){
+                     if(error){
+                       logger.error(error)
+                     }
+                   })
+                   Awx.abortJob(j.id,(m)=>{
+                     Exec.printCommand(m,"stderr",jobid,counter)
+                   })
+                })
+            })
           }else{
-            message=`could not find job with id ${id}`
+            message=`could not find job with id ${job.id}`
             logger.error(message)
-            result(message,null)
+            failed(message,jobid,counter)
           }
         })
         .catch(function (error) {
           logger.error(error.message)
-          result(error,null)
+          failed(error.message)
         })
     }
   })
-
 };
-
-// get the job output
-Awx.findJobStdout = function (job, result) {
+// Get text outpub
+Awx.getJobTextOutput = function (job, result) {
   Awx.getConfig(function(err,awxConfig){
-
     if(err){
       logger.error(err)
       result(`failed to get AWX configuration`)
@@ -278,21 +319,14 @@ Awx.findJobStdout = function (job, result) {
           },
           httpsAgent: getHttpsAgent(awxConfig)
         }
-        axios.get(awxConfig.uri + job.related.stdout + "?format=html",axiosConfig)
+        axios.get(awxConfig.uri + job.related.stdout + "?format=txt",axiosConfig)
           .then((axiosresult)=>{
             var jobstdout = axiosresult.data;
-            const $ = cheerio.load(jobstdout)
-            if(jobstdout){
-              result(null,$('pre').html())
-            }else{
-              message=`could not find job output for job id ${job.id}`
-              logger.error(message)
-              result(message,"")
-            }
+            result(jobstdout)
           })
           .catch(function (error) {
             logger.error(error.message)
-            result(error.message,"")
+            result(error.message)
           })
       }
     }

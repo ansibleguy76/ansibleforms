@@ -60,7 +60,7 @@
             </li>
           </ul>
         </nav>
-        <div v-if="jobId"  class="columns">
+        <div v-if="job"  class="columns">
           <div class="column">
             <h3 class="subtitle">Job output for job {{jobId}} <span class="tag is-info mr-1 ml-3">{{ job.job_type || 'ansible'}}</span><span class="tag" :class="{'is-success':job.status=='success','is-danger':job.status=='failed'}">{{ job.status }}</span></h3>
             <button @click="showExtraVars=true" class="button is-info is-small mr-3">
@@ -152,7 +152,7 @@
       },
       loadJobs(){
         var ref= this;
-        axios.get(`/api/v1/ansible/jobs?timestamp=${new Date().getTime()}`,TokenStorage.getAuthentication())                               // load forms
+        axios.get(`/api/v1/job?timestamp=${new Date().getTime()}`,TokenStorage.getAuthentication())                               // load forms
           .then((result)=>{
             ref.jobs=result.data.data.output;
             this.setPages();
@@ -183,7 +183,7 @@
       loadOutput(id){
         var ref=this
         this.jobId=id
-        axios.get("/api/v1/ansible/job/" + id,TokenStorage.getAuthentication())
+        axios.get("/api/v1/job/" + id,TokenStorage.getAuthentication())
           .then((result)=>{
               if(result.data.data!==undefined){
                 // import the data if output returned
@@ -201,7 +201,7 @@
       deleteJob(id){
         var ref=this
         this.jobId=id
-        axios.delete("/api/v1/ansible/job/" + id,TokenStorage.getAuthentication())
+        axios.delete("/api/v1/job/" + id,TokenStorage.getAuthentication())
           .then((result)=>{
               // console.log(result)
               if(result.data.status=="success"){

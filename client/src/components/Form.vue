@@ -321,15 +321,8 @@
               </button>
             </div>
             <!-- abort ansible button -->
-            <div class="column" v-if="currentForm.type=='ansible' && ansibleResult.status=='info' && !abortTriggered">
-              <button  class="button is-fullwidth has-background-warning" @click="abortAnsibleJob(ansibleJobId)">
-                <span class="icon"><font-awesome-icon icon="times" /></span>
-                <span>Abort Job</span>
-              </button>
-            </div>
-            <!-- abort awx button -->
-            <div class="column" v-if="currentForm.type=='awx' && ansibleResult.status=='info' && !abortTriggered">
-              <button  class="button is-fullwidth has-background-warning" @click="abortAwxJob(awxJobId)">
+            <div class="column" v-if="ansibleResult.status=='info' && !abortTriggered">
+              <button  class="button is-fullwidth has-background-warning" @click="abortJob(jobId)">
                 <span class="icon"><font-awesome-icon icon="times" /></span>
                 <span>Abort Job</span>
               </button>
@@ -443,8 +436,7 @@
           timeout:undefined,        // determines how long we should show the result of run
           showHelp:false,           // flag to show/hide form help
           showHidden:false,         // flag to show/hide hidden field / = debug mode
-          ansibleJobId:undefined,   // holds the current ansible jobid
-          awxJobId:undefined,       // holds the current awx jobid
+          jobId:undefined,          // holds the current jobid
           abortTriggered:false      // flag abort is triggered
         }
     },
@@ -1259,84 +1251,21 @@
             })
           }
       },
-      // get awx job output
-      getAwxJob(id,final){
-        var ref = this;
-        // console.log("=============================")
-        // console.log("getting awx job")
-        axios.get("/api/v1/awx/job/" + id,TokenStorage.getAuthentication())
-          .then((result)=>{
-              // if we have decent data
-              // console.log("job result - " + JSON.stringify(result))
-              if(result.data.data!==undefined){
-                // import the data if output returned
-                if(result.data.data.output!=""){
-                  this.ansibleResult=result.data;
-                }else{
-                  // else, just import message & status
-                  this.ansibleResult.status = result.data.status
-                  this.ansibleResult.message = result.data.message
-                }
-                // if not final status, keep checking after 2s
-                if(this.ansibleResult.status!="success" && this.ansibleResult.status!="error" && this.ansibleResult.status!="warning"){
-                  // this.$toast.info(result.data.message)
-                  setTimeout(function(){ ref.getAwxJob(id) }, 2000);
-                }else{
-                  if(!final){
-                    // 1 final last call for output
-                    setTimeout(function(){ ref.getAwxJob(id,true) }, 2000);
-                  }else{
-                    this.abortTriggered=false
-                    if(this.ansibleResult.status=="success"){
-                      this.$toast.success(result.data.message)
-                    }else if(this.ansibleResult.status=="warning"){
-                      this.$toast.warning(result.data.message)
-                    }else{
-                      this.$toast.error(result.data.message)
-                    }
-                    clearTimeout(this.timeout)
-                  }
-
-                }
-              }else{
-                // no data ? check again after 2s
-                // console.log("geen data")
-                setTimeout(function(){ ref.getAwxJob(id) }, 2000);
-              }
-          })
-          .catch(function(err){
-            console.log("error getting awx job " + err)
-            ref.$toast.error("Failed to get awx job");
-            if(err.response.status!=401){
-              ref.ansibleResult.message="Error in axios call to get awx job\n\n" + err
-              ref.ansibleResult.status="error";
-            }
-          })
-      },
       // trigger an ansible job abort
-      abortAnsibleJob(id){
+      abortJob(id){
         var ref=this
         this.$toast.warning("Aborting job " + id);
-        axios.post("/api/v1/ansible/job/" + id + "/abort",{},TokenStorage.getAuthentication())
-          .then((result)=>{
-            ref.abortTriggered=true
-          })
-      },
-      // trigger an aw job abort
-      abortAwxJob(id){
-        var ref=this
-        this.$toast.warning("Aborting job " + id);
-        axios.post("/api/v1/awx/job/" + id + "/abort",{},TokenStorage.getAuthentication())
+        axios.post("/api/v1/job/" + id + "/abort",{},TokenStorage.getAuthentication())
           .then((result)=>{
             ref.abortTriggered=true
           })
       },
       // get ansible job output
-      getAnsibleJob(id,final){
+      getJob(id,final){
         var ref = this;
         // console.log("=============================")
         // console.log("getting awx job")
-        axios.get("/api/v1/ansible/job/" + id,TokenStorage.getAuthentication())
+        axios.get("/api/v1/job/" + id,TokenStorage.getAuthentication())
           .then((result)=>{
               // if we have decent data
               // console.log("job result - " + JSON.stringify(result))
@@ -1352,11 +1281,11 @@
                 // if not final status, keep checking after 2s
                 if(this.ansibleResult.status!="success" && this.ansibleResult.status!="error" && this.ansibleResult.status!="warning"){
                   // this.$toast.info(result.data.message)
-                  setTimeout(function(){ ref.getAnsibleJob(id) }, 2000);
+                  setTimeout(function(){ ref.getJob(id) }, 2000);
                 }else{
                   if(!final){
                     // 1 final last call for output
-                    setTimeout(function(){ ref.getAnsibleJob(id,true) }, 2000);
+                    setTimeout(function(){ ref.getJob(id,true) }, 2000);
                   }else{
                     // if final, remove output after 15s
                     this.abortTriggered=false
@@ -1375,7 +1304,7 @@
               }else{
                 // no data ? check again after 2s
                 // console.log("geen data")
-                setTimeout(function(){ ref.getAnsibleJob(id) }, 2000);
+                setTimeout(function(){ ref.getJob(id) }, 2000);
               }
           })
           .catch(function(err){
@@ -1517,11 +1446,11 @@
                   }
                   // get the jobid
                   var jobid =  this.ansibleResult.data.output.id
-                  ref.ansibleJobId=jobid
+                  ref.jobId=jobid
                   // don't show the whole json part
                   this.ansibleResult.data.output = ""
                   // wait for 2 seconds, and get the output of the job
-                  setTimeout(function(){ ref.getAnsibleJob(jobid) }, 2000);
+                  setTimeout(function(){ ref.getJob(jobid) }, 2000);
                 }else{
                   ref.$toast.error("Failed to invoke ansible")
                   ref.resetResult()
@@ -1564,11 +1493,11 @@
                     }else{
                       // get the jobid
                       var jobid =  this.ansibleResult.data.output.id
-                      ref.awxJobId=jobid
+                      ref.jobId=jobid
                       // don't show the whole json part
                       this.ansibleResult.data.output = ""
                       // wait for 2 seconds, and get the output of the job
-                      setTimeout(function(){ ref.getAwxJob(jobid) }, 2000);
+                      setTimeout(function(){ ref.getJob(jobid) }, 2000);
                     }
                   }else{
                     ref.$toast.error("Failed to invoke AWX")
@@ -1602,11 +1531,11 @@
                     }
                     // get the jobid
                     var jobid =  this.ansibleResult.data.output.id
-                    ref.ansibleJobId=jobid
+                    ref.JobId=jobid
                     // don't show the whole json part
                     this.ansibleResult.data.output = ""
                     // wait for 2 seconds, and get the output of the job
-                    setTimeout(function(){ ref.getAnsibleJob(jobid) }, 2000);
+                    setTimeout(function(){ ref.getJob(jobid) }, 2000);
                   }else{
                     ref.$toast.error("Failed to push to git")
                     ref.resetResult()
