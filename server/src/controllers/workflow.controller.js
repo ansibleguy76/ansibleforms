@@ -1,5 +1,7 @@
 'use strict';
-const Workflow = require('../models/workflow.model');
+const Ansible = require('../models/ansible.model');
+const Awx = require('../models/awx.model');
+const Git = require('../models/git.model');
 var RestResult = require('../models/restResult.model');
 const logger=require("../lib/logger");
 
@@ -23,19 +25,20 @@ exports.launch = async function(req, res) {
         }else{
           logger.info("Launching workflow : " + JSON.stringify(workflow))
           logger.silly("extravars : " + extraVars)
-          Workflow.launch(form,workflow,extraVars,user,function(err,out){
-            if(err){
-               restResult.status = "error"
-               restResult.message = "error occured while launching workflow " + workflow.name
-               restResult.data.error = err.toString()
-            }else{
-               restResult.message = "succesfully launched"
-               restResult.data.output = out
-
-            }
-            // send response
-            res.json(restResult);
-          })
+          // workflow.
+          // Workflow.launch(form,workflow,extraVars,user,function(err,out){
+          //   if(err){
+          //      restResult.status = "error"
+          //      restResult.message = "error occured while launching workflow " + workflow.name
+          //      restResult.data.error = err.toString()
+          //   }else{
+          //      restResult.message = "succesfully launched"
+          //      restResult.data.output = out
+          //
+          //   }
+          //   // send response
+          //   res.json(restResult);
+          // })
         }
 
     }

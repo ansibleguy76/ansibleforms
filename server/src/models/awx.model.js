@@ -191,48 +191,63 @@ Awx.launch = function (form,template,inventory,tags,check,diff,extraVars,user, r
         }
         logger.silly("Lauching awx with data : " + JSON.stringify(postdata))
         var metaData = {form:form,target:template.name,inventory:inventory,tags:tags,check:check,diff:diff,job_type:'awx',extravars:extraVars,user:user}
-        Exec.runCommand(null,metaData,result,function(jobid,counter){
-          axios.post(awxConfig.uri + template.related.launch,postdata,axiosConfig)
-            .then((axiosresult)=>{
-              var job = axiosresult.data
-              if(job){
-                logger.debug(`success, job id = ${job.id}`)
-                // log in joblog
-                //Exec.endCommand(jobid,counter,"stdout","success",`Launched template ${template.name} with jobid ${job.id}, check AWX logs for details`)
-                // track outcome in the background
-                Exec.printCommand(`Launched template ${template.name} with jobid ${job.id}`,"stdout",jobid,counter,(jobid,counter)=>{
-                  Awx.trackJob(job,jobid,counter,function(j,jobid,counter){
-                    Exec.endCommand(jobid,counter,"stdout","success",`Successfully completed template ${template.name}`)
-                  },function(e,jobid,counter){
-                    var status="failed"
-                    var message=`Template ${template.name} completed with status ${e}`
-                    if(e=="canceled"){
-                      status="aborted"
-                      message=`Template ${template.name} was aborted`
-                    }
-                    Exec.endCommand(jobid,counter,"stderr",status,message)
+        // create a new job in the database
+        Job.create(new Job({form:metaData.form,target:metaData.target,user:metaData.user.username,user_type:metaData.user.type,status:"running",job_type:metaData.job_type,extravars:metaData.extravars}),function(error,jobid){
+          var counter=0
+          if(error){
+            logger.error(error)
+            result(error,null)
+          }else{
+            // job created - return directly to client (the rest is in background)
+            result(null,{id:jobid})
+            logger.silly(`Job id ${jobid} is created`)
+            // launch awx job
+            axios.post(awxConfig.uri + template.related.launch,postdata,axiosConfig)
+              .then((axiosresult)=>{
+                // get awx job (= remote job !!)
+                var job = axiosresult.data
+                if(job){
+                  logger.debug(`awx job id = ${job.id}`)
+                  // log launch
+                  Exec.printCommand(`Launched template ${template.name} with jobid ${job.id}`,"stdout",jobid,counter,(jobid,counter)=>{
+                    // track the job in the background
+                    Awx.trackJob(job,jobid,counter,
+                      function(j,jobid,counter){
+                        // if success, end with success
+                        Exec.endCommand(jobid,counter,"stdout","success",`Successfully completed template ${template.name}`)
+                      },
+                      function(e,jobid,counter){
+                        // if error, end with status (aborted or failed)
+                        var status="failed"
+                        var message=`Template ${template.name} completed with status ${e}`
+                        if(e=="canceled"){
+                          status="aborted"
+                          message=`Template ${template.name} was aborted`
+                        }
+                        Exec.endCommand(jobid,counter,"stderr",status,message)
+                      })
                   })
-                })
-              }else{
-                message=`could not launch job template ${template.name}`
-                Exec.endCommand(jobid,counter,"stderr","failed",`Failed to launch template ${template.name}`)
-                logger.error(message)
-                result(message,null)
-              }
-            })
-            .catch(function (error) {
-              var message=`failed to launch ${template.name}`
-              if(error.response){
-                  logger.error(error.response.data)
-                  message+="\r\n" + YAML.stringify(error.response.data)
-                  Exec.endCommand(jobid,counter,"stderr","success",`Failed to launch template ${template.name}. ${message}`)
-              }else{
-                  logger.error(error)
-                  Exec.endCommand(jobid,counter,"stderr","success",`Failed to launch template ${template.name}. ${error}`)
-              }
-              result(message)
-            })
-          })
+                }else{
+                  // no awx job, end failed
+                  message=`could not launch job template ${template.name}`
+                  Exec.endCommand(jobid,counter,"stderr","failed",`Failed to launch template ${template.name}`)
+                  logger.error(message)
+                  result(message,null)
+                }
+              })
+              .catch(function (error) {
+                var message=`failed to launch ${template.name}`
+                if(error.response){
+                    logger.error(error.response.data)
+                    message+="\r\n" + YAML.stringify(error.response.data)
+                    Exec.endCommand(jobid,counter,"stderr","success",`Failed to launch template ${template.name}. ${message}`)
+                }else{
+                    logger.error(error)
+                    Exec.endCommand(jobid,counter,"stderr","success",`Failed to launch template ${template.name}. ${error}`)
+                }
+              })
+           }
+        })
       }
     }
   })

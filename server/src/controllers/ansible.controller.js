@@ -65,7 +65,7 @@ exports.launch = async function(req, res) {
           logger.silly("check : " + check)
           logger.silly("diff : " + diff)
           logger.silly("tags : " + tags)
-          Ansible.run(form,playbook,inventory,tags,check,diff,extraVars,user,function(err,out){
+          Ansible.launch(form,playbook,inventory,tags,check,diff,extraVars,user,function(err,out){
             if(err){
                restResult.status = "error"
                restResult.message = "error occured while running playbook " + playbook

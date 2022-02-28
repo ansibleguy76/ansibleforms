@@ -149,25 +149,5 @@ Exec.printCommand = (data,type,jobid,counter,next,abort) => {
       if(next)next(jobid,counter)
     })
 }
-Exec.runCommand = (command,metaData,result,success,failed,aborted,setStatus=true) => {
-  var counter=0
-  // create a new job in the database
-  Job.create(new Job({form:metaData.form,target:metaData.target,user:metaData.user.username,user_type:metaData.user.type,status:"running",job_type:metaData.job_type,extravars:metaData.extravars}),function(error,jobid){
 
-    if(error){
-      logger.error(error)
-      result(error,null)
-    }else{
-      // job created - return to client
-      result(null,{id:jobid})
-      logger.silly(`Job id ${jobid} is created`)
-      // in the background, start the commands
-      if(command){
-        Exec.executeCommand(command,jobid,counter,success,failed,aborted,setStatus)
-      }else{
-        if(success && jobid)success(jobid,counter)
-      }
-    }
-  })
-}
 module.exports = Exec

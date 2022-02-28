@@ -107,7 +107,17 @@
               "template": {"not":{}}
             },
             "required": ["repo"]
-          }
+          },
+          {
+            "properties": {
+              "type": {
+                "enum": ["workflow"]
+              },
+              "playbook": {"not":{}},
+              "repo": {"not":{}}
+            },
+            "required": ["steps"]
+          },
         ],
         "properties": {
           "name": {"type": "string"},
@@ -133,9 +143,16 @@
               "$ref": "/categories"
             }
           },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
           "type": {
             "type": "string",
-            "enum": ["ansible", "awx", "git"]
+            "enum": ["ansible", "awx", "git","workflow"]
           },
           "playbook": {"type": "string"},
           "key": {"type": "string"},
