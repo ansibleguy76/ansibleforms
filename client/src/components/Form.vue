@@ -310,18 +310,18 @@
           <!-- job buttons -->
           <hr v-if="!!currentForm" />
           <!-- play button -->
-          <button v-if="!!currentForm && !ansibleResult.message" class="button is-primary is-fullwidth" @click="ansibleResult.message='initializing'"><span class="icon"><font-awesome-icon icon="play" /></span><span>Run</span></button>
+          <button v-if="!!currentForm && !jobResult.message" class="button is-primary is-fullwidth" @click="jobResult.message='initializing'"><span class="icon"><font-awesome-icon icon="play" /></span><span>Run</span></button>
           <div class="columns">
             <!-- progress/close button -->
             <div class="column">
-              <button v-if="!!ansibleResult.message" class="button is-fullwidth has-text-light" @click="resetResult()" :class="{ 'has-background-success' : ansibleResult.status=='success', 'has-background-warning' : ansibleResult.status=='warning', 'has-background-danger' : ansibleResult.status=='error','has-background-info cursor-progress' : ansibleResult.status=='info' }">
-                <span class="icon" v-if="ansibleResult.status=='info'"><font-awesome-icon icon="spinner" spin /></span>
-                <span class="icon" v-if="ansibleResult.status!='info'"><font-awesome-icon icon="times" /></span>
-                <span>{{ ansibleResult.message }}</span>
+              <button v-if="!!jobResult.message" class="button is-fullwidth has-text-light" @click="resetResult()" :class="{ 'has-background-success' : jobResult.status=='success', 'has-background-warning' : jobResult.status=='warning', 'has-background-danger' : jobResult.status=='error','has-background-info cursor-progress' : jobResult.status=='info' }">
+                <span class="icon" v-if="jobResult.status=='info'"><font-awesome-icon icon="spinner" spin /></span>
+                <span class="icon" v-if="jobResult.status!='info'"><font-awesome-icon icon="times" /></span>
+                <span>{{ jobResult.message }}</span>
               </button>
             </div>
             <!-- abort ansible button -->
-            <div class="column" v-if="ansibleResult.status=='info' && !abortTriggered">
+            <div class="column" v-if="jobResult.status=='info' && !abortTriggered">
               <button  class="button is-fullwidth has-background-warning" @click="abortJob(jobId)">
                 <span class="icon"><font-awesome-icon icon="times" /></span>
                 <span>Abort Job</span>
@@ -329,12 +329,11 @@
             </div>
           </div>
           <!-- output result -->
-          <div v-if="!!ansibleResult.data.output" class="box mt-3">
-            <pre v-if="currentForm.type=='ansible' || currentForm.type=='git'" v-html="ansibleResult.data.output"></pre>
-            <pre v-if="currentForm.type=='awx'" v-html="ansibleResult.data.output"></pre>
+          <div v-if="!!jobResult.data.output" class="box mt-3">
+            <pre v-html="jobResult.data.output"></pre>
           </div>
           <!-- close output button -->
-          <button v-if="!!ansibleResult.data.output" class="button has-text-light" :class="{ 'has-background-success' : ansibleResult.status=='success', 'has-background-warning' : ansibleResult.status=='warning', 'has-background-danger' : ansibleResult.status=='error','has-background-info' : ansibleResult.status=='info'}" @click="resetResult()">
+          <button v-if="!!jobResult.data.output" class="button has-text-light" :class="{ 'has-background-success' : jobResult.status=='success', 'has-background-warning' : jobResult.status=='warning', 'has-background-danger' : jobResult.status=='error','has-background-info' : jobResult.status=='info'}" @click="resetResult()">
             <span class="icon"><font-awesome-icon icon="times" /></span>
             <span>Close output</span>
           </button>
@@ -411,7 +410,7 @@
           formdata:{},          // the eventual object sent to the api in the correct hierarchy
           interval:undefined,   // interval how fast fields need to be re-evaluated and refreshed
           showExtraVars: false, // flag to show/hide extravars
-          ansibleResult:{       // holds the output of an execution
+          jobResult:{       // holds the output of an execution
             status:"",
             message:"",
             data:{
@@ -1192,24 +1191,24 @@
             }
             watchdog=0
           }
-          if(ref.ansibleResult.message=="initializing"){ // has a request been made to execute ?
+          if(ref.jobResult.message=="initializing"){ // has a request been made to execute ?
             // ref.$toast.info("Requesting execution")
             if(ref.validateForm()){  // form is valid ?
-              ref.ansibleResult.message="stabilizing"
+              ref.jobResult.message="stabilizing"
               // ref.$toast.info("Waiting for form to stabilize")
               watchdog=0
             }else{
-              ref.ansibleResult.message="" // reset status, form not valid
+              ref.jobResult.message="" // reset status, form not valid
             }
           }
-          if(ref.ansibleResult.message=="stabilizing"){ // are we waiting to execute ?
+          if(ref.jobResult.message=="stabilizing"){ // are we waiting to execute ?
             if(ref.canSubmit){
-              ref.ansibleResult.message="triggering execution"
+              ref.jobResult.message="triggering execution"
               ref.executeForm()
             }else{
               // continue to stabilize
               if(watchdog>15){  // is it taking too long ?
-                ref.ansibleResult.message=""   // stop and reset
+                ref.jobResult.message=""   // stop and reset
                 ref.$toast.warning("It is taking too long to evaluate all fields before run")
               }else{
                 // ref.$toast.info("Stabalizing form...")
@@ -1225,7 +1224,7 @@
       },
       // reset form status
       resetResult(){
-        this.ansibleResult={
+        this.jobResult={
           status:"",
           message:"",
           data:{
@@ -1272,14 +1271,14 @@
               if(result.data.data!==undefined){
                 // import the data if output returned
                 if(result.data.data.output!=""){
-                  this.ansibleResult=result.data;
+                  this.jobResult=result.data;
                 }else{
                   // else, just import message & status
-                  this.ansibleResult.status = result.data.status
-                  this.ansibleResult.message = result.data.message
+                  this.jobResult.status = result.data.status
+                  this.jobResult.message = result.data.message
                 }
                 // if not final status, keep checking after 2s
-                if(this.ansibleResult.status!="success" && this.ansibleResult.status!="error" && this.ansibleResult.status!="warning"){
+                if(this.jobResult.status!="success" && this.jobResult.status!="error" && this.jobResult.status!="warning"){
                   // this.$toast.info(result.data.message)
                   setTimeout(function(){ ref.getJob(id) }, 2000);
                 }else{
@@ -1289,9 +1288,9 @@
                   }else{
                     // if final, remove output after 15s
                     this.abortTriggered=false
-                    if(this.ansibleResult.status=="success"){
+                    if(this.jobResult.status=="success"){
                       this.$toast.success(result.data.message)
-                    }else if(this.ansibleResult.status=="warning"){
+                    }else if(this.jobResult.status=="warning"){
                       this.$toast.warning(result.data.message)
                     }else{
                       this.$toast.error(result.data.message)
@@ -1311,8 +1310,8 @@
             console.log("error getting ansible job " + err)
             ref.$toast.error("Failed to get ansible job");
             if(err.response.status!=401){
-              ref.ansibleResult.message="Error in axios call to get ansible job\n\n" + err
-              ref.ansibleResult.status="error";
+              ref.jobResult.message="Error in axios call to get ansible job\n\n" + err
+              ref.jobResult.status="error";
             }
           })
       },
@@ -1435,20 +1434,20 @@
               .forEach(f => {
                 postdata.credentials[f.name]=this.formdata[f.name]
               })
-            this.ansibleResult.message= "Connecting with ansible ";
-            this.ansibleResult.status="info";
+            this.jobResult.message= "Connecting with ansible ";
+            this.jobResult.status="info";
             axios.post("/api/v1/ansible/launch",postdata,TokenStorage.getAuthentication())
               .then((result)=>{
                 if(result){
-                  this.ansibleResult=result.data;
+                  this.jobResult=result.data;
                   if(result.data.data.error!=""){
                     ref.$toast.error(result.data.data.error)
                   }
                   // get the jobid
-                  var jobid =  this.ansibleResult.data.output.id
+                  var jobid =  this.jobResult.data.output.id
                   ref.jobId=jobid
                   // don't show the whole json part
-                  this.ansibleResult.data.output = ""
+                  this.jobResult.data.output = ""
                   // wait for 2 seconds, and get the output of the job
                   setTimeout(function(){ ref.getJob(jobid) }, 2000);
                 }else{
@@ -1476,8 +1475,8 @@
             postdata.awxDiff = this.currentForm.diff;
             postdata.awxTemplate = this.currentForm.template;
             postdata.awxTags = this.currentForm.tags;
-            this.ansibleResult.message= "Connecting with awx ";
-            this.ansibleResult.status="info";
+            this.jobResult.message= "Connecting with awx ";
+            this.jobResult.status="info";
             postdata.credentials = {}
             this.currentForm.fields
               .filter(f => f.asCredential==true)
@@ -1487,15 +1486,15 @@
             axios.post("/api/v1/awx/launch/",postdata,TokenStorage.getAuthentication())
               .then((result)=>{
                   if(result){
-                    this.ansibleResult=result.data;
+                    this.jobResult=result.data;
                     if(result.data.data.error!=""){
                       ref.$toast.error(result.data.data.error)
                     }else{
                       // get the jobid
-                      var jobid =  this.ansibleResult.data.output.id
+                      var jobid =  this.jobResult.data.output.id
                       ref.jobId=jobid
                       // don't show the whole json part
-                      this.ansibleResult.data.output = ""
+                      this.jobResult.data.output = ""
                       // wait for 2 seconds, and get the output of the job
                       setTimeout(function(){ ref.getJob(jobid) }, 2000);
                     }
@@ -1520,20 +1519,59 @@
               }
               postdata.formName = this.currentForm.name;
               postdata.gitRepo = this.currentForm.repo;
-              this.ansibleResult.message= "Pushing to git";
-              this.ansibleResult.status="info";
+              this.jobResult.message= "Pushing to git";
+              this.jobResult.status="info";
               axios.post("/api/v1/git/push",postdata,TokenStorage.getAuthentication())
                 .then((result)=>{
                   if(result){
-                    this.ansibleResult=result.data;
+                    this.jobResult=result.data;
                     if(result.data.data.error!=""){
                       ref.$toast.error(result.data.data.error)
                     }
                     // get the jobid
-                    var jobid =  this.ansibleResult.data.output.id
+                    var jobid =  this.jobResult.data.output.id
                     ref.JobId=jobid
                     // don't show the whole json part
-                    this.ansibleResult.data.output = ""
+                    this.jobResult.data.output = ""
+                    // wait for 2 seconds, and get the output of the job
+                    setTimeout(function(){ ref.getJob(jobid) }, 2000);
+                  }else{
+                    ref.$toast.error("Failed to push to git")
+                    ref.resetResult()
+                  }
+                })
+                .catch(function(err){
+                  ref.$toast.error("Failed to push to git " + err)
+                  if(err.response.status!=401){
+                    ref.resetResult()
+                  }
+                })
+            }
+            // git
+            else if(this.currentForm.type=="multi"){
+              postdata.multiExtraVars = this.formdata
+              postdata.formName = this.currentForm.name;
+              postdata.multiSteps = this.currentForm.steps;
+              postdata.credentials = {}
+              this.currentForm.fields
+                .filter(f => f.asCredential==true)
+                .forEach(f => {
+                  postdata.credentials[f.name]=this.formdata[f.name]
+                })
+              this.jobResult.message= "Pushing to git";
+              this.jobResult.status="info";
+              axios.post("/api/v1/multi/launch",postdata,TokenStorage.getAuthentication())
+                .then((result)=>{
+                  if(result){
+                    this.jobResult=result.data;
+                    if(result.data.data.error!=""){
+                      ref.$toast.error(result.data.data.error)
+                    }
+                    // get the jobid
+                    var jobid =  this.jobResult.data.output.id
+                    ref.JobId=jobid
+                    // don't show the whole json part
+                    this.jobResult.data.output = ""
                     // wait for 2 seconds, and get the output of the job
                     setTimeout(function(){ ref.getJob(jobid) }, 2000);
                   }else{
@@ -1549,6 +1587,11 @@
                 })
             }
          }
+      },
+      pullGit(repo){
+        var postdata={}
+        postdata.gitRepo = repo;
+        return axios.post("/api/v1/git/pull",postdata,TokenStorage.getAuthentication())
       }
     },
     // start form app
@@ -1598,37 +1641,52 @@
 
       // set as ready
       // if our type is git, we need to first pull git
-      if(this.currentForm.type!="git"){
+      if(this.currentForm.type!="git" && this.currentForm.type!="multi"){
         this.pretasksFinished=true
         // start dynamic field loop (= infinite)
         this.startDynamicFieldsLoop()
       }else{
-        var postdata={}
-        postdata.gitRepo = this.currentForm.repo;
-        this.loadMessage = "Pulling from git..."
-        axios.post("/api/v1/git/pull",postdata,TokenStorage.getAuthentication())
-          .then((result)=>{
+        var gitpulls=[]
+
+        if(this.currentForm.type=="git"){
+            gitpulls.push(this.pullGit(this.currentForm.repo))
+        }else if(this.currentForm.type=="multi"){
+          this.currentForm.steps.forEach((step, i) => {
+            if(step.type=="git")
+              gitpulls.push(this.pullGit(step.repo))
+          });
+        }
+        // wait for all git pulls
+        Promise.all(gitpulls)
+        .then(results=>{
+          var status=true
+          results.forEach((result, i) => {
             if(result){
 
               if(result.data.status=="error"){
                 ref.$toast.error(result.data.message)
-              }else{
-                ref.$toast.success(result.data.message)
+                status=false
               }
 
             }else{
               ref.$toast.error("Failed to pull from git")
+              status=false
             }
-            ref.pretasksFinished=true
-            // start dynamic field loop (= infinite)
-            this.startDynamicFieldsLoop()
-          })
-          .catch(function(err){
-            ref.$toast.error("Failed to pull from git " + err)
-            ref.pretasksFinished=true
-            // start dynamic field loop (= infinite)
-            this.startDynamicFieldsLoop()
-          })
+
+          });
+          if(status){
+            ref.$toast.success("Git was pulled")
+          }
+          ref.pretasksFinished=true
+          // start dynamic field loop (= infinite)
+          ref.startDynamicFieldsLoop()
+        })
+        .catch(function(err){
+          ref.$toast.error("Failed to pull from git " + err)
+          ref.pretasksFinished=true
+          // start dynamic field loop (= infinite)
+          ref.startDynamicFieldsLoop()
+        })
       }
     },
     // before exit, we stop the interval, as it would not stop otherwise

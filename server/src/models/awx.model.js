@@ -144,7 +144,7 @@ Awx.abortJob = function (id, next) {
   })
 };
 // launch awx job template
-Awx.launch = function (form,template,inventory,tags,check,diff,extraVars,user, result) {
+Awx.launch = function (form,template,inventory,tags,check,diff,extraVars,user, result,success,failed) {
 
   Awx.getConfig(function(err,awxConfig){
 
@@ -190,13 +190,13 @@ Awx.launch = function (form,template,inventory,tags,check,diff,extraVars,user, r
           httpsAgent: getHttpsAgent(awxConfig)
         }
         logger.silly("Lauching awx with data : " + JSON.stringify(postdata))
-        var metaData = {form:form,target:template.name,inventory:inventory,tags:tags,check:check,diff:diff,job_type:'awx',extravars:extraVars,user:user}
         // create a new job in the database
-        Job.create(new Job({form:metaData.form,target:metaData.target,user:metaData.user.username,user_type:metaData.user.type,status:"running",job_type:metaData.job_type,extravars:metaData.extravars}),function(error,jobid){
+        Job.create(new Job({form:form,target:template.name,user:user.username,user_type:user.type,status:"running",job_type:"awx",extravars:extraVars}),function(error,jobid){
           var counter=0
           if(error){
             logger.error(error)
             result(error,null)
+            if(failed)failed(error)
           }else{
             // job created - return directly to client (the rest is in background)
             result(null,{id:jobid})
@@ -215,6 +215,7 @@ Awx.launch = function (form,template,inventory,tags,check,diff,extraVars,user, r
                       function(j,jobid,counter){
                         // if success, end with success
                         Exec.endCommand(jobid,counter,"stdout","success",`Successfully completed template ${template.name}`)
+                        if(success)success(true)
                       },
                       function(e,jobid,counter){
                         // if error, end with status (aborted or failed)
@@ -225,12 +226,14 @@ Awx.launch = function (form,template,inventory,tags,check,diff,extraVars,user, r
                           message=`Template ${template.name} was aborted`
                         }
                         Exec.endCommand(jobid,counter,"stderr",status,message)
+                        if(failed)failed(message)
                       })
                   })
                 }else{
                   // no awx job, end failed
                   message=`could not launch job template ${template.name}`
                   Exec.endCommand(jobid,counter,"stderr","failed",`Failed to launch template ${template.name}`)
+                  if(failed)failed(message)
                   logger.error(message)
                   result(message,null)
                 }
@@ -241,9 +244,11 @@ Awx.launch = function (form,template,inventory,tags,check,diff,extraVars,user, r
                     logger.error(error.response.data)
                     message+="\r\n" + YAML.stringify(error.response.data)
                     Exec.endCommand(jobid,counter,"stderr","success",`Failed to launch template ${template.name}. ${message}`)
+                    if(failed)failed(message)
                 }else{
                     logger.error(error)
                     Exec.endCommand(jobid,counter,"stderr","success",`Failed to launch template ${template.name}. ${error}`)
+                    if(failed)failed(error)
                 }
               })
            }

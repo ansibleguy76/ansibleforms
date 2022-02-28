@@ -9,7 +9,7 @@ var Ansible=function(){
 };
 
 // run a playbook
-Ansible.launch = function (form,playbook,inventory,tags,check,diff,extraVars,user, result) {
+Ansible.launch = function (form,playbook,inventory,tags,check,diff,extraVars,user, result,success,failed) {
   // prepare my ansible command
   var command = `ansible-playbook -e '${extraVars}'`
   inventory.forEach((item, i) => {
@@ -28,19 +28,25 @@ Ansible.launch = function (form,playbook,inventory,tags,check,diff,extraVars,use
   command += ` ${playbook}`
   var directory = ansibleConfig.path
   var cmdObj = {directory:directory,command:command,description:"Running playbook",task:"Playbook"}
-  var metaData = {form:form,target:playbook,inventory:inventory,tags:tags,check:check,diff:diff,job_type:'ansible',extravars:extraVars,user:user}
   // create a new job in the database
-  Job.create(new Job({form:metaData.form,target:metaData.target,user:metaData.user.username,user_type:metaData.user.type,status:"running",job_type:metaData.job_type,extravars:metaData.extravars}),function(error,jobid){
+  Job.create(new Job({form:form,target:playbook,user:user.username,user_type:user.type,status:"running",job_type:"ansible",extravars:extraVars}),function(error,jobid){
     var counter=0
     if(error){
       logger.error(error)
       result(error,null)
+      if(failed)failed(error)
     }else{
       // job created - return to client
       result(null,{id:jobid})
       logger.silly(`Job id ${jobid} is created`)
       // in the background, start the commands
-      Exec.executeCommand(cmdObj,jobid,counter)
+      Exec.executeCommand(cmdObj,jobid,counter,(jobid,counter)=>{
+        if(success)success()
+      },(jobid,counter)=>{
+        if(failed)failed("Job failed")
+      },(jobid,counter)=>{
+        if(failed)failed("Job was aborted")
+      })
     }
   })
 

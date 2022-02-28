@@ -1,6 +1,7 @@
 'use strict';
 const Awx = require('../models/awx.model');
 var RestResult = require('../models/restResult.model');
+var Credential = require('../models/credential.model');
 const logger=require("../lib/logger");
 
 exports.getJob = function(req,res){
@@ -58,6 +59,130 @@ exports.check = function(req, res) {
   });
 
 };
+exports.do = async function(form,jobTemplateName,inventory,check,diff,jobTags,user,creds,ev,res,next){
+  return new Promise(async (resolve,reject) => {
+    var extraVars = {...ev}
+    if(creds){
+      for (const [key, value] of Object.entries(creds)) {
+        if(value=="__self__"){
+          extraVars[key]={
+            host:dbConfig.host,
+            user:dbConfig.user,
+            port:dbConfig.port,
+            password:dbConfig.password
+          }
+        }else{
+          try{
+            extraVars[key]=await Credential.findByName(value)
+          }catch(err){
+            logger.error(err)
+          }
+
+        }
+      }
+    }
+
+    extraVars = JSON.stringify(extraVars);
+
+    logger.info("Running template : " + jobTemplateName)
+    logger.debug("extravars : " + extraVars)
+    logger.debug("inventory : " + inventory)
+    logger.debug("check : " + check)
+    logger.debug("diff : " + diff)
+    logger.debug("tags : " + jobTags)
+
+    var restResult = new RestResult("info","")
+
+    if(!jobTemplateName){
+      // wrong implementation -> send 400 error
+      if(res)
+        res.status(400).json(new RestResult("error","no awxJobTemplate","","awxJobTemplate is a required field"));
+      if(next)
+        next("error no job template",null)
+      reject(err)
+    }else{
+
+      Awx.findJobTemplateByName(jobTemplateName, function(err, jobTemplate) {
+          if (err){
+
+            restResult.status = "error"
+            restResult.message = "failed to launch jobtemplate " + jobTemplateName
+            restResult.data.error = err
+            // send response
+            if(res)
+              res.json(restResult)
+            if(next)
+              next("error " + err,null)
+            reject(err)
+          }else{
+              logger.silly("Found jobtemplate, id = " + jobTemplate.id)
+              if(inventory){
+                Awx.findInventoryByName(inventory,function(err,inventory){
+                  if (err){
+                    restResult.status = "error"
+                    restResult.message = "failed to launch jobtemplate " + jobTemplate.name
+                    restResult.data.error = err
+                    if(res)
+                      res.json(restResult)
+                    if(next)
+                      next("error " + err,null)
+                    reject(err)
+                  }else{
+                    logger.silly("Found inventory, id = " + inventory.id)
+                    Awx.launch(form,jobTemplate,inventory,jobTags,check,diff,extraVars,user,function(err,job){
+                        if (err){
+                          restResult.status = "error"
+                          restResult.message = "failed to launch jobtemplate " + jobTemplate.name
+                          restResult.data.error = err
+                          if(next)
+                            next("error " + err,null)
+                          reject(err)
+                        }else{
+                          restResult.message = "successfully launched jobtemplate " + jobTemplate.name
+                          restResult.data.output = job
+                          if(next)
+                            next(null,job)
+                          resolve(true)
+                        }
+                        if(res)
+                          res.json(restResult)
+                    },()=>{
+                      resolve(true)
+                    },(err)=>{
+                      reject(err)
+                    })
+                  }
+                })
+              }else{
+                Awx.launch(form,jobTemplate,undefined,jobTags,check,diff,extraVars,user,function(err,job){
+                    if (err){
+                      restResult.status = "error"
+                      restResult.message = "failed to launch jobtemplate " + jobTemplate.name
+                      restResult.data.error = err
+                      if(next)
+                        next("error " + err,null)
+                      reject(err)
+                    }else{
+                      restResult.message = "successfully launched jobtemplate " + jobTemplate.name
+                      restResult.data.output = job
+                      if(next)
+                        next(null,job)
+
+                    }
+                    if(res)
+                      res.json(restResult)
+                },()=>{
+                  resolve(true)
+                },(err)=>{
+                  reject(err)
+                })
+              }
+
+          }
+      })
+    }
+  })
+}
 exports.launch = async function(req, res) {
     //handles null error
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
@@ -71,91 +196,14 @@ exports.launch = async function(req, res) {
         var diff = req.body.awxDiff || req.body.awxExtraVars.__diff__;
         var jobTags = req.body.awxTags;
         var user = req.user.user
-        if(req.body.credentials){
-          for (const [key, value] of Object.entries(req.body.credentials)) {
-            if(value=="__self__"){
-              req.body.awxExtraVars[key]={
-                host:dbConfig.host,
-                user:dbConfig.user,
-                port:dbConfig.port,
-                password:dbConfig.password
-              }
-            }else{
-              try{
-                req.body.awxExtraVars[key]=await Credential.findByName(value)
-              }catch(err){
-                logger.error(err)
-              }
+        var creds = req.body.credentials
+        var extraVars = req.body.awxExtraVars
 
-            }
-          }
-        }
-
-        var extraVars = JSON.stringify(req.body.awxExtraVars);
-
-        logger.info("Running template : " + jobTemplateName)
-        logger.debug("extravars : " + extraVars)
-        logger.debug("inventory : " + inventory)
-        logger.debug("check : " + check)
-        logger.debug("diff : " + diff)
-        logger.debug("tags : " + jobTags)
-
-        var restResult = new RestResult("info","")
-
-        if(!jobTemplateName){
-          // wrong implementation -> send 400 error
-          res.status(400).json(new RestResult("error","no awxJobTemplate","","awxJobTemplate is a required field"));
-        }else{
-
-          Awx.findJobTemplateByName(jobTemplateName, function(err, jobTemplate) {
-              if (err){
-
-                restResult.status = "error"
-                restResult.message = "failed to launch jobtemplate " + jobTemplateName
-                restResult.data.error = err
-                // send response
-                res.json(restResult)
-              }else{
-                  logger.silly("Found jobtemplate, id = " + jobTemplate.id)
-                  if(inventory){
-                    Awx.findInventoryByName(inventory,function(err,inventory){
-                      if (err){
-                        restResult.status = "error"
-                        restResult.message = "failed to launch jobtemplate " + jobTemplate.name
-                        restResult.data.error = err
-                        res.json(restResult)
-                      }else{
-                        logger.silly("Found inventory, id = " + inventory.id)
-                        Awx.launch(form,jobTemplate,inventory,jobTags,check,diff,extraVars,user,function(err,job){
-                            if (err){
-                              restResult.status = "error"
-                              restResult.message = "failed to launch jobtemplate " + jobTemplate.name
-                              restResult.data.error = err
-                            }else{
-                              restResult.message = "successfully launched jobtemplate " + jobTemplate.name
-                              restResult.data.output = job
-                            }
-                            res.json(restResult)
-                        })
-                      }
-                    })
-                  }else{
-                    Awx.launch(form,jobTemplate,undefined,jobTags,check,diff,extraVars,user,function(err,job){
-                        if (err){
-                          restResult.status = "error"
-                          restResult.message = "failed to launch jobtemplate " + jobTemplate.name
-                          restResult.data.error = err
-                        }else{
-                          restResult.message = "successfully launched jobtemplate " + jobTemplate.name
-                          restResult.data.output = job
-                        }
-                        res.json(restResult)
-                    })
-                  }
-
-              }
+        exports.do(form,jobTemplateName,inventory,check,diff,jobTags,user,creds,extraVars,res)
+          .catch((e)=>{
+            res.json(new RestResult("error",e,"",""));
           })
-        }
+
     }
 };
 exports.find = function(req, res) {

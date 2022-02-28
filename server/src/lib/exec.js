@@ -51,22 +51,20 @@ Exec.executeSilentCommand = (cmd,result) => {
     result(e,null)
   }
 }
-Exec.endCommand = (jobid,counter,stream,status,message,next,setStatus=true) => {
+Exec.endCommand = (jobid,counter,stream,status,message,next) => {
   Job.createOutput({output:message,output_type:stream,job_id:jobid,order:++counter},function(error,res){
     if(error){
       logger.error(error)
     }
-    if(setStatus){
-      Job.update({status:status,end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid,function(error,res){
-        if(error){
-          logger.error(error)
-        }
-      })
-    }
+    Job.update({status:status,end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid,function(error,res){
+      if(error){
+        logger.error(error)
+      }
+    })
     if(next)next(jobid,counter)
   })
 }
-Exec.executeCommand = (cmd,jobid,counter,success,failed,aborted,setStatus=true) => {
+Exec.executeCommand = (cmd,jobid,counter,success,failed,aborted) => {
   // a counter to order the output (as it's very fast and the database can mess up the order)
   var jobstatus = "success"
   var command = cmd.command
@@ -117,9 +115,9 @@ Exec.executeCommand = (cmd,jobid,counter,success,failed,aborted,setStatus=true) 
         if(data!=0){
           jobstatus="failed"
           logger.error(`[${jobid}] Failed with code ${data}`)
-          Exec.endCommand(jobid,counter,"stderr",jobstatus,`${task} failed : `+data,failed,setStatus)
+          Exec.endCommand(jobid,counter,"stderr",jobstatus,`${task} failed : `+data,failed)
         }else{
-          Exec.endCommand(jobid,counter,"stdout",jobstatus,`${task} finished : `+data,success,setStatus)
+          Exec.endCommand(jobid,counter,"stdout",jobstatus,`${task} finished : `+data,success)
         }
 
       }
@@ -127,11 +125,11 @@ Exec.executeCommand = (cmd,jobid,counter,success,failed,aborted,setStatus=true) 
     })
     // add error eventlistener to the process; set failed
     child.on('error',function(data){
-      Exec.endCommand(jobid,counter,"stderr","failed",`${task} failed : `+data,failed,setStatus)
+      Exec.endCommand(jobid,counter,"stderr","failed",`${task} failed : `+data,failed)
     })
 
   }catch(e){
-    Exec.endCommand(jobid,counter,"stderr","failed",`${task} failed : `+e,failed,setStatus)
+    Exec.endCommand(jobid,counter,"stderr","failed",`${task} failed : `+e,failed)
   }
 }
 Exec.printCommand = (data,type,jobid,counter,next,abort) => {

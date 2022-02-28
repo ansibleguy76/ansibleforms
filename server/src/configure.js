@@ -37,7 +37,7 @@ module.exports = app => {
   const jobRoutes = require('./routes/job.routes')
   const ansibleRoutes = require('./routes/ansible.routes')
   const gitRoutes = require('./routes/git.routes')
-  const workflowRoutes = require('./routes/workflow.routes')
+  const multiRoutes = require('./routes/multi.routes')
   const queryRoutes = require('./routes/query.routes')
   const expressionRoutes = require('./routes/expression.routes')
   const userRoutes = require('./routes/user.routes')
@@ -82,7 +82,7 @@ module.exports = app => {
   app.use('/api/v1/awx',cors(), authobj, awxRoutes) // extra middleware in the routes
   app.use('/api/v1/ansible',cors(), authobj, ansibleRoutes)
   app.use('/api/v1/git',cors(), authobj, gitRoutes)
-  app.use('/api/v1/workflow',cors(), authobj, gitRoutes)
+  app.use('/api/v1/multi',cors(), authobj, multiRoutes)
 
   // api routes for admin management
   app.use('/api/v1/job',cors(), authobj, jobRoutes)

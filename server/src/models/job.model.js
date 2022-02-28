@@ -144,7 +144,7 @@ Job.findAll = function (result) {
     }
 };
 Job.findById = function (id,text,result) {
-    logger.debug(`Finding job ${id} | ${text}` )
+    logger.debug(`Finding job ${id}` )
     try{
       // get normal data
       mysql.query("SELECT `status`,`extravars`,`job_type` FROM AnsibleForms.`jobs` WHERE jobs.id=?;",id, function (err, res) {

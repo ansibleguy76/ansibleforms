@@ -11,17 +11,15 @@ var Git=function(){
 };
 
 // run git push
-Git.push = function (form,repo,extraVars,user, result) {
-
-  // prepare my Git command
-  var metaData = {form:form,target:repo.file,inventory:'',tags:'',check:false,diff:false,job_type:'git',extravars:extraVars,user:user}
+Git.push = function (form,repo,extraVars,user, result,success,failed) {
 
   // create a new job in the database
-  Job.create(new Job({form:metaData.form,target:metaData.target,user:metaData.user.username,user_type:metaData.user.type,status:"running",job_type:metaData.job_type,extravars:metaData.extravars}),function(error,jobid){
+  Job.create(new Job({form:form,target:repo.file,user:user.username,user_type:user.type,status:"running",job_type:"git",extravars:extraVars}),function(error,jobid){
     var counter=0
     if(error){
       logger.error(error)
       result(error,null)
+      if(failed)failed(error)
     }else{
       // job created - return to client
       result(null,{id:jobid})
@@ -36,11 +34,19 @@ Git.push = function (form,repo,extraVars,user, result) {
           // start commit
           var command = `git commit --allow-empty -am "update from ansibleforms" && ${repo.push}`
           var directory = repo.dir
-          Exec.executeCommand({directory:directory,command:command,description:"Pushing to git",task:"Git push"},jobid,counter)
+          Exec.executeCommand({directory:directory,command:command,description:"Pushing to git",task:"Git push"},jobid,counter,(jobid,counter)=>{
+            if(success)success()
+          },(jobid,counter)=>{
+            if(failed)failed("Job failed")
+          },(jobid,counter)=>{
+            if(failed)failed("Job was aborted")
+          })
         })
       }catch(e){
         logger.error(e)
-        Exec.printCommand(e,"stderr",jobid,counter)
+        Exec.endCommand(jobid,counter,"stderr","failed",e,null,(jobid,counter)=>{
+          if(failed)failed(e)
+        })
       }
 
     }
