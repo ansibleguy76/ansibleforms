@@ -117,7 +117,7 @@
               "repo": {"not":{}}
             },
             "required": ["steps"]
-          },
+          }
         ],
         "properties": {
           "name": {"type": "string"},
