@@ -111,7 +111,7 @@
           {
             "properties": {
               "type": {
-                "enum": ["workflow"]
+                "enum": ["multi"]
               },
               "playbook": {"not":{}},
               "repo": {"not":{}}
@@ -152,7 +152,7 @@
           },
           "type": {
             "type": "string",
-            "enum": ["ansible", "awx", "git","workflow"]
+            "enum": ["ansible", "awx", "git","multi"]
           },
           "playbook": {"type": "string"},
           "key": {"type": "string"},
