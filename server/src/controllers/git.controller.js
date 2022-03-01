@@ -30,11 +30,14 @@ exports.do = function(form,repo,extraVars,user,res,next){
            restResult.data.output = out
            if(next)
              next(null,out)
-           resolve(true)
         }
         // send response
         if(res)
           res.json(restResult);
+      },()=>{
+        resolve(true)
+      },(err)=>{
+        reject(err)
       })
     }
   })
@@ -52,7 +55,8 @@ exports.push = async function(req, res) {
         var user = req.user.user
         exports.do(form,repo,extraVars,user,res)
           .catch((e)=>{
-            res.json(new RestResult("error",e,"",""));
+            logger.error(e)
+            //res.json(new RestResult("error",e,"",""));
           })
     }
 };

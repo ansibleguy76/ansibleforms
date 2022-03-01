@@ -29,15 +29,10 @@ Multi.launch = async function (form,steps,extraVars,user,creds, result) {
       // Exec.printCommand("ok, so far so good","stdout",jobid,counter)
 
       try{
-
-        logger.silly("extravars : " + extraVars)
         var finalstatus=true
         var last = steps.reduce(
           async (promise,step)=>{
             return promise.then(async previousSuccess =>{
-              logger.warn("Previous was ok... next : " + JSON.stringify(step))
-              logger.warn("form = " + form)
-              logger.warn("extravars = " + JSON.stringify(extraVars))
               var result=false
                 var ev = {...extraVars}
                 if(step.key && ev[step.key]){
@@ -45,6 +40,7 @@ Multi.launch = async function (form,steps,extraVars,user,creds, result) {
                   ev = ev[step.key]
                 }
                 if(step.type=="awx"){
+                  logger.silly("Running step " + step.name)
                   result= await Awx.do(form,step.template,step.inventory,step.check,step.diff,step.tags,user,creds,ev,null,function(err,job){
                     if(err){
                       Exec.printCommand(err,"stderr",jobid,++counter)
@@ -54,11 +50,11 @@ Multi.launch = async function (form,steps,extraVars,user,creds, result) {
                       // TODO loop job progress
                     }
                   })
-                  logger.warn("Result from awx = " + result)
+                  logger.silly("Result from awx = " + result)
                   return result
                 }
                 if(step.type=="ansible"){
-                  logger.warn("Running step " + step.name)
+                  logger.silly("Running step " + step.name)
                   // rest is in background - launch save + git commit/push
                   result= await Ansible.do(form,step.playbook,step.inventory,step.check,step.diff,step.tags,user,creds,ev,null,function(err,job){
                     if(err){
@@ -69,11 +65,11 @@ Multi.launch = async function (form,steps,extraVars,user,creds, result) {
                       // TODO loop job progress
                     }
                   })
-                  logger.warn("Result from git = " + result)
+                  logger.silly("Result from ansible = " + result)
                   return result
                 }
                 if(step.type=="git"){
-                  logger.warn("Running step " + step.name)
+                  logger.silly("Running step " + step.name)
                   // rest is in background - launch save + git commit/push
                   result= await Git.do(form,step.repo,ev,user,null,function(err,job){
                     if(err){
@@ -84,11 +80,11 @@ Multi.launch = async function (form,steps,extraVars,user,creds, result) {
                       // TODO loop job progress
                     }
                   })
-                  logger.warn("Result from git = " + result)
+                  logger.silly("Result from git = " + result)
                   return result
                 }
             }).catch((err)=>{
-              logger.warn("Skipping step " + step.name)
+              logger.silly("Skipping step " + step.name)
               finalstatus=false
               Exec.printCommand("Failed " + err,"stderr",jobid,++counter)
               return false
@@ -97,7 +93,7 @@ Multi.launch = async function (form,steps,extraVars,user,creds, result) {
           Promise.resolve(true)
         )
         last.then((success)=>{
-          logger.warn("Last step => " + success)
+          logger.silly("Last step => " + success)
           if(finalstatus){
             Exec.endCommand(jobid,++counter,"stdout","success","Finished multi")
           }else{

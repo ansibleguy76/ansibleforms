@@ -8,7 +8,6 @@ const dbConfig = require('../../config/db.config')
 exports.do = async function(form,playbook,inv,check,diff,tags,user,creds,ev,res,next){
   return new Promise(async (resolve,reject) => {
     var extraVars = {...ev}
-
     if(creds){
       for (const [key, value] of Object.entries(creds)) {
         if(value=="__self__"){
@@ -100,7 +99,8 @@ exports.launch = async function(req, res) {
         var user = req.user.user
         exports.do(form,playbook,inventory,check,diff,tags,user,creds,extraVars,res)
           .catch((e)=>{
-            res.json(new RestResult("error",e,"",""));
+            logger.error(e)
+            //res.json(new RestResult("error",e,"",""));
           })
     }
 };

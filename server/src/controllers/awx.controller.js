@@ -201,7 +201,8 @@ exports.launch = async function(req, res) {
 
         exports.do(form,jobTemplateName,inventory,check,diff,jobTags,user,creds,extraVars,res)
           .catch((e)=>{
-            res.json(new RestResult("error",e,"",""));
+            logger.error(e)
+            //res.json(new RestResult("error",e,"",""));
           })
 
     }
