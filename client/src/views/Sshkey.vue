@@ -3,7 +3,19 @@
     <div class="container">
       <h1 class="title has-text-info"><font-awesome-icon icon="key" /> Sshkey</h1>
       <BulmaTextArea v-model="ssh.key" label="Private Key" placeholder="-----BEGIN CERTIFICATE-----" :hasError="$v.ssh.key.$invalid" :errors="[]" />
-      <BulmaTextArea v-model="ssh.publicKey" readonly label="Public Key" :hasError="false" :errors="[]" />
+      <div class="field">
+        <label class="label">Public Key
+          <span class="is-pulled-right">
+            <!-- refresh auto -->
+            <span
+              @click="clip(ssh.publicKey,true)"
+                class="icon has-text-info is-clickable">
+              <font-awesome-icon icon="copy" />
+            </span>
+          </span>
+        </label>
+        <p class="box is-family-monospace is-text-overflow" v-text="ssh.publicKey" />
+      </div>
       <BulmaButton icon="save" label="Update Ssh" @click="updateSsh()"></BulmaButton>
     </div>
   </section>
@@ -12,6 +24,7 @@
   import Vue from 'vue'
   import axios from 'axios'
   import Vuelidate from 'vuelidate'
+  import Copy from 'copy-to-clipboard'
   import BulmaButton from './../components/BulmaButton.vue'
   import BulmaTextArea from './../components/BulmaTextArea.vue'
   import TokenStorage from './../lib/TokenStorage'
@@ -35,6 +48,18 @@
         }
     },
     methods:{
+      clip(v,doNotStringify=false){
+        try{
+          if(doNotStringify){
+            Copy(v)
+          }else{
+            Copy(JSON.stringify(v))
+          }
+          this.$toast.success("Copied to clipboard")
+        }catch(e){
+          this.$toast.error("Error copying to clipboard : \n" + e)
+        }
+      },
       loadSsh(){
         var ref= this;
         axios.get('/api/v1/sshkey/',TokenStorage.getAuthentication())
@@ -80,5 +105,11 @@
   }
   .select, .select select{
     width:100%;
+  }
+  .is-text-overflow {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
   }
 </style>
