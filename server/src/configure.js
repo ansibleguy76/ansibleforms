@@ -24,6 +24,9 @@ const appConfig = require('../config/app.config')
 // start the app
 module.exports = app => {
 
+  // first time run init
+  require('./init/')
+
   // we use 2 authentications/authorization strategies
   // - basic : to get jwt tokens
   // - jwt : to use the jwt tokens

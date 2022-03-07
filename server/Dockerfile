@@ -36,6 +36,9 @@ RUN ansible-galaxy collection install netapp.um_info -p /usr/share/ansible/colle
 RUN apk add openssh
 RUN mkdir -p ~/.ssh
 
+# update npm
+RUN npm install -g npm@8.5.3
+
 ##################################################
 # builder stage
 # intermediate build to compile application

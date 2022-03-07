@@ -94,7 +94,7 @@ exports.launch = async function(req, res) {
         var check = req.body.ansibleCheck || req.body.ansibleExtraVars.__check__;
         var diff = req.body.ansibleDiff || req.body.ansibleExtraVars.__diff__;
         var tags = req.body.ansibleTags;
-        var extraVars = req.body.extraVars
+        var extraVars = req.body.ansibleExtraVars
         var creds = req.body.credentials
         var user = req.user.user
         exports.do(form,playbook,inventory,check,diff,tags,user,creds,extraVars,res)
