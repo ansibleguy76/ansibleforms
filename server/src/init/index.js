@@ -20,7 +20,7 @@ if(!fs.existsSync(location)){
         return false
       }
       logger.warn('SSH Keys created!');
-      logger.silly('private key: '+out.key);
+      logger.silly('private key : '+out.key);
       logger.info('public key : '+out.pubKey);
   });
 }else{
