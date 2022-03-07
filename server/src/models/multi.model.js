@@ -29,10 +29,11 @@ Multi.launch = async function (form,steps,extraVars,user,creds, result) {
       // Exec.printCommand("ok, so far so good","stdout",jobid,counter)
 
       try{
-        var finalstatus=true
+        var finalSuccessStatus=true
+        var partialstatus=false
         var last = steps.reduce(
           async (promise,step)=>{
-            return promise.then(async previousSuccess =>{
+            return promise.then(async (previousSuccess) =>{
               var result=false
               if(previousSuccess){
 
@@ -47,7 +48,6 @@ Multi.launch = async function (form,steps,extraVars,user,creds, result) {
                     result= await Awx.do(form,step.template,step.inventory,step.check,step.diff,step.tags,user,creds,ev,null,function(err,job){
                       if(err){
                         Exec.printCommand(err,"stderr",jobid,++counter)
-                        finalstatus=false
                       }else{
                         Exec.printCommand(`Launched step ${step.name} with jobid ${job.id}`,"stdout",jobid,++counter)
                         // TODO loop job progress
@@ -62,7 +62,6 @@ Multi.launch = async function (form,steps,extraVars,user,creds, result) {
                     result= await Ansible.do(form,step.playbook,step.inventory,step.check,step.diff,step.tags,user,creds,ev,null,function(err,job){
                       if(err){
                         Exec.printCommand(err,"stderr",jobid,++counter)
-                        finalstatus=false
                       }else{
                         Exec.printCommand(`Launched step ${step.name} with jobid ${job.id}`,"stdout",jobid,++counter)
                         // TODO loop job progress
@@ -77,7 +76,6 @@ Multi.launch = async function (form,steps,extraVars,user,creds, result) {
                     result= await Git.do(form,step.repo,ev,user,null,function(err,job){
                       if(err){
                         Exec.printCommand(err,"stderr",jobid,++counter)
-                        finalstatus=false
                       }else{
                         Exec.printCommand(`Launched step ${step.name} with jobid ${job.id}`,"stdout",jobid,++counter)
                         // TODO loop job progress
@@ -88,27 +86,37 @@ Multi.launch = async function (form,steps,extraVars,user,creds, result) {
                   }
               }else{
                 logger.silly("Skipping step " + step.name)
-                finalstatus=false
+                finalSuccessStatus=false
                 Exec.printCommand("Skipping step "+ step.name,"stderr",jobid,++counter)
                 return false
               }
             }).catch((err)=>{
               logger.error("Failed step " + step.name)
-              finalstatus=false
               Exec.printCommand("Failed step "+ step.name + " : " + err,"stderr",jobid,++counter)
-              return false
+              if(step.continue){
+                partialstatus=true
+                return true
+              }else{
+                finalSuccessStatus=false
+                return false
+              }
             })
           },
           Promise.resolve(true)
         ).catch((err)=>{ // failed at last step
           logger.error("Failed step " + steps[-1].name)
-          finalstatus=false
+          finalSuccessStatus=false
           Exec.printCommand("Failed step "+ steps[-1].name + " : " + err,"stderr",jobid,++counter)
         })
         last.then((success)=>{
           logger.silly("Last step => " + success)
-          if(finalstatus){
-            Exec.endCommand(jobid,++counter,"stdout","success","Finished multi")
+          if(finalSuccessStatus){
+            if(partialstatus){
+              Exec.endCommand(jobid,++counter,"stdout","success","Finished multi with warnings")
+            }else{
+              Exec.endCommand(jobid,++counter,"stdout","warning","Finished multi with warnings")
+            }
+
           }else{
             Exec.endCommand(jobid,++counter,"stderr","failed","Finished multi with errors")
           }

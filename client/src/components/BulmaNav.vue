@@ -40,6 +40,9 @@
                     <router-link class="navbar-item" to="/credentials">
                       <span class="icon"><font-awesome-icon icon="lock" /></span><span>Credentials</span>
                     </router-link>
+                    <router-link class="navbar-item" to="/sshkey">
+                      <span class="icon"><font-awesome-icon icon="key" /></span><span>Ssh key</span>
+                    </router-link>                    
                   </div>
                 </div>
                 <div class="navbar-item has-dropdown is-hoverable" v-if="authenticated" >

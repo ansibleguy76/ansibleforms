@@ -43,8 +43,7 @@
     "node-cache":"~5.1.2",
     "ldap-authentication": "~2.2.9",
     "ldapjs": "~2.3.2",
-    "swagger-ui-express": "~4.3.0",
-    "ssh-keygen": "~0.5.0"
+    "swagger-ui-express": "~4.3.0"
   },
   "devDependencies": {
     "@babel/core": "7.17.5",

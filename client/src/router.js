@@ -11,6 +11,7 @@ import Ldap from './views/Ldap.vue'
 import Awx from './views/Awx.vue'
 import Designer from './views/Designer.vue'
 import Credentials from './views/Credentials.vue'
+import Sshkey from './views/Sshkey.vue'
 import Jobs from './views/Jobs.vue'
 import Profile from './views/Profile.vue'
 import TokenStorage from './lib/TokenStorage.js'
@@ -85,6 +86,12 @@ export default new Router({
         path:"/credentials",
         name:"Credentials",
         component:Credentials,
+        beforeEnter: checkAdmin
+      },
+      {
+        path:"/sshkey",
+        name:"Sshkey",
+        component:Sshkey,
         beforeEnter: checkAdmin
       },
       {

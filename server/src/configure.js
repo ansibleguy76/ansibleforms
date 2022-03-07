@@ -53,6 +53,7 @@ module.exports = app => {
   const configRoutes = require('./routes/config.routes')
   const versionRoutes = require('./routes/version.routes')
   const profileRoutes = require('./routes/profile.routes')
+  const sshRoutes = require('./routes/ssh.routes')
 
   // using json web tokens as middleware
   const authobj = passport.authenticate('jwt', { session: false })
@@ -93,6 +94,7 @@ module.exports = app => {
   app.use('/api/v1/group',cors(), authobj, checkAdminMiddleware, groupRoutes)
   app.use('/api/v1/ldap',cors(), authobj, checkAdminMiddleware, ldapRoutes)
   app.use('/api/v1/credential',cors(), authobj, checkAdminMiddleware, credentialRoutes)
+  app.use('/api/v1/sshkey',cors(), authobj, checkAdminMiddleware, sshRoutes)
 
   // routes for form config (extra middleware in the routes itself)
   app.use('/api/v1/config',cors(), authobj, configRoutes)
