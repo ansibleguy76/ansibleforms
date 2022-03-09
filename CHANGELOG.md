@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] - 2022-03-09
+
 ### Added
 
 -   About + GPL License
@@ -215,7 +217,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/2.2.4...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.0...HEAD
+
+[3.0.0]: https://github.com/ansibleguy76/ansibleforms/compare/2.2.4...3.0.0
 
 [2.2.4]: https://github.com/ansibleguy76/ansibleforms/compare/2.2.3...2.2.4
 
