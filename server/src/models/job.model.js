@@ -23,6 +23,9 @@ var Job=function(job){
     if(job.end && job.end!=""){ // allow single status update
       this.end = job.end;
     }
+    if(job.parent_id){
+      this.parent_id=job.parent_id
+    }
 };
 Job.create = function (record, result) {
   logger.debug(`Creating job`)
@@ -43,6 +46,22 @@ Job.update = function (record,id, result) {
   logger.silly(`Updating job ${id}`)
   try{
     mysql.query("UPDATE AnsibleForms.`jobs` set ? WHERE id=?", [record,id], function (err, res) {
+        if(err) {
+            //lib/logger.error(err)
+            result(err, null);
+        }
+        else{
+            result(null, res);
+        }
+    });
+  }catch(err){
+    result(err, null);
+  }
+};
+Job.setParentId = function (parent_id,id, result) {
+  logger.silly(`Updating job ${id}`)
+  try{
+    mysql.query("UPDATE AnsibleForms.`jobs` set parent_id=? WHERE id=?", [parent_id,id], function (err, res) {
         if(err) {
             //lib/logger.error(err)
             result(err, null);
@@ -114,7 +133,7 @@ Job.createOutput = function (record, result) {
 Job.delete = function(id, result){
   logger.debug(`Deleting job ${id}`)
   try{
-    mysql.query("DELETE FROM AnsibleForms.`jobs` WHERE id = ?", [id], function (err, res) {
+    mysql.query("DELETE FROM AnsibleForms.`jobs` WHERE id = ?;UPDATE AnsibleForms.`jobs` set parent_id = NULL WHERE parent_id = ?", [id,id], function (err, res) {
         if(err) {
             logger.error(err)
             result(err, null);
@@ -129,7 +148,7 @@ Job.delete = function(id, result){
 };
 Job.findAll = function (result) {
     logger.debug("Finding all jobs")
-    var query = "SELECT id,form,target,status,start,end,user,user_type,job_type FROM AnsibleForms.`jobs` ORDER BY id DESC LIMIT 500;"
+    var query = "SELECT id,form,target,status,start,end,user,user_type,job_type,parent_id FROM AnsibleForms.`jobs` ORDER BY id DESC LIMIT 500;"
     try{
       mysql.query(query,null, function (err, res) {
           if(err) {
@@ -170,11 +189,11 @@ Job.findById = function (id,text,result) {
                     var lineoutput=[]
                     var matchfound=false
                     var record = el.output.trim('\r\n').replace(/\r/g,'')
-                    if(!text){
-                      var lines = record.split('\n')
-                      var previousformat=""
-                      lines.forEach((line,i)=>{
-                        matchfound=false
+                    var lines = record.split('\n')
+                    var previousformat=""
+                    lines.forEach((line,i)=>{
+                      matchfound=false
+                      if(!text){
                         if(el.output_type=="stderr"){
                           // mark errors
                           if(line.match(/^\[WARNING\].*/g) || previousformat=="warning"){
@@ -233,7 +252,7 @@ Job.findById = function (id,text,result) {
                             line = `<span class='has-text-${previousformat}'>${line}</span>`
                           }
                           // summary line ?
-                          if(line.match('ok=.*changed.*')){
+                          if(line.match('ok=.*failed.*')){
                             matchfound=true
                             previousformat=""
                             line=line.replace(/(ok=[1-9]+[0-9]*)/g, "<span class='tag is-success'>$1</span>")
@@ -245,8 +264,10 @@ Job.findById = function (id,text,result) {
 
                           lineoutput.push(line)
                         }
-                      })
-                    }
+                      }else{
+                        lineoutput.push(line)
+                      }
+                    })
                     line=lineoutput.join('\n')
                     line.split('\n').forEach(function(el2,i){
                       if(el2!="" && !addedTimestamp && !text){

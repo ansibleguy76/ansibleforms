@@ -132,6 +132,44 @@ function addColumn(table,name,fieldtype,nullable,defaultvalue){
       })
   })
 }
+function addTable(table,sql){
+  var message
+  var db="AnsibleForms"
+  var checksql = `SHOW TABLES FROM ${db} WHERE Tables_in_${db}='${table}'`
+  logger.silly(`adding table '${table}'`)
+  return new Promise((resolve,reject) => {
+      mysql.query(checksql,null,function(checkerr,checkres){
+        if(checkerr){
+          message=`add table '${table}' check failed\n` + checkerr
+          logger.error(checkerr)
+          reject(message)
+        }else{
+          if(checkres.length==0){
+            mysql.query(sql,null,function(err,res){
+              if(err){
+                message=`add table '${table}' failed\n` + err
+                logger.error(message)
+                reject(message)
+              }else{
+                if(res){
+                  message=`added table '${table}'`
+                  logger.warn(message)
+                  resolve(message)
+                }else{
+                  message=`ERROR : Unexpected result from MySql when adding table '${table}'`
+                  reject(message)
+                }
+              }
+            })
+          }else{
+            message=`Table '${table}' is already present`
+            logger.debug(message)
+            resolve(message)
+          }
+        }
+      })
+  })
+}
 function renameColumn(table,name,newname,fieldtype){
   var message
   var db="AnsibleForms"
@@ -210,6 +248,8 @@ function patchAll(){
   var success=[]
   var failed=[]
   var tablePromises=[]
+  var buffer
+  var sql
   // patches to db for v2.1.4
   tablePromises.push(dropIndex("tokens","PRIMARY")) // drop primary ; allow multi devices
   tablePromises.push(addColumn("tokens","timestamp","datetime",false,"current_timestamp()")) // add timestamp for cleanup
@@ -217,7 +257,11 @@ function patchAll(){
   tablePromises.push(addColumn("awx","ca_bundle","text",true,"NULL")) // add for awx certficate validation
   tablePromises.push(addColumn("jobs","job_type","varchar(20)",true,"NULL")) // add for git addition
   tablePromises.push(addColumn("jobs","extravars","mediumtext",true,"NULL")) // add for extravars
-  tablePromises.push(renameColumn("jobs","playbook","target","VARCHAR(250)")) // add for extravars
+  tablePromises.push(addColumn("jobs","parent_id","int(11)",true,"NULL")) // add for multistep  
+  tablePromises.push(renameColumn("jobs","playbook","target","VARCHAR(250)")) // better column name
+  // buffer=fs.readFileSync(`${__dirname}/../db/create_settings_table.sql`)
+  // sql=buffer.toString();
+  // tablePromises.push(addTable("settings",sql)) // add new table for overriding env variables
   return Promise.all(tablePromises.map(reflect))
     .then((results)=>{ // all table results are back
         // separate success from failed
@@ -328,6 +372,5 @@ Schema.create = function (result) {
     }
   });
 };
-
 
 module.exports= Schema;

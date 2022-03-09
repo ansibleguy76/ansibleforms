@@ -31,19 +31,62 @@ function checkAvailability(location, force,publicOnly, callback){
 	var pubLocation = location+'.pub';
   if(publicOnly){
 		logger.silly('checking availability: '+pubLocation);
-		fs.exists(pubLocation, function(pubKeyExists){
-			doForce(false, pubKeyExists);
+
+		fs.access(pubLocation, function(err){
+      if(err){
+        doForce(false,false)
+      }else{
+        doForce(false, true);
+      }
+
 		})
   }else{
     logger.silly('checking availability: '+location);
-  	fs.exists(location, function(keyExists){
+  	fs.access(location, function(err){
+      var keyExists=false
+      if(!err){keyExists=true}
   		logger.silly('checking availability: '+pubLocation);
-  		fs.exists(pubLocation, function(pubKeyExists){
+  		fs.access(pubLocation, function(err){
+        var pubKeyExists
+        if(!err){pubKeyExists=true}
   			doForce(keyExists, pubKeyExists);
   		})
   	});
   }
 }
+function ssh_randomart(location, callback){
+  logger.silly("Getting private key random art from " + location)
+  var output
+  try{
+    fs.accessSync(location)
+  }catch(e){
+    callback("No private key found")
+    return false
+  }
+
+  var keygen = spawn(binPath, [
+    '-lvf',
+    location
+  ])
+
+  keygen.stdout.on('data', function(a){
+    output=a
+  });
+
+  keygen.on('exit',function(){
+    // logger.silly('exit')
+    if(output){
+      callback(undefined,{art:output.toString()});
+    }else{
+      callback("No private key found")
+    }
+  });
+
+  keygen.stderr.on('data',function(a){
+    logger.error('stderr:'+a);
+  });
+
+};
 function ssh_keygen(location, opts, callback){
 	opts || (opts={});
 
@@ -119,6 +162,7 @@ function ssh_keygen(location, opts, callback){
 module.exports = function(opts, callback){
 
   // set defaults
+  opts.randomArt = opts.randomArt ?? false
   opts.publicOnly = opts.publicOnly ?? false
   opts.force = opts.force ?? false
   opts.read = opts.read ?? true
@@ -128,10 +172,14 @@ module.exports = function(opts, callback){
 	opts.size = opts.size || '2048'
 	opts.format = opts.format || 'RFC4716'
 
-	checkAvailability(opts.location, opts.force,opts.publicOnly, function(err){
-		if(err){
-			return callback(err);
-		}
-		ssh_keygen(opts.location, opts, callback);
-	});
+  if(opts.randomArt){
+    ssh_randomart(opts.location, callback);
+  }else{
+  	checkAvailability(opts.location, opts.force,opts.publicOnly, function(err){
+  		if(err){
+  			return callback(err);
+  		}
+      ssh_keygen(opts.location, opts, callback);
+  	})
+  }
 };

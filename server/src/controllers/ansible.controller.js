@@ -64,7 +64,7 @@ exports.do = async function(form,playbook,inv,check,diff,tags,user,creds,ev,res,
              next("error " + err.toString(),null)
            reject(err.toString())
         }else{
-           restResult.message = "succesfully launched playbook"
+           restResult.message = "succesfully launched playbook " + playbook
            restResult.data.output = out
            if(next)
              next(null,out)
@@ -91,8 +91,8 @@ exports.launch = async function(req, res) {
         var form = req.body.formName;
         var playbook = req.body.ansiblePlaybook;
         var inventory = req.body.ansibleInventory
-        var check = req.body.ansibleCheck || req.body.ansibleExtraVars.__check__;
-        var diff = req.body.ansibleDiff || req.body.ansibleExtraVars.__diff__;
+        var check = req.body.ansibleCheck || req.body.ansibleExtraVars?.__check__;
+        var diff = req.body.ansibleDiff || req.body.ansibleExtraVars?.__diff__;
         var tags = req.body.ansibleTags;
         var extraVars = req.body.ansibleExtraVars
         var creds = req.body.credentials

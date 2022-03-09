@@ -72,6 +72,7 @@ CREATE TABLE `jobs` (
   `user_type` varchar(10) DEFAULT NULL,
   `job_type` varchar(20) DEFAULT NULL,
   `extravars` mediumtext DEFAULT NULL,
+  `parent_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8;
 CREATE TABLE `job_output` (

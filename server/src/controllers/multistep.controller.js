@@ -1,5 +1,5 @@
 'use strict';
-const Multi = require('../models/multi.model');
+const Multistep = require('../models/multistep.model');
 var RestResult = require('../models/restResult.model');
 const logger=require("../lib/logger");
 
@@ -23,13 +23,13 @@ exports.launch = async function(req, res) {
           res.json(new RestResult("error","no steps","","steps is a required field"));
         }else{
           logger.info("Launching workflow : " + JSON.stringify(steps))
-          Multi.launch(form,steps,extraVars,user,creds,function(err,job){
+          Multistep.launch(form,steps,extraVars,user,creds,function(err,job){
               if (err){
                 restResult.status = "error"
-                restResult.message = "failed to launch multi " + form.name
+                restResult.message = "failed to launch multistep " + form
                 restResult.data.error = err
               }else{
-                restResult.message = "successfully launch multi " + form.name
+                restResult.message = "successfully launched multistep " + form
                 restResult.data.output = job
               }
               res.json(restResult)

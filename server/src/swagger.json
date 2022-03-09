@@ -11,20 +11,20 @@
   "basePath": "/api/v1",
   "tags": [
     {
-      "name": "auth",
-      "description": "Authenticate to the api"
+      "name": "authentication",
+      "description": "Authentication and refresh tokens"
     },
     {
       "name": "profile",
       "description": "Operations on profile"
     },
     {
-      "name": "ansible",
-      "description": "Operations on ansible and job history"
+      "name": "executions",
+      "description": "Form executions"
     },
     {
-      "name": "awx",
-      "description": "Operations on awx template jobs"
+      "name": "jobs",
+      "description": "Operations about jobs"
     },
     {
       "name": "awx config",
@@ -51,8 +51,8 @@
       "description": "Operations about groups"
     },
     {
-      "name": "tokens",
-      "description": "Operations about tokens"
+      "name": "repositories",
+      "description": "Operations about repositories"
     },
     {
       "name": "version",
@@ -65,10 +65,6 @@
     {
       "name": "query",
       "description": "Invoke an database query"
-    },
-    {
-      "name": "jobs",
-      "description": "Operations about jobs"
     }
   ],
   "schemes": [
@@ -79,7 +75,7 @@
     "/auth/login": {
       "post": {
         "tags": [
-          "auth"
+          "authentication"
         ],
         "security": [
           {
@@ -98,6 +94,44 @@
               "example": {
                 "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoiQWRtaW5pc3RyYXRvciIsInR5cGUiOiJsZGFwIiwicm9sZXMiOlsicHVibGljIiwiYWRtaW4iXX0sImlhdCI6MTYzODc4Nzk3OSwiZXhwIjoxNjM4Nzg5Nzc5fQ.7QA4n3JlPVuatTY7e1dKLQbB4PlW72Jkep_oRe9kevM",
                 "refreshtoken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoiQWRtaW5pc3RyYXRvciIsInR5cGUiOiJsZGFwIiwicm9sZXMiOlsicHVibGljIiwiYWRtaW4iXX0sImlhdCI6MTYzODc4Nzk3OSwiZXhwIjoxNjM4ODc0Mzc5fQ.ku8-MOflGvdMNR7fZkGn28zSDaG4i2QClqOy4P35zYA"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/token": {
+      "post": {
+        "tags": [
+          "authentication"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "form payload",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "refreshtoken": {
+                  "type": "string",
+                  "example": "**** your refresh token ****"
+                }
+              }
+            }
+          }
+        ],
+        "summary": "Refresh tokens",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoiQWRtaW5pc3RyYXRvciIsInR5cGUiOiJsZGFwIiwicm9sZXMiOlsicHVibGljIiwiYWRtaW4iXX0sImlhdCI6MTYzODgwNjM3MCwiZXhwIjoxNjM4ODA4MTcwfQ.Q0dZCAVcVH6r7j_oUTzAoKp7OyR4kYi-NDxPB1v8-UA",
+                "refreshtoken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoiQWRtaW5pc3RyYXRvciIsInR5cGUiOiJsZGFwIiwicm9sZXMiOlsicHVibGljIiwiYWRtaW4iXX0sImlhdCI6MTYzODgwNjM3MCwiZXhwIjoxNjM4ODkyNzcwfQ.ZIMquso87x8FD5XytyWDi-eMXr2OJBUeXfBGMwk5w04"
               }
             }
           }
@@ -206,7 +240,7 @@
     "/ansible/launch": {
       "post": {
         "tags": [
-          "ansible"
+          "executions"
         ],
         "security": [
           {
@@ -231,7 +265,7 @@
                   "type": "string",
                   "example": "create_vm.yaml"
                 },
-                "ansibleExtravars": {
+                "ansibleExtraVars": {
                   "type": "object",
                   "example": {"name":"vm1","datacenter":"dc1","cluster":"cluster1"}
                 },
@@ -269,6 +303,214 @@
                   },
                   "error": ""
                 }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/awx/launch": {
+      "post": {
+        "tags": [
+          "executions"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "form payload",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "formName": {
+                  "type": "string",
+                  "example": "Create VM"
+                },
+                "awxTemplate": {
+                  "type": "string",
+                  "example": "Create VM"
+                },
+                "awxExtraVars": {
+                  "type": "object",
+                  "example": {"name":"vm1","datacenter":"dc1","cluster":"cluster1"}
+                },
+                "awxInventory": {
+                  "type": "string",
+                  "example": "vcenter.domain.local"
+                },
+                "awxTags": {
+                  "type": "string",
+                  "example": "create,vmware"
+                },
+                "credentials": {
+                  "type": "object",
+                  "example": {"vcenterCredentials":"VCENTER"}
+                }
+              }
+            }
+          }
+        ],
+        "summary": "Launch AWX template",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+              	"status": "info",
+              	"message": "successfully launched jobtemplate HelloWorld",
+              	"data": {
+              		"output": {
+              			"id": 176
+              		},
+              		"error": ""
+              	}
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/git/push": {
+      "post": {
+        "tags": [
+          "executions"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "form payload",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "formName": {
+                  "type": "string",
+                  "example": "Create VM"
+                },
+                "gitRepo": {
+                  "type": "object",
+                  "example": {"dir":"vmware","file":"repo.yaml","push":"git push origin main","pull":"git pull origin main"}
+                },
+                "gitExtraVars": {
+                  "type": "object",
+                  "example": {"name":"vm1","datacenter":"dc1","cluster":"cluster1"}
+                }
+              }
+            }
+          }
+        ],
+        "summary": "Push git repository",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+              	"status": "info",
+              	"message": "successfully launched",
+              	"data": {
+              		"output": {
+              			"id": 176
+              		},
+              		"error": ""
+              	}
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/multistep/launch": {
+      "post": {
+        "tags": [
+          "executions"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "form payload",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "formName": {
+                  "type": "string",
+                  "example": "Create VM"
+                },
+                "multiSteps": {
+                  "type": "array",
+                  "example": [
+                    {"type": "git", "repo":{"dir":"vmware","file":"repo.yaml","push":"git push origin main","pull":"git pull origin main"}},
+                    {"type": "awx", "template":"Create Vm", "inventory": "esxhosts", "tags":"vmware,create", "key":"vmwareInfo", "continue":false},
+                    {"type": "ansible", "playbook":"email.yaml","key":"emailInfo", "always":true}
+                  ]
+                },
+                "multistepExtraVars": {
+                  "type": "object",
+                  "example": {"vmwareInfo":{"name":"vm1","datacenter":"dc1","cluster":"cluster1"},"emailInfo":{"mailhost":"smtp.domain.com","to":"admins@domain.com"}}
+                }
+              }
+            }
+          }
+        ],
+        "summary": "Launch Multistep",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+              	"status": "info",
+              	"message": "successfully launched multistep Create VM",
+              	"data": {
+              		"output": {
+              			"id": 176
+              		},
+              		"error": ""
+              	}
               }
             }
           },
@@ -418,7 +660,7 @@
       },
       "delete": {
         "tags": [
-          "ansible"
+          "jobs"
         ],
         "security": [
           {
@@ -498,82 +740,6 @@
                   "output": "",
                   "error": ""
                 }
-              }
-            }
-          },
-          "401": {
-            "description": "unauthorized",
-            "schema": {
-              "type": "string",
-              "example": "Authorize with a valid Bearer access token"
-            }
-          }
-        }
-      }
-    },
-    "/awx/launch": {
-      "post": {
-        "tags": [
-          "awx"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "in": "body",
-            "name": "form payload",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "formName": {
-                  "type": "string",
-                  "example": "Create VM"
-                },
-                "awxTemplate": {
-                  "type": "string",
-                  "example": "Create VM"
-                },
-                "awxExtravars": {
-                  "type": "object",
-                  "example": {"name":"vm1","datacenter":"dc1","cluster":"cluster1"}
-                },
-                "awxInventory": {
-                  "type": "string",
-                  "example": "vcenter.domain.local"
-                },
-                "awxTags": {
-                  "type": "string",
-                  "example": "create,vmware"
-                },
-                "credentials": {
-                  "type": "object",
-                  "example": {"vcenterCredentials":"VCENTER"}
-                }
-              }
-            }
-          }
-        ],
-        "summary": "Launch AWX template",
-        "produces": [
-          "application/json"
-        ],
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "schema": {
-              "type": "object",
-              "example": {
-              	"status": "info",
-              	"message": "successfully launched jobtemplate HelloWorld",
-              	"data": {
-              		"output": {
-              			"id": 176
-              		},
-              		"error": ""
-              	}
               }
             }
           },
@@ -2200,10 +2366,119 @@
         }
       }
     },
-    "/token": {
+    "/repo": {
+      "get": {
+        "tags": [
+          "repositories"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get list of repositories",
+        "produces": [
+          "application/json"
+        ],
+        "parameters":[
+          {
+            "in": "query",
+            "name": "name",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Get specific repo name"
+          },
+          {
+            "in": "query",
+            "name": "text",
+            "type": "boolean",
+            "required": false,
+            "description": "Get plain text output."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "repositories found",
+                "data": {
+                  "output": [
+                    "vmware",
+                    "backup"
+                  ],
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "repositories"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete a repository",
+        "produces": [
+          "application/json"
+        ],
+        "parameters":[
+          {
+            "in": "query",
+            "name": "name",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Repo directory name to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "repository deleted",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
-          "tokens"
+          "repositories"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
         ],
         "parameters": [
           {
@@ -2212,15 +2487,15 @@
             "schema": {
               "type": "object",
               "properties": {
-                "refreshtoken": {
+                "uri": {
                   "type": "string",
-                  "example": "**** your refresh token ****"
+                  "example": "git@github.com:myrepo"
                 }
               }
             }
           }
         ],
-        "summary": "Refresh tokens",
+        "summary": "Create new repository",
         "produces": [
           "application/json"
         ],
@@ -2230,9 +2505,20 @@
             "schema": {
               "type": "object",
               "example": {
-                "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoiQWRtaW5pc3RyYXRvciIsInR5cGUiOiJsZGFwIiwicm9sZXMiOlsicHVibGljIiwiYWRtaW4iXX0sImlhdCI6MTYzODgwNjM3MCwiZXhwIjoxNjM4ODA4MTcwfQ.Q0dZCAVcVH6r7j_oUTzAoKp7OyR4kYi-NDxPB1v8-UA",
-                "refreshtoken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoiQWRtaW5pc3RyYXRvciIsInR5cGUiOiJsZGFwIiwicm9sZXMiOlsicHVibGljIiwiYWRtaW4iXX0sImlhdCI6MTYzODgwNjM3MCwiZXhwIjoxNjM4ODkyNzcwfQ.ZIMquso87x8FD5XytyWDi-eMXr2OJBUeXfBGMwk5w04"
+                "status": "success",
+                "message": "repository created",
+                "data": {
+                  "output": "Cloning into...",
+                  "error": ""
+                }
               }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
             }
           }
         }

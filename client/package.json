@@ -37,7 +37,8 @@
     "@fortawesome/free-solid-svg-icons":"~6",
     "@fortawesome/free-regular-svg-icons":"~6",
     "@fortawesome/free-brands-svg-icons":"~6",
-    "@fortawesome/vue-fontawesome":"2.0.6"
+    "@fortawesome/vue-fontawesome":"2.0.6",
+    "@femessage/log-viewer":"*"
 
   },
   "devDependencies": {

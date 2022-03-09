@@ -24,7 +24,7 @@ exports.updateJob = function(req, res) {
     });
 };
 exports.getJob = function(req, res) {
-    Job.findById(req.params.id,req.query.text||false, function(err, job) {
+    Job.findById(req.params.id,(req.query.text=="true"), function(err, job) {
         if (err){
             res.json(new RestResult("error","failed to find job",null,err))
         }else{

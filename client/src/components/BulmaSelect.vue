@@ -5,7 +5,7 @@
           <div class="select" :class="{'is-danger':hasError}">
             <select v-model="selected" :value="val">
               <option value="-1" disabled>{{ label}}</option>
-              <option v-for="col in list" :key="col[valuecol]" :value="col[valuecol]">{{ col[labelcol] }}</option>
+              <option v-for="col in list" :key="(valuecol)?col[valuecol]:col" :value="(valuecol)?col[valuecol]:col">{{ (labelcol)?col[labelcol]:col }}</option>
             </select>
           </div>
           <span class="icon is-left">
@@ -23,7 +23,7 @@
       value:{type:[String,Number,Array],default:"-1"},
       val:{type:[String,Number],default:"-1"},
       required:{type:Boolean,default:false},
-      icon:{type:String,default:''},
+      icon:{type:[String,Array],default:''},
       label:{type:String,required:true},
       list:{type:Array,required:true},
       valuecol:{type:String,required:true},

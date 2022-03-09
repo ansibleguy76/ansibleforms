@@ -115,9 +115,9 @@ Exec.executeCommand = (cmd,jobid,counter,success,failed,aborted) => {
         if(data!=0){
           jobstatus="failed"
           logger.error(`[${jobid}] Failed with code ${data}`)
-          Exec.endCommand(jobid,counter,"stderr",jobstatus,`${task} failed : `+data,failed)
+          Exec.endCommand(jobid,counter,"stderr",jobstatus,`[ERROR]: ${task} failed with status (${data})`,failed)
         }else{
-          Exec.endCommand(jobid,counter,"stdout",jobstatus,`${task} finished : `+data,success)
+          Exec.endCommand(jobid,counter,"stdout",jobstatus,`ok: [${task} finished] with status (${data})`,success)
         }
 
       }
@@ -144,7 +144,7 @@ Exec.printCommand = (data,type,jobid,counter,next,abort) => {
             abort(jobid,counter)
         }
       }
-      if(next)next(jobid,counter)
+      if(next && !aborted)next(jobid,counter)
     })
 }
 

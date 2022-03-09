@@ -1,22 +1,19 @@
 <template>
   <section v-if="isAdmin" class="section">
     <div class="container">
-      <h1 class="title has-text-info"><font-awesome-icon icon="key" /> Sshkey</h1>
-      <BulmaTextArea v-model="ssh.key" label="Private Key" placeholder="-----BEGIN CERTIFICATE-----" :hasError="$v.ssh.key.$invalid" :errors="[]" />
-      <div class="field">
-        <label class="label">Public Key
-          <span class="is-pulled-right">
-            <!-- refresh auto -->
-            <span
-              @click="clip(ssh.publicKey,true)"
-                class="icon has-text-info is-clickable">
-              <font-awesome-icon icon="copy" />
-            </span>
-          </span>
-        </label>
-        <p class="box is-family-monospace is-text-overflow" v-text="ssh.publicKey" />
+      <h1 class="title has-text-info"><font-awesome-icon icon="key" /> SSH Key</h1>
+      <BulmaTextArea v-if="update" v-model="ssh.key" label="Private Key" placeholder="-----BEGIN RSA PRIVATE KEY-----" :hasError="$v.ssh.key.$invalid" :errors="[]" />
+      <div class="field"  v-if="!update">
+        <label class="label">Private Key</label>
+        <p @click="update=true"  class="box is-clickable is-family-monospace enable-line-break is-size-7">{{ ssh.art }}</p>
       </div>
-      <BulmaButton icon="save" label="Update Ssh" @click="updateSsh()"></BulmaButton>
+      <div class="field">
+        <label class="label">Public Key</label>
+        <p class="box  is-clickable  is-family-monospace is-text-overflow is-size-7" @click="clip(ssh.publicKey,true)">
+          {{ ssh.publicKey }}
+        </p>
+      </div>
+      <BulmaButton v-if="update" icon="save" label="Update Ssh" @click="updateSsh()"></BulmaButton>
     </div>
   </section>
 </template>
@@ -29,7 +26,7 @@
   import BulmaTextArea from './../components/BulmaTextArea.vue'
   import TokenStorage from './../lib/TokenStorage'
   import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
-
+  const privatekey = helpers.regex("privatekey",/^-----BEGIN RSA PRIVATE KEY-----([^-!]+)-----END RSA PRIVATE KEY-----\s*$/gm)
   Vue.use(Vuelidate)
 
   export default{
@@ -41,8 +38,10 @@
     components:{BulmaButton,BulmaTextArea},
     data(){
       return  {
+          update:false,
           ssh:{
             key:"",
+            art:"",
             publicKey:""
           }
         }
@@ -77,6 +76,8 @@
                 ref.$toast.error(result.data.message + ", " + result.data.data.error);
               }else{
                 ref.$toast.success("Sshkey is updated");
+                ref.ssh.key="";
+                ref.update=false;
                 ref.loadSsh();
               }
             }),function(error){
@@ -90,7 +91,8 @@
     validations: {
       ssh:{
         key: {
-          required
+          required,
+          privatekey
         }
       }
     },
@@ -111,5 +113,8 @@
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+  }
+  .enable-line-break {
+      white-space: pre-wrap;
   }
 </style>

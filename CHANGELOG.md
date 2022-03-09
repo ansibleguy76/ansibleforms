@@ -14,11 +14,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Added property `key` : allow extravars to be specific key
 -   Added extravars to joblog
 -   Added awx to joblog
+-   Added new type : multistep
+-   Added LogViewer
+-   Added SSH key autogen + update
+-   Added Git repo gui
 
 ### Fixed
 
 -   Allow local expressions for query
 -   Wrong timezone timestamp in joblog
+-   Referencing (placeholder) multi select will now return array
 
 ### Removed
 

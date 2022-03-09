@@ -74,27 +74,16 @@ Ssh.find = function (result) {
   var pubkey=''
   try{
     logger.debug("Reading sshkey key")
-    keygen({
-      randomArt: true,
-      location: location
-    }, (err, out)=>{
-        if(err){
-          logger.error(err)
-          result(err)
-          return false
-        }else{
-          // logger.silly("Private key found")
-          try{
-            // logger.silly("Reading public key")
-            pubkey=fs.readFileSync(pubkeylocation).toString()
-            // logger.silly("Public key found")
-          }catch(e){
-            //
-          }
-          result(null,{art:out.art,publicKey:pubkey})
-        }
-    });
-
+    key=fs.readFileSync(location).toString()
+    // logger.silly("Private key found")
+    try{
+      // logger.silly("Reading public key")
+      pubkey=fs.readFileSync(pubkeylocation).toString()
+      // logger.silly("Public key found")
+    }catch(e){
+      //
+    }
+    result(null,{key:key,publicKey:pubkey})
   }catch(e){
     logger.error(e)
     result(e)

@@ -925,7 +925,7 @@
                 fieldvalue=JSON.stringify(ref.form[foundfield])
               }else{
                 // other fields, grab a valid value
-                fieldvalue = ref.getFieldValue(ref.form[foundfield],column,false);// get value of xxx
+                fieldvalue = ref.getFieldValue(ref.form[foundfield],column,true);// get value of xxx
               }
               // get dynamic field status
               if(foundfield in ref.dynamicFieldStatus){
@@ -1548,7 +1548,7 @@
                 })
             }
             // git
-            else if(this.currentForm.type=="multi"){
+            else if(this.currentForm.type=="multistep"){
               postdata.multiExtraVars = this.formdata
               postdata.formName = this.currentForm.name;
               postdata.multiSteps = this.currentForm.steps;
@@ -1560,7 +1560,7 @@
                 })
               this.jobResult.message= "Pushing to git";
               this.jobResult.status="info";
-              axios.post("/api/v1/multi/launch",postdata,TokenStorage.getAuthentication())
+              axios.post("/api/v1/multistep/launch",postdata,TokenStorage.getAuthentication())
                 .then((result)=>{
                   if(result){
                     this.jobResult=result.data;
@@ -1569,7 +1569,7 @@
                     }
                     // get the jobid
                     var jobid =  this.jobResult.data.output.id
-                    ref.JobId=jobid
+                    ref.jobId=jobid
                     // don't show the whole json part
                     this.jobResult.data.output = ""
                     // wait for 2 seconds, and get the output of the job
@@ -1641,7 +1641,7 @@
 
       // set as ready
       // if our type is git, we need to first pull git
-      if(this.currentForm.type!="git" && this.currentForm.type!="multi"){
+      if(this.currentForm.type!="git" && this.currentForm.type!="multistep"){
         this.pretasksFinished=true
         // start dynamic field loop (= infinite)
         this.startDynamicFieldsLoop()
@@ -1650,7 +1650,7 @@
 
         if(this.currentForm.type=="git"){
             gitpulls.push(this.pullGit(this.currentForm.repo))
-        }else if(this.currentForm.type=="multi"){
+        }else if(this.currentForm.type=="multistep"){
           this.currentForm.steps.forEach((step, i) => {
             if(step.type=="git")
               gitpulls.push(this.pullGit(step.repo))
