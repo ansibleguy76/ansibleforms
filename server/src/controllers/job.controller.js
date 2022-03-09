@@ -37,6 +37,10 @@ exports.getJob = function(req, res) {
                 restResult.status = "success"
                 restResult.message = "job ran successfully"
               }
+              if(jobStatus=="warning"){
+                restResult.status = "success"
+                restResult.message = "job ran partially successful"
+              }
               if(jobStatus=="failed"){
                 restResult.status = "error"
                 restResult.message = "job failed"
