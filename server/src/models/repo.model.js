@@ -15,7 +15,7 @@ Repo.color = function(t){
 
 Repo.findAll = function (callback) {
   try{
-    var directory = config.repoDir
+    var directory = config.repoPath
     var repos
     try{
       fs.accessSync(directory)
@@ -41,7 +41,7 @@ Repo.findAll = function (callback) {
 Repo.delete = function (name,callback) {
   try{
     logger.info("Deleting repository " + name)
-    var directory = config.repoDir
+    var directory = config.repoPath
     try{
       fs.accessSync(path.join(directory,name))
     }catch(e){
@@ -57,7 +57,7 @@ Repo.delete = function (name,callback) {
 }
 Repo.findByName = function (name,text,callback) {
   try{
-    var directory = config.repoDir
+    var directory = config.repoPath
     directory=path.join(directory,name)
     try{
       fs.accessSync(directory)
@@ -105,7 +105,7 @@ Repo.findByName = function (name,text,callback) {
 Repo.create = function (repo, callback) {
   try{
     logger.info("Creating repository " + repo)
-    var directory = config.repoDir
+    var directory = config.repoPath
     try{
       fs.accessSync(directory)
     }catch(e){

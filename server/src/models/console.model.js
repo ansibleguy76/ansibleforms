@@ -4,8 +4,8 @@ const config=require("../../config/app.config")
 const fs=require("fs")
 const path=require("path")
 const keygen = require('../lib/ssh-keygen');
-const location = path.join(config.homeDir,'/.ssh/id_rsa');
-const pubkeylocation = path.join(config.homeDir,'/.ssh/id_rsa.pub');
+const location = path.join(config.homePath,'/.ssh/id_rsa');
+const pubkeylocation = path.join(config.homePath,'/.ssh/id_rsa.pub');
 
 // constructor for ssh config
 var Ssh=function(ssh){

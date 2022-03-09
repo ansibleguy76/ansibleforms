@@ -30,13 +30,13 @@ Git.push = function (form,repo,extraVars,user, result,success,failed) {
         // save the extravars as file - we do this in sync, should be fast
         Exec.printCommand(`TASK [Writing YAML to local repo] ${'*'.repeat(72-26)}`,"stdout",jobid,++counter)
         var yaml = YAML.stringify(JSON.parse(extraVars))
-        fs.writeFileSync(path.join(config.repoDir,repo.dir,repo.file),yaml)
+        fs.writeFileSync(path.join(config.repoPath,repo.dir,repo.file),yaml)
         // log the save
         Exec.printCommand(`ok: [Extravars Yaml file created : ${repo.file}]`,"stdout",jobid,++counter)
         Exec.printCommand(`TASK [Committing changes] ${'*'.repeat(72-18)}`,"stdout",jobid,++counter)
         // start commit
         var command = `git commit --allow-empty -am "update from ansibleforms" && ${repo.push}`
-        var directory = path.join(config.repoDir,repo.dir)
+        var directory = path.join(config.repoPath,repo.dir)
         Exec.executeCommand({directory:directory,command:command,description:"Pushing to git",task:"Git push"},jobid,counter,(jobid,counter)=>{
           if(success)success()
         },(jobid,counter)=>{
@@ -60,7 +60,7 @@ Git.push = function (form,repo,extraVars,user, result,success,failed) {
 Git.pull = function (repo, result) {
 
     var command = repo.pull
-    var directory = path.join(config.repoDir,repo.dir)
+    var directory = path.join(config.repoPath,repo.dir)
     Exec.executeSilentCommand({directory:directory,command:command,description:"Pulling from git"},result)
 
 };
