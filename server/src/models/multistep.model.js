@@ -193,7 +193,7 @@ Multi.launch = async function (form,steps,extraVars,user,creds, result) {
               Exec.endCommand(jobid,++counter,"stdout","warning","[WARNING]: Finished multistep with warnings")
             }else{
               // mark as full success
-              Exec.endCommand(jobid,++counter,"stdout","success","ok: Finished multistep successfully")
+              Exec.endCommand(jobid,++counter,"stdout","success","ok: [Finished multistep successfully]")
             }
 
           }else{  // no multistep success
