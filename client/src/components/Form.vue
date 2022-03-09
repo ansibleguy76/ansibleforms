@@ -1,6 +1,7 @@
 <template>
   <section class="section has-background-light">
     <!-- warnings pane -->
+    <BulmaPageloader v-if="!formIsReady">{{ loadMessage }}</BulmaPageloader>
     <BulmaQuickView v-if="warnings && showWarnings" title="Form warnings" footer="" @close="showWarnings=false">
         <p v-for="w,i in warnings" :key="'warning'+i" class="mb-3" v-html="w"></p>
     </BulmaQuickView>
@@ -45,7 +46,7 @@
           </transition>
           <!-- groups -->
           <div :key="group" v-for="group in fieldgroups" class="mt-4">
-            <div :class="{'box':checkGroupDependencies(group)}">
+            <div :class="getGroupClass(group)">
               <!-- group title -->
               <h3 class="title is-3" v-if="checkGroupDependencies(group)">{{group}}</h3>
                 <!-- field loop -->
@@ -82,7 +83,7 @@
                           </span>
                           <!-- expression edit buttons -->
                           <span
-                            class="icon is-clickable has-text-success"
+                            class="icon is-clickable has-text-warning"
                             @click="setExpressionFieldEditable(field.name,true)"
                             v-if="field.editable && field.type=='expression' && !fieldOptions[field.name].editable && !fieldOptions[field.name].viewable"
                           >
@@ -309,38 +310,30 @@
           <!-- job buttons -->
           <hr v-if="!!currentForm" />
           <!-- play button -->
-          <button v-if="!!currentForm && !ansibleResult.message" class="button is-primary is-fullwidth" @click="ansibleResult.message='initializing'"><span class="icon"><font-awesome-icon icon="play" /></span><span>Run</span></button>
+          <button v-if="!!currentForm && !jobResult.message" class="button is-primary is-fullwidth" @click="jobResult.message='initializing'"><span class="icon"><font-awesome-icon icon="play" /></span><span>Run</span></button>
           <div class="columns">
             <!-- progress/close button -->
             <div class="column">
-              <button v-if="!!ansibleResult.message" class="button is-fullwidth has-text-light" @click="resetResult()" :class="{ 'has-background-success' : ansibleResult.status=='success', 'has-background-warning' : ansibleResult.status=='warning', 'has-background-danger' : ansibleResult.status=='error','has-background-info cursor-progress' : ansibleResult.status=='info' }">
-                <span class="icon" v-if="ansibleResult.status=='info'"><font-awesome-icon icon="spinner" spin /></span>
-                <span class="icon" v-if="ansibleResult.status!='info'"><font-awesome-icon icon="times" /></span>
-                <span>{{ ansibleResult.message }}</span>
+              <button v-if="!!jobResult.message" class="button is-fullwidth has-text-light" @click="resetResult()" :class="{ 'has-background-success' : jobResult.status=='success', 'has-background-warning' : jobResult.status=='warning', 'has-background-danger' : jobResult.status=='error','has-background-info cursor-progress' : jobResult.status=='info' }">
+                <span class="icon" v-if="jobResult.status=='info'"><font-awesome-icon icon="spinner" spin /></span>
+                <span class="icon" v-if="jobResult.status!='info'"><font-awesome-icon icon="times" /></span>
+                <span>{{ jobResult.message }}</span>
               </button>
             </div>
             <!-- abort ansible button -->
-            <div class="column" v-if="currentForm.type=='ansible' && ansibleResult.status=='info' && !abortTriggered">
-              <button  class="button is-fullwidth has-background-warning" @click="abortAnsibleJob(ansibleJobId)">
-                <span class="icon"><font-awesome-icon icon="times" /></span>
-                <span>Abort Job</span>
-              </button>
-            </div>
-            <!-- abort awx button -->
-            <div class="column" v-if="currentForm.type=='awx' && ansibleResult.status=='info' && !abortTriggered">
-              <button  class="button is-fullwidth has-background-warning" @click="abortAwxJob(awxJobId)">
+            <div class="column" v-if="jobResult.status=='info' && !abortTriggered">
+              <button  class="button is-fullwidth has-background-warning" @click="abortJob(jobId)">
                 <span class="icon"><font-awesome-icon icon="times" /></span>
                 <span>Abort Job</span>
               </button>
             </div>
           </div>
           <!-- output result -->
-          <div v-if="!!ansibleResult.data.output" class="box mt-3">
-            <pre v-if="currentForm.type=='ansible'" v-html="ansibleResult.data.output"></pre>
-            <pre v-if="currentForm.type=='awx'" v-html="ansibleResult.data.output"></pre>
+          <div v-if="!!jobResult.data.output" class="box mt-3">
+            <pre v-html="jobResult.data.output"></pre>
           </div>
           <!-- close output button -->
-          <button v-if="!!ansibleResult.data.output" class="button has-background-danger has-text-light" @click="resetResult()">
+          <button v-if="!!jobResult.data.output" class="button has-text-light" :class="{ 'has-background-success' : jobResult.status=='success', 'has-background-warning' : jobResult.status=='warning', 'has-background-danger' : jobResult.status=='error','has-background-info' : jobResult.status=='info'}" @click="resetResult()">
             <span class="icon"><font-awesome-icon icon="times" /></span>
             <span>Close output</span>
           </button>
@@ -379,6 +372,7 @@
   import VueJsonPretty from 'vue-json-pretty';
   import BulmaAdvancedSelect from './BulmaAdvancedSelect.vue'
   import BulmaQuickView from './BulmaQuickView.vue'
+  import BulmaPageloader from './BulmaPageloader.vue'
   import BulmaCheckRadio from './BulmaCheckRadio.vue'
   import BulmaEditTable from './BulmaEditTable.vue'
 
@@ -405,7 +399,7 @@
 
   export default{
     name:"Form",
-    components:{VueJsonPretty,BulmaAdvancedSelect,BulmaEditTable,BulmaCheckRadio,BulmaQuickView},
+    components:{VueJsonPretty,BulmaAdvancedSelect,BulmaEditTable,BulmaCheckRadio,BulmaQuickView,BulmaPageloader},
     props:{
       currentForm:{type:Object},
       constants:{type:Object},
@@ -416,7 +410,7 @@
           formdata:{},          // the eventual object sent to the api in the correct hierarchy
           interval:undefined,   // interval how fast fields need to be re-evaluated and refreshed
           showExtraVars: false, // flag to show/hide extravars
-          ansibleResult:{       // holds the output of an execution
+          jobResult:{       // holds the output of an execution
             status:"",
             message:"",
             data:{
@@ -436,11 +430,12 @@
           visibility:{},            // holds which fields are visiable or not
           canSubmit:false,          // flag must be true to enable submit - allows to finish background queries - has a watchdog in case not possible
           validationsLoaded:false,  // ready flag if field validations are ready, we don't show the form otherwise
+          pretasksFinished:false,   // ready flag for form pre tasks (git => git pull)
+          loadMessage:"Loading form...",
           timeout:undefined,        // determines how long we should show the result of run
           showHelp:false,           // flag to show/hide form help
           showHidden:false,         // flag to show/hide hidden field / = debug mode
-          ansibleJobId:undefined,   // holds the current ansible jobid
-          awxJobId:undefined,       // holds the current awx jobid
+          jobId:undefined,          // holds the current jobid
           abortTriggered:false      // flag abort is triggered
         }
     },
@@ -525,12 +520,13 @@
       });
       // flag validations are ready
       Vue.set(this,"validationsLoaded",true)
+
       return obj
     },
     computed: {
       // form loaded and validation ready
       formIsReady(){
-        return this.validationsLoaded && this.currentForm
+        return this.validationsLoaded && this.currentForm && this.pretasksFinished
       },
       // computed list of the field-groups (to generate fieldform-sections)
       fieldgroups(){
@@ -659,6 +655,19 @@
             result=true
           }
         });
+        return result
+      },
+      // get group class
+      getGroupClass(group){
+        var result=[]
+        if(this.checkGroupDependencies(group)){
+          result.push('box')
+          if(group && this.currentForm.fieldGroupClasses){
+            var bg = this.currentForm.fieldGroupClasses[group]
+            if(bg)
+              result.push(bg)
+          }
+        }
         return result
       },
       // reset value of field - only for expression/query
@@ -916,7 +925,7 @@
                 fieldvalue=JSON.stringify(ref.form[foundfield])
               }else{
                 // other fields, grab a valid value
-                fieldvalue = ref.getFieldValue(ref.form[foundfield],column,false);// get value of xxx
+                fieldvalue = ref.getFieldValue(ref.form[foundfield],column,true);// get value of xxx
               }
               // get dynamic field status
               if(foundfield in ref.dynamicFieldStatus){
@@ -1009,7 +1018,9 @@
                         var result
                         try{
                           result=eval(placeholderCheck.value)
-                          Vue.set(ref.form, item.name, result);
+                          if(item.type=="expression") Vue.set(ref.form, item.name, result);
+                          if(item.type=="query") Vue.set(ref.queryresults, item.name, [].concat(result));
+                          if(item.type=="table") Vue.set(ref.form, item.name, [].concat(result));
                           if(placeholderCheck.hasPlaceholders){                 // if placeholders were found we set this a variable dynamic field.
                             // set flag as viable variable query
                             // console.log("Expression found with variables")
@@ -1180,24 +1191,24 @@
             }
             watchdog=0
           }
-          if(ref.ansibleResult.message=="initializing"){ // has a request been made to execute ?
+          if(ref.jobResult.message=="initializing"){ // has a request been made to execute ?
             // ref.$toast.info("Requesting execution")
             if(ref.validateForm()){  // form is valid ?
-              ref.ansibleResult.message="stabilizing"
+              ref.jobResult.message="stabilizing"
               // ref.$toast.info("Waiting for form to stabilize")
               watchdog=0
             }else{
-              ref.ansibleResult.message="" // reset status, form not valid
+              ref.jobResult.message="" // reset status, form not valid
             }
           }
-          if(ref.ansibleResult.message=="stabilizing"){ // are we waiting to execute ?
+          if(ref.jobResult.message=="stabilizing"){ // are we waiting to execute ?
             if(ref.canSubmit){
-              ref.ansibleResult.message="triggering execution"
+              ref.jobResult.message="triggering execution"
               ref.executeForm()
             }else{
               // continue to stabilize
               if(watchdog>15){  // is it taking too long ?
-                ref.ansibleResult.message=""   // stop and reset
+                ref.jobResult.message=""   // stop and reset
                 ref.$toast.warning("It is taking too long to evaluate all fields before run")
               }else{
                 // ref.$toast.info("Stabalizing form...")
@@ -1213,7 +1224,7 @@
       },
       // reset form status
       resetResult(){
-        this.ansibleResult={
+        this.jobResult={
           status:"",
           message:"",
           data:{
@@ -1239,110 +1250,47 @@
             })
           }
       },
-      // get awx job output
-      getAwxJob(id,final){
-        var ref = this;
-        // console.log("=============================")
-        // console.log("getting awx job")
-        axios.get("/api/v1/awx/job/" + id,TokenStorage.getAuthentication())
-          .then((result)=>{
-              // if we have decent data
-              // console.log("job result - " + JSON.stringify(result))
-              if(result.data.data!==undefined){
-                // import the data if output returned
-                if(result.data.data.output!=""){
-                  this.ansibleResult=result.data;
-                }else{
-                  // else, just import message & status
-                  this.ansibleResult.status = result.data.status
-                  this.ansibleResult.message = result.data.message
-                }
-                // if not final status, keep checking after 2s
-                if(this.ansibleResult.status!="success" && this.ansibleResult.status!="error" && this.ansibleResult.status!="warning"){
-                  // this.$toast.info(result.data.message)
-                  setTimeout(function(){ ref.getAwxJob(id) }, 2000);
-                }else{
-                  if(!final){
-                    // 1 final last call for output
-                    setTimeout(function(){ ref.getAwxJob(id,true) }, 2000);
-                  }else{
-                    this.abortTriggered=false
-                    if(this.ansibleResult.status=="success"){
-                      this.$toast.success(result.data.message)
-                    }else if(this.ansibleResult.status=="warning"){
-                      this.$toast.warning(result.data.message)
-                    }else{
-                      this.$toast.error(result.data.message)
-                    }
-                    clearTimeout(this.timeout)
-                  }
-
-                }
-              }else{
-                // no data ? check again after 2s
-                // console.log("geen data")
-                setTimeout(function(){ ref.getAwxJob(id) }, 2000);
-              }
-          })
-          .catch(function(err){
-            console.log("error getting awx job " + err)
-            ref.$toast.error("Failed to get awx job");
-            if(err.response.status!=401){
-              ref.ansibleResult.message="Error in axios call to get awx job\n\n" + err
-              ref.ansibleResult.status="error";
-            }
-          })
-      },
       // trigger an ansible job abort
-      abortAnsibleJob(id){
+      abortJob(id){
         var ref=this
         this.$toast.warning("Aborting job " + id);
-        axios.post("/api/v1/ansible/job/" + id + "/abort",{},TokenStorage.getAuthentication())
-          .then((result)=>{
-            ref.abortTriggered=true
-          })
-      },
-      // trigger an aw job abort
-      abortAwxJob(id){
-        var ref=this
-        this.$toast.warning("Aborting job " + id);
-        axios.post("/api/v1/awx/job/" + id + "/abort",{},TokenStorage.getAuthentication())
+        axios.post("/api/v1/job/" + id + "/abort",{},TokenStorage.getAuthentication())
           .then((result)=>{
             ref.abortTriggered=true
           })
       },
       // get ansible job output
-      getAnsibleJob(id,final){
+      getJob(id,final){
         var ref = this;
         // console.log("=============================")
         // console.log("getting awx job")
-        axios.get("/api/v1/ansible/job/" + id,TokenStorage.getAuthentication())
+        axios.get("/api/v1/job/" + id,TokenStorage.getAuthentication())
           .then((result)=>{
               // if we have decent data
               // console.log("job result - " + JSON.stringify(result))
               if(result.data.data!==undefined){
                 // import the data if output returned
                 if(result.data.data.output!=""){
-                  this.ansibleResult=result.data;
+                  this.jobResult=result.data;
                 }else{
                   // else, just import message & status
-                  this.ansibleResult.status = result.data.status
-                  this.ansibleResult.message = result.data.message
+                  this.jobResult.status = result.data.status
+                  this.jobResult.message = result.data.message
                 }
                 // if not final status, keep checking after 2s
-                if(this.ansibleResult.status!="success" && this.ansibleResult.status!="error" && this.ansibleResult.status!="warning"){
+                if(this.jobResult.status!="success" && this.jobResult.status!="error" && this.jobResult.status!="warning"){
                   // this.$toast.info(result.data.message)
-                  setTimeout(function(){ ref.getAnsibleJob(id) }, 2000);
+                  setTimeout(function(){ ref.getJob(id) }, 2000);
                 }else{
                   if(!final){
                     // 1 final last call for output
-                    setTimeout(function(){ ref.getAnsibleJob(id,true) }, 2000);
+                    setTimeout(function(){ ref.getJob(id,true) }, 2000);
                   }else{
                     // if final, remove output after 15s
                     this.abortTriggered=false
-                    if(this.ansibleResult.status=="success"){
+                    if(this.jobResult.status=="success"){
                       this.$toast.success(result.data.message)
-                    }else if(this.ansibleResult.status=="warning"){
+                    }else if(this.jobResult.status=="warning"){
                       this.$toast.warning(result.data.message)
                     }else{
                       this.$toast.error(result.data.message)
@@ -1355,15 +1303,15 @@
               }else{
                 // no data ? check again after 2s
                 // console.log("geen data")
-                setTimeout(function(){ ref.getAnsibleJob(id) }, 2000);
+                setTimeout(function(){ ref.getJob(id) }, 2000);
               }
           })
           .catch(function(err){
             console.log("error getting ansible job " + err)
             ref.$toast.error("Failed to get ansible job");
             if(err.response.status!=401){
-              ref.ansibleResult.message="Error in axios call to get ansible job\n\n" + err
-              ref.ansibleResult.status="error";
+              ref.jobResult.message="Error in axios call to get ansible job\n\n" + err
+              ref.jobResult.status="error";
             }
           })
       },
@@ -1469,7 +1417,11 @@
           this.generateJsonOutput()
           // local ansible
           if(this.currentForm.type=="ansible"){
-            postdata.ansibleExtraVars = this.formdata
+            if(this.currentForm.key && this.formdata[this.currentForm.key]){
+              postdata.ansibleExtraVars = this.formdata[this.currentForm.key]
+            }else{
+              postdata.ansibleExtraVars = this.formdata
+            }
             postdata.formName = this.currentForm.name;
             postdata.ansibleInventory = this.currentForm.inventory;
             postdata.ansibleCheck = this.currentForm.check;
@@ -1482,22 +1434,22 @@
               .forEach(f => {
                 postdata.credentials[f.name]=this.formdata[f.name]
               })
-            this.ansibleResult.message= "Connecting with ansible ";
-            this.ansibleResult.status="info";
+            this.jobResult.message= "Connecting with ansible ";
+            this.jobResult.status="info";
             axios.post("/api/v1/ansible/launch",postdata,TokenStorage.getAuthentication())
               .then((result)=>{
                 if(result){
-                  this.ansibleResult=result.data;
+                  this.jobResult=result.data;
                   if(result.data.data.error!=""){
                     ref.$toast.error(result.data.data.error)
                   }
                   // get the jobid
-                  var jobid =  this.ansibleResult.data.output.id
-                  ref.ansibleJobId=jobid
+                  var jobid =  this.jobResult.data.output.id
+                  ref.jobId=jobid
                   // don't show the whole json part
-                  this.ansibleResult.data.output = ""
+                  this.jobResult.data.output = ""
                   // wait for 2 seconds, and get the output of the job
-                  setTimeout(function(){ ref.getAnsibleJob(jobid) }, 2000);
+                  setTimeout(function(){ ref.getJob(jobid) }, 2000);
                 }else{
                   ref.$toast.error("Failed to invoke ansible")
                   ref.resetResult()
@@ -1512,14 +1464,19 @@
 
           // remote awx
           }else if(this.currentForm.type=="awx"){
-            postdata.awxExtraVars = this.formdata
+            if(this.currentForm.key && this.formdata[this.currentForm.key]){
+              postdata.awxExtraVars = this.formdata[this.currentForm.key]
+            }else{
+              postdata.awxExtraVars = this.formdata
+            }
+            postdata.formName = this.currentForm.name;
             postdata.awxInventory = this.currentForm.inventory;
             postdata.awxCheck = this.currentForm.check;
             postdata.awxDiff = this.currentForm.diff;
             postdata.awxTemplate = this.currentForm.template;
             postdata.awxTags = this.currentForm.tags;
-            this.ansibleResult.message= "Connecting with awx ";
-            this.ansibleResult.status="info";
+            this.jobResult.message= "Connecting with awx ";
+            this.jobResult.status="info";
             postdata.credentials = {}
             this.currentForm.fields
               .filter(f => f.asCredential==true)
@@ -1529,17 +1486,17 @@
             axios.post("/api/v1/awx/launch/",postdata,TokenStorage.getAuthentication())
               .then((result)=>{
                   if(result){
-                    this.ansibleResult=result.data;
+                    this.jobResult=result.data;
                     if(result.data.data.error!=""){
                       ref.$toast.error(result.data.data.error)
                     }else{
                       // get the jobid
-                      var jobid =  this.ansibleResult.data.output.id
-                      ref.awxJobId=jobid
+                      var jobid =  this.jobResult.data.output.id
+                      ref.jobId=jobid
                       // don't show the whole json part
-                      this.ansibleResult.data.output = ""
+                      this.jobResult.data.output = ""
                       // wait for 2 seconds, and get the output of the job
-                      setTimeout(function(){ ref.getAwxJob(jobid) }, 2000);
+                      setTimeout(function(){ ref.getJob(jobid) }, 2000);
                     }
                   }else{
                     ref.$toast.error("Failed to invoke AWX")
@@ -1553,7 +1510,88 @@
                 }
               })
             }
+            // git
+            else if(this.currentForm.type=="git"){
+              if(this.currentForm.key && this.formdata[this.currentForm.key]){
+                postdata.gitExtraVars = this.formdata[this.currentForm.key]
+              }else{
+                postdata.gitExtraVars = this.formdata
+              }
+              postdata.formName = this.currentForm.name;
+              postdata.gitRepo = this.currentForm.repo;
+              this.jobResult.message= "Pushing to git";
+              this.jobResult.status="info";
+              axios.post("/api/v1/git/push",postdata,TokenStorage.getAuthentication())
+                .then((result)=>{
+                  if(result){
+                    this.jobResult=result.data;
+                    if(result.data.data.error!=""){
+                      ref.$toast.error(result.data.data.error)
+                    }
+                    // get the jobid
+                    var jobid =  this.jobResult.data.output.id
+                    ref.JobId=jobid
+                    // don't show the whole json part
+                    this.jobResult.data.output = ""
+                    // wait for 2 seconds, and get the output of the job
+                    setTimeout(function(){ ref.getJob(jobid) }, 2000);
+                  }else{
+                    ref.$toast.error("Failed to push to git")
+                    ref.resetResult()
+                  }
+                })
+                .catch(function(err){
+                  ref.$toast.error("Failed to push to git " + err)
+                  if(err.response.status!=401){
+                    ref.resetResult()
+                  }
+                })
+            }
+            // git
+            else if(this.currentForm.type=="multistep"){
+              postdata.multiExtraVars = this.formdata
+              postdata.formName = this.currentForm.name;
+              postdata.multiSteps = this.currentForm.steps;
+              postdata.credentials = {}
+              this.currentForm.fields
+                .filter(f => f.asCredential==true)
+                .forEach(f => {
+                  postdata.credentials[f.name]=this.formdata[f.name]
+                })
+              this.jobResult.message= "Pushing to git";
+              this.jobResult.status="info";
+              axios.post("/api/v1/multistep/launch",postdata,TokenStorage.getAuthentication())
+                .then((result)=>{
+                  if(result){
+                    this.jobResult=result.data;
+                    if(result.data.data.error!=""){
+                      ref.$toast.error(result.data.data.error)
+                    }
+                    // get the jobid
+                    var jobid =  this.jobResult.data.output.id
+                    ref.jobId=jobid
+                    // don't show the whole json part
+                    this.jobResult.data.output = ""
+                    // wait for 2 seconds, and get the output of the job
+                    setTimeout(function(){ ref.getJob(jobid) }, 2000);
+                  }else{
+                    ref.$toast.error("Failed to push to git")
+                    ref.resetResult()
+                  }
+                })
+                .catch(function(err){
+                  ref.$toast.error("Failed to push to git " + err)
+                  if(err.response.status!=401){
+                    ref.resetResult()
+                  }
+                })
+            }
          }
+      },
+      pullGit(repo){
+        var postdata={}
+        postdata.gitRepo = repo;
+        return axios.post("/api/v1/git/pull",postdata,TokenStorage.getAuthentication())
       }
     },
     // start form app
@@ -1600,8 +1638,56 @@
       // find all variable dependencies (in both ways)
       this.findVariableDependencies()
       this.findVariableDependentOf()
-      // start dynamic field loop (= infinite)
-      this.startDynamicFieldsLoop()
+
+      // set as ready
+      // if our type is git, we need to first pull git
+      if(this.currentForm.type!="git" && this.currentForm.type!="multistep"){
+        this.pretasksFinished=true
+        // start dynamic field loop (= infinite)
+        this.startDynamicFieldsLoop()
+      }else{
+        var gitpulls=[]
+
+        if(this.currentForm.type=="git"){
+            gitpulls.push(this.pullGit(this.currentForm.repo))
+        }else if(this.currentForm.type=="multistep"){
+          this.currentForm.steps.forEach((step, i) => {
+            if(step.type=="git")
+              gitpulls.push(this.pullGit(step.repo))
+          });
+        }
+        // wait for all git pulls
+        Promise.all(gitpulls)
+        .then(results=>{
+          var status=true
+          results.forEach((result, i) => {
+            if(result){
+
+              if(result.data.status=="error"){
+                ref.$toast.error(result.data.message)
+                status=false
+              }
+
+            }else{
+              ref.$toast.error("Failed to pull from git")
+              status=false
+            }
+
+          });
+          if(status){
+            ref.$toast.success("Git was pulled")
+          }
+          ref.pretasksFinished=true
+          // start dynamic field loop (= infinite)
+          ref.startDynamicFieldsLoop()
+        })
+        .catch(function(err){
+          ref.$toast.error("Failed to pull from git " + err)
+          ref.pretasksFinished=true
+          // start dynamic field loop (= infinite)
+          ref.startDynamicFieldsLoop()
+        })
+      }
     },
     // before exit, we stop the interval, as it would not stop otherwise
     beforeDestroy(){

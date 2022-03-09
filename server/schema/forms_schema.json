@@ -83,7 +83,9 @@
               "type": {
                 "enum": ["ansible"]
               },
-              "template": {"not":{}}
+              "template": {"not":{}},
+              "repo": {"not":{}},
+              "steps": {"not":{}}
             },
             "required": ["playbook"]
           },
@@ -92,9 +94,41 @@
               "type": {
                 "enum": ["awx"]
               },
-              "playbook": {"not":{}}
+              "playbook": {"not":{}},
+              "repo": {"not":{}},
+              "steps": {"not":{}}
             },
             "required": ["template"]
+          },
+          {
+            "properties": {
+              "type": {
+                "enum": ["git"]
+              },
+              "playbook": {"not":{}},
+              "template": {"not":{}},
+              "inventory": {"not":{}},
+              "tags": {"not":{}},
+              "check": {"not":{}},
+              "diff": {"not":{}},
+              "steps": {"not":{}}
+            },
+            "required": ["repo"]
+          },
+          {
+            "properties": {
+              "type": {
+                "enum": ["multistep"]
+              },
+              "playbook": {"not":{}},
+              "repo": {"not":{}},
+              "template": {"not":{}},
+              "inventory": {"not":{}},
+              "tags": {"not":{}},
+              "check": {"not":{}},
+              "diff": {"not":{}}
+            },
+            "required": ["steps"]
           }
         ],
         "properties": {
@@ -121,12 +155,91 @@
               "$ref": "/categories"
             }
           },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["type","name"],
+              "oneOf":[
+                {
+                    "properties": {
+                      "type": {
+                        "enum": ["ansible"]
+                      },
+                      "template": {"not":{}},
+                      "repo": {"not":{}},
+                      "steps": {"not":{}}
+                    },
+                    "required": ["playbook"]
+                  },
+                  {
+                    "properties": {
+                      "type": {
+                        "enum": ["awx"]
+                      },
+                      "playbook": {"not":{}},
+                      "repo": {"not":{}},
+                      "steps": {"not":{}}
+                    },
+                    "required": ["template"]
+                  },
+                  {
+                    "properties": {
+                      "type": {
+                        "enum": ["git"]
+                      },
+                      "playbook": {"not":{}},
+                      "template": {"not":{}},
+                      "inventory": {"not":{}},
+                      "tags": {"not":{}},
+                      "check": {"not":{}},
+                      "diff": {"not":{}},
+                      "steps": {"not":{}}
+                    },
+                    "required": ["repo"]
+                  }
+              ],
+              "properties":{
+                "type": {
+                  "type": "string",
+                  "enum": ["ansible", "awx", "git"]
+                },
+                "name": {"type": "string"},
+                "playbook": {"type": "string"},
+                "key": {"type": "string"},
+                "template": {"type": "string"},
+                "repo": {
+                  "$ref": "/repo"
+                },
+                "inventory": {"type": "string"},
+                "tags": {"type": "string"},
+                "check": {"type": "boolean"},
+                "diff": {"type": "boolean"},
+                "continue": {"type": "boolean"},
+                "always": {"type": "boolean"}
+              },
+              "additionalProperties": false
+            }
+          },
           "type": {
             "type": "string",
-            "enum": ["ansible", "awx"]
+            "enum": ["ansible", "awx", "git","multistep"]
           },
           "playbook": {"type": "string"},
+          "key": {"type": "string"},
           "template": {"type": "string"},
+          "repo": {
+            "$id": "/repo",
+            "type": "object",
+            "required": [ "dir", "file", "push", "pull"],
+            "properties": {
+              "dir": { "type": "string"},
+              "file": { "type": "string"},
+              "push": { "type": "string"},
+              "pull": { "type": "string"}
+            },
+            "additionalProperties": false
+          },
           "inventory": {"type": "string"},
           "tags": {"type": "string"},
           "check": {"type": "boolean"},
@@ -134,6 +247,12 @@
           "help": {"type": "string"},
           "source": {"type": "string"},
           "showHelp": {"type": "boolean"},
+          "fieldGroupClasses": {
+            "type" : "object",
+            "additionalProperties" : {
+                "type" : "string"
+            }
+          },
           "fields": {
             "type": "array",
             "items": {
@@ -426,7 +545,8 @@
                 },
                 "name": {
                   "$id": "/formfield",
-                  "type": "string"
+                  "type": "string",
+                  "pattern": "[A-Za-z0-9_\\-]+"
                 },
                 "label": {"type": "string"},
                 "placeholder": {"type": "string"},

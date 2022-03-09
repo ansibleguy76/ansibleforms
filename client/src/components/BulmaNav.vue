@@ -40,11 +40,20 @@
                     <router-link class="navbar-item" to="/credentials">
                       <span class="icon"><font-awesome-icon icon="lock" /></span><span>Credentials</span>
                     </router-link>
+                    <router-link class="navbar-item" to="/sshkey">
+                      <span class="icon"><font-awesome-icon icon="key" /></span><span>SSH key</span>
+                    </router-link>
+                    <router-link class="navbar-item" to="/repos">
+                      <span class="icon"><font-awesome-icon :icon="['fab','git-square']" /></span><span>Repositories</span>
+                    </router-link>
                   </div>
                 </div>
                 <div class="navbar-item has-dropdown is-hoverable" v-if="authenticated" >
                   <a class="navbar-link"><span class="icon"><font-awesome-icon icon="question-circle" /></span></a>
                   <div class="navbar-dropdown">
+                    <router-link class="navbar-item" v-if="isAdmin && authenticated" to="/logs">
+                      <span class="icon"><font-awesome-icon icon="file-lines" /></span><span>Logs</span>
+                    </router-link>
                     <a class="navbar-item" href="https://www.ansibleforms.com/" target="_blank">
                       <span class="icon"><font-awesome-icon icon="globe" /></span><span>Documentation</span>
                     </a>
@@ -52,9 +61,9 @@
                       <span class="icon"><font-awesome-icon icon="code" /></span><span>Api docs</span>
                     </a>
                     <hr class="navbar-divider">
-                    <div class="navbar-item">
-                      <span class="icon"><font-awesome-icon icon="code-branch" /></span><span>Version {{version}}</span>
-                    </div>
+                    <a class="navbar-item" @click="$emit('about')">
+                      <span class="icon"><font-awesome-icon icon="code-branch" /></span><span>About v{{version}}</span>
+                    </a>
                   </div>
                 </div>
                 <div class="navbar-item has-dropdown is-hoverable" v-if="authenticated">

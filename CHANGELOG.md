@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] - 2022-03-09
+
+### Added
+
+-   About + GPL License
+-   Added new type : push to git
+-   Added property `key` : allow extravars to be specific key
+-   Added extravars to joblog
+-   Added awx to joblog
+-   Added new type : multistep
+-   Added LogViewer
+-   Added SSH key autogen + update
+-   Added Git repo gui
+
+### Fixed
+
+-   Allow local expressions for query
+-   Wrong timezone timestamp in joblog
+-   Referencing (placeholder) multi select will now return array
+
+### Removed
+
+-   Awx and ansible get job api => is now native job api
+-   Awx and ansible joboutput => is now native job output
+-   Ansible and awx job aboort => is now native job abort
+
 ## [2.2.4] - 2022-02-15
 
 ### Added
@@ -191,7 +217,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/2.2.4...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.0...HEAD
+
+[3.0.0]: https://github.com/ansibleguy76/ansibleforms/compare/2.2.4...3.0.0
 
 [2.2.4]: https://github.com/ansibleguy76/ansibleforms/compare/2.2.3...2.2.4
 

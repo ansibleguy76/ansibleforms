@@ -1,4 +1,4 @@
-FROM node:14-alpine AS node
+FROM node:16-alpine AS node
 
 ##################################################
 # base stage
@@ -33,8 +33,14 @@ RUN ansible-galaxy collection install netapp.elementsw -p /usr/share/ansible/col
 RUN ansible-galaxy collection install netapp.um_info -p /usr/share/ansible/collections
 
 # add ssh
-RUN apk add openssh
+RUN apk add --no-cache openssh
 RUN mkdir -p ~/.ssh
+
+# add git
+RUN apk add --no-cache git
+
+# update npm
+RUN npm install -g npm@8.5.3
 
 ##################################################
 # builder stage

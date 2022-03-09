@@ -1,15 +1,51 @@
 <template>
   <div id="app">
-    <BulmaNav :isAdmin="isAdmin" :authenticated="authenticated" :profile="profile" @logout="logout()" :version="version" />
+    <BulmaModal v-if="showAbout" title="About" href="https://github.com/ansibleguy76/ansibleforms" action="View on Github" :icon="['fab','github']" @close="showAbout=false;showEasterEgg=false" @cancel="showAbout=false;showEasterEgg=false">
+        <div class="field is-grouped is-grouped-multiline">
+          <div class="control">
+            <h1 class="title"><strong>AnsibleForms</strong></h1>
+          </div>
+          <div class="control">
+            <div class="tags has-addons">
+              <span class="tag is-dark">build</span>
+              <span class="tag is-link">v{{version}}</span>
+            </div>
+          </div>
+        </div>
+        <p class="is-size-7 is-unselectable">
+          Copyright © 2021 AnsibleGuy<br>
+          <br>
+          This program is free software: you can redistribute it and/or modify
+          it under the terms of the <strong>GNU General Public License</strong> as published by
+          the Free Software Foundation, either version 3 of the License, or
+          (at your option) any later version.<br>
+          <br>
+          This program is distributed in the hope that it will be useful,
+          but WITHOUT ANY WARRANTY; without even the implied warranty of
+          MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+          GNU General Public License for more details.<br>
+
+          <br>You can find the GNU General Public License at
+          <a target="_blank" href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a><br>
+          <br>
+        </p>
+        <span  v-if="!showEasterEgg" class="icon is-pulled-right has-text-grey-lighter"><font-awesome-icon @dblclick="showEasterEgg=true" icon="egg" /></span>
+        <div v-if="showEasterEgg" class="tags has-addons is-unselectable">
+          <span class="tag is-dark">Special thanks to</span>
+          <span class="tag is-warning">{{ thanks.join(', ')}}</span>
+        </div>
+    </BulmaModal>
+    <BulmaNav :isAdmin="isAdmin" @about="showAbout=true" :authenticated="authenticated" :profile="profile" @logout="logout()" :version="version" />
     <router-view :isAdmin="isAdmin" :authenticated="authenticated" :errorMessage="errorMessage" :errorData="errorData" @authenticated="login()" @logout="logout()" />
   </div>
 </template>
 <script>
   import BulmaNav from './components/BulmaNav.vue'
+  import BulmaModal from './components/BulmaModal.vue'
   import axios from 'axios'
   import TokenStorage from './lib/TokenStorage'
   export default{
-    components:{BulmaNav},
+    components:{BulmaNav,BulmaModal},
     name:"AnsibleForms",
     data(){
       return{
@@ -19,7 +55,17 @@
         profile:{},
         authenticated:false,
         isAdmin:false,
-        version:"unknown"
+        version:"unknown",
+        showAbout:false,
+        showEasterEgg:false,
+        thanks:[
+          "A. Bronder",
+          "H. Marko",
+          "S. Mer",
+          "J. Szkudlarek",
+          "J. Burkle",
+          "A. Mikhaylov"
+        ]
       }
     },
     computed: {

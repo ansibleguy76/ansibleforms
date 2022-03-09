@@ -15,7 +15,7 @@ router.post('/check/',checkAdminMiddleware, awxController.check);
 // launch template
 router.post('/launch/', awxController.launch);
 // abort single job
-router.post('/job/:id/abort/', awxController.abortJob);
+// router.post('/job/:id/abort/', awxController.abortJob);
 // get single job
-router.get('/job/:id', awxController.getJob);
+// router.get('/job/:id', awxController.getJob);
 module.exports = router

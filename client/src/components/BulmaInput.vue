@@ -31,7 +31,7 @@
       type:{type:String,default:"text"},
       readonly:{type:Boolean,default:false},
       placeholder:{type:String,default:""},
-      icon:{type:String,default:''},
+      icon:{type:[String,Array],default:''},
       label:{type:String,default:""},
       hasError:{type:Boolean,default:false},
       errors:{type:Array},

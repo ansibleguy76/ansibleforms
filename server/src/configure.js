@@ -24,6 +24,9 @@ const appConfig = require('../config/app.config')
 // start the app
 module.exports = app => {
 
+  // first time run init
+  require('./init/')
+
   // we use 2 authentications/authorization strategies
   // - basic : to get jwt tokens
   // - jwt : to use the jwt tokens
@@ -34,7 +37,10 @@ module.exports = app => {
 
   // import api routes
   const awxRoutes = require('./routes/awx.routes')
+  const jobRoutes = require('./routes/job.routes')
   const ansibleRoutes = require('./routes/ansible.routes')
+  const gitRoutes = require('./routes/git.routes')
+  const multistepRoutes = require('./routes/multistep.routes')
   const queryRoutes = require('./routes/query.routes')
   const expressionRoutes = require('./routes/expression.routes')
   const userRoutes = require('./routes/user.routes')
@@ -47,6 +53,9 @@ module.exports = app => {
   const configRoutes = require('./routes/config.routes')
   const versionRoutes = require('./routes/version.routes')
   const profileRoutes = require('./routes/profile.routes')
+  const sshRoutes = require('./routes/ssh.routes')
+  const logRoutes = require('./routes/log.routes')
+  const repoRoutes = require('./routes/repo.routes')
 
   // using json web tokens as middleware
   const authobj = passport.authenticate('jwt', { session: false })
@@ -78,12 +87,18 @@ module.exports = app => {
   // api routes for automation actions
   app.use('/api/v1/awx',cors(), authobj, awxRoutes) // extra middleware in the routes
   app.use('/api/v1/ansible',cors(), authobj, ansibleRoutes)
+  app.use('/api/v1/git',cors(), authobj, gitRoutes)
+  app.use('/api/v1/multistep',cors(), authobj, multistepRoutes)
 
   // api routes for admin management
+  app.use('/api/v1/job',cors(), authobj, jobRoutes)
   app.use('/api/v1/user',cors(), authobj, checkAdminMiddleware, userRoutes)
   app.use('/api/v1/group',cors(), authobj, checkAdminMiddleware, groupRoutes)
   app.use('/api/v1/ldap',cors(), authobj, checkAdminMiddleware, ldapRoutes)
   app.use('/api/v1/credential',cors(), authobj, checkAdminMiddleware, credentialRoutes)
+  app.use('/api/v1/sshkey',cors(), authobj, checkAdminMiddleware, sshRoutes)
+  app.use('/api/v1/log',cors(), authobj, checkAdminMiddleware, logRoutes)
+  app.use('/api/v1/repo',cors(), authobj, checkAdminMiddleware, repoRoutes)
 
   // routes for form config (extra middleware in the routes itself)
   app.use('/api/v1/config',cors(), authobj, configRoutes)

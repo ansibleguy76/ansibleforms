@@ -1,8 +1,8 @@
 const fs = require("fs")
-
+const path =require("path")
 var log_config = {
   level: process.env.LOG_LEVEL || "info",
-  path: process.env.LOG_PATH || (__dirname + '/../persistent/logs'),
+  path: process.env.LOG_PATH || path.resolve(__dirname + '/../persistent/logs'),
   consolelevel: process.env.LOG_CONSOLE_LEVEL || "info"
 };
 if ( !fs.existsSync( log_config.path ) ) {
