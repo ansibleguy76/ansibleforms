@@ -84,12 +84,12 @@ exports.do = async function(form,jobTemplateName,inventory,check,diff,jobTags,us
 
     extraVars = JSON.stringify(extraVars);
 
-    logger.info("Running template : " + jobTemplateName)
-    logger.debug("extravars : " + extraVars)
-    logger.debug("inventory : " + inventory)
-    logger.debug("check : " + check)
-    logger.debug("diff : " + diff)
-    logger.debug("tags : " + jobTags)
+    logger.notice("Running template : " + jobTemplateName)
+    logger.info("extravars : " + extraVars)
+    logger.info("inventory : " + inventory)
+    logger.info("check : " + check)
+    logger.info("diff : " + diff)
+    logger.info("tags : " + jobTags)
 
     var restResult = new RestResult("info","")
 
@@ -115,7 +115,7 @@ exports.do = async function(form,jobTemplateName,inventory,check,diff,jobTags,us
               next("error " + err,null)
             reject(err)
           }else{
-              logger.silly("Found jobtemplate, id = " + jobTemplate.id)
+              logger.debug("Found jobtemplate, id = " + jobTemplate.id)
               if(inventory){
                 Awx.findInventoryByName(inventory,function(err,inventory){
                   if (err){
@@ -128,7 +128,7 @@ exports.do = async function(form,jobTemplateName,inventory,check,diff,jobTags,us
                       next("error " + err,null)
                     reject(err)
                   }else{
-                    logger.silly("Found inventory, id = " + inventory.id)
+                    logger.debug("Found inventory, id = " + inventory.id)
                     Awx.launch(form,jobTemplate,inventory,jobTags,check,diff,extraVars,user,function(err,job){
                         if (err){
                           restResult.status = "error"

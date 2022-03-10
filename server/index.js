@@ -23,15 +23,15 @@ var httpServer
 const httpsConfig = require('./config/https.config');
 const logger = require('./src/lib/logger');
 if(httpsConfig.https){
-  logger.info("Running https !")
+  logger.notice("Running https !")
   var credentials = {key: httpsConfig.httpsKey, cert: httpsConfig.httpsCert};
   const https = require('https');
   httpServer = https.createServer(credentials, app);
 }else{
-  logger.info("Running http !")
+  logger.notice("Running http !")
   const http = require('http');
   httpServer = http.createServer(app);
 }
 
 // start the webserver and listen on the port we choose
-httpServer.listen(appConfig.port, () => logger.info(`App running on port ${appConfig.port}!`))
+httpServer.listen(appConfig.port, () => logger.notice(`App running on port ${appConfig.port}!`))

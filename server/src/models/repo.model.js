@@ -21,7 +21,7 @@ Repo.findAll = function (callback) {
       fs.accessSync(directory)
     }catch(e){
       try{
-        logger.info("Force creating path : " + directory)
+        logger.notice("Force creating path : " + directory)
         fs.mkdirSync(directory, { recursive: true,force:true });
       }catch(err){
         logger.error(err)
@@ -40,7 +40,7 @@ Repo.findAll = function (callback) {
 }
 Repo.delete = function (name,callback) {
   try{
-    logger.info("Deleting repository " + name)
+    logger.notice("Deleting repository " + name)
     var directory = config.repoPath
     try{
       fs.accessSync(path.join(directory,name))
@@ -79,7 +79,7 @@ Repo.findByName = function (name,text,callback) {
     });
 
     clone.on('exit',function(code){
-      logger.silly('exit')
+      logger.debug('exit')
       if(code==0){
         if(!text){
           callback(null,Repo.color(output))
@@ -104,13 +104,13 @@ Repo.findByName = function (name,text,callback) {
 // run git clone
 Repo.create = function (repo, callback) {
   try{
-    logger.info("Creating repository " + repo)
+    logger.notice("Creating repository " + repo)
     var directory = config.repoPath
     try{
       fs.accessSync(directory)
     }catch(e){
       try{
-        logger.info("Force creating path : " + directory)
+        logger.notice("Force creating path : " + directory)
         fs.mkdirSync(directory, { recursive: true,force:true });
       }catch(err){
         logger.error(err)
@@ -121,12 +121,12 @@ Repo.create = function (repo, callback) {
     var clone = exec(`git clone ${repo}`,{cwd:directory})
     var output = []
     clone.stdout.on('data', function(a){
-      logger.debug(a)
+      logger.info(a)
       output.push(a)
     });
 
     clone.on('exit',function(code){
-      logger.silly('exit')
+      logger.debug('exit')
       if(output.length>0 && code==0){
         callback(null,output.join("\r\n"))
       }else{

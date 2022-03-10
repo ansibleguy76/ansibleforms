@@ -49,12 +49,12 @@ exports.do = async function(form,playbook,inv,check,diff,tags,user,creds,ev,res,
       if(next)next("no playbook")
       reject("no playbook")
     }else{
-      logger.info("Running playbook : " + playbook)
-      logger.silly("extravars : " + extraVars)
-      logger.silly("inventory : " + inventory)
-      logger.silly("check : " + check)
-      logger.silly("diff : " + diff)
-      logger.silly("tags : " + tags)
+      logger.notice("Running playbook : " + playbook)
+      logger.debug("extravars : " + extraVars)
+      logger.debug("inventory : " + inventory)
+      logger.debug("check : " + check)
+      logger.debug("diff : " + diff)
+      logger.debug("tags : " + tags)
       Ansible.launch(form,playbook,inventory,tags,check,diff,extraVars,user,function(err,out){
         if(err){
            restResult.status = "error"

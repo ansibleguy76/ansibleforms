@@ -38,7 +38,7 @@ Ansible.launch = function (form,playbook,inventory,tags,check,diff,extraVars,use
     }else{
       // job created - return to client
       result(null,{id:jobid})
-      logger.silly(`Job id ${jobid} is created`)
+      logger.debug(`Job id ${jobid} is created`)
       // in the background, start the commands
       Exec.executeCommand(cmdObj,jobid,counter,(jobid,counter)=>{
         if(success)success()

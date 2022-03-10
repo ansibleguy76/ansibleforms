@@ -8,7 +8,7 @@ dbConfig.multipleStatements=true
 MySql = {}
 
 MySql.query=function(query,vars,callback){
-  logger.debug("[ansibleforms] running query : " + query)
+  logger.info("[ansibleforms] running query : " + query)
   var conn
   try{
     var conn = client.createConnection(dbConfig)
@@ -19,18 +19,18 @@ MySql.query=function(query,vars,callback){
   }
   try{
     conn.query(query,vars,function(err,result){
-      // logger.silly("[ansibleforms] Closing connection")
+      // logger.debug("[ansibleforms] Closing connection")
       conn.end()
       if(err){
         logger.error("[ansibleforms] Query error : " + err)
         callback(err,null)
       }else{
-        logger.silly("[ansibleforms] query result : " + JSON.stringify(result))
+        logger.debug("[ansibleforms] query result : " + JSON.stringify(result))
         callback(null,result)
       }
     })
   }catch(err){
-    // logger.silly("[ansibleforms] Closing connection")
+    // logger.debug("[ansibleforms] Closing connection")
     conn.end()
     logger.error("[ansibleforms] " + err)
     callback(null,null)

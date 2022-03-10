@@ -22,7 +22,7 @@ exports.launch = async function(req, res) {
           // wrong implementation -> send 400 error
           res.json(new RestResult("error","no steps","","steps is a required field"));
         }else{
-          logger.info("Launching workflow : " + JSON.stringify(steps))
+          logger.notice("Launching workflow : " + JSON.stringify(steps))
           Multistep.launch(form,steps,extraVars,user,creds,function(err,job){
               if (err){
                 restResult.status = "error"

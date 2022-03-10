@@ -9,7 +9,7 @@ exports.refresh = function(req, res) {
 
     // get the refresh token
     var refreshtoken = req.body.refreshtoken
-    logger.debug("requesting refresh token")
+    logger.info("requesting refresh token")
     //handles null error
     if(!refreshtoken){
         logger.error("no refresh token is provided")
@@ -26,14 +26,14 @@ exports.refresh = function(req, res) {
             }else{
                 var body = jwtPayload.user
                 if(new Date(jwtPayload.exp*1000)>new Date()){
-                  // logger.debug("refresh token is not expired")
+                  // logger.info("refresh token is not expired")
                   const token = jwt.sign({ user: body,access:true }, authConfig.secret,{ expiresIn: authConfig.jwtExpiration});
                   const refreshtoken = jwt.sign({ user: body,refresh:true }, authConfig.secret,{ expiresIn: authConfig.jwtRefreshExpiration});
                   User.storeToken(username,username_type,refreshtoken,function(err,resnewtoken){
                     if(err){
                       logger.error("Failed to store new token")
                     }else{
-                      logger.debug("Token is renewed and stored")
+                      logger.info("Token is renewed and stored")
                       res.json({ token,refreshtoken });
                     }
                   })
@@ -44,7 +44,7 @@ exports.refresh = function(req, res) {
                     if(err){
                       logger.error("Failed to remove token for " + username)
                     }else{
-                      logger.debug("Removed token for " + username)
+                      logger.info("Removed token for " + username)
                     }
                   })
                   res.status(401).send({ error:true, message: 'Refresh token is expired' });

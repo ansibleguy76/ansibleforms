@@ -1,9 +1,20 @@
 const fs = require("fs")
 const path =require("path")
+if(process.env.LOG_CONSOLE_LEVEL=="silly"){ // old loglevel
+  process.env.LOG_CONSOLE_LEVEL="debug"
+}
 var log_config = {
-  level: process.env.LOG_LEVEL || "info",
+  level: process.env.LOG_LEVEL || "notice",
   path: process.env.LOG_PATH || path.resolve(__dirname + '/../persistent/logs'),
-  consolelevel: process.env.LOG_CONSOLE_LEVEL || "info"
+  consolelevel: process.env.LOG_CONSOLE_LEVEL || "notice",
+  sysloglevel: process.env.LOG_SYSLOG_LEVEL || "debug",
+  sysloghost: process.env.LOG_SYSLOG_HOST || "localhost",
+  syslogport: process.env.LOG_SYSLOG_PORT || 514,
+  syslogprotocol: process.env.LOG_SYSLOG_PROTOCOL || "udp4",
+  syslogpath: process.env.LOG_SYSLOG_PATH || "/dev/log",
+  sysloglocalhost: process.env.LOG_SYSLOG_SOURCE || "localhost",
+  syslogtype: process.env.LOG_SYSLOG_TYPE || "BSD",
+  syslogappname: process.env.LOG_SYSLOG_APPNAME || "AnsibleForms"
 };
 if ( !fs.existsSync( log_config.path ) ) {
   try{

@@ -22,7 +22,7 @@ const httpsAgent = new https.Agent({
   rejectUnauthorized: false
 })
 function getHttpsAgent(awxConfig){
-  // logger.silly("config : " + awxConfig)
+  // logger.debug("config : " + awxConfig)
   return new https.Agent({
     rejectUnauthorized: !awxConfig.ignore_certs,
     ca: awxConfig.ca_bundle
@@ -47,18 +47,18 @@ Awx.getConfig = function(result){
         result(`failed to get AWX configuration`,null)
       }else{
         cache.set("awxConfig",res)
-        logger.silly("Cached awxConfig from database")
+        logger.debug("Cached awxConfig from database")
         result(null,res)
       }
     })
   }else{
-    // logger.silly("Getting awxConfig from cache")
+    // logger.debug("Getting awxConfig from cache")
     result(null,awxConfig)
   }
 };
 //awx object create (it's an update; during schema creation we add a record)
 Awx.update = function (record, result) {
-    logger.debug(`Updating awx ${record.name}`)
+    logger.info(`Updating awx ${record.name}`)
     mysql.query("UPDATE AnsibleForms.`awx` set ?", record, function (err, res) {
         if(err) {
             result(err, null);
@@ -108,7 +108,7 @@ Awx.abortJob = function (id, next) {
     }else{
 
       var message=""
-      logger.debug(`aborting awx job ${id}`)
+      logger.info(`aborting awx job ${id}`)
       const axiosConfig = {
         headers: {
           Authorization:"Bearer " + awxConfig.token
@@ -120,7 +120,7 @@ Awx.abortJob = function (id, next) {
         .then((axiosnext)=>{
           var job = axiosnext.data
           if(job && job.can_cancel){
-              logger.debug(`can cancel job id = ${id}`)
+              logger.info(`can cancel job id = ${id}`)
               axios.post(awxConfig.uri + "/api/v2/jobs/" + id + "/cancel/",{},axiosConfig)
                 .then((axiosnext)=>{
                   job = axiosnext.data
@@ -175,7 +175,7 @@ Awx.launch = function (form,template,inventory,tags,check,diff,extraVars,user, r
         postdata.job_tags=tags
       }
       var message=""
-      logger.debug(`launching job template ${template.name}`)
+      logger.info(`launching job template ${template.name}`)
       // post
       if(template.related===undefined){
         message=`Failed to launch, no launch attribute found for template ${template.name}`
@@ -189,7 +189,7 @@ Awx.launch = function (form,template,inventory,tags,check,diff,extraVars,user, r
           },
           httpsAgent: getHttpsAgent(awxConfig)
         }
-        logger.silly("Lauching awx with data : " + JSON.stringify(postdata))
+        logger.debug("Lauching awx with data : " + JSON.stringify(postdata))
         // create a new job in the database
         Job.create(new Job({form:form,target:template.name,user:user.username,user_type:user.type,status:"running",job_type:"awx",extravars:extraVars}),function(error,jobid){
           var counter=0
@@ -200,14 +200,14 @@ Awx.launch = function (form,template,inventory,tags,check,diff,extraVars,user, r
           }else{
             // job created - return directly to client (the rest is in background)
             result(null,{id:jobid})
-            logger.silly(`Job id ${jobid} is created`)
+            logger.debug(`Job id ${jobid} is created`)
             // launch awx job
             axios.post(awxConfig.uri + template.related.launch,postdata,axiosConfig)
               .then((axiosresult)=>{
                 // get awx job (= remote job !!)
                 var job = axiosresult.data
                 if(job){
-                  logger.debug(`awx job id = ${job.id}`)
+                  logger.info(`awx job id = ${job.id}`)
                   // log launch
                   Exec.printCommand(`Launched template ${template.name} with jobid ${job.id}`,"stdout",jobid,counter,(jobid,counter)=>{
                     // track the job in the background
@@ -265,7 +265,7 @@ Awx.trackJob = function (job,jobid,counter, success,failed,previousoutput) {
       failed(`failed to get AWX configuration`,jobid,counter)
     }else{
       var message=""
-      logger.debug(`searching for job with id ${job.id}`)
+      logger.info(`searching for job with id ${job.id}`)
       // prepare axiosConfig
       const axiosConfig = {
         headers: {
@@ -277,7 +277,7 @@ Awx.trackJob = function (job,jobid,counter, success,failed,previousoutput) {
         .then((axiosresult)=>{
           var j = axiosresult.data;
           if(j){
-            logger.silly(`awx job status : ` + j.status)
+            logger.debug(`awx job status : ` + j.status)
             Awx.getJobTextOutput(job,(o)=>{
                 var output=o
                 // AWX has incremental output, but we always need to substract previous output
@@ -355,9 +355,9 @@ Awx.getJobTextOutput = function (job, result) {
 // check connection
 Awx.check = function (awxConfig,result) {
 
-  logger.debug(`Checking AWX connection`)
+  logger.info(`Checking AWX connection`)
   // prepare axiosConfig
-  logger.debug(awxConfig)
+  logger.info(awxConfig)
   const axiosConfig = {
     headers: {
       Authorization:"Bearer " + decrypt(awxConfig.token)
@@ -379,13 +379,13 @@ Awx.check = function (awxConfig,result) {
 // find a jobtemplate by name
 Awx.findJobTemplateByName = function (name,result) {
   Awx.getConfig(function(err,awxConfig){
-    // logger.silly(awxConfig)
+    // logger.debug(awxConfig)
     if(err){
       logger.error(err)
       result(`failed to get AWX configuration`)
     }else{
       var message=""
-      logger.debug(`searching job template ${name}`)
+      logger.info(`searching job template ${name}`)
       // prepare axiosConfig
       const axiosConfig = {
         headers: {
@@ -424,7 +424,7 @@ Awx.findInventoryByName = function (name,result) {
       result(`failed to get AWX configuration`)
     }else{
       var message=""
-      logger.debug(`searching inventory ${name}`)
+      logger.info(`searching inventory ${name}`)
       // prepare axiosConfig
       const httpsAgent = new https.Agent({
         rejectUnauthorized: false

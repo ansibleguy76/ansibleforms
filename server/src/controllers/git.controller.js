@@ -15,8 +15,8 @@ exports.do = function(form,repo,extraVars,user,res,next){
       reject("no repo")
     }else{
       extraVars = JSON.stringify(extraVars);
-      logger.info("Pushing to repo : " + JSON.stringify(repo))
-      logger.silly("extravars : " + extraVars)
+      logger.notice("Pushing to repo : " + JSON.stringify(repo))
+      logger.debug("extravars : " + extraVars)
       Git.push(form,repo,extraVars,user,function(err,out){
         if(err){
            restResult.status = "error"
@@ -74,7 +74,7 @@ exports.pull = async function(req, res) {
           // wrong implementation -> send 400 error
           res.json(new RestResult("error","no repo","","repo is a required field"));
         }else{
-          logger.info("Pulling repo : " + JSON.stringify(repo))
+          logger.notice("Pulling repo : " + JSON.stringify(repo))
           Git.pull(repo,function(err,out){
             if(err){
                restResult.status = "error"

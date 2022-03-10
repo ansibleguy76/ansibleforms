@@ -17,7 +17,7 @@ exports.login = async function(req, res,next) {
           if (err || !user) {
             var error={token:""}
             if(err){
-              logger.debug(err)
+              logger.info(err)
               error.message=err
             }
             return res.json(error);
@@ -33,7 +33,7 @@ exports.login = async function(req, res,next) {
                 return next(error);
               }
 
-              logger.debug(JSON.stringify(user))
+              logger.info(JSON.stringify(user))
               // is something like
               // {"username":"administrator","type":"local","roles":["public","admin"]}
 
@@ -42,12 +42,12 @@ exports.login = async function(req, res,next) {
               const refreshtoken = jwt.sign({user,refresh:true}, authConfig.secret,{ expiresIn: authConfig.jwtRefreshExpiration});
 
               // we store the tokens in the database, to later verify a refresh token action
-              logger.debug("Storing refreshtoken in database for user " + user.username)
+              logger.info("Storing refreshtoken in database for user " + user.username)
               User.storeToken(user.username,user.type,refreshtoken,function(err,result){
                 if(err){
                   logger.error(err)
                 }else{
-                  logger.debug(result)
+                  logger.info(result)
                 }
               })
               // send the tokens to the requester

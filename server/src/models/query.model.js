@@ -11,9 +11,9 @@ var Query=function(){
 };
 Query.findAll = function (query,config,noLog,result) {
   if(noLog){
-    logger.debug(`[${config.type}][${config.name}] Running query : noLog is applied`)
+    logger.info(`[${config.type}][${config.name}] Running query : noLog is applied`)
   }else{
-    logger.debug(`[${config.type}][${config.name}] Running query ${query}`)
+    logger.info(`[${config.type}][${config.name}] Running query ${query}`)
   }
 
     if(config.type=="mssql"){  // use mssql connection lib
@@ -23,7 +23,7 @@ Query.findAll = function (query,config,noLog,result) {
           }
           else{
               if(!noLog){
-                logger.silly(`[${config.name}] query result : ${JSON.stringify(res)}`)
+                logger.debug(`[${config.name}] query result : ${JSON.stringify(res)}`)
               }
               result(null, res);
           }
@@ -35,7 +35,7 @@ Query.findAll = function (query,config,noLog,result) {
           }
           else{
             if(!noLog){
-              logger.silly(`[${config.name}] query result : ${JSON.stringify(res)}`)
+              logger.debug(`[${config.name}] query result : ${JSON.stringify(res)}`)
             }
               result(null, res);
           }
@@ -47,7 +47,7 @@ Query.findAll = function (query,config,noLog,result) {
           }
           else{
             if(!noLog){
-              logger.silly(`[${config.name}] query result : ${JSON.stringify(res)}`)
+              logger.debug(`[${config.name}] query result : ${JSON.stringify(res)}`)
             }
               result(null, res);
           }
@@ -59,7 +59,7 @@ Query.findAll = function (query,config,noLog,result) {
           }
           else{
             if(!noLog){
-              logger.silly(`[${config.name}] query result : ${JSON.stringify(res)}`)
+              logger.debug(`[${config.name}] query result : ${JSON.stringify(res)}`)
             }
               result(null, res);
           }

@@ -29,7 +29,7 @@ Helpers.checkAdminMiddleware = (req, res, next) =>  {
         if(!req.user.user.roles.includes("admin")) {
           res.status(401).json(new restResult("error","you are not an admin"))
         } else {
-          //logger.silly("You are admin, access to user management")
+          //logger.debug("You are admin, access to user management")
           next()
         }
       }catch(e){

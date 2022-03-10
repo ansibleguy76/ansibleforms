@@ -15,25 +15,25 @@ Exec.executeSilentCommand = (cmd,result) => {
   var directory = cmd.directory
   var description = cmd.description
   // execute the procces
-  logger.silly(`${description}, ${directory} > ${command}`)
+  logger.debug(`${description}, ${directory} > ${command}`)
   try{
     var child = exec(command,{cwd:directory});
     var out=""
     var err=""
     // add output eventlistener to the process to save output
     child.stdout.on('data',function(data){
-      logger.silly(data)
+      logger.debug(data)
     })
     // add error eventlistener to the process to save output
     child.stderr.on('data',function(data){
       // save the output ; but whilst saving, we quickly check the status to detect abort
-      logger.silly(data)
+      logger.debug(data)
       err+=data+"\r\n"
     })
     // add exit eventlistener to the process to handle status update
     child.on('exit',function(data){
       // if the exit was an actual request ; set aborted
-      logger.debug(description + " finished : " + data)
+      logger.info(description + " finished : " + data)
         if(data!=0){
           result(err,null)
         }else{
@@ -72,7 +72,7 @@ Exec.executeCommand = (cmd,jobid,counter,success,failed,aborted) => {
   var description = cmd.description
   var task = cmd.task
   // execute the procces
-  logger.silly(`${description}, ${directory} > ${Helpers.logSafe(command)}`)
+  logger.debug(`${description}, ${directory} > ${Helpers.logSafe(command)}`)
   try{
     var child = exec(command,{cwd:directory});
 

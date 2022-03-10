@@ -30,7 +30,7 @@ function checkAvailability(location, force,publicOnly, callback){
 
 	var pubLocation = location+'.pub';
   if(publicOnly){
-		logger.silly('checking availability: '+pubLocation);
+		logger.debug('checking availability: '+pubLocation);
 
 		fs.access(pubLocation, function(err){
       if(err){
@@ -41,11 +41,11 @@ function checkAvailability(location, force,publicOnly, callback){
 
 		})
   }else{
-    logger.silly('checking availability: '+location);
+    logger.debug('checking availability: '+location);
   	fs.access(location, function(err){
       var keyExists=false
       if(!err){keyExists=true}
-  		logger.silly('checking availability: '+pubLocation);
+  		logger.debug('checking availability: '+pubLocation);
   		fs.access(pubLocation, function(err){
         var pubKeyExists
         if(!err){pubKeyExists=true}
@@ -55,7 +55,7 @@ function checkAvailability(location, force,publicOnly, callback){
   }
 }
 function ssh_randomart(location, callback){
-  logger.silly("Getting private key random art from " + location)
+  logger.debug("Getting private key random art from " + location)
   var output
   try{
     fs.accessSync(location)
@@ -74,7 +74,7 @@ function ssh_randomart(location, callback){
   });
 
   keygen.on('exit',function(){
-    // logger.silly('exit')
+    // logger.debug('exit')
     if(output){
       callback(undefined,{art:output.toString()});
     }else{
@@ -113,14 +113,14 @@ function ssh_keygen(location, opts, callback){
 
 	keygen.stdout.on('data', function(a){
     output=a
-		// logger.silly('stdout:'+a);
+		// logger.debug('stdout:'+a);
 	});
 
 	var read = opts.read;
 	var destroy = opts.destroy;
 
 	keygen.on('exit',function(){
-    // logger.silly('exit')
+    // logger.debug('exit')
     if(opts.publicOnly){
       fs.writeFileSync(pubLocation,output)
     }

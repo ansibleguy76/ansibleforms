@@ -28,7 +28,7 @@ var Job=function(job){
     }
 };
 Job.create = function (record, result) {
-  logger.debug(`Creating job`)
+  logger.info(`Creating job`)
   try{
     mysql.query("INSERT INTO AnsibleForms.`jobs` set ?", record, function (err, res) {
         if(err) {
@@ -43,7 +43,7 @@ Job.create = function (record, result) {
   }
 };
 Job.update = function (record,id, result) {
-  logger.silly(`Updating job ${id}`)
+  logger.debug(`Updating job ${id}`)
   try{
     mysql.query("UPDATE AnsibleForms.`jobs` set ? WHERE id=?", [record,id], function (err, res) {
         if(err) {
@@ -59,7 +59,7 @@ Job.update = function (record,id, result) {
   }
 };
 Job.setParentId = function (parent_id,id, result) {
-  logger.silly(`Updating job ${id}`)
+  logger.debug(`Updating job ${id}`)
   try{
     mysql.query("UPDATE AnsibleForms.`jobs` set parent_id=? WHERE id=?", [parent_id,id], function (err, res) {
         if(err) {
@@ -75,7 +75,7 @@ Job.setParentId = function (parent_id,id, result) {
   }
 };
 Job.abort = function (id, result) {
-  logger.silly(`Updating job ${id}`)
+  logger.debug(`Updating job ${id}`)
   try{
     mysql.query("UPDATE AnsibleForms.`jobs` set status='abort' WHERE id=? AND status='running'", [id], function (err, res) {
         if(err) {
@@ -95,7 +95,7 @@ Job.abort = function (id, result) {
   }
 };
 Job.createOutput = function (record, result) {
-  // logger.silly(`Creating job output`)
+  // logger.debug(`Creating job output`)
   try{
     if(record.output){
       // insert output and return status in 1 go
@@ -131,7 +131,7 @@ Job.createOutput = function (record, result) {
   }
 };
 Job.delete = function(id, result){
-  logger.debug(`Deleting job ${id}`)
+  logger.info(`Deleting job ${id}`)
   try{
     mysql.query("DELETE FROM AnsibleForms.`jobs` WHERE id = ?;UPDATE AnsibleForms.`jobs` set parent_id = NULL WHERE parent_id = ?", [id,id], function (err, res) {
         if(err) {
@@ -147,7 +147,7 @@ Job.delete = function(id, result){
   }
 };
 Job.findAll = function (result) {
-    logger.debug("Finding all jobs")
+    logger.info("Finding all jobs")
     var query = "SELECT id,form,target,status,start,end,user,user_type,job_type,parent_id FROM AnsibleForms.`jobs` ORDER BY id DESC LIMIT 500;"
     try{
       mysql.query(query,null, function (err, res) {
@@ -163,7 +163,7 @@ Job.findAll = function (result) {
     }
 };
 Job.findById = function (id,text,result) {
-    logger.debug(`Finding job ${id}` )
+    logger.info(`Finding job ${id}` )
     try{
       // get normal data
       mysql.query("SELECT `status`,`extravars`,`job_type` FROM AnsibleForms.`jobs` WHERE jobs.id=?;",id, function (err, res) {

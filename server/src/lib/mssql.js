@@ -32,18 +32,18 @@ Mssql.query=async function(connection_name,query,callback){
       try{
         conn.query(query, (err, result) => {
           conn.close()
-          logger.silly("["+connection_name+"] Closing connection")
+          logger.debug("["+connection_name+"] Closing connection")
           if(err){
             logger.error("["+connection_name+"] query error : " + err)
             callback(null,null)
           }else{
-            // logger.silly("["+connection_name+"] query result : " + JSON.stringify(result))
+            // logger.debug("["+connection_name+"] query result : " + JSON.stringify(result))
             callback(null,result.recordset)
           }
         })
       }catch(err){
         conn.close()
-        logger.silly("["+connection_name+"] Closing connection")
+        logger.debug("["+connection_name+"] Closing connection")
         logger.error("["+connection_name+"] " + err)
         callback(null,null)
       }

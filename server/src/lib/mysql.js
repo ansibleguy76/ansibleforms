@@ -26,18 +26,18 @@ MySql.query=async function(connection_name,query,callback){
   }
   try{
     conn.query(query,function(err,result){
-      logger.silly("["+connection_name+"] Closing connection")
+      logger.debug("["+connection_name+"] Closing connection")
       conn.end()
       if(err){
         logger.error("["+connection_name+"] Query error : " + err)
         callback(err,null)
       }else{
-        // logger.silly("["+connection_name+"] query result : " + JSON.stringify(result))
+        // logger.debug("["+connection_name+"] query result : " + JSON.stringify(result))
         callback(null,result)
       }
     })
   }catch(err){
-    logger.silly("["+connection_name+"] Closing connection")
+    logger.debug("["+connection_name+"] Closing connection")
     conn.end()
     logger.error("["+connection_name+"] " + err)
     callback(null,null)

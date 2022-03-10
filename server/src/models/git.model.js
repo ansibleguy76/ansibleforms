@@ -24,7 +24,7 @@ Git.push = function (form,repo,extraVars,user, result,success,failed) {
     }else{
       // job created - return to client
       result(null,{id:jobid})
-      logger.silly(`Job id ${jobid} is created`)
+      logger.debug(`Job id ${jobid} is created`)
       // rest is in background - launch save + git commit/push
       try{
         // save the extravars as file - we do this in sync, should be fast

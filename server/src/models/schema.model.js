@@ -20,7 +20,7 @@ function handleError(n){
 function checkSchema(){
   var message
   var db="AnsibleForms"
-  logger.silly("checking schema " + db)
+  logger.debug("checking schema " + db)
   var sql = `SHOW DATABASES LIKE '${db}'`
   return new Promise((resolve,reject) => {
       mysql.query(sql,null,function(err,res){
@@ -32,7 +32,7 @@ function checkSchema(){
           if(res){
             if(res.length>0){
               message=`Schema '${db}' is present`
-              logger.silly(message)
+              logger.debug(message)
               resolve(message)
             }else{
               message=`Schema '${db}' is not present`
@@ -51,7 +51,7 @@ function checkSchema(){
 function dropIndex(table,index){
   var message
   var db="AnsibleForms"
-  logger.silly(`dropping index '${index}' on table '${table}'`)
+  logger.debug(`dropping index '${index}' on table '${table}'`)
   var checksql = `SHOW INDEX FROM ${db}.${table} WHERE Key_name='${index}'`
   var sql = `DROP INDEX \`PRIMARY\` ON ${db}.${table}`
   return new Promise((resolve,reject) => {
@@ -80,7 +80,7 @@ function dropIndex(table,index){
             })
           }else{
             message=`Index '${index}' is already dropped on '${table}'`
-            logger.debug(message)
+            logger.info(message)
             resolve(message)
           }
         }
@@ -98,7 +98,7 @@ function addColumn(table,name,fieldtype,nullable,defaultvalue){
   if(defaultvalue){
     sql+=` DEFAULT ${defaultvalue}`
   }
-  logger.silly(`adding column '${name}' on table '${table}'`)
+  logger.debug(`adding column '${name}' on table '${table}'`)
   return new Promise((resolve,reject) => {
       mysql.query(checksql,null,function(checkerr,checkres){
         if(checkerr){
@@ -125,7 +125,7 @@ function addColumn(table,name,fieldtype,nullable,defaultvalue){
             })
           }else{
             message=`Column '${name}' is already present on '${table}'`
-            logger.debug(message)
+            logger.info(message)
             resolve(message)
           }
         }
@@ -136,7 +136,7 @@ function addTable(table,sql){
   var message
   var db="AnsibleForms"
   var checksql = `SHOW TABLES FROM ${db} WHERE Tables_in_${db}='${table}'`
-  logger.silly(`adding table '${table}'`)
+  logger.debug(`adding table '${table}'`)
   return new Promise((resolve,reject) => {
       mysql.query(checksql,null,function(checkerr,checkres){
         if(checkerr){
@@ -163,7 +163,7 @@ function addTable(table,sql){
             })
           }else{
             message=`Table '${table}' is already present`
-            logger.debug(message)
+            logger.info(message)
             resolve(message)
           }
         }
@@ -175,7 +175,7 @@ function renameColumn(table,name,newname,fieldtype){
   var db="AnsibleForms"
   var checksql = `SHOW COLUMNS FROM ${db}.${table} WHERE Field='${newname}'`
   var sql = `ALTER TABLE ${db}.${table} CHANGE \`${name}\` \`${newname}\` ${fieldtype}`
-  logger.silly(`rename column '${name}'->'${newname}' on table '${table}'`)
+  logger.debug(`rename column '${name}'->'${newname}' on table '${table}'`)
   return new Promise((resolve,reject) => {
       mysql.query(checksql,null,function(checkerr,checkres){
         if(checkerr){
@@ -202,7 +202,7 @@ function renameColumn(table,name,newname,fieldtype){
             })
           }else{
             message=`Column '${name}' is already present on '${table}'`
-            logger.debug(message)
+            logger.info(message)
             resolve(message)
           }
         }
@@ -212,19 +212,19 @@ function renameColumn(table,name,newname,fieldtype){
 function checkTable(table){
   var message
   var db="AnsibleForms"
-  logger.silly("checking table " + table)
+  logger.debug("checking table " + table)
   var sql = `SHOW TABLES FROM ${db} WHERE Tables_in_${db}='${table}'`
   return new Promise((resolve,reject) => {
       mysql.query(sql,null,function(err,res){
         if(err){
           message=`Table '${table}' query error\n` + err
-          logger.silly(err)
+          logger.debug(err)
           reject("ERROR : " + message)
         }else{
           if(res){
             if(res.length>0){
               message=`Table '${table}' is present`
-              logger.debug(message)
+              logger.info(message)
               resolve(message)
             }else{
               message=`Table '${table}' is not present`
@@ -257,7 +257,7 @@ function patchAll(){
   tablePromises.push(addColumn("awx","ca_bundle","text",true,"NULL")) // add for awx certficate validation
   tablePromises.push(addColumn("jobs","job_type","varchar(20)",true,"NULL")) // add for git addition
   tablePromises.push(addColumn("jobs","extravars","mediumtext",true,"NULL")) // add for extravars
-  tablePromises.push(addColumn("jobs","parent_id","int(11)",true,"NULL")) // add for multistep  
+  tablePromises.push(addColumn("jobs","parent_id","int(11)",true,"NULL")) // add for multistep
   tablePromises.push(renameColumn("jobs","playbook","target","VARCHAR(250)")) // better column name
   // buffer=fs.readFileSync(`${__dirname}/../db/create_settings_table.sql`)
   // sql=buffer.toString();
@@ -272,9 +272,9 @@ function patchAll(){
             failed.push(x.e)
         })
         messages=messages.concat(success).concat(failed); // overal message
-        logger.silly("Patching database finished")
+        logger.debug("Patching database finished")
         if(failed.length==0){
-          logger.info("Patching database successful")
+          logger.notice("Patching database successful")
           return Promise.resolve(messages) // return success
         }else {
           return Promise.reject(failed) // throw failed
@@ -291,7 +291,7 @@ function checkAll(){
   var resultobj=undefined
   resultobj=cache.get('result')  // get from cache, we only check the schema once (or once a day)
   if(resultobj){
-    logger.silly("Schema check from cache")
+    logger.debug("Schema check from cache")
     return Promise.resolve(resultobj)
   }
   return checkSchema() // schema
@@ -323,7 +323,7 @@ function checkAll(){
           return patchAll().then((res)=>{
             messages=messages.concat(res)
             success=success.concat(res)
-            logger.silly("Schema check to cache")
+            logger.debug("Schema check to cache")
             resultobj={message:messages,data:{success:success,failed:failed}}
             cache.set('result',resultobj)
             return resultobj // return success
@@ -355,7 +355,7 @@ Schema.hasSchema = function(result){
     }) // final catch
 }
 Schema.create = function (result) {
-  logger.info(`Trying to create database schema 'AnsibleForms' and tables`)
+  logger.notice(`Trying to create database schema 'AnsibleForms' and tables`)
   const buffer=fs.readFileSync(`${__dirname}/../db/create_schema_and_tables.sql`)
   const query=buffer.toString();
   mysql.query(query,null, function (err, res) {
@@ -364,7 +364,7 @@ Schema.create = function (result) {
     }
     else{
       if(res.length > 0){
-        logger.info(`Created schema 'AnsibleForms' and tables`)
+        logger.notice(`Created schema 'AnsibleForms' and tables`)
         result(null,`Created schema 'AnsibleForms' and tables`)
       }else{
         result(`Failed to create schema 'AnsibleForms' and/or tables`,null)

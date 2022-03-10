@@ -30,7 +30,7 @@ Multi.launch = async function (form,steps,extraVars,user,creds, result) {
     }else{
       // parent job created - return to client who can now follow the flow
       result(null,{id:jobid})
-      logger.silly(`Job id ${jobid} is created`)
+      logger.debug(`Job id ${jobid} is created`)
       // all remaining steps are now in the background
       try{
         var finalSuccessStatus=true  // multistep success from start to end ?
@@ -39,7 +39,7 @@ Multi.launch = async function (form,steps,extraVars,user,creds, result) {
           async (promise,step)=>{    // we get the promise of the previous step and the new step
             return promise.then(async (previousSuccess) =>{ // we don't actually use previous success
               var result=false
-              logger.info("Running step " + step.name)
+              logger.notice("Running step " + step.name)
               // print title and check abort
               Exec.printCommand(`STEP [${step.name}] ${'*'.repeat(72-step.name.length)}`,"stdout",jobid,++counter,null,()=>{
                 // if abort, then step aborted flag, and change status to aborting
@@ -75,7 +75,7 @@ Multi.launch = async function (form,steps,extraVars,user,creds, result) {
                       }
                     })
                     // AWX job is done
-                    logger.silly("Result from awx = " + result)
+                    logger.debug("Result from awx = " + result)
                     // check again for abort
                     Exec.printCommand(null,null,jobid,++counter,null,()=>{
                       aborted=true
@@ -104,7 +104,7 @@ Multi.launch = async function (form,steps,extraVars,user,creds, result) {
                       }
                     })
                     // job finished
-                    logger.silly("Result from ansible = " + result)
+                    logger.debug("Result from ansible = " + result)
                     // check again for abort
                     Exec.printCommand(null,null,jobid,++counter,null,()=>{
                       aborted=true
@@ -133,7 +133,7 @@ Multi.launch = async function (form,steps,extraVars,user,creds, result) {
                       }
                     })
                     // job finished
-                    logger.silly("Result from git = " + result)
+                    logger.debug("Result from git = " + result)
                     // check again for abort
                     Exec.printCommand(null,null,jobid,++counter,null,()=>{
                       aborted=true
@@ -151,7 +151,7 @@ Multi.launch = async function (form,steps,extraVars,user,creds, result) {
               }else{ // previous was not success or there was fail in other steps
                 // skip this step
                 skipped++
-                logger.silly("skipping: step " + step.name)
+                logger.debug("skipping: step " + step.name)
                 finalSuccessStatus=false
                 Exec.printCommand("skipping: [due to previous failure]","stdout",jobid,++counter)
                 // fail this step
@@ -181,7 +181,7 @@ Multi.launch = async function (form,steps,extraVars,user,creds, result) {
           Exec.printCommand("Failed step "+ steps[-1].name + " : " + err,"stderr",jobid,++counter)
 
         }).then((success)=>{ // last step success
-          logger.silly("Last step => " + success)
+          logger.debug("Last step => " + success)
         }).finally(()=>{ // finally create recap
           // create recap
           Exec.printCommand(`MULTISTEP RECAP ${'*'.repeat(64)}`,"stdout",jobid,++counter)

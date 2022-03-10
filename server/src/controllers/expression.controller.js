@@ -25,7 +25,7 @@ exports.execute = function(req, res) {
               restResult.data.output = result
               if(!noLog){
                 try{
-                  logger.silly(`expression result : ${JSON.stringify(result)}`)
+                  logger.debug(`expression result : ${JSON.stringify(result)}`)
                 }catch(e){
                   //
                 }

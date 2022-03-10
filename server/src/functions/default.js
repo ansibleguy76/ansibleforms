@@ -17,7 +17,7 @@ require.extensions['.definitions'] = function (module, filename) {
 var jqDef = require("./jq.definitions")
 jqDef+= require("./jq.custom.definitions")
 jqDef=jqDef.replace(/(\r\n|\n|\r)/gm, "");
-logger.silly("jq definitions loaded : " + jqDef)
+logger.debug("jq definitions loaded : " + jqDef)
 
 exports.fnGetNumberedName=function(names,pattern,value,fillgap=false){
   var nr=null
@@ -100,7 +100,7 @@ exports.fnSort=function(input,sort){
     logger.warn("Warning in fnSort : sort list not provided")
     return result
   }
-  logger.silly("[fnSort] sorting result")
+  logger.debug("[fnSort] sorting result")
   // force sort to array
   var o = [].concat(sort || [])
   // convert sort to thenBy values
