@@ -2,7 +2,7 @@
 const Log = require('../models/log.model');
 
 exports.get = function(req, res) {
-    Log.find(function(err, log) {
+    Log.find(req.query.lines||100,function(err, log) {
         if (err){
             res.send('...')
         }else{
