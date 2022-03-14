@@ -14,19 +14,15 @@ const AJVErrorParser = require('ajv-error-parser');
 function getFormsDir(){
   return path.join(path.dirname(appConfig.formsPath),"/forms");
 }
-
 function getBackupSuffix(t){
   var backuppartre=new RegExp("(\.bak\.[0-9]{17})$","g")
   var backuppart=backuppartre.exec(t)[1]
   return backuppart
 }
-
 ajv.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
-
 var Form=function(data){
   this.forms = data.forms;
 };
-
 // load the forms config
 Form.load = function() {
   logger.info(`Loading ${appConfig.formsPath}`)
@@ -55,7 +51,7 @@ Form.load = function() {
         });
       }
     }catch(e){
-      logger.warn("No forms directory... loading only forms.yaml")
+      logger.warning("No forms directory... loading only forms.yaml")
     }
 
   }catch(e){
@@ -91,7 +87,7 @@ Form.load = function() {
               f.source=item.name
               forms.forms.push(f)
             }else{
-              logger.warn(`skipping existing form ${f.name}`)
+              logger.warning(`skipping existing form ${f.name}`)
             }
           });
       }catch(e){
@@ -124,7 +120,7 @@ Form.backups = function() {
       }).sort((a, b) => a.date < b.date && 1 || -1);
     }
   }catch(e){
-    logger.warn("Failed to load backups. "+e)
+    logger.warning("Failed to load backups. "+e)
   }
   return backups
 };
@@ -308,5 +304,23 @@ Form.restore = function(backupName,backupBeforeRestore){
     }
     return false
   }
+}
+Form.loadByName = function(form,user){
+  var forms = Form.load()
+  var formObj = forms?.forms.filter(x => x.name==form)
+  if(formObj.length>0){
+    logger.debug(`Form ${form} is found, checking access...`)
+    var access = formObj[0].roles.filter(role => user.roles.includes(role))
+    if(access.length>0 || user.roles.includes("admin")){
+      return formObj[0]
+      logger.warning(`Form ${form}, access allowed...`)
+    }else {
+      logger.warning(`Form ${form}, no access...`)
+      return null
+    }
+  }else{
+    return null
+  }
+
 }
 module.exports= Form;

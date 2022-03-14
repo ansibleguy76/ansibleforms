@@ -31,7 +31,7 @@ Group.update = function (record,id, result) {
 };
 Group.delete = function(id, result){
     if(id==1){
-      logger.warn("Some is trying to remove the admins groups !")
+      logger.warning("Some is trying to remove the admins groups !")
       result("You cannot delete group 'admins'",null)
     }else{
       logger.info(`Deleting group ${id}`)

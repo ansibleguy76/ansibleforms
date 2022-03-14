@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-   Syslog integration (use env variables to tune)
+
+### Changed
+
+-   Logger levels changed (error, warning, notice, info, debug) / debug is lowest (silly is deprecated)
+-   Completely reworked job launch process (neater code and more reusable)
+-   Swagger job launch changed /BREAKING !!
+
 ## [3.0.0] - 2022-03-09
 
 ### Added

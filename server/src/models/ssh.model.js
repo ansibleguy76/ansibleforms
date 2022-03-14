@@ -28,7 +28,7 @@ Ssh.generate = function(force,result){
         logger.error("Error creating ssh keys : " + err)
         return false
       }
-      logger.warn('SSH Keys created!');
+      logger.warning('SSH Keys created!');
       logger.debug('private key : '+out.key);
       logger.notice('public key : '+out.pubKey);
   })

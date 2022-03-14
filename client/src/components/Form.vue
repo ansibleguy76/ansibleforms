@@ -320,7 +320,7 @@
                 <span>{{ jobResult.message }}</span>
               </button>
             </div>
-            <!-- abort ansible button -->
+            <!-- abort job button -->
             <div class="column" v-if="jobResult.status=='info' && !abortTriggered">
               <button  class="button is-fullwidth has-background-warning" @click="abortJob(jobId)">
                 <span class="icon"><font-awesome-icon icon="times" /></span>
@@ -1250,7 +1250,7 @@
             })
           }
       },
-      // trigger an ansible job abort
+      // trigger a job abort
       abortJob(id){
         var ref=this
         this.$toast.warning("Aborting job " + id);
@@ -1259,7 +1259,7 @@
             ref.abortTriggered=true
           })
       },
-      // get ansible job output
+      // get job output
       getJob(id,final){
         var ref = this;
         // console.log("=============================")
@@ -1307,10 +1307,10 @@
               }
           })
           .catch(function(err){
-            console.log("error getting ansible job " + err)
-            ref.$toast.error("Failed to get ansible job");
+            console.log("error getting job " + err)
+            ref.$toast.error("Failed to get job");
             if(err.response.status!=401){
-              ref.jobResult.message="Error in axios call to get ansible job\n\n" + err
+              ref.jobResult.message="Error in axios call to get job\n\n" + err
               ref.jobResult.status="error";
             }
           })
@@ -1415,158 +1415,23 @@
         if(ref.validateForm){ // final validation
 
           this.generateJsonOutput()
-          // local ansible
-          if(this.currentForm.type=="ansible"){
-            if(this.currentForm.key && this.formdata[this.currentForm.key]){
-              postdata.ansibleExtraVars = this.formdata[this.currentForm.key]
-            }else{
-              postdata.ansibleExtraVars = this.formdata
-            }
-            postdata.formName = this.currentForm.name;
-            postdata.ansibleInventory = this.currentForm.inventory;
-            postdata.ansibleCheck = this.currentForm.check;
-            postdata.ansibleDiff = this.currentForm.diff;
-            postdata.ansiblePlaybook = this.currentForm.playbook;
-            postdata.ansibleTags = this.currentForm.tags || "";
-            postdata.credentials = {}
-            this.currentForm.fields
-              .filter(f => f.asCredential==true)
-              .forEach(f => {
-                postdata.credentials[f.name]=this.formdata[f.name]
-              })
-            this.jobResult.message= "Connecting with ansible ";
-            this.jobResult.status="info";
-            axios.post("/api/v1/ansible/launch",postdata,TokenStorage.getAuthentication())
-              .then((result)=>{
+          postdata.extravars = this.formdata
+          postdata.formName = this.currentForm.name;
+          postdata.credentials = {}
+          this.currentForm.fields
+            .filter(f => f.asCredential==true)
+            .forEach(f => {
+              postdata.credentials[f.name]=this.formdata[f.name]
+            })
+          this.jobResult.message= "Connecting with job api ";
+          this.jobResult.status="info";
+          axios.post("/api/v1/job/",postdata,TokenStorage.getAuthentication())
+            .then((result)=>{
                 if(result){
                   this.jobResult=result.data;
                   if(result.data.data.error!=""){
                     ref.$toast.error(result.data.data.error)
-                  }
-                  // get the jobid
-                  var jobid =  this.jobResult.data.output.id
-                  ref.jobId=jobid
-                  // don't show the whole json part
-                  this.jobResult.data.output = ""
-                  // wait for 2 seconds, and get the output of the job
-                  setTimeout(function(){ ref.getJob(jobid) }, 2000);
-                }else{
-                  ref.$toast.error("Failed to invoke ansible")
-                  ref.resetResult()
-                }
-              })
-              .catch(function(err){
-                ref.$toast.error("Failed to invoke ansible " + err)
-                if(err.response.status!=401){
-                  ref.resetResult()
-                }
-              })
-
-          // remote awx
-          }else if(this.currentForm.type=="awx"){
-            if(this.currentForm.key && this.formdata[this.currentForm.key]){
-              postdata.awxExtraVars = this.formdata[this.currentForm.key]
-            }else{
-              postdata.awxExtraVars = this.formdata
-            }
-            postdata.formName = this.currentForm.name;
-            postdata.awxInventory = this.currentForm.inventory;
-            postdata.awxCheck = this.currentForm.check;
-            postdata.awxDiff = this.currentForm.diff;
-            postdata.awxTemplate = this.currentForm.template;
-            postdata.awxTags = this.currentForm.tags;
-            this.jobResult.message= "Connecting with awx ";
-            this.jobResult.status="info";
-            postdata.credentials = {}
-            this.currentForm.fields
-              .filter(f => f.asCredential==true)
-              .forEach(f => {
-                postdata.credentials[f.name]=this.formdata[f.name]
-              })
-            axios.post("/api/v1/awx/launch/",postdata,TokenStorage.getAuthentication())
-              .then((result)=>{
-                  if(result){
-                    this.jobResult=result.data;
-                    if(result.data.data.error!=""){
-                      ref.$toast.error(result.data.data.error)
-                    }else{
-                      // get the jobid
-                      var jobid =  this.jobResult.data.output.id
-                      ref.jobId=jobid
-                      // don't show the whole json part
-                      this.jobResult.data.output = ""
-                      // wait for 2 seconds, and get the output of the job
-                      setTimeout(function(){ ref.getJob(jobid) }, 2000);
-                    }
                   }else{
-                    ref.$toast.error("Failed to invoke AWX")
-                    ref.resetResult()
-                  }
-              })
-              .catch(function(err){
-                ref.$toast.error("Failed to invoke AWX")
-                if(err.response.status!=401){
-                  ref.resetResult()
-                }
-              })
-            }
-            // git
-            else if(this.currentForm.type=="git"){
-              if(this.currentForm.key && this.formdata[this.currentForm.key]){
-                postdata.gitExtraVars = this.formdata[this.currentForm.key]
-              }else{
-                postdata.gitExtraVars = this.formdata
-              }
-              postdata.formName = this.currentForm.name;
-              postdata.gitRepo = this.currentForm.repo;
-              this.jobResult.message= "Pushing to git";
-              this.jobResult.status="info";
-              axios.post("/api/v1/git/push",postdata,TokenStorage.getAuthentication())
-                .then((result)=>{
-                  if(result){
-                    this.jobResult=result.data;
-                    if(result.data.data.error!=""){
-                      ref.$toast.error(result.data.data.error)
-                    }
-                    // get the jobid
-                    var jobid =  this.jobResult.data.output.id
-                    ref.JobId=jobid
-                    // don't show the whole json part
-                    this.jobResult.data.output = ""
-                    // wait for 2 seconds, and get the output of the job
-                    setTimeout(function(){ ref.getJob(jobid) }, 2000);
-                  }else{
-                    ref.$toast.error("Failed to push to git")
-                    ref.resetResult()
-                  }
-                })
-                .catch(function(err){
-                  ref.$toast.error("Failed to push to git " + err)
-                  if(err.response.status!=401){
-                    ref.resetResult()
-                  }
-                })
-            }
-            // git
-            else if(this.currentForm.type=="multistep"){
-              postdata.multiExtraVars = this.formdata
-              postdata.formName = this.currentForm.name;
-              postdata.multiSteps = this.currentForm.steps;
-              postdata.credentials = {}
-              this.currentForm.fields
-                .filter(f => f.asCredential==true)
-                .forEach(f => {
-                  postdata.credentials[f.name]=this.formdata[f.name]
-                })
-              this.jobResult.message= "Pushing to git";
-              this.jobResult.status="info";
-              axios.post("/api/v1/multistep/launch",postdata,TokenStorage.getAuthentication())
-                .then((result)=>{
-                  if(result){
-                    this.jobResult=result.data;
-                    if(result.data.data.error!=""){
-                      ref.$toast.error(result.data.data.error)
-                    }
                     // get the jobid
                     var jobid =  this.jobResult.data.output.id
                     ref.jobId=jobid
@@ -1574,18 +1439,18 @@
                     this.jobResult.data.output = ""
                     // wait for 2 seconds, and get the output of the job
                     setTimeout(function(){ ref.getJob(jobid) }, 2000);
-                  }else{
-                    ref.$toast.error("Failed to push to git")
-                    ref.resetResult()
                   }
-                })
-                .catch(function(err){
-                  ref.$toast.error("Failed to push to git " + err)
-                  if(err.response.status!=401){
-                    ref.resetResult()
-                  }
-                })
-            }
+                }else{
+                  ref.$toast.error("Failed to invoke job launch")
+                  ref.resetResult()
+                }
+            })
+            .catch(function(err){
+              ref.$toast.error("Failed to invoke job launch")
+              if(err.response.status!=401){
+                ref.resetResult()
+              }
+            })
          }
       },
       pullGit(repo){

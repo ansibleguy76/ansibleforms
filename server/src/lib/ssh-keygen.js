@@ -11,7 +11,7 @@ function checkAvailability(location, force,publicOnly, callback){
 		if(!force && pubKeyExists) return callback(pubLocation+' already exists');
 		if(!keyExists && !pubKeyExists) return callback();
 		if(keyExists){
-			logger.warn('removing '+location);
+			logger.warning('removing '+location);
 			fs.unlink(location, function(err){
 				if(err) return callback(err);
 				keyExists = false;
@@ -19,7 +19,7 @@ function checkAvailability(location, force,publicOnly, callback){
 			});
 		}
 		if(pubKeyExists) {
-			logger.warn('removing '+pubLocation);
+			logger.warning('removing '+pubLocation);
 			fs.unlink(pubLocation, function(err){
 				if(err) return callback(err);
 				pubKeyExists = false;
@@ -127,7 +127,7 @@ function ssh_keygen(location, opts, callback){
 		if(read){
 			fs.readFile(location, 'utf8', function(err, key){
 				if(destroy){
-					logger.warn('destroying key '+location);
+					logger.warning('destroying key '+location);
 					fs.unlink(location, function(err){
 						if(err) return callback(err);
 						readPubKey();
@@ -136,7 +136,7 @@ function ssh_keygen(location, opts, callback){
 				function readPubKey(){
 					fs.readFile(pubLocation, 'utf8', function(err, pubKey){
 						if(destroy){
-							logger.warn('destroying pub key '+pubLocation);
+							logger.warning('destroying pub key '+pubLocation);
 							fs.unlink(pubLocation, function(err){
 								if(err) return callback(err);
 								key = key.toString();

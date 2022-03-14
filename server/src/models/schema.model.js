@@ -26,7 +26,7 @@ function checkSchema(){
       mysql.query(sql,null,function(err,res){
         if(err){
           message=`Schema '${db}' query error\n` + err
-          logger.warn(message)
+          logger.warning(message)
           reject("ERROR : " + message)
         }else{
           if(res){
@@ -36,7 +36,7 @@ function checkSchema(){
               resolve(message)
             }else{
               message=`Schema '${db}' is not present`
-              logger.warn(message)
+              logger.warning(message)
               reject(message)
             }
           }else{
@@ -70,7 +70,7 @@ function dropIndex(table,index){
               }else{
                 if(res){
                   message=`Index '${index}' dropped on '${table}'`
-                  logger.warn(message)
+                  logger.warning(message)
                   resolve(message)
                 }else{
                   message=`ERROR : Unexpected result from MySql when dropping index '${index}' from table '${table}'`
@@ -115,7 +115,7 @@ function addColumn(table,name,fieldtype,nullable,defaultvalue){
               }else{
                 if(res){
                   message=`added column '${name}' on '${table}'`
-                  logger.warn(message)
+                  logger.warning(message)
                   resolve(message)
                 }else{
                   message=`ERROR : Unexpected result from MySql when adding column '${name}' on table '${table}'`
@@ -153,7 +153,7 @@ function addTable(table,sql){
               }else{
                 if(res){
                   message=`added table '${table}'`
-                  logger.warn(message)
+                  logger.warning(message)
                   resolve(message)
                 }else{
                   message=`ERROR : Unexpected result from MySql when adding table '${table}'`
@@ -192,7 +192,7 @@ function renameColumn(table,name,newname,fieldtype){
               }else{
                 if(res){
                   message=`renamed column '${name}'->'${newname}' on '${table}'`
-                  logger.warn(message)
+                  logger.warning(message)
                   resolve(message)
                 }else{
                   message=`ERROR : Unexpected result from MySql when renaming column '${name}'->'${newname}' on table '${table}'`
@@ -228,7 +228,7 @@ function checkTable(table){
               resolve(message)
             }else{
               message=`Table '${table}' is not present`
-              logger.warn(message)
+              logger.warning(message)
               reject(message)
             }
           }else{
@@ -257,6 +257,7 @@ function patchAll(){
   tablePromises.push(addColumn("awx","ca_bundle","text",true,"NULL")) // add for awx certficate validation
   tablePromises.push(addColumn("jobs","job_type","varchar(20)",true,"NULL")) // add for git addition
   tablePromises.push(addColumn("jobs","extravars","mediumtext",true,"NULL")) // add for extravars
+  tablePromises.push(addColumn("jobs","credentials","mediumtext",true,"NULL")) // add for credentials
   tablePromises.push(addColumn("jobs","parent_id","int(11)",true,"NULL")) // add for multistep
   tablePromises.push(renameColumn("jobs","playbook","target","VARCHAR(250)")) // better column name
   // buffer=fs.readFileSync(`${__dirname}/../db/create_settings_table.sql`)

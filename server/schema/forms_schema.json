@@ -126,7 +126,8 @@
               "inventory": {"not":{}},
               "tags": {"not":{}},
               "check": {"not":{}},
-              "diff": {"not":{}}
+              "diff": {"not":{}},
+              "key": {"not":{}}
             },
             "required": ["steps"]
           }

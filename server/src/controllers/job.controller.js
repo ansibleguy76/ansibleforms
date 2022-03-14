@@ -76,3 +76,23 @@ exports.deleteJob = function(req, res) {
 
     });
 };
+// this is the main launch code for everything
+exports.launch = async function(req, res) {
+    //handles null error
+    if(req.body.constructor === Object && Object.keys(req.body).length === 0){
+        // wrong implementation -> send 400 error
+        res.json(new RestResult("error","no data was sent","",""));
+    }else{
+        // get the form data
+        var form = req.body.formName;
+        var extravars = req.body.extravars
+        var creds = req.body.credentials
+        var user = req.user.user
+        Job.promise(form,null,user,creds,extravars,res)
+          .catch((e)=>{
+            logger.error(e)
+            //res.json(new RestResult("error",e,"",""));
+        })
+    }
+};
+// this is a generic promise for a launch
