@@ -6,7 +6,12 @@ const logger=require("../lib/logger");
 const dbConfig = require('../../config/db.config')
 
 exports.abortJob = function(req, res) {
-    Job.abort(req.params.id, function(err, job) {
+  var jobid = req.params.id;
+  if(!jobid){
+    res.json(new RestResult("error","You must provide a jobid","",""));
+    return false
+  }
+    Job.abort(jobid, function(err, job) {
         if (err){
             res.json(new RestResult("error","failed to abort job",null,err))
         }else{
@@ -24,7 +29,8 @@ exports.updateJob = function(req, res) {
     });
 };
 exports.getJob = function(req, res) {
-    Job.findById(req.params.id,(req.query.text=="true"), function(err, job) {
+  var user = req.user.user
+    Job.findById(user,req.params.id,(req.query.text=="true"), function(err, job) {
         if (err){
             res.json(new RestResult("error","failed to find job",null,err))
         }else{
@@ -58,7 +64,9 @@ exports.getJob = function(req, res) {
     });
 };
 exports.findAllJobs = function(req, res) {
-    Job.findAll(function(err, job) {
+    var user = req.user.user
+    var records = req.query.records || 500
+    Job.findAll(user,records,function(err, job) {
         if (err){
           res.json(new RestResult("error","failed to find jobs",null,err))
         }else{
@@ -95,4 +103,21 @@ exports.launch = async function(req, res) {
         })
     }
 };
-// this is a generic promise for a launch
+
+exports.relaunchJob = async function(req, res) {
+
+    // get the form data
+    var jobid = req.params.id;
+    if(!jobid){
+      res.json(new RestResult("error","You must provide a jobid","",""));
+      return false
+    }
+    var user = req.user.user
+    Job.relaunch(jobid,user,function(err,result){
+      if(err){
+        res.json(new RestResult("error",err,"",""));
+      }else{
+        res.json(new RestResult("success",`Job has been relaunched with job id ${result.id}`,"",""));
+      }
+    })
+};

@@ -10,12 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 -   Syslog integration (use env variables to tune)
+-   Relaunch and abort from joblog
+-   Filter and auto refresh on joblog
 
 ### Changed
 
 -   Logger levels changed (error, warning, notice, info, debug) / debug is lowest (silly is deprecated)
 -   Completely reworked job launch process (neater code and more reusable)
 -   Swagger job launch changed /BREAKING !!
+
+### Fixed
+
+-   Allow non rsa ssh key
+-   Add job access to own jobs in joblog
 
 ## [3.0.0] - 2022-03-09
 

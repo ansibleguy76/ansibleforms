@@ -14,7 +14,9 @@
             <span v-if="loading" class="icon"><font-awesome-icon icon="spinner" spin /></span>
             <div v-html="repoStatus"></div>
           </div>
-          <BulmaInput v-if="!repoStatus && !loading" :icon="['fab','git-square']" v-model="repo.uri" label="Repository Uri" placeholder="git@github.com:myrepo" :required="true" :hasError="$v.repo.uri.$invalid" :errors="[]" />
+          <BulmaCheckbox v-if="!repoStatus && !loading" checktype="checkbox" v-model="repo.isAdvanced" label="Advanced" />
+          <BulmaInput v-if="!repoStatus && !loading && !repo.isAdvanced" :icon="['fab','git-square']" v-model="repo.uri" label="Repository Uri" placeholder="git@github.com:myrepo" :required="true" :hasError="$v.repo.uri.$invalid" :errors="[]" />
+          <BulmaInput v-if="!repoStatus && !loading && repo.isAdvanced" :icon="['fab','git-square']" v-model="repo.command" label="Repository Clone Command" placeholder="git clone --quite --verbose git@github.com:myrepo" :required="true" :hasError="$v.repo.command.$invalid" :errors="[]" />
           <BulmaButton v-if="repoItem==undefined && !loading" icon="save" label="Create Repository" @click="newRepo()"></BulmaButton>
         </div>
       </div>
@@ -27,11 +29,12 @@
   import Vuelidate from 'vuelidate'
   import BulmaButton from './../components/BulmaButton.vue'
   import BulmaSelect from './../components/BulmaSelect.vue'
+  import BulmaCheckbox from './../components/BulmaCheckRadio.vue'
   import BulmaInput from './../components/BulmaInput.vue'
   import BulmaModal from './../components/BulmaModal.vue'
   import TokenStorage from './../lib/TokenStorage'
   import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
-
+  const gitclone = helpers.regex("gitclone",/^git clone --quiet .+$/g)
   Vue.use(Vuelidate)
 
   export default{
@@ -40,12 +43,14 @@
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean}
     },
-    components:{BulmaButton,BulmaSelect,BulmaInput,BulmaModal},
+    components:{BulmaButton,BulmaSelect,BulmaInput,BulmaModal,BulmaCheckbox},
     data(){
       return  {
           loading:false,
           repo:{
-            uri:""
+            uri:"",
+            isAdvanced:false,
+            command:""
           },
           showDelete:false,
           repoItem:undefined,
@@ -146,7 +151,16 @@
     validations: {
       repo:{
         uri: {
-          required
+          requiredIf:requiredIf(function(repo){
+            return !repo.isAdvanced
+          })
+        },
+        command: {
+          requiredIf:requiredIf(function(repo){
+            return repo.isAdvanced
+          }),
+          gitclone
+
         }
       }
     },

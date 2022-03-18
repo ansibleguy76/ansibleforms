@@ -1,24 +1,55 @@
 <template>
   <section class="section">
     <BulmaModal v-if="showDelete" title="Comfirm" action="Delete" @click="deleteJob(tempJobId);showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete job '{{ tempJobId }}'</BulmaModal>
+    <BulmaModal v-if="showRelaunch" title="Comfirm" action="Relaunch" @click="relaunchJob(tempJobId);showRelaunch=false" @close="showRelaunch=false" @cancel="showRelaunch=false">Are you sure you want to relaunch job '{{ tempJobId }}'</BulmaModal>
+    <BulmaModal v-if="showAbort" title="Comfirm" action="Abort" @click="abortJob(tempJobId);showAbort=false" @close="showAbort=false" @cancel="showAbort=false">Are you sure you want to abort job '{{ tempJobId }}'</BulmaModal>
     <div class="container">
       <h1 class="title has-text-info"><font-awesome-icon icon="history" /> Job history
-        <button @click="loadJobs" class="button is-primary is-small is-pulled-right">
-          <span class="icon">
-            <font-awesome-icon icon="sync-alt" />
-          </span>
-          <span>Refresh</span>
-        </button>
       </h1>
-      <div>
-        <table v-if="isLoaded" class="table is-bordered is-narrow">
+      <nav class="level">
+        <div class="level-left">
+          <div class="level-item">
+            <div class="field">
+              <p class="control has-icons-left">
+                <input class="input" v-model="filter" type="text" placeholder="Regex">
+                <span class="icon is-small is-left">
+                  <font-awesome-icon icon="filter" />
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="level-right">
+          <button :disabled="refresh" class="button is-info level-item" @click="loadJobs(true)">
+            <span class="icon"><font-awesome-icon icon="arrow-rotate-right" :spin="refresh" /></span>
+            <span>Refresh</span>
+          </button>
+          <span class="level-item"><BulmaCheckbox checktype="checkbox" v-model="refresh" name="refresh" label="Auto Refresh" /></span>
+          <div class="level-item control has-icons-left">
+            <div class="select">
+              <select v-model="lines">
+                <option selected>100</option>
+                <option>200</option>
+                <option>300</option>
+                <option>400</option>
+                <option>500</option>
+                <option>1000</option>
+              </select>
+            </div>
+            <div class="icon is-small is-left">
+              <font-awesome-icon icon="arrow-down-short-wide" />
+            </div>
+          </div>
+        </div>
+      </nav>
+      <div v-if="!isLoading">
+        <table class="table is-bordered is-narrow">
           <thead>
             <tr class="has-text-left">
-              <th class="action" v-if="isAdmin"></th>
+              <th class="action"></th>
               <th class="id">id</th>
               <th>form</th>
               <th class="jobtype">job type</th>
-              <th>target</th>
               <th class="status">status</th>
               <th>start time</th>
               <th>end time</th>
@@ -28,7 +59,11 @@
           <tbody>
           <template v-for="j in displayedJobs">
             <tr :key="j.id" :class="{'has-background-success-light':(j.status=='success' && j.id!=jobId),'has-background-danger-light':(j.status=='failed' && j.id!=jobId),'has-background-warning-light':((j.status=='aborted'||j.status=='warning') && j.id!=jobId),'has-background-info':j.id==jobId,'has-text-white':j.id==jobId}">
-              <td v-if="isAdmin" class="has-background-info-light"><span class="icon has-text-danger is-clickable" @click="tempJobId=j.id;showDelete=true" title="Delete job"><font-awesome-icon icon="trash-alt" /></span></td>
+              <td class="has-background-info-light">
+                <span v-if="j.status && !j.status.match(/ing$/)" class="icon has-text-info is-clickable" @click="tempJobId=j.id;showRelaunch=true" title="Relaunch job"><font-awesome-icon icon="redo" /></span>
+                <span v-if="j.status && j.status=='running'" class="icon has-text-warning is-clickable" @click="tempJobId=j.id;showAbort=true" title="Abort job"><font-awesome-icon icon="ban" /></span>
+                <span v-if="j.status && !j.status.match(/ing$/) && isAdmin" class="icon has-text-danger is-clickable" @click="tempJobId=j.id;showDelete=true" title="Delete job"><font-awesome-icon icon="trash-alt" /></span>
+              </td>
               <td class="is-clickable has-text-left" @click="toggleCollapse(j.id)">
                 <span>{{j.id}}</span>
                 <template v-if="j.job_type=='multistep'">
@@ -38,7 +73,6 @@
               </td>
               <td class="is-clickable has-text-left" @click="loadOutput(j.id)" :title="j.form">{{j.form}}</td>
               <td class="is-clickable has-text-left" @click="loadOutput(j.id)" :title="j.job_type">{{j.job_type || "ansible" }}</td>
-              <td class="is-clickable has-text-left" @click="loadOutput(j.id)" :title="j.target">{{j.target}}</td>
               <td class="is-clickable has-text-left" @click="loadOutput(j.id)" :title="j.status">{{j.status}}</td>
               <td class="is-clickable has-text-left" @click="loadOutput(j.id)" :title="j.start">{{j.start | moment('YYYY-MM-DD HH:mm:ss')}}</td>
               <td class="is-clickable has-text-left" @click="loadOutput(j.id)" :title="j.end">{{j.end | moment('YYYY-MM-DD HH:mm:ss')}}</td>
@@ -46,11 +80,12 @@
             </tr>
             <template v-for="c in childJobs(j.id)">
               <tr :key="c.id" :class="{'has-background-success-light':(c.status=='success' && c.id!=jobId),'has-background-danger-light':(c.status=='failed' && c.id!=jobId),'has-background-warning-light':((c.status=='aborted'||c.status=='warning') && c.id!=jobId),'has-background-info':c.id==jobId,'has-text-white':c.id==jobId}">
-                <td v-if="isAdmin" class="has-background-info-light"><span class="icon has-text-danger is-clickable" @click="tempJobId=c.id;showDelete=true" title="Delete job"><font-awesome-icon icon="trash-alt" /></span></td>
+                <td class="has-background-info-light">
+                  <span v-if="isAdmin" class="icon has-text-danger is-clickable" @click="tempJobId=c.id;showDelete=true" title="Delete job"><font-awesome-icon icon="trash-alt" /></span>
+                </td>
                 <td class="is-clickable has-text-right" @click="loadOutput(c.id)">{{c.id}}</td>
                 <td class="is-clickable has-text-left" @click="loadOutput(c.id)" :title="c.form">{{c.form}}</td>
                 <td class="is-clickable has-text-left" @click="loadOutput(c.id)" :title="c.job_type">{{c.job_type || "ansible" }}</td>
-                <td class="is-clickable has-text-left" @click="loadOutput(c.id)" :title="c.target">{{c.target}}</td>
                 <td class="is-clickable has-text-left" @click="loadOutput(c.id)" :title="c.status">{{c.status}}</td>
                 <td class="is-clickable has-text-left" @click="loadOutput(c.id)" :title="c.start">{{c.start | moment('YYYY-MM-DD HH:mm:ss')}}</td>
                 <td class="is-clickable has-text-left" @click="loadOutput(c.id)" :title="c.end">{{c.end | moment('YYYY-MM-DD HH:mm:ss')}}</td>
@@ -60,7 +95,7 @@
           </template>
           </tbody>
         </table>
-        <nav v-if="isLoaded && parentJobs.length>perPage" class="pagination" role="pagination" aria-label="pagination">
+        <nav v-if="!isLoading && parentJobs.length>perPage" class="pagination" role="pagination" aria-label="pagination">
           <a class="pagination-previous" v-if="page != 1" @click="page--">Previous</a>
           <a class="pagination-next" @click="page++" v-if="page < pages.length">Next page</a>
           <ul class="pagination-list">
@@ -83,7 +118,10 @@
         </nav>
         <div v-if="job"  class="columns">
           <div class="column">
-            <h3 class="subtitle">Job output for job {{jobId}} <span class="tag is-info mr-1 ml-3">{{ job.job_type || 'ansible'}}</span><span class="tag" :class="{'is-success':job.status=='success','is-danger':job.status=='failed'}">{{ job.status }}</span></h3>
+            <h3 class="subtitle">Job output for job {{jobId}}
+              <span class="tag is-info mr-1 ml-3">{{ job.job_type || 'ansible'}}</span>
+              <span class="tag" :class="{'is-success':job.status=='success','is-danger':job.status=='failed'}">{{ job.status }}</span>
+            </h3>
             <button @click="showExtraVars=true" class="button is-info is-small mr-3">
               <span class="icon">
                 <font-awesome-icon icon="eye" />
@@ -133,6 +171,7 @@
   import Vue from 'vue'
   import axios from 'axios'
   import BulmaModal from './../components/BulmaModal.vue'
+  import BulmaCheckbox from './../components/BulmaCheckRadio.vue'
   import moment from 'vue-moment'
   import TokenStorage from './../lib/TokenStorage'
   import VueJsonPretty from 'vue-json-pretty';
@@ -145,7 +184,7 @@
     props:{
       isAdmin:{type:Boolean}
     },
-    components:{BulmaModal,VueJsonPretty},
+    components:{BulmaModal,VueJsonPretty,BulmaCheckbox},
     data(){
       return  {
         jobs : [],
@@ -153,13 +192,19 @@
         perPage: 10,
         buttonsShown:7,
         pages: [],
-        isLoaded:false,
+        isLoading:false,
         job:undefined,
         jobId:undefined,
         showExtraVars:false,
         tempJobId:undefined,
         showDelete:false,
-        collapsed:[]
+        showRelaunch:false,
+        showAbort:false,
+        collapsed:[],
+        interval:undefined,
+        refresh:false,
+        lines:500,
+        filter:""
       }
     },
     methods:{
@@ -186,23 +231,30 @@
       },
       childJobs(id){
         var ref=this
-        return this.jobs.filter(x=> (x.parent_id===id && ref.collapsed.includes(id))).sort((a, b) => a.id > b.id && 1 || -1)
+        if(!this.isLoading){
+          return this.jobs.filter(x=> (x.parent_id===id && ref.collapsed.includes(id))).sort((a, b) => a.id > b.id && 1 || -1)
+        } else {
+          return []
+        }
       },
-      loadJobs(){
+      loadJobs(force=false){
         var ref= this;
-        axios.get(`/api/v1/job?timestamp=${new Date().getTime()}`,TokenStorage.getAuthentication())                               // load forms
-          .then((result)=>{
-            ref.jobs=result.data.data.output;
-            this.setPages();
-            this.isLoaded=true
-          })
-          .catch(function(err){
-            if(err.response && err.response.status!=401){
-              ref.errorMessage="Could not get jobs\n\n" + err
-            }else{
-              ref.$toast.error("Failed to load jobs")
-            }
-          })
+        if(!this.isLoading && (this.refresh ||force)){
+          this.isLoading=true;
+          axios.get(`/api/v1/job?records=${ref.lines}`,TokenStorage.getAuthentication())                               // load forms
+            .then((result)=>{
+              ref.jobs=result.data.data.output;
+              this.setPages();
+              this.isLoading=false
+            })
+            .catch(function(err){
+              if(err.response && err.response.status!=401){
+                ref.errorMessage="Could not get jobs\n\n" + err
+              }else{
+                ref.$toast.error("Failed to load jobs")
+              }
+            })
+        }
       },
       setPages () {
         this.pages=[]
@@ -245,24 +297,85 @@
               if(result.data.status=="success"){
                 ref.jobOutput=result.data.data.output;
                 ref.$toast.success("Job "+id+" is deleted");
-                this.loadJobs()
+                this.loadJobs(true)
                 this.tempJobId=undefined
               }else{
                 ref.$toast.error("Failed to delete job "+id);
               }
           })
           .catch(function(err){
-            console.log("error deleting ansible job " + err)
+            console.log("error deleting job " + err)
             ref.$toast.error("Failed to delete job");
+          })
+      },
+      abortJob(id){
+        var ref=this
+        this.jobId=id
+        axios.post("/api/v1/job/" + id + "/abort",TokenStorage.getAuthentication())
+          .then((result)=>{
+              // console.log(result)
+              if(result.data.status=="success"){
+                ref.$toast.success(result.data.message);
+                this.loadJobs(true)
+                this.tempJobId=undefined
+              }else{
+                ref.$toast.error(result.data.message);
+              }
+          })
+          .catch(function(err){
+            console.log("error aborting job " + err)
+            ref.$toast.error("Failed to abort job");
+          })
+      },
+      relaunchJob(id){
+        var ref=this
+        this.jobId=id
+        axios.post("/api/v1/job/" + id + "/relaunch",TokenStorage.getAuthentication())
+          .then((result)=>{
+              // console.log(result)
+              if(result.data.status=="success"){
+                ref.$toast.success(result.data.message);
+                this.loadJobs(true)
+                this.tempJobId=undefined
+              }else{
+                ref.$toast.error(result.data.message);
+              }
+          })
+          .catch(function(err){
+            console.log("error relaunching job " + err)
+            ref.$toast.error("Failed to relaunch job");
           })
       }
     },
     computed: {
       parentJobs (){
-        return this.jobs.filter(x => !x.parent_id)
+        var ref=this
+        if(!this.isLoading)
+          if(this.filter){
+            return this.jobs.filter(x => !x.parent_id
+              &&
+                (
+                  x.id?.toString().match(ref.filter) ||
+                  x.status?.match(ref.filter) ||
+                  x.form?.match(ref.filter)  ||
+                  x.job_type?.match(ref.filter) ||
+                  x.start?.match(ref.filter) ||
+                  x.end?.match(ref.filter) ||
+                  x.user?.match(ref.filter)
+                )
+            )
+          }else{
+            return this.jobs.filter(x => !x.parent_id)
+          }
+
+        else
+          return []
       },
       displayedJobs () {
-        return this.paginate(this.parentJobs);
+        if(!this.isLoading)
+          return this.paginate(this.parentJobs);
+        else
+          return []
       },
       displayedPages(){
         var from=this.page-1 // from the first
@@ -296,7 +409,11 @@
 
     },
     mounted(){
-      this.loadJobs();
+      this.loadJobs(true);
+      this.interval=setInterval(this.loadJobs,5000)
+    },
+    beforeDestroy(){
+      clearInterval(this.interval)
     }
   }
 </script>
@@ -312,12 +429,12 @@
     width: 100%!important;
   }
   table thead th.action{
-    width:3em!important;
-    max-width:3em!important;
+    width:7em!important;
+    max-width:7em!important;
   }
   table thead th.id{
-    width:6em!important;
-    max-width:6em!important;
+    width:7em!important;
+    max-width:7em!important;
   }
   table thead th.jobtype{
     width:6em!important;

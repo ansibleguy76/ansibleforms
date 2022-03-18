@@ -12,8 +12,8 @@ router.delete('/:id', jobController.deleteJob);
 router.post('/', jobController.launch);
 // abort a job
 router.post('/:id/abort/', jobController.abortJob);
-// abort a job
-// router.post('/:id/relaunch/', jobController.relaunchJob);
+// relaunch a job
+router.post('/:id/relaunch/', jobController.relaunchJob);
 // get all jobs
 router.get('/', jobController.findAllJobs);
 

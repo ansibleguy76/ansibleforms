@@ -527,6 +527,54 @@
         }
       }
     },
+    "/job/{jobId}/relaunch": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "jobId",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the job to relaunch."
+          }
+        ],
+        "summary": "Relaunch job",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "job relaunched with job id 123",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
     "/awx": {
       "get": {
         "tags": [

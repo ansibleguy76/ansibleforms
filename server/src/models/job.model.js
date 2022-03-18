@@ -269,11 +269,17 @@ Job.delete = function(id, result){
     result(err, null);
   }
 };
-Job.findAll = function (result) {
+Job.findAll = function (user,records,result) {
     logger.info("Finding all jobs")
-    var query = "SELECT id,form,target,status,start,end,user,user_type,job_type,parent_id FROM AnsibleForms.`jobs` ORDER BY id DESC LIMIT 500;"
+    var query
+    if(user.roles.includes("admin")){
+      query = "SELECT id,form,target,status,start,end,user,user_type,job_type,parent_id FROM AnsibleForms.`jobs` ORDER BY id DESC LIMIT " +records + ";"
+    }else{
+      query = "SELECT id,form,target,status,start,end,user,user_type,job_type,parent_id FROM AnsibleForms.`jobs` WHERE user=? AND user_type=? ORDER BY id DESC LIMIT " +records + ";"
+    }
+
     try{
-      mysql.query(query,null, function (err, res) {
+      mysql.query(query,[user.username,user.type], function (err, res) {
           if(err) {
               result(err, null);
           }
@@ -285,17 +291,27 @@ Job.findAll = function (result) {
       result(err, null);
     }
 };
-Job.findById = function (id,text,result) {
+Job.findById = function (user,id,text,result) {
     logger.info(`Finding job ${id}` )
     try{
+      var query
+      if(user.roles.includes("admin")){
+        query = "SELECT `form`,`status`,`extravars`,`credentials`,`job_type` FROM AnsibleForms.`jobs` WHERE jobs.id=?;"
+      }else{
+        query = "SELECT `form`,`status`,`extravars`,`credentials`,`job_type` FROM AnsibleForms.`jobs` WHERE jobs.id=? AND user=? AND user_type=?;"
+      }
       // get normal data
-      mysql.query("SELECT `status`,`extravars`,`job_type` FROM AnsibleForms.`jobs` WHERE jobs.id=?;",id, function (err, res) {
+      mysql.query(query,[id,user.username,user.type], function (err, res) {
           if(err) {
               result(err, null);
+          }else if(res.length!=1){
+              result(`Job ${id} not found, or access denied`,null)
           }
           else{
             var status=res[0].status
+            var form=res[0].form
             var extravars=res[0].extravars
+            var credentials=res[0].credentials
             var job_type=res[0].job_type
             var output=[]
             var line
@@ -402,7 +418,7 @@ Job.findById = function (id,text,result) {
                     output.push(output2.join("\r\n"))
 
                   })
-                  result(null, [{status:status,extravars:extravars,job_type:job_type,output:output.join('\r\n')}]);
+                  result(null, [{form:form,status:status,extravars:extravars,credentials:credentials,job_type:job_type,output:output.join('\r\n')}]);
                 }
               })
             }else{
@@ -411,7 +427,8 @@ Job.findById = function (id,text,result) {
           }
       });
     }catch(err){
-      result(err, null);
+       logger.error(err)
+       result(null,[])
     }
 };
 Job.promise = async function(form,formObj,user,creds,extravars,res,next){
@@ -674,7 +691,28 @@ Job.launch = function(form,formObj,user,creds,extravars, result,success,failed) 
     }
   )
 };
+Job.relaunch = function(id,user,result){
+  Job.findById(user,id,true,function(err,job){
+    if(err){
+      result(err)
+    }else{
+      if(job.length==1){
+        var j=job[0]
+        var extravars = {}
+        if(j.extravars){
+          extravars = JSON.parse(j.extravars)
+        }
+        if(!j.status.match(/ing$/)){
+          logger.notice(`Relaunching job ${id} with form ${j.form}`)
+          Job.launch(j.form,null,user,j.credentials,extravars,result)
+        }else{
+          result(`Job ${id} is not in a status to be relaunched (status=${j.status})`)
+        }
 
+      }
+    }
+  })
+}
 // Ansible stuff
 var Ansible = function(){}
 Ansible.launch=(playbook,ev,inv,tags,c,d,key,credentials,jobid,success,failed)=>{

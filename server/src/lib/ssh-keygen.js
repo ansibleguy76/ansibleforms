@@ -98,7 +98,7 @@ function ssh_keygen(location, opts, callback){
     keygen = spawn(binPath, [
       '-f',
       location,
-      '-y'
+      '-yq'
     ]);
   }else{
     keygen = spawn(binPath, [

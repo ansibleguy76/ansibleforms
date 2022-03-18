@@ -28,7 +28,7 @@ exports.create = function(req, res) {
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
         res.status(400).send({ error:true, message: 'Please provide all required fields' });
     }else{
-        Repo.create(req.body.uri, function(err, output) {
+        Repo.create(req.body.uri,req.body.command, function(err, output) {
             if (err){
               res.json(new RestResult("error","failed to create repository",null,err))
             }else{
