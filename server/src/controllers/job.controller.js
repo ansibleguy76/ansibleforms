@@ -61,7 +61,7 @@ exports.getJob = function(req, res) {
               res.json(new RestResult("error","failed to find job",null,"No such job"))
             }
         }
-    });
+    },true); // mask passwords if requested externally
 };
 exports.findAllJobs = function(req, res) {
     var user = req.user.user
@@ -113,7 +113,7 @@ exports.relaunchJob = async function(req, res) {
       return false
     }
     var user = req.user.user
-    Job.relaunch(jobid,user,function(err,result){
+    Job.relaunch(user,jobid,function(err,result){
       if(err){
         res.json(new RestResult("error",err,"",""));
       }else{

@@ -12,17 +12,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Syslog integration (use env variables to tune)
 -   Relaunch and abort from joblog
 -   Filter and auto refresh on joblog
+-   Override repo clone command
+-   Add log filtering and auto refresh
 
 ### Changed
 
 -   Logger levels changed (error, warning, notice, info, debug) / debug is lowest (silly is deprecated)
 -   Completely reworked job launch process (neater code and more reusable)
--   Swagger job launch changed /BREAKING !!
+-   Swagger job launch is now at job level
 
 ### Fixed
 
 -   Allow non rsa ssh key
 -   Add job access to own jobs in joblog
+-   Repo runs silent
+
+### Removed
+
+-   Ansible launch api (see job post now)
+-   Awx launch api (see job post now)
+-   Multistep launch api (see job post now)
 
 ## [3.0.0] - 2022-03-09
 

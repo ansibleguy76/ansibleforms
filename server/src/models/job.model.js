@@ -110,7 +110,7 @@ var Job=function(job){
       this.user_type = job.user_type;
       this.job_type = job.job_type;
       this.start = moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')
-      this.extravars = Helpers.logSafe(job.extravars);
+      this.extravars = job.extravars;
       this.credentials = job.credentials
     }
     if(job.status && job.status!=""){ // allow single status update
@@ -291,146 +291,48 @@ Job.findAll = function (user,records,result) {
       result(err, null);
     }
 };
-Job.findById = function (user,id,text,result) {
+Job.findById = function (user,id,asText,result,logSafe=false) {
     logger.info(`Finding job ${id}` )
     try{
       var query
       if(user.roles.includes("admin")){
-        query = "SELECT `form`,`status`,`extravars`,`credentials`,`job_type` FROM AnsibleForms.`jobs` WHERE jobs.id=?;"
+        query = "SELECT * FROM AnsibleForms.`jobs` WHERE jobs.id=?;"
       }else{
-        query = "SELECT `form`,`status`,`extravars`,`credentials`,`job_type` FROM AnsibleForms.`jobs` WHERE jobs.id=? AND user=? AND user_type=?;"
+        query = "SELECT * FROM AnsibleForms.`jobs` WHERE jobs.id=? AND user=? AND user_type=?;"
       }
       // get normal data
       mysql.query(query,[id,user.username,user.type], function (err, res) {
           if(err) {
               result(err, null);
+              return false
           }else if(res.length!=1){
               result(`Job ${id} not found, or access denied`,null)
+              return false
           }
-          else{
-            var status=res[0].status
-            var form=res[0].form
-            var extravars=res[0].extravars
-            var credentials=res[0].credentials
-            var job_type=res[0].job_type
-            var output=[]
-            var line
-            if(res.length>0){
-              // get output summary
-              mysql.query("SELECT COALESCE(output,'') output,COALESCE(`timestamp`,'') `timestamp`,COALESCE(output_type,'stdout') output_type FROM AnsibleForms.`job_output` WHERE job_id=? ORDER by job_output.order;",id, function (err, res) {
-                if(err) {
-                    result(err, null);
-                }
-                else{
-                  res.forEach(function(el){
-                    var addedTimestamp=false
-                    var output2=[]
-                    var lineoutput=[]
-                    var matchfound=false
-                    var record = el.output.trim('\r\n').replace(/\r/g,'')
-                    var lines = record.split('\n')
-                    var previousformat=""
-                    lines.forEach((line,i)=>{
-                      matchfound=false
-                      if(!text){
-                        if(el.output_type=="stderr"){
-                          // mark errors
-                          if(line.match(/^\[WARNING\].*/g) || previousformat=="warning"){
-                            previousformat="warning"
-                            matchfound=true
-                            line = "<span class='has-text-warning'>"+line+"</span>"
-                          }else{
-                            previousformat="danger"
-                            matchfound=true
-                            line = "<span class='has-text-danger'>"+line+"</span>"
-                          }
-                          lineoutput.push(line)
-                        }else{
-                          if(line.match(/^\[WARNING\].*/g)){
-                            previousformat="warning"
-                            matchfound=true
-                            line = "<span class='has-text-warning'>"+line+"</span>"
-                          }
-                          if(line.match(/^\[ERROR\].*/g)){
-                            previousformat="danger"
-                            matchfound=true
-                            line = "<span class='has-text-danger'>"+line+"</span>"
-                          }
-                          // mark play / task lines as bold
-                          if(line.match(/^([A-Z\s]*)[^\*]*(\*+)$/g)){
-                            previousformat=""
-                            matchfound=true
-                            if(i>1){
-                              line = "<strong>" + line + "</strong>"
-                            }else{
-                              // it's a fresh line/// ansible output assumed
-                              line = "\n<strong>" + line + "</strong>"
-                            }
-                          }
+          // we have a record
+          var job = res[0]
+          // mask passwords
+          if(logSafe) job.extravars=Helpers.logSafe(job.extravars)
 
-                          // mark succes lines
-                          if(line.match(/^(ok): \[([^\]]*)\].*/g)){
-                            matchfound=true
-                            previousformat="success"
-                            line = "<span class='has-text-success'>" + line + "</span>"
-                          }
-                          // mark change lines
-                          if(line.match(/^(changed): \[([^\]]*)\].*/g)){
-                            previousformat="warning"
-                            matchfound=true
-                            line = "<span class='has-text-warning'>" + line + "</span>"
-                          }
-                          // mark skip lines
-                          if(line.match(/^(skipping): \[([^\]]*)\].*/g)){
-                            previousformat="info"
-                            matchfound=true
-                            line = "<span class='has-text-info'>" + line + "</span>"
-                          }
-                          // if line continues on next line, give same format
-                          if(!matchfound && previousformat){
-                            line = `<span class='has-text-${previousformat}'>${line}</span>`
-                          }
-                          // summary line ?
-                          if(line.match('ok=.*failed.*')){
-                            matchfound=true
-                            previousformat=""
-                            line=line.replace(/(ok=[1-9]+[0-9]*)/g, "<span class='tag is-success'>$1</span>")
-                                        .replace(/(changed=[1-9]+[0-9]*)/g, "<span class='tag is-warning'>$1</span>")
-                                        .replace(/(failed=[1-9]+[0-9]*)/g, "<span class='tag is-warning'>$1</span>")
-                                        .replace(/(unreachable=[1-9]+[0-9]*)/g, "<span class='tag is-warning'>$1</span>")
-                                        .replace(/(skipped=[1-9]+[0-9]*)/g, "<span class='tag is-info'>$1</span>")
-                          }
-
-                          lineoutput.push(line)
-                        }
-                      }else{
-                        lineoutput.push(line)
-                      }
-                    })
-                    line=lineoutput.join('\n')
-                    line.split('\n').forEach(function(el2,i){
-                      if(el2!="" && !addedTimestamp && !text){
-                        el2+=" <span class='tag is-info is-light'>"+el.timestamp+"</span>"
-                        addedTimestamp=true
-                      }
-                      output2.push(el2)
-                    })
-                    output.push(output2.join("\r\n"))
-
-                  })
-                  result(null, [{form:form,status:status,extravars:extravars,credentials:credentials,job_type:job_type,output:output.join('\r\n')}]);
-                }
-              })
-            }else{
-              result(null, []);
+          // get output summary
+          mysql.query("SELECT COALESCE(output,'') output,COALESCE(`timestamp`,'') `timestamp`,COALESCE(output_type,'stdout') output_type FROM AnsibleForms.`job_output` WHERE job_id=? ORDER by job_output.order;",id, function (err, res) {
+            if(err) {
+                // error getting output - unlikely
+                result(err, null);
             }
-          }
+            else{
+              // merge the job and the output in 1 record
+              result(null, [{...job,...{output:Helpers.formatOutput(res,asText)}}]);
+            }
+          })
+
       });
     }catch(err){
        logger.error(err)
        result(null,[])
     }
 };
+// We wrap a launch in a promise so we can use await in multistep.
 Job.promise = async function(form,formObj,user,creds,extravars,res,next){
   return new Promise(async (resolve,reject) => {
     var restResult = new RestResult("info","","","")
@@ -691,7 +593,7 @@ Job.launch = function(form,formObj,user,creds,extravars, result,success,failed) 
     }
   )
 };
-Job.relaunch = function(id,user,result){
+Job.relaunch = function(user,id,result){
   Job.findById(user,id,true,function(err,job){
     if(err){
       result(err)
@@ -699,16 +601,19 @@ Job.relaunch = function(id,user,result){
       if(job.length==1){
         var j=job[0]
         var extravars = {}
+        var credentials = {}
         if(j.extravars){
           extravars = JSON.parse(j.extravars)
         }
+        if(j.credentials){
+          credentials = JSON.parse(j.credentials)
+        }
         if(!j.status.match(/ing$/)){
           logger.notice(`Relaunching job ${id} with form ${j.form}`)
-          Job.launch(j.form,null,user,j.credentials,extravars,result)
+          Job.launch(j.form,null,user,credentials,extravars,result)
         }else{
           result(`Job ${id} is not in a status to be relaunched (status=${j.status})`)
         }
-
       }
     }
   })
