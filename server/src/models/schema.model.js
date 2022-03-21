@@ -258,8 +258,10 @@ function patchAll(){
   tablePromises.push(addColumn("jobs","job_type","varchar(20)",true,"NULL")) // add for git addition
   tablePromises.push(addColumn("jobs","extravars","mediumtext",true,"NULL")) // add for extravars
   tablePromises.push(addColumn("jobs","credentials","mediumtext",true,"NULL")) // add for credentials
+  tablePromises.push(addColumn("jobs","approval","mediumtext",true,"NULL")) // add for approval info
   tablePromises.push(addColumn("jobs","parent_id","int(11)",true,"NULL")) // add for multistep
   tablePromises.push(renameColumn("jobs","playbook","target","VARCHAR(250)")) // better column name
+  tablePromises.push(addColumn("jobs","step","varchar(250)",true,"NULL")) // add column to hold current step
   // buffer=fs.readFileSync(`${__dirname}/../db/create_settings_table.sql`)
   // sql=buffer.toString();
   // tablePromises.push(addTable("settings",sql)) // add new table for overriding env variables

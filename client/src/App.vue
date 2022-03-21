@@ -36,7 +36,7 @@
         </div>
     </BulmaModal>
     <BulmaNav :isAdmin="isAdmin" @about="showAbout=true" :authenticated="authenticated" :profile="profile" @logout="logout()" :version="version" />
-    <router-view :isAdmin="isAdmin" :authenticated="authenticated" :errorMessage="errorMessage" :errorData="errorData" @authenticated="login()" @logout="logout()" />
+    <router-view :isAdmin="isAdmin" :profile="profile" :authenticated="authenticated" :errorMessage="errorMessage" :errorData="errorData" @authenticated="login()" @logout="logout()" />
   </div>
 </template>
 <script>

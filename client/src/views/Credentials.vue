@@ -1,6 +1,6 @@
 <template>
   <section v-if="isAdmin" class="section">
-    <BulmaModal v-if="showDelete" title="Comfirm" action="Delete" @click="deleteCredential();showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete Credential '{{ credential.name}}'</BulmaModal>
+    <BulmaModal v-if="showDelete" title="Delete" action="Delete" @click="deleteCredential();showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete Credential '{{ credential.name}}'</BulmaModal>
     <div class="container">
       <h1 class="title has-text-info"><font-awesome-icon icon="users" /> Credentials</h1>
       <div class="columns">

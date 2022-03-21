@@ -55,6 +55,14 @@ exports.getJob = function(req, res) {
                 restResult.status = "warning"
                 restResult.message = "job aborted"
               }
+              if(jobStatus=="approve"){
+                restResult.status = "warning"
+                restResult.message = "job is waiting for approval"
+              }
+              if(jobStatus=="rejected"){
+                restResult.status = "warning"
+                restResult.message = "job is rejected"
+              }
               restResult.data = job[0]
               res.json(restResult);
             }else{
@@ -118,6 +126,40 @@ exports.relaunchJob = async function(req, res) {
         res.json(new RestResult("error",err,"",""));
       }else{
         res.json(new RestResult("success",`Job has been relaunched with job id ${result.id}`,"",""));
+      }
+    })
+};
+exports.approveJob = async function(req, res) {
+
+    // get the form data
+    var jobid = req.params.id;
+    if(!jobid){
+      res.json(new RestResult("error","You must provide a jobid","",""));
+      return false
+    }
+    var user = req.user.user
+    Job.approve(user,jobid,function(err,result){
+      if(err){
+        res.json(new RestResult("error",err,"",""));
+      }else{
+        res.json(new RestResult("success",`Job ${jobid} has been approved`,"",""));
+      }
+    })
+};
+exports.rejectJob = async function(req, res) {
+
+    // get the form data
+    var jobid = req.params.id;
+    if(!jobid){
+      res.json(new RestResult("error","You must provide a jobid","",""));
+      return false
+    }
+    var user = req.user.user
+    Job.reject(user,jobid,function(err,result){
+      if(err){
+        res.json(new RestResult("error",err,"",""));
+      }else{
+        res.json(new RestResult("success",`Job ${jobid} has been rejected`,"",""));
       }
     })
 };

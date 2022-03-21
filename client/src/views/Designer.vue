@@ -3,7 +3,7 @@
     <BulmaQuickView v-if="warnings && showWarnings" title="Form warnings" footer="" @close="showWarnings=false">
         <p v-for="w,i in warnings" :key="'warning'+i" class="mb-3" v-html="w"></p>
     </BulmaQuickView>
-    <BulmaModal v-if="showDelete" title="Comfirm" action="Delete" @click="deleteThisForm();showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete form '{{ currentFormName}}'</BulmaModal>
+    <BulmaModal v-if="showDelete" title="Delete" action="Delete" @click="deleteThisForm();showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete form '{{ currentFormName}}'</BulmaModal>
     <BulmaModal
       v-if="showDirty"
       title="Unsaved Changes"

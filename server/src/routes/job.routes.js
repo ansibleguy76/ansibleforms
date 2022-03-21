@@ -14,6 +14,10 @@ router.post('/', jobController.launch);
 router.post('/:id/abort/', jobController.abortJob);
 // relaunch a job
 router.post('/:id/relaunch/', jobController.relaunchJob);
+// approve a job
+router.post('/:id/approve/', jobController.approveJob);
+// approve a job
+router.post('/:id/reject/', jobController.rejectJob);
 // get all jobs
 router.get('/', jobController.findAllJobs);
 

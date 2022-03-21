@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Filter and auto refresh on joblog
 -   Override repo clone command
 -   Add log filtering and auto refresh
+-   Approval and rejections (using new approval property)
 
 ### Changed
 

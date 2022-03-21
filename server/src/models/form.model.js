@@ -305,15 +305,18 @@ Form.restore = function(backupName,backupBeforeRestore){
     return false
   }
 }
-Form.loadByName = function(form,user){
+Form.loadByName = function(form,user,forApproval=false){
   var forms = Form.load()
   var formObj = forms?.forms.filter(x => x.name==form)
   if(formObj.length>0){
-    logger.debug(`Form ${form} is found, checking access...`)
-    var access = formObj[0].roles.filter(role => user.roles.includes(role))
-    if(access.length>0 || user.roles.includes("admin")){
+    if(forApproval){
       return formObj[0]
-      logger.warning(`Form ${form}, access allowed...`)
+    }
+    logger.debug(`Form ${form} is found, checking access...`)
+    var access = formObj[0].roles.filter(role => user?.roles?.includes(role))
+    if(access.length>0 || user?.roles?.includes("admin")){
+      return formObj[0]
+      logger.debug(`Form ${form}, access allowed...`)
     }else {
       logger.warning(`Form ${form}, no access...`)
       return null
