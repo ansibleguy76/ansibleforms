@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { Promise } from 'es6-promise';
+import router from '../router'
 
 var TokenStorage = {
 
@@ -28,6 +29,7 @@ var TokenStorage = {
     }
   },
   getNewToken() {
+    var ref=this
     return new Promise((resolve, reject) => {
       try{
         console.log("Getting new token from server...")
@@ -46,10 +48,11 @@ var TokenStorage = {
           })
           .catch((error) => {
             console.log("Axios gave error. " + error)
-            reject("Error : " + error)
+            var from = router?.currentRoute.path
+            reject(from)
           });
       }catch(err){
-        console.log("Error")
+        console.log(err)
       }
 
     });

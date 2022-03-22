@@ -136,9 +136,19 @@
           var ref= this;
           if(!TokenStorage.isAuthenticated()){
             //this.$toast.error("You need to authenticate")
-            this.$router.replace({ name: "Login" }).catch(err => {});         // no token found, logout
+            if(this.$route.name!="Login"){
+              this.$router.replace({ name: "Login", query: {from: this.$route.fullPath} }).catch(err => {});         // no token found, logout
+            }
           }else{
-            this.$router.push({name:"Home"}).catch(err => {});
+            if(this.$route.query.from){
+              this.$router.push({path:this.$route.query.from}).catch(err => {});
+            }else{
+              if(this.$route.name){
+                this.$router.push({name:this.$route.name}).catch(err => {});
+              }else{
+                this.$router.push({name:"Home"}).catch(err => {});
+              }
+            }
             this.refreshAuthenticated()
             this.loadProfile()
           }

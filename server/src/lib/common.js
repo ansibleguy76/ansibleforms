@@ -42,6 +42,40 @@ Helpers.logSafe = (v)=>{
   }
   return v.replace(/"password":"[^"]+"/g,'"password":"**NOLOG**"')
 }
+Helpers.replacePlaceholders = (msg,extravars)=>{
+  if(!msg)return ""
+  return msg.replace(
+    /\$\(([^\)]+)\)/g,
+    (placeholderWithDelimiters, placeholderWithoutDelimiters) =>
+      Helpers.findExtravar(extravars,placeholderWithoutDelimiters) || placeholderWithDelimiters
+  );
+}
+Helpers.findExtravar =(data,expr)=>{
+  // convert expr into actual data
+  // svm.lif.ipaddress => data["svm"]["lif"]["ipaddress"]
+  // using reduce, which is a recursive function
+  var outputValue=""
+  // outputValue=expr.split(/\s*\.\s*/)
+  expr.split(/\s*\.\s*/).reduce((master,obj, level,arr) => {
+    // if last
+    if (level === (arr.length - 1)){
+        // the last piece we assign the value to
+        try{
+          outputValue=master[obj]
+        }catch(e){
+          outputValue=""
+        }
+
+    }else{
+        // initialize first time to object
+        outputValue=master
+    }
+    // return the result for next reduce iteration
+    return master[obj]
+
+  },data);
+  return outputValue
+}
 Helpers.formatOutput = (records,asText)=>{
   var output=[] // => is final output array
   if(asText){

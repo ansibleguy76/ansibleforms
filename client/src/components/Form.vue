@@ -1540,7 +1540,8 @@
 
           });
           if(status){
-            ref.$toast.success("Git was pulled")
+            if(gitpulls.length>0)
+              ref.$toast.success("Git was pulled")
           }
           ref.pretasksFinished=true
           // start dynamic field loop (= infinite)

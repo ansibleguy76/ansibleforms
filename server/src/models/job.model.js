@@ -7,6 +7,7 @@ const YAML = require('yaml')
 const moment= require('moment')
 const {exec} = require('child_process');
 const Helpers = require('../lib/common.js')
+const Settings = require('./settings.model')
 const logger=require("../lib/logger");
 const authConfig = require('../../config/auth.config')
 const appConfig = require('../../config/app.config')
@@ -376,7 +377,7 @@ Job.launchMultistep = async function(form,steps,user,extravars,creds,jobid,succe
         return promise.then(async (previousSuccess) =>{ // we don't actually use previous success
           var result=false
           if(fromStep && fromStep!=step.name){
-            logger.notice("Skipping step " + step.name + " - in continue phase")
+            logger.debug("Skipping step " + step.name + " - in continue phase")
             // reset from step
             fromStep=undefined
             return true
@@ -390,10 +391,11 @@ Job.launchMultistep = async function(form,steps,user,extravars,creds,jobid,succe
             if(error){
               logger.error(error)
             }
-          })
+          }) // set step in parent
           // if this step has an approval
           if(step.approval){
             if(!approved){
+              Job.sendApprovalNotification(approval,ev,jobid)
               Job.printJobOutput(`APPROVE [${step.name}] ${'*'.repeat(69-step.name.length)}`,"stdout",jobid,++counter)
               Job.update({status:"approve",approval:JSON.stringify(step.approval),end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid,function(error,res){
                 if(error){
@@ -403,7 +405,6 @@ Job.launchMultistep = async function(form,steps,user,extravars,creds,jobid,succe
               approve=true
               return true
             }else{
-              logger.notice("Continuing step " + step.name + " it has been approved")
               approved=false
             }
           }
@@ -604,7 +605,7 @@ Job.launch = function(form,formObj,user,creds,extravars, result,success,failed,p
             success,
             failed,
             null,
-            formObj.approval
+            (parentId)?null:formObj.approval // if multistep: no individual approvals checks
           )
         if(jobtype=="awx"){
           Awx.launch(
@@ -620,11 +621,20 @@ Job.launch = function(form,formObj,user,creds,extravars, result,success,failed,p
             success,
             failed,
             null,
-            formObj.approval
+            (parentId)?null:formObj.approval // if multistep: no individual approvals checks
           )
         }
         if(jobtype=="git"){
-          Git.push(formObj.repo,extravars,formObj.key,jobid,success,failed,null,formObj.approval)
+          Git.push(
+            formObj.repo,
+            extravars,
+            formObj.key,
+            jobid,
+            success,
+            failed,
+            null,
+            (parentId)?null:formObj.approval // if multistep: no individual approvals checks
+          )
         }
         if(jobtype=="multistep"){
           Job.launchMultistep(form,formObj.steps,user,extravars,creds,jobid,success,failed)
@@ -813,6 +823,31 @@ Job.approve = function(user,id,result){
     }
   })
 }
+Job.sendApprovalNotification = function(approval,extravars,jobid){
+  if(!approval?.notifications?.length>0)return false
+
+  Settings.find((err,config)=>{
+    if(err){
+      logger.error(err)
+      return false
+    }
+    var subject = Helpers.replacePlaceholders(approval.title,extravars)
+    var message = "<p>An approval request from AnsibleForms is waiting for approval</p><br><br>"
+    var url = config.url?.replace(/\/$/g,'') // remove trailing slash if present
+    message+=Helpers.replacePlaceholders(approval.message,extravars)
+    message+=`<br><br><p>Click <a href="${url}/#/jobs/${jobid}">here</a> to review this request.</p>`
+    // logger.notice(subject)
+    // logger.notice(message)
+    Settings.mailsend(approval.notifications.join(","),subject,message,(err,messageid)=>{
+      if(err){
+        logger.error(err)
+      }else{
+        logger.notice("Approval mail sent to " + approval.notifications.join(",") + " with id " + messageid)
+      }
+    })
+  })
+
+}
 Job.reject = function(user,id,result){
   Job.findById(user,id,true,function(err,job){
     if(err){
@@ -862,6 +897,7 @@ Ansible.launch=(playbook,ev,inv,tags,c,d,key,credentials,jobid,success,failed,co
   }
   if(approval){
     if(!approved){
+      Job.sendApprovalNotification(approval,ev,jobid)
       Job.printJobOutput(`APPROVE [${playbook}] ${'*'.repeat(69-playbook.length)}`,"stdout",jobid,++counter)
       Job.update({status:"approve",approval:JSON.stringify(approval),end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid,function(error,res){
         if(error){
@@ -982,6 +1018,7 @@ Awx.launch = function (template,ev,inv,tags,c,d,key,credentials,jobid,success,fa
   }
   if(approval){
     if(!approved){
+      Job.sendApprovalNotification(approval,ev,jobid)
       Job.printJobOutput(`APPROVE [${template}] ${'*'.repeat(69-template.length)}`,"stdout",jobid,++counter)
       Job.update({status:"approve",approval:JSON.stringify(approval),end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid,function(error,res){
         if(error){
@@ -1316,6 +1353,7 @@ Git.push = function (repo,ev,key,jobid,success,failed,counter,approval,approved=
     }
     if(approval){
       if(!approved){
+        Job.sendApprovalNotification(approval,ev,jobid)
         Job.printJobOutput(`APPROVE [${repo.file}] ${'*'.repeat(69-repo.file.length)}`,"stdout",jobid,++counter)
         Job.update({status:"approve",approval:JSON.stringify(approval),end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid,function(error,res){
           if(error){
@@ -1327,9 +1365,9 @@ Git.push = function (repo,ev,key,jobid,success,failed,counter,approval,approved=
         logger.notice("Continuing awx " + repo.file + " it has been approved")
       }
     }
-    var extravars
-    if(key && ev[key]){
-      extravars = ev[key]  // only pick a part of it if requested
+    var extravars={...ev}
+    if(key && extravars[key]){
+      extravars = extravars[key]  // only pick a part of it if requested
     }
     try{
       // save the extravars as file - we do this in sync, should be fast

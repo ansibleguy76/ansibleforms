@@ -80,12 +80,14 @@ axios.interceptors.response.use( (response) => {
               })
             });
         })
-        .catch((error) => {
-          router.push({ name: 'Login' }).catch(err => {});
-          Promise.reject(error);
+        .catch((from) => {
+          // token refresh error -> let's login, unless we are already there
+          if(!from.includes("/login")){
+            router.push({ name: 'Login', query:{from:from}}).catch(err => {});
+          }
         });
     }catch(err){
-      console.log("Error")
+      console.log(err)
     }
   }
 });

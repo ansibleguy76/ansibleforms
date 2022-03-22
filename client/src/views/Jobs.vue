@@ -3,10 +3,10 @@
     <BulmaModal v-if="showDelete" title="Delete" action="Delete" @click="deleteJob(tempJobId);showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete job '{{ tempJobId }}'</BulmaModal>
     <BulmaModal v-if="showRelaunch" title="Relaunch" action="Relaunch" @click="relaunchJob(tempJobId);showRelaunch=false" @close="showRelaunch=false" @cancel="showRelaunch=false">Are you sure you want to relaunch job '{{ tempJobId }}'</BulmaModal>
     <BulmaModal v-if="showAbort" title="Abort" action="Abort" @click="abortJob(tempJobId);showAbort=false" @close="showAbort=false" @cancel="showAbort=false">Are you sure you want to abort job '{{ tempJobId }}'</BulmaModal>
-    <BulmaModal v-if="showApprove" :title="approvalTitle" action="Approve" @click="approveJob(jobId);showApprove=false" @close="showApprove=false" @cancel="showApprove=false">Please approve job '{{ jobId }}'<br><div v-if="approvalMessage" class="is-divider" data-content="Approval info"></div>{{ approvalMessage }}</BulmaModal>
-    <BulmaModal v-if="showReject" title="Reject" action="Reject" @click="rejectJob(jobId);showReject=false" @close="showReject=false" @cancel="showReject=false">You are about to reject job '{{ jobId }}'<br><div v-if="approvalMessage" class="is-divider" data-content="Approval info"></div>{{ approvalMessage }}</BulmaModal>
+    <BulmaModal v-if="showApprove" :title="approvalTitle" action="Approve" @click="approveJob(jobId);showApprove=false" @close="showApprove=false" @cancel="showApprove=false">You are about to approve job '{{ jobId }}'<br><div v-if="approvalMessage" class="is-divider" data-content="Approval info"></div><div v-html="approvalMessage"></div></BulmaModal>
+    <BulmaModal v-if="showReject" title="Reject" action="Reject" @click="rejectJob(jobId);showReject=false" @close="showReject=false" @cancel="showReject=false">You are about to reject job '{{ jobId }}'<br><div v-if="approvalMessage" class="is-divider" data-content="Approval info"></div><div v-html="approvalMessage"></div></BulmaModal>
     <div class="container">
-      <h1 class="title has-text-info"><font-awesome-icon icon="history" /> Job history
+      <h1 class="title has-text-info"><font-awesome-icon icon="history" /> Job log
       </h1>
       <nav class="level">
         <div class="level-left">
@@ -22,7 +22,7 @@
           </div>
         </div>
         <div class="level-right">
-          <button :disabled="isLoading" class="button is-info level-item" @click="loadJobs(true)">
+          <button :disabled="isLoading" class="button is-info level-item" @click="loadJobs()">
             <span class="icon"><font-awesome-icon icon="arrow-rotate-right" /></span>
             <span>Refresh</span>
           </button>
@@ -67,7 +67,7 @@
                 <span v-if="j.status=='approve'" class="icon has-text-success is-clickable" @click="showApproval(j.id)" title="Approve job"><font-awesome-icon icon="circle-check" /></span>
                 <span v-if="j.status=='approve'" class="icon has-text-danger is-clickable" @click="showApproval(j.id,true)" title="Reject job"><font-awesome-icon icon="circle-xmark" /></span>
               </td>
-              <td class="is-clickable has-text-left" @click="toggleCollapse(j.id)">
+              <td class="is-clickable has-text-left" @click="(j.job_type=='multistep')?toggleCollapse(j.id):loadOutput(j.id)">
                 <span>{{j.id}}</span>
                 <template v-if="j.job_type=='multistep'">
                   <span class="icon is-pulled-right" v-if="!collapsed.includes(j.id)"><font-awesome-icon icon="caret-right" /></span>
@@ -215,6 +215,14 @@
         filter:""
       }
     },
+    watch:{
+        $route (to, from){
+            if(this.$route.params.id){
+              this.jobId=this.$route.params.id
+              this.loadOutput(this.jobId)
+            }
+        }
+    } ,
     methods:{
       // copy to clipboard
       clip(v){
@@ -248,21 +256,24 @@
           return []
         }
       },
-      loadJobs(){
+      loadJobs(first=false){
         var ref= this;
         if(!this.isLoading){
           this.isLoading=true;
           axios.get(`/api/v1/job?records=${ref.lines}`,TokenStorage.getAuthentication())                               // load forms
             .then((result)=>{
               ref.jobs=result.data.data.output;
-              this.setPages();
-              this.isLoading=false
+              ref.setPages();
+              ref.isLoading=false
+              if(first && ref.jobId){
+                ref.page=ref.getPageByJobIndex
+              }
             })
             .catch(function(err){
               if(err.response && err.response.status!=401){
                 ref.errorMessage="Could not get jobs\n\n" + err
               }else{
-                ref.$toast.error("Failed to load jobs")
+                //ref.$toast.error("Failed to load jobs")
               }
             })
         }
@@ -324,7 +335,7 @@
           })
           .catch(function(err){
             console.log("error getting ansible job " + err)
-            ref.$toast.error("Failed to get job output");
+            //ref.$toast.error("Failed to get job output");
           })
       },
       showApproval(id,reject){
@@ -414,7 +425,7 @@
               if(result.data.status=="success"){
                 ref.jobOutput=result.data.data.output;
                 ref.$toast.success("Job "+id+" is deleted");
-                this.loadJobs(true)
+                this.loadJobs()
                 this.tempJobId=undefined
               }else{
                 ref.$toast.error("Failed to delete job "+id);
@@ -433,7 +444,7 @@
               // console.log(result)
               if(result.data.status=="success"){
                 ref.$toast.success(result.data.message);
-                this.loadJobs(true)
+                this.loadJobs()
                 this.tempJobId=undefined
               }else{
                 ref.$toast.error(result.data.message);
@@ -452,7 +463,7 @@
               // console.log(result)
               if(result.data.status=="success"){
                 ref.$toast.success(result.data.message);
-                this.loadJobs(true)
+                this.loadJobs()
                 this.tempJobId=undefined
               }else{
                 ref.$toast.error(result.data.message);
@@ -471,7 +482,7 @@
               // console.log(result)
               if(result.data.status=="success"){
                 ref.$toast.success(result.data.message);
-                this.loadJobs(true)
+                this.loadJobs()
                 this.loadOutput(id)
                 this.tempJobId=undefined
               }else{
@@ -491,7 +502,7 @@
               // console.log(result)
               if(result.data.status=="success"){
                 ref.$toast.success(result.data.message);
-                this.loadJobs(true)
+                this.loadJobs()
                 this.loadOutput(id)
                 this.tempJobId=undefined
               }else{
@@ -519,6 +530,18 @@
             return false
           }
         })
+      },
+      getDisplayedJobIndex(){
+        if(this.jobId)
+          return this.parentJobs.map((e)=>e.id).indexOf(this.jobId);
+        else {
+          return -1
+        }
+      },
+      getPageByJobIndex(){
+        if(this.getDisplayedJobIndex<0)return -1
+        var x = this.getDisplayedJobIndex/this.perPage
+        return Math.floor(x+1)
       },
       parentJobs (){
         var ref=this
@@ -577,7 +600,11 @@
 
     },
     mounted(){
-      this.loadJobs();
+      if(this.$route.params.id){
+        this.jobId=this.$route.params.id
+        this.loadOutput(parseInt(this.jobId))
+      }
+      this.loadJobs(true);
       this.interval=setInterval(this.loadRunningJobs,2000) // reload running jobs every 2s
     },
     beforeDestroy(){

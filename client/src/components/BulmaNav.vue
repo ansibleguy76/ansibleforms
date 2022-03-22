@@ -16,7 +16,7 @@
           <div id="navbarAnsibleForms" class="navbar-menu" v-bind:class="{ 'is-active' : showNav }">
               <div class="navbar-end">
                 <router-link class="navbar-item" to="/jobs" v-if="authenticated">
-                  <span class="icon"><font-awesome-icon icon="history" /></span><span>Job history</span>
+                  <span class="icon"><font-awesome-icon icon="history" /></span><span>Job log</span>
                 </router-link>
                 <router-link class="navbar-item" to="/designer" v-if="isAdmin && authenticated">
                   <span class="icon"><font-awesome-icon icon="edit" /></span><span>Designer</span>
@@ -25,6 +25,9 @@
                 <div class="navbar-item has-dropdown is-hoverable" v-if="isAdmin && authenticated" >
                   <a class="navbar-link"><span class="icon"><font-awesome-icon icon="cog" /></span></a>
                   <div class="navbar-dropdown">
+                    <router-link class="navbar-item" to="/settings">
+                      <span class="icon"><font-awesome-icon icon="cogs" /></span><span>Settings</span>
+                    </router-link>
                     <router-link class="navbar-item" to="/groups">
                       <span class="icon"><font-awesome-icon icon="users" /></span><span>Groups</span>
                     </router-link>
@@ -34,6 +37,7 @@
                     <router-link class="navbar-item" to="/ldap">
                       <span class="icon"><font-awesome-icon icon="id-card" /></span><span>Ldap Connection</span>
                     </router-link>
+
                     <router-link class="navbar-item" to="/awx">
                       <span class="icon"><font-awesome-icon icon="star" /></span><span>Awx Connection</span>
                     </router-link>

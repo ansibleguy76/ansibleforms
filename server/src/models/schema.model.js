@@ -209,6 +209,50 @@ function renameColumn(table,name,newname,fieldtype){
       })
   })
 }
+function addRecord(table,names,values){
+  var message
+  var db="AnsibleForms"
+  logger.debug("checking record in table " + table)
+  var sql = `SELECT * FROM ${db}.${table}`
+  return new Promise((resolve,reject) => {
+      mysql.query(sql,null,function(err,res){
+        if(err){
+          message=`Table '${table}' query error\n` + err
+          logger.debug(err)
+          reject("ERROR : " + message)
+        }else{
+          if(res){
+            if(res.length>0){
+              message=`Record in '${table}' is present`
+              logger.info(message)
+              resolve(message)
+            }else{
+              message=`Record in '${table}' is not present`
+              mysql.query(`INSERT INTO ${db}.${table}(${names.join(",")}) VALUES(${values.join(",")});`,null,function(err,res){
+                if(err){
+                  message=`failed adding record in '${table}'\n` + err
+                  logger.error(message)
+                  reject(message)
+                }else{
+                  if(res){
+                    message=`added record in '${table}'`
+                    logger.warning(message)
+                    resolve(message)
+                  }else{
+                    message=`ERROR : Unexpected result from MySql when add record in table '${table}'`
+                    reject(message)
+                  }
+                }
+              })
+            }
+          }else{
+            message=`ERROR : Unexpected result from MySql when searching for record in table '${table}'`
+            reject(message)
+          }
+        }
+      })
+  })
+}
 function checkTable(table){
   var message
   var db="AnsibleForms"
@@ -262,6 +306,10 @@ function patchAll(){
   tablePromises.push(addColumn("jobs","parent_id","int(11)",true,"NULL")) // add for multistep
   tablePromises.push(renameColumn("jobs","playbook","target","VARCHAR(250)")) // better column name
   tablePromises.push(addColumn("jobs","step","varchar(250)",true,"NULL")) // add column to hold current step
+  buffer = fs.readFileSync(`${__dirname}/../db/create_settings_table.sql`)
+  sql = buffer.toString()
+  tablePromises.push(addTable("settings",sql)) // add settings table
+  //tablePromises.push(addRecord("settings",["mail_server","mail_port","mail_secure","mail_username","mail_password","mail_from","url"],["''",25,0,"''","''","''","''"]))
   // buffer=fs.readFileSync(`${__dirname}/../db/create_settings_table.sql`)
   // sql=buffer.toString();
   // tablePromises.push(addTable("settings",sql)) // add new table for overriding env variables
@@ -310,6 +358,7 @@ function checkAll(){
       tablePromises.push(checkTable("tokens"))
       tablePromises.push(checkTable("users"))
       tablePromises.push(checkTable("awx"))
+      // tablePromises.push(checkTable("settings"))
       // wait for all results
       return Promise.all(tablePromises.map(reflect)) // map succes status
     },handleError) // stop if schema does not exist or other error (db connect failed ?)

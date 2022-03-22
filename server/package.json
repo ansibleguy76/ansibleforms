@@ -45,7 +45,8 @@
     "ldap-authentication": "~2.2.9",
     "ldapjs": "~2.3.2",
     "read-last-lines": "~1.8.0",
-    "swagger-ui-express": "~4.3.0"
+    "swagger-ui-express": "~4.3.0",
+    "nodemailer": "~6.7.3"
   },
   "devDependencies": {
     "@babel/core": "7.17.5",
