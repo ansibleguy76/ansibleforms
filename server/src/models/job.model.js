@@ -368,6 +368,7 @@ Job.launchMultistep = async function(form,steps,user,extravars,creds,jobid,succe
   var failed=0
   var skipped=0
   var aborted=false
+  var approval
   try{
     var finalSuccessStatus=true  // multistep success from start to end ?
     var partialstatus=false      // was there a step that failed and had continue ?
@@ -395,7 +396,7 @@ Job.launchMultistep = async function(form,steps,user,extravars,creds,jobid,succe
           // if this step has an approval
           if(step.approval){
             if(!approved){
-              Job.sendApprovalNotification(approval,ev,jobid)
+              Job.sendApprovalNotification(step.approval,ev,jobid)
               Job.printJobOutput(`APPROVE [${step.name}] ${'*'.repeat(69-step.name.length)}`,"stdout",jobid,++counter)
               Job.update({status:"approve",approval:JSON.stringify(step.approval),end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid,function(error,res){
                 if(error){
@@ -831,7 +832,7 @@ Job.sendApprovalNotification = function(approval,extravars,jobid){
       logger.error(err)
       return false
     }
-    var subject = Helpers.replacePlaceholders(approval.title,extravars)
+    var subject = Helpers.replacePlaceholders(approval.title,extravars) || "Waiting approval AnsibleForms"
     var message = "<p>An approval request from AnsibleForms is waiting for approval</p><br><br>"
     var url = config.url?.replace(/\/$/g,'') // remove trailing slash if present
     message+=Helpers.replacePlaceholders(approval.message,extravars)

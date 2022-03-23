@@ -78,6 +78,7 @@ Settings.mailsend = function(to,subject,message,result){
 }
 Settings.maildo = function(config,to,subject,message,result){
   var mailConfig
+  if(!config.mail_server)return false
   if(config.mail_username){
     mailConfig = {
       host: config.mail_server,

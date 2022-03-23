@@ -144,7 +144,12 @@
               this.$router.push({path:this.$route.query.from}).catch(err => {});
             }else{
               if(this.$route.name){
-                this.$router.push({name:this.$route.name}).catch(err => {});
+                if(this.$route.name=="Login"){
+                  this.$router.push({name:"Home"}).catch(err => {});
+                }else{
+                  this.$router.push({name:this.$route.name}).catch(err => {});
+                }
+
               }else{
                 this.$router.push({name:"Home"}).catch(err => {});
               }
