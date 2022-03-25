@@ -10,13 +10,13 @@
             <BulmaInput icon="arrows-alt-v" type="number" v-model="settings.mail_port" label="Port" placeholder="25" :required="true" :hasError="$v.settings.mail_port.$invalid" :errors="[]" />
           </div>
           <div class="column">
-            <BulmaInput icon="user" v-model="settings.mail_username" label="username" placeholder="username" :required="false" :hasError="false" :errors="[]" />
-            <BulmaInput icon="lock" v-model="settings.mail_password" type="password" label="password" placeholder="" :required="false" :hasError="false" :errors="[]" />
+            <BulmaInput icon="user" v-model="settings.mail_username" label="Username" placeholder="username" :required="false" :hasError="false" :errors="[]" />
+            <BulmaInput icon="lock" v-model="settings.mail_password" type="Password" label="password" placeholder="" :required="false" :hasError="false" :errors="[]" />
 
           </div>
           <div class="column">
-            <BulmaInput icon="envelope" v-model="settings.mail_from" type="email" label="mail from" placeholder="" :required="true" :hasError="$v.settings.mail_from.$invalid" :errors="[]" />
-            <BulmaInput v-if="test.enabled" icon="envelope" v-model="test.to" type="email" label="mail to" placeholder="" :required="true" :hasError="$v.test.to.$invalid" :errors="[]" />
+            <BulmaInput icon="envelope" v-model="settings.mail_from" type="email" label="Mail from" placeholder="" :required="true" :hasError="$v.settings.mail_from.$invalid" :errors="[]" />
+            <BulmaInput v-if="test.enabled" icon="envelope" v-model="test.to" type="email" label="Mail to" placeholder="" :required="true" :hasError="$v.test.to.$invalid" :errors="[]" />
             <BulmaButton v-if="test.enabled" icon="check" label="Test Mail Settings" @click="testMail()"></BulmaButton>
           </div>
         </div>

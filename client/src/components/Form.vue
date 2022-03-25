@@ -330,7 +330,16 @@
           </div>
           <!-- output result -->
           <div v-if="!!jobResult.data.output" class="box mt-3">
-            <pre v-html="jobResult.data.output"></pre>
+            <div class="columns">
+              <div class="column">
+                <h3 v-if="jobResult.data.job_type=='multistep' && subjob.data.output" class="subtitle">Main job (jobid {{jobResult.data.id}}) <span class="tag" :class="`is-${jobResult.status}`">{{ jobResult.data.status}}</span></h3>
+                <pre v-html="jobResult.data.output"></pre>
+              </div>
+              <div v-if="jobResult.data.job_type=='multistep' && subjob.data.output && !showExtraVars" class="column">
+                <h3 class="subtitle">Current Step (jobid {{subjob.data.id}}) <span class="tag" :class="`is-${subjob.status}`">{{ subjob.data.status}}</span></h3>
+                <pre v-html="subjob.data.output"></pre>
+              </div>
+            </div>
           </div>
           <!-- close output button -->
           <button v-if="!!jobResult.data.output" class="button has-text-light" :class="{ 'has-background-success' : jobResult.status=='success', 'has-background-warning' : jobResult.status=='warning', 'has-background-danger' : jobResult.status=='error','has-background-info' : jobResult.status=='info'}" @click="resetResult()">
@@ -381,7 +390,6 @@
   import VueHighlightJS from 'vue-highlight.js';
   import javascript from 'highlight.js/lib/languages/javascript';
   import vue from 'vue-highlight.js/lib/languages/vue';
-
   import Helpers from './../lib/Helpers'
   import Copy from 'copy-to-clipboard'
   import 'vue-json-pretty/lib/styles.css';
@@ -418,6 +426,7 @@
               error:""
             }
           },
+          subjob:{},                // output of last subjob
           dynamicFieldDependencies:{},      // which fields need to be re-evaluated if other fields change
           dynamicFieldDependentOf:{},       // which fields are dependend from others
           defaults:{},              // holds default info per field
@@ -1276,6 +1285,17 @@
                   // else, just import message & status
                   this.jobResult.status = result.data.status
                   this.jobResult.message = result.data.message
+                }
+                if(this.jobResult.data.job_type=="multistep"){
+                  if(this.jobResult.data.subjobs){
+                    var lastsubjob = this.jobResult.data.subjobs.split(",").map(x=>parseInt(x)).slice(-1)[0]
+                    axios.get("/api/v1/job/" + lastsubjob,TokenStorage.getAuthentication())
+                      .then((subjobresult)=>{
+                        ref.subjob=subjobresult.data
+                      }).catch((e)=>{
+                        console.error("Error getting job : " + lastsubjob)
+                      })
+                  }
                 }
                 // if not final status, keep checking after 2s
                 if(this.jobResult.status!="success" && this.jobResult.status!="error" && this.jobResult.status!="warning"){

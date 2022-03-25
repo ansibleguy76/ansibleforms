@@ -15,6 +15,7 @@ const ansibleConfig = require('./../../config/ansible.config');
 const mysql = require('./db.model')
 const RestResult = require('./restResult.model')
 const Form = require('./form.model')
+const Credential = require('./credential.model')
 
 
 const httpsAgent = new https.Agent({
@@ -291,10 +292,10 @@ Job.findById = function (user,id,asText,result,logSafe=false) {
       var query
       var params
       if(user.roles.includes("admin")){
-        query = "SELECT j.*,j2.no_of_records,o.counter FROM AnsibleForms.jobs j,(SELECT COUNT(id) no_of_records FROM AnsibleForms.jobs)j2,(SELECT max(`order`)+1 counter FROM AnsibleForms.job_output WHERE job_output.job_id=?)o WHERE j.id=?;"
+        query = "SELECT j.*,sj.subjobs,j2.no_of_records,o.counter FROM AnsibleForms.jobs j LEFT JOIN (SELECT parent_id,GROUP_CONCAT(id separator ',') subjobs FROM AnsibleForms.jobs GROUP BY parent_id) sj ON sj.parent_id=j.id,(SELECT COUNT(id) no_of_records FROM AnsibleForms.jobs)j2,(SELECT max(`order`)+1 counter FROM AnsibleForms.job_output WHERE job_output.job_id=?)o WHERE j.id=?;"
         params = [id,id,user.username,user.type]
       }else{
-        query = "SELECT j.*,j2.no_of_records,o.counter FROM AnsibleForms.jobs j,(SELECT COUNT(id) no_of_records FROM AnsibleForms.jobs WHERE user=? AND user_type=?)j2,(SELECT max(`order`)+1 counter FROM AnsibleForms.job_output WHERE job_output.job_id=?)o WHERE j.id=? AND ((j.user=? AND j.user_type=?) OR (j.status='approve'));"
+        query = "SELECT j.*,sj.subjobs,j2.no_of_records,o.counter FROM AnsibleForms.jobs j LEFT JOIN (SELECT parent_id,GROUP_CONCAT(id separator ',') subjobs FROM AnsibleForms.jobs GROUP BY parent_id) sj ON sj.parent_id=j.id,(SELECT COUNT(id) no_of_records FROM AnsibleForms.jobs WHERE user=? AND user_type=?)j2,(SELECT max(`order`)+1 counter FROM AnsibleForms.job_output WHERE job_output.job_id=?)o WHERE j.id=? AND ((j.user=? AND j.user_type=?) OR (j.status='approve'));"
         params = [user.username,user.type,id,id,user.username,user.type]
       }
       // get normal data
@@ -396,7 +397,7 @@ Job.launchMultistep = async function(form,steps,user,extravars,creds,jobid,succe
           // if this step has an approval
           if(step.approval){
             if(!approved){
-              Job.sendApprovalNotification(step.approval,ev,jobid)
+              Job.sendApprovalNotification(approval,ev,jobid)
               Job.printJobOutput(`APPROVE [${step.name}] ${'*'.repeat(69-step.name.length)}`,"stdout",jobid,++counter)
               Job.update({status:"approve",approval:JSON.stringify(step.approval),end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid,function(error,res){
                 if(error){
@@ -584,7 +585,7 @@ Job.launch = function(form,formObj,user,creds,extravars, result,success,failed,p
               try{
                 credentials[key]=await Credential.findByName(value)
               }catch(err){
-                logger.error(err)
+                logger.error("Cannot get credential." + err)
               }
 
             }

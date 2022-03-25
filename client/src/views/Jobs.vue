@@ -86,13 +86,13 @@
                 <td class="has-background-info-light">
                   <span v-if="isAdmin" class="icon has-text-danger is-clickable" @click="tempJobId=c.id;showDelete=true" title="Delete job"><font-awesome-icon icon="trash-alt" /></span>
                 </td>
-                <td class="is-clickable has-text-right" @click="loadOutput(c.id)">{{c.id}}</td>
-                <td class="is-clickable has-text-left" @click="loadOutput(c.id)" :title="c.form">{{c.form}}</td>
-                <td class="is-clickable has-text-left" @click="loadOutput(c.id)" :title="c.job_type">{{c.job_type || "ansible" }}</td>
-                <td class="is-clickable has-text-left" @click="loadOutput(c.id)" :title="c.status">{{c.status}}</td>
-                <td class="is-clickable has-text-left" @click="loadOutput(c.id)" :title="c.start">{{ formatTime(c.start) }}</td>
-                <td class="is-clickable has-text-left" @click="loadOutput(c.id)" :title="c.end">{{ formatTime(c.start) }}</td>
-                <td class="is-clickable has-text-left" @click="loadOutput(c.id)" :title="c.user">{{c.user}} ({{c.user_type}})</td>
+                <td class="is-clickable has-text-right" @click="jobId=c.id">{{c.id}}</td>
+                <td class="is-clickable has-text-left" @click="jobId=c.id" :title="c.form">{{c.form}}</td>
+                <td class="is-clickable has-text-left" @click="jobId=c.id" :title="c.job_type">{{c.job_type || "ansible" }}</td>
+                <td class="is-clickable has-text-left" @click="jobId=c.id" :title="c.status">{{c.status}}</td>
+                <td class="is-clickable has-text-left" @click="jobId=c.id" :title="c.start">{{ formatTime(c.start) }}</td>
+                <td class="is-clickable has-text-left" @click="jobId=c.id" :title="c.end">{{ formatTime(c.start) }}</td>
+                <td class="is-clickable has-text-left" @click="jobId=c.id" :title="c.user">{{c.user}} ({{c.user_type}})</td>
               </tr>
             </template>
           </template>
@@ -137,8 +137,19 @@
               </span>
               <span>Refresh</span>
             </button>
+
             <div class="box mt-3">
-              <pre v-html="job.output"></pre>
+              <div class="columns">
+                <div class="column">
+                  <h3 v-if="subjobId" class="subtitle">Main job (jobid {{jobId}})  <span class="tag" :class="jobClass(job.status)">{{ job.status}}</span></h3>
+                  <pre v-html="job.output"></pre>
+                </div>
+                <div v-if="subjobId && !showExtraVars" class="column">
+                  <h3 class="subtitle">Current step (jobid {{subjobId}})  <span class="tag" :class="jobClass(job.status)">{{ job.status}}</span></h3>
+                  <pre v-if="subjob.output" v-html="subjob.output"></pre>
+                  <pre v-else><font-awesome-icon icon="spinner" spin /></pre>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -221,6 +232,9 @@
               this.jobId=this.$route.params.id
               this.loadOutput(this.jobId)
             }
+        },
+        jobId (to,from){
+          this.loadOutput(this.jobId)
         }
     } ,
     methods:{
@@ -232,6 +246,21 @@
         }catch(e){
           this.$toast.error("Error copying to clipboard : \n" + e)
         }
+      },
+      jobClass(status){
+        if(status=="success"){
+          return "is-success"
+        }
+        if(status=="running"){
+          return "is-info"
+        }
+        if(status=="warning" || status=="aborted"){
+          return "is-warning"
+        }
+        if(status=="failed"){
+          return "is-danger"
+        }
+        return ""
       },
       toggleCollapse(id){
         if(!this.collapsed.includes(id)){
@@ -266,7 +295,7 @@
               ref.setPages();
               ref.isLoading=false
               if(first && ref.jobId){
-                ref.page=ref.getPageByJobIndex
+                ref.page=ref.pageByJobIndex
               }
             })
             .catch(function(err){
@@ -319,18 +348,26 @@
         }
         return result
       },
-      loadOutput(id){
+      loadOutput(id,sub=false){
         var ref=this
-        this.jobId=id
+        if(!sub)this.jobId=id
         axios.get("/api/v1/job/" + id,TokenStorage.getAuthentication())
           .then((result)=>{
               if(result.data.data!==undefined){
                 // import the data if output returned
-                ref.job=result.data.data;
-                if(ref.job.extravars){
-                  ref.job.extravars=JSON.parse(ref.job.extravars)
-                  ref.job.approval=JSON.parse(ref.job.approval)
+                if(!sub){
+                  ref.job=result.data.data;
+                  if(ref.job.extravars){
+                    ref.job.extravars=JSON.parse(ref.job.extravars)
+                    ref.job.approval=JSON.parse(ref.job.approval)
+                  }
+                  if(ref.subjobId)
+                    ref.loadOutput(ref.subjobId,true)
+                }else{
+                  var idx = ref.getJobIndex(id)
+                  Vue.set(ref.jobs,idx,result.data.data)
                 }
+
               }
           })
           .catch(function(err){
@@ -531,16 +568,16 @@
           }
         })
       },
-      getDisplayedJobIndex(){
+      displayedJobIndex(){
         if(this.jobId)
           return this.parentJobs.map((e)=>e.id).indexOf(this.jobId);
         else {
           return -1
         }
       },
-      getPageByJobIndex(){
-        if(this.getDisplayedJobIndex<0)return -1
-        var x = this.getDisplayedJobIndex/this.perPage
+      pageByJobIndex(){
+        if(this.displayedJobIndex<0)return -1
+        var x = this.displayedJobIndex/this.perPage
         return Math.floor(x+1)
       },
       parentJobs (){
@@ -596,8 +633,21 @@
       },
       showLastEllipsis(){
         return (!this.displayedPages.includes(this.pages.length-1) && this.page<(this.pages.length-1))
+      },
+      subjobs(){
+        if(this.job && this.job.subjobs){
+          return this.job.subjobs.split(",").map(x => parseInt(x))
+        }else{
+          return []
+        }
+      },
+      subjobId(){
+        return this.subjobs.slice(-1)[0]
+      },
+      subjob(){
+        var ref=this
+        return this.jobs?.filter(x=>x.id==ref.subjobId)[0]
       }
-
     },
     mounted(){
       if(this.$route.params.id){

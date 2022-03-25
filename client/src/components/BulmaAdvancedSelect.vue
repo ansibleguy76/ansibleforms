@@ -1,7 +1,7 @@
 <template>
   <div>
     <p v-if="queryfilter" class="has-text-info"><span class="icon is-size-7"><font-awesome-icon icon="search" /></span> <span>{{ queryfilter}}</span></p>
-    <div v-if="!sticky" class="dropdown is-fullwidth" :class="{'is-active':isActive && !isLoading}">
+    <div v-if="!sticky" class="dropdown is-fullwidth" :class="{'is-active':isActive && !isLoading,'is-up':isUp}">
       <div class="dropdown-trigger">
         <p class="control has-icons-right" :class="{'has-icons-left':icon!=undefined}">
           <input
@@ -31,7 +31,7 @@
           </span>
         </p>
       </div>
-      <div class="dropdown-menu" id="dropdown-menu" role="menu">
+      <div ref="dd" class="dropdown-menu" id="dropdown-menu" role="menu">
         <div class="dropdown-content" ref="content" tabindex="0" @keydown.esc="close()" @keydown.tab="close()" @blur="close()" @keydown="doFilter">
           <BulmaAdvancedTable
             :defaultValue="defaultValue"
@@ -111,7 +111,8 @@
         previewLabel:"",
         preview:"",
         focus:"",
-        queryfilter:""
+        queryfilter:"",
+        isUp:false
       }
     },
     computed: {
@@ -126,6 +127,9 @@
       }
     },
     methods:{
+      testUp(){
+
+      },
       close(){
         this.isActive=false
         this.$refs.input.focus({ preventScroll: true })
@@ -136,7 +140,16 @@
         var ref=this
         this.isActive=!this.isActive
         if(this.isActive){
-          this.$nextTick(()=>{ref.focus="content"})
+          this.$nextTick(()=>{
+            ref.focus="content";
+            // calculate if we need to do a dropup
+            var dim = ref.$refs["dd"].getBoundingClientRect()
+            var wh = window.innerHeight
+            // if dropdown is out out of view AND there is space for dropup, do dropup
+            if(((dim.y + dim.height)>wh) && (dim.y>dim.height)){
+              ref.isUp=true
+            }
+          })
         }
       },
       doFilter(event){

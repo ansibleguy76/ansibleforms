@@ -147,9 +147,8 @@
                 if(this.$route.name=="Login"){
                   this.$router.push({name:"Home"}).catch(err => {});
                 }else{
-                  this.$router.push({name:this.$route.name}).catch(err => {});
+                  this.$router.push(this.$route.fullPath).catch(err => {});
                 }
-
               }else{
                 this.$router.push({name:"Home"}).catch(err => {});
               }
