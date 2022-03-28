@@ -61,6 +61,10 @@
     {
       "name": "query",
       "description": "Invoke an database query"
+    },
+    {
+      "name": "general settings",
+      "description": "Get and set general settings and test mail"
     }
   ],
   "schemes": [
@@ -810,6 +814,207 @@
               "example": {
                 "status": "success",
                 "message": "Awx Connection is OK",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/settings": {
+      "get": {
+        "tags": [
+          "general settings"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get general settings",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "Settings found",
+                "data": {
+                  "output": {
+                    "mail_server": "relay.domain.local",
+                    "mail_port": 25,
+                    "mail_secure": 0,
+                    "mail_username": "",
+                    "mail_password": "",
+                    "mail_from": "ansibleforms@domain.local",
+                    "url": "https://ansibleforms"
+                  },
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "general settings"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "general settings",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "mail_server": {
+                  "type": "string",
+                  "example": "relay.domain.local"
+                },
+                "mail_port": {
+                  "type": "integer",
+                  "example": 25
+                },
+                "mail_username": {
+                  "type": "string",
+                  "example": ""
+                },
+                "mail_password": {
+                  "type": "string",
+                  "example": ""
+                },
+                "mail_secure": {
+                  "type": "boolean",
+                  "example": false
+                },
+                "mail_from": {
+                  "type": "string",
+                  "example": "ansibleforms@domain.local"
+                },
+                "url":{
+                  "type": "string",
+                  "example": "https://ansibleforms"
+                }
+              }
+            }
+          }
+        ],
+        "summary": "Set general settings",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "Settings updated",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/settings/mailcheck": {
+      "post": {
+        "tags": [
+          "general settings"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "mail test settings",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "mail_server": {
+                  "type": "string",
+                  "example": "relay.domain.local"
+                },
+                "mail_port": {
+                  "type": "integer",
+                  "example": 25
+                },
+                "mail_username": {
+                  "type": "string",
+                  "example": ""
+                },
+                "mail_password": {
+                  "type": "string",
+                  "example": ""
+                },
+                "mail_secure": {
+                  "type": "boolean",
+                  "example": false
+                },
+                "mail_from": {
+                  "type": "string",
+                  "example": "ansibleforms@domain.local"
+                },
+                "to": {
+                  "type": "string",
+                  "example": "testuser@domain.local"
+                }
+              }
+            }
+          }
+        ],
+        "summary": "Test Mail",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "Mail is sent (<430e7527-c0da-197a-5171-ee3ad546668b@domain.local>)",
                 "data": {
                   "output": "",
                   "error": ""
