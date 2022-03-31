@@ -82,6 +82,21 @@ exports.findAllJobs = function(req, res) {
         }
     });
 };
+exports.findApprovals = function(req, res) {
+    var user = req.user.user
+    Job.findApprovals(user,function(err, count) {
+        if (err){
+          res.json(new RestResult("error","failed to find approval jobs",null,err))
+        }else{
+          if(count){
+            res.json(new RestResult("success","approval jobs found",count,""));
+          }else{
+            res.json(new RestResult("success","no approval jobs found",0,""));
+          }
+
+        }
+    });
+};
 exports.deleteJob = function(req, res) {
     Job.delete( req.params.id, function(err, job) {
         if (err){

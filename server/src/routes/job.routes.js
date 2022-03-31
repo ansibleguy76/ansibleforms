@@ -2,6 +2,8 @@ const express = require('express')
 const router = express.Router()
 const jobController =   require('../controllers/job.controller');
 
+// get approvals count
+router.get('/approvals', jobController.findApprovals);
 // get a job
 router.get('/:id', jobController.getJob);
 // change a job (status changes)
@@ -20,5 +22,6 @@ router.post('/:id/approve/', jobController.approveJob);
 router.post('/:id/reject/', jobController.rejectJob);
 // get all jobs
 router.get('/', jobController.findAllJobs);
+
 
 module.exports = router

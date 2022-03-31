@@ -16,7 +16,7 @@
           <div id="navbarAnsibleForms" class="navbar-menu" v-bind:class="{ 'is-active' : showNav }">
               <div class="navbar-end">
                 <router-link class="navbar-item" to="/jobs" v-if="authenticated">
-                  <span class="icon"><font-awesome-icon icon="history" /></span><span>Job log</span>
+                  <span class="icon"><font-awesome-icon icon="history" /></span><span>Job log </span><span v-if="approvals" class="ml-1 is-warning tag">{{approvals}} {{(approvals==1)?"approval":"approvals"}} waiting</span>
                 </router-link>
                 <router-link class="navbar-item" to="/designer" v-if="isAdmin && authenticated">
                   <span class="icon"><font-awesome-icon icon="edit" /></span><span>Designer</span>
@@ -93,7 +93,8 @@
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean},
       profile:{type:Object},
-      version:{type:String}
+      version:{type:String},
+      approvals:{type:Number}
     },
     data(){
       return  {

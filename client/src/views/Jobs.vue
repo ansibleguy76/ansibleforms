@@ -140,11 +140,11 @@
 
             <div class="box mt-3">
               <div class="columns">
-                <div class="column">
+                <div v-if="job" class="column">
                   <h3 v-if="subjobId" class="subtitle">Main job (jobid {{jobId}})  <span class="tag" :class="jobClass(job.status)">{{ job.status}}</span></h3>
-                  <pre v-html="job.output"></pre>
+                  <pre v-if="job.output" v-html="job.output"></pre>
                 </div>
-                <div v-if="subjobId && !showExtraVars" class="column">
+                <div v-if="subjobId && subjob && !showExtraVars" class="column">
                   <h3 class="subtitle">Current step (jobid {{subjobId}})  <span class="tag" :class="jobClass(job.status)">{{ job.status}}</span></h3>
                   <pre v-if="subjob.output" v-html="subjob.output"></pre>
                   <pre v-else><font-awesome-icon icon="spinner" spin /></pre>
@@ -190,7 +190,6 @@
   import VueJsonPretty from 'vue-json-pretty';
   import Copy from 'copy-to-clipboard'
   import 'vue-json-pretty/lib/styles.css';
-  Vue.use(moment)
 
   export default{
     name: "Jobs",
@@ -321,6 +320,7 @@
               if(item.id==ref.jobId){
                 ref.job=result.data.data
               }
+              ref.$emit('refreshApprovals')
             })
             .catch(function(err){
               console.error(`Error loading job ${item.id} : ${err}`)
@@ -367,7 +367,6 @@
                   var idx = ref.getJobIndex(id)
                   Vue.set(ref.jobs,idx,result.data.data)
                 }
-
               }
           })
           .catch(function(err){
@@ -467,6 +466,7 @@
               }else{
                 ref.$toast.error("Failed to delete job "+id);
               }
+              ref.$emit('refreshApprovals')
           })
           .catch(function(err){
             console.log("error deleting job " + err)
@@ -476,7 +476,7 @@
       abortJob(id){
         var ref=this
         this.jobId=id
-        axios.post("/api/v1/job/" + id + "/abort",TokenStorage.getAuthentication())
+        axios.post("/api/v1/job/" + id + "/abort",{},TokenStorage.getAuthentication())
           .then((result)=>{
               // console.log(result)
               if(result.data.status=="success"){
@@ -495,7 +495,7 @@
       relaunchJob(id){
         var ref=this
         this.jobId=id
-        axios.post("/api/v1/job/" + id + "/relaunch",TokenStorage.getAuthentication())
+        axios.post("/api/v1/job/" + id + "/relaunch",{},TokenStorage.getAuthentication())
           .then((result)=>{
               // console.log(result)
               if(result.data.status=="success"){
@@ -505,6 +505,7 @@
               }else{
                 ref.$toast.error(result.data.message);
               }
+              ref.$emit('refreshApprovals')
           })
           .catch(function(err){
             console.log("error relaunching job " + err)
@@ -514,7 +515,7 @@
       approveJob(id){
         var ref=this
         this.jobId=id
-        axios.post("/api/v1/job/" + id + "/approve",TokenStorage.getAuthentication())
+        axios.post("/api/v1/job/" + id + "/approve",{},TokenStorage.getAuthentication())
           .then((result)=>{
               // console.log(result)
               if(result.data.status=="success"){
@@ -522,6 +523,7 @@
                 this.loadJobs()
                 this.loadOutput(id)
                 this.tempJobId=undefined
+                this.$emit('refreshApprovals')
               }else{
                 ref.$toast.error(result.data.message);
               }
@@ -534,7 +536,7 @@
       rejectJob(id){
         var ref=this
         this.jobId=id
-        axios.post("/api/v1/job/" + id + "/reject",TokenStorage.getAuthentication())
+        axios.post("/api/v1/job/" + id + "/reject",{},TokenStorage.getAuthentication())
           .then((result)=>{
               // console.log(result)
               if(result.data.status=="success"){
@@ -542,6 +544,7 @@
                 this.loadJobs()
                 this.loadOutput(id)
                 this.tempJobId=undefined
+                this.$emit('refreshApprovals')
               }else{
                 ref.$toast.error(result.data.message);
               }
@@ -600,7 +603,7 @@
         }
       },
       runningJobs(){
-        return this.jobs.filter(x => (x.start && moment().diff(x.start,'hours')<6) && (x.status=="running" || x.status=="aborting" || x.status=="abort"))
+          return this.jobs.filter(x => (x.start && moment().diff(x.start,'hours')<6) && (x.status=="running" || x.status=="aborting" || x.status=="abort"))
       },
       displayedJobs () {
           return this.paginate(this.parentJobs);

@@ -46,7 +46,7 @@ axios.interceptors.response.use( (response) => {
       vm.$toast.warning(message)
       // clear our tokens from browser and push to login
       TokenStorage.clear();
-      router.push({ name: 'Login' }).catch(err => {});
+      router.push({ name: 'Login', query: {from: this.$route.fullPath} }).catch(err => {});
 
       return new Promise((resolve, reject) => {
         reject(message);
@@ -54,12 +54,12 @@ axios.interceptors.response.use( (response) => {
     }
 
     // Try request again with new token
-    console.log("Trying to refresh tokens")
+    //console.log("Trying to refresh tokens")
     try{
       return TokenStorage.getNewToken()
         .then((token) => {
           // console.log("Refresh done")
-            console.log("Retrying previous call with new tokens")
+            //console.log("Retrying previous call with new tokens")
             // New request with new token
             const config = error.config;
             config.headers['Authorization'] = `Bearer ${token}`;
@@ -69,14 +69,14 @@ axios.interceptors.response.use( (response) => {
                 if(response.error){
                   Promise.reject(error);
                   reject(error);
-                  router.push({ name: 'Login' }).catch(err => {});
+                  router.push({ name: 'Login', query: {from: this.$route.fullPath} }).catch(err => {});
                 }else{
                   resolve(response);
                 }
               }).catch((error) => {
                 Promise.reject(error);
                 reject(error);
-                router.push({ name: 'Login' }).catch(err => {});
+                router.push({ name: 'Login', query: {from: this.$route.fullPath} }).catch(err => {});
               })
             });
         })

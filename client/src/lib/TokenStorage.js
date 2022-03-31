@@ -48,7 +48,7 @@ var TokenStorage = {
           })
           .catch((error) => {
             console.log("Axios gave error. " + error)
-            var from = router?.currentRoute.path
+            var from = router?.currentRoute.fullPath
             reject(from)
           });
       }catch(err){

@@ -138,6 +138,7 @@
       toggle(){
         if(this.disabled)return
         var ref=this
+        this.isUp=false
         this.isActive=!this.isActive
         if(this.isActive){
           this.$nextTick(()=>{
@@ -146,9 +147,7 @@
             var dim = ref.$refs["dd"].getBoundingClientRect()
             var wh = window.innerHeight
             // if dropdown is out out of view AND there is space for dropup, do dropup
-            if((dim.bottom>wh) && (dim.top>dim.height)){
-              ref.isUp=true
-            }
+            ref.isUp=((dim.bottom>wh) && (dim.top>dim.height))
           })
         }
       },

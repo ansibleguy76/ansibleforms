@@ -286,6 +286,33 @@ Job.findAll = function (user,records,result) {
       result(err, null);
     }
 };
+Job.findApprovals = function (user,result) {
+    logger.debug("Finding all approval jobs")
+    var count=0
+    var query = "SELECT approval FROM AnsibleForms.`jobs` WHERE status='approve' AND approval IS NOT NULL;"
+    try{
+      mysql.query(query, function (err, res) {
+          if(err) {
+              result(err, null);
+          }
+          else{
+            if(user.roles.includes("admin")){
+              result(null,res.length)
+            }else{
+              res.forEach((item, i) => {
+                //
+                var matches = item.approval.match(/\"roles\":\[([^\]]*)\]/)[1].replaceAll('"','').split(",").filter(x=>user.roles.includes(x))
+                if(matches.length>0)count++
+              });
+              result(null,count)
+            }
+          }
+      });
+    }catch(err){
+      logger.error(err)
+      result(err, null);
+    }
+};
 Job.findById = function (user,id,asText,result,logSafe=false) {
     logger.info(`Finding job ${id}` )
     try{
@@ -358,12 +385,402 @@ Job.promise = async function(form,formObj,user,creds,extravars,res,next,parentId
     },parentId,reuseId)
   })
 }
-Job.launchMultistep = async function(form,steps,user,extravars,creds,jobid,success,failed,counter,fromStep,approved=false){
+
+Job.launch = function(form,formObj,user,creds,extravars, result,success,failed,parentId=null) {
+  if(!formObj){
+    // we load it, it's an actual form
+    formObj = Form.loadByName(form,user)
+    if(!formObj){
+      result("No such form or access denied")
+      return false
+    }
+  }
+  // console.log(formObj)
+  // we have form and we have access
+  var jobtype=formObj.type
+  var target
+  if(jobtype=="ansible"){
+    target=formObj.playbook
+  }
+  if(jobtype=="awx"){
+    target=formObj.template
+  }
+  if(jobtype=="git"){
+    target=formObj?.repo?.file
+  }
+  if(jobtype=="multistep"){
+    target=formObj.name
+  }
+  if(!target){
+    result("Invalid form or step info")
+    return false
+  }
+  // create a new job in the database
+  // if reuseId is passed, we don't create a new job and continue the existing one (for approve)
+  Job.create(
+    new Job({form:form,target:target,user:user.username,user_type:user.type,status:"running",job_type:jobtype,parent_id:parentId,extravars:JSON.stringify(extravars),credentials:JSON.stringify(creds)}),
+    async (error,jobid)=>{
+      var counter=0
+      if(error){
+        logger.error(error)
+        result(error,null)
+        if(failed)failed(error)
+      }else{
+        logger.debug(`Job id ${jobid} is created`)
+        // job created - return to client
+        result(null,{id:jobid})
+        // the rest is now happening in the background
+        // if credentials are requested, we now get them.
+        var credentials={}
+        if(creds){
+          for (const [key, value] of Object.entries(creds)) {
+            if(value=="__self__"){
+              credentials[key]={
+                host:dbConfig.host,
+                user:dbConfig.user,
+                port:dbConfig.port,
+                password:dbConfig.password
+              }
+            }else{
+              try{
+                credentials[key]=await Credential.findByName(value)
+              }catch(err){
+                logger.error("Cannot get credential." + err)
+              }
+            }
+          }
+        }
+
+        if(jobtype=="ansible")
+
+          Ansible.launch(
+            formObj.playbook,
+            extravars,
+            formObj.inventory,
+            formObj.tags,
+            formObj.check,
+            formObj.diff,
+            formObj.key,
+            credentials,
+            jobid,
+            success,
+            failed,
+            null,
+            (parentId)?null:formObj.approval // if multistep: no individual approvals checks
+          )
+        if(jobtype=="awx"){
+          Awx.launch(
+            formObj.template,
+            extravars,
+            formObj.inventory,
+            formObj.tags,
+            formObj.check,
+            formObj.diff,
+            formObj.key,
+            credentials,
+            jobid,
+            success,
+            failed,
+            null,
+            (parentId)?null:formObj.approval // if multistep: no individual approvals checks
+          )
+        }
+        if(jobtype=="git"){
+          Git.push(
+            formObj.repo,
+            extravars,
+            formObj.key,
+            jobid,
+            success,
+            failed,
+            null,
+            (parentId)?null:formObj.approval // if multistep: no individual approvals checks
+          )
+        }
+        if(jobtype=="multistep"){
+          Multistep.launch(
+            form,
+            formObj.steps,
+            user,
+            extravars,
+            creds,
+            jobid,
+            success,
+            failed,
+            null,
+            formObj.approval
+          )
+        }
+
+      }
+    }
+  )
+};
+Job.continue = function(form,user,creds,extravars, result,jobid) {
+  var formObj
+  // we load it, it's an actual form
+  formObj = Form.loadByName(form,user,true)
+  if(!formObj){
+    result("No such form or access denied")
+    return false
+  }
+
+  // console.log(formObj)
+  // we have form and we have access
+  var jobtype=formObj.type
+  var target
+  if(jobtype=="ansible"){
+    target=formObj.playbook
+  }
+  if(jobtype=="awx"){
+    target=formObj.template
+  }
+  if(jobtype=="git"){
+    target=formObj?.repo?.file
+  }
+  if(jobtype=="multistep"){
+    target=formObj.name
+  }
+  if(!target){
+    result("Invalid form or step info")
+    return false
+  }
+  Job.findById(user,jobid,true,function(err,res){
+    if(!err){
+      if(res.length>0){
+        var step=res[0].step
+        var counter=res[0].counter
+        Job.printJobOutput(`changed: [approved by ${user.username}]`,"stdout",jobid,++counter,()=>{
+          Job.update({status:"running"},jobid,async function(err,res){
+            if(!err){
+              result(null,{id:jobid}) // return continue result
+
+              // the rest is now happening in the background
+              // if credentials are requested, we now get them.
+              var credentials={}
+              if(creds){
+                for (const [key, value] of Object.entries(creds)) {
+                  if(value=="__self__"){
+                    credentials[key]={
+                      host:dbConfig.host,
+                      user:dbConfig.user,
+                      port:dbConfig.port,
+                      password:dbConfig.password
+                    }
+                  }else{
+                    try{
+                      credentials[key]=await Credential.findByName(value)
+                    }catch(err){
+                      logger.error(err)
+                    }
+
+                  }
+                }
+              }
+
+              if(jobtype=="ansible"){
+                Ansible.launch(
+                  formObj.playbook,
+                  extravars,
+                  formObj.inventory,
+                  formObj.tags,
+                  formObj.check,
+                  formObj.diff,
+                  formObj.key,
+                  credentials,
+                  jobid,
+                  null,
+                  null,
+                  ++counter,
+                  formObj.approval,
+                  true
+                )
+              }
+              if(jobtype=="awx"){
+                Awx.launch(
+                  formObj.template,
+                  extravars,
+                  formObj.inventory,
+                  formObj.tags,
+                  formObj.check,
+                  formObj.diff,
+                  formObj.key,
+                  credentials,
+                  jobid,
+                  null,
+                  null,
+                  ++counter,
+                  formObj.approval,
+                  true
+                )
+              }
+              if(jobtype=="git"){
+                Git.push(formObj.repo,extravars,formObj.key,jobid,null,null,++counter,formObj.approval,true)
+              }
+              if(jobtype=="multistep"){
+                Multistep.launch(form,formObj.steps,user,extravars,creds,jobid,null,null,++counter,formObj.approval,step,true)
+              }
+
+            }else{
+              logger.error(err)
+            }
+          })
+        })
+      }else{
+        logger.error("No job found with id " + jobid)
+      }
+    }else{
+      logger.error(err)
+    }
+  })
+};
+Job.relaunch = function(user,id,result){
+  Job.findById(user,id,true,function(err,job){
+    if(err){
+      result(err)
+    }else{
+      if(job.length==1){
+        var j=job[0]
+        var extravars = {}
+        var credentials = {}
+        if(j.extravars){
+          extravars = JSON.parse(j.extravars)
+        }
+        if(j.credentials){
+          credentials = JSON.parse(j.credentials)
+        }
+        if(!["running","aborting","abort"].includes(j.status)){
+          logger.notice(`Relaunching job ${id} with form ${j.form}`)
+          Job.launch(j.form,null,user,credentials,extravars,result)
+        }else{
+          result(`Job ${id} is not in a status to be relaunched (status=${j.status})`)
+        }
+      }
+    }
+  })
+}
+Job.approve = function(user,id,result){
+  Job.findById(user,id,true,function(err,job){
+    if(err){
+      result(err)
+    }else{
+      if(job.length==1){
+        var j=job[0]
+        var approval=JSON.parse(j.approval)
+        if(approval){
+          var access = approval?.roles.filter(role => user?.roles?.includes(role))
+          if(access?.length>0 || user?.roles?.includes("admin")){
+            logger.notice(`Approve allowed for user ${user.username}`)
+          }else {
+            logger.warning(`Approve denied for user ${user.username}`)
+            result(`Approve denied for user ${user.username}`)
+            return null
+          }
+        }
+        var extravars = {}
+        var credentials = {}
+        if(j.extravars){
+          extravars = JSON.parse(j.extravars)
+        }
+        if(j.credentials){
+          credentials = JSON.parse(j.credentials)
+        }
+        if(j.status=="approve"){
+          logger.notice(`Approving job ${id} with form ${j.form}`)
+          Job.continue(j.form,user,credentials,extravars,result,id)
+        }else{
+          result(`Job ${id} is not in approval status (status=${j.status})`)
+        }
+      }
+    }
+  })
+}
+Job.sendApprovalNotification = function(approval,extravars,jobid){
+  if(!approval?.notifications?.length>0)return false
+
+  Settings.find((err,config)=>{
+    if(err){
+      logger.error(err)
+      return false
+    }
+    var subject = Helpers.replacePlaceholders(approval.title,extravars) || "Waiting approval AnsibleForms"
+    var message = "<p>An approval request from AnsibleForms is waiting for approval</p><br><br>"
+    var url = config.url?.replace(/\/$/g,'') // remove trailing slash if present
+    message+=Helpers.replacePlaceholders(approval.message,extravars)
+    message+=`<br><br><p>Click <a href="${url}/#/jobs/${jobid}">here</a> to review this request.</p>`
+    // logger.notice(subject)
+    // logger.notice(message)
+    Settings.mailsend(approval.notifications.join(","),subject,message,(err,messageid)=>{
+      if(err){
+        logger.error(err)
+      }else{
+        logger.notice("Approval mail sent to " + approval.notifications.join(",") + " with id " + messageid)
+      }
+    })
+  })
+
+}
+Job.reject = function(user,id,result){
+  Job.findById(user,id,true,function(err,job){
+    if(err){
+      result(err)
+    }else{
+      if(job.length==1){
+        var j=job[0]
+        var approval=JSON.parse(j.approval)
+        if(approval){
+          var access = approval?.roles.filter(role => user?.roles?.includes(role))
+          if(access?.length>0 || user?.roles?.includes("admin")){
+            logger.notice(`Approve allowed for user ${user.username}`)
+          }else {
+            logger.warning(`Approve denied for user ${user.username}`)
+            result(`Approve denied for user ${user.username}`)
+            return null
+          }
+        }
+        var counter=j.counter
+        if(j.status=="approve"){
+          logger.notice(`Rejecting job ${id} with form ${j.form}`)
+          Job.printJobOutput(`changed: [rejected by ${user.username}]`,"stderr",id,++counter,()=>{
+            Job.update({status:"rejected",end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},id,function(error,res){
+              if(error){
+                logger.error(error)
+                result(error)
+              }else{
+                result(null,true)
+              }
+            })
+          })
+
+        }else{
+          result(`Job ${id} is not in rejectable status (status=${j.status})`)
+        }
+      }
+    }
+  })
+}
+// Multistep stuff
+var Multistep = function(){}
+Multistep.launch = async function(form,steps,user,extravars,creds,jobid,success,failed,counter,approval,fromStep,approved=false){
   // create a new job in the database
   if(!counter){
     counter=0
   }else{
     counter++
+  }
+  if(approval){
+    if(!approved){
+      Job.sendApprovalNotification(approval,extravars,jobid)
+      Job.printJobOutput(`APPROVE [${form}] ${'*'.repeat(69-form.length)}`,"stdout",jobid,++counter)
+      Job.update({status:"approve",approval:JSON.stringify(approval),end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid,function(error,res){
+        if(error){
+          logger.error(error)
+        }
+      })
+      return true
+    }else{
+      logger.notice("Continuing multistep " + form + " it has been approved")
+    }
   }
   var ok=0
   var failed=0
@@ -525,369 +942,6 @@ Job.launchMultistep = async function(form,steps,user,extravars,creds,jobid,succe
     logger.error(e)
     Job.endJobStatus(jobid,++counter,"stderr","failed",e)
   }
-}
-Job.launch = function(form,formObj,user,creds,extravars, result,success,failed,parentId=null) {
-  if(!formObj){
-    // we load it, it's an actual form
-    formObj = Form.loadByName(form,user)
-    if(!formObj){
-      result("No such form or access denied")
-      return false
-    }
-  }
-  // console.log(formObj)
-  // we have form and we have access
-  var jobtype=formObj.type
-  var target
-  if(jobtype=="ansible"){
-    target=formObj.playbook
-  }
-  if(jobtype=="awx"){
-    target=formObj.template
-  }
-  if(jobtype=="git"){
-    target=formObj?.repo?.file
-  }
-  if(jobtype=="multistep"){
-    target=formObj.name
-  }
-  if(!target){
-    result("Invalid form or step info")
-    return false
-  }
-  // create a new job in the database
-  // if reuseId is passed, we don't create a new job and continue the existing one (for approve)
-  Job.create(
-    new Job({form:form,target:target,user:user.username,user_type:user.type,status:"running",job_type:jobtype,parent_id:parentId,extravars:JSON.stringify(extravars),credentials:JSON.stringify(creds)}),
-    async (error,jobid)=>{
-      var counter=0
-      if(error){
-        logger.error(error)
-        result(error,null)
-        if(failed)failed(error)
-      }else{
-        logger.debug(`Job id ${jobid} is created`)
-        // job created - return to client
-        result(null,{id:jobid})
-        // the rest is now happening in the background
-        // if credentials are requested, we now get them.
-        var credentials={}
-        if(creds){
-          for (const [key, value] of Object.entries(creds)) {
-            if(value=="__self__"){
-              credentials[key]={
-                host:dbConfig.host,
-                user:dbConfig.user,
-                port:dbConfig.port,
-                password:dbConfig.password
-              }
-            }else{
-              try{
-                credentials[key]=await Credential.findByName(value)
-              }catch(err){
-                logger.error("Cannot get credential." + err)
-              }
-
-            }
-          }
-        }
-
-        if(jobtype=="ansible")
-
-          Ansible.launch(
-            formObj.playbook,
-            extravars,
-            formObj.inventory,
-            formObj.tags,
-            formObj.check,
-            formObj.diff,
-            formObj.key,
-            credentials,
-            jobid,
-            success,
-            failed,
-            null,
-            (parentId)?null:formObj.approval // if multistep: no individual approvals checks
-          )
-        if(jobtype=="awx"){
-          Awx.launch(
-            formObj.template,
-            extravars,
-            formObj.inventory,
-            formObj.tags,
-            formObj.check,
-            formObj.diff,
-            formObj.key,
-            credentials,
-            jobid,
-            success,
-            failed,
-            null,
-            (parentId)?null:formObj.approval // if multistep: no individual approvals checks
-          )
-        }
-        if(jobtype=="git"){
-          Git.push(
-            formObj.repo,
-            extravars,
-            formObj.key,
-            jobid,
-            success,
-            failed,
-            null,
-            (parentId)?null:formObj.approval // if multistep: no individual approvals checks
-          )
-        }
-        if(jobtype=="multistep"){
-          Job.launchMultistep(form,formObj.steps,user,extravars,creds,jobid,success,failed)
-        }
-
-      }
-    }
-  )
-};
-Job.continue = function(form,user,creds,extravars, result,jobid) {
-  var formObj
-  // we load it, it's an actual form
-  formObj = Form.loadByName(form,user,true)
-  if(!formObj){
-    result("No such form or access denied")
-    return false
-  }
-
-  // console.log(formObj)
-  // we have form and we have access
-  var jobtype=formObj.type
-  var target
-  if(jobtype=="ansible"){
-    target=formObj.playbook
-  }
-  if(jobtype=="awx"){
-    target=formObj.template
-  }
-  if(jobtype=="git"){
-    target=formObj?.repo?.file
-  }
-  if(jobtype=="multistep"){
-    target=formObj.name
-  }
-  if(!target){
-    result("Invalid form or step info")
-    return false
-  }
-  Job.findById(user,jobid,true,function(err,res){
-    if(!err){
-      if(res.length>0){
-        var step=res[0].step
-        var counter=res[0].counter
-        Job.printJobOutput(`changed: [approved by ${user.username}]`,"stdout",jobid,++counter,()=>{
-          Job.update({status:"running"},jobid,async function(err,res){
-            if(!err){
-              result(null,{id:jobid}) // return continue result
-
-              // the rest is now happening in the background
-              // if credentials are requested, we now get them.
-              var credentials={}
-              if(creds){
-                for (const [key, value] of Object.entries(creds)) {
-                  if(value=="__self__"){
-                    credentials[key]={
-                      host:dbConfig.host,
-                      user:dbConfig.user,
-                      port:dbConfig.port,
-                      password:dbConfig.password
-                    }
-                  }else{
-                    try{
-                      credentials[key]=await Credential.findByName(value)
-                    }catch(err){
-                      logger.error(err)
-                    }
-
-                  }
-                }
-              }
-
-              if(jobtype=="ansible"){
-                Ansible.launch(
-                  formObj.playbook,
-                  extravars,
-                  formObj.inventory,
-                  formObj.tags,
-                  formObj.check,
-                  formObj.diff,
-                  formObj.key,
-                  credentials,
-                  jobid,
-                  null,
-                  null,
-                  ++counter,
-                  formObj.approval,
-                  true
-                )
-              }
-              if(jobtype=="awx"){
-                Awx.launch(
-                  formObj.template,
-                  extravars,
-                  formObj.inventory,
-                  formObj.tags,
-                  formObj.check,
-                  formObj.diff,
-                  formObj.key,
-                  credentials,
-                  jobid,
-                  null,
-                  null,
-                  ++counter,
-                  formObj.approval,
-                  true
-                )
-              }
-              if(jobtype=="git"){
-                Git.push(formObj.repo,extravars,formObj.key,jobid,null,null,++counter,formObj.approval,true)
-              }
-              if(jobtype=="multistep"){
-                Job.launchMultistep(form,formObj.steps,user,extravars,creds,jobid,null,null,++counter,step,true)
-              }
-
-            }else{
-              logger.error(err)
-            }
-          })
-        })
-      }else{
-        logger.error("No job found with id " + jobid)
-      }
-    }else{
-      logger.error(err)
-    }
-  })
-};
-Job.relaunch = function(user,id,result){
-  Job.findById(user,id,true,function(err,job){
-    if(err){
-      result(err)
-    }else{
-      if(job.length==1){
-        var j=job[0]
-        var extravars = {}
-        var credentials = {}
-        if(j.extravars){
-          extravars = JSON.parse(j.extravars)
-        }
-        if(j.credentials){
-          credentials = JSON.parse(j.credentials)
-        }
-        if(!["running","aborting","abort"].includes(j.status)){
-          logger.notice(`Relaunching job ${id} with form ${j.form}`)
-          Job.launch(j.form,null,user,credentials,extravars,result)
-        }else{
-          result(`Job ${id} is not in a status to be relaunched (status=${j.status})`)
-        }
-      }
-    }
-  })
-}
-Job.approve = function(user,id,result){
-  Job.findById(user,id,true,function(err,job){
-    if(err){
-      result(err)
-    }else{
-      if(job.length==1){
-        var j=job[0]
-        var approval=JSON.parse(j.approval)
-        if(approval){
-          var access = approval?.roles.filter(role => user?.roles?.includes(role))
-          if(access?.length>0 || user?.roles?.includes("admin")){
-            logger.notice(`Approve allowed for user ${user.username}`)
-          }else {
-            logger.warning(`Approve denied for user ${user.username}`)
-            result(`Approve denied for user ${user.username}`)
-            return null
-          }
-        }
-        var extravars = {}
-        var credentials = {}
-        if(j.extravars){
-          extravars = JSON.parse(j.extravars)
-        }
-        if(j.credentials){
-          credentials = JSON.parse(j.credentials)
-        }
-        if(j.status=="approve"){
-          logger.notice(`Approving job ${id} with form ${j.form}`)
-          Job.continue(j.form,user,credentials,extravars,result,id)
-        }else{
-          result(`Job ${id} is not in approval status (status=${j.status})`)
-        }
-      }
-    }
-  })
-}
-Job.sendApprovalNotification = function(approval,extravars,jobid){
-  if(!approval?.notifications?.length>0)return false
-
-  Settings.find((err,config)=>{
-    if(err){
-      logger.error(err)
-      return false
-    }
-    var subject = Helpers.replacePlaceholders(approval.title,extravars) || "Waiting approval AnsibleForms"
-    var message = "<p>An approval request from AnsibleForms is waiting for approval</p><br><br>"
-    var url = config.url?.replace(/\/$/g,'') // remove trailing slash if present
-    message+=Helpers.replacePlaceholders(approval.message,extravars)
-    message+=`<br><br><p>Click <a href="${url}/#/jobs/${jobid}">here</a> to review this request.</p>`
-    // logger.notice(subject)
-    // logger.notice(message)
-    Settings.mailsend(approval.notifications.join(","),subject,message,(err,messageid)=>{
-      if(err){
-        logger.error(err)
-      }else{
-        logger.notice("Approval mail sent to " + approval.notifications.join(",") + " with id " + messageid)
-      }
-    })
-  })
-
-}
-Job.reject = function(user,id,result){
-  Job.findById(user,id,true,function(err,job){
-    if(err){
-      result(err)
-    }else{
-      if(job.length==1){
-        var j=job[0]
-        var approval=JSON.parse(j.approval)
-        if(approval){
-          var access = approval?.roles.filter(role => user?.roles?.includes(role))
-          if(access?.length>0 || user?.roles?.includes("admin")){
-            logger.notice(`Approve allowed for user ${user.username}`)
-          }else {
-            logger.warning(`Approve denied for user ${user.username}`)
-            result(`Approve denied for user ${user.username}`)
-            return null
-          }
-        }
-        var counter=j.counter
-        if(j.status=="approve"){
-          logger.notice(`Rejecting job ${id} with form ${j.form}`)
-          Job.printJobOutput(`changed: [rejected by ${user.username}]`,"stderr",id,++counter,()=>{
-            Job.update({status:"rejected",end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},id,function(error,res){
-              if(error){
-                logger.error(error)
-                result(error)
-              }else{
-                result(null,true)
-              }
-            })
-          })
-
-        }else{
-          result(`Job ${id} is not in rejectable status (status=${j.status})`)
-        }
-      }
-    }
-  })
 }
 // Ansible stuff
 var Ansible = function(){}

@@ -329,20 +329,20 @@
             </div>
           </div>
           <!-- output result -->
-          <div v-if="!!jobResult.data.output" class="box mt-3">
+          <div v-if="jobResult.data && !!jobResult.data.output" class="box mt-3">
             <div class="columns">
               <div class="column">
-                <h3 v-if="jobResult.data.job_type=='multistep' && subjob.data.output" class="subtitle">Main job (jobid {{jobResult.data.id}}) <span class="tag" :class="`is-${jobResult.status}`">{{ jobResult.data.status}}</span></h3>
+                <h3 v-if="jobResult.data.job_type=='multistep' && subjob.data && subjob.data.output" class="subtitle">Main job (jobid {{jobResult.data.id}}) <span class="tag" :class="`is-${jobResult.status}`">{{ jobResult.data.status}}</span></h3>
                 <pre v-html="jobResult.data.output"></pre>
               </div>
-              <div v-if="jobResult.data.job_type=='multistep' && subjob.data.output && !showExtraVars" class="column">
+              <div v-if="jobResult.data.job_type=='multistep' && subjob.data && subjob.data.output && !showExtraVars" class="column">
                 <h3 class="subtitle">Current Step (jobid {{subjob.data.id}}) <span class="tag" :class="`is-${subjob.status}`">{{ subjob.data.status}}</span></h3>
                 <pre v-html="subjob.data.output"></pre>
               </div>
             </div>
           </div>
           <!-- close output button -->
-          <button v-if="!!jobResult.data.output" class="button has-text-light" :class="{ 'has-background-success' : jobResult.status=='success', 'has-background-warning' : jobResult.status=='warning', 'has-background-danger' : jobResult.status=='error','has-background-info' : jobResult.status=='info'}" @click="resetResult()">
+          <button v-if="jobResult.data && !!jobResult.data.output" class="button has-text-light" :class="{ 'has-background-success' : jobResult.status=='success', 'has-background-warning' : jobResult.status=='warning', 'has-background-danger' : jobResult.status=='error','has-background-info' : jobResult.status=='info'}" @click="resetResult()">
             <span class="icon"><font-awesome-icon icon="times" /></span>
             <span>Close output</span>
           </button>
@@ -1277,9 +1277,9 @@
           .then((result)=>{
               // if we have decent data
               // console.log("job result - " + JSON.stringify(result))
-              if(result.data.data!==undefined){
+              if(result.data?.data!==undefined){
                 // import the data if output returned
-                if(result.data.data.output!=""){
+                if(result.data?.data?.output!=""){
                   this.jobResult=result.data;
                 }else{
                   // else, just import message & status
@@ -1526,7 +1526,7 @@
 
       // set as ready
       // if our type is git, we need to first pull git
-      if(this.currentForm.type!="git" && this.currentForm.type!="multistep"){
+      if(!["git","multistep"].includes(this.currentForm.type)){
         this.pretasksFinished=true
         // start dynamic field loop (= infinite)
         this.startDynamicFieldsLoop()
