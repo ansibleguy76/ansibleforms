@@ -703,11 +703,19 @@ Job.sendApprovalNotification = function(approval,extravars,jobid){
       logger.error(err)
       return false
     }
-    var subject = Helpers.replacePlaceholders(approval.title,extravars) || "Waiting approval AnsibleForms"
-    var message = "<p>An approval request from AnsibleForms is waiting for approval</p><br><br>"
+    var subject = Helpers.replacePlaceholders(approval.title,extravars) || "AnsibleForms Approval Request"
+    var buffer = fs.readFileSync(`${__dirname}/../templates/approval.html`)
+    var message = buffer.toString()
+    var color = "#158cba"
     var url = config.url?.replace(/\/$/g,'') // remove trailing slash if present
-    message+=Helpers.replacePlaceholders(approval.message,extravars)
-    message+=`<br><br><p>Click <a href="${url}/#/jobs/${jobid}">here</a> to review this request.</p>`
+    var logo = `${url}/assets/img/logo.png`
+    var approvalMessage = Helpers.replacePlaceholders(approval.message,extravars)
+    message=message.replace("${message}",approvalMessage)
+                    .replaceAll("${url}",url)
+                    .replaceAll("${jobid}",jobid)
+                    .replaceAll("${title}",subject)
+                    .replaceAll("${logo}",logo)
+                    .replaceAll("${color}",color)
     // logger.notice(subject)
     // logger.notice(message)
     Settings.mailsend(approval.notifications.join(","),subject,message,(err,messageid)=>{
