@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.1] - 2022-04-01
+
 ### Added
 
 -   Syslog integration (use env variables to tune)
@@ -243,7 +245,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.0...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.1...HEAD
+
+[3.0.1]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.0...3.0.1
 
 [3.0.0]: https://github.com/ansibleguy76/ansibleforms/compare/2.2.4...3.0.0
 
