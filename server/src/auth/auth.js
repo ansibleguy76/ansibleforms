@@ -16,7 +16,7 @@ passport.use(
           // if error ?
           if (err || result===null) {
             // trying against ldap
-            logger.debug("No login locally, trying ldap")
+            logger.info("No login locally, trying ldap")
             UserModel.checkLdap(username,password,function(err,result){
               if(err){
                 const match = err.match(authConfig.ldapErrorRegex)
@@ -31,11 +31,11 @@ passport.use(
                   return done(err)
                 }
               }else{
-                logger.debug(JSON.stringify(result))
+                logger.info(JSON.stringify(result))
                 user.username = result.sAMAccountName
                 user.type = 'ldap'
                 user.roles = UserModel.getRoles(user,result)
-                logger.debug("ldap login is ok => " + user.username)
+                logger.info("ldap login is ok => " + user.username)
                 return done(null, user);
               }
 
@@ -51,7 +51,7 @@ passport.use(
             user.id = result.user.id
             user.type = 'local'
             user.roles = UserModel.getRoles(user,result.user.groups)
-            logger.debug("local login is ok => " + user.username)
+            logger.info("local login is ok => " + user.username)
             return done(null, user);
           }
         });
@@ -73,10 +73,14 @@ passport.use(
     },
     async (jwtPayload, done) => {
       try {
-        return done(null, jwtPayload);
+        if(jwtPayload.access){
+          return done(null, jwtPayload);
+        }else {
+          done(null, false,{message:'Bad accesstoken'})
+        }
       } catch (error) {
-        logger.debug("error ?")
-        done(error);
+        logger.info("error ?")
+        done(error,false,{message:'Unknown JWT error'});
       }
     }
   )

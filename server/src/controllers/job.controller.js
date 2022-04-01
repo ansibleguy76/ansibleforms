@@ -6,7 +6,12 @@ const logger=require("../lib/logger");
 const dbConfig = require('../../config/db.config')
 
 exports.abortJob = function(req, res) {
-    Job.abort(req.params.id, function(err, job) {
+  var jobid = req.params.id;
+  if(!jobid){
+    res.json(new RestResult("error","You must provide a jobid","",""));
+    return false
+  }
+    Job.abort(jobid, function(err, job) {
         if (err){
             res.json(new RestResult("error","failed to abort job",null,err))
         }else{
@@ -24,7 +29,8 @@ exports.updateJob = function(req, res) {
     });
 };
 exports.getJob = function(req, res) {
-    Job.findById(req.params.id,(req.query.text=="true"), function(err, job) {
+  var user = req.user.user
+    Job.findById(user,req.params.id,(req.query.text=="true"), function(err, job) {
         if (err){
             res.json(new RestResult("error","failed to find job",null,err))
         }else{
@@ -49,20 +55,45 @@ exports.getJob = function(req, res) {
                 restResult.status = "warning"
                 restResult.message = "job aborted"
               }
+              if(jobStatus=="approve"){
+                restResult.status = "warning"
+                restResult.message = "job is waiting for approval"
+              }
+              if(jobStatus=="rejected"){
+                restResult.status = "warning"
+                restResult.message = "job is rejected"
+              }
               restResult.data = job[0]
               res.json(restResult);
             }else{
               res.json(new RestResult("error","failed to find job",null,"No such job"))
             }
         }
-    });
+    },true); // mask passwords if requested externally
 };
 exports.findAllJobs = function(req, res) {
-    Job.findAll(function(err, job) {
+    var user = req.user.user
+    var records = req.query.records || 500
+    Job.findAll(user,records,function(err, job) {
         if (err){
           res.json(new RestResult("error","failed to find jobs",null,err))
         }else{
           res.json(new RestResult("success","jobs found",job,""));
+        }
+    });
+};
+exports.findApprovals = function(req, res) {
+    var user = req.user.user
+    Job.findApprovals(user,function(err, count) {
+        if (err){
+          res.json(new RestResult("error","failed to find approval jobs",null,err))
+        }else{
+          if(count){
+            res.json(new RestResult("success","approval jobs found",count,""));
+          }else{
+            res.json(new RestResult("success","no approval jobs found",0,""));
+          }
+
         }
     });
 };
@@ -75,4 +106,75 @@ exports.deleteJob = function(req, res) {
         }
 
     });
+};
+// this is the main launch code for everything
+exports.launch = async function(req, res) {
+    //handles null error
+    if(req.body.constructor === Object && Object.keys(req.body).length === 0){
+        // wrong implementation -> send 400 error
+        res.json(new RestResult("error","no data was sent","",""));
+    }else{
+        // get the form data
+        var form = req.body.formName;
+        var extravars = req.body.extravars
+        var creds = req.body.credentials
+        var user = req.user.user
+        Job.promise(form,null,user,creds,extravars,res)
+          .catch((e)=>{
+            logger.error(e)
+            //res.json(new RestResult("error",e,"",""));
+        })
+    }
+};
+
+exports.relaunchJob = async function(req, res) {
+
+    // get the form data
+    var jobid = req.params.id;
+    if(!jobid){
+      res.json(new RestResult("error","You must provide a jobid","",""));
+      return false
+    }
+    var user = req.user.user
+    Job.relaunch(user,jobid,function(err,result){
+      if(err){
+        res.json(new RestResult("error",err,"",""));
+      }else{
+        res.json(new RestResult("success",`Job has been relaunched with job id ${result.id}`,"",""));
+      }
+    })
+};
+exports.approveJob = async function(req, res) {
+
+    // get the form data
+    var jobid = req.params.id;
+    if(!jobid){
+      res.json(new RestResult("error","You must provide a jobid","",""));
+      return false
+    }
+    var user = req.user.user
+    Job.approve(user,jobid,function(err,result){
+      if(err){
+        res.json(new RestResult("error",err,"",""));
+      }else{
+        res.json(new RestResult("success",`Job ${jobid} has been approved`,"",""));
+      }
+    })
+};
+exports.rejectJob = async function(req, res) {
+
+    // get the form data
+    var jobid = req.params.id;
+    if(!jobid){
+      res.json(new RestResult("error","You must provide a jobid","",""));
+      return false
+    }
+    var user = req.user.user
+    Job.reject(user,jobid,function(err,result){
+      if(err){
+        res.json(new RestResult("error",err,"",""));
+      }else{
+        res.json(new RestResult("success",`Job ${jobid} has been rejected`,"",""));
+      }
+    })
 };

@@ -20,7 +20,7 @@ var Ldap=function(ldap){
     this.enable = (ldap.enable)?1:0;
 };
 Ldap.update = function (record, result) {
-    logger.debug(`Updating ldap ${record.name}`)
+    logger.info(`Updating ldap ${record.name}`)
     mysql.query("UPDATE AnsibleForms.`ldap` set ?", record, function (err, res) {
         if(err) {
             result(err, null);
@@ -103,16 +103,16 @@ Ldap.check = function(ldapConfig,result){
         options.ldapOpts.tlsOptions.ca = ldapConfig.ldapTlsCa
       }
       options.ldapOpts.tlsOptions.rejectUnauthorized = !(ldapConfig.ignore_certs==1)
-      logger.debug("use tls : " + (ldapConfig.enable_tls==1))
-      logger.debug("reject invalid certificates : " + !(ldapConfig.ignore_certs==1))
+      logger.info("use tls : " + (ldapConfig.enable_tls==1))
+      logger.info("reject invalid certificates : " + !(ldapConfig.ignore_certs==1))
     }
 
     if(badCertificates){
       result("Certificate is not valid",null)
     }else{
-      logger.info("Certificates are valid")
+      logger.notice("Certificates are valid")
       try{
-        logger.silly(options)
+        logger.debug(options)
         var user = await authenticate(options)
         result(null,user)
       }catch(err){
@@ -134,7 +134,7 @@ Ldap.check = function(ldapConfig,result){
               }
             }
           }
-          logger.info("Checking ldap connection result : " + em)
+          logger.notice("Checking ldap connection result : " + em)
           result(em,null)
       }
     }

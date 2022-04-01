@@ -126,7 +126,8 @@
               "inventory": {"not":{}},
               "tags": {"not":{}},
               "check": {"not":{}},
-              "diff": {"not":{}}
+              "diff": {"not":{}},
+              "key": {"not":{}}
             },
             "required": ["steps"]
           }
@@ -216,7 +217,34 @@
                 "check": {"type": "boolean"},
                 "diff": {"type": "boolean"},
                 "continue": {"type": "boolean"},
-                "always": {"type": "boolean"}
+                "always": {"type": "boolean"},
+                "approval": {
+                  "$id": "/approval",
+                  "type": "object",
+                  "required":[
+                    "message",
+                    "roles"
+                  ],
+                  "properties": {
+                    "title": {"type": "string"},
+                    "message": {"type": "string"},
+                    "roles": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "/role"
+                      }
+                    },
+                    "notifications": {
+                      "type": "array",
+                      "items": {
+                        "$id": "/email",
+                        "type": "string",
+                        "pattern": "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+                      }
+                    }
+                  },
+                  "additionalProperties": false
+                }
               },
               "additionalProperties": false
             }
@@ -224,6 +252,9 @@
           "type": {
             "type": "string",
             "enum": ["ansible", "awx", "git","multistep"]
+          },
+          "approval":{
+            "$ref": "/approval"
           },
           "playbook": {"type": "string"},
           "key": {"type": "string"},

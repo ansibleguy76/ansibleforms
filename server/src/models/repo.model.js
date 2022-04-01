@@ -15,13 +15,13 @@ Repo.color = function(t){
 
 Repo.findAll = function (callback) {
   try{
-    var directory = config.repoDir
+    var directory = config.repoPath
     var repos
     try{
       fs.accessSync(directory)
     }catch(e){
       try{
-        logger.info("Force creating path : " + directory)
+        logger.notice("Force creating path : " + directory)
         fs.mkdirSync(directory, { recursive: true,force:true });
       }catch(err){
         logger.error(err)
@@ -40,8 +40,8 @@ Repo.findAll = function (callback) {
 }
 Repo.delete = function (name,callback) {
   try{
-    logger.info("Deleting repository " + name)
-    var directory = config.repoDir
+    logger.notice("Deleting repository " + name)
+    var directory = config.repoPath
     try{
       fs.accessSync(path.join(directory,name))
     }catch(e){
@@ -57,7 +57,7 @@ Repo.delete = function (name,callback) {
 }
 Repo.findByName = function (name,text,callback) {
   try{
-    var directory = config.repoDir
+    var directory = config.repoPath
     directory=path.join(directory,name)
     try{
       fs.accessSync(directory)
@@ -65,7 +65,7 @@ Repo.findByName = function (name,text,callback) {
       callback(e)
       return false
     }
-    var clone = exec(`git remote show origin && git log -n 1`,{cwd:directory})
+    var info = exec(`git remote show origin && git log -n 1`,{cwd:directory})
     var output=[]
     if(!text){
       output.push(`<h1 class='subtitle'>${directory}</h1>`)
@@ -73,13 +73,13 @@ Repo.findByName = function (name,text,callback) {
       output.push(directory)
     }
 
-    clone.stdout.on('data', function(a){
+    info.stdout.on('data', function(a){
       // logger.sill(a)
       output.push(a)
     });
 
-    clone.on('exit',function(code){
-      logger.silly('exit')
+    info.on('exit',function(code){
+      logger.debug('exit')
       if(code==0){
         if(!text){
           callback(null,Repo.color(output))
@@ -91,7 +91,7 @@ Repo.findByName = function (name,text,callback) {
       }
     });
 
-    clone.stderr.on('data',function(a){
+    info.stderr.on('data',function(a){
       output.push(a)
       logger.error('stderr:'+a);
     });
@@ -102,15 +102,15 @@ Repo.findByName = function (name,text,callback) {
 }
 
 // run git clone
-Repo.create = function (repo, callback) {
+Repo.create = function (uri,command, callback) {
   try{
-    logger.info("Creating repository " + repo)
-    var directory = config.repoDir
+    logger.notice("Creating repository " + (uri)?uri:command)
+    var directory = config.repoPath
     try{
       fs.accessSync(directory)
     }catch(e){
       try{
-        logger.info("Force creating path : " + directory)
+        logger.notice("Force creating path : " + directory)
         fs.mkdirSync(directory, { recursive: true,force:true });
       }catch(err){
         logger.error(err)
@@ -118,17 +118,27 @@ Repo.create = function (repo, callback) {
         return false
       }
     }
-    var clone = exec(`git clone ${repo}`,{cwd:directory})
+    var clone
+    var cmd
+    if(uri){
+      cmd = `git clone --verbose --quiet ${uri}`
+    }else if(command){
+      cmd = command
+    }else{
+      callback("No uri or command given")
+      return false
+    }
+    var clone = exec(cmd,{cwd:directory})
     var output = []
     clone.stdout.on('data', function(a){
-      logger.debug(a)
+      logger.info(a)
       output.push(a)
     });
 
     clone.on('exit',function(code){
-      logger.silly('exit')
-      if(output.length>0 && code==0){
-        callback(null,output.join("\r\n"))
+      logger.debug('exit')
+      if(code==0){
+        callback(null,`repository created succesfully`)
       }else{
         callback(`\ncreating repository failed with code ${code}\n${output.join("\n")}`)
       }

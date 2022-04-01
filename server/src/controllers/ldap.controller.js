@@ -14,7 +14,7 @@ exports.find = function(req, res) {
 };
 exports.check = function(req, res) {
   Ldap.check(new Ldap(req.body),function(err, ldap) {
-    logger.debug(err)
+    logger.info(err)
     // as a check we search a dummy user; if we get a user not found error, we know the connection worked
     if(err.includes("user not found")){
       res.json(new RestResult("success","Ldap connection ok"))

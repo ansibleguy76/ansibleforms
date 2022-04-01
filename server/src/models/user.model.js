@@ -28,7 +28,7 @@ User.create = function (record, result) {
         result(err,null)
       }else{
         record.password = hash
-        logger.debug(`Creating user ${record.username}`)
+        logger.info(`Creating user ${record.username}`)
         mysql.query("INSERT INTO AnsibleForms.`users` set ?", record, function (err, res) {
             if(err) {
                 result(err, null);
@@ -50,7 +50,7 @@ User.update = function (record,id, result) {
           result(err,null)
         }else{
           record.password = hash
-          logger.debug(`Updating user ${(record.username)?record.username:id}`)
+          logger.info(`Updating user ${(record.username)?record.username:id}`)
           mysql.query("UPDATE AnsibleForms.`users` set ? WHERE id=?", [record,id], function (err, res) {
               if(err) {
                   //lib/logger.error(err)
@@ -69,7 +69,7 @@ User.delete = function(id, result){
     if(id==1){
       result("You cannot delete user 'admin'",null)
     }else{
-      logger.debug(`Deleting user ${id}`)
+      logger.info(`Deleting user ${id}`)
       mysql.query("DELETE FROM AnsibleForms.`users` WHERE id = ? AND username<>'admin'", [id], function (err, res) {
           if(err) {
               logger.error(err)
@@ -83,7 +83,7 @@ User.delete = function(id, result){
 
 };
 User.findAll = function (result) {
-    logger.debug("Finding all users")
+    logger.info("Finding all users")
     var query = "SELECT * FROM AnsibleForms.`users` limit 20;"
     try{
       mysql.query(query,null, function (err, res) {
@@ -99,7 +99,7 @@ User.findAll = function (result) {
     }
 };
 User.findById = function (id,result) {
-    logger.debug(`Finding user ${id}`)
+    logger.info(`Finding user ${id}`)
     try{
       mysql.query("SELECT * FROM AnsibleForms.`users` WHERE id=?;",id, function (err, res) {
           if(err) {
@@ -114,7 +114,7 @@ User.findById = function (id,result) {
     }
 };
 User.findByUsername = function (username,result) {
-    logger.debug(`Finding user ${username}`)
+    logger.info(`Finding user ${username}`)
     try{
       mysql.query("SELECT * FROM AnsibleForms.`users` WHERE username=?;",username, function (err, res) {
           if(err) {
@@ -129,7 +129,7 @@ User.findByUsername = function (username,result) {
     }
 };
 User.authenticate = function (username,password,result) {
-    logger.debug(`Checking password for user ${username}`)
+    logger.info(`Checking password for user ${username}`)
     var query = "SELECT users.id,`username`,`password`,GROUP_CONCAT(groups.name) `groups` FROM AnsibleForms.`users`,AnsibleForms.`groups` WHERE `users`.group_id=`groups`.id AND username=?;"
     try{
       mysql.query(query,username, function (err, res) {
@@ -144,7 +144,7 @@ User.authenticate = function (username,password,result) {
                     logger.error("Error comparing passwords : " + err)
                     result(err,null)
                   }else{
-                    logger.debug(`match = ${isSame}`)
+                    logger.info(`match = ${isSame}`)
                     result(null, {isValid:isSame,user:res[0]});
                   }
                 });
@@ -164,7 +164,7 @@ User.storeToken = function (username,username_type,refresh_token,result) {
     record.username = username
     record.username_type= username_type
     record.refresh_token = refresh_token
-    logger.debug(`Adding token for ${record.username} (${record.username_type})`)
+    logger.info(`Adding token for ${record.username} (${record.username_type})`)
     try{
       mysql.query("INSERT INTO AnsibleForms.`tokens` set ?", record,  function (err, res) {
           if(err) {
@@ -179,7 +179,7 @@ User.storeToken = function (username,username_type,refresh_token,result) {
     }
 };
 User.deleteToken = function (username,username_type,refresh_token,result) {
-    logger.debug(`Deleting token for user ${username} (${username_type}) - ${refresh_token}`)
+    logger.info(`Deleting token for user ${username} (${username_type}) - ${refresh_token}`)
     try{
       User.cleanupTokens()
       mysql.query("DELETE FROM AnsibleForms.`tokens` WHERE username=? AND username_type=? AND refresh_token=?",[username,username_type,refresh_token], function (err, res) {
@@ -194,13 +194,13 @@ User.deleteToken = function (username,username_type,refresh_token,result) {
     }
 };
 User.cleanupTokens = function() {
-    logger.debug(`Deleting tokens older than a month`)
+    logger.info(`Deleting tokens older than a month`)
     try{
       mysql.query("DELETE FROM AnsibleForms.`tokens` WHERE timestamp < NOW() - INTERVAL 30 DAY",null, function (err, res) {
           if(err) {
             logger.error("Cleanup tokens failed")
           }else{
-            logger.info("Cleanup tokens finished")
+            logger.notice("Cleanup tokens finished")
           }
       });
     }catch(err){
@@ -208,7 +208,7 @@ User.cleanupTokens = function() {
     }
 };
 User.checkToken = function (username,username_type,refresh_token,result) {
-    logger.debug(`Checking token for user ${username} (${username_type})`)
+    logger.info(`Checking token for user ${username} (${username_type})`)
     try{
       mysql.query("SELECT refresh_token FROM AnsibleForms.`tokens` WHERE username=? AND username_type=? AND refresh_token=?",[username,username_type,refresh_token], function (err, res) {
           if(err) {
@@ -332,16 +332,16 @@ User.checkLdap = function(username,password,result){
         options.ldapOpts.tlsOptions.ca = ldapConfig.ldapTlsCa
       }
       options.ldapOpts.tlsOptions.rejectUnauthorized = !(ldapConfig.ignore_certs==1)
-      logger.debug("use tls : " + (ldapConfig.enable_tls==1))
-      logger.debug("reject invalid certificates : " + !(ldapConfig.ignore_certs==1))
+      logger.info("use tls : " + (ldapConfig.enable_tls==1))
+      logger.info("reject invalid certificates : " + !(ldapConfig.ignore_certs==1))
     }
 
     if(badCertificates){
       result("Certificate is not valid",null)
     }else{
       try{
-        logger.debug(`Checking ldap for user ${username}`)
-        logger.silly(options)
+        logger.info(`Checking ldap for user ${username}`)
+        logger.debug(options)
         var user = await authenticate(options)
         result(null,user)
       }catch(err){
@@ -374,10 +374,10 @@ User.checkLdap = function(username,password,result){
       if(res.enable==1){
         auth(res)
       }else{
-        logger.debug("Ldap is disabled")
+        logger.info("Ldap is disabled")
       }
     }else{
-      logger.debug("No ldap configured or not enabled")
+      logger.info("No ldap configured or not enabled")
     }
   })
 }

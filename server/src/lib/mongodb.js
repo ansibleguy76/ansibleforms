@@ -7,7 +7,7 @@ Mongo = {}
 
 Mongo.query=async function(connection_name,query,callback){
   // does the pool exist already, if not let's add it
-  // logger.debug("["+connection_name+"] running query : " + query)
+  // logger.info("["+connection_name+"] running query : " + query)
   var config=undefined
   var queryarr = query.split("~")
   if(queryarr.length!=3){
@@ -31,17 +31,17 @@ Mongo.query=async function(connection_name,query,callback){
   }
 
   var uri = `mongodb://${encodeURI(config.user)}:${encodeURI(config.password)}@${config.host}:${config.port}`
-  // logger.silly("["+connection_name+"] uri : " + uri)
+  // logger.debug("["+connection_name+"] uri : " + uri)
   try{
     Client.connect(uri,function(err,db){
       if(err){
-        logger.silly("["+connection_name+"] Connection error : " + err)
+        logger.debug("["+connection_name+"] Connection error : " + err)
         callback(null,null)
       }else{
         var dbo=db.db(queryarr[0])
 
         dbo.collection(queryarr[1]).find(queryprep).toArray(function(err,result){
-          // logger.silly("["+connection_name+"] query result : " + JSON.stringify(result))
+          // logger.debug("["+connection_name+"] query result : " + JSON.stringify(result))
           callback(null,result)
           db.close()
         })

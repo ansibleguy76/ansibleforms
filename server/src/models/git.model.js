@@ -1,66 +1,61 @@
 'use strict';
 const logger=require("../lib/logger")
 const path=require("path")
-const Exec=require("../lib/exec.js")
-const Job=require("./job.model")
-const YAML=require("yaml")
+const {exec} = require('child_process');
 var config=require('../../config/app.config')
-const fs=require("fs")
 
 var Git=function(){
 
 };
+var Exec=function(){}
+Exec.executeSilentCommand = (cmd,result) => {
+  // a counter to order the output (as it's very fast and the database can mess up the order)
+  var command = cmd.command
+  var directory = cmd.directory
+  var description = cmd.description
+  // execute the procces
+  logger.debug(`${description}, ${directory} > ${command}`)
+  try{
+    var child = exec(command,{cwd:directory});
+    var out=""
+    var err=""
+    // add output eventlistener to the process to save output
+    child.stdout.on('data',function(data){
+      logger.debug(data)
+    })
+    // add error eventlistener to the process to save output
+    child.stderr.on('data',function(data){
+      // save the output ; but whilst saving, we quickly check the status to detect abort
+      logger.debug(data)
+      err+=data+"\r\n"
+    })
+    // add exit eventlistener to the process to handle status update
+    child.on('exit',function(data){
+      // if the exit was an actual request ; set aborted
+      logger.info(description + " finished : " + data)
+        if(data!=0){
+          result(err,null)
+        }else{
+          result(null,"Git fetch finished")
+        }
+    })
+    // add error eventlistener to the process; set failed
+    child.on('error',function(data){
+      logger.error(data)
+      err+=data+"\r\n"
+      result(err,null)
+    })
 
-// run git push
-Git.push = function (form,repo,extraVars,user, result,success,failed) {
+  }catch(e){
+    result(e,null)
+  }
+}
 
-  // create a new job in the database
-  Job.create(new Job({form:form,target:repo.file,user:user.username,user_type:user.type,status:"running",job_type:"git",extravars:extraVars}),function(error,jobid){
-    var counter=0
-    if(error){
-      logger.error(error)
-      result(error,null)
-      if(failed)failed(error)
-    }else{
-      // job created - return to client
-      result(null,{id:jobid})
-      logger.silly(`Job id ${jobid} is created`)
-      // rest is in background - launch save + git commit/push
-      try{
-        // save the extravars as file - we do this in sync, should be fast
-        Exec.printCommand(`TASK [Writing YAML to local repo] ${'*'.repeat(72-26)}`,"stdout",jobid,++counter)
-        var yaml = YAML.stringify(JSON.parse(extraVars))
-        fs.writeFileSync(path.join(config.repoDir,repo.dir,repo.file),yaml)
-        // log the save
-        Exec.printCommand(`ok: [Extravars Yaml file created : ${repo.file}]`,"stdout",jobid,++counter)
-        Exec.printCommand(`TASK [Committing changes] ${'*'.repeat(72-18)}`,"stdout",jobid,++counter)
-        // start commit
-        var command = `git commit --allow-empty -am "update from ansibleforms" && ${repo.push}`
-        var directory = path.join(config.repoDir,repo.dir)
-        Exec.executeCommand({directory:directory,command:command,description:"Pushing to git",task:"Git push"},jobid,counter,(jobid,counter)=>{
-          if(success)success()
-        },(jobid,counter)=>{
-          if(failed)failed("Job failed")
-        },(jobid,counter)=>{
-          if(failed)failed("Job was aborted")
-        })
-
-      }catch(e){
-        logger.error(e)
-        Exec.endCommand(jobid,counter,"stderr","failed",e,null,(jobid,counter)=>{
-          if(failed)failed(e)
-        })
-      }
-
-    }
-  })
-
-};
 // run a playbook
 Git.pull = function (repo, result) {
 
     var command = repo.pull
-    var directory = path.join(config.repoDir,repo.dir)
+    var directory = path.join(config.repoPath,repo.dir)
     Exec.executeSilentCommand({directory:directory,command:command,description:"Pulling from git"},result)
 
 };

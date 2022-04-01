@@ -17,7 +17,7 @@ require.extensions['.definitions'] = function (module, filename) {
 var jqDef = require("./jq.definitions")
 jqDef+= require("./jq.custom.definitions")
 jqDef=jqDef.replace(/(\r\n|\n|\r)/gm, "");
-logger.silly("jq definitions loaded : " + jqDef)
+logger.debug("jq definitions loaded : " + jqDef)
 
 exports.fnGetNumberedName=function(names,pattern,value,fillgap=false){
   var nr=null
@@ -27,7 +27,7 @@ exports.fnGetNumberedName=function(names,pattern,value,fillgap=false){
   var re=new RegExp("[^\#]*(\#+)[^\#]*")
   var patternmatch=re.exec(pattern)
   if(!names || !Array.isArray(names)){
-    logger.warn("fnGetNumberedName, No input or no array")
+    logger.warning("fnGetNumberedName, No input or no array")
     return value
   }
   if(patternmatch && patternmatch.length==2){
@@ -65,11 +65,11 @@ exports.fnGetNumberedName=function(names,pattern,value,fillgap=false){
       var tmp = pattern.replace(nrsequence,nr.toString().padStart(nrsequence.length,"0"))
       return tmp
     }else{
-      logger.warn("fnGetNumberedName, no pattern matches found in the list")
+      logger.warning("fnGetNumberedName, no pattern matches found in the list")
     	return value
     }
   }else{
-    logger.warn("fnGetNumberedName, no pattern found, use ### for numbers")
+    logger.warning("fnGetNumberedName, no pattern found, use ### for numbers")
 	  return value
   }
 }
@@ -77,7 +77,7 @@ exports.fnJq=async function(input,jqe){
     const jq = require('node-jq')
     let result=undefined
     if(!jqe){
-      logger.warn("[fnJq] jq is empty")
+      logger.warning("[fnJq] jq is empty")
       return result
     }
     try{
@@ -93,14 +93,14 @@ exports.fnCopy=function(input){
 exports.fnSort=function(input,sort){
   let result=input
   if(!Array.isArray(input)){
-    logger.warn("Warning in fnSort : input is not an array")
+    logger.warning("Warning in fnSort : input is not an array")
     return result
   }
   if(!sort){
-    logger.warn("Warning in fnSort : sort list not provided")
+    logger.warning("Warning in fnSort : sort list not provided")
     return result
   }
-  logger.silly("[fnSort] sorting result")
+  logger.debug("[fnSort] sorting result")
   // force sort to array
   var o = [].concat(sort || [])
   // convert sort to thenBy values

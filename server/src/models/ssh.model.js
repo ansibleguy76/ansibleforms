@@ -4,8 +4,8 @@ const config=require("../../config/app.config")
 const fs=require("fs")
 const path=require("path")
 const keygen = require('../lib/ssh-keygen');
-const location = path.join(config.homeDir,'/.ssh/id_rsa');
-const pubkeylocation = path.join(config.homeDir,'/.ssh/id_rsa.pub');
+const location = path.join(config.homePath,'/.ssh/id_rsa');
+const pubkeylocation = path.join(config.homePath,'/.ssh/id_rsa.pub');
 
 // constructor for ssh config
 var Ssh=function(ssh){
@@ -28,21 +28,21 @@ Ssh.generate = function(force,result){
         logger.error("Error creating ssh keys : " + err)
         return false
       }
-      logger.warn('SSH Keys created!');
-      logger.silly('private key : '+out.key);
-      logger.info('public key : '+out.pubKey);
+      logger.warning('SSH Keys created!');
+      logger.debug('private key : '+out.key);
+      logger.notice('public key : '+out.pubKey);
   })
 }
 
 //ssh object create (it's an update; during schema creation we add a record)
 Ssh.update = function (record, result) {
-    logger.debug(`Updating ssh key`)
+    logger.info(`Updating ssh key`)
     try{
       // write new key
       fs.writeFileSync(location,record.key,{mode:0o600})
-      // logger.info("Updated ssh private key")
+      // logger.notice("Updated ssh private key")
       // generate public key
-      // logger.debug(`Generating ssh public key`)
+      // logger.info(`Generating ssh public key`)
       keygen({
         publicOnly: true,
         location: location,
@@ -55,8 +55,8 @@ Ssh.update = function (record, result) {
             result(err)
             return false
           }else{
-            logger.info('Public SSH Key created!');
-            logger.silly('public key : '+out.pubKey);
+            logger.notice('Public SSH Key created!');
+            logger.debug('public key : '+out.pubKey);
             result(null,true)
           }
       });
@@ -73,7 +73,7 @@ Ssh.find = function (result) {
   var key
   var pubkey=''
   try{
-    logger.debug("Reading sshkey key")
+    logger.info("Reading sshkey key")
     keygen({
       randomArt: true,
       location: location
@@ -83,11 +83,11 @@ Ssh.find = function (result) {
           result(err)
           return false
         }else{
-          // logger.silly("Private key found")
+          // logger.debug("Private key found")
           try{
-            // logger.silly("Reading public key")
+            // logger.debug("Reading public key")
             pubkey=fs.readFileSync(pubkeylocation).toString()
-            // logger.silly("Public key found")
+            // logger.debug("Public key found")
           }catch(e){
             //
           }

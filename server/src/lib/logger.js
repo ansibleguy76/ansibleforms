@@ -1,50 +1,66 @@
 const winston = require('winston');
+require('winston-syslog').Syslog;
 const loggerConfig = require('../../config/log.config');
 
-const levels = {
-  error: 0,
-  warn: 1,
-  info: 2,
-  http: 3,
-  debug: 4,
-  silly: 5
-}
+const color = {
+'info': process.env.LOG_COLOR_INFO || "\x1b[32m",
+'error': process.env.LOG_COLOR_ERROR || "\x1b[31m",
+'warn': process.env.LOG_COLOR_WARN || "\x1b[33m",
+'notice': process.env.LOG_COLOR_NOTICE || "\x1b[37m",
+'debug' : process.env.LOG_COLOR_DEBUG || "\x1b[36m"
+};
 
-const colors = {
-  error: 'red',
-  warn: 'yellow',
-  info: 'green',
-  http: 'magenta',
-  debug: 'white',
-  silly: 'cyan'
-}
-
-winston.addColors(colors)
-
-const format = winston.format.combine(
+const formatColor = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
-  winston.format.colorize({ all: true }),
+  winston.format.printf(
+    (info) => `${info.timestamp} ${color[info.level] || ''}${info.level}: ${info.message}\x1b[0m`,
+  ),
+)
+const formatNoColor = winston.format.combine(
+  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
   winston.format.printf(
     (info) => `${info.timestamp} ${info.level}: ${info.message}`,
   ),
 )
 
-const transports = [
+
+
+var transports = [
   new winston.transports.Console({
     stderrLevels: ["error"],
-    level:loggerConfig.consolelevel || "info"
+    level:loggerConfig.consolelevel,
+    format:formatColor
   }),
   new winston.transports.File({
     filename: loggerConfig.path + "/ansibleforms.errors.log",
     level: 'error',
+    format:formatNoColor
   }),
-  new winston.transports.File({ filename: loggerConfig.path + "/ansibleforms.log" }),
+  new winston.transports.File({
+    level: loggerConfig.level,
+    filename: loggerConfig.path + "/ansibleforms.log",
+    format:formatColor
+  }),
 ]
 
+if(loggerConfig.sysloghost){
+  transports.push(
+    new winston.transports.Syslog({
+      host: loggerConfig.sysloghost,
+      port: loggerConfig.syslogport,
+      protocol: loggerConfig.syslogprotcol,
+      path: loggerConfig.syslogpath,
+      localhost: loggerConfig.sysloglocalhost,
+      type: loggerConfig.syslogtype,
+      app_name: loggerConfig.syslogappname,
+      format: formatNoColor,
+      level: loggerConfig.sysloglevel
+    })
+  )
+}
+
 const Logger = winston.createLogger({
-  level: loggerConfig.level || "info",
-  levels,
-  format,
+  levels: winston.config.syslog.levels,
   transports,
 })
 

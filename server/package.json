@@ -1,6 +1,6 @@
 {
   "name": "ansible_forms",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "repository": {
     "type": "git",
     "url": "git://github.com/ansibleguy76/ansibleforms.git"
@@ -25,6 +25,7 @@
     "connect-history-api-fallback": "~1.6.0",
     "express": "~4.17.3",
     "winston": "~3.6.0",
+    "winston-syslog": "~2.5.0",
     "passport": "~0.5.2",
     "passport-http": "~0.3.0",
     "passport-jwt": "~4.0.0",
@@ -44,7 +45,8 @@
     "ldap-authentication": "~2.2.9",
     "ldapjs": "~2.3.2",
     "read-last-lines": "~1.8.0",
-    "swagger-ui-express": "~4.3.0"
+    "swagger-ui-express": "~4.3.0",
+    "nodemailer": "~6.7.3"
   },
   "devDependencies": {
     "@babel/core": "7.17.5",

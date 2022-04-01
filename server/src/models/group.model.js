@@ -7,7 +7,7 @@ var Group=function(group){
     this.name = group.name;
 };
 Group.create = function (record, result) {
-    logger.debug(`Creating group ${record.name}`)
+    logger.info(`Creating group ${record.name}`)
     mysql.query("INSERT INTO AnsibleForms.`groups` set ?", record, function (err, res) {
         if(err) {
             result(err, null);
@@ -19,7 +19,7 @@ Group.create = function (record, result) {
 
 };
 Group.update = function (record,id, result) {
-    logger.debug(`Updating group ${record.name}`)
+    logger.info(`Updating group ${record.name}`)
     mysql.query("UPDATE AnsibleForms.`groups` set ? WHERE name=?", [record,id], function (err, res) {
         if(err) {
             result(err, null);
@@ -31,10 +31,10 @@ Group.update = function (record,id, result) {
 };
 Group.delete = function(id, result){
     if(id==1){
-      logger.warn("Some is trying to remove the admins groups !")
+      logger.warning("Some is trying to remove the admins groups !")
       result("You cannot delete group 'admins'",null)
     }else{
-      logger.debug(`Deleting group ${id}`)
+      logger.info(`Deleting group ${id}`)
       mysql.query("DELETE FROM AnsibleForms.`groups` WHERE id = ? AND name<>'admins'", [id], function (err, res) {
           if(err) {
               result(err, null);
@@ -47,7 +47,7 @@ Group.delete = function(id, result){
 
 };
 Group.findAll = function (result) {
-    logger.debug("Finding all groups")
+    logger.info("Finding all groups")
     var query = "SELECT * FROM AnsibleForms.`groups` limit 20;"
     try{
       mysql.query(query,null, function (err, res) {
@@ -63,7 +63,7 @@ Group.findAll = function (result) {
     }
 };
 Group.findById = function (id,result) {
-    logger.debug(`Finding group ${id}`)
+    logger.info(`Finding group ${id}`)
     var query = "SELECT * FROM AnsibleForms.`groups` WHERE id=?;"
     try{
       mysql.query(query,id, function (err, res) {
@@ -79,7 +79,7 @@ Group.findById = function (id,result) {
     }
 };
 Group.findByName = function (name,result) {
-    logger.debug(`Finding group ${name}`)
+    logger.info(`Finding group ${name}`)
     var query = "SELECT * FROM AnsibleForms.`groups` WHERE name=?;"
     try{
       mysql.query(query,name, function (err, res) {

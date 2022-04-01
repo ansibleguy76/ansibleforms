@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "description": "This is the swagger interface for AnsibleForms.\r\nUse the `/auth/login` api with basic authentication to obtain a JWT token.\r\nThen use the access token, prefixed with the word '**Bearer**' to use all other api's.\r\nNote that the access token is limited in time.  You can then either login again and get a new set of tokens or use the `/token` api and the refresh token to obtain a new set (preferred).",
-    "version": "3.0.0",
+    "version": "3.0.1",
     "title": "AnsibleForms",
     "contact": {
       "email": "info@ansibleforms.com"
@@ -17,10 +17,6 @@
     {
       "name": "profile",
       "description": "Operations on profile"
-    },
-    {
-      "name": "executions",
-      "description": "Form executions"
     },
     {
       "name": "jobs",
@@ -65,6 +61,10 @@
     {
       "name": "query",
       "description": "Invoke an database query"
+    },
+    {
+      "name": "general settings",
+      "description": "Get and set general settings and test mail"
     }
   ],
   "schemes": [
@@ -237,10 +237,10 @@
         }
       }
     },
-    "/ansible/launch": {
+    "/job": {
       "post": {
         "tags": [
-          "executions"
+          "jobs"
         ],
         "security": [
           {
@@ -254,28 +254,16 @@
             "schema": {
               "type": "object",
               "required": [
-                "playbook"
+                "formName"
               ],
               "properties": {
                 "formName": {
                   "type": "string",
                   "example": "Create Virtual Machine"
                 },
-                "ansiblePlaybook": {
-                  "type": "string",
-                  "example": "create_vm.yaml"
-                },
-                "ansibleExtraVars": {
+                "extravars": {
                   "type": "object",
                   "example": {"name":"vm1","datacenter":"dc1","cluster":"cluster1"}
-                },
-                "ansibleInventory": {
-                  "type": "string",
-                  "example": "vcenter.domain.local"
-                },
-                "ansibleTags": {
-                  "type": "string",
-                  "example": "create,vmware"
                 },
                 "credentials": {
                   "type": "object",
@@ -285,7 +273,7 @@
             }
           }
         ],
-        "summary": "Launch Ansible playbook",
+        "summary": "Launch Job",
         "produces": [
           "application/json"
         ],
@@ -296,7 +284,7 @@
               "type": "object",
               "example": {
                 "status": "info",
-                "message": "succesfully launched playbook",
+                "message": "succesfully launched form Create Virtual Machine",
                 "data": {
                   "output": {
                     "id": 91
@@ -314,217 +302,7 @@
             }
           }
         }
-      }
-    },
-    "/awx/launch": {
-      "post": {
-        "tags": [
-          "executions"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "in": "body",
-            "name": "form payload",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "formName": {
-                  "type": "string",
-                  "example": "Create VM"
-                },
-                "awxTemplate": {
-                  "type": "string",
-                  "example": "Create VM"
-                },
-                "awxExtraVars": {
-                  "type": "object",
-                  "example": {"name":"vm1","datacenter":"dc1","cluster":"cluster1"}
-                },
-                "awxInventory": {
-                  "type": "string",
-                  "example": "vcenter.domain.local"
-                },
-                "awxTags": {
-                  "type": "string",
-                  "example": "create,vmware"
-                },
-                "credentials": {
-                  "type": "object",
-                  "example": {"vcenterCredentials":"VCENTER"}
-                }
-              }
-            }
-          }
-        ],
-        "summary": "Launch AWX template",
-        "produces": [
-          "application/json"
-        ],
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "schema": {
-              "type": "object",
-              "example": {
-              	"status": "info",
-              	"message": "successfully launched jobtemplate HelloWorld",
-              	"data": {
-              		"output": {
-              			"id": 176
-              		},
-              		"error": ""
-              	}
-              }
-            }
-          },
-          "401": {
-            "description": "unauthorized",
-            "schema": {
-              "type": "string",
-              "example": "Authorize with a valid Bearer access token"
-            }
-          }
-        }
-      }
-    },
-    "/git/push": {
-      "post": {
-        "tags": [
-          "executions"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "in": "body",
-            "name": "form payload",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "formName": {
-                  "type": "string",
-                  "example": "Create VM"
-                },
-                "gitRepo": {
-                  "type": "object",
-                  "example": {"dir":"vmware","file":"repo.yaml","push":"git push origin main","pull":"git pull origin main"}
-                },
-                "gitExtraVars": {
-                  "type": "object",
-                  "example": {"name":"vm1","datacenter":"dc1","cluster":"cluster1"}
-                }
-              }
-            }
-          }
-        ],
-        "summary": "Push git repository",
-        "produces": [
-          "application/json"
-        ],
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "schema": {
-              "type": "object",
-              "example": {
-              	"status": "info",
-              	"message": "successfully launched",
-              	"data": {
-              		"output": {
-              			"id": 176
-              		},
-              		"error": ""
-              	}
-              }
-            }
-          },
-          "401": {
-            "description": "unauthorized",
-            "schema": {
-              "type": "string",
-              "example": "Authorize with a valid Bearer access token"
-            }
-          }
-        }
-      }
-    },
-    "/multistep/launch": {
-      "post": {
-        "tags": [
-          "executions"
-        ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "in": "body",
-            "name": "form payload",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "formName": {
-                  "type": "string",
-                  "example": "Create VM"
-                },
-                "multiSteps": {
-                  "type": "array",
-                  "example": [
-                    {"type": "git", "repo":{"dir":"vmware","file":"repo.yaml","push":"git push origin main","pull":"git pull origin main"}},
-                    {"type": "awx", "template":"Create Vm", "inventory": "esxhosts", "tags":"vmware,create", "key":"vmwareInfo", "continue":false},
-                    {"type": "ansible", "playbook":"email.yaml","key":"emailInfo", "always":true}
-                  ]
-                },
-                "multistepExtraVars": {
-                  "type": "object",
-                  "example": {"vmwareInfo":{"name":"vm1","datacenter":"dc1","cluster":"cluster1"},"emailInfo":{"mailhost":"smtp.domain.com","to":"admins@domain.com"}}
-                }
-              }
-            }
-          }
-        ],
-        "summary": "Launch Multistep",
-        "produces": [
-          "application/json"
-        ],
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "schema": {
-              "type": "object",
-              "example": {
-              	"status": "info",
-              	"message": "successfully launched multistep Create VM",
-              	"data": {
-              		"output": {
-              			"id": 176
-              		},
-              		"error": ""
-              	}
-              }
-            }
-          },
-          "401": {
-            "description": "unauthorized",
-            "schema": {
-              "type": "string",
-              "example": "Authorize with a valid Bearer access token"
-            }
-          }
-        }
-      }
-    },
-    "/job": {
+      },
       "get": {
         "tags": [
           "jobs"
@@ -753,6 +531,150 @@
         }
       }
     },
+    "/job/{jobId}/relaunch": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "jobId",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the job to relaunch."
+          }
+        ],
+        "summary": "Relaunch job",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "job relaunched with job id 123",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/job/{jobId}/approve": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "jobId",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the job to approve."
+          }
+        ],
+        "summary": "Approve job",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "job approved",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/job/{jobId}/reject": {
+      "post": {
+        "tags": [
+          "jobs"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "jobId",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the job to reject."
+          }
+        ],
+        "summary": "Reject job",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "job rejected",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
     "/awx": {
       "get": {
         "tags": [
@@ -892,6 +814,207 @@
               "example": {
                 "status": "success",
                 "message": "Awx Connection is OK",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/settings": {
+      "get": {
+        "tags": [
+          "general settings"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get general settings",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "Settings found",
+                "data": {
+                  "output": {
+                    "mail_server": "relay.domain.local",
+                    "mail_port": 25,
+                    "mail_secure": 0,
+                    "mail_username": "",
+                    "mail_password": "",
+                    "mail_from": "ansibleforms@domain.local",
+                    "url": "https://ansibleforms"
+                  },
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "general settings"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "general settings",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "mail_server": {
+                  "type": "string",
+                  "example": "relay.domain.local"
+                },
+                "mail_port": {
+                  "type": "integer",
+                  "example": 25
+                },
+                "mail_username": {
+                  "type": "string",
+                  "example": ""
+                },
+                "mail_password": {
+                  "type": "string",
+                  "example": ""
+                },
+                "mail_secure": {
+                  "type": "boolean",
+                  "example": false
+                },
+                "mail_from": {
+                  "type": "string",
+                  "example": "ansibleforms@domain.local"
+                },
+                "url":{
+                  "type": "string",
+                  "example": "https://ansibleforms"
+                }
+              }
+            }
+          }
+        ],
+        "summary": "Set general settings",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "Settings updated",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/settings/mailcheck": {
+      "post": {
+        "tags": [
+          "general settings"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "mail test settings",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "mail_server": {
+                  "type": "string",
+                  "example": "relay.domain.local"
+                },
+                "mail_port": {
+                  "type": "integer",
+                  "example": 25
+                },
+                "mail_username": {
+                  "type": "string",
+                  "example": ""
+                },
+                "mail_password": {
+                  "type": "string",
+                  "example": ""
+                },
+                "mail_secure": {
+                  "type": "boolean",
+                  "example": false
+                },
+                "mail_from": {
+                  "type": "string",
+                  "example": "ansibleforms@domain.local"
+                },
+                "to": {
+                  "type": "string",
+                  "example": "testuser@domain.local"
+                }
+              }
+            }
+          }
+        ],
+        "summary": "Test Mail",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "Mail is sent (<430e7527-c0da-197a-5171-ee3ad546668b@domain.local>)",
                 "data": {
                   "output": "",
                   "error": ""

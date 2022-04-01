@@ -38,14 +38,13 @@ module.exports = app => {
   // import api routes
   const awxRoutes = require('./routes/awx.routes')
   const jobRoutes = require('./routes/job.routes')
-  const ansibleRoutes = require('./routes/ansible.routes')
   const gitRoutes = require('./routes/git.routes')
-  const multistepRoutes = require('./routes/multistep.routes')
   const queryRoutes = require('./routes/query.routes')
   const expressionRoutes = require('./routes/expression.routes')
   const userRoutes = require('./routes/user.routes')
   const groupRoutes = require('./routes/group.routes')
   const ldapRoutes = require('./routes/ldap.routes')
+  const settingsRoutes = require('./routes/settings.routes')
   const credentialRoutes = require('./routes/credential.routes')
   const loginRoutes = require('./routes/login.routes')
   const schemaRoutes = require('./routes/schema.routes')
@@ -85,18 +84,20 @@ module.exports = app => {
   app.use('/api/v1/token',cors(), tokenRoutes)
 
   // api routes for automation actions
-  app.use('/api/v1/awx',cors(), authobj, awxRoutes) // extra middleware in the routes
-  app.use('/api/v1/ansible',cors(), authobj, ansibleRoutes)
+
+  // app.use('/api/v1/ansible',cors(), authobj, ansibleRoutes)
   app.use('/api/v1/git',cors(), authobj, gitRoutes)
-  app.use('/api/v1/multistep',cors(), authobj, multistepRoutes)
+  // app.use('/api/v1/multistep',cors(), authobj, multistepRoutes)
 
   // api routes for admin management
   app.use('/api/v1/job',cors(), authobj, jobRoutes)
   app.use('/api/v1/user',cors(), authobj, checkAdminMiddleware, userRoutes)
   app.use('/api/v1/group',cors(), authobj, checkAdminMiddleware, groupRoutes)
   app.use('/api/v1/ldap',cors(), authobj, checkAdminMiddleware, ldapRoutes)
+  app.use('/api/v1/settings',cors(), authobj, checkAdminMiddleware, settingsRoutes)
   app.use('/api/v1/credential',cors(), authobj, checkAdminMiddleware, credentialRoutes)
   app.use('/api/v1/sshkey',cors(), authobj, checkAdminMiddleware, sshRoutes)
+  app.use('/api/v1/awx',cors(), authobj, checkAdminMiddleware, awxRoutes)
   app.use('/api/v1/log',cors(), authobj, checkAdminMiddleware, logRoutes)
   app.use('/api/v1/repo',cors(), authobj, checkAdminMiddleware, repoRoutes)
 

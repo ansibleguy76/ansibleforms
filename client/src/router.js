@@ -9,6 +9,7 @@ import Groups from './views/Groups.vue'
 import Repos from './views/Repos.vue'
 import Users from './views/Users.vue'
 import Ldap from './views/Ldap.vue'
+import Settings from './views/Settings.vue'
 import Awx from './views/Awx.vue'
 import Designer from './views/Designer.vue'
 import Credentials from './views/Credentials.vue'
@@ -85,6 +86,12 @@ export default new Router({
         beforeEnter: checkAdmin
       },
       {
+        path:"/settings",
+        name:"Settings",
+        component:Settings,
+        beforeEnter: checkAdmin
+      },
+      {
         path:"/awx",
         name:"Awx",
         component:Awx,
@@ -117,6 +124,11 @@ export default new Router({
       {
         path:"/jobs",
         name:"JobLogs",
+        component:Jobs
+      },
+      {
+        path:"/jobs/:id",
+        name:"JobLog",
         component:Jobs
       }
   ]

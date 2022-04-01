@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.1] - 2022-04-01
+
+### Added
+
+-   Syslog integration (use env variables to tune)
+-   Relaunch and abort from joblog
+-   Override repo clone command
+-   Add log filtering and auto refresh
+-   Approvals and rejections (using new approval property)
+
+### Changed
+
+-   Logger levels changed (error, warning, notice, info, debug) / debug is lowest (silly is deprecated)
+-   Completely reworked job launch process (neater code and more reusable)
+-   Swagger job launch is now at job level
+
+### Fixed
+
+-   Allow non rsa ssh key
+-   Add job access to own jobs in joblog
+-   Repo runs silent
+
+### Removed
+
+-   Ansible launch api (see job post now)
+-   Awx launch api (see job post now)
+-   Multistep launch api (see job post now)
+
 ## [3.0.0] - 2022-03-09
 
 ### Added
@@ -217,7 +245,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.0...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.1...HEAD
+
+[3.0.1]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.0...3.0.1
 
 [3.0.0]: https://github.com/ansibleguy76/ansibleforms/compare/2.2.4...3.0.0
 

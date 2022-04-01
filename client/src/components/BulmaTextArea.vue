@@ -18,7 +18,7 @@
     }
   })
   export default{
-    name:"BulmaInput",
+    name:"BulmaTextArea",
     props:{
       focus:{type:String,default:""},
       value:{type:[String,Number],default:""},

@@ -14,22 +14,18 @@ const AJVErrorParser = require('ajv-error-parser');
 function getFormsDir(){
   return path.join(path.dirname(appConfig.formsPath),"/forms");
 }
-
 function getBackupSuffix(t){
   var backuppartre=new RegExp("(\.bak\.[0-9]{17})$","g")
   var backuppart=backuppartre.exec(t)[1]
   return backuppart
 }
-
 ajv.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
-
 var Form=function(data){
   this.forms = data.forms;
 };
-
 // load the forms config
 Form.load = function() {
-  logger.debug(`Loading ${appConfig.formsPath}`)
+  logger.info(`Loading ${appConfig.formsPath}`)
   var forms=undefined
   var rawdata=undefined
   var formsdirpath=path.join(path.dirname(appConfig.formsPath),"/forms");
@@ -55,7 +51,7 @@ Form.load = function() {
         });
       }
     }catch(e){
-      logger.warn("No forms directory... loading only forms.yaml")
+      logger.warning("No forms directory... loading only forms.yaml")
     }
 
   }catch(e){
@@ -82,16 +78,16 @@ Form.load = function() {
   }
   // merge extra files
   formfiles.forEach((item, i) => {
-      logger.debug(`merging file ${item.name}`)
+      logger.info(`merging file ${item.name}`)
       try{
           var existing = forms.forms.map(x => x.name);
           [].concat(item.value||[]).forEach((f, i) => {
             if(!existing.includes(f.name)){
-              logger.silly(`adding form ${f.name}`)
+              logger.debug(`adding form ${f.name}`)
               f.source=item.name
               forms.forms.push(f)
             }else{
-              logger.warn(`skipping existing form ${f.name}`)
+              logger.warning(`skipping existing form ${f.name}`)
             }
           });
       }catch(e){
@@ -108,7 +104,7 @@ Form.load = function() {
 };
 // load the forms config
 Form.backups = function() {
-  logger.debug(`Loading backups`)
+  logger.info(`Loading backups`)
   var files=undefined
   var backups=[]
   try{
@@ -124,21 +120,21 @@ Form.backups = function() {
       }).sort((a, b) => a.date < b.date && 1 || -1);
     }
   }catch(e){
-    logger.warn("Failed to load backups. "+e)
+    logger.warning("Failed to load backups. "+e)
   }
   return backups
 };
 Form.validate = function(forms){
   if(forms){
     var schema = require("../../schema/forms_schema.json")
-    logger.silly("validating forms.yaml against schema")
+    logger.debug("validating forms.yaml against schema")
     const valid = ajv.validate(schema, forms)
     if (!valid){
       var ajvMessages = AJVErrorParser.parseErrors(ajv.errors)
       logger.error(ajvMessages)
       throw `${ajvMessages.join("\r\n")}`
     }else{
-      logger.silly("Valid forms.yaml")
+      logger.debug("Valid forms.yaml")
       return forms
     }
   }
@@ -146,7 +142,7 @@ Form.validate = function(forms){
 Form.parse = function(data){
   var formsConfig = undefined
   try{
-    logger.debug("Parsing yaml data")
+    logger.info("Parsing yaml data")
     formsConfig = YAML.parse(data.forms,{prettyErrors:true})
   }catch(err){
     logger.error(err.toString())
@@ -167,13 +163,13 @@ Form.removeOld=function(days=10){
       if(old>days){ // date is older than x days ?
         Form.remove(file) // remove backup
       }else{
-        //logger.silly(`Keeping ${file} [${old} days]`)
+        //logger.debug(`Keeping ${file} [${old} days]`)
       }
     });
   }
 }
 Form.backup = function(){
-  logger.debug("Making backup of forms")
+  logger.info("Making backup of forms")
   var formsdir=getFormsDir()
   var today=moment()
   var timestamp=moment().format("YYYYMMDDkkmmssSSS")
@@ -181,10 +177,10 @@ Form.backup = function(){
   var backupformsfile=appConfig.formsPath+".bak."+timestamp
   var backupfile=path.parse(backupformsfile).base
   Form.removeOld(10)
-  logger.silly(`Copying forms file '${appConfig.formsPath}'->'${backupformsfile}'`)
+  logger.debug(`Copying forms file '${appConfig.formsPath}'->'${backupformsfile}'`)
   fse.copySync(appConfig.formsPath,backupformsfile)
   if(fs.existsSync(formsdir)){
-    logger.silly(`Copying forms directory '${formsdir}'->'${backupformsdir}'`)
+    logger.debug(`Copying forms directory '${formsdir}'->'${backupformsdir}'`)
     fse.removeSync(backupformsdir) // just in case, remove it (unlikely hit)
     fse.ensureDirSync(backupformsdir) // make backupdir
     fse.copySync(formsdir,backupformsdir) // make backup
@@ -196,10 +192,10 @@ Form.remove = function(backupName){
   var basedir=path.dirname(appConfig.formsPath)
   var backupformsdir=formsdir+getBackupSuffix(backupName)
   var backupformsfile=path.join(basedir,backupName)
-  logger.silly(`Removing forms file '${backupformsfile}'`)
+  logger.debug(`Removing forms file '${backupformsfile}'`)
   fse.removeSync(backupformsfile)
   if(fs.existsSync(backupformsdir)){
-    logger.silly(`Removing forms directory '${backupformsdir}'`)
+    logger.debug(`Removing forms directory '${backupformsdir}'`)
     fse.removeSync(backupformsfile)
   }
 }
@@ -208,10 +204,10 @@ Form.restoreBackup = function(backupName){
   var basedir=path.dirname(appConfig.formsPath)
   var backupformsdir=formsdir+getBackupSuffix(backupName)
   var backupformsfile=path.join(basedir,backupName)
-  logger.silly(`Copying forms file '${backupformsfile}'->'${appConfig.formsPath}'`)
+  logger.debug(`Copying forms file '${backupformsfile}'->'${appConfig.formsPath}'`)
   fse.copySync(backupformsfile,appConfig.formsPath)
   if(fs.existsSync(backupformsdir)){
-    logger.silly(`Copying forms directory '${backupformsdir}'->'${formsdir}'`)
+    logger.debug(`Copying forms directory '${backupformsdir}'->'${formsdir}'`)
     fse.removeSync(formsdir) // just in case, remove it (unlikely hit)
     fse.ensureDirSync(formsdir) // make backupdir
     fse.copySync(backupformsdir,formsdir) // make backup
@@ -221,7 +217,7 @@ Form.save = function(data){
   var formsConfig = Form.parse(data)
   var formsdir=getFormsDir()
   formsConfig = Form.validate(formsConfig)
-  logger.debug("Saving forms")
+  logger.info("Saving forms")
   var files={}
 
   // filter source-forms out of forms and move to files
@@ -247,24 +243,24 @@ Form.save = function(data){
       var tmpfile=path.join(tmpDir,file)
       var formnames=forms.map(x => x.name)
       if(forms.length==1){
-        logger.silly(`saving single form '${forms[0].name}' to '${tmpfile}'`)
+        logger.debug(`saving single form '${forms[0].name}' to '${tmpfile}'`)
         fs.writeFileSync(tmpfile,YAML.stringify(forms[0]));
       }
       if(forms.length>1){
-        logger.silly(`saving forms ${formnames} to '${tmpfile}'`)
+        logger.debug(`saving forms ${formnames} to '${tmpfile}'`)
         fs.writeFileSync(tmpfile,YAML.stringify(forms));
       }
     }
     // backup current forms config
     var backupfile=Form.backup()
-    logger.silly(`Succesfull backup to ${backupfile}`)
+    logger.debug(`Succesfull backup to ${backupfile}`)
 
     // now move tmp to prod
-    logger.silly(`Copy tmp directory '${tmpDir}'->'${formsdir}'`)
+    logger.debug(`Copy tmp directory '${tmpDir}'->'${formsdir}'`)
     fse.emptyDirSync(formsdir) // empty formsdir
     fse.copySync(tmpDir,formsdir) // copy from temp
 
-    logger.silly(`Writing base file '${appConfig.formsPath}'`)
+    logger.debug(`Writing base file '${appConfig.formsPath}'`)
     fs.writeFileSync(appConfig.formsPath,YAML.stringify(formsConfig)); // write basefile
   }
   catch(e) {
@@ -276,7 +272,7 @@ Form.save = function(data){
   finally {
     try {
       if (tmpDir) {
-        logger.silly(`Cleaning up folder '${tmpDir}'`)
+        logger.debug(`Cleaning up folder '${tmpDir}'`)
         //fs.rmSync(tmpDir, { recursive: true });
       }
     }
@@ -288,7 +284,7 @@ Form.save = function(data){
   return true
 }
 Form.restore = function(backupName,backupBeforeRestore){
-  logger.debug(`Restoring backup '${backupName}'`)
+  logger.info(`Restoring backup '${backupName}'`)
   var tmpbackup
   try {
     // first backup current
@@ -308,5 +304,26 @@ Form.restore = function(backupName,backupBeforeRestore){
     }
     return false
   }
+}
+Form.loadByName = function(form,user,forApproval=false){
+  var forms = Form.load()
+  var formObj = forms?.forms.filter(x => x.name==form)
+  if(formObj.length>0){
+    if(forApproval){
+      return formObj[0]
+    }
+    logger.debug(`Form ${form} is found, checking access...`)
+    var access = formObj[0].roles.filter(role => user?.roles?.includes(role))
+    if(access.length>0 || user?.roles?.includes("admin")){
+      return formObj[0]
+      logger.debug(`Form ${form}, access allowed...`)
+    }else {
+      logger.warning(`Form ${form}, no access...`)
+      return null
+    }
+  }else{
+    return null
+  }
+
 }
 module.exports= Form;

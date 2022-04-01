@@ -35,8 +35,8 @@
           <span class="tag is-warning">{{ thanks.join(', ')}}</span>
         </div>
     </BulmaModal>
-    <BulmaNav :isAdmin="isAdmin" @about="showAbout=true" :authenticated="authenticated" :profile="profile" @logout="logout()" :version="version" />
-    <router-view :isAdmin="isAdmin" :authenticated="authenticated" :errorMessage="errorMessage" :errorData="errorData" @authenticated="login()" @logout="logout()" />
+    <BulmaNav :isAdmin="isAdmin" @about="showAbout=true" :approvals="approvals" :authenticated="authenticated" :profile="profile" @logout="logout()" :version="version" />
+    <router-view :isAdmin="isAdmin" :profile="profile" :authenticated="authenticated" :errorMessage="errorMessage" :errorData="errorData" @authenticated="login()" @logout="logout()" @refreshApprovals="loadApprovals()" />
   </div>
 </template>
 <script>
@@ -56,6 +56,7 @@
         authenticated:false,
         isAdmin:false,
         version:"unknown",
+        approvals:0,
         showAbout:false,
         showEasterEgg:false,
         thanks:[
@@ -90,6 +91,18 @@
             .then((result)=>{
               if(result.data.status=="success"){
                 ref.version=result.data.message
+              }
+            })
+            .catch(function(err){
+              // silent fail
+            });
+        },
+        loadApprovals(){
+          var ref=this;
+          axios.get('/api/v1/job/approvals',TokenStorage.getAuthentication())                               // check database
+            .then((result)=>{
+              if(result.data.status=="success"){
+                ref.approvals=result.data.data.output || 0
               }
             })
             .catch(function(err){
@@ -136,11 +149,26 @@
           var ref= this;
           if(!TokenStorage.isAuthenticated()){
             //this.$toast.error("You need to authenticate")
-            this.$router.replace({ name: "Login" }).catch(err => {});         // no token found, logout
+            if(this.$route.name!="Login"){
+              this.$router.replace({ name: "Login", query: {from: this.$route.fullPath} }).catch(err => {});         // no token found, logout
+            }
           }else{
-            this.$router.push({name:"Home"}).catch(err => {});
+            if(this.$route.query.from){
+              this.$router.push({path:this.$route.query.from}).catch(err => {});
+            }else{
+              if(this.$route.name){
+                if(this.$route.name=="Login"){
+                  this.$router.push({name:"Home"}).catch(err => {});
+                }else{
+                  this.$router.push(this.$route.fullPath).catch(err => {});
+                }
+              }else{
+                this.$router.push({name:"Home"}).catch(err => {});
+              }
+            }
             this.refreshAuthenticated()
             this.loadProfile()
+            this.loadApprovals()
           }
         },
         logout() {

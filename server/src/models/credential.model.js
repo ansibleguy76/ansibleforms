@@ -21,7 +21,7 @@ var Credential=function(credential){
 };
 
 Credential.create = function (record, result) {
-    logger.debug(`Creating credential ${record.name}`)
+    logger.info(`Creating credential ${record.name}`)
     mysql.query("INSERT INTO AnsibleForms.`credentials` set ?", record, function (err, res) {
         if(err) {
             result(err, null);
@@ -33,7 +33,7 @@ Credential.create = function (record, result) {
 
 };
 Credential.update = function (record,id, result) {
-    logger.debug(`Updating credential ${record.name}`)
+    logger.info(`Updating credential ${record.name}`)
     mysql.query("UPDATE AnsibleForms.`credentials` set ? WHERE id=?", [record,id], function (err, res) {
         if(err) {
             //lib/logger.error(err)
@@ -47,7 +47,7 @@ Credential.update = function (record,id, result) {
 };
 Credential.delete = function(id, result){
 
-    logger.debug(`Deleting credential ${id}`)
+    logger.info(`Deleting credential ${id}`)
     mysql.query("DELETE FROM AnsibleForms.`credentials` WHERE id = ? AND name<>'admins'", [id], function (err, res) {
         if(err) {
             result(err, null);
@@ -58,7 +58,7 @@ Credential.delete = function(id, result){
     });
 };
 Credential.findAll = function (result) {
-    logger.debug("Finding all credentials")
+    logger.info("Finding all credentials")
     var query = "SELECT id,name,user,host,port,description FROM AnsibleForms.`credentials`;"
     try{
       mysql.query(query, function (err, res) {
@@ -74,7 +74,7 @@ Credential.findAll = function (result) {
     }
 };
 Credential.findById = function (id,result) {
-    logger.debug(`Finding credential ${id}`)
+    logger.info(`Finding credential ${id}`)
     var query = "SELECT * FROM AnsibleForms.`credentials` WHERE id=?;"
     try{
       mysql.query(query,id, function (err, res) {
@@ -101,7 +101,7 @@ Credential.findById = function (id,result) {
     }
 };
 Credential.findByName2 = function (name,result) {
-    logger.debug(`Finding credential ${name}`)
+    logger.info(`Finding credential ${name}`)
     var query = "SELECT * FROM AnsibleForms.`credentials` WHERE name=?;"
     try{
       mysql.query(query,name, function (err, res) {
@@ -130,7 +130,7 @@ Credential.findByName2 = function (name,result) {
 Credential.findByName = function (name) {
     return new Promise((resolve,reject) => {
       try{
-        logger.silly(`Finding credential ${name}`)
+        logger.debug(`Finding credential ${name}`)
         var cred = cache.get(name)
         if(cred==undefined){
           var query = "SELECT host,port,name,user,password FROM AnsibleForms.`credentials` WHERE name=?;"
@@ -151,7 +151,7 @@ Credential.findByName = function (name) {
                       res[0].password = ""
                     }
                     cache.set(name,res[0])
-                    logger.silly("Caching credentials " + name + " from database")
+                    logger.debug("Caching credentials " + name + " from database")
                     resolve(JSON.parse(JSON.stringify(res[0])))
                   }else{
                     reject(new Error("No credential found named " + name),null)
@@ -159,7 +159,7 @@ Credential.findByName = function (name) {
               }
           });
         }else{
-          // logger.silly("returning credentials " + name + " from cache")
+          // logger.debug("returning credentials " + name + " from cache")
           resolve(cred)
         }
       }catch(err){
