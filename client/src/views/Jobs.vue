@@ -59,7 +59,7 @@
           </thead>
           <tbody>
           <template v-for="j in displayedJobs">
-            <tr :key="j.id" :class="{'has-background-success-light':(j.status=='success' && j.id!=jobId),'has-background-danger-light':(j.status=='failed' && j.id!=jobId),'has-background-warning-light':(['aborted','warning','rejected'].includes(j.status) && j.id!=jobId),'has-background-info':j.id==jobId,'has-text-white':j.id==jobId}">
+            <tr :key="j.id" :class="{'has-background-success-light':(j.status=='success' && j.id!=jobId),'has-background-danger-light':(j.status=='failed' && j.id!=jobId),'has-background-warning':(j.status=='approve' && j.id!=jobId),'has-text-black':(j.status=='approve' && j.id!=jobId),'has-background-warning-light':(['aborted','warning','rejected'].includes(j.status) && j.id!=jobId),'has-background-info':j.id==jobId,'has-text-white':j.id==jobId}">
               <td class="has-background-info-light">
                 <span v-if="j.status!='running'&&j.status!='aborting'&&j.status!='abort'" class="icon has-text-info is-clickable" @click="tempJobId=j.id;showRelaunch=true" title="Relaunch job"><font-awesome-icon icon="redo" /></span>
                 <span v-if="j.status && (j.status=='running')" class="icon has-text-warning is-clickable" @click="tempJobId=j.id;showAbort=true" title="Abort job"><font-awesome-icon icon="ban" /></span>

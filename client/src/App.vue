@@ -99,7 +99,6 @@
         },
         loadApprovals(){
           var ref=this;
-
           axios.get('/api/v1/job/approvals',TokenStorage.getAuthentication())                               // check database
             .then((result)=>{
               if(result.data.status=="success"){

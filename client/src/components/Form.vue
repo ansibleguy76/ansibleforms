@@ -1306,18 +1306,18 @@
                     // 1 final last call for output
                     setTimeout(function(){ ref.getJob(id,true) }, 2000);
                   }else{
-                    // if final, remove output after 15s
+                    // final result
                     this.abortTriggered=false
                     if(this.jobResult.status=="success"){
                       this.$toast.success(result.data.message)
                     }else if(this.jobResult.status=="warning"){
+
                       this.$toast.warning(result.data.message)
                     }else{
                       this.$toast.error(result.data.message)
                     }
                     clearTimeout(this.timeout)
-                    this.$emit('refreshApprovals')                    
-                    // this.timeout = setTimeout(function(){ ref.resetResult() }, 15000);
+                    this.$emit('refreshApprovals')
                   }
 
                 }

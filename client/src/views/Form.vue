@@ -1,5 +1,5 @@
 <template>
-    <Form v-if="currentForm" :isAdmin="isAdmin" :constants="formConfig.constants||{}" :token="token" :key="componentKey" @rerender="load" :currentForm="currentForm" />
+    <Form v-if="currentForm" :isAdmin="isAdmin" :constants="formConfig.constants||{}" :token="token" :key="componentKey" @rerender="load" @refreshApprovals="$emit('refreshApprovals')" :currentForm="currentForm" />
 </template>
 <script>
   import Vue from 'vue'
