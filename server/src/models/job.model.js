@@ -11,6 +11,7 @@ const Settings = require('./settings.model')
 const logger=require("../lib/logger");
 const authConfig = require('../../config/auth.config')
 const appConfig = require('../../config/app.config')
+const dbConfig = require('../../config/db.config')
 const ansibleConfig = require('./../../config/ansible.config');
 const mysql = require('./db.model')
 const RestResult = require('./restResult.model')
@@ -313,6 +314,26 @@ Job.findApprovals = function (user,result) {
       result(err, null);
     }
 };
+// Job.hasSubJobs = function(id,result){
+//   try{
+//     mysql.query("SELECT count(id) as subjobs FROM AnsibleForms.jobs WHERE parent_id=?",id, function (err, res) {
+//       if(err){
+//         logger.error(err)
+//         result(err)
+//       }else{
+//         if(res.length > 0 && res[0].subjobs>0){
+//           result(null,true)
+//         }else{
+//           result(null,false)
+//         }
+//       }
+//     })
+//   }catch(err){
+//     logger.error(err)
+//     result(err)
+//   }
+//
+// };
 Job.findById = function (user,id,asText,result,logSafe=false) {
     logger.info(`Finding job ${id}` )
     try{
@@ -707,6 +728,7 @@ Job.sendApprovalNotification = function(approval,extravars,jobid){
     var buffer = fs.readFileSync(`${__dirname}/../templates/approval.html`)
     var message = buffer.toString()
     var color = "#158cba"
+    var color2 = "#ffa73b"
     var url = config.url?.replace(/\/$/g,'') // remove trailing slash if present
     var logo = `${url}/assets/img/logo.png`
     var approvalMessage = Helpers.replacePlaceholders(approval.message,extravars)
@@ -716,6 +738,7 @@ Job.sendApprovalNotification = function(approval,extravars,jobid){
                     .replaceAll("${title}",subject)
                     .replaceAll("${logo}",logo)
                     .replaceAll("${color}",color)
+                    .replaceAll("${color2}",color2)
     // logger.notice(subject)
     // logger.notice(message)
     Settings.mailsend(approval.notifications.join(","),subject,message,(err,messageid)=>{
@@ -776,7 +799,9 @@ Multistep.launch = async function(form,steps,user,extravars,creds,jobid,success,
   }else{
     counter++
   }
-  if(approval){
+  // global approval
+
+  if(!fromStep && approval){
     if(!approved){
       Job.sendApprovalNotification(approval,extravars,jobid)
       Job.printJobOutput(`APPROVE [${form}] ${'*'.repeat(69-form.length)}`,"stdout",jobid,++counter)
@@ -788,13 +813,14 @@ Multistep.launch = async function(form,steps,user,extravars,creds,jobid,success,
       return true
     }else{
       logger.notice("Continuing multistep " + form + " it has been approved")
+      // reset flag for steps
+      approved=false
     }
   }
   var ok=0
   var failed=0
   var skipped=0
   var aborted=false
-  var approval
   try{
     var finalSuccessStatus=true  // multistep success from start to end ?
     var partialstatus=false      // was there a step that failed and had continue ?
@@ -803,14 +829,15 @@ Multistep.launch = async function(form,steps,user,extravars,creds,jobid,success,
       async (promise,step)=>{    // we get the promise of the previous step and the new step
         return promise.then(async (previousSuccess) =>{ // we don't actually use previous success
           var result=false
+          // console.log("fromstep : " + fromStep)
           if(fromStep && fromStep!=step.name){
-            logger.debug("Skipping step " + step.name + " - in continue phase")
-            // reset from step
-            fromStep=undefined
+            logger.info("Skipping step " + step.name + " - in continue phase")
             return true
           }
+          // reset from step
+          fromStep=undefined
           if(approve && !approved){
-            logger.debug("Skipping step " + step.name + " due to approval")
+            logger.info("Skipping step " + step.name + " due to approval")
             return true
           }
           logger.notice("Running step " + step.name)
@@ -822,7 +849,7 @@ Multistep.launch = async function(form,steps,user,extravars,creds,jobid,success,
           // if this step has an approval
           if(step.approval){
             if(!approved){
-              Job.sendApprovalNotification(approval,ev,jobid)
+              Job.sendApprovalNotification(step.approval,ev,jobid)
               Job.printJobOutput(`APPROVE [${step.name}] ${'*'.repeat(69-step.name.length)}`,"stdout",jobid,++counter)
               Job.update({status:"approve",approval:JSON.stringify(step.approval),end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid,function(error,res){
                 if(error){

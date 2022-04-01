@@ -1316,6 +1316,7 @@
                       this.$toast.error(result.data.message)
                     }
                     clearTimeout(this.timeout)
+                    this.$emit('refreshApprovals')                    
                     // this.timeout = setTimeout(function(){ ref.resetResult() }, 15000);
                   }
 

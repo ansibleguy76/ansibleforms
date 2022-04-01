@@ -84,7 +84,7 @@
             <template v-for="c in childJobs(j.id)">
               <tr :key="c.id" :class="{'has-background-success-light':(c.status=='success' && c.id!=jobId),'has-background-danger-light':(c.status=='failed' && c.id!=jobId),'has-background-warning-light':((c.status=='aborted'||c.status=='warning') && c.id!=jobId),'has-background-info':c.id==jobId,'has-text-white':c.id==jobId}">
                 <td class="has-background-info-light">
-                  <span v-if="isAdmin" class="icon has-text-danger is-clickable" @click="tempJobId=c.id;showDelete=true" title="Delete job"><font-awesome-icon icon="trash-alt" /></span>
+                  <!-- <span v-if="isAdmin" class="icon has-text-danger is-clickable" @click="tempJobId=c.id;showDelete=true" title="Delete job"><font-awesome-icon icon="trash-alt" /></span> -->
                 </td>
                 <td class="is-clickable has-text-right" @click="jobId=c.id">{{c.id}}</td>
                 <td class="is-clickable has-text-left" @click="jobId=c.id" :title="c.form">{{c.form}}</td>
@@ -658,6 +658,7 @@
         this.loadOutput(parseInt(this.jobId))
       }
       this.loadJobs(true);
+      this.$emit('refreshApprovals')
       this.interval=setInterval(this.loadRunningJobs,2000) // reload running jobs every 2s
     },
     beforeDestroy(){
