@@ -19,48 +19,41 @@ var Ldap=function(ldap){
     this.username_attribute = ldap.username_attribute;
     this.enable = (ldap.enable)?1:0;
 };
-Ldap.update = function (record, result) {
-    logger.info(`Updating ldap ${record.name}`)
-    mysql.query("UPDATE AnsibleForms.`ldap` set ?", record, function (err, res) {
-        if(err) {
-            result(err, null);
-        }
-        else{
-            result(null, res);
-        }
-    });
+Ldap.update = function (record) {
+    logger.info(`Updating ldap ${record.server}`)
+    return new Promise((resolve,reject)=>{
+      mysql.do("UPDATE AnsibleForms.`ldap` set ?", record)
+        .then((res)=>{ resolve() })
+        .catch((err)=>{
+          logger.error("Failed to update ldap : " + err)
+          reject(err)
+        })
+    })
 };
-Ldap.find = function (result) {
-    var query = "SELECT * FROM AnsibleForms.`ldap` limit 1;"
-    try{
-      mysql.query(query, function (err, res) {
-          if(err) {
-              result(err, null);
+Ldap.find = function(){
+  return new Promise((resolve,reject)=>{
+    mysql.do("SELECT * FROM AnsibleForms.`ldap` limit 1;")
+      .then((res)=>{
+        if(res.length>0){
+          try{
+            res[0].bind_user_pw=decrypt(res[0].bind_user_pw)
+          }catch(e){
+            logger.error("Couldn't decrypt ldap binding password, did the secretkey change ?")
+            res[0].bind_user_pw=""
           }
-          else{
-            if(res.length>0){
-              try{
-                res[0].bind_user_pw=decrypt(res[0].bind_user_pw)
-              }catch(e){
-                logger.error("Couldn't decrypt ldap binding password, did the secretkey change ?")
-                res[0].bind_user_pw=""
-              }
-              result(null, res[0]);
-            }else{
-              logger.error("No ldap record in the database, something is wrong")
-            }
+          resolve(res[0])
+        }else{
+          logger.error("No ldap record in the database, something is wrong")
+          reject("No ldap record in the database, something is wrong")
+        }
+      })
+      .catch((err)=>{ reject(err) })
+  })
+}
+Ldap.check = function(ldapConfig){
+  return new Promise(async (resolve,reject)=>{
 
-          }
-      });
-    }catch(err){
-      result(err, null);
-    }
-};
-Ldap.check = function(ldapConfig,result){
-  const { authenticate } = require('ldap-authentication')
-  const process =require('process');
-
-  async function auth() {
+    const { authenticate } = require('ldap-authentication')
     // auth with admin
     var badCertificates=false
     let options = {
@@ -108,38 +101,42 @@ Ldap.check = function(ldapConfig,result){
     }
 
     if(badCertificates){
-      result("Certificate is not valid",null)
+      reject("Certificate is not valid")
     }else{
       logger.notice("Certificates are valid")
       try{
         logger.debug(options)
         var user = await authenticate(options)
-        result(null,user)
+        resolve(user)
       }catch(err){
-          var em =""
-          if(err.message){
-            em = err.message
-          }else{
-            try{ em = YAML.stringify(err)}catch(e){em = err}
-          }
-          if(err.admin){
-            if(err.admin.code){
-              em = err
-              if(err.admin.code=="UNABLE_TO_VERIFY_LEAF_SIGNATURE"){
-                em = "Unable to verify the certificate"
-              }else if(err.admin.code==49){
-                em = "Wrong binding credentials"
-              }else if(err.admin.code="ENOTFOUND"){
-                em = "Bad server or port (connection failed)"
-              }
+        var em =""
+        if(err.message){
+          em = err.message
+        }else{
+          try{ em = YAML.stringify(err)}catch(e){em = err}
+        }
+        if(err.admin){
+          if(err.admin.code){
+            em = err
+            if(err.admin.code=="UNABLE_TO_VERIFY_LEAF_SIGNATURE"){
+              em = "Unable to verify the certificate"
+            }else if(err.admin.code==49){
+              em = "Wrong binding credentials"
+            }else if(err.admin.code="ENOTFOUND"){
+              em = "Bad server or port (connection failed)"
             }
           }
+        }
+        if(em.includes("user not found")){
+          logger.notice("Checking ldap connection ok")
+          resolve()
+        }else{
           logger.notice("Checking ldap connection result : " + em)
-          result(em,null)
+          reject(em)
+        }
       }
     }
-  }
-  auth()
+  })
 }
 
 module.exports= Ldap;
