@@ -49,7 +49,7 @@
             <tr class="has-text-left">
               <th class="action"></th>
               <th class="id">id</th>
-              <th>form</th>
+              <th>Action</th>
               <th class="jobtype">job type</th>
               <th class="status">status</th>
               <th>start time</th>
@@ -87,7 +87,7 @@
                   <!-- <span v-if="isAdmin" class="icon has-text-danger is-clickable" @click="tempJobId=c.id;showDelete=true" title="Delete job"><font-awesome-icon icon="trash-alt" /></span> -->
                 </td>
                 <td class="is-clickable has-text-right" @click="jobId=c.id">{{c.id}}</td>
-                <td class="is-clickable has-text-left" @click="jobId=c.id" :title="c.form">{{c.form}}</td>
+                <td class="is-clickable has-text-left" @click="jobId=c.id" :title="c.target">{{c.target}}</td>
                 <td class="is-clickable has-text-left" @click="jobId=c.id" :title="c.job_type">{{c.job_type || "ansible" }}</td>
                 <td class="is-clickable has-text-left" @click="jobId=c.id" :title="c.status">{{c.status}}</td>
                 <td class="is-clickable has-text-left" @click="jobId=c.id" :title="c.start">{{ formatTime(c.start) }}</td>

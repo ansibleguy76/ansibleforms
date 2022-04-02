@@ -419,19 +419,7 @@ Job.launch = function(form,formObj,user,creds,extravars, result,success,failed,p
   // console.log(formObj)
   // we have form and we have access
   var jobtype=formObj.type
-  var target
-  if(jobtype=="ansible"){
-    target=formObj.playbook
-  }
-  if(jobtype=="awx"){
-    target=formObj.template
-  }
-  if(jobtype=="git"){
-    target=formObj?.repo?.file
-  }
-  if(jobtype=="multistep"){
-    target=formObj.name
-  }
+  var target=formObj.name
   if(!target){
     result("Invalid form or step info")
     return false
