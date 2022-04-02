@@ -49,7 +49,7 @@
             <tr class="has-text-left">
               <th class="action"></th>
               <th class="id">id</th>
-              <th>Action</th>
+              <th>form</th>
               <th class="jobtype">job type</th>
               <th class="status">status</th>
               <th>start time</th>
