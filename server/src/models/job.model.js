@@ -707,36 +707,29 @@ Job.approve = function(user,id,result){
 Job.sendApprovalNotification = function(approval,extravars,jobid){
   if(!approval?.notifications?.length>0)return false
 
-  Settings.find((err,config)=>{
-    if(err){
-      logger.error(err)
-      return false
-    }
-    var subject = Helpers.replacePlaceholders(approval.title,extravars) || "AnsibleForms Approval Request"
-    var buffer = fs.readFileSync(`${__dirname}/../templates/approval.html`)
-    var message = buffer.toString()
-    var color = "#158cba"
-    var color2 = "#ffa73b"
-    var url = config.url?.replace(/\/$/g,'') // remove trailing slash if present
-    var logo = `${url}/assets/img/logo.png`
-    var approvalMessage = Helpers.replacePlaceholders(approval.message,extravars)
-    message=message.replace("${message}",approvalMessage)
-                    .replaceAll("${url}",url)
-                    .replaceAll("${jobid}",jobid)
-                    .replaceAll("${title}",subject)
-                    .replaceAll("${logo}",logo)
-                    .replaceAll("${color}",color)
-                    .replaceAll("${color2}",color2)
-    // logger.notice(subject)
-    // logger.notice(message)
-    Settings.mailsend(approval.notifications.join(","),subject,message,(err,messageid)=>{
-      if(err){
-        logger.error(err)
-      }else{
-        logger.notice("Approval mail sent to " + approval.notifications.join(",") + " with id " + messageid)
-      }
+  Settings.find()
+    .then((config)=>{
+      var subject = Helpers.replacePlaceholders(approval.title,extravars) || "AnsibleForms Approval Request"
+      var buffer = fs.readFileSync(`${__dirname}/../templates/approval.html`)
+      var message = buffer.toString()
+      var color = "#158cba"
+      var color2 = "#ffa73b"
+      var url = config.url?.replace(/\/$/g,'') // remove trailing slash if present
+      var logo = `${url}/assets/img/logo.png`
+      var approvalMessage = Helpers.replacePlaceholders(approval.message,extravars)
+      message=message.replace("${message}",approvalMessage)
+                      .replaceAll("${url}",url)
+                      .replaceAll("${jobid}",jobid)
+                      .replaceAll("${title}",subject)
+                      .replaceAll("${logo}",logo)
+                      .replaceAll("${color}",color)
+                      .replaceAll("${color2}",color2)
+      // logger.notice(subject)
+      // logger.notice(message)
+      return Settings.mailsend(approval.notifications.join(","),subject,message)
+        .then((messageid)=>{logger.notice("Approval mail sent to " + approval.notifications.join(",") + " with id " + messageid)})
     })
-  })
+    .catch((err)=>{logger.error(err.message)})  
 
 }
 Job.reject = function(user,id,result){
@@ -1045,12 +1038,8 @@ var Awx = function(){}
 Awx.getConfig = require('./awx.model').getConfig
 Awx.abortJob = function (id, next) {
 
-  Awx.getConfig(function(err,awxConfig){
-
-    if(err){
-      logger.error(err)
-      next(`failed to get AWX configuration`)
-    }else{
+  Awx.getConfig()
+    .then((awxConfig)=>{
 
       var message=""
       logger.info(`aborting awx job ${id}`)
@@ -1085,8 +1074,11 @@ Awx.abortJob = function (id, next) {
           logger.error(error.message)
           next(`failed to abort awx job ${id}`)
         })
-    }
-  })
+      })
+      .catch((err)=>{
+        logger.error(err)
+        next(`failed to get AWX configuration`)
+      })
 };
 Awx.launch = function (template,ev,inv,tags,c,d,key,credentials,jobid,success,failed,counter,approval,approved=false){
   var message=""
@@ -1139,14 +1131,8 @@ Awx.launchTemplate = function (template,ev,inventory,tags,c,d,key,credentials,jo
   if(!counter){
     counter=0
   }
-  Awx.getConfig(function(err,awxConfig){
-
-    if(err){
-      logger.error(err)
-      message= `failed to get AWX configuration`
-      Job.endJobStatus(jobid,++counter,"stderr",status,message)
-      failed(message)
-    }else{
+  Awx.getConfig()
+  .then((awxConfig)=>{
       var extravars={...ev} // we make a copy of the main extravars
       // check could be controlled from extravars
       var check = c || extravars?.__check__
@@ -1242,15 +1228,17 @@ Awx.launchTemplate = function (template,ev,inventory,tags,c,d,key,credentials,jo
             }
           })
       }
-    }
+  })
+  .catch((err)=>{
+    logger.error(err)
+    message= `failed to get AWX configuration`
+    Job.endJobStatus(jobid,++counter,"stderr",status,message)
+    failed(message)
   })
 };
 Awx.trackJob = function (job,jobid,counter, success,failed,previousoutput) {
-  Awx.getConfig(function(err,awxConfig){
-    if(err){
-      logger.error(err)
-      failed(`failed to get AWX configuration`,jobid,counter)
-    }else{
+  Awx.getConfig()
+  .then((awxConfig)=>{
       var message=""
       logger.info(`searching for job with id ${job.id}`)
       // prepare axiosConfig
@@ -1309,15 +1297,15 @@ Awx.trackJob = function (job,jobid,counter, success,failed,previousoutput) {
           logger.error(error.message)
           failed(error.message)
         })
-    }
+  })
+  .catch((err)=>{
+    logger.error(err)
+    failed(`failed to get AWX configuration`,jobid,counter)
   })
 };
 Awx.getJobTextOutput = function (job, result) {
-  Awx.getConfig(function(err,awxConfig){
-    if(err){
-      logger.error(err)
-      result(`failed to get AWX configuration`)
-    }else{
+  Awx.getConfig()
+  .then((awxConfig)=>{
       var message=""
       if(job.related===undefined){
         result(null,"")
@@ -1339,16 +1327,15 @@ Awx.getJobTextOutput = function (job, result) {
             result(error.message)
           })
       }
-    }
+  })
+  .catch((err)=>{
+    logger.error(err)
+    result(`failed to get AWX configuration`)
   })
 };
 Awx.findJobTemplateByName = function (name,result) {
-  Awx.getConfig(function(err,awxConfig){
-    // logger.debug(awxConfig)
-    if(err){
-      logger.error(err)
-      result(`failed to get AWX configuration`)
-    }else{
+  Awx.getConfig()
+  .then((awxConfig)=>{
       var message=""
       logger.info(`searching job template ${name}`)
       // prepare axiosConfig
@@ -1376,17 +1363,16 @@ Awx.findJobTemplateByName = function (name,result) {
           logger.error(error.message)
           result(error.message,null)
         })
-    }
+  })
+  .catch((err)=>{
+    logger.error(err)
+    result(`failed to get AWX configuration`)
   })
 
 };
 Awx.findInventoryByName = function (name,result) {
-  Awx.getConfig(function(err,awxConfig){
-
-    if(err){
-      logger.error(err)
-      result(`failed to get AWX configuration`)
-    }else{
+  Awx.getConfig()
+  .then((awxConfig)=>{
       var message=""
       logger.info(`searching inventory ${name}`)
       // prepare axiosConfig
@@ -1417,7 +1403,10 @@ Awx.findInventoryByName = function (name,result) {
           logger.error(error.message)
           result(error.message,null)
         })
-    }
+  })
+  .catch((err)=>{
+    logger.error(err)
+    result(`failed to get AWX configuration`)
   })
 
 };

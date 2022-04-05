@@ -4,21 +4,19 @@ var RestResult = require('../models/restResult.model');
 
 exports.find = function(req, res) {
   if(req.query.name){
-    Group.findByName(req.query.name,function(err, group) {
-        if (err){
-          res.json(new RestResult("error","failed to find group",null,err))
+    Group.findByName(req.query.name)
+      .then((groups)=>{
+        if(groups.length>0){
+          res.json(new RestResult("success","found group",groups[0],""));
         }else{
-          res.json(new RestResult("success","group found",group,""));
+          res.json(new RestResult("error","no such group found",null))
         }
-    });    
+      })
+      .catch((err)=>{res.json(new RestResult("error","failed to find group",null,err))})
   }else{
-    Group.findAll(function(err, group) {
-        if (err){
-          res.json(new RestResult("error","failed to find groups",null,err))
-        }else{
-          res.json(new RestResult("success","groups found",group,""));
-        }
-    });
+    Group.findAll()
+      .then((groups)=>{ res.json(new RestResult("success","groups found",groups,"")) })
+      .catch((err)=>{ res.json(new RestResult("error","failed to find groups",null,err)) })
   }
 
 };
@@ -28,49 +26,33 @@ exports.create = function(req, res) {
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
         res.status(400).send({ error:true, message: 'Please provide all required fields' });
     }else{
-        Group.create(new_group, function(err, group) {
-            if (err){
-              res.json(new RestResult("error","failed to create group",null,err))
-            }else{
-              res.json(new RestResult("success","group added",group,""));
-            }
-        });
+        Group.create(new_group)
+          .then((group)=>{ res.json(new RestResult("success","group added",group,"")) })
+          .catch((err)=>{ res.json(new RestResult("error","failed to create group",null,err)) })
     }
 };
 exports.findById = function(req, res) {
-    Group.findById(req.params.id, function(err, group) {
-        if (err){
-            res.json(new RestResult("error","failed to find group",null,err))
+    Group.findById(req.params.id)
+      .then((groups)=>{
+        if(groups.length>0){
+          res.json(new RestResult("success","found group",groups[0],""));
         }else{
-            if(group.length>0){
-              res.json(new RestResult("success","found group",group[0],""));
-            }else{
-              res.json(new RestResult("error","failed to find group",null,err))
-            }
-
+          res.json(new RestResult("error","no such group found",null))
         }
-    });
+      })
+      .catch((err)=>{res.json(new RestResult("error","failed to find group",null,err))})
 };
 exports.update = function(req, res) {
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
         res.status(400).send({ error:true, message: 'Please provide all required fields' });
     }else{
-        Group.update(new Group(req.body),req.params.id, function(err, group) {
-            if (err){
-                res.json(new RestResult("error","failed to update group",null,err))
-            }else{
-                res.json(new RestResult("success","group updated",null,""));
-            }
-        });
+        Group.update(new Group(req.body),req.params.id)
+          .then(()=>{res.json(new RestResult("success","group updated",null,""))})
+          .catch((err)=>{res.json(new RestResult("error","failed to update group",null,err))})
     }
 };
 exports.delete = function(req, res) {
-    Group.delete( req.params.id,function(err, group) {
-        if (err){
-            res.json(new RestResult("error","failed to delete group",null,err))
-        }else{
-            res.json(new RestResult("success","group deleted",null,""));
-        }
-
-    });
+    Group.delete( req.params.id)
+      .then(()=>{res.json(new RestResult("success","group deleted",null,""))})
+      .catch((err)=>{res.json(new RestResult("error","failed to delete group",null,err))})
 };

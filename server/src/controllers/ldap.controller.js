@@ -14,11 +14,11 @@ exports.check = function(req, res) {
   .catch((err) => { res.json(new RestResult("error","Ldap check failed",null,err)) })
 };
 exports.update = function(req, res) {
-    if(req.body.constructor === Object && Object.keys(req.body).length === 0){
-        res.status(400).send({ error:true, message: 'Please provide all required fields' });
-    }else{
-        Ldap.update(new Ldap(req.body))
-          .then(()=>{ res.json(new RestResult("success","Ldap updated",null,"")); })
-          .catch((err) => { res.json(new RestResult("error","Failed to update ldap",null,err)) })
-    }
+  if(req.body.constructor === Object && Object.keys(req.body).length === 0){
+    res.status(400).send({ error:true, message: 'Please provide all required fields' });
+  }else{
+    Ldap.update(new Ldap(req.body))
+    .then(()=>{ res.json(new RestResult("success","Ldap updated",null,"")); })
+    .catch((err) => { res.json(new RestResult("error","Failed to update ldap",null,err)) })
+  }
 };

@@ -20,153 +20,86 @@ var Credential=function(credential){
     this.description = credential.description;
 };
 
-Credential.create = function (record, result) {
+Credential.create = function (record) {
     logger.info(`Creating credential ${record.name}`)
-    mysql.query("INSERT INTO AnsibleForms.`credentials` set ?", record, function (err, res) {
-        if(err) {
-            result(err, null);
-        }
-        else{
-            result(null, res.insertId);
-        }
-    });
-
+    return mysql.do("INSERT INTO AnsibleForms.`credentials` set ?", record)
+    .then((res)=>{ return res.insertId })
 };
-Credential.update = function (record,id, result) {
+Credential.update = function (record,id) {
     logger.info(`Updating credential ${record.name}`)
-    mysql.query("UPDATE AnsibleForms.`credentials` set ? WHERE id=?", [record,id], function (err, res) {
-        if(err) {
-            //lib/logger.error(err)
-            result(err, null);
-        }
-        else{
-            cache.del(record.name)
-            result(null, res);
-        }
-    });
+    return mysql.do("UPDATE AnsibleForms.`credentials` set ? WHERE id=?", [record,id])
+    .then((res)=>{
+      cache.del(record.name)
+      return res
+    })
 };
-Credential.delete = function(id, result){
-
+Credential.delete = function(id){
     logger.info(`Deleting credential ${id}`)
-    mysql.query("DELETE FROM AnsibleForms.`credentials` WHERE id = ? AND name<>'admins'", [id], function (err, res) {
-        if(err) {
-            result(err, null);
-        }
-        else{
-            result(null, res);
-        }
-    });
+    return mysql.do("DELETE FROM AnsibleForms.`credentials` WHERE id = ? AND name<>'admins'", [id])
 };
-Credential.findAll = function (result) {
+Credential.findAll = function () {
     logger.info("Finding all credentials")
-    var query = "SELECT id,name,user,host,port,description FROM AnsibleForms.`credentials`;"
-    try{
-      mysql.query(query, function (err, res) {
-          if(err) {
-              result(err, null);
-          }
-          else{
-              result(null, res);
-          }
-      });
-    }catch(err){
-      result(err, null);
-    }
+    return mysql.do("SELECT id,name,user,host,port,description FROM AnsibleForms.`credentials`;")
 };
-Credential.findById = function (id,result) {
+Credential.findById = function (id) {
     logger.info(`Finding credential ${id}`)
-    var query = "SELECT * FROM AnsibleForms.`credentials` WHERE id=?;"
-    try{
-      mysql.query(query,id, function (err, res) {
-        if(err) {
-            result(err, null);
+    return mysql.do("SELECT * FROM AnsibleForms.`credentials` WHERE id=?;",id)
+    .then((res)=>{
+      if(res.length>0){
+        try{
+          res[0].password = decrypt(res[0].password)
+        }catch(e){
+          logger.error("Failed to decrypt the password.  Did the secretkey change ?")
+          res[0].password = ""
         }
-        else{
-          if(res.length>0){
-            try{
-              res[0].password = decrypt(res[0].password)
-            }catch(e){
-              logger.error("Failed to decrypt the password.  Did the secretkey change ?")
-              res[0].password = ""
-            }
-
-            result(null, res);
-          }else{
-            result("No credential found with id " + id,null)
-          }
-        }
-      });
-    }catch(err){
-      result(err, null);
-    }
-};
-Credential.findByName2 = function (name,result) {
-    logger.info(`Finding credential ${name}`)
-    var query = "SELECT * FROM AnsibleForms.`credentials` WHERE name=?;"
-    try{
-      mysql.query(query,name, function (err, res) {
-        if(err) {
-            result(err, null);
-        }
-        else{
-          if(res.length>0){
-            try{
-              res[0].password = decrypt(res[0].password)
-            }catch(e){
-              logger.error("Failed to decrypt the password.  Did the secretkey change ?")
-              res[0].password = ""
-            }
-
-            result(null, res);
-          }else{
-            result("No credential found named " + name,null)
-          }
-        }
-      });
-    }catch(err){
-      result(err, null);
-    }
-};
-Credential.findByName = function (name) {
-    return new Promise((resolve,reject) => {
-      try{
-        logger.debug(`Finding credential ${name}`)
-        var cred = cache.get(name)
-        if(cred==undefined){
-          var query = "SELECT host,port,name,user,password FROM AnsibleForms.`credentials` WHERE name=?;"
-          mysql.query(query,name, function (err, res) {
-              if(err) {
-                  reject(err,null);
-              }
-              else{
-                  if(res.length>0){
-                    // a bit special here.  We will pass the full object as a mysql connect object,
-                    // so we convert the DataRowPacket to normal javascript object.  We also remove array.
-                    // we also assume we find the credential, hence we throw an error if it's not found.
-                    res[0].multipleStatements = true
-                    try{
-                      res[0].password = decrypt(res[0].password)
-                    }catch(e){
-                      logger.error("Failed to decrypt the password.  Did the secretkey change ?")
-                      res[0].password = ""
-                    }
-                    cache.set(name,res[0])
-                    logger.debug("Caching credentials " + name + " from database")
-                    resolve(JSON.parse(JSON.stringify(res[0])))
-                  }else{
-                    reject(new Error("No credential found named " + name),null)
-                  }
-              }
-          });
-        }else{
-          // logger.debug("returning credentials " + name + " from cache")
-          resolve(cred)
-        }
-      }catch(err){
-        reject(err)
+        return res
+      }else{
+        throw `No credential found with id ${id}`
       }
     })
-
+};
+Credential.findByName2 = function (name) {
+    logger.info(`Finding credential ${name}`)
+    return mysql.do("SELECT * FROM AnsibleForms.`credentials` WHERE name=?;",name)
+    .then((res)=>{
+      if(res.length>0){
+        try{
+          res[0].password = decrypt(res[0].password)
+        }catch(e){
+          logger.error("Failed to decrypt the password.  Did the secretkey change ?")
+          res[0].password = ""
+        }
+        return res
+      }else{
+        throw `No credential found named ${name}`
+      }
+    })
+};
+Credential.findByName = function (name) {
+  logger.debug(`Finding credential ${name}`)
+  var cred = cache.get(name)
+  if(cred==undefined){
+    return mysql.do("SELECT host,port,name,user,password FROM AnsibleForms.`credentials` WHERE name=?;",name)
+    .then((res)=>{
+      if(res.length>0){
+        res[0].multipleStatements = true
+        try{
+          res[0].password = decrypt(res[0].password)
+        }catch(e){
+          logger.error("Failed to decrypt the password.  Did the secretkey change ?")
+          res[0].password = ""
+        }
+        cache.set(name,res[0])
+        logger.debug("Caching credentials " + name + " from database")
+        return JSON.parse(JSON.stringify(res[0]))
+      }else{
+        throw new Error("No credential found named " + name)
+      }
+    })
+  }else{
+    // logger.debug("returning credentials " + name + " from cache")
+    return Promise.resolve(cred)
+  }
 };
 
 module.exports= Credential;

@@ -18,20 +18,18 @@ exports.pull = async function(req, res) {
           res.json(new RestResult("error","no repo","","repo is a required field"));
         }else{
           logger.notice("Pulling repo : " + JSON.stringify(repo))
-          Git.pull(repo,function(err,out){
-            if(err){
-               restResult.status = "error"
-               restResult.message = "error occured while pulling from git " + repo.file
-               restResult.data.error = err.toString()
-            }else{
-               restResult.message = "succesfully pulled"
-               restResult.data.output = out
-
-            }
-            // send response
+          Git.pull(repo)
+          .then((out)=>{
+            restResult.message = "succesfully pulled"
+            restResult.data.output = out
+            res.json(restResult);
+          })
+          .catch((err)=>{
+            restResult.status = "error"
+            restResult.message = "error occured while pulling from git " + repo.file
+            restResult.data.error = err.toString()
             res.json(restResult);
           })
         }
-
     }
 };

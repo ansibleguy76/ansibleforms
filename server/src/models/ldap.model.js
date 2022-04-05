@@ -20,35 +20,25 @@ var Ldap=function(ldap){
     this.enable = (ldap.enable)?1:0;
 };
 Ldap.update = function (record) {
-    logger.info(`Updating ldap ${record.server}`)
-    return new Promise((resolve,reject)=>{
-      mysql.do("UPDATE AnsibleForms.`ldap` set ?", record)
-        .then((res)=>{ resolve() })
-        .catch((err)=>{
-          logger.error("Failed to update ldap : " + err)
-          reject(err)
-        })
-    })
+  logger.info(`Updating ldap ${record.server}`)
+  return mysql.do("UPDATE AnsibleForms.`ldap` set ?", record)
 };
 Ldap.find = function(){
-  return new Promise((resolve,reject)=>{
-    mysql.do("SELECT * FROM AnsibleForms.`ldap` limit 1;")
-      .then((res)=>{
-        if(res.length>0){
-          try{
-            res[0].bind_user_pw=decrypt(res[0].bind_user_pw)
-          }catch(e){
-            logger.error("Couldn't decrypt ldap binding password, did the secretkey change ?")
-            res[0].bind_user_pw=""
-          }
-          resolve(res[0])
-        }else{
-          logger.error("No ldap record in the database, something is wrong")
-          reject("No ldap record in the database, something is wrong")
+  return mysql.do("SELECT * FROM AnsibleForms.`ldap` limit 1;")
+    .then((res)=>{
+      if(res.length>0){
+        try{
+          res[0].bind_user_pw=decrypt(res[0].bind_user_pw)
+        }catch(e){
+          logger.error("Couldn't decrypt ldap binding password, did the secretkey change ?")
+          res[0].bind_user_pw=""
         }
-      })
-      .catch((err)=>{ reject(err) })
-  })
+        return res[0]
+      }else{
+        logger.error("No ldap record in the database, something is wrong")
+        throw "No ldap record in the database, something is wrong"
+      }
+    })
 }
 Ldap.check = function(ldapConfig){
   return new Promise(async (resolve,reject)=>{

@@ -33,85 +33,60 @@ var Awx=function(awx){
 
 // get the awx config from cache or database (=wrapper function)
 Awx.getConfig = function(){
-  return new Promise((resolve,reject)=>{
-    var awxConfig=cache.get("awxConfig")
-    if(awxConfig==undefined){
-      Awx.find()
-        .then((awx)=>{
-          cache.set("awxConfig",res)
-          logger.debug("Cached awxConfig from database")
-          resolve(awx)
-        })
-        .catch((err)=>{
-          logger.error(err)
-          reject(`failed to get AWX configuration`)
-        })
-    }else{
-      // logger.debug("Getting awxConfig from cache")
-      resolve(awxConfig)
-    }
-  })
-};
-//awx object create (it's an update; during schema creation we add a record)
-Awx.update = function (record, result) {
-  return new Promise((resolve,reject)=>{
-    logger.info(`Updating awx ${record.name}`)
-    mysql.do("UPDATE AnsibleForms.`awx` set ?", record)
-      .then((res)=>{
-        cache.del("awxConfig")
-        resolve(res)
+  var awxConfig=cache.get("awxConfig")
+  if(awxConfig==undefined){
+    return Awx.find()
+      .then((awx)=>{
+        cache.set("awxConfig",awx)
+        logger.debug("Cached awxConfig from database")
+        return awx
       })
-      .catch((err)=>{ reject(err) })
-  })
+  }else{
+    // logger.debug("Getting awxConfig from cache")
+    return Promise.resolve(awxConfig)
+  }
 };
-// get awx config from database
-Awx.find = function (result) {
-  return new Promise((resolve,resject)=>{
-    mysql.do("SELECT * FROM AnsibleForms.`awx` limit 1;")
-      .then((res)=>{
-        if(res.length>0){
-          try{
-            res[0].token=decrypt(res[0].token)
-          }catch(e){
-            logger.error("Couldn't decrypt awx token, did the secretkey change ?")
-            res[0].token=""
-          }
-          resolve(res[0])
-        }else{
-          logger.error("No awx record in the database, something is wrong")
-          reject("No awx record in the database, something is wrong")
+Awx.update = function (record) {
+  logger.info(`Updating awx ${record.name}`)
+  return mysql.do("UPDATE AnsibleForms.`awx` set ?", record)
+    .then((res)=>{
+      cache.del("awxConfig")
+      return res
+    })
+};
+Awx.find = function() {
+  return mysql.do("SELECT * FROM AnsibleForms.`awx` limit 1;")
+    .then((res)=>{
+      if(res.length>0){
+        try{
+          res[0].token=decrypt(res[0].token)
+        }catch(e){
+          logger.error("Couldn't decrypt awx token, did the secretkey change ?")
+          res[0].token=""
         }
-      })
-      .catch((err)=>{
-        logger.error("error querying awx config " + err)
-        reject(err)
-      })
-  })
+        return res[0]
+      }else{
+        logger.error("No awx record in the database, something is wrong")
+        throw "No awx record in the database, something is wrong"
+      }
+    })
+
 };
-// check connection
 Awx.check = function (awxConfig) {
-  return new Promise((resolve,reject)=>{
-    logger.info(`Checking AWX connection`)
-    // prepare axiosConfig
-    logger.info(awxConfig)
-    const axiosConfig = {
-      headers: {
-        Authorization:"Bearer " + decrypt(awxConfig.token)
-      },
-      httpsAgent: getHttpsAgent(awxConfig)
-    }
-    axios.get(awxConfig.uri + "/api/v2/job_templates/",axiosConfig)
-      .then((axiosresult)=>{
-        if(axiosresult.data.results){
-          resolve("Awx Connection is OK")
-        }
-      })
-      .catch(function (error) {
-        logger.error(error.message)
-        reject(error.message)
-      })
-  })
-
-
+  logger.info(`Checking AWX connection`)
+  const axiosConfig = {
+    headers: {
+      Authorization:"Bearer " + decrypt(awxConfig.token)
+    },
+    httpsAgent: getHttpsAgent(awxConfig)
+  }
+  return axios.get(awxConfig.uri + "/api/v2/job_templates/",axiosConfig)
+    .then((axiosresult)=>{
+      if(axiosresult?.data?.results){
+        return "Awx Connection is OK"
+      }else{
+        throw new Error("Awx Connection failed")
+      }
+    })
 };
 module.exports= Awx;
