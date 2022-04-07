@@ -15,7 +15,7 @@ Group.update = function (record,id) {
     logger.info(`Updating group ${record.name}`)
     return mysql.do("UPDATE AnsibleForms.`groups` set ? WHERE name=?", [record,id])
 };
-Group.delete = function(id, result){
+Group.delete = function(id){
     if(id==1){
       logger.warning("Someone is trying to remove the admins group !")
       return new Promise.reject("You cannot delete group 'admins'")

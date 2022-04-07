@@ -21,7 +21,7 @@ Settings.update = function (record) {
     logger.info(`Updating settings`)
     return mysql.do("UPDATE AnsibleForms.`settings` set ?", record)
 };
-Settings.find = function (result) {
+Settings.find = function () {
 
   return mysql.do("SELECT * FROM AnsibleForms.`settings` limit 1;")
     .then((res)=>{
@@ -40,7 +40,7 @@ Settings.find = function (result) {
     })
 
 };
-Settings.mailcheck = function(config,to,result){
+Settings.mailcheck = function(config,to){
   var subject= "Test message"
   var message= "<p>This is a test message from AnsibleForms</p>"
   if(config.mail_password){
@@ -51,15 +51,15 @@ Settings.mailcheck = function(config,to,result){
       logger.error("Failed to decrypt mail password")
     }
   }
-  return Settings.maildo(config,to,subject,message,result)
+  return Settings.maildo(config,to,subject,message)
 }
-Settings.mailsend = function(to,subject,message,result){
+Settings.mailsend = function(to,subject,message){
   return Settings.find()
-          .then((config)=>{
-            return Settings.maildo(config,to,subject,message,result)
-          })
+    .then((config)=>{
+      return Settings.maildo(config,to,subject,message)
+    })
 }
-Settings.maildo = function(config,to,subject,message,result){
+Settings.maildo = function(config,to,subject,message){
   var mailConfig
   if(!config.mail_server)return false
   if(config.mail_username){

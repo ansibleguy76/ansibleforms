@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 const appConfig = require('../../config/app.config')
 
 const algorithm = 'aes-256-ctr';
@@ -24,8 +25,30 @@ const decrypt = (hash) => {
 
     return decrpyted.toString();
 };
+// promise wrapper for bcrypthash
+const hashPassword = (pw) => {
+    const saltrounds = 10
+    return new Promise((resolve,reject)=>{
+      bcrypt.hash(pw, saltrounds,(err,hash)=>{
+        if(err) reject(err)
+        resolve(hash)
+      })
+    })
+}
+// promise wrapper for bcrypt compare
+const checkPassword = (pw,hash,user) =>{
+  return new Promise((resolve,reject)=>{
+    bcrypt.compare(pw,hash,function(err,isSame){
+      if(err)reject(err)
+      resolve({isValid:isSame,user:user});
+    });
+  })
+}
+
 
 module.exports = {
     encrypt,
-    decrypt
+    decrypt,
+    hashPassword,
+    checkPassword
 };

@@ -1,8 +1,9 @@
 'use strict';
-const bcrypt = require('bcrypt');
+const crypto = require("../lib/crypto")
 const logger=require("../lib/logger");
 const authConfig = require('../../config/auth.config')
 const appConfig = require('../../config/app.config')
+const ldapAuthentication = require('ldap-authentication').authenticate
 const Ldap = require('./ldap.model')
 const Form = require('./form.model')
 const YAML = require('yaml')
@@ -21,210 +22,95 @@ var User=function(user){
     }
 
 };
-User.create = function (record, result) {
-    bcrypt.hash(record.password, 10,function(err,hash){
-      if(err){
-        logger.error("error creating hash : " + err)
-        result(err,null)
-      }else{
-        record.password = hash
-        logger.info(`Creating user ${record.username}`)
-        mysql.query("INSERT INTO AnsibleForms.`users` set ?", record, function (err, res) {
-            if(err) {
-                result(err, null);
-            }
-            else{
-                result(null, res.insertId);
-            }
-        });
-      }
-    });
+User.create = function (record) {
+  return crypto.hashPassword(record.password)
+    .then((hash)=>{
+      record.password = hash
+      logger.info(`Creating user ${record.username}`)
+      return mysql.do("INSERT INTO AnsibleForms.`users` set ?", record)
+    })
+    .then((res)=>{
+      return res.insertId
+    })
 };
-User.update = function (record,id, result) {
-    if(id==1 && record.group_id!=undefined && record.group_id!=1){
-      result("You cannot change the 'admin' user out of the 'admins' group.",null)
-    }else{
-      bcrypt.hash(record.password, 10,function(err,hash){
-        if(err){
-          logger.error("error creating hash : " + err)
-          result(err,null)
-        }else{
-          record.password = hash
-          logger.info(`Updating user ${(record.username)?record.username:id}`)
-          mysql.query("UPDATE AnsibleForms.`users` set ? WHERE id=?", [record,id], function (err, res) {
-              if(err) {
-                  //lib/logger.error(err)
-                  result(err, null);
-              }
-              else{
-                  result(null, res);
-              }
-          });
-        }
-      });
-    }
+User.update = function (record,id) {
+  if(id==1 && record.group_id!=undefined && record.group_id!=1){
+    return Promise.reject("You cannot change the 'admin' user out of the 'admins' group.")
+  }
+  if(record.password){
+    logger.info(`Updating user with password ${(record.username)?record.username:id}`)
+    return crypto.hashPassword(record.password)
+      .then((hash)=>{
+        record.password = hash
+        return mysql.do("UPDATE AnsibleForms.`users` set ? WHERE id=?", [record,id])
+      })
+  }else{
+    logger.info(`Updating user ${(record.username)?record.username:id}`)
+    return mysql.do("UPDATE AnsibleForms.`users` set ? WHERE id=?", [record,id])
+  }
 
 };
-User.delete = function(id, result){
+User.delete = function(id){
     if(id==1){
-      result("You cannot delete user 'admin'",null)
+      return Promise.reject("You cannot delete user 'admin'")
     }else{
       logger.info(`Deleting user ${id}`)
-      mysql.query("DELETE FROM AnsibleForms.`users` WHERE id = ? AND username<>'admin'", [id], function (err, res) {
-          if(err) {
-              logger.error(err)
-              result(err, null);
-          }
-          else{
-              result(null, res);
-          }
-      });
+      return mysql.do("DELETE FROM AnsibleForms.`users` WHERE id = ? AND username<>'admin'", [id])
     }
-
 };
-User.findAll = function (result) {
+User.findAll = function () {
     logger.info("Finding all users")
-    var query = "SELECT * FROM AnsibleForms.`users` limit 20;"
-    try{
-      mysql.query(query,null, function (err, res) {
-          if(err) {
-              result(err, null);
-          }
-          else{
-              result(null, res);
-          }
-      });
-    }catch(err){
-      result(err, null);
-    }
+    return mysql.do("SELECT * FROM AnsibleForms.`users`;")
 };
-User.findById = function (id,result) {
+User.findById = function (id) {
     logger.info(`Finding user ${id}`)
-    try{
-      mysql.query("SELECT * FROM AnsibleForms.`users` WHERE id=?;",id, function (err, res) {
-          if(err) {
-              result(err, null);
-          }
-          else{
-              result(null, res);
-          }
-      });
-    }catch(err){
-      result(err, null);
-    }
+    return mysql.do("SELECT * FROM AnsibleForms.`users` WHERE id=?;",id)
 };
-User.findByUsername = function (username,result) {
+User.findByUsername = function (username) {
     logger.info(`Finding user ${username}`)
-    try{
-      mysql.query("SELECT * FROM AnsibleForms.`users` WHERE username=?;",username, function (err, res) {
-          if(err) {
-              result(err, null);
-          }
-          else{
-              result(null, res);
-          }
-      });
-    }catch(err){
-      result(err, null);
-    }
+    return mysql.do("SELECT * FROM AnsibleForms.`users` WHERE username=?;",username)
 };
-User.authenticate = function (username,password,result) {
+User.authenticate = function (username,password) {
     logger.info(`Checking password for user ${username}`)
     var query = "SELECT users.id,`username`,`password`,GROUP_CONCAT(groups.name) `groups` FROM AnsibleForms.`users`,AnsibleForms.`groups` WHERE `users`.group_id=`groups`.id AND username=?;"
-    try{
-      mysql.query(query,username, function (err, res) {
-          if(err) {
-              logger.error("Error querying user : " + err)
-              result(err, null);
-          }
-          else{
-              if(res.length > 0 && res[0].password){
-                bcrypt.compare(password,res[0].password,function(err,isSame){
-                  if(err){
-                    logger.error("Error comparing passwords : " + err)
-                    result(err,null)
-                  }else{
-                    logger.info(`match = ${isSame}`)
-                    result(null, {isValid:isSame,user:res[0]});
-                  }
-                });
-              }else{
-                result(`User ${username} not found`,null);
-              }
-
-          }
-      });
-    }catch(err){
-        result("Failed to connect to the AnsibleForms database", null);
-    }
-
+    return mysql.do(query,username)
+      .then((res)=>{
+        if(res.length > 0 && res[0].password){
+          return crypto.checkPassword(password,res[0].password,res[0])
+        }else{
+          throw `User ${username} not found`
+        }
+      })
 };
-User.storeToken = function (username,username_type,refresh_token,result) {
+User.storeToken = function (username,username_type,refresh_token) {
     var record = {}
     record.username = username
     record.username_type= username_type
     record.refresh_token = refresh_token
     logger.info(`Adding token for ${record.username} (${record.username_type})`)
-    try{
-      mysql.query("INSERT INTO AnsibleForms.`tokens` set ?", record,  function (err, res) {
-          if(err) {
-              result(err, null);
-          }
-          else{
-              result(null, "Token saved");
-          }
-      });
-    }catch(err){
-      result("Failed to insert token in database",null)
-    }
+    return mysql.do("INSERT INTO AnsibleForms.`tokens` set ?", record)
 };
-User.deleteToken = function (username,username_type,refresh_token,result) {
+User.deleteToken = function (username,username_type,refresh_token) {
     logger.info(`Deleting token for user ${username} (${username_type}) - ${refresh_token}`)
-    try{
-      User.cleanupTokens()
-      mysql.query("DELETE FROM AnsibleForms.`tokens` WHERE username=? AND username_type=? AND refresh_token=?",[username,username_type,refresh_token], function (err, res) {
-          if(err) {
-              result(err, null);
-          }else{
-            result(null,"Token removed")
-          }
-      });
-    }catch(err){
-        result("Failed to connect to the AnsibleForms database. " + err, null);
-    }
+    User.cleanupTokens()
+    return mysql.do("DELETE FROM AnsibleForms.`tokens` WHERE username=? AND username_type=? AND refresh_token=?",[username,username_type,refresh_token])
 };
 User.cleanupTokens = function() {
     logger.info(`Deleting tokens older than a month`)
-    try{
-      mysql.query("DELETE FROM AnsibleForms.`tokens` WHERE timestamp < NOW() - INTERVAL 30 DAY",null, function (err, res) {
-          if(err) {
-            logger.error("Cleanup tokens failed")
-          }else{
-            logger.notice("Cleanup tokens finished")
-          }
-      });
-    }catch(err){
-        logger.error("Failed to connect to the AnsibleForms database. " + err, null);
-    }
+    mysql.do("DELETE FROM AnsibleForms.`tokens` WHERE timestamp < NOW() - INTERVAL 30 DAY")
+      .then(()=>{logger.notice("Cleanup tokens finished")})
+      .catch((err)=>{logger.error("Cleanup tokens failed. "+err)})
 };
-User.checkToken = function (username,username_type,refresh_token,result) {
-    logger.info(`Checking token for user ${username} (${username_type})`)
-    try{
-      mysql.query("SELECT refresh_token FROM AnsibleForms.`tokens` WHERE username=? AND username_type=? AND refresh_token=? LIMIT 1",[username,username_type,refresh_token], function (err, res) {
-          if(err) {
-              result("Failed to connect to the AnsibleForms database : " + err, null);
-          }
-          else{
-              if(res.length >0){
-                result(null,"Refresh token is OK");
-              }else{
-                result(`User ${username} (${username_type}) not found`,null);
-              }
-          }
-      });
-    }catch(err){
-        result("Failed to connect to the AnsibleForms database. " + err, null);
-    }
+User.checkToken = function (username,username_type,refresh_token) {
+  logger.info(`Checking token for user ${username} (${username_type})`)
+  return mysql.do("SELECT refresh_token FROM AnsibleForms.`tokens` WHERE username=? AND username_type=? AND refresh_token=? LIMIT 1",[username,username_type,refresh_token])
+    .then((res)=>{
+      if(res.length >0){
+        return "Refresh token is OK"
+      }else{
+        throw `User ${username} (${username_type}) not found`
+      }
+    })
 };
 User.getRoles = function(user,groupObj){
   var roles = ["public"]
@@ -276,99 +162,88 @@ User.getRoles = function(user,groupObj){
     return roles
   }
 }
-User.checkLdap = function(username,password,result){
-  const { authenticate } = require('ldap-authentication')
-  async function auth(ldapConfig) {
-    // auth with admin
-    var badCertificates=false
-    let options = {
-      ldapOpts: {
-        url: ((ldapConfig.enable_tls==1)?"ldaps":"ldap") + "://" + ldapConfig.server + ":" + ldapConfig.port,
-        tlsOptions: {
-          // cert: cert,
-          // requestCert: tls,
-          // rejectUnauthorized: rejectUnauthorized,
-          // ca: ca
+User.checkLdap = function(username,password){
+
+  return Ldap.find()
+    .then((ldapConfig)=>{
+      if(ldapConfig.enable==1){
+        return ldapConfig
+      }else {
+        throw "No ldap configured or not enabled"
+      }
+    })
+    .then(async (ldapConfig)=>{
+      // auth with admin
+      var badCertificates=false
+      let options = {
+        ldapOpts: {
+          url: ((ldapConfig.enable_tls==1)?"ldaps":"ldap") + "://" + ldapConfig.server + ":" + ldapConfig.port,
+          tlsOptions: {}
+        },
+        adminDn: ldapConfig.bind_user_dn,
+        adminPassword: ldapConfig.bind_user_pw,
+        userPassword: password,
+        userSearchBase: ldapConfig.search_base,
+        usernameAttribute: ldapConfig.username_attribute,
+        username: username,
+        // starttls: false
+      }
+      // ldap-authentication has bad cert check, so we check first !!
+      if(ldapConfig.enable_tls && !(ldapConfig.ignore_certs==1)){
+        if(!helpers.checkCertificate(ldapConfig.cert)){
+          badCertificates=true
         }
-      },
-      adminDn: ldapConfig.bind_user_dn,
-      adminPassword: ldapConfig.bind_user_pw,
-      userPassword: password,
-      userSearchBase: ldapConfig.search_base,
-      usernameAttribute: ldapConfig.username_attribute,
-      username: username,
-      // starttls: false
-    }
-    // ldap-authentication has bad cert check, so we check first !!
-    if(ldapConfig.enable_tls && !(ldapConfig.ignore_certs==1)){
-      if(!helpers.checkCertificate(ldapConfig.cert)){
-        badCertificates=true
-      }
-      if(!helpers.checkCertificate(ldapConfig.ca_bundle)){
-        badCertificates=true
-      }
-    }else{
-      ldapConfig.cert=""
-      ldapConfig.ca_bundle=""
-    }
-    // enable tls/ldaps
-    if(ldapConfig.enable_tls==1){
-      options.ldapOpts.tlsOptions.requestCert = (ldapConfig.enable_tls==1)
-      if(ldapConfig.cert!=""){
-        options.ldapOpts.tlsOptions.cert = ldapConfig.cert
-      }
-      if(ldapConfig.ca_bundle!=""){
-        options.ldapOpts.tlsOptions.ca = ldapConfig.ldapTlsCa
-      }
-      options.ldapOpts.tlsOptions.rejectUnauthorized = !(ldapConfig.ignore_certs==1)
-      logger.info("use tls : " + (ldapConfig.enable_tls==1))
-      logger.info("reject invalid certificates : " + !(ldapConfig.ignore_certs==1))
-    }
-
-    if(badCertificates){
-      result("Certificate is not valid",null)
-    }else{
-      try{
-        logger.info(`Checking ldap for user ${username}`)
-        logger.debug(options)
-        var user = await authenticate(options)
-        result(null,user)
-      }catch(err){
-          var em =""
-          if(err.message){
-            em=err.message
-          }else{
-            try{em = YAML.stringify(err)}catch(e){em = err}
-          }
-
-
-          if(err.admin){
-            if(err.admin.code){
-              em = err.admin.code
-              if(err.admin.code=="UNABLE_TO_VERIFY_LEAF_SIGNATURE"){
-                em = "Unable to verify the certificate"
-              }
-              if(err.admin.code==49){
-                em = "Wrong binding credentials"
-              }
-            }
-          }
-          logger.error("Error connecting to ldap : " + em)
-          result("Ldap : " + em,null)
-      }
-    }
-  }
-  Ldap.find(function(err,res){
-    if(res){
-      if(res.enable==1){
-        auth(res)
+        if(!helpers.checkCertificate(ldapConfig.ca_bundle)){
+          badCertificates=true
+        }
       }else{
-        logger.info("Ldap is disabled")
+        ldapConfig.cert=""
+        ldapConfig.ca_bundle=""
       }
-    }else{
-      logger.info("No ldap configured or not enabled")
-    }
-  })
+      // enable tls/ldaps
+      if(ldapConfig.enable_tls==1){
+        options.ldapOpts.tlsOptions.requestCert = (ldapConfig.enable_tls==1)
+        if(ldapConfig.cert!=""){
+          options.ldapOpts.tlsOptions.cert = ldapConfig.cert
+        }
+        if(ldapConfig.ca_bundle!=""){
+          options.ldapOpts.tlsOptions.ca = ldapConfig.ldapTlsCa
+        }
+        options.ldapOpts.tlsOptions.rejectUnauthorized = !(ldapConfig.ignore_certs==1)
+        logger.info("use tls : " + (ldapConfig.enable_tls==1))
+        logger.info("reject invalid certificates : " + !(ldapConfig.ignore_certs==1))
+      }
+
+      if(badCertificates){
+        throw "Certificate is not valid"
+      }else{
+        logger.info(`Checking ldap for user ${username}`)
+        // logger.debug(JSON.stringify(options))
+        return ldapAuthentication(options)
+      }
+    })
+    .catch((err)=>{
+      var em =""
+      if(err.message){
+        em=err.message
+      }else{
+        try{em = YAML.stringify(err)}catch(e){em = err}
+      }
+
+      if(err.admin){
+        if(err.admin.code){
+          em = err.admin.code
+          if(err.admin.code=="UNABLE_TO_VERIFY_LEAF_SIGNATURE"){
+            em = "Unable to verify the certificate"
+          }
+          if(err.admin.code==49){
+            em = "Wrong binding credentials"
+          }
+        }
+      }
+      logger.error("Error connecting to ldap : " + em)
+      throw ("Ldap : " + em)
+    })
 }
 
 

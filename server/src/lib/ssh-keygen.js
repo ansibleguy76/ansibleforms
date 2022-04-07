@@ -4,182 +4,182 @@ const fs = require('fs');
 const path = require('path');
 const binPath = 'ssh-keygen'
 
-function checkAvailability(location, force,publicOnly, callback){
+// SSH KEY GEN LIBRARY 
+// USES PROMISES
 
-  function doForce(keyExists, pubKeyExists){
-		if(!force && keyExists) return callback(location+' already exists');
-		if(!force && pubKeyExists) return callback(pubLocation+' already exists');
-		if(!keyExists && !pubKeyExists) return callback();
-		if(keyExists){
-			logger.warning('removing '+location);
-			fs.unlink(location, function(err){
-				if(err) return callback(err);
-				keyExists = false;
-				if(!keyExists && !pubKeyExists) callback();
-			});
-		}
-		if(pubKeyExists) {
-			logger.warning('removing '+pubLocation);
-			fs.unlink(pubLocation, function(err){
-				if(err) return callback(err);
-				pubKeyExists = false;
-				if(!keyExists && !pubKeyExists) callback();
-			});
-		}
-	}
-
-	var pubLocation = location+'.pub';
-  if(publicOnly){
-		logger.debug('checking availability: '+pubLocation);
-
-		fs.access(pubLocation, function(err){
-      if(err){
-        doForce(false,false)
-      }else{
-        doForce(false, true);
+var Keygen = {}
+// check if file exists with possible force remove
+Keygen.exists = function(path,forceRemove){
+    logger.debug('checking availability: '+ path);
+    // can we access it ?
+    return fs.promises.access(path)
+      .then(()=>{
+        // do we need to remove ?
+        if(forceRemove){
+          logger.debug('removing '+ path);
+          return fs.promises.unlink(path)
+            .then(()=>{
+              // file doesn't exist (we just removed it)
+              return false
+            })
+        }else{
+          // file exists
+          logger.debug('already exists: '+ path);
+          return true
+        }
+      })
+      .catch(()=>{
+        // file doesn't exist
+        return false
+      })
+}
+// read a key and trims it
+Keygen.readKey = function(path,destroy){
+	return fs.promises.readFile(path, 'utf8')
+    .then((key)=>{
+      key = key.toString();
+      key = key.substring(0, key.lastIndexOf("\n")).trim();
+      if(destroy){
+        fs.promises.unlink(path).catch((err)=>{ throw err })
       }
-
-		})
+      return key
+    })
+}
+// check if private and/or public keys exists, with possible forcer removal
+Keygen.checkAvailability = function(privateKeyPath, force,publicOnly){
+  var publicKeyPath = privateKeyPath+'.pub';
+  if(publicOnly){
+    return Keygen.exists(publicKeyPath,force)
   }else{
-    logger.debug('checking availability: '+location);
-  	fs.access(location, function(err){
-      var keyExists=false
-      if(!err){keyExists=true}
-  		logger.debug('checking availability: '+pubLocation);
-  		fs.access(pubLocation, function(err){
-        var pubKeyExists
-        if(!err){pubKeyExists=true}
-  			doForce(keyExists, pubKeyExists);
-  		})
-  	});
+    return Keygen.exists(privateKeyPath,force)
+      .then((exists)=>{
+        if(!exists){
+          // if private key doesn't exist, remove public key
+          return Keygen.exists(publicKeyPath,force)
+        }else{
+          return true
+        }
+      })
   }
 }
-function ssh_randomart(location, callback){
-  logger.debug("Getting private key random art from " + location)
-  var output
-  try{
-    fs.accessSync(location)
-  }catch(e){
-    callback("No private key found")
-    return false
-  }
+// get random art from private key
+Keygen.ssh_randomart =function(privateKeyPath){
+  logger.debug("Getting private key random art from " + privateKeyPath)
 
-  var keygen = spawn(binPath, [
-    '-lvf',
-    location
-  ])
+  return fs.promises.access(privateKeyPath)
+    .catch(()=>{ throw "No private key found" })
+    .then(()=>{
+        return new Promise((resolve,reject)=>{
+          var output
+          var keygen = spawn(binPath, [
+            '-lvf',
+            privateKeyPath
+          ])
 
-  keygen.stdout.on('data', function(a){
-    output=a
-  });
+          keygen.stdout.on('data', function(a){
+            output=a
+          });
 
-  keygen.on('exit',function(){
-    // logger.debug('exit')
-    if(output){
-      callback(undefined,{art:output.toString()});
-    }else{
-      callback("No private key found")
-    }
-  });
+          keygen.on('exit',function(){
+            // logger.debug('exit')
+            if(output){
+              resolve({art:output.toString()})
+            }else{
+              reject("No private key found")
+            }
+          });
 
-  keygen.stderr.on('data',function(a){
-    logger.error('stderr:'+a);
-  });
+          keygen.stderr.on('data',function(a){
+            logger.error('stderr:'+a);
+          });
+        })
 
+    })
 };
-function ssh_keygen(location, opts, callback){
-	opts || (opts={});
+// create new keys
+Keygen.ssh_keygen = function(privateKeyPath, opts){
 
-	var pubLocation = location+'.pub';
-  var keygen
-  var output
+  return new Promise((resolve,reject)=>{
+    opts || (opts={});
 
-  if(opts.publicOnly){
-    keygen = spawn(binPath, [
-      '-f',
-      location,
-      '-yq'
-    ]);
-  }else{
-    keygen = spawn(binPath, [
-  		'-t','rsa',
-  		'-b', opts.size,
-  		'-C', opts.comment,
-  		'-N', opts.password,
-  		'-f', location,
-  		'-m', opts.format
-  	]);
-  }
+  	var publicKeyPath = privateKeyPath+'.pub';
+    var keygen
+    var output=""
 
-	keygen.stdout.on('data', function(a){
-    output=a
-		// logger.debug('stdout:'+a);
-	});
-
-	var read = opts.read;
-	var destroy = opts.destroy;
-
-	keygen.on('exit',function(){
-    // logger.debug('exit')
     if(opts.publicOnly){
-      fs.writeFileSync(pubLocation,output)
+      keygen = spawn(binPath, [
+        '-f',
+        privateKeyPath,
+        '-yq'
+      ]);
+    }else{
+      keygen = spawn(binPath, [
+    		'-t','rsa',
+    		'-b', opts.size,
+    		'-C', opts.comment,
+    		'-N', opts.password,
+    		'-f', privateKeyPath,
+    		'-m', opts.format
+    	]);
     }
-		if(read){
-			fs.readFile(location, 'utf8', function(err, key){
-				if(destroy){
-					logger.warning('destroying key '+location);
-					fs.unlink(location, function(err){
-						if(err) return callback(err);
-						readPubKey();
-					});
-				} else readPubKey();
-				function readPubKey(){
-					fs.readFile(pubLocation, 'utf8', function(err, pubKey){
-						if(destroy){
-							logger.warning('destroying pub key '+pubLocation);
-							fs.unlink(pubLocation, function(err){
-								if(err) return callback(err);
-								key = key.toString();
-								key = key.substring(0, key.lastIndexOf("\n")).trim();
-								pubKey = pubKey.toString();
-								pubKey = pubKey.substring(0, pubKey.lastIndexOf("\n")).trim();
-								return callback(undefined, {
-									key: key, pubKey: pubKey
-								});
-							});
-						} else callback(undefined, { key: key, pubKey: pubKey });
-					});
-				}
-			});
-		} else if(callback) callback();
-	});
 
-	keygen.stderr.on('data',function(a){
-		logger.error('stderr:'+a);
-	});
+  	keygen.stdout.on('data', function(a){
+      // only output for public key - the other spawn, generates file
+      output=a
+  		// logger.debug('stdout:'+a);
+  	});
+    keygen.stderr.on('data',function(a){
+      logger.error('stderr:'+a);
+    });
+  	var read = opts.read;
+  	var destroy = opts.destroy;
+
+  	keygen.on('exit',function(){
+      // logger.debug('exit')
+      if(opts.publicOnly){
+        // write public key
+        fs.writeFileSync(publicKeyPath,output)
+      }
+  		if(read){
+  			Keygen.readKey(privateKeyPath,destroy)
+          .then((privatekey)=>{
+            Keygen.readKey(publicKeyPath,destroy)
+              .then((publickey)=>{
+                resolve({ key: privatekey, pubKey: publickey})
+              })
+          })
+          .catch((err)=>reject(err))
+  		} else resolve();
+  	});
+  })
 };
-
-module.exports = function(opts, callback){
+// main function to handle all options
+Keygen.keygen = async function(opts, callback){
 
   // set defaults
-  opts.randomArt = opts.randomArt ?? false
-  opts.publicOnly = opts.publicOnly ?? false
-  opts.force = opts.force ?? false
-  opts.read = opts.read ?? true
-  opts.destroy = opts.destroy ?? false
-  opts.comment = opts.comment || ''
-	opts.password = opts.password || ''
-	opts.size = opts.size || '2048'
-	opts.format = opts.format || 'RFC4716'
+  opts.randomArt = opts.randomArt ?? false    // get random art of priate key
+  opts.publicOnly = opts.publicOnly ?? false  // only process public key
+  opts.force = opts.force ?? false            // force remove before starting
+  opts.read = opts.read ?? true               // read keys after generating
+  opts.destroy = opts.destroy ?? false        // destroy keys after generating
+  opts.comment = opts.comment || ''           // add comment to key
+	opts.password = opts.password || ''         // password protection
+	opts.size = opts.size || '2048'             // encryption size
+	opts.format = opts.format || 'RFC4716'      // encryption format
 
   if(opts.randomArt){
-    ssh_randomart(opts.location, callback);
+    return Keygen.ssh_randomart(opts.path);
   }else{
-  	checkAvailability(opts.location, opts.force,opts.publicOnly, function(err){
-  		if(err){
-  			return callback(err);
-  		}
-      ssh_keygen(opts.location, opts, callback);
-  	})
+
+  	return Keygen.checkAvailability(opts.path, opts.force,opts.publicOnly)
+      .then((exists)=>{
+        if(exists){
+          throw "already exists"
+        }else{
+          return Keygen.ssh_keygen(opts.path, opts);
+        }
+      })
   }
 };
+
+module.exports = Keygen

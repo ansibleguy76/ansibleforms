@@ -21,32 +21,20 @@ function checkSchema(){
   var message
   var db="AnsibleForms"
   logger.debug("checking schema " + db)
-  var sql = `SHOW DATABASES LIKE '${db}'`
-  return new Promise((resolve,reject) => {
-      mysql.query(sql,null,function(err,res){
-        if(err){
-          message=`Schema '${db}' query error\n` + err
-          logger.warning(message)
-          reject("ERROR : " + message)
+  return mysql.do(`SHOW DATABASES LIKE '${db}'`)
+    .then((res)=>{
+      if(res){
+        if(res.length>0){
+          message=`Schema '${db}' is present`
+          logger.debug(message)
+          return message
         }else{
-          if(res){
-            if(res.length>0){
-              message=`Schema '${db}' is present`
-              logger.debug(message)
-              resolve(message)
-            }else{
-              message=`Schema '${db}' is not present`
-              logger.warning(message)
-              reject(message)
-            }
-          }else{
-            message=`ERROR : Unexpected result from MySql when searching for schema '${db}'`
-            logger.error(message)
-            reject(message)
-          }
+          message=`Schema '${db}' is not present`
+          logger.warning(message)
+          throw message
         }
-      })
-  })
+      }
+    })
 }
 function dropIndex(table,index){
   var message
@@ -54,38 +42,23 @@ function dropIndex(table,index){
   logger.debug(`dropping index '${index}' on table '${table}'`)
   var checksql = `SHOW INDEX FROM ${db}.${table} WHERE Key_name='${index}'`
   var sql = `DROP INDEX \`PRIMARY\` ON ${db}.${table}`
-  return new Promise((resolve,reject) => {
-      mysql.query(checksql,null,function(checkerr,checkres){
-        if(checkerr){
-          message=`index '${index}' check failed on '${table}'\n` + checkerr
-          logger.error(checkerr)
-          reject(message)
-        }else{
-          if(checkres.length>0){
-            mysql.query(sql,null,function(err,res){
-              if(err){
-                message=`index '${index}' drop failed on '${table}'\n` + err
-                logger.error(message)
-                reject(message)
-              }else{
-                if(res){
-                  message=`Index '${index}' dropped on '${table}'`
-                  logger.warning(message)
-                  resolve(message)
-                }else{
-                  message=`ERROR : Unexpected result from MySql when dropping index '${index}' from table '${table}'`
-                  reject(message)
-                }
-              }
-            })
-          }else{
-            message=`Index '${index}' is already dropped on '${table}'`
-            logger.info(message)
-            resolve(message)
-          }
-        }
-      })
-  })
+  return mysql.do(checksql)
+    .then((checkres)=>{
+      if(checkres.length>0){
+        return mysql.do(sql)
+      }
+      return false
+    })
+    .then((res)=>{
+      if(!res){
+        message=`Index '${index}' is already dropped on '${table}'`
+        logger.debug(message)
+        return message
+      }
+      message=`Index '${index}' dropped on '${table}'`
+      logger.warning(message)
+      return message
+    })
 }
 function addColumn(table,name,fieldtype,nullable,defaultvalue){
   var message
@@ -99,76 +72,46 @@ function addColumn(table,name,fieldtype,nullable,defaultvalue){
     sql+=` DEFAULT ${defaultvalue}`
   }
   logger.debug(`adding column '${name}' on table '${table}'`)
-  return new Promise((resolve,reject) => {
-      mysql.query(checksql,null,function(checkerr,checkres){
-        if(checkerr){
-          message=`add column '${name}' check failed on '${table}'\n` + checkerr
-          logger.error(checkerr)
-          reject(message)
-        }else{
-          if(checkres.length==0){
-            mysql.query(sql,null,function(err,res){
-              if(err){
-                message=`add column '${name}' failed on '${table}'\n` + err
-                logger.error(message)
-                reject(message)
-              }else{
-                if(res){
-                  message=`added column '${name}' on '${table}'`
-                  logger.warning(message)
-                  resolve(message)
-                }else{
-                  message=`ERROR : Unexpected result from MySql when adding column '${name}' on table '${table}'`
-                  reject(message)
-                }
-              }
-            })
-          }else{
-            message=`Column '${name}' is already present on '${table}'`
-            logger.info(message)
-            resolve(message)
-          }
-        }
-      })
-  })
+  return mysql.do(checksql)
+    .then((checkres)=>{
+      if(checkres.length==0){
+        return mysql.do(sql)
+      }
+      return false
+    })
+    .then((res)=>{
+      if(!res){
+        message=`Column '${name}' is already present on '${table}'`
+        logger.debug(message)
+        return message
+      }
+      message=`added column '${name}' on '${table}'`
+      logger.warning(message)
+      return message
+    })
 }
 function addTable(table,sql){
   var message
   var db="AnsibleForms"
   var checksql = `SHOW TABLES FROM ${db} WHERE Tables_in_${db}='${table}'`
   logger.debug(`adding table '${table}'`)
-  return new Promise((resolve,reject) => {
-      mysql.query(checksql,null,function(checkerr,checkres){
-        if(checkerr){
-          message=`add table '${table}' check failed\n` + checkerr
-          logger.error(checkerr)
-          reject(message)
-        }else{
-          if(checkres.length==0){
-            mysql.query(sql,null,function(err,res){
-              if(err){
-                message=`add table '${table}' failed\n` + err
-                logger.error(message)
-                reject(message)
-              }else{
-                if(res){
-                  message=`added table '${table}'`
-                  logger.warning(message)
-                  resolve(message)
-                }else{
-                  message=`ERROR : Unexpected result from MySql when adding table '${table}'`
-                  reject(message)
-                }
-              }
-            })
-          }else{
-            message=`Table '${table}' is already present`
-            logger.info(message)
-            resolve(message)
-          }
-        }
-      })
-  })
+  return mysql.do(checksql)
+    .then((checkres)=>{
+      if(checkres.length==0){
+        return mysql.do(sql)
+      }
+      return false
+    })
+    .then((res)=>{
+      if(!res){
+        message=`Table '${table}' is already present`
+        logger.debug(message)
+        return message
+      }
+      message=`added table '${table}'`
+      logger.warning(message)
+      return message
+    })
 }
 function renameColumn(table,name,newname,fieldtype){
   var message
@@ -176,112 +119,66 @@ function renameColumn(table,name,newname,fieldtype){
   var checksql = `SHOW COLUMNS FROM ${db}.${table} WHERE Field='${newname}'`
   var sql = `ALTER TABLE ${db}.${table} CHANGE \`${name}\` \`${newname}\` ${fieldtype}`
   logger.debug(`rename column '${name}'->'${newname}' on table '${table}'`)
-  return new Promise((resolve,reject) => {
-      mysql.query(checksql,null,function(checkerr,checkres){
-        if(checkerr){
-          message=`rename column '${name}'->'${newname}' check failed on '${table}'\n` + checkerr
-          logger.error(checkerr)
-          reject(message)
-        }else{
-          if(checkres.length==0){
-            mysql.query(sql,null,function(err,res){
-              if(err){
-                message=`rename column '${name}'->'${newname}' failed on '${table}'\n` + err
-                logger.error(message)
-                reject(message)
-              }else{
-                if(res){
-                  message=`renamed column '${name}'->'${newname}' on '${table}'`
-                  logger.warning(message)
-                  resolve(message)
-                }else{
-                  message=`ERROR : Unexpected result from MySql when renaming column '${name}'->'${newname}' on table '${table}'`
-                  reject(message)
-                }
-              }
-            })
-          }else{
-            message=`Column '${name}' is already present on '${table}'`
-            logger.info(message)
-            resolve(message)
-          }
-        }
-      })
-  })
+  return mysql.do(checksql)
+    .then((checkres)=>{
+      if(checkres.length==0){
+        return mysql.do(sql)
+      }
+      return false
+    })
+    .then((res)=>{
+      if(!res){
+        message=`Column '${name}' is already present on '${table}'`
+        logger.debug(message)
+        return message
+      }
+      message=`renamed column '${name}'->'${newname}' on '${table}'`
+      logger.warning(message)
+      return message
+    })
 }
 function addRecord(table,names,values){
   var message
   var db="AnsibleForms"
   logger.debug("checking record in table " + table)
-  var sql = `SELECT * FROM ${db}.${table}`
-  return new Promise((resolve,reject) => {
-      mysql.query(sql,null,function(err,res){
-        if(err){
-          message=`Table '${table}' query error\n` + err
-          logger.debug(err)
-          reject("ERROR : " + message)
-        }else{
-          if(res){
-            if(res.length>0){
-              message=`Record in '${table}' is present`
-              logger.info(message)
-              resolve(message)
-            }else{
-              message=`Record in '${table}' is not present`
-              mysql.query(`INSERT INTO ${db}.${table}(${names.join(",")}) VALUES(${values.join(",")});`,null,function(err,res){
-                if(err){
-                  message=`failed adding record in '${table}'\n` + err
-                  logger.error(message)
-                  reject(message)
-                }else{
-                  if(res){
-                    message=`added record in '${table}'`
-                    logger.warning(message)
-                    resolve(message)
-                  }else{
-                    message=`ERROR : Unexpected result from MySql when add record in table '${table}'`
-                    reject(message)
-                  }
-                }
-              })
-            }
-          }else{
-            message=`ERROR : Unexpected result from MySql when searching for record in table '${table}'`
-            reject(message)
-          }
-        }
-      })
-  })
+  var checksql = `SELECT * FROM ${db}.${table}`
+  var sql = `INSERT INTO ${db}.${table}(${names.join(",")}) VALUES(${values.join(",")});`
+  return mysql.do(checksql)
+    .then((checkres)=>{
+      if(checkres.length==0){
+        return mysql.do(sql)
+      }
+      return false
+    })
+    .then((res)=>{
+      if(!res){
+        message=`Record in '${table}' is present`
+        logger.debug(message)
+        return message
+      }
+      message=`added record in '${table}'`
+      logger.warning(message)
+      return message
+    })
 }
 function checkTable(table){
   var message
   var db="AnsibleForms"
   logger.debug("checking table " + table)
   var sql = `SHOW TABLES FROM ${db} WHERE Tables_in_${db}='${table}'`
-  return new Promise((resolve,reject) => {
-      mysql.query(sql,null,function(err,res){
-        if(err){
-          message=`Table '${table}' query error\n` + err
-          logger.debug(err)
-          reject("ERROR : " + message)
-        }else{
-          if(res){
-            if(res.length>0){
-              message=`Table '${table}' is present`
-              logger.info(message)
-              resolve(message)
-            }else{
-              message=`Table '${table}' is not present`
-              logger.warning(message)
-              reject(message)
-            }
-          }else{
-            message=`ERROR : Unexpected result from MySql when searching for table '${table}'`
-            reject(message)
-          }
-        }
-      })
-  })
+  return mysql.do(sql)
+    .then((res)=>{
+      if(res.length>0){
+        message=`Table '${table}' is present`
+        logger.debug(message)
+        return message
+      }else{
+        message=`Table '${table}' is not present`
+        logger.warning(message)
+        throw message
+      }
+    })
+
 }
 function reflect(promise){
     return promise.then(function(v){ return {v:v, status: "fulfilled" }},
@@ -391,38 +288,22 @@ function checkAll(){
       handleError
     )
 }
-Schema.hasSchema = function(result){
-  checkAll()
-    .then((res)=>{
-      result(null,{status:"success",message:"Schema and tables are ok",data:res.data}) // fail
-    })
-    .catch((res)=>{
-      if(typeof res=="object"){ // actual schema issue
-        result(null,{status:"error",message:"Schema and/or tables are not ok",data:res.data}) // fail
-      }else{
-        result(res,null) // fail (db connect ?)
-      }
-    }).catch((e)=>{
-      logger.error(e)
-    }) // final catch
+Schema.hasSchema = function(){
+  return checkAll()
 }
-Schema.create = function (result) {
+Schema.create = function () {
   logger.notice(`Trying to create database schema 'AnsibleForms' and tables`)
   const buffer=fs.readFileSync(`${__dirname}/../db/create_schema_and_tables.sql`)
   const query=buffer.toString();
-  mysql.query(query,null, function (err, res) {
-    if(err) {
-      result(err, null);
-    }
-    else{
+  return mysql.do(query)
+    .then((res)=>{
       if(res.length > 0){
         logger.notice(`Created schema 'AnsibleForms' and tables`)
-        result(null,`Created schema 'AnsibleForms' and tables`)
+        return `Created schema 'AnsibleForms' and tables`
       }else{
-        result(`Failed to create schema 'AnsibleForms' and/or tables`,null)
+        throw `Failed to create schema 'AnsibleForms' and/or tables`
       }
-    }
-  });
+    })
 };
 
 module.exports= Schema;

@@ -5,7 +5,7 @@ var Helpers = function(){
 
 }
 
-// this is needed because ldap-authentication has missage try catch
+// this is needed because ldap-authentication has missing try catch
 Helpers.checkCertificateBase64=function(cert){
   var b64 = cert.replace(/(\r\n|\n|\r)/gm, "").replace(/\-{5}[^\-]+\-{5}/gm,"")
   return (Buffer.from(b64, 'base64').toString('base64') === b64)
@@ -24,6 +24,7 @@ Helpers.checkCertificate=function(cert){
     }
   }
 }
+// a middleware in the routes to check if use is administrator
 Helpers.checkAdminMiddleware = (req, res, next) =>  {
       try{
         if(!req.user.user.roles.includes("admin")) {
@@ -36,12 +37,14 @@ Helpers.checkAdminMiddleware = (req, res, next) =>  {
         res.status(401).json(new restResult("error","you are not an admin"))
       }
 }
+// checks for passwords from credentials and masks them
 Helpers.logSafe = (v)=>{
   if(!v){
     return ""
   }
   return v.replace(/"password":"[^"]+"/g,'"password":"**NOLOG**"')
 }
+// a smart object placeholder replacer
 Helpers.replacePlaceholders = (msg,extravars)=>{
   if(!msg)return ""
   return msg.replace(

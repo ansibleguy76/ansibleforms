@@ -11,28 +11,9 @@ exports.execute = function(req, res) {
         // get the form data
         var expression = req.body.expression;
         var noLog = (req.query.noLog == "true");
-        var restResult = new RestResult("success","")
 
-        Expression.execute(expression,noLog, function(err, result) {
-            if (err){
-              restResult.status = "error"
-              restResult.message = "failed to execute expression " + expression
-              restResult.data.error = err
-              // send response
-              res.json(restResult)
-            }else{
-              restResult.message = "successfully executed expression " + expression
-              restResult.data.output = result
-              if(!noLog){
-                try{
-                  logger.debug(`expression result : ${JSON.stringify(result)}`)
-                }catch(e){
-                  //
-                }
-              }
-              res.json(restResult)
-            }
-        })
-
+        Expression.execute(expression,noLog)
+          .then((result)=>{res.json(new RestResult("success","successfully executed expression " + expression,result)) })
+          .catch((err)=>{ logger.error("Uncaught expection in expression, should not be possible");res.json(new RestResult("error","uncaught error")) })
     }
 };

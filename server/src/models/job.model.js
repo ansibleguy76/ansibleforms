@@ -709,28 +709,27 @@ Job.sendApprovalNotification = function(approval,extravars,jobid){
 
   Settings.find()
     .then((config)=>{
+      return config.url?.replace(/\/$/g,'') // remove trailing slash if present
+    })
+    .then((url)=>{
       var subject = Helpers.replacePlaceholders(approval.title,extravars) || "AnsibleForms Approval Request"
       var buffer = fs.readFileSync(`${__dirname}/../templates/approval.html`)
       var message = buffer.toString()
       var color = "#158cba"
       var color2 = "#ffa73b"
-      var url = config.url?.replace(/\/$/g,'') // remove trailing slash if present
       var logo = `${url}/assets/img/logo.png`
       var approvalMessage = Helpers.replacePlaceholders(approval.message,extravars)
-      message=message.replace("${message}",approvalMessage)
+      message = message.replace("${message}",approvalMessage)
                       .replaceAll("${url}",url)
                       .replaceAll("${jobid}",jobid)
                       .replaceAll("${title}",subject)
                       .replaceAll("${logo}",logo)
                       .replaceAll("${color}",color)
                       .replaceAll("${color2}",color2)
-      // logger.notice(subject)
-      // logger.notice(message)
       return Settings.mailsend(approval.notifications.join(","),subject,message)
-        .then((messageid)=>{logger.notice("Approval mail sent to " + approval.notifications.join(",") + " with id " + messageid)})
     })
-    .catch((err)=>{logger.error(err.message)})  
-
+    .then((messageid)=>{logger.notice("Approval mail sent to " + approval.notifications.join(",") + " with id " + messageid)})
+    .catch((err)=>{logger.error(err.message)})
 }
 Job.reject = function(user,id,result){
   Job.findById(user,id,true,function(err,job){
