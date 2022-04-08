@@ -5,41 +5,24 @@ const Credential = require('../models/credential.model')
 
 Postgres = {}
 
-Postgres.query=async function(connection_name,query,callback){
-  var config=undefined
-  try{
-    config = await Credential.findByName(connection_name)
-  }catch(e){
-    callback(null,null)
-    return;
-  }
+Postgres.query=function(connection_name,query){
 
-  var client = new Client(config)
-  try{
-    await client.connect()
-  }catch(err){
-    logger.error("["+connection_name+"] Connection error : " + err)
-    callback(null,null)
-    return;
-  }
-  try{
+  return Credential.findByName(connection_name)
+  .then((config)=>{
+    return new Client(config)
+  })
+  .then((client)=>{
+    return client.connect()
+  })
+  .then((client)=>{
     client.query(query,function(err,result){
       logger.debug("["+connection_name+"] Closing connection")
       client.end()
       if(err){
-        logger.error("["+connection_name+"] Query error : " + err)
-        callback(null,null)
-      }else{
-        // logger.debug("["+connection_name+"] query result : " + JSON.stringify(result))
-        callback(null,result.rows)
+        throw `[${connection_name}] query error ${err.toString()}`
       }
+      return result.rows
     })
-  }catch(err){
-    client.end()
-    logger.debug("["+connection_name+"] Closing connection")
-    logger.error("["+connection_name+"] " + err)
-    callback(null,null)
-  }
-
+  })
 };
 module.exports = Postgres

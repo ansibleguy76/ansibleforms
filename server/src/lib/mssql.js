@@ -5,49 +5,35 @@ const Credential = require('../models/credential.model')
 
 Mssql = {}
 
-Mssql.query=async function(connection_name,query,callback){
-  var creds=undefined
-  try{
-    creds = await Credential.findByName(connection_name)
-  }catch(e){
-    callback(null,null)
-    return;
-  }
-
-  var config = {
-      server: creds.host,
-      user: creds.user,
-      password: creds.password,
-      port: creds.port,
-      options: {
-          trustServerCertificate: true
+Mssql.query=async function(connection_name,query){
+  return Credential.findByName(connection_name)
+  .then((creds)=>{
+    var config = {
+        server: creds.host,
+        user: creds.user,
+        password: creds.password,
+        port: creds.port,
+        options: {
+            trustServerCertificate: true
+        }
+    };
+    return config
+  })
+  .then((config)=>{
+    client.connect(config, function(err,conn){
+      if(err){
+        throw `[${connection_name}] connection error ${err.toString()}`
       }
-  };
-
-  client.connect(config, function(err,conn){
-    if(err){
-      logger.error("["+connection_name+"] connection error : " + err)
-      callback(null,null)
-    }else{
-      try{
-        conn.query(query, (err, result) => {
-          conn.close()
-          logger.debug("["+connection_name+"] Closing connection")
-          if(err){
-            logger.error("["+connection_name+"] query error : " + err)
-            callback(null,null)
-          }else{
-            // logger.debug("["+connection_name+"] query result : " + JSON.stringify(result))
-            callback(null,result.recordset)
-          }
-        })
-      }catch(err){
+      conn.query(query, (err, result) => {
+        // close connection immediately
+        logger.debug(`[${connection_name}] closing connection`)
         conn.close()
-        logger.debug("["+connection_name+"] Closing connection")
-        logger.error("["+connection_name+"] " + err)
-        callback(null,null)
-      }
-    }
+        if(err){
+          throw `[${connection_name}] query error ${err.toString()}`
+        }
+        return result.recordset
+      })
+    })
   })
 };
 

@@ -5,43 +5,30 @@ const Credential = require('../models/credential.model')
 
 MySql = {}
 
-MySql.query=async function(connection_name,query,callback){
-  // does the pool exist already, if not let's add it
-  var config=undefined
-  try{
-    config = await Credential.findByName(connection_name)
-  }catch(e){
-    callback(null,null)
-    return;
-  }
-
-  config.multipleStatements=true
-  var conn
-  try{
-    var conn = client.createConnection(config)
-  }catch(err){
-    logger.error("["+connection_name+"] Connection error : " + err)
-    callback(null,null)
-    return;
-  }
-  try{
+MySql.do=function(connection_name,query){
+  // get credentials
+  return Credential.findByName(connection_name)
+  .then((config)=>{
+    try{
+      config.multipleStatements=true
+      // get connection
+      return client.createConnection(config)
+    }catch(err){
+      throw `[${connection_name}] connection error ${err.toString()}`
+    }
+  })
+  .then((conn)=>{
+    // get data
     conn.query(query,function(err,result){
-      logger.debug("["+connection_name+"] Closing connection")
+      logger.debug(`[${connection_name}] closing connection`)
       conn.end()
       if(err){
-        logger.error("["+connection_name+"] Query error : " + err)
-        callback(err,null)
+        throw `[${connection_name}] query error ${err.toString()}`
       }else{
         // logger.debug("["+connection_name+"] query result : " + JSON.stringify(result))
-        callback(null,result)
+        return result
       }
     })
-  }catch(err){
-    logger.debug("["+connection_name+"] Closing connection")
-    conn.end()
-    logger.error("["+connection_name+"] " + err)
-    callback(null,null)
-  }
-
+  })
 };
 module.exports = MySql

@@ -11,13 +11,13 @@ exports.findAll = function(req, res) {
       if(req.body.config){
         var config = req.body.config
         var noLog = (req.query.noLog == "true")
-        Query.findAll(req.body.query,config,noLog, function(err, resultset) {
-            if (err){
-               res.json(new RestResult("error","failed run query",null,err))
-            }else{
-               res.json(new RestResult("success","query ran successfully",resultset,""));
-            }
-        });
+        Query.findAll(req.body.query,config,noLog)
+        .then((resultset)=>{
+          res.json(new RestResult("success","query ran successfully",resultset,""));
+        })
+        .catch((err)=>{
+          res.json(new RestResult("error","failed run query",null,err))
+        })
       }else{
         logger.error("database config is missing, provide 'dbConfig' parameter with type query")
         res.status(400).json(new RestResult("error","missing dbConfig",null,""));
