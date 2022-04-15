@@ -1,5 +1,13 @@
 <template>
   <div>
+    <div class="px-3 pb-2">
+      <p class="control has-icons-left">
+        <input class="input is-info" type="text" placeholder="" v-model="queryfilter">
+        <span class="icon is-small is-left">
+          <font-awesome-icon icon="search" />
+        </span>
+      </p>
+    </div>
     <p v-if="values.length==0" class="pl-3">No data</p>
     <p v-if="values.length>0 && filtered.length==0" class="pl-3">Filter returns no results</p>
     <div v-if="filtered.length>0" class="table-container">
@@ -59,8 +67,7 @@
       previewColumn:{type:String},
       valueColumn:{type:String},
       pctColumns:{type:Array},
-      filterColumns:{type:Array},
-      queryfilter:{type:String}
+      filterColumns:{type:Array}
     },
     data () {
       return {
@@ -70,7 +77,8 @@
         previewLabel:"",
         preview:"",
         focus:"",
-        isLoading:true
+        isLoading:true,
+        queryfilter:""
       }
     },
     computed: {
@@ -143,6 +151,7 @@
       values: {
          handler(val){
            this.reset()
+           this.queryfilter=""
            this.getLabels()
          },
          deep: true
@@ -303,6 +312,7 @@
       }
     },
     mounted(){
+      var ref=this
       this.reset();
       this.getLabels();
     }

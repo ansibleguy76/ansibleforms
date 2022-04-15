@@ -11,7 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+-   Rewrote all callbacks to promises
+-   Query filter in dropdown => no more close on lose focus !
+
 ### Fixed
+
+-   Remove query filter on values change
 
 ### Removed
 

@@ -5,30 +5,34 @@ const Credential = require('../models/credential.model')
 
 MySql = {}
 
-MySql.do=function(connection_name,query){
+MySql.query=function(connection_name,query){
   // get credentials
   return Credential.findByName(connection_name)
   .then((config)=>{
-    try{
-      config.multipleStatements=true
-      // get connection
-      return client.createConnection(config)
-    }catch(err){
-      throw `[${connection_name}] connection error ${err.toString()}`
-    }
-  })
-  .then((conn)=>{
-    // get data
-    conn.query(query,function(err,result){
-      logger.debug(`[${connection_name}] closing connection`)
-      conn.end()
-      if(err){
-        throw `[${connection_name}] query error ${err.toString()}`
-      }else{
-        // logger.debug("["+connection_name+"] query result : " + JSON.stringify(result))
-        return result
+    logger.debug(`[${connection_name}] query : ${query}`)
+    return new Promise((resolve,reject)=>{
+      var conn
+      try{
+        logger.debug(`[${connection_name}] connection found : ${config.name}`)
+        config.multipleStatements=true
+        // get connection
+        conn = client.createConnection(config)
+      }catch(err){
+        reject(`[${connection_name}] connection error ${err.toString()}`)
       }
+      // get data
+      conn.query(query,function(err,result){
+        // logger.debug(`[${connection_name}] closing connection`)
+        conn.end()
+        if(err){
+          reject(`[${connection_name}] query error ${err.toString()}`)
+        }else{
+          // logger.debug("["+connection_name+"] query result 1 : " + JSON.stringify(result))
+          resolve(result)
+        }
+      })
     })
+
   })
 };
 module.exports = MySql

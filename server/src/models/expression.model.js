@@ -43,7 +43,16 @@ function sanitizeExpression(expr){
   }
   return expr
 }
-
+async function doAsync (expr) {
+  try{
+    var sanitized = sanitizeExpression(expr)
+    var outcome = await eval(sanitized)
+    return outcome
+  }catch(e){
+    logger.error("Error in expression : " + e)
+    return undefined
+  }
+}
 // execute expression (cannot be a promise)
 Expression.execute = function (expr,noLog) {
   if(noLog){
@@ -51,18 +60,13 @@ Expression.execute = function (expr,noLog) {
   }else{
     logger.info(`Expression: ${expr}`)
   }
-  return new Promise(async (resolve,reject)=>{
-    try{
-      var result = await eval(sanitizeExpression(expr))
-      try{
-        if(!noLog) logger.debug(`expression result : ${JSON.stringify(result)}`)
-      }catch(e){}
-      resolve(result)
-    }catch(e){
-      resolve(undefined)
-    }
-  })
-
+  var expression = ""
+  try{
+    return doAsync(expr)
+  }catch(err){
+    throw err.message
+  }
 };
+
 
 module.exports= Expression;

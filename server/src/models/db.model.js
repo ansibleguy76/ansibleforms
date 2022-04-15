@@ -16,7 +16,6 @@ MySql.do=function(query,vars){
     }catch(err){
       logger.error("[ansibleforms] Connection error : " + err)
       reject(err)
-      return;
     }
     try{
       conn.query(query,vars,function(err,result){

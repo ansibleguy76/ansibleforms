@@ -777,6 +777,22 @@
         })
         // do the analysis
         this.currentForm.fields.forEach((item,i) => {
+          if(item.dependencies){
+            item.dependencies.forEach((dep)=>{
+              if(!fields.includes(dep.name)){
+                ref.warnings.push(`<span class="has-text-warning-dark">'${item.name}' has bad dependencies</span><br><span>${dep.name} is not a valid field name</span>`)
+              }
+            })
+          }
+          if(item.notIn && !fields.includes(item.notIn.field)){
+            ref.warnings.push(`<span class="has-text-warning-dark">'${item.name}' has bad 'notIn' validation</span><br><span>${item.notIn.field} is not a valid field name</span>`)
+          }
+          if(item.in && !fields.includes(item.in.field)){
+            ref.warnings.push(`<span class="has-text-warning-dark">'${item.name}' has bad 'in' validation</span><br><span>${item.in.field} is not a valid field name</span>`)
+          }
+          if(item.sameAs && !fields.includes(item.sameAs)){
+            ref.warnings.push(`<span class="has-text-warning-dark">'${item.name}' has bad 'sameAs' validation</span><br><span>${item.sameAs} is not a valid field name</span>`)
+          }
           if(["expression","query","table"].includes(item.type)){
             var testRegex = /\$\(([^)]+)\)/g;
             var matches=(item.expression || item.query || "").matchAll(testRegex);
@@ -791,6 +807,7 @@
               }else{
                 // console.log("found no in " + foundfield + " in " + item.name)
               }
+              foundfield=foundfield.replace(/\[[0-9]*\]/,'') // xxx[y] => xxx
               if(fields.includes(foundfield)){                         // does field xxx exist in our form ?
                 // console.log(foundfield + " is a real field")
                 if(foundfield in ref.dynamicFieldDependencies){															 // did we declare it before ?
@@ -912,7 +929,7 @@
         // console.log(testRegex)
         matches=[...newValue.matchAll(testRegex)] // force match array
         for(match of matches){
-            // console.log("-> match : " + match[0] + "->" + match[1])
+            //console.log("-> match : " + match[0] + "->" + match[1])
             foundmatch = match[0];                                              // found $(xxx)
             foundfield = match[1];                                              // found xxx
             var columnRegex = /(.+)\.(.+)/g;                                        // detect a "." in the field
@@ -925,13 +942,16 @@
                 column=ref.fieldOptions[foundfield].placeholderColumn||""        // get placeholder column
               }
             }
+            foundfield=foundfield.replace(/\[[0-9]*\]/,'') // make xxx[y] => xxx
             fieldvalue = ""
             targetflag = undefined
             // mark the field as a dependent field
             if(foundfield in ref.form){      // does field xxx exist in our form ?
               if(ref.fieldOptions[foundfield] && ["expression","table"].includes(ref.fieldOptions[foundfield].type) && (typeof ref.form[foundfield]=="object")){
                 // objects and array should be stringified
-                fieldvalue=JSON.stringify(ref.form[foundfield])
+                //fieldvalue=JSON.stringify(ref.form[foundfield])
+                // console.log(Helpers.replacePlaceholders(match[1],ref.form))
+                fieldvalue=JSON.stringify(Helpers.replacePlaceholders(match[1],ref.form)) // allow full object reference
               }else{
                 // other fields, grab a valid value
                 fieldvalue = ref.getFieldValue(ref.form[foundfield],column,true);// get value of xxx

@@ -1,6 +1,5 @@
 <template>
   <div>
-    <p v-if="queryfilter" class="has-text-info"><span class="icon is-size-7"><font-awesome-icon icon="search" /></span> <span>{{ queryfilter}}</span></p>
     <div v-if="!sticky" class="dropdown is-fullwidth" :class="{'is-active':isActive && !isLoading,'is-up':isUp}">
       <div class="dropdown-trigger">
         <p class="control has-icons-right" :class="{'has-icons-left':icon!=undefined}">
@@ -18,7 +17,6 @@
             @keydown.tab="close()"
             @keydown.space="toggle()"
             @mousedown="toggle()"
-            @keydown="doFilter"
             :disabled="disabled"
           >
           <span v-if="icon!=undefined" class="icon is-small is-left">
@@ -32,7 +30,7 @@
         </p>
       </div>
       <div ref="dd" class="dropdown-menu" id="dropdown-menu" role="menu">
-        <div class="dropdown-content" ref="content" tabindex="0" @keydown.esc="close()" @keydown.tab="close()" @blur="close()" @keydown="doFilter">
+        <div class="dropdown-content" ref="content" @keydown.esc="close()" @keydown.tab="close()" >
           <BulmaAdvancedTable
             :defaultValue="defaultValue"
             :required="required||false"
@@ -46,15 +44,14 @@
             :filterColumns="filterColumns||[]"
             :previewColumn="previewColumn||''"
             :valueColumn="valueColumn||''"
-            :queryfilter="queryfilter"
             @ischanged="$emit('ischanged')"
             @isSelected="close()"
-            @filtering="doFilter"
+            ref="child"
            />
         </div>
       </div>
     </div>
-    <div class="inputborder mb-2 p-2" :class="{'hasError':hasError}" v-else @keydown="doFilter" tabindex="0">
+    <div class="inputborder mb-2 p-2" :class="{'hasError':hasError}" v-else tabindex="0">
       <BulmaAdvancedTable
         :defaultValue="defaultValue"
         :required="required||false"
@@ -67,10 +64,10 @@
         :filterColumns="filterColumns||[]"
         :previewColumn="previewColumn||''"
         :valueColumn="valueColumn||''"
-        :queryfilter="queryfilter"
         @ischanged="$emit('ischanged')"
        />
     </div>
+
   </div>
 </template>
 <script>
@@ -130,6 +127,12 @@
       testUp(){
 
       },
+      handleBlur(event){
+        console.log(event)
+        // if (event.currentTarget && !event.currentTarget.contains(event.relatedTarget)) {
+        //   this.close()
+        // }
+      },
       close(){
         this.isActive=false
         this.$refs.input.focus({ preventScroll: true })
@@ -149,22 +152,6 @@
             // if dropdown is out out of view AND there is space for dropup, do dropup
             ref.isUp=((dim.bottom>wh) && (dim.top>dim.height))
           })
-        }
-      },
-      doFilter(event){
-        var ref=this
-        if(event.key.length==1){
-          this.queryfilter+=event.key
-          this.isActive=true
-          this.$nextTick(()=>{ref.focus="content"})
-        }
-        if(event.key=="Escape"){
-          this.queryfilter=""
-        }
-        if(event.key=="Backspace"){
-          if(this.queryfilter){
-            this.queryfilter=this.queryfilter.slice(0,-1)
-          }
         }
       }
     },

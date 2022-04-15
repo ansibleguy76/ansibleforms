@@ -28,7 +28,7 @@ Query.findAll = function (query,config,noLog) {
       return mysql.query(config.name,query)
       .then((res)=>{
         if(!noLog){
-          logger.debug(`[${config.name}] query result : ${JSON.stringify(res)}`)
+          logger.debug(`[${config.name}] query result 2 : ${JSON.stringify(res)}`)
         }
         return res
       })

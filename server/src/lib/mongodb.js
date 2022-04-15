@@ -25,14 +25,17 @@ Mongo.query=async function(connection_name,query){
       if(err){
         throw ("["+connection_name+"] Connection error : " + err)
       }else{
-        var dbo=db.db(queryarr[0])
-        dbo.collection(queryarr[1]).find(queryprep).toArray(function(err,result){
-          db.close()
-          if(err){
-            throw `[${connection_name}] query error ${err.toString()}`
-          }
-          return result
+        return new Promise((resolve,reject)=>{
+          var dbo=db.db(queryarr[0])
+          dbo.collection(queryarr[1]).find(queryprep).toArray(function(err,result){
+            db.close()
+            if(err){
+              reject(`[${connection_name}] query error ${err.toString()}`)
+            }
+            resolve(result)
+          })
         })
+
       }
     })
   })

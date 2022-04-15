@@ -20,20 +20,23 @@ Mssql.query=async function(connection_name,query){
     return config
   })
   .then((config)=>{
-    client.connect(config, function(err,conn){
-      if(err){
-        throw `[${connection_name}] connection error ${err.toString()}`
-      }
-      conn.query(query, (err, result) => {
-        // close connection immediately
-        logger.debug(`[${connection_name}] closing connection`)
-        conn.close()
+    return new Promise((resolve,reject)=>{
+      client.connect(config, function(err,conn){
         if(err){
-          throw `[${connection_name}] query error ${err.toString()}`
+          reject(`[${connection_name}] connection error ${err.toString()}`)
         }
-        return result.recordset
+        conn.query(query, (err, result) => {
+          // close connection immediately
+          logger.debug(`[${connection_name}] closing connection`)
+          conn.close()
+          if(err){
+            reject(`[${connection_name}] query error ${err.toString()}`)
+          }
+          resolve(result?.recordset)
+        })
       })
     })
+
   })
 };
 
