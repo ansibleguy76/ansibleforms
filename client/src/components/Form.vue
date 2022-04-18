@@ -459,16 +459,16 @@
         var regexObj
         var description
         // required validation for simple fields
-        if(ff.type!='checkbox' && ff.type!='expression'){
+        if(ff.type!='checkbox' && ff.type!='expression' && ff.type!='query'){
           attrs.required=requiredIf(function(){
             return !!ff.required
           })
         }
         // required validation for expression field
-        if(ff.type=="expression" && ff.required){
+        if((ff.type=="expression")||(ff.type=="query") && ff.required){
           attrs.required=helpers.withParams(
               {description: "This field is required"},
-              (value) => (value!=undefined && value!=null)
+              (value) => (value!=undefined && value!=null && value!='__auto__' && value!='__none__' && value!='__all__')
           )
         }
         // required validation for checkbox (MUST be true)
@@ -1385,6 +1385,9 @@
           }else{
             field=(!keepArray)?undefined:field // force undefined if we don't want arrays
           }
+        }
+        if(field=='__auto__'||field=='__none__'||field=='__all__'){
+          field=undefined
         }
         return field
       },

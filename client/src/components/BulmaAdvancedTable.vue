@@ -2,7 +2,7 @@
   <div>
     <div class="px-3 pb-2">
       <p class="control has-icons-left">
-        <input class="input is-info" type="text" placeholder="" v-model="queryfilter">
+        <input class="input is-info" tabindex="0" ref="queryfilter" type="text" placeholder="" v-model="queryfilter">
         <span class="icon is-small is-left">
           <font-awesome-icon icon="search" />
         </span>
@@ -67,7 +67,8 @@
       previewColumn:{type:String},
       valueColumn:{type:String},
       pctColumns:{type:Array},
-      filterColumns:{type:Array}
+      filterColumns:{type:Array},
+      focus:{type:String}
     },
     data () {
       return {
@@ -76,7 +77,6 @@
         valueLabel:"",
         previewLabel:"",
         preview:"",
-        focus:"",
         isLoading:true,
         queryfilter:""
       }
@@ -153,8 +153,20 @@
            this.reset()
            this.queryfilter=""
            this.getLabels()
+           this.selected={}
          },
          deep: true
+      },
+      focus:{
+        handler(val){
+          if(val=='content'){
+            var ref=this
+            this.$nextTick(()=>{
+              ref.$refs.queryfilter.focus({ preventScroll: true })
+              ref.$emit('focusset')
+            })
+          }
+        }
       }
     },
     methods:{
@@ -315,6 +327,10 @@
       var ref=this
       this.reset();
       this.getLabels();
+      // this.$nextTick(()=>{
+      //   ref.$refs.queryfilter?.focus()
+      // })
+
     }
   }
 </script>

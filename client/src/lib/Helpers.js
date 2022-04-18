@@ -15,7 +15,7 @@ var Helpers = {
     }
   },
   replacePlaceholders(match,object){
-    if(match.match(/^[a-zA-Z0-9\[\]\.]*$/)){ /* eslint-disable-line */
+    if(match.match(/^[a-zA-Z0-9_\-\[\]\.]*$/)){ /* eslint-disable-line */
       return eval("object."+match)
     } else{
       return undefined
