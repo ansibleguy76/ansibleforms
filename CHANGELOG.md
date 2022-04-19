@@ -10,15 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 -   More form validations
+-   More form warnings and errors
 
 ### Changed
 
 -   Rewrote all callbacks to promises
--   Query filter in dropdown => no more close on lose focus
+-   Query filter in dropdown
 
 ### Fixed
 
 -   Remove query filter on values change
+-   Reset query value when "no data"
 
 ## [3.0.1] - 2022-04-01
 

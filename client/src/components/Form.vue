@@ -953,9 +953,9 @@
             if(foundfield in ref.form){      // does field xxx exist in our form ?
               if(ref.fieldOptions[foundfield] && ["expression","table"].includes(ref.fieldOptions[foundfield].type) && (typeof ref.form[foundfield]=="object")){
                 // objects and array should be stringified
-                fieldvalue=JSON.stringify(ref.form[foundfield])
+                //fieldvalue=JSON.stringify(ref.form[foundfield])
                 // console.log(Helpers.replacePlaceholders(match[1],ref.form))
-                //fieldvalue=JSON.stringify(Helpers.replacePlaceholders(match[1],ref.form)) // allow full object reference
+                fieldvalue=JSON.stringify(Helpers.replacePlaceholders(match[1],ref.form)) // allow full object reference
               }else{
                 // other fields, grab a valid value
                 fieldvalue = ref.getFieldValue(ref.form[foundfield],column,true);// get value of xxx
