@@ -16,7 +16,7 @@ exports.findAll = function(req, res) {
           res.json(new RestResult("success","query ran successfully",resultset,""));
         })
         .catch((err)=>{
-          res.json(new RestResult("error","failed run query",null,err))
+          res.json(new RestResult("success","failed run query",null,err))
         })
       }else{
         logger.error("database config is missing, provide 'dbConfig' parameter with type query")

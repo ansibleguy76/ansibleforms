@@ -15,13 +15,13 @@ Postgres.query=function(connection_name,query){
         client = new Client(config)
         client.connect()
       }catch(err){
-        reject(`[${connection_name}] connection error ${err.toString()}`)
+        reject(`[${connection_name}] connection error : ${err.toString()}`)
       }
       client.query(query,function(err,result){
         logger.debug("["+connection_name+"] Closing connection")
         client.end()
         if(err){
-          reject(`[${connection_name}] query error ${err.toString()}`)
+          reject(`[${connection_name}] query error : ${err.toString()}`)
         }
         resolve(result?.rows)
       })

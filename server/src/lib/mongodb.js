@@ -30,7 +30,7 @@ Mongo.query=async function(connection_name,query){
           dbo.collection(queryarr[1]).find(queryprep).toArray(function(err,result){
             db.close()
             if(err){
-              reject(`[${connection_name}] query error ${err.toString()}`)
+              reject(`[${connection_name}] query error : ${err.toString()}`)
             }
             resolve(result)
           })

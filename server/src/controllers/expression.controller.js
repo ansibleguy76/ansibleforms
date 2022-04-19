@@ -13,7 +13,19 @@ exports.execute = function(req, res) {
         var noLog = (req.query.noLog == "true");
 
         Expression.execute(expression,noLog)
-          .then((result)=>{res.json(new RestResult("success","successfully executed expression " + expression,result)) })
-          .catch((err)=>{ logger.error("Uncaught expection in expression, should not be possible");res.json(new RestResult("error","uncaught error")) })
+          .then((result)=>{
+            if(!noLog){
+              try{
+                logger.debug(`expression result : ${JSON.stringify(result)}`)
+              }catch(e){
+                //
+              }
+            }
+            res.json(new RestResult("success","successfully executed expression " + expression,result))
+          })
+          .catch((err)=>{
+            logger.error(`Error in expression : ${err}`)
+            res.json(new RestResult("success","failed to execute expression " + expression,undefined,err))
+          })
     }
 };

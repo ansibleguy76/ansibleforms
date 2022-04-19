@@ -2,8 +2,11 @@
   <section class="section has-background-light">
     <!-- warnings pane -->
     <BulmaPageloader v-if="!formIsReady">{{ loadMessage }}</BulmaPageloader>
-    <BulmaQuickView v-if="warnings && showWarnings" title="Form warnings" footer="" @close="showWarnings=false">
+    <BulmaQuickView v-if="(warnings || Object.keys(queryerrors).length>0) && showWarnings" title="Form warnings" footer="" @close="showWarnings=false">
         <p v-for="w,i in warnings" :key="'warning'+i" class="mb-3" v-html="w"></p>
+        <p v-for="q,i in Object.keys(queryerrors)" :key="'queryerror'+i" class="mb-3 has-text-danger">
+          '{{ q }}' has query errors<br>{{queryerrors[q]}}
+        </p>
     </BulmaQuickView>
 
     <div class="container" v-if="formIsReady">
@@ -37,7 +40,7 @@
           </button>
           <!-- warnings button -->
           <transition name="pop" appear>
-            <button v-if="warnings.length>0" @click="showWarnings=!showWarnings" class="button is-small is-light is-warning">
+            <button v-if="warnings.length>0 || Object.keys(queryerrors).length>0" @click="showWarnings=!showWarnings" class="button is-small is-light is-warning">
               <span class="icon">
                 <font-awesome-icon icon="exclamation-triangle" />
               </span>
@@ -432,6 +435,7 @@
           defaults:{},              // holds default info per field
           dynamicFieldStatus:{},    // holds the status of dynamics fields (running=currently being evaluated, variable=depends on others, fixed=only need 1-time lookup, default=has defaulted, undefined=trigger eval/query)
           queryresults:{},          // holds the results of dynamic dropdown boxes
+          queryerrors:{},           // holds errors of dynamic dropdown boxes
           fieldOptions:{},          // holds a couple of fieldoptions for fast access (valueColumn,ignoreIncomplete, ...), only for expression,query and table
           warnings:[],              // holds form warnings.
           showWarnings:false,       // flag to show/hide warnings
@@ -949,9 +953,9 @@
             if(foundfield in ref.form){      // does field xxx exist in our form ?
               if(ref.fieldOptions[foundfield] && ["expression","table"].includes(ref.fieldOptions[foundfield].type) && (typeof ref.form[foundfield]=="object")){
                 // objects and array should be stringified
-                //fieldvalue=JSON.stringify(ref.form[foundfield])
+                fieldvalue=JSON.stringify(ref.form[foundfield])
                 // console.log(Helpers.replacePlaceholders(match[1],ref.form))
-                fieldvalue=JSON.stringify(Helpers.replacePlaceholders(match[1],ref.form)) // allow full object reference
+                //fieldvalue=JSON.stringify(Helpers.replacePlaceholders(match[1],ref.form)) // allow full object reference
               }else{
                 // other fields, grab a valid value
                 fieldvalue = ref.getFieldValue(ref.form[foundfield],column,true);// get value of xxx
@@ -1076,10 +1080,21 @@
                               // console.log(restresult.data.error)
                               ref.resetField(item.name)
                             }
+                            if(restresult.data.error){
+                              Vue.set(ref.queryerrors, item.name, restresult.data.error)
+                            }else{
+                              Vue.delete(ref.queryerrors, item.name)
+                            }
                             if(restresult.status=="success"){
                               // console.log("expression for "+item.name+" triggered : result found -> "+ JSON.stringify(restresult.data.output));
                               if(item.type=="expression") Vue.set(ref.form, item.name, restresult.data.output);
-                              if(item.type=="query") Vue.set(ref.queryresults, item.name, [].concat(restresult.data.output??[]));
+                              if(item.type=="query"){
+                                if(restresult.data.output==undefined){
+                                  Vue.set(ref.queryresults, item.name, [])
+                                }else{
+                                  Vue.set(ref.queryresults, item.name, [].concat(restresult.data.output??[]))
+                                }
+                              }
                               if(item.type=="table") Vue.set(ref.form, item.name, [].concat(restresult.data.output??[]));
 
                               // expression returned undefined, so lets set to default if we have one
@@ -1133,6 +1148,11 @@
                     axios.post("/api/v1/query?noLog="+(!!item.noLog),{query:placeholderCheck.value,config:item.dbConfig},TokenStorage.getAuthentication())
                       .then((result)=>{
                         var restresult = result.data
+                        if(restresult.data.error){
+                          Vue.set(ref.queryerrors, item.name, restresult.data.error)
+                        }else{
+                          Vue.delete(ref.queryerrors, item.name)
+                        }
                         if(restresult.status=="error"){
                            //console.log(restresult.data.error)
                            if(item.type=="expression"){

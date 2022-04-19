@@ -325,12 +325,8 @@
     },
     mounted(){
       var ref=this
-      this.reset();
-      this.getLabels();
-      // this.$nextTick(()=>{
-      //   ref.$refs.queryfilter?.focus()
-      // })
-
+      this.reset()
+      this.getLabels()
     }
   }
 </script>

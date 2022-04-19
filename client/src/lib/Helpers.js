@@ -18,7 +18,7 @@ var Helpers = {
     if(match.match(/^[a-zA-Z0-9_\-\[\]\.]*$/)){ /* eslint-disable-line */
       return eval("object."+match)
     } else{
-      return undefined
+      return `$(${match})` // return original
     }
   }
 };

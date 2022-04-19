@@ -3,7 +3,7 @@
 <template>
 
 <div>
-    <div v-if="!sticky" v-click-outside="dropfocus" class="dropdown is-fullwidth is-active" :class="{'is-up':isUp}">
+    <div v-if="!sticky" v-click-outside="dropfocus" class="dropdown is-fullwidth" :class="{'is-active':isActive && !isLoading,'is-up':isUp}">
         <div class="dropdown-trigger">
             <p class="control has-icons-right" :class="{'has-icons-left':icon!=undefined}">
                 <input class="input" ref="input" :class="{'is-danger':hasError}" :readonly="!disabled" type="text" :value="(isLoading)?'':preview" :placeholder="(isLoading)?'Loading...':placeholder" aria-haspopup="true" aria-controls="dropdown-menu" @keydown.esc="close()"
@@ -18,7 +18,7 @@
           </span>
             </p>
         </div>
-        <div v-if="isActive && !isLoading" ref="dd" class="dropdown-menu" id="dropdown-menu" role="menu">
+        <div ref="dd" class="dropdown-menu" id="dropdown-menu" role="menu">
             <div class="dropdown-content" ref="content" @keydown.esc="close()" @keydown.tab="close()">
                 <BulmaAdvancedTable
                   :defaultValue="defaultValue"
@@ -115,7 +115,7 @@ export default {
         }
     },
     methods: {
-      close() {
+      close(a) {
           this.isActive = false
           this.$refs.input?.focus({ preventScroll: true  })
       },
@@ -127,11 +127,11 @@ export default {
           if (this.isActive && !this.isLoading) {
               this.$nextTick(() => {
                   ref.focus = "content";
-                  // // calculate if we need to do a dropup
-                  // var dim = ref.$refs["dd"]?.getBoundingClientRect()
-                  // var wh = window.innerHeight
-                  // // if dropdown is out out of view AND there is space for dropup, do dropup
-                  // ref.isUp=((dim.bottom>wh) && (dim.top>dim.height))
+                  //calculate if we need to do a dropup
+                  var dim = ref.$refs["dd"]?.getBoundingClientRect()
+                  var wh = window.innerHeight
+                  // if dropdown is out out of view AND there is space for dropup, do dropup
+                  ref.isUp=((dim.bottom>wh) && (dim.top>dim.height))
               })
           }
       },

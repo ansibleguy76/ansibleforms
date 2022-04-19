@@ -49,8 +49,7 @@ async function doAsync (expr) {
     var outcome = await eval(sanitized)
     return outcome
   }catch(e){
-    logger.error("Error in expression : " + e)
-    return undefined
+    throw e.message
   }
 }
 // execute expression (cannot be a promise)
