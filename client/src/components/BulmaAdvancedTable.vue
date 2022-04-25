@@ -150,10 +150,10 @@
     watch: {                    // we watch the values prop for changes... each time we reset the data and grab the labels
       values: {
          handler(val){
-           this.reset()
-           this.queryfilter=""
-           this.getLabels()
-           this.selected={}
+           this.queryfilter=""   // remove filter
+           this.selected={}      // selections
+           this.getLabels()      // re lookup labels
+           this.$emit('reset')   // signal reset preview to parent
          },
          deep: true
       },

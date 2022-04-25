@@ -1063,8 +1063,10 @@
                             // set flag as viable fixed query
                             ref.setFieldStatus(item.name,"fixed") // if this dynamic field was a 1 time evaluation, set as fixed
                           }
+                          Vue.delete(ref.queryerrors, item.name);
                         }catch(err){
                           //console.log("Local eval failed : " + err)
+                          Vue.set(ref.queryerrors, item.name,err);
                           try{
                             ref.defaultField(item.name)
                           }catch(err){

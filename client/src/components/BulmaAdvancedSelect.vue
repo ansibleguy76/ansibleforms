@@ -35,6 +35,7 @@
                   :valueColumn="valueColumn||''"
                   @ischanged="$emit('ischanged')"
                   @isSelected="close()"
+                  @reset="preview=''"
                   :focus="focus"
                   @focusset="focus=''"
                 />
@@ -55,6 +56,7 @@
           :previewColumn="previewColumn||''"
           :valueColumn="valueColumn||''"
           @ischanged="$emit('ischanged')"
+          @reset="preview=''"
         />
     </div>
 
