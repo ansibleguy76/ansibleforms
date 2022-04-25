@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   More form validations
 -   Show expression and query form warnings
+-   Allow for expression references to have full object placeholder .e.g. $(settings.servers[0].name)
 
 ### Changed
 
