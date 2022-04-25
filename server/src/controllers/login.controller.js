@@ -38,8 +38,8 @@ exports.login = async function(req, res,next) {
               // {"username":"administrator","type":"local","roles":["public","admin"]}
 
               // we create 2 jwt tokens (accesstoken and refresh token)
-              const token = jwt.sign({user,access:true}, authConfig.secret,{ expiresIn: authConfig.jwtExpiration});
-              const refreshtoken = jwt.sign({user,refresh:true}, authConfig.secret,{ expiresIn: authConfig.jwtRefreshExpiration});
+              const token = jwt.sign({user}, authConfig.secret,{ expiresIn: authConfig.jwtExpiration});
+              const refreshtoken = jwt.sign({user}, authConfig.secret,{ expiresIn: authConfig.jwtRefreshExpiration});
 
               // we store the tokens in the database, to later verify a refresh token action
               logger.info("Storing refreshtoken in database for user " + user.username)
