@@ -1,5 +1,13 @@
 <template>
   <div>
+    <div class="px-3 pb-2">
+      <p class="control has-icons-left">
+        <input class="input is-info" tabindex="0" ref="queryfilter" type="text" placeholder="" v-model="queryfilter">
+        <span class="icon is-small is-left">
+          <font-awesome-icon icon="search" />
+        </span>
+      </p>
+    </div>
     <p v-if="values.length==0" class="pl-3">No data</p>
     <p v-if="values.length>0 && filtered.length==0" class="pl-3">Filter returns no results</p>
     <div v-if="filtered.length>0" class="table-container">
@@ -60,7 +68,7 @@
       valueColumn:{type:String},
       pctColumns:{type:Array},
       filterColumns:{type:Array},
-      queryfilter:{type:String}
+      focus:{type:String}
     },
     data () {
       return {
@@ -69,8 +77,8 @@
         valueLabel:"",
         previewLabel:"",
         preview:"",
-        focus:"",
-        isLoading:true
+        isLoading:true,
+        queryfilter:""
       }
     },
     computed: {
@@ -142,10 +150,23 @@
     watch: {                    // we watch the values prop for changes... each time we reset the data and grab the labels
       values: {
          handler(val){
-           this.reset()
-           this.getLabels()
+           this.queryfilter=""   // remove filter
+           this.selected={}      // selections
+           this.getLabels()      // re lookup labels
+           this.$emit('reset')   // signal reset preview to parent
          },
          deep: true
+      },
+      focus:{
+        handler(val){
+          if(val=='content'){
+            var ref=this
+            this.$nextTick(()=>{
+              ref.$refs.queryfilter.focus({ preventScroll: true })
+              ref.$emit('focusset')
+            })
+          }
+        }
       }
     },
     methods:{
@@ -303,8 +324,9 @@
       }
     },
     mounted(){
-      this.reset();
-      this.getLabels();
+      var ref=this
+      this.reset()
+      this.getLabels()
     }
   }
 </script>

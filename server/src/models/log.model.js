@@ -8,11 +8,9 @@ const Log = {
 
 }
 
-Log.find = function (lines,result) {
+Log.find = function (lines) {
   const fileName = path.join(config.path,'ansibleforms.log')
-  readLastLines.read(fileName, lines)
-  	.then((lines) => result(null,lines))
-    .catch(() => result(true));
+  return readLastLines.read(fileName, lines)
 };
 
 module.exports= Log;

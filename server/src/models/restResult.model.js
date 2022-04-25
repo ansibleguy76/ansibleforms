@@ -3,7 +3,7 @@
 //awx object create - not used, but you could create an instance with it
 var RestResult=function(status,message,output,error){
     if(!output){
-      output=""
+      if(output!==undefined) output=""
     }
     if(!error){
       error=""

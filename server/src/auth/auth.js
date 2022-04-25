@@ -1,6 +1,6 @@
 const passport = require('passport');
 const basicStrategy = require('passport-http').BasicStrategy;
-const UserModel = require('./../models/user.model');
+const User = require('./../models/user.model');
 const authConfig = require('../../config/auth.config.js')
 const logger=require("../lib/logger");
 
@@ -9,54 +9,56 @@ passport.use(
   'basic',
   new basicStrategy(
     async (username, password, done) => {
-      try {
-        var user = {}
-        // authentication against database first
-        UserModel.authenticate(username,password,function(err,result){
-          // if error ?
-          if (err || result===null) {
-            // trying against ldap
-            logger.info("No login locally, trying ldap")
-            UserModel.checkLdap(username,password,function(err,result){
-              if(err){
-                const match = err.match(authConfig.ldapErrorRegex)
-                if(match){
-                  try{
-                    var errMessage=authConfig.ldapErrors[match[1]]
-                    return done(errMessage)
-                  }catch(e){
-                    return done("Error " + match[1])
-                  }
-                }else{
-                  return done(err)
-                }
-              }else{
-                logger.info(JSON.stringify(result))
-                user.username = result.sAMAccountName
-                user.type = 'ldap'
-                user.roles = UserModel.getRoles(user,result)
-                logger.info("ldap login is ok => " + user.username)
-                return done(null, user);
-              }
-
-            });
-
-          }else if(!result.isValid) {
-            // user found in db, but wrong pw
-            return done("Wrong password")
-            //return done(null, false, { message: 'Wrong Password'});
-          }else{
-            // user ok in db
+      // authentication against database first
+      try{
+        var user = await User.authenticate(username,password)
+          .catch((err)=>{
+            logger.info(err)
+            // move to next
+            return Promise.resolve(null)
+          })
+          .then((result)=>{
+            var user = {}
+            if(result===null){
+              // no local result
+              // trying against ldap
+              logger.info("No login locally, trying ldap")
+              return User.checkLdap(username,password)
+                .then((result)=>{
+                  // valid local authentication
+                  logger.info(JSON.stringify(result))
+                  user.username = result.sAMAccountName
+                  user.type = 'ldap'
+                  user.roles = User.getRoles(user,result)
+                  logger.info("ldap login is ok => " + user.username)
+                  return user
+                })
+            }
+            // user found in db
+            if(!result.isValid)throw "Wrong password"
             user.username = result.user.username
             user.id = result.user.id
             user.type = 'local'
-            user.roles = UserModel.getRoles(user,result.user.groups)
+            user.roles = User.getRoles(user,result.user.groups)
             logger.info("local login is ok => " + user.username)
-            return done(null, user);
-          }
-        });
-      } catch (error) {
-        return done(error);
+            return user
+          })
+          .catch((err)=>{
+            const match = err.match(authConfig.ldapErrorRegex)
+            if(match){
+              try{
+                var errMessage=authConfig.ldapErrors[match[1]]
+              }catch(e){
+                throw "Error " + match[1]
+              }
+              throw errMessage
+            }
+            throw err
+          })
+        // we have an authenticated user
+        return done(null,user)
+      }catch(err){
+        return done(err)
       }
     }
   )

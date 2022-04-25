@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.2] - 2022-04-25
+
+### Added
+
+-   More form validations
+-   Show expression and query form warnings
+-   Allow for expression references to have full object placeholder .e.g. $(settings.servers[0].name)
+
+### Changed
+
+-   Rewrote all callbacks to promises
+-   Query filter in dropdown
+
+### Fixed
+
+-   Remove query filter on values change
+-   Reset query value when "no data"
+
 ## [3.0.1] - 2022-04-01
 
 ### Added
@@ -245,7 +263,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.1...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.2...HEAD
+
+[3.0.2]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.1...3.0.2
 
 [3.0.1]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.0...3.0.1
 

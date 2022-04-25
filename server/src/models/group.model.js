@@ -6,93 +6,36 @@ const mysql=require("./db.model")
 var Group=function(group){
     this.name = group.name;
 };
-Group.create = function (record, result) {
+Group.create = function (record) {
     logger.info(`Creating group ${record.name}`)
-    mysql.query("INSERT INTO AnsibleForms.`groups` set ?", record, function (err, res) {
-        if(err) {
-            result(err, null);
-        }
-        else{
-            result(null, res.insertId);
-        }
-    });
-
+    return mysql.do("INSERT INTO AnsibleForms.`groups` set ?", record)
+            .then((res)=>{ return res.insertId })
 };
-Group.update = function (record,id, result) {
+Group.update = function (record,id) {
     logger.info(`Updating group ${record.name}`)
-    mysql.query("UPDATE AnsibleForms.`groups` set ? WHERE name=?", [record,id], function (err, res) {
-        if(err) {
-            result(err, null);
-        }
-        else{
-            result(null, res);
-        }
-    });
+    return mysql.do("UPDATE AnsibleForms.`groups` set ? WHERE name=?", [record,id])
 };
-Group.delete = function(id, result){
+Group.delete = function(id){
     if(id==1){
-      logger.warning("Some is trying to remove the admins groups !")
-      result("You cannot delete group 'admins'",null)
+      logger.warning("Someone is trying to remove the admins group !")
+      return new Promise.reject("You cannot delete group 'admins'")
     }else{
       logger.info(`Deleting group ${id}`)
-      mysql.query("DELETE FROM AnsibleForms.`groups` WHERE id = ? AND name<>'admins'", [id], function (err, res) {
-          if(err) {
-              result(err, null);
-          }
-          else{
-              result(null, res);
-          }
-      });
+      return mysql.do("DELETE FROM AnsibleForms.`groups` WHERE id = ? AND name<>'admins'", [id])
     }
 
 };
 Group.findAll = function (result) {
     logger.info("Finding all groups")
-    var query = "SELECT * FROM AnsibleForms.`groups` limit 20;"
-    try{
-      mysql.query(query,null, function (err, res) {
-          if(err) {
-              result(err, null);
-          }
-          else{
-              result(null, res);
-          }
-      });
-    }catch(err){
-      result(err, null);
-    }
+    return mysql.do("SELECT * FROM AnsibleForms.`groups`")
 };
-Group.findById = function (id,result) {
+Group.findById = function (id) {
     logger.info(`Finding group ${id}`)
-    var query = "SELECT * FROM AnsibleForms.`groups` WHERE id=?;"
-    try{
-      mysql.query(query,id, function (err, res) {
-          if(err) {
-              result(err, null);
-          }
-          else{
-              result(null, res);
-          }
-      });
-    }catch(err){
-      result(err, null);
-    }
+    return mysql.do("SELECT * FROM AnsibleForms.`groups` WHERE id=?;",id)
 };
-Group.findByName = function (name,result) {
+Group.findByName = function (name) {
     logger.info(`Finding group ${name}`)
-    var query = "SELECT * FROM AnsibleForms.`groups` WHERE name=?;"
-    try{
-      mysql.query(query,name, function (err, res) {
-          if(err) {
-              result(err, null);
-          }
-          else{
-              result(null, res);
-          }
-      });
-    }catch(err){
-      result(err, null);
-    }
+    return mysql.do("SELECT * FROM AnsibleForms.`groups` WHERE name=?;",name)
 };
 
 module.exports= Group;

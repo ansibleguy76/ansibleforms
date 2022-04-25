@@ -3,18 +3,18 @@ const logger=require("../lib/logger");
 const config=require("../../config/app.config")
 const fs=require("fs")
 const path=require("path")
-const keygen = require('../lib/ssh-keygen');
-const location = path.join(config.homePath,'/.ssh/id_rsa');
-const pubkeylocation = path.join(config.homePath,'/.ssh/id_rsa.pub');
+const keygen = require('../lib/ssh-keygen').keygen;
+const privateKeyPath = path.join(config.homePath,'/.ssh/id_rsa');
+const publicKeyPath = path.join(config.homePath,'/.ssh/id_rsa.pub');
 
 // constructor for ssh config
 var Ssh=function(ssh){
     this.key = ssh.key;
 };
-
-Ssh.generate = function(force,result){
-  keygen({
-    location: location,
+// generate new keys (used only once during startup of ansibleforms (in the init/index.js))
+Ssh.generate = function(force){
+  return keygen({
+    path: privateKeyPath,
     read: true,
     force: force,
     destroy: false,
@@ -23,82 +23,66 @@ Ssh.generate = function(force,result){
     read: true,
     size: '2048',
     format: 'PEM'
-  }, function onDoneCallback(err, out){
-      if(err){
-        logger.error("Error creating ssh keys : " + err)
-        return false
-      }
-      logger.warning('SSH Keys created!');
-      logger.debug('private key : '+out.key);
-      logger.notice('public key : '+out.pubKey);
+  })
+  .then((keys)=>{
+    logger.warning('SSH Keys created!');
+    logger.debug('private key : '+keys.key);
+    logger.notice('public key : '+keys.pubKey);
   })
 }
 
-//ssh object create (it's an update; during schema creation we add a record)
-Ssh.update = function (record, result) {
+// it allows a manual upload of a custom private key
+// the public key is then auto generated
+Ssh.update = function (record) {
     logger.info(`Updating ssh key`)
     try{
-      // write new key
-      fs.writeFileSync(location,record.key,{mode:0o600})
-      // logger.notice("Updated ssh private key")
-      // generate public key
-      // logger.info(`Generating ssh public key`)
-      keygen({
+      // write new private key
+      fs.writeFileSync(privateKeyPath,record.key,{mode:0o600})
+      // autogenerate new public key
+      return keygen({
         publicOnly: true,
-        location: location,
+        path: privateKeyPath,
         read: true,
         force: true,
         destroy: false
-      }, (err, out)=>{
-          if(err){
-            logger.error("Error creating public ssh key : " + err)
-            result(err)
-            return false
-          }else{
-            logger.notice('Public SSH Key created!');
-            logger.debug('public key : '+out.pubKey);
-            result(null,true)
-          }
-      });
+      })
+      .then((keys)=>{
+        logger.notice('Public SSH Key created!');
+        logger.debug('public key : '+keys.pubKey);
+      })
+      .catch((err)=>{
+        logger.error("Error creating public key "+err)
+      })
 
     }catch(e){
       logger.error(e)
-      fs.rmSync(location,true)
-      fs.rmSync(pubkeylocation,true)
-      result(e)
+      fs.rmSync(privateKeyPath,true)
+      fs.rmSync(publicKeyPath,true)
+      throw e
     }
 };
-// get ssh config from database
-Ssh.find = function (result) {
+// get private & public key info
+Ssh.find = function () {
   var key
   var pubkey=''
-  try{
-    logger.info("Reading sshkey key")
-    keygen({
-      randomArt: true,
-      location: location
-    }, (err, out)=>{
-        if(err){
-          logger.error(err)
-          result(err)
-          return false
-        }else{
-          // logger.debug("Private key found")
-          try{
-            // logger.debug("Reading public key")
-            pubkey=fs.readFileSync(pubkeylocation).toString()
-            // logger.debug("Public key found")
-          }catch(e){
-            //
-          }
-          result(null,{art:out.art,publicKey:pubkey})
-        }
-    });
 
-  }catch(e){
-    logger.error(e)
-    result(e)
-  }
+  logger.info("Reading sshkey key")
+  return keygen({              // get random art for private key
+    randomArt: true,
+    path: privateKeyPath
+  })
+  .then((out)=>{
+    // logger.debug("Private key found")
+    return fs.promises.readFile(publicKeyPath)  // read public key
+      .then((pubkey)=>{
+        return {art:out.art,publicKey:pubkey.toString()}
+      })
+      .catch((e)=>{
+        logger.error("No public key found")
+        return Promise.resolve({art:out.art,publicKey:""})
+      })
+
+  })
 
 };
 module.exports= Ssh;

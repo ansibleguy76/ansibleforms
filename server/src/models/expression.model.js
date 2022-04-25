@@ -43,34 +43,29 @@ function sanitizeExpression(expr){
   }
   return expr
 }
-
 async function doAsync (expr) {
   try{
-    return await eval(sanitizeExpression(expr))
+    var sanitized = sanitizeExpression(expr)
+    var outcome = await eval(sanitized)
+    return outcome
   }catch(e){
-    return undefined
+    throw e.message
   }
-
 }
-
 // execute expression (cannot be a promise)
-Expression.execute = function (expr,noLog, result) {
+Expression.execute = function (expr,noLog) {
   if(noLog){
     logger.info('Expression: noLog is applied')
   }else{
     logger.info(`Expression: ${expr}`)
   }
-
   var expression = ""
   try{
-    doAsync(expr).then(function(response){
-      result(null,response)
-    })
-    // var r = eval(expression)
-    // result(null,r)
+    return doAsync(expr)
   }catch(err){
-    result(err.message,null)
+    throw err.message
   }
 };
+
 
 module.exports= Expression;

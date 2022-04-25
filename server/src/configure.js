@@ -1,6 +1,9 @@
 // express is the base http server for nodejs
 const express = require('express');
 // cors is a middleware to allow cross origin resource sharing
+// some routes/apis we will allow coming from other ip's/sources
+// for some internal apis we will not allow cors, all requests can only come
+// from localhost
 const cors = require('cors')
 // a plugin to add the swagger interface
 const swaggerUi = require('swagger-ui-express');
@@ -28,9 +31,11 @@ module.exports = app => {
   require('./init/')
 
   // we use 2 authentications/authorization strategies
-  // - basic : to get jwt tokens
+  // - basic : with username and password to get jwt tokens
   // - jwt : to use the jwt tokens
-  require('./auth/auth');
+  // passport (the auth lib used) is smart, if basic authentication headers are detected
+  // then the basic authentication strategy kicks and the basic login procedure starts
+    require('./auth/auth');
 
   app.use(bodyParser.json({limit: '50mb'}));
   app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
@@ -57,6 +62,8 @@ module.exports = app => {
   const repoRoutes = require('./routes/repo.routes')
 
   // using json web tokens as middleware
+  // the jwtauthentication strategy from passport (/auth/auth.js)
+  // is used as a middleware.  Every route will check the token for validity
   const authobj = passport.authenticate('jwt', { session: false })
 
   // api routes for browser only (no cors)

@@ -17,44 +17,30 @@ var Settings=function(settings){
     this.mail_from = settings.mail_from;
     this.url = settings.url;
 };
-Settings.update = function (record, result) {
+Settings.update = function (record) {
     logger.info(`Updating settings`)
-    mysql.query("UPDATE AnsibleForms.`settings` set ?", record, function (err, res) {
-        if(err) {
-            result(err, null);
-        }
-        else{
-            result(null, res);
-        }
-    });
+    return mysql.do("UPDATE AnsibleForms.`settings` set ?", record)
 };
-Settings.find = function (result) {
-    var query = "SELECT * FROM AnsibleForms.`settings` limit 1;"
-    try{
-      mysql.query(query, function (err, res) {
-          if(err) {
-              result(err, null);
-          }
-          else{
-            if(res.length>0){
-              try{
-                res[0].mail_password=decrypt(res[0].mail_password)
-              }catch(e){
-                logger.error("Couldn't decrypt mail password, did the secretkey change ?")
-                res[0].mail_password=""
-              }
-              result(null, res[0]);
-            }else{
-              logger.error("No settings record in the database, something is wrong")
-            }
+Settings.find = function () {
 
-          }
-      });
-    }catch(err){
-      result(err, null);
-    }
+  return mysql.do("SELECT * FROM AnsibleForms.`settings` limit 1;")
+    .then((res)=>{
+      if(res.length>0){
+        try{
+          res[0].mail_password=decrypt(res[0].mail_password)
+        }catch(e){
+          logger.error("Couldn't decrypt mail password, did the secretkey change ?")
+          res[0].mail_password=""
+        }
+        return res[0]
+      }else{
+        logger.error("No settings record in the database, something is wrong")
+        throw "No settings record in the database, something is wrong"
+      }
+    })
+
 };
-Settings.mailcheck = function(config,to,result){
+Settings.mailcheck = function(config,to){
   var subject= "Test message"
   var message= "<p>This is a test message from AnsibleForms</p>"
   if(config.mail_password){
@@ -65,18 +51,15 @@ Settings.mailcheck = function(config,to,result){
       logger.error("Failed to decrypt mail password")
     }
   }
-  Settings.maildo(config,to,subject,message,result)
+  return Settings.maildo(config,to,subject,message)
 }
-Settings.mailsend = function(to,subject,message,result){
-  Settings.find((err,config)=>{
-    if(config){
-      Settings.maildo(config,to,subject,message,result)
-    }else{
-      result(err)
-    }
-  })
+Settings.mailsend = function(to,subject,message){
+  return Settings.find()
+    .then((config)=>{
+      return Settings.maildo(config,to,subject,message)
+    })
 }
-Settings.maildo = function(config,to,subject,message,result){
+Settings.maildo = function(config,to,subject,message){
   var mailConfig
   if(!config.mail_server)return false
   if(config.mail_username){
@@ -105,14 +88,13 @@ Settings.maildo = function(config,to,subject,message,result){
   // console.log(mailConfig)
   // console.log(message)
   let transporter = nodemailer.createTransport(mailConfig);
-  transporter.sendMail(message).then((info)=>{
-    if(info.messageId){
-      result(null,`Mail is sent (${info.messageId})`)
-    }else{
-      result("No messageId")
-    }
-  }).catch((e)=>{
-    result(e)
-  });
+  return transporter.sendMail(message)
+    .then((info)=>{
+      if(info.messageId){
+        return info.messageId
+      }else{
+        return "No messageId"
+      }
+  })
 }
 module.exports= Settings;
