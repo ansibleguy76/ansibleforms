@@ -53,6 +53,13 @@ exports.update = function(req, res) {
 };
 exports.delete = function(req, res) {
     Group.delete( req.params.id)
-      .then(()=>{res.json(new RestResult("success","group deleted",null,""))})
+      .then((deleted)=>{
+        if(deleted.affectedRows==1){
+          res.json(new RestResult("success","group deleted",null,""))
+        }else{
+          res.json(new RestResult("error","unknown group or group has users",null,`affected rows : ${deleted.affectedRows}`))
+        }
+
+      })
       .catch((err)=>{res.json(new RestResult("error","failed to delete group",null,err))})
 };
