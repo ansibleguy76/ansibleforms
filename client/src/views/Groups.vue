@@ -19,24 +19,24 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="gr in groupList" :key="'group'+gr.name" :class="{'has-background-link has-text-white':gr.id==groupItem}">
+              <tr v-for="group in groupList" :key="'group'+group.name" :class="{'has-background-link-light':group.id==groupItem}">
                 <td class="is-first">
-                  <span class="icon is-clickable has-text-danger" v-if="gr.id!=1 && !hasUsers(gr.id)" title="delete group" @click="groupItem=gr.id;loadGroup();showDelete=true"><font-awesome-icon icon="times" /></span>
+                  <span class="icon is-clickable has-text-danger" v-if="group.id!=1 && !hasUsers(group.id)" title="delete group" @click="groupItem=group.id;loadGroup();showDelete=true"><font-awesome-icon icon="times" /></span>
                   <span class="icon has-text-grey-lighter" v-else><font-awesome-icon icon="times" /></span>
-                  <span class="icon is-clickable has-text-success" title="show details" @click="groupItem=gr.id;loadGroup()"><font-awesome-icon icon="info-circle" /></span>
+                  <span class="icon is-clickable has-text-info" title="show details" @click="groupItem=group.id;loadGroup()"><font-awesome-icon icon="info-circle" /></span>
                 </td>
-                <td>{{ gr.name }}</td>
+                <td class="is-clickable" @click="groupItem=group.id;loadGroup()">{{ group.name }}</td>
               </tr>
             </tbody>
           </table>
             <!-- <BulmaSelect icon="group" label="Select a group" :list="groupList" valuecol="id" labelcol="name" @change="loadGroup()" v-model="groupItem" /> -->
         </div>
         <transition name="add-column" appear>
-          <div class="column" v-if="groupItem==-1">
+          <div class="column" v-if="groupItem==-1 && !showDelete">
               <BulmaInput icon="users" v-model="group.name" label="Name" placeholder="Name" :required="true" :hasError="$v.group.name.$invalid" :errors="[]" />
               <BulmaButton icon="save" label="Create Group" @click="newGroup()"></BulmaButton>
           </div>
-          <div class="column" v-if="groupItem>0">
+          <div class="column" v-if="groupItem>0 && !showDelete">
             <table class="table is-bordered is-fullwidth" v-if="groupUsers.length>0">
               <thead class="has-background-grey">
                 <tr>

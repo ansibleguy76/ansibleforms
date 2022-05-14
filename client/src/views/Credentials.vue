@@ -1,25 +1,53 @@
 <template>
   <section v-if="isAdmin" class="section">
-    <BulmaModal v-if="showDelete" title="Delete" action="Delete" @click="deleteCredential();showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete Credential '{{ credential.name}}'</BulmaModal>
+    <BulmaModal v-if="showDelete && credential.name" title="Delete" action="Delete" @click="deleteCredential();showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete Credential '{{ credential.name}}'</BulmaModal>
     <div class="container">
-      <h1 class="title has-text-info"><font-awesome-icon icon="users" /> Credentials</h1>
+      <h1 class="title has-text-info"><font-awesome-icon icon="lock" /> Credentials</h1>
+
+      <nav class="level">
+        <!-- Left side -->
+        <div class="level-left">
+          <p class="level-item"><BulmaButton icon="plus" label="New Credential" @click="credentialItem=-1;loadCredential()"></BulmaButton></p>
+        </div>
+      </nav>
       <div class="columns">
         <div class="column">
-            <BulmaSelect icon="lock" label="Select a credential" size="10" :list="credentialList" valuecol="id" labelcol="name" @change="loadCredential()" v-model="credentialItem" />
-            <BulmaButton v-if="credentialItem!=undefined" icon="plus" label="New Credential" @click="credentialItem=undefined;loadCredential()"></BulmaButton>
-            <BulmaButton v-if="credentialItem!=undefined" type="is-danger" icon="trash-alt" label="Delete Credential" @click="showDelete=true"></BulmaButton>
+          <table class="table is-bordered is-striped is-fullwidth">
+            <thead class="has-background-primary">
+              <tr>
+                <th class="has-text-white is-first">Actions</th>
+                <th class="has-text-white">Name</th>
+                <th class="has-text-white">Username</th>
+                <th class="has-text-white">Host</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="credential in credentialList" :key="credential.name" :class="{'has-background-link-light':credential.id==credentialItem}">
+                <td class="is-first">
+                  <span class="icon is-clickable has-text-warning" title="edit credential" @click="credentialItem=credential.id;loadCredential()"><font-awesome-icon icon="pencil-alt" /></span>
+                  <span class="icon is-clickable has-text-danger" title="delete credential" @click="credentialItem=credential.id;loadCredential();showDelete=true"><font-awesome-icon icon="times" /></span>
+                </td>
+                <td class="is-clickable" @click="credentialItem=credential.id;loadCredential()">{{ credential.name }}</td>
+                <td class="is-clickable" @click="credentialItem=credential.id;loadCredential()">{{ credential.user }}</td>
+                <td class="is-clickable" @click="credentialItem=credential.id;loadCredential()">{{ credential.host }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        <div class="column is-three-quarters">
-          <BulmaInput icon="heading" v-model="credential.name" label="Name" placeholder="Name" :readonly="credentialItem!==undefined" :required="true" :hasError="$v.credential.name.$invalid" :errors="[]" />
-          <BulmaInput icon="user" v-model="credential.user" label="Username" placeholder="Username" :required="true" :hasError="$v.credential.user.$invalid" :errors="[]" />
-          <BulmaInput icon="lock" v-model="credential.password" type="password" label="Password" placeholder="Password" :required="true" :hasError="$v.credential.password.$invalid" :errors="[]" />
-          <BulmaInput icon="server" v-model="credential.host" label="Host" placeholder="Host" :required="true" :hasError="$v.credential.host.$invalid" :errors="[]" />
-          <BulmaInput icon="door-closed" v-model="credential.port" label="Port" placeholder="3306" :required="true" :hasError="$v.credential.port.$invalid" :errors="[]" />
-          <BulmaInput icon="info-circle" v-model="credential.description" label="Description" placeholder="Description" :required="true" :hasError="$v.credential.description.$invalid" :errors="[]" />
-          <BulmaButton v-if="credentialItem==undefined" icon="save" label="Create Credential" @click="newCredential()"></BulmaButton>
-          <BulmaButton v-if="credentialItem!=undefined" icon="save" label="Update Credential" @click="updateCredential()"></BulmaButton>
-        </div>
+        <transition name="add-column" appear>
+          <div class="column" v-if="credentialItem!==undefined && !showDelete">
+            <BulmaInput icon="heading" v-model="credential.name" label="Name" placeholder="Name" :readonly="credentialItem!==-1" :required="true" :hasError="$v.credential.name.$invalid" :errors="[]" />
+            <BulmaInput icon="user" v-model="credential.user" label="Username" placeholder="Username" :required="true" :hasError="$v.credential.user.$invalid" :errors="[]" />
+            <BulmaInput icon="lock" v-model="credential.password" type="password" label="Password" placeholder="Password" :required="true" :hasError="$v.credential.password.$invalid" :errors="[]" />
+            <BulmaInput icon="server" v-model="credential.host" label="Host" placeholder="Host" :required="true" :hasError="$v.credential.host.$invalid" :errors="[]" />
+            <BulmaInput icon="door-closed" v-model="credential.port" label="Port" placeholder="3306" :required="true" :hasError="$v.credential.port.$invalid" :errors="[]" />
+            <BulmaInput icon="info-circle" v-model="credential.description" label="Description" placeholder="Description" :required="true" :hasError="$v.credential.description.$invalid" :errors="[]" />
+            <BulmaButton v-if="credentialItem==-1" icon="save" label="Create Credential" @click="newCredential()"></BulmaButton>
+            <BulmaButton v-if="credentialItem!=-1" icon="save" label="Update Credential" @click="updateCredential()"></BulmaButton>
+          </div>
+        </transition>
       </div>
+
     </div>
   </section>
 </template>
@@ -28,7 +56,6 @@
   import axios from 'axios'
   import Vuelidate from 'vuelidate'
   import BulmaButton from './../components/BulmaButton.vue'
-  import BulmaSelect from './../components/BulmaSelect.vue'
   import BulmaInput from './../components/BulmaInput.vue'
   import BulmaModal from './../components/BulmaModal.vue'
   import TokenStorage from './../lib/TokenStorage'
@@ -41,7 +68,7 @@
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean}
     },
-    components:{BulmaButton,BulmaSelect,BulmaInput,BulmaModal},
+    components:{BulmaButton,BulmaInput,BulmaModal},
     data(){
       return  {
           credential:{
@@ -76,7 +103,7 @@
           };
       },loadCredential(){
         var ref= this;
-        if(this.credentialItem!=undefined){
+        if(this.credentialItem!=undefined && this.credentialItem!=-1){
 
           axios.get('/api/v1/credential/' + this.credentialItem,TokenStorage.getAuthentication())
             .then((result)=>{
@@ -183,7 +210,38 @@
   .cursor-progress{
     cursor:progress;
   }
-  .select, .select select{
-    width:100%;
+  .table td,.table th{
+    max-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  table thead th.is-first,table tbody td.is-first{
+    width:8em!important;
+    max-width:8em!important;
+  }
+  .add-column-enter-to, .add-column-leave {
+    opacity: 1;
+  }
+  .add-column-enter, .add-column-leave-to {
+    overflow: hidden;
+    opacity: 0;
+  }
+  .add-column-enter-active > div {
+    transition: all 0.5s;
+  }
+  .add-column-enter-active {
+    overflow: hidden;
+    transition: all 0.5s;
+  }
+  .add-column-leave-active {
+    overflow: hidden;
+    transition: all 0.5s;
+  }
+  .add-column-leave-active > div {
+    transition: all 0.5s;
+  }
+  .add-column-leave-to > div {
+    width: 0;
   }
 </style>

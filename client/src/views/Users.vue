@@ -20,23 +20,23 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="user in userList" :key="user.username + '_' + user.group_id" :class="{'has-background-link has-text-white':user.id==userItem}">
+              <tr v-for="user in userList" :key="user.username + '_' + user.group_id" :class="{'has-background-link-light':user.id==userItem}">
                 <td class="is-first">
                   <span class="icon is-clickable has-text-warning" v-if="user.id!=1" title="edit user" @click="userItem=user.id;changePassword=false;loadUser()"><font-awesome-icon icon="pencil-alt" /></span>
                   <span class="icon has-text-grey-lighter" v-else><font-awesome-icon icon="pencil-alt" /></span>
-                  <span class="icon is-clickable has-text-success" title="change password" @click="userItem=user.id;changePassword=true;loadUser()"><font-awesome-icon icon="lock" /></span>
+                  <span class="icon is-clickable has-text-link" title="change password" @click="userItem=user.id;changePassword=true;loadUser()"><font-awesome-icon icon="lock" /></span>
                   <span class="icon is-clickable has-text-danger" v-if="user.id!=1" title="delete user" @click="userItem=user.id;loadUser();showDelete=true"><font-awesome-icon icon="times" /></span>
                   <span class="icon has-text-grey-lighter" v-else><font-awesome-icon icon="times" /></span>
                 </td>
-                <td>{{ user.username }}</td>
-                <td>{{ groupName(user.group_id)}}</td>
+                <td class="is-clickable" @click="userItem=user.id;loadUser()">{{ user.username }}</td>
+                <td class="is-clickable" @click="userItem=user.id;loadUser()">{{ groupName(user.group_id)}}</td>
               </tr>
             </tbody>
           </table>
             <!-- <BulmaSelect icon="user" label="Select a user" :list="userList" valuecol="id" labelcol="username" @change="loadUser()" v-model="userItem" /> -->
         </div>
         <transition name="add-column" appear>
-          <div class="column" v-if="userItem!==undefined">
+          <div class="column" v-if="userItem!==undefined && !showDelete">
             <template v-if="!changePassword">
               <BulmaInput icon="user" v-model="user.username" label="Username" :readonly="userItem!==-1" placeholder="Username" :required="true" :hasError="$v.user.username.$invalid" :errors="[]" />
               <BulmaInput v-if="userItem==-1" icon="lock" type="password" v-model="user.password" label="Password" placeholder="Password" :required="true" :hasError="$v.user.password.$invalid" :errors="[{if:!$v.user.password.regex,label:$v.user.password.$params.regex.description}]" />
