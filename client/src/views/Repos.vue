@@ -12,23 +12,17 @@
       </nav>
       <div class="columns">
         <div class="column">
-          <table class="table is-bordered is-striped is-fullwidth">
-            <thead class="has-background-primary">
-              <tr>
-                <th class="has-text-white is-first">Actions</th>
-                <th class="has-text-white">Name</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="repo in repoList" :key="repo.name" :class="{'has-background-link-light':repo==repoItem}">
-                <td class="is-first">
-                  <span class="icon is-clickable has-text-danger" title="delete repo" @click="repoItem=repo;loadRepo();showDelete=true"><font-awesome-icon icon="times" /></span>
-                  <span class="icon is-clickable has-text-info" title="show repo" @click="repoItem=repo;loadRepo()"><font-awesome-icon icon="info-circle" /></span>
-                </td>
-                <td class="is-clickable" @click="repoItem=repo;loadRepo()">{{ repo }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <BulmaAdminTable
+            v-if="repoList && repoList.length>0"
+            :dataList="repoList"
+            :labels="['Name']"
+            :columns="['']"
+            identifier=""
+            :actions="[{name:'select',title:'show repository',icon:'info-circle',color:'has-text-link'},{name:'delete',title:'delete repository',icon:'times',color:'has-text-danger'}]"
+            :currentItem="repoItem"
+            @select="selectItem"
+            @delete="deleteItem"
+          />
         </div>
         <transition name="add-column" appear>
           <div class="column is-two-thirds" v-if="repoItem!==undefined && !showDelete">
@@ -53,6 +47,7 @@
   import BulmaButton from './../components/BulmaButton.vue'
   import BulmaCheckbox from './../components/BulmaCheckRadio.vue'
   import BulmaInput from './../components/BulmaInput.vue'
+  import BulmaAdminTable from './../components/BulmaAdminTable.vue'
   import BulmaModal from './../components/BulmaModal.vue'
   import TokenStorage from './../lib/TokenStorage'
   import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
@@ -65,7 +60,7 @@
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean}
     },
-    components:{BulmaButton,BulmaInput,BulmaModal,BulmaCheckbox},
+    components:{BulmaButton,BulmaInput,BulmaModal,BulmaCheckbox,BulmaAdminTable},
     data(){
       return  {
           loading:false,
@@ -101,7 +96,16 @@
           }),function(error){
             ref.$toast.error(error.message);
           };
-      },loadRepo(){
+      },
+      selectItem(value){
+        this.repoItem=value
+        this.loadRepo()
+      },
+      deleteItem(value){
+        this.selectItem(value)
+        this.showDelete=true
+      },
+      loadRepo(){
         var ref= this;
         if(this.repoItem!=undefined && this.repoItem!=-1){
           this.loading=true

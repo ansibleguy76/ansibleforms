@@ -11,29 +11,22 @@
       </nav>
       <div class="columns">
         <div class="column">
-          <table class="table is-bordered is-striped is-fullwidth">
-            <thead class="has-background-primary">
-              <tr>
-                <th class="has-text-white is-first">Actions</th>
-                <th class="has-text-white">Name</th>
-                <th class="has-text-white">Group</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="user in userList" :key="user.username + '_' + user.group_id" :class="{'has-background-link-light':user.id==userItem}">
-                <td class="is-first">
-                  <span class="icon is-clickable has-text-warning" v-if="user.id!=1" title="edit user" @click="userItem=user.id;changePassword=false;loadUser()"><font-awesome-icon icon="pencil-alt" /></span>
-                  <span class="icon has-text-grey-lighter" v-else><font-awesome-icon icon="pencil-alt" /></span>
-                  <span class="icon is-clickable has-text-link" title="change password" @click="userItem=user.id;changePassword=true;loadUser()"><font-awesome-icon icon="lock" /></span>
-                  <span class="icon is-clickable has-text-danger" v-if="user.id!=1" title="delete user" @click="userItem=user.id;loadUser();showDelete=true"><font-awesome-icon icon="times" /></span>
-                  <span class="icon has-text-grey-lighter" v-else><font-awesome-icon icon="times" /></span>
-                </td>
-                <td class="is-clickable" @click="userItem=user.id;loadUser()">{{ user.username }}</td>
-                <td class="is-clickable" @click="userItem=user.id;loadUser()">{{ groupName(user.group_id)}}</td>
-              </tr>
-            </tbody>
-          </table>
-            <!-- <BulmaSelect icon="user" label="Select a user" :list="userList" valuecol="id" labelcol="username" @change="loadUser()" v-model="userItem" /> -->
+          <BulmaAdminTable
+            v-if="userList && userList.length>0 && groupList && groupList.length>0"
+            :dataList="userList.map(x => ({...x,allowselect:(x.id!=1),allowdelete:(x.id!=1),group:groupName(x.group_id)}))"
+            :labels="['Name','Group']"
+            :columns="['username','group']"
+            identifier="id"
+            :actions="[
+                        {name:'select',title:'edit user',icon:'pencil-alt',color:'has-text-warning'},
+                        {name:'delete',title:'delete user',icon:'times',color:'has-text-danger'},
+                        {name:'changepassword',title:'change password',icon:'lock',color:'has-text-link'}
+                    ]"
+            :currentItem="userItem"
+            @select="selectItem"
+            @delete="deleteItem"
+            @changepassword="changepassword"
+          />
         </div>
         <transition name="add-column" appear>
           <div class="column" v-if="userItem!==undefined && !showDelete">
@@ -69,6 +62,7 @@
   import BulmaButton from './../components/BulmaButton.vue'
   import BulmaSelect from './../components/BulmaSelect.vue'
   import BulmaInput from './../components/BulmaInput.vue'
+  import BulmaAdminTable from './../components/BulmaAdminTable.vue'
   import BulmaModal from './../components/BulmaModal.vue'
   import TokenStorage from './../lib/TokenStorage'
   import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
@@ -81,7 +75,7 @@
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean}
     },
-    components:{BulmaButton,BulmaSelect,BulmaInput,BulmaModal},
+    components:{BulmaButton,BulmaSelect,BulmaInput,BulmaModal,BulmaAdminTable},
     data(){
       return  {
           user:{
@@ -111,7 +105,22 @@
           }),function(error){
             ref.$toast.error(error.message);
           };
-      },loadGroupList(){
+      },
+      selectItem(value){
+        this.userItem=value
+        this.changePassword=false;
+        this.loadUser()
+      },
+      deleteItem(value){
+        this.selectItem(value)
+        this.showDelete=true
+      },
+      changepassword(value){
+        this.userItem=value
+        this.changePassword=true
+        this.loadUser()
+      },
+      loadGroupList(){
         var ref= this;
         axios.get('/api/v1/group/',TokenStorage.getAuthentication())
           .then((result)=>{
@@ -121,7 +130,12 @@
           };
       }
       ,groupName(id){
-        return (this.groupList.filter(x => x.id==id))[0].name
+        var groups=this.groupList.filter(x => x.id==id)
+        if(groups.length>0)
+          return groups[0].name
+        else {
+          return "..."
+        }
       }
       ,resetUser(){
         this.user = {

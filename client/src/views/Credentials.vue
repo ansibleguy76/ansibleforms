@@ -3,7 +3,6 @@
     <BulmaModal v-if="showDelete && credential.name" title="Delete" action="Delete" @click="deleteCredential();showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete Credential '{{ credential.name}}'</BulmaModal>
     <div class="container">
       <h1 class="title has-text-info"><font-awesome-icon icon="lock" /> Credentials</h1>
-
       <nav class="level">
         <!-- Left side -->
         <div class="level-left">
@@ -12,27 +11,17 @@
       </nav>
       <div class="columns">
         <div class="column">
-          <table class="table is-bordered is-striped is-fullwidth">
-            <thead class="has-background-primary">
-              <tr>
-                <th class="has-text-white is-first">Actions</th>
-                <th class="has-text-white">Name</th>
-                <th class="has-text-white">Username</th>
-                <th class="has-text-white">Host</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="credential in credentialList" :key="credential.name" :class="{'has-background-link-light':credential.id==credentialItem}">
-                <td class="is-first">
-                  <span class="icon is-clickable has-text-warning" title="edit credential" @click="credentialItem=credential.id;loadCredential()"><font-awesome-icon icon="pencil-alt" /></span>
-                  <span class="icon is-clickable has-text-danger" title="delete credential" @click="credentialItem=credential.id;loadCredential();showDelete=true"><font-awesome-icon icon="times" /></span>
-                </td>
-                <td class="is-clickable" @click="credentialItem=credential.id;loadCredential()">{{ credential.name }}</td>
-                <td class="is-clickable" @click="credentialItem=credential.id;loadCredential()">{{ credential.user }}</td>
-                <td class="is-clickable" @click="credentialItem=credential.id;loadCredential()">{{ credential.host }}</td>
-              </tr>
-            </tbody>
-          </table>
+          <BulmaAdminTable
+            v-if="credentialList && credentialList.length>0"
+            :dataList="credentialList"
+            :labels="['Name','User','Host']"
+            :columns="['name','user','host']"
+            identifier="id"
+            :actions="[{name:'select',title:'edit credential',icon:'pencil-alt',color:'has-text-warning'},{name:'delete',title:'delete credential',icon:'times',color:'has-text-danger'}]"
+            :currentItem="credentialItem"
+            @select="selectItem"
+            @delete="deleteItem"
+          />
         </div>
         <transition name="add-column" appear>
           <div class="column" v-if="credentialItem!==undefined && !showDelete">
@@ -56,6 +45,7 @@
   import axios from 'axios'
   import Vuelidate from 'vuelidate'
   import BulmaButton from './../components/BulmaButton.vue'
+  import BulmaAdminTable from './../components/BulmaAdminTable.vue'
   import BulmaInput from './../components/BulmaInput.vue'
   import BulmaModal from './../components/BulmaModal.vue'
   import TokenStorage from './../lib/TokenStorage'
@@ -68,7 +58,7 @@
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean}
     },
-    components:{BulmaButton,BulmaInput,BulmaModal},
+    components:{BulmaButton,BulmaInput,BulmaModal,BulmaAdminTable},
     data(){
       return  {
           credential:{
@@ -101,7 +91,16 @@
           }),function(error){
             ref.$toast.error(error.message);
           };
-      },loadCredential(){
+      },
+      selectItem(value){
+        this.credentialItem=value
+        this.loadCredential()
+      },
+      deleteItem(value){
+        this.selectItem(value)
+        this.showDelete=true
+      },
+      loadCredential(){
         var ref= this;
         if(this.credentialItem!=undefined && this.credentialItem!=-1){
 
