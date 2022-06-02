@@ -1,33 +1,58 @@
 <template>
   <section v-if="isAdmin" class="section">
-    <BulmaModal v-if="showDelete" title="Delete" action="Delete" @click="deleteUser();showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete User '{{ user.username}}'</BulmaModal>
+    <BulmaModal v-if="showDelete && user.username" title="Delete" action="Delete" @click="deleteUser();showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete User '{{ user.username}}'</BulmaModal>
     <div class="container">
       <h1 class="title has-text-info"><font-awesome-icon icon="user" /> Users</h1>
+      <nav class="level">
+        <!-- Left side -->
+        <div class="level-left">
+          <p class="level-item"><BulmaButton icon="plus" label="New User" @click="userItem=-1;changePassword=false;loadUser()"></BulmaButton></p>
+        </div>
+      </nav>
       <div class="columns">
         <div class="column">
-            <BulmaSelect icon="user" label="Select a user" :list="userList" valuecol="id" labelcol="username" @change="loadUser()" v-model="userItem" />
-            <BulmaButton v-if="userItem!=undefined" icon="plus" label="New User" @click="userItem=undefined;loadUser()"></BulmaButton>
-            <BulmaButton v-if="userItem!=undefined && userItem!=1" type="is-danger" icon="trash-alt" label="Delete User" @click="showDelete=true"></BulmaButton>
+          <BulmaAdminTable
+            v-if="userList && userList.length>0 && groupList && groupList.length>0"
+            :dataList="userList.map(x => ({...x,allowselect:(x.id!=1),allowdelete:(x.id!=1),group:groupName(x.group_id)}))"
+            :labels="['Name','Group']"
+            :columns="['username','group']"
+            :filters="['username','group']"
+            identifier="id"
+            :actions="[
+                        {name:'select',title:'edit user',icon:'pencil-alt',color:'has-text-warning'},
+                        {name:'delete',title:'delete user',icon:'times',color:'has-text-danger'},
+                        {name:'changepassword',title:'change password',icon:'lock',color:'has-text-link'}
+                    ]"
+            :currentItem="userItem"
+            @select="selectItem"
+            @reset="resetItem"
+            @delete="deleteItem"
+            @changepassword="changepassword"
+          />
         </div>
-        <div class="column is-three-quarters">
-          <BulmaInput icon="user" v-model="user.username" label="Username" :readonly="userItem!==undefined" placeholder="Username" :required="true" :hasError="$v.user.username.$invalid" :errors="[]" />
-          <BulmaInput v-if="userItem==undefined" icon="lock" type="password" v-model="user.password" label="Password" placeholder="Password" :required="true" :hasError="$v.user.password.$invalid" :errors="[{if:!$v.user.password.regex,label:$v.user.password.$params.regex.description}]" />
-          <BulmaInput v-if="userItem==undefined" icon="lock" type="password" v-model="user.password2" label="Password Again" placeholder="Password" :required="true" :hasError="$v.user.password2.$invalid" :errors="[{if:!$v.user.password2.sameAsPassword,label:'Passwords are not the same'}]" />
-          <BulmaSelect icon="users" label="Select a group" :list="groupList" valuecol="id" :required="true" :hasError="$v.user.group_id.$invalid" labelcol="name" v-model="user.group_id" :errors="[]" />
-          <BulmaButton v-if="userItem==undefined" icon="save" label="Create User" @click="newUser()"></BulmaButton>
-          <BulmaButton v-if="userItem!=undefined" icon="save" label="Update User" @click="updateUser(false)"></BulmaButton>
-          <article v-if="userItem!=undefined && !passwordChanged" class="message is-warning">
-            <div class="message-header">
-              <p>Change password</p>
-            </div>
-            <div class="message-body">
-              <BulmaInput icon="lock" type="password" v-model="user.password" label="Password" placeholder="Password" :required="true" :hasError="$v.user.password.$invalid" :errors="[{if:!$v.user.password.regex,label:$v.user.password.$params.regex.description}]" />
-              <BulmaInput icon="lock" type="password" v-model="user.password2" label="Password Again" placeholder="Password" :required="true" :hasError="$v.user.password2.$invalid" :errors="[{if:!$v.user.password2.sameAsPassword,label:'Passwords are not the same'}]" />
-              <BulmaButton icon="save" label="Change password" @click="updateUser(true)"></BulmaButton>
-            </div>
-          </article>
-
-        </div>
+        <transition name="add-column" appear>
+          <div class="column" v-if="userItem!==undefined && !showDelete">
+            <template v-if="!changePassword">
+              <BulmaInput icon="user" v-model="user.username" label="Username" :readonly="userItem!==-1" placeholder="Username" :required="true" :hasError="$v.user.username.$invalid" :errors="[]" />
+              <BulmaInput v-if="userItem==-1" icon="lock" type="password" v-model="user.password" label="Password" placeholder="Password" :required="true" :hasError="$v.user.password.$invalid" :errors="[{if:!$v.user.password.regex,label:$v.user.password.$params.regex.description}]" />
+              <BulmaInput v-if="userItem==-1" icon="lock" type="password" v-model="user.password2" label="Password Again" placeholder="Password" :required="true" :hasError="$v.user.password2.$invalid" :errors="[{if:!$v.user.password2.sameAsPassword,label:'Passwords are not the same'}]" />
+              <BulmaSelect icon="users" label="Select a group" :list="groupList" valuecol="id" :required="true" :hasError="$v.user.group_id.$invalid" labelcol="name" v-model="user.group_id" :errors="[]" />
+              <BulmaButton v-if="userItem==-1" icon="save" label="Create User" @click="newUser()"></BulmaButton>
+              <BulmaButton v-if="userItem!=-1" icon="save" label="Update User" @click="updateUser(false)"></BulmaButton>
+            </template>
+            <template v-if="changePassword">
+              <h2 class="subtitle"><font-awesome-icon icon="user" /> {{ user.username }}</h2>
+              <div v-if="!passwordChanged">
+                <BulmaInput icon="lock" type="password" v-model="user.password" label="Password" placeholder="Password" :required="true" :hasError="$v.user.password.$invalid" :errors="[{if:!$v.user.password.regex,label:$v.user.password.$params.regex.description}]" />
+                <BulmaInput icon="lock" type="password" v-model="user.password2" label="Password Again" placeholder="Password" :required="true" :hasError="$v.user.password2.$invalid" :errors="[{if:!$v.user.password2.sameAsPassword,label:'Passwords are not the same'}]" />
+                <BulmaButton icon="save" label="Change password" @click="updateUser(true)"></BulmaButton>
+              </div>
+              <div v-else class="notification is-primary is-light">
+                Password is changed.
+              </div>
+            </template>
+          </div>
+        </transition>
       </div>
     </div>
   </section>
@@ -39,6 +64,7 @@
   import BulmaButton from './../components/BulmaButton.vue'
   import BulmaSelect from './../components/BulmaSelect.vue'
   import BulmaInput from './../components/BulmaInput.vue'
+  import BulmaAdminTable from './../components/BulmaAdminTable.vue'
   import BulmaModal from './../components/BulmaModal.vue'
   import TokenStorage from './../lib/TokenStorage'
   import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
@@ -51,7 +77,7 @@
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean}
     },
-    components:{BulmaButton,BulmaSelect,BulmaInput,BulmaModal},
+    components:{BulmaButton,BulmaSelect,BulmaInput,BulmaModal,BulmaAdminTable},
     data(){
       return  {
           user:{
@@ -61,6 +87,7 @@
             group_id:undefined
           },
           showDelete:false,
+          changePassword:false,
           passwordChanged:false,
           userItem:undefined,
           userList:[],
@@ -80,7 +107,25 @@
           }),function(error){
             ref.$toast.error(error.message);
           };
-      },loadGroupList(){
+      },
+      selectItem(value){
+        this.userItem=value
+        this.changePassword=false;
+        this.loadUser()
+      },
+      resetItem(){
+        this.userItem=undefined
+      },
+      deleteItem(value){
+        this.selectItem(value)
+        this.showDelete=true
+      },
+      changepassword(value){
+        this.userItem=value
+        this.changePassword=true
+        this.loadUser()
+      },
+      loadGroupList(){
         var ref= this;
         axios.get('/api/v1/group/',TokenStorage.getAuthentication())
           .then((result)=>{
@@ -88,9 +133,27 @@
           }),function(error){
             ref.$toast.error(error.message);
           };
-      },loadUser(){
+      }
+      ,groupName(id){
+        var groups=this.groupList.filter(x => x.id==id)
+        if(groups.length>0)
+          return groups[0].name
+        else {
+          return "..."
+        }
+      }
+      ,resetUser(){
+        this.user = {
+          username:"",
+          password:"",
+          password2:"",
+          group_id:undefined
+        }
+      }
+      ,loadUser(){
         var ref= this;
-        if(this.userItem!=undefined){
+        this.resetUser();
+        if(this.userItem!=undefined && this.userItem!=-1){
           axios.get('/api/v1/user/' + this.userItem,TokenStorage.getAuthentication())
             .then((result)=>{
               console.log("loaded user item");
@@ -100,13 +163,7 @@
               ref.$toast.error(error.message);
             };
         }else{
-          console.log("No item selected")
-          this.user = {
-            username:"",
-            password:"",
-            password2:"",
-            group_id:undefined
-          }
+          this.resetUser()
         }
       },deleteUser(){
         var ref= this;
@@ -195,7 +252,38 @@
   .cursor-progress{
     cursor:progress;
   }
-  .select, .select select{
-    width:100%;
+  .table td,.table th{
+    max-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  table thead th.is-first,table tbody td.is-first{
+    width:8em!important;
+    max-width:8em!important;
+  }
+  .add-column-enter-to, .add-column-leave {
+    opacity: 1;
+  }
+  .add-column-enter, .add-column-leave-to {
+    overflow: hidden;
+    opacity: 0;
+  }
+  .add-column-enter-active > div {
+    transition: all 0.5s;
+  }
+  .add-column-enter-active {
+    overflow: hidden;
+    transition: all 0.5s;
+  }
+  .add-column-leave-active {
+    overflow: hidden;
+    transition: all 0.5s;
+  }
+  .add-column-leave-active > div {
+    transition: all 0.5s;
+  }
+  .add-column-leave-to > div {
+    width: 0;
   }
 </style>

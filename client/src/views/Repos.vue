@@ -3,22 +3,39 @@
     <BulmaModal v-if="showDelete" title="Delete" action="Delete" @click="deleteRepo();showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete repository '{{ repoItem}}'</BulmaModal>
     <div class="container">
       <h1 class="title has-text-info"><font-awesome-icon :icon="['fab','git-square']" /> Repositories</h1>
+
+      <nav class="level">
+        <!-- Left side -->
+        <div class="level-left">
+          <p class="level-item"><BulmaButton icon="plus" label="New Repo" @click="repoItem=-1;loadRepo()"></BulmaButton></p>
+        </div>
+      </nav>
       <div class="columns">
         <div class="column">
-            <BulmaSelect :icon="['fab','git-square']" label="Select a repository" size="10" :list="repoList" valuecol="" labelcol="" @change="loadRepo()" v-model="repoItem" />
-            <BulmaButton v-if="repoItem!=undefined" icon="plus" label="New Repo" @click="repoItem=undefined;loadRepo()"></BulmaButton>
-            <BulmaButton v-if="repoItem!=undefined && repoItem!=1" type="is-danger" icon="trash-alt" label="Delete Repo" @click="showDelete=true"></BulmaButton>
+          <BulmaAdminTable
+            v-if="repoList && repoList.length>0"
+            :dataList="repoList"
+            :labels="['Name']"
+            :columns="['']"
+            identifier=""
+            :actions="[{name:'select',title:'show repository',icon:'info-circle',color:'has-text-link'},{name:'delete',title:'delete repository',icon:'times',color:'has-text-danger'}]"
+            :currentItem="repoItem"
+            @select="selectItem"
+            @delete="deleteItem"
+          />
         </div>
-        <div class="column is-three-quarters">
-          <div v-if="repoStatus || loading" class="box  is-family-monospace enable-line-break is-size-7">
-            <span v-if="loading" class="icon"><font-awesome-icon icon="spinner" spin /></span>
-            <div v-html="repoStatus"></div>
+        <transition name="add-column" appear>
+          <div class="column is-two-thirds" v-if="repoItem!==undefined && !showDelete">
+            <div v-if="repoStatus || loading" class="box  is-family-monospace enable-line-break is-size-7">
+              <span v-if="loading" class="icon"><font-awesome-icon icon="spinner" spin /></span>
+              <div v-html="repoStatus"></div>
+            </div>
+            <BulmaCheckbox v-if="!repoStatus && !loading" checktype="checkbox" v-model="repo.isAdvanced" label="Advanced" />
+            <BulmaInput v-if="!repoStatus && !loading && !repo.isAdvanced" :icon="['fab','git-square']" v-model="repo.uri" label="Repository Uri" placeholder="git@github.com:myrepo" :required="true" :hasError="$v.repo.uri.$invalid" :errors="[]" />
+            <BulmaInput v-if="!repoStatus && !loading && repo.isAdvanced" :icon="['fab','git-square']" v-model="repo.command" label="Repository Clone Command" placeholder="git clone --quite --verbose git@github.com:myrepo" :required="true" :hasError="$v.repo.command.$invalid" :errors="[]" />
+            <BulmaButton v-if="repoItem==-1 && !loading" icon="save" label="Create Repository" @click="newRepo()"></BulmaButton>
           </div>
-          <BulmaCheckbox v-if="!repoStatus && !loading" checktype="checkbox" v-model="repo.isAdvanced" label="Advanced" />
-          <BulmaInput v-if="!repoStatus && !loading && !repo.isAdvanced" :icon="['fab','git-square']" v-model="repo.uri" label="Repository Uri" placeholder="git@github.com:myrepo" :required="true" :hasError="$v.repo.uri.$invalid" :errors="[]" />
-          <BulmaInput v-if="!repoStatus && !loading && repo.isAdvanced" :icon="['fab','git-square']" v-model="repo.command" label="Repository Clone Command" placeholder="git clone --quite --verbose git@github.com:myrepo" :required="true" :hasError="$v.repo.command.$invalid" :errors="[]" />
-          <BulmaButton v-if="repoItem==undefined && !loading" icon="save" label="Create Repository" @click="newRepo()"></BulmaButton>
-        </div>
+        </transition>
       </div>
     </div>
   </section>
@@ -28,9 +45,9 @@
   import axios from 'axios'
   import Vuelidate from 'vuelidate'
   import BulmaButton from './../components/BulmaButton.vue'
-  import BulmaSelect from './../components/BulmaSelect.vue'
   import BulmaCheckbox from './../components/BulmaCheckRadio.vue'
   import BulmaInput from './../components/BulmaInput.vue'
+  import BulmaAdminTable from './../components/BulmaAdminTable.vue'
   import BulmaModal from './../components/BulmaModal.vue'
   import TokenStorage from './../lib/TokenStorage'
   import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
@@ -43,7 +60,7 @@
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean}
     },
-    components:{BulmaButton,BulmaSelect,BulmaInput,BulmaModal,BulmaCheckbox},
+    components:{BulmaButton,BulmaInput,BulmaModal,BulmaCheckbox,BulmaAdminTable},
     data(){
       return  {
           loading:false,
@@ -79,9 +96,18 @@
           }),function(error){
             ref.$toast.error(error.message);
           };
-      },loadRepo(){
+      },
+      selectItem(value){
+        this.repoItem=value
+        this.loadRepo()
+      },
+      deleteItem(value){
+        this.selectItem(value)
+        this.showDelete=true
+      },
+      loadRepo(){
         var ref= this;
-        if(this.repoItem!=undefined){
+        if(this.repoItem!=undefined && this.repoItem!=-1){
           this.loading=true
           axios.get('/api/v1/repo/?name=' + this.repoItem,TokenStorage.getAuthentication())
             .then((result)=>{
@@ -173,9 +199,6 @@
   .cursor-progress{
     cursor:progress;
   }
-  .select, .select select{
-    width:100%;
-  }
   .is-text-overflow {
       flex: 1;
       overflow: hidden;
@@ -184,5 +207,39 @@
   }
   .enable-line-break {
       white-space: pre-wrap;
+  }
+  .table td,.table th{
+    max-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  table thead th.is-first,table tbody td.is-first{
+    width:8em!important;
+    max-width:8em!important;
+  }
+  .add-column-enter-to, .add-column-leave {
+    opacity: 1;
+  }
+  .add-column-enter, .add-column-leave-to {
+    overflow: hidden;
+    opacity: 0;
+  }
+  .add-column-enter-active > div {
+    transition: all 0.5s;
+  }
+  .add-column-enter-active {
+    overflow: hidden;
+    transition: all 0.5s;
+  }
+  .add-column-leave-active {
+    overflow: hidden;
+    transition: all 0.5s;
+  }
+  .add-column-leave-active > div {
+    transition: all 0.5s;
+  }
+  .add-column-leave-to > div {
+    width: 0;
   }
 </style>

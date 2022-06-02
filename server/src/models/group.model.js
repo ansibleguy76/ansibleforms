@@ -21,7 +21,7 @@ Group.delete = function(id){
       return new Promise.reject("You cannot delete group 'admins'")
     }else{
       logger.info(`Deleting group ${id}`)
-      return mysql.do("DELETE FROM AnsibleForms.`groups` WHERE id = ? AND name<>'admins'", [id])
+      return mysql.do("DELETE FROM AnsibleForms.`groups` WHERE id = ? AND name<>'admins' AND NOT EXISTS(SELECT id FROM AnsibleForms.users u WHERE u.group_id=groups.id)", [id])
     }
 
 };

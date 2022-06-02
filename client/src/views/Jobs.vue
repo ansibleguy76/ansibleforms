@@ -98,27 +98,14 @@
           </template>
           </tbody>
         </table>
-        <nav v-if="!isLoading && parentJobs.length>perPage" class="pagination" role="pagination" aria-label="pagination">
-          <a class="pagination-previous" v-if="page != 1" @click="page--">Previous</a>
-          <a class="pagination-next" @click="page++" v-if="page < pages.length">Next page</a>
-          <ul class="pagination-list">
-            <li>
-              <a class="pagination-link" v-if="showFirstPage" :class="{'is-current':1==page}" aria-label="Goto page 1" @click="page = 1">1</a>
-            </li>
-            <li>
-              <span class="pagination-ellipsis" v-if="showFirstEllipsis">&hellip;</span>
-            </li>
-            <li v-for="pageNumber in displayedPages" :key="pageNumber" @click="page = pageNumber">
-              <a class="pagination-link" :class="{'is-current':pageNumber==page}" :aria-label="'Goto page '+pageNumber">{{pageNumber}}</a>
-            </li>
-            <li>
-              <span class="pagination-ellipsis" v-if="showLastEllipsis">&hellip;</span>
-            </li>
-            <li>
-              <a class="pagination-link" v-if="showLastPage" :class="{'is-current':page==(pages.length)}" @click="page = pages.length" :aria-label="'Goto page '+pages.length">{{pages.length}}</a>
-            </li>
-          </ul>
-        </nav>
+        <BulmaNavigation
+          v-if="!isLoading"
+          :dataList="parentJobs"
+          :perPage="10"
+          :buttonsShown="7"
+          :index="displayedJobIndex"
+          @change="setDisplayJobs"
+        />
         <div v-if="job"  class="columns">
           <div class="column">
             <h3 class="subtitle">Job output for job {{jobId}}
@@ -185,6 +172,7 @@
   import Vue from 'vue'
   import axios from 'axios'
   import BulmaModal from './../components/BulmaModal.vue'
+  import BulmaNavigation from './../components/BulmaNavigation.vue'
   import moment from 'moment'
   import TokenStorage from './../lib/TokenStorage'
   import VueJsonPretty from 'vue-json-pretty';
@@ -197,14 +185,11 @@
       isAdmin:{type:Boolean},
       profile:{type:Object}
     },
-    components:{BulmaModal,VueJsonPretty},
+    components:{BulmaModal,VueJsonPretty,BulmaNavigation},
     data(){
       return  {
         jobs : [],
-        page: 1,
-        perPage: 10,
-        buttonsShown:7,
-        pages: [],
+        displayedJobs: [],
         isLoading:false,
         job:undefined,
         jobId:undefined,
@@ -245,6 +230,9 @@
         }catch(e){
           this.$toast.error("Error copying to clipboard : \n" + e)
         }
+      },
+      setDisplayJobs(jobs){
+        this.displayedJobs=jobs
       },
       jobClass(status){
         if(status=="success"){
@@ -291,11 +279,10 @@
           axios.get(`/api/v1/job?records=${ref.lines}`,TokenStorage.getAuthentication())                               // load forms
             .then((result)=>{
               ref.jobs=result.data.data.output;
-              ref.setPages();
               ref.isLoading=false
-              if(first && ref.jobId){
-                ref.page=ref.pageByJobIndex
-              }
+              // if(first && ref.jobId){
+              //   ref.jobIndex=ref.displayedJobIndex
+              // }
             })
             .catch(function(err){
               if(err.response && err.response.status!=401){
@@ -326,20 +313,6 @@
               console.error(`Error loading job ${item.id} : ${err}`)
             })
         });
-      },
-      setPages () {
-        this.pages=[]
-        let numberOfPages = Math.ceil(this.parentJobs.length / this.perPage);
-        for (let index = 1; index <= numberOfPages; index++) {
-         this.pages.push(index);
-        }
-      },
-      paginate (jobs) {
-        let page = this.page;
-        let perPage = this.perPage;
-        let from = (page * perPage) - perPage;
-        let to = (page * perPage);
-        return  jobs.slice(from, to);
       },
       formatTime(t){
         var result = ''
@@ -578,11 +551,6 @@
           return -1
         }
       },
-      pageByJobIndex(){
-        if(this.displayedJobIndex<0)return -1
-        var x = this.displayedJobIndex/this.perPage
-        return Math.floor(x+1)
-      },
       parentJobs (){
         var ref=this
         if(this.filter){
@@ -604,38 +572,6 @@
       },
       runningJobs(){
           return this.jobs.filter(x => (x.start && moment().diff(x.start,'hours')<6) && (x.status=="running" || x.status=="aborting" || x.status=="abort"))
-      },
-      displayedJobs () {
-          return this.paginate(this.parentJobs);
-      },
-      displayedPages(){
-        var from=this.page-1 // from the first
-        if(from==0)from=1     // force on first
-        var to = this.page+this.buttonsShown
-        // for x from the last
-        if(this.page>=this.pages.length-this.buttonsShown){
-          from=this.pages.length-this.buttonsShown-1
-        }
-        // make sure the have the right amount of buttons
-        if((to-from)!=this.buttonsShown)to=this.buttonsShown+from
-        // if all can be show, show all - otherwise a subset
-        if(this.buttonsShown>=this.pages.length){
-          return this.pages
-        }else{
-          return this.pages.slice(from, to)
-        }
-      },
-      showFirstPage(){
-        return !(this.displayedPages.includes(1))
-      },
-      showLastPage(){
-        return !(this.displayedPages.includes(this.pages.length))
-      },
-      showFirstEllipsis(){
-        return (this.page>2 && this.pages.length>=2 && !this.displayedPages.includes(2))
-      },
-      showLastEllipsis(){
-        return (!this.displayedPages.includes(this.pages.length-1) && this.page<(this.pages.length-1))
       },
       subjobs(){
         if(this.job && this.job.subjobs){

@@ -1,18 +1,54 @@
 <template>
   <section v-if="isAdmin" class="section">
-    <BulmaModal v-if="showDelete" title="Delete" action="Delete" @click="deleteGroup();showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete Group '{{ group.name}}'</BulmaModal>
+    <BulmaModal v-if="showDelete && group.name" title="Delete" action="Delete" @click="deleteGroup();showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete Group '{{ group.name}}'</BulmaModal>
     <div class="container">
       <h1 class="title has-text-info"><font-awesome-icon icon="users" /> Groups</h1>
+      <nav class="level">
+        <!-- Left side -->
+        <div class="level-left">
+          <p class="level-item"><BulmaButton icon="plus" label="New Group" @click="groupItem=-1;loadGroup()"></BulmaButton></p>
+        </div>
+      </nav>
       <div class="columns">
         <div class="column">
-            <BulmaSelect icon="users" label="Select a group" size="10" :list="groupList" valuecol="id" labelcol="name" @change="loadGroup()" v-model="groupItem" />
-            <BulmaButton v-if="groupItem!=undefined" icon="plus" label="New Group" @click="groupItem=undefined;loadGroup()"></BulmaButton>
-            <BulmaButton v-if="groupItem!=undefined && groupItem!=1" type="is-danger" icon="trash-alt" label="Delete Group" @click="showDelete=true"></BulmaButton>
+          <BulmaAdminTable
+            v-if="groupList && groupList.length>0"
+            :dataList="groupList.map(x => ({...x,allowdelete:(x.id!=1 && !hasUsers(x.id))}))"
+            :labels="['Name']"
+            :columns="['name']"
+            :filters="['name']"
+            identifier="id"
+            :actions="[
+                        {name:'select',title:'show group',icon:'info-circle',color:'has-text-info'},
+                        {name:'delete',title:'delete group',icon:'times',color:'has-text-danger'}
+                    ]"
+            :currentItem="groupItem"
+            @select="selectItem"
+            @reset="resetItem"
+            @delete="deleteItem"
+          />
         </div>
-        <div class="column is-three-quarters">
-          <BulmaInput icon="users" v-model="group.name" label="Groupname" :readonly="groupItem!==undefined" placeholder="Groupname" :required="true" :hasError="$v.group.name.$invalid" :errors="[]" />
-          <BulmaButton v-if="groupItem==undefined" icon="save" label="Create Group" @click="newGroup()"></BulmaButton>
-        </div>
+        <transition name="add-column" appear>
+          <div class="column" v-if="groupItem==-1 && !showDelete">
+              <BulmaInput icon="users" v-model="group.name" label="Name" placeholder="Name" :required="true" :hasError="$v.group.name.$invalid" :errors="[]" />
+              <BulmaButton icon="save" label="Create Group" @click="newGroup()"></BulmaButton>
+          </div>
+          <div class="column" v-if="groupItem>0 && !showDelete">
+            <table class="table is-bordered is-fullwidth" v-if="groupUsers.length>0">
+              <thead class="has-background-grey">
+                <tr>
+                  <th class="has-text-white">Users in group '{{group.name}}'</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="user in groupUsers" :key="'user'+user.username">
+                  <td>{{ user.username }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="notification" v-else>No users in group '{{group.name}}'</p>
+          </div>
+        </transition>
       </div>
     </div>
   </section>
@@ -22,8 +58,8 @@
   import axios from 'axios'
   import Vuelidate from 'vuelidate'
   import BulmaButton from './../components/BulmaButton.vue'
-  import BulmaSelect from './../components/BulmaSelect.vue'
   import BulmaInput from './../components/BulmaInput.vue'
+  import BulmaAdminTable from './../components/BulmaAdminTable.vue'
   import BulmaModal from './../components/BulmaModal.vue'
   import TokenStorage from './../lib/TokenStorage'
   import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
@@ -35,7 +71,7 @@
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean}
     },
-    components:{BulmaButton,BulmaSelect,BulmaInput,BulmaModal},
+    components:{BulmaButton,BulmaInput,BulmaModal,BulmaAdminTable},
     data(){
       return  {
           group:{
@@ -44,6 +80,7 @@
           showDelete:false,
           groupItem:undefined,
           groupList:[],
+          userList:[],
           alert:{
             timeout:undefined,
             message:"",
@@ -51,27 +88,59 @@
           }
         }
     },
+    computed:{
+      groupUsers(){
+        return this.userList.filter(x => x.group_id == this.groupItem)
+      }
+    },
     methods:{
       loadAll(){
         this.loadGroupList();
+        this.loadUserList();
         this.loadGroup();
-      },loadGroupList(){
+      },
+      hasUsers(groupId){
+        return (this.userList.filter(x => x.group_id == groupId).length>0)
+      },
+      selectItem(value){
+        this.groupItem=value
+        this.loadGroup()
+      },
+      resetItem(){
+        this.groupItem=undefined
+      },
+      deleteItem(value){
+        this.selectItem(value)
+        this.showDelete=true
+      },
+      loadGroupList(){
         var ref= this;
+        this.groupList=[];
         axios.get('/api/v1/group/',TokenStorage.getAuthentication())
           .then((result)=>{
             ref.groupList=result.data.data.output;
           }),function(error){
             ref.$toast.error(error.message);
           };
-      },loadGroup(){
+      },
+      loadUserList(){
         var ref= this;
-        if(this.groupItem!=undefined){
+        this.userList=[];
+        axios.get('/api/v1/user/',TokenStorage.getAuthentication())
+          .then((result)=>{
+            ref.userList=result.data.data.output;
+          }),function(error){
+            ref.$toast.error(error.message);
+          };
+      },
+      loadGroup(){
+        var ref= this;
+        if(this.groupItem!=undefined && this.groupItem!=-1){
 
           axios.get('/api/v1/group/' + this.groupItem,TokenStorage.getAuthentication())
             .then((result)=>{
               console.log("loaded group item");
               ref.group=result.data.data.output
-              ref.group.password=""
             }),function(error){
               ref.$toast.error(error.message);
             };
@@ -81,7 +150,8 @@
             name:""
           }
         }
-      },deleteGroup(){
+      },
+      deleteGroup(){
         var ref= this;
         axios.delete('/api/v1/group/'+this.groupItem,TokenStorage.getAuthentication())
           .then((result)=>{
@@ -95,7 +165,8 @@
           }),function(error){
             ref.$toast.error(error.message);
           };
-      },newGroup(){
+      },
+      newGroup(){
         var ref= this;
         if (!this.$v.group.$invalid) {
           axios.post('/api/v1/group/',this.group,TokenStorage.getAuthentication())
@@ -111,7 +182,8 @@
               ref.$toast.error(error.message);
             };
         }
-      },showAlert(type,message){
+      },
+      showAlert(type,message){
           var ref=this;
           this.alert.message=message;
           if(type){
@@ -140,7 +212,38 @@
   .cursor-progress{
     cursor:progress;
   }
-  .select, .select select{
-    width:100%;
+  .table td,.table th{
+    max-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  table thead th.is-first,table tbody td.is-first{
+    width:6em!important;
+    max-width:6em!important;
+  }
+  .add-column-enter-to, .add-column-leave {
+    opacity: 1;
+  }
+  .add-column-enter, .add-column-leave-to {
+    overflow: hidden;
+    opacity: 0;
+  }
+  .add-column-enter-active > div {
+    transition: all 0.5s;
+  }
+  .add-column-enter-active {
+    overflow: hidden;
+    transition: all 0.5s;
+  }
+  .add-column-leave-active {
+    overflow: hidden;
+    transition: all 0.5s;
+  }
+  .add-column-leave-active > div {
+    transition: all 0.5s;
+  }
+  .add-column-leave-to > div {
+    width: 0;
   }
 </style>

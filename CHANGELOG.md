@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.3] - 2022-06-02
+
+### Changed
+
+-   Improved gui management (table format with paging and filtering)
+-   Updated all packages and no-cache build
+
+### Fixed
+
+-   You cannot remove a group with users
+
 ## [3.0.2] - 2022-04-25
 
 ### Added
@@ -263,7 +274,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.2...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.3...HEAD
+
+[3.0.3]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.2...3.0.3
 
 [3.0.2]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.1...3.0.2
 
