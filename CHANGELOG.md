@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
--   Improved gui management (table format)
+-   Improved gui management (table format with paging and filtering)
+-   Updated all libraries and no-cache build
 
 ### Fixed
 
