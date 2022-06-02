@@ -16,6 +16,7 @@
             :dataList="userList.map(x => ({...x,allowselect:(x.id!=1),allowdelete:(x.id!=1),group:groupName(x.group_id)}))"
             :labels="['Name','Group']"
             :columns="['username','group']"
+            :filters="['username','group']"
             identifier="id"
             :actions="[
                         {name:'select',title:'edit user',icon:'pencil-alt',color:'has-text-warning'},
@@ -24,6 +25,7 @@
                     ]"
             :currentItem="userItem"
             @select="selectItem"
+            @reset="resetItem"
             @delete="deleteItem"
             @changepassword="changepassword"
           />
@@ -110,6 +112,9 @@
         this.userItem=value
         this.changePassword=false;
         this.loadUser()
+      },
+      resetItem(){
+        this.userItem=undefined
       },
       deleteItem(value){
         this.selectItem(value)

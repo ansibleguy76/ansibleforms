@@ -51,7 +51,13 @@
       change(){
         this.$emit('change',this.displayedItems)
       }
-    },computed:{
+    },
+    watch: {
+      displayedItems() {
+        this.$emit('change',this.displayedItems)
+      }
+    },
+    computed:{
       displayedItems () {
           return this.paginate(this.dataList);
       },

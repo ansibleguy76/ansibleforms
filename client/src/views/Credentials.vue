@@ -16,10 +16,12 @@
             :dataList="credentialList"
             :labels="['Name','User','Host']"
             :columns="['name','user','host']"
+            :filters="['name','user']"
             identifier="id"
             :actions="[{name:'select',title:'edit credential',icon:'pencil-alt',color:'has-text-warning'},{name:'delete',title:'delete credential',icon:'times',color:'has-text-danger'}]"
             :currentItem="credentialItem"
             @select="selectItem"
+            @reset="resetItem"
             @delete="deleteItem"
           />
         </div>
@@ -95,6 +97,9 @@
       selectItem(value){
         this.credentialItem=value
         this.loadCredential()
+      },
+      resetItem(){
+        this.credentialItem=undefined
       },
       deleteItem(value){
         this.selectItem(value)

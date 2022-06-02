@@ -16,6 +16,7 @@
             :dataList="groupList.map(x => ({...x,allowdelete:(x.id!=1 && !hasUsers(x.id))}))"
             :labels="['Name']"
             :columns="['name']"
+            :filters="['name']"
             identifier="id"
             :actions="[
                         {name:'select',title:'show group',icon:'info-circle',color:'has-text-info'},
@@ -23,6 +24,7 @@
                     ]"
             :currentItem="groupItem"
             @select="selectItem"
+            @reset="resetItem"
             @delete="deleteItem"
           />
         </div>
@@ -103,6 +105,9 @@
       selectItem(value){
         this.groupItem=value
         this.loadGroup()
+      },
+      resetItem(){
+        this.groupItem=undefined
       },
       deleteItem(value){
         this.selectItem(value)
