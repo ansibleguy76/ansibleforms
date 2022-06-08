@@ -16,7 +16,7 @@
             :dataList="credentialList"
             :labels="['Name','User','Host']"
             :columns="['name','user','host']"
-            :filters="['name','user']"
+            :filters="['name','user','host']"
             identifier="id"
             :actions="[{name:'select',title:'edit credential',icon:'pencil-alt',color:'has-text-warning'},{name:'delete',title:'delete credential',icon:'times',color:'has-text-danger'}]"
             :currentItem="credentialItem"
