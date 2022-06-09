@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.4] - 2022-06-09
+
+### Fixed
+
+-   Forgot fs-extra in package
+
+### Added
+
+-   Added 'ansibleforms_user' as object to extravars
+
 ## [3.0.3] - 2022-06-02
 
 ### Changed
@@ -274,7 +284,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.3...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.4...HEAD
+
+[3.0.4]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.3...3.0.4
 
 [3.0.3]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.2...3.0.3
 

@@ -112,8 +112,26 @@ User.checkToken = function (username,username_type,refresh_token) {
       }
     })
 };
-User.getRoles = function(user,groupObj){
+User.getRoles = function(groups,user){
   var roles = ["public"]
+  var forms=undefined
+  try{
+    forms = Form.load()
+  }catch(e){
+    logger.error(e)
+    return roles
+  }
+  groups.forEach(function(group){
+      // add all the roles that match the group
+      forms.roles.forEach(function(role){
+        if(role.groups.includes(group)){
+          roles.push(role.name)
+        }
+      })
+  })
+  return roles
+}
+User.getGroups = function(user,groupObj){
   var groupMatch=""
   var group=""
   var groups = []
@@ -122,44 +140,36 @@ User.getRoles = function(user,groupObj){
     forms = Form.load()
   }catch(e){
     logger.error(e)
-    return roles
+    return groups
   }
   // ldap type
   if(user.type=="ldap"){
     if(groupObj.memberOf){
       // get the memberOf field, force to array
-      groups = [].concat(groupObj.memberOf)
+      var ldapgroups = [].concat(groupObj.memberOf)
       // loop ldap groups
-      groups.forEach(function(v,i,a){
+      ldapgroups.forEach(function(v,i,a){
         // grab groupname part
         var groupMatch=v.match("^[cCnN]{2}=([^,]*)")
         if(groupMatch.length>0){
           // prefix with ldap
           group="ldap/" + groupMatch[1]
           // add all the roles that match the group
-          forms.roles.forEach(function(v,i,a){
-            if(v.groups.includes(group)){
-              roles.push(v.name)
-            }
-          })
+          groups.push(group)
         }
       })
     }
-    return roles
+    return groups
   }else if(user.type="local"){
-    groups = groupObj.split(",")
-    groups.forEach(function(v,i,a){
+    var localgroups = groupObj.split(",")
+    localgroups.forEach(function(v,i,a){
       group='local/' + v
       // add all the roles that match the group
-      forms.roles.forEach(function(v,i,a){
-        if(v.groups.includes(group)){
-          roles.push(v.name)
-        }
-      })
+      groups.push(group)
     })
-    return roles
+    return groups
   }else{
-    return roles
+    return groups
   }
 }
 User.checkLdap = function(username,password){

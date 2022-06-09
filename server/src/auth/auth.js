@@ -29,7 +29,8 @@ passport.use(
                   logger.info(JSON.stringify(result))
                   user.username = result.sAMAccountName
                   user.type = 'ldap'
-                  user.roles = User.getRoles(user,result)
+                  user.groups = User.getGroups(user,result)
+                  user.roles = User.getRoles(user.groups,user)
                   logger.info("ldap login is ok => " + user.username)
                   return user
                 })
@@ -39,7 +40,8 @@ passport.use(
             user.username = result.user.username
             user.id = result.user.id
             user.type = 'local'
-            user.roles = User.getRoles(user,result.user.groups)
+            user.groups = User.getGroups(user,result.user.groups)
+            user.roles = User.getRoles(user.groups,user)
             logger.info("local login is ok => " + user.username)
             return user
           })

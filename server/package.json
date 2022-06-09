@@ -1,6 +1,6 @@
 {
   "name": "ansible_forms",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "repository": {
     "type": "git",
     "url": "git://github.com/ansibleguy76/ansibleforms.git"
@@ -41,6 +41,7 @@
     "mssql":"~8.1.2",
     "mongodb":"~4.6.0",
     "pg":"~8.7.3",
+    "fs-extra":"~10.1.0",
     "node-cache":"~5.1.2",
     "ldap-authentication": "~2.2.9",
     "ldapjs": "~2.3.2",
