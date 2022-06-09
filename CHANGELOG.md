@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Forgot fs-extra in package
 
+### Added
+
+-   Added 'ansibleforms_user' as object to extravars
+
 ## [3.0.3] - 2022-06-02
 
 ### Changed
