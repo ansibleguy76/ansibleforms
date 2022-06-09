@@ -98,6 +98,7 @@ exports.launch = async function(req, res) {
         var extravars = req.body.extravars
         var creds = req.body.credentials
         var user = req.user.user
+        extravars.ansibleforms_user = user
         Job.launch(form,null,user,creds,extravars,null,function(job){
           res.json(new RestResult("success","succesfully launched form",job,""))
         })
