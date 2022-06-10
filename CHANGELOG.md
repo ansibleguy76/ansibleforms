@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-   Add object-like default value for dropdowns
+
 ## [3.0.4] - 2022-06-09
 
 ### Fixed
