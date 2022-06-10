@@ -170,6 +170,16 @@
       }
     },
     methods:{
+      objectEqual(object1,object2){
+        const keys1 = Object.keys(object1);
+        const keys2 = Object.keys(object2);
+        for (let key of keys1) {
+          if (object1[key] !== object2[key]) {
+            return false;
+          }
+        }
+        return true;
+      },
       highlightFilter(v,label=undefined){
         var s=v+""
         var cols=[]
@@ -305,17 +315,46 @@
               this.select(i)
             })
           }else if(this.defaultValue!="__none__" && this.defaultValue!=undefined){ // if a regular default is set, we select it
-            this.values.forEach((item,i) => {
+            var obj
+            var defaulttype
+            try{
+              obj = JSON.parse(this.defaultValue)
+              if(typeof obj == "object"){
+                defaulttype="object"
+              }
+            }catch(e){
+              // bad default value
+            }
+            if(defaulttype=="object"){
+              // we search for the value by property
+              if(obj){
+                // loop all values
+                this.values.forEach((item,i) => {
+                  try{
+                    if(this.objectEqual(obj,item)){
+                        this.select(i)
+                    }
+                  }catch(e){
+                    console.log("Bad defaultvalue : "  + e)
+                  }
+                })
+              }
 
-                if(item && ref.defaultValue==(item[ref.valueLabel]||item)){
-                  this.select(i)
-                }
-                if(ref.multiple && Array.isArray(ref.defaultValue)){
-                  if(item && ref.default.includes(item[ref.valueLabel]||item||false)){
+            }else{
+              // we search for the value by string
+              this.values.forEach((item,i) => {
+
+                  if(item && ref.defaultValue==(item[ref.valueLabel]||item)){
                     this.select(i)
                   }
-                }
-            })
+                  if(ref.multiple && Array.isArray(ref.defaultValue)){
+                    if(item && ref.default.includes(item[ref.valueLabel]||item||false)){
+                      this.select(i)
+                    }
+                  }
+              })
+            }
+
           }else{
             this.recalc()
           }
