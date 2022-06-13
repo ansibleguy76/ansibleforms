@@ -70,6 +70,9 @@ Settings.maildo = function(config,to,subject,message){
       auth: {
         user: config.mail_username,
         pass: config.mail_password
+      },
+      tls: {
+          rejectUnauthorized: false
       }
     }
   }else{
@@ -77,7 +80,10 @@ Settings.maildo = function(config,to,subject,message){
       host: config.mail_server,
       port: config.mail_port,
       secure: !!config.mail_secure
-    }
+    },
+    tls: {
+        rejectUnauthorized: false
+    }         
   }
   var message = {
     from: config.mail_from,

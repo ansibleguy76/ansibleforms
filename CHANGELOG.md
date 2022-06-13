@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Add object-like default value for dropdowns
 
+### Fixed
+
+-   Allow selfsigned certificates in mailserver
+
 ## [3.0.4] - 2022-06-09
 
 ### Fixed
