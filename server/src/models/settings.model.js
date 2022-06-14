@@ -79,11 +79,11 @@ Settings.maildo = function(config,to,subject,message){
     mailConfig = {
       host: config.mail_server,
       port: config.mail_port,
-      secure: !!config.mail_secure
-    },
-    tls: {
-        rejectUnauthorized: false
-    }         
+      secure: !!config.mail_secure,
+      tls:{
+          rejectUnauthorized: false
+      }          
+    }
   }
   var message = {
     from: config.mail_from,
