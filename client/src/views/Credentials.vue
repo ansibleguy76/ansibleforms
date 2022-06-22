@@ -10,9 +10,8 @@
         </div>
       </nav>
       <div class="columns">
-        <div class="column">
+        <div class="column" v-if="credentialList && credentialList.length>0">
           <BulmaAdminTable
-            v-if="credentialList && credentialList.length>0"
             :dataList="credentialList"
             :labels="['Name','User','Host']"
             :columns="['name','user','host']"

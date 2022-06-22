@@ -11,9 +11,8 @@
         </div>
       </nav>
       <div class="columns">
-        <div class="column">
+        <div class="column" v-if="repoList && repoList.length>0">
           <BulmaAdminTable
-            v-if="repoList && repoList.length>0"
             :dataList="repoList"
             :labels="['Name']"
             :columns="['']"
