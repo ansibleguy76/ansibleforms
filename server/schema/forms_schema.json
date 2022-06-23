@@ -149,6 +149,27 @@
             "type": "string",
             "pattern": "^has-background-.+"
           },
+          "notifications":{
+            "type": "object",
+            "properties": {
+              "status": {
+                "enum": ["warning","failed","success","aborted","any"]
+              },
+              "recipients": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "default": "",
+                  "pattern": "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+                }
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "recipients",
+              "status"
+            ]
+          },
           "categories": {
             "type": "array",
             "default": ["Default"],
@@ -218,6 +239,27 @@
                 "diff": {"type": "boolean"},
                 "continue": {"type": "boolean"},
                 "always": {"type": "boolean"},
+                "notifications":{
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "enum": ["warning","failed","success","aborted","any"]
+                    },
+                    "recipients": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "default": "",
+                        "pattern": "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+                      }
+                    }
+                  },
+                  "additionalProperties": false,
+                  "required": [
+                    "recipients",
+                    "status"
+                  ]
+                },
                 "approval": {
                   "$id": "/approval",
                   "type": "object",
