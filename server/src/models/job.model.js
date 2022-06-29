@@ -108,7 +108,8 @@ var Job=function(job){
       this.job_type = job.job_type;
       this.start = moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')
       this.extravars = job.extravars;
-      this.credentials = job.credentials
+      this.credentials = job.credentials;
+      this.notifications = job.notifications;
     }
     if(job.step && job.step!=""){ // allow single step update
       this.step = job.step
@@ -137,7 +138,11 @@ Job.endJobStatus = (jobid,counter,stream,status,message,next) => {
   Job.createOutput({output:message,output_type:stream,job_id:jobid,order:++counter})
     .then(()=>{
       Job.update({status:status,end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid)
+        .then(()=>{
+           Job.sendStatusNotification(jobid)
+        })
         .catch((error)=>logger.error(error))
+
       if(next)next(jobid,counter)
     })
     .catch((error)=>{logger.error(error)})
@@ -258,6 +263,7 @@ Job.launch = function(form,formObj,user,creds,extravars,parentId=null,next) {
   }
   // console.log(formObj)
   // we have form and we have access
+  var notifications=formObj.notifications || {}
   var jobtype=formObj.type
   var target=formObj.name
   if(!target){
@@ -266,7 +272,7 @@ Job.launch = function(form,formObj,user,creds,extravars,parentId=null,next) {
   // create a new job in the database
   // if reuseId is passed, we don't create a new job and continue the existing one (for approve)
   logger.notice(`Launching form ${form}`)
-  return Job.create(new Job({form:form,target:target,user:user.username,user_type:user.type,status:"running",job_type:jobtype,parent_id:parentId,extravars:JSON.stringify(extravars),credentials:JSON.stringify(creds)}))
+  return Job.create(new Job({form:form,target:target,user:user.username,user_type:user.type,status:"running",job_type:jobtype,parent_id:parentId,extravars:JSON.stringify(extravars),credentials:JSON.stringify(creds),notifications:JSON.stringify(notifications)}))
     .then(async (jobid)=>{
 
       logger.debug(`Job id ${jobid} is created`)
@@ -321,7 +327,9 @@ Job.launch = function(form,formObj,user,creds,extravars,parentId=null,next) {
           credentials,
           jobid,
           null,
-          (parentId)?null:formObj.approval // if multistep: no individual approvals checks
+          (parentId)?null:formObj.approval, // if multistep: no individual approvals checks,
+          null,
+          notifications
         )
       }
       if(jobtype=="git"){
@@ -545,6 +553,65 @@ Job.sendApprovalNotification = function(approval,extravars,jobid){
       return Settings.mailsend(approval.notifications.join(","),subject,message)
     })
     .then((messageid)=>{logger.notice("Approval mail sent to " + approval.notifications.join(",") + " with id " + messageid)})
+    .catch((err)=>{logger.error(err.message)})
+}
+Job.sendStatusNotification = function(jobid){
+  logger.notice(`Sending status mail for jobid ${jobid}`)
+  var user={
+    roles:["admin"]
+  }
+
+  logger.notice(`Finding jobid ${jobid}`)
+  Job.findById(user,jobid,false,true)  // first get job
+    .then((j)=>{  // if jobs
+      if(!j.length==1){
+        logger.error(`No job found with jobid ${jobid}`)
+        return false
+      }
+      var job=j[0]
+      var notifications=JSON.parse(job.notifications) // get notifications if any
+      if(!notifications.recipients){
+        logger.notice("No notifications set")
+        return false
+      }else if(!notifications.on?.includes(job.status) && !notifications.on?.includes("any")){
+        logger.notice(`Skipping notification for status ${job.status}`)
+        return false
+      }else{
+        // we have notifications, correct status => let's send the mail
+        return Settings.find()
+          .then((config)=>{
+            return config.url?.replace(/\/$/g,'') // remove trailing slash if present
+          })
+          .then((url)=>{
+            if(!url){
+              logger.warn(`Host URL is not set, no status mail can be sent. Go to 'settings' to correct this.`)
+              return false
+            }
+            var subject = `AnsibleForms '${job.form}' [${job.job_type}] (${jobid}) - ${job.status} `
+            var buffer = fs.readFileSync(`${__dirname}/../templates/jobstatus.html`)
+            var message = buffer.toString()
+            var color = "#158cba"
+            var color2 = "#ffa73b"
+            var logo = `${url}/assets/img/logo.png`
+            message = message.replace("${message}",job.output.replaceAll("\r\n","<br>"))
+                            .replaceAll("${url}",url)
+                            .replaceAll("${jobid}",jobid)
+                            .replaceAll("${title}",subject)
+                            .replaceAll("${logo}",logo)
+                            .replaceAll("${color}",color)
+                            .replaceAll("${color2}",color2)
+            return Settings.mailsend(notifications.recipients.join(","),subject,message)
+          })
+          .catch((err)=>{logger.error(err.message)})
+      }
+    })
+    .then((messageid)=>{
+      if(!messageid){
+        logger.notice("No status mail sent")
+      }else{
+        logger.notice("Status mail sent with id " + messageid)}
+      }
+    )
     .catch((err)=>{logger.error(err.message)})
 }
 Job.reject = function(user,id){

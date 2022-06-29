@@ -152,8 +152,12 @@
           "notifications":{
             "type": "object",
             "properties": {
-              "status": {
-                "enum": ["warning","failed","success","aborted","any"]
+              "on": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "default": ""
+                }
               },
               "recipients": {
                 "type": "array",
@@ -167,7 +171,7 @@
             "additionalProperties": false,
             "required": [
               "recipients",
-              "status"
+              "on"
             ]
           },
           "categories": {
@@ -242,8 +246,12 @@
                 "notifications":{
                   "type": "object",
                   "properties": {
-                    "status": {
-                      "enum": ["warning","failed","success","aborted","any"]
+                    "on": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "default": ""
+                      }
                     },
                     "recipients": {
                       "type": "array",
@@ -257,7 +265,7 @@
                   "additionalProperties": false,
                   "required": [
                     "recipients",
-                    "status"
+                    "on"
                   ]
                 },
                 "approval": {
