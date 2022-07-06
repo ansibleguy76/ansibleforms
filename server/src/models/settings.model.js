@@ -51,6 +51,7 @@ Settings.mailcheck = function(config,to){
       logger.error("Failed to decrypt mail password")
     }
   }
+  logger.info("Sending testmail")
   return Settings.maildo(config,to,subject,message)
 }
 Settings.mailsend = function(to,subject,message){
@@ -70,16 +71,22 @@ Settings.maildo = function(config,to,subject,message){
       auth: {
         user: config.mail_username,
         pass: config.mail_password
+      },
+      tls: {
+          rejectUnauthorized: false
       }
     }
   }else{
     mailConfig = {
       host: config.mail_server,
       port: config.mail_port,
-      secure: !!config.mail_secure
+      secure: !!config.mail_secure,
+      tls:{
+          rejectUnauthorized: false
+      }
     }
   }
-  var message = {
+  var mailmessage = {
     from: config.mail_from,
     to: to,
     subject: subject,
@@ -88,7 +95,7 @@ Settings.maildo = function(config,to,subject,message){
   // console.log(mailConfig)
   // console.log(message)
   let transporter = nodemailer.createTransport(mailConfig);
-  return transporter.sendMail(message)
+  return transporter.sendMail(mailmessage)
     .then((info)=>{
       if(info.messageId){
         return info.messageId

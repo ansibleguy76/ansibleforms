@@ -149,6 +149,31 @@
             "type": "string",
             "pattern": "^has-background-.+"
           },
+          "notifications":{
+            "type": "object",
+            "properties": {
+              "on": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "default": ""
+                }
+              },
+              "recipients": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "default": "",
+                  "pattern": "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+                }
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "recipients",
+              "on"
+            ]
+          },
           "categories": {
             "type": "array",
             "default": ["Default"],
@@ -218,6 +243,31 @@
                 "diff": {"type": "boolean"},
                 "continue": {"type": "boolean"},
                 "always": {"type": "boolean"},
+                "notifications":{
+                  "type": "object",
+                  "properties": {
+                    "on": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "default": ""
+                      }
+                    },
+                    "recipients": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "default": "",
+                        "pattern": "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+                      }
+                    }
+                  },
+                  "additionalProperties": false,
+                  "required": [
+                    "recipients",
+                    "on"
+                  ]
+                },
                 "approval": {
                   "$id": "/approval",
                   "type": "object",

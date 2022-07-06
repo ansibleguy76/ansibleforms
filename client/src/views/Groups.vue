@@ -10,9 +10,8 @@
         </div>
       </nav>
       <div class="columns">
-        <div class="column">
+        <div class="column" v-if="groupList && groupList.length>0">
           <BulmaAdminTable
-            v-if="groupList && groupList.length>0"
             :dataList="groupList.map(x => ({...x,allowdelete:(x.id!=1 && !hasUsers(x.id))}))"
             :labels="['Name']"
             :columns="['name']"

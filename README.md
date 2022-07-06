@@ -1,5 +1,5 @@
 ![]( wiki/screenshot_forms.jpg)
-[More screenshots](https://github.com/ansibleguy76/ansibleforms/wiki/GUI)
+[More screenshots](https://github.com/ansibleguy76/ansibleforms/wiki/2.-GUI)
 # Intro
 Ansible forms is a lightweight node.js webapplication to generate userfriendly and pretty forms to kickoff ansible playbooks or awx (ansible tower) templates.
 
@@ -23,6 +23,9 @@ Ansible forms is a lightweight node.js webapplication to generate userfriendly a
 - Json web tokens authorization (jwt) (access & refresh)
 - Environment variables
 - Ldap & local authentication
+- Job History & Log
+- Approval points
+- Multistep forms
 
 # How to install and run in docker
 ## Use docker compose (recommended)

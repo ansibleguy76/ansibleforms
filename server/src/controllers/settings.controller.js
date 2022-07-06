@@ -10,7 +10,7 @@ exports.find = function(req, res) {
 };
 exports.mailcheck = function(req, res) {
   Settings.mailcheck(new Settings(req.body),req.body.to)
-    .then((messageid)=>{res.json(new RestResult("success",`Mail sent with id ${message}`))})
+    .then((messageid)=>{res.json(new RestResult("success",`Mail sent with id ${messageid}`))})
     .catch((err)=>{res.json(new RestResult("error","Mail check failed",null,err.message))})
 };
 exports.update = function(req, res) {

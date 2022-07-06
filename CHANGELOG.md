@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.5] - 2022-07-06
+
+### Added
+
+-   Add object-like default value for dropdowns
+-   Add email notifications
+-   Allow custom git user/email per repo
+
+### Fixed
+
+-   Allow selfsigned certificates in mailserver
+-   Auto qdd repo hosts to known_hosts + add gui for manually
+
 ## [3.0.4] - 2022-06-09
 
 ### Fixed
@@ -284,7 +297,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.4...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.5...HEAD
+
+[3.0.5]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.4...3.0.5
 
 [3.0.4]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.3...3.0.4
 
