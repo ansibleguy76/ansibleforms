@@ -2613,6 +2613,14 @@
                 "uri": {
                   "type": "string",
                   "example": "git@github.com:myrepo"
+                },
+                "username": {
+                  "type": "string",
+                  "example": "AnsibleForms"
+                },
+                "email": {
+                  "type": "string",
+                  "example": "info@ansibleforms.com"
                 }
               }
             }

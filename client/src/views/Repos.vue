@@ -7,7 +7,8 @@
       <nav class="level">
         <!-- Left side -->
         <div class="level-left">
-          <p class="level-item"><BulmaButton icon="plus" label="New Repo" @click="repoItem=-1;loadRepo()"></BulmaButton></p>
+          <p class="level-item"><BulmaButton icon="plus" label="New Repo" @click="reset();loadRepo()"></BulmaButton></p>
+          <p class="level-item"><BulmaButton icon="server" label="Add known hosts" @click="reset();known_hosts=1"></BulmaButton></p>
         </div>
       </nav>
       <div class="columns">
@@ -24,7 +25,7 @@
           />
         </div>
         <transition name="add-column" appear>
-          <div class="column is-two-thirds" v-if="repoItem!==undefined && !showDelete">
+          <div class="column is-two-thirds" v-if="repoItem!==undefined && known_hosts!==1 && !showDelete">
             <div v-if="repoStatus || loading" class="box  is-family-monospace enable-line-break is-size-7">
               <span v-if="loading" class="icon"><font-awesome-icon icon="spinner" spin /></span>
               <div v-html="repoStatus"></div>
@@ -32,7 +33,15 @@
             <BulmaCheckbox v-if="!repoStatus && !loading" checktype="checkbox" v-model="repo.isAdvanced" label="Advanced" />
             <BulmaInput v-if="!repoStatus && !loading && !repo.isAdvanced" :icon="['fab','git-square']" v-model="repo.uri" label="Repository Uri" placeholder="git@github.com:myrepo" :required="true" :hasError="$v.repo.uri.$invalid" :errors="[]" />
             <BulmaInput v-if="!repoStatus && !loading && repo.isAdvanced" :icon="['fab','git-square']" v-model="repo.command" label="Repository Clone Command" placeholder="git clone --quite --verbose git@github.com:myrepo" :required="true" :hasError="$v.repo.command.$invalid" :errors="[]" />
+            <BulmaInput v-if="!repoStatus && !loading" icon="user" v-model="repo.username" label="Repository Username" placeholder="Ansibleforms" :required="true" :hasError="$v.repo.username.$invalid" :errors="[]" />
+            <BulmaInput v-if="!repoStatus && !loading" icon="envelope" v-model="repo.email" label="Repository Email" placeholder="info@ansibleforms.com" :required="true" :hasError="$v.repo.email.$invalid" :errors="[]" />
             <BulmaButton v-if="repoItem==-1 && !loading" icon="save" label="Create Repository" @click="newRepo()"></BulmaButton>
+          </div>
+        </transition>
+        <transition name="add-column" appear>
+          <div class="column is-two-thirds" v-if="known_hosts==1 && !showDelete">
+            <BulmaInput icon="server" v-model="hosts" label="Known hosts" placeholder="github.com,bitbucket.com" :required="true" :hasError="$v.hosts.$invalid" :errors="[]" />
+            <BulmaButton v-if="known_hosts==1 && !loading" icon="server" label="Add to known hosts" @click="addKnownHosts()"></BulmaButton>
           </div>
         </transition>
       </div>
@@ -66,10 +75,14 @@
           repo:{
             uri:"",
             isAdvanced:false,
-            command:""
+            command:"",
+            username:"Ansibleforms",
+            email:"info@ansibleforms.com"
           },
           showDelete:false,
           repoItem:undefined,
+          known_hosts:undefined,
+          hosts:"",
           repoList:[],
           alert:{
             timeout:undefined,
@@ -95,6 +108,14 @@
           }),function(error){
             ref.$toast.error(error.message);
           };
+      },
+      reset(){
+        this.repoItem=-1
+        this.known_hosts=-1
+        this.repo.uri=""
+        this.repo.command=""
+        this.repo.username="Ansibleforms"
+        this.repo.email="info@ansibleforms.com"
       },
       selectItem(value){
         this.repoItem=value
@@ -123,9 +144,7 @@
             };
         }else{
           console.log("No item selected")
-          this.repo = {
-            name:""
-          }
+          this.reset()
           this.repoStatus=undefined
         }
       },deleteRepo(){
@@ -152,7 +171,7 @@
               if(result.data.status=="error"){
                 ref.$toast.error(result.data.message + ", " + result.data.data.error);
               }else{
-                ref.repo.uri=""
+                ref.reset()
                 ref.$toast.success("Created repository");
                 ref.loadAll();
               }
@@ -161,7 +180,29 @@
               ref.$toast.error(error.message);
             };
         }
-      },showAlert(type,message){
+      },
+      addKnownHosts(){
+        var ref= this;
+        if (!this.$v.hosts.$invalid) {
+          this.loading=true
+          axios.post('/api/v1/repo/known_hosts',{hosts:this.hosts},TokenStorage.getAuthentication())
+            .then((result)=>{
+              ref.loading=false
+              if(result.data.status=="error"){
+                ref.$toast.error(result.data.message + ", " + result.data.data.error);
+              }else{
+                ref.hosts=""
+                ref.reset()
+                ref.$toast.success("Added keys of hosts\n"+result.data.data.output.replaceAll('\n\n','\n'));
+                ref.loadAll();
+              }
+            }),function(error){
+              ref.loading=false
+              ref.$toast.error(error.message);
+            };
+        }
+      }
+      ,showAlert(type,message){
           var ref=this;
           this.alert.message=message;
           if(type){
@@ -185,8 +226,17 @@
             return repo.isAdvanced
           }),
           gitclone
-
+        },
+        email:{
+          required,
+          email
+        },
+        username:{
+          required
         }
+      },
+      hosts:{
+        required
       }
     },
     mounted() { // when the Vue app is booted up, this is run automatically.

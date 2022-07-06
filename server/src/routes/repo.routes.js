@@ -7,6 +7,8 @@ router.get('/', repoController.find);
 // create repo
 router.post('/', repoController.create);
 // create repo
+router.post('/known_hosts/', repoController.addKnownHosts);
+// create repo
 router.delete('/', repoController.delete);
 
 module.exports = router

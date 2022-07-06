@@ -20,9 +20,19 @@ exports.create = function(req, res) {
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
         res.status(400).send({ error:true, message: 'Please provide all required fields' });
     }else{
-        Repo.create(req.body.uri,req.body.command)
+        Repo.create(req.body.uri,req.body.command,req.body.username,req.body.email)
           .then((output)=>{res.json(new RestResult("success","repository created",output,""))})
           .catch((err)=>{res.json(new RestResult("error","failed to create repository",null,err))})
+    }
+};
+exports.addKnownHosts = function(req, res) {
+    //handles null error
+    if(req.body.constructor === Object && Object.keys(req.body).length === 0){
+        res.status(400).send({ error:true, message: 'Please provide all required fields' });
+    }else{
+        Repo.addKnownHosts(req.body.hosts)
+          .then((output)=>{res.json(new RestResult("success","hosts added",output,""))})
+          .catch((err)=>{res.json(new RestResult("error","failed to add hosts",null,err))})
     }
 };
 exports.delete = function(req, res) {

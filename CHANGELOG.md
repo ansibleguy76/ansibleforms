@@ -10,11 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 -   Add object-like default value for dropdowns
--   Add notifications
+-   Add email notifications
+-   Allow custom git user/email per repo
 
 ### Fixed
 
 -   Allow selfsigned certificates in mailserver
+-   Auto qdd repo hosts to known_hosts + add gui for manually
 
 ## [3.0.4] - 2022-06-09
 
