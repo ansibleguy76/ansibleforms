@@ -85,6 +85,9 @@
       selectedItems(){
         return this.values.filter((v,i) => this.selected[i])
       },
+      test(){
+        return this.selected[0]
+      },
       checkAll(){
         var ref=this
         var all=true
@@ -224,11 +227,11 @@
       },
       select(i){
         if(this.multiple){
-          this.selected[i]=!this.selected[i];
+          Vue.set(this.selected,i,!this.selected[i]);
         }else{
           var temp = !this.selected[i]  // if single just clear and invert selection
           this.selected=[]
-          this.selected[i]=temp;
+          Vue.set(this.selected,i,temp);
           this.$emit('isSelected');
         }
         this.recalc()

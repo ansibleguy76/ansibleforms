@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.6] - 2022-08-10
+
+### Fixed
+
+-   Fixed multiselect bug
+
 ## [3.0.5] - 2022-07-06
 
 ### Added
@@ -297,7 +303,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.5...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.6...HEAD
+
+[3.0.6]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.5...3.0.6
 
 [3.0.5]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.4...3.0.5
 

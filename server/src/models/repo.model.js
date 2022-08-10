@@ -15,9 +15,9 @@ Repo.color = function(t){
 
 Repo.findAll = function () {
   return new Promise((resolve,reject)=>{
+    var directory = config.repoPath
+    var repos
     try{
-      var directory = config.repoPath
-      var repos
       try{
         fs.accessSync(directory)
       }catch(e){
@@ -27,32 +27,31 @@ Repo.findAll = function () {
         }catch(err){
           logger.error(err)
           reject(err)
+          return;
         }
       }
       repos = fs.readdirSync(directory, { withFileTypes: true })
         .filter(dir => dir.isDirectory())
         .map(dir => dir.name)
-      resolve(repos)
-    }catch(e){
-      logger.error(e)
-      reject(e)
+    }catch(err){
+      logger.error(err)
+      reject(err)
+      return;
     }
+    resolve(repos)
   })
-
 }
 Repo.delete = function (name) {
   return new Promise((resolve,reject)=>{
+    logger.notice("Deleting repository " + name)
+    var directory = config.repoPath
     try{
-      logger.notice("Deleting repository " + name)
-      var directory = config.repoPath
-      try{
-        fs.accessSync(path.join(directory,name))
-      }catch(e){
-        reject(e)
-      }
+      fs.accessSync(path.join(directory,name))
+      // if found and access continue with delete
       fs.rmSync(path.join(directory,name),{force:true,recursive:true})
       resolve()
     }catch(e){
+      // not found - we don't fail and don't delete
       logger.error(e)
       reject(e)
     }
@@ -68,6 +67,7 @@ Repo.findByName = function (name,text){
         fs.accessSync(directory)
       }catch(e){
         reject(e)
+        return;
       }
       var info = exec(`git remote show origin && git log -n 1`,{cwd:directory})
       var output=[]
@@ -121,6 +121,7 @@ Repo.create = function (uri,command,username,email) {
         }catch(err){
           logger.error(err)
           reject(err)
+          return;
         }
       }
       var clone
@@ -131,6 +132,7 @@ Repo.create = function (uri,command,username,email) {
         cmd = command
       }else{
         reject("No uri or command given")
+        return;
       }
       var repoNameRegex = new RegExp(".*/([^\.]+)\.git.*", "g");
       var match = repoNameRegex.exec(uri);
@@ -190,6 +192,7 @@ Repo.addKnownHosts = function (hosts) {
     try{
       if(!hosts){
         reject("No hosts given")
+        return;
       }else{
         logger.notice(`Adding keys for hosts ${hosts}`)
         var cmd = `ssh-keyscan ${hosts} >> ~/.ssh/known_hosts`
@@ -205,8 +208,10 @@ Repo.addKnownHosts = function (hosts) {
           logger.debug('exit')
           if(code==0){
             resolve(`Adding keys ran succesfully\n${output.join("\n")}`)
+            return;
           }else{
             reject(`\nAdding keys failed with code ${code}\n${output.join("\n")}`)
+            return;
           }
         });
 
@@ -218,6 +223,7 @@ Repo.addKnownHosts = function (hosts) {
     }catch(e){
       logger.error(e)
       reject(e)
+      return;
     }
   })
 };
