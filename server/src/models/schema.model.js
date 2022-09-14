@@ -204,6 +204,7 @@ function patchAll(){
   tablePromises.push(addColumn("jobs","parent_id","int(11)",true,"NULL")) // add for multistep
   tablePromises.push(renameColumn("jobs","playbook","target","VARCHAR(250)")) // better column name
   tablePromises.push(addColumn("jobs","step","varchar(250)",true,"NULL")) // add column to hold current step
+  tablePromises.push(addColumn("credentials","secure","tinyint(4)",true,"0")) // add column to have secure connection
   buffer = fs.readFileSync(`${__dirname}/../db/create_settings_table.sql`)
   sql = buffer.toString()
   tablePromises.push(addTable("settings",sql)) // add settings table

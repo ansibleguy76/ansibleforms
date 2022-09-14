@@ -15,6 +15,16 @@ MySql.query=function(connection_name,query){
       try{
         logger.debug(`[${connection_name}] connection found : ${config.name}`)
         config.multipleStatements=true
+        if(config.secure){
+          config.ssl={
+            sslmode:"required",
+            rejectUnauthorized:false
+          }
+        }else{
+          config.ssl={
+            sslmode:"none"
+          }
+        }
         // get connection
         conn = client.createConnection(config)
       }catch(err){

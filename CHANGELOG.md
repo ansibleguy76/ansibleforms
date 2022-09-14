@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-  Allow secure connection for mysql
+
+### Changed
+
+-  Updated nodejs packages
+
 ## [3.0.6] - 2022-08-10
 
 ### Fixed

@@ -32,6 +32,7 @@
             <BulmaInput icon="server" v-model="credential.host" label="Host" placeholder="Host" :required="true" :hasError="$v.credential.host.$invalid" :errors="[]" />
             <BulmaInput icon="door-closed" v-model="credential.port" label="Port" placeholder="3306" :required="true" :hasError="$v.credential.port.$invalid" :errors="[]" />
             <BulmaInput icon="info-circle" v-model="credential.description" label="Description" placeholder="Description" :required="true" :hasError="$v.credential.description.$invalid" :errors="[]" />
+            <BulmaCheckbox checktype="checkbox" v-model="credential.secure" label="Secure connection" /><br><br>
             <BulmaButton v-if="credentialItem==-1" icon="save" label="Create Credential" @click="newCredential()"></BulmaButton>
             <BulmaButton v-if="credentialItem!=-1" icon="save" label="Update Credential" @click="updateCredential()"></BulmaButton>
           </div>
@@ -49,6 +50,7 @@
   import BulmaAdminTable from './../components/BulmaAdminTable.vue'
   import BulmaInput from './../components/BulmaInput.vue'
   import BulmaModal from './../components/BulmaModal.vue'
+  import BulmaCheckbox from './../components/BulmaCheckRadio.vue'
   import TokenStorage from './../lib/TokenStorage'
   import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs,numeric } from 'vuelidate/lib/validators'
 
@@ -59,7 +61,7 @@
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean}
     },
-    components:{BulmaButton,BulmaInput,BulmaModal,BulmaAdminTable},
+    components:{BulmaButton,BulmaInput,BulmaModal,BulmaAdminTable,BulmaCheckbox},
     data(){
       return  {
           credential:{
@@ -68,7 +70,8 @@
             password:"",
             host:"",
             port:3306,
-            description:""
+            description:"",
+            secure:false
           },
           showDelete:false,
           credentialItem:undefined,
