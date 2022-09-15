@@ -12,4 +12,6 @@ router.put('/:id', credentialController.update);
 // Delete a credential with id
 router.delete('/:id', credentialController.delete);
 
+router.get('/testdb/:id', credentialController.testDb)
+
 module.exports = router

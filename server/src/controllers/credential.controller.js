@@ -1,6 +1,9 @@
 'use strict';
 const Credential = require('../models/credential.model');
 var RestResult = require('../models/restResult.model');
+const mysql=require("../lib/mysql")
+const postgres=require("../lib/postgres")
+const mssql=require("../lib/mssql")
 
 exports.find = function(req, res) {
   if(req.query.name){
@@ -49,3 +52,30 @@ exports.delete = function(req, res) {
     .then(()=>{res.json(new RestResult("success","credential deleted",null,""))})
     .catch((err)=>{res.json(new RestResult("error","failed to delete credential",null,err))})
 };
+exports.testDb = function(req,res){
+    Credential.findById(req.params.id)
+    .then((cred)=>{
+        var db_type = cred[0].db_type
+        if(db_type=='mysql'){
+          return mysql.query(cred[0].name,'select 1')
+        }else if(db_type=='mssql'){
+          return mssql.query(cred[0].name,'select 1')
+        }else if(db_type=='postgres'){
+          return postgres.query(cred[0].name,'select 1')
+        }else if(db_type=='mongodb'){
+          throw "Mongodb test is not implemented"
+        }else{
+          throw "Database type not set"
+        }
+    })
+    .then(()=>{res.json(new RestResult("success","Database connection ok",null,""))})
+    .catch((err)=>{
+      if(err.includes("not set")){
+        res.json(new RestResult("error","Database type not set",null,""))
+      }else{
+        res.json(new RestResult("error","Database connection failed",null,err))
+      }
+
+    })
+
+}

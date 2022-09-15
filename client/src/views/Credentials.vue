@@ -17,11 +17,12 @@
             :columns="['name','user','host']"
             :filters="['name','user','host']"
             identifier="id"
-            :actions="[{name:'select',title:'edit credential',icon:'pencil-alt',color:'has-text-warning'},{name:'delete',title:'delete credential',icon:'times',color:'has-text-danger'}]"
+            :actions="[{name:'select',title:'edit credential',icon:'pencil-alt',color:'has-text-warning'},{name:'delete',title:'delete credential',icon:'times',color:'has-text-danger'},{name:'test',title:'test credential',icon:'database',color:'has-text-link'}]"
             :currentItem="credentialItem"
             @select="selectItem"
             @reset="resetItem"
             @delete="deleteItem"
+            @test="testItem"
           />
         </div>
         <transition name="add-column" appear>
@@ -32,6 +33,7 @@
             <BulmaInput icon="server" v-model="credential.host" label="Host" placeholder="Host" :required="true" :hasError="$v.credential.host.$invalid" :errors="[]" />
             <BulmaInput icon="door-closed" v-model="credential.port" label="Port" placeholder="3306" :required="true" :hasError="$v.credential.port.$invalid" :errors="[]" />
             <BulmaInput icon="info-circle" v-model="credential.description" label="Description" placeholder="Description" :required="true" :hasError="$v.credential.description.$invalid" :errors="[]" />
+            <BulmaSelect icon="database" v-model="credential.db_type" label="Database type" :list="['mysql','mssql','postgres','mongodb']"  />
             <BulmaCheckbox checktype="checkbox" v-model="credential.secure" label="Secure connection" /><br><br>
             <BulmaButton v-if="credentialItem==-1" icon="save" label="Create Credential" @click="newCredential()"></BulmaButton>
             <BulmaButton v-if="credentialItem!=-1" icon="save" label="Update Credential" @click="updateCredential()"></BulmaButton>
@@ -51,6 +53,7 @@
   import BulmaInput from './../components/BulmaInput.vue'
   import BulmaModal from './../components/BulmaModal.vue'
   import BulmaCheckbox from './../components/BulmaCheckRadio.vue'
+  import BulmaSelect from './../components/BulmaSelect.vue'
   import TokenStorage from './../lib/TokenStorage'
   import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs,numeric } from 'vuelidate/lib/validators'
 
@@ -61,7 +64,7 @@
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean}
     },
-    components:{BulmaButton,BulmaInput,BulmaModal,BulmaAdminTable,BulmaCheckbox},
+    components:{BulmaButton,BulmaInput,BulmaModal,BulmaAdminTable,BulmaCheckbox,BulmaSelect},
     data(){
       return  {
           credential:{
@@ -71,7 +74,8 @@
             host:"",
             port:3306,
             description:"",
-            secure:false
+            secure:false,
+            db_type:""
           },
           showDelete:false,
           credentialItem:undefined,
@@ -107,6 +111,21 @@
         this.selectItem(value)
         this.showDelete=true
       },
+      testItem(value){
+        var ref= this;
+        if(value){
+          axios.get('/api/v1/credential/testdb/' + value,TokenStorage.getAuthentication())
+            .then((result)=>{
+              if(result.data.status=='success'){
+                ref.$toast.success(result.data.message)
+              }else{
+                ref.$toast.error(result.data.message + "\r\n" + result.data.data.error)
+              }
+            }),function(error){
+              ref.$toast.error(error.message);
+            };
+        }
+      },
       loadCredential(){
         var ref= this;
         if(this.credentialItem!=undefined && this.credentialItem!=-1){
@@ -124,7 +143,8 @@
             name:""
           }
         }
-      },deleteCredential(){
+      },
+      deleteCredential(){
         var ref= this;
         axios.delete('/api/v1/credential/'+this.credentialItem,TokenStorage.getAuthentication())
           .then((result)=>{

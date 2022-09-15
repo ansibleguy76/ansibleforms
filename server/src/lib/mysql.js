@@ -22,7 +22,8 @@ MySql.query=function(connection_name,query){
           }
         }else{
           config.ssl={
-            sslmode:"none"
+            sslmode:"none",
+            rejectUnauthorized:false
           }
         }
         // get connection

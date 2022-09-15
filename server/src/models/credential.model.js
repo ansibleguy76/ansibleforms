@@ -19,6 +19,7 @@ var Credential=function(credential){
     this.secure = (credential.secure)?1:0;
     this.password = encrypt(credential.password);
     this.description = credential.description;
+    this.db_type = credential.db_type;
 };
 
 Credential.create = function (record) {
@@ -40,7 +41,7 @@ Credential.delete = function(id){
 };
 Credential.findAll = function () {
     logger.info("Finding all credentials")
-    return mysql.do("SELECT id,name,user,host,port,description FROM AnsibleForms.`credentials`;")
+    return mysql.do("SELECT id,name,user,host,port,description,secure,db_type FROM AnsibleForms.`credentials`;")
 };
 Credential.findById = function (id) {
     logger.info(`Finding credential ${id}`)
@@ -80,7 +81,7 @@ Credential.findByName = function (name) {
   logger.debug(`Finding credential ${name}`)
   var cred = cache.get(name)
   if(cred==undefined){
-    return mysql.do("SELECT host,port,name,user,password,secure FROM AnsibleForms.`credentials` WHERE name=?;",name)
+    return mysql.do("SELECT host,port,name,user,password,secure,db_type FROM AnsibleForms.`credentials` WHERE name=?;",name)
     .then((res)=>{
       if(res.length>0){
         res[0].multipleStatements = true

@@ -1997,6 +1997,54 @@
         }
       }
     },
+    "/credential/testdb/{credentialId}": {
+      "get": {
+        "tags": [
+          "credentials"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Test a credential against a database",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "credentialId",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the credential to get."
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                  "status": "success",
+                  "message": "Mysql connection success",
+                  "data": {
+                    "output": "",
+                    "error": ""
+                  }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
     "/user": {
       "get": {
         "tags": [
