@@ -7,13 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.7] - 2022-09-26
+
 ### Added
 
--  Allow secure connection for mysql
+-   Allow secure connection for mysql
 
 ### Changed
 
--  Updated nodejs packages
+-   Updated nodejs packages
 
 ## [3.0.6] - 2022-08-10
 
@@ -311,7 +313,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.6...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.7...HEAD
+
+[3.0.7]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.6...3.0.7
 
 [3.0.6]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.5...3.0.6
 
