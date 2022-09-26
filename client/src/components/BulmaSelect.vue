@@ -26,8 +26,8 @@
       icon:{type:[String,Array],default:''},
       label:{type:String,required:true},
       list:{type:Array,required:true},
-      valuecol:{type:String,required:true},
-      labelcol:{type:String,required:true},
+      valuecol:{type:String,required:false},
+      labelcol:{type:String,required:false},
       hasError:{type:Boolean,default:false},
       errors:{type:Array},
     },data(){

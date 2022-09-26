@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "description": "This is the swagger interface for AnsibleForms.\r\nUse the `/auth/login` api with basic authentication to obtain a JWT token.\r\nThen use the access token, prefixed with the word '**Bearer**' to use all other api's.\r\nNote that the access token is limited in time.  You can then either login again and get a new set of tokens or use the `/token` api and the refresh token to obtain a new set (preferred).",
-    "version": "3.0.6",
+    "version": "3.0.7",
     "title": "AnsibleForms",
     "contact": {
       "email": "info@ansibleforms.com"
@@ -1984,6 +1984,54 @@
                   "output": "",
                   "error": ""
                 }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/credential/testdb/{credentialId}": {
+      "get": {
+        "tags": [
+          "credentials"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Test a credential against a database",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "credentialId",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the credential to get."
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                  "status": "success",
+                  "message": "Mysql connection success",
+                  "data": {
+                    "output": "",
+                    "error": ""
+                  }
               }
             }
           },
