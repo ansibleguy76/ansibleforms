@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+-   Allow password type in tablefield
+
 ## [3.0.7] - 2022-09-26
 
 ### Added

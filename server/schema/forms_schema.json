@@ -807,7 +807,7 @@
                     "oneOf": [{
                         "properties": {
                           "type": {
-                            "enum": ["text"]
+                            "enum": ["text","password"]
                           },
                           "minValue": {"not":{}},
                           "maxValue": {"not":{}},

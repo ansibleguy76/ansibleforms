@@ -12,7 +12,7 @@
                 {{ field.placeholder }}
               </label> -->
               <div :class="{'has-icons-left':!!field.icon}" class="control">
-                <input v-if="field.type=='text'" :disabled="action=='Edit' && readonlyColumns.includes(field.name)" :autofocus="index==0" :class="{'is-danger':$v.editedItem[field.name].$invalid}" class="input" type="text" v-model="$v.editedItem[field.name].$model" :placeholder="field.placeholder" :name="field.name">
+                <input v-if="field.type=='text' || field.type=='password'" :disabled="action=='Edit' && readonlyColumns.includes(field.name)" :autofocus="index==0" :class="{'is-danger':$v.editedItem[field.name].$invalid}" class="input" :type="field.type" v-model="$v.editedItem[field.name].$model" :placeholder="field.placeholder" :name="field.name">
                 <input v-if="field.type=='number'" :disabled="action=='Edit' && readonlyColumns.includes(field.name)" :autofocus="index==0" class="input" type="number" v-model="editedItem[field.name]" :placeholder="field.placeholder" :name="field.name">
                 <div v-if="field.type=='enum'" class="select">
                   <select :name="field.name" :disabled="action=='Edit' && readonlyColumns.includes(field.name)" :class="{'is-danger':$v.editedItem[field.name].$invalid}" v-model="$v.editedItem[field.name].$model">
