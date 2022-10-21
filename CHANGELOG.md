@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.9] - 2022-10-21
+
 ### Fixed
 
 -   Allow password type in tablefield
@@ -323,7 +325,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.7...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.9...HEAD
+
+[3.0.9]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.7...3.0.9
 
 [3.0.7]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.6...3.0.7
 
