@@ -1012,6 +1012,67 @@
       // starts the evaluation of dynamic fields (expression or query)
       //----------------------------------------------------------------
       startDynamicFieldsLoop() {
+
+        function compareProps(x1,x2,p){
+          for(let i=0;i<p.length;i++){
+            const x=p[i]
+            if(x1[x] !== x2[x]){
+              return false
+            }
+          }
+          return true
+        }
+
+        function dynamicSort(property) {
+            var sortOrder = 1;
+            if(property[0] === "-") {
+                sortOrder = -1;
+                property = property.substr(1);
+            }
+            return function (a,b) {
+                /* next line works with strings and numbers,
+                 * and you may want to customize it to your needs
+                 */
+                var result = (a[property] < b[property]) ? -1 : (a[property] > b[property]) ? 1 : 0;
+                return result * sortOrder;
+            }
+        }
+
+        function dynamicSortMultiple() {
+            /*
+             * save the arguments object as it will be overwritten
+             * note that arguments object is an array-like object
+             * consisting of the names of the properties to sort by
+             */
+            var props = arguments;
+            return function (obj1, obj2) {
+                var i = 0, result = 0, numberOfProperties = props.length;
+                /* try getting a different result from 0 (equal)
+                 * as long as we have extra properties to compare
+                 */
+                while(result === 0 && i < numberOfProperties) {
+                    result = dynamicSort(props[i])(obj1, obj2);
+                    i++;
+                }
+                return result;
+            }
+        }
+
+        class fnArray extends Array {
+            sortBy(...args) {
+                return this.sort(dynamicSortMultiple(...args));
+            }
+            distinctBy(...args) {
+                return this.filter((a, i) => this.findIndex((s) => compareProps(a,s,args)) === i)
+            }
+            filterBy(...args) {
+              let props=Object.keys(args[0])
+              return this.filter((x)=>{
+                return compareProps(x,args[0],props)
+              })
+            }
+        }
+
         // console.log("invoking field expressions and queries")
         var ref=this;                                                           // a reference to 'this'
         var watchdog=0;                                                         // a counter how many times we retry to find a value
@@ -1048,6 +1109,7 @@
                       // allow local run in browser
                       if(item.runLocal){
                         // console.log("Running local expression : " + placeholderCheck.value)
+
                         var result
                         try{
                           result=eval(placeholderCheck.value)

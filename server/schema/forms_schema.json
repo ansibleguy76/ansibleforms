@@ -939,10 +939,8 @@
                             "$ref": "/formfield"
                           },
                           "description": {"type": "string"},
-                          "when":{
-                            "type": "array",
-                            "items": {"type": "string"}
-                          }
+                          "when": {"type": "string"}
+
                         }
                       },
                       "in": {
@@ -956,10 +954,7 @@
                             "$ref": "/formfield"
                           },
                           "description": {"type": "string"},
-                          "when":{
-                            "type": "array",
-                            "items": {"type": "string"}
-                          }
+                          "when":{"type": "string"}
                         }
                       },
                       "values": {
