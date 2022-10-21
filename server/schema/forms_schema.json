@@ -807,7 +807,7 @@
                     "oneOf": [{
                         "properties": {
                           "type": {
-                            "enum": ["text"]
+                            "enum": ["text","password"]
                           },
                           "minValue": {"not":{}},
                           "maxValue": {"not":{}},
@@ -928,6 +928,35 @@
                       "maxValue": {"type": "integer"},
                       "minLength": {"type": "integer"},
                       "maxLength": {"type": "integer"},
+                      "notIn": {
+                        "type": "object",
+                        "required": [
+                          "field",
+                          "description"
+                        ],
+                        "properties": {
+                          "field": {
+                            "$ref": "/formfield"
+                          },
+                          "description": {"type": "string"},
+                          "when": {"type": "string"}
+
+                        }
+                      },
+                      "in": {
+                        "type": "object",
+                        "required": [
+                          "field",
+                          "description"
+                        ],
+                        "properties": {
+                          "field": {
+                            "$ref": "/formfield"
+                          },
+                          "description": {"type": "string"},
+                          "when":{"type": "string"}
+                        }
+                      },
                       "values": {
                         "type": "array",
                         "items": {"type": "string"}

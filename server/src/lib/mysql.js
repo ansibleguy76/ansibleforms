@@ -28,20 +28,23 @@ MySql.query=function(connection_name,query){
         }
         // get connection
         conn = client.createConnection(config)
+
+        // get data
+        conn.query(query,function(err,result){
+          // logger.debug(`[${connection_name}] closing connection`)
+          if(err){
+            reject(`[${connection_name}] query error : ${err.toString()}`)
+          }else{
+            conn.end()
+            // logger.debug("["+connection_name+"] query result 1 : " + JSON.stringify(result))
+            resolve(result)
+          }
+
+        })
       }catch(err){
         reject(`[${connection_name}] connection error : ${err.toString()}`)
       }
-      // get data
-      conn.query(query,function(err,result){
-        // logger.debug(`[${connection_name}] closing connection`)
-        conn.end()
-        if(err){
-          reject(`[${connection_name}] query error : ${err.toString()}`)
-        }else{
-          // logger.debug("["+connection_name+"] query result 1 : " + JSON.stringify(result))
-          resolve(result)
-        }
-      })
+
     })
 
   })

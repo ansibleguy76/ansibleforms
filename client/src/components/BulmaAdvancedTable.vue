@@ -36,8 +36,8 @@
               <font-awesome-icon v-if="selected[v.index]" :icon="['far','check-square']" />
               <font-awesome-icon v-else :icon="['far','square']" /> <span class="has-text-grey-lighter">{{v.index}}</span>
             </td>
-            <template  v-for="l in labels">
-            <td v-if="isPctColumn(l)" :key="l" v-html="getProgressHtml(v.value[l])"></td>
+            <template  v-for="l,i in labels">
+            <td v-if="isPctColumn(l)" :key="l+i" v-html="getProgressHtml(v.value[l])"></td>
             <td v-else v-html="highlightFilter(v.value[l],l)" :key="l"></td>
             </template>
             <td v-if="labels.length==0" v-html="highlightFilter(v.value)"></td>
@@ -123,11 +123,11 @@
             if(item){
               // go over all filterColumns
               if(cols.length>0){
-                cols.forEach((col, i) => {
+                cols.forEach((col) => {
                   // if the column is present
                   if(item[col]){
                     // check if the value contains our filter
-                    found=item[col].toString().toLowerCase().includes(ref.queryfilter.toLowerCase())
+                    found||=item[col].toString().toLowerCase().includes(ref.queryfilter.toLowerCase())
                   }else{
                     // no item, always pass
                     found=true
@@ -200,12 +200,17 @@
         var search=this.queryfilter;
         var l=search.length
         var p1,p2,p3
-        if(v && this.queryfilter){
+        if(s && this.queryfilter){
           index=s.toLowerCase().indexOf(search.toLowerCase())
-          p1=s.slice(0,index)
-          p2=s.slice(index,index+l)
-          p3=s.slice(index+l)
-          return `${h.htmlEncode(p1)}<span class='has-text-weight-bold'>${h.htmlEncode(p2)}</span>${h.htmlEncode(p3)}`
+          if(index>=0){
+            p1=s.slice(0,index)
+            p2=s.slice(index,index+l)
+            p3=s.slice(index+l)
+            return `${h.htmlEncode(p1)}<span class='has-text-weight-bold'>${h.htmlEncode(p2)}</span>${h.htmlEncode(p3)}`
+          }else{
+            return h.htmlEncode(s)
+          }
+
         }else{
           return v
         }

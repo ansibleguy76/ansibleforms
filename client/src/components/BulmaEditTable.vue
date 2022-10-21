@@ -12,7 +12,7 @@
                 {{ field.placeholder }}
               </label> -->
               <div :class="{'has-icons-left':!!field.icon}" class="control">
-                <input v-if="field.type=='text'" :disabled="action=='Edit' && readonlyColumns.includes(field.name)" :autofocus="index==0" :class="{'is-danger':$v.editedItem[field.name].$invalid}" class="input" type="text" v-model="$v.editedItem[field.name].$model" :placeholder="field.placeholder" :name="field.name">
+                <input v-if="field.type=='text' || field.type=='password'" :disabled="action=='Edit' && readonlyColumns.includes(field.name)" :autofocus="index==0" :class="{'is-danger':$v.editedItem[field.name].$invalid}" class="input" :type="field.type" v-model="$v.editedItem[field.name].$model" :placeholder="field.placeholder" :name="field.name">
                 <input v-if="field.type=='number'" :disabled="action=='Edit' && readonlyColumns.includes(field.name)" :autofocus="index==0" class="input" type="number" v-model="editedItem[field.name]" :placeholder="field.placeholder" :name="field.name">
                 <div v-if="field.type=='enum'" class="select">
                   <select :name="field.name" :disabled="action=='Edit' && readonlyColumns.includes(field.name)" :class="{'is-danger':$v.editedItem[field.name].$invalid}" v-model="$v.editedItem[field.name].$model">
@@ -53,6 +53,8 @@
               <p class="has-text-danger" v-if="'minValue' in $v.editedItem[field.name] && !$v.editedItem[field.name].minValue">Value cannot be lower than {{$v.editedItem[field.name].$params.minValue.min}}</p>
               <p class="has-text-danger" v-if="'maxValue' in $v.editedItem[field.name] && !$v.editedItem[field.name].maxValue">Value cannot be higher than {{$v.editedItem[field.name].$params.maxValue.max}}</p>
               <p class="has-text-danger" v-if="'regex' in $v.editedItem[field.name] && !$v.editedItem[field.name].regex">{{$v.editedItem[field.name].$params.regex.description}}</p>
+              <p class="has-text-danger" v-if="'notIn' in $v.editedItem[field.name] && !$v.editedItem[field.name].notIn">{{$v.editedItem[field.name].$params.notIn.description}}</p>
+              <p class="has-text-danger" v-if="'in' in $v.editedItem[field.name] && !$v.editedItem[field.name].in">{{$v.editedItem[field.name].$params.in.description}}</p>
 
           </div>
         </BulmaModal>
@@ -205,7 +207,7 @@
             }
         },
         validations() {     // a dynamic assignment of vuelidate validations, based on the form json
-
+          var self=this
           var obj = {
             editedItem:{},
           }
@@ -227,6 +229,22 @@
                     {description: description,type:"regex"},
                     (value) => !helpers.req(value) || regexObj.test(value)
                 )
+            }
+            // field must not be in array (other field)
+            if("notIn" in ff){
+              description = ff.notIn.description
+              attrs.notIn = helpers.withParams(
+                  {description: description,type:"notIn"},
+                  (value) => !helpers.req(value) || ((self.form[ff.notIn.field]!=undefined && Array.isArray(self.form[ff.notIn.field]) && !self.form[ff.notIn.field].includes(value)) || !ff.notIn.when?.includes(self.action.toLowerCase()))
+              )
+            }
+            // field must be in array (other field)
+            if("in" in ff){
+              description = ff.in.description
+              attrs.in = helpers.withParams(
+                  {description: description,type:"in"},
+                  (value) => !helpers.req(value) || ((self.form[ff.in.field]!=undefined && Array.isArray(self.form[ff.in.field]) && self.form[ff.in.field].includes(value)) || !ff.in.when?.includes(self.action.toLowerCase()))
+              )
             }
             obj.editedItem[ff.name]=attrs
           });
