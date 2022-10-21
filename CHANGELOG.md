@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Allow password type in tablefield
 -   Fixed sql connection problems
+-   Fixed filterColumns bug
+
+### Added
+
+-   Added fnArray runLocal functions (filterBy,distinctBy,sortBy)
 
 ## [3.0.7] - 2022-09-26
 
