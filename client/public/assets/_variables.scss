@@ -9,7 +9,11 @@ $red: #ea4141;
 $warning: $orange;
 $danger: $red;
 $primary: #158cba !default;
-
+$gap: 32px;
+$fullhd: 1800px + (2 * $gap);
+$fullhd-enabled: true;
+$widescreen: 1400px + (2 * $gap);
+$widescreen-enabled: true;
 $info-invert: #fff;
 
 $family-sans-serif: "Source Sans Pro", "Helvetica Neue", Helvetica, Arial,

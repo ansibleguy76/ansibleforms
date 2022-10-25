@@ -1,17 +1,17 @@
 <template>
   <section class="section has-background-light">
     <div class="container">
-    <div class="tile is-ancestor">
-      <div class="tile is-parent">
-        <article class="tile is-child box">
-          <Categories :formConfig="formConfig" />
-        </article>
-      </div>
-      <div class="tile is-parent is-9">
-        <Forms :formConfig="formConfig" />
+      <div class="tile is-ancestor columns">
+        <div class="tile is-parent column">
+          <article class="tile is-child box">
+            <Categories :formConfig="formConfig" />
+          </article>
+        </div>
+        <div class="tile is-parent column is-three-quarters-fullhd is-three-quarters-widescreen is-two-thirds-desktop">
+          <Forms :formConfig="formConfig" />
+        </div>
       </div>
     </div>
-  </div>
   </section>
 </template>
 <script>
