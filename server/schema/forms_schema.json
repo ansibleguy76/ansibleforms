@@ -946,7 +946,10 @@
                             "$ref": "/formfield"
                           },
                           "description": {"type": "string"},
-                          "when": {"type": "string"}
+                          "when": {
+                            "type": "string",
+                            "enum": ["add", "edit"]
+                          }
 
                         }
                       },
@@ -961,7 +964,10 @@
                             "$ref": "/formfield"
                           },
                           "description": {"type": "string"},
-                          "when":{"type": "string"}
+                          "when": {
+                            "type": "string",
+                            "enum": ["add", "edit"]
+                          }
                         }
                       },
                       "values": {
