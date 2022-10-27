@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 -  Search functionality forms
+-  Full with html
+-  Allow "notIn" and "in" validation in tablefields
+-  Add nested categories
 
 ## [3.0.9] - 2022-10-21
 
