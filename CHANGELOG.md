@@ -7,12 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.0] - 2022-10-28
+
 ### Added
 
--  Search functionality forms
--  Full with html
--  Allow "notIn" and "in" validation in tablefields
--  Add nested categories
+-   Search functionality forms
+-   Full with html
+-   Allow "notIn" and "in" validation in tablefields
+-   Add nested categories
 
 ## [3.0.9] - 2022-10-21
 
@@ -332,7 +334,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.9...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/3.1.0...HEAD
+
+[3.1.0]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.9...3.1.0
 
 [3.0.9]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.7...3.0.9
 
