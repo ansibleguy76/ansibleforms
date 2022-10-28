@@ -1,4 +1,4 @@
-FROM node:16-alpine AS node
+FROM node:19-alpine AS node
 
 ##################################################
 # base stage

@@ -15,6 +15,7 @@
         }
       },
       "items": {
+        "$id": "/category",
         "type": "object",
         "required": [
           "name",
@@ -22,12 +23,18 @@
         ],
         "properties": {
           "name": {
-            "$id": "/categories",
-            "type": "string"
+            "type": "string",
+            "pattern": "^[^/]{3,25}$"
           },
           "icon": {
             "$id": "/icon",
             "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "/category"
+            }
           }
         },
         "additionalProperties": false
@@ -178,7 +185,7 @@
             "type": "array",
             "default": ["Default"],
             "items": {
-              "$ref": "/categories"
+              "type": "string"
             }
           },
           "steps": {
@@ -939,7 +946,10 @@
                             "$ref": "/formfield"
                           },
                           "description": {"type": "string"},
-                          "when": {"type": "string"}
+                          "when": {
+                            "type": "string",
+                            "enum": ["add", "edit"]
+                          }
 
                         }
                       },
@@ -954,7 +964,10 @@
                             "$ref": "/formfield"
                           },
                           "description": {"type": "string"},
-                          "when":{"type": "string"}
+                          "when": {
+                            "type": "string",
+                            "enum": ["add", "edit"]
+                          }
                         }
                       },
                       "values": {

@@ -1,6 +1,6 @@
 {
   "name": "ansible_forms",
-  "version": "3.0.9",
+  "version": "3.1.0",
   "repository": {
     "type": "git",
     "url": "git://github.com/ansibleguy76/ansibleforms.git"
@@ -17,15 +17,15 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "core-js": "~3.25.3",
+    "core-js": "~3.26.0",
     "axios": "~0.27.2",
     "cors": "~2.8.5",
-    "bcrypt": "~5.0.1",
+    "bcrypt": "~5.1.0",
     "cheerio": "~1.0.0-rc.12",
     "connect-history-api-fallback": "~2.0.0",
-    "express": "~4.18.1",
+    "express": "~4.18.2",
     "winston": "~3.8.2",
-    "winston-syslog": "~2.6.0",
+    "winston-syslog": "~2.7.0",
     "passport": "~0.6.0",
     "passport-http": "~0.3.0",
     "passport-jwt": "~4.0.0",
@@ -33,21 +33,21 @@
     "ajv": "~6.12.6",
     "ajv-error-parser": "~1.0.7",
     "bluebird": "~3.7.2",
-    "node-jq": "~2.3.3",
+    "node-jq": "~2.3.4",
     "moment": "~2.29.4",
-    "yaml": "~2.1.1",
+    "yaml": "~2.1.3",
     "cert-info":"~1.5.1",
     "thenby":"~1.3.4",
     "mssql":"~9.0.1",
-    "mongodb":"~4.10.0",
+    "mongodb":"~4.11.0",
     "pg":"~8.8.0",
     "fs-extra":"~10.1.0",
     "node-cache":"~5.1.2",
-    "ldap-authentication": "~2.3.1",
+    "ldap-authentication": "~2.3.2",
     "ldapjs": "~2.3.3",
     "read-last-lines": "~1.8.0",
     "swagger-ui-express": "~4.5.0",
-    "nodemailer": "~6.7.8"
+    "nodemailer": "~6.8.0"
   },
   "devDependencies": {
     "@babel/core": "7.19.1",
@@ -57,8 +57,8 @@
     "nodemon": "~2.0.20",
     "rifraf": "~2.0.3",
     "npm-run-all": "*",
-    "dotenv": "~16.0.2",
-    "eslint": "~8.24.0"
+    "dotenv": "~16.0.3",
+    "eslint": "~8.26.0"
   },
   "eslintConfig": {
     "root": true,

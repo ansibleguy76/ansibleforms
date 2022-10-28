@@ -1,7 +1,15 @@
 <template>
   <article class="tile is-child box" v-if="formConfig && formConfig.forms">
+    <div class="field">
+      <p class="control has-icons-left">
+        <input class="input" type="text" v-model="search" placeholder="Search">
+        <span class="icon is-small is-left">
+          <font-awesome-icon icon="search" />
+        </span>
+      </p>
+    </div>
     <div class="columns is-flex-wrap-wrap">
-      <div class="column is-4" v-for="form in getForms" :key="form.name">
+      <div class="column is-one-quarter-fullhd is-one-third-widescreen is-half-tablet" v-for="form in getForms" :key="form.name">
         <router-link :to="'/form/?form='+encodeURI(form.name)" class="box" :class="getFormClass(form)" >
           <article class="media">
             <div v-if="form.image || form.icon" class="media-left">
@@ -34,11 +42,23 @@
     },
     data(){
       return  {
+        search:""
       }
     },
     computed:{
+      filterFormsBySearch(){
+        var f=this.formConfig?.forms || []
+        if(this.search){
+          return f.filter(x=>x.name.toLowerCase().includes(this.search.toLowerCase()))
+        }else{
+          return f
+        }
+      },
+      currentCategory(){
+        return decodeURIComponent(this.$route.query?.category || "")
+      },
       getForms(){
-        return this.filterAllowedForms(this.$route.query.category)
+        return this.filterAllowedForms(this.currentCategory)
       },
     },
     methods:{
@@ -62,26 +82,41 @@
           }
         }).sort((a, b) => (a.name||"").toLowerCase() > (b.name||"").toLowerCase() && 1 || -1)
       },
+
       // filter all the forms per category
       filterForms(category){
-        if(this.formConfig!=undefined){
-          if(!category){
-            // if no category is given, pass all forms (=all)
-            return this.formConfig.forms
-          }else{
-            return this.formConfig.forms.filter((item)=>{
-              if(item.categories!=undefined){
-                return (item.categories.includes(category))  // selected category
-              }else{
-                // if no category was give, add to Default
-                return (category=="Default")
-              }
-            })
-          }
+        var f=this.filterFormsBySearch || []
+        if(!category){
+          // if no category is given, pass all forms (=all)
+          return f
         }else{
-          // forms not loaded or empty
-          return []
+          return f.filter((item)=>{
+            if(item.categories!=undefined){
+              for(let j=0;j<item.categories.length;j++){
+                // if in any, we show
+                if(this.inCategory(item.categories[j],category))return true
+              }
+              return false
+            }else{
+              // if no category was give, add to Default
+              return (category=="Default")
+            }
+          })
         }
+      },
+      inCategory(c,category){
+        var x = category.split("/")
+        var y = c.split("/")
+        for(let i=0;i<x.length;i++){
+          if(i<y.length){
+            if(x[i]!=y[i]){
+              return false
+            }
+          }else{
+            return false
+          }
+        }
+        return true
       },
       isAdmin(payload){
         return payload.user.roles.includes("admin")
