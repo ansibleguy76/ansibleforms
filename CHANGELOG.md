@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+-   Ldap certificate bug
+
+### Added
+
+-   Local selectAttr function
+
 ## [3.1.0] - 2022-10-28
 
 ### Added
