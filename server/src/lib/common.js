@@ -7,12 +7,13 @@ var Helpers = function(){
 
 // this is needed because ldap-authentication has missing try catch
 Helpers.checkCertificateBase64=function(cert){
-  var b64 = cert.replace(/(\r\n|\n|\r)/gm, "").replace(/\-{5}[^\-]+\-{5}/gm,"")
+  var b64 = cert.replace(/(\r\n|\n|\r)/gm, "").replace(/\-{5}[^\-]+\-{5}/gm,"").replaceAll(" ","")
   return (Buffer.from(b64, 'base64').toString('base64') === b64)
 }
 
 Helpers.checkCertificate=function(cert){
   if(!Helpers.checkCertificateBase64(cert)){
+    logger.error("Bad Base64 Encoding...")
     return false
   }else{
     try{
@@ -20,6 +21,7 @@ Helpers.checkCertificate=function(cert){
       tmp = certinfo.info(cert)
       return true
     }catch(e){
+      logger.error("Certificate cannot be parsed...")
       return false
     }
   }
