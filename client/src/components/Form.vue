@@ -1071,6 +1071,17 @@
                 return compareProps(x,args[0],props)
               })
             }
+            selectAttr(...args) {
+              let props=Object.keys(args[0])
+
+              return this.map((x)=>{
+                let o = {}
+                for(let i=0;i<props.length;i++){
+                  o[props[i]]=x[args[0][props[i]]]
+                }
+                return o
+              })
+            }
         }
 
         // console.log("invoking field expressions and queries")
