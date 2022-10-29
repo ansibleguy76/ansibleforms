@@ -16,9 +16,17 @@ Helpers.checkCertificate=function(cert){
     logger.error("Bad Base64 Encoding...")
     return false
   }else{
+    logger.debug("Base64 is valid...")
     try{
-      var tmp
-      tmp = certinfo.info(cert)
+      certs=cert.replaceAll(" ","").replace(/----(\r\n|\n|\r)-----/gm,"----|----").split("|")
+      if(certs.length>1){
+        logger.debug("Certificate is a bundle...")
+      }
+      certs.forEach((item, i) => {
+        var tmp
+        tmp = certinfo.info(item)
+        logger.debug(JSON.stringify(tmp))
+      });
       return true
     }catch(e){
       logger.error("Certificate cannot be parsed...")
