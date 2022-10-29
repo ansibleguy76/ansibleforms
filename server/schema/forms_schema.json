@@ -646,6 +646,7 @@
                     {"type": "integer"}
                   ]
                 },
+                "dropWrappingQuotes": {"type": "boolean"},
                 "noOutput": {"type": "boolean"},
                 "asCredential": {"type": "boolean"},
                 "required": {
