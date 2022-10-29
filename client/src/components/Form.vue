@@ -956,6 +956,9 @@
                 //fieldvalue=JSON.stringify(ref.form[foundfield])
                 // console.log(Helpers.replacePlaceholders(match[1],ref.form))
                 fieldvalue=JSON.stringify(Helpers.replacePlaceholders(match[1],ref.form)) // allow full object reference
+                if(item.dropQuotes){
+                  fieldvalue=fieldvalue.replace(/^\"+/, '').replace(/\"+$/, ''); // eslint-disable-line
+                }
               }else{
                 // other fields, grab a valid value
                 fieldvalue = ref.getFieldValue(ref.form[foundfield],column,true);// get value of xxx
@@ -1082,7 +1085,7 @@
                 return o
               })
             }
-     
+
         }
 
         // console.log("invoking field expressions and queries")
