@@ -10,13 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 -   Ldap certificate bug
+-   Drop quotes on string placeholder
 
 ### Added
 
 -   Local selectAttr function
 -   Local regexBy function
 -   Add wildcard support on filterBy function
--   Add a property to drop quotes on placeholders (dropQuotes)
 
 ## [3.1.0] - 2022-10-28
 
