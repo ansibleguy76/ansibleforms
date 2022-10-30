@@ -12,12 +12,16 @@ Helpers.checkCertificateBase64=function(cert){
 }
 
 Helpers.checkCertificate=function(cert){
-  certs=cert.replaceAll(" ","").replace(/----(\r\n|\n|\r)-----/gm,"----|----").split("|")
+  certs=cert.replace(/-----(\r\n|\n|\r)-----/gm,"-----|-----").split("|")
   if(certs.length>1){
     logger.debug("Certificate is a bundle...")
+  }else{
+    logger.debug("Certificate is single...")
   }
   for(let i=0;i<certs.length;i++){
-    const c=certs[i]
+    logger.debug(`Certificate ${i+1}`)
+    var c=certs[i]
+    logger.debug(c)
     if(!Helpers.checkCertificateBase64(c)){
       logger.error("Bad Base64 Encoding...")
       return false
@@ -25,10 +29,7 @@ Helpers.checkCertificate=function(cert){
       logger.debug("Base64 is valid...")
       try{
         var tmp
-        tmp = Certinfo.info(c).catch((e)=>{
-          logger.error("Certificate cannot be parsed...")
-          return false
-        })
+        tmp = Certinfo.info(c)
         logger.debug(JSON.stringify(tmp))
       }catch(e){
         logger.error("Certificate cannot be parsed...")

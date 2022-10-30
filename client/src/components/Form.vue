@@ -1017,10 +1017,27 @@
       //----------------------------------------------------------------
       startDynamicFieldsLoop() {
 
+        function matchRuleShort(str, rule) {
+          var escapeRegex = (str) => str.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1"); // eslint-disable-line
+          return new RegExp("^" + rule.split("*").map(escapeRegex).join(".*") + "$").test(str); // eslint-disable-line
+        }
+
         function compareProps(x1,x2,p){
           for(let i=0;i<p.length;i++){
             const x=p[i]
-            if(x1[x] !== x2[x]){
+
+            if(!matchRuleShort(x1[x],x2[x])){
+              return false
+            }
+          }
+          return true
+        }
+
+        function comparePropsRegex(x1,x2,p){
+          for(let i=0;i<p.length;i++){
+            const x=p[i]
+
+            if(!x1[x].match(x2[x])){
               return false
             }
           }
@@ -1073,6 +1090,12 @@
               let props=Object.keys(args[0])
               return this.filter((x)=>{
                 return compareProps(x,args[0],props)
+              })
+            }
+            regexBy(...args) {
+              let props=Object.keys(args[0])
+              return this.filter((x)=>{
+                return comparePropsRegex(x,args[0],props)
               })
             }
             selectAttr(...args) {
