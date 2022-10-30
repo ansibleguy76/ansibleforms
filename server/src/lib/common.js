@@ -25,7 +25,10 @@ Helpers.checkCertificate=function(cert){
       logger.debug("Base64 is valid...")
       try{
         var tmp
-        tmp = Certinfo.info(c)
+        tmp = Certinfo.info(c).catch((e)=>{
+          logger.error("Certificate cannot be parsed...")
+          return false
+        })
         logger.debug(JSON.stringify(tmp))
       }catch(e){
         logger.error("Certificate cannot be parsed...")
