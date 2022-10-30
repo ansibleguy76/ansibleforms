@@ -1,4 +1,4 @@
-const certinfo=require("cert-info")
+const Certinfo=require("cert-info")
 const restResult=require("../models/restResult.model")
 const logger=require("./logger")
 var Helpers = function(){
@@ -12,27 +12,29 @@ Helpers.checkCertificateBase64=function(cert){
 }
 
 Helpers.checkCertificate=function(cert){
-  if(!Helpers.checkCertificateBase64(cert)){
-    logger.error("Bad Base64 Encoding...")
-    return false
-  }else{
-    logger.debug("Base64 is valid...")
-    try{
-      certs=cert.replaceAll(" ","").replace(/----(\r\n|\n|\r)-----/gm,"----|----").split("|")
-      if(certs.length>1){
-        logger.debug("Certificate is a bundle...")
-      }
-      certs.forEach((item, i) => {
-        var tmp
-        tmp = certinfo.info(item)
-        logger.debug(JSON.stringify(tmp))
-      });
-      return true
-    }catch(e){
-      logger.error("Certificate cannot be parsed...")
-      return false
-    }
+  certs=cert.replaceAll(" ","").replace(/----(\r\n|\n|\r)-----/gm,"----|----").split("|")
+  if(certs.length>1){
+    logger.debug("Certificate is a bundle...")
   }
+  for(let i=0;i<certs.length;i++){
+    const c=certs[i]
+    if(!Helpers.checkCertificateBase64(c)){
+      logger.error("Bad Base64 Encoding...")
+      return false
+    }else{
+      logger.debug("Base64 is valid...")
+      try{
+        var tmp
+        tmp = Certinfo.info(c)
+        logger.debug(JSON.stringify(tmp))
+      }catch(e){
+        logger.error("Certificate cannot be parsed...")
+        return false
+      }
+    }
+  };
+  // we parsed all certificates, no errors found
+  return true
 }
 // a middleware in the routes to check if use is administrator
 Helpers.checkAdminMiddleware = (req, res, next) =>  {
