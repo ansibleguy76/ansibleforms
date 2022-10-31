@@ -154,12 +154,74 @@
             "items": {
               "$id": "/action",
               "type": "object",
-              "required": [
-                "action"
+              "oneOf": [{
+                  "properties": {
+                    "clear": {"not":{}},
+                    "reload": {"not":{}},
+                    "home": {"not":{}},
+                    "hide": {"not":{}},
+                    "show": {"not":{}}
+                  },
+                  "required": ["load"]
+                },
+                {
+                    "properties": {
+                      "load": {"not":{}},
+                      "reload": {"not":{}},
+                      "home": {"not":{}},
+                      "hide": {"not":{}},
+                      "show": {"not":{}}
+                    },
+                    "required": ["clear"]
+                },
+                {
+                    "properties": {
+                      "load": {"not":{}},
+                      "clear": {"not":{}},
+                      "home": {"not":{}},
+                      "hide": {"not":{}},
+                      "show": {"not":{}}
+                    },
+                    "required": ["reload"]
+                },
+                {
+                    "properties": {
+                      "load": {"not":{}},
+                      "clear": {"not":{}},
+                      "reload": {"not":{}},
+                      "hide": {"not":{}},
+                      "show": {"not":{}}
+                    },
+                    "required": ["home"]
+                },
+                {
+                    "properties": {
+                      "load": {"not":{}},
+                      "clear": {"not":{}},
+                      "home": {"not":{}},
+                      "reload": {"not":{}},
+                      "show": {"not":{}}
+                    },
+                    "required": ["hide"]
+                },
+                {
+                    "properties": {
+                      "load": {"not":{}},
+                      "clear": {"not":{}},
+                      "home": {"not":{}},
+                      "hide": {"not":{}},
+                      "reload": {"not":{}}
+                    },
+                    "required": ["show"]
+                }
               ],
               "properties": {
-                "action": {"type": "string"},
-                "value": {"type": "string"},
+                "load": {"type": "string"},
+                "clear": {"type": "boolean"},
+                "home": {"type": "boolean"},
+                "reload": {"type": "boolean"},
+                "hide": {"type": "boolean"},
+                "show": {"type": "boolean"},
                 "delay": {"type": "integer"}
               }
             }
@@ -187,7 +249,7 @@
             "items": {
               "$ref": "/action"
             }
-          },          
+          },
           "icon": {
             "$ref": "/icon"
           },
