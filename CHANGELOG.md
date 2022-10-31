@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Local selectAttr function
 -   Local regexBy function
 -   Add wildcard support on filterBy function
+-   PostActionsEvents
+    - events: onSubmit, onSuccess, onFailed, onFinished
+    - actions: load (a form), reload (same form), home, clear (reset form), hide/show (form)
+    - optional delay
 
 ## [3.1.0] - 2022-10-28
 
