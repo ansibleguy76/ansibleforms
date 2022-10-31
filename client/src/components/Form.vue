@@ -560,24 +560,39 @@
     },
     methods:{
       doAction(a){
-        if(a.action=="clear"){
-          this.initForm()
+        var ref=this
+        const action=Object.keys(a)[0]
+        const value=a[action]
+        var wait=0
+        var form=""
+        if(typeof value=="string"){
+          var tmp=value.split(/,(.*)/s)
+          wait=tmp[0]
+          form=tmp[1]
+        }else{
+          wait=parseInt(value)
         }
-        if(a.action=="home"){
-          this.$router.replace({name:"Home"}).catch(err => {});
+        // this.$toast.info(`${action} => (${wait})${form}`)
+        if(action=="clear"){
+          setTimeout(()=>{ref.initForm()},wait*1000)
         }
-        if(a.action=="load"){
-          this.reloadForm()
-          this.$router.replace({name:"Form",query:{form:a.value}}).catch(err => {});
+        if(action=="home"){
+          setTimeout(()=>{ref.$router.replace({name:"Home"}).catch(err => {});},wait*1000)
         }
-        if(a.action=="reload"){
-          this.$router.go()
+        if(action=="load"){
+          setTimeout(()=>{
+            ref.reloadForm()
+            ref.$router.replace({name:"Form",query:{form:form}}).catch(err => {});
+          },wait*1000)
         }
-        if(a.action=="hide"){
-          this.hideForm=true
+        if(action=="reload"){
+          setTimeout(()=>{ref.$router.go()},wait*1000)
         }
-        if(a.action=="show"){
-          this.hideForm=false
+        if(action=="hide"){
+          setTimeout(()=>{ref.hideForm=true},wait*1000)
+        }
+        if(action=="show"){
+          setTimeout(()=>{ref.hideForm=false},wait*1000)
         }
       },
       reloadForm(){
@@ -1484,17 +1499,17 @@
                     // final result
                     if(ref.currentForm.onFinished){
                       ref.currentForm.onFinished.forEach((action, i) => {
-                        setTimeout(function(){ ref.doAction(action) }, (action.delay||0)*1000);
+                        ref.doAction(action);
                       });
                     }
                     if(this.jobResult.status=="success" && ref.currentForm.onSuccess){
                       ref.currentForm.onSuccess.forEach((action, i) => {
-                        setTimeout(function(){ ref.doAction(action) }, (action.delay||0)*1000);
+                        ref.doAction(action);
                       });
                     }
                     if(this.jobResult.status=="error" && ref.currentForm.onFailed){
                       ref.currentForm.onFailed.forEach((action, i) => {
-                        setTimeout(function(){ ref.doAction(action) }, (action.delay||0)*1000);
+                        ref.doAction(action);
                       });
                     }
                     this.abortTriggered=false
@@ -1653,7 +1668,7 @@
                     this.jobResult.data.output = ""
                     if(ref.currentForm.onSubmit){
                       ref.currentForm.onSubmit.forEach((action, i) => {
-                        setTimeout(function(){ ref.doAction(action) }, (action.delay||0)*1000);
+                        ref.doAction(action);
                       });
                     }
                     // wait for 2 seconds, and get the output of the job

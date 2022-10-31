@@ -217,12 +217,11 @@
               ],
               "properties": {
                 "load": {"type": "string"},
-                "clear": {"type": "boolean"},
-                "home": {"type": "boolean"},
-                "reload": {"type": "boolean"},
-                "hide": {"type": "boolean"},
-                "show": {"type": "boolean"},
-                "delay": {"type": "integer"}
+                "clear": {"type": "number"},
+                "home": {"type": "number"},
+                "reload": {"type": "number"},
+                "hide": {"type": "number"},
+                "show": {"type": "number"}
               }
             }
           },
