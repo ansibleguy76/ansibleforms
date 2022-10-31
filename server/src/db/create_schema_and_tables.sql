@@ -82,6 +82,7 @@ CREATE TABLE `job_output` (
   `output` longtext DEFAULT NULL,
   `timestamp` datetime NOT NULL DEFAULT current_timestamp(),
   `output_type` varchar(10) NOT NULL,
+  `replace` tinyint(4) DEFAULT NULL,
   `job_id` int(11) NOT NULL,
   `order` int(11) NOT NULL,
   PRIMARY KEY (`id`),

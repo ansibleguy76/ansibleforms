@@ -1071,7 +1071,7 @@ Awx.launchTemplate = function (template,ev,inventory,tags,c,d,key,credentials,jo
     Job.endJobStatus(jobid,++counter,"stderr",status,message)
   })
 };
-Awx.trackJob = function (job,jobid,counter,success,failed, previousoutput) {
+Awx.trackJob = function (job,jobid,counter,success,failed, previousoutput,previousoutputid) {
   Awx.getConfig()
   .then((awxConfig)=>{
       var message=""
@@ -1093,8 +1093,14 @@ Awx.trackJob = function (job,jobid,counter,success,failed, previousoutput) {
                 var output=o
                 // AWX has incremental output, but we always need to substract previous output
                 // if previous output is part of this one, substract it (for awx output)
+                // logger.debug("---------------------------------------")
+                // logger.debug(`[${counter}] => "${previousoutput}"`)
+                // logger.debug(`[${counter}] => "${output}"`)
                 if(output && previousoutput && output.indexOf(previousoutput)==0){
+                  // logger.info("==> Seeing increment, substracting")
                   output = output.substring(previousoutput.length)
+                }else{
+                  // logger.info("==> No increment found ?")
                 }
                 Job.printJobOutput(output,"stdout",jobid,counter,(jobid,counter)=>{
                   if(j.finished){
@@ -1105,7 +1111,7 @@ Awx.trackJob = function (job,jobid,counter,success,failed, previousoutput) {
                     }
                   }else{
                     // not finished, try again
-                    setTimeout(()=>{Awx.trackJob(j,jobid,counter,success,failed,o)},1000)
+                    setTimeout(()=>{Awx.trackJob(j,jobid,counter,success,failed,o)},5000)
                   }
                 },(jobid,counter)=>{
                    Job.printJobOutput("Abort requested","stderr",jobid,counter)
@@ -1144,6 +1150,10 @@ Awx.getJobTextOutput = function (job) {
       if(job.related===undefined){
         throw "No such job"
       }else{
+        if(!job.related.stdout){
+          // workflow job... just return status
+          return job.status
+        }
         // prepare axiosConfig
         const axiosConfig = {
           headers: {
@@ -1153,6 +1163,7 @@ Awx.getJobTextOutput = function (job) {
         }
         return axios.get(awxConfig.uri + job.related.stdout + "?format=txt",axiosConfig)
           .then((axiosresult)=>{ return axiosresult.data })
+
       }
   })
 };
@@ -1177,9 +1188,23 @@ Awx.findJobTemplateByName = function (name) {
           if(job_template){
             return job_template
           }else{
-            message=`could not find job template ${name}`
-            logger.error(message)
-            throw message
+            logger.info("Template not found, looking for workflow job template")
+            // trying workflow job templates
+            return axios.get(awxConfig.uri + "/api/v2/workflow_job_templates/?name=" + encodeURI(name),axiosConfig)
+              .then((axiosresult)=>{
+                var job_template = axiosresult.data.results.find(function(jt, index) {
+                  if(jt.name == name)
+                    return true;
+                });
+                if(job_template){
+                  return job_template
+                }else{
+                  message=`could not find job template ${name}`
+                  logger.error(message)
+                  throw message
+                }
+              })
+
           }
         })
   })
