@@ -175,10 +175,10 @@ Job.createOutput = function (record) {
   // logger.debug(`Creating job output`)
   if(record.output){
     // insert output and return status in 1 go
-    return mysql.do("INSERT INTO AnsibleForms.`job_output` set ?;SELECT status FROM AnsibleForms.`jobs` WHERE id=?;", [record,record.job_id])
+    return mysql.do("SELECT status FROM AnsibleForms.`jobs` WHERE id=?;INSERT INTO AnsibleForms.`job_output` set ?;", [record,record.job_id])
       .then((res)=>{
         if(res.length==2){
-          return res[1][0].status
+          return res[0][0].status
         }else{
           throw "Failed to get job status"
         }
@@ -1092,15 +1092,9 @@ Awx.trackJob = function (job,jobid,counter,success,failed, previousoutput,previo
             .then((o)=>{
                 var output=o
                 // AWX has incremental output, but we always need to substract previous output
-                // if previous output is part of this one, substract it (for awx output)
-                // logger.debug("---------------------------------------")
-                // logger.debug(`[${counter}] => "${previousoutput}"`)
-                // logger.debug(`[${counter}] => "${output}"`)
-                if(output && previousoutput && output.indexOf(previousoutput)==0){
-                  // logger.info("==> Seeing increment, substracting")
+                // we substract the previous output
+                if(output && previousoutput){
                   output = output.substring(previousoutput.length)
-                }else{
-                  // logger.info("==> No increment found ?")
                 }
                 Job.printJobOutput(output,"stdout",jobid,counter,(jobid,counter)=>{
                   if(j.finished){
@@ -1111,7 +1105,7 @@ Awx.trackJob = function (job,jobid,counter,success,failed, previousoutput,previo
                     }
                   }else{
                     // not finished, try again
-                    setTimeout(()=>{Awx.trackJob(j,jobid,counter,success,failed,o)},5000)
+                    setTimeout(()=>{Awx.trackJob(j,jobid,counter,success,failed,o)},1000)
                   }
                 },(jobid,counter)=>{
                    Job.printJobOutput("Abort requested","stderr",jobid,counter)
