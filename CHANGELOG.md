@@ -19,8 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Add wildcard support on filterBy function
 -   PostActionsEvents
     - events: onSubmit, onSuccess, onFailed, onFinished
-    - actions: load (a form), reload (same form), home, clear (reset form), hide/show (form)
-    - optional delay
+    - actions with delay: load (a form), reload (same form), home, clear (reset form), hide/show (form)
 
 ## [3.1.0] - 2022-10-28
 
