@@ -1512,7 +1512,7 @@
                         ref.doAction(action);
                       });
                     }
-                    if(this.jobResult.status=="error" && ref.currentForm.onAbort){
+                    if(this.jobResult.status=="warning" && ref.currentForm.onAbort){
                       ref.currentForm.onAbort.forEach((action, i) => {
                         ref.doAction(action);
                       });
