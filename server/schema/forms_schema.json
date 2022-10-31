@@ -231,19 +231,19 @@
               "$ref": "/action"
             }
           },
-          "onFailed": {
+          "onFailure": {
             "type": "array",
             "items": {
               "$ref": "/action"
             }
           },
-          "onAborted": {
+          "onAbort": {
             "type": "array",
             "items": {
               "$ref": "/action"
             }
           },
-          "onFinished": {
+          "onFinish": {
             "type": "array",
             "items": {
               "$ref": "/action"
