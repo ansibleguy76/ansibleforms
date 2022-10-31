@@ -1497,8 +1497,8 @@
                     setTimeout(function(){ ref.getJob(id,true) }, 2000);
                   }else{
                     // final result
-                    if(ref.currentForm.onFinished){
-                      ref.currentForm.onFinished.forEach((action, i) => {
+                    if(ref.currentForm.onFinish){
+                      ref.currentForm.onFinish.forEach((action, i) => {
                         ref.doAction(action);
                       });
                     }
@@ -1507,8 +1507,13 @@
                         ref.doAction(action);
                       });
                     }
-                    if(this.jobResult.status=="error" && ref.currentForm.onFailed){
-                      ref.currentForm.onFailed.forEach((action, i) => {
+                    if(this.jobResult.status=="error" && ref.currentForm.onFailure){
+                      ref.currentForm.onFailure.forEach((action, i) => {
+                        ref.doAction(action);
+                      });
+                    }
+                    if(this.jobResult.status=="error" && ref.currentForm.onAbort){
+                      ref.currentForm.onAbort.forEach((action, i) => {
                         ref.doAction(action);
                       });
                     }
