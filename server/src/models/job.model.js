@@ -175,7 +175,7 @@ Job.createOutput = function (record) {
   // logger.debug(`Creating job output`)
   if(record.output){
     // insert output and return status in 1 go
-    return mysql.do("SELECT status FROM AnsibleForms.`jobs` WHERE id=?;INSERT INTO AnsibleForms.`job_output` set ?;", [record,record.job_id])
+    return mysql.do("SELECT status FROM AnsibleForms.`jobs` WHERE id=?;INSERT INTO AnsibleForms.`job_output` set ?;", [record.job_id,record])
       .then((res)=>{
         if(res.length==2){
           return res[0][0].status

@@ -149,6 +149,45 @@
           },
           "description": {"type": "string"},
           "image": {"type": "string"},
+          "onSubmit": {
+            "type": "array",
+            "items": {
+              "$id": "/action",
+              "type": "object",
+              "required": [
+                "action"
+              ],
+              "properties": {
+                "action": {"type": "string"},
+                "value": {"type": "string"},
+                "delay": {"type": "integer"}
+              }
+            }
+          },
+          "onSuccess": {
+            "type": "array",
+            "items": {
+              "$ref": "/action"
+            }
+          },
+          "onFailed": {
+            "type": "array",
+            "items": {
+              "$ref": "/action"
+            }
+          },
+          "onAborted": {
+            "type": "array",
+            "items": {
+              "$ref": "/action"
+            }
+          },
+          "onFinished": {
+            "type": "array",
+            "items": {
+              "$ref": "/action"
+            }
+          },          
           "icon": {
             "$ref": "/icon"
           },
