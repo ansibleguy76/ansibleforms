@@ -470,7 +470,7 @@
           })
         }
         // required validation for expression field
-        if((ff.type=="expression")||(ff.type=="query") && ff.required){
+        if(((ff.type=="expression")||(ff.type=="query")) && ff.required){
           attrs.required=helpers.withParams(
               {description: "This field is required"},
               (value) => (value!=undefined && value!=null && value!='__auto__' && value!='__none__' && value!='__all__')
