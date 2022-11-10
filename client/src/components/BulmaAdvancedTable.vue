@@ -78,7 +78,8 @@
         previewLabel:"",
         preview:"",
         isLoading:true,
-        queryfilter:""
+        queryfilter:"",
+        foo:""
       }
     },
     computed: {
@@ -248,9 +249,9 @@
         var first = this.selectedItems.slice(0,3)
         if(l>0){
           if(l>3){
-            this.preview = first.map(i => {return ((i)?i[ref.previewLabel]||i:"undefined")}).join(', ') + ", ... ("+l+" items selected)"
+            this.preview = first.map(i => {return ((i)?(i[ref.previewLabel]??i):"undefined")}).join(', ') + ", ... ("+l+" items selected)"
           }else{
-            this.preview = first.map(i => {return ((i)?i[ref.previewLabel]||i:"undefined")}).join(', ')
+            this.preview = first.map(i => {return ((i)?(i[ref.previewLabel]??i):"undefined")}).join(', ')
           }
         }else{
           this.preview = ""
@@ -264,6 +265,7 @@
               this.$emit('input', {values:undefined,preview:this.preview})
             }
         }
+        this.foo=JSON.stringify(this.preview)
       },
       multicheck(){
         var ref=this

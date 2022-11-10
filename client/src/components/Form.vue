@@ -21,18 +21,18 @@
           </article>
           <!-- top form buttons -->
           <!-- show extra vars -->
-          <button @click="generateJsonOutput();showExtraVars=true" class="button is-info is-small mr-3">
+          <button @click="generateJsonOutput();showExtraVars=true" class="button is-info is-small mr-3" v-show="!hideForm">
             <span class="icon">
               <font-awesome-icon icon="eye" />
             </span>
             <span>Show Extravars</span>
           </button>
           <!-- debug button - show hidden expressions -->
-          <span v-if="isAdmin" class="icon is-clickable is-pulled-right" :class="{'has-text-success':!showHidden,'has-text-danger':showHidden}" @click="showHidden=!showHidden">
+          <span  v-show="!hideForm" v-if="isAdmin" class="icon is-clickable is-pulled-right" :class="{'has-text-success':!showHidden,'has-text-danger':showHidden}" @click="showHidden=!showHidden">
               <font-awesome-icon :icon="(showHidden?'search-minus':'search-plus')" />
           </span>
           <!-- reload button -->
-          <button @click="$emit('rerender')" class="button is-warning is-small mr-3">
+          <button @click="reloadForm" class="button is-warning is-small mr-3">
             <span class="icon">
               <font-awesome-icon icon="redo" />
             </span>
@@ -48,7 +48,7 @@
             </button>
           </transition>
           <!-- groups -->
-          <div :key="group" v-for="group in fieldgroups" class="mt-4">
+          <div :key="group" v-for="group in fieldgroups" class="mt-4" v-show="!hideForm">
             <div :class="getGroupClass(group)">
               <!-- group title -->
               <h3 class="title is-3" v-if="checkGroupDependencies(group)">{{group}}</h3>
@@ -418,6 +418,7 @@
     },
     data(){
       return  {
+          hideForm:false,       // possible action to hide form onsubmit for example
           formdata:{},          // the eventual object sent to the api in the correct hierarchy
           interval:undefined,   // interval how fast fields need to be re-evaluated and refreshed
           showExtraVars: false, // flag to show/hide extravars
@@ -449,7 +450,7 @@
           showHelp:false,           // flag to show/hide form help
           showHidden:false,         // flag to show/hide hidden field / = debug mode
           jobId:undefined,          // holds the current jobid
-          abortTriggered:false      // flag abort is triggered
+          abortTriggered:false     // flag abort is triggered
         }
     },
     validations() {     // a dynamic assignment of vuelidate validations, based on the form yaml
@@ -469,7 +470,7 @@
           })
         }
         // required validation for expression field
-        if((ff.type=="expression")||(ff.type=="query") && ff.required){
+        if(((ff.type=="expression")||(ff.type=="query")) && ff.required){
           attrs.required=helpers.withParams(
               {description: "This field is required"},
               (value) => (value!=undefined && value!=null && value!='__auto__' && value!='__none__' && value!='__all__')
@@ -558,6 +559,45 @@
       }
     },
     methods:{
+      doAction(a){
+        var ref=this
+        const action=Object.keys(a)[0]
+        const value=a[action]
+        var wait=0
+        var form=""
+        if(typeof value=="string"){
+          var tmp=value.split(/,(.*)/s)
+          wait=tmp[0]
+          form=tmp[1]
+        }else{
+          wait=parseInt(value)
+        }
+        // this.$toast.info(`${action} => (${wait})${form}`)
+        if(action=="clear"){
+          setTimeout(()=>{ref.initForm()},wait*1000)
+        }
+        if(action=="home"){
+          setTimeout(()=>{ref.$router.replace({name:"Home"}).catch(err => {});},wait*1000)
+        }
+        if(action=="load"){
+          setTimeout(()=>{
+            ref.reloadForm()
+            ref.$router.replace({name:"Form",query:{form:form}}).catch(err => {});
+          },wait*1000)
+        }
+        if(action=="reload"){
+          setTimeout(()=>{ref.$router.go()},wait*1000)
+        }
+        if(action=="hide"){
+          setTimeout(()=>{ref.hideForm=true},wait*1000)
+        }
+        if(action=="show"){
+          setTimeout(()=>{ref.hideForm=false},wait*1000)
+        }
+      },
+      reloadForm(){
+        this.$emit('rerender')
+      },
       // prevent default focus
       inputFocus(e){
         e.preventDefault();
@@ -621,9 +661,10 @@
       // check if a field must be shown based on dependencies
       checkDependencies(field){
         var ref = this
-        var result=true                          // checks if a field can be show, based on the value of other fields
         if("dependencies" in field){
-          field.dependencies.forEach((item, i) => {
+          var result=false
+          for(let i=0;i<field.dependencies.length;i++){
+            const item=field.dependencies[i]
             var value=undefined
             var column=""
             var fieldname=item.name
@@ -642,19 +683,17 @@
             }else{
               value=ref.form[fieldname]
             }
-            if(!item.values.includes(value)){
-              if(ref.visibility[field.name]){
-                Vue.set(ref.visibility,field.name,false)
-              }
-              result =false
-            }else{
-              if(!ref.visibility[field.name]){
-                Vue.set(ref.visibility,field.name,true)
-              }
+            if(item.values.includes(value)){
+               result=true
+               break
             }
-          });
+          }
+          if(result){
+            Vue.set(ref.visibility,field.name,true)
+          }else{
+            Vue.set(ref.visibility,field.name,false)
+          }
         }
-        return result
       },
       //----------------------------------------------------------------
       // check if an entire group can be shown, based on field depencies
@@ -690,6 +729,12 @@
         // console.log(`[${fieldname}] reset`)
         this.setFieldStatus(fieldname,undefined)
         Vue.set(this.form,fieldname,this.defaults[fieldname])
+      },
+      resetFields(){
+        this.currentForm.fields.forEach((item, i) => {
+          this.resetField(item.name)
+        });
+
       },
       // load default value in field
       defaultField(fieldname){
@@ -911,7 +956,7 @@
         })
       },
       // replace $() placeholders
-      replacePlaceholders(item){
+      replacePlaceholderInString(value,ignoreIncomplete){
         //---------------------------------------
         // replace placeholders if possible
         //---------------------------------------
@@ -927,11 +972,10 @@
         var keys = undefined
         var targetflag=undefined
         var hasPlaceholders = false;
-        var newValue = item.expression || item.query                                                    // make a copy of our item
-        // console.log("item = " + newValue)
-        // console.log(typeof newValue)
+        // console.log("item = " + value)
+        // console.log(typeof value)
         // console.log(testRegex)
-        matches=[...newValue.matchAll(testRegex)] // force match array
+        matches=[...value.matchAll(testRegex)] // force match array
         for(match of matches){
             //console.log("-> match : " + match[0] + "->" + match[1])
             foundmatch = match[0];                                              // found $(xxx)
@@ -956,6 +1000,10 @@
                 //fieldvalue=JSON.stringify(ref.form[foundfield])
                 // console.log(Helpers.replacePlaceholders(match[1],ref.form))
                 fieldvalue=JSON.stringify(Helpers.replacePlaceholders(match[1],ref.form)) // allow full object reference
+                // drop wrapping quotes
+                if(typeof fieldvalue=="string"){
+                  fieldvalue=fieldvalue.replace(/^\"+/, '').replace(/\"+$/, ''); // eslint-disable-line
+                }
               }else{
                 // other fields, grab a valid value
                 fieldvalue = ref.getFieldValue(ref.form[foundfield],column,true);// get value of xxx
@@ -972,28 +1020,36 @@
             // if the variable is viable and not being changed, replace it
             // console.log(foundfield + "("+fieldvalue+")" + " -> targetflag = " + targetflag)
             // console.log(foundfield + " -> targetflag = " + targetflag)
-            if(((targetflag=="variable"||targetflag=="fixed"||targetflag=="default") && fieldvalue!==undefined && newValue!=undefined)||((item.ignoreIncomplete||false) && newValue!=undefined)){                // valid value ?
+            if(((targetflag=="variable"||targetflag=="fixed"||targetflag=="default") && fieldvalue!==undefined && value!=undefined)||((ignoreIncomplete||false) && value!=undefined)){                // valid value ?
                 if(fieldvalue==undefined){
                   fieldvalue="__undefined__"   // catch undefined values
                 }
                 fieldvalue=ref.stringifyValue(fieldvalue)
                 // console.log("replacing placeholder")
-                newValue=newValue.replace(foundmatch,fieldvalue);               // replace the placeholder with the value
+                value=value.replace(foundmatch,fieldvalue);               // replace the placeholder with the value
                  // console.log("replaced")
-                 // console.log(item.name + " -> " + newValue)
+                 // console.log(item.name + " -> " + value)
             }else{
-                newValue=undefined      // cannot evaluate yet
+                value=undefined      // cannot evaluate yet
             }
             hasPlaceholders=true;
         }
-        if(retestRegex.test(newValue)){                                         // still placeholders found ?
-            newValue=undefined                           // cannot evaluate yet
+        if(retestRegex.test(value)){                     // still placeholders found ?
+            value=undefined                           // cannot evaluate yet
         }
-        if(newValue!=undefined){
-           newValue=newValue.replace("'__undefined__'","undefined")  // replace undefined values
-           newValue=newValue.replace("__undefined__","undefined")
+        if(value!=undefined){
+           value=value.replace("'__undefined__'","undefined")  // replace undefined values
+           value=value.replace("__undefined__","undefined")
         }
-        return {"hasPlaceholders":hasPlaceholders,"value":newValue}          // return the result
+        return {"hasPlaceholders":hasPlaceholders,"value":value}          // return the result
+      },
+      replacePlaceholders(item){
+        //---------------------------------------
+        // replace placeholders if possible
+        //---------------------------------------
+        var newValue = item.expression || item.query   // make a copy of our item
+        return this.replacePlaceholderInString(newValue,item.ignoreIncomplete)
+
       },
       // stringify value if needed
       stringifyValue(fieldvalue){
@@ -1012,11 +1068,28 @@
       // starts the evaluation of dynamic fields (expression or query)
       //----------------------------------------------------------------
       startDynamicFieldsLoop() {
+        // this.$toast("Start eval")
+        function matchRuleShort(str, rule) {
+          var escapeRegex = (str) => str.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1"); // eslint-disable-line
+          return new RegExp("^" + rule.split("*").map(escapeRegex).join(".*") + "$").test(str); // eslint-disable-line
+        }
 
         function compareProps(x1,x2,p){
           for(let i=0;i<p.length;i++){
             const x=p[i]
-            if(x1[x] !== x2[x]){
+
+            if(!matchRuleShort(x1[x],x2[x])){
+              return false
+            }
+          }
+          return true
+        }
+
+        function comparePropsRegex(x1,x2,p){
+          for(let i=0;i<p.length;i++){
+            const x=p[i]
+
+            if(!x1[x].match(x2[x])){
               return false
             }
           }
@@ -1071,6 +1144,24 @@
                 return compareProps(x,args[0],props)
               })
             }
+            regexBy(...args) {
+              let props=Object.keys(args[0])
+              return this.filter((x)=>{
+                return comparePropsRegex(x,args[0],props)
+              })
+            }
+            selectAttr(...args) {
+              let props=Object.keys(args[0])
+
+              return this.map((x)=>{
+                let o = {}
+                for(let i=0;i<props.length;i++){
+                  o[props[i]]=x[args[0][props[i]]]
+                }
+                return o
+              })
+            }
+
         }
 
         // console.log("invoking field expressions and queries")
@@ -1084,6 +1175,7 @@
         // this should not cause issues.
         this.interval = setInterval(function() {
           //console.log("enter loop");
+          // ref.$toast("... loop ...")
           hasUnevaluatedFields=false;                                           // reset flag
           // console.log("-------------------------------")
           ref.currentForm.fields.forEach(
@@ -1411,6 +1503,26 @@
                     setTimeout(function(){ ref.getJob(id,true) }, 2000);
                   }else{
                     // final result
+                    if(ref.currentForm.onFinish){
+                      ref.currentForm.onFinish.forEach((action, i) => {
+                        ref.doAction(action);
+                      });
+                    }
+                    if(this.jobResult.status=="success" && ref.currentForm.onSuccess){
+                      ref.currentForm.onSuccess.forEach((action, i) => {
+                        ref.doAction(action);
+                      });
+                    }
+                    if(this.jobResult.status=="error" && ref.currentForm.onFailure){
+                      ref.currentForm.onFailure.forEach((action, i) => {
+                        ref.doAction(action);
+                      });
+                    }
+                    if(this.jobResult.status=="warning" && ref.currentForm.onAbort){
+                      ref.currentForm.onAbort.forEach((action, i) => {
+                        ref.doAction(action);
+                      });
+                    }
                     this.abortTriggered=false
                     if(this.jobResult.status=="success"){
                       this.$toast.success(result.data.message)
@@ -1565,6 +1677,11 @@
                     ref.jobId=jobid
                     // don't show the whole json part
                     this.jobResult.data.output = ""
+                    if(ref.currentForm.onSubmit){
+                      ref.currentForm.onSubmit.forEach((action, i) => {
+                        ref.doAction(action);
+                      });
+                    }
                     // wait for 2 seconds, and get the output of the job
                     setTimeout(function(){ ref.getJob(jobid) }, 2000);
                   }
@@ -1585,103 +1702,125 @@
         var postdata={}
         postdata.gitRepo = repo;
         return axios.post("/api/v1/git/pull",postdata,TokenStorage.getAuthentication())
-      }
-    },
-    // start form app
-    mounted() { // when the Vue app is booted up, this is run automatically.
-      this.resetResult();
-      var ref=this
-      this.form={}
-      // initialize defaults
-      this.currentForm.fields.forEach((item, i) => {
-        if(["expression","query","table"].includes(item.type)){
-          Vue.set(ref.fieldOptions,item.name,{})                                // storing some easy to find options
-          Vue.set(ref.fieldOptions[item.name],"valueColumn",item.valueColumn||"")
-          Vue.set(ref.fieldOptions[item.name],"placeholderColumn",item.placeholderColumn||"")
-          Vue.set(ref.fieldOptions[item.name],"type",item.type)
-          // if interval refresh store that for easy access
-          if(item.refresh && typeof item.refresh=='string' && /[0-9]+s/.test(item.refresh)){
-            Vue.set(ref.fieldOptions[item.name],"refresh",item.refresh)
+      },
+      initForm(){
+        var ref=this
+        this.pretasksFinished=false
+        this.form={}
+        this.formdata={}
+        this.hideForm=false
+        this.interval=undefined
+        this.showExtraVars=false
+        this.dynamicFieldDependencies={}
+        this.dynamicFieldDependentOf={}
+        this.defaults={}
+        this.dynamicFieldStatus={}
+        this.queryresults={}
+        this.queryerrors={}
+        this.fieldOptions={}
+        this.warnings=[]
+        this.showWarnings=false
+        this.visibility={}
+        this.canSubmit=false
+        this.pretasksFinished=false
+        this.timeout=undefined
+
+        // initialize defaults
+        this.currentForm.fields.forEach((item, i) => {
+          if(["expression","query","table"].includes(item.type)){
+            Vue.set(ref.fieldOptions,item.name,{})                                // storing some easy to find options
+            Vue.set(ref.fieldOptions[item.name],"valueColumn",item.valueColumn||"")
+            Vue.set(ref.fieldOptions[item.name],"placeholderColumn",item.placeholderColumn||"")
+            Vue.set(ref.fieldOptions[item.name],"type",item.type)
+            // if interval refresh store that for easy access
+            if(item.refresh && typeof item.refresh=='string' && /[0-9]+s/.test(item.refresh)){
+              Vue.set(ref.fieldOptions[item.name],"refresh",item.refresh)
+            }
+            Vue.set(ref.form,item.name,item.default)
+            if(item.type=="table"){
+              Vue.set(ref.form,item.name,[])
+            }
+          }else if(["checkbox"].includes(item.type)){
+            Vue.set(ref.form,item.name,item.default||false)
+          }else{
+            Vue.set(ref.form,item.name,item.default||"")
           }
-          Vue.set(ref.form,item.name,item.default)
-          if(item.type=="table"){
-            Vue.set(ref.form,item.name,[])
-          }
-        }else if(["checkbox"].includes(item.type)){
-          Vue.set(ref.form,item.name,item.default||false)
+          Vue.set(ref.visibility,item.name,true)
+        });
+        // initiate the constants
+        if(ref.constants){
+          Object.keys(ref.constants).forEach((item)=>{
+            Vue.set(ref.form,item,ref.constants[item])
+          })
+        }
+        // see if the help should be show initially
+        if(this.currentForm.showHelp && this.currentForm.showHelp===true){
+          this.showHelp=true
+        }
+        // reset the form
+        this.$v.form.$reset();
+        // set all defaults
+        this.initiateDefaults()
+        // find all variable dependencies (in both ways)
+        this.findVariableDependencies()
+        this.findVariableDependentOf()
+
+        // set as ready
+        // if our type is git, we need to first pull git
+        if(!["git","multistep"].includes(this.currentForm.type)){
+          this.pretasksFinished=true
+          // start dynamic field loop (= infinite)
+          this.startDynamicFieldsLoop()
         }else{
-          Vue.set(ref.form,item.name,item.default||"")
-        }
-        Vue.set(ref.visibility,item.name,true)
-      });
-      // initiate the constants
-      if(ref.constants){
-        Object.keys(ref.constants).forEach((item)=>{
-          Vue.set(ref.form,item,ref.constants[item])
-        })
-      }
-      // see if the help should be show initially
-      if(this.currentForm.showHelp && this.currentForm.showHelp===true){
-        this.showHelp=true
-      }
-      // reset the form
-      this.$v.form.$reset();
-      // set all defaults
-      this.initiateDefaults()
-      // find all variable dependencies (in both ways)
-      this.findVariableDependencies()
-      this.findVariableDependentOf()
+          var gitpulls=[]
 
-      // set as ready
-      // if our type is git, we need to first pull git
-      if(!["git","multistep"].includes(this.currentForm.type)){
-        this.pretasksFinished=true
-        // start dynamic field loop (= infinite)
-        this.startDynamicFieldsLoop()
-      }else{
-        var gitpulls=[]
+          if(this.currentForm.type=="git"){
+              gitpulls.push(this.pullGit(this.currentForm.repo))
+          }else if(this.currentForm.type=="multistep"){
+            this.currentForm.steps.forEach((step, i) => {
+              if(step.type=="git")
+                gitpulls.push(this.pullGit(step.repo))
+            });
+          }
+          // wait for all git pulls
+          Promise.all(gitpulls)
+          .then(results=>{
+            var status=true
+            results.forEach((result, i) => {
+              if(result){
 
-        if(this.currentForm.type=="git"){
-            gitpulls.push(this.pullGit(this.currentForm.repo))
-        }else if(this.currentForm.type=="multistep"){
-          this.currentForm.steps.forEach((step, i) => {
-            if(step.type=="git")
-              gitpulls.push(this.pullGit(step.repo))
-          });
-        }
-        // wait for all git pulls
-        Promise.all(gitpulls)
-        .then(results=>{
-          var status=true
-          results.forEach((result, i) => {
-            if(result){
+                if(result.data.status=="error"){
+                  ref.$toast.error(result.data.message)
+                  status=false
+                }
 
-              if(result.data.status=="error"){
-                ref.$toast.error(result.data.message)
+              }else{
+                ref.$toast.error("Failed to pull from git")
                 status=false
               }
 
-            }else{
-              ref.$toast.error("Failed to pull from git")
-              status=false
+            });
+            if(status){
+              if(gitpulls.length>0)
+                ref.$toast.success("Git was pulled")
             }
-
-          });
-          if(status){
-            if(gitpulls.length>0)
-              ref.$toast.success("Git was pulled")
-          }
-          ref.pretasksFinished=true
-          // start dynamic field loop (= infinite)
-          ref.startDynamicFieldsLoop()
-        })
-        .catch(function(err){
-          ref.$toast.error("Failed to pull from git " + err)
-          ref.pretasksFinished=true
-          // start dynamic field loop (= infinite)
-          ref.startDynamicFieldsLoop()
-        })
-      }
+            ref.pretasksFinished=true
+            // start dynamic field loop (= infinite)
+            ref.startDynamicFieldsLoop()
+          })
+          .catch(function(err){
+            ref.$toast.error("Failed to pull from git " + err)
+            ref.pretasksFinished=true
+            // start dynamic field loop (= infinite)
+            ref.startDynamicFieldsLoop()
+          })
+        }
+      },
+    },
+      // start form app
+    mounted() { // when the Vue app is booted up, this is run automatically.
+      this.resetResult();
+      this.initForm();
     },
     // before exit, we stop the interval, as it would not stop otherwise
     beforeDestroy(){

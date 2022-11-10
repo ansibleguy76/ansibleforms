@@ -1,6 +1,6 @@
 {
   "name": "ansible_forms",
-  "version": "3.1.0",
+  "version": "3.1.1",
   "repository": {
     "type": "git",
     "url": "git://github.com/ansibleguy76/ansibleforms.git"
@@ -38,7 +38,7 @@
     "yaml": "~2.1.3",
     "cert-info":"~1.5.1",
     "thenby":"~1.3.4",
-    "mssql":"~9.0.1",
+    "mssql":"~8.1.3",
     "mongodb":"~4.11.0",
     "pg":"~8.8.0",
     "fs-extra":"~10.1.0",

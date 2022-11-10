@@ -175,10 +175,10 @@ Job.createOutput = function (record) {
   // logger.debug(`Creating job output`)
   if(record.output){
     // insert output and return status in 1 go
-    return mysql.do("INSERT INTO AnsibleForms.`job_output` set ?;SELECT status FROM AnsibleForms.`jobs` WHERE id=?;", [record,record.job_id])
+    return mysql.do("SELECT status FROM AnsibleForms.`jobs` WHERE id=?;INSERT INTO AnsibleForms.`job_output` set ?;", [record.job_id,record])
       .then((res)=>{
         if(res.length==2){
-          return res[1][0].status
+          return res[0][0].status
         }else{
           throw "Failed to get job status"
         }
@@ -654,7 +654,6 @@ Multistep.launch = async function(form,steps,user,extravars,creds,jobid,counter,
     counter++
   }
   // global approval
-
   if(!fromStep && approval){
     if(!approved){
       Job.sendApprovalNotification(approval,extravars,jobid)
@@ -682,13 +681,26 @@ Multistep.launch = async function(form,steps,user,extravars,creds,jobid,counter,
           var result=false
           // console.log("fromstep : " + fromStep)
           if(fromStep && fromStep!=step.name){
+            Job.printJobOutput(`STEP [${step.name}] ${'*'.repeat(72-step.name.length)}`,"stdout",jobid,++counter)
+            Job.printJobOutput(`skipped: due to continue`,"stdout",jobid,++counter)
             logger.info("Skipping step " + step.name + " - in continue phase")
+            skipped++
             return true
           }
           // reset from step
           fromStep=undefined
+          if(step.ifExtraVar && extravars[step.ifExtraVar]!==true){
+            Job.printJobOutput(`STEP [${step.name}] ${'*'.repeat(72-step.name.length)}`,"stdout",jobid,++counter)
+            Job.printJobOutput(`skipped: due to condition`,"stdout",jobid,++counter)
+            logger.info("Skipping step " + step.name + " due to condition")
+            skipped++
+            return true
+          }
           if(approve && !approved){
+            Job.printJobOutput(`STEP [${step.name}] ${'*'.repeat(72-step.name.length)}`,"stdout",jobid,++counter)
+            Job.printJobOutput(`skipped: due to approval`,"stdout",jobid,++counter)
             logger.info("Skipping step " + step.name + " due to approval")
+            skipped++
             return true
           }
           logger.notice("Running step " + step.name)
@@ -1071,7 +1083,7 @@ Awx.launchTemplate = function (template,ev,inventory,tags,c,d,key,credentials,jo
     Job.endJobStatus(jobid,++counter,"stderr",status,message)
   })
 };
-Awx.trackJob = function (job,jobid,counter,success,failed, previousoutput) {
+Awx.trackJob = function (job,jobid,counter,success,failed, previousoutput,previousoutputid) {
   Awx.getConfig()
   .then((awxConfig)=>{
       var message=""
@@ -1092,8 +1104,8 @@ Awx.trackJob = function (job,jobid,counter,success,failed, previousoutput) {
             .then((o)=>{
                 var output=o
                 // AWX has incremental output, but we always need to substract previous output
-                // if previous output is part of this one, substract it (for awx output)
-                if(output && previousoutput && output.indexOf(previousoutput)==0){
+                // we substract the previous output
+                if(output && previousoutput){
                   output = output.substring(previousoutput.length)
                 }
                 Job.printJobOutput(output,"stdout",jobid,counter,(jobid,counter)=>{
@@ -1144,6 +1156,10 @@ Awx.getJobTextOutput = function (job) {
       if(job.related===undefined){
         throw "No such job"
       }else{
+        if(!job.related.stdout){
+          // workflow job... just return status
+          return job.status
+        }
         // prepare axiosConfig
         const axiosConfig = {
           headers: {
@@ -1153,6 +1169,7 @@ Awx.getJobTextOutput = function (job) {
         }
         return axios.get(awxConfig.uri + job.related.stdout + "?format=txt",axiosConfig)
           .then((axiosresult)=>{ return axiosresult.data })
+
       }
   })
 };
@@ -1177,9 +1194,23 @@ Awx.findJobTemplateByName = function (name) {
           if(job_template){
             return job_template
           }else{
-            message=`could not find job template ${name}`
-            logger.error(message)
-            throw message
+            logger.info("Template not found, looking for workflow job template")
+            // trying workflow job templates
+            return axios.get(awxConfig.uri + "/api/v2/workflow_job_templates/?name=" + encodeURI(name),axiosConfig)
+              .then((axiosresult)=>{
+                var job_template = axiosresult.data.results.find(function(jt, index) {
+                  if(jt.name == name)
+                    return true;
+                });
+                if(job_template){
+                  return job_template
+                }else{
+                  message=`could not find job template ${name}`
+                  logger.error(message)
+                  throw message
+                }
+              })
+
           }
         })
   })

@@ -1,4 +1,4 @@
-const certinfo=require("cert-info")
+const Certinfo=require("cert-info")
 const restResult=require("../models/restResult.model")
 const logger=require("./logger")
 var Helpers = function(){
@@ -7,22 +7,38 @@ var Helpers = function(){
 
 // this is needed because ldap-authentication has missing try catch
 Helpers.checkCertificateBase64=function(cert){
-  var b64 = cert.replace(/(\r\n|\n|\r)/gm, "").replace(/\-{5}[^\-]+\-{5}/gm,"")
+  var b64 = cert.replace(/(\r\n|\n|\r)/gm, "").replace(/\-{5}[^\-]+\-{5}/gm,"").replaceAll(" ","")
   return (Buffer.from(b64, 'base64').toString('base64') === b64)
 }
 
 Helpers.checkCertificate=function(cert){
-  if(!Helpers.checkCertificateBase64(cert)){
-    return false
+  certs=cert.replace(/-----(\r\n|\n|\r)-----/gm,"-----|-----").split("|")
+  if(certs.length>1){
+    logger.debug("Certificate is a bundle...")
   }else{
-    try{
-      var tmp
-      tmp = certinfo.info(cert)
-      return true
-    }catch(e){
-      return false
-    }
+    logger.debug("Certificate is single...")
   }
+  for(let i=0;i<certs.length;i++){
+    logger.debug(`Certificate ${i+1}`)
+    var c=certs[i]
+    logger.debug(c)
+    if(!Helpers.checkCertificateBase64(c)){
+      logger.error("Bad Base64 Encoding...")
+      return false
+    }else{
+      logger.debug("Base64 is valid...")
+      try{
+        var tmp
+        tmp = Certinfo.info(c)
+        logger.debug(JSON.stringify(tmp))
+      }catch(e){
+        logger.error("Certificate cannot be parsed...")
+        return false
+      }
+    }
+  };
+  // we parsed all certificates, no errors found
+  return true
 }
 // a middleware in the routes to check if use is administrator
 Helpers.checkAdminMiddleware = (req, res, next) =>  {

@@ -149,6 +149,106 @@
           },
           "description": {"type": "string"},
           "image": {"type": "string"},
+          "onSubmit": {
+            "type": "array",
+            "items": {
+              "$id": "/action",
+              "type": "object",
+              "oneOf": [{
+                  "properties": {
+                    "clear": {"not":{}},
+                    "reload": {"not":{}},
+                    "home": {"not":{}},
+                    "hide": {"not":{}},
+                    "show": {"not":{}}
+                  },
+                  "required": ["load"]
+                },
+                {
+                    "properties": {
+                      "load": {"not":{}},
+                      "reload": {"not":{}},
+                      "home": {"not":{}},
+                      "hide": {"not":{}},
+                      "show": {"not":{}}
+                    },
+                    "required": ["clear"]
+                },
+                {
+                    "properties": {
+                      "load": {"not":{}},
+                      "clear": {"not":{}},
+                      "home": {"not":{}},
+                      "hide": {"not":{}},
+                      "show": {"not":{}}
+                    },
+                    "required": ["reload"]
+                },
+                {
+                    "properties": {
+                      "load": {"not":{}},
+                      "clear": {"not":{}},
+                      "reload": {"not":{}},
+                      "hide": {"not":{}},
+                      "show": {"not":{}}
+                    },
+                    "required": ["home"]
+                },
+                {
+                    "properties": {
+                      "load": {"not":{}},
+                      "clear": {"not":{}},
+                      "home": {"not":{}},
+                      "reload": {"not":{}},
+                      "show": {"not":{}}
+                    },
+                    "required": ["hide"]
+                },
+                {
+                    "properties": {
+                      "load": {"not":{}},
+                      "clear": {"not":{}},
+                      "home": {"not":{}},
+                      "hide": {"not":{}},
+                      "reload": {"not":{}}
+                    },
+                    "required": ["show"]
+                }
+              ],
+              "properties": {
+                "load": {"type": "string"},
+                "clear": {"type": "number"},
+                "home": {"type": "number"},
+                "reload": {"type": "number"},
+                "hide": {"type": "number"},
+                "show": {"type": "number"}
+              }
+            }
+          },
+          "onSuccess": {
+            "type": "array",
+            "items": {
+              "$ref": "/action"
+            }
+          },
+          "onFailure": {
+            "type": "array",
+            "items": {
+              "$ref": "/action"
+            }
+          },
+          "onAbort": {
+            "type": "array",
+            "items": {
+              "$ref": "/action"
+            }
+          },
+          "onFinish": {
+            "type": "array",
+            "items": {
+              "$ref": "/action"
+            }
+          },
           "icon": {
             "$ref": "/icon"
           },
@@ -240,6 +340,9 @@
                 "name": {"type": "string"},
                 "playbook": {"type": "string"},
                 "key": {"type": "string"},
+                "ifExtraVar": {
+                  "$ref": "/formfield"
+                },
                 "template": {"type": "string"},
                 "repo": {
                   "$ref": "/repo"
