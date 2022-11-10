@@ -340,6 +340,9 @@
                 "name": {"type": "string"},
                 "playbook": {"type": "string"},
                 "key": {"type": "string"},
+                "ifExtraVar": {
+                  "$ref": "/formfield"
+                },
                 "template": {"type": "string"},
                 "repo": {
                   "$ref": "/repo"
