@@ -150,7 +150,7 @@ Form.parse = function(data){
   }
   return formsConfig
 }
-Form.removeOld=function(days=10){
+Form.removeOld=function(days=60){
   var files = fs.readdirSync(path.dirname(appConfig.formsPath))
   if(files && files.length){
     // filter only backup yamls
