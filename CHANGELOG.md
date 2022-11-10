@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Ldap certificate bug
 -   Drop quotes on string placeholder
+-   Expressions were forced to required field
+-   Dropping mssql package to v8 hoping to fix hang up issue
+-   Dependency bug fixed with multiple dependencies
 
 ### Added
 
@@ -20,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   PostActionsEvents
     - events: onSubmit, onSuccess, onFailure, onFinish
     - actions with delay: load (a form), reload (same form), home, clear (reset form), hide/show (form)
+-   ifExtraVar property on step for conditional step
 
 ## [3.1.0] - 2022-10-28
 
