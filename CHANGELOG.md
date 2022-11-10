@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.1] - 2022-11-10
+
 ### Fixed
 
 -   Ldap certificate bug
@@ -22,8 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Local regexBy function
 -   Add wildcard support on filterBy function
 -   PostActionsEvents
-    - events: onSubmit, onSuccess, onFailure, onFinish
-    - actions with delay: load (a form), reload (same form), home, clear (reset form), hide/show (form)
+    -   events: onSubmit, onSuccess, onFailure, onFinish
+    -   actions with delay: load (a form), reload (same form), home, clear (reset form), hide/show (form)
 -   ifExtraVar property on step for conditional step
 
 ## [3.1.0] - 2022-10-28
@@ -353,7 +355,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/3.1.0...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/3.1.1...HEAD
+
+[3.1.1]: https://github.com/ansibleguy76/ansibleforms/compare/3.1.0...3.1.1
 
 [3.1.0]: https://github.com/ansibleguy76/ansibleforms/compare/3.0.9...3.1.0
 
