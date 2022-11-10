@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Expressions were forced to required field
 -   Dropping mssql package to v8 hoping to fix hang up issue
 -   Dependency bug fixed with multiple dependencies
+-   Preview bug fixed when column was empty
 
 ### Added
 
