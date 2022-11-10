@@ -654,7 +654,6 @@ Multistep.launch = async function(form,steps,user,extravars,creds,jobid,counter,
     counter++
   }
   // global approval
-
   if(!fromStep && approval){
     if(!approved){
       Job.sendApprovalNotification(approval,extravars,jobid)
@@ -682,13 +681,26 @@ Multistep.launch = async function(form,steps,user,extravars,creds,jobid,counter,
           var result=false
           // console.log("fromstep : " + fromStep)
           if(fromStep && fromStep!=step.name){
+            Job.printJobOutput(`STEP [${step.name}] ${'*'.repeat(72-step.name.length)}`,"stdout",jobid,++counter)
+            Job.printJobOutput(`skipped: due to continue`,"stdout",jobid,++counter)
             logger.info("Skipping step " + step.name + " - in continue phase")
+            skipped++
             return true
           }
           // reset from step
           fromStep=undefined
+          if(step.ifExtraVar && extravars[step.ifExtraVar]!==true){
+            Job.printJobOutput(`STEP [${step.name}] ${'*'.repeat(72-step.name.length)}`,"stdout",jobid,++counter)
+            Job.printJobOutput(`skipped: due to condition`,"stdout",jobid,++counter)
+            logger.info("Skipping step " + step.name + " due to condition")
+            skipped++
+            return true
+          }
           if(approve && !approved){
+            Job.printJobOutput(`STEP [${step.name}] ${'*'.repeat(72-step.name.length)}`,"stdout",jobid,++counter)
+            Job.printJobOutput(`skipped: due to approval`,"stdout",jobid,++counter)
             logger.info("Skipping step " + step.name + " due to approval")
+            skipped++
             return true
           }
           logger.notice("Running step " + step.name)
