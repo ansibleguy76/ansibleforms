@@ -17,6 +17,10 @@ Mssql.query=async function(connection_name,query){
             trustServerCertificate: true
         }
     };
+    if(creds.secure){
+      
+      config.encrypt=true
+    }
     return config
   })
   .then((config)=>{
