@@ -661,9 +661,10 @@
       // check if a field must be shown based on dependencies
       checkDependencies(field){
         var ref = this
-        var result=true                          // checks if a field can be show, based on the value of other fields
         if("dependencies" in field){
-          field.dependencies.forEach((item, i) => {
+          var result=false
+          for(let i=0;i<field.dependencies.length;i++){
+            const item=field.dependencies[i]
             var value=undefined
             var column=""
             var fieldname=item.name
@@ -682,19 +683,17 @@
             }else{
               value=ref.form[fieldname]
             }
-            if(!item.values.includes(value)){
-              if(ref.visibility[field.name]){
-                Vue.set(ref.visibility,field.name,false)
-              }
-              result =false
-            }else{
-              if(!ref.visibility[field.name]){
-                Vue.set(ref.visibility,field.name,true)
-              }
+            if(item.values.includes(value)){
+               result=true
+               break
             }
-          });
+          }
+          if(result){
+            Vue.set(ref.visibility,field.name,true)
+          }else{
+            Vue.set(ref.visibility,field.name,false)
+          }
         }
-        return result
       },
       //----------------------------------------------------------------
       // check if an entire group can be shown, based on field depencies
@@ -957,7 +956,7 @@
         })
       },
       // replace $() placeholders
-      replacePlaceholders(item){
+      replacePlaceholderInString(value,ignoreIncomplete){
         //---------------------------------------
         // replace placeholders if possible
         //---------------------------------------
@@ -973,11 +972,10 @@
         var keys = undefined
         var targetflag=undefined
         var hasPlaceholders = false;
-        var newValue = item.expression || item.query                                                    // make a copy of our item
-        // console.log("item = " + newValue)
-        // console.log(typeof newValue)
+        // console.log("item = " + value)
+        // console.log(typeof value)
         // console.log(testRegex)
-        matches=[...newValue.matchAll(testRegex)] // force match array
+        matches=[...value.matchAll(testRegex)] // force match array
         for(match of matches){
             //console.log("-> match : " + match[0] + "->" + match[1])
             foundmatch = match[0];                                              // found $(xxx)
@@ -1022,28 +1020,36 @@
             // if the variable is viable and not being changed, replace it
             // console.log(foundfield + "("+fieldvalue+")" + " -> targetflag = " + targetflag)
             // console.log(foundfield + " -> targetflag = " + targetflag)
-            if(((targetflag=="variable"||targetflag=="fixed"||targetflag=="default") && fieldvalue!==undefined && newValue!=undefined)||((item.ignoreIncomplete||false) && newValue!=undefined)){                // valid value ?
+            if(((targetflag=="variable"||targetflag=="fixed"||targetflag=="default") && fieldvalue!==undefined && value!=undefined)||((ignoreIncomplete||false) && value!=undefined)){                // valid value ?
                 if(fieldvalue==undefined){
                   fieldvalue="__undefined__"   // catch undefined values
                 }
                 fieldvalue=ref.stringifyValue(fieldvalue)
                 // console.log("replacing placeholder")
-                newValue=newValue.replace(foundmatch,fieldvalue);               // replace the placeholder with the value
+                value=value.replace(foundmatch,fieldvalue);               // replace the placeholder with the value
                  // console.log("replaced")
-                 // console.log(item.name + " -> " + newValue)
+                 // console.log(item.name + " -> " + value)
             }else{
-                newValue=undefined      // cannot evaluate yet
+                value=undefined      // cannot evaluate yet
             }
             hasPlaceholders=true;
         }
-        if(retestRegex.test(newValue)){                                         // still placeholders found ?
-            newValue=undefined                           // cannot evaluate yet
+        if(retestRegex.test(value)){                     // still placeholders found ?
+            value=undefined                           // cannot evaluate yet
         }
-        if(newValue!=undefined){
-           newValue=newValue.replace("'__undefined__'","undefined")  // replace undefined values
-           newValue=newValue.replace("__undefined__","undefined")
+        if(value!=undefined){
+           value=value.replace("'__undefined__'","undefined")  // replace undefined values
+           value=value.replace("__undefined__","undefined")
         }
-        return {"hasPlaceholders":hasPlaceholders,"value":newValue}          // return the result
+        return {"hasPlaceholders":hasPlaceholders,"value":value}          // return the result
+      },
+      replacePlaceholders(item){
+        //---------------------------------------
+        // replace placeholders if possible
+        //---------------------------------------
+        var newValue = item.expression || item.query   // make a copy of our item
+        return this.replacePlaceholderInString(newValue,item.ignoreIncomplete)
+
       },
       // stringify value if needed
       stringifyValue(fieldvalue){
