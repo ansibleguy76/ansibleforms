@@ -30,6 +30,22 @@ function getHttpsAgent(awxConfig){
   })
 }
 
+function replaceSinglePlaceholder(s,ev){
+  var m = s.match(/^\$\(([^\)]+)\)$/)
+  if(m){
+    try{
+      var v =  eval("ev."+m[1])
+      logger.notice(`Succesfully replaced placeholder ${s} => ${v}`)
+      return v
+
+    }catch(e){
+      logger.error("Error replacing placeholder "+s)
+      return s
+    }
+  }else{
+    return s
+  }
+}
 
 var Exec = function(){
 
@@ -302,7 +318,7 @@ Job.launch = function(form,formObj,user,creds,extravars,parentId=null,next) {
 
       if(jobtype=="ansible"){
         Ansible.launch(
-          formObj.playbook,
+          replaceSinglePlaceholder(formObj.playbook,extravars),
           extravars,
           formObj.inventory,
           formObj.tags,
@@ -317,7 +333,7 @@ Job.launch = function(form,formObj,user,creds,extravars,parentId=null,next) {
       }
       if(jobtype=="awx"){
         Awx.launch(
-          formObj.template,
+          replaceSinglePlaceholder(formObj.template,extravars),
           extravars,
           formObj.inventory,
           formObj.tags,
@@ -422,7 +438,7 @@ Job.continue = function(form,user,creds,extravars,jobid,next) {
 
                 if(jobtype=="ansible"){
                   Ansible.launch(
-                    formObj.playbook,
+                    replaceSinglePlaceholder(formObj.playbook,extravars),
                     extravars,
                     formObj.inventory,
                     formObj.tags,
@@ -438,7 +454,7 @@ Job.continue = function(form,user,creds,extravars,jobid,next) {
                 }
                 if(jobtype=="awx"){
                   Awx.launch(
-                    formObj.template,
+                    replaceSinglePlaceholder(formObj.template,extravars),
                     extravars,
                     formObj.inventory,
                     formObj.tags,
@@ -646,6 +662,7 @@ Job.reject = function(user,id){
 }
 // Multistep stuff
 var Multistep = function(){}
+
 Multistep.launch = async function(form,steps,user,extravars,creds,jobid,counter,approval,fromStep,approved=false){
   // create a new job in the database
   if(!counter){
