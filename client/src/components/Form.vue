@@ -662,7 +662,7 @@
       checkDependencies(field){
         var ref = this
         if("dependencies" in field){
-          var result=false
+          var result=true
           for(let i=0;i<field.dependencies.length;i++){
             const item=field.dependencies[i]
             var value=undefined
@@ -683,8 +683,8 @@
             }else{
               value=ref.form[fieldname]
             }
-            if(item.values.includes(value)){
-               result=true
+            if(!item.values.includes(value)){
+               result=false
                break
             }
           }
