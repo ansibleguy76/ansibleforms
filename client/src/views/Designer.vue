@@ -16,6 +16,18 @@
         Are you sure you want to leave the designer ?<br>You have unsaved changes.
     </BulmaModal>
     <BulmaModal
+      v-if="showForce"
+      title="Force Unlock"
+      action="Unlock"
+      @click="showForce=false;next(true)"
+      @close="showForce=false;next(false)"
+      @cancel="showForce=false;next(false)">
+        Are you sure you want to force the unlock ?<br>
+        Whomever has the lock now, will loose all changes<br>
+        and will not be able to save them.<br><br>
+        Proceed with care and respect.
+    </BulmaModal>
+    <BulmaModal
       v-if="showRestore"
       title="Restore backup"
       actionSuccess="Restore"
@@ -43,7 +55,7 @@
         <BulmaCheckRadio checktype="checkbox" v-model="backupBeforeRestore" name="backupBeforeRestore" label="Make a backup before restore ?" />
     </BulmaModal>
     <div class="container">
-      <div class="is-pulled-right">
+      <div class="is-pulled-right" v-if="lock && lock.match">
         <transition name="pop" appear>
           <button v-if="warnings.length>0" @click="showWarnings=!showWarnings" class="button is-light is-warning mr-3">
             <span class="icon">
@@ -66,165 +78,201 @@
         </button>
       </div>
       <div>
-        <h1 class="title has-text-info"><font-awesome-icon icon="edit" /> Designer</h1>
-      </div>
-
-      <div class="tabs mt-5">
-        <ul>
-          <li v-for="(tab,index) in tabs" :key="'tab'+index" :class="{'is-active':tab==currentTab}"><a @click="currentTab=tab">{{ tab }}</a></li>
-        </ul>
-      </div>
-      <div v-if="currentTab=='Categories'">
-        <VueCodeEditor
-            v-model="categories"
-            @init="editorInit"
-            lang="yaml"
-            theme="monokai"
-            width="100%"
-            height="60vh"
-            :lazymodel="true"
-            @dirty="formDirty=true"
-            :options="{
-              enableBasicAutocompletion: true,
-              enableLiveAutocompletion: false,
-              fontSize: 14,
-              highlightActiveLine: true,
-              enableSnippets: false,
-              showLineNumbers: true,
-              tabSize: 2,
-              wrap:false,
-              showPrintMargin: false,
-              showGutter: true
-            }"
-            :commands="[
-                {
-                    name: 'save',
-                    bindKey: { win: 'Ctrl-s', mac: 'Command-s' },
-                    exec: null,
-                    readOnly: true,
-                },
-            ]"
-          />
-      </div>
-      <div v-if="currentTab=='Roles'">
-        <VueCodeEditor
-            v-model="roles"
-            @init="editorInit"
-            lang="yaml"
-            theme="monokai"
-            width="100%"
-            height="60vh"
-            :lazymodel="true"
-            @dirty="formDirty=true"
-            :options="{
-              enableBasicAutocompletion: true,
-              enableLiveAutocompletion: false,
-              fontSize: 14,
-              highlightActiveLine: true,
-              enableSnippets: false,
-              showLineNumbers: true,
-              tabSize: 2,
-              wrap:false,
-              showPrintMargin: false,
-              showGutter: true
-            }"
-            :commands="[
-                {
-                    name: 'save',
-                    bindKey: { win: 'Ctrl-s', mac: 'Command-s' },
-                    exec: save,
-                    readOnly: true
-                }
-            ]"
-          />
-      </div>
-      <div v-if="currentTab=='Constants'">
-        <VueCodeEditor
-            v-model="constants"
-            @init="editorInit"
-            lang="yaml"
-            theme="monokai"
-            width="100%"
-            height="60vh"
-            :lazymodel="true"
-            @dirty="formDirty=true"
-            :options="{
-              enableBasicAutocompletion: true,
-              enableLiveAutocompletion: false,
-              fontSize: 14,
-              highlightActiveLine: true,
-              enableSnippets: false,
-              showLineNumbers: true,
-              tabSize: 2,
-              wrap:false,
-              showPrintMargin: false,
-              showGutter: true
-            }"
-            :commands="[
-                {
-                    name: 'save',
-                    bindKey: { win: 'Ctrl-s', mac: 'Command-s' },
-                    exec: save,
-                    readOnly: true
-                }
-            ]"
-          />
-      </div>
-      <div v-if="currentTab=='Forms'">
-        <div class="columns">
-          <div class="column">
-            <VueCodeEditor
-                v-model="forms[currentForm]"
-                @init="editorInit"
-                lang="yaml"
-                theme="monokai"
-                width="100%"
-                height="60vh"
-                tabindex=0
-                :lazymodel="true"
-                @dirty="formDirty=true"
-                :options="{
-                    enableBasicAutocompletion: true,
-                    enableLiveAutocompletion: false,
-                    fontSize: 14,
-                    highlightActiveLine: true,
-                    enableSnippets: false,
-                    showLineNumbers: true,
-                    tabSize: 2,
-                    wrap:false,
-                    showPrintMargin: false,
-                    showGutter: true
-                }"
-                :commands="[
-                    {
-                        name: 'save',
-                        bindKey: { win: 'Ctrl-s', mac: 'Command-s' },
-                        exec: save,
-                        readOnly: true,
-                    },
-                ]"
-              />
+        <h1 class="title has-text-info">
+          <span class="mr-3"><font-awesome-icon icon="edit" /> Designer</span>
+          <div v-if="lock && lock.lock" class="dropdown is-hoverable">
+            <div class="dropdown-trigger">
+              <span aria-haspopup="true" aria-controls="dropdown-menu-lock" class="tag is-light is-medium mr-3" :class="{'is-warning':!lock.match,'is-success':lock.match}">
+                <span class="icon">
+                  <font-awesome-icon icon="lock" size="sm" />
+                </span>
+                <span v-if="lock && lock.lock && !lock.match" class="mr-1"> Locked by {{ lock.lock.username }}</span>
+                <span v-if="lock && lock.lock && lock.match"  class="mr-1"> Locked by me</span>
+              </span>
+            </div>
+            <div class="dropdown-menu" id="dropdown-menu-lock" role="menu">
+              <div class="dropdown-content">
+                <div class="dropdown-item">
+                  <p>User: {{ lock.lock.username}}</p>
+                  <p>Type: {{ lock.lock.type}}</p>
+                  <p>Created: {{ lockAge }}</p>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="column is-one-third">
-            <aside class="menu">
-              <template v-for="f in files">
-                <p :key="'file'+f" class="menu-label">
-                  <span>{{f||"Base file"}}</span>
-                  <span class="icon is-pulled-right has-text-success mr-3 is-clickable" @click="addForm(f)"><font-awesome-icon icon="plus" /></span>
-                </p>
-                <ul :key="'form'+f" class="menu-list">
-                  <li v-for="n in formnames(f)" :key="n.id">
-                    <a class="is-not-clickable" @click="currentForm=n.id" :class="{'is-active':currentForm==n.id}">
-                      <span>{{ n.name }}</span>
-                      <span class="icon is-pulled-right has-text-danger" @click="deleteForm(n.id)"><font-awesome-icon icon="times" /></span>
-                    </a>
-                  </li>
-                </ul>
-              </template>
-            </aside>
+          <span class="is-clickable tag is-medium is-link mr-3" v-if="lock && lock.free" @click="setLock">
+            <span class="icon"><font-awesome-icon icon="unlock" size="sm" /></span>
+            <span>Start designer</span>
+          </span>
+          <span class="is-clickable tag is-medium is-link mr-3" v-if="lock && (!lock.match && !lock.free)" @click="unLock">
+            <span class="icon"><font-awesome-icon icon="unlock" size="sm" /></span>
+            <span>Force unlock</span>
+          </span>
+          <span class="is-clickable tag is-medium is-link mr-3" v-if="lock && lock.match" @click="releaseLock">
+            <span class="icon"><font-awesome-icon icon="unlock" size="sm" /></span>
+            <span>Release lock</span>
+          </span>
+        </h1>
+      </div>
+      <template v-if="lock && lock.match" >
+        <div class="tabs mt-5">
+          <ul>
+            <li v-for="(tab,index) in tabs" :key="'tab'+index" :class="{'is-active':tab==currentTab}"><a @click="currentTab=tab">{{ tab }}</a></li>
+          </ul>
+        </div>
+
+        <div v-if="currentTab=='Categories'">
+          <VueCodeEditor
+              v-model="categories"
+              @init="editorInit"
+              lang="yaml"
+              theme="monokai"
+              width="100%"
+              height="60vh"
+              :lazymodel="true"
+              @dirty="formDirty=true"
+              :options="{
+                enableBasicAutocompletion: true,
+                enableLiveAutocompletion: false,
+                fontSize: 14,
+                highlightActiveLine: true,
+                enableSnippets: false,
+                showLineNumbers: true,
+                tabSize: 2,
+                wrap:false,
+                showPrintMargin: false,
+                showGutter: true
+              }"
+              :commands="[
+                  {
+                      name: 'save',
+                      bindKey: { win: 'Ctrl-s', mac: 'Command-s' },
+                      exec: null,
+                      readOnly: true,
+                  },
+              ]"
+            />
+        </div>
+        <div v-if="currentTab=='Roles'">
+          <VueCodeEditor
+              v-model="roles"
+              @init="editorInit"
+              lang="yaml"
+              theme="monokai"
+              width="100%"
+              height="60vh"
+              :lazymodel="true"
+              @dirty="formDirty=true"
+              :options="{
+                enableBasicAutocompletion: true,
+                enableLiveAutocompletion: false,
+                fontSize: 14,
+                highlightActiveLine: true,
+                enableSnippets: false,
+                showLineNumbers: true,
+                tabSize: 2,
+                wrap:false,
+                showPrintMargin: false,
+                showGutter: true
+              }"
+              :commands="[
+                  {
+                      name: 'save',
+                      bindKey: { win: 'Ctrl-s', mac: 'Command-s' },
+                      exec: save,
+                      readOnly: true
+                  }
+              ]"
+            />
+        </div>
+        <div v-if="currentTab=='Constants'">
+          <VueCodeEditor
+              v-model="constants"
+              @init="editorInit"
+              lang="yaml"
+              theme="monokai"
+              width="100%"
+              height="60vh"
+              :lazymodel="true"
+              @dirty="formDirty=true"
+              :options="{
+                enableBasicAutocompletion: true,
+                enableLiveAutocompletion: false,
+                fontSize: 14,
+                highlightActiveLine: true,
+                enableSnippets: false,
+                showLineNumbers: true,
+                tabSize: 2,
+                wrap:false,
+                showPrintMargin: false,
+                showGutter: true
+              }"
+              :commands="[
+                  {
+                      name: 'save',
+                      bindKey: { win: 'Ctrl-s', mac: 'Command-s' },
+                      exec: save,
+                      readOnly: true
+                  }
+              ]"
+            />
+        </div>
+        <div v-if="currentTab=='Forms'">
+          <div class="columns">
+            <div class="column">
+              <VueCodeEditor
+                  v-model="forms[currentForm]"
+                  @init="editorInit"
+                  lang="yaml"
+                  theme="monokai"
+                  width="100%"
+                  height="60vh"
+                  tabindex=0
+                  :lazymodel="true"
+                  @dirty="formDirty=true"
+                  :options="{
+                      enableBasicAutocompletion: true,
+                      enableLiveAutocompletion: false,
+                      fontSize: 14,
+                      highlightActiveLine: true,
+                      enableSnippets: false,
+                      showLineNumbers: true,
+                      tabSize: 2,
+                      wrap:false,
+                      showPrintMargin: false,
+                      showGutter: true
+                  }"
+                  :commands="[
+                      {
+                          name: 'save',
+                          bindKey: { win: 'Ctrl-s', mac: 'Command-s' },
+                          exec: save,
+                          readOnly: true,
+                      },
+                  ]"
+                />
+            </div>
+            <div class="column is-one-third">
+              <aside class="menu">
+                <template v-for="f in files">
+                  <p :key="'file'+f" class="menu-label">
+                    <span>{{f||"Base file"}}</span>
+                    <span class="icon is-pulled-right has-text-success mr-3 is-clickable" @click="addForm(f)"><font-awesome-icon icon="plus" /></span>
+                  </p>
+                  <ul :key="'form'+f" class="menu-list">
+                    <li v-for="n in formnames(f)" :key="n.id">
+                      <a class="is-not-clickable" @click="currentForm=n.id" :class="{'is-active':currentForm==n.id}">
+                        <span>{{ n.name }}</span>
+                        <span class="icon is-pulled-right has-text-danger" @click="deleteForm(n.id)"><font-awesome-icon icon="times" /></span>
+                      </a>
+                    </li>
+                  </ul>
+                </template>
+              </aside>
+            </div>
           </div>
         </div>
-      </div>
+      </template>
     </div>
   </section>
 </template>
@@ -239,6 +287,7 @@
   import BulmaAdvancedSelect from './../components/BulmaAdvancedSelect.vue'
   import BulmaCheckRadio from './../components/BulmaCheckRadio.vue'
   import Helpers from './../lib/Helpers'
+  import moment from 'moment'
   import Form from './../lib/Form'
 
   export default{
@@ -261,7 +310,10 @@
         loaded:false,
         showDelete: false,
         showWarnings: false,
+        lock: undefined,
         showDirty:false,
+        showForce:false,
+        lockInterval:undefined,
         showRestore:false,
         backups:[],
         backupToRestore:undefined,
@@ -285,6 +337,13 @@
       }
     },
     computed:{
+      lockAge(){
+        if(this.lock?.lock){
+          return moment(this.lock.lock.created).from()
+        }else{
+          return ""
+        }
+      },
       formsObj(){
         return Object.keys(this.forms).map(x => {
           try{
@@ -419,8 +478,20 @@
 
     methods:{
       selectfirst(){
+        this.selectById(0)
+      },
+      selectById(id){
         if(Object.keys(this.forms).length>0){
-          this.currentForm=Object.keys(this.forms)[0]
+          this.currentForm=Object.keys(this.forms)[id]
+        }
+      },
+      selectByName(name){
+        var formId=0
+        formId = this.idmapping.map((x)=>{return x.name}).indexOf(name)
+        if(formId>0){
+          this.selectById(formId)
+        }else{
+          this.selectById(0)
         }
       },
       formnames(file){
@@ -434,7 +505,6 @@
         }
         return result
       },
-
       addForm(file=undefined){
         if(!this.formExists("New Form")){
           var newform=this.formtemplate
@@ -467,7 +537,11 @@
           formConfig.forms.forEach((item, i) => {
             Vue.set(ref.forms,"form_"+i,YAML.stringify(item))
           });
-          ref.selectfirst()
+          if(ref.$route.query.form){
+            ref.selectByName(ref.$route.query.form)
+          }else{
+            ref.selectfirst()
+          }
           ref.loaded=true
         },function(err){
           ref.$toast.error(err)
@@ -506,6 +580,72 @@
          }),function(error){
            ref.$toast.error(error.message);
          };
+      },
+      getLock(){
+        var ref=this
+        axios.get('/api/v1/lock',TokenStorage.getAuthentication())
+          .then((result)=>{
+            if(result.data.status=="error" && result.data.data?.error=="Designer is disabled"){
+              ref.$toast.error("The designer has been disabled")
+              clearInterval(ref.lockInterval)
+            }else if(result.data.status=="error"){
+              ref.$toast.error(result.data?.message)
+              clearInterval(ref.lockInterval)
+            }else{
+              ref.lock=result.data.data.output
+            }
+          }),function(error){
+            ref.$toast.error(error.message);
+            ref.lock=undefined
+          };
+      },
+      setLock(proceed){
+        var ref=this
+        if(!proceed)return false
+        return axios.post('/api/v1/lock',{},TokenStorage.getAuthentication())
+          .then((result)=>{
+            if(result.data.status=="error"){
+                ref.$toast.error("Failed to set lock");
+            }else{
+                ref.loadAll()
+            }
+          }),function(error){
+            ref.$toast.error(error.message);
+            ref.lock=undefined
+          };
+      },
+      unLock(){
+        this.next=this.setLock
+        this.showForce=true
+      },
+      releaseLock(){
+        if(this.formDirty){
+          this.next=this.deleteLock
+          this.showDirty=true
+        }else{
+          this.deleteLock(true)
+        }
+      },
+      deleteLock(proceed){
+        var ref=this
+        if(!proceed)return false
+        return axios.delete('/api/v1/lock',{},TokenStorage.getAuthentication())
+          .then((result)=>{
+            if(result.data.status=="error"){
+                ref.$toast.error("Failed to remove lock");
+                ref.lock=undefined
+            }else{
+              // ref.$toast.success(result.data.message);
+              ref.loadAll()
+            }
+          }),function(error){
+            ref.$toast.error(error.message);
+          };
+      },
+      loadAll(){
+        this.loadForms();
+        this.loadBackups();
+        this.getLock();
       },
       save(close=false) {
        var ref= this;
@@ -548,8 +688,9 @@
       }
     },
     mounted() { // when the Vue app is booted up, this is run automatically.
-        this.loadForms();
-        this.loadBackups();
+      var ref=this
+      this.loadAll();
+      this.lockInterval=setInterval(this.getLock,5000) // reload running jobs every 2s
     },
     beforeRouteLeave (to, from , next) {
       if(this.formDirty){
@@ -559,7 +700,11 @@
         next(true)
       }
     },
+    beforeDestroy(){
+      clearInterval(this.lockInterval)
+    },
     beforeMount() {
+      var ref=this
       window.addEventListener("beforeunload", event => {
         if (!this.formDirty) return
         event.preventDefault()
