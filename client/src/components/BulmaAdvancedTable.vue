@@ -60,7 +60,7 @@
       multiple:{type:Boolean},
       required:{type:Boolean},
       name:{type:String,required:true},
-      defaultValue:{type:[String,Array]},
+      defaultValue:{type:[String,Array,Object]},
       status:{type:String},
       sizeClass:{type:String},
       columns:{type:Array},
@@ -281,7 +281,7 @@
         this.filtered.forEach((item) => {
           Vue.set(ref.selected,item.index,false)
         })
-
+        this.$emit('ischanged')
       },
       getLabels(){
         var ref=this
@@ -325,7 +325,7 @@
               this.select(i)
             })
           }else if(this.defaultValue!="__none__" && this.defaultValue!=undefined){ // if a regular default is set, we select it
-            var obj
+            var obj=undefined
             var defaulttype
             try{
               obj = JSON.parse(this.defaultValue)
@@ -333,14 +333,20 @@
                 defaulttype="object"
               }
             }catch(e){
-              // bad default value
+              obj=undefined
+            }
+            if(typeof this.defaultValue == "object"){
+              obj=this.defaultValue
+              defaulttype="object"
             }
             if(defaulttype=="object"){
               // we search for the value by property
+
               if(obj){
                 // loop all values
                 this.values.forEach((item,i) => {
                   try{
+
                     if(this.objectEqual(obj,item)){
                         this.select(i)
                     }

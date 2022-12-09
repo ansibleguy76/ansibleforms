@@ -260,7 +260,7 @@
                 }
             },
             values: function(){
-              this.rows=this.values
+              Vue.set(this,"rows",this.values)
               if(this.values && this.values.length>0){
                 var fields = this.tableFields.map(x => x.name)
                 var data = Object.keys(this.values[0])
@@ -276,12 +276,13 @@
           if((this.deleteMarker || !this.allowDelete) && (!this.insert_marker || this.insert_marker.length==0)){
             this.insert_marker="__inserted__"
           }
-          this.rows=this.values
+          Vue.set(this,"rows",this.values)
           if(this.rows){
             this.showedRows = JSON.parse(JSON.stringify(this.rows));
           }else{
             this.showedRows = undefined
           }
+          //this.input()
         },
         computed: {
             filterRow: function () {

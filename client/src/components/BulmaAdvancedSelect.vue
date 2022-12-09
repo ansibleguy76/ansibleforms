@@ -80,7 +80,7 @@ export default {
         required: { type: Boolean },
         isLoading: { type: Boolean },
         name: { type: String, required: true },
-        defaultValue: { type: [String, Array] },
+        defaultValue: { type: [String, Array,Object] },
         placeholder: { type: String },
         icon: { type: String },
         sizeClass: { type: String },
