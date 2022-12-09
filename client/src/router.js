@@ -17,11 +17,12 @@ import Sshkey from './views/Sshkey.vue'
 import Jobs from './views/Jobs.vue'
 import Logs from './views/Logs.vue'
 import Profile from './views/Profile.vue'
+import ReferenceGuide from './views/ReferenceGuide.vue'
 import TokenStorage from './lib/TokenStorage.js'
 Vue.use(Router);
 const checkAdmin=(to, from, next) => {
   var payload = TokenStorage.getPayload()
-  if(payload.user && payload.user.roles && payload.user.roles.includes("admin")){
+  if(payload?.user?.roles?.includes("admin")){
     next()
   }else{
     console.log("You are not an admin user")
@@ -60,6 +61,11 @@ export default new Router({
         path:"/schema",
         name:"Schema",
         component:Schema
+      },
+      {
+        path:"/reference-guide",
+        name:"Reference Guide",
+        component:ReferenceGuide
       },
       {
         path:"/groups",
