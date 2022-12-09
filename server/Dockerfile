@@ -6,6 +6,9 @@ FROM node:16-alpine AS node
 
 FROM node AS nodebase
 
+RUN wget -O /bin/ytt github.com/vmware-tanzu/carvel-ytt/releases/download/v0.44.0/ytt-linux-amd64
+RUN chmod -R +x /bin/ytt
+
 # Use /app as CWD
 WORKDIR /app
 
