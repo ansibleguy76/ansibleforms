@@ -18,7 +18,7 @@
                 <router-link class="navbar-item" to="/jobs" v-if="authenticated">
                   <span class="icon"><font-awesome-icon icon="history" /></span><span>Job log </span><span v-if="approvals" class="ml-1 is-warning tag">{{approvals}} {{(approvals==1)?"approval":"approvals"}} waiting</span>
                 </router-link>
-                <router-link class="navbar-item" to="/designer" v-if="isAdmin && authenticated">
+                <router-link class="navbar-item" :to="'/designer?form='+($route.query.form||'')" v-if="isAdmin && authenticated">
                   <span class="icon"><font-awesome-icon icon="edit" /></span><span>Designer</span>
                 </router-link>
 
@@ -61,6 +61,9 @@
                     <a class="navbar-item" href="https://www.ansibleforms.com/" target="_blank">
                       <span class="icon"><font-awesome-icon icon="globe" /></span><span>Documentation</span>
                     </a>
+                    <router-link class="navbar-item" to="/reference-guide">
+                      <span class="icon"><font-awesome-icon icon="question-circle" /></span><span>Reference Guide</span>
+                    </router-link>
                     <a class="navbar-item" href="/api-docs" target="_blank">
                       <span class="icon"><font-awesome-icon icon="code" /></span><span>Api docs</span>
                     </a>
