@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+-   Dependencies are now AND not OR
+-   Using mysql2 lib to fix authentication issues
+-   Fixed AWX Task issue when failed
+-   Auto select current form in designer
+-   Placeholder with dash bug
+
+### Added
+
+-   Added dynamic playbook and template name $(extravar)
+-   Designer Locking (env var)
+-   Pass external data to form
+-   Reference Guide
+
+### Changed
+
+-   Better error messages with remote expressions
+
 ## [3.1.1] - 2022-11-10
 
 ### Fixed

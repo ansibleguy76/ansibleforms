@@ -17,9 +17,8 @@ var Helpers = {
   },
   replacePlaceholders(match,object){
     if(match.match(/^[a-zA-Z0-9_\-\[\]\.]*$/)){ /* eslint-disable-line */
-      var obj_list = match.split('.')
-      var to_eval="object['"+obj_list.join("']['")+"']"
-      //console.log(to_eval)
+      var to_eval="object"+match.replaceAll("[",".").replaceAll("]",".").split(".").filter(x=>!(x==="")).map(x=>{return "["+((/^-?\d+$/.test(x))?x:"'"+x+"'")+"]"}).join("")
+      // console.log(to_eval)
       return eval(to_eval)
     } else{
       return `$(${match})` // return original

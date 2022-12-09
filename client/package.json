@@ -33,6 +33,7 @@
     "yaml": "1.10.2",
     "thenby": "*",
     "vue-showdown": "2.4.1",
+    "bulma-calendar": "*",
     "@fortawesome/fontawesome-svg-core":"~6.2.0",
     "@fortawesome/free-solid-svg-icons":"~6.2.0",
     "@fortawesome/free-regular-svg-icons":"~6.2.0",

@@ -280,7 +280,7 @@ formfield:
     type: boolean
     short: Send credential as extravar
     description: |
-      Use the value of this field to search for a credential with the same name and send that credential hidden to the playbook as extravar.
+      Use the value of this field to search for a credential with the same name and send that credential (with user and password) hidden to the playbook as extravar.
     with_types: text,password,query,expression
     examples:
       - name: Search and send the credential named 'vcenter'
@@ -289,3 +289,48 @@ formfield:
             type: expression
             expression: "'vcenter'"
             asCredential: true
+  - name: outputObject
+    type: boolean
+    short: Output the selection of a query-field as a full object.
+    description: |
+      When selecting from a query-field (dropdown), either the first column or the column defined in `valueColumn` is sent as an extravar.  If you want the full selected record, use the property.
+    with_types: query
+  - name: expression
+    type: string
+    short: A javascript expression.
+    description: |
+        By default this javascript is evaluated on the server side and limited to predefined functions (for security).
+        However in combination with `runLocal`, the evaluation is ran in the browsers sandbox and allows the full javascript power.
+        When used in a `query` field, the expression must return a flat array or array of flat objects, to make it presentable in a dropdown box.
+        Click here to find out more about the predefined functions.
+    with_types: query,expression
+    examples:
+      - name: Get a list of users from a rest api
+        code: |
+          - name: users
+            type: query
+            expression: fn.fnRestBasic('get','http://myapi/user','','credential_name')
+      - name: Apply a naming convention
+        code: |
+          - name: full_name
+            type: expression
+            expression: "'$(first_name) $(last_name)'.toUpperCase()"
+            runLocal: true
+      - name: Calculate numbers
+        code: |
+          - name: size_in_gb
+            type: query
+            expression: ($(size_bytes)/1024/1024/1024).toFixed(2)
+            runLocal: true
+      - name: Filter and sort an array of objects
+        code: |
+          - name: superheros
+            type: query
+            expression: "fnArray.from($(mylist)).filterBy({has_ability:true}).selectAttr('name','ability').sortBy('name')"
+            runLocal: true
+      - name: Make a numbered list
+        code: |
+          - name: superheros
+            type: query
+            expression: "fnArray.from($(mylist)).filterBy({has_ability:true}).selectAttr('name','ability').sortBy('name')"
+            runLocal: true
