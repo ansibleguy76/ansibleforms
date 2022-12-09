@@ -97,6 +97,10 @@ exports.launch = async function(req, res) {
         var form = req.body.formName;
         var extravars = req.body.extravars
         var creds = req.body.credentials
+        var awxCreds = req.body.awxCredentials
+        for (const [key, value] of Object.entries(awxCreds)) {
+          creds["awx___"+key]=value
+        }
         var user = req.user.user
         extravars.ansibleforms_user = user
         Job.launch(form,null,user,creds,extravars,null,function(job){
