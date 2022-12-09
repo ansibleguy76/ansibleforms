@@ -266,6 +266,13 @@
                   "default": ""
                 }
               },
+              "onStatus": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "default": ""
+                }
+              },
               "recipients": {
                 "type": "array",
                 "items": {
@@ -277,8 +284,7 @@
             },
             "additionalProperties": false,
             "required": [
-              "recipients",
-              "on"
+              "recipients"
             ]
           },
           "categories": {
@@ -301,7 +307,8 @@
                       },
                       "template": {"not":{}},
                       "repo": {"not":{}},
-                      "steps": {"not":{}}
+                      "steps": {"not":{}},
+                      "awxCredentials": {"not":{}}
                     },
                     "required": ["playbook"]
                   },
@@ -327,7 +334,8 @@
                       "tags": {"not":{}},
                       "check": {"not":{}},
                       "diff": {"not":{}},
-                      "steps": {"not":{}}
+                      "steps": {"not":{}},
+                      "awxCredentials": {"not":{}}
                     },
                     "required": ["repo"]
                   }
@@ -347,6 +355,13 @@
                 "repo": {
                   "$ref": "/repo"
                 },
+                "awxCredentials": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "default": ""
+                  }
+                },
                 "inventory": {"type": "string"},
                 "tags": {"type": "string"},
                 "check": {"type": "boolean"},
@@ -357,6 +372,13 @@
                   "type": "object",
                   "properties": {
                     "on": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "default": ""
+                      }
+                    },
+                    "onStatus": {
                       "type": "array",
                       "items": {
                         "type": "string",
@@ -374,8 +396,7 @@
                   },
                   "additionalProperties": false,
                   "required": [
-                    "recipients",
-                    "on"
+                    "recipients"
                   ]
                 },
                 "approval": {
@@ -880,13 +901,18 @@
                   "default": false
                 },
                 "size": {"type": "integer"},
+                "dependencyFn": {
+                  "type": "string",
+                  "enum": ["and", "or", "nand", "nor"]
+                },
                 "dependencies": {
                   "type": "array",
                   "items": {
                     "type": "object",
                     "properties": {
                       "name": {
-                        "$ref": "/formfield"
+                        "type": "string",
+                        "pattern": "^!{0,1}[A-Za-z0-9_\\-.]+$"
                       },
                       "values": {
                         "type": "array",
