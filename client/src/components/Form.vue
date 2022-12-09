@@ -28,8 +28,11 @@
             <span>Show Extravars</span>
           </button>
           <!-- debug button - show hidden expressions -->
-          <span  v-show="!hideForm" v-if="isAdmin" class="icon is-clickable is-pulled-right" :class="{'has-text-success':!showHidden,'has-text-danger':showHidden}" @click="showHidden=!showHidden">
+          <span  v-show="!hideForm" v-if="isAdmin" title="Show hidden fields" class="icon is-clickable is-pulled-right" :class="{'has-text-success':!showHidden,'has-text-danger':showHidden}" @click="showHidden=!showHidden">
               <font-awesome-icon :icon="(showHidden?'search-minus':'search-plus')" />
+          </span>
+          <span  v-show="!hideForm" title="Copy form link with values" class="icon is-clickable is-pulled-right has-text-link" @click="getFormUrl()">
+              <font-awesome-icon icon="link" />
           </span>
           <!-- reload button -->
           <button @click="reloadForm" class="button is-warning is-small mr-3">
@@ -153,7 +156,7 @@
                       <div v-if="field.type=='query'">
                         <BulmaAdvancedSelect
                           v-show="!fieldOptions[field.name].viewable"
-                          :defaultValue="field.default"
+                          :defaultValue="defaults[field.name]"
                           :required="field.required||false"
                           :multiple="field.multiple||false"
                           :name="field.name"
@@ -271,7 +274,7 @@
                             v-model="$v.form[field.name].$model"
                             @change="evaluateDynamicFields(field.name)">
                             <option v-if="!field.required" value=""></option>
-                            <option v-for="option in field.values" :key="option" :selected="field.default==option" :value="option">{{ option }}</option>
+                            <option v-for="option in field.values" :key="option" :selected="defaults[field.name]==option" :value="option">{{ option }}</option>
                           </select>
                         </div>
                         <!-- type = multiple enum -->
@@ -284,7 +287,7 @@
                             multiple
                             :size="field.size">
                             <option v-if="!field.required" value=""></option>
-                            <option v-for="option in field.values" :key="option" :selected="field.default.includes(option)" :value="option">{{ option }}</option>
+                            <option v-for="option in field.values" :key="option" :selected="defaults[field.name].includes(option)" :value="option">{{ option }}</option>
                           </select>
                         </div>
                         <!-- add left icon, but not for query, because that's a component with icon builtin -->
@@ -422,6 +425,7 @@
           formdata:{},          // the eventual object sent to the api in the correct hierarchy
           interval:undefined,   // interval how fast fields need to be re-evaluated and refreshed
           showExtraVars: false, // flag to show/hide extravars
+          externalData:{},           // object to hold external data
           jobResult:{       // holds the output of an execution
             status:"",
             message:"",
@@ -559,6 +563,12 @@
       }
     },
     methods:{
+      getFormUrl(){
+        var base64values=btoa(JSON.stringify(this.form))
+        var url=`${location.protocol}//${location.host}/#/form/?form=${encodeURIComponent(this.currentForm.name)}&base64values=${base64values}`
+
+        this.clip(url,true)
+      },
       doAction(a){
         var ref=this
         const action=Object.keys(a)[0]
@@ -661,15 +671,25 @@
       // check if a field must be shown based on dependencies
       checkDependencies(field){
         var ref = this
+        var dependencyFn=field.dependencyFn || "and"
+        var isAnd = (dependencyFn=="and" || dependencyFn=="nand")
+        var isOr = (dependencyFn=="or" || dependencyFn=="nor")
+        // console.log("fn => " + dependencyFn)
         if("dependencies" in field){
-          var result=true
+          var result
+          if(dependencyFn=="and" || dependencyFn=="nand"){
+            result=true // and starts with true
+          }else{
+            result=false // or starts with false
+          }
           for(let i=0;i<field.dependencies.length;i++){
             const item=field.dependencies[i]
             var value=undefined
             var column=""
-            var fieldname=item.name
+            var inversed=item.name.startsWith("!")                         // detect ! => inversion
+            var fieldname=inversed?item.name.slice(1):item.name
             var columnRegex = /(.+)\.(.+)/g;                               // detect a "." in the field
-            var tmpArr=columnRegex.exec(field)                             // found aaa.bbb
+            var tmpArr=columnRegex.exec(fieldname)                             // found aaa.bbb
             if(tmpArr && tmpArr.length>0){
               fieldname = tmpArr[1]                                        // aaa
               column=tmpArr[2]                                             // bbb
@@ -683,11 +703,24 @@
             }else{
               value=ref.form[fieldname]
             }
-            if(!item.values.includes(value)){
+            if(isAnd && ((!inversed && !item.values.includes(value)) || ((inversed && item.values.includes(value)))) ){
                result=false
+               // console.log("and not valid")
+               break
+            }
+            if(isOr && ((!inversed && item.values.includes(value)) || (inversed && !item.values.includes(value)))){
+               result=true
+               // console.log("or valid")
                break
             }
           }
+          // console.log("sub => " + result)
+          // invert if nand or nor
+          if(dependencyFn=="nand" || dependencyFn=="nor"){
+            result=!result
+            // console.log("inverting")
+          }
+          // console.log("final => " + result)
           if(result){
             Vue.set(ref.visibility,field.name,true)
           }else{
@@ -794,7 +827,11 @@
       initiateDefaults(){
         var ref=this
         this.currentForm.fields.forEach((item,i) => {
-          ref.defaults[item.name]=item.default
+          if(item.name in ref.externalData){
+            ref.defaults[item.name]=ref.externalData[item.name]
+          }else{
+            ref.defaults[item.name]=item.default
+          }
         })
       },
       // add warnings for bad table values
@@ -828,7 +865,7 @@
         this.currentForm.fields.forEach((item,i) => {
           if(item.dependencies){
             item.dependencies.forEach((dep)=>{
-              if(!fields.includes(dep.name)){
+              if(!(fields.includes(dep.name) || ( dep.name.startsWith("!") && fields.includes(dep.name.slice(1))  ))){
                 ref.warnings.push(`<span class="has-text-warning-dark">'${item.name}' has bad dependencies</span><br><span>${dep.name} is not a valid field name</span>`)
               }
             })
@@ -956,7 +993,7 @@
         })
       },
       // replace $() placeholders
-      replacePlaceholderInString(value,ignoreIncomplete){
+      replacePlaceholderInString(value,ignoreIncomplete=false){
         //---------------------------------------
         // replace placeholders if possible
         //---------------------------------------
@@ -1001,7 +1038,7 @@
                 // console.log(Helpers.replacePlaceholders(match[1],ref.form))
                 fieldvalue=JSON.stringify(Helpers.replacePlaceholders(match[1],ref.form)) // allow full object reference
                 // drop wrapping quotes
-                if(typeof fieldvalue=="string"){
+                if(typeof fieldvalue=="string"){ // drop quotes if string
                   fieldvalue=fieldvalue.replace(/^\"+/, '').replace(/\"+$/, ''); // eslint-disable-line
                 }
               }else{
@@ -1207,7 +1244,13 @@
                           result=eval(placeholderCheck.value)
                           if(item.type=="expression") Vue.set(ref.form, item.name, result);
                           if(item.type=="query") Vue.set(ref.queryresults, item.name, [].concat(result));
-                          if(item.type=="table") Vue.set(ref.form, item.name, [].concat(result));
+                          // table is special.  if external data is passed.  we take that instead of results.
+                          if(item.type=="table" && !ref.defaults(item.name)){
+                            Vue.set(ref.form, item.name, [].concat(result));
+                          }
+                          if(item.type=="table" && ref.defaults(item.name)){
+                            Vue.set(ref.form, item.name, [].concat(ref.defaults[item.name]));
+                          }
                           if(placeholderCheck.hasPlaceholders){                 // if placeholders were found we set this a variable dynamic field.
                             // set flag as viable variable query
                             // console.log("Expression found with variables")
@@ -1251,10 +1294,12 @@
                                   Vue.set(ref.queryresults, item.name, [].concat(restresult.data.output??[]))
                                 }
                               }
-                              if(item.type=="table") Vue.set(ref.form, item.name, [].concat(restresult.data.output??[]));
+                              // table is special, use external data is passed !
+                              if(item.type=="table" && !ref.defaults[item.name]) Vue.set(ref.form, item.name, [].concat(restresult.data.output??[]));
+                              if(item.type=="table" && ref.defaults[item.name]) Vue.set(ref.form, item.name, [].concat(ref.defaults[item.name]??[]));
 
                               // expression returned undefined, so lets set to default if we have one
-                              if(restresult.data.output==undefined && (item.default!=undefined)){
+                              if(restresult.data.output==undefined && (ref.defaults[item.name]!=undefined)){
                                 if(item.type=="expression"){
                                   ref.defaultField(item.name)
                                 }else{
@@ -1298,9 +1343,6 @@
                   ref.setFieldStatus(item.name,"running",false)
                   placeholderCheck = ref.replacePlaceholders(item)     // check and replace placeholders
                   if(placeholderCheck.value!=undefined){                       // expression is clean ?
-                     // console.log(placeholderCheck);
-                    // execute query
-
                     axios.post("/api/v1/query?noLog="+(!!item.noLog),{query:placeholderCheck.value,config:item.dbConfig},TokenStorage.getAuthentication())
                       .then((result)=>{
                         var restresult = result.data
@@ -1554,7 +1596,7 @@
       },
       // get the value of a field
       // can be many things and more complex than you think
-      // if a records is selected in a query for example
+      // if a record is selected in a query for example
       // the value can be the valueColumn, ....
       getFieldValue(field,column,keepArray){
         var keys=undefined
@@ -1658,11 +1700,23 @@
           postdata.extravars = this.formdata
           postdata.formName = this.currentForm.name;
           postdata.credentials = {}
+          postdata.awxCredentials = {}
           this.currentForm.fields
             .filter(f => f.asCredential==true)
             .forEach(f => {
               postdata.credentials[f.name]=this.formdata[f.name]
             })
+          if(this.currentForm.steps)
+            this.currentForm.steps
+              .forEach(s => {
+                if(s.awxCredentials)
+                  s.awxCredentials
+                    .forEach(f => {
+                      if(this.formdata[f]){
+                        postdata.awxCredentials[f]=this.formdata[f]
+                      }
+                    })
+              })
           this.jobResult.message= "Connecting with job api ";
           this.jobResult.status="info";
           axios.post("/api/v1/job/",postdata,TokenStorage.getAuthentication())
@@ -1724,9 +1778,42 @@
         this.canSubmit=false
         this.pretasksFinished=false
         this.timeout=undefined
-
+        // extract external data
+        if(ref.$route.query.base64values){
+          try{
+            var queryObject=JSON.parse(atob(ref.$route.query.base64values))
+            // Vue.set(ref,"form",queryObject)
+          }catch(e){
+            ref.$toast.error("Couldn't parse your querystring")
+          }
+          for (const [key, value] of Object.entries(queryObject)) {
+            // if(ref.currentForm.fields[key]){
+              // console.log("Setting " + key)
+              Vue.set(ref.externalData,key,value)
+            // }
+          }
+        }
         // initialize defaults
         this.currentForm.fields.forEach((item, i) => {
+          // extra query parameters and store in externalData
+          if(ref.$route.query[item.name]!=undefined){
+            var queryValue=ref.$route.query[item.name]
+            if(item.type=="number"){
+              try{
+                queryValue=parseInt(queryValue)
+              }catch(e){
+                queryValue=0
+              }
+            }
+            if(item.type=="checkbox"){
+              if(queryValue.toLowerCase()==="false"){
+                queryValue=false
+              }else{
+                queryValue=!!queryValue
+              }
+            }
+            Vue.set(ref.externalData,item.name,queryValue)
+          }
           if(["expression","query","table"].includes(item.type)){
             Vue.set(ref.fieldOptions,item.name,{})                                // storing some easy to find options
             Vue.set(ref.fieldOptions[item.name],"valueColumn",item.valueColumn||"")
@@ -1736,17 +1823,21 @@
             if(item.refresh && typeof item.refresh=='string' && /[0-9]+s/.test(item.refresh)){
               Vue.set(ref.fieldOptions[item.name],"refresh",item.refresh)
             }
-            Vue.set(ref.form,item.name,item.default)
-            if(item.type=="table"){
+            Vue.set(ref.form,item.name,ref.externalData[item.name]??item.default)
+            if(item.type=="table" && !ref.defaults[item.name]){
               Vue.set(ref.form,item.name,[])
             }
+            if(item.type=="table" && ref.defaults[item.name]){
+              Vue.set(ref.form,item.name,ref.externalData[item.name])
+            }
           }else if(["checkbox"].includes(item.type)){
-            Vue.set(ref.form,item.name,item.default||false)
+            Vue.set(ref.form,item.name,ref.externalData[item.name]??item.default??false)
           }else{
-            Vue.set(ref.form,item.name,item.default||"")
+            Vue.set(ref.form,item.name,ref.externalData[item.name]??item.default??"")
           }
           Vue.set(ref.visibility,item.name,true)
         });
+
         // initiate the constants
         if(ref.constants){
           Object.keys(ref.constants).forEach((item)=>{
@@ -1815,6 +1906,7 @@
             ref.startDynamicFieldsLoop()
           })
         }
+
       },
     },
       // start form app
