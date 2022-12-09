@@ -1,0 +1,291 @@
+---
+environment_variables:
+- name: PORT
+  examples:
+  - PORT=8443
+  type: Numeric
+  allowed: Valid TCP port
+  description: The listening port of the web application
+  default: 8443
+- name: HTTPS
+  type: Numeric
+  allowed: 0 or 1
+  examples:
+  - HTTPS=1
+  description: Enable SSL/TLS on the web application
+  default: 1
+formfield:
+  description: |
+    Each form contains 1 or more formfields.  Each formfield can be heavily tuned with the below parameters.
+  attributes:
+  - name: name
+    type: string
+    required: true
+    unique: true
+    allowed: Alfanumeric + underscore + dash
+    short: Field name
+    description: This attribute represents the name of the form field.
+  - name: type
+    type: string
+    required: true
+    choices:
+      - text
+      - number
+      - password
+      - checkbox
+      - radio
+      - enum
+      - query
+      - expression
+      - table
+    short: Field type
+    description: Other attributes might only be available for some field types.
+  - name: label
+    type: string
+    allowed: Free text
+    short: Field label
+    description: |
+      A friendly name/label for the field
+  - name: placeholder
+    type: string
+    allowed: Free text
+    short: In-field help value
+    description: |
+      Some form fields allow an in-field hint value.
+    with_types: text,number,password,checkbox,query
+  - name: help
+    type: string
+    allowed: Free text
+    short: Field help message
+    description: |
+      Some fields require additional help information.
+      This help message will be shown below the field.
+  - name: icon
+    type: string
+    allowed: Free fontawesome 6 icon
+    short: Field icon
+    description: |
+      Some formfields can hold a nice looking icon.  The icon name is a free fontawesome 6 icon.
+      You can find more information at [www.fontawesome.com](https://www.fontawesome.com)
+    with_types: text,number,expression,password,query
+  - name: group
+    type: string
+    allowed: Free text
+    short: The field group name
+    description: With this attribute you can group fields together.  When all fields in a group are hidden (due to dependencies), the group is also hidden.
+  - name: dependencyFn
+    type: string
+    version: 3.1.2
+    choices:
+      - and
+      - or
+      - nand
+      - nor
+    short: The dependency logical function
+    default: and
+    description: This attribute represents the logical function between multiple dependencies.
+  - name: dependencies
+    type: list / elements=object
+    allowed: Reference to other formfields and their values
+    short: Show/hide this field based on the values or other fields
+    description: |
+      Each dependency element is an object with 2 attributes:
+      * `name` : holds the fieldname.
+      * `values` : a list of valid values for the referencing field.
+
+      Use in combination with attribute `dependencyFn`.
+    changelog:
+      - version: 3.1.2
+        type: added
+        description: Add an exlamation mark `!` before the referencing field's name, to invert the match.
+    examples:
+      - name: Show a field based on a checkbox
+        code: |
+
+         - name: add_extra_comment
+           label: Add extra comment ?
+           type: checkbox
+         - name: extra_comment
+           type: text
+           label: Type your extra comment
+           dependencies:
+           - name: add_extra_comment
+             values:
+             - true
+      - name: Show a field based on 2 fields, using the 'or' function
+        code: |
+
+         - name: job_type
+           label: Job type
+           type: enum
+           values:
+           - IT
+           - HR
+           - Sales
+           - Management
+         - name: has_private_office
+           type: checkbox
+           label: Has private office ?
+         - name: office_name
+           type: text
+           label: What's the name of the office
+           dependencyFn: or
+           dependencies:
+           - name: job_type
+             values:
+             - Sales
+             - Management
+           - name: has_private_office
+             values:
+             - true
+  - name: keydown
+    type: boolean
+    short: Enable responsiveness
+    version: 2.2.0
+    description: |
+      Enable instant responsiveness whilst typing.  Can be important to re-evaluate expressions at every keystroke.
+    with_types: text,password
+  - name: noLog
+    type: boolean
+    short: Disable backend logging
+    version: 2.2.3
+    description: |
+      Disables logging in the backend, to hide passwords for example.
+    with_types: expression, query
+  - name: multiple
+    type: boolean
+    short: Enable multi select
+    description: |
+      Enable multiple select with dropdown boxes.
+    with_types: enum, query
+  - name: default
+    type: many
+    short: Default value
+    description: |
+      The type of the value depends on the field type.  Can be `string`, `number`, `array` or `object`.
+      When using `multiple`, the default is an `array`.
+    with_types: text,number,expression,password,query,enum,radio,checkbox
+  - name: required
+    type: boolean
+    short: Required field
+    description: |
+      Makes the field required.
+  - name: minLength
+    type: number
+    short: Field minimum length
+    description: |
+      Forces a string-field to be at least x long.
+    with_types: text,expression,password
+  - name: maxLength
+    type: number
+    short: Field maximum length
+    description: |
+      Forces a string-field to be maximum x long.
+    with_types: text,expression,password
+  - name: minValue
+    type: number
+    short: Field minimum value
+    description: |
+      Forces a number-field to not be lower than...
+    with_types: number
+  - name: maxValue
+    type: number
+    short: Field maximum value
+    description: |
+      Forces a number-field to not be higher than...
+    with_types: number
+  - name: regex
+    type: object
+    short: A regular expression validation
+    description: |
+      Enforces a validation where the current field must match a regular expression.
+      This field requires an object with 2 attributes:
+      * `expression` : The regular expression
+      * `description` : A validation message to show when the regex is not matched.
+    with_types: text,expression,password
+  - name: notIn
+    type: object
+    short: A list validation (can not be in list)
+    version: 2.2.4
+    description: |
+      Enforces a validation where the current field can not be one of the values in a list (referencing another field).
+      This field requires an object with 2 attributes:
+      * `field` : The name of the field that holds the list
+      * `description` : A validation message to show when the validation is not met.
+    with_types: text,expression,password
+  - name: in
+    type: object
+    version: 2.2.4
+    short: A list validation (must be in list)
+    description: |
+      Enforces a validation where the current field must be one of the values in a list (referencing another field).
+      This field requires an object with 2 attributes:
+      * `field` : The name of the field that holds the list
+      * `description` : A validation message to show when the validation is not met.
+    with_types: text,expression,password
+  - name: validIf
+    type: object
+    version: 2.2.4
+    short: An field based validation (field must be true)
+    description: |
+      Enforces a validation where a referencing (expression) field must be true.
+      This field requires an object with 2 attributes:
+      * `field` : The name of the referencing field
+      * `description` : A validation message to show when the validation is not met.
+  - name: validIfNot
+    type: object
+    version: 2.2.4
+    short: An field based validation (field must be false)
+    description: |
+      Enforces a validation where a referencing (expression) field must be false.
+      This field requires an object with 2 attributes:
+      * `field` : The name of the referencing field
+      * `description` : A validation message to show when the validation is not met.
+  - name: sameAs
+    type: string
+    short: An field based validation (field must be false)
+    allowed: The name of another existing field
+    description: |
+      Enables a validation where the value of this field must match the value of another field.
+      Perfect for password entry, for example.
+    with_types: text,expression,password
+  - name: ignoreIncomplete
+    type: boolean
+    short: Allow form submit on non-evaluated placeholders
+    description: |
+      When an expression-based field has placeholders, the default form behaviour is not to allow form submit until all placeholders are resolved.
+      When this attribute is true, the form does not wait for placeholder completion for this field.
+    with_type: expression, query
+  - name: noOutput
+    type: boolean
+    short: Do not output as extravar
+    description: |
+      Form fields are by default send as extravars.  If you do not want a field to be sent as extravar, set this attribute to true.
+  - name: model
+    type: string
+    allowed: An dot-based string notation of an object
+    short: Extravar modelling
+    description: |
+      By default, a field is sent as a root-extravar.  If you want model the output of the extravars, you can specify a dot-notation of how this field should be modelled.
+    examples:
+      - name: Model 2 fields together as a single object
+        code: |
+         - name: diskName
+           type: text
+           model: disk.name
+         - name: diskSize
+           type: number
+           model: disk.size
+  - name: asCredential
+    type: boolean
+    short: Send credential as extravar
+    description: |
+      Use the value of this field to search for a credential with the same name and send that credential hidden to the playbook as extravar.
+    with_types: text,password,query,expression
+    examples:
+      - name: Search and send the credential named 'vcenter'
+        code: |
+          - name: vcenter_creds
+            type: expression
+            expression: "'vcenter'"
+            asCredential: true
