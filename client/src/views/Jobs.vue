@@ -22,7 +22,7 @@
           </div>
         </div>
         <div class="level-right">
-          <button :disabled="isLoading" class="button is-info level-item" @click="loadJobs()">
+          <button :disabled="isLoading" class="button is-info level-item" @click="loadJobs();">
             <span class="icon"><font-awesome-icon icon="arrow-rotate-right" /></span>
             <span>Refresh</span>
           </button>
@@ -132,7 +132,7 @@
                   <pre v-if="job.output" v-html="job.output"></pre>
                 </div>
                 <div v-if="subjobId && subjob && !showExtraVars" class="column">
-                  <h3 class="subtitle">Current step (jobid {{subjobId}})  <span class="tag" :class="jobClass(job.status)">{{ job.status}}</span></h3>
+                  <h3 class="subtitle">Current step (jobid {{subjobId}})  <span class="tag" :class="jobClass(subjob.status)">{{ subjob.status}}</span></h3>
                   <pre v-if="subjob.output" v-html="subjob.output"></pre>
                   <pre v-else><font-awesome-icon icon="spinner" spin /></pre>
                 </div>
@@ -283,6 +283,9 @@
               // if(first && ref.jobId){
               //   ref.jobIndex=ref.displayedJobIndex
               // }
+              if(ref.jobId){
+                ref.loadOutput(ref.jobId)
+              }
             })
             .catch(function(err){
               if(err.response && err.response.status!=401){
@@ -343,7 +346,7 @@
               }
           })
           .catch(function(err){
-            console.log("error getting ansible job " + err)
+            console.log("error getting job " + err)
             //ref.$toast.error("Failed to get job output");
           })
       },
@@ -383,7 +386,7 @@
               }
           })
           .catch(function(err){
-            console.log("error getting ansible job " + err)
+            console.log("error getting job " + err)
             ref.$toast.error("Failed to get job output");
           })
 
@@ -595,7 +598,7 @@
       }
       this.loadJobs(true);
       this.$emit('refreshApprovals')
-      this.interval=setInterval(this.loadRunningJobs,2000) // reload running jobs every 2s
+      this.interval=setInterval(this.loadRunningJobs,5000) // reload running jobs every 2s
     },
     beforeDestroy(){
       clearInterval(this.interval)
