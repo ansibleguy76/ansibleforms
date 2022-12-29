@@ -3240,7 +3240,7 @@
     description: |
       Placeholders are references to other fields in the forms.  
       A placeholder is always in the format `$(reference)`.  Expressions or queries can contain placeholders.  
-      If the placeholder is pointing to simple field (text, number, enum), it will hold that fields value.  
+      If the placeholder is pointing to a simple field (text, number, password), it will hold that fields value.  
       If the placeholder is pointing to a object-based-enum field, then you must either use the `placeholderColumn`-property or a dot-notation like `$(city.name)`.  
       If the placeholder is pointing to an expression field, then either the full object is returned or you can have an advanced placeholder reference like `$(myarray[0].name)` where you can create javascript-like references.  
         
