@@ -22,7 +22,7 @@
             </div>
             <div class="media-content">
               <div class="content">
-                <p class="subtitle">{{ form.name }}</p>
+                <p class="subtitle" :class="getFormClass(form)">{{ form.name }}</p>
                 <p class="content">{{ form.description }}</p>
               </div>
             </div>

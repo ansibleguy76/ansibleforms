@@ -61,7 +61,7 @@
                     <a class="navbar-item" href="https://www.ansibleforms.com/" target="_blank">
                       <span class="icon"><font-awesome-icon icon="globe" /></span><span>Documentation</span>
                     </a>
-                    <router-link class="navbar-item" to="/reference-guide">
+                    <router-link class="navbar-item" to="/reference-guide/environment-variable">
                       <span class="icon"><font-awesome-icon icon="question-circle" /></span><span>Reference Guide</span>
                     </router-link>
                     <a class="navbar-item" href="/api-docs" target="_blank">

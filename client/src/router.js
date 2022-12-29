@@ -31,6 +31,19 @@ const checkAdmin=(to, from, next) => {
 
 export default new Router({
   linkExactActiveClass: 'is-active',
+  scrollBehavior (to, from, savedPosition) {
+    if (to && to.hash) {
+      return {
+          selector: to.hash,
+          offset: { x: 0, y: 80 }, // avoid blocking the view when having fixed components
+          behavior: 'smooth'
+      };
+    } else if (savedPosition) {
+        return savedPosition;
+    } else {
+        return { x: 0, y: 0 };
+    }
+  },
   routes: [
       {
         path:"/",
@@ -64,9 +77,29 @@ export default new Router({
       },
       {
         path:"/reference-guide",
-        name:"Reference Guide",
+        name:"Reference Guide Home",
         component:ReferenceGuide
       },
+      {
+        path:"/reference-guide/:section",
+        name:"Reference Guide Section",
+        component:ReferenceGuide
+      },  
+      {
+        path:"/reference-guide/:section/:page",
+        name:"Reference Guide Page",
+        component:ReferenceGuide
+      },     
+      {
+        path:"/reference-guide/:section/:page/:sub",
+        name:"Reference Guide Sub",
+        component:ReferenceGuide
+      },   
+      {
+        path:"/reference-guide/:section/:page/:sub/:item",
+        name:"Reference Guide Item",
+        component:ReferenceGuide
+      },                                 
       {
         path:"/groups",
         name:"Groups",

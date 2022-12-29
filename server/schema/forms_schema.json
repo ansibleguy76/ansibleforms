@@ -607,7 +607,6 @@
                     "maxValue": {"not":{}},
                     "minLength": {"not":{}},
                     "maxLength": {"not":{}},
-                    "sticky": {"not":{}},
                     "editable": {"not":{}},
                     "pctColumns": {"not":{}},
                     "filterColumns": {"not":{}},
@@ -655,6 +654,31 @@
                 {
                   "properties": {
                     "type": {
+                      "enum": ["enum"]
+                    },
+                    "values": {"not":{}},
+                    "regex": {"not":{}},
+                    "minValue": {"not":{}},
+                    "maxValue": {"not":{}},
+                    "minLength": {"not":{}},
+                    "maxLength": {"not":{}},
+                    "editable": {"not":{}},
+                    "expression": {"not":{}},
+                    "keydown": {"not":{}},
+                    "allowDelete": {"not":{}},
+                    "allowInsert": {"not":{}},
+                    "deleteMarker": {"not":{}},
+                    "insertMarker": {"not":{}},
+                    "readonlyColumns": {"not":{}},
+                    "isHtml": {"not":{}},
+                    "runLocal": {"not":{}},
+                    "hide": {"not":{}}
+                  },
+                  "required": ["query", "dbConfig"]
+                },                
+                {
+                  "properties": {
+                    "type": {
                       "enum": ["query"]
                     },
                     "values": {"not":{}},
@@ -677,6 +701,31 @@
                   },
                   "required": ["expression"]
                 },
+                {
+                  "properties": {
+                    "type": {
+                      "enum": ["enum"]
+                    },
+                    "values": {"not":{}},
+                    "regex": {"not":{}},
+                    "editable": {"not":{}},
+                    "minValue": {"not":{}},
+                    "maxValue": {"not":{}},
+                    "minLength": {"not":{}},
+                    "maxLength": {"not":{}},
+                    "query": {"not":{}},
+                    "keydown": {"not":{}},
+                    "allowDelete": {"not":{}},
+                    "allowInsert": {"not":{}},
+                    "deleteMarker": {"not":{}},
+                    "insertMarker": {"not":{}},
+                    "readonlyColumns": {"not":{}},
+                    "isHtml": {"not":{}},
+                    "dbConfig": {"not":{}},
+                    "hide": {"not":{}}
+                  },
+                  "required": ["expression"]
+                },                
                 {
                   "properties": {
                     "type": {
@@ -1017,7 +1066,7 @@
                       {
                         "properties": {
                           "type": {
-                            "enum": ["query"]
+                            "enum": ["query","enum"]
                           },
                           "regex": {"not":{}},
                           "minValue": {"not":{}},

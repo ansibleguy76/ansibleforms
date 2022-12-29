@@ -17,8 +17,7 @@ const mysql = require('./db.model')
 const RestResult = require('./restResult.model')
 const Form = require('./form.model')
 const Credential = require('./credential.model')
-const inspect = require('util').inspect
-
+const inspect = require('util').inspect;
 
 const httpsAgent = new https.Agent({
   rejectUnauthorized: false
@@ -33,22 +32,22 @@ function getHttpsAgent(awxConfig){
 function delay(t, v) {
     return new Promise(resolve => setTimeout(resolve, t, v));
 }
-function replaceSinglePlaceholder(s,ev){
-  var m = s.match(/^\$\(([^\)]+)\)$/)
-  if(m){
-    try{
-      var v =  eval("ev."+m[1])
-      logger.notice(`Succesfully replaced placeholder ${s} => ${v}`)
-      return v
+// function replaceSinglePlaceholder(s,ev){
+//   var m = s.match(/^\$\(([^\)]+)\)$/)
+//   if(m){
+//     try{
+//       var v =  eval("ev."+m[1])
+//       logger.notice(`Succesfully replaced placeholder ${s} => ${v}`)
+//       return v
 
-    }catch(e){
-      logger.error("Error replacing placeholder "+s)
-      return s
-    }
-  }else{
-    return s
-  }
-}
+//     }catch(e){
+//       logger.error("Error replacing placeholder "+s)
+//       return s
+//     }
+//   }else{
+//     return s
+//   }
+// }
 
 var Exec = function(){}
 // start a command with db output
@@ -58,13 +57,24 @@ Exec.executeCommand = (cmd,jobid,counter) => {
   var command = cmd.command
   var directory = cmd.directory
   var description = cmd.description
+  var extravars = cmd.extravars
+  var extravarsFileName = cmd.extravarsFileName
   var task = cmd.task
   // execute the procces
   return new Promise((resolve,reject)=>{
     logger.debug(`${description}, ${directory} > ${Helpers.logSafe(command)}`)
     try{
+      
 
-      var child = exec(command,{cwd:directory});
+      if(extravarsFileName){
+        logger.debug(`Storing extravars to file ${extravarsFileName}`)
+        var filepath=path.join(directory,extravarsFileName)
+        fs.writeFileSync(filepath,extravars) 
+      }else{
+        logger.warning("No filename was given")
+      }
+
+      var child = exec(command,{cwd:directory,encoding: "UTF-8"});
 
       // add output eventlistener to the process to save output
       child.stdout.on('data',function(data){
@@ -109,6 +119,11 @@ Exec.executeCommand = (cmd,jobid,counter) => {
             resolve(true)
           }
         }
+        if(extravarsFileName){
+          logger.debug(`Removing extavars file ${filepath}`)
+          fs.unlinkSync(filepath)    
+        }
+             
       })
       // add error eventlistener to the process; set failed
       child.on('error',function(data){
@@ -331,7 +346,7 @@ Job.launch = function(form,formObj,user,creds,extravars,parentId=null,next) {
 
       if(jobtype=="ansible"){
         return Ansible.launch(
-          replaceSinglePlaceholder(formObj.playbook,extravars),
+          formObj.playbook,
           extravars,
           formObj.inventory,
           formObj.tags,
@@ -346,7 +361,7 @@ Job.launch = function(form,formObj,user,creds,extravars,parentId=null,next) {
       }
       if(jobtype=="awx"){
         return Awx.launch(
-          replaceSinglePlaceholder(formObj.template,extravars),
+          formObj.template,
           extravars,
           formObj.inventory,
           formObj.tags,
@@ -460,7 +475,7 @@ Job.continue = function(form,user,creds,extravars,jobid,next) {
 
                 if(jobtype=="ansible"){
                   return Ansible.launch(
-                    replaceSinglePlaceholder(formObj.playbook,extravars),
+                    formObj.playbook,
                     extravars,
                     formObj.inventory,
                     formObj.tags,
@@ -476,7 +491,7 @@ Job.continue = function(form,user,creds,extravars,jobid,next) {
                 }
                 if(jobtype=="awx"){
                   return Awx.launch(
-                    replaceSinglePlaceholder(formObj.template,extravars),
+                    formObj.template,
                     extravars,
                     formObj.inventory,
                     formObj.tags,
@@ -912,10 +927,14 @@ Ansible.launch=(playbook,ev,inv,tags,c,d,key,credentials,jobid,counter,approval,
         }
       });
   }
+  // playbook could be controlled from extravars
+  var pb = extravars?.__playbook__ || playbook
+  // tags could be controlled from extravars
+  var tgs = extravars?.__tags__ || tags  
   // check could be controlled from extravars
-  var check = c || extravars?.__check__
+  var check = extravars?.__check__ || c || false
   // diff could be controlled from extravars
-  var diff = d || extravars?.__diff__
+  var diff = extravars?.__diff__ || d || false
   if(key && ev[key]){
     extravars = extravars[key]  // only pick a part of it
   }
@@ -923,17 +942,21 @@ Ansible.launch=(playbook,ev,inv,tags,c,d,key,credentials,jobid,counter,approval,
   extravars = {...extravars,...credentials}
   // convert to string for the command
   extravars = JSON.stringify(extravars)
+  // make extravars file
+  const extravarsFileName = `extravars_${jobid}.json`;
+  logger.debug(`Extravars File: ${extravarsFileName}`);
   // prepare my ansible command
-  var command = `ansible-playbook -e '${extravars}'`
+
+  var command = `ansible-playbook -e '@${extravarsFileName}'`
   inventory.forEach((item, i) => {  command += ` -i '${item}'` });
-  if(tags){ command += ` -t '${tags}'` }
+  if(tgs){ command += ` -t '${tgs}'` }
   if(check){ command += ` --check` }
   if(diff){ command += ` --diff` }
-  command += ` ${playbook}`
+  command += ` ${pb}`
   var directory = ansibleConfig.path
-  var cmdObj = {directory:directory,command:command,description:"Running playbook",task:"Playbook"}
+  var cmdObj = {directory:directory,command:command,description:"Running playbook",task:"Playbook",extravars:extravars,extravarsFileName:extravarsFileName}
 
-  logger.notice("Running playbook : " + playbook)
+  logger.notice("Running playbook : " + pb)
   logger.debug("extravars : " + extravars)
   logger.debug("inventory : " + inventory)
   logger.debug("check : " + check)
@@ -1008,28 +1031,40 @@ Awx.launch = function (template,ev,inv,tags,c,d,key,credentials,awxCredentials,j
         logger.notice("Continuing awx " + template + " it has been approved")
       }
     }
-    return Awx.findJobTemplateByName(template)
+
+    var extravars={...ev}
+    // awx can have only 1 inventory and could be controlled by extravars
+    var invent = extravars?.__inventory__ || inv
+    // template could be controlled from extravars
+    var templ = extravars?.__template__ || template
+    // check could be controlled from extravars
+    var check = extravars?.__check__ || c || false
+    // diff could be controlled from extravars
+    var diff = extravars?.__diff__ || d || false
+    // tags could be controlled from extravars
+    var tgs = extravars?.__tags__ || tags
+    return Awx.findJobTemplateByName(templ)
       .catch((err)=>{
-        message="failed to find awx template " + template + "\n" + err
+        message="failed to find awx template " + templ + "\n" + err
         Job.endJobStatus(jobid,++counter,"stdout","failed",message)
         throw message
       })
       .then((jobTemplate)=>{
           logger.debug("Found jobtemplate, id = " + jobTemplate.id)
           if(inv){
-            return Awx.findInventoryByName(inv)
+            return Awx.findInventoryByName(invent)
             .then((inventory)=>{
                 logger.debug("Found inventory, id = " + inventory.id)
-                return Awx.launchTemplate(jobTemplate,ev,inventory,tags,c,d,key,credentials,awxCredentials,jobid,++counter)
+                return Awx.launchTemplate(jobTemplate,ev,inventory,tgs,check,diff,key,credentials,awxCredentials,jobid,++counter)
             })
             .catch((err)=>{
-              message="failed to find inventory " + inv + "\n" + err
+              message="failed to find inventory " + invent + "\n" + err
               Job.endJobStatus(jobid,++counter,"stdout","failed",message)
               throw message
             })
           }else{
             logger.debug("running without inventory")
-            return Awx.launchTemplate(jobTemplate,ev,undefined,tags,c,d,key,credentials,awxCredentials,jobid,++counter)
+            return Awx.launchTemplate(jobTemplate,ev,undefined,tgs,check,diff,key,credentials,awxCredentials,jobid,++counter)
           }
       })
 

@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Fixed AWX Task issue when failed
 -   Auto select current form in designer
 -   Placeholder with dash bug
+-   UTF8 character in extravars breaks local ansible execution
 
 ### Added
 
@@ -25,6 +26,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 -   Better error messages with remote expressions
+-   Running extravars from tmp file (due to utf8 issues)
+-   Rolling log file
+
+### Deprecated
+
+-   formfield type query is deprecated, use 'enum'
 
 ## [3.1.1] - 2022-11-10
 
