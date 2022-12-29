@@ -29,11 +29,15 @@ RUN apk del .build-deps
 RUN pip3 install PyMySQL
 RUN pip3 install netapp_lib
 RUN pip3 install solidfire-sdk-python
+RUN pip3 install boto3
+RUN pip3 install boto
+RUN pip3 install botocore
 
 # run ansible galaxy modules
 RUN ansible-galaxy collection install netapp.ontap -p /usr/share/ansible/collections
 RUN ansible-galaxy collection install netapp.elementsw -p /usr/share/ansible/collections
 RUN ansible-galaxy collection install netapp.um_info -p /usr/share/ansible/collections
+RUN ansible-galaxy collection install amazon.aws -p /usr/share/ansible/collections
 
 # add ssh
 RUN apk add --no-cache openssh

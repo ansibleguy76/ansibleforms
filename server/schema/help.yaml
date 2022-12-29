@@ -3165,8 +3165,9 @@
   - name: Cascaded Dropdowns
     short: How to make cascaded dropdowns
     description: |
-      `enum` fields (AKA dropdown boxes) can contain placeholders in the format of `$(another_field)` or `$(another_field[0].name)`.  
-      The moment the referenced field changes, the referencing field gets re-evaluated, resulting in dynamics and cascading dropdown boxes.  
+      `enum` fields (AKA dropdown boxes) can contain placeholders in their `query` or `expression` property in the format of `$(another_field)` or `$(another_field[0].name)`.  
+      The moment the referenced field changes, the referencing field gets re-evaluated, resulting in dynamic and cascading dropdown boxes.  
+      The power of this concept lies in the client web-application that is re-evaluating fields every 100ms.  With current processors and the chromium engine, this should be a very seamless experience.  
         
       **Note**: When you reference another enum field, you reference the selected values, NOT the full dropdown list.  Use the `placeholderColumn`-property or a dot-notation like `$(city.name)` 
     language: YAML
@@ -3274,12 +3275,12 @@
   - name: Hide a field
     short: How to hide a field
     description: |
-      You can hide a field using the field `hide` property.  
-      Or you can hide a field dynamically using the field `dependencies` property.
+      You can hide a field using the field property `hide` .  
+      Or you can show/hide a field dynamically using the field properties `dependencies` and `dependencyFn`.
   - name: Group fields
     short: How to group fields together in a block
     description: |
-      Use the field `group` property.  Field with the same group name will be grouped in a block.
+      Use the field property `group` .  Fields with the same group name will be grouped in a block.
   - name: Field validation
     short: How to validate a field
     description: |
@@ -3289,7 +3290,7 @@
     description: |
       Credentials can be safely passed as extravars by creating a hidden expression field.  
       The value of the expression field is is the name of the stored credential you want to pass.  
-      And then simply add the field property 'asCredential' as true.
+      And then simply add the field property `asCredential` as true.  
   - name: Userinfo
     short: How to pass the current user
     description: |
@@ -3300,8 +3301,22 @@
     short: How to customize AnsibleForms
     description: |
       AnsibleForms is a web-app.  If you run it natively in nodejs, you could replace files or change them.  
-      But more recommended is to run it as a docker-image and add volume or file mappings.  Our docker-compose projects already maps directories to make the database, playbooks, logs and certificates persistent.  Nothing is keeping you from adding more mappings to, for example, override the logo.  
-      There is also a custom.js file where you can add your own javascript functions to use in expressions.  Just like you can address our functions with the prefix `fn.` (fn.fnRestBasic for example) you can access the custom functions with prefix `fnc.`.  
+      But more recommended is to run it as a docker-image and add volume or file mappings.  Our docker-compose projects already maps directories to make the database, playbooks, logs, certificates and ssh-keys persistent.  Nothing is keeping you from adding more mappings to, for example, override the logo.  
+      There is also a `custom.js` file where you can add your own javascript functions to use in expressions.  Just like you can address our functions with the prefix `fn.` (fn.fnRestBasic for example) you can access the custom functions with prefix `fnc.`.  
+      And you can add your own jq definitions as well in the same way with the `jq.custom.definitions.js`
+    language: YAML
+    code: |
+      volumes:
+        # Mount application folder to host folder (to maintain persistency)
+        - ./data:/app/dist/persistent
+        # Map custom functions for js expressions and jq
+        - ./data/functions/custom.js:/app/dist/src/functions/custom.js
+        - ./data/functions/jq.custom.definitions.js:/app/dist/src/functions/jq.custom.definitions.js
+        # Map custom sshkey to local node .ssh location
+        - ./data/ssh:$HOME_DIR/.ssh
+        - ./data/git/.gitconfig:$HOME_DIR/.gitconfig    
+        # Map custom logo
+        - ./data/mylogo.svg:/app/dist/views/assets/img/logo_ansible_forms_full_white.svg
   - name: Default value
     short: How to set a default value
     description: |
