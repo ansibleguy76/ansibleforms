@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.0] - 2022-12-31
+
 ### Fixed
 
 -   Dependencies are now AND not OR
@@ -383,7 +385,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/3.1.1...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.0...HEAD
+
+[4.0.0]: https://github.com/ansibleguy76/ansibleforms/compare/3.1.1...4.0.0
 
 [3.1.1]: https://github.com/ansibleguy76/ansibleforms/compare/3.1.0...3.1.1
 
