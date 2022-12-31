@@ -1,3 +1,4 @@
+const inspect = require('util').inspect
 var Helpers = {
   htmlEncode(v){
       return v.toString().replace(/[\u00A0-\u9999<>\&]/g, function(i) { //eslint-disable-line
@@ -16,7 +17,9 @@ var Helpers = {
   },
   replacePlaceholders(match,object){
     if(match.match(/^[a-zA-Z0-9_\-\[\]\.]*$/)){ /* eslint-disable-line */
-      return eval("object."+match)
+      var to_eval="object"+match.replaceAll("[",".").replaceAll("]",".").split(".").filter(x=>!(x==="")).map(x=>{return "["+((/^-?\d+$/.test(x))?x:"'"+x+"'")+"]"}).join("")
+      // console.log(to_eval)
+      return eval(to_eval)
     } else{
       return `$(${match})` // return original
     }

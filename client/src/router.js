@@ -17,11 +17,12 @@ import Sshkey from './views/Sshkey.vue'
 import Jobs from './views/Jobs.vue'
 import Logs from './views/Logs.vue'
 import Profile from './views/Profile.vue'
+import ReferenceGuide from './views/ReferenceGuide.vue'
 import TokenStorage from './lib/TokenStorage.js'
 Vue.use(Router);
 const checkAdmin=(to, from, next) => {
   var payload = TokenStorage.getPayload()
-  if(payload.user && payload.user.roles && payload.user.roles.includes("admin")){
+  if(payload?.user?.roles?.includes("admin")){
     next()
   }else{
     console.log("You are not an admin user")
@@ -30,6 +31,19 @@ const checkAdmin=(to, from, next) => {
 
 export default new Router({
   linkExactActiveClass: 'is-active',
+  scrollBehavior (to, from, savedPosition) {
+    if (to && to.hash) {
+      return {
+          selector: to.hash,
+          offset: { x: 0, y: 80 }, // avoid blocking the view when having fixed components
+          behavior: 'smooth'
+      };
+    } else if (savedPosition) {
+        return savedPosition;
+    } else {
+        return { x: 0, y: 0 };
+    }
+  },
   routes: [
       {
         path:"/",
@@ -61,6 +75,31 @@ export default new Router({
         name:"Schema",
         component:Schema
       },
+      {
+        path:"/reference-guide",
+        name:"Reference Guide Home",
+        component:ReferenceGuide
+      },
+      {
+        path:"/reference-guide/:section",
+        name:"Reference Guide Section",
+        component:ReferenceGuide
+      },  
+      {
+        path:"/reference-guide/:section/:page",
+        name:"Reference Guide Page",
+        component:ReferenceGuide
+      },     
+      {
+        path:"/reference-guide/:section/:page/:sub",
+        name:"Reference Guide Sub",
+        component:ReferenceGuide
+      },   
+      {
+        path:"/reference-guide/:section/:page/:sub/:item",
+        name:"Reference Guide Item",
+        component:ReferenceGuide
+      },                                 
       {
         path:"/groups",
         name:"Groups",

@@ -33,3 +33,9 @@ ontap*.yaml
 *.njsproj
 *.sln
 *.sw?
+
+# workspace
+*.code-workspace
+
+# git
+.gitignore

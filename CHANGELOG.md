@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.0] - 2022-12-31
+
+### Fixed
+
+-   Dependencies are now AND not OR
+-   Using mysql2 lib to fix authentication issues
+-   Fixed AWX Task issue when failed
+-   Auto select current form in designer
+-   Placeholder with dash bug
+-   UTF8 character in extravars breaks local ansible execution
+
+### Added
+
+-   Added dynamic playbook and template name $(extravar)
+-   Designer Locking (env var)
+-   Pass external data to form
+-   Reference Guide
+-   Add verbose logging for ansible (verbose: true)
+-   Add keepExtravars property to keep the tmp extravars json file
+
+### Changed
+
+-   Better error messages with remote expressions
+-   Running extravars from tmp file (due to utf8 issues)
+-   Rolling log file
+
+### Deprecated
+
+-   formfield type query is deprecated, use 'enum'
+
 ## [3.1.1] - 2022-11-10
 
 ### Fixed
@@ -355,7 +385,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/3.1.1...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.0...HEAD
+
+[4.0.0]: https://github.com/ansibleguy76/ansibleforms/compare/3.1.1...4.0.0
 
 [3.1.1]: https://github.com/ansibleguy76/ansibleforms/compare/3.1.0...3.1.1
 

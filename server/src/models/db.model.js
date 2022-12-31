@@ -1,10 +1,10 @@
 //- MYSQL Module
 const logger = require('../lib/logger');
 const dbConfig = require('../../config/db.config')
-const client = require('mysql');
+const client = require('mysql2');
 
 dbConfig.multipleStatements=true
-
+delete dbConfig.name // remove unsupported property
 MySql = {}
 
 MySql.do=function(query,vars){

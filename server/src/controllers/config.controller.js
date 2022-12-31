@@ -1,7 +1,9 @@
 'use strict';
 const Form=require("../models/form.model")
+const Lock=require("../models/lock.model")
+const YAML=require("yaml")
 var RestResult = require('../models/restResult.model');
-
+const inspect = require("util").inspect
 exports.findAll = function(req,res){
   try{
     var forms = Form.load()
@@ -19,7 +21,20 @@ exports.backups = function(req,res){
     res.json({error:error})
   }
 }
-exports.restore = function(req,res){
+exports.restore = async function(req,res){
+  var lock=undefined
+  var user=req.user.user
+  try{
+    lock = await Lock.status(user)
+    if(lock.free){
+      lock.set(user).catch(()=>{}) // set lock and fail silent
+    }
+  }catch(e){
+    logger.error("Failed to get lock:" + e)
+    res.json(new RestResult("error","Failed to restore forms",null,"Failed to get lock : "+e))
+    return true
+  }
+  if(lock.match || lock.free){
     try{
       var backupName=req.params.backupName
       var backupBeforeRestore=(req.query.backupBeforeRestore=="true")?true:false
@@ -36,24 +51,44 @@ exports.restore = function(req,res){
     }catch(err){
       res.json(new RestResult("error","Failed to restore forms",null,err))
     }
-}
-exports.save = function(req,res){
-  const newConfig = new Form(req.body);
-  //handles null error
-  if(req.body.constructor === Object && Object.keys(req.body).length === 0){
-      res.status(400).send({ error:true, message: 'Please provide all required fields' });
   }else{
-    try{
-      var forms = Form.save(newConfig)
-      if(forms) {
-        res.json(new RestResult("success","Config saved",null,""));
-      }else{
-        res.json(new RestResult("error","Failed to save forms",null,"Failed to save forms"))
-      }
-    }catch(err){
-      res.json(new RestResult("error","Failed to save forms",null,err))
-    }
+    res.json(new RestResult("error","Failed to restore forms",null,"Designer is locked by "+lock.username))
   }
+}
+exports.save = async function(req,res){
+  var lock=undefined
+  var user=req.user.user
+  try{
+    lock = await Lock.status(user)
+    if(lock.free){
+      lock.set(user).catch(()=>{}) // set lock and fail silent
+    }
+  }catch(e){
+    logger.error("Failed to get lock:" + e)
+    res.json(new RestResult("error","Failed to save forms",null,"Failed to get lock : "+e))
+    return true
+  }
+  if(lock.match || lock.free){
+    const newConfig = new Form(req.body);
+    //handles null error
+    if(req.body.constructor === Object && Object.keys(req.body).length === 0){
+        res.status(400).send({ error:true, message: 'Please provide all required fields' });
+    }else{
+      try{
+        var forms = Form.save(newConfig)
+        if(forms) {
+          res.json(new RestResult("success","Config saved",null,""));
+        }else{
+          res.json(new RestResult("error","Failed to save forms",null,"Failed to save forms"))
+        }
+      }catch(err){
+        res.json(new RestResult("error","Failed to save forms",null,err))
+      }
+    }
+  }else{
+    res.json(new RestResult("error","Failed to save forms",null,"Designer is locked by "+lock.username))
+  }
+
 }
 exports.validate = function(req,res){
   const newConfig = new Form(req.body);

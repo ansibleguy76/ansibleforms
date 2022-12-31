@@ -1,9 +1,17 @@
 //- MYSQL Module
 const logger = require('./logger');
-const client = require('mysql');
+const client = require('mysql2');
 const Credential = require('../models/credential.model')
+const util = require('util')
 
 MySql = {}
+
+MySql.clean=function(config){
+  delete config.name
+  delete config.db_type
+  delete config.secure
+  return config
+}
 
 MySql.query=function(connection_name,query){
   // get credentials
@@ -27,6 +35,8 @@ MySql.query=function(connection_name,query){
           }
         }
         // get connection
+        config=MySql.clean(config) // remove unsupported properties
+        // logger.notice(util.inspect(config))
         conn = client.createConnection(config)
 
         // get data

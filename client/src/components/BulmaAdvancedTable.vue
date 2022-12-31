@@ -60,7 +60,7 @@
       multiple:{type:Boolean},
       required:{type:Boolean},
       name:{type:String,required:true},
-      defaultValue:{type:[String,Array]},
+      defaultValue:{type:[String,Array,Object]},
       status:{type:String},
       sizeClass:{type:String},
       columns:{type:Array},
@@ -232,6 +232,7 @@
 
       },
       select(i){
+        console.log("A, we selecteren " + i)
         if(this.multiple){
           Vue.set(this.selected,i,!this.selected[i]);
         }else{
@@ -281,7 +282,7 @@
         this.filtered.forEach((item) => {
           Vue.set(ref.selected,item.index,false)
         })
-
+        this.$emit('ischanged')
       },
       getLabels(){
         var ref=this
@@ -320,29 +321,35 @@
           }
           if(this.defaultValue=="__auto__" && this.values.length>0){
             this.select(0) // if __auto__ select the first
-          }else if(this.defaultValue=="__all__"){ // if a regular default is set, we select it
+          }else if(this.defaultValue=="__all__" && this.multiple){ // if all is set, we select all
             this.values.forEach((item,i) => {
               this.select(i)
             })
           }else if(this.defaultValue!="__none__" && this.defaultValue!=undefined){ // if a regular default is set, we select it
-            var obj
+            var obj=undefined
             var defaulttype
-            try{
+             try{
               obj = JSON.parse(this.defaultValue)
               if(typeof obj == "object"){
+                console.log("moh")
                 defaulttype="object"
               }
             }catch(e){
-              // bad default value
+              obj=undefined
             }
-            if(defaulttype=="object"){
+            if(typeof this.defaultValue == "object"){
+              obj=this.defaultValue
+              defaulttype="object"
+            }
+            if(defaulttype=="object" && !Array.isArray(this.defaultValue)){
               // we search for the value by property
               if(obj){
                 // loop all values
                 this.values.forEach((item,i) => {
                   try{
+
                     if(this.objectEqual(obj,item)){
-                        this.select(i)
+                        ref.select(i)
                     }
                   }catch(e){
                     console.log("Bad defaultvalue : "  + e)
@@ -353,13 +360,11 @@
             }else{
               // we search for the value by string
               this.values.forEach((item,i) => {
-
                   if(item && ref.defaultValue==(item[ref.valueLabel]||item)){
-                    this.select(i)
-                  }
-                  if(ref.multiple && Array.isArray(ref.defaultValue)){
-                    if(item && ref.default.includes(item[ref.valueLabel]||item||false)){
-                      this.select(i)
+                    ref.select(i)
+                  }else if(ref.multiple && Array.isArray(ref.defaultValue) && ref.defaultValue.length>0){
+                    if(item && ref.defaultValue.includes(item[ref.valueLabel]||item||false)){
+                      ref.select(i)
                     }
                   }
               })

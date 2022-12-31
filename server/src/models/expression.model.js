@@ -13,32 +13,37 @@ var Expression=function(){
 
 function sanitizeExpression(expr){
   var sanitized=expr
+  var message=""
   // first we check if the expression has errors
   if(sanitized.match(/\r|\n/)){
-    logger.error("Abuse attempt of eval function, attempt to have multilines")
+    message="Abuse attempt of eval function, attempt to have multilines"
+    logger.error(message)
     // return "'ACCESS DENIED, no multiline expressions allowed'"
-    return undefined
+    throw Error(message)
   }
   // then we remove all harmless strings
   sanitized = sanitized.replace(/(["'])(?:(?=(\\?))\2.)*?\1/g,"")
   // we check if ";" is present, no multi commands
   if(sanitized.match(/;/)){
-    logger.error("Abuse attempt of eval function, attempt to have multi expression")
+    message="Abuse attempt of eval function, attempt to have multi expression, try runLocal"
+    logger.error(message)
     // return "'ACCESS DENIED, no multiple expressions allowed'"
-    return undefined
+    throw Error(message)
   }
   // if contains process.env
   if(sanitized.match(/process\.env/)){
-    logger.error("Abuse attempt of eval function, attempt to get environment variables")
+    message="Abuse attempt of eval function, attempt to get environment variables"
+    logger.error(message)
     // return "'ACCESS DENIED, no access to environment variables (process.env)'"
-    return undefined
+    throw Error(message)
   }
   // if contains "(" and not starting with fn.fn
   if(sanitized.match(/\(/)){
     if(!sanitized.match(/^fnc{0,1}\.+/g)){
-      logger.error("Abuse attempt of eval function, using custom functions")
+      message="Abuse attempt of eval function, using custom functions, try runLocal"
+      logger.error(message)
       // return "'ACCESS DENIED, no custom functions allowed'"
-      return undefined
+      throw Error(message)
     }
   }
   return expr

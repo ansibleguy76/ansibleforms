@@ -14,22 +14,16 @@
               <div :class="{'has-icons-left':!!field.icon}" class="control">
                 <input v-if="field.type=='text' || field.type=='password'" :disabled="action=='Edit' && readonlyColumns.includes(field.name)" :autofocus="index==0" :class="{'is-danger':$v.editedItem[field.name].$invalid}" class="input" :type="field.type" v-model="$v.editedItem[field.name].$model" :placeholder="field.placeholder" :name="field.name">
                 <input v-if="field.type=='number'" :disabled="action=='Edit' && readonlyColumns.includes(field.name)" :autofocus="index==0" class="input" type="number" v-model="editedItem[field.name]" :placeholder="field.placeholder" :name="field.name">
-                <div v-if="field.type=='enum'" class="select">
-                  <select :name="field.name" :disabled="action=='Edit' && readonlyColumns.includes(field.name)" :class="{'is-danger':$v.editedItem[field.name].$invalid}" v-model="$v.editedItem[field.name].$model">
-                    <option v-if="!field.required" value=""></option>
-                    <option v-for="option in field.values" :key="option" :selected="field.default==option" :value="option">{{ option }}</option>
-                  </select>
-                </div>
                 <BulmaAdvancedSelect
-                  v-if="field.type=='query'"
+                  v-if="field.type=='query' || field.type=='enum'"
                   :defaultValue="stringify($v.editedItem[field.name].$model,field)||field.default||''"
                   :required="field.required||false"
                   :multiple="false"
                   :name="field.name"
                   :placeholder="field.placeholder||'Select...'"
-                  :values="form[field.from]||[]"
+                  :values="field.values||form[field.from]||[]"
                   :hasError="$v.editedItem[field.name].$invalid"
-                  :isLoading="!['fixed','variable'].includes(dynamicFieldStatus[field.from])"
+                  :isLoading="!field.values && !['fixed','variable'].includes(dynamicFieldStatus[field.from])"
                   v-model="$v.editedItem[field.name].$model"
                   :icon="field.icon"
                   :columns="field.columns||[]"
@@ -260,7 +254,7 @@
                 }
             },
             values: function(){
-              this.rows=this.values
+              Vue.set(this,"rows",this.values)
               if(this.values && this.values.length>0){
                 var fields = this.tableFields.map(x => x.name)
                 var data = Object.keys(this.values[0])
@@ -276,12 +270,13 @@
           if((this.deleteMarker || !this.allowDelete) && (!this.insert_marker || this.insert_marker.length==0)){
             this.insert_marker="__inserted__"
           }
-          this.rows=this.values
+          Vue.set(this,"rows",this.values)
           if(this.rows){
             this.showedRows = JSON.parse(JSON.stringify(this.rows));
           }else{
             this.showedRows = undefined
           }
+          //this.input()
         },
         computed: {
             filterRow: function () {
@@ -368,7 +363,7 @@
             saveItem:function(){
               var ref=this
               this.tableFields.forEach((item)=>{
-                if(item.type=="query"){
+                if(item.type=="query" || item.type=="enum"){
                   if(!item.outputObject){
                     var valueLabel=this.getValueLabel(item)
                     if(valueLabel){
