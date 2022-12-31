@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Designer Locking (env var)
 -   Pass external data to form
 -   Reference Guide
+-   Add verbose logging for ansible (verbose: true)
+-   Add keepExtravars property to keep the tmp extravars json file
 
 ### Changed
 
