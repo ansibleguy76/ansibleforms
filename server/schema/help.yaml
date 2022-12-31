@@ -400,6 +400,8 @@
             inventory: inventory.yml                       # optional ansible inventory file
             check: false                                   # run in checkmode or not
             diff: false                                    # show differences
+            verbose: false                                 # verbose output
+            keepExtravars: false                           # keep extravars json file
             tags: vm,create                                # optional ansible tags (comma separated)
             type: ansible                                  # type is awx or ansible
             onSubmit:                                      # event handler on form submit
@@ -668,6 +670,8 @@
                   inventory: inventory.yml                       # optional ansible inventory file
                   check: false                                   # run in checkmode or not
                   diff: false                                    # show differences
+                  verbose: false                                 # verbose output
+                  keepExtravars: false                           # keep extravars json file                  
                   tags: vm,create                                # optional ansible tags (comma separated)
                   type: ansible                                  # type is awx or ansible
                   onSubmit:                                      # event handler on form submit
@@ -926,6 +930,22 @@
           In both awx and ansible core you run a playbook in diff mode.  Enable this attribute to do so.
 
           **Note** : You can also dynamically set the check mode by using a field called `__diff__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static diff field.  The field must result in a boolean (expression or checkbox)          
+          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+      - name: verbose
+        type: boolean
+        short: Run in verbose mode
+        description: |
+          In ansible core you run a playbook in verbose mode.  Enable this attribute to do so.
+
+          **Note** : You can also dynamically set the verbose mode by using a field called `__verbose__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static diff field.  The field must result in a boolean (expression or checkbox)          
+          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+      - name: keepExtravars
+        type: boolean
+        short: Do not remove the extarvars json file
+        description: |
+          In ansible core we temporarily store the extravars in a json file.  After run, this file is removed.  Use this property to disable this behaviour.
+
+          **Note** : You can also dynamically set this property by using a field called `__keepExtravars__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static diff field.  The field must result in a boolean (expression or checkbox)          
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
       - name: tags
         type: string

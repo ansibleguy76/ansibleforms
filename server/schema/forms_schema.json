@@ -256,6 +256,12 @@
             "type": "string",
             "pattern": "^has-background-.+"
           },
+          "verbose": {
+            "type": "boolean"
+          },
+          "keepExtravars":{
+            "type": "boolean"
+          },
           "notifications":{
             "type": "object",
             "properties": {

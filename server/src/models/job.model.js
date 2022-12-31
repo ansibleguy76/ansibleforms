@@ -59,6 +59,7 @@ Exec.executeCommand = (cmd,jobid,counter) => {
   var description = cmd.description
   var extravars = cmd.extravars
   var extravarsFileName = cmd.extravarsFileName
+  var keepExtravars = cmd.keepExtravars
   var task = cmd.task
   // execute the procces
   return new Promise((resolve,reject)=>{
@@ -119,7 +120,7 @@ Exec.executeCommand = (cmd,jobid,counter) => {
             resolve(true)
           }
         }
-        if(extravarsFileName){
+        if(extravarsFileName && !keepExtravars){
           logger.debug(`Removing extavars file ${filepath}`)
           fs.unlinkSync(filepath)    
         }
@@ -352,6 +353,8 @@ Job.launch = function(form,formObj,user,creds,extravars,parentId=null,next) {
           formObj.tags,
           formObj.check,
           formObj.diff,
+          formObj.verbose,
+          formObj.keepExtravars,
           formObj.key,
           credentials,
           jobid,
@@ -481,6 +484,8 @@ Job.continue = function(form,user,creds,extravars,jobid,next) {
                     formObj.tags,
                     formObj.check,
                     formObj.diff,
+                    formObj.verbose,
+                    formObj.keepExtravars,
                     formObj.key,
                     credentials,
                     jobid,
@@ -895,7 +900,7 @@ Multistep.launch = async function(form,steps,user,extravars,creds,jobid,counter,
 }
 // Ansible stuff
 var Ansible = function(){}
-Ansible.launch=(playbook,ev,inv,tags,c,d,key,credentials,jobid,counter,approval,approved=false)=>{
+Ansible.launch=(playbook,ev,inv,tags,c,d,v,k,key,credentials,jobid,counter,approval,approved=false)=>{
   if(!counter){
     counter=0
   }else{
@@ -933,6 +938,10 @@ Ansible.launch=(playbook,ev,inv,tags,c,d,key,credentials,jobid,counter,approval,
   var tgs = extravars?.__tags__ || tags  
   // check could be controlled from extravars
   var check = extravars?.__check__ || c || false
+  // verbose could be controlled from extravars
+  var verbose = extravars?.__verbose__ || v || false  
+  // verbose could be controlled from extravars
+  var keepExtravars = extravars?.__keepExtravars__ || k || false    
   // diff could be controlled from extravars
   var diff = extravars?.__diff__ || d || false
   if(key && ev[key]){
@@ -952,9 +961,10 @@ Ansible.launch=(playbook,ev,inv,tags,c,d,key,credentials,jobid,counter,approval,
   if(tgs){ command += ` -t '${tgs}'` }
   if(check){ command += ` --check` }
   if(diff){ command += ` --diff` }
+  if(verbose){ command += ` -vvv`}
   command += ` ${pb}`
   var directory = ansibleConfig.path
-  var cmdObj = {directory:directory,command:command,description:"Running playbook",task:"Playbook",extravars:extravars,extravarsFileName:extravarsFileName}
+  var cmdObj = {directory:directory,command:command,description:"Running playbook",task:"Playbook",extravars:extravars,extravarsFileName:extravarsFileName,keepExtravars:keepExtravars}
 
   logger.notice("Running playbook : " + pb)
   logger.debug("extravars : " + extravars)
