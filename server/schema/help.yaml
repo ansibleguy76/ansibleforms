@@ -933,6 +933,7 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
       - name: verbose
         type: boolean
+        version: 4.0.0
         short: Run in verbose mode
         description: |
           In ansible core you run a playbook in verbose mode.  Enable this attribute to do so.
@@ -942,6 +943,7 @@
       - name: keepExtravars
         type: boolean
         short: Do not remove the extarvars json file
+        version: 4.0.0
         description: |
           In ansible core we temporarily store the extravars in a json file.  After run, this file is removed.  Use this property to disable this behaviour.
 
