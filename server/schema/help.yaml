@@ -1449,7 +1449,21 @@
                         expression: "^[a-zA-Z]*$"
                         description: Must be alpha numeric
                       icon: user
-                      help: A help message                      
+                      help: A help message     
+              - name: textarea
+                description: A textarea input field
+                examples:
+                - name: Textarea
+                  code: |
+                    - type: textarea
+                      name: comments
+                      label: Comments
+                      default: |
+                        Line 1
+                        Line 2
+                      placeholder: add your comments
+                      required: true
+                      help: A help message                                          
               - name: number
                 description: A number input field
                 examples:
@@ -1655,7 +1669,7 @@
             short: In-field help value
             description: |
               Some form fields allow an in-field hint value.
-            with_types: text, number, password, checkbox, enum
+            with_types: text, textarea, number, password, checkbox, enum
           - name: help
             type: string
             allowed: Free text
@@ -1787,7 +1801,7 @@
               * `__auto__` : select the first
               * `__none__` : select none
               * `__all__` : select all (if multiple is true)
-            with_types: text, number, expression, password, enum, radio, checkbox
+            with_types: text, textarea, number, expression, password, enum, radio, checkbox
           - name: required
             type: boolean
             default: false
@@ -2376,6 +2390,8 @@
               choices:
                 - name: text
                   description: A text input field
+                - name: textarea
+                  description: A textarea input field                  
                 - name: number
                   description: A number input field
                 - name: password
@@ -2414,7 +2430,7 @@
               short: In-field help value
               description: |
                 Some form fields allow an in-field hint value.
-              with_types: text, number, password, checkbox, enum
+              with_types: text, textarea, number, password, checkbox, enum
             - name: icon
               type: string
               allowed: Free fontawesome 6 icon
@@ -2433,7 +2449,7 @@
                 * `__auto__` : select the first
                 * `__none__` : select none
                 * `__all__` : select all (if multiple is true)
-              with_types: text, number, password, enum, checkbox
+              with_types: text, textarea, number, password, enum, checkbox
             - name: required
               type: boolean
               default: false

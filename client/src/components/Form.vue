@@ -253,6 +253,17 @@
                           :placeholder="field.placeholder"
                           @keydown="(field.keydown)?evaluateDynamicFields(field.name):null"
                           @change="evaluateDynamicFields(field.name)">
+                        <!-- type = textarea-->
+                        <textarea v-if="field.type=='textarea'"
+                          @focus="inputFocus"
+                          :class="{'is-danger':$v.form[field.name].$invalid}"
+                          v-model="$v.form[field.name].$model"
+                          class="textarea" :name="field.name"
+                          v-bind="field.attrs"
+                          :required="field.required"
+                          :placeholder="field.placeholder"
+                          @change="evaluateDynamicFields(field.name)">
+                        </textarea>                          
                         <!-- type = number -->
                         <input v-if="field.type=='number'"
                           @focus="inputFocus"

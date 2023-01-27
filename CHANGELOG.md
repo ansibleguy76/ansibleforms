@@ -10,6 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 -   Saving settings error
+-   Table field issues
+
+### Added
+
+-   Ansible Galaxy collection community.general
+-   TextArea field
+
+### Changed
+
+-   Designer readonly when locked
 
 ## [4.0.0] - 2022-12-31
 

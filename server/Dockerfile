@@ -39,6 +39,7 @@ RUN ansible-galaxy collection install netapp.elementsw -p /usr/share/ansible/col
 RUN ansible-galaxy collection install netapp.um_info -p /usr/share/ansible/collections
 RUN ansible-galaxy collection install amazon.aws -p /usr/share/ansible/collections
 RUN ansible-galaxy collection install netapp.storagegrid -p /usr/share/ansible/collections
+RUN ansible-galaxy collection install community.general -p /usr/share/ansible/collections
 
 # add ssh
 RUN apk add --no-cache openssh

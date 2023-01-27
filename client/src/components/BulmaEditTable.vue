@@ -299,9 +299,10 @@
                 if(field.columns && field.columns.length>0){
                   return field.columns[0]
                 }
-                if(Object.keys(field) && Object.keys(field).length>0){
-                  return Object.keys(field)[0]
+                if(Object.keys(this.editedItem[field.name]) && Object.keys(this.editedItem[field.name]).length>0){
+                  return Object.keys(this.editedItem[field.name])[0]
                 }
+                return undefined
               }else{
                 return undefined
               }
@@ -365,10 +366,12 @@
               this.tableFields.forEach((item)=>{
                 if(item.type=="query" || item.type=="enum"){
                   if(!item.outputObject){
+                    console.log(item.name)
                     var valueLabel=this.getValueLabel(item)
-                    if(valueLabel){
-                      ref.editedItem[item.name]=ref.editedItem[item.name][valueLabel]
-                    }
+                    console.log(valueLabel)
+                    // if(valueLabel){
+                    //   ref.editedItem[item.name]=ref.editedItem[item.name][valueLabel]
+                    // }
                   }
                 }
               })
