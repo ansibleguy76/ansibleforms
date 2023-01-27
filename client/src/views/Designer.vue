@@ -77,6 +77,9 @@
           <span>Restore</span>
         </button>
       </div>
+      <div class="is-pulled-right" v-if="lock && !lock.match">
+        <span class="tag is-medium is-warning">The designer is read-only</span>
+      </div>
       <div>
         <h1 class="title has-text-info">
           <span class="mr-3"><font-awesome-icon icon="edit" /> Designer</span>
@@ -114,7 +117,7 @@
           </span>
         </h1>
       </div>
-      <template v-if="lock && lock.match" >
+      <template v-if="lock && !lock.free">
         <div class="tabs mt-5">
           <ul>
             <li v-for="(tab,index) in tabs" :key="'tab'+index" :class="{'is-active':tab==currentTab}"><a @click="currentTab=tab">{{ tab }}</a></li>

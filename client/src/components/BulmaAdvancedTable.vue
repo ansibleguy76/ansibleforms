@@ -232,7 +232,7 @@
 
       },
       select(i){
-        console.log("A, we selecteren " + i)
+        // console.log("A, we selecteren " + i)
         if(this.multiple){
           Vue.set(this.selected,i,!this.selected[i]);
         }else{

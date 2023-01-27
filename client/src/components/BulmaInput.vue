@@ -6,7 +6,7 @@
       <span class="icon is-left">
         <font-awesome-icon :icon="icon" />
       </span>
-    </p>
+    </p>    
     <p class="has-text-danger" v-for="e in errors" :key="e.label" :class="{'is-hidden':!e.if}">{{ e.label }}</p>
   </div>
 </template>

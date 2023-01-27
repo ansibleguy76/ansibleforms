@@ -510,6 +510,43 @@
                 {
                   "properties": {
                     "type": {
+                      "enum": ["textarea"]
+                    },
+                    "query": {"not":{}},
+                    "minValue": {"not":{}},
+                    "maxValue": {"not":{}},
+                    "expression": {"not":{}},
+                    "runLocal": {"not":{}},
+                    "dbConfig": {"not":{}},
+                    "sticky": {"not":{}},
+                    "editable": {"not":{}},
+                    "pctColumns": {"not":{}},
+                    "filterColumns": {"not":{}},
+                    "hide": {"not":{}},
+                    "allowDelete": {"not":{}},
+                    "allowInsert": {"not":{}},
+                    "deleteMarker": {"not":{}},
+                    "insertMarker": {"not":{}},
+                    "minLength": {"not":{}},
+                    "maxLength": {"not":{}},
+                    "regex": {"not":{}},
+                    "icon": {"not":{}},
+                    "notIn": {"not":{}},
+                    "in": {"not":{}},
+                    "sameAs": {"not":{}},
+                    "asCredential": {"not":{}},
+                    "keydown": {"not":{}},
+                    "refresh": {"not":{}},
+                    "readonlyColumns": {"not":{}},
+                    "values": {"not":{}},
+                    "isHtml": {"not":{}},
+                    "multiple": {"not":{}},
+                    "outputObject": {"not":{}}
+                  }
+                },                
+                {
+                  "properties": {
+                    "type": {
                       "enum": ["number"]
                     },
                     "query": {"not":{}},
@@ -808,7 +845,7 @@
               "properties": {
                 "type": {
                   "type": "string",
-                  "enum": ["text", "password", "checkbox", "enum", "query", "number", "radio", "expression", "table"]
+                  "enum": ["text","textarea", "password", "checkbox", "enum", "query", "number", "radio", "expression", "table"]
                 },
                 "name": {
                   "$id": "/formfield",
@@ -1015,6 +1052,29 @@
                       {
                         "properties": {
                           "type": {
+                            "enum": ["textarea"]
+                          },
+                          "minValue": {"not":{}},
+                          "maxValue": {"not":{}},
+                          "minLength": {"not":{}},
+                          "maxLength": {"not":{}},        
+                          "regex": {"not":{}},
+                          "values": {"not":{}},
+                          "from": {"not":{}},
+                          "outputObject": {"not":{}},
+                          "columns": {"not":{}},
+                          "icon": {"not":{}},
+                          "notIn": {"not":{}},
+                          "in": {"not":{}},
+                          "pctColumns": {"not":{}},
+                          "filterColumns": {"not":{}},
+                          "previewColumn": {"not":{}},
+                          "valueColumn": {"not":{}}
+                        }
+                      },                      
+                      {
+                        "properties": {
+                          "type": {
                             "enum": ["number"]
                           },
                           "minLength": {"not":{}},
@@ -1087,7 +1147,7 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["text", "password", "checkbox", "enum", "query", "number"]
+                        "enum": ["text","textarea", "password", "checkbox", "enum", "query", "number"]
                       },
                       "name": {"type": "string"},
                       "label": {"type": "string"},

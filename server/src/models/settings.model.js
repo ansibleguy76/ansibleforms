@@ -16,7 +16,6 @@ var Settings=function(settings){
     }
     this.mail_from = settings.mail_from;
     this.url = settings.url;
-    this.show_designer = settings.show_designer;
 };
 Settings.update = function (record) {
     logger.info(`Updating settings`)

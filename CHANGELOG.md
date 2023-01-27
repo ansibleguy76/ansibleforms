@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.1] - 2023-01-27
+
+### Fixed
+
+-   Saving settings error
+-   Table field issues
+
+### Added
+
+-   Ansible Galaxy collection community.general
+-   TextArea field
+
+### Changed
+
+-   Designer readonly when locked
+
 ## [4.0.0] - 2022-12-31
 
 ### Fixed
@@ -385,7 +401,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.0...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.1...HEAD
+
+[4.0.1]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.0...4.0.1
 
 [4.0.0]: https://github.com/ansibleguy76/ansibleforms/compare/3.1.1...4.0.0
 
