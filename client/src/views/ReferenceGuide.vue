@@ -103,6 +103,14 @@
               <template v-if="types">
                 <div v-for="t in types" :key="t.name" class="mt-3">
                   <h2 class="mytype subtitle is-capitalized is-underlined has-text-primary" :id="t.name">{{ t.name }} {{ help.name }}</h2>
+                  <div v-if="t.version" class="field is-grouped is-grouped-multiline">
+                    <div class="control">
+                      <div class="tags has-addons">
+                        <span class="tag is-dark">version</span>
+                        <span class="tag is-info">{{t.version}}</span>
+                      </div>
+                    </div>
+                  </div>
                   <VueShowdown class="mb-5" :markdown="t.description" flavor="github" :options="{ghCodeBlocks:true}" />
                   <VueShowdown v-if="t.extra" class="mb-5" :markdown="t.extra" flavor="github" :options="{ghCodeBlocks:true}" />
                   <p v-if="related(t.name).length>0">The following properties are related to {{ currentHelp.name }} {{ t.name }}</p>  

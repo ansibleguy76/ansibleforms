@@ -216,8 +216,31 @@
                           <vue-json-pretty :data="$v.form[field.name].$model"></vue-json-pretty>
                         </div>
                       </div>
+                      <date-picker v-if="field.type=='datetime'"
+                          :type="field.dateType"
+                          value-type="format"
+                          v-model="$v.form[field.name].$model"
+                       >
+                            <template #input>
+                              <div :class="{'has-icons-left':!!field.icon}" class="control">
+                                <input 
+                                  @focus="inputFocus"
+                                  :class="{'is-danger':$v.form[field.name].$invalid}"
+                                  class="input"
+                                  :name="field.name"
+                                  v-model="$v.form[field.name].$model"
+                                  @change="evaluateDynamicFields(field.name)"
+                                  :required="field.required"
+                                  type="text"
+                                  :placeholder="field.placeholder">
+                                  <span v-if="!!field.icon" class="icon is-small is-left">
+                                    <font-awesome-icon :icon="field.icon" />
+                                  </span>                                  
+                              </div>                            
+                            </template>
+                      </date-picker>  
                       <!-- fields with icons -->
-                      <div :class="{'has-icons-left':!!field.icon && !['query','enum'].includes(field.type)}" class="control">
+                      <div v-if="!['datetime','table','radio','enum','query','checkbox'].includes(field.type)" :class="{'has-icons-left':!!field.icon && !['query','enum','datetime'].includes(field.type)}" class="control">
                         <!-- type = expression -->
                         <div v-if="field.type=='expression'" :class="{'is-loading':(dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running') &! fieldOptions[field.name].editable}" class="control">
                           <div v-if="!fieldOptions[field.name].viewable">
@@ -268,7 +291,7 @@
                         <input v-if="field.type=='number'"
                           @focus="inputFocus"
                           :class="{'is-danger':$v.form[field.name].$invalid}"
-                          v-model="$v.form[field.name].$model"
+                          v-model.number="$v.form[field.name].$model"
                           class="input"
                           :name="field.name"
                           v-bind="field.attrs"
@@ -276,8 +299,9 @@
                           type="number"
                           :placeholder="field.placeholder"
                           @change="evaluateDynamicFields(field.name)">
+                   
                         <!-- add left icon, but not for query, because that's a component with icon builtin -->
-                        <span v-if="!!field.icon && !['query','enum'].includes(field.type) && !(field.type=='expression' && fieldOptions[field.name].viewable)" class="icon is-small is-left">
+                        <span v-if="!!field.icon && !(field.type=='expression' && fieldOptions[field.name].viewable)" class="icon is-small is-left">
                           <font-awesome-icon :icon="field.icon" />
                         </span>
                       </div>
@@ -376,6 +400,8 @@
   import BulmaPageloader from './BulmaPageloader.vue'
   import BulmaCheckRadio from './BulmaCheckRadio.vue'
   import BulmaEditTable from './BulmaEditTable.vue'
+  import DatePicker from 'vue2-datepicker';
+  import 'vue2-datepicker/index.css';
 
   // load javascript highlight, for debug view
   import 'highlight.js/styles/monokai-sublime.css'
@@ -399,7 +425,7 @@
 
   export default{
     name:"Form",
-    components:{VueJsonPretty,BulmaAdvancedSelect,BulmaEditTable,BulmaCheckRadio,BulmaQuickView,BulmaPageloader},
+    components:{VueJsonPretty,BulmaAdvancedSelect,BulmaEditTable,BulmaCheckRadio,BulmaQuickView,BulmaPageloader,DatePicker},
     props:{
       currentForm:{type:Object},
       constants:{type:Object},
@@ -1027,7 +1053,7 @@
               if(ref.fieldOptions[foundfield] && ["expression","table"].includes(ref.fieldOptions[foundfield].type) && (typeof ref.form[foundfield]=="object")){
                 // objects and array should be stringified
                 //fieldvalue=JSON.stringify(ref.form[foundfield])
-                // console.log(Helpers.replacePlaceholders(match[1],ref.form))
+                //console.log(Helpers.replacePlaceholders(match[1],ref.form))
                 fieldvalue=JSON.stringify(Helpers.replacePlaceholders(match[1],ref.form)) // allow full object reference
                 // drop wrapping quotes
                 if(typeof fieldvalue=="string"){ // drop quotes if string
@@ -1233,7 +1259,14 @@
 
                         var result
                         try{
-                          result=eval(placeholderCheck.value)
+                          // check if direct object attempt
+                          console.log(placeholderCheck.value)
+                          if(placeholderCheck.value.at(0)=="{" && placeholderCheck.value.at(-1)=="}"){
+                            result=eval(`Object.assign(${placeholderCheck.value})`)
+                          }else{
+                            result=eval(placeholderCheck.value)
+                          }
+                          
                           if(item.type=="expression") Vue.set(ref.form, item.name, result);
                           if((item.type=="query")||(item.type=="enum")) Vue.set(ref.queryresults, item.name, [].concat(result));
                           // table is special.  if external data is passed.  we take that instead of results.
@@ -1785,6 +1818,11 @@
             // }
           }
         }
+        // inject user
+        this.form["__user__"]=TokenStorage.getPayload().user
+        this.fieldOptions["__user__"]={
+          type:"expression"
+        }
         // initialize defaults
         this.currentForm.fields.forEach((item, i) => {
           // extra query parameters and store in externalData
@@ -1928,6 +1966,9 @@ pre{
   text-overflow: ellipsis;
   width:100%;
   overflow: hidden;
+}
+.mx-datepicker,.mx-input-wrapper{
+  width:100%;
 }
 .is-nowrap{
   white-space:nowrap;

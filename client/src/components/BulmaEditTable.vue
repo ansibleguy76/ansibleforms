@@ -11,32 +11,57 @@
                 <input v-if="field.type=='checkbox'" :disabled="readonlyColumns.includes(field.name)" :autofocus="index==0" :checked="editedItem[field.name]" v-model="editedItem[field.name]" :name="field.name" type="checkbox">
                 {{ field.placeholder }}
               </label> -->
-              <div :class="{'has-icons-left':!!field.icon}" class="control">
+              <date-picker v-if="field.type=='datetime'"
+                :type="field.dateType"
+                value-type="format"
+                v-model="$v.editedItem[field.name].$model"
+              >
+                  <template #input>
+                    <div :class="{'has-icons-left':!!field.icon}" class="control">
+                      <input 
+                        :class="{'is-danger':$v.editedItem[field.name].$invalid}"
+                        class="input"
+                        :name="field.name"
+                        v-model="$v.editedItem[field.name].$model"
+                        @change="evaluateDynamicFields(field.name)"
+                        :required="field.required"
+                        type="text"
+                        :placeholder="field.placeholder">
+                        <span v-if="!!field.icon" class="icon is-small is-left">
+                          <font-awesome-icon :icon="field.icon" />
+                        </span>                                  
+                    </div>                            
+                  </template>
+              </date-picker>   
+               
+              <BulmaAdvancedSelect
+                v-if="field.type=='query' || field.type=='enum'"
+                :defaultValue="stringify($v.editedItem[field.name].$model,field)||field.default||''"
+                :required="field.required||false"
+                :multiple="false"
+                :name="field.name"
+                :placeholder="field.placeholder||'Select...'"
+                :values="field.values||form[field.from]||[]"
+                :hasError="$v.editedItem[field.name].$invalid"
+                :isLoading="!field.values && !['fixed','variable'].includes(dynamicFieldStatus[field.from])"
+                v-model="$v.editedItem[field.name].$model"
+                :icon="field.icon"
+                :columns="field.columns||[]"
+                :pctColumns="field.pctColumns||[]"
+                :filterColumns="field.filterColumns||[]"
+                :previewColumn="field.previewColumn||''"
+                :valueColumn="field.valueColumn||''"
+                :sticky="false"
+                :disabled="action=='Edit' && readonlyColumns.includes(field.name)"
+                >
+              </BulmaAdvancedSelect>     
+                             
+              <div v-if="!['datetime','checkbox','query','enum'].includes(field.type)" :class="{'has-icons-left':!!field.icon}" class="control">
                 <input v-if="field.type=='text' || field.type=='password'" :disabled="action=='Edit' && readonlyColumns.includes(field.name)" :autofocus="index==0" :class="{'is-danger':$v.editedItem[field.name].$invalid}" class="input" :type="field.type" v-model="$v.editedItem[field.name].$model" :placeholder="field.placeholder" :name="field.name">
                 <input v-if="field.type=='number'" :disabled="action=='Edit' && readonlyColumns.includes(field.name)" :autofocus="index==0" class="input" type="number" v-model="editedItem[field.name]" :placeholder="field.placeholder" :name="field.name">
-                <BulmaAdvancedSelect
-                  v-if="field.type=='query' || field.type=='enum'"
-                  :defaultValue="stringify($v.editedItem[field.name].$model,field)||field.default||''"
-                  :required="field.required||false"
-                  :multiple="false"
-                  :name="field.name"
-                  :placeholder="field.placeholder||'Select...'"
-                  :values="field.values||form[field.from]||[]"
-                  :hasError="$v.editedItem[field.name].$invalid"
-                  :isLoading="!field.values && !['fixed','variable'].includes(dynamicFieldStatus[field.from])"
-                  v-model="$v.editedItem[field.name].$model"
-                  :icon="field.icon"
-                  :columns="field.columns||[]"
-                  :pctColumns="field.pctColumns||[]"
-                  :filterColumns="field.filterColumns||[]"
-                  :previewColumn="field.previewColumn||''"
-                  :valueColumn="field.valueColumn||''"
-                  :sticky="false"
-                  :disabled="action=='Edit' && readonlyColumns.includes(field.name)"
-                  >
-                </BulmaAdvancedSelect>
+
                 <!-- add left icon, but not for query, because that's a component with icon builtin -->
-                <span v-if="!!field.icon && field.type!='query'" class="icon is-small is-left">
+                <span v-if="!!field.icon" class="icon is-small is-left">
                   <font-awesome-icon :icon="field.icon" />
                 </span>
               </div>
@@ -146,12 +171,14 @@
     import BulmaAdvancedSelect from './BulmaAdvancedSelect'
     import Helpers from './../lib/Helpers.js'
     import BulmaCheckRadio from './BulmaCheckRadio'
+    import DatePicker from 'vue2-datepicker';
+   import 'vue2-datepicker/index.css';    
     import { required,minValue,maxValue,minLength,maxLength, helpers,requiredIf } from 'vuelidate/lib/validators'
 
     Vue.use(Vuelidate)
     export default{
         name:'BulmaEditTable',
-        components:{BulmaModal,BulmaAdvancedSelect,BulmaCheckRadio},
+        components:{BulmaModal,BulmaAdvancedSelect,BulmaCheckRadio,DatePicker},
         props:{
             tableFields: {
                 type: Array,
@@ -471,7 +498,9 @@
 .select, .select select{
   width:100%;
 }
-
+.mx-datepicker,.mx-input-wrapper{
+  width:100%;
+}
 .hasError{
   border:2px solid #ea4141!important;
 }
