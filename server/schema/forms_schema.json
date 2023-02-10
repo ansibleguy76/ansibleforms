@@ -819,6 +819,26 @@
                 {
                   "properties": {
                     "type": {
+                      "enum": ["datetime"]
+                    },
+                    "minValue": {"not":{}},
+                    "maxValue": {"not":{}},
+                    "minLength": {"not":{}},
+                    "maxLength": {"not":{}},        
+                    "values": {"not":{}},
+                    "from": {"not":{}},
+                    "outputObject": {"not":{}},
+                    "columns": {"not":{}},
+                    "pctColumns": {"not":{}},
+                    "filterColumns": {"not":{}},
+                    "previewColumn": {"not":{}},
+                    "valueColumn": {"not":{}}
+                  },
+                  "required": ["dateType"]
+                },                   
+                {
+                  "properties": {
+                    "type": {
                       "enum": ["table"]
                     },
                     "values": {"not":{}},
@@ -845,7 +865,7 @@
               "properties": {
                 "type": {
                   "type": "string",
-                  "enum": ["text","textarea", "password", "checkbox", "enum", "query", "number", "radio", "expression", "table"]
+                  "enum": ["text","textarea", "password", "checkbox", "enum", "query", "number", "radio", "expression", "table","datetime"]
                 },
                 "name": {
                   "$id": "/formfield",
@@ -862,6 +882,7 @@
                     {"type": "integer"}
                   ]
                 },
+                "dateType": {"type": "string","enum":["date","datetime","year","month","time","week"]},
                 "noOutput": {"type": "boolean"},
                 "asCredential": {"type": "boolean"},
                 "required": {
@@ -1071,7 +1092,27 @@
                           "previewColumn": {"not":{}},
                           "valueColumn": {"not":{}}
                         }
-                      },                      
+                      },      
+                      {
+                        "properties": {
+                          "type": {
+                            "enum": ["datetime"]
+                          },
+                          "minValue": {"not":{}},
+                          "maxValue": {"not":{}},
+                          "minLength": {"not":{}},
+                          "maxLength": {"not":{}},        
+                          "values": {"not":{}},
+                          "from": {"not":{}},
+                          "outputObject": {"not":{}},
+                          "columns": {"not":{}},
+                          "pctColumns": {"not":{}},
+                          "filterColumns": {"not":{}},
+                          "previewColumn": {"not":{}},
+                          "valueColumn": {"not":{}}
+                        },
+                        "required": ["dateType"]
+                      },                                         
                       {
                         "properties": {
                           "type": {
@@ -1147,7 +1188,7 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["text","textarea", "password", "checkbox", "enum", "query", "number"]
+                        "enum": ["text","textarea", "password", "checkbox", "enum", "query", "number","datetime"]
                       },
                       "name": {"type": "string"},
                       "label": {"type": "string"},
@@ -1175,6 +1216,7 @@
                             "description": {"type": "string"}
                           }
                       },
+                      "dateType": {"type": "string","enum":["date","datetime","year","month","time","week"]},
                       "minValue": {"type": "integer"},
                       "maxValue": {"type": "integer"},
                       "minLength": {"type": "integer"},

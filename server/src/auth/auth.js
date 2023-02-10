@@ -1,5 +1,5 @@
 const passport = require('passport');
-const basicStrategy = require('passport-http').BasicStrategy;
+const basicStrategy = require('modern-passport-http').BasicStrategy;
 const User = require('./../models/user.model');
 const authConfig = require('../../config/auth.config.js')
 const logger=require("../lib/logger");

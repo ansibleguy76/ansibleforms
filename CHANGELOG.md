@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.2] - 2023-02-10
+
+### Added
+
+-   Userobject is available in form with **user** => $(**user**)
+-   New field type datetime (date and time picker)
+
+### Changed
+
+-   An object-expression is now possible => "{foo:'bar'}"
+-   Bumped corejs and axios
+
+### Fixed
+
+-   Colons failed in password due to bad passport-http
+-   Number field was exported as string
+
 ## [4.0.1] - 2023-01-27
 
 ### Fixed
@@ -401,7 +418,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.1...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.2...HEAD
+
+[4.0.2]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.1...4.0.2
 
 [4.0.1]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.0...4.0.1
 

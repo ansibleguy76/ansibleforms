@@ -15,6 +15,14 @@
     <div v-for="f in filteredItems" class="mt-5" :key="f.name">
       <h2 class="subtitle" :id="f.name.replaceAll(' ','_').toLowerCase()" v-html="highlight(f.name)">
       </h2>
+      <div v-if="f.version" class="field is-grouped is-grouped-multiline">
+        <div class="control">
+          <div class="tags has-addons">
+            <span class="tag is-dark">version</span>
+            <span class="tag is-info">{{f.version}}</span>
+          </div>
+        </div>
+      </div>      
       <p v-if="f.description">
         <VueShowdown :markdown="highlight(f.description)" flavor="github" :options="{ghCodeBlocks:true}" />
       </p>

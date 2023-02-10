@@ -663,7 +663,7 @@
                  ref.$toast.success(result.data.message);
                  ref.formDirty=false
                  if(close){
-                   this.next(true)
+                   try{this.next(true)}catch{var x;}  
                  }else{
                    ref.loadBackups()
                  }

@@ -1463,7 +1463,33 @@
                         Line 2
                       placeholder: add your comments
                       required: true
-                      help: A help message                                          
+                      help: A help message       
+              - name: datetime
+                description: A datetime input field
+                examples:
+                - name: DateTime
+                  code: |
+                    - type: datetime
+                      dateType: date
+                      name: mydate
+                      label: Date
+                      default: "2023-12-01"
+                      required: true
+                      help: A help message 
+                    - type: datetime
+                      dateType: datetime
+                      name: mydateandtime
+                      label: DateTime
+                      default: "2023-12-01 13:01:00"
+                      required: true
+                      help: A help message       
+                    - type: datetime
+                      dateType: time
+                      name: mytime
+                      label: Time
+                      default: "13:01:00"
+                      required: true
+                      help: A help message                                                                                                   
               - name: number
                 description: A number input field
                 examples:
@@ -1657,6 +1683,24 @@
                   help: A help message    
 
                 # more examples per type, check out the links at the top of the page                                                 
+          - name: dateType
+            type: string
+            version: 4.0.2
+            required: false
+            choices:
+              - name: date
+                description: A single date
+              - name: datetime
+                description: A date and time              
+              - name: time
+                description: A time
+              - name: month
+                description: A month
+              - name: year
+                description: A year
+            short: DateType of the datetime picker
+            description: The datetime picker can pick several types
+            with_types: datetime
           - name: label
             type: string
             allowed: Free text
@@ -1669,7 +1713,7 @@
             short: In-field help value
             description: |
               Some form fields allow an in-field hint value.
-            with_types: text, textarea, number, password, checkbox, enum
+            with_types: text, textarea, number, password, checkbox, enum, datetime
           - name: help
             type: string
             allowed: Free text
@@ -1801,7 +1845,7 @@
               * `__auto__` : select the first
               * `__none__` : select none
               * `__all__` : select all (if multiple is true)
-            with_types: text, textarea, number, expression, password, enum, radio, checkbox
+            with_types: text, textarea, number, expression, password, enum, radio, checkbox, datetime
           - name: required
             type: boolean
             default: false
@@ -1844,7 +1888,7 @@
               This field requires an object with 2 attributes:
               * `expression` : The regular expression
               * `description` : A validation message to show when the regex is not matched.
-            with_types: text, expression, password
+            with_types: text, expression, password, datetime
             examples:
             - name: Validate email address
               code: |
@@ -1865,7 +1909,7 @@
               This field requires an object with 2 attributes:
               * `field` : The name of the field that holds the list
               * `description` : A validation message to show when the validation is not met.
-            with_types: text, expression, password
+            with_types: text, expression, password, datetime
             examples:
             - name: Check if ip exists
               code: |
@@ -1881,7 +1925,7 @@
               This field requires an object with 2 attributes:
               * `field` : The name of the field that holds the list
               * `description` : A validation message to show when the validation is not met.
-            with_types: text, expression, password
+            with_types: text, expression, password, datetime
             examples:
             - name: Check if ip is in range
               code: |
@@ -2398,6 +2442,8 @@
                   description: A password masked input field
                 - name: checkbox
                   description: A checkbox field
+                - name: datetime
+                  description: A datetime field                  
                 - name: enum
                   description: A multi-column filterable dropdown box
               short: Tablefield type
@@ -2417,7 +2463,25 @@
                       expression: "^[a-zA-Z]*$"
                       description: Must be alpha numeric
                     icon: user
-                  # more examples at the bottom of this help page                                                  
+                  # more examples at the bottom of this help page         
+            - name: dateType
+              type: string
+              version: 4.0.2
+              required: false
+              choices:
+                - name: date
+                  description: A single date
+                - name: datetime
+                  description: A date and time              
+                - name: time
+                  description: A time
+                - name: month
+                  description: A month
+                - name: year
+                  description: A year
+              short: DateType of the datetime picker
+              description: The datetime picker can pick several types
+              with_types: datetime
             - name: label
               type: string
               allowed: Free text
@@ -2430,7 +2494,7 @@
               short: In-field help value
               description: |
                 Some form fields allow an in-field hint value.
-              with_types: text, textarea, number, password, checkbox, enum
+              with_types: text, textarea, number, password, checkbox, enum, datetime
             - name: icon
               type: string
               allowed: Free fontawesome 6 icon
@@ -2438,7 +2502,7 @@
               description: |
                 Some tablefields can hold a nice looking icon.  The icon name is a free fontawesome 6 icon.
                 You can find more information at [www.fontawesome.com](https://www.fontawesome.com)
-              with_types: text, number, password, enum
+              with_types: text, number, password, enum, datetime
             - name: default
               type: many
               short: Default value
@@ -2449,7 +2513,7 @@
                 * `__auto__` : select the first
                 * `__none__` : select none
                 * `__all__` : select all (if multiple is true)
-              with_types: text, textarea, number, password, enum, checkbox
+              with_types: text, textarea, number, password, enum, checkbox, datetime
             - name: required
               type: boolean
               default: false
@@ -2492,7 +2556,7 @@
                 This field requires an object with 2 attributes:
                 * `expression` : The regular expression
                 * `description` : A validation message to show when the regex is not matched.
-              with_types: text, expression, password
+              with_types: text, expression, password, datetime
               examples:
               - name: Validate email address
                 code: |
@@ -2513,7 +2577,7 @@
                 This field requires an object with 2 attributes:
                 * `field` : The name of the field that holds the list
                 * `description` : A validation message to show when the validation is not met.
-              with_types: text, expression, password
+              with_types: text, expression, password, datetime
               examples:
               - name: Check if ip exists
                 code: |
@@ -2537,7 +2601,7 @@
                 This field requires an object with 2 attributes:
                 * `field` : The name of the field that holds the list
                 * `description` : A validation message to show when the validation is not met.
-              with_types: text, expression, password
+              with_types: text, expression, password, datetime
               examples:
               - name: Check if ip is in range
                 code: |
@@ -3335,6 +3399,17 @@
       AnsibleForms automatically sends the userinformation in the extravars.  
       You don't need to do anything.  
       It is sent as `ansibleforms_user`.
+  - name: Userinfo Form
+    short: How to access current user info
+    description: |
+      The field `__user__` is automatically added in the form.
+    language: YAML
+    version: 4.0.2
+    code: |
+      expression: $(__user__)
+      expression: "'$(__user__.username)'"
+      expression: $(__user__.groups)
+      expression: $(__user__.roles)
   - name: Customization
     short: How to customize AnsibleForms
     description: |
