@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-   Userobject is available in form with __user__ => $(__user__)
+-   New field type datetime (date and time picker)
+
+### Changed
+
+-   An object-expression is now possible => "{foo:'bar'}"
+-   Bumped corejs and axios
+
+### Fixed
+
+-   Colons failed in password due to bad passport-http
+-   Number field was exported as string
+
 ## [4.0.1] - 2023-01-27
 
 ### Fixed
