@@ -356,6 +356,7 @@ Job.launch = function(form,formObj,user,creds,extravars,parentId=null,next) {
           formObj.verbose,
           formObj.keepExtravars,
           formObj.key,
+          formObj.limit,
           credentials,
           jobid,
           null,
@@ -900,7 +901,7 @@ Multistep.launch = async function(form,steps,user,extravars,creds,jobid,counter,
 }
 // Ansible stuff
 var Ansible = function(){}
-Ansible.launch=(playbook,ev,inv,tags,c,d,v,k,key,credentials,jobid,counter,approval,approved=false)=>{
+Ansible.launch=(playbook,ev,inv,tags,limit,c,d,v,k,key,credentials,jobid,counter,approval,approved=false)=>{
   if(!counter){
     counter=0
   }else{
@@ -934,6 +935,7 @@ Ansible.launch=(playbook,ev,inv,tags,c,d,v,k,key,credentials,jobid,counter,appro
   }
   // playbook could be controlled from extravars
   var pb = extravars?.__playbook__ || playbook
+  var lmit = extravars?.__limit__ || limit
   // tags could be controlled from extravars
   var tgs = extravars?.__tags__ || tags  
   // check could be controlled from extravars
@@ -962,6 +964,7 @@ Ansible.launch=(playbook,ev,inv,tags,c,d,v,k,key,credentials,jobid,counter,appro
   if(check){ command += ` --check` }
   if(diff){ command += ` --diff` }
   if(verbose){ command += ` -vvv`}
+  if(lmit){command += ` -l '${lmit}'`}
   command += ` ${pb}`
   var directory = ansibleConfig.path
   var cmdObj = {directory:directory,command:command,description:"Running playbook",task:"Playbook",extravars:extravars,extravarsFileName:extravarsFileName,keepExtravars:keepExtravars}
