@@ -9,11 +9,14 @@ import Groups from './views/Groups.vue'
 import Repos from './views/Repos.vue'
 import Users from './views/Users.vue'
 import Ldap from './views/Ldap.vue'
+import AzureAd from './views/AzureAd.vue'
 import Settings from './views/Settings.vue'
+import MailSettings from './views/MailSettings.vue'
 import Awx from './views/Awx.vue'
 import Designer from './views/Designer.vue'
 import Credentials from './views/Credentials.vue'
 import Sshkey from './views/Sshkey.vue'
+import KnownHosts from './views/KnownHosts.vue'
 import Jobs from './views/Jobs.vue'
 import Logs from './views/Logs.vue'
 import Profile from './views/Profile.vue'
@@ -125,9 +128,21 @@ export default new Router({
         beforeEnter: checkAdmin
       },
       {
+        path:"/azuread",
+        name:"AzureAd",
+        component:AzureAd,
+        beforeEnter: checkAdmin
+      },    
+      {
         path:"/settings",
         name:"Settings",
         component:Settings,
+        beforeEnter: checkAdmin
+      },        
+      {
+        path:"/mail_settings",
+        name:"Settings Mail",
+        component:MailSettings,
         beforeEnter: checkAdmin
       },
       {
@@ -148,6 +163,12 @@ export default new Router({
         component:Sshkey,
         beforeEnter: checkAdmin
       },
+      {
+        path:"/knownhosts",
+        name:"KnownHost",
+        component:KnownHosts,
+        beforeEnter: checkAdmin
+      },      
       {
         path:"/logs",
         name:"Logs",

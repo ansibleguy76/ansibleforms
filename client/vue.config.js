@@ -7,6 +7,8 @@
 
  module.exports = {
    devServer: {
-     before: configureAPI
+     before: configureAPI,
+     port: 8443,
+     https: true
    }
  }

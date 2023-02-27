@@ -2,27 +2,27 @@
   <section class="section has-background-light">
     <!-- warnings pane -->
     <BulmaPageloader v-if="!formIsReady">{{ loadMessage }}</BulmaPageloader>
-    <BulmaQuickView v-if="(warnings || Object.keys(queryerrors).length>0) && showWarnings" title="Form warnings" footer="" @close="showWarnings=false">
+    <BulmaQuickView class="quickview" v-if="(warnings || Object.keys(queryerrors).length>0) && showWarnings" title="Form warnings" footer="" @close="showWarnings=false">
         <p v-for="w,i in warnings" :key="'warning'+i" class="mb-3" v-html="w"></p>
         <p v-for="q,i in Object.keys(queryerrors)" :key="'queryerror'+i" class="mb-3 has-text-danger">
           '{{ q }}' has query errors<br>{{queryerrors[q]}}
         </p>
     </BulmaQuickView>
 
-    <div class="container" v-if="formIsReady">
-      <div class="columns">
+    <div ref="container" class="container">
+      <div class="columns" v-if="formIsReady">
         <!-- form column -->
         <div class="column is-clipped-horizontal">
           <!-- form title -->
-          <h1 class="title">{{ currentForm.name }} <span v-if="currentForm.help" class="tag is-info is-clickable" @click="showHelp=!showHelp"><span class="icon"><font-awesome-icon icon="question-circle" /></span><span v-if="showHelp">Hide help</span><span v-else>Show help</span></span></h1>
+          <h1 class="title">{{ currentForm.name }} <span v-if="currentForm.help" class="tag is-light is-clickable" @click="showHelp=!showHelp"><span class="icon has-text-info"><font-awesome-icon icon="question-circle" /></span><span v-if="showHelp">Hide help</span><span v-else>Show help</span></span></h1>
           <!-- help pane -->
-          <article v-if="currentForm.help && showHelp" class="message is-info">
+          <article v-if="currentForm.help && showHelp" class="message is-light">
             <div class="message-body content"><VueShowdown :markdown="currentForm.help" flavor="github" :options="{ghCodeBlocks:true}" /></div>
           </article>
           <!-- top form buttons -->
           <!-- show extra vars -->
-          <button @click="generateJsonOutput();showExtraVars=true" class="button is-info is-small mr-3" v-show="!hideForm">
-            <span class="icon">
+          <button @click="generateJsonOutput();showExtraVars=true" class="button is-white is-small mr-3" v-show="!hideForm">
+            <span class="has-text-info icon">
               <font-awesome-icon icon="eye" />
             </span>
             <span>Show Extravars</span>
@@ -35,8 +35,8 @@
               <font-awesome-icon icon="link" />
           </span>
           <!-- reload button -->
-          <button @click="reloadForm" class="button is-warning is-small mr-3">
-            <span class="icon">
+          <button @click="reloadForm" class="button is-white is-small mr-3">
+            <span class="has-text-info icon">
               <font-awesome-icon icon="redo" />
             </span>
             <span>Reload This Form</span>
@@ -55,272 +55,279 @@
             <div :class="getGroupClass(group)">
               <!-- group title -->
               <h3 class="title is-3" v-if="checkGroupDependencies(group)">{{group}}</h3>
+              <div :key="line" v-for="line in fieldlines" class="columns">
                 <!-- field loop -->
-                <div :key="field.name" v-for="field in filterfieldsByGroup(group)">
-                  <transition name="slide">
-                    <div class="field mt-3" v-if="visibility[field.name]">
-                      <!-- field label -->
-                      <label class="label" :class="{'has-text-primary':!field.hide,'has-text-grey':field.hide}">{{ field.label || field.name }} <span v-if="field.required" class="has-text-danger">*</span>
-                        <!-- field buttons -->
-                        <span class="is-pulled-right">
-                          <!-- refresh auto -->
-                          <span
-                            @click="setFieldStatus(field.name,undefined)"
-                            v-if="fieldOptions[field.name] && fieldOptions[field.name].refresh"
-                            class="tag is-link icon-text is-clickable">
-                            <span>{{fieldOptions[field.name].refresh}}</span>
-                            <span class="icon"><font-awesome-icon icon="arrow-rotate-right" spin /></span>
+                <template  v-for="field in filterfieldsByGroupAndLine(group,line)">
+                  <transition :key="field.name" name="slide">
+                    <div class="column py-0" v-if="visibility[field.name]" :class="field.width">
+                    
+                      <div class="field mt-3">
+                        <!-- field label -->
+                        <label class="label" :class="{'has-text-dark':!field.hide,'has-text-grey':field.hide}">{{ field.label || field.name }} <span v-if="field.required" class="has-text-danger">*</span>
+                          <!-- field buttons -->
+                          <span class="is-pulled-right">
+                            <!-- refresh auto -->
+                            <span
+                              @click="setFieldStatus(field.name,undefined)"
+                              v-if="fieldOptions[field.name] && fieldOptions[field.name].refresh"
+                              class="tag is-link icon-text is-clickable">
+                              <span>{{fieldOptions[field.name].refresh}}</span>
+                              <span class="icon"><font-awesome-icon icon="arrow-rotate-right" spin /></span>
+                            </span>
+                            <!-- refresh manual -->
+                            <span v-if="(field.expression!=undefined || field.query!=undefined) && field.refresh &! fieldOptions[field.name].refresh"
+                              class="icon is-clickable has-text-link"
+                              @click="setFieldStatus(field.name,undefined)"
+                            >
+                              <font-awesome-icon icon="arrow-rotate-right" />
+                            </span>
+                            <!-- enable field debug -->
+                            <span
+                              class="icon is-clickable"
+                              :class="{'has-text-success':!fieldOptions[field.name].debug,'has-text-danger':fieldOptions[field.name].debug}"
+                              @click="setExpressionFieldDebug(field.name,!fieldOptions[field.name].debug)"
+                              v-if="field.expression && isAdmin"
+                            >
+                              <font-awesome-icon :icon="(fieldOptions[field.name].debug?'search-minus':'search-plus')" />
+                            </span>
+                            <!-- expression edit buttons -->
+                            <span
+                              class="icon is-clickable has-text-warning"
+                              @click="setExpressionFieldEditable(field.name,true)"
+                              v-if="field.editable && field.type=='expression' && !fieldOptions[field.name].editable && !fieldOptions[field.name].viewable"
+                            >
+                              <font-awesome-icon icon="pencil-alt" />
+                            </span>
+                            <span
+                              class="icon is-clickable has-text-danger"
+                              @click="setExpressionFieldEditable(field.name,false)"
+                              v-if="field.editable && field.type=='expression' && fieldOptions[field.name].editable && !fieldOptions[field.name].viewable"
+                            >
+                              <font-awesome-icon icon="times" />
+                            </span>
+                            <!-- raw content buttons -->
+                            <!-- show -->
+                            <span
+                              class="icon is-clickable has-text-success"
+                              @click="setExpressionFieldViewable(field.name,true)"
+                              v-if="field.expression && !fieldOptions[field.name].viewable && !fieldOptions[field.name].editable"
+                            >
+                              <font-awesome-icon icon="eye" />
+                            </span>
+                            <!-- copy -->
+                            <span
+                              class="icon is-clickable has-text-info"
+                              @click="clip((field.type=='expression')?$v.form[field.name].$model:queryresults[field.name])"
+                              v-if="field.expression && fieldOptions[field.name].viewable && !fieldOptions[field.name].editable"
+                            >
+                              <font-awesome-icon icon="copy" />
+                            </span>
+                            <!-- close -->
+                            <span
+                              class="icon is-clickable has-text-danger"
+                              @click="setExpressionFieldViewable(field.name,false)"
+                              v-if="field.expression && fieldOptions[field.name].viewable && !fieldOptions[field.name].editable"
+                            >
+                              <font-awesome-icon icon="times" />
+                            </span>
                           </span>
-                          <!-- refresh manual -->
-                          <span v-if="(field.expression!=undefined || field.query!=undefined) && field.refresh &! fieldOptions[field.name].refresh"
-                            class="icon is-clickable has-text-link"
-                            @click="setFieldStatus(field.name,undefined)"
-                          >
-                            <font-awesome-icon icon="arrow-rotate-right" />
-                          </span>
-                          <!-- enable field debug -->
-                          <span
-                            class="icon is-clickable"
-                            :class="{'has-text-success':!fieldOptions[field.name].debug,'has-text-danger':fieldOptions[field.name].debug}"
-                            @click="setExpressionFieldDebug(field.name,!fieldOptions[field.name].debug)"
-                            v-if="field.expression && isAdmin"
-                          >
-                            <font-awesome-icon :icon="(fieldOptions[field.name].debug?'search-minus':'search-plus')" />
-                          </span>
-                          <!-- expression edit buttons -->
-                          <span
-                            class="icon is-clickable has-text-warning"
-                            @click="setExpressionFieldEditable(field.name,true)"
-                            v-if="field.editable && field.type=='expression' && !fieldOptions[field.name].editable && !fieldOptions[field.name].viewable"
-                          >
-                            <font-awesome-icon icon="pencil-alt" />
-                          </span>
-                          <span
-                            class="icon is-clickable has-text-danger"
-                            @click="setExpressionFieldEditable(field.name,false)"
-                            v-if="field.editable && field.type=='expression' && fieldOptions[field.name].editable && !fieldOptions[field.name].viewable"
-                          >
-                            <font-awesome-icon icon="times" />
-                          </span>
-                          <!-- raw content buttons -->
-                          <!-- show -->
-                          <span
-                            class="icon is-clickable has-text-success"
-                            @click="setExpressionFieldViewable(field.name,true)"
-                            v-if="field.expression && !fieldOptions[field.name].viewable && !fieldOptions[field.name].editable"
-                          >
-                            <font-awesome-icon icon="eye" />
-                          </span>
-                          <!-- copy -->
-                          <span
-                            class="icon is-clickable has-text-info"
-                            @click="clip((field.type=='expression')?$v.form[field.name].$model:queryresults[field.name])"
-                            v-if="field.expression && fieldOptions[field.name].viewable && !fieldOptions[field.name].editable"
-                          >
-                            <font-awesome-icon icon="copy" />
-                          </span>
-                          <!-- close -->
-                          <span
-                            class="icon is-clickable has-text-danger"
-                            @click="setExpressionFieldViewable(field.name,false)"
-                            v-if="field.expression && fieldOptions[field.name].viewable && !fieldOptions[field.name].editable"
-                          >
-                            <font-awesome-icon icon="times" />
-                          </span>
-                        </span>
-                      </label>
-                      <!-- debug expression view -->
-                      <div class="mb-3"
-                        @dblclick="clip(field.expression,true)"
-                        v-if="field.expression && fieldOptions[field.name].debug">
-                        <highlight-code
-                          lang="javascript"
-                          :code="field.expression"
-                        />
-                      </div>
-                      <!-- evaluated debug expression view -->
-                      <div class="mb-3"
-                        @dblclick="clip(fieldOptions[field.name].expressionEval,true)"
-                        v-if="field.expression && fieldOptions[field.name].debug && dynamicFieldStatus[field.name]!='fixed'">
-                        <highlight-code
-                          lang="javascript"
-                          :code="fieldOptions[field.name].expressionEval"
-                        />
-                      </div>
-                      <!-- START FIELD BUILD -->
-                      <!-- type = checkbox -->
-                      <div v-if="field.type=='checkbox'">
-                        <BulmaCheckRadio checktype="checkbox" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="field.placeholder" @change="evaluateDynamicFields(field.name)" />
-                      </div>
-                      <!-- type = enum/query -->
-                      <div v-if="field.type=='query' || field.type=='enum'">
-                        <BulmaAdvancedSelect
-                          v-show="!fieldOptions[field.name].viewable"
-                          :defaultValue="defaults[field.name]"
-                          :required="field.required||false"
-                          :multiple="field.multiple||false"
-                          :name="field.name"
-                          :placeholder="field.placeholder||'Select...'"
-                          :values="field.values||queryresults[field.name]||[]"
-                          :hasError="$v.form[field.name].$invalid"
-                          :isLoading="!field.values && !['fixed','variable'].includes(dynamicFieldStatus[field.name])"
-                          v-model="$v.form[field.name].$model"
-                          :icon="field.icon"
-                          :columns="field.columns||[]"
-                          :pctColumns="field.pctColumns||[]"
-                          :filterColumns="field.filterColumns||[]"
-                          :previewColumn="field.previewColumn||''"
-                          :valueColumn="field.valueColumn||''"
-                          @ischanged="evaluateDynamicFields(field.name)"
-                          :sticky="field.sticky||false"
-                          >
-                        </BulmaAdvancedSelect>
-                        <!-- raw query data -->
-                        <div
-                          @dblclick="setExpressionFieldViewable(field.name,false)"
-                          v-if="fieldOptions[field.name].viewable"
-                          class="box limit-height is-limited mb-3">
-                          <vue-json-pretty :data="queryresults[field.name]||[]"></vue-json-pretty>
+                        </label>
+                        <!-- debug expression view -->
+                        <div class="mb-3"
+                          @dblclick="clip(field.expression,true)"
+                          v-if="field.expression && fieldOptions[field.name].debug">
+                          <highlight-code
+                            lang="javascript"
+                            :code="field.expression"
+                          />
                         </div>
-
-                      </div>
-                      <!-- type = radio -->
-                      <div v-if="field.type=='radio'" >
-                        <BulmaCheckRadio :val="radiovalue" checktype="radio" v-for="radiovalue in field.values" :key="field.name+'_'+radiovalue" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="radiovalue"  @change="evaluateDynamicFields(field.name)" />
-                      </div>
-                      <!-- type = table -->
-                      <div v-if="field.type=='table'">
-                        <BulmaEditTable
-                          v-show="!fieldOptions[field.name].viewable"
-                          :dynamicFieldStatus="dynamicFieldStatus"
-                          :form="form"
-                          :tableFields="field.tableFields"
-                          :hasError="$v.form[field.name].$invalid"
-                          :click="false"
-                          tableClass="table is-striped is-bordered is-narrow"
-                          :allowInsert="field.allowInsert && true"
-                          :allowDelete="field.allowDelete && true"
-                          :deleteMarker="field.deleteMarker || ''"
-                          :insertMarker="field.insertMarker || ''"
-                          :readonlyColumns="field.readonlyColumns || []"
-                          :isLoading="!['fixed','variable'].includes(dynamicFieldStatus[field.name]) && (field.expression!=undefined || field.query!=undefined)"
-                          :values="form[field.name]||[]"
-                          @input="evaluateDynamicFields(field.name)"
-                          @warning="addTableWarnings(field.name,...arguments)"
-                          v-model="$v.form[field.name].$model" />
-                        <!-- raw table data -->
-                        <div
-                          @dblclick="setExpressionFieldViewable(field.name,false)"
-                          v-if="fieldOptions[field.name].viewable"
-                          class="box limit-height is-limited mb-3">
-                          <vue-json-pretty :data="$v.form[field.name].$model"></vue-json-pretty>
+                        <!-- evaluated debug expression view -->
+                        <div class="mb-3"
+                          @dblclick="clip(fieldOptions[field.name].expressionEval,true)"
+                          v-if="field.expression && fieldOptions[field.name].debug && dynamicFieldStatus[field.name]!='fixed'">
+                          <highlight-code
+                            lang="javascript"
+                            :code="fieldOptions[field.name].expressionEval"
+                          />
                         </div>
-                      </div>
-                      <date-picker v-if="field.type=='datetime'"
-                          :type="field.dateType"
-                          value-type="format"
-                          v-model="$v.form[field.name].$model"
-                       >
-                            <template #input>
-                              <div :class="{'has-icons-left':!!field.icon}" class="control">
-                                <input 
-                                  @focus="inputFocus"
-                                  :class="{'is-danger':$v.form[field.name].$invalid}"
-                                  class="input"
-                                  :name="field.name"
-                                  v-model="$v.form[field.name].$model"
-                                  @change="evaluateDynamicFields(field.name)"
-                                  :required="field.required"
-                                  type="text"
-                                  :placeholder="field.placeholder">
-                                  <span v-if="!!field.icon" class="icon is-small is-left">
-                                    <font-awesome-icon :icon="field.icon" />
-                                  </span>                                  
-                              </div>                            
-                            </template>
-                      </date-picker>  
-                      <!-- fields with icons -->
-                      <div v-if="!['datetime','table','radio','enum','query','checkbox'].includes(field.type)" :class="{'has-icons-left':!!field.icon && !['query','enum','datetime'].includes(field.type)}" class="control">
-                        <!-- type = expression -->
-                        <div v-if="field.type=='expression'" :class="{'is-loading':(dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running') &! fieldOptions[field.name].editable}" class="control">
-                          <div v-if="!fieldOptions[field.name].viewable">
-                            <input v-if="fieldOptions[field.name].editable" type="text"
-                              @focus="inputFocus"
-                              :class="{'is-danger':$v.form[field.name].$invalid,'has-text-info':!fieldOptions[field.name].editable}"
-                              v-model="$v.form[field.name].$model"
-                              class="input"
-                              :name="field.name"
-                              :required="field.required"
-                              @change="evaluateDynamicFields(field.name)"
-                              >
-                            <p @dblclick="setExpressionFieldViewable(field.name,true)" v-if="!fieldOptions[field.name].editable && !field.isHtml" class="input has-text-info" :class="{'is-danger':$v.form[field.name].$invalid}" v-text="stringify($v.form[field.name].$model)"></p>
-                            <p @dblclick="setExpressionFieldViewable(field.name,true)" v-if="!fieldOptions[field.name].editable && field.isHtml" class="input has-text-info" :class="{'is-danger':$v.form[field.name].$invalid}" v-html="stringify($v.form[field.name].$model)"></p>
-                          </div>
-                          <!-- expression raw data -->
+                        <!-- START FIELD BUILD -->
+                        <!-- type = checkbox -->
+                        <div v-if="field.type=='checkbox'">
+                          <BulmaCheckRadio checktype="checkbox" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="field.placeholder" @change="evaluateDynamicFields(field.name)" />
+                        </div>
+                        <!-- type = enum/query -->
+                        <div v-if="field.type=='query' || field.type=='enum'">
+                          <BulmaAdvancedSelect
+                            :containerSize="containerSize"
+                            v-show="!fieldOptions[field.name].viewable"
+                            :defaultValue="defaults[field.name]"
+                            :required="field.required||false"
+                            :multiple="field.multiple||false"
+                            :name="field.name"
+                            :placeholder="field.placeholder||'Select...'"
+                            :values="field.values||queryresults[field.name]||[]"
+                            :hasError="$v.form[field.name].$invalid"
+                            :isLoading="!field.values && !['fixed','variable'].includes(dynamicFieldStatus[field.name])"
+                            v-model="$v.form[field.name].$model"
+                            :icon="field.icon"
+                            :columns="field.columns||[]"
+                            :pctColumns="field.pctColumns||[]"
+                            :filterColumns="field.filterColumns||[]"
+                            :previewColumn="field.previewColumn||''"
+                            :valueColumn="field.valueColumn||''"
+                            @input="evaluateDynamicFields(field.name)"
+                            :sticky="field.sticky||false"
+                            :horizontal="field.horizontal||false"
+                            >
+                          </BulmaAdvancedSelect>
+                          <!-- raw query data -->
                           <div
                             @dblclick="setExpressionFieldViewable(field.name,false)"
-                            v-else
+                            v-if="fieldOptions[field.name].viewable"
+                            class="box limit-height is-limited mb-3">
+                            <vue-json-pretty :data="queryresults[field.name]||[]"></vue-json-pretty>
+                          </div>
+
+                        </div>
+                        <!-- type = radio -->
+                        <div v-if="field.type=='radio'" >
+                          <BulmaCheckRadio :val="radiovalue" checktype="radio" v-for="radiovalue in field.values" :key="field.name+'_'+radiovalue" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="radiovalue"  @change="evaluateDynamicFields(field.name)" />
+                        </div>
+                        <!-- type = table -->
+                        <div v-if="field.type=='table'">
+                          <BulmaEditTable
+                            v-show="!fieldOptions[field.name].viewable"
+                            :dynamicFieldStatus="dynamicFieldStatus"
+                            :form="form"
+                            :tableFields="field.tableFields"
+                            :hasError="$v.form[field.name].$invalid"
+                            :click="false"
+                            tableClass="table is-striped is-bordered is-narrow"
+                            :allowInsert="field.allowInsert && true"
+                            :allowDelete="field.allowDelete && true"
+                            :deleteMarker="field.deleteMarker || ''"
+                            :insertMarker="field.insertMarker || ''"
+                            :readonlyColumns="field.readonlyColumns || []"
+                            :isLoading="!['fixed','variable'].includes(dynamicFieldStatus[field.name]) && (field.expression!=undefined || field.query!=undefined)"
+                            :values="form[field.name]||[]"
+                            @input="evaluateDynamicFields(field.name)"
+                            @warning="addTableWarnings(field.name,...arguments)"
+                            v-model="$v.form[field.name].$model" />
+                          <!-- raw table data -->
+                          <div
+                            @dblclick="setExpressionFieldViewable(field.name,false)"
+                            v-if="fieldOptions[field.name].viewable"
                             class="box limit-height is-limited mb-3">
                             <vue-json-pretty :data="$v.form[field.name].$model"></vue-json-pretty>
                           </div>
                         </div>
-                        <!-- type = text or password-->
-                        <input v-if="field.type=='text' || field.type=='password'"
-                          @focus="inputFocus"
-                          :class="{'is-danger':$v.form[field.name].$invalid}"
-                          v-model="$v.form[field.name].$model"
-                          class="input" :name="field.name"
-                          v-bind="field.attrs"
-                          :required="field.required"
-                          :type="field.type"
-                          :placeholder="field.placeholder"
-                          @keydown="(field.keydown)?evaluateDynamicFields(field.name):null"
-                          @change="evaluateDynamicFields(field.name)">
-                        <!-- type = textarea-->
-                        <textarea v-if="field.type=='textarea'"
-                          @focus="inputFocus"
-                          :class="{'is-danger':$v.form[field.name].$invalid}"
-                          v-model="$v.form[field.name].$model"
-                          class="textarea" :name="field.name"
-                          v-bind="field.attrs"
-                          :required="field.required"
-                          :placeholder="field.placeholder"
-                          @change="evaluateDynamicFields(field.name)">
-                        </textarea>                          
-                        <!-- type = number -->
-                        <input v-if="field.type=='number'"
-                          @focus="inputFocus"
-                          :class="{'is-danger':$v.form[field.name].$invalid}"
-                          v-model.number="$v.form[field.name].$model"
-                          class="input"
-                          :name="field.name"
-                          v-bind="field.attrs"
-                          :required="field.required"
-                          type="number"
-                          :placeholder="field.placeholder"
-                          @change="evaluateDynamicFields(field.name)">
-                   
-                        <!-- add left icon, but not for query, because that's a component with icon builtin -->
-                        <span v-if="!!field.icon && !(field.type=='expression' && fieldOptions[field.name].viewable)" class="icon is-small is-left">
-                          <font-awesome-icon :icon="field.icon" />
-                        </span>
+                        <date-picker v-if="field.type=='datetime'"
+                            :type="field.dateType"
+                            value-type="format"
+                            v-model="$v.form[field.name].$model"
+                        >
+                              <template #input>
+                                <div :class="{'has-icons-left':!!field.icon}" class="control">
+                                  <input 
+                                    @focus="inputFocus"
+                                    :class="{'is-danger':$v.form[field.name].$invalid}"
+                                    class="input"
+                                    :name="field.name"
+                                    v-model="$v.form[field.name].$model"
+                                    @change="evaluateDynamicFields(field.name)"
+                                    :required="field.required"
+                                    type="text"
+                                    :placeholder="field.placeholder">
+                                    <span v-if="!!field.icon" class="icon is-small is-left">
+                                      <font-awesome-icon :icon="field.icon" />
+                                    </span>                                  
+                                </div>                            
+                              </template>
+                        </date-picker>  
+                        <!-- fields with icons -->
+                        <div v-if="!['datetime','table','radio','enum','query','checkbox'].includes(field.type)" :class="{'has-icons-left':!!field.icon && !['query','enum','datetime'].includes(field.type)}" class="control">
+                          <!-- type = expression -->
+                          <div v-if="field.type=='expression'" :class="{'is-loading':(dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running') &! fieldOptions[field.name].editable}" class="control">
+                            <div v-if="!fieldOptions[field.name].viewable">
+                              <input v-if="fieldOptions[field.name].editable" type="text"
+                                @focus="inputFocus"
+                                :class="{'is-danger':$v.form[field.name].$invalid,'has-text-info':!fieldOptions[field.name].editable}"
+                                v-model="$v.form[field.name].$model"
+                                class="input"
+                                :name="field.name"
+                                :required="field.required"
+                                @change="evaluateDynamicFields(field.name)"
+                                >
+                              <p @dblclick="setExpressionFieldViewable(field.name,true)" v-if="!fieldOptions[field.name].editable && !field.isHtml" class="input has-text-info" :class="{'is-danger':$v.form[field.name].$invalid}" v-text="stringify($v.form[field.name].$model)"></p>
+                              <p @dblclick="setExpressionFieldViewable(field.name,true)" v-if="!fieldOptions[field.name].editable && field.isHtml" class="input has-text-info" :class="{'is-danger':$v.form[field.name].$invalid}" v-html="stringify($v.form[field.name].$model)"></p>
+                            </div>
+                            <!-- expression raw data -->
+                            <div
+                              @dblclick="setExpressionFieldViewable(field.name,false)"
+                              v-else
+                              class="box limit-height is-limited mb-3">
+                              <vue-json-pretty :data="$v.form[field.name].$model"></vue-json-pretty>
+                            </div>
+                          </div>
+                          <!-- type = text or password-->
+                          <input v-if="field.type=='text' || field.type=='password'"
+                            @focus="inputFocus"
+                            :class="{'is-danger':$v.form[field.name].$invalid}"
+                            v-model="$v.form[field.name].$model"
+                            class="input" :name="field.name"
+                            v-bind="field.attrs"
+                            :required="field.required"
+                            :type="field.type"
+                            :placeholder="field.placeholder"
+                            @keydown="(field.keydown)?evaluateDynamicFields(field.name):null"
+                            @change="evaluateDynamicFields(field.name)">
+                          <!-- type = textarea-->
+                          <textarea v-if="field.type=='textarea'"
+                            @focus="inputFocus"
+                            :class="{'is-danger':$v.form[field.name].$invalid}"
+                            v-model="$v.form[field.name].$model"
+                            class="textarea" :name="field.name"
+                            v-bind="field.attrs"
+                            :required="field.required"
+                            :placeholder="field.placeholder"
+                            @change="evaluateDynamicFields(field.name)">
+                          </textarea>                          
+                          <!-- type = number -->
+                          <input v-if="field.type=='number'"
+                            @focus="inputFocus"
+                            :class="{'is-danger':$v.form[field.name].$invalid}"
+                            v-model.number="$v.form[field.name].$model"
+                            class="input"
+                            :name="field.name"
+                            v-bind="field.attrs"
+                            :required="field.required"
+                            type="number"
+                            :placeholder="field.placeholder"
+                            @change="evaluateDynamicFields(field.name)">
+                    
+                          <!-- add left icon, but not for query, because that's a component with icon builtin -->
+                          <span v-if="!!field.icon && !(field.type=='expression' && fieldOptions[field.name].viewable)" class="icon is-small is-left">
+                            <font-awesome-icon :icon="field.icon" />
+                          </span>
+                        </div>
+                        <!-- add help and validation alerts -->
+                        <p class="help" v-if="!!field.help">{{ field.help}}</p>
+                        <p class="has-text-danger" v-if="$v.form[field.name].required==false">This field is required</p>
+                        <p class="has-text-danger" v-if="'minLength' in $v.form[field.name] && !$v.form[field.name].minLength">Must be at least {{$v.form[field.name].$params.minLength.min}} characters long</p>
+                        <p class="has-text-danger" v-if="'maxLength' in $v.form[field.name] && !$v.form[field.name].maxLength">Can not be more than {{$v.form[field.name].$params.maxLength.max}} characters long</p>
+                        <p class="has-text-danger" v-if="'minValue' in $v.form[field.name] && !$v.form[field.name].minValue">Value cannot be lower than {{$v.form[field.name].$params.minValue.min}}</p>
+                        <p class="has-text-danger" v-if="'maxValue' in $v.form[field.name] && !$v.form[field.name].maxValue">Value cannot be higher than {{$v.form[field.name].$params.maxValue.max}}</p>
+                        <p class="has-text-danger" v-if="'regex' in $v.form[field.name] && !$v.form[field.name].regex">{{$v.form[field.name].$params.regex.description}}</p>
+                        <p class="has-text-danger" v-if="'validIf' in $v.form[field.name] && !$v.form[field.name].validIf">{{$v.form[field.name].$params.validIf.description}}</p>
+                        <p class="has-text-danger" v-if="'validIfNot' in $v.form[field.name] && !$v.form[field.name].validIfNot">{{$v.form[field.name].$params.validIfNot.description}}</p>
+                        <p class="has-text-danger" v-if="'notIn' in $v.form[field.name] && !$v.form[field.name].notIn">{{$v.form[field.name].$params.notIn.description}}</p>
+                        <p class="has-text-danger" v-if="'in' in $v.form[field.name] && !$v.form[field.name].in">{{$v.form[field.name].$params.in.description}}</p>
+                        <p class="has-text-danger" v-if="'sameAs' in $v.form[field.name] && !$v.form[field.name].sameAs">Field must be identical to '{{$v.form[field.name].$params.sameAs.eq}}'</p>
                       </div>
-                      <!-- add help and validation alerts -->
-                      <p class="help" v-if="!!field.help">{{ field.help}}</p>
-                      <p class="has-text-danger" v-if="$v.form[field.name].required==false">This field is required</p>
-                      <p class="has-text-danger" v-if="'minLength' in $v.form[field.name] && !$v.form[field.name].minLength">Must be at least {{$v.form[field.name].$params.minLength.min}} characters long</p>
-                      <p class="has-text-danger" v-if="'maxLength' in $v.form[field.name] && !$v.form[field.name].maxLength">Can not be more than {{$v.form[field.name].$params.maxLength.max}} characters long</p>
-                      <p class="has-text-danger" v-if="'minValue' in $v.form[field.name] && !$v.form[field.name].minValue">Value cannot be lower than {{$v.form[field.name].$params.minValue.min}}</p>
-                      <p class="has-text-danger" v-if="'maxValue' in $v.form[field.name] && !$v.form[field.name].maxValue">Value cannot be higher than {{$v.form[field.name].$params.maxValue.max}}</p>
-                      <p class="has-text-danger" v-if="'regex' in $v.form[field.name] && !$v.form[field.name].regex">{{$v.form[field.name].$params.regex.description}}</p>
-                      <p class="has-text-danger" v-if="'validIf' in $v.form[field.name] && !$v.form[field.name].validIf">{{$v.form[field.name].$params.validIf.description}}</p>
-                      <p class="has-text-danger" v-if="'validIfNot' in $v.form[field.name] && !$v.form[field.name].validIfNot">{{$v.form[field.name].$params.validIfNot.description}}</p>
-                      <p class="has-text-danger" v-if="'notIn' in $v.form[field.name] && !$v.form[field.name].notIn">{{$v.form[field.name].$params.notIn.description}}</p>
-                      <p class="has-text-danger" v-if="'in' in $v.form[field.name] && !$v.form[field.name].in">{{$v.form[field.name].$params.in.description}}</p>
-                      <p class="has-text-danger" v-if="'sameAs' in $v.form[field.name] && !$v.form[field.name].sameAs">Field must be identical to '{{$v.form[field.name].$params.sameAs.eq}}'</p>
                     </div>
                   </transition>
-                </div>
+                </template>
+              </div>
             </div>
           </div>
           <!-- job buttons -->
@@ -367,15 +374,15 @@
         <div v-if="showExtraVars" class="column is-clipped-horizontal">
           <h1 class="title">Extravars</h1>
           <!-- close extravar view button -->
-          <button @click="showExtraVars=false" class="button is-danger is-small">
-            <span class="icon">
+          <button @click="showExtraVars=false" class="button is-white is-small">
+            <span class="has-text-info icon">
               <font-awesome-icon icon="times" />
             </span>
             <span>Close</span>
           </button>
           <!-- copy extravars button -->
-          <button @click="clip(formdata)" class="ml-2 button is-success is-small">
-            <span class="icon">
+          <button @click="clip(formdata)" class="ml-2 button is-white is-small">
+            <span class=" has-text-info icon">
               <font-awesome-icon icon="copy" />
             </span>
             <span>Copy to clipboard</span>
@@ -466,7 +473,11 @@
           showHelp:false,           // flag to show/hide form help
           showHidden:false,         // flag to show/hide hidden field / = debug mode
           jobId:undefined,          // holds the current jobid
-          abortTriggered:false     // flag abort is triggered
+          abortTriggered:false,     // flag abort is triggered,
+          containerSize:{
+            x:0,
+            width:0
+          }          // width of container
         }
     },
     validations() {     // a dynamic assignment of vuelidate validations, based on the form yaml
@@ -572,9 +583,35 @@
         }else{
           return []
         }
-      }
+      },
+      fieldlines(){
+        // make groupname array with empty at start
+        var ref=this
+        if(this.currentForm.fields){
+          var linecount=0
+          return this.currentForm.fields.reduce(function(pV,cV,cI){
+            linecount++
+            if("line" in cV){
+              return [...pV, cV.line];
+            }else{
+              ref.currentForm.fields[cI].line=`__line__${linecount}`
+              return [...pV, `__line__${linecount}`];
+            }
+          },[""]).filter((v, i, a) => a.indexOf(v) === i);
+        }else{
+          return []
+        }
+      }      
     },
     methods:{
+      calcContainerSize(){
+        var rect=this.$refs["container"]?.getBoundingClientRect()
+        if(rect){
+          this.containerSize.x=rect.x
+          this.containerSize.width=rect.width
+        }
+
+      },
       getFormUrl(){
         var base64values=btoa(JSON.stringify(this.form))
         var url=`${location.protocol}//${location.host}/#/form/?form=${encodeURIComponent(this.currentForm.name)}&base64values=${base64values}`
@@ -680,6 +717,16 @@
             && (el.hide!==true || ref.showHidden))
         });
       },
+      // creates a list of fields per group
+      filterfieldsByGroupAndLine(group,line){
+        var ref=this
+        return this.filterfieldsByGroup(group).filter(function (el) {
+          return (
+            (("line" in el && el.line === line)
+              || !("line" in el) && (line==""))
+            && (el.hide!==true || ref.showHidden))
+        });
+      },      
       // check if a field must be shown based on dependencies
       checkDependencies(field){
         var ref = this
@@ -765,6 +812,9 @@
               result.push(bg)
           }
         }
+        // if(result.length==1){
+        //   result.push('has-background-light')
+        // }
         return result
       },
       // reset value of field - only for expression/query
@@ -1260,7 +1310,7 @@
                         var result
                         try{
                           // check if direct object attempt
-                          console.log(placeholderCheck.value)
+                          // console.log(placeholderCheck.value)
                           if(placeholderCheck.value.at(0)=="{" && placeholderCheck.value.at(-1)=="}"){
                             result=eval(`Object.assign(${placeholderCheck.value})`)
                           }else{
@@ -1943,6 +1993,11 @@
     mounted() { // when the Vue app is booted up, this is run automatically.
       this.resetResult();
       this.initForm();
+      this.calcContainerSize();
+      window.addEventListener('resize', this.calcContainerSize);
+    },
+    unmounted(){
+      window.removeEventListener('resize', this.calcContainerSize);
     },
     // before exit, we stop the interval, as it would not stop otherwise
     beforeDestroy(){
@@ -1951,6 +2006,9 @@
   }
 </script>
 <style scoped>
+.quickview{
+  z-index:91000;
+}
 pre{
   white-space: pre-wrap;       /* Since CSS 2.1 */
   white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */

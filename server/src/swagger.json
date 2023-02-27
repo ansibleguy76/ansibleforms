@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "description": "This is the swagger interface for AnsibleForms.\r\nUse the `/auth/login` api with basic authentication to obtain a JWT token.\r\nThen use the access token, prefixed with the word '**Bearer**' to use all other api's.\r\nNote that the access token is limited in time.  You can then either login again and get a new set of tokens or use the `/token` api and the refresh token to obtain a new set (preferred).",
-    "version": "4.0.2",
+    "version": "4.0.3",
     "title": "AnsibleForms",
     "contact": {
       "email": "info@ansibleforms.com"
@@ -34,6 +34,10 @@
       "name": "ldap config",
       "description": "Operations on ldap configuration"
     },
+    {
+      "name": "Azure AD config",
+      "description": "Operations on azure ad configuration"
+    },    
     {
       "name": "credentials",
       "description": "Operations on credentials"
@@ -1666,6 +1670,109 @@
         }
       }
     },
+    "/azuread": {
+      "get": {
+        "tags": [
+          "Azure AD config"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get Azure AD configuration",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "Azure AD found",
+                "data": {
+                  "output": {
+                    "client_id": "client_id",
+                    "secret_id": "*** secret_id ***",
+                    "enable": 1
+                  },
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Azure AD config"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "Azure AD config",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "client_id": {
+                  "type": "string",
+                  "example": "my_client_id"
+                },
+                "bind_user_pw": {
+                  "type": "string",
+                  "example": "my_secret_id"
+                },
+                "enable": {
+                  "type": "boolean",
+                  "example": true
+                }
+              }
+            }
+          }
+        ],
+        "summary": "Set Azure AD configuration",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "Azure AD updated",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },    
     "/credential": {
       "get": {
         "tags": [
