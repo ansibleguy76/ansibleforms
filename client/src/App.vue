@@ -35,7 +35,7 @@
           <span class="tag is-warning">{{ thanks.join(', ')}}</span>
         </div>
     </BulmaModal>
-    <BulmaNav :isAdmin="isAdmin" @about="showAbout=true" :approvals="approvals" :authenticated="authenticated" :profile="profile" @logout="logout()" :version="version" />
+    <BulmaNav v-if="version" :isAdmin="isAdmin" @about="showAbout=true" :approvals="approvals" :authenticated="authenticated" :profile="profile" @logout="logout()" :version="version" />
     <router-view :isAdmin="isAdmin" :profile="profile" :authenticated="authenticated" :errorMessage="errorMessage" :errorData="errorData" @authenticated="login()" @logout="logout()" @refreshApprovals="loadApprovals()" />
   </div>
 </template>
@@ -55,7 +55,7 @@
         profile:{},
         authenticated:false,
         isAdmin:false,
-        version:"unknown",
+        version:undefined,
         approvals:0,
         showAbout:false,
         showEasterEgg:false,
@@ -72,7 +72,6 @@
     computed: {
     },
     beforeMount() {
-      this.loadVersion()
       this.checkDatabase()
     },
     methods: {
@@ -115,6 +114,7 @@
           axios.get('/api/v1/schema')                               // check database
             .then((result)=>{
               if(result.data.status=="error"){
+                console.log("aha error")
                 ref.errorMessage=result.data.message;
                 ref.errorData=result.data.data;
                 if(!ref.errorMessage)ref.errorMessage="Unknown error"
@@ -126,6 +126,7 @@
                   ref.$router.replace({name:"Schema"}).catch(err => {});
                 }
               }else{
+                this.loadVersion()
                 this.login()
               }
 
