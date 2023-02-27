@@ -147,7 +147,7 @@ User.getGroups = function(user,groupObj){
     if(groupObj.memberOf){
       // get the memberOf field, force to array
       var ldapgroups = [].concat(groupObj.memberOf)
-      logger.debug(`LDAP Groups = ${ldapgroups}`)
+      //logger.debug(`LDAP Groups = ${ldapgroups}`)
       // loop ldap groups
       ldapgroups.forEach(function(v,i,a){
         // grab groupname part

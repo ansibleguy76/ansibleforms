@@ -27,7 +27,9 @@ Settings.find = function () {
     .then((res)=>{
       if(res.length>0){
         try{
-          res[0].mail_password=decrypt(res[0].mail_password)
+          if(res[0].mail_password!=""){
+            res[0].mail_password=decrypt(res[0].mail_password)
+          }
         }catch(e){
           logger.error("Couldn't decrypt mail password, did the secretkey change ?")
           res[0].mail_password=""
