@@ -30,7 +30,7 @@
             </p>
           </th>
         </tr>
-        <tr v-for="item in displayedList" :key="'item_'+((identifier)?item[identifier]:item)" :class="{'has-background-link-light':(identifier)?currentItem==item[identifier]:currentItem==item}">
+        <tr v-for="item,i in displayedList" :key="'item_'+((identifier)?item[identifier]:item)+'_'+i" :class="{'has-background-link-light':(identifier)?currentItem==item[identifier]:currentItem==item}">
           <td class="is-first">
             <template v-for="a in actions" >
               <span :key="'action_'+a.name" v-if="item['allow'+a.name]==undefined || item['allow'+a.name]==true" class="icon is-clickable" :class="a.color" :title="a.title" @click="(identifier)?action(a.name,item[identifier]):action(a.name,item)"><font-awesome-icon :icon="a.icon" /></span>
