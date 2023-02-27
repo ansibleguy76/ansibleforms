@@ -98,6 +98,14 @@ CREATE TABLE `settings` (
   `mail_from` varchar(250) DEFAULT NULL,
   `url` varchar(250) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+USE `AnsibleForms`;
+DROP TABLE IF EXISTS `azuread`;
+CREATE TABLE `azuread` (
+  `client_id` text DEFAULT NULL,
+  `secret_id` text DEFAULT NULL,
+  `enable` tinyint(4) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+INSERT INTO AnsibleForms.azuread(client_id,secret_id,enable) VALUES('','',0);
 INSERT INTO AnsibleForms.groups(name) VALUES('admins');
 INSERT INTO AnsibleForms.awx(uri,token) VALUES('','');
 INSERT INTO AnsibleForms.users(username,password,group_id) VALUES('admin','$2b$10$Z/W0HXNBk2aLR4yVLkq5L..C8tXg.G.o1vkFr8D2lw8JSgWRCNiCa',1);
