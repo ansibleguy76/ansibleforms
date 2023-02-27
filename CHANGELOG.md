@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+-   Add select-all box with single column multiselect enum
+-   Required not enforced on multiple enum
+-   Log view since date-based logfiles
+-   enum dropup better calculation
+-   issues with multistep and key
+-   add user profile in steps
+
+### Added
+
+-   Add enum horizontal mode
+-   Add azure ad oAuth2 login method
+-   Add server fn.fnSsh function
+-   Showing env.variables in the settings
+-   Showing known_hosts and allow removal
+-   Added limit property for ansible playbooks 
+
+### Changed
+
+-   Moved form backups to subfolder (new ENV VAR)
+-   Made backup age configurable (new ENV VAR)
+-   New theme look
+-   New settings menu
+
+
 ## [4.0.2] - 2023-02-10
 
 ### Added
