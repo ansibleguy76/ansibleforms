@@ -351,11 +351,11 @@ Job.launch = function(form,formObj,user,creds,extravars,parentId=null,next) {
           extravars,
           formObj.inventory,
           formObj.tags,
+          formObj.limit,          
           formObj.check,
           formObj.diff,
           formObj.verbose,
           formObj.keepExtravars,
-          formObj.key,
           credentials,
           jobid,
           null,
@@ -368,9 +368,10 @@ Job.launch = function(form,formObj,user,creds,extravars,parentId=null,next) {
           extravars,
           formObj.inventory,
           formObj.tags,
+          formObj.limit,
           formObj.check,
           formObj.diff,
-          formObj.key,
+          formObj.verbose,
           credentials,
           awxCredentials,
           jobid,
@@ -384,7 +385,6 @@ Job.launch = function(form,formObj,user,creds,extravars,parentId=null,next) {
         Git.push(
           formObj.repo,
           extravars,
-          formObj.key,
           jobid,
           null,
           (parentId)?null:formObj.approval // if multistep: no individual approvals checks
@@ -482,11 +482,11 @@ Job.continue = function(form,user,creds,extravars,jobid,next) {
                     extravars,
                     formObj.inventory,
                     formObj.tags,
+                    formObj.limit,
                     formObj.check,
                     formObj.diff,
                     formObj.verbose,
                     formObj.keepExtravars,
-                    formObj.key,
                     credentials,
                     jobid,
                     ++counter,
@@ -500,9 +500,10 @@ Job.continue = function(form,user,creds,extravars,jobid,next) {
                     extravars,
                     formObj.inventory,
                     formObj.tags,
+                    formObj.limit,
                     formObj.check,
                     formObj.diff,
-                    formObj.key,
+                    formObj.verbose,
                     credentials,
                     awxCredentials,
                     jobid,
@@ -512,7 +513,7 @@ Job.continue = function(form,user,creds,extravars,jobid,next) {
                   )
                 }
                 if(jobtype=="git"){
-                  Git.push(formObj.repo,extravars,formObj.key,jobid,++counter,formObj.approval,true)
+                  Git.push(formObj.repo,extravars,jobid,++counter,formObj.approval,true)
                 }
                 if(jobtype=="multistep"){
                   Multistep.launch(form,formObj.steps,user,extravars,creds,jobid,++counter,formObj.approval,step,true)
@@ -812,9 +813,12 @@ Multistep.launch = async function(form,steps,user,extravars,creds,jobid,counter,
                 if(finalSuccessStatus || step.always){
                     // filter the extravars with "key"
                     var ev = {...extravars}
+                    // steps can have a key, we then take a partial piece of the extravars to send to the step
                     if(step.key && ev[step.key]){
                       // logger.warning(step.key + " exists using it")
                       ev = ev[step.key]
+                      // we copy the user profile in the step data
+                      ev.ansibleforms_user = extravars.ansibleforms_user
                     }
                     // wait the promise of step
                     result= await Job.launch(form,step,user,creds,ev,jobid,function(job){
@@ -900,7 +904,7 @@ Multistep.launch = async function(form,steps,user,extravars,creds,jobid,counter,
 }
 // Ansible stuff
 var Ansible = function(){}
-Ansible.launch=(playbook,ev,inv,tags,c,d,v,k,key,credentials,jobid,counter,approval,approved=false)=>{
+Ansible.launch=(playbook,ev,inv,tags,limit,c,d,v,k,credentials,jobid,counter,approval,approved=false)=>{
   if(!counter){
     counter=0
   }else{
@@ -917,6 +921,7 @@ Ansible.launch=(playbook,ev,inv,tags,c,d,v,k,key,credentials,jobid,counter,appro
       logger.notice("Continuing ansible " + playbook + " it has been approved")
     }
   }
+  // we make a copy, we don't want to mutate the original
   var extravars={...ev}
   // ansible can have multiple inventories
   var inventory = []
@@ -932,21 +937,21 @@ Ansible.launch=(playbook,ev,inv,tags,c,d,v,k,key,credentials,jobid,counter,appro
         }
       });
   }
+  
   // playbook could be controlled from extravars
   var pb = extravars?.__playbook__ || playbook
   // tags could be controlled from extravars
-  var tgs = extravars?.__tags__ || tags  
+  var tgs = extravars?.__tags__ || tags || ""
   // check could be controlled from extravars
   var check = extravars?.__check__ || c || false
   // verbose could be controlled from extravars
   var verbose = extravars?.__verbose__ || v || false  
+  // limit could be controlled from extravars
+  var lmit = extravars?.__limit__ || limit || ""
   // verbose could be controlled from extravars
   var keepExtravars = extravars?.__keepExtravars__ || k || false    
   // diff could be controlled from extravars
-  var diff = extravars?.__diff__ || d || false
-  if(key && ev[key]){
-    extravars = extravars[key]  // only pick a part of it
-  }
+  var diff = extravars?.__diff__ || d || false  
   // merge credentials now
   extravars = {...extravars,...credentials}
   // convert to string for the command
@@ -962,6 +967,7 @@ Ansible.launch=(playbook,ev,inv,tags,c,d,v,k,key,credentials,jobid,counter,appro
   if(check){ command += ` --check` }
   if(diff){ command += ` --diff` }
   if(verbose){ command += ` -vvv`}
+  if(lmit){ command += ` --limit '${lmit}'`}
   command += ` ${pb}`
   var directory = ansibleConfig.path
   var cmdObj = {directory:directory,command:command,description:"Running playbook",task:"Playbook",extravars:extravars,extravarsFileName:extravarsFileName,keepExtravars:keepExtravars}
@@ -971,7 +977,8 @@ Ansible.launch=(playbook,ev,inv,tags,c,d,v,k,key,credentials,jobid,counter,appro
   logger.debug("inventory : " + inventory)
   logger.debug("check : " + check)
   logger.debug("diff : " + diff)
-  logger.debug("tags : " + tags)
+  logger.debug("tags : " + tgs)
+  logger.debug("limit : " + lmit)
   // in the background, start the commands
   return Exec.executeCommand(cmdObj,jobid,counter)
 }
@@ -1023,7 +1030,7 @@ Awx.abortJob = function (id, next) {
         next(`failed to get AWX configuration`)
       })
 };
-Awx.launch = function (template,ev,inv,tags,c,d,key,credentials,awxCredentials,jobid,counter,approval,approved=false){
+Awx.launch = function (template,ev,inv,tags,limit,c,d,v,credentials,awxCredentials,jobid,counter,approval,approved=false){
     var message=""
     if(!counter){
       counter=0
@@ -1041,18 +1048,24 @@ Awx.launch = function (template,ev,inv,tags,c,d,key,credentials,awxCredentials,j
         logger.notice("Continuing awx " + template + " it has been approved")
       }
     }
-
+    // we make a copy, we don't mutate the original
     var extravars={...ev}
+
     // awx can have only 1 inventory and could be controlled by extravars
-    var invent = extravars?.__inventory__ || inv
-    // template could be controlled from extravars
-    var templ = extravars?.__template__ || template
+    var invent = extravars?.__inventory__ || inv    
+    // playbook could be controlled from extravars
+    var tgs = extravars?.__tags__ || tags || ""
     // check could be controlled from extravars
     var check = extravars?.__check__ || c || false
+    // verbose could be controlled from extravars
+    var verbose = extravars?.__verbose__ || v || false  
+    // limit could be controlled from extravars
+    var lmit = extravars?.__limit__ || limit || ""
     // diff could be controlled from extravars
-    var diff = extravars?.__diff__ || d || false
-    // tags could be controlled from extravars
-    var tgs = extravars?.__tags__ || tags
+    var diff = extravars?.__diff__ || d || false  
+    // template could be controlled from extravars
+    var templ = extravars?.__template__ || template
+
     return Awx.findJobTemplateByName(templ)
       .catch((err)=>{
         message="failed to find awx template " + templ + "\n" + err
@@ -1061,11 +1074,11 @@ Awx.launch = function (template,ev,inv,tags,c,d,key,credentials,awxCredentials,j
       })
       .then((jobTemplate)=>{
           logger.debug("Found jobtemplate, id = " + jobTemplate.id)
-          if(inv){
+          if(invent){
             return Awx.findInventoryByName(invent)
             .then((inventory)=>{
                 logger.debug("Found inventory, id = " + inventory.id)
-                return Awx.launchTemplate(jobTemplate,ev,inventory,tgs,check,diff,key,credentials,awxCredentials,jobid,++counter)
+                return Awx.launchTemplate(jobTemplate,ev,inventory,tgs,lmit,check,diff,verbose,credentials,awxCredentials,jobid,++counter)
             })
             .catch((err)=>{
               message="failed to find inventory " + invent + "\n" + err
@@ -1074,12 +1087,12 @@ Awx.launch = function (template,ev,inv,tags,c,d,key,credentials,awxCredentials,j
             })
           }else{
             logger.debug("running without inventory")
-            return Awx.launchTemplate(jobTemplate,ev,undefined,tgs,check,diff,key,credentials,awxCredentials,jobid,++counter)
+            return Awx.launchTemplate(jobTemplate,ev,undefined,tgs,lmit,check,diff,verbose,credentials,awxCredentials,jobid,++counter)
           }
       })
 
 }
-Awx.launchTemplate = async function (template,ev,inventory,tags,c,d,key,credentials,awxCredentials,jobid,counter) {
+Awx.launchTemplate = async function (template,ev,inventory,tags,limit,c,d,v,credentials,awxCredentials,jobid,counter) {
   var message=""
   if(!counter){
     counter=0
@@ -1106,39 +1119,35 @@ Awx.launchTemplate = async function (template,ev,inventory,tags,c,d,key,credenti
   })
   .then((awxConfig)=>{
       var extravars={...ev} // we make a copy of the main extravars
-      // check could be controlled from extravars
-      var check = c || extravars?.__check__
-      // diff could be controlled from extravars
-      var diff = d || extravars?.__diff__
-      if(key && ev[key]){
-        extravars = extravars[key]  // only pick a part of it if requested
-      }
       // merge credentials now
       extravars = {...extravars,...credentials}
       extravars = JSON.stringify(extravars)
       // prep the post data
       var postdata = {
-        extra_vars:extravars,
-        job_tags:tags
+        extra_vars:extravars
       }
       if(awxCredentialList.length>0){
         postdata.credentials=awxCredentialList
       }
       // inventory needs to be looked up first
       if(inventory){ postdata.inventory=inventory.id }
-      if(check){ postdata.job_type="check" }
+      if(c){ postdata.job_type="check" }
         else{ postdata.job_type="run" }
-      if(diff){ postdata.diff_mode=true }
+      if(d){ postdata.diff_mode=true }
         else{ postdata.diff_mode=false }
+      if(v) { postdata.verbosity=3}
+      if(limit){ postdata.limit=limit}
       if(tags){ postdata.job_tags=tags }
 
       logger.notice("Running template : " + template.name)
       logger.info("extravars : " + extravars)
       logger.info("inventory : " + inventory)
       logger.info("credentials : " + awxCredentialList)
-      logger.info("check : " + check)
-      logger.info("diff : " + diff)
+      logger.info("check : " + c)
+      logger.info("diff : " + d)
+      logger.info("verbose : " + v)      
       logger.info("tags : " + tags)
+      logger.info("limit : " + limit)
       // post
       if(template.related===undefined){
         message=`Failed to launch, no launch attribute found for template ${template.name}`
@@ -1460,7 +1469,7 @@ Awx.findInventoryByName = function (name) {
 
 // git stuff
 var Git=function(){};
-Git.push = function (repo,ev,key,jobid,counter,approval,approved=false) {
+Git.push = function (repo,ev,jobid,counter,approval,approved=false) {
     if(!counter){
       counter=0
     }else{
@@ -1477,10 +1486,8 @@ Git.push = function (repo,ev,key,jobid,counter,approval,approved=false) {
         logger.notice("Continuing awx " + repo.file + " it has been approved")
       }
     }
+    // we make a copy to not mutate
     var extravars={...ev}
-    if(key && extravars[key]){
-      extravars = extravars[key]  // only pick a part of it if requested
-    }
     try{
       // save the extravars as file - we do this in sync, should be fast
       Job.printJobOutput(`TASK [Writing YAML to local repo] ${'*'.repeat(72-26)}`,"stdout",jobid,++counter)
