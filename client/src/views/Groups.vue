@@ -3,51 +3,58 @@
     <BulmaModal v-if="showDelete && group.name" title="Delete" action="Delete" @click="deleteGroup();showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete Group '{{ group.name}}'</BulmaModal>
     <div class="container">
       <h1 class="title has-text-info"><font-awesome-icon icon="users" /> Groups</h1>
-      <nav class="level">
-        <!-- Left side -->
-        <div class="level-left">
-          <p class="level-item"><BulmaButton icon="plus" label="New Group" @click="groupItem=-1;loadGroup()"></BulmaButton></p>
-        </div>
-      </nav>
       <div class="columns">
-        <div class="column" v-if="groupList && groupList.length>0">
-          <BulmaAdminTable
-            :dataList="groupList.map(x => ({...x,allowdelete:(x.id!=1 && !hasUsers(x.id))}))"
-            :labels="['Name']"
-            :columns="['name']"
-            :filters="['name']"
-            identifier="id"
-            :actions="[
-                        {name:'select',title:'show group',icon:'info-circle',color:'has-text-info'},
-                        {name:'delete',title:'delete group',icon:'times',color:'has-text-danger'}
-                    ]"
-            :currentItem="groupItem"
-            @select="selectItem"
-            @reset="resetItem"
-            @delete="deleteItem"
-          />
+        <div class="column is-narrow">
+          <BulmaSettingsMenu />
         </div>
-        <transition name="add-column" appear>
-          <div class="column" v-if="groupItem==-1 && !showDelete">
-              <BulmaInput icon="users" v-model="group.name" label="Name" placeholder="Name" :required="true" :hasError="$v.group.name.$invalid" :errors="[]" />
-              <BulmaButton icon="save" label="Create Group" @click="newGroup()"></BulmaButton>
+        <div class="column">          
+          <nav class="level">
+            <!-- Left side -->
+            <div class="level-left">
+              <p class="level-item"><BulmaButton icon="plus" label="New Group" @click="groupItem=-1;loadGroup()"></BulmaButton></p>
+            </div>
+          </nav>
+          <div class="columns">
+            <div class="column" v-if="groupList && groupList.length>0">
+              <BulmaAdminTable
+                :dataList="groupList.map(x => ({...x,allowdelete:(x.id!=1 && !hasUsers(x.id))}))"
+                :labels="['Name']"
+                :columns="['name']"
+                :filters="['name']"
+                identifier="id"
+                :actions="[
+                            {name:'select',title:'show group',icon:'info-circle',color:'has-text-info'},
+                            {name:'delete',title:'delete group',icon:'times',color:'has-text-danger'}
+                        ]"
+                :currentItem="groupItem"
+                @select="selectItem"
+                @reset="resetItem"
+                @delete="deleteItem"
+              />
+            </div>
+            <transition name="add-column" appear>
+              <div class="column" v-if="groupItem==-1 && !showDelete">
+                  <BulmaInput icon="users" v-model="group.name" label="Name" placeholder="Name" :required="true" :hasError="$v.group.name.$invalid" :errors="[]" />
+                  <BulmaButton icon="save" label="Create Group" @click="newGroup()"></BulmaButton>
+              </div>
+              <div class="column" v-if="groupItem>0 && !showDelete">
+                <table class="table is-bordered is-fullwidth" v-if="groupUsers.length>0">
+                  <thead class="has-background-grey">
+                    <tr>
+                      <th class="has-text-white">Users in group '{{group.name}}'</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="user in groupUsers" :key="'user'+user.username">
+                      <td>{{ user.username }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <p class="notification" v-else>No users in group '{{group.name}}'</p>
+              </div>
+            </transition>
           </div>
-          <div class="column" v-if="groupItem>0 && !showDelete">
-            <table class="table is-bordered is-fullwidth" v-if="groupUsers.length>0">
-              <thead class="has-background-grey">
-                <tr>
-                  <th class="has-text-white">Users in group '{{group.name}}'</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="user in groupUsers" :key="'user'+user.username">
-                  <td>{{ user.username }}</td>
-                </tr>
-              </tbody>
-            </table>
-            <p class="notification" v-else>No users in group '{{group.name}}'</p>
-          </div>
-        </transition>
+        </div>
       </div>
     </div>
   </section>
@@ -60,6 +67,7 @@
   import BulmaInput from './../components/BulmaInput.vue'
   import BulmaAdminTable from './../components/BulmaAdminTable.vue'
   import BulmaModal from './../components/BulmaModal.vue'
+  import BulmaSettingsMenu from '../components/BulmaSettingsMenu.vue'
   import TokenStorage from './../lib/TokenStorage'
   import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
 
@@ -70,7 +78,7 @@
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean}
     },
-    components:{BulmaButton,BulmaInput,BulmaModal,BulmaAdminTable},
+    components:{BulmaButton,BulmaInput,BulmaModal,BulmaAdminTable,BulmaSettingsMenu},
     data(){
       return  {
           group:{

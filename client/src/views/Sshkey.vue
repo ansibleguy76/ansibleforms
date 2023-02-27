@@ -2,18 +2,25 @@
   <section v-if="isAdmin" class="section">
     <div class="container">
       <h1 class="title has-text-info"><font-awesome-icon icon="key" /> SSH Key</h1>
-      <BulmaTextArea v-if="update" v-model="ssh.key" label="Private Key" placeholder="-----BEGIN RSA PRIVATE KEY-----" :hasError="$v.ssh.key.$invalid" :errors="[{if:$v.ssh.key.$invalid,label:'Enter a valid private key followed by a new line'}]" />
-      <div class="field"  v-if="!update">
-        <label class="label">Private Key</label>
-        <p @click="update=true"  class="box is-clickable is-family-monospace enable-line-break is-size-7">{{ ssh.art }}</p>
+      <div class="columns">
+        <div class="column is-narrow">
+          <BulmaSettingsMenu />
+        </div>
+        <div class="column">        
+          <BulmaTextArea v-if="update" v-model="ssh.key" label="Private Key" placeholder="-----BEGIN RSA PRIVATE KEY-----" :hasError="$v.ssh.key.$invalid" :errors="[{if:$v.ssh.key.$invalid,label:'Enter a valid private key followed by a new line'}]" />
+          <div class="field"  v-if="!update">
+            <label class="label">Private Key</label>
+            <p @click="update=true"  class="box is-clickable is-family-monospace enable-line-break is-size-7">{{ ssh.art }}</p>
+          </div>
+          <div class="field">
+            <label class="label">Public Key</label>
+            <p class="box  is-clickable  is-family-monospace is-text-overflow is-size-7" @click="clip(ssh.publicKey,true)">
+              {{ ssh.publicKey }}
+            </p>
+          </div>
+          <BulmaButton v-if="update" icon="save" label="Update Ssh" @click="updateSsh()"></BulmaButton>
+        </div>
       </div>
-      <div class="field">
-        <label class="label">Public Key</label>
-        <p class="box  is-clickable  is-family-monospace is-text-overflow is-size-7" @click="clip(ssh.publicKey,true)">
-          {{ ssh.publicKey }}
-        </p>
-      </div>
-      <BulmaButton v-if="update" icon="save" label="Update Ssh" @click="updateSsh()"></BulmaButton>
     </div>
   </section>
 </template>
@@ -24,6 +31,7 @@
   import Copy from 'copy-to-clipboard'
   import BulmaButton from './../components/BulmaButton.vue'
   import BulmaTextArea from './../components/BulmaTextArea.vue'
+  import BulmaSettingsMenu from '../components/BulmaSettingsMenu.vue'
   import TokenStorage from './../lib/TokenStorage'
   import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
   const privatekey = helpers.regex("privatekey",/^-----BEGIN (.+) PRIVATE KEY-----([^-!]+)-----END \1 PRIVATE KEY-----\r?\n$/gm)
@@ -35,7 +43,7 @@
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean}
     },
-    components:{BulmaButton,BulmaTextArea},
+    components:{BulmaButton,BulmaTextArea,BulmaSettingsMenu},
     data(){
       return  {
           update:false,

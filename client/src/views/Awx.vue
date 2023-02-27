@@ -3,15 +3,28 @@
     <div class="container">
       <h1 class="title has-text-info"><font-awesome-icon icon="id-card" /> Awx</h1>
       <div class="columns">
-        <div class="column">
-          <BulmaInput icon="globe" v-model="awx.uri" label="Uri" placeholder="https://awx.domain.local" :required="true" :hasError="$v.awx.uri.$invalid" :errors="[]" />
-          <BulmaInput icon="lock" type="password" v-model="awx.token" label="Token" placeholder="Token" :required="true" :hasError="$v.awx.token.$invalid" :errors="[]" />
-          <BulmaButton icon="save" label="Update Awx" @click="updateAwx()"></BulmaButton>
-          <BulmaButton icon="check" label="Test Awx" @click="testAwx()"></BulmaButton>
+        <div class="column is-narrow">
+          <BulmaSettingsMenu />
         </div>
-        <div class="column">
-          <BulmaCheckbox checktype="checkbox" v-model="awx.ignore_certs" label="Ignore Certificate Errors" />
-          <BulmaTextArea v-if="!awx.ignore_certs" v-model="awx.ca_bundle" label="Ca Bundle" placeholder="-----BEGIN CERTIFICATE-----" :hasError="$v.awx.ca_bundle.$invalid" :errors="[]" />
+        <div class="column">      
+          <nav class="level">
+            <!-- Left side -->
+            <div class="level-left">
+              <p class="level-item"><BulmaButton icon="save" label="Update Awx" @click="updateAwx()"></BulmaButton></p>
+              <p class="level-item"><BulmaButton icon="check" label="Test Awx" @click="testAwx()"></BulmaButton></p>
+            </div>
+          </nav>         
+          <div class="columns">
+            <div class="column">
+              <BulmaInput icon="globe" v-model="awx.uri" label="Uri" placeholder="https://awx.domain.local" :required="true" :hasError="$v.awx.uri.$invalid" :errors="[]" />
+              <BulmaInput icon="lock" type="password" v-model="awx.token" label="Token" placeholder="Token" :required="true" :hasError="$v.awx.token.$invalid" :errors="[]" />
+            
+            </div>
+            <div class="column">
+              <BulmaCheckbox checktype="checkbox" v-model="awx.ignore_certs" label="Ignore Certificate Errors" />
+              <BulmaTextArea v-if="!awx.ignore_certs" v-model="awx.ca_bundle" label="Ca Bundle" placeholder="-----BEGIN CERTIFICATE-----" :hasError="$v.awx.ca_bundle.$invalid" :errors="[]" />
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -25,6 +38,7 @@
   import BulmaInput from './../components/BulmaInput.vue'
   import BulmaCheckbox from './../components/BulmaCheckRadio.vue'
   import BulmaTextArea from './../components/BulmaTextArea.vue'
+  import BulmaSettingsMenu from '../components/BulmaSettingsMenu.vue'
   import TokenStorage from './../lib/TokenStorage'
   import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
 
@@ -36,7 +50,7 @@
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean}
     },
-    components:{BulmaButton,BulmaInput,BulmaCheckbox,BulmaTextArea},
+    components:{BulmaButton,BulmaInput,BulmaCheckbox,BulmaTextArea,BulmaSettingsMenu},
     data(){
       return  {
           awx:{

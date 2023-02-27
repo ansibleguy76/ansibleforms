@@ -1,6 +1,6 @@
 <template>
   <section v-if="isAdmin && loaded" class="section">
-    <BulmaQuickView v-if="warnings && showWarnings" title="Form warnings" footer="" @close="showWarnings=false">
+    <BulmaQuickView class="quickview" v-if="warnings && showWarnings" title="Form warnings" footer="" @close="showWarnings=false">
         <p v-for="w,i in warnings" :key="'warning'+i" class="mb-3" v-html="w"></p>
     </BulmaQuickView>
     <BulmaModal v-if="showDelete" title="Delete" action="Delete" @click="deleteThisForm();showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete form '{{ currentFormName}}'</BulmaModal>
@@ -57,41 +57,41 @@
     <div class="container">
       <div class="is-pulled-right" v-if="lock && lock.match">
         <transition name="pop" appear>
-          <button v-if="warnings.length>0" @click="showWarnings=!showWarnings" class="button is-light is-warning mr-3">
+          <button v-if="warnings.length>0" @click="showWarnings=!showWarnings" class="button is-warning is-light mr-3">
             <span class="icon">
               <font-awesome-icon icon="exclamation-triangle" />
             </span>
             <span class="mr-1">{{(showWarnings)?'Hide':'This design has'}} Warnings </span>
           </button>
         </transition>
-        <button class="button is-info mr-3" :disabled="!formConfig" @click="validate()">
-          <span class="icon"><font-awesome-icon icon="check" /></span>
+        <button class="button is-light mr-3" :disabled="!formConfig" @click="validate()">
+          <span class="icon has-text-info"><font-awesome-icon icon="check" /></span>
           <span>Validate</span>
         </button>
-        <button class="button is-success mr-3" ref="saveButton" :disabled="warnings.length>0 || !formConfig || !formDirty" @click="save()">
-          <span class="icon"><font-awesome-icon icon="save" /></span>
+        <button class="button is-light mr-3" ref="saveButton" :disabled="warnings.length>0 || !formConfig || !formDirty" @click="save()">
+          <span class="icon has-text-info"><font-awesome-icon icon="save" /></span>
           <span>Save</span>
         </button>
-        <button class="button is-warning" ref="restoreButton" @click="showRestore=true;backupToRestore=undefined">
-          <span class="icon"><font-awesome-icon icon="undo" /></span>
+        <button class="button is-light" ref="restoreButton" @click="showRestore=true;backupToRestore=undefined">
+          <span class="icon has-text-info"><font-awesome-icon icon="undo" /></span>
           <span>Restore</span>
         </button>
       </div>
       <div class="is-pulled-right" v-if="lock && !lock.match">
-        <span class="tag is-medium is-warning">The designer is read-only</span>
+        <span class="tag is-medium is-warning is-light">The designer is read-only</span>
       </div>
       <div>
         <h1 class="title has-text-info">
           <span class="mr-3"><font-awesome-icon icon="edit" /> Designer</span>
           <div v-if="lock && lock.lock" class="dropdown is-hoverable">
             <div class="dropdown-trigger">
-              <span aria-haspopup="true" aria-controls="dropdown-menu-lock" class="tag is-light is-medium mr-3" :class="{'is-warning':!lock.match,'is-success':lock.match}">
+              <button aria-haspopup="true" aria-controls="dropdown-menu-lock" class="is-not-clickable button is-light mr-3" :class="{'is-warning':!lock.match,'is-success':lock.match}">
                 <span class="icon">
                   <font-awesome-icon icon="lock" size="sm" />
                 </span>
                 <span v-if="lock && lock.lock && !lock.match" class="mr-1"> Locked by {{ lock.lock.username }}</span>
                 <span v-if="lock && lock.lock && lock.match"  class="mr-1"> Locked by me</span>
-              </span>
+              </button>
             </div>
             <div class="dropdown-menu" id="dropdown-menu-lock" role="menu">
               <div class="dropdown-content">
@@ -103,18 +103,18 @@
               </div>
             </div>
           </div>
-          <span class="is-clickable tag is-medium is-link mr-3" v-if="lock && lock.free" @click="setLock">
-            <span class="icon"><font-awesome-icon icon="unlock" size="sm" /></span>
+          <button class="button is-light mr-3" v-if="lock && lock.free" @click="setLock">
+            <span class="icon has-text-info"><font-awesome-icon icon="unlock" size="sm" /></span>
             <span>Start designer</span>
-          </span>
-          <span class="is-clickable tag is-medium is-link mr-3" v-if="lock && (!lock.match && !lock.free)" @click="unLock">
-            <span class="icon"><font-awesome-icon icon="unlock" size="sm" /></span>
+          </button>
+          <button class="button is-light mr-3" v-if="lock && (!lock.match && !lock.free)" @click="unLock">
+            <span class="icon has-text-info"><font-awesome-icon icon="unlock" size="sm" /></span>
             <span>Force unlock</span>
-          </span>
-          <span class="is-clickable tag is-medium is-link mr-3" v-if="lock && lock.match" @click="releaseLock">
-            <span class="icon"><font-awesome-icon icon="unlock" size="sm" /></span>
+          </button>
+          <button class="button is-light mr-3" v-if="lock && lock.match" @click="releaseLock">
+            <span class="icon has-text-info"><font-awesome-icon icon="unlock" size="sm" /></span>
             <span>Release lock</span>
-          </span>
+          </button>
         </h1>
       </div>
       <template v-if="lock && !lock.free">
@@ -717,6 +717,9 @@
   }
 </script>
 <style scoped>
+  .quickview{
+    z-index:91000;
+  }
   .cursor-progress{
     cursor:progress;
   }
@@ -724,7 +727,7 @@
     width:100%;
   }
   .is-not-clickable{
-    cursor:normal!important;
+    cursor:default!important;
   }
   .pop-enter-active,
   .pop-leave-active {

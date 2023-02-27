@@ -70,8 +70,8 @@
               <td class="is-clickable has-text-left" @click="(j.job_type=='multistep')?toggleCollapse(j.id):loadOutput(j.id)">
                 <span>{{j.id}}</span>
                 <template v-if="j.job_type=='multistep'">
-                  <span class="icon is-pulled-right" v-if="!collapsed.includes(j.id)"><font-awesome-icon icon="caret-right" /></span>
-                  <span class="icon is-pulled-right" v-else><font-awesome-icon icon="caret-down" /></span>
+                  <span class="icon is-pulled-right" v-if="!collapsed.includes(j.id)"><font-awesome-icon icon="angle-right" /></span>
+                  <span class="icon is-pulled-right" v-else><font-awesome-icon icon="angle-down" /></span>
                 </template>
               </td>
               <td class="is-clickable has-text-left" @click="loadOutput(j.id)" :title="j.form">{{j.form}}</td>
@@ -112,14 +112,14 @@
               <span class="tag is-info mr-1 ml-3">{{ job.job_type || 'ansible'}}</span>
               <span class="tag" :class="{'is-success':job.status=='success','is-danger':job.status=='failed'}">{{ job.status }}</span>
             </h3>
-            <button @click="showExtraVars=true" class="button is-info is-small mr-3">
-              <span class="icon">
+            <button @click="showExtraVars=true" class="button is-light is-small mr-3">
+              <span class="icon has-text-info">
                 <font-awesome-icon icon="eye" />
               </span>
               <span>Show Extravars</span>
             </button>
-            <button @click="loadOutput(jobId)" v-if="jobId" class="button is-primary is-small">
-              <span class="icon">
+            <button @click="loadOutput(jobId)" v-if="jobId" class="button is-light is-small">
+              <span class="icon has-text-info">
                 <font-awesome-icon icon="sync-alt" />
               </span>
               <span>Refresh</span>
@@ -144,15 +144,15 @@
           <div v-if="showExtraVars" class="column is-clipped-horizontal">
             <h3 class="subtitle">Extravars</h3>
             <!-- close extravar view button -->
-            <button @click="showExtraVars=false" class="button is-danger is-small">
-              <span class="icon">
+            <button @click="showExtraVars=false" class="button is-light is-small">
+              <span class="icon has-text-info">
                 <font-awesome-icon icon="times" />
               </span>
               <span>Close</span>
             </button>
             <!-- copy extravars button -->
-            <button @click="clip(job.extravars)" class="ml-2 button is-success is-small">
-              <span class="icon">
+            <button @click="clip(job.extravars)" class="ml-2 button is-light is-small">
+              <span class="icon has-text-info">
                 <font-awesome-icon icon="copy" />
               </span>
               <span>Copy to clipboard</span>

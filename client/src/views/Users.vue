@@ -3,55 +3,62 @@
     <BulmaModal v-if="showDelete && user.username" title="Delete" action="Delete" @click="deleteUser();showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete User '{{ user.username}}'</BulmaModal>
     <div class="container">
       <h1 class="title has-text-info"><font-awesome-icon icon="user" /> Users</h1>
-      <nav class="level">
-        <!-- Left side -->
-        <div class="level-left">
-          <p class="level-item"><BulmaButton icon="plus" label="New User" @click="userItem=-1;changePassword=false;loadUser()"></BulmaButton></p>
-        </div>
-      </nav>
       <div class="columns">
-        <div class="column" v-if="userList && userList.length>0 && groupList && groupList.length>0">
-          <BulmaAdminTable
-            :dataList="userList.map(x => ({...x,allowselect:(x.id!=1),allowdelete:(x.id!=1),group:groupName(x.group_id)}))"
-            :labels="['Name','Group']"
-            :columns="['username','group']"
-            :filters="['username','group']"
-            identifier="id"
-            :actions="[
-                        {name:'select',title:'edit user',icon:'pencil-alt',color:'has-text-warning'},
-                        {name:'delete',title:'delete user',icon:'times',color:'has-text-danger'},
-                        {name:'changepassword',title:'change password',icon:'lock',color:'has-text-link'}
-                    ]"
-            :currentItem="userItem"
-            @select="selectItem"
-            @reset="resetItem"
-            @delete="deleteItem"
-            @changepassword="changepassword"
-          />
+        <div class="column is-narrow">
+          <BulmaSettingsMenu />
         </div>
-        <transition name="add-column" appear>
-          <div class="column" v-if="userItem!==undefined && !showDelete">
-            <template v-if="!changePassword">
-              <BulmaInput icon="user" v-model="user.username" label="Username" :readonly="userItem!==-1" placeholder="Username" :required="true" :hasError="$v.user.username.$invalid" :errors="[]" />
-              <BulmaInput v-if="userItem==-1" icon="lock" type="password" v-model="user.password" label="Password" placeholder="Password" :required="true" :hasError="$v.user.password.$invalid" :errors="[{if:!$v.user.password.regex,label:$v.user.password.$params.regex.description}]" />
-              <BulmaInput v-if="userItem==-1" icon="lock" type="password" v-model="user.password2" label="Password Again" placeholder="Password" :required="true" :hasError="$v.user.password2.$invalid" :errors="[{if:!$v.user.password2.sameAsPassword,label:'Passwords are not the same'}]" />
-              <BulmaSelect icon="users" label="Select a group" :list="groupList" valuecol="id" :required="true" :hasError="$v.user.group_id.$invalid" labelcol="name" v-model="user.group_id" :errors="[]" />
-              <BulmaButton v-if="userItem==-1" icon="save" label="Create User" @click="newUser()"></BulmaButton>
-              <BulmaButton v-if="userItem!=-1" icon="save" label="Update User" @click="updateUser(false)"></BulmaButton>
-            </template>
-            <template v-if="changePassword">
-              <h2 class="subtitle"><font-awesome-icon icon="user" /> {{ user.username }}</h2>
-              <div v-if="!passwordChanged">
-                <BulmaInput icon="lock" type="password" v-model="user.password" label="Password" placeholder="Password" :required="true" :hasError="$v.user.password.$invalid" :errors="[{if:!$v.user.password.regex,label:$v.user.password.$params.regex.description}]" />
-                <BulmaInput icon="lock" type="password" v-model="user.password2" label="Password Again" placeholder="Password" :required="true" :hasError="$v.user.password2.$invalid" :errors="[{if:!$v.user.password2.sameAsPassword,label:'Passwords are not the same'}]" />
-                <BulmaButton icon="save" label="Change password" @click="updateUser(true)"></BulmaButton>
+        <div class="column">          
+          <nav class="level">
+            <!-- Left side -->
+            <div class="level-left">
+              <p class="level-item"><BulmaButton icon="plus" label="New User" @click="userItem=-1;changePassword=false;loadUser()"></BulmaButton></p>
+            </div>
+          </nav>
+          <div class="columns">
+            <div class="column" v-if="userList && userList.length>0 && groupList && groupList.length>0">
+              <BulmaAdminTable
+                :dataList="userList.map(x => ({...x,allowselect:(x.id!=1),allowdelete:(x.id!=1),group:groupName(x.group_id)}))"
+                :labels="['Name','Group']"
+                :columns="['username','group']"
+                :filters="['username','group']"
+                identifier="id"
+                :actions="[
+                            {name:'select',title:'edit user',icon:'pencil-alt',color:'has-text-warning'},
+                            {name:'delete',title:'delete user',icon:'times',color:'has-text-danger'},
+                            {name:'changepassword',title:'change password',icon:'lock',color:'has-text-link'}
+                        ]"
+                :currentItem="userItem"
+                @select="selectItem"
+                @reset="resetItem"
+                @delete="deleteItem"
+                @changepassword="changepassword"
+              />
+            </div>
+            <transition name="add-column" appear>
+              <div class="column" v-if="userItem!==undefined && !showDelete">
+                <template v-if="!changePassword">
+                  <BulmaInput icon="user" v-model="user.username" label="Username" :readonly="userItem!==-1" placeholder="Username" :required="true" :hasError="$v.user.username.$invalid" :errors="[]" />
+                  <BulmaInput v-if="userItem==-1" icon="lock" type="password" v-model="user.password" label="Password" placeholder="Password" :required="true" :hasError="$v.user.password.$invalid" :errors="[{if:!$v.user.password.regex,label:$v.user.password.$params.regex.description}]" />
+                  <BulmaInput v-if="userItem==-1" icon="lock" type="password" v-model="user.password2" label="Password Again" placeholder="Password" :required="true" :hasError="$v.user.password2.$invalid" :errors="[{if:!$v.user.password2.sameAsPassword,label:'Passwords are not the same'}]" />
+                  <BulmaSelect icon="users" label="Select a group" :list="groupList" valuecol="id" :required="true" :hasError="$v.user.group_id.$invalid" labelcol="name" v-model="user.group_id" :errors="[]" />
+                  <BulmaButton v-if="userItem==-1" icon="save" label="Create User" @click="newUser()"></BulmaButton>
+                  <BulmaButton v-if="userItem!=-1" icon="save" label="Update User" @click="updateUser(false)"></BulmaButton>
+                </template>
+                <template v-if="changePassword">
+                  <h2 class="subtitle"><font-awesome-icon icon="user" /> {{ user.username }}</h2>
+                  <div v-if="!passwordChanged">
+                    <BulmaInput icon="lock" type="password" v-model="user.password" label="Password" placeholder="Password" :required="true" :hasError="$v.user.password.$invalid" :errors="[{if:!$v.user.password.regex,label:$v.user.password.$params.regex.description}]" />
+                    <BulmaInput icon="lock" type="password" v-model="user.password2" label="Password Again" placeholder="Password" :required="true" :hasError="$v.user.password2.$invalid" :errors="[{if:!$v.user.password2.sameAsPassword,label:'Passwords are not the same'}]" />
+                    <BulmaButton icon="save" label="Change password" @click="updateUser(true)"></BulmaButton>
+                  </div>
+                  <div v-else class="notification is-primary is-light">
+                    Password is changed.
+                  </div>
+                </template>
               </div>
-              <div v-else class="notification is-primary is-light">
-                Password is changed.
-              </div>
-            </template>
+            </transition>
           </div>
-        </transition>
+        </div>
       </div>
     </div>
   </section>
@@ -65,6 +72,7 @@
   import BulmaInput from './../components/BulmaInput.vue'
   import BulmaAdminTable from './../components/BulmaAdminTable.vue'
   import BulmaModal from './../components/BulmaModal.vue'
+  import BulmaSettingsMenu from '../components/BulmaSettingsMenu.vue'
   import TokenStorage from './../lib/TokenStorage'
   import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
 
@@ -76,7 +84,7 @@
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean}
     },
-    components:{BulmaButton,BulmaSelect,BulmaInput,BulmaModal,BulmaAdminTable},
+    components:{BulmaButton,BulmaSelect,BulmaInput,BulmaModal,BulmaAdminTable,BulmaSettingsMenu},
     data(){
       return  {
           user:{
