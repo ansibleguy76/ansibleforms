@@ -4,7 +4,7 @@
           <div v-for="field,index in tableFields" :key="field.name" class="field mt-3">
 
               <!-- add field label -->
-              <label class="label has-text-primary">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span></label>
+              <label class="label has-text-dark">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span></label>
               <!-- type = checkbox -->
               <BulmaCheckRadio v-if="field.type=='checkbox'" checktype="checkbox" :disabled="action=='Edit' && readonlyColumns.includes(field.name)" v-model="editedItem[field.name]" :name="field.name" :label="field.placeholder"/>
               <!-- <label v-if="field.type=='checkbox'" class="checkbox">
@@ -51,7 +51,8 @@
                 :filterColumns="field.filterColumns||[]"
                 :previewColumn="field.previewColumn||''"
                 :valueColumn="field.valueColumn||''"
-                :sticky="false"
+                :sticky="field.sticky||false"
+                :horizontal="field.horizontal||false"
                 :disabled="action=='Edit' && readonlyColumns.includes(field.name)"
                 >
               </BulmaAdvancedSelect>     

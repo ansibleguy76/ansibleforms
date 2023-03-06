@@ -1,72 +1,53 @@
 <template>
-  <div>
-    <div class="px-3 pb-2">
-      <p class="control has-icons-left">
-        <input class="input is-info" tabindex="0" ref="queryfilter" type="text" placeholder="" v-model="queryfilter">
-        <span class="icon is-small is-left">
-          <font-awesome-icon icon="search" />
-        </span>
-      </p>
+    <div>
+      <div class="pb-2">
+        <p class="control has-icons-left">
+          <input class="input is-info" tabindex="0" ref="queryfilter" type="text" placeholder="" v-model="queryfilter">
+          <span class="icon is-small is-left">
+            <font-awesome-icon icon="search" />
+          </span>
+        </p>
+      </div>
+      <div v-if="values.length==0" class="pl-3">No data</div>
+      <div v-if="values.length>0 && filtered.length==0" class="pl-3">Filter returns no results</div>
+      <div v-if="filtered.length>0" class="table-container">
+        <table class="table is-hoverable is-bordered">
+          <thead v-if="labels.length>1">
+            <tr :class="sizeClass">
+              <th :key="l" v-for="l in labels">{{ l }}</th>
+            </tr>
+          </thead>
+          <thead v-if="labels.length==1">
+            <tr :class="sizeClass">
+               <th>Name</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr :class="{'has-background-info':selected[v.index],'has-text-white':selected[v.index],sizeClass:sizeClass}" :key="v.index" v-for="v in filtered" @click="select(v.index)">
+              <td v-for="l in labels" v-html="highlightFilter(v.value[l],l)" :key="l"></td>
+              <td v-if="labels.length==0" v-html="highlightFilter(v.value)"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
-    <p v-if="values.length==0" class="pl-3">No data</p>
-    <p v-if="values.length>0 && filtered.length==0" class="pl-3">Filter returns no results</p>
-    <div v-if="filtered.length>0" class="table-container">
-      <table class="table is-hoverable">
-        <thead v-if="labels.length>1">
-          <tr :class="sizeClass">
-            <th v-if="multiple" class="is-first">
-              <font-awesome-icon v-if="checkAll" @click="multicheck()" :icon="['far','check-square']" />
-              <font-awesome-icon v-else  @click="multicheck()" :icon="['far','square']" />
-            </th>
-            <th :key="l" v-for="l in labels">{{ l }}</th>
-          </tr>
-        </thead>
-        <thead v-if="labels.length<=1 && multiple">
-          <tr :class="sizeClass">
-            <th v-if="multiple" class="is-first">
-              <font-awesome-icon v-if="checkAll" @click="multicheck()" :icon="['far','check-square']" />
-              <font-awesome-icon v-else  @click="multicheck()" :icon="['far','square']" />
-            </th>
-            <th>Name</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr :class="{'has-background-info':selected[v.index],'has-text-white':selected[v.index],sizeClass:sizeClass}" :key="v.index" v-for="v in filtered" @click="select(v.index)">
-            <td v-if="multiple" class="is-first">
-              <font-awesome-icon v-if="selected[v.index]" :icon="['far','check-square']" />
-              <font-awesome-icon v-else :icon="['far','square']" /> <span class="has-text-grey-lighter">{{v.index}}</span>
-            </td>
-            <template  v-for="l,i in labels">
-            <td v-if="isPctColumn(l)" :key="l+i" v-html="getProgressHtml(v.value[l])"></td>
-            <td v-else v-html="highlightFilter(v.value[l],l)" :key="l"></td>
-            </template>
-            <td v-if="labels.length==0" v-html="highlightFilter(v.value)"></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
 </template>
 <script>
   import Vue from 'vue'
-  import h from './../lib/Helpers'
+  import h from '../lib/Helpers'
   export default{
-    name:"BulmaAdvancedTable",
+    name:"BulmaAdvancedTable2",
     props: {
       values: {
         type: Array,
         required: true,
       },
-      multiple:{type:Boolean},
       required:{type:Boolean},
-      name:{type:String,required:true},
-      defaultValue:{type:[String,Array,Object]},
       status:{type:String},
       sizeClass:{type:String},
       columns:{type:Array},
       previewColumn:{type:String},
       valueColumn:{type:String},
-      pctColumns:{type:Array},
       filterColumns:{type:Array},
       focus:{type:String}
     },
@@ -149,7 +130,7 @@
           }
           return filtered;
         }, []);
-      }
+      },
     },
     watch: {                    // we watch the values prop for changes... each time we reset the data and grab the labels
       values: {
@@ -158,6 +139,7 @@
            this.selected={}      // selections
            this.getLabels()      // re lookup labels
            this.$emit('reset')   // signal reset preview to parent
+           this.recalc()
          },
          deep: true
       },
@@ -216,37 +198,18 @@
           return v
         }
       },
-      isPctColumn(label){
-        return this.pctColumns.includes(label)
-      },
-      getProgressHtml(value){
-        var rounded
-        if(!isNaN(value) ){
-          rounded = Math.round(parseInt(value))
-          if(rounded<0) rounded=0
-          if(rounded>100) rounded=100
-          return `<progress class="progress is-warning mt-1" value="${rounded}" max="100">${rounded}%</progress>`
-        }else{
-          return value
-        }
-
-      },
       select(i){
-        // console.log("A, we selecteren " + i)
-        if(this.multiple){
-          Vue.set(this.selected,i,!this.selected[i]);
-        }else{
-          var temp = !this.selected[i]  // if single just clear and invert selection
-          this.selected=[]
-          Vue.set(this.selected,i,temp);
-          this.$emit('isSelected');
-        }
+        Vue.set(this.selected,i,!this.selected[i]);
         this.recalc()
       },
+      choose(i){
+        Vue.set(this.chosen,i,!this.selected[i]);
+        this.recalc()
+      },      
       recalc(){
         var ref=this
-        var l = this.selectedItems.length
-        var first = this.selectedItems.slice(0,3)
+        var l = this.values.length
+        var first = this.values.slice(0,3)
         if(l>0){
           if(l>3){
             this.preview = first.map(i => {return ((i)?(i[ref.previewLabel]??i):"undefined")}).join(', ') + ", ... ("+l+" items selected)"
@@ -256,20 +219,7 @@
         }else{
           this.preview = ""
         }
-        if(this.multiple){ // multiple and outputObject, return simple array
-            if(l>0){
-              this.$emit('input', {values:this.selectedItems,preview:this.preview})
-            }else{
-              this.$emit('input', {values:undefined,preview:this.preview})
-            }
-            
-        }else{
-            if(l>0)
-              this.$emit('input', {values:this.selectedItems[0],preview:this.preview})
-            else{
-              this.$emit('input', {values:undefined,preview:this.preview})
-            }
-        }
+        this.$emit('input', {values:this.selectedItems,preview:this.preview})
         this.foo=JSON.stringify(this.preview)
       },
       multicheck(){
@@ -321,59 +271,6 @@
           }else{
             if(this.labels.length>0)
               ref.valueLabel=this.labels[0]
-          }
-          if(this.defaultValue=="__auto__" && this.values.length>0){
-            this.select(0) // if __auto__ select the first
-          }else if(this.defaultValue=="__all__" && this.multiple){ // if all is set, we select all
-            this.values.forEach((item,i) => {
-              this.select(i)
-            })
-          }else if(this.defaultValue!="__none__" && this.defaultValue!=undefined){ // if a regular default is set, we select it
-            var obj=undefined
-            var defaulttype
-             try{
-              obj = JSON.parse(this.defaultValue)
-              if(typeof obj == "object"){
-                defaulttype="object"
-              }
-            }catch(e){
-              obj=undefined
-            }
-            if(typeof this.defaultValue == "object"){
-              obj=this.defaultValue
-              defaulttype="object"
-            }
-            if(defaulttype=="object" && !Array.isArray(this.defaultValue)){
-              // we search for the value by property
-              if(obj){
-                // loop all values
-                this.values.forEach((item,i) => {
-                  try{
-
-                    if(this.objectEqual(obj,item)){
-                        ref.select(i)
-                    }
-                  }catch(e){
-                    console.log("Bad defaultvalue : "  + e)
-                  }
-                })
-              }
-
-            }else{
-              // we search for the value by string
-              this.values.forEach((item,i) => {
-                  if(item && ref.defaultValue==(item[ref.valueLabel]||item)){
-                    ref.select(i)
-                  }else if(ref.multiple && Array.isArray(ref.defaultValue) && ref.defaultValue.length>0){
-                    if(item && ref.defaultValue.includes(item[ref.valueLabel]||item||false)){
-                      ref.select(i)
-                    }
-                  }
-              })
-            }
-
-          }else{
-            this.recalc()
           }
         }
 

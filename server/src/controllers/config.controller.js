@@ -1,9 +1,13 @@
 'use strict';
 const Form=require("../models/form.model")
 const Lock=require("../models/lock.model")
+const Help=require("../models/help.model")
+const path=require("path")
+const logger=require("../lib/logger")
+const appConfig=require("../../config/app.config")
 const YAML=require("yaml")
 var RestResult = require('../models/restResult.model');
-const inspect = require("util").inspect
+const {inspect} = require("node:util")
 exports.findAll = function(req,res){
   try{
     var forms = Form.load()
@@ -20,6 +24,38 @@ exports.backups = function(req,res){
   }catch(error){
     res.json({error:error})
   }
+}
+exports.env = function(req,res){
+  Help.get()
+  .then((help)=>{
+    // logger.debug(inspect(help))
+    var help = help.filter(x => x.name=='Environment Variables')[0].items
+    var env = help.map(x => {
+      var item={}
+      item.name = x.name
+      if(process.env[x.name]){
+        item.set=true
+        item.value=process.env[x.name]
+      }else{
+        item.set=false
+        item.value=x.default
+        if(item.name=='HOME_PATH'){
+          item.value=require('os').homedir()
+        }        
+        if(item.value && item.value.toString().includes('PERSISTENT')){
+          item.value=item.value?.replace("%PERSISTENT_FOLDER%",path.resolve(__dirname + "/../../persistent"))
+        }        
+      }
+      if(x.name.includes('PASSWORD') || x.name.includes('SECRET')){
+        item.value="*** NOT REVEALED ***"
+      }      
+
+
+      return item
+    });
+    // logger.debug(inspect(env))
+    res.json(new RestResult("success","Environment variables found",env,""))
+  })
 }
 exports.restore = async function(req,res){
   var lock=undefined

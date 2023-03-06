@@ -11,6 +11,22 @@ Helpers.checkCertificateBase64=function(cert){
   return (Buffer.from(b64, 'base64').toString('base64') === b64)
 }
 
+Helpers.getError=function(err){
+  if(err){
+    if(err.message){
+      return err.message
+    }else{
+      if(typeof err == 'string'){
+        return err
+      }else{
+        return 'Could not extract error from err object'
+      }
+    }
+  }else{
+    return undefined
+  }
+}
+
 Helpers.checkCertificate=function(cert){
   certs=cert.replace(/-----(\r\n|\n|\r)-----/gm,"-----|-----").split("|")
   if(certs.length>1){

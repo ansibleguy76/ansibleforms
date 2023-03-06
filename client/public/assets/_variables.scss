@@ -1,36 +1,53 @@
-////////////////////////////////////////////////
-// LUMEN
-////////////////////////////////////////////////
-
-$orange: #efaf31;
-$green: #28b62c;
-$blue: #5bb7db;
-$red: #ea4141;
-$warning: $orange;
-$danger: $red;
-$primary: #158cba !default;
+// mine
 $gap: 32px;
 $fullhd: 1800px + (2 * $gap);
 $fullhd-enabled: true;
 $widescreen: 1400px + (2 * $gap);
 $widescreen-enabled: true;
-$info-invert: #fff;
 
-$family-sans-serif: "Source Sans Pro", "Helvetica Neue", Helvetica, Arial,
-  sans-serif;
 
-$thickness: 4px;
+////////////////////////////////////////////////
+// YETI
+////////////////////////////////////////////////
+$grey-darker: #222;
+$grey-dark: #333;
+$grey: #888;
+$grey-light: #ccc;
+$grey-lighter: #e9e9e9;
 
-$pagination-current-border: darken($primary, 5);
+$orange: #e99002;
+$green: #43ac6a;
+$cyan: #5bc0de;
+$red: #f04124;
 
-$navbar-item-active-color: $primary;
+$primary: #008cba !default;
+$warning: $orange;
+$danger: $red;
 
-$dropdown-content-shadow: 0 0 0 1px #dbdbdb, 0 #{$thickness} 0 1px #dbdbdb;
+$orange-invert: #fff;
+$warning-invert: $orange-invert;
 
-$navbar-dropdown-boxed-shadow: $dropdown-content-shadow;
+$border: #e9e9e9;
+$family-sans-serif: "Open Sans", "Helvetica Neue", Arial, sans-serif;
+$body-size: 15px;
 
-$bulmaswatch-import-font: false !default;
+$radius: 0;
+$radius-small: 0;
+$radius-large: 0;
 
-$box-shadow: none;
+$subtitle-color: $grey;
 
-$control-height: 2.25em;
+$button-background-color: $grey-lighter;
+$button-border-color: darken($button-background-color, 5);
+
+$navbar-background-color: #767676;
+$navbar-item-color: rgba(#fff, 0.6);
+$navbar-item-hover-color: #fff;
+$navbar-item-active-color: #fff;
+$navbar-item-hover-background-color: rgba(#000, 0.1);
+$navbar-dropdown-arrow: $navbar-item-color;
+
+$bulmaswatch-import-font: true !default;
+
+$box-shadow: 0 0 0 1px $border;
+$card-shadow: 0 0 0 1px $border;

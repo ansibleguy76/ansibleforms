@@ -9,6 +9,8 @@ var app_config = {
   helpPath: path.resolve(__dirname + "/../schema/help.yaml"),
   encryptionSecret: ((process.env.ENCRYPTION_SECRET + "vOVH6sdmpNWjRRIqCc7rdxs01lwHzfr3").substring(0,32)) || "vOVH6sdmpNWjRRIqCc7rdxs01lwHzfr3",
   homePath: process.env.HOME_PATH || require('os').homedir(),
-  repoPath: process.env.REPO_PATH || path.resolve(__dirname + "/../persistent/repositories")
+  repoPath: process.env.REPO_PATH || path.resolve(__dirname + "/../persistent/repositories"),
+  formsBackupPath: process.env.FORMS_BACKUP_PATH || path.resolve(__dirname + "/../persistent/forms_backups"),
+  oldBackupDays: process.env.OLD_BACKUP_DAYS || 60
 };
 module.exports = app_config;

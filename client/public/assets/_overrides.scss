@@ -1,59 +1,12 @@
 // Overrides
-// @if $bulmaswatch-import-font {
-//   @import url("https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,700,400italic&display=swap");
-// }
-@font-face {
-  font-family: "Source Sans Pro";
-  src: url("fonts/SourceSansPro-Regular.ttf");
-  font-weight: 400;
-  font-style: normal;
-}
-@font-face {
-  font-family: "Source Sans Pro";
-  src: url("fonts/SourceSansPro-Italic.ttf");
-  font-weight: 400;
-  font-style: italic;
-}
-@font-face {
-  font-family: "Source Sans Pro";
-  src: url("fonts/SourceSansPro-Bold.ttf");
-  font-weight: 700;
-  font-style: normal;
-}
-@font-face {
-  font-family: "Source Sans Pro";
-  src: url("fonts/SourceSansPro-Light.ttf");
-  font-weight: 300;
-}
-
-.box {
-  border-style: solid;
-  border-width: 1px 1px $thickness 1px;
-  border-color: $border;
+@if $bulmaswatch-import-font {
+  @import url("https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,700italic,400,300,700&display=swap");
 }
 
 .button {
-  height: $control-height + 0.398em;
-}
-
-.button {
-  transition: all 300ms ease;
-  border-style: solid;
-  border-width: 1px 1px $thickness 1px;
-  text-transform: uppercase;
-  font-size: 0.85rem;
-  font-weight: bold;
-
-  &.is-hovered,
-  &:hover {
-    border-bottom-width: $thickness - 1;
-  }
-
   &.is-active,
-  &.is-focused,
-  &:active,
-  &:focus {
-    box-shadow: none;
+  &:active {
+    box-shadow: inset 1px 1px 4px rgba($grey-darker, 0.3);
   }
   @each $name, $pair in $colors {
     $color: nth($pair, 1);
@@ -64,187 +17,116 @@
 
       &.is-hovered,
       &:hover {
-        border-color: darken($color, 10) !important;
+        background-color: darken($color, 10);
       }
 
       &.is-active,
-      &.is-focused,
-      &:active,
-      &:focus {
-        border-color: darken($color, 10);
-        box-shadow: $input-focus-box-shadow-size rgba($color, 0.25);
+      &:active {
+        box-shadow: inset 1px 0 3px rgba($grey-darker, 0.3);
+        background-color: darken($color, 10);
       }
     }
+  }
+
+  &.is-loading:after {
+    border-color: transparent transparent $grey-light $grey-light;
   }
 }
 
 .input,
 .textarea {
-  box-shadow: inset 0 0.125em 0 rgba($black, 0.075);
+  box-shadow: none;
+}
 
-  &.is-active,
-  &.is-focused,
-  &:active,
-  &:focus {
-    box-shadow: inset 0 0.125em 0 rgba($black, 0.075),
-      $input-focus-box-shadow-size $input-focus-box-shadow-color;
-  }
+// .box,
+// .card {
+//   box-shadow: 0 0 0 1px $border;
+// }
 
+.notification {
   @each $name, $pair in $colors {
     $color: nth($pair, 1);
     $color-invert: nth($pair, 2);
 
     &.is-#{$name} {
-      &.is-active,
-      &.is-focused,
-      &:active,
-      &:focus {
-        border-color: darken($color, 10);
-        box-shadow: inset 0 0.125em 0 rgba($black, 0.075),
-          $input-focus-box-shadow-size rgba($color, 0.25);
+      a:not(.button) {
+        color: $color-invert;
+        text-decoration: underline;
       }
     }
   }
 }
 
-.select:after {
-  margin-top: -0.575em;
-}
+.navbar {
+  &.is-transparent {
+    background-color: transparent;
 
-.select select {
-  border-width: 1px 1px $thickness 1px;
-  &:not([multiple]) {
-    height: calc(#{$control-height} + #{$thickness});
-  }
-}
+    .navbar-item,
+    .navbar-link {
+      color: $link;
 
-.file {
-  .file-cta,
-  .file-name {
-    border-width: 1px 1px $thickness 1px;
-    position: unset;
-  }
-  &.has-name .file-name {
-    border-left-width: 0;
-  }
-  &.is-boxed.has-name .file-name {
-    border-width: 1px 1px $thickness 1px;
-  }
-  @each $name, $pair in $colors {
-    $color: nth($pair, 1);
-    $color-invert: nth($pair, 2);
-
-    &.is-#{$name} {
-      .file-cta {
-        border-color: darken($color, 5);
+      &:after {
+        border-color: currentColor;
       }
-      &.is-hovered,
-      &:hover {
-        .file-cta {
-          border-color: darken($color, 10);
+    }
+  }
+
+    @include from($navbar-breakpoint) {
+    .has-dropdown .navbar-item {
+      color: $text;
+    }
+  }
+
+  @include until($navbar-breakpoint) {
+    .navbar-menu {
+      background-color: inherit;
+    }
+
+    @each $name, $pair in $colors {
+      $color: nth($pair, 1);
+      $color-invert: nth($pair, 2);
+
+      &.is-#{$name} {
+        .navbar-item,
+        .navbar-link {
+          color: $color-invert;
         }
       }
     }
   }
 }
 
-.notification {
-  border-style: solid;
-  border-width: 1px 1px $thickness 1px;
-  border-color: $border;
-  @each $name, $pair in $colors {
-    $color: nth($pair, 1);
-
-    &.is-#{$name} {
-      border-color: darken($color, 5);
-    }
-  }
-}
-
-.progress {
-  border-radius: $radius-large;
-}
-
-.card {
-  box-shadow: none;
-  border-style: solid;
-  border-width: 1px 1px $thickness 1px;
-  border-color: $border;
-  background-color: rgba($grey-lighter, 0.075);
-  border-radius: $radius;
-
-  .card-image {
-    img {
-      border-radius: $radius $radius 0 0;
-    }
-  }
-
-  .card-header {
-    box-shadow: none;
-    border-bottom: 1px solid $grey-lighter;
-    border-radius: $radius $radius 0 0;
-  }
-}
-
-.message {
-  .message-body {
-    border-style: solid;
-    border-width: 1px 1px $thickness 1px;
-  }
-}
-
 .hero {
   .navbar {
-    border: none;
-    box-shadow: 0 $thickness 0 $border;
-  }
-  @each $name, $pair in $colors {
-    $color: nth($pair, 1);
-    $color-invert: nth($pair, 2);
+    .navbar-item,
+    .navbar-link {
+      color: $link;
 
-    &.is-#{$name} {
-      .navbar {
-        box-shadow: 0 $thickness 0 darken($color, 5);
+      &:after {
+        border-color: currentColor;
+      }
+    }
+
+    @include from($navbar-breakpoint) {
+      .has-dropdown .navbar-item {
+        color: $text;
       }
     }
   }
-  @include until($navbar-breakpoint) {
-    .navbar-menu {
-      box-shadow: none;
-    }
-  }
-}
-
-.navbar {
-  border: solid $border;
-  border-width: 1px 1px $thickness 1px;
   @each $name, $pair in $colors {
     $color: nth($pair, 1);
     $color-invert: nth($pair, 2);
 
     &.is-#{$name} {
-      border-color: darken($color, 5);
+      .navbar-item,
+      .navbar-link {
+        color: $color-invert;
+      }
     }
   }
-  .navbar-dropdown {
-    box-shadow: $navbar-dropdown-boxed-shadow;
-    top: 101%;
-  }
 }
 
-.pagination-link,
-.pagination-next,
-.pagination-previous {
-  border-width: 1px 1px $thickness 1px;
-}
-
-.tabs {
-  &.is-boxed li.is-active a {
-    border-top-width: $thickness;
-  }
-
-  &.tabs.is-toggle li.is-active a {
-    box-shadow: inset 0 -#{$thickness} 0 darken($link, 10);
-    border-color: darken($link, 10);
-  }
+.progress,
+.tag {
+  border-radius: $radius;
 }

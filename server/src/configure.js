@@ -1,5 +1,6 @@
 // express is the base http server for nodejs
 const express = require('express');
+const session = require('express-session');
 // cors is a middleware to allow cross origin resource sharing
 // some routes/apis we will allow coming from other ip's/sources
 // for some internal apis we will not allow cors, all requests can only come
@@ -30,12 +31,27 @@ module.exports = app => {
   // first time run init
   require('./init/')
 
-  // we use 2 authentications/authorization strategies
+  // passport
+  app.use(session({ 
+    secret: 'AnsibleForms',
+    resave: false,
+    saveUninitialized: true
+  }));
+  app.use(passport.initialize());
+  app.use(passport.session());
+
+  // we use 3 authentications/authorization strategies
   // - basic : with username and password to get jwt tokens
+  // - azure-ad-oauth2 : microsoft login
   // - jwt : to use the jwt tokens
   // passport (the auth lib used) is smart, if basic authentication headers are detected
   // then the basic authentication strategy kicks and the basic login procedure starts
-    require('./auth/auth');
+  require('./auth/auth_basic');
+  require('./auth/auth_jwt');
+  const auth_azuread = require('./auth/auth_azuread');  
+  auth_azuread.initialize()
+
+
 
   app.use(bodyParser.json({limit: '50mb'}));
   app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
@@ -49,6 +65,7 @@ module.exports = app => {
   const userRoutes = require('./routes/user.routes')
   const groupRoutes = require('./routes/group.routes')
   const ldapRoutes = require('./routes/ldap.routes')
+  const azureadRoutes = require('./routes/azuread.routes')
   const settingsRoutes = require('./routes/settings.routes')
   const credentialRoutes = require('./routes/credential.routes')
   const loginRoutes = require('./routes/login.routes')
@@ -61,6 +78,7 @@ module.exports = app => {
   const sshRoutes = require('./routes/ssh.routes')
   const logRoutes = require('./routes/log.routes')
   const repoRoutes = require('./routes/repo.routes')
+  const knownhostsRoutes = require('./routes/knownhosts.routes')
   const helpRoutes = require('./routes/help.routes')
 
   // using json web tokens as middleware
@@ -106,12 +124,14 @@ module.exports = app => {
   app.use('/api/v1/user',cors(), authobj, checkAdminMiddleware, userRoutes)
   app.use('/api/v1/group',cors(), authobj, checkAdminMiddleware, groupRoutes)
   app.use('/api/v1/ldap',cors(), authobj, checkAdminMiddleware, ldapRoutes)
+  app.use('/api/v1/azuread',cors(), authobj, checkAdminMiddleware, azureadRoutes)
   app.use('/api/v1/settings',cors(), authobj, checkAdminMiddleware, settingsRoutes)
   app.use('/api/v1/credential',cors(), authobj, checkAdminMiddleware, credentialRoutes)
   app.use('/api/v1/sshkey',cors(), authobj, checkAdminMiddleware, sshRoutes)
   app.use('/api/v1/awx',cors(), authobj, checkAdminMiddleware, awxRoutes)
   app.use('/api/v1/log',cors(), authobj, checkAdminMiddleware, logRoutes)
   app.use('/api/v1/repo',cors(), authobj, checkAdminMiddleware, repoRoutes)
+  app.use('/api/v1/knownhosts',cors(), authobj, checkAdminMiddleware, knownhostsRoutes)
 
   // routes for form config (extra middleware in the routes itself)
   app.use('/api/v1/config',cors(), authobj, configRoutes)

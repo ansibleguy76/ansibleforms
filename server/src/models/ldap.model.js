@@ -95,7 +95,7 @@ Ldap.check = function(ldapConfig){
     }else{
       logger.notice("Certificates are valid")
       try{
-        logger.debug(options)
+        // logger.debug(JSON.stringify(options))
         var user = await authenticate(options)
         resolve(user)
       }catch(err){

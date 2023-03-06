@@ -137,6 +137,30 @@ function renameColumn(table,name,newname,fieldtype){
       return message
     })
 }
+function resizeColumn(table,name,fieldtype){
+  var message
+  var db="AnsibleForms"
+  var checksql = `SHOW COLUMNS FROM ${db}.${table} WHERE Field='${name}' and type='${fieldtype}'`
+  var sql = `ALTER TABLE ${db}.${table} MODIFY \`${name}\` ${fieldtype}`
+  logger.debug(`resize column '${name}'->'${fieldtype}' on table '${table}'`)
+  return mysql.do(checksql)
+    .then((checkres)=>{
+      if(checkres.length==0){
+        return mysql.do(sql)
+      }
+      return false
+    })
+    .then((res)=>{
+      if(!res){
+        message=`Column '${name}' has already correct size on '${table}'`
+        logger.debug(message)
+        return message
+      }
+      message=`resized column '${name}'->'${fieldtype}' on '${table}'`
+      logger.warning(message)
+      return message
+    })
+}
 function addRecord(table,names,values){
   var message
   var db="AnsibleForms"
@@ -206,9 +230,13 @@ function patchAll(){
   tablePromises.push(addColumn("jobs","step","varchar(250)",true,"NULL")) // add column to hold current step
   tablePromises.push(addColumn("credentials","secure","tinyint(4)",true,"0")) // add column to have secure connection
   tablePromises.push(addColumn("credentials","db_type","varchar(10)",true,"NULL")) // add column to have db type
+  tablePromises.push(resizeColumn("tokens","username_type","VARCHAR(10)")) // azuread is longer
   buffer = fs.readFileSync(`${__dirname}/../db/create_settings_table.sql`)
   sql = buffer.toString()
   tablePromises.push(addTable("settings",sql)) // add settings table
+  buffer = fs.readFileSync(`${__dirname}/../db/create_azuread_table.sql`)
+  sql = buffer.toString()
+  tablePromises.push(addTable("azuread",sql)) // add azuread table
   //tablePromises.push(addRecord("settings",["mail_server","mail_port","mail_secure","mail_username","mail_password","mail_from","url"],["''",25,0,"''","''","''","''"]))
   // buffer=fs.readFileSync(`${__dirname}/../db/create_settings_table.sql`)
   // sql=buffer.toString();

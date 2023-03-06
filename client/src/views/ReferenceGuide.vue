@@ -348,7 +348,9 @@
   }
 </script>
 <style scoped>
-
+  .navbar-menu{
+    z-index:500!important;
+  }
   .float-right-bottom{
     position:fixed;
     z-index:99999;

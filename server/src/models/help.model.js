@@ -20,7 +20,7 @@ Help.get = function(help){
 }
 
 Help.read = function () {
-    // logger.notice("Getting lock")
+
     return fsPromises
       .readFile(config.helpPath,{encoding:"utf8"})
 };

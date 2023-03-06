@@ -7,33 +7,40 @@
     Ansibleforms is a nodejs webapplication and is tunable using environment variables.  
     Whether you use docker-compose, kubernetes or you run the webapplication natively, we advise you to get familiar with these variables and learn how to set them in your preferred environment.  
   items:
+  - name: NODE_ENV
+    type: string
+    allowed: a valid nodejs environment
+    short: The nodejs environment 
+    required: false
+    description: Nodejs can have multiple environments, like development or production
+    default: production
   - name: DB_HOST
     type: string
     allowed: a valid IP or FQDN
     short: The database host
     required: true
     description: |
-      AnsibleForms requires a mysql database connection to store the configuration of the application.  
+      Ansible Forms requires a mysql database connection to store the configuration of the application.  
   - name: DB_USER
     type: string
     allowed: a valid mysql user
     short: The database user
     required: true
     description: |
-      AnsibleForms requires a mysql database connection to store the configuration of the application. 
+      Ansible Forms requires a mysql database connection to store the configuration of the application. 
   - name: DB_PASSWORD
     type: string
     allowed: a valid mysql password
     short: The database password
     required: true
     description: |
-      AnsibleForms requires a mysql database connection to store the configuration of the application.    
+      Ansible Forms requires a mysql database connection to store the configuration of the application.    
   - name: PORT
     type: number
     allowed: a valid TCP port
     short: Http port
     description: The listening port of the web application
-    default: 8443
+    default: 8000
   - name: HTTPS
     type: number
     short: Enables HTTPS
@@ -43,7 +50,7 @@
     - name: 1
       description: Enables https
     description: Our docker-compose comes with sample certificates.  It is highly recommended to enable HTTPS.
-    default: 1
+    default: 0
   - name: HTTPS_KEY
     type: string
     allowed: a valid file path
@@ -62,8 +69,39 @@
     short: Forms.yaml path
     default: "%PERSISTENT_FOLDER%/forms.yaml"
     description: | 
-      The forms.yaml file is the main configuration file needed to run AnsibleForms.  
-      Read here more about the forms.yaml file.  [TODO]
+      The forms.yaml file is the main configuration file needed to run Ansible Forms.  
+      Read here more about the forms.yaml file.
+  - name: LOCK_PATH
+    type: string
+    allowed: a valid file path
+    short: ansibleForm.lock path
+    default: "%PERSISTENT_FOLDER%/ansibleForms.lock"
+    description: | 
+      Only 1 user can use the designer, so we use a locking file to hold the current owners information.
+  - name: FORMS_BACKUP_PATH
+    version: 4.0.3
+    type: string
+    allowed: a valid directory path
+    short: Backup path for form backups
+    default: "%PERSISTENT_FOLDER%/form_backups"
+    description: | 
+      When backups are made, they end up in this path    
+  - name: OLD_BACKUP_DAYS
+    version: 4.0.3
+    type: number
+    allowed: a valid number in days
+    short: Days of backups to keep
+    default: 60
+    description: | 
+      Old backups are cleanup, you can choose the age
+  - name: AZURE_GRAPH_URI
+    version: 4.0.3
+    type: string
+    allowed: a valid base URI without slash on the end
+    short: The azure graph api base uri
+    default: https://graph.microsoft.com
+    description: |
+      This variable is used to acquire data from the Azure AD api.      
   - name: SHOW_DESIGNER
     type: number
     choices:
@@ -74,7 +112,7 @@
     default: 1    
     short: Enable the internal designer
     description: | 
-      Although we encourage you to use an editor such as **Visual Studio Code** to edit the forms.yaml file, preferably with some form of source control.  AnsibleForms comes with an internal yaml designer.  
+      Although we encourage you to use an editor such as **Visual Studio Code** to edit the forms.yaml file, preferably with some form of source control.  Ansible Forms comes with an internal yaml designer.  
       And although only admins can see the designer, you might want to disable it completely by setting this variable to 0.
     version: 4.0.0
   - name: LOG_LEVEL
@@ -93,7 +131,7 @@
     default: notice    
     short: Log level
     description: | 
-      AnsibleForms logs to logfile called AnsibleForms.log.  
+      Ansible Forms logs to logfile called Ansible Forms.log.  
       It does so in multiple levels.  
   - name: LOG_PATH
     type: string
@@ -101,7 +139,7 @@
     default: "%PERSISTENT_FOLDER%/logs"
     short: Path for logfiles
     description: | 
-      AnsibleForms maintains 2 logfiles.  `ansibleforms.log` and `ansibleforms.errors.log`   
+      Ansible Forms maintains 2 logfiles.  `ansibleforms.log` and `ansibleforms.errors.log`   
     changelog:
       - version: 4.0.0
         type: added
@@ -207,7 +245,7 @@
     type: string
     allowed: free text
     short: App Name
-    default: AnsibleForms
+    default: Ansible Forms
     version: 3.0.1
     description: The name of the application    
   - name: LOG_COLOR_ERROR
@@ -249,7 +287,7 @@
     type: string
     allowed: a hard secret string
     short: Secret to encryp access tokens
-    default: No revealed
+    default: "*** NOT REVEALED ***"
     description: |
       AnsibleForm uses Basic Authentication as authentication mechanism.  
       Once authenticated, the client uses a JWT (Json Web Token) for authorization (Bearer authorization header).
@@ -280,7 +318,7 @@
     default: OS Homedir path
     version: 3.0.0
     description: |
-      AnsibleForms generates an sshkey at first start, is one is not present, so you can have a git connection or other password-less connection.  
+      Ansible Forms generates an sshkey at first start, is one is not present, so you can have a git connection or other password-less connection.  
       Typically this key is stored in the users home-directory under `/.ssh/id_rsa`.  You can set this homedirectory path manually with this property.
   - name: REPO_PATH
     type: string
@@ -289,24 +327,31 @@
     default: "%PERSISTENT_FOLDER%/repositories"
     version: 3.0.0
     description: |
-      AnsibleForms target a git repository.  The extravars will be save to a local repository and a git push is triggered.  
+      Ansible Forms target a git repository.  The extravars will be save to a local repository and a git push is triggered.  
       This path is the root path for your local repositories.
   - name: ENCRYPTION_SECRET
     type: string
     allowed: a strong encryption string
     short: Database encryption secret
-    default: not revealed
+    default: "*** NOT REVEALED ***"
     description: |
-      AnsibleForms encrypts passwords in the database using this secret.  
+      Ansible Forms encrypts passwords in the database using this secret.  
       We strongly advise you to set a custom entryption secret to uniquely protect your passwords.  
       The secret must be 32 character long, however, we extend or cut the secret if this is not the case.
+  - name: ANSIBLE_PATH
+    type: string
+    allowed: a valid path
+    short: The path of the ansible playbooks (local instance)
+    default: "%PERSISTENT_FOLDER%/playbooks"
+    description: |
+      Ansible Forms can have a local ansible instance.  This path says where the playbooks are.
 - name: Forms.yaml
   icon: fab,wpforms
   link: forms
   itemName: attribute
   description: |
-    AnsibleForms reads the forms configuration from the main `forms.yaml` file.   
-    The forms.yaml file contains the `categories`, `roles`, `constants` and `forms`.  You can choose to put all the forms in the single forms.yaml file, or, to make editing and source control easier, you can split the forms up and put then in separate files in the `forms` subdirectory.  AnsibleForms will merge them together.  Below are the 4 main attributes of the forms.yaml file.
+    Ansible Forms reads the forms configuration from the main `forms.yaml` file.   
+    The forms.yaml file contains the `categories`, `roles`, `constants` and `forms`.  You can choose to put all the forms in the single forms.yaml file, or, to make editing and source control easier, you can split the forms up and put then in separate files in the `forms` subdirectory.  Ansible Forms will merge them together.  Below are the 4 main attributes of the forms.yaml file.
   items:
   - name: categories
     type: array
@@ -340,7 +385,7 @@
     objectLink: forms/role
     short: Roles
     description: | 
-      The roles provide RBAC.  Each role has a name and 1 or more groups (local or ldap).  The `admin` and `public` rol is mandatory.
+      The roles provide RBAC.  Each role has a name and 1 or more groups (local, ldap or azuread).  The `admin` and `public` rol is mandatory.
     examples:
     - name: Roles
       code: |
@@ -349,6 +394,7 @@
           groups:
           - local/admins
           - ldap/Domain Admins
+          - azuread/Domain Admins
         - name: operator
           groups:
           - local/operator
@@ -378,7 +424,7 @@
     moreExamplesLink: forms/form
     short: Forms
     description: | 
-      The forms are the core of AnsibleForms and describe all the nice forms.
+      The forms are the core of Ansible Forms and describe all the nice forms.
     examples: 
     - name: Ansible Core Form
       code: |
@@ -613,7 +659,7 @@
         allowed: valid bulma background class
         short: Form tile background colour
         description: |
-          AnsibleForms uses the Bulma css framework to style the webapplication.  
+          Ansible Forms uses the Bulma css framework to style the webapplication.  
           Bulma has a few color helper classes you can use to give your formtile a background color.  
           You can find them here [background color](https://bulma.io/documentation/helpers/color-helpers/#background-color) and [foreground color](https://bulma.io/documentation/helpers/color-helpers/#text-color).  
           **Hint**: Try to add a matching foreground color.
@@ -634,7 +680,7 @@
         allowed: key-value pairs
         short: Fieldgroup background color
         description:
-          AnsibleForms uses the Bulma css framework to style the webapplication.  
+          Ansible Forms uses the Bulma css framework to style the webapplication.  
           Bulma has a few color helper classes you can use to give your fieldgroups a background color.  
           You can find them here [background color](https://bulma.io/documentation/helpers/color-helpers/#background-color) and [foreground color](https://bulma.io/documentation/helpers/color-helpers/#text-color).         
         examples:
@@ -923,6 +969,15 @@
 
           **Note** : You can also dynamically set the check mode by using a field called `__check__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static check field.  The field must result in a boolean (expression or checkbox)
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+      - name: limit
+        type: text
+        allowed: a valid host pattern
+        short: Run against a limited number of hosts
+        description: |
+          In awx and ansible core you run a playbook against limited hosts by supplying a host pattern.  Use this attribute to do so.  
+
+          **Note** : You can also dynamically set the limit by using a field called `__limit__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static check field.  The field must result in number (number field or expression)
+          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
       - name: diff
         type: boolean
         short: Run in diff mode
@@ -964,7 +1019,7 @@
         objectLink: forms/form/approval
         short: Add approval point
         description: |
-          AnsibleForms allows to add an approval point before a job is ran.  
+          Ansible Forms allows to add an approval point before a job is ran.  
           An approval link is sent by email to a specific approver who can then approve or reject the job.
       - name: notifications
         type: object
@@ -988,7 +1043,7 @@
         objectLink: forms/form/job-status-action
         version: 3.1.0
         description: |
-          Once a job is launched, AnsibleForms has a few status events you can act on.  
+          Once a job is launched, Ansible Forms has a few status events you can act on.  
           * **onSubmit** : Triggered the moment the submit button is pressed
           * **onSuccess** : Triggered when the job is finished succesfully
           * **onFailure** : Triggered when the job was not succesful
@@ -1010,7 +1065,7 @@
         objectLink: forms/form/job-status-action
         version: 3.1.0
         description: |
-          Once a job is launched, AnsibleForms has a few status events you can act on.  
+          Once a job is launched, Ansible Forms has a few status events you can act on.  
           * **onSubmit** : Triggered the moment the submit button is pressed
           * **onSuccess** : Triggered when the job is finished succesfully
           * **onFailure** : Triggered when the job was not succesful
@@ -1031,7 +1086,7 @@
         objectLink: forms/form/job-status-action
         version: 3.1.0
         description: |
-          Once a job is launched, AnsibleForms has a few status events you can act on.  
+          Once a job is launched, Ansible Forms has a few status events you can act on.  
           * **onSubmit** : Triggered the moment the submit button is pressed
           * **onSuccess** : Triggered when the job is finished succesfully
           * **onFailure** : Triggered when the job was not succesful
@@ -1052,7 +1107,7 @@
         objectLink: forms/form/job-status-action
         version: 3.1.0
         description: |
-          Once a job is launched, AnsibleForms has a few status events you can act on.  
+          Once a job is launched, Ansible Forms has a few status events you can act on.  
           * **onSubmit** : Triggered the moment the submit button is pressed
           * **onSuccess** : Triggered when the job is finished succesfully
           * **onFailure** : Triggered when the job was not succesful
@@ -1073,7 +1128,7 @@
         objectLink: forms/form/job-status-action
         version: 3.1.0
         description: |
-          Once a job is launched, AnsibleForms has a few status events you can act on.  
+          Once a job is launched, Ansible Forms has a few status events you can act on.  
           * **onSubmit** : Triggered the moment the submit button is pressed
           * **onSuccess** : Triggered when the job is finished succesfully
           * **onFailure** : Triggered when the job was not succesful
@@ -1252,7 +1307,7 @@
             objectLink: forms/form/approval
             short: Add approval point
             description: |
-              AnsibleForms allows to add an approval point before a job is ran.  
+              Ansible Forms allows to add an approval point before a job is ran.  
               An approval link is sent by email to a specific approver who can then approve or reject the job.  
               Every step can have a differnt approval point.
           - name: notifications
@@ -1276,7 +1331,7 @@
             allowed: valid extravar reference
             short: Extravar key
             description: |
-              AnsibleForms can model the extravars into objects using the formfield `model` attribute.  In a multistep form, by default, every step gets the full extravars payload.  However, using this `key` attribute you can choose which step receives which part of the extravars.  
+              Ansible Forms can model the extravars into objects using the formfield `model` attribute.  In a multistep form, by default, every step gets the full extravars payload.  However, using this `key` attribute you can choose which step receives which part of the extravars.  
               Study the example below to understand how the `key` property works.
             examples:
             - name: Resize volume
@@ -1351,7 +1406,7 @@
             type: extravar reference
             short: Run step if ...
             description: |
-              In a mulitstep form, by default, AnsibleForms will try to run every step sequentially one after the other.  
+              In a mulitstep form, by default, Ansible Forms will try to run every step sequentially one after the other.  
               Using this property you choose if a step should be run or not by setting the property to a part of the extravars that resolves into a boolean (expression or checkbox).  This way you can dynamically skip steps.
             examples: 
             - name: Run step based on checkbox
@@ -1736,6 +1791,58 @@
             description: | 
               With this attribute you can group fields together.  
               When all fields in a group are hidden (due to dependencies), the group is also hidden.
+          - name: line
+            type: string
+            version: 4.0.3
+            allowed: Free text
+            short: The field line name
+            description: | 
+              With this attribute you can group fields in a single line together.  
+              Use together with the `width` parameter to set the width, if not, the width is auto.  
+          - name: width
+            type: string
+            version: 4.0.3
+            allowed: A valid Bulma Column width
+            short: The field width
+            description: | 
+              With this attribute you can set the width of a field.  
+              Use together wit the `line` parameter to put fields on 1 line.  see [www.bulma.io](https://bulma.io)
+            choices:
+              - name: is-three-quarters
+              - name: is-two-thirds
+              - name: is-half
+              - name: is-one-third
+              - name: is-one-quarter
+              - name: is-full      
+              - name: is-four-fifths
+              - name: is-three-fifths
+              - name: is-two-fifths
+              - name: is-one-fifth
+              - name: is-1
+              - name: is-2
+              - name: is-3
+              - name: is-4
+              - name: is-5
+              - name: is-6
+              - name: is-7
+              - name: is-8
+              - name: is-9
+              - name: is-10
+              - name: is-11
+              - name: is-12     
+            examples:
+            - name: Name and lastname
+              code: |
+                - type: text
+                  name: name
+                  label: Firstname
+                  group: login
+                  line: names
+                - type: text
+                  name: lastname
+                  label: Lastname
+                  group: login
+                  line: names
           - name: dependencyFn
             type: string
             version: 4.0.0
@@ -2197,6 +2304,16 @@
             description: |
               A `enum` field is by default a dropdown box.  However, you can change that behavior by setting this property.  
               The dropbox looses it reactivity and becomes a fixed table.
+          - name: horizontal
+            type: boolean
+            version: 4.0.3
+            default: false
+            with_types: enum
+            short: Converts a dropdown box to a horizontal selector
+            description: |
+              A `enum` field is by default a dropdown box.  However, you can change that behavior by setting this property.  
+              The unselected values are on the left and the selected values on the right.  This works in combiniation with sticky.  
+              PctColumns are disabled, due to the space it consumes horizontally.
           - name: columns
             type: array
             with_types: enum
@@ -2592,6 +2709,24 @@
               description: |
                 In a table we can have an `enum` field.  The source of the data for this enum field must come from the main form.  
                 So this `from` field points to the expression field that holds the query data.
+            - name: sticky
+              type: boolean
+              default: false
+              with_types: enum
+              short: Make a dropdown box permanently visible
+              description: |
+                A `enum` field is by default a dropdown box.  However, you can change that behavior by setting this property.  
+                The dropbox looses it reactivity and becomes a fixed table.                
+            - name: horizontal
+              type: boolean
+              version: 4.0.3
+              default: false
+              with_types: enum
+              short: Converts a dropdown box to a horizontal selector
+              description: |
+                A `enum` field is by default a dropdown box.  However, you can change that behavior by setting this property.  
+                The unselected values are on the left and the selected values on the right.  This works in combiniation with sticky.  
+                PctColumns are disabled, due to the space it consumes horizontally.                
             - name: in
               type: object
               version: 2.2.4
@@ -2734,7 +2869,7 @@
             allowed: a subfolder in the repositories folder
             short: Directory
             description: | 
-              AnsibleForms can hold multiple local copies of repositories that can be pulled and push using forms.  
+              Ansible Forms can hold multiple local copies of repositories that can be pulled and push using forms.  
               Each copy goes in a subfolder of the repositories folder.  Use this attribute to define the subfolder name.
           - name: file
             type: string
@@ -2966,7 +3101,7 @@
     - name: object-array manipulation
       description: |
         When working with object-arrays, you will want to control and manipulate that data.  
-        Filtering, altering, sorting.  To make your life easy, AnsibleForms comes with a custom helper, to keep your code clean.
+        Filtering, altering, sorting.  To make your life easy, Ansible Forms comes with a custom helper, to keep your code clean.
       code: |
           /* 
             fnArray.from($(your_array_field))                               // custom helper library
@@ -3088,9 +3223,21 @@
     description: |
       The following examples are assumed to run with the field property `runLocal` false (=default).  
       They are evaluated on the server side.  
-      Due to the danger of evaluating code server side, the expression is sanitized and limited to predefined functions that come with AnsibleForms.  
+      Due to the danger of evaluating code server side, the expression is sanitized and limited to predefined functions that come with Ansible Forms.  
       Server side expressions are meant to grab information from various datasources, such as files and rest-api's.  
-    examples:          
+    examples:     
+    - name: get SSH output
+      code: |
+        fn.fnSsh('root','172.16.0.1','ls -la')
+
+        // fn.fnSsh(user,host,command,jq-expression)
+        // - user : the ssh user
+        // - host : the host
+        // - command : the command to trigger by ssh
+        // - jq-expression : an optional jq-expression (https://jsplay.org)  
+        //  
+        // You must use 'known_hosts' and 'public-key' to setup non-interactive password-less authentication.
+        // In the settings you can find the public-key and add your target-host to known_hosts
     - name: read json file
       code: |
         fn.fnReadJsonFile('/tmp/file.json','.[].name')
@@ -3228,7 +3375,7 @@
       description: |
         In all the data-fetching functions you have the option to add a json-query.  A powerfull language to manipulate a data object or array.  
         Whilst manipulating data, you might bump into the need to convert bytes to KB, MB, ...  as well as the need to round numbers.  
-        That's why AnsibleForms comes with a few custom handy JQ-functions.  
+        That's why Ansible Forms comes with a few custom handy JQ-functions.  
         * **fn2KB**: Bytes to KB
         * **fn2MB**: Bytes to MB
         * **fn2GB**: Bytes to GB
@@ -3396,7 +3543,7 @@
   - name: Userinfo
     short: How to pass the current user
     description: |
-      AnsibleForms automatically sends the userinformation in the extravars.  
+      Ansible Forms automatically sends the userinformation in the extravars.  
       You don't need to do anything.  
       It is sent as `ansibleforms_user`.
   - name: Userinfo Form
@@ -3411,9 +3558,9 @@
       expression: $(__user__.groups)
       expression: $(__user__.roles)
   - name: Customization
-    short: How to customize AnsibleForms
+    short: How to customize Ansible Forms
     description: |
-      AnsibleForms is a web-app.  If you run it natively in nodejs, you could replace files or change them.  
+      Ansible Forms is a web-app.  If you run it natively in nodejs, you could replace files or change them.  
       But more recommended is to run it as a docker-image and add volume or file mappings.  Our docker-compose projects already maps directories to make the database, playbooks, logs, certificates and ssh-keys persistent.  Nothing is keeping you from adding more mappings to, for example, override the logo.  
       There is also a `custom.js` file where you can add your own javascript functions to use in expressions.  Just like you can address our functions with the prefix `fn.` (fn.fnRestBasic for example) you can access the custom functions with prefix `fnc.`.  
       And you can add your own jq definitions as well in the same way with the `jq.custom.definitions.js`

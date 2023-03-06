@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.3] - 2023-03-06
+
+### Fixed
+
+-   Add select-all box with single column multiselect enum
+-   Required not enforced on multiple enum
+-   Log view since date-based logfiles
+-   enum dropup correct calculation
+-   issues with multistep and key
+-   add user profile in steps
+
+### Added
+
+-   Add enum horizontal mode
+-   Add azure ad oAuth2 login method
+-   Add server fn.fnSsh function
+-   Showing env.variables in the settings
+-   Showing known_hosts and allow removal
+-   Added limit property for ansible playbooks 
+
+### Changed
+
+-   Moved form backups to subfolder (new ENV VAR)
+-   Made backup age configurable (new ENV VAR)
+-   New theme look
+-   New settings menu
+-   Improved joblog navigation, using url params
+
 ## [4.0.2] - 2023-02-10
 
 ### Added
@@ -418,7 +446,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.2...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.3...HEAD
+
+[4.0.3]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.2...4.0.3
 
 [4.0.2]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.1...4.0.2
 

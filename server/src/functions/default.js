@@ -7,6 +7,9 @@ const fs = require("fs")
 const logger=require("../lib/logger");
 const jq=require("node-jq")
 const YAML=require("yaml")
+const {exec} = require('child_process');
+const {inspect} = require('node:util')
+const _ = require("lodash")
 const {firstBy,thenBy}=require("thenby")
 const credentialModel = require("../models/credential.model")
 // import definitions as strings
@@ -14,7 +17,8 @@ require.extensions['.definitions'] = function (module, filename) {
     module.exports = fs.readFileSync(filename, 'utf8');
 };
 // import jq definitions
-var jqDef = require("./jq.definitions")
+var jqDef = require("./jq.definitions");
+const Helpers = require('../lib/common');
 jqDef+= require("./jq.custom.definitions")
 jqDef=jqDef.replace(/(\r\n|\n|\r)/gm, "");
 logger.debug("jq definitions loaded : " + jqDef)
@@ -239,5 +243,49 @@ exports.fnRestJwtSecure = async function(action,url,body,tokenname,jqe=null,sort
     headers.Authorization="Bearer " + token.password
   }
   return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort)
+}
+exports.fnSsh = async function(user,host,cmd,jqe=null){
+
+  result= await new Promise((resolve,reject)=>{
+    const u=user.replaceAll('"','\"') // escape quote in user to avoid code injection
+    const h=host.replaceAll('"','') // remove quote in host to avoid code injection
+    const c=cmd.replace('"','\"') // escape quote in command to avoid code injection
+    const command=`ssh "${u}"@${h} "${c}"`
+    logger.debug(`invoking ssh : ${command}`)
+    var child = exec(command,{encoding: "UTF-8"});
+    var output=[]
+    
+    // add output eventlistener to the process to save output
+    child.stdout.on('data',function(data){
+      // save the output ; but whilst saving, we quickly check the status to detect abort
+      data.split(/\r?\n/).forEach(element => {
+        output.push(element)
+      });
+    })
+    // add error eventlistener to the process to save output
+    child.stderr.on('data',function(data){
+      // save the output ; but whilst saving, we quickly check the status to detect abort
+      data.split(/\r?\n/).forEach(element => {
+        output.push(element)
+      });
+    })
+    // add exit eventlistener to the process to handle status update
+    child.on('exit',function(data){
+      output.push(`exit(${data})`)
+
+      resolve(output)
+    })
+    // add error eventlistener to the process; set failed
+    child.on('error',function(data){
+      output.push(Helpers.getError())
+      logger.error(inspect(data))
+      reject(output)
+    })  
+  })
+  if(jqe){
+    result=await jq.run(jqDef+jqe, result, { input:"json",output:"json" })
+  }
+  return result
+
 }
 // etc

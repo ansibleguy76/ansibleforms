@@ -3,44 +3,50 @@
     <BulmaModal v-if="showDelete && credential.name" title="Delete" action="Delete" @click="deleteCredential();showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete Credential '{{ credential.name}}'</BulmaModal>
     <div class="container">
       <h1 class="title has-text-info"><font-awesome-icon icon="lock" /> Credentials</h1>
-      <nav class="level">
-        <!-- Left side -->
-        <div class="level-left">
-          <p class="level-item"><BulmaButton icon="plus" label="New Credential" @click="credentialItem=-1;loadCredential()"></BulmaButton></p>
-        </div>
-      </nav>
       <div class="columns">
-        <div class="column" v-if="credentialList && credentialList.length>0">
-          <BulmaAdminTable
-            :dataList="credentialList"
-            :labels="['Name','User','Host']"
-            :columns="['name','user','host']"
-            :filters="['name','user','host']"
-            identifier="id"
-            :actions="[{name:'select',title:'edit credential',icon:'pencil-alt',color:'has-text-warning'},{name:'delete',title:'delete credential',icon:'times',color:'has-text-danger'},{name:'test',title:'test credential',icon:'database',color:'has-text-link'}]"
-            :currentItem="credentialItem"
-            @select="selectItem"
-            @reset="resetItem"
-            @delete="deleteItem"
-            @test="testItem"
-          />
+        <div class="column is-narrow">
+          <BulmaSettingsMenu />
         </div>
-        <transition name="add-column" appear>
-          <div class="column" v-if="credentialItem!==undefined && !showDelete">
-            <BulmaInput icon="heading" v-model="credential.name" label="Name" placeholder="Name" :readonly="credentialItem!==-1" :required="true" :hasError="$v.credential.name.$invalid" :errors="[]" />
-            <BulmaInput icon="user" v-model="credential.user" label="Username" placeholder="Username" :required="true" :hasError="$v.credential.user.$invalid" :errors="[]" />
-            <BulmaInput icon="lock" v-model="credential.password" type="password" label="Password" placeholder="Password" :required="true" :hasError="$v.credential.password.$invalid" :errors="[]" />
-            <BulmaInput icon="server" v-model="credential.host" label="Host" placeholder="Host" :required="true" :hasError="$v.credential.host.$invalid" :errors="[]" />
-            <BulmaInput icon="door-closed" v-model="credential.port" label="Port" placeholder="3306" :required="true" :hasError="$v.credential.port.$invalid" :errors="[]" />
-            <BulmaInput icon="info-circle" v-model="credential.description" label="Description" placeholder="Description" :required="true" :hasError="$v.credential.description.$invalid" :errors="[]" />
-            <BulmaSelect icon="database" v-model="credential.db_type" label="Database type" :list="['mysql','mssql','postgres','mongodb']"  />
-            <BulmaCheckbox checktype="checkbox" v-model="credential.secure" label="Secure connection" /><br><br>
-            <BulmaButton v-if="credentialItem==-1" icon="save" label="Create Credential" @click="newCredential()"></BulmaButton>
-            <BulmaButton v-if="credentialItem!=-1" icon="save" label="Update Credential" @click="updateCredential()"></BulmaButton>
+        <div class="column">         
+          <nav class="level">
+            <!-- Left side -->
+            <div class="level-left">
+              <p class="level-item"><BulmaButton icon="plus" label="New Credential" @click="credentialItem=-1;loadCredential()"></BulmaButton></p>
+            </div>
+          </nav>
+          <div class="columns">
+            <div class="column" v-if="credentialList && credentialList.length>0">
+              <BulmaAdminTable
+                :dataList="credentialList"
+                :labels="['Name','User','Host']"
+                :columns="['name','user','host']"
+                :filters="['name','user','host']"
+                identifier="id"
+                :actions="[{name:'select',title:'edit credential',icon:'pencil-alt',color:'has-text-warning'},{name:'delete',title:'delete credential',icon:'times',color:'has-text-danger'},{name:'test',title:'test credential',icon:'database',color:'has-text-info'}]"
+                :currentItem="credentialItem"
+                @select="selectItem"
+                @reset="resetItem"
+                @delete="deleteItem"
+                @test="testItem"
+              />
+            </div>
+            <transition name="add-column" appear>
+              <div class="column" v-if="credentialItem!==undefined && !showDelete">
+                <BulmaInput icon="heading" v-model="credential.name" label="Name" placeholder="Name" :readonly="credentialItem!==-1" :required="true" :hasError="$v.credential.name.$invalid" :errors="[]" />
+                <BulmaInput icon="user" v-model="credential.user" label="Username" placeholder="Username" :required="true" :hasError="$v.credential.user.$invalid" :errors="[]" />
+                <BulmaInput icon="lock" v-model="credential.password" type="password" label="Password" placeholder="Password" :required="true" :hasError="$v.credential.password.$invalid" :errors="[]" />
+                <BulmaInput icon="server" v-model="credential.host" label="Host" placeholder="Host" :required="true" :hasError="$v.credential.host.$invalid" :errors="[]" />
+                <BulmaInput icon="door-closed" v-model="credential.port" label="Port" placeholder="3306" :required="true" :hasError="$v.credential.port.$invalid" :errors="[]" />
+                <BulmaInput icon="info-circle" v-model="credential.description" label="Description" placeholder="Description" :required="true" :hasError="$v.credential.description.$invalid" :errors="[]" />
+                <BulmaSelect icon="database" v-model="credential.db_type" label="Database type" :list="['mysql','mssql','postgres','mongodb']"  />
+                <BulmaCheckbox checktype="checkbox" v-model="credential.secure" label="Secure connection" /><br><br>
+                <BulmaButton v-if="credentialItem==-1" icon="save" label="Create Credential" @click="newCredential()"></BulmaButton>
+                <BulmaButton v-if="credentialItem!=-1" icon="save" label="Update Credential" @click="updateCredential()"></BulmaButton>
+              </div>
+            </transition>
           </div>
-        </transition>
+        </div>
       </div>
-
     </div>
   </section>
 </template>
@@ -53,6 +59,7 @@
   import BulmaInput from './../components/BulmaInput.vue'
   import BulmaModal from './../components/BulmaModal.vue'
   import BulmaCheckbox from './../components/BulmaCheckRadio.vue'
+  import BulmaSettingsMenu from '../components/BulmaSettingsMenu.vue'
   import BulmaSelect from './../components/BulmaSelect.vue'
   import TokenStorage from './../lib/TokenStorage'
   import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs,numeric } from 'vuelidate/lib/validators'
@@ -64,7 +71,7 @@
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean}
     },
-    components:{BulmaButton,BulmaInput,BulmaModal,BulmaAdminTable,BulmaCheckbox,BulmaSelect},
+    components:{BulmaButton,BulmaInput,BulmaModal,BulmaAdminTable,BulmaCheckbox,BulmaSelect,BulmaSettingsMenu},
     data(){
       return  {
           credential:{

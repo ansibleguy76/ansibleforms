@@ -10,10 +10,16 @@ const Ajv = require('ajv');
 const ajv = new Ajv()
 const path=require("path")
 const AJVErrorParser = require('ajv-error-parser');
+const {inspect} = require("node:util")
 
-function getFormsDir(){
-  return path.join(path.dirname(appConfig.formsPath),"/forms");
-}
+const backupPath = appConfig.formsBackupPath
+const formFilePath = path.dirname(appConfig.formsPath)
+const formFileName = path.basename(appConfig.formsPath)
+const formsPath = path.join(formFilePath,"forms")
+const formsBackupPath = path.join(backupPath,'forms')
+const formFileBackupPath = path.join(backupPath,formFileName)
+const oldBackupDays = appConfig.oldBackupDays
+
 function getBackupSuffix(t){
   var backuppartre=new RegExp("(\.bak\.[0-9]{17})$","g")
   var backuppart=backuppartre.exec(t)[1]
@@ -23,6 +29,31 @@ ajv.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
 var Form=function(data){
   this.forms = data.forms;
 };
+
+// create the backup path and 
+// since version 4.0.3 the backups go under folder => move backups there (should be only once)
+Form.initBackupFolder=function(){
+  logger.info("Moving older form backups to new backup folder")
+  fs.mkdirSync(backupPath, { recursive: true })
+  // move old forms.bak.files
+  var files = fs.readdirSync(formFilePath)
+  if(files){
+    // filter only backup-files and folders
+    files=files.filter((item)=>item.match(/\.bak\.[0-9]*$/))
+    // read files
+    files.forEach((item, i) => {
+      try{
+        const from = path.join(formFilePath,item)
+        const to = path.join(backupPath,item)
+        logger.debug(`moving ${from} -> ${to}`)
+        fse.moveSync(from,to)
+      }catch(e){
+        logger.error(`failed to move item '${item}'.\n${e}`)
+      }
+    });
+  }  
+  Form.removeOld(oldBackupDays)
+}
 // load the forms config
 Form.load = function() {
   logger.info(`Loading ${appConfig.formsPath}`)
@@ -108,7 +139,7 @@ Form.backups = function() {
   var files=undefined
   var backups=[]
   try{
-    files = fs.readdirSync(path.dirname(appConfig.formsPath))
+    files = fs.readdirSync(backupPath)
     if(files){
       // filter only backups
       files=files.filter((item)=>item.match(/y[a]{0,1}ml\.bak\.[0-9]{17}$/g))
@@ -151,17 +182,18 @@ Form.parse = function(data){
   return formsConfig
 }
 Form.removeOld=function(days=60){
-  var files = fs.readdirSync(path.dirname(appConfig.formsPath))
-  if(files && files.length){
+  var items = fs.readdirSync(backupPath)
+  if(items && items.length){
     // filter only backup yamls
-    files=files.filter((item)=>item.match(/y[a]{0,1}ml\.bak\.[0-9]{17}$/g))
+    items=items.filter((item)=>item.match(/\.bak\.[0-9]{17}$/g))
     // read files
-    files.forEach((file, i) => {
-      var item=file.substring(file.length-17) // get time part
-      var iso=moment(item.slice(0,8)) // get date part
+    items.forEach((item, i) => {
+      var dt=item.substring(item.length-17) // get time part
+      var iso=moment(dt.slice(0,8)) // get date part
       var old=moment().diff(moment(iso),"days") // how old ?
       if(old>days){ // date is older than x days ?
-        Form.remove(file) // remove backup
+        logger.debug("Removing old backup item")
+        fse.removeSync(path.join(backupPath,item)) // remove backup
       }else{
         //logger.debug(`Keeping ${file} [${old} days]`)
       }
@@ -170,52 +202,47 @@ Form.removeOld=function(days=60){
 }
 Form.backup = function(){
   logger.info("Making backup of forms")
-  var formsdir=getFormsDir()
-  var today=moment()
   var timestamp=moment().format("YYYYMMDDkkmmssSSS")
-  var backupformsdir=formsdir+".bak."+timestamp
-  var backupformsfile=appConfig.formsPath+".bak."+timestamp
+  var backupformsdir=formsBackupPath +".bak."+timestamp
+  var backupformsfile=formFileBackupPath +".bak."+timestamp
   var backupfile=path.parse(backupformsfile).base
-  Form.removeOld(10)
+  Form.removeOld(oldBackupDays)
   logger.debug(`Copying forms file '${appConfig.formsPath}'->'${backupformsfile}'`)
   fse.copySync(appConfig.formsPath,backupformsfile)
-  if(fs.existsSync(formsdir)){
-    logger.debug(`Copying forms directory '${formsdir}'->'${backupformsdir}'`)
+  if(fs.existsSync(formsPath)){
+    logger.debug(`Copying forms directory '${formsPath}'->'${backupformsdir}'`)
     fse.removeSync(backupformsdir) // just in case, remove it (unlikely hit)
     fse.ensureDirSync(backupformsdir) // make backupdir
-    fse.copySync(formsdir,backupformsdir) // make backup
+    fse.copySync(formsPath,backupformsdir) // make backup
   }
   return backupfile
 }
+// remove unique backupname with forms folder
 Form.remove = function(backupName){
-  var formsdir=getFormsDir()
-  var basedir=path.dirname(appConfig.formsPath)
-  var backupformsdir=formsdir+getBackupSuffix(backupName)
-  var backupformsfile=path.join(basedir,backupName)
+  logger.debug(`Removing old file '${backupName}'`)
+  var backupformsdir=formsBackupPath+getBackupSuffix(backupName)
+  var backupformsfile=formFileBackupPath+getBackupSuffix(backupName)
   logger.debug(`Removing forms file '${backupformsfile}'`)
   fse.removeSync(backupformsfile)
   if(fs.existsSync(backupformsdir)){
     logger.debug(`Removing forms directory '${backupformsdir}'`)
-    fse.removeSync(backupformsfile)
+    fse.removeSync(backupformsdir)
   }
 }
 Form.restoreBackup = function(backupName){
-  var formsdir=getFormsDir()
-  var basedir=path.dirname(appConfig.formsPath)
-  var backupformsdir=formsdir+getBackupSuffix(backupName)
-  var backupformsfile=path.join(basedir,backupName)
+  var backupformsdir=formsBackupPath+getBackupSuffix(backupName)
+  var backupformsfile=formFileBackupPath+getBackupSuffix(backupName)
   logger.debug(`Copying forms file '${backupformsfile}'->'${appConfig.formsPath}'`)
   fse.copySync(backupformsfile,appConfig.formsPath)
   if(fs.existsSync(backupformsdir)){
-    logger.debug(`Copying forms directory '${backupformsdir}'->'${formsdir}'`)
-    fse.removeSync(formsdir) // just in case, remove it (unlikely hit)
-    fse.ensureDirSync(formsdir) // make backupdir
-    fse.copySync(backupformsdir,formsdir) // make backup
+    logger.debug(`Copying forms directory '${backupformsdir}'->'${formsPath}'`)
+    fse.removeSync(formsPath) // just in case, remove it (unlikely hit)
+    fse.ensureDirSync(formsPath) // make backupdir
+    fse.copySync(backupformsdir,formsPath) // make backup
   }
 }
 Form.save = function(data){
   var formsConfig = Form.parse(data)
-  var formsdir=getFormsDir()
   formsConfig = Form.validate(formsConfig)
   logger.info("Saving forms")
   var files={}
@@ -256,9 +283,9 @@ Form.save = function(data){
     logger.debug(`Succesfull backup to ${backupfile}`)
 
     // now move tmp to prod
-    logger.debug(`Copy tmp directory '${tmpDir}'->'${formsdir}'`)
-    fse.emptyDirSync(formsdir) // empty formsdir
-    fse.copySync(tmpDir,formsdir) // copy from temp
+    logger.debug(`Copy tmp directory '${tmpDir}'->'${formsPath}'`)
+    fse.emptyDirSync(formsPath) // empty formsdir
+    fse.copySync(tmpDir,formsPath) // copy from temp
 
     logger.debug(`Writing base file '${appConfig.formsPath}'`)
     fs.writeFileSync(appConfig.formsPath,YAML.stringify(formsConfig)); // write basefile
@@ -273,7 +300,7 @@ Form.save = function(data){
     try {
       if (tmpDir) {
         logger.debug(`Cleaning up folder '${tmpDir}'`)
-        //fs.rmSync(tmpDir, { recursive: true });
+        fs.rmSync(tmpDir, { recursive: true });
       }
     }
     catch (e) {
@@ -316,7 +343,7 @@ Form.loadByName = function(form,user,forApproval=false){
     var access = formObj[0].roles.filter(role => user?.roles?.includes(role))
     if(access.length>0 || user?.roles?.includes("admin")){
       return formObj[0]
-      logger.debug(`Form ${form}, access allowed...`)
+      //logger.debug(`Form ${form}, access allowed...`)
     }else {
       logger.warning(`Form ${form}, no access...`)
       return null

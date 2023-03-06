@@ -95,9 +95,9 @@ exports.launch = async function(req, res) {
     }else{
         // get the form data
         var form = req.body.formName;
-        var extravars = req.body.extravars
-        var creds = req.body.credentials
-        var awxCreds = req.body.awxCredentials
+        var extravars = req.body.extravars || {}
+        var creds = req.body.credentials || {}
+        var awxCreds = req.body.awxCredentials || {}
         for (const [key, value] of Object.entries(awxCreds)) {
           creds["awx___"+key]=value
         }
