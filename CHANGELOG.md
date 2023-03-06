@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.3] - 2023-03-06
+
 ### Fixed
 
 -   Add select-all box with single column multiselect enum
@@ -32,7 +34,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   New theme look
 -   New settings menu
 -   Improved joblog navigation, using url params
-
 
 ## [4.0.2] - 2023-02-10
 
@@ -445,7 +446,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.2...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.3...HEAD
+
+[4.0.3]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.2...4.0.3
 
 [4.0.2]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.1...4.0.2
 
