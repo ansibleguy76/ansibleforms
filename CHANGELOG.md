@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Add select-all box with single column multiselect enum
 -   Required not enforced on multiple enum
 -   Log view since date-based logfiles
--   enum dropup better calculation
+-   enum dropup correct calculation
 -   issues with multistep and key
 -   add user profile in steps
 
@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Made backup age configurable (new ENV VAR)
 -   New theme look
 -   New settings menu
+-   Improved joblog navigation, using url params
 
 
 ## [4.0.2] - 2023-02-10
