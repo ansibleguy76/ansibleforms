@@ -3225,7 +3225,19 @@
       They are evaluated on the server side.  
       Due to the danger of evaluating code server side, the expression is sanitized and limited to predefined functions that come with Ansible Forms.  
       Server side expressions are meant to grab information from various datasources, such as files and rest-api's.  
-    examples:          
+    examples:     
+    - name: get SSH output
+      code: |
+        fn.fnSsh('root','172.16.0.1','ls -la')
+
+        // fn.fnSsh(user,host,command,jq-expression)
+        // - user : the ssh user
+        // - host : the host
+        // - command : the command to trigger by ssh
+        // - jq-expression : an optional jq-expression (https://jsplay.org)  
+        //  
+        // You must use 'known_hosts' and 'public-key' to setup non-interactive password-less authentication.
+        // In the settings you can find the public-key and add your target-host to known_hosts
     - name: read json file
       code: |
         fn.fnReadJsonFile('/tmp/file.json','.[].name')
