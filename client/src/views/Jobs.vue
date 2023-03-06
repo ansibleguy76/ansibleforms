@@ -74,25 +74,25 @@
                   <span class="icon is-pulled-right" v-else><font-awesome-icon icon="angle-down" /></span>
                 </template>
               </td>
-              <td class="is-clickable has-text-left" @click="loadOutput(j.id)" :title="j.form">{{j.form}}</td>
-              <td class="is-clickable has-text-left" @click="loadOutput(j.id)" :title="j.job_type">{{j.job_type || "ansible" }}</td>
-              <td class="is-clickable has-text-left" @click="loadOutput(j.id)" :title="j.status">{{j.status}}</td>
-              <td class="is-clickable has-text-left" @click="loadOutput(j.id)" :title="j.start">{{ formatTime(j.start) }}</td>
-              <td class="is-clickable has-text-left" @click="loadOutput(j.id)" :title="j.end">{{ formatTime(j.end) }}</td>
-              <td class="is-clickable has-text-left" @click="loadOutput(j.id)" :title="j.user">{{j.user}} ({{j.user_type}})</td>
+              <td class="is-clickable has-text-left" @click="getJob(j.id)" :title="j.form">{{j.form}}</td>
+              <td class="is-clickable has-text-left" @click="getJob(j.id)" :title="j.job_type">{{j.job_type || "ansible" }}</td>
+              <td class="is-clickable has-text-left" @click="getJob(j.id)" :title="j.status">{{j.status}}</td>
+              <td class="is-clickable has-text-left" @click="getJob(j.id)" :title="j.start">{{ formatTime(j.start) }}</td>
+              <td class="is-clickable has-text-left" @click="getJob(j.id)" :title="j.end">{{ formatTime(j.end) }}</td>
+              <td class="is-clickable has-text-left" @click="getJob(j.id)" :title="j.user">{{j.user}} ({{j.user_type}})</td>
             </tr>
             <template v-for="c in childJobs(j.id)">
               <tr :key="c.id" :class="{'has-background-success-light':(c.status=='success' && c.id!=jobId),'has-background-danger-light':(c.status=='failed' && c.id!=jobId),'has-background-warning-light':((c.status=='aborted'||c.status=='warning') && c.id!=jobId),'has-background-info':c.id==jobId,'has-text-white':c.id==jobId}">
                 <td class="has-background-info-light">
                   <!-- <span v-if="isAdmin" class="icon has-text-danger is-clickable" @click="tempJobId=c.id;showDelete=true" title="Delete job"><font-awesome-icon icon="trash-alt" /></span> -->
                 </td>
-                <td class="is-clickable has-text-right" @click="jobId=c.id">{{c.id}}</td>
-                <td class="is-clickable has-text-left" @click="jobId=c.id" :title="c.target">{{c.target}}</td>
-                <td class="is-clickable has-text-left" @click="jobId=c.id" :title="c.job_type">{{c.job_type || "ansible" }}</td>
-                <td class="is-clickable has-text-left" @click="jobId=c.id" :title="c.status">{{c.status}}</td>
-                <td class="is-clickable has-text-left" @click="jobId=c.id" :title="c.start">{{ formatTime(c.start) }}</td>
-                <td class="is-clickable has-text-left" @click="jobId=c.id" :title="c.end">{{ formatTime(c.start) }}</td>
-                <td class="is-clickable has-text-left" @click="jobId=c.id" :title="c.user">{{c.user}} ({{c.user_type}})</td>
+                <td class="is-clickable has-text-right" @click="getJob(c.id)">{{c.id}}</td>
+                <td class="is-clickable has-text-left" @click="getJob(c.id)" :title="c.target">{{c.target}}</td>
+                <td class="is-clickable has-text-left" @click="getJob(c.id)" :title="c.job_type">{{c.job_type || "ansible" }}</td>
+                <td class="is-clickable has-text-left" @click="getJob(c.id)" :title="c.status">{{c.status}}</td>
+                <td class="is-clickable has-text-left" @click="getJob(c.id)" :title="c.start">{{ formatTime(c.start) }}</td>
+                <td class="is-clickable has-text-left" @click="getJob(c.id)" :title="c.end">{{ formatTime(c.start) }}</td>
+                <td class="is-clickable has-text-left" @click="getJob(c.id)" :title="c.user">{{c.user}} ({{c.user_type}})</td>
               </tr>
             </template>
           </template>
@@ -216,9 +216,6 @@
               this.jobId=this.$route.params.id
               this.loadOutput(this.jobId)
             }
-        },
-        jobId (to,from){
-          this.loadOutput(this.jobId)
         }
     } ,
     methods:{
@@ -230,6 +227,9 @@
         }catch(e){
           this.$toast.error("Error copying to clipboard : \n" + e)
         }
+      },
+      getJob(id){
+        this.$router.push({ name:'JobLog', params: { id } }).catch((e)=>{})
       },
       setDisplayJobs(jobs){
         this.displayedJobs=jobs
@@ -593,8 +593,8 @@
     },
     mounted(){
       if(this.$route.params.id){
-        this.jobId=this.$route.params.id
-        this.loadOutput(parseInt(this.jobId))
+        this.jobId=parseInt(this.$route.params.id)
+        this.loadOutput(this.jobId)
       }
       this.loadJobs(true);
       this.$emit('refreshApprovals')
