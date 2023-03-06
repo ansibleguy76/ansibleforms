@@ -244,9 +244,9 @@ exports.fnRestJwtSecure = async function(action,url,body,tokenname,jqe=null,sort
   }
   return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort)
 }
-exports.fnSsh = async function(user,host,cmd){
+exports.fnSsh = async function(user,host,cmd,jqe=null){
 
-  return await new Promise((resolve,reject)=>{
+  result= await new Promise((resolve,reject)=>{
     const u=user.replaceAll('"','\"') // escape quote in user to avoid code injection
     const h=host.replaceAll('"','') // remove quote in host to avoid code injection
     const c=cmd.replace('"','\"') // escape quote in command to avoid code injection
@@ -272,6 +272,7 @@ exports.fnSsh = async function(user,host,cmd){
     // add exit eventlistener to the process to handle status update
     child.on('exit',function(data){
       output.push(`exit(${data})`)
+
       resolve(output)
     })
     // add error eventlistener to the process; set failed
@@ -281,6 +282,10 @@ exports.fnSsh = async function(user,host,cmd){
       reject(output)
     })  
   })
+  if(jqe){
+    result=await jq.run(jqDef+jqe, result, { input:"json",output:"json" })
+  }
+  return result
 
 }
 // etc
