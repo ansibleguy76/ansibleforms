@@ -30,7 +30,7 @@
                     <li>Security Groups</li>
                     <li>Access > samAccountName</li>
                   </ul>
-                  <p><strong>Callback Url </strong>: {{ callbackUrl }} <span v-if="!settings.url" class="tag is-danger"><font-awesome-icon icon="circle-exclamation" class="mr-1" /> You have not set the Ansible Form Url (see: settings page)</span></p>
+                  <p><strong>Callback Url </strong>: {{ callbackUrl }} <span v-if="!settings.url" class="tag is-danger"><font-awesome-icon icon="circle-exclamation" class="mr-1" /> You have not set the Ansible Form Url (see: 'General > Ansible Forms' settings page)</span></p>
                 </div>
                 <!-- <BulmaButton :disabled="!azuread.enable" icon="check" label="Test AzureAd" @click="testAzureAd()"></BulmaButton> -->
                 
@@ -51,7 +51,7 @@
   import BulmaCheckbox from '../components/BulmaCheckRadio.vue'
   import TokenStorage from '../lib/TokenStorage'
   import BulmaSettingsMenu from '../components/BulmaSettingsMenu.vue'
-  import { required } from 'vuelidate/lib/validators'
+  import { requiredIf } from 'vuelidate/lib/validators'
 
   Vue.use(Vuelidate)
 
@@ -132,10 +132,14 @@
     validations: {
       azuread:{
         client_id: {
-          required
+          required:requiredIf(function(azuread){
+            return azuread.enable
+          })
         },
         secret_id:{
-          required
+          required:requiredIf(function(azuread){
+            return azuread.enable
+          })
         }
 
       }
