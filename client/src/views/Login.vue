@@ -58,7 +58,7 @@
                 this.getGroupsAndLogin(azuretoken)
               }
             }else{
-              this.$toast.error(result.data.data.error)
+              // this.$toast.error(result.data.data.error)
             }
           })
           .catch((err)=>{

@@ -19,8 +19,8 @@
               <BulmaCheckbox checktype="checkbox" v-model="awx.use_credentials" label="Use Credentials" />
               <BulmaInput icon="globe" v-model="awx.uri" label="Uri" placeholder="https://awx.domain.local" :required="true" :hasError="$v.awx.uri.$invalid" :errors="[]" />
               <BulmaInput icon="user" v-if="awx.use_credentials" v-model="awx.username" label="Username" placeholder="Username" :required="true" :hasError="$v.awx.username.$invalid" :errors="[]" />
-              <BulmaInput icon="lock" type="password" v-model="awx.token" :label="(awx.use_credentials)?'Password':'Token'" :required="true" :hasError="$v.awx.token.$invalid" :errors="[]" />
-            
+              <BulmaInput icon="lock" v-if="!awx.use_credentials" type="password" v-model="awx.token" label="Token" :required="true" :hasError="$v.awx.token.$invalid" :errors="[]" />
+              <BulmaInput icon="lock" v-if="awx.use_credentials" type="password" v-model="awx.password" label="Password" :required="true" :hasError="$v.awx.password.$invalid" :errors="[]" />
             </div>
             <div class="column">
               <BulmaCheckbox checktype="checkbox" v-model="awx.ignore_certs" label="Ignore Certificate Errors" />
@@ -58,6 +58,7 @@
           awx:{
             uri:"",
             token:"",
+            password:"",
             username:"",
             ignore_certs:true,
             use_credentials:false,
@@ -111,9 +112,11 @@
         uri: {
           required
         },
-        token: {
-          required
-        },
+        token:{
+          required:requiredIf(function(awx){
+            return !awx.use_credentials
+          })
+        },  
         ca_bundle:{
           required:requiredIf(function(awx){
             return !awx.ignore_certs
@@ -123,7 +126,12 @@
           required:requiredIf(function(awx){
             return awx.use_credentials
           })
-        }        
+        },
+        password:{
+          required:requiredIf(function(awx){
+            return awx.use_credentials
+          })
+        }                     
       }
     },
     mounted() { // when the Vue app is booted up, this is run automatically.

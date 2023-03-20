@@ -704,9 +704,10 @@
                 "data": {
                   "output": {
                     "uri": "http://10.0.0.1",
-                    "token": "***** secret awx token or password *****",
+                    "token": "***** secret awx token *****",
                     "use_credentials": false,
-                    "username": "admin"
+                    "username": "admin",
+                    "password": "***** secret awx password *****"
                   },
                   "error": ""
                 }
