@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-  Allow awx connection with username and password
+
 ## [4.0.3] - 2023-03-06
 
 ### Fixed

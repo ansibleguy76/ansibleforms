@@ -2066,7 +2066,7 @@
             examples:
             - name: Check if powered off
               code: |
-                validIf:
+                validIfNot:
                   field: rest_api_ping_test  # an other expression field that is returning true or false
                   description: The ip is still pingable, shut down the machine first                    
           - name: sameAs

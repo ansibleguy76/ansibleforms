@@ -16,7 +16,8 @@ const ansibleConfig = require('./../../config/ansible.config');
 const mysql = require('./db.model')
 const RestResult = require('./restResult.model')
 const Form = require('./form.model')
-const Credential = require('./credential.model')
+const Credential = require('./credential.model');
+const { getAuthorization } = require('./awx.model');
 const inspect = require('util').inspect;
 
 const httpsAgent = new https.Agent({
@@ -986,6 +987,7 @@ Ansible.launch=(playbook,ev,inv,tags,limit,c,d,v,k,credentials,jobid,counter,app
 // awx stuff, interaction with awx
 var Awx = function(){}
 Awx.getConfig = require('./awx.model').getConfig
+Awx.getAuthorization= require('./awx.model').getAuthorization
 Awx.abortJob = function (id, next) {
 
   Awx.getConfig()
@@ -993,12 +995,7 @@ Awx.abortJob = function (id, next) {
 
       var message=""
       logger.info(`aborting awx job ${id}`)
-      const axiosConfig = {
-        headers: {
-          Authorization:"Bearer " + awxConfig.token
-        },
-        httpsAgent: getHttpsAgent(awxConfig)
-      }
+      const axiosConfig = getAuthorization(awxConfig)
       // we first need to check if we CAN cancel
       axios.get(awxConfig.uri + "/api/v2/jobs/" + id + "/cancel/",axiosConfig)
         .then((axiosnext)=>{
@@ -1156,12 +1153,7 @@ Awx.launchTemplate = async function (template,ev,inventory,tags,limit,c,d,v,cred
         throw message
       }else{
         // prepare axiosConfig
-        const axiosConfig = {
-          headers: {
-            Authorization:"Bearer " + awxConfig.token
-          },
-          httpsAgent: getHttpsAgent(awxConfig)
-        }
+        const axiosConfig = Awx.getAuthorization(awxConfig)
         logger.debug("Lauching awx with data : " + JSON.stringify(postdata))
         // launch awx job
         return axios.post(awxConfig.uri + template.related.launch,postdata,axiosConfig)
@@ -1212,12 +1204,7 @@ Awx.trackJob = function (job,jobid,counter,previousoutput) {
       var message=""
       logger.info(`searching for job with id ${job.id}`)
       // prepare axiosConfig
-      const axiosConfig = {
-        headers: {
-          Authorization:"Bearer " + awxConfig.token
-        },
-        httpsAgent: getHttpsAgent(awxConfig)
-      }
+      const axiosConfig = Awx.getAuthorization(awxConfig)
       return axios.get(awxConfig.uri + job.url,axiosConfig)
         .then((axiosresult)=>{
           var j = axiosresult.data;
@@ -1305,12 +1292,7 @@ Awx.getJobTextOutput = function (job) {
           return job.status
         }
         // prepare axiosConfig
-        const axiosConfig = {
-          headers: {
-            Authorization:"Bearer " + awxConfig.token
-          },
-          httpsAgent: getHttpsAgent(awxConfig)
-        }
+        const axiosConfig = Awx.getAuthorization(awxConfig)
         return axios.get(awxConfig.uri + job.related.stdout + "?format=txt",axiosConfig)
           .then((axiosresult)=>{ return axiosresult.data })
 
@@ -1327,12 +1309,7 @@ Awx.findJobTemplateByName = function (name) {
       var message=""
       logger.info(`searching job template ${name}`)
       // prepare axiosConfig
-      const axiosConfig = {
-        headers: {
-          Authorization:"Bearer " + awxConfig.token
-        },
-        httpsAgent: getHttpsAgent(awxConfig)
-      }
+      const axiosConfig = Awx.getAuthorization(awxConfig)
       return axios.get(awxConfig.uri + "/api/v2/job_templates/?name=" + encodeURI(name),axiosConfig)
         .then((axiosresult)=>{
           var job_template = axiosresult.data.results.find(function(jt, index) {
@@ -1376,12 +1353,7 @@ Awx.findCredentialByName = function (name) {
       const httpsAgent = new https.Agent({
         rejectUnauthorized: false
       })
-      const axiosConfig = {
-        headers: {
-          Authorization:"Bearer " + awxConfig.token
-        },
-        httpsAgent:httpsAgent
-      }
+      const axiosConfig = Awx.getAuthorization(awxConfig)
       return axios.get(awxConfig.uri + "/api/v2/credentials/?name=" + encodeURI(name),axiosConfig)
         .then((axiosresult)=>{
           var credential = axiosresult.data.results.find(function(jt, index) {
@@ -1412,12 +1384,7 @@ Awx.findCredentialsByTemplate = function (id) {
       const httpsAgent = new https.Agent({
         rejectUnauthorized: false
       })
-      const axiosConfig = {
-        headers: {
-          Authorization:"Bearer " + awxConfig.token
-        },
-        httpsAgent:httpsAgent
-      }
+      const axiosConfig = Awx.getAuthorization(awxConfig)
       return axios.get(awxConfig.uri + "/api/v2/job_templates/"+id+"/credentials/",axiosConfig)
         .then((axiosresult)=>{
           if(axiosresult.data?.results?.length){
@@ -1444,12 +1411,7 @@ Awx.findInventoryByName = function (name) {
       const httpsAgent = new https.Agent({
         rejectUnauthorized: false
       })
-      const axiosConfig = {
-        headers: {
-          Authorization:"Bearer " + awxConfig.token
-        },
-        httpsAgent:httpsAgent
-      }
+      const axiosConfig = Awx.getAuthorization(awxConfig)
       return axios.get(awxConfig.uri + "/api/v2/inventories/?name=" + encodeURI(name),axiosConfig)
         .then((axiosresult)=>{
           var inventory = axiosresult.data.results.find(function(jt, index) {

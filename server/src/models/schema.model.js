@@ -230,6 +230,8 @@ function patchAll(){
   tablePromises.push(addColumn("jobs","step","varchar(250)",true,"NULL")) // add column to hold current step
   tablePromises.push(addColumn("credentials","secure","tinyint(4)",true,"0")) // add column to have secure connection
   tablePromises.push(addColumn("credentials","db_type","varchar(10)",true,"NULL")) // add column to have db type
+  tablePromises.push(addColumn("awx","username","varchar(255)",true,"NULL")) // add column to have user based awx connection
+  tablePromises.push(addColumn("awx","use_credentials","tinyint(4)",false,"0")) // add column to have user based awx connection
   tablePromises.push(resizeColumn("tokens","username_type","VARCHAR(10)")) // azuread is longer
   buffer = fs.readFileSync(`${__dirname}/../db/create_settings_table.sql`)
   sql = buffer.toString()
