@@ -1,7 +1,7 @@
 <template>
   <li v-if="countFormsByCategory(path)>0">
     <a :class="{'is-active':isHighLighted}" class="is-size-6" @click="$emit('click',path)">
-      <font-awesome-icon :icon="menu.icon" class="mr-2" fixed-width />{{ menu.name }}
+      <font-awesome-icon :icon="(menu.icon.includes(','))?(menu.icon.split(',')):(menu.icon)" class="mr-2" fixed-width />{{ menu.name }}
       <span class="tag is-primary is-pulled-right">{{ countFormsByCategory(path) }}</span>
     </a>
     <ul class="menu-list ml-5 mr-0 my-1" v-if="isActive && menu && menu.items && menu.items.length>0">

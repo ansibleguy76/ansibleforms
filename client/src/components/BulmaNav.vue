@@ -52,6 +52,7 @@
                       <span class="icon"><font-awesome-icon icon="key" /></span><span>Change password</span>
                     </router-link>
                     <router-link class="navbar-item" to="/login" v-on:click.native="logout()" replace><span class="icon"><font-awesome-icon icon="sign-out-alt" /></span><span>Logout</span></router-link>
+                    <span @click="$emit('profile')" class="navbar-item is-clickable"><span class="icon"><font-awesome-icon icon="address-card" /></span> <span>About me</span></span>
                   </div>
                 </div>
               </div>

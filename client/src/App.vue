@@ -35,7 +35,31 @@
           <span class="tag is-warning">{{ thanks.join(', ')}}</span>
         </div>
     </BulmaModal>
-    <BulmaNav v-if="version" :isAdmin="isAdmin" @about="showAbout=true" :approvals="approvals" :authenticated="authenticated" :profile="profile" @logout="logout()" :version="version" />
+    <BulmaModal v-if="showProfile" title="About me" @close="showProfile=false" @cancel="showProfile=false">
+      <div class="columns">
+        <div class="column m-1 has-background-info-light">
+          <strong>Username : </strong>{{ profile.username }}
+        </div>
+        <div class="column m-1 has-background-info-light">
+          <strong>Type : </strong>{{ profile.type }}
+        </div>
+      </div>
+      <div class="columns">
+        <div class="column m-1 has-background-success-light">
+          <strong>Groups : </strong>
+          <ul>
+            <li v-for="g in profile.groups" :key="g"><font-awesome-icon icon="check" /> {{ g }}</li>
+          </ul>
+        </div>
+        <div class="column m-1 has-background-warning-light">
+          <strong>Roles : </strong>
+          <ul>
+            <li v-for="r in profile.roles" :key="r"><font-awesome-icon icon="check" /> {{ r }}</li>
+          </ul>
+        </div>              
+      </div>
+    </BulmaModal>    
+    <BulmaNav v-if="version" :isAdmin="isAdmin" @profile="showProfile=true" @about="showAbout=true" :approvals="approvals" :authenticated="authenticated" :profile="profile" @logout="logout()" :version="version" />
     <router-view :isAdmin="isAdmin" :profile="profile" :authenticated="authenticated" :errorMessage="errorMessage" :errorData="errorData" @authenticated="login()" @logout="logout()" @refreshApprovals="loadApprovals()" />
   </div>
 </template>
@@ -53,6 +77,7 @@
         errorMessage:"",
         errorData:{success:[],failed:[]},
         profile:{},
+        showProfile:false,
         authenticated:false,
         isAdmin:false,
         version:undefined,

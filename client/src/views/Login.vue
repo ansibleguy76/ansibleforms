@@ -11,11 +11,12 @@
                 <button class="button is-light mr-1" @click="login()">
                   <span class="icon has-text-info"><font-awesome-icon icon="right-to-bracket" /></span><span>Login</span>
                 </button>
-                <a v-if="azureAdEnabled" class="button is-light" href="/api/v1/auth/azureadoauth2">
-                  <span class="icon has-text-link"><font-awesome-icon icon="arrow-right-to-bracket" /></span><span>Azure AD</span>
-                </a>                
+          
               </div>
             </div>
+            <a v-if="azureAdEnabled" title="Azure" class="button is-light" href="/api/v1/auth/azureadoauth2">
+              <span class="icon"><img src="/assets/img/azure.svg" alt="Azure" /></span>
+            </a>      
           </div>
         </div>
       </div>
