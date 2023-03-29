@@ -353,14 +353,20 @@
           </div>
           <!-- output result -->
           <div v-if="jobResult.data && !!jobResult.data.output" class="box mt-3">
+            <button @click="filterOutput=!filterOutput" v-if="jobId" class="button is-light is-small mb-3">
+              <span class="icon has-text-info">
+                <font-awesome-icon icon="eye-slash" />
+              </span>
+              <span v-text="(filterOutput)?'Remove filter':'Apply filter'"></span>
+            </button>   
             <div class="columns">
               <div class="column">
                 <h3 v-if="jobResult.data.job_type=='multistep' && subjob.data && subjob.data.output" class="subtitle">Main job (jobid {{jobResult.data.id}}) <span class="tag" :class="`is-${jobResult.status}`">{{ jobResult.data.status}}</span></h3>
-                <pre v-html="jobResult.data.output"></pre>
+                <div class="pre" v-html="filteredJobOutput"></div>
               </div>
               <div v-if="jobResult.data.job_type=='multistep' && subjob.data && subjob.data.output && !showExtraVars" class="column">
                 <h3 class="subtitle">Current Step (jobid {{subjob.data.id}}) <span class="tag" :class="`is-${subjob.status}`">{{ subjob.data.status}}</span></h3>
-                <pre v-html="subjob.data.output"></pre>
+                <div class="pre" v-html="filteredSubJobOutput"></div>
               </div>
             </div>
           </div>
@@ -440,6 +446,7 @@
     },
     data(){
       return  {
+          filterOutput:true,
           hideForm:false,       // possible action to hide form onsubmit for example
           formdata:{},          // the eventual object sent to the api in the correct hierarchy
           interval:undefined,   // interval how fast fields need to be re-evaluated and refreshed
@@ -565,6 +572,15 @@
       return obj
     },
     computed: {
+      // joboutput
+      filteredJobOutput(){
+        if(!this.filterOutput) return this.jobResult?.data?.output?.replace(/\r\n/g,"<br>")
+        return this.jobResult?.data?.output?.replace(/<span class='low[^<]*<\/span>/g,"").replace(/\r\n/g,"<br>").replace(/(<br>\s*){3,}/ig,"<br><br>") // eslint-disable-line
+      },
+      filteredSubJobOutput(){
+        if(!this.filterOutput) return this.subjob?.output?.replace(/\r\n/g,"<br>")
+        return this.subjob?.output?.replace(/<span class='low[^<]*<\/span>/g,"").replace(/\r\n/g,"<br>").replace(/(<br>\s*){3,}/ig,"<br><br>") // eslint-disable-line
+      },      
       // form loaded and validation ready
       formIsReady(){
         return this.validationsLoaded && this.currentForm && this.pretasksFinished
@@ -2102,24 +2118,18 @@ pre{
 .pop-leave-to {
   transform: scale(1);
 }
-pre::v-deep .ansi1 { font-weight: bold; }
-pre::v-deep .ansi3 { font-weight: italic; }
-pre::v-deep .ansi4 { text-decoration: underline; }
-pre::v-deep .ansi9 { text-decoration: line-through; }
-pre::v-deep .ansi30 { color: #161b1f; }
-pre::v-deep .ansi31 { color: #d9534f; }
-pre::v-deep .ansi32 { color: #5cb85c; }
-pre::v-deep .ansi33 { color: #f0ad4e; }
-pre::v-deep .ansi34 { color: #337ab7; }
-pre::v-deep .ansi35 { color: #e1539e; }
-pre::v-deep .ansi36 { color: #2dbaba; }
-pre::v-deep .ansi37 { color: #ffffff; }
-pre::v-deep .ansi40 { background-color: #161b1f; }
-pre::v-deep .ansi41 { background-color: #d9534f; }
-pre::v-deep .ansi42 { background-color: #5cb85c; }
-pre::v-deep .ansi43 { background-color: #f0ad4e; }
-pre::v-deep .ansi44 { background-color: #337ab7; }
-pre::v-deep .ansi45 { background-color: #e1539e; }
-pre::v-deep .ansi46 { background-color: #2dbaba; }
-pre::v-deep .ansi47 { background-color: #ffffff; }
+.pre{
+    white-space: pre-wrap;       /* Since CSS 2.1 */
+    white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+    white-space: -pre-wrap;      /* Opera 4-6 */
+    white-space: -o-pre-wrap;    /* Opera 7 */
+    word-wrap: break-word;       /* Internet Explorer 5.5+ */
+    font-family: consolas,'Courier New', Courier, monospace;
+    font-size: .85rem;
+    background-color: #f1f1f1;
+    padding:1rem;
+    color:#333;
+
+  }
+
 </style>

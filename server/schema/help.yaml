@@ -345,6 +345,14 @@
     default: "%PERSISTENT_FOLDER%/playbooks"
     description: |
       Ansible Forms can have a local ansible instance.  This path says where the playbooks are.
+  - name: REGEX_FILTER_JOB_OUTPUT
+    type: string
+    allowed: an escaped regular expression
+    short: Filter out job output tasks
+    default: "\\[low\\]"
+    description: |
+      Sometime, the job output is flooded with meaningless output, such as 'Gathering Facts', or 'Includes'.  You filter out these by add a piece of string in the taskname, i.e. `[low]` and then used regex `\\[low\\]` to hide this information.  
+      The output has a button `Apply filter` for the filtering to take effect.
 - name: Forms.yaml
   icon: fab,wpforms
   link: forms

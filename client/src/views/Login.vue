@@ -14,9 +14,11 @@
           
               </div>
             </div>
-            <a v-if="azureAdEnabled" title="Azure" class="button is-light" href="/api/v1/auth/azureadoauth2">
-              <span class="icon"><img src="/assets/img/azure.svg" alt="Azure" /></span>
-            </a>      
+            <div class="box" v-if="azureAdEnabled">
+              <a v-if="azureAdEnabled" title="Azure" class="button is-light" href="/api/v1/auth/azureadoauth2">
+                <span class="icon"><img src="/assets/img/azure.svg" alt="Azure" /></span>
+              </a>
+            </div>
           </div>
         </div>
       </div>
