@@ -64,8 +64,8 @@
                 <span v-if="j.status!='running'&&j.status!='aborting'&&j.status!='abort'" class="icon has-text-info is-clickable" @click="tempJobId=j.id;showRelaunch=true" title="Relaunch job"><font-awesome-icon icon="redo" /></span>
                 <span v-if="j.status && (j.status=='running')" class="icon has-text-warning is-clickable" @click="tempJobId=j.id;showAbort=true" title="Abort job"><font-awesome-icon icon="ban" /></span>
                 <span v-if="j.status!='running' && j.status!='aborting' || isAdmin" class="icon has-text-danger is-clickable" @click="tempJobId=j.id;showDelete=true" title="Delete job"><font-awesome-icon icon="trash-alt" /></span>
-                <span v-if="j.status=='approve'" class="icon has-text-success is-clickable" @click="showApproval(j.id)" title="Approve job"><font-awesome-icon icon="circle-check" /></span>
-                <span v-if="j.status=='approve'" class="icon has-text-danger is-clickable" @click="showApproval(j.id,true)" title="Reject job"><font-awesome-icon icon="circle-xmark" /></span>
+                <span v-if="j.status=='approve' && approvalAllowed(j)" class="icon has-text-success is-clickable" @click="showApproval(j.id)" title="Approve job"><font-awesome-icon icon="circle-check" /></span>
+                <span v-if="j.status=='approve' && approvalAllowed(j)" class="icon has-text-danger is-clickable" @click="showApproval(j.id,true)" title="Reject job"><font-awesome-icon icon="circle-xmark" /></span>
               </td>
               <td class="is-clickable has-text-left" @click="(j.job_type=='multistep')?toggleCollapse(j.id):loadOutput(j.id)">
                 <span>{{j.id}}</span>
@@ -235,6 +235,20 @@
           this.$toast.error("Error copying to clipboard : \n" + e)
         }
       },
+      approvalAllowed(job){
+        var ref=this
+        if(ref.profile?.roles?.includes("admin"))return true
+        if(!job.approval)return true
+        // not admin and approval - lets check access
+        var approval=JSON.parse(job.approval)
+        var access = approval?.roles?.filter(role => ref.profile?.roles?.includes(role))
+        if(access?.length>0){
+          return true
+        }else {
+          return false
+        }        
+
+      },      
       getJob(id){
         this.$router.push({ name:'JobLog', params: { id } }).catch((e)=>{})
       },
@@ -547,21 +561,6 @@
         if(!this.hide) return this.subjob?.output?.replace(/\r\n/g,"<br>")
         return this.subjob?.output?.replace(/<span class='low[^<]*<\/span>/g,"").replace(/\r\n/g,"<br>").replace(/(<br>\s*){3,}/ig,"<br><br>") // eslint-disable-line
       },      
-      allowedJobs (){
-        var ref=this
-        return this.jobs?.filter(x => {
-          if(ref.profile?.roles?.includes("admin"))return true
-          if(!x.approval)return true
-          // not admin and approval - lets check access
-          var approval=JSON.parse(x.approval)
-          var access = approval?.roles?.filter(role => ref.profile?.roles?.includes(role))
-          if(access?.length>0){
-            return true
-          }else {
-            return false
-          }
-        })
-      },
       displayedJobIndex(){
         if(this.jobId)
           return this.parentJobs.map((e)=>e.id).indexOf(this.jobId);
@@ -572,7 +571,7 @@
       parentJobs (){
         var ref=this
         if(this.filter){
-          return this.allowedJobs.filter(x => !x.parent_id
+          return this.jobs?.filter(x => !x.parent_id
             &&
               (
                 x.id?.toString().match(ref.filter) ||
@@ -585,7 +584,7 @@
               )
           )
         }else{
-          return this.allowedJobs.filter(x => !x.parent_id)
+          return this.jobs?.filter(x => !x.parent_id)
         }
       },
       runningJobs(){
