@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -  Allow awx connection with username and password
 -  Added about me for 
+-  Added new env var with regex to filter job output
 
 ### Fixed
 
