@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 -  Allow awx connection with username and password
+-  Added about me for 
+
+### Fixed
+
+-  Non admin can see their own approve jobs
 
 ## [4.0.3] - 2023-03-06
 
