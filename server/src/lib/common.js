@@ -112,6 +112,29 @@ Helpers.findExtravar =(data,expr)=>{
   },data);
   return outputValue
 }
+Helpers.friendlyAJVError= (e,property,label,o)=>{
+  const re= new RegExp(`${property}\\[([0-9]+)\\][.]*`)
+  const matches = e.match(re)    
+  var value = `${e}`
+  var changed = false
+  var result={}
+  var index=-1
+  var name=""
+  if(matches && matches.length>1){
+    index = parseInt(matches[1])
+    name = o[index].name || o[index].label || (index+1)
+    value = e.replace(matches[0], `${label} '${name}', `)
+    changed = true
+  }   
+
+  result = {
+    changed,
+    value,
+    index,
+    name
+  }
+  return result
+}
 Helpers.formatOutput = (records,asText)=>{
   var output=[] // => is final output array
   if(asText){

@@ -10,6 +10,7 @@ const Ajv = require('ajv');
 const ajv = new Ajv()
 const path=require("path")
 const AJVErrorParser = require('ajv-error-parser');
+const Helpers = require("../lib/common")
 const {inspect} = require("node:util")
 
 const backupPath = appConfig.formsBackupPath
@@ -162,6 +163,44 @@ Form.validate = function(forms){
     const valid = ajv.validate(schema, forms)
     if (!valid){
       var ajvMessages = AJVErrorParser.parseErrors(ajv.errors)
+      ajvMessages=ajvMessages.map(x => {
+        try{
+          var tmp=`${x}`
+          var form
+          var field
+          var tableField
+          var category
+          var role
+          category = Helpers.friendlyAJVError(tmp,"categories","Category",forms.categories)
+          if(category.changed){
+            return category.value
+          }
+          role = Helpers.friendlyAJVError(tmp,"roles","Role",forms.roles)
+          if(role.changed){
+            return role.value
+          }        
+          form = Helpers.friendlyAJVError(tmp,"forms","Form",forms.forms)
+          if(form.changed){
+            tmp = form.value
+            field = Helpers.friendlyAJVError(tmp,"fields","Field",forms.forms[form.index].fields)
+            if(field.changed){
+              tmp = field.value
+              if(forms.forms[form.index].fields[field.index].tableFields){
+                tableField = Helpers.friendlyAJVError(tmp,"tableFields","TableField",forms.forms[form.index].fields[field.index].tableFields)
+                if(tableField.changed){
+                  return tableField.value
+                }    
+              }
+            }
+          }   
+        }catch(e){
+          logger.error(e)
+          return x
+        }     
+
+        return tmp
+
+      })
       logger.error(ajvMessages)
       throw `${ajvMessages.join("\r\n")}`
     }else{
