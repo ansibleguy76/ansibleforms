@@ -1230,16 +1230,21 @@ Awx.trackJob = function (job,jobid,counter,previousoutput,previousoutput2=undefi
                 // AWX has no incremental output, so we always need to substract previous output
                 // we substract the previous output
                 if(output && previousoutput){
+                    // does the previous output fit in the new
                     if(output.includes(previousoutput)){
                       output = output.substring(previousoutput.length)
                     }else{
                       if(output && previousoutput2){
+                        // here we have an output problem, the incremental of AWX can sometime deviate
+                        // and the last output was wrong, in this case we remove the last output from the db and take the second last output
+                        // as last reference.
                         incrementIssue=true
-                        logger.error("Incremental problem")
+                        // logger.error("Incremental problem")
                         output = output.substring(previousoutput2.length)
                       }
                     }
                 }
+                // the increment issue (if true) will remove the last entry before add the new (corrected) one.
                 return Job.printJobOutput(output,"stdout",jobid,++counter,incrementIssue)
                 .then((dbjobstatus)=>{
                   if(dbjobstatus && dbjobstatus=="abort"){
