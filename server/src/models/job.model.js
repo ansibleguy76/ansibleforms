@@ -1205,7 +1205,7 @@ Awx.launchTemplate = async function (template,ev,inventory,tags,limit,c,d,v,cred
   })
 
 };
-Awx.trackJob = function (job,jobid,counter,previousoutput,previousoutput2=undefined) {
+Awx.trackJob = function (job,jobid,counter,previousoutput,previousoutput2=undefined,lastrun=false) {
   return Awx.getConfig()
   .catch((err)=>{
     logger.error(err)
@@ -1260,7 +1260,7 @@ Awx.trackJob = function (job,jobid,counter,previousoutput,previousoutput2=undefi
                     })
                     return Promise.resolve("Abort requested")
                   }else{
-                    if(j.finished){
+                    if(j.finished && lastrun){
                       if(j.status==="successful"){
                         Job.endJobStatus(jobid,++counter,"stdout","success",`Successfully completed template ${j.name}`)
                         return Promise.resolve(true)
@@ -1278,10 +1278,13 @@ Awx.trackJob = function (job,jobid,counter,previousoutput,previousoutput2=undefi
                     }else{
                       // not finished, try again
                       return delay(1000).then(()=>{
-                        if(incrementIssue){
-                          return Awx.trackJob(j,jobid,++counter,o,previousoutput2)
+                        if(j.finished){
+                          logger.debug("Getting final stdout")
                         }
-                        return Awx.trackJob(j,jobid,++counter,o,previousoutput)
+                        if(incrementIssue){
+                          return Awx.trackJob(j,jobid,++counter,o,previousoutput2,j.finished)
+                        }
+                        return Awx.trackJob(j,jobid,++counter,o,previousoutput,j.finished)
                       })
                     }
                   }
