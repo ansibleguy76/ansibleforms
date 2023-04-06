@@ -190,8 +190,15 @@ Job.endJobStatus = (jobid,counter,stream,status,message) => {
       logger.error(error)
     })
 }
-Job.printJobOutput = (data,type,jobid,counter) => {
-    return Job.createOutput({output:data,output_type:type,job_id:jobid,order:counter})
+Job.printJobOutput = (data,type,jobid,counter,incrementIssue) => {
+    if(incrementIssue){
+      return Job.deleteOutput({job_id:jobid}).then(()=>{
+        return Job.createOutput({output:data,output_type:type,job_id:jobid,order:counter})
+      })
+    }else{
+      return Job.createOutput({output:data,output_type:type,job_id:jobid,order:counter})
+    }
+    
 }
 Job.abort = function (id) {
   logger.notice(`Aborting job ${id}`)
@@ -203,6 +210,11 @@ Job.abort = function (id) {
           throw "This job cannot be aborted"
       }
     })
+};
+Job.deleteOutput = function (record) {
+    // delete last output
+    return mysql.do("DELETE FROM AnsibleForms.`job_output` WHERE job_id=? ORDER BY `order` DESC LIMIT 1", [record.job_id])
+      .then((res)=>{})
 };
 Job.createOutput = function (record) {
   // logger.debug(`Creating job output`)
@@ -1193,7 +1205,7 @@ Awx.launchTemplate = async function (template,ev,inventory,tags,limit,c,d,v,cred
   })
 
 };
-Awx.trackJob = function (job,jobid,counter,previousoutput) {
+Awx.trackJob = function (job,jobid,counter,previousoutput,previousoutput2=undefined) {
   return Awx.getConfig()
   .catch((err)=>{
     logger.error(err)
@@ -1213,13 +1225,22 @@ Awx.trackJob = function (job,jobid,counter,previousoutput) {
             logger.debug(`awx job status : ` + j.status)
             return Awx.getJobTextOutput(job)
             .then((o)=>{
+                var incrementIssue=false
                 var output=o
-                // AWX has incremental output, but we always need to substract previous output
+                // AWX has no incremental output, so we always need to substract previous output
                 // we substract the previous output
                 if(output && previousoutput){
-                  output = output.substring(previousoutput.length)
+                    if(output.includes(previousoutput)){
+                      output = output.substring(previousoutput.length)
+                    }else{
+                      if(output && previousoutput2){
+                        incrementIssue=true
+                        logger.error("Incremental problem")
+                        output = output.substring(previousoutput2.length)
+                      }
+                    }
                 }
-                return Job.printJobOutput(output,"stdout",jobid,++counter)
+                return Job.printJobOutput(output,"stdout",jobid,++counter,incrementIssue)
                 .then((dbjobstatus)=>{
                   if(dbjobstatus && dbjobstatus=="abort"){
                     Job.printJobOutput("Abort requested","stderr",jobid,++counter)
@@ -1252,7 +1273,10 @@ Awx.trackJob = function (job,jobid,counter,previousoutput) {
                     }else{
                       // not finished, try again
                       return delay(1000).then(()=>{
-                        return Awx.trackJob(j,jobid,++counter,o)
+                        if(incrementIssue){
+                          return Awx.trackJob(j,jobid,++counter,o,previousoutput2)
+                        }
+                        return Awx.trackJob(j,jobid,++counter,o,previousoutput)
                       })
                     }
                   }
@@ -1294,7 +1318,9 @@ Awx.getJobTextOutput = function (job) {
         // prepare axiosConfig
         const axiosConfig = Awx.getAuthorization(awxConfig)
         return axios.get(awxConfig.uri + job.related.stdout + "?format=txt",axiosConfig)
-          .then((axiosresult)=>{ return axiosresult.data })
+          .then((axiosresult)=>{ 
+            return axiosresult.data 
+          })
 
       }
   })
