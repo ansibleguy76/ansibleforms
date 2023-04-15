@@ -9,10 +9,10 @@
         </p>
     </BulmaQuickView>
 
-    <div ref="container" class="container">
+    <div class="container">
       <div class="columns" v-if="formIsReady">
         <!-- form column -->
-        <div class="column is-clipped-horizontal">
+        <div ref="container" class="column is-clipped-horizontal">
           <!-- form title -->
           <h1 class="title">{{ currentForm.name }} <span v-if="currentForm.help" class="tag is-light is-clickable" @click="showHelp=!showHelp"><span class="icon has-text-info"><font-awesome-icon icon="question-circle" /></span><span v-if="showHelp">Hide help</span><span v-else>Show help</span></span></h1>
           <!-- help pane -->
@@ -225,6 +225,7 @@
                             :type="field.dateType"
                             value-type="format"
                             v-model="$v.form[field.name].$model"
+                            @change="evaluateDynamicFields(field.name)"
                         >
                               <template #input>
                                 <div :class="{'has-icons-left':!!field.icon}" class="control">
@@ -620,20 +621,22 @@
       }      
     },
     methods:{
+      // used for enum field, to know the width of the container
       calcContainerSize(){
         var rect=this.$refs["container"]?.getBoundingClientRect()
         if(rect){
           this.containerSize.x=rect.x
           this.containerSize.width=rect.width
         }
-
       },
+      // create a url with current values in embedded /-> experimental !
       getFormUrl(){
         var base64values=btoa(JSON.stringify(this.form))
         var url=`${location.protocol}//${location.host}/#/form/?form=${encodeURIComponent(this.currentForm.name)}&base64values=${base64values}`
 
         this.clip(url,true)
       },
+      // to execute form events
       doAction(a){
         var ref=this
         const action=Object.keys(a)[0]
@@ -670,6 +673,7 @@
           setTimeout(()=>{ref.hideForm=false},wait*1000)
         }
       },
+      // as the parent to rerender the form vue component
       reloadForm(){
         this.$emit('rerender')
       },
@@ -697,6 +701,7 @@
         Vue.set(this.fieldOptions[fieldname],'debug',value)   // flag editable
       },
       // forces any type to visible string
+      // used to visualize expressions
       stringify(v){
         if(v){
           if(Array.isArray(v)){
@@ -733,7 +738,7 @@
             && (el.hide!==true || ref.showHidden))
         });
       },
-      // creates a list of fields per group
+      // creates a list of fields per group & line
       filterfieldsByGroupAndLine(group,line){
         var ref=this
         return this.filterfieldsByGroup(group).filter(function (el) {
@@ -839,16 +844,40 @@
         // reset this field status
         // console.log(`[${fieldname}] reset`)
         this.setFieldStatus(fieldname,undefined)
+        this.initiateDefaults(fieldname)
         Vue.set(this.form,fieldname,this.defaults[fieldname])
       },
+      // reset all fields
       resetFields(){
         this.currentForm.fields.forEach((item, i) => {
           this.resetField(item.name)
         });
-
+      },
+      // new in 4.0.5
+      // instead of taking the default value, see if it needs to be evaluated
+      // allowing dynamic defaults
+      getDefaultValue(fieldname,value){
+        if(value!=undefined){
+          var _value = this.replacePlaceholderInString(value).value
+          // console.log(`${fieldname} -> ${value} -> ${_value}`)
+          if(this.fieldOptions[fieldname].evalDefault){
+            var r=undefined
+            try{
+              r=eval(_value)
+              return r
+            }catch(e){
+              console.log(`Error evaluating default value : ${e}`)
+            }
+          }else{
+            return _value
+          }       
+        }else{
+          return value
+        }
+ 
       },
       // load default value in field
-      defaultField(fieldname){
+      setFieldToDefault(fieldname){
         // reset to default value
         try{
           // if there is a default, set "default" status
@@ -868,6 +897,7 @@
           }
           // set default value
           Vue.set(this.form,fieldname,this.defaults[fieldname])
+         
         }catch(e){
           // this error should not hit, unless we have a bug
           console.log("Error: " + e)
@@ -901,15 +931,17 @@
         }
         return result
       },
+      // new in 4.0.5, we now allow dynamic defaults
       // first time run, load all the default values
-      initiateDefaults(){
+      initiateDefaults(fieldname=undefined){
         var ref=this
-        this.currentForm.fields.forEach((item,i) => {
+        this.currentForm.fields.filter(x => !fieldname || fieldname==x.name).forEach((item,i) => {
           if(item.name in ref.externalData){
             ref.defaults[item.name]=ref.externalData[item.name]
           }else{
-            ref.defaults[item.name]=item.default
-          }
+            // console.log(`defaulting ${item.name} -> ${item.default}`)
+            ref.defaults[item.name]=ref.getDefaultValue(item.name,item.default)
+          }      
         })
       },
       // add warnings for bad table values
@@ -920,8 +952,60 @@
         var i=(data.length>1)?"are":"is"
         this.warnings.push(`<span class="has-text-warning-dark">Table '${name}' has missing data</span><br><span>${c} '${data}' ${i} missing.</span>`)
       },
+      addDynamicFieldDependency(fields,field,foundfield){
+        var ref=this
+        var columnRegex = /(.+)\.(.+)/g;                                    // detect a "." in the field
+        var tmpArr=columnRegex.exec(foundfield)                             // found aaa.bbb
+        if(tmpArr && tmpArr.length>0){
+          // console.log("found dot in " + foundfield + " in " + field)
+          foundfield = tmpArr[1]                                            // aaa
+        }else{
+          // console.log("found no in " + foundfield + " in " + field)
+        }
+        foundfield=foundfield.replace(/\[[0-9]*\]/,'') // xxx[y] => xxx
+        if(fields.includes(foundfield)){                         // does field xxx exist in our form ?
+          //console.log(foundfield + " is a real field")
+          if(foundfield in ref.dynamicFieldDependencies){															 // did we declare it before ?
+            if(ref.dynamicFieldDependencies[foundfield].indexOf(field) === -1) {  // allready in there ?
+                ref.dynamicFieldDependencies[foundfield].push(field);												 // push it
+                if(foundfield==field){
+                  // we capture self references
+                  ref.warnings.push(`<span class="has-text-warning-dark">'${foundfield}' has a self reference</span><br><span>This will cause a racing condition</span>`)
+                  ref.$toast.error("You defined a self reference on field '"+foundfield+"'")
+                }
+            }
+          }else{
+            ref.dynamicFieldDependencies[foundfield]=[field]
+            if(foundfield==field){
+              // we capture self references
+              ref.warnings.push(`<span class="has-text-warning-dark">'${foundfield}' has a self reference</span><br><span>This will cause a racing condition</span>`)
+              ref.$toast.error("You defined a self reference on field '"+foundfield+"'")
+            }
+          }
+
+        }else{
+          // we capture bad references
+          if(!Object.keys(ref.form).includes(foundfield))
+            ref.warnings.push(`<span class="has-text-warning-dark">'${field}' has a reference to unknown field '${foundfield}'</span><br><span>Your form might not function as expected</span>`)
+        }
+      },
+      getPlaceholderMatches(fields,field,s){
+        var ref=this
+        var matches=[]
+        // console.log(typeof s)
+        if(s && typeof s=="string"){
+          var testRegex = /\$\(([^)]+)\)/g;
+          matches = s.matchAll(testRegex)
+        }
+        for(var match of matches){
+          // foundmatch = match[0];                                              // found $(xxx)
+          var foundfield = match[1];                                              // found xxx
+          ref.addDynamicFieldDependency(fields,field,foundfield)
+        }        
+      },
       // Find variable devDependencies
       // we analyse which fields are dependent on others
+      // if they change, we then know which other fields to re-evaluate
       findVariableDependencies(){
         var ref=this
         var watchdog=0
@@ -941,6 +1025,7 @@
         })
         // do the analysis
         this.currentForm.fields.forEach((item,i) => {
+          // while we are looping, we also check if there are issues
           if(item.dependencies){
             item.dependencies.forEach((dep)=>{
               if(!(fields.includes(dep.name) || ( dep.name.startsWith("!") && fields.includes(dep.name.slice(1))  ))){
@@ -957,55 +1042,17 @@
           if(item.sameAs && !fields.includes(item.sameAs)){
             ref.warnings.push(`<span class="has-text-warning-dark">'${item.name}' has bad 'sameAs' validation</span><br><span>${item.sameAs} is not a valid field name</span>`)
           }
-          if(["expression","query","enum","table"].includes(item.type)){
 
-            // query type is now deprecated
-            if(item.type=='query'){
-              ref.warnings.push(`<span class="has-text-warning-dark">'${item.name}' has the deprecated query type</span><br><span>Use enum type instead.</span>`)            
-            }
-            
-            var testRegex = /\$\(([^)]+)\)/g;
-            var matches=(item.expression || item.query || "").matchAll(testRegex);
-            for(var match of matches){
-              foundmatch = match[0];                                              // found $(xxx)
-              foundfield = match[1];                                              // found xxx
-              var columnRegex = /(.+)\.(.+)/g;                                    // detect a "." in the field
-              var tmpArr=columnRegex.exec(foundfield)                             // found aaa.bbb
-              if(tmpArr && tmpArr.length>0){
-                // console.log("found dot in " + foundfield + " in " + item.name)
-                foundfield = tmpArr[1]                                            // aaa
-              }else{
-                // console.log("found no in " + foundfield + " in " + item.name)
-              }
-              foundfield=foundfield.replace(/\[[0-9]*\]/,'') // xxx[y] => xxx
-              if(fields.includes(foundfield)){                         // does field xxx exist in our form ?
-                //console.log(foundfield + " is a real field")
-                if(foundfield in ref.dynamicFieldDependencies){															 // did we declare it before ?
-                  if(ref.dynamicFieldDependencies[foundfield].indexOf(item.name) === -1) {  // allready in there ?
-                      ref.dynamicFieldDependencies[foundfield].push(item.name);												 // push it
-                      if(foundfield==item.name){
-                        // we capture self references
-                        ref.warnings.push(`<span class="has-text-warning-dark">'${foundfield}' has a self reference</span><br><span>This will cause a racing condition</span>`)
-                        ref.$toast.error("You defined a self reference on field '"+foundfield+"'")
-                      }
-                  }
-                }else{
-                  ref.dynamicFieldDependencies[foundfield]=[item.name]
-                  if(foundfield==item.name){
-                    // we capture self references
-                    ref.warnings.push(`<span class="has-text-warning-dark">'${foundfield}' has a self reference</span><br><span>This will cause a racing condition</span>`)
-                    ref.$toast.error("You defined a self reference on field '"+foundfield+"'")
-                  }
-                }
-
-              }else{
-                // we capture bad references
-                if(!Object.keys(ref.form).includes(foundfield))
-                  ref.warnings.push(`<span class="has-text-warning-dark">'${item.name}' has a reference to unknown field '${foundfield}'</span><br><span>Your form might not function as expected</span>`)
-              }
-            }
+          // query type is now deprecated
+          if(item.type=='query'){
+            ref.warnings.push(`<span class="has-text-warning-dark">'${item.name}' has the deprecated query type</span><br><span>Use enum type instead.</span>`)            
           }
+
+          this.getPlaceholderMatches(fields,item.name,item.expression ?? item.query)
+          this.getPlaceholderMatches(fields,item.name,item.default)
+ 
         })
+        // check self references
         while(!finishedFlag){
           finishedFlag=true
           temp = JSON.parse(JSON.stringify(ref.dynamicFieldDependencies));   // copy dependencies to temp
@@ -1093,6 +1140,9 @@
         var keys = undefined
         var targetflag=undefined
         var hasPlaceholders = false;
+        if(typeof value!=="string"){
+          return value
+        }
         // console.log("item = " + value)
         // console.log(typeof value)
         // console.log(testRegex)
@@ -1118,12 +1168,14 @@
             if(foundfield in ref.form){      // does field xxx exist in our form ?
               if(ref.fieldOptions[foundfield] && ["expression","table"].includes(ref.fieldOptions[foundfield].type) && (typeof ref.form[foundfield]=="object")){
                 // objects and array should be stringified
-                //fieldvalue=JSON.stringify(ref.form[foundfield])
-                //console.log(Helpers.replacePlaceholders(match[1],ref.form))
+                fieldvalue=JSON.stringify(ref.form[foundfield])
+                // console.log(Helpers.replacePlaceholders(match[1],ref.form))
                 fieldvalue=JSON.stringify(Helpers.replacePlaceholders(match[1],ref.form)) // allow full object reference
                 // drop wrapping quotes
                 if(typeof fieldvalue=="string"){ // drop quotes if string
                   fieldvalue=fieldvalue.replace(/^\"+/, '').replace(/\"+$/, ''); // eslint-disable-line
+                }else{
+                  // console.log(typeof fieldvalue)
                 }
               }else{
                 // other fields, grab a valid value
@@ -1356,7 +1408,7 @@
                           //console.log("Local eval failed : " + err)
                           Vue.set(ref.queryerrors, item.name,err);
                           try{
-                            ref.defaultField(item.name)
+                            ref.setFieldToDefault(item.name)
                           }catch(err){
                             ref.stopLoop("Defaulting " + item.name)
                           }
@@ -1392,7 +1444,7 @@
                               // expression returned undefined, so lets set to default if we have one
                               if(restresult.data.output==undefined && (ref.defaults[item.name]!=undefined)){
                                 if(item.type=="expression"){
-                                  ref.defaultField(item.name)
+                                  ref.setFieldToDefault(item.name)
                                 }else{
                                   ref.resetField(item.name)
                                 }
@@ -1412,7 +1464,7 @@
                           }).catch(function (error) {
                                 // console.log('Error ' + error.message)
                                 try{
-                                  ref.defaultField(item.name)
+                                  ref.setFieldToDefault(item.name)
                                 }catch(err){
                                   ref.stopLoop("Defaulting " + item.name)
                                 }
@@ -1423,7 +1475,7 @@
 
                   }else{
                     // console.log(item.name + " is not evaluated yet");
-                    ref.defaultField(item.name)
+                    ref.setFieldToDefault(item.name)
                   }
                 } else if(item.query && flag==undefined){
                    // console.log("eval query : " + item.name)
@@ -1445,7 +1497,7 @@
                         if(restresult.status=="error"){
                            //console.log(restresult.data.error)
                            if(item.type=="expression"){
-                             ref.defaultField(item.name)
+                             ref.setFieldToDefault(item.name)
                            }else{
                              ref.resetField(item.name)
                            }
@@ -1471,7 +1523,7 @@
                           // console.log('Error ' + err.message)
                           try{
                             if(item.type=="expression"){
-                              ref.defaultField(item.name)
+                              ref.setFieldToDefault(item.name)
                             }else{
                               ref.resetField(item.name)
                             }
@@ -1486,7 +1538,7 @@
                     //console.log(item.name + " is not evaluated yet");
                     try{
                       if(item.type=="expression"){
-                        ref.defaultField(item.name)
+                        ref.setFieldToDefault(item.name)
                       }else{
                         ref.resetField(item.name)
                       }
@@ -1497,7 +1549,7 @@
                 }
               }else{  // not visible field
                 if(item.type=="expression"){
-                  ref.defaultField(item.name)
+                  ref.setFieldToDefault(item.name)
                 }else if(item.type=="query" || item.type=="enum" || item.type=="table"){
                   // console.log("resetting " + item.name)
                   ref.resetField(item.name)
@@ -1573,6 +1625,7 @@
       },
       // trigger this when a field has changed and we need to see if it has an impact.
       evaluateDynamicFields(fieldname) {
+          // console.log(`${fieldname} changed`)
           var ref=this;
           // console.log(`[${fieldname}] eval trigger`)
           // if this field is dependency
@@ -1910,8 +1963,10 @@
             }
             Vue.set(ref.externalData,item.name,queryValue)
           }
+          Vue.set(ref.fieldOptions,item.name,{})                                // storing some easy to find options
+          Vue.set(ref.fieldOptions[item.name],"evalDefault",item.evalDefault??false)
           if(["expression","query","enum","table"].includes(item.type)){
-            Vue.set(ref.fieldOptions,item.name,{})                                // storing some easy to find options
+            
             Vue.set(ref.fieldOptions[item.name],"valueColumn",item.valueColumn||"")
             Vue.set(ref.fieldOptions[item.name],"placeholderColumn",item.placeholderColumn||"")
             Vue.set(ref.fieldOptions[item.name],"type",item.type)
@@ -1919,7 +1974,7 @@
             if(item.refresh && typeof item.refresh=='string' && /[0-9]+s/.test(item.refresh)){
               Vue.set(ref.fieldOptions[item.name],"refresh",item.refresh)
             }
-            Vue.set(ref.form,item.name,ref.externalData[item.name]??item.default)
+            Vue.set(ref.form,item.name,ref.externalData[item.name]??this.getDefaultValue(item.name,item.default))
             if(item.type=="table" && !ref.defaults[item.name]){
               Vue.set(ref.form,item.name,[])
             }
@@ -1927,9 +1982,9 @@
               Vue.set(ref.form,item.name,ref.externalData[item.name])
             }
           }else if(["checkbox"].includes(item.type)){
-            Vue.set(ref.form,item.name,ref.externalData[item.name]??item.default??false)
+            Vue.set(ref.form,item.name,ref.externalData[item.name]??this.getDefaultValue(item.name,item.default)??false)
           }else{
-            Vue.set(ref.form,item.name,ref.externalData[item.name]??item.default??"")
+            Vue.set(ref.form,item.name,ref.externalData[item.name]??this.getDefaultValue(item.name,item.default)??"")
           }
           Vue.set(ref.visibility,item.name,true)
         });

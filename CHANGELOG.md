@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -  Allow awx connection with username and password
 -  Added about me for 
 -  Added new env var with regex to filter job output
+-  Default property can now hold placeholders
+-  New property evalDefault (bool) can evaluate default as javascript
 
 ### Changed
 
@@ -21,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -  Non admin can see their own approve jobs
 -  Wrong stdout with AWX sometimes
+-  timedate field change event missing
+-  dropdown under extravars
 
 ## [4.0.3] - 2023-03-06
 
