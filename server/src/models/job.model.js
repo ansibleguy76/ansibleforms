@@ -16,7 +16,8 @@ const ansibleConfig = require('./../../config/ansible.config');
 const mysql = require('./db.model')
 const RestResult = require('./restResult.model')
 const Form = require('./form.model')
-const Credential = require('./credential.model')
+const Credential = require('./credential.model');
+const { getAuthorization } = require('./awx.model');
 const inspect = require('util').inspect;
 
 const httpsAgent = new https.Agent({
@@ -189,8 +190,15 @@ Job.endJobStatus = (jobid,counter,stream,status,message) => {
       logger.error(error)
     })
 }
-Job.printJobOutput = (data,type,jobid,counter) => {
-    return Job.createOutput({output:data,output_type:type,job_id:jobid,order:counter})
+Job.printJobOutput = (data,type,jobid,counter,incrementIssue) => {
+    if(incrementIssue){
+      return Job.deleteOutput({job_id:jobid}).then(()=>{
+        return Job.createOutput({output:data,output_type:type,job_id:jobid,order:counter})
+      })
+    }else{
+      return Job.createOutput({output:data,output_type:type,job_id:jobid,order:counter})
+    }
+    
 }
 Job.abort = function (id) {
   logger.notice(`Aborting job ${id}`)
@@ -202,6 +210,11 @@ Job.abort = function (id) {
           throw "This job cannot be aborted"
       }
     })
+};
+Job.deleteOutput = function (record) {
+    // delete last output
+    return mysql.do("DELETE FROM AnsibleForms.`job_output` WHERE job_id=? ORDER BY `order` DESC LIMIT 1", [record.job_id])
+      .then((res)=>{})
 };
 Job.createOutput = function (record) {
   // logger.debug(`Creating job output`)
@@ -986,6 +999,7 @@ Ansible.launch=(playbook,ev,inv,tags,limit,c,d,v,k,credentials,jobid,counter,app
 // awx stuff, interaction with awx
 var Awx = function(){}
 Awx.getConfig = require('./awx.model').getConfig
+Awx.getAuthorization= require('./awx.model').getAuthorization
 Awx.abortJob = function (id, next) {
 
   Awx.getConfig()
@@ -993,12 +1007,7 @@ Awx.abortJob = function (id, next) {
 
       var message=""
       logger.info(`aborting awx job ${id}`)
-      const axiosConfig = {
-        headers: {
-          Authorization:"Bearer " + awxConfig.token
-        },
-        httpsAgent: getHttpsAgent(awxConfig)
-      }
+      const axiosConfig = getAuthorization(awxConfig)
       // we first need to check if we CAN cancel
       axios.get(awxConfig.uri + "/api/v2/jobs/" + id + "/cancel/",axiosConfig)
         .then((axiosnext)=>{
@@ -1156,12 +1165,7 @@ Awx.launchTemplate = async function (template,ev,inventory,tags,limit,c,d,v,cred
         throw message
       }else{
         // prepare axiosConfig
-        const axiosConfig = {
-          headers: {
-            Authorization:"Bearer " + awxConfig.token
-          },
-          httpsAgent: getHttpsAgent(awxConfig)
-        }
+        const axiosConfig = Awx.getAuthorization(awxConfig)
         logger.debug("Lauching awx with data : " + JSON.stringify(postdata))
         // launch awx job
         return axios.post(awxConfig.uri + template.related.launch,postdata,axiosConfig)
@@ -1201,7 +1205,7 @@ Awx.launchTemplate = async function (template,ev,inventory,tags,limit,c,d,v,cred
   })
 
 };
-Awx.trackJob = function (job,jobid,counter,previousoutput) {
+Awx.trackJob = function (job,jobid,counter,previousoutput,previousoutput2=undefined,lastrun=false) {
   return Awx.getConfig()
   .catch((err)=>{
     logger.error(err)
@@ -1212,12 +1216,7 @@ Awx.trackJob = function (job,jobid,counter,previousoutput) {
       var message=""
       logger.info(`searching for job with id ${job.id}`)
       // prepare axiosConfig
-      const axiosConfig = {
-        headers: {
-          Authorization:"Bearer " + awxConfig.token
-        },
-        httpsAgent: getHttpsAgent(awxConfig)
-      }
+      const axiosConfig = Awx.getAuthorization(awxConfig)
       return axios.get(awxConfig.uri + job.url,axiosConfig)
         .then((axiosresult)=>{
           var j = axiosresult.data;
@@ -1226,13 +1225,27 @@ Awx.trackJob = function (job,jobid,counter,previousoutput) {
             logger.debug(`awx job status : ` + j.status)
             return Awx.getJobTextOutput(job)
             .then((o)=>{
+                var incrementIssue=false
                 var output=o
-                // AWX has incremental output, but we always need to substract previous output
+                // AWX has no incremental output, so we always need to substract previous output
                 // we substract the previous output
                 if(output && previousoutput){
-                  output = output.substring(previousoutput.length)
+                    // does the previous output fit in the new
+                    if(output.includes(previousoutput)){
+                      output = output.substring(previousoutput.length)
+                    }else{
+                      if(output && previousoutput2){
+                        // here we have an output problem, the incremental of AWX can sometime deviate
+                        // and the last output was wrong, in this case we remove the last output from the db and take the second last output
+                        // as last reference.
+                        incrementIssue=true
+                        // logger.error("Incremental problem")
+                        output = output.substring(previousoutput2.length)
+                      }
+                    }
                 }
-                return Job.printJobOutput(output,"stdout",jobid,++counter)
+                // the increment issue (if true) will remove the last entry before add the new (corrected) one.
+                return Job.printJobOutput(output,"stdout",jobid,++counter,incrementIssue)
                 .then((dbjobstatus)=>{
                   if(dbjobstatus && dbjobstatus=="abort"){
                     Job.printJobOutput("Abort requested","stderr",jobid,++counter)
@@ -1247,7 +1260,7 @@ Awx.trackJob = function (job,jobid,counter,previousoutput) {
                     })
                     return Promise.resolve("Abort requested")
                   }else{
-                    if(j.finished){
+                    if(j.finished && lastrun){
                       if(j.status==="successful"){
                         Job.endJobStatus(jobid,++counter,"stdout","success",`Successfully completed template ${j.name}`)
                         return Promise.resolve(true)
@@ -1265,7 +1278,13 @@ Awx.trackJob = function (job,jobid,counter,previousoutput) {
                     }else{
                       // not finished, try again
                       return delay(1000).then(()=>{
-                        return Awx.trackJob(j,jobid,++counter,o)
+                        if(j.finished){
+                          logger.debug("Getting final stdout")
+                        }
+                        if(incrementIssue){
+                          return Awx.trackJob(j,jobid,++counter,o,previousoutput2,j.finished)
+                        }
+                        return Awx.trackJob(j,jobid,++counter,o,previousoutput,j.finished)
                       })
                     }
                   }
@@ -1305,14 +1324,11 @@ Awx.getJobTextOutput = function (job) {
           return job.status
         }
         // prepare axiosConfig
-        const axiosConfig = {
-          headers: {
-            Authorization:"Bearer " + awxConfig.token
-          },
-          httpsAgent: getHttpsAgent(awxConfig)
-        }
+        const axiosConfig = Awx.getAuthorization(awxConfig)
         return axios.get(awxConfig.uri + job.related.stdout + "?format=txt",axiosConfig)
-          .then((axiosresult)=>{ return axiosresult.data })
+          .then((axiosresult)=>{ 
+            return axiosresult.data 
+          })
 
       }
   })
@@ -1327,12 +1343,7 @@ Awx.findJobTemplateByName = function (name) {
       var message=""
       logger.info(`searching job template ${name}`)
       // prepare axiosConfig
-      const axiosConfig = {
-        headers: {
-          Authorization:"Bearer " + awxConfig.token
-        },
-        httpsAgent: getHttpsAgent(awxConfig)
-      }
+      const axiosConfig = Awx.getAuthorization(awxConfig)
       return axios.get(awxConfig.uri + "/api/v2/job_templates/?name=" + encodeURI(name),axiosConfig)
         .then((axiosresult)=>{
           var job_template = axiosresult.data.results.find(function(jt, index) {
@@ -1376,12 +1387,7 @@ Awx.findCredentialByName = function (name) {
       const httpsAgent = new https.Agent({
         rejectUnauthorized: false
       })
-      const axiosConfig = {
-        headers: {
-          Authorization:"Bearer " + awxConfig.token
-        },
-        httpsAgent:httpsAgent
-      }
+      const axiosConfig = Awx.getAuthorization(awxConfig)
       return axios.get(awxConfig.uri + "/api/v2/credentials/?name=" + encodeURI(name),axiosConfig)
         .then((axiosresult)=>{
           var credential = axiosresult.data.results.find(function(jt, index) {
@@ -1412,12 +1418,7 @@ Awx.findCredentialsByTemplate = function (id) {
       const httpsAgent = new https.Agent({
         rejectUnauthorized: false
       })
-      const axiosConfig = {
-        headers: {
-          Authorization:"Bearer " + awxConfig.token
-        },
-        httpsAgent:httpsAgent
-      }
+      const axiosConfig = Awx.getAuthorization(awxConfig)
       return axios.get(awxConfig.uri + "/api/v2/job_templates/"+id+"/credentials/",axiosConfig)
         .then((axiosresult)=>{
           if(axiosresult.data?.results?.length){
@@ -1444,12 +1445,7 @@ Awx.findInventoryByName = function (name) {
       const httpsAgent = new https.Agent({
         rejectUnauthorized: false
       })
-      const axiosConfig = {
-        headers: {
-          Authorization:"Bearer " + awxConfig.token
-        },
-        httpsAgent:httpsAgent
-      }
+      const axiosConfig = Awx.getAuthorization(awxConfig)
       return axios.get(awxConfig.uri + "/api/v2/inventories/?name=" + encodeURI(name),axiosConfig)
         .then((axiosresult)=>{
           var inventory = axiosresult.data.results.find(function(jt, index) {

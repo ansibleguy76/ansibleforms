@@ -1,6 +1,7 @@
 const Certinfo=require("cert-info")
 const restResult=require("../models/restResult.model")
 const logger=require("./logger")
+const config=require("../../config/app.config")
 var Helpers = function(){
 
 }
@@ -111,6 +112,29 @@ Helpers.findExtravar =(data,expr)=>{
   },data);
   return outputValue
 }
+Helpers.friendlyAJVError= (e,property,label,o)=>{
+  const re= new RegExp(`${property}\\[([0-9]+)\\][.]*`)
+  const matches = e.match(re)    
+  var value = `${e}`
+  var changed = false
+  var result={}
+  var index=-1
+  var name=""
+  if(matches && matches.length>1){
+    index = parseInt(matches[1])
+    name = o[index].name || o[index].label || (index+1)
+    value = e.replace(matches[0], `${label} '${name}', `)
+    changed = true
+  }   
+
+  result = {
+    changed,
+    value,
+    index,
+    name
+  }
+  return result
+}
 Helpers.formatOutput = (records,asText)=>{
   var output=[] // => is final output array
   if(asText){
@@ -124,6 +148,7 @@ Helpers.formatOutput = (records,asText)=>{
   }
   // not as text, so we need to colorize
   // loop all records
+  var filterOutput=false
   records.forEach(function(el){
     var line
     var addedTimestamp=false
@@ -131,9 +156,9 @@ Helpers.formatOutput = (records,asText)=>{
     var lineoutput=[]
     var record = el.output.trim('\r\n').replace(/\r/g,'') // => first generalize linefeeds
     var lines = record.split('\n') // => break record if multiple lines
-
     var previousformat="" // => a string to hold the format of a previous line in case multiline
     var matchfound=false
+
     lines.forEach((line,i)=>{ // loop lines
       matchfound=false // => a flag to check if previous line was changed
       if(el.output_type=="stderr"){ // if it was in the error stream
@@ -147,53 +172,53 @@ Helpers.formatOutput = (records,asText)=>{
           matchfound=true
           line = "<span class='has-text-danger'>"+line+"</span>"
         }
-        lineoutput.push(line)
       }else{ // regular output stream
         if(line.match(/^\[WARNING\].*/g)){ // warnings
           previousformat="warning"
           matchfound=true
           line = "<span class='has-text-warning'>"+line+"</span>"
-        }
-        if(line.match(/^\[ERROR\].*/g)){ // errors
+        }else if(line.match(/^\[ERROR\].*/g)){ // errors
           previousformat="danger"
           matchfound=true
           line = "<span class='has-text-danger'>"+line+"</span>"
-        }
-        // mark play / task lines as bold
-        if(line.match(/^([A-Z\s]*)[^\*]*(\*+)$/g)){ // task line with ****
+        }else if(line.match(/^([A-Z\s]*)[^\*]*(\*+)$/g)){ // task line with **** // mark play / task lines as bold
           previousformat=""
           matchfound=true
           if(i>1){
-            line = "<strong>" + line + "</strong>"
+            line = "<span class='has-text-weight-bold'>" + line + "</span>"
           }else{
             // it's a fresh line/// ansible output assumed
-            line = "\n<strong>" + line + "</strong>"
+            line = "\n<span class='has-text-weight-bold'>" + line + "</span>"
           }
-        }
-        // mark succes lines
-        if(line.match(/^(ok): \[([^\]]*)\].*/g)){
+          // if task line matches filter regex, register this task as low
+          var filter=new RegExp(config.filterJobOutputRegex,"i")
+          if(line.match(filter)){
+            filterOutput=true
+          }else{
+            filterOutput=false
+          }
+        }else if(line.match(/^(ok): \[([^\]]*)\].*/g)){ // mark succes lines
           matchfound=true
           previousformat="success"
           line = "<span class='has-text-success'>" + line + "</span>"
-        }
-        // mark change lines
-        if(line.match(/^(changed): \[([^\]]*)\].*/g)){
+        }else if(line.match(/^(changed): \[([^\]]*)\].*/g)){ // mark change lines
           previousformat="warning"
           matchfound=true
           line = "<span class='has-text-warning'>" + line + "</span>"
-        }
-        // mark skip lines
-        if(line.match(/^(skipping): \[([^\]]*)\].*/g)){
+        }else if(line.match(/^(skipping): \[([^\]]*)\].*/g)){ // mark skip lines
           previousformat="info"
           matchfound=true
           line = "<span class='has-text-info'>" + line + "</span>"
-        }
-        // if line continues on next line, give same format
-        if(!matchfound && previousformat){
+        }else if(!matchfound && previousformat && line && line.trim()!='\r\n' && line.trim()){ // if line continues on next line, give same format
           line = `<span class='has-text-${previousformat}'>${line}</span>`
-        }
+        }else{
+          if(line && line.trim()!='\r\n' && line.trim()){  // is text ? 
+            line = `<span class=''>${line}</span>` // then wrap in span
+          }
+        }        
         // summary line ?
         if(line.match('ok=.*failed.*')){
+          hide=false
           matchfound=true
           previousformat=""
           line=line.replace(/(ok=[1-9]+[0-9]*)/g, "<span class='tag is-success'>$1</span>")
@@ -202,6 +227,9 @@ Helpers.formatOutput = (records,asText)=>{
                       .replace(/(unreachable=[1-9]+[0-9]*)/g, "<span class='tag is-warning'>$1</span>")
                       .replace(/(skipped=[1-9]+[0-9]*)/g, "<span class='tag is-info'>$1</span>")
         }
+        if(filterOutput){
+          line=line.replace(/class='/g,"class='low ")
+        }
         lineoutput.push(line)
       }
     }) // end line loop
@@ -209,7 +237,12 @@ Helpers.formatOutput = (records,asText)=>{
     // we push it in the intermediate output array
     lineoutput.forEach(function(el2,i){
       if(el2!="" && !addedTimestamp){ // we only add timestamp to first non-empty line
-        el2+=" <span class='tag is-info is-light'>"+el.timestamp+"</span>"
+        if(el2.includes("class='low")){
+          el2+=" <span class='low tag is-info is-light'>"+el.timestamp+"</span>"
+        }else{
+          el2+=" <span class='tag is-info is-light'>"+el.timestamp+"</span>"
+        }
+        
         addedTimestamp=true
       }
       output2.push(el2)

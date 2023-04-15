@@ -17,7 +17,7 @@
                 <img :src="form.image" alt="Image">
               </figure>
               <span v-if="form.icon" class="icon is-large">
-                <font-awesome-icon class="fa-3x has-text-grey" :icon="form.icon" />
+                <font-awesome-icon class="fa-3x has-text-grey" :icon="(form.icon.includes(','))?(form.icon.split(',')):(form.icon)" />
               </span>
             </div>
             <div class="media-content">

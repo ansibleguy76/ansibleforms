@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "description": "This is the swagger interface for AnsibleForms.\r\nUse the `/auth/login` api with basic authentication to obtain a JWT token.\r\nThen use the access token, prefixed with the word '**Bearer**' to use all other api's.\r\nNote that the access token is limited in time.  You can then either login again and get a new set of tokens or use the `/token` api and the refresh token to obtain a new set (preferred).",
-    "version": "4.0.3",
+    "version": "4.0.5",
     "title": "AnsibleForms",
     "contact": {
       "email": "info@ansibleforms.com"
@@ -704,7 +704,10 @@
                 "data": {
                   "output": {
                     "uri": "http://10.0.0.1",
-                    "token": "***** secret awx token *****"
+                    "token": "***** secret awx token *****",
+                    "use_credentials": false,
+                    "username": "admin",
+                    "password": "***** secret awx password *****"
                   },
                   "error": ""
                 }
@@ -743,7 +746,19 @@
                 "token": {
                   "type": "string",
                   "example": "MySecretTokenForAWX"
-                }
+                },
+                "use_credentials":{
+                  "type": "boolean",
+                  "example": false
+                },
+                "username": {
+                  "type": "string",
+                  "example": "MyUsernameForAWX"
+                },
+                "password": {
+                  "type": "string",
+                  "example": "MySecretPasswordForAWX"
+                }                                
               }
             }
           }
@@ -801,7 +816,19 @@
                 "token": {
                   "type": "string",
                   "example": "MySecretTokenForAWX"
-                }
+                },
+                "use_credentials":{
+                  "type": "boolean",
+                  "example": false
+                },
+                "username": {
+                  "type": "string",
+                  "example": "MyUsernameForAWX"
+                },
+                "password": {
+                  "type": "string",
+                  "example": "MySecretPasswordForAWX"
+                }  
               }
             }
           }

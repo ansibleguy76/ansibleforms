@@ -26,6 +26,10 @@ function getHttpsAgent(awxConfig){
 // constructor for awx config
 var Awx=function(awx){
     this.uri = awx.uri;
+    this.use_credentials = (awx.use_credentials)?1:0;
+    this.username = awx.username;
+    // in case someone passes password through the api
+    this.password = encrypt(awx.password);
     this.token = encrypt(awx.token);
     this.ignore_certs = (awx.ignore_certs)?1:0;
     this.ca_bundle = awx.ca_bundle;
@@ -61,9 +65,15 @@ Awx.find = function() {
         try{
           res[0].token=decrypt(res[0].token)
         }catch(e){
-          logger.error("Couldn't decrypt awx token, did the secretkey change ?")
+          // logger.error("Couldn't decrypt awx token, did the secretkey change ?")
           res[0].token=""
         }
+        try{
+          res[0].password=decrypt(res[0].password)
+        }catch(e){
+          // logger.error("Couldn't decrypt awx token, did the secretkey change ?")
+          res[0].password=""
+        }        
         return res[0]
       }else{
         logger.error("No awx record in the database, something is wrong")
@@ -72,14 +82,32 @@ Awx.find = function() {
     })
 
 };
+Awx.getAuthorization= function(awxConfig,encrypted=false){
+  var axiosConfig = {}
+  if(awxConfig.use_credentials){
+    // logger.debug('Using credentials and basic authentication')
+    var upw = `${awxConfig.username}:${(encrypted)?decrypt(awxConfig.password):awxConfig.password}`
+    axiosConfig = {
+      headers: {
+        Authorization:`Basic ${Buffer.from(upw).toString('base64')}`
+      },
+      httpsAgent: getHttpsAgent(awxConfig)
+    }
+  }else{
+    // logger.debug('Using token')
+    axiosConfig = {
+      headers: {
+        Authorization:`Bearer ${(encrypted)?decrypt(awxConfig.token):awxConfig.token}`
+      },
+      httpsAgent: getHttpsAgent(awxConfig)
+    }    
+  }
+  return axiosConfig
+}
+
 Awx.check = function (awxConfig) {
   logger.info(`Checking AWX connection`)
-  const axiosConfig = {
-    headers: {
-      Authorization:"Bearer " + decrypt(awxConfig.token)
-    },
-    httpsAgent: getHttpsAgent(awxConfig)
-  }
+  const axiosConfig = Awx.getAuthorization(awxConfig,true)
   return axios.get(awxConfig.uri + "/api/v2/job_templates/",axiosConfig)
     .then((axiosresult)=>{
       if(axiosresult?.data?.results){

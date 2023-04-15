@@ -64,8 +64,8 @@
                 <span v-if="j.status!='running'&&j.status!='aborting'&&j.status!='abort'" class="icon has-text-info is-clickable" @click="tempJobId=j.id;showRelaunch=true" title="Relaunch job"><font-awesome-icon icon="redo" /></span>
                 <span v-if="j.status && (j.status=='running')" class="icon has-text-warning is-clickable" @click="tempJobId=j.id;showAbort=true" title="Abort job"><font-awesome-icon icon="ban" /></span>
                 <span v-if="j.status!='running' && j.status!='aborting' || isAdmin" class="icon has-text-danger is-clickable" @click="tempJobId=j.id;showDelete=true" title="Delete job"><font-awesome-icon icon="trash-alt" /></span>
-                <span v-if="j.status=='approve'" class="icon has-text-success is-clickable" @click="showApproval(j.id)" title="Approve job"><font-awesome-icon icon="circle-check" /></span>
-                <span v-if="j.status=='approve'" class="icon has-text-danger is-clickable" @click="showApproval(j.id,true)" title="Reject job"><font-awesome-icon icon="circle-xmark" /></span>
+                <span v-if="j.status=='approve' && approvalAllowed(j)" class="icon has-text-success is-clickable" @click="showApproval(j.id)" title="Approve job"><font-awesome-icon icon="circle-check" /></span>
+                <span v-if="j.status=='approve' && approvalAllowed(j)" class="icon has-text-danger is-clickable" @click="showApproval(j.id,true)" title="Reject job"><font-awesome-icon icon="circle-xmark" /></span>
               </td>
               <td class="is-clickable has-text-left" @click="(j.job_type=='multistep')?toggleCollapse(j.id):loadOutput(j.id)">
                 <span>{{j.id}}</span>
@@ -118,23 +118,29 @@
               </span>
               <span>Show Extravars</span>
             </button>
-            <button @click="loadOutput(jobId)" v-if="jobId" class="button is-light is-small">
+            <button @click="loadOutput(jobId)" v-if="jobId" class="button is-light mr-3 is-small">
               <span class="icon has-text-info">
                 <font-awesome-icon icon="sync-alt" />
               </span>
               <span>Refresh</span>
             </button>
+            <button @click="hide=!hide" v-if="jobId" class="button is-light is-small">
+              <span class="icon has-text-info">
+                <font-awesome-icon icon="eye-slash" />
+              </span>
+              <span v-text="(hide)?'Remove filter':'Apply filter'"></span>
+            </button>            
 
             <div class="box mt-3">
               <div class="columns">
                 <div v-if="job" class="column">
                   <h3 v-if="subjobId" class="subtitle">Main job (jobid {{jobId}})  <span class="tag" :class="jobClass(job.status)">{{ job.status}}</span></h3>
-                  <pre v-if="job.output" v-html="job.output"></pre>
+                  <div class="pre" v-if="job.output" :class="(hide)?'hidelow':''" v-html="filteredJobOutput"></div>
                 </div>
                 <div v-if="subjobId && subjob && !showExtraVars" class="column">
                   <h3 class="subtitle">Current step (jobid {{subjobId}})  <span class="tag" :class="jobClass(subjob.status)">{{ subjob.status}}</span></h3>
-                  <pre v-if="subjob.output" v-html="subjob.output"></pre>
-                  <pre v-else><font-awesome-icon icon="spinner" spin /></pre>
+                  <div class="pre" v-if="subjob.output" :class="(hide)?'hidelow':''" v-html="filteredSubJobOutput"></div>
+                  <div class="pre" v-else><font-awesome-icon icon="spinner" spin /></div>
                 </div>
               </div>
             </div>
@@ -207,7 +213,8 @@
         interval2:undefined,
         lines:500,
         noOfRecords:0,
-        filter:""
+        filter:"",
+        hide:false
       }
     },
     watch:{
@@ -228,6 +235,20 @@
           this.$toast.error("Error copying to clipboard : \n" + e)
         }
       },
+      approvalAllowed(job){
+        var ref=this
+        if(ref.profile?.roles?.includes("admin"))return true
+        if(!job.approval)return true
+        // not admin and approval - lets check access
+        var approval=JSON.parse(job.approval)
+        var access = approval?.roles?.filter(role => ref.profile?.roles?.includes(role))
+        if(access?.length>0){
+          return true
+        }else {
+          return false
+        }        
+
+      },      
       getJob(id){
         this.$router.push({ name:'JobLog', params: { id } }).catch((e)=>{})
       },
@@ -532,21 +553,14 @@
       }
     },
     computed: {
-      allowedJobs (){
-        var ref=this
-        return this.jobs?.filter(x => {
-          if(ref.profile?.roles?.includes("admin"))return true
-          if(!x.approval)return true
-          // not admin and approval - lets check access
-          var approval=JSON.parse(x.approval)
-          var access = approval?.roles?.filter(role => ref.profile?.roles?.includes(role))
-          if(access?.length>0){
-            return true
-          }else {
-            return false
-          }
-        })
+      filteredJobOutput(){
+        if(!this.hide) return this.job?.output?.replace(/\r\n/g,"<br>")
+        return this.job?.output?.replace(/<span class='low[^<]*<\/span>/g,"").replace(/\r\n/g,"<br>").replace(/(<br>\s*){3,}/ig,"<br><br>") // eslint-disable-line
       },
+      filteredSubJobOutput(){
+        if(!this.hide) return this.subjob?.output?.replace(/\r\n/g,"<br>")
+        return this.subjob?.output?.replace(/<span class='low[^<]*<\/span>/g,"").replace(/\r\n/g,"<br>").replace(/(<br>\s*){3,}/ig,"<br><br>") // eslint-disable-line
+      },      
       displayedJobIndex(){
         if(this.jobId)
           return this.parentJobs.map((e)=>e.id).indexOf(this.jobId);
@@ -557,7 +571,7 @@
       parentJobs (){
         var ref=this
         if(this.filter){
-          return this.allowedJobs.filter(x => !x.parent_id
+          return this.jobs?.filter(x => !x.parent_id
             &&
               (
                 x.id?.toString().match(ref.filter) ||
@@ -570,7 +584,7 @@
               )
           )
         }else{
-          return this.allowedJobs.filter(x => !x.parent_id)
+          return this.jobs?.filter(x => !x.parent_id)
         }
       },
       runningJobs(){
@@ -651,12 +665,19 @@
   .is-nowrap{
     white-space:nowrap;
   }
-  pre{
+  .pre{
     white-space: pre-wrap;       /* Since CSS 2.1 */
     white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
     white-space: -pre-wrap;      /* Opera 4-6 */
     white-space: -o-pre-wrap;    /* Opera 7 */
     word-wrap: break-word;       /* Internet Explorer 5.5+ */
+    font-family: consolas,'Courier New', Courier, monospace;
+    font-size: .85rem;
+    background-color: #f1f1f1;
+    padding:1rem;
+    color:#333;
+
   }
+
 @-webkit-keyframes spinAround{from{-webkit-transform:rotate(0);transform:rotate(0)}to{-webkit-transform:rotate(359deg);transform:rotate(359deg)}}@keyframes spinAround{from{-webkit-transform:rotate(0);transform:rotate(0)}to{-webkit-transform:rotate(359deg);transform:rotate(359deg)}}.is-divider,.is-divider-vertical{display:block;position:relative;border-top:.1rem solid #dbdbdb;height:.1rem;margin:2rem 0;text-align:center}.is-divider-vertical[data-content]::after,.is-divider[data-content]::after{background:#fff;color:#b5b5b5;content:attr(data-content);display:inline-block;font-size:.75rem;padding:.4rem .8rem;-webkit-transform:translateY(-1.1rem);transform:translateY(-1.1rem);text-align:center}@media screen and (min-width:769px),print{.is-divider-vertical{display:block;flex:none;width:auto;height:auto;padding:2rem;margin:0;position:relative;border-top:none;min-height:2rem}.is-divider-vertical::before{border-left:.1rem solid #dbdbdb;bottom:1rem;content:"";display:block;left:50%;position:absolute;top:1rem;-webkit-transform:translateX(-50%);transform:translateX(-50%)}.is-divider-vertical[data-content]::after{position:absolute;left:50%;top:50%;padding:.1rem;-webkit-transform:translateY(-50%) translateX(-50%);transform:translateY(-50%) translateX(-50%)}}.is-divider-vertical.is-white,.is-divider.is-white{border-top-color:#fff}.is-divider-vertical.is-white[data-content]::after,.is-divider.is-white[data-content]::after{background:#0a0a0a;color:#fff}.is-divider-vertical.is-white::before,.is-divider.is-white::before{border-left-color:#fff}.is-divider-vertical.is-black,.is-divider.is-black{border-top-color:#0a0a0a}.is-divider-vertical.is-black[data-content]::after,.is-divider.is-black[data-content]::after{background:#fff;color:#0a0a0a}.is-divider-vertical.is-black::before,.is-divider.is-black::before{border-left-color:#0a0a0a}.is-divider-vertical.is-light,.is-divider.is-light{border-top-color:#f5f5f5}.is-divider-vertical.is-light[data-content]::after,.is-divider.is-light[data-content]::after{background:#363636;color:#f5f5f5}.is-divider-vertical.is-light::before,.is-divider.is-light::before{border-left-color:#f5f5f5}.is-divider-vertical.is-dark,.is-divider.is-dark{border-top-color:#363636}.is-divider-vertical.is-dark[data-content]::after,.is-divider.is-dark[data-content]::after{background:#f5f5f5;color:#363636}.is-divider-vertical.is-dark::before,.is-divider.is-dark::before{border-left-color:#363636}.is-divider-vertical.is-primary,.is-divider.is-primary{border-top-color:#00d1b2}.is-divider-vertical.is-primary[data-content]::after,.is-divider.is-primary[data-content]::after{background:#fff;color:#00d1b2}.is-divider-vertical.is-primary::before,.is-divider.is-primary::before{border-left-color:#00d1b2}.is-divider-vertical.is-link,.is-divider.is-link{border-top-color:#3273dc}.is-divider-vertical.is-link[data-content]::after,.is-divider.is-link[data-content]::after{background:#fff;color:#3273dc}.is-divider-vertical.is-link::before,.is-divider.is-link::before{border-left-color:#3273dc}.is-divider-vertical.is-info,.is-divider.is-info{border-top-color:#209cee}.is-divider-vertical.is-info[data-content]::after,.is-divider.is-info[data-content]::after{background:#fff;color:#209cee}.is-divider-vertical.is-info::before,.is-divider.is-info::before{border-left-color:#209cee}.is-divider-vertical.is-success,.is-divider.is-success{border-top-color:#23d160}.is-divider-vertical.is-success[data-content]::after,.is-divider.is-success[data-content]::after{background:#fff;color:#23d160}.is-divider-vertical.is-success::before,.is-divider.is-success::before{border-left-color:#23d160}.is-divider-vertical.is-warning,.is-divider.is-warning{border-top-color:#ffdd57}.is-divider-vertical.is-warning[data-content]::after,.is-divider.is-warning[data-content]::after{background:rgba(0,0,0,.7);color:#ffdd57}.is-divider-vertical.is-warning::before,.is-divider.is-warning::before{border-left-color:#ffdd57}.is-divider-vertical.is-danger,.is-divider.is-danger{border-top-color:#ff3860}.is-divider-vertical.is-danger[data-content]::after,.is-divider.is-danger[data-content]::after{background:#fff;color:#ff3860}.is-divider-vertical.is-danger::before,.is-divider.is-danger::before{border-left-color:#ff3860}.is-divider-vertical.is-black-bis,.is-divider.is-black-bis{border-top-color:#121212}.is-divider-vertical.is-black-bis[data-content]::after,.is-divider.is-black-bis[data-content]::after{background:#fff;color:#121212}.is-divider-vertical.is-black-bis::before,.is-divider.is-black-bis::before{border-left-color:#121212}.is-divider-vertical.is-black-ter,.is-divider.is-black-ter{border-top-color:#242424}.is-divider-vertical.is-black-ter[data-content]::after,.is-divider.is-black-ter[data-content]::after{background:#fff;color:#242424}.is-divider-vertical.is-black-ter::before,.is-divider.is-black-ter::before{border-left-color:#242424}.is-divider-vertical.is-grey-darker,.is-divider.is-grey-darker{border-top-color:#363636}.is-divider-vertical.is-grey-darker[data-content]::after,.is-divider.is-grey-darker[data-content]::after{background:#fff;color:#363636}.is-divider-vertical.is-grey-darker::before,.is-divider.is-grey-darker::before{border-left-color:#363636}.is-divider-vertical.is-grey-dark,.is-divider.is-grey-dark{border-top-color:#4a4a4a}.is-divider-vertical.is-grey-dark[data-content]::after,.is-divider.is-grey-dark[data-content]::after{background:#fff;color:#4a4a4a}.is-divider-vertical.is-grey-dark::before,.is-divider.is-grey-dark::before{border-left-color:#4a4a4a}.is-divider-vertical.is-grey,.is-divider.is-grey{border-top-color:#7a7a7a}.is-divider-vertical.is-grey[data-content]::after,.is-divider.is-grey[data-content]::after{background:#fff;color:#7a7a7a}.is-divider-vertical.is-grey::before,.is-divider.is-grey::before{border-left-color:#7a7a7a}.is-divider-vertical.is-grey-light,.is-divider.is-grey-light{border-top-color:#b5b5b5}.is-divider-vertical.is-grey-light[data-content]::after,.is-divider.is-grey-light[data-content]::after{background:#fff;color:#b5b5b5}.is-divider-vertical.is-grey-light::before,.is-divider.is-grey-light::before{border-left-color:#b5b5b5}.is-divider-vertical.is-grey-lighter,.is-divider.is-grey-lighter{border-top-color:#dbdbdb}.is-divider-vertical.is-grey-lighter[data-content]::after,.is-divider.is-grey-lighter[data-content]::after{background:rgba(0,0,0,.7);color:#dbdbdb}.is-divider-vertical.is-grey-lighter::before,.is-divider.is-grey-lighter::before{border-left-color:#dbdbdb}.is-divider-vertical.is-white-ter,.is-divider.is-white-ter{border-top-color:#f5f5f5}.is-divider-vertical.is-white-ter[data-content]::after,.is-divider.is-white-ter[data-content]::after{background:rgba(0,0,0,.7);color:#f5f5f5}.is-divider-vertical.is-white-ter::before,.is-divider.is-white-ter::before{border-left-color:#f5f5f5}.is-divider-vertical.is-white-bis,.is-divider.is-white-bis{border-top-color:#fafafa}.is-divider-vertical.is-white-bis[data-content]::after,.is-divider.is-white-bis[data-content]::after{background:rgba(0,0,0,.7);color:#fafafa}.is-divider-vertical.is-white-bis::before,.is-divider.is-white-bis::before{border-left-color:#fafafa}
 </style>

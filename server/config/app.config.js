@@ -11,6 +11,7 @@ var app_config = {
   homePath: process.env.HOME_PATH || require('os').homedir(),
   repoPath: process.env.REPO_PATH || path.resolve(__dirname + "/../persistent/repositories"),
   formsBackupPath: process.env.FORMS_BACKUP_PATH || path.resolve(__dirname + "/../persistent/forms_backups"),
-  oldBackupDays: process.env.OLD_BACKUP_DAYS || 60
+  oldBackupDays: process.env.OLD_BACKUP_DAYS || 60,
+  filterJobOutputRegex: process.env.REGEX_FILTER_JOB_OUTPUT || "\\[low\\]"
 };
 module.exports = app_config;
