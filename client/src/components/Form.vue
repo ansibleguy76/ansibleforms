@@ -208,6 +208,7 @@
                             :deleteMarker="field.deleteMarker || ''"
                             :insertMarker="field.insertMarker || ''"
                             :readonlyColumns="field.readonlyColumns || []"
+                            :insertColumns="field.insertColumns || []"
                             :isLoading="!['fixed','variable'].includes(dynamicFieldStatus[field.name]) && (field.expression!=undefined || field.query!=undefined)"
                             :values="form[field.name]||[]"
                             @input="evaluateDynamicFields(field.name)"
@@ -802,11 +803,14 @@
           }
           // console.log("final => " + result)
           if(result){
-            Vue.set(ref.visibility,field.name,true)
+            ref.setVisibility(field.name,true)
           }else{
-            Vue.set(ref.visibility,field.name,false)
+            ref.setVisibility(field.name,false)
           }
         }
+      },
+      setVisibility(fieldname,status){
+        Vue.set(this.visibility,fieldname,status)
       },
       //----------------------------------------------------------------
       // check if an entire group can be shown, based on field depencies
@@ -843,8 +847,8 @@
         // reset to default value
         // reset this field status
         // console.log(`[${fieldname}] reset`)
-        this.setFieldStatus(fieldname,undefined)
         this.initiateDefaults(fieldname)
+        this.setFieldStatus(fieldname,undefined)
         Vue.set(this.form,fieldname,this.defaults[fieldname])
       },
       // reset all fields
@@ -879,6 +883,7 @@
       // load default value in field
       setFieldToDefault(fieldname){
         // reset to default value
+        // console.log(`defaulting ${fieldname}`)
         try{
           // if there is a default, set "default" status
           if(this.defaults[fieldname]!=undefined){
@@ -1141,7 +1146,7 @@
         var targetflag=undefined
         var hasPlaceholders = false;
         if(typeof value!=="string"){
-          return value
+          return {"hasPlaceholders":false,"value":value} 
         }
         // console.log("item = " + value)
         // console.log(typeof value)
@@ -1356,7 +1361,7 @@
               ref.checkDependencies(item)
               if(ref.visibility[item.name]){  // only if they are visible
                 // if expression and not processed yet or needs to be reprocessed
-                var flag = ref.dynamicFieldStatus[item.name];                     // current field status (running/fixed/variable)
+                var flag = ref.dynamicFieldStatus[item.name];                     // current field status (running/fixed/variable/default)
                 var placeholderCheck=undefined;                                   // result for a placeholder check
                 if(item.expression && (flag==undefined || ref.hasDefaultDependencies(item.name))){                // if expression and not evaluated yet
                   // console.log("eval expression " + item.name)
@@ -1405,7 +1410,7 @@
                           }
                           Vue.delete(ref.queryerrors, item.name);
                         }catch(err){
-                          //console.log("Local eval failed : " + err)
+                          // console.log("Local eval failed : " + err)
                           Vue.set(ref.queryerrors, item.name,err);
                           try{
                             ref.setFieldToDefault(item.name)

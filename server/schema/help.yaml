@@ -2548,6 +2548,14 @@
             description: |
               With a tablefield, some fields might need to be readonly, like an `id` field for example.  
               Use this property to set the readonly fields.
+          - name: insertColumns
+            type: array
+            with_types: table
+            short: The insert columns in table
+            version: 4.0.5
+            description: |
+              With a tablefield, you can choose which fields are visible during insert.  This way you can choose to hide certain fields.
+              Use this property to set the insert fields.              
           - name: tableFields
             type: array
             with_types: table

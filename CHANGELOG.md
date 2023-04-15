@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -  Added new env var with regex to filter job output
 -  Default property can now hold placeholders
 -  New property evalDefault (bool) can evaluate default as javascript
+-  TableField insertColumns (to hide columns on insert)
 
 ### Changed
 
