@@ -810,7 +810,10 @@
         }
       },
       setVisibility(fieldname,status){
-        Vue.set(this.visibility,fieldname,status)
+        if(this.visibility[fieldname]!=status){
+          Vue.set(this.visibility,fieldname,status)
+          this.resetField(fieldname)
+        }
       },
       //----------------------------------------------------------------
       // check if an entire group can be shown, based on field depencies
@@ -880,7 +883,7 @@
         }
  
       },
-      // load default value in field
+      // load default value in field => only for expressions
       setFieldToDefault(fieldname){
         // reset to default value
         // console.log(`defaulting ${fieldname}`)
@@ -892,11 +895,14 @@
           else{
             // if no default, set to undefined
             var prevState=this.dynamicFieldStatus[fieldname]
+
             if(prevState=="running"){
+              // console.log(`defaulting ${fieldname}`)
               // if the field was running, don't re-eval, we just did that
               this.setFieldStatus(fieldname,undefined,false)
             }else{
               // if the field was something diff, re-eval
+              // console.log(`defaulting ${fieldname}`)
               this.setFieldStatus(fieldname,undefined,true)
             }
           }
@@ -912,12 +918,14 @@
       // set dynamic field status, only for expressions,query and table
       setFieldStatus(fieldname,status,reeval=true){
         // console.log(`[${fieldname}] ----> ${status}`)
-        var prevState=this.dynamicFieldStatus[fieldname]
-        Vue.set(this.dynamicFieldStatus,fieldname,status)
-        if(reeval && (prevState!=status)){
-          // re-evaluate if need
-          this.evaluateDynamicFields(fieldname)
-        }
+        if(this.fieldOptions[fieldname]?.isDynamic){
+          var prevState=this.dynamicFieldStatus[fieldname]
+          Vue.set(this.dynamicFieldStatus,fieldname,status)
+          if(reeval && (prevState!=status)){
+            // re-evaluate if need
+            this.evaluateDynamicFields(fieldname)
+          }
+        } 
       },
       // if 2 dependend fields (parent-child) both have defaults
       // this can potentially be an issue.
@@ -1971,7 +1979,7 @@
           Vue.set(ref.fieldOptions,item.name,{})                                // storing some easy to find options
           Vue.set(ref.fieldOptions[item.name],"evalDefault",item.evalDefault??false)
           if(["expression","query","enum","table"].includes(item.type)){
-            
+            Vue.set(ref.fieldOptions[item.name],"isDynamic",!!(item.expression??item.query??false))
             Vue.set(ref.fieldOptions[item.name],"valueColumn",item.valueColumn||"")
             Vue.set(ref.fieldOptions[item.name],"placeholderColumn",item.placeholderColumn||"")
             Vue.set(ref.fieldOptions[item.name],"type",item.type)
