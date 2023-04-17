@@ -231,8 +231,8 @@ export default {
     },
     mounted() {
         var ref = this
-            // this.$refs.input.blur()
-            // this.$refs.content.blur()
+        // this.$refs.input.blur()
+        // this.$refs.content.blur()
     },
     directives: {
         'click-outside': {

@@ -1653,6 +1653,7 @@
                 }
             })
           }
+          this.calcContainerSize();
       },
       // trigger a job abort
       abortJob(id){
