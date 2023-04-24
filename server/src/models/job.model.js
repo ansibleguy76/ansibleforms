@@ -1205,7 +1205,7 @@ Awx.launchTemplate = async function (template,ev,inventory,tags,limit,c,d,v,cred
   })
 
 };
-Awx.trackJob = function (job,jobid,counter,previousoutput,previousoutput2=undefined,lastrun=false) {
+Awx.trackJob = function (job,jobid,counter,previousoutput,previousoutput2=undefined,lastrun=false,retryCount=0) {
   return Awx.getConfig()
   .catch((err)=>{
     logger.error(err)
@@ -1292,16 +1292,35 @@ Awx.trackJob = function (job,jobid,counter,previousoutput,previousoutput2=undefi
             })
             .catch((err)=>{
               message = err.toString()
-              return Promise.resolve(message)
+              logger.error(message)
+              retryCount++
+              if(retryCount==10){
+                return Promise.resolve(message)
+              }else{
+                logger.warning(`Retrying jobid ${jobid} [${retryCount}]`)
+                return delay(1000).then(()=>{
+                  return Awx.trackJob(job,jobid,counter,previousoutput,previousoutput2,lastrun,retryCount)
+                })
+              }
             })
           }else{
             message=`could not find job with id ${job.id}`
-            return Promise.resolve(message)
+            logger.error(message)
+            retryCount++
+            if(retryCount==10){
+              return Promise.resolve(message)
+            }else{
+              logger.warning(`Retrying jobid ${jobid} [${retryCount}]`)
+              return delay(1000).then(()=>{
+                return Awx.trackJob(job,jobid,counter,previousoutput,previousoutput2,lastrun,retryCount)
+              })
+            }
           }
         })
         .catch(function (error) {
-          logger.error(error.message)
-          return Promise.resolve(error.message)
+          message=error.message
+          logger.error(message)
+          return Promise.resolve(message)
         })
 
   })
