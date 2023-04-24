@@ -59,7 +59,7 @@
           </thead>
           <tbody>
           <template v-for="j in displayedJobs">
-            <tr :key="j.id" :class="{'has-background-success-light':(j.status=='success' && j.id!=jobId),'has-background-danger-light':(j.status=='failed' && j.id!=jobId),'has-background-warning':(j.status=='approve' && j.id!=jobId),'has-text-black':(j.status=='approve' && j.id!=jobId),'has-background-warning-light':(['aborted','warning','rejected'].includes(j.status) && j.id!=jobId),'has-background-info':j.id==jobId,'has-text-white':j.id==jobId}">
+            <tr :key="j.id" :class="{'has-background-success-light':(j.status=='success' && j.id!=jobId),'has-background-danger-light':(j.status=='failed' && j.id!=jobId),'has-background-warning':(j.status=='approve' && j.id!=jobId),'has-text-black':(j.status=='approve' && j.id!=jobId),'has-background-warning-light':(['aborted','abandoned','warning','rejected'].includes(j.status) && j.id!=jobId),'has-background-info':j.id==jobId,'has-text-white':j.id==jobId}">
               <td class="has-background-info-light">
                 <span v-if="j.status!='running'&&j.status!='aborting'&&j.status!='abort'" class="icon has-text-info is-clickable" @click="tempJobId=j.id;showRelaunch=true" title="Relaunch job"><font-awesome-icon icon="redo" /></span>
                 <span v-if="j.status && (j.status=='running')" class="icon has-text-warning is-clickable" @click="tempJobId=j.id;showAbort=true" title="Abort job"><font-awesome-icon icon="ban" /></span>
@@ -82,7 +82,7 @@
               <td class="is-clickable has-text-left" @click="getJob(j.id)" :title="j.user">{{j.user}} ({{j.user_type}})</td>
             </tr>
             <template v-for="c in childJobs(j.id)">
-              <tr :key="c.id" :class="{'has-background-success-light':(c.status=='success' && c.id!=jobId),'has-background-danger-light':(c.status=='failed' && c.id!=jobId),'has-background-warning-light':((c.status=='aborted'||c.status=='warning') && c.id!=jobId),'has-background-info':c.id==jobId,'has-text-white':c.id==jobId}">
+              <tr :key="c.id" :class="{'has-background-success-light':(c.status=='success' && c.id!=jobId),'has-background-danger-light':(c.status=='failed' && c.id!=jobId),'has-background-warning-light':(['aborted','warning','abandoned'].includes(c.status) && c.id!=jobId),'has-background-info':c.id==jobId,'has-text-white':c.id==jobId}">
                 <td class="has-background-info-light">
                   <!-- <span v-if="isAdmin" class="icon has-text-danger is-clickable" @click="tempJobId=c.id;showDelete=true" title="Delete job"><font-awesome-icon icon="trash-alt" /></span> -->
                 </td>
@@ -262,7 +262,7 @@
         if(status=="running"){
           return "is-info"
         }
-        if(status=="warning" || status=="aborted"){
+        if(status=="warning" || status=="aborted" || status=="abandoned"){
           return "is-warning"
         }
         if(status=="failed"){

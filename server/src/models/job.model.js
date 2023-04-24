@@ -170,6 +170,12 @@ Job.create = function (record) {
   return mysql.do("INSERT INTO AnsibleForms.`jobs` set ?", record)
     .then((res)=>{ return res.insertId})
 };
+Job.abandon = function () {
+  // abandon jobs
+  logger.notice(`Abandoning jobs`)
+  return mysql.do("UPDATE AnsibleForms.`jobs` set status='abandoned' where status='running' or status='abort'")
+    .then((res)=>{ return res.changedRows})
+};
 Job.update = function (record,id) {
   logger.notice(`Updating job ${id} ${record.status}`)
   return mysql.do("UPDATE AnsibleForms.`jobs` set ? WHERE id=?", [record,id])
