@@ -967,11 +967,12 @@
       },
       addDynamicFieldDependency(fields,field,foundfield){
         var ref=this
-        var columnRegex = /(.+)\.(.+)/g;                                    // detect a "." in the field
+        var columnRegex = /([^.]+)\..+/g;                                    // detect a "." in the field
         var tmpArr=columnRegex.exec(foundfield)                             // found aaa.bbb
         if(tmpArr && tmpArr.length>0){
           // console.log("found dot in " + foundfield + " in " + field)
           foundfield = tmpArr[1]                                            // aaa
+          // console.log(tmpArr)
         }else{
           // console.log("found no in " + foundfield + " in " + field)
         }
@@ -1161,10 +1162,10 @@
         // console.log(testRegex)
         matches=[...value.matchAll(testRegex)] // force match array
         for(match of matches){
-            //console.log("-> match : " + match[0] + "->" + match[1])
+            // console.log("-> match : " + match[0] + "->" + match[1])
             foundmatch = match[0];                                              // found $(xxx)
             foundfield = match[1];                                              // found xxx
-            var columnRegex = /(.+)\.(.+)/g;                                        // detect a "." in the field
+            var columnRegex = /([^.]+)\.(.+)/g;                                        // detect a "." in the field
             var tmpArr=columnRegex.exec(foundfield)                             // found aaa.bbb
             if(tmpArr && tmpArr.length>0){
               foundfield = tmpArr[1]                                            // aaa
@@ -1179,7 +1180,11 @@
             targetflag = undefined
             // mark the field as a dependent field
             if(foundfield in ref.form){      // does field xxx exist in our form ?
-              if(ref.fieldOptions[foundfield] && ["expression","table"].includes(ref.fieldOptions[foundfield].type) && (typeof ref.form[foundfield]=="object")){
+              // if the field exists
+              // and it's from an expression or table
+              //   or it's deep link in a column (colum has .)
+              // and the reference field is an object
+              if(ref.fieldOptions[foundfield] && (["expression","table"].includes(ref.fieldOptions[foundfield].type)||column.includes(".")) && (typeof ref.form[foundfield]=="object")){
                 // objects and array should be stringified
                 fieldvalue=JSON.stringify(ref.form[foundfield])
                 // console.log(Helpers.replacePlaceholders(match[1],ref.form))
@@ -1190,9 +1195,10 @@
                 }else{
                   // console.log(typeof fieldvalue)
                 }
+              // in other cases, it's a classic field.column reference
               }else{
                 // other fields, grab a valid value
-                fieldvalue = ref.getFieldValue(ref.form[foundfield],column,true);// get value of xxx
+                fieldvalue = ref.getFieldValue(ref.form[foundfield],column,true);// get value of aaa.bbb
               }
               // get dynamic field status
               if(foundfield in ref.dynamicFieldStatus){
