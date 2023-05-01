@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 -   Default dependency bug
 -   nested placeholder expressions
+-   removed google font uri
 
 ## [4.0.5] - 2023-04-15
 
