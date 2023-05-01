@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Fixed
--   Default depedency bug
+-   Default dependency bug
+-   nested placeholder expressions
 
 ## [4.0.5] - 2023-04-15
 
