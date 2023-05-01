@@ -10,7 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 -   Default dependency bug
 -   nested placeholder expressions
--   removed google font uri
+-   removed google font uri to local
+-   awx retry jobs
+
+### Added
+-   Added clean up abandoned jobs at startup
 
 ## [4.0.5] - 2023-04-15
 
