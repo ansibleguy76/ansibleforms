@@ -170,6 +170,12 @@ Job.create = function (record) {
   return mysql.do("INSERT INTO AnsibleForms.`jobs` set ?", record)
     .then((res)=>{ return res.insertId})
 };
+Job.abandon = function () {
+  // abandon jobs
+  logger.notice(`Abandoning jobs`)
+  return mysql.do("UPDATE AnsibleForms.`jobs` set status='abandoned' where status='running' or status='abort'")
+    .then((res)=>{ return res.changedRows})
+};
 Job.update = function (record,id) {
   logger.notice(`Updating job ${id} ${record.status}`)
   return mysql.do("UPDATE AnsibleForms.`jobs` set ? WHERE id=?", [record,id])
@@ -1205,7 +1211,7 @@ Awx.launchTemplate = async function (template,ev,inventory,tags,limit,c,d,v,cred
   })
 
 };
-Awx.trackJob = function (job,jobid,counter,previousoutput,previousoutput2=undefined,lastrun=false) {
+Awx.trackJob = function (job,jobid,counter,previousoutput,previousoutput2=undefined,lastrun=false,retryCount=0) {
   return Awx.getConfig()
   .catch((err)=>{
     logger.error(err)
@@ -1292,16 +1298,35 @@ Awx.trackJob = function (job,jobid,counter,previousoutput,previousoutput2=undefi
             })
             .catch((err)=>{
               message = err.toString()
-              return Promise.resolve(message)
+              logger.error(message)
+              retryCount++
+              if(retryCount==10){
+                return Promise.resolve(message)
+              }else{
+                logger.warning(`Retrying jobid ${jobid} [${retryCount}]`)
+                return delay(1000).then(()=>{
+                  return Awx.trackJob(job,jobid,counter,previousoutput,previousoutput2,lastrun,retryCount)
+                })
+              }
             })
           }else{
             message=`could not find job with id ${job.id}`
-            return Promise.resolve(message)
+            logger.error(message)
+            retryCount++
+            if(retryCount==10){
+              return Promise.resolve(message)
+            }else{
+              logger.warning(`Retrying jobid ${jobid} [${retryCount}]`)
+              return delay(1000).then(()=>{
+                return Awx.trackJob(job,jobid,counter,previousoutput,previousoutput2,lastrun,retryCount)
+              })
+            }
           }
         })
         .catch(function (error) {
-          logger.error(error.message)
-          return Promise.resolve(error.message)
+          message=error.message
+          logger.error(message)
+          return Promise.resolve(message)
         })
 
   })

@@ -896,6 +896,7 @@
                     {"type": "integer"}
                   ]
                 },
+                "evalDefault": {"type": "boolean"},
                 "dateType": {"type": "string","enum":["date","datetime","year","month","time","week"]},
                 "noOutput": {"type": "boolean"},
                 "asCredential": {"type": "boolean"},
@@ -1000,6 +1001,10 @@
                   "type": "array",
                   "items": { "type": "string" }
                 },
+                "insertColumns": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },                
                 "sticky": {"type": "boolean"},
                 "horizontal": {"type": "boolean"},
                 "editable": {"type": "boolean"},

@@ -1,7 +1,7 @@
 <template>
     <div>
         <BulmaModal type="large" v-if="showEdit" :title="action" action="Save" @click="saveItem()" @close="showEdit=false" @cancel="showEdit=false">
-          <div v-for="field,index in tableFields" :key="field.name" class="field mt-3">
+          <div v-for="field,index in editFields" :key="field.name" class="field mt-3">
 
               <!-- add field label -->
               <label class="label has-text-dark">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span></label>
@@ -210,6 +210,7 @@
             deleteMarker:{type: String, default: ""},
             insertMarker:{type: String, default: ""},
             readonlyColumns:{type: Array},
+            insertColumns:{type: Array},
             hasError:{type: Boolean}
         },
         data: function(){
@@ -307,6 +308,9 @@
           //this.input()
         },
         computed: {
+            editFields: function(){
+              return this.tableFields.filter(x => (this.action!="Add" || this.insertColumns.length==0 || this.insertColumns.includes(x.name)))
+            },
             filterRow: function () {
                 return this.tableFields.findIndex( (e) => e.filterable ) >= 0;
             },

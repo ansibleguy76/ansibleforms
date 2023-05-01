@@ -189,13 +189,14 @@ export default {
                   //calculate if we need to do a dropup
                   var dd = ref.$refs["dd"]?.getBoundingClientRect()
                   var dt = ref.$refs["dt"]?.getBoundingClientRect()
-                  var wh = window.innerHeight
-                  var ww = window.innerWidth
-                  // if dropdown is out out of view AND there is space for dropup, do dropup
-                  ref.isUp=((dd.bottom>wh) && (dd.height<(dt.top-100)))
-                  ref.isRight=(dt.left>ww/2)
-                  this.calcDropdownMenuWidth()        
-                  
+                  if(dt){
+                    var wh = window.innerHeight
+                    var ww = window.innerWidth
+                    // if dropdown is out out of view AND there is space for dropup, do dropup
+                    ref.isUp=((dd.bottom>wh) && (dd.height<(dt.top-100)))
+                    ref.isRight=(dt.left>ww/2)
+                    this.calcDropdownMenuWidth()   
+                  }
               })
           }
       },
@@ -210,10 +211,12 @@ export default {
         var columnsCount=this.columns?.length || valueLength
         if(this.horizontal || (columnsCount>1)){
             var dt = this.$refs["dt"]?.getBoundingClientRect()
+            var dtleft = dt?.left||0
+            var dtright = (dt?.right||0)
             var ww = this.containerSize.width
             var wx = this.containerSize.x         
-            var widthIfLeft = (ww+wx-dt.left-25)
-            var widthIfRight = (dt.right-wx-25)
+            var widthIfLeft = (ww+wx-dtleft-25)
+            var widthIfRight = (dtright-wx-25)
             var width=((this.isRight)?widthIfRight:widthIfLeft)
             this.dropdownMenuWidth=width+"px"
         }
@@ -228,8 +231,8 @@ export default {
     },
     mounted() {
         var ref = this
-            // this.$refs.input.blur()
-            // this.$refs.content.blur()
+        // this.$refs.input.blur()
+        // this.$refs.content.blur()
     },
     directives: {
         'click-outside': {

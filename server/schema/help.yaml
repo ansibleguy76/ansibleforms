@@ -1542,6 +1542,14 @@
                     - type: datetime
                       dateType: datetime
                       name: mydateandtime
+                      line: Demo1
+                      label: I will default to now
+                      evalDefault: true
+                      default: "new Date().toISOString().substring(0,19).replace('T',' ')"
+                      required: true                      
+                    - type: datetime
+                      dateType: datetime
+                      name: mydateandtime
                       label: DateTime
                       default: "2023-12-01 13:01:00"
                       required: true
@@ -1955,11 +1963,22 @@
             description: |
               The type of the value depends on the field type.  
               Can be `string`,`boolean`, `number`, `array` or `object`.
-              When using `multiple`, the default is an `array`.  
+              When using `multiple`, the default must be an `array`.  
               When using an `enum` field, you can use the following special values :
               * `__auto__` : select the first
               * `__none__` : select none
               * `__all__` : select all (if multiple is true)
+            changelog:
+              - version: 4.0.5
+                type: added
+                description: A default can now hold placeholders like `$(other_field)`, and together with `evalDefault` be evaluated as javascript.           
+            with_types: text, textarea, number, expression, password, enum, radio, checkbox, datetime
+          - name: evalDefault
+            type: boolean
+            default: false
+            short: Evaluates default value
+            description: A default can be treated as javascript and can thus hold expressions like `'$(other_field)'.toUpperCase()` or `Math.PI` or `Date.getDate.toISOString()`
+            version: 4.0.5
             with_types: text, textarea, number, expression, password, enum, radio, checkbox, datetime
           - name: required
             type: boolean
@@ -2529,6 +2548,14 @@
             description: |
               With a tablefield, some fields might need to be readonly, like an `id` field for example.  
               Use this property to set the readonly fields.
+          - name: insertColumns
+            type: array
+            with_types: table
+            short: The insert columns in table
+            version: 4.0.5
+            description: |
+              With a tablefield, you can choose which fields are visible during insert.  This way you can choose to hide certain fields.
+              Use this property to set the insert fields.              
           - name: tableFields
             type: array
             with_types: table
