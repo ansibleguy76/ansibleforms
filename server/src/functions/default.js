@@ -12,6 +12,7 @@ const {inspect} = require('node:util')
 const _ = require("lodash")
 const {firstBy,thenBy}=require("thenby")
 const ip=require("ip")
+const dayjs=require("dayjs")
 const credentialModel = require("../models/credential.model")
 // import definitions as strings
 require.extensions['.definitions'] = function (module, filename) {
@@ -80,6 +81,13 @@ exports.fnGetNumberedName=function(names,pattern,value,fillgap=false){
 }
 exports.fnCidr=function(i,n){
   return ip.subnet(i,n)
+}
+exports.fnTime=function(d){
+  if(d==undefined){
+    return dayjs()
+  }else{
+    return dayjs(d)
+  }
 }
 exports.fnJq=async function(input,jqe){
     const jq = require('node-jq')

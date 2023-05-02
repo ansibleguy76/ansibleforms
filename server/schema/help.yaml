@@ -3278,7 +3278,7 @@
         //   "subnetMask":"255.255.0.0",
         //   "subnetMaskLength":16,
         //   "numHosts":65534,
-        //   "length":65536
+        //   "length":65536,
         //   "contains":(ip)=>{return ...}
         // }
     - name: get SSH output
