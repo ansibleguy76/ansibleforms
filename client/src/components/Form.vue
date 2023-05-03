@@ -34,6 +34,9 @@
           <span  v-show="!hideForm" title="Copy form link with values" class="icon is-clickable is-pulled-right has-text-link" @click="getFormUrl()">
               <font-awesome-icon icon="link" />
           </span>
+          <span class="icon is-pulled-right">
+            <font-awesome-icon :icon="loopicon.icon" size="lg" :class="loopicon.color" :spin="loopicon.spin" /> 
+          </span>
           <!-- reload button -->
           <button @click="reloadForm" class="button is-white is-small mr-3">
             <span class="has-text-info icon">
@@ -43,13 +46,14 @@
           </button>
           <!-- warnings button -->
           <transition name="pop" appear>
-            <button v-if="warnings.length>0 || Object.keys(queryerrors).length>0" @click="showWarnings=!showWarnings" class="button is-small is-light is-warning">
+            <button v-if="warnings.length>0 || Object.keys(queryerrors).length>0" @click="showWarnings=!showWarnings" class="button is-small is-light is-warning mr-3">
               <span class="icon">
                 <font-awesome-icon icon="exclamation-triangle" />
               </span>
               <span class="mr-1">{{(showWarnings)?'Hide':'This form has'}} Warnings </span>
             </button>
           </transition>
+        
           <!-- groups -->
           <div :key="group" v-for="group in fieldgroups" class="mt-4" v-show="!hideForm">
             <div :class="getGroupClass(group)">
@@ -462,6 +466,8 @@
               error:""
             }
           },
+          watchdog:0,               // main loop counter 
+          loopdelay:100,            // main loop delay
           subjob:{},                // output of last subjob
           dynamicFieldDependencies:{},      // which fields need to be re-evaluated if other fields change
           dynamicFieldDependentOf:{},       // which fields are dependend from others
@@ -619,7 +625,15 @@
         }else{
           return []
         }
-      }      
+      },
+      loopicon(){
+        if(this.loopdelay==500){
+          return {icon:['fa-regular','face-smile'],color:"has-text-success",spin:false}
+        }else{
+          return {icon:['fa-solid','spinner'],color:"has-text-warning",spin:true}
+        }
+       
+      }    
     },
     methods:{
       // used for enum field, to know the width of the container
@@ -1022,7 +1036,6 @@
       // if they change, we then know which other fields to re-evaluate
       findVariableDependencies(){
         var ref=this
-        var watchdog=0
         var temp={}
         var finishedFlag=false
         var foundmatch,foundfield
@@ -1093,7 +1106,6 @@
       // search which fields are dependent of others
       findVariableDependentOf(){
         var ref=this
-        var watchdog=0
         var foundDependentDefaults=false
         var temp={}
         var finishedFlag=false
@@ -1353,12 +1365,11 @@
                 return o
               })
             }
-
         }
 
         // console.log("invoking field expressions and queries")
         var ref=this;                                                           // a reference to 'this'
-        var watchdog=0;                                                         // a counter how many times we retry to find a value
+        ref.watchdog=0                                                          // a counter how many times we retry to find a value
         var refreshCounter=0;                                                   // a counter to refresh the json output
         var hasUnevaluatedFields=false;                                         // a flag to check whether a have unevaluated fields
         // does the eval every x milliseconds ; this.interval
@@ -1590,22 +1601,22 @@
           ) // end field loop
           if(hasUnevaluatedFields){
             ref.canSubmit=false;
-            watchdog++                       // keeps track of how many loop it takes to evaluate all fields
+            ref.watchdog++                       // keeps track of how many loop it takes to evaluate all fields
           }
 
           if(!hasUnevaluatedFields){
             ref.canSubmit=true;
-            if(watchdog>0){
+            if(ref.watchdog>0){
               //ref.$toast.info("All fields are found")
             }
-            watchdog=0
+            ref.watchdog=0
           }
           if(ref.jobResult.message=="initializing"){ // has a request been made to execute ?
             // ref.$toast.info("Requesting execution")
             if(ref.validateForm()){  // form is valid ?
               ref.jobResult.message="stabilizing"
               // ref.$toast.info("Waiting for form to stabilize")
-              watchdog=0
+              ref.watchdog=0
             }else{
               ref.jobResult.message="" // reset status, form not valid
             }
@@ -1616,7 +1627,7 @@
               ref.executeForm()
             }else{
               // continue to stabilize
-              if(watchdog>15){  // is it taking too long ?
+              if(ref.watchdog>15){  // is it taking too long ?
                 ref.jobResult.message=""   // stop and reset
                 ref.$toast.warning("It is taking too long to evaluate all fields before run")
               }else{
@@ -1628,8 +1639,12 @@
           if(refreshCounter%10==0){
             ref.generateJsonOutput() // refresh json output
           }
-
-        },100); // end interval
+          if(ref.watchdog>30 || ref.watchdog==0){
+            ref.loopdelay=500
+          }else{
+            ref.loopdelay=4
+          }
+        },ref.loopdelay); // end interval
       },
       // reset form status
       resetResult(){

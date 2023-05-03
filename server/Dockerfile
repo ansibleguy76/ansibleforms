@@ -49,7 +49,7 @@ RUN mkdir -p ~/.ssh
 RUN apk add --no-cache git
 
 # update npm
-RUN npm install -g npm@8.5.3
+RUN npm install -g npm@9.6.5
 
 ##################################################
 # builder stage

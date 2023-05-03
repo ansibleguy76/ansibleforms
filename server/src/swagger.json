@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "description": "This is the swagger interface for AnsibleForms.\r\nUse the `/auth/login` api with basic authentication to obtain a JWT token.\r\nThen use the access token, prefixed with the word '**Bearer**' to use all other api's.\r\nNote that the access token is limited in time.  You can then either login again and get a new set of tokens or use the `/token` api and the refresh token to obtain a new set (preferred).",
-    "version": "4.0.7",
+    "version": "4.0.8",
     "title": "AnsibleForms",
     "contact": {
       "email": "info@ansibleforms.com"

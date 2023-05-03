@@ -11,6 +11,8 @@ const {exec} = require('child_process');
 const {inspect} = require('node:util')
 const _ = require("lodash")
 const {firstBy,thenBy}=require("thenby")
+const ip=require("ip")
+const dayjs=require("dayjs")
 const credentialModel = require("../models/credential.model")
 // import definitions as strings
 require.extensions['.definitions'] = function (module, filename) {
@@ -75,6 +77,16 @@ exports.fnGetNumberedName=function(names,pattern,value,fillgap=false){
   }else{
     logger.warning("fnGetNumberedName, no pattern found, use ### for numbers")
 	  return value
+  }
+}
+exports.fnCidr=function(i,n){
+  return ip.subnet(i,n)
+}
+exports.fnTime=function(d){
+  if(d==undefined){
+    return dayjs()
+  }else{
+    return dayjs(d)
   }
 }
 exports.fnJq=async function(input,jqe){

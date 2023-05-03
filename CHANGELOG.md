@@ -7,12 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.8] - 2023-05-03
+
+### Added
+
+-   new function fn.fnCidr // core implementation of ip.subnet() <https://www.npmjs.com/package/ip>
+-   new function fn.fnTime // core implementation of dayjs() <https://day.js.org> 
+-   background image on login screen (that you can overwrite)
+
 ## [4.0.7] - 2023-05-01
 
 ### Fixed
 
 -   Default dependency bug
 -   nested placeholder expressions
+-   removed google font uri to local
+-   awx retry jobs
+
+### Added
+
+-   Added clean up abandoned jobs at startup
 
 ## [4.0.5] - 2023-04-15
 
@@ -470,7 +484,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.7...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.8...HEAD
+
+[4.0.8]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.7...4.0.8
 
 [4.0.7]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.5...4.0.7
 
