@@ -3260,7 +3260,12 @@
       They are evaluated on the server side.  
       Due to the danger of evaluating code server side, the expression is sanitized and limited to predefined functions that come with Ansible Forms.  
       Server side expressions are meant to grab information from various datasources, such as files and rest-api's.  
-    examples:     
+    examples:   
+    - name: manipulate date and time
+      code: |
+        fn.fnTime().diff(fn.fnTime('2019-10-01'),'day') // number of days between now and 2019-10-01
+
+        // This is the core implementation of https://day.js.org
     - name: get Cidr info from ip
       code: |
         fn.fnCidr('172.16.0.1','255.255.0.0')

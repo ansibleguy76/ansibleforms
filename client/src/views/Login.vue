@@ -1,9 +1,9 @@
 <template>
-  <section v-if="!loading" class="hero has-background-light is-fullheight">
+  <section v-if="!loading" class="hero">
     <div class="hero-body">
       <div class="container">
-        <div class="columns is-centered">
-          <div class="column is-5-tablet is-4-desktop is-3-widescreen">
+        <div class="columns is-centered is-vcentered vh-90">
+          <div class="column is-6-tablet is-6-desktop is-4-widescreen">
             <div class="box">
               <BulmaInput icon="user" focus="true" v-model="user.username" label="Username" placeholder="Username" :required="true" :hasError="$v.user.username.$invalid" :errors="[]" />
               <BulmaInput icon="lock" v-model="user.password" @enterClicked="login()" label="Password" type="password" placeholder="***********" :required="true" :hasError="$v.user.password.$invalid" :errors="[]" />
@@ -148,3 +148,18 @@
       }
   }
 </script>
+<style scoped>
+  .hero{
+    background: url(/assets/img/bg.jpg) no-repeat center center fixed; 
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+  }
+  .box{
+    background-color:rgba(255, 255, 255, 0.91)!important;
+  }
+  .vh-90{
+    height:calc(100vh - 150px);
+  }
+</style>

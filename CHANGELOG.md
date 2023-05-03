@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
--   new function fn.fnCidr
+-   new function fn.fnCidr // core implementation of ip.subnet() https://www.npmjs.com/package/ip
+-   new function fn.fnTime // core implementation of dayjs() https://day.js.org 
+-   background image on login screen (that you can overwrite)
 
 ## [4.0.7] - 2023-05-01
 
