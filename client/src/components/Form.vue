@@ -34,6 +34,9 @@
           <span  v-show="!hideForm" title="Copy form link with values" class="icon is-clickable is-pulled-right has-text-link" @click="getFormUrl()">
               <font-awesome-icon icon="link" />
           </span>
+          <span class="icon is-pulled-right">
+            <font-awesome-icon :icon="loopicon.icon" size="lg" :class="loopicon.color" :spin="loopicon.spin" /> 
+          </span>
           <!-- reload button -->
           <button @click="reloadForm" class="button is-white is-small mr-3">
             <span class="has-text-info icon">
@@ -41,16 +44,16 @@
             </span>
             <span>Reload This Form</span>
           </button>
-          <font-awesome-icon :icon="loopicon.icon" size="lg" :class="loopicon.color" :spin="loopicon.spin" />
           <!-- warnings button -->
           <transition name="pop" appear>
-            <button v-if="warnings.length>0 || Object.keys(queryerrors).length>0" @click="showWarnings=!showWarnings" class="button is-small is-light is-warning">
+            <button v-if="warnings.length>0 || Object.keys(queryerrors).length>0" @click="showWarnings=!showWarnings" class="button is-small is-light is-warning mr-3">
               <span class="icon">
                 <font-awesome-icon icon="exclamation-triangle" />
               </span>
               <span class="mr-1">{{(showWarnings)?'Hide':'This form has'}} Warnings </span>
             </button>
           </transition>
+        
           <!-- groups -->
           <div :key="group" v-for="group in fieldgroups" class="mt-4" v-show="!hideForm">
             <div :class="getGroupClass(group)">
