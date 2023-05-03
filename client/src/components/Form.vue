@@ -34,8 +34,8 @@
           <span  v-show="!hideForm" title="Copy form link with values" class="icon is-clickable is-pulled-right has-text-link" @click="getFormUrl()">
               <font-awesome-icon icon="link" />
           </span>
-          <span class="icon is-pulled-right">
-            <font-awesome-icon :icon="loopicon.icon" size="lg" :class="loopicon.color" :spin="loopicon.spin" /> 
+          <span class="icon is-pulled-right" v-show="loopbusy">
+            <font-awesome-icon icon="spinner" size="lg" class="has-text-warning" spin /> 
           </span>
           <!-- reload button -->
           <button @click="reloadForm" class="button is-white is-small mr-3">
@@ -626,13 +626,8 @@
           return []
         }
       },
-      loopicon(){
-        if(this.loopdelay==500){
-          return {icon:['fa-regular','face-smile'],color:"has-text-success",spin:false}
-        }else{
-          return {icon:['fa-solid','spinner'],color:"has-text-warning",spin:true}
-        }
-       
+      loopbusy(){
+        return this.loopdelay!=500
       }    
     },
     methods:{
