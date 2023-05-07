@@ -343,7 +343,7 @@
           <div class="columns">
             <!-- progress/close button -->
             <div class="column">
-              <button v-if="!!jobResult.message" class="button is-fullwidth has-text-light" @click="resetResult()" :class="{ 'has-background-success' : jobResult.status=='success', 'has-background-warning' : jobResult.status=='warning', 'has-background-danger' : jobResult.status=='error','has-background-info cursor-progress' : jobResult.status=='info' }">
+              <button v-if="!!jobResult.message" class="button is-fullwidth has-text-light" @click="resetResult()" :class="{ 'has-background-success' : jobResult.status=='success', 'has-background-warning' : jobResult.status=='warning', 'has-background-danger' : jobResult.status=='error','has-background-info cursor-progress' : ['info',''].includes(jobResult.status) }">
                 <span class="icon" v-if="jobResult.status=='info'"><font-awesome-icon icon="spinner" spin /></span>
                 <span class="icon" v-if="jobResult.status!='info'"><font-awesome-icon icon="times" /></span>
                 <span>{{ jobResult.message }}</span>
@@ -1389,9 +1389,7 @@
                 if(item.expression && (flag==undefined || ref.hasDefaultDependencies(item.name))){                // if expression and not evaluated yet
                   // console.log("eval expression " + item.name)
                   // console.log(`[${item.name}][${flag}] : evaluating`)
-                  if(item.required){
-                    hasUnevaluatedFields=true                                       // set the un-eval flag if this is required
-                  }
+                  hasUnevaluatedFields=true                                       // set the un-eval flag if this is required
                   // set flag running
                   ref.setFieldStatus(item.name,"running",false)
                   placeholderCheck = ref.replacePlaceholders(item)     // check and replace placeholders
@@ -1508,9 +1506,7 @@
                 } else if(item.query && flag==undefined){
                    // console.log("eval query : " + item.name)
                   // set flag running
-                  if(item.required){
-                    hasUnevaluatedFields=true
-                  }
+                  hasUnevaluatedFields=true
                   ref.setFieldStatus(item.name,"running",false)
                   placeholderCheck = ref.replacePlaceholders(item)     // check and replace placeholders
                   if(placeholderCheck.value!=undefined){                       // expression is clean ?
@@ -1605,31 +1601,36 @@
           if(!hasUnevaluatedFields){
             ref.canSubmit=true;
             if(ref.watchdog>0){
-              //ref.$toast.info("All fields are found")
+              // ref.$toast.info("All fields are found")
             }
             ref.watchdog=0
           }
           if(ref.jobResult.message=="initializing"){ // has a request been made to execute ?
             // ref.$toast.info("Requesting execution")
-            if(ref.validateForm()){  // form is valid ?
-              ref.jobResult.message="stabilizing"
-              // ref.$toast.info("Waiting for form to stabilize")
-              ref.watchdog=0
-            }else{
-              ref.jobResult.message="" // reset status, form not valid
-            }
+            ref.jobResult.message="" // immediately reset => we don't want to initialized twice
+            Vue.nextTick(()=>{ // we want to make sure the the last form action (lostfocus field) is processed
+              if(ref.validateForm()){  // form is valid ?
+                ref.jobResult.message="stabilizing"
+                // ref.$toast.info("Waiting for form to stabilize")
+                ref.watchdog=0
+              }else{
+                ref.jobResult.message="" // reset status, form not valid
+              }              
+            })
+
           }
           if(ref.jobResult.message=="stabilizing"){ // are we waiting to execute ?
             if(ref.canSubmit){
               ref.jobResult.message="triggering execution"
               ref.executeForm()
+              // ref.$toast.info("Executing form...");ref.jobResult.message=""
             }else{
               // continue to stabilize
-              if(ref.watchdog>15){  // is it taking too long ?
+              if(ref.watchdog>50){  // is it taking too long ?
                 ref.jobResult.message=""   // stop and reset
-                ref.$toast.warning("It is taking too long to evaluate all fields before run")
+                ref.$toast.warning("It took too long to evaluate all fields before run.\r\nLet the form stabilize and try again.")
               }else{
-                // ref.$toast.info("Stabalizing form...")
+                //ref.$toast.info(`Stabilizing form...${ref.watchdog}`)
               }
             }
           }
@@ -1637,7 +1638,7 @@
           if(refreshCounter%ref.loopdivider==0){
             ref.generateJsonOutput() // refresh json output
           }
-          if(ref.watchdog>30 || ref.watchdog==0){
+          if(ref.watchdog>50 || ref.watchdog==0){
             ref.loopdelay=500
           }else{
             ref.loopdelay=4
