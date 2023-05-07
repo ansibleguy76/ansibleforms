@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-   model can now be an array
+
 ## [4.0.8] - 2023-05-03
 
 ### Added

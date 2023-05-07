@@ -2132,13 +2132,17 @@
               Form fields are by default send as extravars.  
               If you do not want a field to be sent as extravar, set this attribute to true.
           - name: model
-            type: string
-            allowed: An dot-based string notation of an object
+            type: string or array
+            allowed: An dot-based string notation of an object, or an array of these
             short: Extravar modelling
             description: |
               By default, a field is sent as a root-extravar.  
               If you want model the output of the extravars, 
-              you can specify a `dot-notation` of how this field should be modelled.
+              you can specify a `dot-notation` of how this field should be modelled.  
+            changelog:
+              - version: 4.0.9
+                type: added
+                description: model can now be an array
             examples:
               - name: Model 2 fields together as a single object
                 code: |

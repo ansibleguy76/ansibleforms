@@ -1025,7 +1025,11 @@
                     }
                   }
                 },
-                "model": {"type": "string"},
+                "model": {
+                  "anyOf": [{"type": "string"},
+                    {"type": "array"}
+                  ]
+                },
                 "help": {"type": "string"},
                 "values": {
                   "type": "array",

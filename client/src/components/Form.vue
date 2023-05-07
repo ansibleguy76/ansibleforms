@@ -628,7 +628,10 @@
       },
       loopbusy(){
         return this.loopdelay!=500
-      }    
+      },
+      loopdivider(){
+        return 5000/this.loopdelay
+      } 
     },
     methods:{
       // used for enum field, to know the width of the container
@@ -1631,7 +1634,7 @@
             }
           }
           refreshCounter++;
-          if(refreshCounter%10==0){
+          if(refreshCounter%ref.loopdivider==0){
             ref.generateJsonOutput() // refresh json output
           }
           if(ref.watchdog>30 || ref.watchdog==0){
@@ -1810,34 +1813,37 @@
         this.currentForm.fields.forEach((item, i) => {
           // this.checkDependencies(item) // hide field based on dependency
           if(this.visibility[item.name] && !item.noOutput){
-            var fieldmodel = item.model
+            var fieldmodel = [].concat(item.model || [])
             var outputObject = item.outputObject || item.type=="expression" || item.type=="table" || false
             var outputValue = this.form[item.name]
             // if no model is given, we assign to the root
             if(!outputObject){  // do we need to flatten output ?
               outputValue=this.getFieldValue(outputValue,item.valueColumn || "",true)
             }
-            if(fieldmodel=="" || fieldmodel===undefined){
+            if(fieldmodel.length==0){
               this.formdata[item.name]=outputValue
             }else{
-              // convert fieldmodel for actual object
-              // svm.lif.name => svm["lif"].name = formvalue
-              // using reduce, which is a recursive function
-              fieldmodel.split(/\s*\.\s*/).reduce((master,obj, level,arr) => {
-                // if last
-                if (level === (arr.length - 1)){
-                    // the last piece we assign the value to
-                    master[obj]=outputValue
-                }else{
-                    // initialize first time to object
-                    if(master[obj]===undefined){
-                      master[obj]={}
-                    }
-                }
-                // return the result for next reduce iteration
-                return master[obj]
+              fieldmodel.forEach((f)=>{
+                // convert fieldmodel for actual object
+                // svm.lif.name => svm["lif"].name = formvalue
+                // using reduce, which is a recursive function
+                f.split(/\s*\.\s*/).reduce((master,obj, level,arr) => {
+                  // if last
+                  if (level === (arr.length - 1)){
+                      // the last piece we assign the value to
+                      master[obj]=outputValue
+                  }else{
+                      // initialize first time to object
+                      if(master[obj]===undefined){
+                        master[obj]={}
+                      }
+                  }
+                  // return the result for next reduce iteration
+                  return master[obj]
 
-              },ref.formdata);
+                },ref.formdata);
+              })
+
             }
           }
         });
