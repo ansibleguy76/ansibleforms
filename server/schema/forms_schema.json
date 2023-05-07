@@ -832,6 +832,59 @@
                 {
                   "properties": {
                     "type": {
+                      "enum": ["html"]
+                    },
+                    "label":             {"not":{}}, 
+                    "placeholder":       {"not":{}}, 
+                    "dateType":          {"not":{}}, 
+                    "asCredential":      {"not":{}}, 
+                    "required":          {"not":{}}, 
+                    "sameAs":            {"not":{}}, 
+                    "validIf":           {"not":{}}, 
+                    "validIfNot":        {"not":{}}, 
+                    "regex":             {"not":{}}, 
+                    "notIn":             {"not":{}}, 
+                    "in":                {"not":{}}, 
+                    "minValue":          {"not":{}}, 
+                    "maxValue":          {"not":{}}, 
+                    "minLength":         {"not":{}}, 
+                    "maxLength":         {"not":{}}, 
+                    "keydown":           {"not":{}}, 
+                    "refresh":           {"not":{}}, 
+                    "isHtml":            {"not":{}}, 
+                    "runLocal":          {"not":{}}, 
+                    "query":             {"not":{}}, 
+                    "outputObject":      {"not":{}}, 
+                    "columns":           {"not":{}}, 
+                    "pctColumns":        {"not":{}}, 
+                    "filterColumns":     {"not":{}}, 
+                    "allowDelete":       {"not":{}}, 
+                    "allowInsert":       {"not":{}}, 
+                    "deleteMarker":      {"not":{}}, 
+                    "insertMarker":      {"not":{}}, 
+                    "readonlyColumns":   {"not":{}}, 
+                    "insertColumns":     {"not":{}},  
+                    "sticky":            {"not":{}}, 
+                    "horizontal":        {"not":{}}, 
+                    "editable":          {"not":{}}, 
+                    "valueColumn":       {"not":{}}, 
+                    "previewColumn":     {"not":{}}, 
+                    "placeholderColumn": {"not":{}}, 
+                    "dbConfig":          {"not":{}}, 
+                    "model":             {"not":{}}, 
+                    "help":              {"not":{}}, 
+                    "values":            {"not":{}}, 
+                    "multiple":          {"not":{}}, 
+                    "size":              {"not":{}}, 
+                    "hide":              {"not":{}}, 
+                    "icon":              {"not":{}}, 
+                    "tableFields":       {"not":{}}
+                  },
+                  "required": ["expression"]
+                },                
+                {
+                  "properties": {
+                    "type": {
                       "enum": ["datetime"]
                     },
                     "minValue": {"not":{}},
@@ -879,7 +932,7 @@
               "properties": {
                 "type": {
                   "type": "string",
-                  "enum": ["text","textarea", "password", "checkbox", "enum", "query", "number", "radio", "expression", "table","datetime"]
+                  "enum": ["text","textarea", "password", "checkbox", "enum", "query", "number", "radio", "expression", "table","datetime","html"]
                 },
                 "name": {
                   "$id": "/formfield",
@@ -1025,7 +1078,11 @@
                     }
                   }
                 },
-                "model": {"type": "string"},
+                "model": {
+                  "anyOf": [{"type": "string"},
+                    {"type": "array"}
+                  ]
+                },
                 "help": {"type": "string"},
                 "values": {
                   "type": "array",
@@ -1220,7 +1277,7 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["text","textarea", "password", "checkbox", "enum", "query", "number","datetime"]
+                        "enum": ["text","textarea", "password", "checkbox", "enum", "query", "number","datetime","html"]
                       },
                       "name": {"type": "string"},
                       "label": {"type": "string"},

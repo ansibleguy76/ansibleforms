@@ -34,8 +34,8 @@
           <span  v-show="!hideForm" title="Copy form link with values" class="icon is-clickable is-pulled-right has-text-link" @click="getFormUrl()">
               <font-awesome-icon icon="link" />
           </span>
-          <span class="icon is-pulled-right">
-            <font-awesome-icon :icon="loopicon.icon" size="lg" :class="loopicon.color" :spin="loopicon.spin" /> 
+          <span class="icon is-pulled-right" v-show="loopbusy">
+            <font-awesome-icon icon="spinner" size="lg" class="has-text-warning" spin /> 
           </span>
           <!-- reload button -->
           <button @click="reloadForm" class="button is-white is-small mr-3">
@@ -67,7 +67,7 @@
                     
                       <div class="field mt-3">
                         <!-- field label -->
-                        <label class="label" :class="{'has-text-dark':!field.hide,'has-text-grey':field.hide}">{{ field.label || field.name }} <span v-if="field.required" class="has-text-danger">*</span>
+                        <label v-show="field.type!='html'" class="label" :class="{'has-text-dark':!field.hide,'has-text-grey':field.hide}">{{ field.label || field.name }} <span v-if="field.required" class="has-text-danger">*</span>
                           <!-- field buttons -->
                           <span class="is-pulled-right">
                             <!-- refresh auto -->
@@ -159,6 +159,8 @@
                         <div v-if="field.type=='checkbox'">
                           <BulmaCheckRadio checktype="checkbox" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="field.placeholder" @change="evaluateDynamicFields(field.name)" />
                         </div>
+                        <!-- type = html -->
+                        <div class="mt-3" v-if="field.type=='html'" v-html="$v.form[field.name].$model || ''"></div>
                         <!-- type = enum/query -->
                         <div v-if="field.type=='query' || field.type=='enum'">
                           <BulmaAdvancedSelect
@@ -343,7 +345,7 @@
           <div class="columns">
             <!-- progress/close button -->
             <div class="column">
-              <button v-if="!!jobResult.message" class="button is-fullwidth has-text-light" @click="resetResult()" :class="{ 'has-background-success' : jobResult.status=='success', 'has-background-warning' : jobResult.status=='warning', 'has-background-danger' : jobResult.status=='error','has-background-info cursor-progress' : jobResult.status=='info' }">
+              <button v-if="!!jobResult.message" class="button is-fullwidth has-text-light" @click="resetResult()" :class="{ 'has-background-success' : jobResult.status=='success', 'has-background-warning' : jobResult.status=='warning', 'has-background-danger' : jobResult.status=='error','has-background-info cursor-progress' : ['info',''].includes(jobResult.status) }">
                 <span class="icon" v-if="jobResult.status=='info'"><font-awesome-icon icon="spinner" spin /></span>
                 <span class="icon" v-if="jobResult.status!='info'"><font-awesome-icon icon="times" /></span>
                 <span>{{ jobResult.message }}</span>
@@ -626,14 +628,12 @@
           return []
         }
       },
-      loopicon(){
-        if(this.loopdelay==500){
-          return {icon:['fa-regular','face-smile'],color:"has-text-success",spin:false}
-        }else{
-          return {icon:['fa-solid','spinner'],color:"has-text-warning",spin:true}
-        }
-       
-      }    
+      loopbusy(){
+        return this.loopdelay!=500
+      },
+      loopdivider(){
+        return 5000/this.loopdelay
+      } 
     },
     methods:{
       // used for enum field, to know the width of the container
@@ -1172,6 +1172,7 @@
         // console.log("item = " + value)
         // console.log(typeof value)
         // console.log(testRegex)
+        value = value.replace(/\n+/g, '') // put everything in 1 line.
         matches=[...value.matchAll(testRegex)] // force match array
         for(match of matches){
             // console.log("-> match : " + match[0] + "->" + match[1])
@@ -1391,9 +1392,7 @@
                 if(item.expression && (flag==undefined || ref.hasDefaultDependencies(item.name))){                // if expression and not evaluated yet
                   // console.log("eval expression " + item.name)
                   // console.log(`[${item.name}][${flag}] : evaluating`)
-                  if(item.required){
-                    hasUnevaluatedFields=true                                       // set the un-eval flag if this is required
-                  }
+                  hasUnevaluatedFields=true                                       // set the un-eval flag if this is required
                   // set flag running
                   ref.setFieldStatus(item.name,"running",false)
                   placeholderCheck = ref.replacePlaceholders(item)     // check and replace placeholders
@@ -1402,9 +1401,8 @@
                   if(placeholderCheck.value!=undefined){                       // expression is clean ?
                       // console.log(`[${item.name}] 2 : ${placeholderCheck.value}`)
                       // allow local run in browser
-                      if(item.runLocal){
+                      if(item.runLocal || item.type=="html"){
                         // console.log("Running local expression : " + placeholderCheck.value)
-
                         var result
                         try{
                           // check if direct object attempt
@@ -1415,7 +1413,7 @@
                             result=eval(placeholderCheck.value)
                           }
                           
-                          if(item.type=="expression") Vue.set(ref.form, item.name, result);
+                          if(item.type=="expression" || item.type=="html") Vue.set(ref.form, item.name, result);
                           if((item.type=="query")||(item.type=="enum")) Vue.set(ref.queryresults, item.name, [].concat(result));
                           // table is special.  if external data is passed.  we take that instead of results.
                           if(item.type=="table" && !ref.defaults(item.name)){
@@ -1510,9 +1508,7 @@
                 } else if(item.query && flag==undefined){
                    // console.log("eval query : " + item.name)
                   // set flag running
-                  if(item.required){
-                    hasUnevaluatedFields=true
-                  }
+                  hasUnevaluatedFields=true
                   ref.setFieldStatus(item.name,"running",false)
                   placeholderCheck = ref.replacePlaceholders(item)     // check and replace placeholders
                   if(placeholderCheck.value!=undefined){                       // expression is clean ?
@@ -1607,39 +1603,44 @@
           if(!hasUnevaluatedFields){
             ref.canSubmit=true;
             if(ref.watchdog>0){
-              //ref.$toast.info("All fields are found")
+              // ref.$toast.info("All fields are found")
             }
             ref.watchdog=0
           }
           if(ref.jobResult.message=="initializing"){ // has a request been made to execute ?
             // ref.$toast.info("Requesting execution")
-            if(ref.validateForm()){  // form is valid ?
-              ref.jobResult.message="stabilizing"
-              // ref.$toast.info("Waiting for form to stabilize")
-              ref.watchdog=0
-            }else{
-              ref.jobResult.message="" // reset status, form not valid
-            }
+            ref.jobResult.message="" // immediately reset => we don't want to initialized twice
+            Vue.nextTick(()=>{ // we want to make sure the the last form action (lostfocus field) is processed
+              if(ref.validateForm()){  // form is valid ?
+                ref.jobResult.message="stabilizing"
+                // ref.$toast.info("Waiting for form to stabilize")
+                ref.watchdog=0
+              }else{
+                ref.jobResult.message="" // reset status, form not valid
+              }              
+            })
+
           }
           if(ref.jobResult.message=="stabilizing"){ // are we waiting to execute ?
             if(ref.canSubmit){
               ref.jobResult.message="triggering execution"
               ref.executeForm()
+              // ref.$toast.info("Executing form...");ref.jobResult.message=""
             }else{
               // continue to stabilize
-              if(ref.watchdog>15){  // is it taking too long ?
+              if(ref.watchdog>50){  // is it taking too long ?
                 ref.jobResult.message=""   // stop and reset
-                ref.$toast.warning("It is taking too long to evaluate all fields before run")
+                ref.$toast.warning("It took too long to evaluate all fields before run.\r\nLet the form stabilize and try again.")
               }else{
-                // ref.$toast.info("Stabalizing form...")
+                //ref.$toast.info(`Stabilizing form...${ref.watchdog}`)
               }
             }
           }
           refreshCounter++;
-          if(refreshCounter%10==0){
+          if(refreshCounter%ref.loopdivider==0){
             ref.generateJsonOutput() // refresh json output
           }
-          if(ref.watchdog>30 || ref.watchdog==0){
+          if(ref.watchdog>50 || ref.watchdog==0){
             ref.loopdelay=500
           }else{
             ref.loopdelay=4
@@ -1815,34 +1816,37 @@
         this.currentForm.fields.forEach((item, i) => {
           // this.checkDependencies(item) // hide field based on dependency
           if(this.visibility[item.name] && !item.noOutput){
-            var fieldmodel = item.model
+            var fieldmodel = [].concat(item.model || [])
             var outputObject = item.outputObject || item.type=="expression" || item.type=="table" || false
             var outputValue = this.form[item.name]
             // if no model is given, we assign to the root
             if(!outputObject){  // do we need to flatten output ?
               outputValue=this.getFieldValue(outputValue,item.valueColumn || "",true)
             }
-            if(fieldmodel=="" || fieldmodel===undefined){
+            if(fieldmodel.length==0){
               this.formdata[item.name]=outputValue
             }else{
-              // convert fieldmodel for actual object
-              // svm.lif.name => svm["lif"].name = formvalue
-              // using reduce, which is a recursive function
-              fieldmodel.split(/\s*\.\s*/).reduce((master,obj, level,arr) => {
-                // if last
-                if (level === (arr.length - 1)){
-                    // the last piece we assign the value to
-                    master[obj]=outputValue
-                }else{
-                    // initialize first time to object
-                    if(master[obj]===undefined){
-                      master[obj]={}
-                    }
-                }
-                // return the result for next reduce iteration
-                return master[obj]
+              fieldmodel.forEach((f)=>{
+                // convert fieldmodel for actual object
+                // svm.lif.name => svm["lif"].name = formvalue
+                // using reduce, which is a recursive function
+                f.split(/\s*\.\s*/).reduce((master,obj, level,arr) => {
+                  // if last
+                  if (level === (arr.length - 1)){
+                      // the last piece we assign the value to
+                      master[obj]=outputValue
+                  }else{
+                      // initialize first time to object
+                      if(master[obj]===undefined){
+                        master[obj]={}
+                      }
+                  }
+                  // return the result for next reduce iteration
+                  return master[obj]
 
-              },ref.formdata);
+                },ref.formdata);
+              })
+
             }
           }
         });

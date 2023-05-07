@@ -1560,7 +1560,26 @@
                       label: Time
                       default: "13:01:00"
                       required: true
-                      help: A help message                                                                                                   
+                      help: A help message     
+              - name: html
+                description: An HTML field
+                examples:
+                - name: Alert
+                  code: |
+                    - type: html
+                      name: alert
+                      expression: |
+                        '<div class="notification is-danger">
+                          danger mister robinson !
+                        </div>'
+                    - type: html   
+                      name: image
+                      expression: |
+                        '<img src="https://dummyimage.com/16:9x1080" />' 
+                    - name: header
+                      type: html
+                      expression: | 
+                        '<h3 class="title is-3">Your own title</h3>'                                                                                                                                                        
               - name: number
                 description: A number input field
                 examples:
@@ -2132,13 +2151,17 @@
               Form fields are by default send as extravars.  
               If you do not want a field to be sent as extravar, set this attribute to true.
           - name: model
-            type: string
-            allowed: An dot-based string notation of an object
+            type: string or array
+            allowed: An dot-based string notation of an object, or an array of these
             short: Extravar modelling
             description: |
               By default, a field is sent as a root-extravar.  
               If you want model the output of the extravars, 
-              you can specify a `dot-notation` of how this field should be modelled.
+              you can specify a `dot-notation` of how this field should be modelled.  
+            changelog:
+              - version: 4.0.9
+                type: added
+                description: model can now be an array
             examples:
               - name: Model 2 fields together as a single object
                 code: |
@@ -2198,7 +2221,7 @@
                 When used in an `enum` field, the expression must return a flat array or array of flat objects, to make it presentable in a dropdown box.  
                 An expression supports placeholders.  Read more about placeholders here. [TODO]
                 Click here to find out more about the predefined functions. [TODO]
-            with_types: enum, expression, table
+            with_types: enum, expression, table, html
             examples:
               - name: Get a list of users from a rest api
                 code: |
