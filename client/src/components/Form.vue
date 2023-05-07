@@ -67,7 +67,7 @@
                     
                       <div class="field mt-3">
                         <!-- field label -->
-                        <label class="label" :class="{'has-text-dark':!field.hide,'has-text-grey':field.hide}">{{ field.label || field.name }} <span v-if="field.required" class="has-text-danger">*</span>
+                        <label v-show="field.type!='html'" class="label" :class="{'has-text-dark':!field.hide,'has-text-grey':field.hide}">{{ field.label || field.name }} <span v-if="field.required" class="has-text-danger">*</span>
                           <!-- field buttons -->
                           <span class="is-pulled-right">
                             <!-- refresh auto -->
@@ -159,6 +159,8 @@
                         <div v-if="field.type=='checkbox'">
                           <BulmaCheckRadio checktype="checkbox" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="field.placeholder" @change="evaluateDynamicFields(field.name)" />
                         </div>
+                        <!-- type = html -->
+                        <div class="mt-3" v-if="field.type=='html'" v-html="$v.form[field.name].$model || ''"></div>
                         <!-- type = enum/query -->
                         <div v-if="field.type=='query' || field.type=='enum'">
                           <BulmaAdvancedSelect
@@ -1170,6 +1172,7 @@
         // console.log("item = " + value)
         // console.log(typeof value)
         // console.log(testRegex)
+        value = value.replace(/\n+/g, '') // put everything in 1 line.
         matches=[...value.matchAll(testRegex)] // force match array
         for(match of matches){
             // console.log("-> match : " + match[0] + "->" + match[1])
@@ -1398,9 +1401,8 @@
                   if(placeholderCheck.value!=undefined){                       // expression is clean ?
                       // console.log(`[${item.name}] 2 : ${placeholderCheck.value}`)
                       // allow local run in browser
-                      if(item.runLocal){
+                      if(item.runLocal || item.type=="html"){
                         // console.log("Running local expression : " + placeholderCheck.value)
-
                         var result
                         try{
                           // check if direct object attempt
@@ -1411,7 +1413,7 @@
                             result=eval(placeholderCheck.value)
                           }
                           
-                          if(item.type=="expression") Vue.set(ref.form, item.name, result);
+                          if(item.type=="expression" || item.type=="html") Vue.set(ref.form, item.name, result);
                           if((item.type=="query")||(item.type=="enum")) Vue.set(ref.queryresults, item.name, [].concat(result));
                           // table is special.  if external data is passed.  we take that instead of results.
                           if(item.type=="table" && !ref.defaults(item.name)){

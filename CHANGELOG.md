@@ -10,10 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 -   model can now be an array
+-   html field
 
 ### Fixed
 
 -   form could be executed while non-required fields were being evaluated
+
+### Changed
+
+-   expression field can have newlines, they will be removed.
 
 ## [4.0.8] - 2023-05-03
 
