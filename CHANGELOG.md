@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.9] - 2023-05-07
+
 ### Added
 
 -   model can now be an array
@@ -497,7 +499,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.8...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.9...HEAD
+
+[4.0.9]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.8...4.0.9
 
 [4.0.8]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.7...4.0.8
 
