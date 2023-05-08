@@ -1563,6 +1563,7 @@
                       help: A help message     
               - name: html
                 description: An HTML field
+                version: 4.0.9
                 examples:
                 - name: Alert
                   code: |
@@ -1794,12 +1795,14 @@
           - name: label
             type: string
             allowed: Free text
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table
             short: Field label
             description: |
               A friendly name/label for the field
           - name: placeholder
             type: string
             allowed: Free text
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table
             short: In-field help value
             description: |
               Some form fields allow an in-field hint value.
@@ -1807,6 +1810,7 @@
           - name: help
             type: string
             allowed: Free text
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table
             short: Field help message
             description: |
               Some fields require additional help information.
