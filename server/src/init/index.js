@@ -8,10 +8,24 @@ Ssh.generate(false)
     logger.error("Failed to generate ssh keys : " + err)
   })
 Form.initBackupFolder()
-Job.abandon()
-  .then((changed)=>{
-    logger.warning(`Abandoned ${changed} jobs`)
-  })
-  .catch((err)=>{
-    logger.error("Failed to abandon job : " + err)
-  })
+
+// this is at startup, abandon all running jobs, pointless to not do it.
+Job.abandon(true)
+.then((changed)=>{
+  logger.warning(`Abandoned ${changed} jobs`)
+})
+.catch((err)=>{
+  logger.error("Failed to abandon jobs : " + err)
+})
+
+logger.info("Initializing hourly abandoned jobs timer")
+// this is hourly, abandon running jobs older than a day.
+setInterval(()=>{
+  Job.abandon()
+    .then((changed)=>{
+      logger.warning(`Abandoned ${changed} jobs`)
+    })
+    .catch((err)=>{
+      logger.error("Failed to abandon jobs : " + err)
+    })
+},3600000)
