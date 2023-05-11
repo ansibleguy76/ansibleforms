@@ -161,6 +161,30 @@ function resizeColumn(table,name,fieldtype){
       return message
     })
 }
+function setUtf8mb4CharacterSet(table,name,fieldtype){
+  var message
+  var db="AnsibleForms"
+  var checksql = `SELECT 1 FROM information_schema.columns WHERE table_schema='${db}' AND table_name = '${table}' AND column_name = '${name}' AND character_set_name='utf8mb4';`
+  var sql = `ALTER TABLE ${db}.${table} MODIFY \`${name}\` ${fieldtype} character set utf8mb4 collate utf8mb4_unicode_ci;`
+  logger.debug(`set charset column '${name}'->'utf8mb4' on table '${table}'`)
+  return mysql.do(checksql)
+    .then((checkres)=>{
+      if(checkres.length==0){
+        return mysql.do(sql)
+      }
+      return false
+    })
+    .then((res)=>{
+      if(!res){
+        message=`Column '${name}' has already charset 'utf8mb4' on '${table}'`
+        logger.debug(message)
+        return message
+      }
+      message=`Changed charset to 'utf8mb4' on column '${name}' on '${table}'`
+      logger.warning(message)
+      return message
+    })
+}
 function addRecord(table,names,values){
   var message
   var db="AnsibleForms"
@@ -234,9 +258,16 @@ function patchAll(){
   tablePromises.push(addColumn("awx","password","text",true,"NULL")) // add column to have user based awx connection
   tablePromises.push(addColumn("awx","use_credentials","tinyint(4)",false,"0")) // add column to have user based awx connection
   tablePromises.push(resizeColumn("tokens","username_type","VARCHAR(10)")) // azuread is longer
+  // patches to db for v4.0.10
+  tablePromises.push(setUtf8mb4CharacterSet("jobs","extravars","longtext")) // allow emoticon or utf16 character
+  tablePromises.push(setUtf8mb4CharacterSet("jobs","notifications","longtext")) // allow emoticon or utf16 character
+  tablePromises.push(setUtf8mb4CharacterSet("jobs","approval","longtext")) // allow emoticon or utf16 character
+  tablePromises.push(setUtf8mb4CharacterSet("job_output","output","longtext")) // allow emoticon or utf16 character
+
   buffer = fs.readFileSync(`${__dirname}/../db/create_settings_table.sql`)
   sql = buffer.toString()
   tablePromises.push(addTable("settings",sql)) // add settings table
+  
   buffer = fs.readFileSync(`${__dirname}/../db/create_azuread_table.sql`)
   sql = buffer.toString()
   tablePromises.push(addTable("azuread",sql)) // add azuread table

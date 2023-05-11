@@ -4,7 +4,7 @@
       <div class="container">
         <div class="columns is-centered">
           <div class="column is-6-tablet is-6-desktop is-6-widescreen">
-            <div class="notification is-danger" v-if="errorMessage!=''" v-text="errorMessage"></div>
+            <div class="notification is-danger" v-if="error!=''" v-text="error"></div>
             <div class="notification is-success" v-if="success" v-html="success"></div>
             <div class="notification is-warning" v-if="failed" v-html="failed"></div>
             <form action="" class="box">
@@ -34,7 +34,6 @@
 </template>
 
 <script>
-  import Vue from 'vue'
   import axios from 'axios'
 
 
@@ -47,6 +46,7 @@
       },
       data() {
           return {
+              error:this.errorMessage
           }
       },
       computed:{
@@ -69,19 +69,21 @@
           create() {
             var ref=this
             this.$toast.info("Creating... wait a moment")
-            axios.post("/api/v1/schema")
+            axios.post("/api/v1/schema",{})
               .then((result)=>{
+
                 if(result.data.status!="error"){
-                  ref.errorMessage=""
-                  setTimeout(()=>{ref.$router.push({name:"Login"})},3000)
+                  ref.error=""
+                  this.$toast.success(result.data.message)
+                  //setTimeout(()=>{ref.$router.push({name:"Login"})},3000)
                 }else{
-                  ref.errorMessage=result.data.message
+                  ref.error=result.data.message
                 }
-
+                console.log(result)
               }).catch(function (error) {
-                  ref.errorMessage=error
+                  ref.error=error
               })
-
+            console.log("creating")
           }
       }
   }

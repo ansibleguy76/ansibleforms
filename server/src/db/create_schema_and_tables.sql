@@ -22,7 +22,7 @@ CREATE TABLE `users`(
 DROP TABLE IF EXISTS `tokens`;
 CREATE TABLE `tokens` (
   `username` varchar(250) NOT NULL,
-  `username_type` varchar(5) NOT NULL,
+  `username_type` varchar(10) NOT NULL,
   `refresh_token` text DEFAULT NULL,
   `timestamp` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -76,13 +76,17 @@ CREATE TABLE `jobs` (
   `user` varchar(250) DEFAULT NULL,
   `user_type` varchar(10) DEFAULT NULL,
   `job_type` varchar(20) DEFAULT NULL,
-  `extravars` mediumtext DEFAULT NULL,
+  `extravars` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `credentials` mediumtext DEFAULT NULL,
+  `notifications` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `approval` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `step` varchar(250) DEFAULT NULL,
   `parent_id` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8;
 CREATE TABLE `job_output` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `output` longtext DEFAULT NULL,
+  `output` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `timestamp` datetime NOT NULL DEFAULT current_timestamp(),
   `output_type` varchar(10) NOT NULL,
   `job_id` int(11) NOT NULL,
