@@ -1806,7 +1806,6 @@
             short: In-field help value
             description: |
               Some form fields allow an in-field hint value.
-            with_types: text, textarea, number, password, checkbox, enum, datetime
           - name: help
             type: string
             allowed: Free text

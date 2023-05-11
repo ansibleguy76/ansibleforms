@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+-   help added
+-   fixed sql init
+-   set a few columns to utf8mb4 for emoticon issues
+-   add interval to cleanup 1 day old running jobs
+
 ## [4.0.9] - 2023-05-07
 
 ### Added
