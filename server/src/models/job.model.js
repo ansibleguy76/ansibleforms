@@ -170,10 +170,14 @@ Job.create = function (record) {
   return mysql.do("INSERT INTO AnsibleForms.`jobs` set ?", record)
     .then((res)=>{ return res.insertId})
 };
-Job.abandon = function () {
+Job.abandon = function (all=false) {
   // abandon jobs
   logger.notice(`Abandoning jobs`)
-  return mysql.do("UPDATE AnsibleForms.`jobs` set status='abandoned' where status='running' or status='abort'")
+  var sql = "UPDATE AnsibleForms.`jobs` set status='abandoned' where (status='running' or status='abort') " // remove all jobs
+  if(!all){
+    sql = sql + "and (start >= (NOW() - INTERVAL 1 DAY))" // remove jobs that are 1 day old
+  }
+  return mysql.do(sql)
     .then((res)=>{ return res.changedRows})
 };
 Job.update = function (record,id) {
