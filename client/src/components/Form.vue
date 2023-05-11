@@ -1118,7 +1118,7 @@
         this.currentForm.fields.forEach((item,i) => {
           if(["expression"].includes(item.type)){
             var testRegex = /\$\(([^)]+)\)/g;
-            var matches=(item.expression || item.query).matchAll(testRegex);
+            var matches=(item.expression || item.query || '').matchAll(testRegex);
             for(var match of matches){
               foundmatch = match[0];                                              // found $(xxx)
               foundfield = match[1];                                              // found xxx
@@ -2004,7 +2004,7 @@
           }
           Vue.set(ref.fieldOptions,item.name,{})                                // storing some easy to find options
           Vue.set(ref.fieldOptions[item.name],"evalDefault",item.evalDefault??false)
-          if(["expression","query","enum","table"].includes(item.type)){
+          if(["expression","query","enum","table","html"].includes(item.type)){
             Vue.set(ref.fieldOptions[item.name],"isDynamic",!!(item.expression??item.query??false))
             Vue.set(ref.fieldOptions[item.name],"valueColumn",item.valueColumn||"")
             Vue.set(ref.fieldOptions[item.name],"placeholderColumn",item.placeholderColumn||"")
