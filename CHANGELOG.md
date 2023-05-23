@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   fixed sql init
 -   set a few columns to utf8mb4 for emoticon issues
 -   add interval to cleanup 1 day old running jobs
+-   better database check error handling, if the database is offline, no create schema button will be shown
+
+### Added
+
+-   Added alias type 'local' => expression, runLocal, hide, noOutput
 
 ## [4.0.9] - 2023-05-07
 

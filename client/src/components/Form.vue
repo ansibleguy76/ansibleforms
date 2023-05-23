@@ -1981,6 +1981,15 @@
         this.fieldOptions["__user__"]={
           type:"expression"
         }
+        // process aliases
+        this.currentForm.fields.forEach((item, i) => {
+          if(item.type=="local"){
+            item.hide=item.hide??true
+            item.noOutput=item.noOutput??true
+            item.type="expression"
+            item.runLocal=true
+          }
+        })        
         // initialize defaults
         this.currentForm.fields.forEach((item, i) => {
           // extra query parameters and store in externalData

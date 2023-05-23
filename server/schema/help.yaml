@@ -1671,10 +1671,12 @@
                     
                   * **database query** : you can use the query and dbConfig property to query a mysql, mssql server, postgres or mongodb.
                   * **expression** : you can use the expression property to create or retrieve data. in this case the output of the expression can be any type.  
-                  The expression itself is pure javascript. You can do inline javascript or you can use a function. Read more on security concerns about expressions You can extend the functions with your own in the custom.js file. You can have synchronous and asynchronous functions. This allows you to retrieve any kind of data, whether it's reading a file or accessing a rest-api, or querying a foreign database. You can run the expression locally (`runLocal`) in the browser for simple expressions. This is faster and there is no limitation on the expression.  
+                  The expression itself is pure javascript. You can do inline javascript or you can use a function. Read more on security concerns about expressions You can extend the functions with your own in the custom.js file. You can have synchronous and asynchronous functions. This allows you to retrieve any kind of data, whether it's reading a file or accessing a rest-api, or querying a foreign database. You can run the expression locally (`runLocal`) in the browser for simple expressions. This is faster and there is no limitation on the expression.  Use the alias type `local` to quickly make an expression type with runLocal, hide and noOutput.
                     
                   Advanced helper functions (local and remote) are available, to query from rest for example.  
-                  Explore the separate section on Expressions for multiple demo's.    
+                  Explore the separate section on Expressions for multiple demo's.  
+                    
+                  Alias : `local` (type='expression', runLocal=true, hide=true, noOutput=true) // since version 4.0.10
                 examples:    
                 - name: Expressions
                   code: |
@@ -2223,7 +2225,9 @@
                 However in combination with `runLocal`, the evaluation is ran in the browsers sandbox and allows the full javascript power.
                 When used in an `enum` field, the expression must return a flat array or array of flat objects, to make it presentable in a dropdown box.  
                 An expression supports placeholders.  Read more about placeholders here. [TODO]
-                Click here to find out more about the predefined functions. [TODO]
+                Click here to find out more about the predefined functions. [TODO]  
+                  
+                **tip** : use the alias `local` (type='expression',runLocal=true,hide=true,noOutput=true)
             with_types: enum, expression, table, html
             examples:
               - name: Get a list of users from a rest api
@@ -2247,6 +2251,15 @@
                     type: enum
                     expression: Array.from({length: 10}, (_, i) => i + 1)
                     runLocal: true
+              - name: Use the alias `local`
+                code: |
+                  - name: uppercase
+                    type: local
+                    expression: "'test'.toUpperCase()"
+                    runLocal: true // this is default with type=local                  
+                    hide: true     // this is default with type=local
+                    noOutput: true // this is default with type=local
+
           - name: runLocal
             type: boolean
             default: false
@@ -3146,6 +3159,8 @@
     description: |
       The following example are assumed to run with the field property `runLocal` true.  
       They are ran in the sandbox of the browser and can leverage the full javascript engine.  
+        
+      **Tip** : use the type `local` as an alias for 'type=expression, runLocal=true, hide=true, noOutput=true'
     examples:
     - name: naming convention
       description: Use string manipulations to apply naming conventions

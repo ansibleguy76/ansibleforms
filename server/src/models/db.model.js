@@ -20,7 +20,9 @@ MySql.do=function(query,vars){
     try{
       conn.query(query,vars,function(err,result){
         // logger.debug("[ansibleforms] Closing connection")
-        conn.end()
+        try{
+          conn.end()
+        }catch(e){}
         if(err){
           logger.error("[ansibleforms] Query error : " + err)
           reject(err)
@@ -31,7 +33,9 @@ MySql.do=function(query,vars){
       })
     }catch(err){
       // logger.debug("[ansibleforms] Closing connection")
-      conn.end()
+      try{
+        conn.end()
+      }catch(e){}
       logger.error("[ansibleforms] " + err)
       reject(err)
     }

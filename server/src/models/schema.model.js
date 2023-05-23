@@ -13,7 +13,7 @@ const cache = new NodeCache({
 var Schema=function(){
 };
 function handleError(n){
-  logger.error(n)
+  logger.error(n.message)
   throw(n)
 }
 

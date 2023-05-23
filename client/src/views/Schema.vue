@@ -7,7 +7,7 @@
             <div class="notification is-danger" v-if="error!=''" v-text="error"></div>
             <div class="notification is-success" v-if="success" v-html="success"></div>
             <div class="notification is-warning" v-if="failed" v-html="failed"></div>
-            <form action="" class="box">
+            <form action="" class="box" v-if="error!='FATAL ERROR'">
               <div class="content">
                 If this is the first time setup and you don't have your own schema and tables.<br><br>
                 Would you like me to try and create the schema and tables ?<br>
@@ -26,6 +26,12 @@
                 </button>
               </div>
             </form>
+            <div v-else class="box">
+              <div class="content">
+                Something went wrong.  Most likely the database is simply not reachable.   
+              </div>
+                
+            </div>  
           </div>
         </div>
       </div>
