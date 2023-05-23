@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.10] - 2023-05-23
+
+### Fixed
+
+-   help added
+-   fixed sql init
+-   set a few columns to utf8mb4 for emoticon issues
+-   add interval to cleanup 1 day old running jobs
+-   better database check error handling, if the database is offline, no create schema button will be shown
+
+### Added
+
+-   Added alias type 'local' => expression, runLocal, hide, noOutput
+
 ## [4.0.9] - 2023-05-07
 
 ### Added
@@ -499,7 +513,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.9...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.10...HEAD
+
+[4.0.10]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.9...4.0.10
 
 [4.0.9]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.8...4.0.9
 

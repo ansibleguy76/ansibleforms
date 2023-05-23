@@ -807,6 +807,30 @@
                 {
                   "properties": {
                     "type": {
+                      "enum": ["local"]
+                    },
+                    "values": {"not":{}},
+                    "minValue": {"not":{}},
+                    "maxValue": {"not":{}},
+                    "sticky": {"not":{}},
+                    "horizontal": {"not":{}},
+                    "pctColumns": {"not":{}},
+                    "filterColumns": {"not":{}},
+                    "dbConfig": {"not":{}},
+                    "multiple": {"not":{}},
+                    "allowDelete": {"not":{}},
+                    "allowInsert": {"not":{}},
+                    "deleteMarker": {"not":{}},
+                    "insertMarker": {"not":{}},
+                    "readonlyColumns": {"not":{}},
+                    "keydown": {"not":{}},
+                    "outputObject": {"not":{}}
+                  },
+                  "required": ["expression"]
+                },                
+                {
+                  "properties": {
+                    "type": {
                       "enum": ["expression"]
                     },
                     "values": {"not":{}},
@@ -932,7 +956,7 @@
               "properties": {
                 "type": {
                   "type": "string",
-                  "enum": ["text","textarea", "password", "checkbox", "enum", "query", "number", "radio", "expression", "table","datetime","html"]
+                  "enum": ["text","textarea", "password", "checkbox", "enum", "query", "number", "radio", "expression","local", "table","datetime","html"]
                 },
                 "name": {
                   "$id": "/formfield",

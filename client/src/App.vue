@@ -60,7 +60,7 @@
       </div>
     </BulmaModal>    
     <BulmaNav v-if="version" :isAdmin="isAdmin" @profile="showProfile=true" @about="showAbout=true" :approvals="approvals" :authenticated="authenticated" :profile="profile" @logout="logout()" :version="version" />
-    <router-view :isAdmin="isAdmin" :profile="profile" :authenticated="authenticated" :errorMessage="errorMessage" :errorData="errorData" @authenticated="login()" @logout="logout()" @refreshApprovals="loadApprovals()" />
+    <router-view v-if="isLoaded" :isAdmin="isAdmin" :profile="profile" :authenticated="authenticated" :errorMessage="errorMessage" :errorData="errorData" @authenticated="login()" @logout="logout()" @refreshApprovals="loadApprovals()" />
   </div>
 </template>
 <script>
@@ -82,6 +82,7 @@
         isAdmin:false,
         version:undefined,
         approvals:0,
+        isLoaded:false,
         showAbout:false,
         showEasterEgg:false,
         thanks:[
@@ -135,33 +136,34 @@
         },
         checkDatabase(){
           var ref=this;
-
+          console.log("Checking database")
           axios.get('/api/v1/schema')                               // check database
-            .then((result)=>{
-              if(result.data.status=="error"){
-                console.log("aha error")
-                ref.errorMessage=result.data.message;
-                ref.errorData=result.data.data;
-                if(!ref.errorMessage)ref.errorMessage="Unknown error"
-                if(typeof ref.errorMessage=="object"){ref.errorMessage=ref.errorMessage.message}
-                if(ref.errorMessage.startsWith("ERROR")){ // actual error, send to error page
-                  ref.errorMessage="Failed to check AnsibleForms database schema\n\n" + ref.errorMessage;
-                  ref.$router.replace({name:"Error"}).catch(err => {});
-                }else{ // not a real error, send to schema page
-                  ref.$router.replace({name:"Schema"}).catch(err => {});
-                }
-              }else{
-                this.loadVersion()
-                this.login()
+          .then((result)=>{
+            if(result.data.status=="error"){
+              ref.errorMessage=result.data.message;
+              ref.errorData=result.data.data;
+              if(!ref.errorMessage)ref.errorMessage="Unknown error"
+              if(typeof ref.errorMessage=="object"){ref.errorMessage=ref.errorMessage.message}
+              if(ref.errorMessage.startsWith("ERROR")){ // actual error, send to error page
+                ref.errorMessage="Failed to check AnsibleForms database schema\n\n" + ref.errorMessage;
+                ref.$router.replace({name:"Error"}).catch(err => {});
+              }else{ // not a real error, send to schema page
+                ref.$router.replace({name:"Schema"}).catch(err => {});
               }
+              ref.isLoaded=true
+            }else{
+              this.loadVersion()
+              this.login()
+              ref.isLoaded=true
+            }
 
-            })
-            .catch(function(err){
-              ref.$toast.error("Failed to check AnsibleForms database schema");
-              ref.errorMessage="Failed to check AnsibleForms database schema\n\n" + err
-              ref.$router.replace({name:"Error"}).catch(err => {});
-            });
-
+          })
+          .catch(function(err){
+            ref.$toast.error("Failed to check AnsibleForms database schema");
+            ref.errorMessage="Failed to check AnsibleForms database schema\n\n" + err
+            ref.$router.replace({name:"Error"}).catch(err => {});
+            ref.isLoaded=true
+          });            
         },
         loadProfile(){
           var ref=this;
