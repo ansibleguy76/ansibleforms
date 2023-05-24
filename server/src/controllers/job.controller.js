@@ -63,7 +63,7 @@ exports.getJob = function(req, res) {
 
 };
 exports.findAllJobs = function(req, res) {
-    var user = req.user.user
+    var user = req?.user?.user || {}
     var records = req.query.records || 500
     Job.findAll(user,records)
     .then((jobs)=>{res.json(new RestResult("success","jobs found",jobs,""))})
@@ -94,19 +94,23 @@ exports.launch = async function(req, res) {
         res.json(new RestResult("error","no data was sent","",""));
     }else{
         // get the form data
-        var form = req.body.formName;
+        var form = req.body.formName || "";
         var extravars = req.body.extravars || {}
         var creds = req.body.credentials || {}
         var awxCreds = req.body.awxCredentials || {}
         for (const [key, value] of Object.entries(awxCreds)) {
           creds["awx___"+key]=value
         }
-        var user = req.user.user
+        var user = req?.user?.user || {}
         extravars.ansibleforms_user = user
-        Job.launch(form,null,user,creds,extravars,null,function(job){
-          res.json(new RestResult("success","succesfully launched form",job,""))
-        })
-        .catch((err)=>{res.json(new RestResult("success","failed to launch form",null,err.toString))})
+        try{
+          await Job.launch(form,null,user,creds,extravars,null,function(job){
+            res.json(new RestResult("success","succesfully launched form",job,""))
+          })
+        }catch(err){
+          logger.error(err.toString())
+          res.json(new RestResult("success","failed to launch form",null,err.toString()))
+        }
     }
 };
 exports.relaunchJob = async function(req, res) {
@@ -117,11 +121,15 @@ exports.relaunchJob = async function(req, res) {
       res.json(new RestResult("error","You must provide a jobid","",""));
       return false
     }
-    var user = req.user.user
-    Job.relaunch(user,jobid,(job)=>{
-      res.json(new RestResult("success",`Job has been relaunched with job id ${job.id}`,"",""))
-    })
-    .catch((err)=>{ res.json(new RestResult("error",`Failed to relaunch : ${err.toString()}`,"","")) })
+    var user = req?.user?.user || {}
+    try{
+      await Job.relaunch(user,jobid,(job)=>{
+        res.json(new RestResult("success",`Job has been relaunched with job id ${job.id}`,"",""))
+      })
+    }catch(err){
+      logger.error(err.toString())
+      res.json(new RestResult("error",`Failed to relaunch : ${err.toString()}`,"",""))
+    }
 };
 exports.approveJob = async function(req, res) {
 
@@ -131,11 +139,15 @@ exports.approveJob = async function(req, res) {
       res.json(new RestResult("error","You must provide a jobid","",""));
       return false
     }
-    var user = req.user.user
-    Job.approve(user,jobid,(job)=>{
-      res.json(new RestResult("success",`Job ${jobid} has been approved`,"",""))
-    })
-    .catch((err)=>{res.json(new RestResult("error",`Failed to approve : ${err.toString()}`,"",""))})
+    var user = req?.user?.user || {}
+    try{
+      await Job.approve(user,jobid,(job)=>{
+        res.json(new RestResult("success",`Job ${jobid} has been approved`,"",""))
+      })
+    }catch(err){
+      logger.error(err.toString())
+      res.json(new RestResult("error",`Failed to approve : ${err.toString()}`,"",""))
+    }    
 };
 exports.rejectJob = async function(req, res) {
 
@@ -145,8 +157,13 @@ exports.rejectJob = async function(req, res) {
       res.json(new RestResult("error","You must provide a jobid","",""));
       return false
     }
-    var user = req.user.user
-    Job.reject(user,jobid)
-    .then(()=>{res.json(new RestResult("success",`Job ${jobid} has been rejected`,"",""))})
-    .catch((err)=>{res.json(new RestResult("error",`Failed to reject : ${err.toString()}`,"",""))})
+    var user = req?.user?.user || {}
+    try{
+      await Job.reject(user,jobid)
+      res.json(new RestResult("success",`Job ${jobid} has been rejected`,"",""))
+    }catch(err){
+      logger.error(err.toString())
+      res.json(new RestResult("error",`Failed to reject : ${err.toString()}`,"",""))
+    }    
+
 };
