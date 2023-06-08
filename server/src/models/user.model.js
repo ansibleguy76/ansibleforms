@@ -115,6 +115,7 @@ User.checkToken = function (username,username_type,refresh_token) {
 User.getRoles = function(groups,user){
   var roles = ["public"]
   var forms=undefined
+  var full_username = `${user.type}/${user.username}`
   try{
     forms = Form.load()
   }catch(e){
@@ -124,11 +125,19 @@ User.getRoles = function(groups,user){
   groups.forEach(function(group){
       // add all the roles that match the group
       forms.roles.forEach(function(role){
-        if(role.groups.includes(group)){
+        if(role.groups && role.groups.includes(group)){
           roles.push(role.name)
         }
       })
   })
+
+  // add all the roles that match the user
+  forms.roles.forEach(function(role){
+    if(role.users && role.users.includes(full_username)){
+      roles.push(role.name)
+    }
+  })
+
   return roles
 }
 User.getGroups = function(user,groupObj){
