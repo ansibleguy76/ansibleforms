@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - app crash on bad rest body
+- errors were not shown in output
 
 ## [4.0.10] - 2023-05-23
 
