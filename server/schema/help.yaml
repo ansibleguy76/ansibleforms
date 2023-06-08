@@ -393,7 +393,8 @@
     objectLink: forms/role
     short: Roles
     description: | 
-      The roles provide RBAC.  Each role has a name and 1 or more groups (local, ldap or azuread).  The `admin` and `public` rol is mandatory.
+      The roles provide RBAC.  Each role has a name and 1 or more groups (local, ldap or azuread).  The `admin` and `public` rol is mandatory.  
+      Since version 4.0.11 you can also add users (local, ldap or azuread)
     examples:
     - name: Roles
       code: |
@@ -409,6 +410,9 @@
         - name: demo
           groups:
           - local/demo
+        - name: usersonly
+          users:
+          - local/myuser
         - name: public        # is mandatory
           groups: []  
   - name: constants

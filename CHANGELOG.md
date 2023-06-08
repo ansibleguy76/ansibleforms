@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.11] - 2023-06-08
+
+### Added
+
+-   Allow users in roles
+
+### Fixed
+
+-   app crash on bad rest body
+-   errors were not shown in output
+
 ## [4.0.10] - 2023-05-23
 
 ### Fixed
@@ -41,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 -   new function fn.fnCidr // core implementation of ip.subnet() <https://www.npmjs.com/package/ip>
--   new function fn.fnTime // core implementation of dayjs() <https://day.js.org> 
+-   new function fn.fnTime // core implementation of dayjs() <https://day.js.org>
 -   background image on login screen (that you can overwrite)
 
 ## [4.0.7] - 2023-05-01
@@ -62,7 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 -   Allow awx connection with username and password
--   Added about me for 
+-   Added about me for
 -   Added new env var with regex to filter job output
 
 ### Changed
@@ -92,7 +103,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Add server fn.fnSsh function
 -   Showing env.variables in the settings
 -   Showing known_hosts and allow removal
--   Added limit property for ansible playbooks 
+-   Added limit property for ansible playbooks
 
 ### Changed
 
@@ -341,10 +352,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     -   insertMarker and deleteMarker (to mark deleted or new records)
     -   allowDelete and allowInsert (to allow insert/delete)
     -   readonlyField
-        With this table feature you can now load existing data and use table to modify it.  
-        The allowInsert set to false will focus on modification only.  
-        The deleteMarker set to value of choice, will allow you to use ansible `absent` for deleted records.  
-        Read the wiki for more details.
+            With this table feature you can now load existing data and use table to modify it.  
+            The allowInsert set to false will focus on modification only.  
+            The deleteMarker set to value of choice, will allow you to use ansible `absent` for deleted records.  
+            Read the wiki for more details.
 
 ### Fixed
 
@@ -513,7 +524,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.10...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.11...HEAD
+
+[4.0.11]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.10...4.0.11
 
 [4.0.10]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.9...4.0.10
 
@@ -564,8 +577,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [2.2.1]: https://github.com/ansibleguy76/ansibleforms/compare/2.2.0...2.2.1
 
 [2.2.0]: https://github.com/ansibleguy76/ansibleforms/compare/2.1.6...2.2.0
-
-[2.1.6]: https://github.com/ansibleguy76/ansibleforms/compare/2.1.5...2.1.6
 
 [2.1.6]: https://github.com/ansibleguy76/ansibleforms/compare/2.1.5...2.1.6
 

@@ -51,9 +51,19 @@
       "items": {
         "type": "object",
         "required": [
-          "name",
-          "groups"
+          "name"
         ],
+        "anyOf": [
+          {
+            "required": [
+              "groups"
+            ]
+          },{
+            "required": [
+              "users"
+            ]
+          }
+        ],        
         "properties": {
           "name": {
             "$id": "/role",
@@ -66,9 +76,17 @@
               "default": "",
               "pattern": "(\\blocal\\b|\\bldap\\b|\\bazuread\\b)\\/.+"
             }
-          }
+          },
+          "users": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "default": "",
+              "pattern": "(\\blocal\\b|\\bldap\\b|\\bazuread\\b)\\/.+"
+            }            
+          }                    
         },
-        "additionalProperties": false
+        "additionalProperties": true
       }
     },
     "constants":{
