@@ -230,8 +230,8 @@ Helpers.formatOutput = (records,asText)=>{
         if(filterOutput){
           line=line.replace(/class='/g,"class='low ")
         }
-        lineoutput.push(line)
       }
+      lineoutput.push(line)
     }) // end line loop
     // we add a timestamp to the record
     // we push it in the intermediate output array
