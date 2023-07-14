@@ -801,7 +801,7 @@
                 {
                   "properties": {
                     "type": {
-                      "enum": ["expression"]
+                      "enum": ["expression","local","local_out","credential"]
                     },
                     "values": {"not":{}},
                     "minValue": {"not":{}},
@@ -822,30 +822,6 @@
                   },
                   "required": ["expression"]
                 },
-                {
-                  "properties": {
-                    "type": {
-                      "enum": ["local"]
-                    },
-                    "values": {"not":{}},
-                    "minValue": {"not":{}},
-                    "maxValue": {"not":{}},
-                    "sticky": {"not":{}},
-                    "horizontal": {"not":{}},
-                    "pctColumns": {"not":{}},
-                    "filterColumns": {"not":{}},
-                    "dbConfig": {"not":{}},
-                    "multiple": {"not":{}},
-                    "allowDelete": {"not":{}},
-                    "allowInsert": {"not":{}},
-                    "deleteMarker": {"not":{}},
-                    "insertMarker": {"not":{}},
-                    "readonlyColumns": {"not":{}},
-                    "keydown": {"not":{}},
-                    "outputObject": {"not":{}}
-                  },
-                  "required": ["expression"]
-                },                
                 {
                   "properties": {
                     "type": {
@@ -974,7 +950,7 @@
               "properties": {
                 "type": {
                   "type": "string",
-                  "enum": ["text","textarea", "password", "checkbox", "enum", "query", "number", "radio", "expression","local", "table","datetime","html"]
+                  "enum": ["text","textarea", "password", "checkbox", "enum", "query", "number", "radio", "expression","local","local_out","credential", "table","datetime","html"]
                 },
                 "name": {
                   "$id": "/formfield",
@@ -1128,7 +1104,12 @@
                 "help": {"type": "string"},
                 "values": {
                   "type": "array",
-                  "items": {"type": "string"}
+                  "items": {
+                      "anyOf": [
+                        {"type": "string"},
+                        {"type": "object"}
+                      ]                    
+                  }
                 },
                 "multiple": {
                   "type": "boolean",
@@ -1391,7 +1372,12 @@
                       },
                       "values": {
                         "type": "array",
-                        "items": {"type": "string"}
+                        "items": {
+                          "anyOf": [{"type": "string"},
+                            {"type": "integer"},
+                            {"type": "boolean"}
+                          ]                          
+                        }
                       },
                       "icon": {
                         "$ref": "/icon"

@@ -1,6 +1,6 @@
 {
   "name": "ansible_forms",
-  "version": "4.0.11",
+  "version": "4.0.12",
   "repository": {
     "type": "git",
     "url": "git://github.com/ansibleguy76/ansibleforms.git"

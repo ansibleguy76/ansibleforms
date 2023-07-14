@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Modals are now 1024px
+
+### Added
+
+-   Allow enum array-of-objects values.
+-   New alias local_out (=> hidden local expression)
+-   New alias credential (=> hidden local expression with asCredential true)
+
 ## [4.0.11] - 2023-06-08
 
 ### Added
