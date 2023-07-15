@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.12] - 2023-07-15
+
+### Changed
+
+-   Modals are now 1024px
+
+### Added
+
+-   Allow enum array-of-objects values.
+-   New alias local_out (=> hidden local expression)
+-   New alias credential (=> hidden local expression with asCredential true)
+
 ## [4.0.11] - 2023-06-08
 
 ### Added
@@ -524,7 +536,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.11...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.12...HEAD
+
+[4.0.12]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.11...4.0.12
 
 [4.0.11]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.10...4.0.11
 

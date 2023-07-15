@@ -1,6 +1,6 @@
 {
   "name": "ansible_forms",
-  "version": "4.0.11",
+  "version": "4.0.12",
   "repository": {
     "type": "git",
     "url": "git://github.com/ansibleguy76/ansibleforms.git"
@@ -17,7 +17,7 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "core-js": "~3.30.1",
+    "core-js": "~3.31.1",
     "axios": "~1.4.0",
     "cors": "~2.8.5",
     "bcrypt": "~5.1.0",
@@ -46,14 +46,14 @@
     "mongodb":"~4.11.0",
     "pg":"~8.10.0",
     "ip":"1.1.8",
-    "dayjs": "1.11.7",
+    "dayjs": "1.11.9",
     "fs-extra":"~10.1.0",
     "node-cache":"~5.1.2",
     "ldap-authentication": "~2.3.3",
     "ldapjs": "~2.3.3",
     "read-last-lines": "~1.8.0",
-    "swagger-ui-express": "~4.6.2",
-    "nodemailer": "~6.9.1",
+    "swagger-ui-express": "~4.6.3",
+    "nodemailer": "~6.9.3",
     "nanoid": "~3.3.6"
   },
   "devDependencies": {

@@ -1675,12 +1675,17 @@
                     
                   * **database query** : you can use the query and dbConfig property to query a mysql, mssql server, postgres or mongodb.
                   * **expression** : you can use the expression property to create or retrieve data. in this case the output of the expression can be any type.  
-                  The expression itself is pure javascript. You can do inline javascript or you can use a function. Read more on security concerns about expressions You can extend the functions with your own in the custom.js file. You can have synchronous and asynchronous functions. This allows you to retrieve any kind of data, whether it's reading a file or accessing a rest-api, or querying a foreign database. You can run the expression locally (`runLocal`) in the browser for simple expressions. This is faster and there is no limitation on the expression.  Use the alias type `local` to quickly make an expression type with runLocal, hide and noOutput.
+                  The expression itself is pure javascript. You can do inline javascript or you can use a function. Read more on security concerns about expressions You can extend the functions with your own in the custom.js file. You can have synchronous and asynchronous functions. This allows you to retrieve any kind of data, whether it's reading a file or accessing a rest-api, or querying a foreign database. You can run the expression locally (`runLocal`) in the browser for simple expressions. This is faster and there is no limitation on the expression.  
+                  Use the alias type `local` to quickly make an expression type with runLocal, hide and noOutput.
+                  Use the alias type `local_out` to quickly make an expression type with runLocal, hide
+                  Use the alias type `credential` to quickly make an expression type with runLocal, hide, asCredential
                     
                   Advanced helper functions (local and remote) are available, to query from rest for example.  
                   Explore the separate section on Expressions for multiple demo's.  
                     
                   Alias : `local` (type='expression', runLocal=true, hide=true, noOutput=true) // since version 4.0.10
+                  Alias : `local_out` (type='expression', runLocal=true, hide=true) // since version 4.0.12
+                  Alias : `credential` (type='expression', runLocal=true, hide=true, asCredential=true) // since version 4.0.10
                 examples:    
                 - name: Expressions
                   code: |
@@ -1915,7 +1920,7 @@
             changelog:
               - version: 4.0.0
                 type: added
-                description: Add an exlamation mark `!` before the referencing field's name, to invert the match.
+                description: Add an exlamation mark `!` before the referencing field's name, to invert the match.  Wrap it in quotes because the `!` mark has special meaning in YAML.
             examples:
               - name: Show a field based on a checkbox
                 code: |
@@ -1954,6 +1959,18 @@
                     - name: has_private_office
                       values:
                       - true
+                  - name: office_name2
+                    type: text
+                    label: What's the name of the office
+                    dependencyFn: or
+                    dependencies:
+                    - name: "!job_type"     # this will invert/negate
+                      values:
+                      - IT
+                      - HR
+                    - name: has_private_office
+                      values:
+                      - true                      
           - name: keydown
             type: boolean
             short: Enable responsiveness
@@ -1985,6 +2002,31 @@
             description: |
               Enable multiple select with dropdown boxes.
             with_types: enum
+          - name: values
+            type: array
+            short: A list of values
+            description: |
+              To manually populate an enum field
+            with_types: enum
+            examples:
+            - name: list of cities
+              code: |
+                - name: cities
+                  type: enum
+                  values:
+                  - Rome
+                  - Paris
+                - name: cities2
+                  type: enum
+                  values:
+                  - name: Rome
+                    short: RO
+                  - name: Paris
+                    short: PA
+                - name: your_choice
+                  type: local
+                  expression: "'You chose $(cities2.name) or just short $(cities2.short)'"
+                    
           - name: default
             type: many
             short: Default value
@@ -2200,6 +2242,9 @@
                     type: expression
                     expression: "'vcenter'"
                     asCredential: true
+                  - name: vcenter_creds2
+                    type: credential    # alias for cleaner code
+                    expression: "'vcenter'"
 
                   # in the backend following will happen :
                   # - lookup credential call 'vcenter'
@@ -2231,7 +2276,9 @@
                 An expression supports placeholders.  Read more about placeholders here. [TODO]
                 Click here to find out more about the predefined functions. [TODO]  
                   
-                **tip** : use the alias `local` (type='expression',runLocal=true,hide=true,noOutput=true)
+                **tip** : use the alias `local` (type='expression',runLocal=true,hide=true,noOutput=true)  
+                **tip** : use the alias `local_out` (type='expression',runLocal=true,hide=true)
+                **tip** : use the alias `credential` (type='expression',runLocal=true,hide=true,asCredential=true)
             with_types: enum, expression, table, html
             examples:
               - name: Get a list of users from a rest api
@@ -2263,7 +2310,14 @@
                     runLocal: true // this is default with type=local                  
                     hide: true     // this is default with type=local
                     noOutput: true // this is default with type=local
-
+              - name: Use the alias `local_out`
+                code: |
+                  - name: uppercase
+                    type: local
+                    expression: "'test'.toUpperCase()"
+                    runLocal: true // this is default with type=local                  
+                    hide: true     // this is default with type=local
+ 
           - name: runLocal
             type: boolean
             default: false
@@ -3164,7 +3218,9 @@
       The following example are assumed to run with the field property `runLocal` true.  
       They are ran in the sandbox of the browser and can leverage the full javascript engine.  
         
-      **Tip** : use the type `local` as an alias for 'type=expression, runLocal=true, hide=true, noOutput=true'
+      **Tip** : use the type `local` as an alias for 'type=expression, runLocal=true, hide=true, noOutput=true'  
+      **Tip** : use the type `local_out` as an alias for 'type=expression, runLocal=true, hide=true'
+      **Tip** : use the type `credential` as an alias for 'type=expression, runLocal=true, hide=true, asCredential: true'
     examples:
     - name: naming convention
       description: Use string manipulations to apply naming conventions

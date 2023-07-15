@@ -1989,6 +1989,17 @@
             item.type="expression"
             item.runLocal=true
           }
+          if(item.type=="local_out"){
+            item.hide=item.hide??true
+            item.type="expression"
+            item.runLocal=true
+          }        
+          if(item.type=="credential"){
+            item.hide=item.hide??true
+            item.asCredential=true
+            item.type="expression"
+            item.runLocal=true
+          }                   
         })        
         // initialize defaults
         this.currentForm.fields.forEach((item, i) => {
