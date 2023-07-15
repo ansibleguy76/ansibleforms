@@ -17,7 +17,7 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "core-js": "~3.30.2",
+    "core-js": "~3.31.1",
     "axios": "~1.4.0",
     "cors": "~2.8.5",
     "bcrypt": "~5.1.0",
@@ -46,7 +46,7 @@
     "mongodb":"~4.11.0",
     "pg":"~8.10.0",
     "ip":"1.1.8",
-    "dayjs": "1.11.7",
+    "dayjs": "1.11.9",
     "fs-extra":"~10.1.0",
     "node-cache":"~5.1.2",
     "ldap-authentication": "~2.3.3",
