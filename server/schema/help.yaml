@@ -1900,10 +1900,6 @@
                 description: Uses the logical `and` operand to evaluate multiple dependencies
               - name: or
                 description: Uses the logical `and` operand to evaluate multiple dependencies
-              - name: nand
-                description: Uses the logical `nand` operand to evaluate multiple dependencies
-              - name: nor
-                description: Uses the logical `nor` operand to evaluate multiple dependencies
             short: The dependency logical function
             default: and
             description: This attribute represents the logical function between multiple dependencies.
@@ -1912,15 +1908,22 @@
             allowed: Reference to other formfields and their values
             short: Show/hide this field based on the values or other fields
             description: |
-              Each dependency element is an object with 2 attributes:
+              Each dependency element is either an object with the following 2 attributes:
               * `name` : holds the fieldname.
-              * `values` : a list of valid values for the referencing field.
+              * `values` : a list of valid values for the referenced field.
 
+              Or with the following 2 attributes:  
+              * `name` : holds the fieldname.
+              * `isValid` : a boolean to check if the referenced is validated or not.
+                
               Use in combination with attribute `dependencyFn`.
             changelog:
               - version: 4.0.0
                 type: added
                 description: Add an exlamation mark `!` before the referencing field's name, to invert the match.  Wrap it in quotes because the `!` mark has special meaning in YAML.
+              - version: 4.0.13
+                type: added
+                description: Add a new way of dependency.  Use `isValid` property to show/hide a field.
             examples:
               - name: Show a field based on a checkbox
                 code: |
@@ -1934,6 +1937,21 @@
                     - name: add_extra_comment
                       values:
                       - true
+              - name: Show a field if another field is valid
+                code: |
+                  - name: code
+                    type: text
+                    regex: 
+                      expression: "^[a-z]{3}$"
+                      description: Must be 3 characters lowercase
+                    required: true
+                  - name: code_uppercase
+                    type: expression
+                    runLocal: true
+                    expression: "'$(code)'.toUpperCase()"
+                    dependencies:
+                    - name: code
+                      isValid: true     # new in 4.0.13 -> code_uppercase will only be shown if code is validated
               - name: Show a field based on 2 fields, using the 'or' function
                 code: |
                   - name: job_type
@@ -1964,7 +1982,7 @@
                     label: What's the name of the office
                     dependencyFn: or
                     dependencies:
-                    - name: "!job_type"     # this will invert/negate
+                    - name: "!job_type"     # this will invert/negate - note the wrapping quotes!! needed for valid yaml
                       values:
                       - IT
                       - HR

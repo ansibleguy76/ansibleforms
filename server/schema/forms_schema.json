@@ -1123,24 +1123,39 @@
                 "dependencies": {
                   "type": "array",
                   "items": {
-                    "type": "object",
-                    "properties": {
-                      "name": {
-                        "type": "string",
-                        "pattern": "^!{0,1}[A-Za-z0-9_\\-.]+$"
-                      },
-                      "values": {
-                        "type": "array",
-                        "items": {
-                          "anyOf": [{"type": "string"},
-                            {"type": "integer"},
-                            {"type": "boolean"}
-                          ]
+                    "anyOf":[
+                      {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "pattern": "^!{0,1}[A-Za-z0-9_\\-.]+$"
+                          },
+                          "values": {
+                            "type": "array",
+                            "items": {
+                              "anyOf": [
+                                {"type": "string"},
+                                {"type": "integer"},
+                                {"type": "boolean"}
+                              ]
+                            }
+                          }
                         }
-                      }
-                    },
-                    "additionalProperties": false
-                  }
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "pattern": "^!{0,1}[A-Za-z0-9_\\-.]+$"
+                          },
+                          "isValid": { "type": "boolean"}
+                        }
+                      }                      
+                    ]
+                  },
+                  "additionalProperties": false
                 },
                 "hide": {"type": "boolean"},
                 "icon": {

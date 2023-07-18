@@ -785,6 +785,7 @@
             var fieldname=inversed?item.name.slice(1):item.name
             var columnRegex = /(.+)\.(.+)/g;                               // detect a "." in the field
             var tmpArr=columnRegex.exec(fieldname)                             // found aaa.bbb
+            var tmp
             if(tmpArr && tmpArr.length>0){
               fieldname = tmpArr[1]                                        // aaa
               column=tmpArr[2]                                             // bbb
@@ -798,16 +799,34 @@
             }else{
               value=ref.form[fieldname]
             }
-            if(isAnd && ((!inversed && !item.values.includes(value)) || ((inversed && item.values.includes(value)))) ){
-               result=false
-               // console.log("and not valid")
-               break
+            // new in 4.0.13 - dependency on validated
+            if(item.isValid != undefined){
+              tmp = item.isValid!=this.$v.form[fieldname].$invalid
+              if(isAnd && ((!inversed && !tmp) || ((inversed && tmp))) ){
+                result=false
+                // console.log("and not valid")
+                break
+              }
+              if(isOr && ((!inversed && tmp) || (inversed && !tmp))){
+                result=true
+                // console.log("or valid")
+                break
+              }         
+          
+            }else{
+              tmp = item.values?.includes(value)
+              if(isAnd && ((!inversed && !tmp) || ((inversed && tmp))) ){
+                result=false
+                // console.log("and not valid")
+                break
+              }
+              if(isOr && ((!inversed && tmp) || (inversed && !tmp))){
+                result=true
+                // console.log("or valid")
+                break
+              }
             }
-            if(isOr && ((!inversed && item.values.includes(value)) || (inversed && !item.values.includes(value)))){
-               result=true
-               // console.log("or valid")
-               break
-            }
+
           }
           // console.log("sub => " + result)
           // invert if nand or nor

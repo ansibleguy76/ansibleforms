@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-   New dependency mechanism isValid
+    you can show/hide a field based if another field is valid or not
+
 ## [4.0.12] - 2023-07-15
 
 ### Changed
