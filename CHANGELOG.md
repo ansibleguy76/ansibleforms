@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.13] - 2023-07-24
+
 ### Added
 
 -   New dependency mechanism isValid
@@ -541,7 +543,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.12...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.13...HEAD
+
+[4.0.13]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.12...4.0.13
 
 [4.0.12]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.11...4.0.12
 
