@@ -73,6 +73,6 @@ The forms are described in 1 or multiple yaml-files.
 ## 4. Requirements
 
 <div class="callout callout--warning">
-    <p><strong>Requirements depend on how you plan to install AnsibleForms.</strong> <a href="installation">See the installation section to learn more.</a></p>
+    <p><strong>Requirements depend on how you plan to install AnsibleForms.</strong> <a href="{% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}/installation">See the installation section to learn more.</a></p>
 </div>
 

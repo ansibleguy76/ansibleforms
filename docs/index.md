@@ -30,4 +30,8 @@ grid_navigation:
       excerpt: What is AnsibleForms and what can it do for me ?
       cta: Read more
       url: 'introduction'
+    - title: Installation
+      excerpt: How to install AnsibleForms
+      cta: Read more
+      url: 'installation'      
 ---

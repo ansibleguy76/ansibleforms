@@ -1,6 +1,6 @@
 # Theme settings
 doks:
-    baseurl: /ansibleforms/ 
+    baseurl: /ansibleforms 
     color_theme: # Available themes: blue (default), green, purple, red and yellow
     header:
         logo:
