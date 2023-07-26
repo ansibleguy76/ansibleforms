@@ -7,12 +7,8 @@ doks:
             text: 
             image: true
         nav:
-            - item_name: Item 1
-              item_url: '#'
-            - item_name: Item 2
-              item_url: '#'
-            - item_name: Item 3
-              item_url: '#'
+            - item_name: Github
+              item_url: 'https://github.com/ansibleguy76'
     footer:
         content:
             logo:
@@ -20,14 +16,14 @@ doks:
                 image: true
             copyright: Copyright &copy; 2023. - AnsibleForms <br>All rights reserved.
         social_list:
-            - network_name: facebook
-              profile_url: '#'
-            - network_name: twitter
-              profile_url: '#'
-            - network_name: instagram
-              profile_url: '#'
-            - network_name: youtube
-              profile_url: '#'
+            #- network_name: facebook
+            #  profile_url: '#'
+            #- network_name: twitter
+            #  profile_url: '#'
+            #- network_name: instagram
+            #  profile_url: '#'
+            #- network_name: youtube
+            #  profile_url: '#'
     google_analytics:
         tracking_code: # Add your Google Analytics tracking code to activate Google Analytics
     comments:

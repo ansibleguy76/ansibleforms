@@ -11,8 +11,8 @@
 	#{$list} {
 		position: relative;
 		min-height: 1px;
-		padding-left:  ceil(($grid-gutter-width / 2));
-		padding-right: floor(($grid-gutter-width / 2));
+		padding-left:  ceil(calc($grid-gutter-width / 2));
+		padding-right: floor(calc($grid-gutter-width / 2));
 	}
 }
 
@@ -31,13 +31,13 @@
 @mixin calc-grid-column($index, $class, $type) {
 	@if ($type == width) and ($index > 0) {
 		.col-#{$class}-#{$index} {
-			width: percentage(($index / $grid-columns));
+			width: percentage(calc($index / $grid-columns));
 		}
 	}
 
 	@if ($type == push) and ($index > 0) {
 		.col-#{$class}-push-#{$index} {
-			left: percentage(($index / $grid-columns));
+			left: percentage(calc($index / $grid-columns));
 		}
 	}
 
@@ -49,7 +49,7 @@
 
 	@if ($type == pull) and ($index > 0) {
 		.col-#{$class}-pull-#{$index} {
-			right: percentage(($index / $grid-columns));
+			right: percentage(calc($index / $grid-columns));
 		}
 	}
 
@@ -61,7 +61,7 @@
 
 	@if ($type == offset) {
 		.col-#{$class}-offset-#{$index} {
-			margin-left: percentage(($index / $grid-columns));
+			margin-left: percentage(calc($index / $grid-columns));
 		}
 	}
 }

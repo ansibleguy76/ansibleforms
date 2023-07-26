@@ -6,7 +6,11 @@ comments: false
 
 # Hero section
 title: Introduction
-description: What is AnsibleForms and what can it do for me ?
+description: |
+    Ansible is a great automation tool, but in the end, it's still a command-line application.  
+    While AWX/Tower is a great GUI, it is lacking fancy forms that can grab data from several sources.<br><br>  
+      
+    That's where AnsibleForms comes in.  It allows you to build awesome forms, build extravars and send it to Ansible or AWX/Tower.
 
 # Micro navigation
 micro_nav: true
@@ -21,12 +25,9 @@ page_nav:
         url: '/installation'
 ---
 
-# What is AnsibleForms
 
-Ansible forms is a lightweight node.js webapplication to generate userfriendly and pretty forms to kickoff **ansible** playbooks or **awx** (ansible tower) templates.  
-The forms are described in 1 or multiple yaml-files.
 
-## Application Capabilities
+# Application Capabilities
 
 * **Categories** : Group multiple forms under categories
 * **Role based access** : Limit forms based on roles (users and groups)
@@ -38,7 +39,7 @@ The forms are described in 1 or multiple yaml-files.
 * **Swagger API** : Has a rest-api and Swagger documentation
 * **Designer** : Although the forms are NOT built using a graphical designer, a YAML based editor/designer with validation is present
 
-## Form Capabilities
+# Form Capabilities
 
 * **Categories** : Group multiple forms under categories
 * **Role based access** : Limit forms based on roles
@@ -56,21 +57,21 @@ The forms are described in 1 or multiple yaml-files.
 * **Multistep forms** : Execute multiple playbooks in steps from a single form
 * **Email notifications** : Send email notifications after form execution
 
-## Types of Form Fields
+# Types of Form Fields
 
 {% assign formfile = site.data.help[1].help[2].help[1].items[1] %}
 {% for type in formfile.choices %}
 * **{{ type.name }}** : {{ type.description }}
 {% endfor %}
 
-## Used Technologies
+# Used Technologies
 
 * **Backend** : Nodejs / Express
 * **Database** : MySql
 * **Frontend** : Vue2
 * **Layout** : Bulma / font-awesome
 
-## 4. Requirements
+# Requirements
 
 <div class="callout callout--warning">
     <p><strong>Requirements depend on how you plan to install AnsibleForms.</strong> <a href="{% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}/installation">See the installation section to learn more.</a></p>
