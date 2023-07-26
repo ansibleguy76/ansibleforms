@@ -11,8 +11,8 @@
 	#{$list} {
 		position: relative;
 		min-height: 1px;
-		padding-left:  ceil(calc($grid-gutter-width / 2));
-		padding-right: floor(calc($grid-gutter-width / 2));
+		padding-left:  calc($grid-gutter-width / 2);
+		padding-right: calc($grid-gutter-width / 2);
 	}
 }
 
