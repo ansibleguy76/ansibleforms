@@ -32,4 +32,12 @@ grid_navigation:
       excerpt: How to install AnsibleForms
       cta: Read more
       url: '/installation'      
+    - title: Installation
+      excerpt: Customize AnsibleForms with <strong>Environment Variables</strong>
+      cta: Read more
+      url: '/customization'    
+    - title: Configuration
+      excerpt: Understand how the <strong>forms.yaml</strong> file works and setup categories and roles
+      cta: Read more
+      url: '/forms'                    
 ---

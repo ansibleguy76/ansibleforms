@@ -6,7 +6,7 @@ comments: false
 
 # Hero section
 title: Customization
-description: Use the environment variable to customize AnsibleForms ?
+description: Use the environment variables to customize AnsibleForms
 
 # Micro navigation
 micro_nav: true
@@ -21,13 +21,12 @@ page_nav:
         url: '/installation'
     next:
         content: Configuration
-        url: '/configuration'
+        url: '/forms'
 ---
 
 # Environment Variables
 
-AnsibleForms is build with `Node.js` and when starting the application, you can pass variables to customize the application.  
-These are called environment variables.  
+{{ site.data.help[0].description }}
 
 <table class="table-responsive">
       <thead>
@@ -102,11 +101,12 @@ These are called environment variables.
             {% for e in var.examples %}
             <div>
               <p class="fw-bold mt-2">{{ forloop.index }}) {{ e.name }}</p>
-              <p markdown="1">
+
+<div markdown="1">
 ```yaml
-e.code
+{{ e.code }}
 ```
-              </p>
+</div>
             </div>
             {% endfor %}
           </td>

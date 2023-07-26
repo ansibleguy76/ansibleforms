@@ -420,7 +420,7 @@
     allowed: Free object structure
     short: Constants
     description: | 
-      Sometimes you want to have global-like variables.  The constants section give you all freedom.  Whether it are objects, arrays, strings, numbers or booleans.  They will be available in every form.  
+      Sometimes you want to have global-like variables.  The constants section gives you all freedom.  Whether it are objects, arrays, strings, numbers or booleans.  They will be available in every form.  
     examples:
     - name: Constants
       code: |

@@ -28,7 +28,7 @@
 	}
 
 	img {
-		height: calc(5.625rem - 1px);
+		height: (5.625rem - 0.0625rem);
 	}
 }
 
@@ -51,7 +51,7 @@
 		font-size: .875em;
 		font-weight: 500;
 		font-family: $font-family-secondary;
-		line-height: calc(5.625rem - 1px);
+		line-height: calc(5.625rem - 0.0625rem);
 		text-transform: uppercase;
 		border-bottom: 1px solid;
 		border-color: transparent;
