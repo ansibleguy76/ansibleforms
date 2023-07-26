@@ -8,7 +8,7 @@ function InitCopyPaste(){
       copyCodeButton.classList = "btn btn-sm btn-dark";
       // insert a copy button
       copyCodeButton.onclick = function () {
-        navigator.clipboard.writeText(code);
+        window.navigator.clipboard.writeText(code);
         copyCodeButton.innerHTML = "COPIED";
         copyCodeButton.classList.add("btn-success");
         copyCodeButton.classList.remove("btn-dark");
