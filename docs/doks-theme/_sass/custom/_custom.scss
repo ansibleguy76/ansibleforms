@@ -59,15 +59,15 @@ $dark:          $gray-900;
 .tag:not(body){
     align-items: center;
     background-color: #f5f5f5;
-    border-radius: 0.375em;
+    border-radius: 6px;
     color: #4a4a4a;
     display: inline-flex;
-    font-size: .75rem;
-    height: 2em;
+    font-size: 12px;
+    height: 32px;
     justify-content: center;
-    line-height: 1.5;
-    padding-left: 0.75em;
-    padding-right: 0.75em;
+    line-height: 18px;
+    padding-left: 12px;
+    padding-right: 12px;
     white-space: nowrap;    
 }
 
@@ -75,7 +75,7 @@ $dark:          $gray-900;
 .tags {
     .tag{
         margin:0;
-        padding:0.5rem;
+        padding:8px;
 
         &.is-primary{
             background-color:$primary;
@@ -127,7 +127,7 @@ $dark:          $gray-900;
 }
 
 .mb-1{
-    margin-bottom:0.2em;
+    margin-bottom:3px;
 }
 
 
