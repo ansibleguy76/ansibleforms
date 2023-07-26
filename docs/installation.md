@@ -101,11 +101,11 @@ systemctl start docker
 systemctl enable docker
 ```
 
-# Customize
+## Customize
 
 Feel free to look at the variables in the `.env` file and `docker-compose.yaml` file.
 
-# Test the application
+## Test the application
 
 * Surf to : https://your_ip:8443
 * Login with admin / AnsibleForms!123 (or password you chose in the .env file)
@@ -117,7 +117,7 @@ Feel free to look at the variables in the `.env` file and `docker-compose.yaml` 
   * Add AWX connection
   * Add credentials for custom external connections such as other mysql servers or credentials for rest api's or tho pass to ansible playbooks
 
-# File structure
+## File structure
 
 The docker-compose project comes with the following folder structure :
 
@@ -160,26 +160,41 @@ sudo yum install mysql-server
 sudo systemctl start mysqld
 sudo grep 'temporary password' /var/log/mysqld.log
 sudo mysql_secure_installation
-* the above will be interactive
-* do NOT disallow remote access
-* set new password of choice
+# the above will be interactive
+# do NOT disallow remote access
+# set new password of choice
 ```
 
 ## Get image from docker hub
 If you don't want to go through the hassle of a dockerbuild.  Run a docker image directly from docker hub.  
-
+  
 If you want, you can use the latest build from docker hub (https://hub.docker.com/repository/docker/ansibleguy/ansibleforms)
 Note that we have deployed the solution in the `/app` folder inside the docker.  So if you want your `forms.yaml`, logs, certificates and playbooks reachable from within the docker image, you have to use a mount path or persistent volume and make sure it's mounted under `/app/dist/persistent`.  
 Make sure you have your environment variables set.  Most variables fall back to defaults, but the MySQL database connection is mandatory.  The image contains ansible and python3.  The below command is merely an example. An example of a forms.yaml you can find here (https://github.com/ansibleguy76/ansibleforms/tree/main/server/persistent).
-```
+
+```bash
 docker run -p 8000:8000 -d -t --mount type=bind,source=/srv/apps/ansibleforms/server/persistent,target=/app/dist/persistent --name ansibleforms -e DB_HOST=192.168.0.1 -e DB_USER=root -e DB_PASSWORD=password ansibleguy/ansibleforms
 ```
+
 Once started :
-```
+
+```bash
 docker ps
 CONTAINER ID   IMAGE                     COMMAND                  CREATED         STATUS         PORTS                                       NAMES
 d91f7b05b67e   ansibleguy/ansibleforms   "node ./dist/index.js"   7 seconds ago   Up 6 seconds   0.0.0.0:8000->8000/tcp, :::8000->8000/tcp   ansibleforms
 ```
+
+## Test the application
+
+* Surf to : https://your_ip:8000
+* Login with admin / AnsibleForms!123 (or password you chose in the .env file)
+* Next steps :
+  * Start creating your forms by changing the forms.yaml file or using the built-in designer
+  * Add your own playbooks under the data/playbooks/ folder
+  * Add ldap connection
+  * Add users and groups
+  * Add AWX connection
+  * Add credentials for custom external connections such as other mysql servers or credentials for rest api's or tho pass to ansible playbooks
 
 # How to run a custom build
 
@@ -191,6 +206,10 @@ This project has 2 node applications
 
 The client app will dynamically build the forms (vue.js v2) for ansible/awx, based on one or more yaml files (forms.yaml).
 The server app (express.js) will cover authentication, background database connections and executing the ansible playbooks or awx templates.
+
+## Prerequisites
+
+* **Ansible or AWX** : Native installation does not cover Ansible, you must have this installed manually
 
 ## Project download
 
@@ -255,10 +274,11 @@ cp ./persistent/forms.yaml.example ./persistent/forms.yaml
 
 ## Modify the forms.yaml to your needs
 
-The `forms.yaml` file describes all your forms in a yaml format.  It must be available in the server application.  By default the webapp will search under `/server/persistent` In the file, make the proper changes, check the wiki documentation for all details.
+The `forms.yaml` file describes all your forms in a yaml format.  It must be available in the server application.  By default the webapp will search under `/server/persistent` 
 
 * add categories
 * add roles
+* add constants
 * add forms
 
 ## How to run
@@ -282,7 +302,7 @@ npm run start
 
 #### Run compiled in development
 
-If are done testing, you can compile the client code and have it embedded into the server code.  And then spin up the server application.  the command `npm run bundle` will compile the client code and copy it under `/views` in the server application.  You can then start the server application with `npm run dev`, and as you will see in the `package.json`, it will build, copy the environment file and start the server application in dev mode.
+If you are done testing, you can compile the client code and have it embedded into the server code.  And then spin up the server application.  the command `npm run bundle` will compile the client code and copy it under `/views` in the server application.  You can then start the server application with `npm run dev`, and as you will see in the `package.json`, it will build, copy the environment file and start the server application in dev mode.
 
 First we compile the client code, and bundle it in the server code
 
@@ -340,20 +360,17 @@ Once started
 ```bash
 # pm2 status
 ┌─────┬─────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
-│ id  │ name            │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+│ id  │ name            │ namespace   │ version │ mode    │ pid      │ uptime │      │ status    │ cpu      │ mem      │ user     │ watching │
 ├─────┼─────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
 │ 0   │ ansibleforms    │ default     │ 1.0.0   │ fork    │ 3104     │ 8s     │ 0    │ online    │ 0%       │ 57.1mb   │ root     │ enabled  │
 └─────┴─────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
 ```
 
-# First time run
-
-## Create AnsibleForms database
+## First time run
 
 The first time you surf to the webapplication, it will ask you if it should create the AnsibleForms schema.  
-
-## Admin user
-
 The default admin user is :
+
 * username : admin
 * password : AnsibleForms!123
+  
