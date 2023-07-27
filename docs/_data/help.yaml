@@ -537,10 +537,18 @@
       - groups:
         type: array
         required: true
-        allowed: A local or ldap group
+        allowed: A group (local, ldap or azuread)
         short: Groups
         description: |
-          A list of local or ldap groups.  They must be in the format of `local/groupname` or `ldap/groupname`
+          A list of groups.  They must be in the format of `local/groupname` or `ldap/groupname` or `azuread/groupname`
+      - users:
+        type: array
+        required: true
+        allowed: A user (local, ldap or azuread)
+        short: User
+        version: 4.0.10
+        description: |
+          A list of local or ldap users.  They must be in the format of `local/username` or `ldap/username` or `azuread/username`         
       examples:
       - name: Roles
         language: YAML
@@ -553,6 +561,8 @@
           - name: operator
             groups:
             - local/operator
+            users:
+            - azuread/mike
           - name: demo
             groups:
             - local/demo
