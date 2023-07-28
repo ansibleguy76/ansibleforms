@@ -27,10 +27,13 @@ page_nav:
 ---
 
 {% assign help = site.data.help %}
-{% assign formsyaml = help | find: "name", "Forms.yaml" %}
-{% assign form = formsyaml.help | find: "name", "Form" %}
+{% assign formsyaml_list = help | where: "link", "forms" %}
+{% assign formsyaml = formsyaml_list[0] %}
+{% assign form_list = formsyaml.help | where: "name", "Form" %}
+{% assign form = form_list[0] %}
 {% assign objects = form.help %}
-{% assign type = form.items | find: "name", "type" %}
+{% assign type_list = form.items | where: "name", "type" %}
+{% assign type = type_list[0] %}
 
 
 # Possible form types / Examples

@@ -26,7 +26,12 @@ page_nav:
 
 # Environment Variables
 
-{{ site.data.help[0].description }}
+{% assign help = site.data.help %}
+{% assign env_vars_list = help | where: "name", "Environment Variables" %}
+{% assign env_vars = env_vars_list[0] %}
+
+
+{{ env_vars.description }}
 
 <table class="table-responsive">
       <thead>
@@ -37,8 +42,6 @@ page_nav:
         </tr>
       </thead>
       <tbody>
-{% assign help = site.data.help %}
-{% assign env_vars = help | find: "name", "Environment Variables" %}
 {% for var in env_vars.items %}
         <tr>
           <td>

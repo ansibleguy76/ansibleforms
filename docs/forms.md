@@ -27,8 +27,9 @@ page_nav:
 ---
 
 {% assign help = site.data.help %}
-{% assign formsyaml = help | find: "link", "forms" %}
-{% assign formsyaml_items = formsyaml.items %}
+{% assign formsyaml_list = help | where: "link", "forms" %}
+{% assign formsyaml = formsyaml_list[0] %}
+{% assign formsyaml_items = forms_yaml.items %}
 {% assign forms_objects = formsyaml.help %}
 
 # Forms.yaml
