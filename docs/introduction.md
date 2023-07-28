@@ -43,9 +43,9 @@ page_nav:
 
 * **Categories** : Group multiple forms under categories
 * **Role based access** : Limit forms based on roles
-* **Cascaded dropdowns** : Allow references to between field to create responsive, cascaded dropdown boxes
+* **Cascaded dropdowns** : Allow references between fields to create responsive, cascaded dropdown boxes
 * **Database sources** : Import data into fields from databases (MySql, MSSql, Postgres, Mongo)
-* **Expressions sources** : Import data using serverside expressions (javascript), such as Rest API's, json-files, yaml-files, ... and filter, manipulate and sort them
+* **Expression based sources** : Import data using serverside expressions (javascript), such as Rest API's, json-files, yaml-files, ... and filter, manipulate and sort them
 * **Local expressions** : Use the power of javascript (local browser sandbox) to calculate, manipulate, generate, ... 
 * **Field dependencies** : Show/hide fields based on values of other fields
 * **Visualization** : Many nice visualizations, such as icons, images, colors, responsive grid-system, help descriptions, ...
@@ -60,9 +60,11 @@ page_nav:
 # Types of Form Fields
 
 {% assign formfile = site.data.help[1].help[2].help[1].items[1] %}
+<ul>
 {% for type in formfile.choices %}
-* **{{ type.name }}** : {{ type.description }}
+<li><strong>{{ type.name }}</strong> : {{ type.description }}</li>
 {% endfor %}
+</ul>
 
 # Used Technologies
 

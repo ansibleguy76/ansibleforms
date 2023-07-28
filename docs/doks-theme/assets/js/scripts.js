@@ -21,7 +21,7 @@
 	};
 
 	// Title sections
-	$( ':header[id]' ).each( function() {
+	$( ':header[id],.scrollspy[id]' ).each( function() {
 		var $self = $( this );
 
 		$self.html(
@@ -31,6 +31,10 @@
 
 	var getHeadingLevel = function( $el ) {
 		var tagName = $el.prop( 'tagName' ).toLowerCase();
+
+		if(($el).attr("headinglevel")!=undefined){
+			return parseInt(($el).attr("headinglevel"))
+		}
 
 		if (
 			! tagName ||
@@ -42,7 +46,7 @@
 		return parseInt( tagName.replace( 'h', '' ), 10 );
 	};
 
-	var headings = $( ':header[id]' ).reduce( function( previousValue, currentValue ) {
+	var headings = $( ':header[id],.scrollspy[id]' ).reduce( function( previousValue, currentValue ) {
 		var currentHeading = {
 			childrens: [],
 		};

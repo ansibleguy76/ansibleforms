@@ -20,7 +20,7 @@ page_nav:
         content: Installation
         url: '/installation'
     next:
-        content: Configuration
+        content: Forms configuration
         url: '/forms'
 ---
 
@@ -37,8 +37,9 @@ page_nav:
         </tr>
       </thead>
       <tbody>
-{% assign env = site.data.help[0].items %}
-{% for var in env %}
+{% assign help = site.data.help %}
+{% assign env_vars = help | find: "name", "Environment Variables" %}
+{% for var in env_vars.items %}
         <tr>
           <td>
             <span class="fw-bold">{{ var.name }}</span><br>

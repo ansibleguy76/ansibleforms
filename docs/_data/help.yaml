@@ -365,6 +365,7 @@
     type: array
     allowed: valid category object
     objectLink: forms/category
+    docsObjectLink: "#category-object"
     short: Categories
     description: | 
       The categories group the forms together in a tree-like view.  The Default category is mandatory and holds all forms without a category. 
@@ -391,6 +392,7 @@
     type: array
     allowed: valid role object
     objectLink: forms/role
+    docsObjectLink: "#role-object"
     short: Roles
     description: | 
       The roles provide RBAC.  Each role has a name and 1 or more groups (local, ldap or azuread).  The `admin` and `public` rol is mandatory.  
@@ -425,14 +427,15 @@
     - name: Constants
       code: |
         constants:
-          SERVERX: 172.16.0.1
+          SERVERX: 172.16.0.1 # reference it later as $(SERVERX)
           VCENTER:
-            fqdn: vcenter.demo.local
+            fqdn: vcenter.demo.local  # reference it later as $(VCENTER.fqdn)
             ip: 172.16.0.2
   - name: forms
     type: array
     allowed: valid form object
     objectLink: forms/form
+    docsObjectLink: "#form-object"
     moreExamplesLink: forms/form
     short: Forms
     description: | 
@@ -534,14 +537,14 @@
         short: The name of the role
         description: | 
           The name of a role has to be unique.  The `public` and `admin` roles are mandatory.
-      - groups:
+      - name: groups
         type: array
         required: true
         allowed: A group (local, ldap or azuread)
         short: Groups
         description: |
           A list of groups.  They must be in the format of `local/groupname` or `ldap/groupname` or `azuread/groupname`
-      - users:
+      - name: users
         type: array
         required: true
         allowed: A user (local, ldap or azuread)
@@ -676,6 +679,10 @@
           code: |
             name: Add Windows Virtual Machine
             image: https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg
+        - name: Local image
+          code: |
+            name: Add Netapp storage
+            image: /assets/images/netapp.svg # the docker compose has a few brand images, feel free to add your own
       - name: tileClass
         type: string
         allowed: valid bulma background class
@@ -866,12 +873,12 @@
             
           *Note* : In case of git, the repository is pulled before the form is loaded.
         examples:
-        - name: Run AWX Template Helloworld
+        - name: Run AWX Template Create VM
           code: |
             name: Create vm
             type: awx
             template: Create VM       
-        - name: Run Ansible playbook
+        - name: Run Delete VM playbook
           code: |
             name: Delete vm
             type: ansible
@@ -1167,6 +1174,28 @@
               - clear: 0   # clear and show on finish
               - show: 0    
             # more examples on the job-status-event page                                                  
+      - name: fields
+        type: array
+        allowed: valid field object
+        short: fields
+        objectLink: forms/form/formfield
+        description: |
+          It makes sense that a form has 1 or more formfields.  Read more about them in the separate formfield section.
+        examples:
+        - name: Examples
+          code: |
+            fields:
+              - name : name
+                label: Your name
+                type: text
+                required: true
+              - name : email
+                label: Your email
+                type: text
+                regex:
+                  expression: "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$"
+                  description: Please enter a valid email address
+                required: true
       help:
         - name: Step
           itemName: attribute

@@ -5,11 +5,11 @@ keywords:
 comments: false
 
 # Hero section
-title: Configuration
+title: Forms.yaml
 description: | 
-  Configure AnsibleForms using 1 or more yaml files.  
-  The master yaml file is <code>forms.yaml</code> and is the heart of your forms.
-
+  Configuring AnsibleForms is done using 1 or more yaml files.<br>
+  The master yaml file is <code>forms.yaml</code> and is the heart of your forms.<br><br>
+  This file is so important, this is likely the most important part of this help documentation.  
 # Micro navigation
 micro_nav: true
 
@@ -22,12 +22,51 @@ page_nav:
         content: Customization and Environment Variables
         url: '/customization'
     next:
-        content: Setup categories
-        url: '/forms/categories'
+        content: Create forms
+        url: '/form'
 ---
 
+{% assign help = site.data.help %}
+{% assign formsyaml = help | find: "link", "forms" %}
+{% assign formsyaml_items = formsyaml.items %}
+{% assign forms_objects = formsyaml.help %}
+
 # Forms.yaml
-{{ site.data.help[1].description }}
+
+{{ formsyaml.description }}
+
+The file below is a minimal sample forms.yaml file to start with.  
+If has only the required `default` category, the required `admin` and `public` roles and a very simple sample form with 1 text field.
+
+```yaml
+categories:
+  - name: Default
+    icon: bars
+roles:
+  - name: admin
+    groups:
+      - local/admins
+  - name: public
+    groups: []
+constants: {}
+forms: 
+  - name: Demo Form
+    showHelp: true
+    help: >
+      This is a demo form
+    roles:
+      - public
+    description: A simple form
+    categories:
+      - Demo
+    icon: heart
+    playbook: dummy.yaml
+    type: ansible
+    fields:
+      - type: text
+        name: username
+        label: Username
+```
 
 <table class="table-responsive">
       <thead>
@@ -37,22 +76,28 @@ page_nav:
         </tr>
       </thead>
       <tbody>
-{% assign formsyaml = site.data.help[1].items %}
-{% for var in formsyaml %}
+
+{% for var in formsyaml.items %}
         <tr>
           <td>
-            <span class="fw-bold">{{ var.name }}</span><br>
+            <span id="formsyaml_{{ var.name }}" headinglevel="2" class="scrollspy fw-bold ">{{ var.name }}</span><br>
             <span class="has-text-primary">{{ var.type}}</span>
             {% if var.required==true %}<span class="has-text-danger"> / required</span>{% endif %}
             {% if var.unique==true %}<span v-if="f.unique" class="has-text-warning"> / unique</span>{% endif %}
             <br>
-            {% if var.version %}<span v-if="f.version" class="is-italic has-text-success">added in version {{var.version}}</span>{% endif %}
+            {% if var.version %}<span v-if="f.version" class="is-italic has-text-success">added in version {{ var.version }}</span>{% endif %}
           </td>
           <td>
             <p>
-              <strong>{{var.short}}</strong><br>
+              <strong>{{ var.short }}</strong><br>
+              {% if var.docsObjectLink %}
+              <a href="{{ var.docsObjectLink}}"><i class="fat fa-link"></i> 
+              {% endif %}
               {% if var.allowed != nil %}
               <span class="has-text-primary">{{ var.allowed }}</span>
+              {% endif %}
+              {% if var.docsObjectLink %}
+              </a>
               {% endif %}
             </p>
             <p markdown="1">
@@ -93,8 +138,8 @@ page_nav:
       </tbody>
 </table>
 
-{% for f in site.data.help[1].help %}
-# {{ f.name }}
+{% for f in forms_objects %}
+# {{ f.name }} Object
 
 {{ f.description }}
 
@@ -109,11 +154,13 @@ page_nav:
 {% for var in f.items %}
         <tr>
           <td>
-            <span class="fw-bold">{{ var.name }}</span><br>
+            <span id="{{f.name}}_{{ var.name }}" headinglevel="2" class="scrollspy fw-bold">{{ var.name }}</span><br>
             <span class="has-text-primary">{{ var.type}}</span>
+          
             {% if var.required==true %}<span class="has-text-danger"> / required</span>{% endif %}
             {% if var.unique==true %}<span v-if="f.unique" class="has-text-warning"> / unique</span>{% endif %}
             <br>
+              
             {% if var.version %}<span v-if="f.version" class="is-italic has-text-success">added in version {{var.version}}</span>{% endif %}
           </td>
           <td>
@@ -126,6 +173,34 @@ page_nav:
             <p markdown="1">
               {{ var.description }}
             </p>
+            {% if var.choices.size > 0 %}
+            <div class="">
+              <span class="fw-bold">Choices:</span><br>
+              <ul>
+                {% for c in var.choices %}
+                <li>
+                  {% if c.name == var.default %}
+                  <span title="{{ c.description }}" class="has-text-info">{{ c.name }} (default)</span>
+                  {% else %}
+                  <span title="{{ c.description }}">{{ c.name }}</span>
+                  {% endif %}
+                </li>
+                {% endfor %}
+              </ul>
+            </div>
+            {% elsif var.default != nil %}               
+            <div>
+              <span class="fw-bold">Default:</span><br>
+              <span class="">{{ var.default }}</span>
+            </div>   
+            {% endif %}   
+            {% if var.with_types!=nil %}
+            <div>
+              <span class="fw-bold">Only available with types:</span><br>
+              <span class="">{{ var.with_types }}</span>
+              <br><br>
+            </div>
+            {% endif %}                          
             {% for c in var.changelog %}
             <div class="callout callout--info">
               {% if c.type == "added" %}
@@ -161,3 +236,4 @@ page_nav:
       </tbody>
 </table>
 {% endfor %}
+
