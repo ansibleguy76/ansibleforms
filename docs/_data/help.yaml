@@ -2236,7 +2236,7 @@
                   description: The ip is still pingable, shut down the machine first                    
           - name: sameAs
             type: string
-            short: An field based validation (field must be false)
+            short: An field based validation (field must be same as other field)
             allowed: The name of another existing field
             description: |
               Enables a validation where the value of this field must match the value of another field.
