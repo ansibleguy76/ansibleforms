@@ -7,7 +7,7 @@ doks:
             text: 
             image: true
         nav:
-            - item_name: Github
+            - item_name: AnsibleForms on Github
               item_url: 'https://github.com/ansibleguy76'
     footer:
         content:

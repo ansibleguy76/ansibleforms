@@ -962,6 +962,7 @@
         with_types: git
         allowed: a repo object
         objectLink: forms/form/repo
+        docsObjectLink: "#repository-object"
         short: Repository
         description: |
           This attribute is only used when the form type is `git`.  
@@ -978,6 +979,7 @@
         with_types: multistep
         allowed: a step object
         objectLink: forms/form/step
+        docsObjectLink: "#step-object"
         short: Multistep steps
         description: |
           A multistep form is basically an array of multiple form type destinations, defined here as steps.
@@ -1046,6 +1048,7 @@
         type: object
         allowed: valid approval object
         objectLink: forms/form/approval
+        docsObjectLink: "#approval-point-object"
         short: Add approval point
         description: |
           Ansible Forms allows to add an approval point before a job is ran.  
@@ -1054,6 +1057,7 @@
         type: object
         allowed: valid notification object
         objectLink: forms/form/notifications
+        docsObjectLink: "#notifications-object"
         short: Add Notification
         description: |
           Add email notifications on job status events.
@@ -1070,6 +1074,7 @@
         allowed: valid job status action objects
         short: Events on submit
         objectLink: forms/form/job-status-action
+        docsObjectLink: "#job-status-action-object"
         version: 3.1.0
         description: |
           Once a job is launched, Ansible Forms has a few status events you can act on.  
@@ -1092,6 +1097,7 @@
         allowed: valid job status action objects
         short: Events on success
         objectLink: forms/form/job-status-action
+        docsObjectLink: "#job-status-action-object"
         version: 3.1.0
         description: |
           Once a job is launched, Ansible Forms has a few status events you can act on.  
@@ -1113,6 +1119,7 @@
         allowed: valid job status action objects
         short: Events on failure
         objectLink: forms/form/job-status-action
+        docsObjectLink: "#job-status-action-object"
         version: 3.1.0
         description: |
           Once a job is launched, Ansible Forms has a few status events you can act on.  
@@ -1134,6 +1141,7 @@
         allowed: valid job status action objects
         short: Events on abort
         objectLink: forms/form/job-status-action
+        docsObjectLink: "#job-status-action-object"
         version: 3.1.0
         description: |
           Once a job is launched, Ansible Forms has a few status events you can act on.  
@@ -1155,6 +1163,7 @@
         allowed: valid job status action objects
         short: Events on finished
         objectLink: forms/form/job-status-action
+        docsObjectLink: "#job-status-action-object"
         version: 3.1.0
         description: |
           Once a job is launched, Ansible Forms has a few status events you can act on.  
@@ -1179,6 +1188,7 @@
         allowed: valid field object
         short: fields
         objectLink: forms/form/formfield
+        docsObjectLink: "#formfield-object"
         description: |
           It makes sense that a form has 1 or more formfields.  Read more about them in the separate formfield section.
         examples:
@@ -1200,6 +1210,7 @@
         - name: Step
           itemName: attribute
           link: forms/form/step
+          
           icon: fas,list-ol
           description: |
             Each step is a new form destination.  And steps are executed sequentially.  

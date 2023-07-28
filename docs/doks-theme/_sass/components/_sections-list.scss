@@ -6,6 +6,8 @@
 .sections-list {
 	float: left;
 	margin-top: 1.25rem;
+	font-size:0.85rem;
+	line-height:1.1rem;
 }
 
 /* ----- Wrapper ----- */
@@ -48,7 +50,7 @@
 					content: '\e91d';
 					color: #bdbdbd;
 					display: inline-block;
-					font-size: 1.25rem;
+					font-size: 1rem;
 					position: absolute;
 					right: 0;
 					top: .3125rem;
@@ -57,6 +59,8 @@
 
 				> ul {
 					display: none;
+					font-size: 0.85rem;
+					line-height:0.6rem;
 				}
 
 				&.active {

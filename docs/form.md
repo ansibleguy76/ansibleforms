@@ -78,6 +78,8 @@ page_nav:
   </p>
   
 {% assign specific_properties = form.items | where_exp: "item", "item.with_types contains f.name" %}
+{% assign generic_properties = form.items | where_exp: "item", "item.with_types==nil" %}
+{% assign specific_properties = specific_properties | concat: generic_properties %}
 
   <table class="table-responsive">
         <thead>
@@ -90,7 +92,7 @@ page_nav:
           {% for var in specific_properties %}
           <tr>
             <td>
-              <span id="{{ f.name }}_{{ var.name }}" headinglevel="2" class="scrollspy fw-bold">{{ var.name }}</span><br>
+              <span id="{{ f.name }}_{{ var.name }}" headinglevel="3" class="scrollspy fw-bold">{{ var.name }}</span><br>
               <span class="has-text-primary">{{ var.type}}</span>
             
               {% if var.required==true %}<span class="has-text-danger"> / required</span>{% endif %}
@@ -101,9 +103,15 @@ page_nav:
             </td>
             <td>
               <p>
-                <strong>{{var.short}}</strong><br>
+                <strong>{{ var.short }}</strong><br>
+                {% if var.docsObjectLink %}
+                <a href="{{ var.docsObjectLink}}"><i class="fat fa-link"></i> 
+                {% endif %}
                 {% if var.allowed != nil %}
                 <span class="has-text-primary">{{ var.allowed }}</span>
+                {% endif %}
+                {% if var.docsObjectLink %}
+                </a>
                 {% endif %}
               </p>
               <p markdown="1">
@@ -132,7 +140,7 @@ page_nav:
               {% endif %}   
               {% if var.with_types!=nil %}
               <div>
-                <span class="fw-bold">Only available with types:</span><br>
+                <span class="fw-bold has-text-danger">Only available with types:</span><br>
                 <span class="">{{ var.with_types }}</span>
                 <br><br>
               </div>
@@ -245,7 +253,7 @@ page_nav:
             {% endif %}   
             {% if var.with_types!=nil %}
             <div>
-              <span class="fw-bold">Only available with types:</span><br>
+              <span class="fw-bold has-text-danger">Only available with types:</span><br>
               <span class="">{{ var.with_types }}</span>
               <br><br>
             </div>
