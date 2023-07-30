@@ -3341,8 +3341,8 @@
       They are ran in the sandbox of the browser and can leverage the full javascript engine.  
         
       **Tip** : use the type `local` as an alias for 'type=expression, runLocal=true, hide=true, noOutput=true'  
-      **Tip** : use the type `local_out` as an alias for 'type=expression, runLocal=true, hide=true'
-      **Tip** : use the type `credential` as an alias for 'type=expression, runLocal=true, hide=true, asCredential: true'
+      **Tip** : use the type `local_out` as an alias for 'type=expression, runLocal=true, hide=true'  
+      **Tip** : use the type `credential` as an alias for 'type=expression, runLocal=true, hide=true, asCredential: true'  
     examples:
     - name: naming convention
       description: Use string manipulations to apply naming conventions

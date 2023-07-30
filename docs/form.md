@@ -211,7 +211,7 @@ page_nav:
           {% assign group_properties = f.items  | where: "group",group %}
           {% if group %}
           <tr>
-            <th id="{{ f.name }}_{{ group }}_group" colspan="2" class="fw-bold scrollspy is-success" headinglevel="2">
+            <th id="{{ f.name }}_{{ group }}_group" colspan="2"  addclass="has-text-success"  class="fw-bold scrollspy is-success" headinglevel="2">
               {{ group }}
             </th>
           </tr>

@@ -110,7 +110,7 @@
 		for ( i = 0; i < list.length; i += 1 ) {
 			$li = $( '<li></li>' );
 			$li.append(
-				'<a href="#' + list[ i ].$el.attr( 'id' ) + '">' +
+				'<a href="#' + list[ i ].$el.attr( 'id' ) + '" class="' + list[ i ].$el.attr( 'addclass' ) + '">' +
 					list[ i ].$el.text().replace( /^#\ /, '' ) +
 				'</a>'
 			);

@@ -56,7 +56,7 @@ page_nav:
 </div>
 
 {% for f in type.choices %} 
-# {{ f.name }} Formfield
+# {{ f.name }} formfield
 
   {% if f.version %}
   <div class="tags has-addons mb-1">
@@ -67,7 +67,7 @@ page_nav:
   <p markdown="1">
   {{ f.description }}
   {{ f.extra }}<br>
-    Below are the properties that are specifically for a {{ f.name }} Formfield
+    Below are the properties that are specifically for a {{ f.name }} formfield
   </p>
   
   <table class="table-responsive">
@@ -85,7 +85,7 @@ page_nav:
           {% for group in groups %}
           {% assign group_properties = specific_properties  | where: "group",group %}
           <tr>
-            <th id="{{ f.name }}_{{ group }}_group" colspan="2" class="fw-bold scrollspy is-success" headinglevel="2">
+            <th id="{{ f.name }}_{{ group }}_group" colspan="2" addclass="has-text-success" class="fw-bold scrollspy is-success" headinglevel="2">
               {{ group }}
             </th>
           </tr>
