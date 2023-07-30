@@ -25,18 +25,11 @@ page_nav:
 ---
 
 {% assign help = site.data.help %}
-{% assign formsyaml_list = help | where: "link", "forms" %}
-{% assign formsyaml = formsyaml_list[0] %}
-{% assign form_list = formsyaml.help | where: "name", "Form" %}
-{% assign form = form_list[0] %}
-{% assign formfield_list = form.help | where: "name", "Formfield" %}
-{% assign formfield = formfield_list[0] %}
+{% assign formsyaml = help | where: "link", "forms" | first %}
+{% assign form = formsyaml.help | where: "name", "Form" | first %}
+{% assign formfield = form.help | where: "name", "Formfield" | first %}
 {% assign objects = formfield.help %}
-{% assign type_list = formfield.items | where: "name", "type" %}
-{% assign type = type_list[0] %}
-
-
-# Possible formfield types / Examples
+{% assign type = formfield.items | where: "name", "type" | first %}
 
 <!-- type links -->
 <div class="mb-5">
@@ -51,7 +44,7 @@ page_nav:
       {% for t in type.choices %}
       <tr>
         <td>
-          <a href="#{{ t.name }}-form"><strong>{{ t.name }}</strong></a>
+          <a href="#{{ t.name }}-formfield"><strong>{{ t.name }}</strong></a>
         </td>
 <td markdown="1">
 {{ t.description }}
@@ -63,7 +56,7 @@ page_nav:
 </div>
 
 {% for f in type.choices %} 
-## {{ f.name }} Formfield
+# {{ f.name }} Formfield
 
   {% if f.version %}
   <div class="tags has-addons mb-1">
@@ -77,10 +70,6 @@ page_nav:
     Below are the properties that are specifically for a {{ f.name }} Formfield
   </p>
   
-{% assign specific_properties = formfield.items | where_exp: "item", "item.with_types contains f.name" %}
-{% assign generic_properties = formfield.items | where_exp: "item", "item.with_types==nil" %}
-{% assign specific_properties = specific_properties | concat: generic_properties %}
-
   <table class="table-responsive">
         <thead>
           <tr>
@@ -89,7 +78,18 @@ page_nav:
           </tr>
         </thead>
         <tbody>
-          {% for var in specific_properties %}
+          {% assign specific_properties = formfield.items | where_exp: "item", "item.with_types contains f.name" %}
+          {% assign generic_properties = formfield.items | where_exp: "item", "item.with_types==nil" %}
+          {% assign specific_properties = specific_properties | concat: generic_properties | sort_natural: "group" | sort_natural: "name" %}        
+          {% assign groups = specific_properties | map: "group" | uniq | sort_natural %}
+          {% for group in groups %}
+          {% assign group_properties = specific_properties  | where: "group",group %}
+          <tr>
+            <th id="{{ f.name }}_{{ group }}_group" colspan="2" class="fw-bold scrollspy is-success" headinglevel="2">
+              {{ group }}
+            </th>
+          </tr>
+          {% for var in group_properties %}
           <tr>
             <td>
               <span id="{{ f.name }}_{{ var.name }}" headinglevel="3" class="scrollspy fw-bold">{{ var.name }}</span><br>
@@ -176,7 +176,9 @@ page_nav:
               {% endfor %}
             </td>
           </tr>
+          {% endfor %}          
           {% endfor %}
+
         </tbody>
   </table>
 
@@ -184,7 +186,7 @@ page_nav:
 <p class="mt-5 fw-bold" >Examples</p>
 {% for e in f.examples %}
 <div>
-  <p class="has-text-link mt-2">{{ forloop.index +1 }}) {{ e.name }}</p>
+  <p class="has-text-link mt-2">{{ forloop.index }}) {{ e.name }}</p>
 <div markdown="1">
 ```yaml
 {{ e.code }}
@@ -208,6 +210,7 @@ page_nav:
         </tr>
       </thead>
       <tbody>
+      
 {% for var in f.items %}
         <tr>
           <td>

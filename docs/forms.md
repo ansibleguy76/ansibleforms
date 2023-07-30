@@ -27,8 +27,7 @@ page_nav:
 ---
 
 {% assign help = site.data.help %}
-{% assign formsyaml_list = help | where: "link", "forms" %}
-{% assign formsyaml = formsyaml_list[0] %}
+{% assign formsyaml = help | where: "link", "forms" | first %}
 {% assign formsyaml_items = forms_yaml.items %}
 {% assign forms_objects = formsyaml.help %}
 
@@ -152,7 +151,7 @@ forms:
         </tr>
       </thead>
       <tbody>
-{% for var in f.items %}
+        {% for var in f.items %}      
         <tr>
           <td>
             <span id="{{f.name}}_{{ var.name }}" headinglevel="2" class="scrollspy fw-bold">{{ var.name }}</span><br>

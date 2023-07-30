@@ -27,9 +27,7 @@ page_nav:
 # Environment Variables
 
 {% assign help = site.data.help %}
-{% assign env_vars_list = help | where: "name", "Environment Variables" %}
-{% assign env_vars = env_vars_list[0] %}
-
+{% assign env_vars = help | where: "name", "Environment Variables" | first %}
 
 {{ env_vars.description }}
 

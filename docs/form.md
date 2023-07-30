@@ -27,13 +27,11 @@ page_nav:
 ---
 
 {% assign help = site.data.help %}
-{% assign formsyaml_list = help | where: "link", "forms" %}
-{% assign formsyaml = formsyaml_list[0] %}
-{% assign form_list = formsyaml.help | where: "name", "Form" %}
-{% assign form = form_list[0] %}
+{% assign formsyaml = help | where: "link", "forms" | first %}
+{% assign form = formsyaml.help | where: "name", "Form" | first %}
 {% assign objects = form.help %}
-{% assign type_list = form.items | where: "name", "type" %}
-{% assign type = type_list[0] %}
+{% assign type = form.items | where: "name", "type" | first %}
+
 
 
 # Possible form types / Examples
@@ -184,7 +182,7 @@ page_nav:
 <p class="mt-5 fw-bold" >Examples</p>
 {% for e in f.examples %}
 <div>
-  <p class="has-text-link mt-2">{{ forloop.index +1 }}) {{ e.name }}</p>
+  <p class="has-text-link mt-2">{{ forloop.index }}) {{ e.name }}</p>
 <div markdown="1">
 ```yaml
 {{ e.code }}
@@ -208,10 +206,20 @@ page_nav:
         </tr>
       </thead>
       <tbody>
-{% for var in f.items %}
+          {% assign groups = f.items | map: "group" | uniq | sort_natural %}
+          {% for group in groups %}
+          {% assign group_properties = f.items  | where: "group",group %}
+          {% if group %}
+          <tr>
+            <th id="{{ f.name }}_{{ group }}_group" colspan="2" class="fw-bold scrollspy is-success" headinglevel="2">
+              {{ group }}
+            </th>
+          </tr>
+          {% endif %}
+          {% for var in group_properties %}      
         <tr>
           <td>
-            <span id="{{f.name}}_{{ var.name }}" headinglevel="2" class="scrollspy fw-bold">{{ var.name }}</span><br>
+            <span id="{{f.name}}_{{ var.name }}" headinglevel="3" class="scrollspy fw-bold">{{ var.name }}</span><br>
             <span class="has-text-primary">{{ var.type}}</span>
           
             {% if var.required==true %}<span class="has-text-danger"> / required</span>{% endif %}
@@ -289,6 +297,7 @@ page_nav:
             {% endfor %}
           </td>
         </tr>
+{% endfor %}
 {% endfor %}
       </tbody>
 </table>

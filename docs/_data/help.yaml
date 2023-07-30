@@ -1541,6 +1541,7 @@
           - name: name
             type: string
             required: true
+            group: basic
             unique: true
             allowed: Alfanumeric + underscore + dash
             short: Field name
@@ -1548,6 +1549,7 @@
           - name: type
             type: string
             required: true
+            group: basic
             choices:
               - name: text
                 description: A text input field
@@ -1838,6 +1840,7 @@
           - name: dateType
             type: string
             version: 4.0.2
+            group: datetime
             required: false
             choices:
               - name: date
@@ -1855,6 +1858,7 @@
             with_types: datetime
           - name: label
             type: string
+            group: basic
             allowed: Free text
             with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table
             short: Field label
@@ -1862,6 +1866,7 @@
               A friendly name/label for the field
           - name: placeholder
             type: string
+            group: basic
             allowed: Free text
             with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table
             short: In-field help value
@@ -1869,6 +1874,7 @@
               Some form fields allow an in-field hint value.
           - name: help
             type: string
+            group: basic
             allowed: Free text
             with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table
             short: Field help message
@@ -1877,6 +1883,7 @@
               This help message will be shown below the field.
           - name: icon
             type: string
+            group: visualization
             allowed: Free fontawesome 6 icon
             short: Field icon
             description: |
@@ -1885,6 +1892,7 @@
             with_types: text, number, expression, password, enum
           - name: group
             type: string
+            group: visualization
             allowed: Free text
             short: The field group name
             description: | 
@@ -1893,6 +1901,7 @@
           - name: line
             type: string
             version: 4.0.3
+            group: visualization
             allowed: Free text
             short: The field line name
             description: | 
@@ -1901,6 +1910,7 @@
           - name: width
             type: string
             version: 4.0.3
+            group: visualization
             allowed: A valid Bulma Column width
             short: The field width
             description: | 
@@ -1945,6 +1955,7 @@
           - name: dependencyFn
             type: string
             version: 4.0.0
+            group: interaction
             choices:
               - name: and
                 description: Uses the logical `and` operand to evaluate multiple dependencies
@@ -1955,6 +1966,7 @@
             description: This attribute represents the logical function between multiple dependencies.
           - name: dependencies
             type: list / elements=object
+            group: interaction
             allowed: Reference to other formfields and their values
             short: Show/hide this field based on the values or other fields
             description: |
@@ -2041,6 +2053,7 @@
                       - true                      
           - name: keydown
             type: boolean
+            group: interaction
             short: Enable responsiveness
             default: false
             version: 2.2.0
@@ -2050,6 +2063,7 @@
             with_types: text, password
           - name: noLog
             type: boolean
+            group: security
             default: false
             short: Disable backend logging
             version: 2.2.3
@@ -2072,6 +2086,7 @@
             with_types: enum
           - name: values
             type: array
+            group: data
             short: A list of values
             description: |
               To manually populate an enum field
@@ -2094,9 +2109,9 @@
                 - name: your_choice
                   type: local
                   expression: "'You chose $(cities2.name) or just short $(cities2.short)'"
-                    
           - name: default
             type: many
+            group: data
             short: Default value
             description: |
               The type of the value depends on the field type.  
@@ -2113,6 +2128,7 @@
             with_types: text, textarea, number, expression, password, enum, radio, checkbox, datetime
           - name: evalDefault
             type: boolean
+            group: data
             default: false
             short: Evaluates default value
             description: A default can be treated as javascript and can thus hold expressions like `'$(other_field)'.toUpperCase()` or `Math.PI` or `Date.getDate.toISOString()`
@@ -2120,12 +2136,14 @@
             with_types: text, textarea, number, expression, password, enum, radio, checkbox, datetime
           - name: required
             type: boolean
+            group: validation
             default: false
             short: Required field
             description: |
               Makes the field required.
           - name: minLength
             type: number
+            group: validation
             allowed: Integer > 0
             short: Field minimum length
             description: |
@@ -2134,12 +2152,14 @@
           - name: maxLength
             allowed: Integer > 0
             type: number
+            group: validation
             short: Field maximum length
             description: |
               Forces a string-field to be maximum x long.
             with_types: text, expression, password
           - name: minValue
             allowed: Integer
+            group: validation
             type: number
             short: Field minimum value
             description: |
@@ -2147,6 +2167,7 @@
             with_types: number
           - name: maxValue
             allowed: Integer
+            group: validation
             type: number
             short: Field maximum value
             description: |
@@ -2154,6 +2175,7 @@
             with_types: number
           - name: regex
             type: object
+            group: validation
             short: A regular expression validation
             description: |
               Enforces a validation where the current field must match a regular expression.
@@ -2174,6 +2196,7 @@
                   description: Must be complex (8 or longer ; uppercase ; lowercase ; numeric ; specials)              
           - name: notIn
             type: object
+            group: validation
             short: A list validation (can not be in list)
             version: 2.2.4
             description: |
@@ -2190,6 +2213,7 @@
                   description: This ip already exists            
           - name: in
             type: object
+            group: validation
             version: 2.2.4
             short: A list validation (must be in list)
             description: |
@@ -2206,6 +2230,7 @@
                   description: This ip must be in the specified range              
           - name: validIf
             type: object
+            group: validation
             version: 2.2.4
             short: An field based validation (field must be true)
             description: |
@@ -2221,6 +2246,7 @@
                   description: The ip is not pingable            
           - name: validIfNot
             type: object
+            group: validation
             version: 2.2.4
             short: An field based validation (field must be false)
             description: |
@@ -2236,6 +2262,7 @@
                   description: The ip is still pingable, shut down the machine first                    
           - name: sameAs
             type: string
+            group: validation
             short: An field based validation (field must be same as other field)
             allowed: The name of another existing field
             description: |
@@ -2257,6 +2284,7 @@
             type: boolean
             default: false
             short: Allow form submit on non-evaluated placeholders
+            group: validation
             description: |
               When an expression-based field has placeholders,  
               the default form behaviour is not to allow form submit until all placeholders are resolved.
@@ -2265,12 +2293,14 @@
           - name: noOutput
             type: boolean
             default: false
+            group: output
             short: Do not output as extravar
             description: |
               Form fields are by default send as extravars.  
               If you do not want a field to be sent as extravar, set this attribute to true.
           - name: model
             type: string or array
+            group: output
             allowed: An dot-based string notation of an object, or an array of these
             short: Extravar modelling
             description: |
@@ -2298,6 +2328,7 @@
           - name: asCredential
             type: boolean
             default: false
+            group: output
             short: Send credential as extravar
             description: |
               Use the value of this field to search for a credential with the same name  
@@ -2327,6 +2358,7 @@
           - name: outputObject
             type: boolean
             default: false
+            group: output
             short: Output the selection of a enum-field as a full object.
             description: |
               When selecting from an `enum`-field (dropdown), either the first column or  
@@ -2335,6 +2367,7 @@
             with_types: enum
           - name: expression
             type: string
+            group: data
             allowed: Valid javascript
             short: A javascript expression.
             description: |
@@ -2385,9 +2418,9 @@
                     expression: "'test'.toUpperCase()"
                     runLocal: true // this is default with type=local                  
                     hide: true     // this is default with type=local
- 
           - name: runLocal
             type: boolean
+            group: data
             default: false
             with_types: enum, expression, table
             short: Run an expression locally
@@ -2399,6 +2432,7 @@
           - name: refresh
             type: boolean|string
             default: false
+            group: data
             with_types: enum, expression
             short: Allow a manual or auto refresh
             description: |
@@ -2407,6 +2441,7 @@
               Set this property to `true` to allow a refresh, or set `5s` for example to allow auto refresh.
           - name: isHtml
             type: boolean
+            group: visualization
             default: false
             with_types: expression
             short: Renders text as html
@@ -2421,6 +2456,7 @@
                   isHtml: true
           - name: hide
             type: boolean
+            group: visualization
             default: false
             with_types: expression
             short: Hides an expression field
@@ -2428,6 +2464,7 @@
               Set to `true` if you want your expression hidden.
           - name: editable
             type: boolean
+            group: data
             default: false
             with_types: expression
             short: Makes an expression editable
@@ -2436,6 +2473,7 @@
               By setting this property, you can flip the expression field to a regular text field.
           - name: dbConfig
             type: object
+            group: data
             with_types: enum, expression, table
             short: A database connection object
             description: |
@@ -2462,6 +2500,7 @@
                   # database, collection and the query in valid json
           - name: query
             type: string
+            group: data
             allowed: A valid sql query
             with_types: expression, enum, table
             short: The query to select data from a database
@@ -2490,6 +2529,7 @@
                   # database, collection and the query in valid json      
           - name: sticky
             type: boolean
+            group: visualization
             default: false
             with_types: enum
             short: Make a dropdown box permanently visible
@@ -2498,6 +2538,7 @@
               The dropbox looses it reactivity and becomes a fixed table.
           - name: horizontal
             type: boolean
+            group: visualization
             version: 4.0.3
             default: false
             with_types: enum
@@ -2508,6 +2549,7 @@
               PctColumns are disabled, due to the space it consumes horizontally.
           - name: columns
             type: array
+            group: visualization
             with_types: enum
             short: The list of columns visible in the dropdown box
             description: |
@@ -2526,6 +2568,7 @@
                   - username
           - name: pctColumns
             type: array
+            group: visualization
             with_types: enum
             short: The list of columns that should visualized as a percentage-bar
             description: |
@@ -2548,6 +2591,7 @@
                   - used_pct
           - name: filterColumns
             type: array
+            group: interaction
             with_types: enum
             short: The list of columns that you can filter on
             description: |
@@ -2570,6 +2614,7 @@
                   - title                  
           - name: valueColumn
             type: string
+            group: data
             default: first column
             with_types: enum
             short: The column of a selected item that needs to exported as extravar
@@ -2592,6 +2637,7 @@
                   - username
           - name: placeholderColumn
             type: string
+            group: data
             with_types: enum
             default: first column
             short: The column of a selected item that is used in a placeholder
@@ -2630,6 +2676,7 @@
                   # and removes the need of the placeholderColumn property
           - name: previewColumn
             type: string
+            group: visualization
             default: first column
             with_types: enum
             short: The column of the selected item(s) that is shown in the dropdown-preview
@@ -2649,6 +2696,7 @@
                   - name
           - name: allowInsert
             type: boolean
+            group: interaction
             with_types: table
             default: true
             short: Allow table insert
@@ -2656,6 +2704,7 @@
               A table can be used to modify existing data.  If new data is allowed, set this property to false.  
           - name: allowDelete
             type: boolean
+            group: interaction
             default: true
             with_types: table
             short: Allow table delete
@@ -2663,6 +2712,7 @@
               A table can be used to modify existing data.  If you don't was recoreds to be deleted, set this property to false.
           - name: deleteMarker
             type: string
+            group: output
             with_types: table
             short: Adds an additional deletemarker field
             description: |
@@ -2686,6 +2736,7 @@
                       type: text
           - name: insertMarker
             type: string
+            group: output
             with_types: table
             short: Adds an additional insertmarker field
             description: |
@@ -2708,6 +2759,7 @@
                       type: text  
           - name: readonlyColumns
             type: array
+            group: interaction
             with_types: table
             short: The readonly columns in table
             description: |
@@ -2715,6 +2767,7 @@
               Use this property to set the readonly fields.
           - name: insertColumns
             type: array
+            group: interaction
             with_types: table
             short: The insert columns in table
             version: 4.0.5
@@ -2723,6 +2776,7 @@
               Use this property to set the insert fields.              
           - name: tableFields
             type: array
+            group: table
             with_types: table
             allowed: Tablefield object
             objectLink: forms/form/formfield/tablefield
