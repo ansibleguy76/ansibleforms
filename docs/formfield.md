@@ -20,7 +20,7 @@ page_nav:
         content: Create forms
         url: '/form'
     next:
-        content: Learn more about expressions
+        content: Expressions
         url: '/expressions'
 ---
 

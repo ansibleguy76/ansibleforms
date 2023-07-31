@@ -55,5 +55,9 @@ grid_navigation:
     - title: FAQ
       excerpt: More examples and more answers
       cta: Read more
-      url: '/faq'                                    
+      url: '/faq'          
+    - title: GUI
+      excerpt: About the GUI
+      cta: Read more
+      url: '/gui'                               
 ---

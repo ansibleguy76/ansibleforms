@@ -14,12 +14,14 @@ doks:
             - item_name: Environment Variables
               item_url: '/customization'   
             - item_name: Forms.yaml
-              item_url: '/forms'                 
+              item_url: '/forms'        
+            - item_name: GUI
+              item_url: '/gui'                        
         nav2:
             - item_name: Create Forms
               item_url: '/form'        
               item_icon: table-list
-            - item_name: Create Formfields
+            - item_name: Formfields
               item_url: '/formfield'  
               item_icon: input-text        
             - item_name: Expressions

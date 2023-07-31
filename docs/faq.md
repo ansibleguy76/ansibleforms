@@ -17,8 +17,11 @@ hide_scrollspy: false
 # Page navigation
 page_nav:
     prev:
-        content: Learn more about expressions
+        content: Expressions
         url: '/expressions'
+    next:
+        content: The GUI
+        url: '/gui'        
 ---
 
 {% assign help = site.data.help %}

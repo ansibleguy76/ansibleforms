@@ -22,7 +22,7 @@ page_nav:
         content: Forms configuration
         url: '/forms'
     next:
-        content: Learn more about formfields
+        content: Formfields
         url: '/formfield'
 ---
 
