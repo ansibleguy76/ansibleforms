@@ -1,0 +1,13 @@
+<div class="micro-nav">
+	<div class="container">
+		<div class="row">
+			<div class="col-xs-12">
+				{% if site.doks.header.nav2 %}
+				{% for item in site.doks.header.nav2 %}
+				<a class="micro-nav__link {% if item.item_url==url %}active{% endif %}" href="{% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}{{ item.item_url }}"><span class="icon"><i class="fat fa-{{item.item_icon}}"></i></span> {{ item.item_name }}</a>
+				{% endfor %}
+				{% endif %}				
+			</div><!-- /.col -->
+		</div><!-- /.row -->
+	</div><!-- /.container -->
+</div><!-- /.micro-nav -->

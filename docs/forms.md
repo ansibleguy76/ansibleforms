@@ -5,11 +5,11 @@ keywords:
 comments: false
 
 # Hero section
-title: Forms.yaml
+title: First time use and Forms.yaml
 description: | 
   Configuring AnsibleForms is done using 1 or more yaml files.<br>
   The master yaml file is <code>forms.yaml</code> and is the heart of your forms.<br><br>
-  This file is so important, this is likely the most important part of this help documentation.  
+  This file is so important, this is likely the most important part of this help documentation to get you started.  
 # Micro navigation
 micro_nav: true
 
@@ -39,17 +39,17 @@ The file below is a minimal sample forms.yaml file to start with.
 If has only the required `default` category, the required `admin` and `public` roles and a very simple sample form with 1 text field.
 
 ```yaml
-categories:
+categories: # a list of categories to group forms
   - name: Default
     icon: bars
-roles:
+roles: # a list of roles
   - name: admin
     groups:
       - local/admins
   - name: public
     groups: []
-constants: {}
-forms: 
+constants: {} # free objects to re-use over all forms
+forms: # a list of forms
   - name: Demo Form
     showHelp: true
     help: >
@@ -67,6 +67,8 @@ forms:
         name: username
         label: Username
 ```
+
+To add more forms, you either extend the forms-list property in the forms.yaml file, or you make seperate yaml files under the forms folder.  Each file must contain [a single form item](#form-object).
 
 <table class="table-responsive">
       <thead>

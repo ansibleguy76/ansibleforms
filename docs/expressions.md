@@ -25,7 +25,7 @@ page_nav:
 ---
 
 {% assign help = site.data.help %}
-{% assign expression = help | where: "link", "expressions" | first %}
+{% assign expression = help | where: "name", "Expressions" | first %}
 {% assign expressions = expression.help %}
 
 The `expression` formfield-attribute is so powerfull, more examples are important. 
@@ -54,7 +54,11 @@ This javascript is evaluated either on the server side (default) or on the clien
 {% assign examples = ex.examples %}
 {% for e in examples %}
 ## {{ e.name }}
-
+{% if e.version %}
+<div class="tags has-addons mb-1">
+  <span class="tag is-dark">Added</span><span class="tag is-success">{{ e.version }}</span>
+</div>
+{% endif %}
 {% if e.code %}
 
 {{ e.description }}

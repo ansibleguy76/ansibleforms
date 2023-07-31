@@ -62,6 +62,9 @@
 		&:active {
 			border-color: $color-dark-blue;
 		}
+		&.active{
+			font-weight:bold;
+		}
 	}
 }
 

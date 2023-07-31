@@ -36,7 +36,7 @@ grid_navigation:
       excerpt: Customize AnsibleForms with <strong>Environment Variables</strong>
       cta: Read more
       url: '/customization'    
-    - title: Forms.yaml configuration
+    - title: First time use / Forms.yaml
       excerpt: Understand how the <strong>forms.yaml</strong> file works and setup categories and roles
       cta: Read more
       url: '/forms'    
@@ -51,5 +51,9 @@ grid_navigation:
     - title: Expressions
       excerpt: Enhance your forms with javascript expressions
       cta: Read more
-      url: '/expressions'                                  
+      url: '/expressions'      
+    - title: FAQ
+      excerpt: More examples and more answers
+      cta: Read more
+      url: '/faq'                                    
 ---

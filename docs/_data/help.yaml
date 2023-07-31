@@ -3695,14 +3695,14 @@
     Frequently Asked Questions.  
   examples:
   - name: Cascaded Dropdowns
-    short: How to make cascaded dropdowns
+    short: Make cascaded dropdowns
     description: |
       `enum` fields (AKA dropdown boxes) can contain placeholders in their `query` or `expression` property in the format of `$(another_field)` or `$(another_field[0].name)`.  
       The moment the referenced field changes, the referencing field gets re-evaluated, resulting in dynamic and cascading dropdown boxes.  
       The power of this concept lies in the client web-application that is re-evaluating fields every 100ms.  With current processors and the chromium engine, this should be a very seamless experience.  
         
       **Note**: When you reference another enum field, you reference the selected values, NOT the full dropdown list.  Use the `placeholderColumn`-property or a dot-notation like `$(city.name)` 
-    language: YAML
+    language: yaml
     code: |
       - type: enum
         dbConfig: 
@@ -3768,7 +3768,7 @@
         model: cmdb.datacenter
         group: CMDB
   - name: Field placeholders
-    short: How to reference another fields value
+    short: Reference another fields value
     description: |
       Placeholders are references to other fields in the forms.  
       A placeholder is always in the format `$(reference)`.  Expressions or queries can contain placeholders.  
@@ -3777,7 +3777,7 @@
       If the placeholder is pointing to an expression field, then either the full object is returned or you can have an advanced placeholder reference like `$(myarray[0].name)` where you can create javascript-like references.  
         
       **Note**: Important to know is that the placeholder is replaced BEFORE the evaluation of the expression.  If you expect the result to be a string, then you must wrap it with quotes!.
-    language: YAML
+    language: yaml
     code: |
       - name: field1
         type: expression
@@ -3805,35 +3805,35 @@
         expression: "'$(field5)'"   # result : the selected item from field5 (default=bar)
         runLocal: true        
   - name: Hide a field
-    short: How to hide a field
+    short: Hide a field
     description: |
       You can hide a field using the field property `hide` .  
       Or you can show/hide a field dynamically using the field properties `dependencies` and `dependencyFn`.
   - name: Group fields
-    short: How to group fields together in a block
+    short: Group fields together in a block
     description: |
       Use the field property `group` .  Fields with the same group name will be grouped in a block.
   - name: Field validation
-    short: How to validate a field
+    short: Validate a field
     description: |
       Have a look at the many validation field properties such as `regex`, `minValue`, `notIn`, ...
   - name: Credentials
-    short: How to pass credentials
+    short: Pass credentials
     description: |
       Credentials can be safely passed as extravars by creating a hidden expression field.  
       The value of the expression field is is the name of the stored credential you want to pass.  
       And then simply add the field property `asCredential` as true.  
   - name: Userinfo
-    short: How to pass the current user
+    short: Pass the current user
     description: |
       Ansible Forms automatically sends the userinformation in the extravars.  
       You don't need to do anything.  
       It is sent as `ansibleforms_user`.
   - name: Userinfo Form
-    short: How to access current user info
+    short: Access current user info
     description: |
       The field `__user__` is automatically added in the form.
-    language: YAML
+    language: yaml
     version: 4.0.2
     code: |
       expression: $(__user__)
@@ -3841,13 +3841,13 @@
       expression: $(__user__.groups)
       expression: $(__user__.roles)
   - name: Customization
-    short: How to customize Ansible Forms
+    short: Customize Ansible Forms
     description: |
       Ansible Forms is a web-app.  If you run it natively in nodejs, you could replace files or change them.  
       But more recommended is to run it as a docker-image and add volume or file mappings.  Our docker-compose projects already maps directories to make the database, playbooks, logs, certificates and ssh-keys persistent.  Nothing is keeping you from adding more mappings to, for example, override the logo.  
       There is also a `custom.js` file where you can add your own javascript functions to use in expressions.  Just like you can address our functions with the prefix `fn.` (fn.fnRestBasic for example) you can access the custom functions with prefix `fnc.`.  
       And you can add your own jq definitions as well in the same way with the `jq.custom.definitions.js`
-    language: YAML
+    language: yaml
     code: |
       volumes:
         # Mount application folder to host folder (to maintain persistency)
@@ -3861,13 +3861,13 @@
         # Map custom logo
         - ./data/mylogo.svg:/app/dist/views/assets/img/logo_ansible_forms_full_white.svg
   - name: Default value
-    short: How to set a default value
+    short: Set a default value
     description: |
       There is obviously the field property `default` you can use to manipulate a default.  And with `enum` fields, you can use `__auto__` for example to automatically select the first item.  
          
       But sometimes you want to have a dynamic default, based on an expression.  For simple fields, you use the `expression` field in combination with the field property `editable`, this will force the expression as the default, but allows the operator to override it.  
       But in case you want an expression-based default on an `enum` field, it's a bit tricky, yet not undoable.  See the below example how we accomplish this.
-    language: YAML
+    language: yaml
     code: |
       # using client javascript manipulation
 

@@ -7,8 +7,27 @@ doks:
             text: 
             image: true
         nav:
-            - item_name: AnsibleForms on Github
-              item_url: 'https://github.com/ansibleguy76'
+            - item_name: Introduction
+              item_url: '/introduction'        
+            - item_name: How to install
+              item_url: '/installation'          
+            - item_name: Environment Variables
+              item_url: '/customization'   
+            - item_name: Forms.yaml
+              item_url: '/forms'                 
+            - item_name: FAQ
+              item_url: '/faq'    
+        nav2:
+            - item_name: Create Forms
+              item_url: '/form'        
+              item_icon: table-list
+            - item_name: Create Formfields
+              item_url: '/formfield'  
+              item_icon: input-text        
+            - item_name: Expressions
+              item_url: '/expressions'   
+              item_icon: brackets-curly
+        github_url: https://github.com/ansibleguy76
     footer:
         content:
             logo:

@@ -10,9 +10,11 @@
 					<div class="col-md-7">
 						<div class="align-container" data-mh>
 							<div class="align-inner">
-								{% if page.title %}
-									<h1 class="hero-subheader__title">{{ page.title }}</h1>
-								{% endif %}
+								{% if site.doks.header.logo.text %}
+								<h1 class="hero-subheader__title">{{ page.title }}</h1>
+								{% elsif site.doks.header.logo.image %}
+								<img src="{% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}/doks-theme/assets/images/layout/logo.png">
+								{% endif %}								
 								{% if page.description %}
 									<p class="hero-subheader__desc">{{ page.description }}</p>
 								{% endif %}

@@ -220,3 +220,12 @@ table td{
     font-size: 18px; /* Increase font size */
     text-align: center;
   }
+
+  
+/* ----- Back ----- */
+.micro-nav__link {
+
+    &.active{
+        color:$warning;
+    }
+}
