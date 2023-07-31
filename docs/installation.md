@@ -36,7 +36,7 @@ AnsibleForms can be installed in a few ways.
 
 # Install using Docker-Compose
 
-The recommende way to install AnsibleForms is using `Docker Compose`, which is the fastest way to start AnsibleForms with Docker.  However, if you are skilled with docker and/or Kubernetes, the [docker-compose (with Kubernetes sample)](https://github.com/ansibleguy76/ansibleforms-docker), together with the environment variables should get you started as well.
+The recommended way to install AnsibleForms is using `Docker Compose`, which is the fastest way to start AnsibleForms with Docker.  However, if you are skilled with docker and/or Kubernetes, the [docker-compose (with Kubernetes sample)](https://github.com/ansibleguy76/ansibleforms-docker), together with the environment variables should get you started as well.
 
 <div class="callout callout--danger">
     <p><strong>Note</strong> Using docker and docker-compose for the first time, requires some basic linux skills and some knowledge about containers</p>
