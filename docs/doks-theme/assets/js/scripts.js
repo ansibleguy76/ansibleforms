@@ -172,4 +172,9 @@
 	$( '.offcanvas-toggle' ).on( 'click', function() {
 		$( 'body' ).toggleClass( 'offcanvas-expanded' );
 	} );
+
+
+	// search
+	$('#tipue_search_input').tipuesearch();	
+
 }( jQuery ) );

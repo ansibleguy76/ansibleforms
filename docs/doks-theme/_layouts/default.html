@@ -13,7 +13,7 @@
 						<div class="align-container" data-mh>
 							<div class="align-inner">
 								{% if page.title %}
-									<h1 class="hero-subheader__title">{{ page.title }} - {{ url }}</h1>
+									<h1 class="hero-subheader__title">{{ page.title }}</h1>
 								{% endif %}
 								{% if page.description %}
 									<p class="hero-subheader__desc">{{ page.description }}</p>
@@ -36,30 +36,21 @@
 							</div><!-- /.align-inner -->
 						</div><!-- /.align-container -->
 					</div><!-- /.col -->
-					{% if page.author.title and page.author.description and page.author.title_url  %}
-						<div class="col-md-4 col-offset-1 hidden-xs hidden-sm">
-							<div class="align-container" data-mh>
-								<div class="align-inner">
-									<div class="hero-subheader__author">
-										<p class="hero-subheader__author-title">
-											{% if button.external_url == true %}
-											<a href="{{ page.author.title_url }}" class="btn btn--read-more">
-												{{ page.author.title }}
-												<i class="icon icon--arrow-right"></i>
-											</a>
-											{% else %}
-											<a href="{% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}{{ page.author.title_url }}" class="btn btn--read-more">
-												{{ page.author.title }}
-												<i class="icon icon--arrow-right"></i>
-											</a>
-											{% endif %}
-										</p><!-- /.hero-subheader__author-title -->
-										<p>{{ page.author.description }}</p>
-									</div><!-- /.hero-subheader__author -->
-								</div><!-- /.align-inner -->
-							</div><!-- /.align-container -->
-						</div><!-- /.col -->
-					{% endif %}
+
+					<div class="col-md-4 col-offset-1">
+						<div class="align-container" data-mh>
+							<div class="align-inner">
+								<div class="hero-subheader__author">
+									<h1 class="hero-subheader__title">Search</h1>
+									<form action="{% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}/search">
+										<input type="text" name="q" placeholder="Search" id="tipue_search_input" pattern=".{3,}" title="At least 3 characters" required> <span class="icon"><i class="fas fa-magnifying-glass"></i></span>
+										<div style="clear: both;"></div>
+									</form>
+								</div><!-- /.hero-subheader__author -->
+							</div><!-- /.align-inner -->
+						</div><!-- /.align-container -->
+					</div><!-- /.col -->
+
 				</div><!-- /.row -->
 			</div><!-- /.container -->
 		</div><!-- /.hero-subheader -->

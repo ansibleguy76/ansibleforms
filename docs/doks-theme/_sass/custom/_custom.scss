@@ -193,6 +193,9 @@ div.highlighter-rouge {
     margin-bottom:0.2em;
 }
 
+.mt-2{
+    margin-top:0.4em;
+}
 
 
 table td{
@@ -228,4 +231,8 @@ table td{
     &.active{
         color:$warning;
     }
+}
+
+.d-none{
+    display:none
 }

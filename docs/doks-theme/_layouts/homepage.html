@@ -31,6 +31,11 @@
 									</a>
 									{% endif %}
 								{% endfor %}
+								<form action="{% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}/search">
+									<input type="text" placeholder="Search" name="q" id="tipue_search_input" pattern=".{3,}" title="At least 3 characters" required> <span class="icon"><i class="fas fa-magnifying-glass"></i></span>
+									<div style="clear: both;"></div>
+								</form>
+						
 							</div><!-- /.align-inner -->
 						</div><!-- /.align-container -->
 					</div><!-- /.col -->
