@@ -20,8 +20,8 @@ page_nav:
         content: Create forms
         url: '/form'
     next:
-        content: Expressions
-        url: '/expressions'
+        content: Tablefields
+        url: '/tablefield'
 ---
 
 {% assign help = site.data.help %}
@@ -103,7 +103,7 @@ page_nav:
             </td>
             <td>
               <p>
-                <strong>{{ var.short }}</strong><br>
+                <strong>{{ var.short }} {% if var.name=="type" %}(= {{ f.name }}){% endif %}</strong><br>
                 {% if var.docsObjectLink %}
                 <a href="{{ var.docsObjectLink}}"><i class="fat fa-link"></i> 
                 {% endif %}
@@ -114,10 +114,12 @@ page_nav:
                 </a>
                 {% endif %}
               </p>
+              {% if var.name!="type" %}
               <p markdown="1">
                 {{ var.description }}
               </p>
-              {% if var.choices.size > 0 %}
+              {% endif%}
+              {% if var.choices.size > 0 and var.name!="type" %}
               <div class="">
                 <span class="fw-bold">Choices:</span><br>
                 <ul>
@@ -157,11 +159,10 @@ page_nav:
                 </p>
               </div>
               {% endfor %}
-              {% if var.example != nil %}
+              {% if var.examples and var.name!="type" %}
               <p class="fw-bold">
                 Examples:
               </p>
-              {% endif %}
               {% for e in var.examples %}
             <div>
               <p class="fw-bold mt-2">{{ forloop.index }}) {{ e.name }}</p>
@@ -174,6 +175,7 @@ page_nav:
 
             </div>
               {% endfor %}
+              {% endif %}              
             </td>
           </tr>
           {% endfor %}          
@@ -198,6 +200,7 @@ page_nav:
 {% endfor %}
 
 {% for f in objects %}
+
 # {{ f.name }} Object
 
 {{ f.description }}
@@ -211,10 +214,23 @@ page_nav:
       </thead>
       <tbody>
       
-{% for var in f.items %}
+
+      {% assign groups = f.items | map: "group" | uniq | sort_natural %}
+
+      {% for group in groups %}
+
+        {% assign group_properties = f.items  | where: "group",group %}
+        <tr>
+          <th id="{{ f.name }}_{{ group }}_group" colspan="2" addclass="has-text-success" class="fw-bold scrollspy is-success" headinglevel="2">
+            {{ group }}
+          </th>
+        </tr>
+
+        {% for var in group_properties %}
+
         <tr>
           <td>
-            <span id="{{f.name}}_{{ var.name }}" headinglevel="2" class="scrollspy fw-bold">{{ var.name }}</span><br>
+            <span id="{{f.name}}_{{ var.name }}" headinglevel="3" class="scrollspy fw-bold">{{ var.name }}</span><br>
             <span class="has-text-primary">{{ var.type}}</span>
           
             {% if var.required==true %}<span class="has-text-danger"> / required</span>{% endif %}
@@ -261,7 +277,7 @@ page_nav:
               <br><br>
             </div>
             {% endif %}                          
-            {% for c in var.changelog %}
+{% for c in var.changelog %}
             <div class="callout callout--info">
               {% if c.type == "added" %}
               <div class="tags has-addons mb-1">
@@ -272,13 +288,13 @@ page_nav:
                 {{ c.description }}
               </p>
             </div>
-            {% endfor %}
+{% endfor %}
             {% if var.example != nil %}
             <p class="fw-bold">
               Examples:
             </p>
             {% endif %}
-            {% for e in var.examples %}
+{% for e in var.examples %}
             <div>
               <p class="fw-bold mt-2">{{ forloop.index }}) {{ e.name }}</p>
 
@@ -289,10 +305,11 @@ page_nav:
 </div>
 
             </div>
-            {% endfor %}
+{% endfor %}
           </td>
         </tr>
-{% endfor %}
+        {% endfor %}
+      {% endfor %}
       </tbody>
 </table>
 {% endfor %}

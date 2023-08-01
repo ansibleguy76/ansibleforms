@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-   New documentation, the website ansibleforms is now generated on github pages using jekyll
+
+### Changed
+
+-   Removed environment variable from reference guide (find it in documentation now)
+
+### Fixed
+
+-   Scheme creation bug fixed
+-   Typos in help
+
 ## [4.0.13] - 2023-07-24
 
 ### Added

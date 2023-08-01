@@ -9,7 +9,7 @@
             <div class="tabs is-medium is-boxed">
               <ul>
                 <template v-for="h in help">
-                  <li :key="h.name" :class="{'is-active':links.includes(h.link)}">
+                  <li v-if="!h.hideFromReferenceGuide" :key="h.name" :class="{'is-active':links.includes(h.link)}">
                     <router-link :to="'/reference-guide/'+h.link">
                       <span class="icon is-small"><font-awesome-icon :icon="h.icon.split(',')" /></span>
                       <span>{{ h.name }}</span>

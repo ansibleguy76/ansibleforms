@@ -31,7 +31,7 @@ function checkSchema(){
         }else{
           message=`Schema '${db}' is not present`
           logger.warning(message)
-          throw message
+          throw({message:message,data:{success:"",failed:message}})
         }
       }
     })
@@ -223,7 +223,7 @@ function checkTable(table){
       }else{
         message=`Table '${table}' is not present`
         logger.warning(message)
-        throw message
+        throw({message:message,data:{success:"",failed:message}})
       }
     })
 
@@ -366,7 +366,7 @@ Schema.create = function () {
         logger.notice(`Created schema 'AnsibleForms' and tables`)
         return `Created schema 'AnsibleForms' and tables`
       }else{
-        throw `Failed to create schema 'AnsibleForms' and/or tables`
+        throw {message:`Failed to create schema 'AnsibleForms' and/or tables`,data:{success:"",failed:`Failed to create schema 'AnsibleForms' and/or tables`}}
       }
     })
 };

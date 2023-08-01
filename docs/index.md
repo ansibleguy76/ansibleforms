@@ -47,7 +47,11 @@ grid_navigation:
     - title: All about formfields
       excerpt: Learn all the different types of formfields
       cta: Read more
-      url: '/formfield'         
+      url: '/formfield'     
+    - title: Tablefields
+      excerpt: A table formfield has its own fields
+      cta: Read more
+      url: '/tablefield'               
     - title: Expressions
       excerpt: Enhance your forms with javascript expressions
       cta: Read more

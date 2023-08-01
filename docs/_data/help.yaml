@@ -2,6 +2,7 @@
 - name: Environment Variables
   icon: fas,gear
   link: environment-variable
+  hideFromReferenceGuide: true
   itemName: variable
   description: |
     Ansibleforms is a nodejs webapplication and is tunable using environment variables.  
@@ -581,6 +582,7 @@
       - name: name
         type: string
         required: true
+        group: basic
         unique: true
         allowed: alphanumeric + dash + underscore + space
         short: The name of the form
@@ -590,6 +592,7 @@
       - name: roles
         type: array
         required: true
+        group: basic
         allowed: valid role names
         short: Who has access
         description: | 
@@ -606,6 +609,7 @@
       - name: categories
         type: array
         allowed: valid category name
+        group: basic
         short: Categories
         description: | 
           By adding one or more categories, you can group forms together in categories. 
@@ -619,12 +623,14 @@
       - name: description
         type: string
         allowed: free text
+        group: basic
         short: Form description
         description: | 
           A short description, explaining what the form does.
       - name: help
         type: string
         allowed: valid markdown
+        group: basic
         short: Help
         description: | 
           Using markdown you can a more detailed help message to help the operator understand the form.  
@@ -640,10 +646,12 @@
       - name: showHelp
         type: boolean
         short: Show Help
+        group: visualization
         default: true
         description: Show the help by default or collapse the help.  
       - name: icon
         type: string
+        group: visualization
         allowed: Free fontawesome 6 icon
         short: Form icon
         description: |
@@ -658,6 +666,7 @@
       - name: image
         type: string
         allowed: valid image url
+        group: visualization
         short: Form image
         description: |
           You can add a nice image to your form.  You can provide a local or remote url.  But if you are in a secured location, you might want to go for a base64 encode image.  This allows you to embed the image in the yaml file.  
@@ -686,6 +695,7 @@
       - name: tileClass
         type: string
         allowed: valid bulma background class
+        group: visualization
         short: Form tile background colour
         description: |
           Ansible Forms uses the Bulma css framework to style the webapplication.  
@@ -707,6 +717,7 @@
       - name: fieldGroupClasses
         type: object
         allowed: key-value pairs
+        group: visualization
         short: Fieldgroup background color
         description:
           Ansible Forms uses the Bulma css framework to style the webapplication.  
@@ -720,6 +731,7 @@
               groupname2: has-background-success-light                 
       - name: type
         type: string
+        group: basic
         choices:
         - name: ansible
           description: | 
@@ -796,7 +808,6 @@
                   groupname1: has-background-info-light
                   groupname2: has-background-success-light    
                 fields:                                        # list of field objects      
-
         - name: git
           description: | 
             Updates a file in a repository.   
@@ -866,7 +877,6 @@
                   groupname1: has-background-info-light
                   groupname2: has-background-success-light    
                 fields:                                        # list of field objects      
-
         short: Form type
         description: | 
           Our form eventually sends extravars to a target.  That target can be an ansible-playbook, an awx-template a git repository or a multistep (which is a list or combination of multiple playbooks/templates/repositories, executed sequentially).
@@ -910,6 +920,7 @@
       - name: template
         type: string
         with_types: awx
+        group: basic
         allowed: a valid awx template name
         short: Awx template
         description: |
@@ -935,6 +946,7 @@
       - name: playbook
         type: string
         with_types: ansible
+        group: basic
         allowed: a valid yaml file
         short: Ansible playbook
         description: | 
@@ -960,6 +972,7 @@
       - name: repo
         type: object
         with_types: git
+        group: basic
         allowed: a repo object
         objectLink: forms/form/repo
         docsObjectLink: "#repository-object"
@@ -977,6 +990,7 @@
       - name: steps
         type: array
         with_types: multistep
+        group: basic
         allowed: a step object
         objectLink: forms/form/step
         docsObjectLink: "#step-object"
@@ -986,6 +1000,7 @@
       - name: inventory
         type: string
         short: Inventory
+        group: workflow
         description: |
           In both awx and ansible core you can pass an inventory.  In the case of ansible core, it will be a yaml file.  In case of awx it will be the inventory name.  
             
@@ -994,6 +1009,7 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
       - name: check
         type: boolean
+        group: workflow
         short: Run in check mode
         description: |
           In both awx and ansible core you run a playbook in check mode.  Enable this attribute to do so.  
@@ -1003,6 +1019,7 @@
       - name: limit
         type: text
         allowed: a valid host pattern
+        group: workflow
         short: Run against a limited number of hosts
         description: |
           In awx and ansible core you run a playbook against limited hosts by supplying a host pattern.  Use this attribute to do so.  
@@ -1012,6 +1029,7 @@
       - name: diff
         type: boolean
         short: Run in diff mode
+        group: workflow
         description: |
           In both awx and ansible core you run a playbook in diff mode.  Enable this attribute to do so.
 
@@ -1020,6 +1038,7 @@
       - name: verbose
         type: boolean
         version: 4.0.0
+        group: workflow
         short: Run in verbose mode
         description: |
           In ansible core you run a playbook in verbose mode.  Enable this attribute to do so.
@@ -1029,6 +1048,7 @@
       - name: keepExtravars
         type: boolean
         short: Do not remove the extarvars json file
+        group: workflow
         version: 4.0.0
         description: |
           In ansible core we temporarily store the extravars in a json file.  After run, this file is removed.  Use this property to disable this behaviour.
@@ -1038,6 +1058,7 @@
       - name: tags
         type: string
         allowed: comma separated tag-list
+        group: workflow
         short: Set tags
         description: |
           In both awx and ansible core you can pass tags.  Use this attribute to pass a comma separted list of tags.
@@ -1047,6 +1068,7 @@
       - name: approval
         type: object
         allowed: valid approval object
+        group: interaction
         objectLink: forms/form/approval
         docsObjectLink: "#approval-point-object"
         short: Add approval point
@@ -1055,6 +1077,7 @@
           An approval link is sent by email to a specific approver who can then approve or reject the job.
       - name: notifications
         type: object
+        group: interaction
         allowed: valid notification object
         objectLink: forms/form/notifications
         docsObjectLink: "#notifications-object"
@@ -1071,6 +1094,7 @@
                 - success
       - name: onSubmit
         type: array
+        group: interaction
         allowed: valid job status action objects
         short: Events on submit
         objectLink: forms/form/job-status-action
@@ -1094,6 +1118,7 @@
             # more examples on the job-status-event page
       - name: onSuccess
         type: array
+        group: interaction
         allowed: valid job status action objects
         short: Events on success
         objectLink: forms/form/job-status-action
@@ -1116,6 +1141,7 @@
             # more examples on the job-status-event page  
       - name: onFailure
         type: array
+        group: interaction
         allowed: valid job status action objects
         short: Events on failure
         objectLink: forms/form/job-status-action
@@ -1138,6 +1164,7 @@
             # more examples on the job-status-event page  
       - name: onAbort
         type: array
+        group: interaction
         allowed: valid job status action objects
         short: Events on abort
         objectLink: forms/form/job-status-action
@@ -1160,6 +1187,7 @@
             # more examples on the job-status-event page   
       - name: onFinish
         type: array
+        group: interaction
         allowed: valid job status action objects
         short: Events on finished
         objectLink: forms/form/job-status-action
@@ -1185,6 +1213,7 @@
             # more examples on the job-status-event page                                                  
       - name: fields
         type: array
+        group: basic
         allowed: valid field object
         short: fields
         objectLink: forms/form/formfield
@@ -1219,12 +1248,14 @@
           - name: name
             type: string
             required: true
+            group: basic
             allowed: alphanumeric + dash + underscore + space
             short: The name of the form
             description: | 
               The name of the step.  Used for logging and visualization.
           - name: type
             type: string
+            group: basic
             choices:
             - name: ansible
               description: | 
@@ -1263,6 +1294,7 @@
                   pull: git pull origin main  
           - name: template
             type: string
+            group: basic
             with_types: awx
             allowed: a valid awx template name
             short: Awx template
@@ -1288,6 +1320,7 @@
                     default: Foobar # this will overwrite the template name            
           - name: playbook
             type: string
+            group: basic
             with_types: ansible
             allowed: a valid yaml file
             short: Ansible playbook
@@ -1311,11 +1344,10 @@
                   - name: __playbook__
                     type: text
                     default: helloworld.yaml # this will overwrite the playbook name
-
-
           - name: repo
             type: object
             allowed: a repo object
+            group: basic
             with_types: git
             objectLink: forms/form/repo
             short: Repository
@@ -1331,6 +1363,7 @@
                   pull: git pull origin main  
           - name: inventory
             type: string
+            group: workflow
             short: Inventory
             description: |
               In both awx and ansible core you can pass an inventory.  In the case of ansible core, it will be a yaml file.  In case of awx it will be the inventory name.  
@@ -1340,6 +1373,7 @@
               **Note** : If you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
           - name: check
             type: boolean
+            group: workflow
             short: Run in check mode
             description: |
               In both awx and ansible core you run a playbook in check mode.  Enable this attribute to do so.  
@@ -1348,6 +1382,7 @@
               **Note** : If you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
           - name: diff
             type: boolean
+            group: workflow
             short: Run in diff mode
             description: |
               In both awx and ansible core you run a playbook in diff mode.  Enable this attribute to do so.
@@ -1356,6 +1391,7 @@
               **Note** : If you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
           - name: tags
             type: string
+            group: workflow
             allowed: comma separated tag-list
             short: Set tags
             description: |
@@ -1365,6 +1401,7 @@
               **Note** : If you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.            
           - name: approval
             type: object
+            group: interaction
             allowed: valid approval object
             objectLink: forms/form/approval
             short: Add approval point
@@ -1374,6 +1411,7 @@
               Every step can have a differnt approval point.
           - name: notifications
             type: object
+            group: interaction
             allowed: valid notification object
             objectLink: forms/form/notifications
             short: Add Notification
@@ -1391,6 +1429,7 @@
           - name: key
             type: string
             allowed: valid extravar reference
+            group: workflow
             short: Extravar key
             description: |
               Ansible Forms can model the extravars into objects using the formfield `model` attribute.  In a multistep form, by default, every step gets the full extravars payload.  However, using this `key` attribute you can choose which step receives which part of the extravars.  
@@ -1466,6 +1505,7 @@
                 # Extra : Every step can reference its own key and thus send a piece of the extravars
           - name: ifExtraVar
             type: extravar reference
+            group: workflow
             short: Run step if ...
             description: |
               In a mulitstep form, by default, Ansible Forms will try to run every step sequentially one after the other.  
@@ -1492,6 +1532,7 @@
                   label: Should I send an email ?
           - name: continue
             type: boolean
+            group: workflow
             default: false
             short: Continue on fail
             description: |
@@ -1511,6 +1552,7 @@
                   template: volume resize
           - name: always
             type: boolean
+            group: workflow
             default: false
             short: Always run
             description: |
@@ -1728,9 +1770,9 @@
                   * **database query** : you can use the query and dbConfig property to query a mysql, mssql server, postgres or mongodb.
                   * **expression** : you can use the expression property to create or retrieve data. in this case the output of the expression can be any type.  
                   The expression itself is pure javascript. You can do inline javascript or you can use a function. Read more on security concerns about expressions You can extend the functions with your own in the custom.js file. You can have synchronous and asynchronous functions. This allows you to retrieve any kind of data, whether it's reading a file or accessing a rest-api, or querying a foreign database. You can run the expression locally (`runLocal`) in the browser for simple expressions. This is faster and there is no limitation on the expression.  
-                  Use the alias type `local` to quickly make an expression type with runLocal, hide and noOutput.
-                  Use the alias type `local_out` to quickly make an expression type with runLocal, hide
-                  Use the alias type `credential` to quickly make an expression type with runLocal, hide, asCredential
+                  Use the alias type `local` to quickly make an expression type with runLocal, hide and noOutput.  
+                  Use the alias type `local_out` to quickly make an expression type with runLocal, hide.  
+                  Use the alias type `credential` to quickly make an expression type with runLocal, hide, asCredential.  
                     
                   Advanced helper functions (local and remote) are available, to query from rest for example.  
                   Explore the separate section on Expressions for multiple demo's.  
@@ -1840,7 +1882,7 @@
           - name: dateType
             type: string
             version: 4.0.2
-            group: datetime
+            group: basic
             required: false
             choices:
               - name: date
@@ -2225,7 +2267,7 @@
             examples:
             - name: Check if ip is in range
               code: |
-                notIn:
+                in:
                   field: range_of_ips   # range_of_ips is an other expression array field
                   description: This ip must be in the specified range              
           - name: validIf
@@ -2378,8 +2420,8 @@
                 Click here to find out more about the predefined functions. [TODO]  
                   
                 **tip** : use the alias `local` (type='expression',runLocal=true,hide=true,noOutput=true)  
-                **tip** : use the alias `local_out` (type='expression',runLocal=true,hide=true)
-                **tip** : use the alias `credential` (type='expression',runLocal=true,hide=true,asCredential=true)
+                **tip** : use the alias `local_out` (type='expression',runLocal=true,hide=true)  
+                **tip** : use the alias `credential` (type='expression',runLocal=true,hide=true,asCredential=true)  
             with_types: enum, expression, table, html
             examples:
               - name: Get a list of users from a rest api
@@ -2776,10 +2818,11 @@
               Use this property to set the insert fields.              
           - name: tableFields
             type: array
-            group: table
+            group: basic
             with_types: table
             allowed: Tablefield object
             objectLink: forms/form/formfield/tablefield
+            docsObjectLink: "#tablefield-object"
             short: The list of fields in a table
             description: |
               Every table field has its own separated table fields.  The explanation of a tablefield requires a separate help.  
@@ -2794,6 +2837,7 @@
             items: 
             - name: name
               type: string
+              group: basic
               required: true
               unique: true
               allowed: Alfanumeric + underscore + dash
@@ -2801,6 +2845,7 @@
               description: This attribute represents the name of the form field.
             - name: type
               type: string
+              group: basic
               required: true
               choices:
                 - name: text
@@ -2839,6 +2884,7 @@
               type: string
               version: 4.0.2
               required: false
+              group: datetime
               choices:
                 - name: date
                   description: A single date
@@ -2855,12 +2901,14 @@
               with_types: datetime
             - name: label
               type: string
+              group: basic
               allowed: Free text
               short: Tablefield label
               description: |
                 A friendly name/label for the tablefield
             - name: placeholder
               type: string
+              group: basic
               allowed: Free text
               short: In-field help value
               description: |
@@ -2868,6 +2916,7 @@
               with_types: text, textarea, number, password, checkbox, enum, datetime
             - name: icon
               type: string
+              group: visualization
               allowed: Free fontawesome 6 icon
               short: Field icon
               description: |
@@ -2877,6 +2926,7 @@
             - name: default
               type: many
               short: Default value
+              group: data
               description: |
                 The type of the value depends on the field type.  
                 Can be `string`,`boolean`, `number`, `array` or `object`.
@@ -2888,11 +2938,13 @@
             - name: required
               type: boolean
               default: false
+              group: validation
               short: Required field
               description: |
                 Makes the field required.
             - name: minLength
               type: number
+              group: validation
               allowed: Integer > 0
               short: Field minimum length
               description: |
@@ -2901,12 +2953,14 @@
             - name: maxLength
               allowed: Integer > 0
               type: number
+              group: validation
               short: Field maximum length
               description: |
                 Forces a string-field to be maximum x long.
               with_types: text, expression, password
             - name: minValue
               allowed: Integer
+              group: validation
               type: number
               short: Field minimum value
               description: |
@@ -2915,12 +2969,14 @@
             - name: maxValue
               allowed: Integer
               type: number
+              group: validation
               short: Field maximum value
               description: |
                 Forces a number-field to not be higher than...
               with_types: number
             - name: regex
               type: object
+              group: validation
               short: A regular expression validation
               description: |
                 Enforces a validation where the current field must match a regular expression.
@@ -2941,6 +2997,7 @@
                     description: Must be complex (8 or longer ; uppercase ; lowercase ; numeric ; specials)              
             - name: notIn
               type: object
+              group: validation
               short: A list validation (can not be in list)
               version: 2.2.4
               description: |
@@ -2957,6 +3014,7 @@
                     description: This ip already exists            
             - name: from
               type: string
+              group: data
               allowed: expression reference
               with_types: enum
               short: Datasource
@@ -2966,6 +3024,7 @@
             - name: sticky
               type: boolean
               default: false
+              group: visualization
               with_types: enum
               short: Make a dropdown box permanently visible
               description: |
@@ -2975,6 +3034,7 @@
               type: boolean
               version: 4.0.3
               default: false
+              group: visualization
               with_types: enum
               short: Converts a dropdown box to a horizontal selector
               description: |
@@ -2984,6 +3044,7 @@
             - name: in
               type: object
               version: 2.2.4
+              group: validation
               short: A list validation (must be in list)
               description: |
                 Enforces a validation where the current field must be one of the values in a list (referencing another field).
@@ -2994,12 +3055,13 @@
               examples:
               - name: Check if ip is in range
                 code: |
-                  notIn:
+                  in:
                     field: range_of_ips   # range_of_ips is an other expression array field
                     description: This ip must be in the specified range              
             - name: outputObject
               type: boolean
               default: false
+              group: data
               short: Output the selection of an enum field as a full object.
               description: |
                 When selecting from an `enum` field (dropdown), either the first column or  
@@ -3009,6 +3071,7 @@
             - name: columns
               type: array
               with_types: enum
+              group: visualization
               short: The list of columns visible in the dropdown box
               description: |
                 By default all properties are show in an `enum` field.  With this property you can choose which are visible.
@@ -3027,6 +3090,7 @@
             - name: pctColumns
               type: array
               with_types: enum
+              group: visualization
               short: The list of columns that should visualized as a percentage-bar
               description: |
                 By default all properties are show with its regular value.  
@@ -3049,6 +3113,7 @@
             - name: filterColumns
               type: array
               with_types: enum
+              group: interaction
               short: The list of columns that you can filter on
               description: |
                 By default the `previewColumn` or first visible column is used to filter on.  
@@ -3071,6 +3136,7 @@
             - name: valueColumn
               type: string
               default: first column
+              group: data
               with_types: enum
               short: The column of a selected item that needs to exported as extravar
               description: |
@@ -3093,6 +3159,7 @@
             - name: previewColumn
               type: string
               default: first column
+              group: visualization
               with_types: enum
               short: The column of the selected item(s) that is shown in the dropdown-preview
               description: |

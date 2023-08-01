@@ -5,11 +5,10 @@ keywords:
 comments: false
 
 # Hero section
-title: Creating forms
+title: Creating Tablefields
 description: | 
-  Once you understand the <code>forms.yaml</code> structure, you can now focus on the forms part.<br>
-  You can choose to either put all the forms in the master forms.yaml file, or you can create several yaml files under the <code>/forms</code> folder.<br>
-  AnsibleForms will read them all and merge them together.
+  A tablefield is somewhat special.  It's a field of a table formfield (can you still follow ?).<br>  
+  A form can have the <code>table formfield</code>.  That table has its own fields, called a tablefield.  
 # Micro navigation
 micro_nav: true
 
@@ -19,18 +18,19 @@ hide_scrollspy: false
 # Page navigation
 page_nav:
     prev:
-        content: Forms configuration
-        url: '/forms'
-    next:
         content: Formfields
         url: '/formfield'
+    next:
+        content: Expressions
+        url: '/expressions'
 ---
 
 {% assign help = site.data.help %}
 {% assign formsyaml = help | where: "link", "forms" | first %}
 {% assign form = formsyaml.help | where: "name", "Form" | first %}
-{% assign objects = form.help %}
-{% assign type = form.items | where: "name", "type" | first %}
+{% assign formfield = form.help | where: "name", "Formfield" | first %}
+{% assign tablefield = formfield.help | where: "name", "Tablefield" | first %}
+{% assign type = tablefield.items | where: "name", "type" | first %}
 
 <!-- type links -->
 <div class="mb-5">
@@ -45,7 +45,7 @@ page_nav:
       {% for t in type.choices %}
       <tr>
         <td>
-          <a href="#{{ t.name }}-form"><strong>{{ t.name }}</strong></a>
+          <a href="#{{ t.name }}-tablefield"><strong>{{ t.name }}</strong></a>
         </td>
 <td markdown="1">
 {{ t.description }}
@@ -57,7 +57,7 @@ page_nav:
 </div>
 
 {% for f in type.choices %} 
-# {{ f.name }} Form
+# {{ f.name }} formfield
 
   {% if f.version %}
   <div class="tags has-addons mb-1">
@@ -68,13 +68,9 @@ page_nav:
   <p markdown="1">
   {{ f.description }}
   {{ f.extra }}<br>
-    Below are the properties that are specifically for a {{ f.name }} Form
+    Below are the properties that are specifically for a {{ f.name }} tablefield
   </p>
   
-{% assign specific_properties = form.items | where_exp: "item", "item.with_types contains f.name" %}
-{% assign generic_properties = form.items | where_exp: "item", "item.with_types==nil" %}
-{% assign specific_properties = specific_properties | concat: generic_properties %}
-
   <table class="table-responsive">
         <thead>
           <tr>
@@ -83,6 +79,9 @@ page_nav:
           </tr>
         </thead>
         <tbody>
+          {% assign specific_properties = tablefield.items | where_exp: "item", "item.with_types contains f.name" %}
+          {% assign generic_properties = tablefield.items | where_exp: "item", "item.with_types==nil" %}
+          {% assign specific_properties = specific_properties | concat: generic_properties | sort_natural: "group" | sort_natural: "name" %}        
           {% assign groups = specific_properties | map: "group" | uniq | sort_natural %}
           {% for group in groups %}
           {% assign group_properties = specific_properties  | where: "group",group %}
@@ -165,6 +164,7 @@ page_nav:
               <p class="fw-bold">
                 Examples:
               </p>
+
               {% for e in var.examples %}
             <div>
               <p class="fw-bold mt-2">{{ forloop.index }}) {{ e.name }}</p>
@@ -180,141 +180,23 @@ page_nav:
               {% endif %}              
             </td>
           </tr>
+          {% endfor %}          
           {% endfor %}
-          {% endfor %}
-          {% if f.examples %}          
-          <tr>
-            <th id="{{ f.name }}_examples" colspan="2" addclass="has-text-success" class="fw-bold scrollspy is-dark" headinglevel="2">
-              Examples
-            </th>
-          </tr>
-          <tr>
-            <td colspan="2">
-              {% for e in f.examples %}
-              <div>
-                <p id="{{ f.name }}_examples_{{ forloop_index }}" class="scrollspy" headinglevel="3"><span>{{ forloop.index }})</span> <span>{{ e.name }}</span></p>
-<div markdown="1">
-```yaml
-{{ e.code }}
-```
-</div>
-              </div>
-              {% endfor %}            
-            </td>
-          </tr>      
-          {% endif %}              
+
         </tbody>
   </table>
-{% endfor %}
 
-{% for f in objects %}
-# {{ f.name }} Object
-
-{{ f.description }}
-
-<table class="table-responsive">
-      <thead>
-        <tr>
-          <th>Attribute</th>
-          <th>Comments</th>
-        </tr>
-      </thead>
-      <tbody>
-          {% assign groups = f.items | map: "group" | uniq | sort_natural %}
-          {% for group in groups %}
-          {% assign group_properties = f.items  | where: "group",group %}
-          {% if group %}
-          <tr>
-            <th id="{{ f.name }}_{{ group }}_group" colspan="2"  addclass="has-text-success"  class="fw-bold scrollspy is-success" headinglevel="2">
-              {{ group }}
-            </th>
-          </tr>
-          {% endif %}
-          {% for var in group_properties %}
-        <tr>
-          <td>
-            <span id="{{f.name}}_{{ var.name }}" headinglevel="3" class="scrollspy fw-bold">{{ var.name }}</span><br>
-            <span class="has-text-primary">{{ var.type}}</span>
-
-            {% if var.required==true %}<span class="has-text-danger"> / required</span>{% endif %}
-            {% if var.unique==true %}<span v-if="f.unique" class="has-text-warning"> / unique</span>{% endif %}
-            <br>
-              
-            {% if var.version %}<span v-if="f.version" class="is-italic has-text-success">added in version {{var.version}}</span>{% endif %}
-          </td>
-          <td>
-            <p>
-              <strong>{{var.short}}</strong><br>
-              {% if var.allowed != nil %}
-              <span class="has-text-primary">{{ var.allowed }}</span>
-              {% endif %}
-            </p>
-            <p markdown="1">
-              {{ var.description }}
-            </p>
-            {% if var.choices.size > 0 %}
-            <div class="">
-              <span class="fw-bold">Choices:</span><br>
-              <ul>
-                {% for c in var.choices %}
-                <li>
-                  {% if c.name == var.default %}
-                  <span title="{{ c.description }}" class="has-text-info">{{ c.name }} (default)</span>
-                  {% else %}
-                  <span title="{{ c.description }}">{{ c.name }}</span>
-                  {% endif %}
-                </li>
-                {% endfor %}
-              </ul>
-            </div>
-            {% elsif var.default != nil %}               
-            <div>
-              <span class="fw-bold">Default:</span><br>
-              <span class="">{{ var.default }}</span>
-            </div>   
-            {% endif %}   
-            {% if var.with_types!=nil %}
-            <div>
-              <span class="fw-bold has-text-danger">Only available with types:</span><br>
-              <span class="">{{ var.with_types }}</span>
-              <br><br>
-            </div>
-            {% endif %}                          
-            {% for c in var.changelog %}
-            <div class="callout callout--info">
-              {% if c.type == "added" %}
-              <div class="tags has-addons mb-1">
-                <span class="tag is-dark">Added</span><span class="tag is-success">{{ c.version }}</span>
-              </div>
-              {% endif %}
-              <p markdown="1">
-                {{ c.description }}
-              </p>
-            </div>
-            {% endfor %}
-            {% if var.example != nil %}
-            <p class="fw-bold">
-              Examples:
-            </p>
-            {% endif %}
-            {% for e in var.examples %}
-            <div>
-              <p class="fw-bold mt-2">{{ forloop.index }}) {{ e.name }}</p>
-
+{% if f.examples %}
+<p class="mt-5 fw-bold" >Examples</p>
+{% for e in f.examples %}
+<div>
+  <p class="has-text-link mt-2">{{ forloop.index }}) {{ e.name }}</p>
 <div markdown="1">
 ```yaml
 {{ e.code }}
 ```
 </div>
-
-            </div>
-            {% endfor %}
-          </td>
-        </tr>
+</div>
 {% endfor %}
+{% endif %}
 {% endfor %}
-      </tbody>
-</table>
-{% endfor %}
-
-

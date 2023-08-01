@@ -117,7 +117,7 @@ To add more forms, you either extend the forms-list property in the forms.yaml f
               </p>
             </div>
             {% endfor %}
-            {% if var.example != nil %}
+            {% if var.examples %}
             <p class="fw-bold">
               Examples:
             </p>
@@ -153,10 +153,20 @@ To add more forms, you either extend the forms-list property in the forms.yaml f
         </tr>
       </thead>
       <tbody>
-        {% for var in f.items %}      
+        {% assign groups = f.items | map: "group" | uniq | sort_natural %}
+        {% for group in groups %}
+        {% assign group_properties = f.items  | where: "group",group %}
+        {% if group %}
+        <tr>
+          <th id="{{ f.name }}_{{ group }}_group" colspan="2"  addclass="has-text-success"  class="fw-bold scrollspy is-success" headinglevel="2">
+            {{ group }}
+          </th>
+        </tr>
+        {% endif %}
+        {% for var in group_properties %}
         <tr>
           <td>
-            <span id="{{f.name}}_{{ var.name }}" headinglevel="2" class="scrollspy fw-bold">{{ var.name }}</span><br>
+            <span id="{{f.name}}_{{ var.name }}" headinglevel="3" class="scrollspy fw-bold">{{ var.name }}</span><br>
             <span class="has-text-primary">{{ var.type}}</span>
           
             {% if var.required==true %}<span class="has-text-danger"> / required</span>{% endif %}
@@ -221,26 +231,31 @@ To add more forms, you either extend the forms-list property in the forms.yaml f
               </p>
             </div>
             {% endfor %}
-            {% if var.example != nil %}
-            <p class="fw-bold">
-              Examples:
-            </p>
-            {% endif %}
-            {% for e in var.examples %}
-            <div>
-              <p class="fw-bold mt-2">{{ forloop.index }}) {{ e.name }}</p>
-
+          </td>
+        </tr>
+{% endfor %}
+{% endfor %}
+{% if f.examples %}          
+          <tr>
+            <th id="{{ f.name }}_examples" colspan="2" addclass="has-text-success" class="fw-bold scrollspy is-dark" headinglevel="2">
+              Examples
+            </th>
+          </tr>
+          <tr>
+            <td colspan="2">
+              {% for e in f.examples %}
+              <div>
+                <p id="{{ f.name }}_examples_{{ forloop_index }}" class="scrollspy fw-bold" headinglevel="3"><span>{{ forloop.index }})</span> <span>{{ e.name }}</span></p>
 <div markdown="1">
 ```yaml
 {{ e.code }}
 ```
 </div>
-
-            </div>
-            {% endfor %}
-          </td>
-        </tr>
-{% endfor %}
+              </div>
+              {% endfor %}            
+            </td>
+          </tr>      
+{% endif %}              
       </tbody>
 </table>
 {% endfor %}
@@ -262,10 +277,20 @@ To add more forms, you either extend the forms-list property in the forms.yaml f
         </tr>
       </thead>
       <tbody>
-{% for var in f.items %}
+          {% assign groups = f.items | map: "group" | uniq | sort_natural %}
+          {% for group in groups %}
+          {% assign group_properties = f.items  | where: "group",group %}
+          {% if group %}
+          <tr>
+            <th id="{{ f.name }}_{{ group }}_group" colspan="2"  addclass="has-text-success"  class="fw-bold scrollspy is-success" headinglevel="2">
+              {{ group }}
+            </th>
+          </tr>
+          {% endif %}
+          {% for var in group_properties %}
         <tr>
           <td>
-            <span id="{{f.name}}_{{ var.name }}" headinglevel="2" class="scrollspy fw-bold">{{ var.name }}</span><br>
+            <span id="{{f.name}}_{{ var.name }}" headinglevel="3" class="scrollspy fw-bold">{{ var.name }}</span><br>
             <span class="has-text-primary">{{ var.type}}</span>
           
             {% if var.required==true %}<span class="has-text-danger"> / required</span>{% endif %}
@@ -324,7 +349,7 @@ To add more forms, you either extend the forms-list property in the forms.yaml f
               </p>
             </div>
             {% endfor %}
-            {% if var.example != nil %}
+            {% if var.examples %}
             <p class="fw-bold">
               Examples:
             </p>
@@ -344,6 +369,28 @@ To add more forms, you either extend the forms-list property in the forms.yaml f
           </td>
         </tr>
 {% endfor %}
+{% endfor %}
+          {% if f.examples %}          
+          <tr>
+            <th id="{{ f.name }}_examples" colspan="2" addclass="has-text-success" class="fw-bold scrollspy is-dark" headinglevel="2">
+              Examples
+            </th>
+          </tr>
+          <tr>
+            <td colspan="2">
+              {% for e in f.examples %}
+              <div>
+                <p id="{{ f.name }}_examples_{{ forloop_index }}" class="scrollspy fw-bold" headinglevel="3"><span>{{ forloop.index }})</span> <span>{{ e.name }}</span></p>
+<div markdown="1">
+```yaml
+{{ e.code }}
+```
+</div>
+              </div>
+              {% endfor %}            
+            </td>
+          </tr>      
+          {% endif %}              
       </tbody>
 </table>
 {% endfor %}

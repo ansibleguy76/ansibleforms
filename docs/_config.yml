@@ -24,6 +24,9 @@ doks:
             - item_name: Formfields
               item_url: '/formfield'  
               item_icon: input-text        
+            - item_name: Tablefields
+              item_url: '/tablefield'  
+              item_icon: table-tree                
             - item_name: Expressions
               item_url: '/expressions'   
               item_icon: brackets-curly

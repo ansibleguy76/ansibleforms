@@ -17,8 +17,8 @@ hide_scrollspy: false
 # Page navigation
 page_nav:
     prev:
-        content: Learn more about formfields
-        url: '/formfield'
+        content: Tablefields
+        url: '/tablefield'
     next:
         content: FAQ
         url: '/faq'
