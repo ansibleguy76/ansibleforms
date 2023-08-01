@@ -2111,7 +2111,6 @@
             version: 2.2.3
             description: |
               Disables logging in the backend, to hide passwords for example.
-            with_types: expression, enum
             examples:
             - name: hide password in log
               code: |
@@ -2782,7 +2781,7 @@
             with_types: table
             short: Adds an additional insertmarker field
             description: |
-              When you add a record in a table, it simply get added.  
+              When you add a record in a table, it simply gets added.  
               When working with ansible and idempotency, your playbook doesn't know which records are new and which are not.  
               You might want to explicitly run a taks on only the new records.   
               So you can add a custom property to the inserted record, marking the record as new.   
