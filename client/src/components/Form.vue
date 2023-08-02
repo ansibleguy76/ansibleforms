@@ -898,6 +898,7 @@
       // allowing dynamic defaults
       getDefaultValue(fieldname,value){
         if(value!=undefined){
+          
           var _value = this.replacePlaceholderInString(value).value
           // console.log(`${fieldname} -> ${value} -> ${_value}`)
           if(this.fieldOptions[fieldname].evalDefault){
@@ -1208,8 +1209,9 @@
               }
             }
             foundfield=foundfield.replace(/\[[0-9]*\]/,'') // make xxx[y] => xxx
-            fieldvalue = ""
+            fieldvalue = undefined
             targetflag = undefined
+            // console.log(foundfield + "("+fieldvalue+")" + " -> targetflag = " + targetflag)
             // mark the field as a dependent field
             if(foundfield in ref.form){      // does field xxx exist in our form ?
               // if the field exists
@@ -1240,7 +1242,6 @@
                 targetflag = "fixed"
               }
             }
-
             // if the variable is viable and not being changed, replace it
             // console.log(foundfield + "("+fieldvalue+")" + " -> targetflag = " + targetflag)
             // console.log(foundfield + " -> targetflag = " + targetflag)
@@ -1251,8 +1252,8 @@
                 fieldvalue=ref.stringifyValue(fieldvalue)
                 // console.log("replacing placeholder")
                 value=value.replace(foundmatch,fieldvalue);               // replace the placeholder with the value
-                 // console.log("replaced")
-                 // console.log(item.name + " -> " + value)
+                //  console.log("replaced")
+                //  console.log(foundmatch + " -> " + fieldvalue)
             }else{
                 value=undefined      // cannot evaluate yet
             }
@@ -2059,14 +2060,15 @@
             if(item.type=="table" && ref.defaults[item.name]){
               Vue.set(ref.form,item.name,ref.externalData[item.name])
             }
-          }else if(["checkbox"].includes(item.type)){
-            Vue.set(ref.form,item.name,ref.externalData[item.name]??this.getDefaultValue(item.name,item.default)??false)
-          }else{
-            Vue.set(ref.form,item.name,ref.externalData[item.name]??this.getDefaultValue(item.name,item.default)??"")
-          }
+          }else {
+            var fallbackvalue=undefined
+            if(item.type=="checkbox"){
+              fallbackvalue=false
+            }
+            Vue.set(ref.form,item.name,ref.externalData[item.name]??this.getDefaultValue(item.name,item.default)??fallbackvalue)
+          }         
           Vue.set(ref.visibility,item.name,true)
         });
-
         // initiate the constants
         if(ref.constants){
           Object.keys(ref.constants).forEach((item)=>{
