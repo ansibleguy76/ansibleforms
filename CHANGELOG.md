@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Scheme creation bug fixed
 -   Typos in help
+-   Set default to undefined instead of \"\"
 
 ## [4.0.13] - 2023-07-24
 
