@@ -887,6 +887,13 @@
         this.setFieldStatus(fieldname,undefined)
         Vue.set(this.form,fieldname,this.defaults[fieldname])
       },
+      // reset number field (bug vue2)
+      setFieldUndefined(fieldname){
+        // reset to undefined
+        Vue.set(this.form,fieldname,undefined);
+        this.evaluateDynamicFields(fieldname);
+        this.generateJsonOutput() // refresh json output
+      },      
       // reset all fields
       resetFields(){
         this.currentForm.fields.forEach((item, i) => {
@@ -1601,7 +1608,11 @@
                   ref.resetField(item.name)
                 }
               }
-
+              // correct vue2 bug => emtpy number => "" => set to undefined instead => avoid having form errors
+              // fixed in 4.0.14
+              if(item.type=="number" && ref.form[item.name]===""){
+                ref.setFieldUndefined(item.name)
+              }
               // see if it is time to refresh
               if(item.refresh && typeof item.refresh=="string"){
                 var match=item.refresh.match(/([0-9]+)s/g)
@@ -1612,7 +1623,6 @@
                   }
                 }
               }
-
             } // end loop function
           ) // end field loop
           if(hasUnevaluatedFields){

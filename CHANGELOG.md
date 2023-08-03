@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Scheme creation bug fixed
 -   Typos in help
--   Set default to undefined instead of \"\"
+-   Vue2 bug number fields fall back to emptry string when empty.  fixed to set to undefined.
 
 ## [4.0.13] - 2023-07-24
 
