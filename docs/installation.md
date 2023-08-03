@@ -64,46 +64,64 @@ The recommended way to install AnsibleForms is using `Docker Compose`, which is 
 ## Choose a location to install
 
 ```bash
-mkdir /srv/apps
+sudo mkdir /srv/apps
 cd /srv/apps
 ```
 
 ## Clone the docker-compose project
 
 ```bash
-yum install -y git
-‌‌git init
-git clone https://github.com/ansibleguy76/ansibleforms-docker.git
+# centos
+sudo yum install -y git
+
+# ubuntu
+sudo apt-get install -y git
+
+‌sudo ‌git init
+sudo git clone https://github.com/ansibleguy76/ansibleforms-docker.git
 
 cd ansibleforms-docker
 ```
 
-## Set permissions
+## Set proper permissions
 
 ```bash
 # write access will be needed on the datafolder
-chmod -R 664 ./data
+sudo chmod -R 664 ./data
 # the mysql init folder needs execute rights 
-chmod -R +x ./data/mysql/init/
+sudo chmod -R +x ./data/mysql/init/
 ```
 
-## Install Docker
+## Install Docker and docker-compose
+
+(Install docker manuals)[https://docs.docker.com/engine/install]
 
 ```bash
+# centos
 yum install -y docker-ce docker-ce-cli containerd.io docker-compose
 
+# ubuntu
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-compose
+
 # the below is to ensure dns works properly inside the dockerimages
-mkdir -p /etc/docker
-echo "{\"dns-opts\":[\"ndots:15\"]}" > /etc/docker/daemon.json
+sudo mkdir -p /etc/docker
+echo "{\"dns-opts\":[\"ndots:15\"]}" | sudo tee /etc/docker/daemon.json
 
 # start docker permanently as a service
-systemctl start docker
-systemctl enable docker
+sudo systemctl start docker
+sudo systemctl enable docker
 ```
 
 ## Customize
 
-Feel free to look at the variables in the `.env` file and `docker-compose.yaml` file.
+Feel free to look at the variables in the `.env` file and `docker-compose.yaml` file.  
+(Learn more about the environment variables)[/customization]
+
+## Start docker-compose project
+
+```bash
+sudo docker-compose up -d
+```
 
 ## Test the application
 
