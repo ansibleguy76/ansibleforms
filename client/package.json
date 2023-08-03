@@ -6,7 +6,7 @@
     "serve": "vue-cli-service serve",
     "start": "nodemon --exec 'vue-cli-service serve --mode development'",
     "remove": "rm -rdf ./../server/views || exit 0",
-    "copy": "cp -R dist ../server/views",
+    "copy": "cp -R dist ../server/views && cp ./../docs/_data/help.yaml ../server",
     "bundle": "npm run build && npm run remove && npm run copy",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint"
