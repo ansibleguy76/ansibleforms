@@ -40,7 +40,7 @@ The recommended way to install AnsibleForms is using `Docker Compose`, which is 
 
 <div class="callout callout--danger">
     <p><strong>Note</strong> Using docker and docker-compose for the first time, requires some basic linux skills and some knowledge about containers</p>
-    <p><a href="/doks-theme/assets/docker and ansibleforms.pdf">Download this document</a> to get you kick-started with containers and Docker</p>
+    <p><a href="/doks-theme/assets/files/docker and ansibleforms.pdf">Download this document</a> to get you kick-started with containers and Docker</p>
 </div>
 
 ## Prerequisites
