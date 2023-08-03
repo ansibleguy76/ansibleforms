@@ -28,6 +28,7 @@ RUN pip3 install --no-cache-dir lxml
 RUN apk del .build-deps
 RUN pip3 install PyMySQL
 RUN pip3 install netapp_lib
+RUN pip3 install netapp_ontap
 RUN pip3 install solidfire-sdk-python
 RUN pip3 install boto3
 RUN pip3 install boto
@@ -49,7 +50,7 @@ RUN mkdir -p ~/.ssh
 RUN apk add --no-cache git
 
 # update npm
-RUN npm install -g npm@9.6.5
+RUN npm install -g npm@9.8.1
 
 ##################################################
 # builder stage
@@ -64,6 +65,8 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install all dependencies
+RUN npm install -g npm@9.8.1
+
 RUN npm install
 
 # Copy the rest of the code

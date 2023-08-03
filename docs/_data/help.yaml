@@ -1,0 +1,3959 @@
+---
+- name: Environment Variables
+  icon: fas,gear
+  link: environment-variable
+  hideFromReferenceGuide: true
+  itemName: variable
+  description: |
+    Ansibleforms is a nodejs webapplication and is tunable using environment variables.  
+    Whether you use docker-compose, kubernetes or you run the webapplication natively, we advise you to get familiar with these variables and learn how to set them in your preferred environment.  
+  items:
+  - name: NODE_ENV
+    type: string
+    allowed: a valid nodejs environment
+    short: The nodejs environment 
+    required: false
+    description: Nodejs can have multiple environments, like development or production
+    default: production
+  - name: DB_HOST
+    type: string
+    allowed: a valid IP or FQDN
+    short: The database host
+    required: true
+    description: |
+      Ansible Forms requires a mysql database connection to store the configuration of the application.  
+  - name: DB_USER
+    type: string
+    allowed: a valid mysql user
+    short: The database user
+    required: true
+    description: |
+      Ansible Forms requires a mysql database connection to store the configuration of the application. 
+  - name: DB_PASSWORD
+    type: string
+    allowed: a valid mysql password
+    short: The database password
+    required: true
+    description: |
+      Ansible Forms requires a mysql database connection to store the configuration of the application.    
+  - name: PORT
+    type: number
+    allowed: a valid TCP port
+    short: Http port
+    description: The listening port of the web application
+    default: 8000
+  - name: HTTPS
+    type: number
+    short: Enables HTTPS
+    choices:
+    - name: 0
+      description: Disables https
+    - name: 1
+      description: Enables https
+    description: Our docker-compose comes with sample certificates.  It is highly recommended to enable HTTPS.
+    default: 0
+  - name: HTTPS_KEY
+    type: string
+    allowed: a valid file path
+    short: Private key
+    default: "%PERSISTENT_FOLDER%/certificates/key.pem"
+    description: The path to the private key of the server certificate, in BASE64/PEM format.
+  - name: HTTPS_CERT
+    type: string
+    allowed: a valid file path
+    short: Certificate
+    default: "%PERSISTENT_FOLDER%/certificates/cert.pem"
+    description: The path to the server certificate, in BASE64/PEM format.
+  - name: FORMS_PATH
+    type: string
+    allowed: a valid file path
+    short: Forms.yaml path
+    default: "%PERSISTENT_FOLDER%/forms.yaml"
+    description: | 
+      The forms.yaml file is the main configuration file needed to run Ansible Forms.  
+      Read here more about the forms.yaml file.
+  - name: LOCK_PATH
+    type: string
+    allowed: a valid file path
+    short: ansibleForm.lock path
+    default: "%PERSISTENT_FOLDER%/ansibleForms.lock"
+    description: | 
+      Only 1 user can use the designer, so we use a locking file to hold the current owners information.
+  - name: FORMS_BACKUP_PATH
+    version: 4.0.3
+    type: string
+    allowed: a valid directory path
+    short: Backup path for form backups
+    default: "%PERSISTENT_FOLDER%/form_backups"
+    description: | 
+      When backups are made, they end up in this path    
+  - name: OLD_BACKUP_DAYS
+    version: 4.0.3
+    type: number
+    allowed: a valid number in days
+    short: Days of backups to keep
+    default: 60
+    description: | 
+      Old backups are cleanup, you can choose the age
+  - name: AZURE_GRAPH_URI
+    version: 4.0.3
+    type: string
+    allowed: a valid base URI without slash on the end
+    short: The azure graph api base uri
+    default: https://graph.microsoft.com
+    description: |
+      This variable is used to acquire data from the Azure AD api.      
+  - name: SHOW_DESIGNER
+    type: number
+    choices:
+    - name: 0
+      description: Hides the designer
+    - name: 1
+      description: Shows the designer
+    default: 1    
+    short: Enable the internal designer
+    description: | 
+      Although we encourage you to use an editor such as **Visual Studio Code** to edit the forms.yaml file, preferably with some form of source control.  Ansible Forms comes with an internal yaml designer.  
+      And although only admins can see the designer, you might want to disable it completely by setting this variable to 0.
+    version: 4.0.0
+  - name: LOG_LEVEL
+    type: string
+    choices:
+    - name: error
+      description: Error message, something is wrong
+    - name: warn
+      description: Warning message, something is off, but acceptable
+    - name: notice
+      description: Notice message, something happened worth mentioning
+    - name: info
+      description: Info message, just saying, nothing fancy
+    - name: debug
+      description: Debug message, if you really want to know more details
+    default: notice    
+    short: Log level
+    description: | 
+      Ansible Forms logs to logfile called Ansible Forms.log.  
+      It does so in multiple levels.  
+  - name: LOG_PATH
+    type: string
+    allowed: a valid folder path
+    default: "%PERSISTENT_FOLDER%/logs"
+    short: Path for logfiles
+    description: | 
+      Ansible Forms maintains 2 logfiles.  `ansibleforms.log` and `ansibleforms.errors.log`   
+    changelog:
+      - version: 4.0.0
+        type: added
+        description: Make the logfiles rotating with daily timestamp.  30days of logs are kept.
+  - name: LOG_CONSOLE_LEVEL
+    type: string
+    choices:
+    - name: error
+      description: Error message, something is wrong
+    - name: warn
+      description: Warning message, something is off, but acceptable
+    - name: notice
+      description: Notice message, something happened worth mentioning
+    - name: info
+      description: Info message, just saying, nothing fancy
+    - name: debug
+      description: Debug message, if you really want to know more details
+    default: debug    
+    short: Console Log level
+    description: | 
+      When you run ansibleforms, by default the application also logs to the console.  
+      For example with docker you can use the command docker logs to access this console log.  
+      This console log has a seperate loglevel.
+  - name: LOG_SYSLOG_HOST
+    type: string
+    allowed: a valid IP or FQDN
+    short: Syslog host
+    version: 3.0.1
+    description: Setting the syslog settings, enables the logging to a syslog server
+  - name: LOG_SYSLOG_LEVEL
+    type: string
+    choices:
+    - name: error
+      description: Error message, something is wrong
+    - name: warn
+      description: Warning message, something is off, but acceptable
+    - name: notice
+      description: Notice message, something happened worth mentioning
+    - name: info
+      description: Info message, just saying, nothing fancy
+    - name: debug
+      description: Debug message, if you really want to know more details
+    default: debug  
+    short: Syslog level
+    version: 3.0.1
+    description: The logging level for the syslog server  
+  - name: LOG_SYSLOG_PORT
+    type: number
+    allowed: valid tcp/udp port number
+    short: Syslog Port
+    default: 514
+    version: 3.0.1
+    description: The port on which the syslog server is listening
+  - name: LOG_SYSLOG_PROTOCOL
+    type: string
+    short: Syslog protocol
+    choices:
+    - name: tcp4
+      description: Syslog protocol tcp4
+    - name: udp4
+      description: Syslog protocol udp4
+    - name: tls4
+      description: Syslog protocol tls4
+    - name: unix
+      description: Syslog protocol unix
+    - name: unix-connect
+      description: Syslog protocol unix-connect
+    default: udp4
+    version: 3.0.1
+    description: The syslog protocol to use  
+  - name: LOG_SYSLOG_PATH
+    type: string
+    allowed: valid syslog path
+    short: Syslog path
+    default: /dev/log
+    version: 3.0.1
+    description: The path to the syslog dgram socket (i.e. `/dev/log` or `/var/run/syslog` for OS X)         
+  - name: LOG_SYSLOG_SOURCE
+    type: string
+    allowed: hostname
+    short: Source hostname
+    default: localhost
+    version: 3.0.1
+    description: Host to indicate where log messages are coming from      
+  - name: LOG_SYSLOG_TYPE
+    type: string
+    choices:
+    - name: BSD
+      description: Syslog type BCD
+    - name: "3164"
+      description: Syslog type 3164
+    - name: "5424"
+      description: Syslog type 5424
+    - name: RFC3164
+      description: Syslog type RFC3164
+    - name: RFC5424
+      description: Syslog type RFC5424
+    short: Syslog protocol type
+    default: BSD
+    version: 3.0.1
+    description: The type of the syslog protocol to use   
+  - name: LOG_SYSLOG_APPNAME
+    type: string
+    allowed: free text
+    short: App Name
+    default: Ansible Forms
+    version: 3.0.1
+    description: The name of the application    
+  - name: LOG_COLOR_ERROR
+    type: string
+    allowed: valid escape color code
+    short: Error color code
+    default: \x1b[31m
+    version: 3.0.1
+    description: The escape color code for error (default red)    
+  - name: LOG_COLOR_WARN
+    type: string
+    allowed: valid escape color code
+    short: Warning color code
+    default: \x1b[33m
+    version: 3.0.1
+    description: The escape color code for warning (default yellow)  
+  - name: LOG_COLOR_NOTICE
+    type: string
+    allowed: valid escape color code
+    short: Notice color code
+    default: \x1b[37m
+    version: 3.0.1
+    description: The escape color code for notice (default white)  
+  - name: LOG_COLOR_INFO
+    type: string
+    allowed: valid escape color code
+    short: Info color code
+    default: \x1b[32m
+    version: 3.0.1
+    description: The escape color code for info (default green)  
+  - name: LOG_COLOR_DEBUG
+    type: string
+    allowed: valid escape color code
+    short: Debug color code
+    default: \x1b[36m
+    version: 3.0.1
+    description: The escape color code for debug (default cyan)
+  - name: ACCESS_TOKEN_SECRET
+    type: string
+    allowed: a hard secret string
+    short: Secret to encryp access tokens
+    default: "*** NOT REVEALED ***"
+    description: |
+      AnsibleForm uses Basic Authentication as authentication mechanism.  
+      Once authenticated, the client uses a JWT (Json Web Token) for authorization (Bearer authorization header).
+      This token is stored on the client side (i.e. browser cookie) and is signed with a secret key.  
+      To keep the communication between client and server safe, we strongly recommend you to set this secret.
+  - name: ACCESS_TOKEN_EXPIRATION
+    type: string
+    allowed: a valid time indication
+    short: Expiration time access token
+    default: 30m
+    description: |
+      A JWT (Json Web Token) is only valid for a certain amount of time.  
+      If someone would be able to intercept a communication packet and see the token, it would only be valid for a short time.  
+      After this short time, the client must refresh his access token using his refresh token.  
+  - name: ACCESS_TOKEN_REFRESH_EXPIRATION
+    type: string
+    allowed: a valid time indication
+    short: Expiration time refresh token
+    default: 24h
+    description: |
+      Once the access token is expired, and the client tries to connect to the server, the client hits a 401 error (unauthorized). the client application captures this error, and calls the refresh api with its refresh token.  If the refresh token is valid, the client gets a new set of access and refresh tokens and retries the last unauthorized api call with the renew access token.  
+      With this mechanism, the client can keep the user-connection open for a long time and avoid a sudden logout during a save action.  
+      If the client has not connected back to the server during the expiration time of the refresh token, the client is logged of and authentication is required again.
+  - name: HOME_PATH
+    type: string
+    allowed: a valid path
+    short: The users home directory
+    default: OS Homedir path
+    version: 3.0.0
+    description: |
+      Ansible Forms generates an sshkey at first start, is one is not present, so you can have a git connection or other password-less connection.  
+      Typically this key is stored in the users home-directory under `/.ssh/id_rsa`.  You can set this homedirectory path manually with this property.
+  - name: REPO_PATH
+    type: string
+    allowed: a valid path
+    short: Repositories path
+    default: "%PERSISTENT_FOLDER%/repositories"
+    version: 3.0.0
+    description: |
+      Ansible Forms target a git repository.  The extravars will be save to a local repository and a git push is triggered.  
+      This path is the root path for your local repositories.
+  - name: ENCRYPTION_SECRET
+    type: string
+    allowed: a strong encryption string
+    short: Database encryption secret
+    default: "*** NOT REVEALED ***"
+    description: |
+      Ansible Forms encrypts passwords in the database using this secret.  
+      We strongly advise you to set a custom entryption secret to uniquely protect your passwords.  
+      The secret must be 32 character long, however, we extend or cut the secret if this is not the case.
+  - name: ANSIBLE_PATH
+    type: string
+    allowed: a valid path
+    short: The path of the ansible playbooks (local instance)
+    default: "%PERSISTENT_FOLDER%/playbooks"
+    description: |
+      Ansible Forms can have a local ansible instance.  This path says where the playbooks are.
+  - name: REGEX_FILTER_JOB_OUTPUT
+    type: string
+    allowed: an escaped regular expression
+    short: Filter out job output tasks
+    default: "\\[low\\]"
+    description: |
+      Sometime, the job output is flooded with meaningless output, such as 'Gathering Facts', or 'Includes'.  You filter out these by add a piece of string in the taskname, i.e. `[low]` and then used regex `\\[low\\]` to hide this information.  
+      The output has a button `Apply filter` for the filtering to take effect.
+- name: Forms.yaml
+  icon: fab,wpforms
+  link: forms
+  itemName: attribute
+  description: |
+    Ansible Forms reads the forms configuration from the main `forms.yaml` file.   
+    The forms.yaml file contains the `categories`, `roles`, `constants` and `forms`.  You can choose to put all the forms in the single forms.yaml file, or, to make editing and source control easier, you can split the forms up and put then in separate files in the `forms` subdirectory.  Ansible Forms will merge them together.  Below are the 4 main attributes of the forms.yaml file.
+  items:
+  - name: categories
+    type: array
+    allowed: valid category object
+    objectLink: forms/category
+    docsObjectLink: "#category-object"
+    short: Categories
+    description: | 
+      The categories group the forms together in a tree-like view.  The Default category is mandatory and holds all forms without a category. 
+    changelog:
+    - version: 3.1.0
+      type: added
+      description: Added nested categories
+    examples:
+    - name: Categories
+      code: |
+        categories:
+        - name: Default          # is mandatory
+          icon: bars
+        - name: Provisioning
+          icon: pencil-alt
+        - name: Decommissioning
+          icon: trash-alt
+          items:                 # sub categories
+            - name: Linux
+              icon: star
+            - name: Windows
+              icon: bullseye  
+  - name: roles
+    type: array
+    allowed: valid role object
+    objectLink: forms/role
+    docsObjectLink: "#role-object"
+    short: Roles
+    description: | 
+      The roles provide RBAC.  Each role has a name and 1 or more groups (local, ldap or azuread).  The `admin` and `public` rol is mandatory.  
+      Since version 4.0.11 you can also add users (local, ldap or azuread)
+    examples:
+    - name: Roles
+      code: |
+        roles:
+        - name: admin        # is mandatory
+          groups:
+          - local/admins
+          - ldap/Domain Admins
+          - azuread/Domain Admins
+        - name: operator
+          groups:
+          - local/operator
+        - name: demo
+          groups:
+          - local/demo
+        - name: usersonly
+          users:
+          - local/myuser
+        - name: public        # is mandatory
+          groups: []  
+  - name: constants
+    type: object
+    allowed: Free object structure
+    short: Constants
+    description: | 
+      Sometimes you want to have global-like variables.  The constants section gives you all freedom.  Whether it are objects, arrays, strings, numbers or booleans.  They will be available in every form.  
+    examples:
+    - name: Constants
+      code: |
+        constants:
+          SERVERX: 172.16.0.1 # reference it later as $(SERVERX)
+          VCENTER:
+            fqdn: vcenter.demo.local  # reference it later as $(VCENTER.fqdn)
+            ip: 172.16.0.2
+  - name: forms
+    type: array
+    allowed: valid form object
+    objectLink: forms/form
+    docsObjectLink: "#form-object"
+    moreExamplesLink: forms/form
+    short: Forms
+    description: | 
+      The forms are the core of Ansible Forms and describe all the nice forms.
+    examples: 
+    - name: Ansible Core Form
+      code: |
+        forms:
+          - name: Create a vm
+            roles:                                         # reference to roles defined earlier
+            - vmware
+            description: Create a virtual machine
+            help: |
+              This Form creates a virtual machine.  it will connect to `vcenter`.  This help is Markdown
+              so you can use **markdown** markup to highlight __certain words__.
+            showHelp: true                                 # show help on load
+            icon: computer                                 # a font awesome icon
+            categories:                                    # reference to categories defined earlier
+            - Demo
+            - Vmware/Linux                                 # Add to a subcategory using the `/` separator
+            tileClass: has-background-success-light        # a bulma background color style (https://bulma.io)
+            playbook: playbook_vm.yml                      # playbook to launch (only if type = ansible)
+            inventory: inventory.yml                       # optional ansible inventory file
+            check: false                                   # run in checkmode or not
+            diff: false                                    # show differences
+            verbose: false                                 # verbose output
+            keepExtravars: false                           # keep extravars json file
+            tags: vm,create                                # optional ansible tags (comma separated)
+            type: ansible                                  # type is awx or ansible
+            onSubmit:                                      # event handler on form submit
+              - clear: 0                                   # clear form after 0 seconds
+              - hide: 1                                    # hide form after 1 second
+            onFinish:                                      # event handler on job finished
+              - show: 2                                    # show the form after 2 seconds
+            fieldGroupClasses:                             # give fieldgroups a custom background
+              groupname1: has-background-info-light
+              groupname2: has-background-success-light    
+            fields:                                        # list of field objects 
+  help:
+    - name: Category
+      icon: fas,folder-tree
+      link: forms/category
+      itemName: attribute
+      description: |
+        A category groups together 1 or more forms.
+      items:
+      - name: name
+        type: string
+        required: true
+        unique: true
+        allowed: alphanumeric + dash + underscore + space
+        short: The name of the category
+        description: | 
+          The name of a category has to be unique.  The Default category is mandatory and holds all non-category forms.
+      - name: icon
+        type: string
+        allowed: Free fontawesome 6 icon
+        short: Category icon
+        description: |
+          You can add a nice icon to your categories.  The icon name is a free fontawesome 6 icon.
+          You can find more information at [www.fontawesome.com](https://www.fontawesome.com).  
+      - name: items
+        type: object
+        objectLink: forms/category
+        allowed: A category object
+        short: Sub categories
+        version: 3.1.0
+        description: |
+          A category can have sub categories, which is again a category object.  
+      examples: 
+      - name: Categories
+        language: YAML
+        code: |
+          categories:
+          - name: Default          # is mandatory
+            icon: bars
+          - name: Provisioning
+            icon: pencil-alt
+          - name: Decommissioning
+            icon: trash-alt
+            items:                 # sub categories
+              - name: Linux
+                icon: star
+              - name: Windows
+                icon: bullseye
+    - name: Role
+      icon: fas,fingerprint
+      link: forms/role
+      itemName: attribute
+      description: |
+        A role allows RBAC.  Each role has 1 or more groups (local or ldap).  Except the `public` role, which has no groups.  
+        The `public` and `admin` roles are mandatory.
+      items:
+      - name: name
+        type: string
+        required: true
+        unique: true
+        allowed: alphanumeric + dash + underscore + space
+        short: The name of the role
+        description: | 
+          The name of a role has to be unique.  The `public` and `admin` roles are mandatory.
+      - name: groups
+        type: array
+        required: true
+        allowed: A group (local, ldap or azuread)
+        short: Groups
+        description: |
+          A list of groups.  They must be in the format of `local/groupname` or `ldap/groupname` or `azuread/groupname`
+      - name: users
+        type: array
+        required: true
+        allowed: A user (local, ldap or azuread)
+        short: User
+        version: 4.0.10
+        description: |
+          A list of local or ldap users.  They must be in the format of `local/username` or `ldap/username` or `azuread/username`         
+      examples:
+      - name: Roles
+        language: YAML
+        code: |
+          roles:
+          - name: admin        # is mandatory
+            groups:
+            - local/admins
+            - ldap/Domain Admins
+          - name: operator
+            groups:
+            - local/operator
+            users:
+            - azuread/mike
+          - name: demo
+            groups:
+            - local/demo
+          - name: public        # is mandatory
+            groups: []    
+    - name: Form
+      icon: fas,rectangle-list
+      link: forms/form
+      itemName: attribute
+      description: |
+        Each form in the forms list is configured with the below attributes.
+      items:
+      - name: name
+        type: string
+        required: true
+        group: basic
+        unique: true
+        allowed: alphanumeric + dash + underscore + space
+        short: The name of the form
+        description: | 
+          The name of a form is also the identifier of the form and thus must be unique.  
+          For simplicity we have chosen not to some sore of guid as unique identifier.  This does mean, however, that when your rename a form any reference to it will be broken.  
+      - name: roles
+        type: array
+        required: true
+        group: basic
+        allowed: valid role names
+        short: Who has access
+        description: | 
+          You can have RBAC by adding roles to a form.  If you want everyone to see the form, add the `public` role.  
+          **Note** : An admin has always access.
+        examples:
+        - name: Give access to vmware team
+          language: YAML
+          code: |
+            name: Create virtual machine
+            roles:
+            - vmAdmins
+            - vmOperators
+      - name: categories
+        type: array
+        allowed: valid category name
+        group: basic
+        short: Categories
+        description: | 
+          By adding one or more categories, you can group forms together in categories. 
+        examples:
+        - name: Category vmware
+          code: |
+            name: Delete virtual machine
+            categories:
+            - Vmware
+            - Decommissioning     
+      - name: description
+        type: string
+        allowed: free text
+        group: basic
+        short: Form description
+        description: | 
+          A short description, explaining what the form does.
+      - name: help
+        type: string
+        allowed: valid markdown
+        group: basic
+        short: Help
+        description: | 
+          Using markdown you can a more detailed help message to help the operator understand the form.  
+        examples:
+        - name: blockquote with title, list, italic and bold
+          code: |
+            > #### The quarterly results look great!
+            >
+            > - Revenue was off the chart.
+            > - Profits were higher than ever.
+            >
+            >  *Everything* is going according to **plan**.     
+      - name: showHelp
+        type: boolean
+        short: Show Help
+        group: visualization
+        default: true
+        description: Show the help by default or collapse the help.  
+      - name: icon
+        type: string
+        group: visualization
+        allowed: Free fontawesome 6 icon
+        short: Form icon
+        description: |
+          You can add a nice icon to your forms.  The icon name is a free fontawesome 6 icon.
+          You can find more information at [www.fontawesome.com](https://www.fontawesome.com).  
+          **Note** : You can either have an icon or an image, not both.
+        examples: 
+        - name: Trash icon
+          code: |
+            name: Delete virtual machine
+            icon: trash
+      - name: image
+        type: string
+        allowed: valid image url
+        group: visualization
+        short: Form image
+        description: |
+          You can add a nice image to your form.  You can provide a local or remote url.  But if you are in a secured location, you might want to go for a base64 encode image.  This allows you to embed the image in the yaml file.  
+          To do this, find a not-to-large PNG image or better, an SVG image and convert to a base64 image url.  You can do this [here](https://base64.guru/converter/encode/image).  
+          **Note** : You can either have an icon or an image, not both.
+        examples: 
+        - name: Microsoft image
+          code: |
+            name: Add Windows Virtual Machine
+            image: |
+              data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My
+              5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMyAyMyI+PHBhdGggZmlsbD
+              0iI2YzZjNmMyIgZD0iTTAgMGgyM3YyM0gweiIvPjxwYXRoIGZpbGw9IiNmMz
+              UzMjUiIGQ9Ik0xIDFoMTB2MTBIMXoiLz48cGF0aCBmaWxsPSIjODFiYzA2Ii
+              BkPSJNMTIgMWgxMHYxMEgxMnoiLz48cGF0aCBmaWxsPSIjMDVhNmYwIiBkPS
+              JNMSAxMmgxMHYxMEgxeiIvPjxwYXRoIGZpbGw9IiNmZmJhMDgiIGQ9Ik0xMi
+              AxMmgxMHYxMEgxMnoiLz48L3N2Zz4=
+        - name: Internet image
+          code: |
+            name: Add Windows Virtual Machine
+            image: https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg
+        - name: Local image
+          code: |
+            name: Add Netapp storage
+            image: /assets/images/netapp.svg # the docker compose has a few brand images, feel free to add your own
+      - name: tileClass
+        type: string
+        allowed: valid bulma background class
+        group: visualization
+        short: Form tile background colour
+        description: |
+          Ansible Forms uses the Bulma css framework to style the webapplication.  
+          Bulma has a few color helper classes you can use to give your formtile a background color.  
+          You can find them here [background color](https://bulma.io/documentation/helpers/color-helpers/#background-color) and [foreground color](https://bulma.io/documentation/helpers/color-helpers/#text-color).  
+          **Hint**: Try to add a matching foreground color.
+        default: has-background-light
+        examples:
+        - name: warning color
+          code: |
+            name: Cleanup jobs
+            icon: trash
+            tileClass: has-background-warning has-text-white-ter
+        - name: success light color
+          code: |
+            name: New job
+            icon: plus
+            tileClass: has-background-success-light has-text-black-ter  
+      - name: fieldGroupClasses
+        type: object
+        allowed: key-value pairs
+        group: visualization
+        short: Fieldgroup background color
+        description:
+          Ansible Forms uses the Bulma css framework to style the webapplication.  
+          Bulma has a few color helper classes you can use to give your fieldgroups a background color.  
+          You can find them here [background color](https://bulma.io/documentation/helpers/color-helpers/#background-color) and [foreground color](https://bulma.io/documentation/helpers/color-helpers/#text-color).         
+        examples:
+        - name: Color fieldgroup
+          code: |
+            fieldGroupClasses:                             # give fieldgroups a custom background
+              groupname1: has-background-info-light
+              groupname2: has-background-success-light                 
+      - name: type
+        type: string
+        group: basic
+        choices:
+        - name: ansible
+          description: | 
+            Targets an Ansible Core playbook.  
+          examples:
+          - name: Ansible Core Form
+            code: |
+              forms:
+                - name: Create a vm
+                  roles:                                         # reference to roles defined earlier
+                  - vmware
+                  description: Create a virtual machine
+                  help: |
+                    This Form creates a virtual machine.  it will connect to `vcenter`.  This help is Markdown
+                    so you can use **markdown** markup to highlight __certain words__.
+                  showHelp: true                                 # show help on load
+                  icon: computer                                 # a font awesome icon
+                  categories:                                    # reference to categories defined earlier
+                  - Demo
+                  - Vmware/Linux                                 # Add to a subcategory using the `/` separator
+                  tileClass: has-background-success-light        # a bulma background color style (https://bulma.io)
+                  playbook: playbook_vm.yml                      # playbook to launch (only if type = ansible)
+                  inventory: inventory.yml                       # optional ansible inventory file
+                  check: false                                   # run in checkmode or not
+                  diff: false                                    # show differences
+                  verbose: false                                 # verbose output
+                  keepExtravars: false                           # keep extravars json file                  
+                  tags: vm,create                                # optional ansible tags (comma separated)
+                  type: ansible                                  # type is awx or ansible
+                  onSubmit:                                      # event handler on form submit
+                    - clear: 0                                   # clear form after 0 seconds
+                    - hide: 1                                    # hide form after 1 second
+                  onFinish:                                      # event handler on job finished
+                    - show: 2                                    # show the form after 2 seconds
+                  fieldGroupClasses:                             # give fieldgroups a custom background
+                    groupname1: has-background-info-light
+                    groupname2: has-background-success-light    
+                  fields:                                        # list of field objects 
+        - name: awx
+          description: |
+            Targets an Awx Template.  
+            The AWX Connection token must be set in the settings.
+          examples:
+          - name: Awx Form
+            code: |
+              - name: Delete a vm
+                roles:                                         # reference to roles defined earlier
+                - vmware
+                description: Delete a virtual machine
+                help: This Form deletes a virtual machine.
+                showHelp: true                                 # show help on load
+                image: https://picsum.photos/64                # an image url (can be base64)
+                categories:                                    # reference to categories defined earlier
+                - Demo
+                - Vmware
+                - Decommissioning/Linux                        # Add to a subcategory using the `/` separator
+                tileClass: has-background-danger               # a bulma background color style (https://bulma.io)
+                template: remove_vm                            # template to launch (only if type = awx)
+                inventory: inventory                           # optional awx inventory
+                check: false                                   # run in checkmode or not
+                diff: false                                    # show differences
+                tags: vm,delete                                # optional ansible tags (comma separated)
+                type: awx                                      # type is awx or ansible
+                onSubmit:                                      # event handler on form submit
+                  - clear: 0                                   # clear form after 0 seconds
+                  - hide: 1                                   # hide form after 1 second
+                onSuccess:                                     # event handler on form success
+                  - load: 1,Another Form                       # load another form after 1 second
+                onFailure:                                     # event handler on job failure
+                  - show: 2                                    # show the form after 2 seconds
+                onAbort:                                       # event handler on job failure
+                  - reload: 3                                  # reload the form after 3 seconds
+                fieldGroupClasses:                             # give fieldgroups a custom background
+                  groupname1: has-background-info-light
+                  groupname2: has-background-success-light    
+                fields:                                        # list of field objects      
+        - name: git
+          description: | 
+            Updates a file in a repository.   
+            The repository must be added in the settings.  
+          examples:
+          - name: Git Form
+            code: |
+              - name: Update repo
+                roles:                                         # reference to roles defined earlier
+                - vmware
+                description: Updates a repo in git
+                image: https://picsum.photos/64                # an image url (can be base64)
+                categories:                                    # reference to categories defined earlier
+                - Demo
+                - Vmware/Linux                                 # Add to a subcategory using the `/` separator
+                tileClass: has-background-danger               # a bulma background color style (https://bulma.io)
+                type: git                                      # type is awx, ansible, git or multistep
+                repo:
+                  dir: myrepodir
+                  file: myrepofile.yaml
+                  push: git push origin main
+                  pull: git pull origin main
+                fieldGroupClasses:                             # give fieldgroups a custom background
+                  groupname1: has-background-info-light
+                  groupname2: has-background-success-light    
+                fields:                                        # list of field objects      
+        - name: multistep
+          description: |
+            Executes multiple jobs sequentially.  
+            Each step can be a different type (ansible, awx, git).
+          examples:
+          - name: Multistep form
+            code: |
+              - name: Create VM
+                roles:                                         # reference to roles defined earlier
+                - vmware
+                description: Updates a repo in git
+                image: https://picsum.photos/64                # an image url (can be base64)
+                categories:                                    # reference to categories defined earlier
+                - Demo
+                - Vmware
+                tileClass: has-background-danger               # a bulma background color style (https://bulma.io)
+                type: multistep                                # type is awx, ansible, git or multistep
+                steps:
+                - type: git
+                  name: Sync repository
+                  repo:
+                    dir: myrepodir
+                    file: myrepofile.yaml
+                    push: git push origin main
+                    pull: git pull origin main
+                    key: repoInfo                              # a specific key in the extravars
+                  continue: true                               # continue even this step fails
+                - type: awx
+                  name: Create vm
+                  template: Create VM
+                  key: vmInfo
+                - type: awx
+                  name: Start vm
+                  template: Start VM
+                  key: vmInfo
+                - type: ansible
+                  name: Email results
+                  playbook: email.yaml
+                  always: true                                 # always run this task, even if others failed
+                fieldGroupClasses:                             # give fieldgroups a custom background
+                  groupname1: has-background-info-light
+                  groupname2: has-background-success-light    
+                fields:                                        # list of field objects      
+        short: Form type
+        description: | 
+          Our form eventually sends extravars to a target.  That target can be an ansible-playbook, an awx-template a git repository or a multistep (which is a list or combination of multiple playbooks/templates/repositories, executed sequentially).
+            
+          *Note* : In case of git, the repository is pulled before the form is loaded.
+        examples:
+        - name: Run AWX Template Create VM
+          code: |
+            name: Create vm
+            type: awx
+            template: Create VM       
+        - name: Run Delete VM playbook
+          code: |
+            name: Delete vm
+            type: ansible
+            template: delete_vm.yaml
+        - name: Update git repo
+          code: |
+            name: Update sourcecontrol
+            type: git
+            repo:
+              dir: my_project
+              file: test.yaml
+              push: git push origin main
+              pull: git pull origin main  
+        - name: Run multistep job
+          code: |
+            name: Trigger awx job
+            type: multistep
+            steps:
+            - name: Update git
+              type: git
+              repo:
+                dir: vmware_inventory
+                file: virtual_machines.yaml
+                push: git push origin main
+                pull: git pull origin main  
+            - name: Update vms
+              type: awx
+              template: Create VM                        
+      - name: template
+        type: string
+        with_types: awx
+        group: basic
+        allowed: a valid awx template name
+        short: Awx template
+        description: |
+          This attribute is only used when the form type is `awx`.  When using native Ansible, use the property `playbook`.
+            
+          **Note** : You can also dynamically set the template by using a field called `__template__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static template name.  
+          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.                    
+        examples:
+        - name: Run AWX Template Helloworld
+          code: |
+            name: Helloworld
+            type: awx
+            template: Helloworld
+        - name: Use dynamic template name
+          code: |
+            name: Foobar
+            type: awx
+            template: HelloWorld
+            fields:
+              - name: __template__
+                type: text
+                default: Foobar # this will overwrite the template name            
+      - name: playbook
+        type: string
+        with_types: ansible
+        group: basic
+        allowed: a valid yaml file
+        short: Ansible playbook
+        description: | 
+          This attribute is only used when the form type is `ansible`.  When using awx, use the property `template`.  
+            
+          **Note** : You can also dynamically set the playbook by using a field called `__playbook__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static playbook name.  
+          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.        
+        examples:
+        - name: Run foobar playbook
+          code: |
+            name: Foobar
+            type: ansible
+            playbook: foobar.yaml  
+        - name: Use dynamic playbook name
+          code: |
+            name: HelloWorld
+            type: ansible
+            playbook: foobar.yaml
+            fields:
+              - name: __playbook__
+                type: text
+                default: helloworld.yaml # this will overwrite the playbook name
+      - name: repo
+        type: object
+        with_types: git
+        group: basic
+        allowed: a repo object
+        objectLink: forms/form/repo
+        docsObjectLink: "#repository-object"
+        short: Repository
+        description: |
+          This attribute is only used when the form type is `git`.  
+        examples:
+        - name: Push to git
+          code: |
+            repo:
+              dir: vmware_inventory
+              file: virtual_machines.yaml
+              push: git push origin main
+              pull: git pull origin main  
+      - name: steps
+        type: array
+        with_types: multistep
+        group: basic
+        allowed: a step object
+        objectLink: forms/form/step
+        docsObjectLink: "#step-object"
+        short: Multistep steps
+        description: |
+          A multistep form is basically an array of multiple form type destinations, defined here as steps.
+      - name: inventory
+        type: string
+        short: Inventory
+        group: workflow
+        description: |
+          In both awx and ansible core you can pass an inventory.  In the case of ansible core, it will be a yaml file.  In case of awx it will be the inventory name.  
+            
+          **Note** : You can also dynamically set the inventory by using a field called `__inventory__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static inventory.  
+          **Note** : Ansible core allows multiple inventories (so you can use an array), however awx does not support multiple inventories.
+          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+      - name: check
+        type: boolean
+        group: workflow
+        short: Run in check mode
+        description: |
+          In both awx and ansible core you run a playbook in check mode.  Enable this attribute to do so.  
+
+          **Note** : You can also dynamically set the check mode by using a field called `__check__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static check field.  The field must result in a boolean (expression or checkbox)
+          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+      - name: limit
+        type: text
+        allowed: a valid host pattern
+        group: workflow
+        short: Run against a limited number of hosts
+        description: |
+          In awx and ansible core you run a playbook against limited hosts by supplying a host pattern.  Use this attribute to do so.  
+
+          **Note** : You can also dynamically set the limit by using a field called `__limit__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static check field.  The field must result in number (number field or expression)
+          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+      - name: diff
+        type: boolean
+        short: Run in diff mode
+        group: workflow
+        description: |
+          In both awx and ansible core you run a playbook in diff mode.  Enable this attribute to do so.
+
+          **Note** : You can also dynamically set the check mode by using a field called `__diff__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static diff field.  The field must result in a boolean (expression or checkbox)          
+          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+      - name: verbose
+        type: boolean
+        version: 4.0.0
+        group: workflow
+        short: Run in verbose mode
+        description: |
+          In ansible core you run a playbook in verbose mode.  Enable this attribute to do so.
+
+          **Note** : You can also dynamically set the verbose mode by using a field called `__verbose__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static diff field.  The field must result in a boolean (expression or checkbox)          
+          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+      - name: keepExtravars
+        type: boolean
+        short: Do not remove the extarvars json file
+        group: workflow
+        version: 4.0.0
+        description: |
+          In ansible core we temporarily store the extravars in a json file.  After run, this file is removed.  Use this property to disable this behaviour.
+
+          **Note** : You can also dynamically set this property by using a field called `__keepExtravars__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static diff field.  The field must result in a boolean (expression or checkbox)          
+          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+      - name: tags
+        type: string
+        allowed: comma separated tag-list
+        group: workflow
+        short: Set tags
+        description: |
+          In both awx and ansible core you can pass tags.  Use this attribute to pass a comma separted list of tags.
+            
+          **Note** : You can also dynamically set the tags by using a field called `__tags__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static tags.  
+          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.            
+      - name: approval
+        type: object
+        allowed: valid approval object
+        group: interaction
+        objectLink: forms/form/approval
+        docsObjectLink: "#approval-point-object"
+        short: Add approval point
+        description: |
+          Ansible Forms allows to add an approval point before a job is ran.  
+          An approval link is sent by email to a specific approver who can then approve or reject the job.
+      - name: notifications
+        type: object
+        group: interaction
+        allowed: valid notification object
+        objectLink: forms/form/notifications
+        docsObjectLink: "#notifications-object"
+        short: Add Notification
+        description: |
+          Add email notifications on job status events.
+        examples:
+        - name: Send on success
+          code: |
+            notifications:
+              recipients:
+                - info@ansibleguy.com
+              onStatus:
+                - success
+      - name: onSubmit
+        type: array
+        group: interaction
+        allowed: valid job status action objects
+        short: Events on submit
+        objectLink: forms/form/job-status-action
+        docsObjectLink: "#job-status-action-object"
+        version: 3.1.0
+        description: |
+          Once a job is launched, Ansible Forms has a few status events you can act on.  
+          * **onSubmit** : Triggered the moment the submit button is pressed
+          * **onSuccess** : Triggered when the job is finished succesfully
+          * **onFailure** : Triggered when the job was not succesful
+          * **onAbort** : Triggered when the job was aborted
+          * **onFinish** : Triggered when the job is finished, regardless the status
+            
+          Follow the link above to learn about the possible job status actions
+        examples:
+        - name: Examples
+          code: |
+            onSubmit:
+              - clear: 0   # clear form after submit
+              - hide: 2   # seconds later, hide the form
+            # more examples on the job-status-event page
+      - name: onSuccess
+        type: array
+        group: interaction
+        allowed: valid job status action objects
+        short: Events on success
+        objectLink: forms/form/job-status-action
+        docsObjectLink: "#job-status-action-object"
+        version: 3.1.0
+        description: |
+          Once a job is launched, Ansible Forms has a few status events you can act on.  
+          * **onSubmit** : Triggered the moment the submit button is pressed
+          * **onSuccess** : Triggered when the job is finished succesfully
+          * **onFailure** : Triggered when the job was not succesful
+          * **onAbort** : Triggered when the job was aborted
+          * **onFinish** : Triggered when the job is finished, regardless the status
+            
+          Follow the link above to learn about the possible job status actions
+        examples:
+        - name: Examples
+          code: |
+            onSuccess:
+              - home: 0    # go home on success
+            # more examples on the job-status-event page  
+      - name: onFailure
+        type: array
+        group: interaction
+        allowed: valid job status action objects
+        short: Events on failure
+        objectLink: forms/form/job-status-action
+        docsObjectLink: "#job-status-action-object"
+        version: 3.1.0
+        description: |
+          Once a job is launched, Ansible Forms has a few status events you can act on.  
+          * **onSubmit** : Triggered the moment the submit button is pressed
+          * **onSuccess** : Triggered when the job is finished succesfully
+          * **onFailure** : Triggered when the job was not succesful
+          * **onAbort** : Triggered when the job was aborted
+          * **onFinish** : Triggered when the job is finished, regardless the status
+            
+          Follow the link above to learn about the possible job status actions
+        examples:
+        - name: Examples
+          code: |
+            onFailure:
+              - load: 3   # reload form after failure after 3 seconds
+            # more examples on the job-status-event page  
+      - name: onAbort
+        type: array
+        group: interaction
+        allowed: valid job status action objects
+        short: Events on abort
+        objectLink: forms/form/job-status-action
+        docsObjectLink: "#job-status-action-object"
+        version: 3.1.0
+        description: |
+          Once a job is launched, Ansible Forms has a few status events you can act on.  
+          * **onSubmit** : Triggered the moment the submit button is pressed
+          * **onSuccess** : Triggered when the job is finished succesfully
+          * **onFailure** : Triggered when the job was not succesful
+          * **onAbort** : Triggered when the job was aborted
+          * **onFinish** : Triggered when the job is finished, regardless the status
+            
+          Follow the link above to learn about the possible job status actions
+        examples:
+        - name: Examples
+          code: |
+            onAbort:
+              - clear: 3   # clear form after abort after 3 seconds
+            # more examples on the job-status-event page   
+      - name: onFinish
+        type: array
+        group: interaction
+        allowed: valid job status action objects
+        short: Events on finished
+        objectLink: forms/form/job-status-action
+        docsObjectLink: "#job-status-action-object"
+        version: 3.1.0
+        description: |
+          Once a job is launched, Ansible Forms has a few status events you can act on.  
+          * **onSubmit** : Triggered the moment the submit button is pressed
+          * **onSuccess** : Triggered when the job is finished succesfully
+          * **onFailure** : Triggered when the job was not succesful
+          * **onAbort** : Triggered when the job was aborted
+          * **onFinish** : Triggered when the job is finished, regardless the status
+            
+          Follow the link above to learn about the possible job status actions
+        examples:
+        - name: Examples
+          code: |
+            onSubmit:
+              - hide: 0    # hide on submit
+            onFinish:
+              - clear: 0   # clear and show on finish
+              - show: 0    
+            # more examples on the job-status-event page                                                  
+      - name: fields
+        type: array
+        group: basic
+        allowed: valid field object
+        short: fields
+        objectLink: forms/form/formfield
+        docsObjectLink: "#formfield-object"
+        description: |
+          It makes sense that a form has 1 or more formfields.  Read more about them in the separate formfield section.
+        examples:
+        - name: Examples
+          code: |
+            fields:
+              - name : name
+                label: Your name
+                type: text
+                required: true
+              - name : email
+                label: Your email
+                type: text
+                regex:
+                  expression: "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$"
+                  description: Please enter a valid email address
+                required: true
+      help:
+        - name: Step
+          itemName: attribute
+          link: forms/form/step
+          
+          icon: fas,list-ol
+          description: |
+            Each step is a new form destination.  And steps are executed sequentially.  
+            Use specific properties like `continue`, `always` and `ifExtraVar` to control the flow of a multistep form.
+          items:
+          - name: name
+            type: string
+            required: true
+            group: basic
+            allowed: alphanumeric + dash + underscore + space
+            short: The name of the form
+            description: | 
+              The name of the step.  Used for logging and visualization.
+          - name: type
+            type: string
+            group: basic
+            choices:
+            - name: ansible
+              description: | 
+                Targets an Ansible Core playbook.  
+            - name: awx
+              description: |
+                Targets an Awx Template.  
+                The AWX Connection token must be set in the settings.
+            - name: git
+              description: | 
+                Updates a file in a repository.   
+                The repository must be added in the settings.  
+            short: Step type
+            description: | 
+              Every step can be an ansible-playbook, an awx-template or a git repository.  
+              *Note* : In case of git, the repository is pulled before the form is loaded.
+            examples:
+            - name: Run AWX Template Helloworld
+              code: |
+                name: Create vm
+                type: awx
+                template: Create VM       
+            - name: Run Ansible playbook
+              code: |
+                name: Delete vm
+                type: ansible
+                template: delete_vm.yaml
+            - name: Update git repo
+              code: |
+                name: Update sourcecontrol
+                type: git
+                repo:
+                  dir: my_project
+                  file: test.yaml
+                  push: git push origin main
+                  pull: git pull origin main  
+          - name: template
+            type: string
+            group: basic
+            with_types: awx
+            allowed: a valid awx template name
+            short: Awx template
+            description: |
+              This attribute is only used when the form type is `awx`.  When using native Ansible, use the property `playbook`.
+                
+              **Note** : You can also dynamically set the template by using a field called `__template__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static template name.  
+              **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.                    
+            examples:
+            - name: Run AWX Template Helloworld
+              code: |
+                name: Helloworld
+                type: awx
+                template: Helloworld
+            - name: Use dynamic template name
+              code: |
+                name: Foobar
+                type: awx
+                template: HelloWorld
+                fields:
+                  - name: __template__
+                    type: text
+                    default: Foobar # this will overwrite the template name            
+          - name: playbook
+            type: string
+            group: basic
+            with_types: ansible
+            allowed: a valid yaml file
+            short: Ansible playbook
+            description: | 
+              This attribute is only used when the form type is `ansible`.  When using awx, use the property `template`.  
+                
+              **Note** : You can also dynamically set the playbook by using a field called `__playbook__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static playbook name.  
+              **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.        
+            examples:
+            - name: Run foobar playbook
+              code: |
+                name: Foobar
+                type: ansible
+                playbook: foobar.yaml  
+            - name: Use dynamic playbook name
+              code: |
+                name: HelloWorld
+                type: ansible
+                playbook: foobar.yaml
+                fields:
+                  - name: __playbook__
+                    type: text
+                    default: helloworld.yaml # this will overwrite the playbook name
+          - name: repo
+            type: object
+            allowed: a repo object
+            group: basic
+            with_types: git
+            objectLink: forms/form/repo
+            short: Repository
+            description: |
+              This attribute is only used when the form type is `git`.  
+            examples:
+            - name: Push to git
+              code: |
+                repo:
+                  dir: vmware_inventory
+                  file: virtual_machines.yaml
+                  push: git push origin main
+                  pull: git pull origin main  
+          - name: inventory
+            type: string
+            group: workflow
+            short: Inventory
+            description: |
+              In both awx and ansible core you can pass an inventory.  In the case of ansible core, it will be a yaml file.  In case of awx it will be the inventory name.  
+                
+              **Note** : You can also dynamically set the inventory by using a field called `__inventory__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static inventory.  
+              **Note** : Ansible core allows multiple inventories (so you can use an array), however awx does not support multiple inventories.
+              **Note** : If you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+          - name: check
+            type: boolean
+            group: workflow
+            short: Run in check mode
+            description: |
+              In both awx and ansible core you run a playbook in check mode.  Enable this attribute to do so.  
+
+              **Note** : You can also dynamically set the check mode by using a field called `__check__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static check field.  The field must result in a boolean (expression or checkbox)
+              **Note** : If you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+          - name: diff
+            type: boolean
+            group: workflow
+            short: Run in diff mode
+            description: |
+              In both awx and ansible core you run a playbook in diff mode.  Enable this attribute to do so.
+
+              **Note** : You can also dynamically set the check mode by using a field called `__diff__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static diff field.  The field must result in a boolean (expression or checkbox)          
+              **Note** : If you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+          - name: tags
+            type: string
+            group: workflow
+            allowed: comma separated tag-list
+            short: Set tags
+            description: |
+              In both awx and ansible core you can pass tags.  Use this attribute to pass a comma separted list of tags.
+                
+              **Note** : You can also dynamically set the tags by using a field called `__tags__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static tags.  
+              **Note** : If you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.            
+          - name: approval
+            type: object
+            group: interaction
+            allowed: valid approval object
+            objectLink: forms/form/approval
+            short: Add approval point
+            description: |
+              Ansible Forms allows to add an approval point before a job is ran.  
+              An approval link is sent by email to a specific approver who can then approve or reject the job.  
+              Every step can have a differnt approval point.
+          - name: notifications
+            type: object
+            group: interaction
+            allowed: valid notification object
+            objectLink: forms/form/notifications
+            short: Add Notification
+            description: |
+              Add email notifications on job status events.  
+              Every step can have its own notifications
+            examples:
+            - name: Send on success
+              code: |
+                notifications:
+                  recipients:
+                    - info@ansibleguy.com
+                  onStatus:
+                    - success
+          - name: key
+            type: string
+            allowed: valid extravar reference
+            group: workflow
+            short: Extravar key
+            description: |
+              Ansible Forms can model the extravars into objects using the formfield `model` attribute.  In a multistep form, by default, every step gets the full extravars payload.  However, using this `key` attribute you can choose which step receives which part of the extravars.  
+              Study the example below to understand how the `key` property works.
+            examples:
+            - name: Resize volume
+              code: |
+                # This example might need a little explanation :
+                #
+                # When the operator opens the form :
+                # - Phase 1 : the git repo (from step 1) is pulled and the local copy is now up-to-date
+                # - Phase 2 : the form loads the local file volume.yaml
+                # - Phase 3 : the operator sets a new size
+                # - Phase 4 : the expression 'new_data' merges the new size in the original data
+                #             at this moment the extravars contains 2 parts:
+                #               original : the contents of volume.yaml
+                #               new_data : the contents of volume.yaml with updated size info 
+                # - Phase 5 : the operator submits the form
+                # - Phase 6 : step 1 is executed
+                #             the extravar 'new_data' is send as step 1 (using the 'key' attribute !)
+                #             the 'new_data' is saved as volume.yaml (overwrite repo data)
+                #             the git repo is pushed and updated
+                # - Phase 7 : step 2 is executed
+                #             the awx template 'volume resize' is triggered
+                #             the awx templates project is set to reload from git on run
+                #             awx pulls from git and is now aware of the new inventory data (new volume size)
+                #             the tempate is executed
+                #             ansibles idempotency sees the size change and resizes the volume
+                name: Resize volume
+                type: multistep
+                steps:
+                - name: Push to git
+                  type: git
+                  repo:
+                    dir: storage
+                    file: volume.yaml
+                    push: git push origin main
+                    pull: git pull origin main
+                  key: new_data
+                - name: Resize volume
+                  type: awx
+                  template: volume resize
+                  key: new_data
+                fields:
+                  - name: original
+                    type: expression
+                    expression: fn.fnReadYamlFile('/root/ansible_forms/server/persistent/repositories/storage/volume.yaml')
+                    label: original yaml from git (pull)
+                  - name: size
+                    type: number
+                    label: new size
+                    required: true
+                  - name: new_data
+                    label: new yaml for git (push)
+                    type: expression
+                    expression: (()=>{ return {...$(original),...{'size':$(size)}} })()
+                    runLocal: true
+
+                # the expression above is vanilla ES6 javascript.  using the 'spread' operator (... the 3 dots), 
+                # the new size is merged into the original data
+                # https://atomizedobjects.com/blog/javascript/how-to-merge-two-objects-in-javascript/
+
+                # the extravars of the above example will be somewhat like this :
+                original:
+                    name: volumex
+                    size: 123
+                    server_id: 5
+                new_data:         # the step is referencing this key, only this is send as extravars to the step.
+                    name: volumex
+                    size: 500      # the new size is merged
+                    server_id: 5
+
+                # Extra : Every step can reference its own key and thus send a piece of the extravars
+          - name: ifExtraVar
+            type: extravar reference
+            group: workflow
+            short: Run step if ...
+            description: |
+              In a mulitstep form, by default, Ansible Forms will try to run every step sequentially one after the other.  
+              Using this property you choose if a step should be run or not by setting the property to a part of the extravars that resolves into a boolean (expression or checkbox).  This way you can dynamically skip steps.
+            examples: 
+            - name: Run step based on checkbox
+              code: |
+                name: Create something
+                type: multistep
+                steps:
+                - name: Create
+                  type: awx
+                  template: create
+                - name: Send email
+                  type: awx
+                  template: send mail
+                  ifExtraVar: sendmail
+                fields:
+                - name: name
+                  type: text
+                  label: What to create ?
+                - name: sendmail
+                  type: checkbox
+                  label: Should I send an email ?
+          - name: continue
+            type: boolean
+            group: workflow
+            default: false
+            short: Continue on fail
+            description: |
+              In a mulitstep form, by default, if 1 step fails, the multistep is stopped.  However, if you want to continue to the next step, even if the current step failed, use this attribute and set it to true and the multistep will goto the next step.  If this happens the status becomes 'partially success'.
+            examples: 
+            - name: 
+              code: |
+                name: Resize volume
+                type: multistep
+                steps:
+                - name: Send email
+                  type: awx
+                  template: email
+                  continue: true       # if email send fails, we still continue
+                - name: Resize volume
+                  type: awx
+                  template: volume resize
+          - name: always
+            type: boolean
+            group: workflow
+            default: false
+            short: Always run
+            description: |
+              In a mulitstep form, by default, if 1 step fails, the multistep is stopped.  However, if you always want to run a certain step, even if a step failed somewhere, use this attribute and set it to true and the specific step will always run.  
+            examples: 
+            - name: 
+              code: |
+                name: Resize volume
+                type: multistep
+                steps:
+                - name: Load cmdb
+                  type: awx
+                  template: load cmdb
+                - name: Resize volume
+                  type: awx
+                  template: volume resize
+                - name: Send email
+                  type: awx
+                  template: email
+                  always: true       # whether step 1 or 2 fails, this step always runs          
+        - name: Formfield
+          itemName: attribute
+          link: forms/form/formfield
+          icon: fas,font
+          description: |
+            Each form contains 1 or more formfields.  Each formfield can be heavily tuned with the below parameters.  
+          items:
+          - name: name
+            type: string
+            required: true
+            group: basic
+            unique: true
+            allowed: Alfanumeric + underscore + dash
+            short: Field name
+            description: This attribute represents the name of the form field.
+          - name: type
+            type: string
+            required: true
+            group: basic
+            choices:
+              - name: text
+                description: A text input field
+                examples:
+                - name: Text
+                  code: |
+                    - type: text
+                      name: username
+                      label: Username
+                      default: ansibleguy
+                      placeholder: type a username
+                      required: true
+                      minLength: 4
+                      maxLength: 10
+                      regex:
+                        expression: "^[a-zA-Z]*$"
+                        description: Must be alpha numeric
+                      icon: user
+                      help: A help message     
+              - name: textarea
+                description: A textarea input field
+                examples:
+                - name: Textarea
+                  code: |
+                    - type: textarea
+                      name: comments
+                      label: Comments
+                      default: |
+                        Line 1
+                        Line 2
+                      placeholder: add your comments
+                      required: true
+                      help: A help message       
+              - name: datetime
+                description: A datetime input field
+                examples:
+                - name: DateTime
+                  code: |
+                    - type: datetime
+                      dateType: date
+                      name: mydate
+                      label: Date
+                      default: "2023-12-01"
+                      required: true
+                      help: A help message 
+                    - type: datetime
+                      dateType: datetime
+                      name: mydateandtime
+                      line: Demo1
+                      label: I will default to now
+                      evalDefault: true
+                      default: "new Date().toISOString().substring(0,19).replace('T',' ')"
+                      required: true                      
+                    - type: datetime
+                      dateType: datetime
+                      name: mydateandtime
+                      label: DateTime
+                      default: "2023-12-01 13:01:00"
+                      required: true
+                      help: A help message       
+                    - type: datetime
+                      dateType: time
+                      name: mytime
+                      label: Time
+                      default: "13:01:00"
+                      required: true
+                      help: A help message     
+              - name: html
+                description: An HTML field
+                version: 4.0.9
+                examples:
+                - name: Alert
+                  code: |
+                    - type: html
+                      name: alert
+                      expression: |
+                        '<div class="notification is-danger">
+                          danger mister robinson !
+                        </div>'
+                    - type: html   
+                      name: image
+                      expression: |
+                        '<img src="https://dummyimage.com/16:9x1080" />' 
+                    - name: header
+                      type: html
+                      expression: | 
+                        '<h3 class="title is-3">Your own title</h3>'                                                                                                                                                        
+              - name: number
+                description: A number input field
+                examples:
+                - name: Number
+                  code: |
+                    - type: number
+                      name: numberfield
+                      label: Number
+                      default: '1'
+                      required: true
+                      minValue: 0
+                      maxValue: 10
+                      help: A help message    
+              - name: password
+                description: A password masked input field
+                examples:
+                - name: Password   
+                  code: |
+                    - type: password
+                      name: mypassword
+                      label: Password
+                      default: ''
+                      required: true
+                      minLength: 8
+                      maxLength: 20
+                      regex:
+                        expression: "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\\$%\\^&\\*])"
+                        description: Must contain at least 1 numeric, 1 special, 1 upper and 1 lower character
+                      icon: lock
+                    - type: password
+                      name: mypassword_verify
+                      label: Verify Password
+                      default: ''
+                      sameAs: mypassword       # sameas-validation : value must be the same as the field 'mypassword'
+                      icon: lock     
+              - name: checkbox
+                description: A checkbox field
+                examples:
+                - name: Checkbox
+                  code: |
+                    - type: checkbox
+                      name: areyousure
+                      label: Confirmation
+                      default: false
+                      placeholder: are you sure?
+              - name: radio
+                description: A radio field (multi options)
+                examples:
+                - name: Radio
+                  code: |
+                    - type: radio
+                      name: linuxfavourite
+                      label: Choose your favorite linux flavour
+                      values:
+                      - CentOS
+                      - Ubuntu
+                      - Red Hat
+                      - Debian
+                      default: CentOS
+                      required: true 
+              - name: enum
+                description: A multi-column filterable dropdown box
+                extra: |
+                  The enum field will create a powerfull dropdown box with multi-column, multiselect and filter capabilities. The enum field can be used in 3 ways.
+
+                  * **fixed list** : simply use the `values` property to set a fixed list
+                  * **database query** : you can use the query and dbConfig property to query a mysql, mssql, postgres or mongodb.
+                  * **expression** : you can use the expression property to create data. in this case the output of the expression can be :
+                    * **single item** : a single item like a string, integer, ...
+                    * **array of items** : an array of strings, integers, ...
+                    * **object** : a single 1-dimensional javascript object like `{"name":"ansibleforms","description":"is awesome"}`
+                    * **array of objects** : an array of objects like `[{"name":"ansibleforms","description":"is awesome"},{"name":"ansibleguy","description":"is the best"}]`  
+                    
+                  **Filtering** : 
+                  You can just start typing when on an enum field, filtering will happen automatically.  
+                  You can tune with `filterColumns`. Otherwise filtering falls back to the `previewColumn` or the first visible column.  
+                  
+                  **Multiselect** :
+                  Use `multiple` to allow multiselect
+                examples:    
+                - name: Queries
+                  code: |
+                    since queries are so diverse, there is a separate section on queries with examples.
+              - name: expression
+                description: A powerfull javascript driven expression field
+                help: |
+                  The expression field is the most powerfull field. It can calculate, manipulate, get, post, ... The expression can hold any type of information, array, objects, ... And the extravars-output will takeover the information. The expression field can be used in 2 ways.  
+                    
+                  * **database query** : you can use the query and dbConfig property to query a mysql, mssql server, postgres or mongodb.
+                  * **expression** : you can use the expression property to create or retrieve data. in this case the output of the expression can be any type.  
+                  The expression itself is pure javascript. You can do inline javascript or you can use a function. Read more on security concerns about expressions You can extend the functions with your own in the custom.js file. You can have synchronous and asynchronous functions. This allows you to retrieve any kind of data, whether it's reading a file or accessing a rest-api, or querying a foreign database. You can run the expression locally (`runLocal`) in the browser for simple expressions. This is faster and there is no limitation on the expression.  
+                  Use the alias type `local` to quickly make an expression type with runLocal, hide and noOutput.  
+                  Use the alias type `local_out` to quickly make an expression type with runLocal, hide.  
+                  Use the alias type `credential` to quickly make an expression type with runLocal, hide, asCredential.  
+                    
+                  Advanced helper functions (local and remote) are available, to query from rest for example.  
+                  Explore the separate section on Expressions for multiple demo's.  
+                    
+                  Alias : `local` (type='expression', runLocal=true, hide=true, noOutput=true) // since version 4.0.10
+                  Alias : `local_out` (type='expression', runLocal=true, hide=true) // since version 4.0.12
+                  Alias : `credential` (type='expression', runLocal=true, hide=true, asCredential=true) // since version 4.0.10
+                examples:    
+                - name: Expressions
+                  code: |
+                    since expressions are so diverse, there is a separate section on expressions with examples.
+              - name: table
+                description: A table input field (insert, modify, delete)
+                extra: |
+                  A table field allows you to manually add multi object arrays.  
+                  You can start from an empty list, but you can also retrieve existing data first using :  
+
+                  * **database query** : you can use the query and dbConfig property to query a mysql, mssql server, postgres or mongodb.
+                  * **expression** : you can use the expression property to create or retrieve data. in this case the output of the expression can be any type.    
+                examples:
+                - name: Table
+                  code: |
+                    - type: table
+                      name: member
+                      label: Add club members
+                      expression: "[{department:'HR',firstname:'Ansible',lastname:'Guy',age:46,food:'veggies',paid:true}]"
+                      allowInsert: true
+                      allowDelete: true
+                      insertMarker: isNewItem
+                      deleteMarker: isRemovedItem
+                      readonlyColumns:
+                      - department
+                      - firstname
+                      - lastname
+                      - paid
+                      required: true
+                      tableFields:
+                        - name: department
+                          label: Department
+                          type: enum
+                          from: another_expression_array_field
+                          columns: []
+                          valueColumn: column_holding_value
+                          previewColumn: column_as_preview
+                          pctColumns: []
+                          filterColumns: []
+                          outputObject: false
+                        - name: firstname
+                          label: First Name
+                          type: text
+                          required: true
+                          default: ""
+                          minLength: 2
+                          regex: 
+                            expression: "[a-zA-Z]*"
+                            description: Must be normal characters
+                          icon: user
+                        - name: lastname
+                          label: Last Name
+                          type: text
+                          required: true
+                          default: ""
+                          minLength: 5
+                        - name: age
+                          label: How old ?
+                          type: number
+                          required: true
+                          default: 12
+                          minValue: 12
+                          maxValue: 80
+                        - type: enum
+                          name: food
+                          label: Favorite food
+                          default: veggies
+                          values:
+                            - pasta
+                            - pizza
+                            - fries
+                            - steak
+                            - veggies
+                        - name: paid
+                          label: membership
+                          placeholder: Paid yet ?
+                          type: checkbox
+                          required: true
+                          default: true                                
+            short: Field type
+            description: Other attributes might only be available for some field types.
+            examples:
+            - name: Text
+              code: |
+                - type: text
+                  name: username
+                  label: Username
+                  default: ansibleguy
+                  placeholder: type a username
+                  required: true
+                  minLength: 4
+                  maxLength: 10
+                  regex:
+                    expression: "^[a-zA-Z]*$"
+                    description: Must be alpha numeric
+                  icon: user
+                  help: A help message    
+
+                # more examples per type, check out the links at the top of the page                                                 
+          - name: dateType
+            type: string
+            version: 4.0.2
+            group: basic
+            required: false
+            choices:
+              - name: date
+                description: A single date
+              - name: datetime
+                description: A date and time              
+              - name: time
+                description: A time
+              - name: month
+                description: A month
+              - name: year
+                description: A year
+            short: DateType of the datetime picker
+            description: The datetime picker can pick several types
+            with_types: datetime
+          - name: label
+            type: string
+            group: basic
+            allowed: Free text
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table
+            short: Field label
+            description: |
+              A friendly name/label for the field
+          - name: placeholder
+            type: string
+            group: basic
+            allowed: Free text
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table
+            short: In-field help value
+            description: |
+              Some form fields allow an in-field hint value.
+          - name: help
+            type: string
+            group: basic
+            allowed: Free text
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table
+            short: Field help message
+            description: |
+              Some fields require additional help information.
+              This help message will be shown below the field.
+          - name: icon
+            type: string
+            group: visualization
+            allowed: Free fontawesome 6 icon
+            short: Field icon
+            description: |
+              Some formfields can hold a nice looking icon.  The icon name is a free fontawesome 6 icon.
+              You can find more information at [www.fontawesome.com](https://www.fontawesome.com)
+            with_types: text, number, expression, password, enum
+          - name: group
+            type: string
+            group: visualization
+            allowed: Free text
+            short: The field group name
+            description: | 
+              With this attribute you can group fields together.  
+              When all fields in a group are hidden (due to dependencies), the group is also hidden.
+          - name: line
+            type: string
+            version: 4.0.3
+            group: visualization
+            allowed: Free text
+            short: The field line name
+            description: | 
+              With this attribute you can group fields in a single line together.  
+              Use together with the `width` parameter to set the width, if not, the width is auto.  
+          - name: width
+            type: string
+            version: 4.0.3
+            group: visualization
+            allowed: A valid Bulma Column width
+            short: The field width
+            description: | 
+              With this attribute you can set the width of a field.  
+              Use together wit the `line` parameter to put fields on 1 line.  see [www.bulma.io](https://bulma.io)
+            choices:
+              - name: is-three-quarters
+              - name: is-two-thirds
+              - name: is-half
+              - name: is-one-third
+              - name: is-one-quarter
+              - name: is-full      
+              - name: is-four-fifths
+              - name: is-three-fifths
+              - name: is-two-fifths
+              - name: is-one-fifth
+              - name: is-1
+              - name: is-2
+              - name: is-3
+              - name: is-4
+              - name: is-5
+              - name: is-6
+              - name: is-7
+              - name: is-8
+              - name: is-9
+              - name: is-10
+              - name: is-11
+              - name: is-12     
+            examples:
+            - name: Name and lastname
+              code: |
+                - type: text
+                  name: name
+                  label: Firstname
+                  group: login
+                  line: names
+                - type: text
+                  name: lastname
+                  label: Lastname
+                  group: login
+                  line: names
+          - name: dependencyFn
+            type: string
+            version: 4.0.0
+            group: interaction
+            choices:
+              - name: and
+                description: Uses the logical `and` operand to evaluate multiple dependencies
+              - name: or
+                description: Uses the logical `and` operand to evaluate multiple dependencies
+            short: The dependency logical function
+            default: and
+            description: This attribute represents the logical function between multiple dependencies.
+          - name: dependencies
+            type: list / elements=object
+            group: interaction
+            allowed: Reference to other formfields and their values
+            short: Show/hide this field based on the values or other fields
+            description: |
+              Each dependency element is either an object with the following 2 attributes:
+              * `name` : holds the fieldname.
+              * `values` : a list of valid values for the referenced field.
+
+              Or with the following 2 attributes:  
+              * `name` : holds the fieldname.
+              * `isValid` : a boolean to check if the referenced is validated or not.
+                
+              Use in combination with attribute `dependencyFn`.
+            changelog:
+              - version: 4.0.0
+                type: added
+                description: Add an exlamation mark `!` before the referencing field's name, to invert the match.  Wrap it in quotes because the `!` mark has special meaning in YAML.
+              - version: 4.0.13
+                type: added
+                description: Add a new way of dependency.  Use `isValid` property to show/hide a field.
+            examples:
+              - name: Show a field based on a checkbox
+                code: |
+                  - name: add_extra_comment
+                    label: Add extra comment ?
+                    type: checkbox
+                  - name: extra_comment
+                    type: text
+                    label: Type your extra comment
+                    dependencies:
+                    - name: add_extra_comment
+                      values:
+                      - true
+              - name: Show a field if another field is valid
+                code: |
+                  - name: code
+                    type: text
+                    regex: 
+                      expression: "^[a-z]{3}$"
+                      description: Must be 3 characters lowercase
+                    required: true
+                  - name: code_uppercase
+                    type: expression
+                    runLocal: true
+                    expression: "'$(code)'.toUpperCase()"
+                    dependencies:
+                    - name: code
+                      isValid: true     # new in 4.0.13 -> code_uppercase will only be shown if code is validated
+              - name: Show a field based on 2 fields, using the 'or' function
+                code: |
+                  - name: job_type
+                    label: Job type
+                    type: enum
+                    values:
+                    - IT
+                    - HR
+                    - Sales
+                    - Management
+                  - name: has_private_office
+                    type: checkbox
+                    label: Has private office ?
+                  - name: office_name
+                    type: text
+                    label: What's the name of the office
+                    dependencyFn: or
+                    dependencies:
+                    - name: job_type
+                      values:
+                      - Sales
+                      - Management
+                    - name: has_private_office
+                      values:
+                      - true
+                  - name: office_name2
+                    type: text
+                    label: What's the name of the office
+                    dependencyFn: or
+                    dependencies:
+                    - name: "!job_type"     # this will invert/negate - note the wrapping quotes!! needed for valid yaml
+                      values:
+                      - IT
+                      - HR
+                    - name: has_private_office
+                      values:
+                      - true                      
+          - name: keydown
+            type: boolean
+            group: interaction
+            short: Enable responsiveness
+            default: false
+            version: 2.2.0
+            description: |
+              Enable instant responsiveness whilst typing.  
+              Can be important to re-evaluate expressions at every keystroke.
+            with_types: text, password
+          - name: noLog
+            type: boolean
+            group: security
+            default: false
+            short: Disable backend logging
+            version: 2.2.3
+            description: |
+              Disables logging in the backend, to hide passwords for example.
+            examples:
+            - name: hide password in log
+              code: |
+                - name: password
+                  type: password
+                  label: Enter password
+                  noLog: true
+          - name: multiple
+            type: boolean
+            default: false
+            short: Enable multi select
+            description: |
+              Enable multiple select with dropdown boxes.
+            with_types: enum
+          - name: values
+            type: array
+            group: data
+            short: A list of values
+            description: |
+              To manually populate an enum field
+            with_types: enum
+            examples:
+            - name: list of cities
+              code: |
+                - name: cities
+                  type: enum
+                  values:
+                  - Rome
+                  - Paris
+                - name: cities2
+                  type: enum
+                  values:
+                  - name: Rome
+                    short: RO
+                  - name: Paris
+                    short: PA
+                - name: your_choice
+                  type: local
+                  expression: "'You chose $(cities2.name) or just short $(cities2.short)'"
+          - name: default
+            type: many
+            group: data
+            short: Default value
+            description: |
+              The type of the value depends on the field type.  
+              Can be `string`,`boolean`, `number`, `array` or `object`.
+              When using `multiple`, the default must be an `array`.  
+              When using an `enum` field, you can use the following special values :
+              * `__auto__` : select the first
+              * `__none__` : select none
+              * `__all__` : select all (if multiple is true)
+            changelog:
+              - version: 4.0.5
+                type: added
+                description: A default can now hold placeholders like `$(other_field)`, and together with `evalDefault` be evaluated as javascript.           
+            with_types: text, textarea, number, expression, password, enum, radio, checkbox, datetime
+          - name: evalDefault
+            type: boolean
+            group: data
+            default: false
+            short: Evaluates default value
+            description: A default can be treated as javascript and can thus hold expressions like `'$(other_field)'.toUpperCase()` or `Math.PI` or `Date.getDate.toISOString()`
+            version: 4.0.5
+            with_types: text, textarea, number, expression, password, enum, radio, checkbox, datetime
+          - name: required
+            type: boolean
+            group: validation
+            default: false
+            short: Required field
+            description: |
+              Makes the field required.
+          - name: minLength
+            type: number
+            group: validation
+            allowed: Integer > 0
+            short: Field minimum length
+            description: |
+              Forces a string-field to be at least x long.
+            with_types: text, expression, password
+          - name: maxLength
+            allowed: Integer > 0
+            type: number
+            group: validation
+            short: Field maximum length
+            description: |
+              Forces a string-field to be maximum x long.
+            with_types: text, expression, password
+          - name: minValue
+            allowed: Integer
+            group: validation
+            type: number
+            short: Field minimum value
+            description: |
+              Forces a number-field to not be lower than...
+            with_types: number
+          - name: maxValue
+            allowed: Integer
+            group: validation
+            type: number
+            short: Field maximum value
+            description: |
+              Forces a number-field to not be higher than...
+            with_types: number
+          - name: regex
+            type: object
+            group: validation
+            short: A regular expression validation
+            description: |
+              Enforces a validation where the current field must match a regular expression.
+              This field requires an object with 2 attributes:
+              * `expression` : The regular expression
+              * `description` : A validation message to show when the regex is not matched.
+            with_types: text, expression, password, datetime
+            examples:
+            - name: Validate email address
+              code: |
+                regex:
+                  expression: "[a-z0-9]+@[a-z]+\.[a-z]{2,3}"
+                  description: Please type a valid email address
+            - name: Strong password
+              code: |
+                regex:
+                  expression: "(?=^.{8,}$)(?=.*\d)(?=.*[!@#$%^&*]+)(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$"
+                  description: Must be complex (8 or longer ; uppercase ; lowercase ; numeric ; specials)              
+          - name: notIn
+            type: object
+            group: validation
+            short: A list validation (can not be in list)
+            version: 2.2.4
+            description: |
+              Enforces a validation where the current field can not be one of the values in a list (referencing another field).
+              This field requires an object with 2 attributes:
+              * `field` : The name of the field that holds the list
+              * `description` : A validation message to show when the validation is not met.
+            with_types: text, expression, password, datetime
+            examples:
+            - name: Check if ip exists
+              code: |
+                notIn:
+                  field: list_of_ips  # list_of_ips is an other expression array field
+                  description: This ip already exists            
+          - name: in
+            type: object
+            group: validation
+            version: 2.2.4
+            short: A list validation (must be in list)
+            description: |
+              Enforces a validation where the current field must be one of the values in a list (referencing another field).
+              This field requires an object with 2 attributes:
+              * `field` : The name of the field that holds the list
+              * `description` : A validation message to show when the validation is not met.
+            with_types: text, expression, password, datetime
+            examples:
+            - name: Check if ip is in range
+              code: |
+                in:
+                  field: range_of_ips   # range_of_ips is an other expression array field
+                  description: This ip must be in the specified range              
+          - name: validIf
+            type: object
+            group: validation
+            version: 2.2.4
+            short: An field based validation (field must be true)
+            description: |
+              Enforces a validation where a referencing (expression) field must be true.
+              This field requires an object with 2 attributes:
+              * `field` : The name of the referencing field
+              * `description` : A validation message to show when the validation is not met.
+            examples:
+            - name: Ip must be pingable
+              code: |
+                validIf:
+                  field: rest_api_ping_test  # an other expression field that is returning true or false
+                  description: The ip is not pingable            
+          - name: validIfNot
+            type: object
+            group: validation
+            version: 2.2.4
+            short: An field based validation (field must be false)
+            description: |
+              Enforces a validation where a referencing (expression) field must be false.
+              This field requires an object with 2 attributes:
+              * `field` : The name of the referencing field
+              * `description` : A validation message to show when the validation is not met.
+            examples:
+            - name: Check if powered off
+              code: |
+                validIfNot:
+                  field: rest_api_ping_test  # an other expression field that is returning true or false
+                  description: The ip is still pingable, shut down the machine first                    
+          - name: sameAs
+            type: string
+            group: validation
+            short: An field based validation (field must be same as other field)
+            allowed: The name of another existing field
+            description: |
+              Enables a validation where the value of this field must match the value of another field.
+              Perfect for password entry, for example.
+            with_types: text, expression, password
+            examples:
+            - name: Password doublecheck
+              code: |
+                - name: password
+                  type: password
+                  label: Enter password
+                - name: password2
+                  type: password
+                  label: Enter password again
+                  sameAs: password
+                  noOutput: true
+          - name: ignoreIncomplete
+            type: boolean
+            default: false
+            short: Allow form submit on non-evaluated placeholders
+            group: validation
+            description: |
+              When an expression-based field has placeholders,  
+              the default form behaviour is not to allow form submit until all placeholders are resolved.
+              When this attribute is true, the form does not wait for placeholder completion for this field.
+            with_type: expression, enum
+          - name: noOutput
+            type: boolean
+            default: false
+            group: output
+            short: Do not output as extravar
+            description: |
+              Form fields are by default send as extravars.  
+              If you do not want a field to be sent as extravar, set this attribute to true.
+          - name: model
+            type: string or array
+            group: output
+            allowed: An dot-based string notation of an object, or an array of these
+            short: Extravar modelling
+            description: |
+              By default, a field is sent as a root-extravar.  
+              If you want model the output of the extravars, 
+              you can specify a `dot-notation` of how this field should be modelled.  
+            changelog:
+              - version: 4.0.9
+                type: added
+                description: model can now be an array
+            examples:
+              - name: Model 2 fields together as a single object
+                code: |
+                  - name: diskName
+                    type: text
+                    model: disk.name
+                  - name: diskSize
+                    type: number
+                    model: disk.size
+
+                  # the extravars of this example will be like this :
+                  disk:
+                    name: mydisk
+                    size: 123
+          - name: asCredential
+            type: boolean
+            default: false
+            group: output
+            short: Send credential as extravar
+            description: |
+              Use the value of this field to search for a credential with the same name  
+              and send that credential (with user and password) hidden to the playbook as extravar.
+            with_types: text, password, enum, expression
+            examples:
+              - name: Search and send the credential named 'vcenter'
+                code: |
+                  - name: vcenter_creds
+                    type: expression
+                    expression: "'vcenter'"
+                    asCredential: true
+                  - name: vcenter_creds2
+                    type: credential    # alias for cleaner code
+                    expression: "'vcenter'"
+
+                  # in the backend following will happen :
+                  # - lookup credential call 'vcenter'
+                  # - inject credential details in extravars as 'vcenter_creds'
+
+                  # the extravars will now contain something like this :
+                  vcenter_creds:
+                    user: admin
+                    password: T0pS3cr#t!
+                    host: vcenter1.domain.local
+                    port: 443
+          - name: outputObject
+            type: boolean
+            default: false
+            group: output
+            short: Output the selection of a enum-field as a full object.
+            description: |
+              When selecting from an `enum`-field (dropdown), either the first column or  
+              the column defined in `valueColumn` is sent as an extravar.  
+              If you want the full selected record, use the property.
+            with_types: enum
+          - name: expression
+            type: string
+            group: data
+            allowed: Valid javascript
+            short: A javascript expression.
+            description: |
+                By default this javascript is evaluated on the server side and limited to predefined functions (for security).
+                However in combination with `runLocal`, the evaluation is ran in the browsers sandbox and allows the full javascript power.
+                When used in an `enum` field, the expression must return a flat array or array of flat objects, to make it presentable in a dropdown box.  
+                An expression supports placeholders.  Read more about placeholders here. [TODO]
+                Click here to find out more about the predefined functions. [TODO]  
+                  
+                **tip** : use the alias `local` (type='expression',runLocal=true,hide=true,noOutput=true)  
+                **tip** : use the alias `local_out` (type='expression',runLocal=true,hide=true)  
+                **tip** : use the alias `credential` (type='expression',runLocal=true,hide=true,asCredential=true)  
+            with_types: enum, expression, table, html
+            examples:
+              - name: Get a list of users from a rest api
+                code: |
+                  - name: users
+                    type: enum
+                    expression: fn.fnRestBasic('get','http://myapi/user','','credential_name')
+              - name: Filter and sort an array of objects
+                code: |
+                  - name: superheros
+                    type: enum
+                    expression: |
+                      fnArray.from($(mylist))
+                      .filterBy({has_ability:true})
+                      .selectAttr('name','ability')
+                      .sortBy('name')"
+                    runLocal: true
+              - name: Make a numbered list
+                code: |
+                  - name: numbers
+                    type: enum
+                    expression: Array.from({length: 10}, (_, i) => i + 1)
+                    runLocal: true
+              - name: Use the alias `local`
+                code: |
+                  - name: uppercase
+                    type: local
+                    expression: "'test'.toUpperCase()"
+                    runLocal: true // this is default with type=local                  
+                    hide: true     // this is default with type=local
+                    noOutput: true // this is default with type=local
+              - name: Use the alias `local_out`
+                code: |
+                  - name: uppercase
+                    type: local
+                    expression: "'test'.toUpperCase()"
+                    runLocal: true // this is default with type=local                  
+                    hide: true     // this is default with type=local
+          - name: runLocal
+            type: boolean
+            group: data
+            default: false
+            with_types: enum, expression, table
+            short: Run an expression locally
+            description: |
+              When running expressions, by default they are run remotely on the server.  
+              But remote expressions are limited to predefined functions.  
+              To unleash more javascript power, use this property.  
+              The code will be evaluated in the sandbox of the browser, offloading the server, saving api-calls and making it more secure.         
+          - name: refresh
+            type: boolean|string
+            default: false
+            group: data
+            with_types: enum, expression
+            short: Allow a manual or auto refresh
+            description: |
+              A query or expression is by default run once (if it doesn't contain any dependencies).  
+              Sometimes a refresh would be handy.  
+              Set this property to `true` to allow a refresh, or set `5s` for example to allow auto refresh.
+          - name: isHtml
+            type: boolean
+            group: visualization
+            default: false
+            with_types: expression
+            short: Renders text as html
+            description: |
+              If an expression value has html tags (for example <b></b>), it will render the value as such.
+            examples:
+            - name: Show bold in an expression
+              code: |
+                - name: feedback
+                  type: expression
+                  expression: "'<b style=\"color:red\">Error</b>'"
+                  isHtml: true
+          - name: hide
+            type: boolean
+            group: visualization
+            default: false
+            with_types: expression
+            short: Hides an expression field
+            description: |
+              Set to `true` if you want your expression hidden.
+          - name: editable
+            type: boolean
+            group: data
+            default: false
+            with_types: expression
+            short: Makes an expression editable
+            description: |
+              An expression is by default readonly.  
+              By setting this property, you can flip the expression field to a regular text field.
+          - name: dbConfig
+            type: object
+            group: data
+            with_types: enum, expression, table
+            short: A database connection object
+            description: |
+              When you want to query data from a database, you will need the proper connection information.  
+              This object has 2 properties : `name` (pointing to a stored credential name) and `type` (mysql, sql, postgres, mongodb).  
+            examples:
+            - name: get information from a mysql database
+              code: |
+                - name: cities
+                  type: enum
+                  dbConfig:
+                    name: CMDB_CONN
+                    type: mysql
+                  query: select name, country from cities
+            - name: get information from a mongodb
+              code: |
+                - name: user
+                  type: expression
+                  dbConfig:
+                    name: USER_DB_CONN
+                    type: mongodb
+                  query: cmdb~users~{"name":"ansibleguy"}
+                  # the query in mongodb has 3 parts, separated by ~  
+                  # database, collection and the query in valid json
+          - name: query
+            type: string
+            group: data
+            allowed: A valid sql query
+            with_types: expression, enum, table
+            short: The query to select data from a database
+            description: |
+              This is typically a classic SELECT statement.  
+              However, in the case of mongodb, the query is slightly different.  See the examples.  
+              An expression supports placeholders.  Read more about placeholders here. [TODO]
+            examples:
+            - name: get information from a mysql database
+              code: |
+                - name: cities
+                  type: enum
+                  dbConfig:
+                    name: CMDB_CONN
+                    type: mysql
+                  query: select name, country from cities
+            - name: get information from a mongodb
+              code: |
+                - name: user
+                  type: expression
+                  dbConfig:
+                    name: USER_DB_CONN
+                    type: mongodb
+                  query: cmdb~users~{"name":"ansibleguy"}
+                  # the query in mongodb has 3 parts, separated by ~  
+                  # database, collection and the query in valid json      
+          - name: sticky
+            type: boolean
+            group: visualization
+            default: false
+            with_types: enum
+            short: Make a dropdown box permanently visible
+            description: |
+              A `enum` field is by default a dropdown box.  However, you can change that behavior by setting this property.  
+              The dropbox looses it reactivity and becomes a fixed table.
+          - name: horizontal
+            type: boolean
+            group: visualization
+            version: 4.0.3
+            default: false
+            with_types: enum
+            short: Converts a dropdown box to a horizontal selector
+            description: |
+              A `enum` field is by default a dropdown box.  However, you can change that behavior by setting this property.  
+              The unselected values are on the left and the selected values on the right.  This works in combiniation with sticky.  
+              PctColumns are disabled, due to the space it consumes horizontally.
+          - name: columns
+            type: array
+            group: visualization
+            with_types: enum
+            short: The list of columns visible in the dropdown box
+            description: |
+              By default all properties are show in an `enum` field.  With this property you can choose which are visible.
+            examples:
+            - name: Show only wanted columns
+              code: |
+                - name: users
+                  type: enum
+                  dbConfig:
+                    name: CMDB
+                    type: mysql
+                  query: SELECT id, name, username, zip, city FROM users
+                  columns:
+                  - name
+                  - username
+          - name: pctColumns
+            type: array
+            group: visualization
+            with_types: enum
+            short: The list of columns that should visualized as a percentage-bar
+            description: |
+              By default all properties are show with its regular value.  
+              With a percentage it can be nice to visualize it as a graphical bar.  
+              The assumption is that the value is an integer between 0 and 100.
+            examples:
+            - name: Show usage
+              code: |
+                - name: volumes
+                  type: enum
+                  dbConfig:
+                    name: CMDB
+                    type: mysql
+                  query: SELECT id, name, used, total, (used/total*100) as used_pct FROM volumes
+                  columns:
+                  - name
+                  - used_pct
+                  pctColumns:
+                  - used_pct
+          - name: filterColumns
+            type: array
+            group: interaction
+            with_types: enum
+            short: The list of columns that you can filter on
+            description: |
+              By default the `previewColumn` or first visible column is used to filter on.  
+              With this property you can filter on the columns you want.
+            examples:
+            - name: Show usage
+              code: |
+                - name: volumes
+                  type: enum
+                  dbConfig:
+                    name: CMDB
+                    type: mysql
+                  query: SELECT id, name, title FROM volumes
+                  columns:
+                  - name
+                  - title
+                  filterColumns:
+                  - name
+                  - title                  
+          - name: valueColumn
+            type: string
+            group: data
+            default: first column
+            with_types: enum
+            short: The column of a selected item that needs to exported as extravar
+            description: |
+              When you select an item in an `enum` field, by default the first column is used to send as extravar.  
+              By setting this property, you can change it to another field.  
+              This setting is ignored when `outputObject` is true.  
+            examples:
+            - name: Export name
+              code: |
+                - name: users
+                  type: enum
+                  dbConfig:
+                    name: CMDB
+                    type: mysql
+                  query: SELECT name, username FROM users
+                  columns:
+                  - name
+                  valueColumn:
+                  - username
+          - name: placeholderColumn
+            type: string
+            group: data
+            with_types: enum
+            default: first column
+            short: The column of a selected item that is used in a placeholder
+            description: |
+              When you select an item in an `enum` field and later on you use this field as a placeholder, 
+              by default the first column is used as a value.  
+              By setting this property you change the column to be used.  
+              **NOTE** : this property is somewhat out-of-date since the introduction of the dot-notation.  
+              See examples below.
+            examples:
+            - name: Export name
+              code: |
+                - name: user
+                  type: enum
+                  dbConfig:
+                    name: CMDB
+                    type: mysql
+                  query: SELECT name, id FROM users
+                  columns:
+                  - name
+                  placeholderColumn:
+                  - id
+                - name: computername
+                  type: expression
+                  dbConfig:
+                    name: CMDB
+                    type: mysql
+                  query: SELECT name FROM computers where user_id=$(user)
+                - name: computername_2nd_example
+                  type: expression
+                  dbConfig:
+                    name: CMDB
+                    type: mysql
+                  query: SELECT name FROM computers where user_id=$(user.id)      
+                  # this example is better readable 
+                  # and removes the need of the placeholderColumn property
+          - name: previewColumn
+            type: string
+            group: visualization
+            default: first column
+            with_types: enum
+            short: The column of the selected item(s) that is shown in the dropdown-preview
+            description: |
+              When you select an item in an `enum` field, by default the first column is used as a preview.  
+              By setting this property you change the column to be used.  
+            examples:
+            - name: Export name
+              code: |
+                - name: user
+                  type: enum
+                  dbConfig:
+                    name: CMDB
+                    type: mysql
+                  query: SELECT id,name FROM users
+                  previewColumn:
+                  - name
+          - name: allowInsert
+            type: boolean
+            group: interaction
+            with_types: table
+            default: true
+            short: Allow table insert
+            description: |
+              A table can be used to modify existing data.  If new data is allowed, set this property to false.  
+          - name: allowDelete
+            type: boolean
+            group: interaction
+            default: true
+            with_types: table
+            short: Allow table delete
+            description: |
+              A table can be used to modify existing data.  If you don't was recoreds to be deleted, set this property to false.
+          - name: deleteMarker
+            type: string
+            group: output
+            with_types: table
+            short: Adds an additional deletemarker field
+            description: |
+              When you remove a record in a table, it gets removed.  
+              When working with ansible and idempotency, the playbook never knew it got removed.  
+              You need to explicitly set the status to `absent`.  
+              So you can add a custom property to the deleted record, 
+              marking the record as deleted and sending it to the playbook for removal.   
+            examples:
+            - name: Mark delete record
+              code: |
+                - type: table
+                  name: member
+                  expression: "[{firstname:'ansible',lastname:'guy'}]"
+                  deleteMarker: deleted
+                  tableFields:
+                    - name: firstname
+                      type: text
+                      icon: user
+                    - name: lastname
+                      type: text
+          - name: insertMarker
+            type: string
+            group: output
+            with_types: table
+            short: Adds an additional insertmarker field
+            description: |
+              When you add a record in a table, it simply gets added.  
+              When working with ansible and idempotency, your playbook doesn't know which records are new and which are not.  
+              You might want to explicitly run a taks on only the new records.   
+              So you can add a custom property to the inserted record, marking the record as new.   
+            examples:
+            - name: Mark new record
+              code: |
+                - type: table
+                  name: member
+                  expression: "[{firstname:'ansible',lastname:'guy'}]"
+                  insertMarker: new
+                  tableFields:
+                    - name: firstname
+                      type: text
+                      icon: user
+                    - name: lastname
+                      type: text  
+          - name: readonlyColumns
+            type: array
+            group: interaction
+            with_types: table
+            short: The readonly columns in table
+            description: |
+              With a tablefield, some fields might need to be readonly, like an `id` field for example.  
+              Use this property to set the readonly fields.
+          - name: insertColumns
+            type: array
+            group: interaction
+            with_types: table
+            short: The insert columns in table
+            version: 4.0.5
+            description: |
+              With a tablefield, you can choose which fields are visible during insert.  This way you can choose to hide certain fields.
+              Use this property to set the insert fields.              
+          - name: tableFields
+            type: array
+            group: basic
+            with_types: table
+            allowed: Tablefield object
+            objectLink: forms/form/formfield/tablefield
+            docsObjectLink: "#tablefield-object"
+            short: The list of fields in a table
+            description: |
+              Every table field has its own separated table fields.  The explanation of a tablefield requires a separate help.  
+              You can read of them here. [TODO]
+          help:
+          - name: Tablefield
+            itemName: attribute
+            link: forms/form/formfield/tablefield
+            icon: fas,table
+            description: |
+              Each tablefield is a miniature form on it's own.  As you will see, many of the form fields are also usable here.
+            items: 
+            - name: name
+              type: string
+              group: basic
+              required: true
+              unique: true
+              allowed: Alfanumeric + underscore + dash
+              short: Field name
+              description: This attribute represents the name of the form field.
+            - name: type
+              type: string
+              group: basic
+              required: true
+              choices:
+                - name: text
+                  description: A text input field
+                - name: textarea
+                  description: A textarea input field                  
+                - name: number
+                  description: A number input field
+                - name: password
+                  description: A password masked input field
+                - name: checkbox
+                  description: A checkbox field
+                - name: datetime
+                  description: A datetime field                  
+                - name: enum
+                  description: A multi-column filterable dropdown box
+              short: Tablefield type
+              description: Other attributes might only be available for some tablefield types.
+              examples:
+              - name: Text
+                code: |
+                  - type: text
+                    name: username
+                    label: Username
+                    default: ansibleguy
+                    placeholder: type a username
+                    required: true
+                    minLength: 4
+                    maxLength: 10
+                    regex:
+                      expression: "^[a-zA-Z]*$"
+                      description: Must be alpha numeric
+                    icon: user
+                  # more examples at the bottom of this help page         
+            - name: dateType
+              type: string
+              version: 4.0.2
+              required: false
+              group: datetime
+              choices:
+                - name: date
+                  description: A single date
+                - name: datetime
+                  description: A date and time              
+                - name: time
+                  description: A time
+                - name: month
+                  description: A month
+                - name: year
+                  description: A year
+              short: DateType of the datetime picker
+              description: The datetime picker can pick several types
+              with_types: datetime
+            - name: label
+              type: string
+              group: basic
+              allowed: Free text
+              short: Tablefield label
+              description: |
+                A friendly name/label for the tablefield
+            - name: placeholder
+              type: string
+              group: basic
+              allowed: Free text
+              short: In-field help value
+              description: |
+                Some form fields allow an in-field hint value.
+              with_types: text, textarea, number, password, checkbox, enum, datetime
+            - name: icon
+              type: string
+              group: visualization
+              allowed: Free fontawesome 6 icon
+              short: Field icon
+              description: |
+                Some tablefields can hold a nice looking icon.  The icon name is a free fontawesome 6 icon.
+                You can find more information at [www.fontawesome.com](https://www.fontawesome.com)
+              with_types: text, number, password, enum, datetime
+            - name: default
+              type: many
+              short: Default value
+              group: data
+              description: |
+                The type of the value depends on the field type.  
+                Can be `string`,`boolean`, `number`, `array` or `object`.
+                When using an `enum` field, you can use the following special values :
+                * `__auto__` : select the first
+                * `__none__` : select none
+                * `__all__` : select all (if multiple is true)
+              with_types: text, textarea, number, password, enum, checkbox, datetime
+            - name: required
+              type: boolean
+              default: false
+              group: validation
+              short: Required field
+              description: |
+                Makes the field required.
+            - name: minLength
+              type: number
+              group: validation
+              allowed: Integer > 0
+              short: Field minimum length
+              description: |
+                Forces a string-field to be at least x long.
+              with_types: text, expression, password
+            - name: maxLength
+              allowed: Integer > 0
+              type: number
+              group: validation
+              short: Field maximum length
+              description: |
+                Forces a string-field to be maximum x long.
+              with_types: text, expression, password
+            - name: minValue
+              allowed: Integer
+              group: validation
+              type: number
+              short: Field minimum value
+              description: |
+                Forces a number-field to not be lower than...
+              with_types: number
+            - name: maxValue
+              allowed: Integer
+              type: number
+              group: validation
+              short: Field maximum value
+              description: |
+                Forces a number-field to not be higher than...
+              with_types: number
+            - name: regex
+              type: object
+              group: validation
+              short: A regular expression validation
+              description: |
+                Enforces a validation where the current field must match a regular expression.
+                This field requires an object with 2 attributes:
+                * `expression` : The regular expression
+                * `description` : A validation message to show when the regex is not matched.
+              with_types: text, expression, password, datetime
+              examples:
+              - name: Validate email address
+                code: |
+                  regex:
+                    expression: "[a-z0-9]+@[a-z]+\.[a-z]{2,3}"
+                    description: Please type a valid email address
+              - name: Strong password
+                code: |
+                  regex:
+                    expression: "(?=^.{8,}$)(?=.*\d)(?=.*[!@#$%^&*]+)(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$"
+                    description: Must be complex (8 or longer ; uppercase ; lowercase ; numeric ; specials)              
+            - name: notIn
+              type: object
+              group: validation
+              short: A list validation (can not be in list)
+              version: 2.2.4
+              description: |
+                Enforces a validation where the current field can not be one of the values in a list (referencing another field).
+                This field requires an object with 2 attributes:
+                * `field` : The name of the field that holds the list
+                * `description` : A validation message to show when the validation is not met.
+              with_types: text, expression, password, datetime
+              examples:
+              - name: Check if ip exists
+                code: |
+                  notIn:
+                    field: list_of_ips  # list_of_ips is an other expression array field
+                    description: This ip already exists            
+            - name: from
+              type: string
+              group: data
+              allowed: expression reference
+              with_types: enum
+              short: Datasource
+              description: |
+                In a table we can have an `enum` field.  The source of the data for this enum field must come from the main form.  
+                So this `from` field points to the expression field that holds the query data.
+            - name: sticky
+              type: boolean
+              default: false
+              group: visualization
+              with_types: enum
+              short: Make a dropdown box permanently visible
+              description: |
+                A `enum` field is by default a dropdown box.  However, you can change that behavior by setting this property.  
+                The dropbox looses it reactivity and becomes a fixed table.                
+            - name: horizontal
+              type: boolean
+              version: 4.0.3
+              default: false
+              group: visualization
+              with_types: enum
+              short: Converts a dropdown box to a horizontal selector
+              description: |
+                A `enum` field is by default a dropdown box.  However, you can change that behavior by setting this property.  
+                The unselected values are on the left and the selected values on the right.  This works in combiniation with sticky.  
+                PctColumns are disabled, due to the space it consumes horizontally.                
+            - name: in
+              type: object
+              version: 2.2.4
+              group: validation
+              short: A list validation (must be in list)
+              description: |
+                Enforces a validation where the current field must be one of the values in a list (referencing another field).
+                This field requires an object with 2 attributes:
+                * `field` : The name of the field that holds the list
+                * `description` : A validation message to show when the validation is not met.
+              with_types: text, expression, password, datetime
+              examples:
+              - name: Check if ip is in range
+                code: |
+                  in:
+                    field: range_of_ips   # range_of_ips is an other expression array field
+                    description: This ip must be in the specified range              
+            - name: outputObject
+              type: boolean
+              default: false
+              group: data
+              short: Output the selection of an enum field as a full object.
+              description: |
+                When selecting from an `enum` field (dropdown), either the first column or  
+                the column defined in `valueColumn` is sent as an extravar.  
+                If you want the full selected record, use the property.
+              with_types: enum
+            - name: columns
+              type: array
+              with_types: enum
+              group: visualization
+              short: The list of columns visible in the dropdown box
+              description: |
+                By default all properties are show in an `enum` field.  With this property you can choose which are visible.
+              examples:
+              - name: Show only wanted columns
+                code: |
+                  - name: users
+                    type: enum
+                    dbConfig:
+                      name: CMDB
+                      type: mysql
+                    query: SELECT id, name, username, zip, city FROM users
+                    columns:
+                    - name
+                    - username
+            - name: pctColumns
+              type: array
+              with_types: enum
+              group: visualization
+              short: The list of columns that should visualized as a percentage-bar
+              description: |
+                By default all properties are show with its regular value.  
+                With a percentage it can be nice to visualize it as a graphical bar.  
+                The assumption is that the value is an integer between 0 and 100.
+              examples:
+              - name: Show usage
+                code: |
+                  - name: volumes
+                    type: enum
+                    dbConfig:
+                      name: CMDB
+                      type: mysql
+                    query: SELECT id, name, used, total, (used/total*100) as used_pct FROM volumes
+                    columns:
+                    - name
+                    - used_pct
+                    pctColumns:
+                    - used_pct
+            - name: filterColumns
+              type: array
+              with_types: enum
+              group: interaction
+              short: The list of columns that you can filter on
+              description: |
+                By default the `previewColumn` or first visible column is used to filter on.  
+                With this property you can filter on the columns you want.
+              examples:
+              - name: Show usage
+                code: |
+                  - name: volumes
+                    type: enum
+                    dbConfig:
+                      name: CMDB
+                      type: mysql
+                    query: SELECT id, name, title FROM volumes
+                    columns:
+                    - name
+                    - title
+                    filterColumns:
+                    - name
+                    - title  
+            - name: valueColumn
+              type: string
+              default: first column
+              group: data
+              with_types: enum
+              short: The column of a selected item that needs to exported as extravar
+              description: |
+                When you select an item in an `enum` field, by default the first column is used to send as extravar.  
+                By setting this property, you can change it to another field.  
+                This setting is ignored when `outputObject` is true.  
+              examples:
+              - name: Export name
+                code: |
+                  - name: users
+                    type: enum
+                    dbConfig:
+                      name: CMDB
+                      type: mysql
+                    query: SELECT name, username FROM users
+                    columns:
+                    - name
+                    valueColumn:
+                    - username
+            - name: previewColumn
+              type: string
+              default: first column
+              group: visualization
+              with_types: enum
+              short: The column of the selected item(s) that is shown in the dropdown-preview
+              description: |
+                When you select an item in an `enum` field, by default the first column is used as a preview.  
+                By setting this property you change the column to be used.  
+              examples:
+              - name: Export name
+                code: |
+                  - name: user
+                    type: enum
+                    dbConfig:
+                      name: CMDB
+                      type: mysql
+                    query: SELECT id,name FROM users
+                    previewColumn:
+                    - name
+        - name: Repository
+          itemName: attribute
+          link: forms/form/repo
+          icon: fab,git
+          description: |
+            One of the form destination types is `git`.  This allows the form to update a file in a git repository.  
+            To define the git connection, a repo-object attribute is required.
+          items:
+          - name: dir
+            type: string
+            required: true
+            allowed: a subfolder in the repositories folder
+            short: Directory
+            description: | 
+              Ansible Forms can hold multiple local copies of repositories that can be pulled and push using forms.  
+              Each copy goes in a subfolder of the repositories folder.  Use this attribute to define the subfolder name.
+          - name: file
+            type: string
+            required: true
+            allowed: a repository filename
+            short: File
+            description: | 
+              This property hold the filename of a yaml file that can be updated with the forms extravars.
+          - name: push
+            type: string
+            required: true
+            allowed: a git push command
+            short: Push command
+            description: | 
+              When the form is submitted the git-step will push the extravars (or subset) using this git command.
+          - name: pull
+            type: string
+            required: true
+            allowed: a git pull command
+            short: Pull command
+            description: | 
+              Before the form is loaded the repository is pulled using this command.
+          examples:
+          - name: Pull from main branch
+            language: YAML
+            code: |
+              repo:
+                dir: vmware_inventory
+                file: virtual_machines.yaml
+                push: git push origin main
+                pull: git pull origin main      
+        - name: Approval point
+          itemName: attribute
+          link: forms/form/approval
+          icon: fas,clipboard-check
+          description: |
+            When you want to pause a job and ask for approval first.  You can insert an approval point using the approval-object attributes
+          items:
+          - name: title
+            type: string
+            required: true
+            allowed: Free text with placeholders
+            short: Approval message title
+            description: | 
+              The approval point consists out of a title and message.  This is the title attribute.  
+              **Note**: This supports placeholders (the placeholders point to extravars)
+          - name: message
+            type: string
+            required: true
+            allowed: Free text with placeholders
+            short: Approval message
+            description: | 
+              The approval point consists out of a title and message.  This is the message attribute.  
+              **Note**: This supports placeholders (the placeholders point to extravars)      
+          - name: roles
+            type: array
+            required: true
+            allowed: a valid role
+            short: The approver roles
+            description: | 
+              Every role in this list will have the power to approve or reject this job.     
+          - name: notifications
+            type: array
+            required: true
+            allowed: a valid email address
+            short: The approval recipients
+            description: | 
+              Every email-address in this list will receive the approval message by email with the approval link.
+          examples: 
+          - name: Remove host
+            language: YAML
+            code: |
+              approval:
+                title: Remove host $(vm.name) ?
+                message: |
+                  You are about to remove vm $(vm.name).<br>
+                  Esx server : $(cluster.esxhost.name)<br>
+                  Status : $(vm.status)<br>
+                  Change request : $(cr.id)
+                roles:
+                - approvers
+                - vmwareadmin
+                notifications:
+                - vmware@domain.local
+                - approvers@domain.local      
+        - name: Notifications
+          itemName: attribute
+          link: forms/form/notifications
+          icon: fas,envelope
+          description: |
+            When you want to send an email on job-event
+          items:
+          - name: recipients
+            type: array
+            required: true
+            allowed: email address
+            short: Recipients
+            description: | 
+              A list of email addresses who need to receive a notification
+          - name: onStatus
+            type: array
+            required: true
+            choices:
+            - name: any
+              description: Always sends a notification 
+            - name: success
+              description: Sends a notification on job success
+            - name: failed
+              description: Sends a notification on job failure
+            - name: aborted
+              description: Sends a notification on job aborted
+            short: Jobstatus event
+            description: | 
+              A list of jobstatus events you want to send a notification on.  Use `all`, if you always want a notification.      
+          examples: 
+          - name: Send a notification on failed
+            language: YAML
+            code: |
+              notifications:
+                recipients:
+                  - info@ansibleguy.com
+                onStatus:
+                  - failed
+        - name: Job Status Action
+          itemName: attribute
+          link: forms/form/job-status-action
+          icon: fas,bolt
+          description: |
+            Start a GUI action, triggered by a job status.  Such as `clear`, `hide`, `show`, ...
+          items:
+          - name: clear
+            type: number
+            allowed: integer >= 0
+            short: Clear the form
+            description: | 
+              This action clears the form after x seconds.  
+          - name: hide
+            type: number
+            allowed: integer >= 0
+            short: Hide the form
+            description: | 
+              This action hides the form after x seconds.   
+          - name: show
+            type: number
+            allowed: integer >= 0
+            short: Show the form
+            description: | 
+              This action shows the form after x seconds.    
+          - name: home
+            type: number
+            allowed: integer >= 0
+            short: Go to Home
+            description: | 
+              This action navigates to the home page      
+          - name: reload
+            type: number
+            allowed: integer >= 0
+            short: Reload form
+            description: | 
+              This action reloads the form (and cleans the job output)  
+          - name: load
+            type: string
+            allowed: number_of_seconds,name_of_form
+            short: Load a form
+            description: | 
+              This action allows you to load another form                                              
+          examples: 
+          - name: Clear and hide on submit
+            language: YAML
+            code: |
+              onSubmit:
+                - clear: 0   # clear form after submit
+                - hide: 2    # 2 seconds later, hide the form        
+          - name: Go home on submit
+            language: YAML
+            code: |                
+              onSubmit:
+                - home: 0 
+          - name: Load another form on success
+            language: YAML
+            code: |
+              onSuccess:
+                - load: 2,Another form   # load another form after success
+          - name: Hide, Show and Home
+            language: YAML
+            code: |
+              onSubmit:
+                - hide: 0  # hide on submit
+              onFailure: 
+                - show: 0  # show if failed
+              onSuccess:
+                - home: 0  # go home if success
+- name: Expressions
+  icon: fas,code
+  link: expressions
+  description: |
+    The `expression` formfield-attribute is so powerfull, more examples are important. 
+    The expression attribute can be used on an :  
+    - `enum` field, to fill the dropdown
+    - `expression` field, to grab or maka any for of data
+    - `table` field, to fill the table field  
+
+    This javascript is evaluated either on the server side (default) or on the client side using the field property `runLocal`
+
+    [**On the server side**](/#/reference-guide/expressions/remote), the code is limited to pre-defined functions, mainly to get external data.  
+    [**On the client side**](/#/reference-guide/expressions/local), the code is unlimited, yet some pre-defined filter and sorting functions are available to make life easier.
+      
+    **Security Concerns** : Since expressions are evaluated using javascripts eval function, there can be a concern for code injection.  Therefor, server side expressions are limited to predefined functions, no code injection is possible.  On the client side, the code is evaluated in the sandbox of the browser and can be considered safe.  
+  help:
+  - name: Local Expressions
+    icon: far,circle-down
+    link: expressions/local
+    description: |
+      The following example are assumed to run with the field property `runLocal` true.  
+      They are ran in the sandbox of the browser and can leverage the full javascript engine.  
+        
+      **Tip** : use the type `local` as an alias for 'type=expression, runLocal=true, hide=true, noOutput=true'  
+      **Tip** : use the type `local_out` as an alias for 'type=expression, runLocal=true, hide=true'  
+      **Tip** : use the type `credential` as an alias for 'type=expression, runLocal=true, hide=true, asCredential: true'  
+    examples:
+    - name: naming convention
+      description: Use string manipulations to apply naming conventions
+      code: | 
+        '$(field1) $(field2)'.replace('-','_').toUpperCase()
+    - name: calculation
+      description: Use math to make calculations
+      code: | 
+        round($(field1)*$(field2)*Math.PI)   // Math.PI is native javascript
+    - name: conversions
+      description: Convert bytes to gigabytes
+      code: | 
+        ($(size_bytes)/1024/1024/1024).toFixed(2)  // toFixed is native javascript method
+    - name: object-array manipulation
+      description: |
+        When working with object-arrays, you will want to control and manipulate that data.  
+        Filtering, altering, sorting.  To make your life easy, Ansible Forms comes with a custom helper, to keep your code clean.
+      code: |
+          /* 
+            fnArray.from($(your_array_field))                               // custom helper library
+                .filterBy({property1:'value1'},{property2:'value2'}, ...}}  // filters the array by property value (* wildcards allowed)
+                .regexBy({property1:'regex1'},{property2:'regex2'}, ...}}   // filters the array by property matched against regex
+                .distinctBy('property1','property2', ...)                   // will make the array entries unique by property
+                .selectAttr('property1','property2')                        // only selects a certain property
+                .sortBy('property1','-property2', ...)                      // will order the array.  To have descending add a "-" (minus) before the property
+
+            mylist:
+            [
+              {
+                name:'Spiderman',
+                has_ability: true,
+                ability: 'Can do whatever a spider can'
+              },
+              {
+                name:'Superman',
+                has_ability: true,
+                ability: 'Superstrong,Flying,Laserbeams'
+              },     
+              {
+                name:'FamilyGuy',
+                has_ability: false
+              },    
+              {
+                name:'Wolverine',
+                has_ability: true,
+                ability: 'Enhanced healing'
+              }                                                  
+            ]
+          */
+
+          fnArray.from($(mylist))         // take data from another field 'mylist'
+          .regexBy({name:'.*man$'})       // name must end with 'man'
+          .filterBy({has_ability:true})   // must have abilities
+          .selectAttr('name','ability')   // only take properties name and ability
+          .sortBy('-name')                // sort by name descending
+
+          /*
+            result : 
+            [
+              {name:'Superman',ability:'Superstrong,Flying,Laserbeams'},
+              {name:'Spiderman',ability:'Can do whatever a spider can'}
+            ]
+          */
+    - name: object-array manipulation with vanilla javascript
+      description: |
+        You can still use all the vanilla javascript goodies to filter and alter you data.  
+        Such as map, forEach, find, filter and reduce.
+      code: |
+          // source : https://medium.com/@jeff_long/understanding-foreach-map-filter-and-find-in-javascript-f91da93b9f2c
+
+          mylist=
+            [
+              {
+                name:'Bob',
+                age: 5
+              },
+              {
+                name:'Tom',
+                age: 10
+              },     
+              {
+                name:'Paul',
+                age: 30
+              },    
+              {
+                name:'Tom',
+                age: 40
+              }                                                  
+            ]
+
+          // simple filter
+          $(mylist).filter((x) => x.age<=20) // filter age<=20
+          /* result:
+          [
+            {name:'Bob',age:5},
+            {name:'Tom',age:10}
+          ]
+          */
+
+          // filter and addition
+          $(mylist)
+            .filter((x) => x.age<=20)   // filter age<=20
+            .map((x) => { return {...x,diff:20-x.age} }) // add new property diff
+          /* result:
+          [
+            {name:'Bob',age:5,diff:15},
+            {name:'Tom',age:10,diff:10}
+          ] 
+          */
+
+          // find
+          $(mylist).find((x) => x.name=='Tom').age  // find age of first Tom
+          // result: 10
+          
+          // make sum with reduce
+          $(mylist).reduce((sum,x) => sum+x.age,0) // calculate sum of ages
+          // result: 85
+
+          // make temp function
+          ((arr,min)=>{
+            return arr
+              .filter(x => x.age>=min)  // filter
+              .map(x => {
+                var preview=`${x.name} (${x.age})`; // make preview string
+                return {...x,preview:preview} })    // add new preview property
+          })($(mylist),20)                          // feed function with mylist and 20       
+          /* result:
+          [
+            {name:'Paul',age:30,preview:'Paul (30)'},
+            {name:'Tom',age:40,preview:'Tom (40)'}
+          ] 
+          */
+  - name: Remote Expressions
+    icon: fas,circle-right
+    link: expressions/remote
+    description: |
+      The following examples are assumed to run with the field property `runLocal` false (=default).  
+      They are evaluated on the server side.  
+      Due to the danger of evaluating code server side, the expression is sanitized and limited to predefined functions that come with Ansible Forms.  
+      Server side expressions are meant to grab information from various datasources, such as files and rest-api's.  
+    examples:   
+    - name: manipulate date and time
+      code: |
+        fn.fnTime().diff(fn.fnTime('2019-10-01'),'day') // number of days between now and 2019-10-01
+
+        // This is the core implementation of https://day.js.org
+    - name: get Cidr info from ip
+      code: |
+        fn.fnCidr('172.16.0.1','255.255.0.0')
+
+        // fn.fnCidr(ip,netmask)
+        // - ip : an ip address
+        // - netmask : a netmask
+        //  
+        // it will return the Cidr subnet information as well as expose a `contains` method to check whether an ip is part of this subnet.
+        // {
+        //   "networkAddress":"172.16.0.0",
+        //   "firstAddress":"172.16.0.1",
+        //   "lastAddress":"172.16.255.254",
+        //   "broadcastAddress":"172.16.255.255",
+        //   "subnetMask":"255.255.0.0",
+        //   "subnetMaskLength":16,
+        //   "numHosts":65534,
+        //   "length":65536,
+        //   "contains":(ip)=>{return ...}
+        // }
+    - name: get SSH output
+      code: |
+        fn.fnSsh('root','172.16.0.1','ls -la')
+
+        // fn.fnSsh(user,host,command,jq-expression)
+        // - user : the ssh user
+        // - host : the host
+        // - command : the command to trigger by ssh
+        // - jq-expression : an optional jq-expression (https://jsplay.org)  
+        //  
+        // You must use 'known_hosts' and 'public-key' to setup non-interactive password-less authentication.
+        // In the settings you can find the public-key and add your target-host to known_hosts
+    - name: read json file
+      code: |
+        fn.fnReadJsonFile('/tmp/file.json','.[].name')
+
+        // fn.fnReadJsonFile(path,jq-expression)
+        // - path : path to json file
+        // - jq-expression : an optional jq-expression (https://jsplay.org)
+    - name: read yaml file
+      code: |
+        fn.fnReadYamlFile('/tmp/file.yaml','.[].name')
+
+        // fn.fnReadJsonFile(path,jq-expression)
+        // - path : path to json file
+        // - jq-expression : an optional jq-expression (https://jsplay.org)
+    - name: rest api with basic authentication
+      code: |
+        fn.fnRestBasic(
+          'get',
+          'https://resturl/api/',
+          '',
+          'name_of_credential_in_database',
+          '[.records[] | {name:.name, email:.email, spouse:.relations.spouse}'],
+          'name'
+        )
+
+        // output : a full json object coming from rest, json transformed with jq, result sorted and transformed by javascript.
+
+        // fn.fnRestBasic(method,url,body,credentialname,jq-expression,sort-object)
+        // - method : get,post,put,patch,delete
+        // - url : url to restapi (can for example contain a placeholder like 'https://$(serverfield.fqdn)/api/'
+        // - body : in case of post and put
+        // - credential-name : it will lookup the credentials as you have saved in the gui
+        // - jq-expression : an optional jq-expression (https://jsplay.org)
+        // - sort object : a sort object to order the result
+    - name: rest api with token authentication
+      code: |
+        fn.fnRestJwt(
+          'get',
+          'https://resturl/api/',
+          '',
+          'your_jwt_token_in_text',
+          '[.records[] | {name:.name, age:.age}]',
+          ['age','name']
+        )
+
+        // output : a full json object coming from rest, json transformed with jq, result sorted, first by age, then by name
+
+        // fn.fnRestJwt(method,url,body,token,jq-expression,sort-object)
+        // - method : get,post,put,patch,delete
+        // - url : url to restapi (can for example contain a placeholder like 'https://$(serverfield.fqdn)/api/'
+        // - body : in case of post and put
+        // - token : it will be add as a Bearer Authorization header
+        // - jq-expression : an optional jq-expression (https://jsplay.org)
+        // - sort-object : a sort object to sort the result
+    - name: rest api with secured token authentication
+      code: |
+        fn.fnRestJwtSecure(
+          'get',
+          'https://resturl/api/',
+          '',
+          'name_of_credential_in_database',
+          '[.records[] | {name:.name, age:.age}]',
+          ['age','name']
+        )
+
+        // output : a full json object coming from rest, json transformed with jq, result sorted, first by age, then by name
+
+        // fn.fnRestJwtSecure(method,url,body,token,jq-expression,sort-object)
+        // - method : get,post,put,patch,delete
+        // - url : url to restapi (can for example contain a placeholder like 'https://$(serverfield.fqdn)/api/'
+        // - body : in case of post and put
+        // - credential_name : Encrypted credential will be looked up.  The password will be the token.
+        // - jq-expression : an optional jq-expression (https://jsplay.org)
+        // - sort-object : a sort object to sort the result    
+    - name: rest api with custom headers
+      code: |
+        fn.fnRestAdvanced(
+          'get',
+          'https://resturl/api/',
+          '',
+          {'a_custom_http_header','your_value'},
+          '.records[].name',
+          {name:{ignoreCase:true,direction:'desc'}}
+        )
+
+        // output : a full json object coming from rest, json transformed with jq, result sorted descending by name
+
+        // fn.fnRestAdvanced(method,url,body,{myheader:'value'},jq-expression,sort-object)
+        // - method : get,post,put,patch,delete
+        // - url : url to restapi (can for example contain a placeholder like 'https://$(serverfield.fqdn)/api/'
+        // - body : in case of post and put
+        // - headers: an object of headers
+        // - jq-expression : an optional jq-expression (https://jsplay.org)
+        // - sort-object : a sorting object to order the results
+    - name: get credentials
+      code: |
+        fn.fnCredentials('credentialname')
+
+        // Try to used `fnRestBasic` and `fnRestJwtSecured` if possible, this avoids passwords and tokens going over the network.
+
+        // output : a credential object with all properties (username, password, host, port)    
+    - name: sort an array
+      code: |
+        fn.fnSort(['a','b','z','q','c'],{'':{direction:'asc'}})
+
+        // output : sorts the flat array
+
+        // fn.fnSort(arrayinput,sort-object)
+        // - array, coming from expression or rest or database
+        // - sort-object : a sorting object to order the results    
+    - name: the sorting object
+      description: |
+        In all the data-fetching functions you have the option to sort your data, using this sorting object.  
+      code: |
+        The sorting object can have multiple forms, for example :
+
+        'name' // will sort ascending on property name
+        ['name','email'] // will first sort on name, then on email
+        {name:{direction:'desc'}} // will sort on name descending
+        {name:{ignoreCase:true}} // will sort on name ascending, ignoring case
+        ['name',{email:{ignoreCase:true,direction:'asc'}}] // will sort on name first, then on email, ignoring case
+        {'':{}} // a special case for sorting a flat array which has no headername (properties)
+        {'':{direction:'desc'}} // sort a flat array descending      
+    - name: run a json-query (jq) on an object
+      code: |
+        fn.fnJq($(settings),'.mapping | keys',{name:{ignoreCase:true,direction:'desc'}})
+
+        // output : a full json object taken from another field called "settings", converted by jq, and sorted desc on property "name"
+
+        // fn.fnJq(object, jq, sort-object)
+        // - object, for example read from rest or yaml file
+        // - jq-expression : an optional jq-expression (https://jsplay.org)
+        // - sort-object : a sorting object to order the results  
+    - name: builtin jq functions
+      description: |
+        In all the data-fetching functions you have the option to add a json-query.  A powerfull language to manipulate a data object or array.  
+        Whilst manipulating data, you might bump into the need to convert bytes to KB, MB, ...  as well as the need to round numbers.  
+        That's why Ansible Forms comes with a few custom handy JQ-functions.  
+        * **fn2KB**: Bytes to KB
+        * **fn2MB**: Bytes to MB
+        * **fn2GB**: Bytes to GB
+        * **fnRound0**: Round with 0 decimals
+        * **fnRound1**: Round with 1 decimal
+        * **fnRound2**: Round with 2 decimals
+        * **fnRound**: Round with 2 decimals        
+      code: |
+        fn.fnRestBasic('get','https://youruri','','CREDS',
+          '[.records[] | {"Available Capacity":.storage_capacity.available | fn2GB | fnRound }]')
+        // note you need to pipe into the functions
+    - name: Get a name with incremental numbering
+      code: |
+        fn.fnGetNumberedName(['server001','server002','server005'],'server###','server001',false)
+        // result : "server006"
+
+        fn.fnGetNumberedName(['server001','server002','server005'],'server###','server001',true)
+        // result : "server003"
+
+        fn.fnGetNumberedName($(fieldlist),'server###','server001',true)
+        // use another expression field as input for the array
+
+        // fn.fnGetNumberedName(array,pattern,default,fillgaps)
+        // This function searches for a numbered pattern in a list of string, 
+        // increases the highest number and returns a name like the pattern
+        // - array : an array object, you can use a placeholder to an expression where you know it's an array
+        // - pattern : a string that hold the # as a digit
+        // - default : if no value is found, return this default
+        // - fillgaps : a boolean to indicate it can fill gaps in the numbers, 1,2,3,6 => 4      
+- name: FAQ
+  icon: fas,circle-question
+  link: faq
+  description: |
+    Frequently Asked Questions.  
+  examples:
+  - name: Cascaded Dropdowns
+    short: Make cascaded dropdowns
+    description: |
+      `enum` fields (AKA dropdown boxes) can contain placeholders in their `query` or `expression` property in the format of `$(another_field)` or `$(another_field[0].name)`.  
+      The moment the referenced field changes, the referencing field gets re-evaluated, resulting in dynamic and cascading dropdown boxes.  
+      The power of this concept lies in the client web-application that is re-evaluating fields every 100ms.  With current processors and the chromium engine, this should be a very seamless experience.  
+        
+      **Note**: When you reference another enum field, you reference the selected values, NOT the full dropdown list.  Use the `placeholderColumn`-property or a dot-notation like `$(city.name)` 
+    language: yaml
+    code: |
+      - type: enum
+        dbConfig: 
+          name: CONN1
+          type: mysql
+        query: select name from cmdb.city
+        name: city_name
+        label: Select a city
+        default: Amsterdam
+        required: true
+        model: cmdb.city
+        group: CMDB
+      - type: enum
+        dbConfig: 
+          name: CONN1
+          type: mysql
+        query: select datacenter.name from cmdb.datacenter,cmdb.city where datacenter.city_id=city.id
+          and city.name='$(city_name)'
+        name: datacenter_name
+        label: Select a datacenter
+        default: __auto__    # default can be "__auto__" (first item) or "__all__" (all items) or "__none__" (no default)
+        multiple: true
+        outputObject: true
+        required: true
+        model: cmdb.datacenter
+        group: CMDB      
+
+      # or use the placeholderColumn property
+
+      - type: enum
+        dbConfig: 
+          name: CONN1
+          type: mysql
+        query: select id,name,description from cmdb.city
+        name: city
+        label: Select a city
+        default: Amsterdam         # evaluated against valueColumn
+        required: true
+        model: cmdb.city
+        group: CMDB
+        valueColumn: name          # we choose the name column as value for placeholders
+        placeholderColumn: id      # we can reference the id by using $(city)
+        previewColumn: description # when you select a value, the dropdown will show description
+        columns:                   # we hide id
+        - name
+        - description
+      - type: enum
+        dbConfig: 
+          name: CONN1
+          type: mysql
+        query: select name, capacity_pct from cmdb.datacenter where datacenter.city_id=$(city)
+      # this cascaded dropdown will react using "id" as placeholder
+      # or "query":"select name from cmdb.datacenter where datacenter.city_id=$(city.id)",  
+      # or reference the column in the placeholder                            
+        name: datacenter_name
+        label: Select a datacenter
+        default: __auto__         # default can be "__auto__" (first item) or "__all__" (all items) or "__none__" (no default)
+        multiple: true
+        pctColumns
+        - capacity_pct
+        outputObject: true
+        required: true
+        model: cmdb.datacenter
+        group: CMDB
+  - name: Field placeholders
+    short: Reference another fields value
+    description: |
+      Placeholders are references to other fields in the forms.  
+      A placeholder is always in the format `$(reference)`.  Expressions or queries can contain placeholders.  
+      If the placeholder is pointing to a simple field (text, number, password), it will hold that fields value.  
+      If the placeholder is pointing to a object-based-enum field, then you must either use the `placeholderColumn`-property or a dot-notation like `$(city.name)`.  
+      If the placeholder is pointing to an expression field, then either the full object is returned or you can have an advanced placeholder reference like `$(myarray[0].name)` where you can create javascript-like references.  
+        
+      **Note**: Important to know is that the placeholder is replaced BEFORE the evaluation of the expression.  If you expect the result to be a string, then you must wrap it with quotes!.
+    language: yaml
+    code: |
+      - name: field1
+        type: expression
+        expression: "[{name: 'foo'},{name: 'bar'},{name: 'ansible'}]"
+        runLocal: true
+      - name: field2
+        type: expression
+        expression: "'$(field1[0].name)'"  # result : 'foo' (note the wrapping quotes)
+        runLocal: true
+      - name: field3
+        type: expression
+        expression: "$(field1)[0].name"  # result : {name: 'foo'}.name => 'foo'  
+        runLocal: true    
+      - name: field4
+        type: expression
+        expression: "$(field1).slice(-1)[0].name"  # result : {name: 'ansible'}.name => 'ansible' 
+        runLocal: true
+      - name: field5
+        type: enum
+        expression: $(field1).filter(x => x.name.includes('a'))   # result : [{name: 'bar'},{name: 'ansible'}]
+        runLocal: true
+        default: __auto__                                         # result: bar
+      - name: field6
+        type: expression
+        expression: "'$(field5)'"   # result : the selected item from field5 (default=bar)
+        runLocal: true        
+  - name: Hide a field
+    short: Hide a field
+    description: |
+      You can hide a field using the field property `hide` .  
+      Or you can show/hide a field dynamically using the field properties `dependencies` and `dependencyFn`.
+  - name: Group fields
+    short: Group fields together in a block
+    description: |
+      Use the field property `group` .  Fields with the same group name will be grouped in a block.
+  - name: Field validation
+    short: Validate a field
+    description: |
+      Have a look at the many validation field properties such as `regex`, `minValue`, `notIn`, ...
+  - name: Credentials
+    short: Pass credentials
+    description: |
+      Credentials can be safely passed as extravars by creating a hidden expression field.  
+      The value of the expression field is is the name of the stored credential you want to pass.  
+      And then simply add the field property `asCredential` as true.  
+  - name: Userinfo
+    short: Pass the current user
+    description: |
+      Ansible Forms automatically sends the userinformation in the extravars.  
+      You don't need to do anything.  
+      It is sent as `ansibleforms_user`.
+  - name: Userinfo Form
+    short: Access current user info
+    description: |
+      The field `__user__` is automatically added in the form.
+    language: yaml
+    version: 4.0.2
+    code: |
+      expression: $(__user__)
+      expression: "'$(__user__.username)'"
+      expression: $(__user__.groups)
+      expression: $(__user__.roles)
+  - name: Customization
+    short: Customize Ansible Forms
+    description: |
+      Ansible Forms is a web-app.  If you run it natively in nodejs, you could replace files or change them.  
+      But more recommended is to run it as a docker-image and add volume or file mappings.  Our docker-compose projects already maps directories to make the database, playbooks, logs, certificates and ssh-keys persistent.  Nothing is keeping you from adding more mappings to, for example, override the logo.  
+      There is also a `custom.js` file where you can add your own javascript functions to use in expressions.  Just like you can address our functions with the prefix `fn.` (fn.fnRestBasic for example) you can access the custom functions with prefix `fnc.`.  
+      And you can add your own jq definitions as well in the same way with the `jq.custom.definitions.js`
+    language: yaml
+    code: |
+      volumes:
+        # Mount application folder to host folder (to maintain persistency)
+        - ./data:/app/dist/persistent
+        # Map custom functions for js expressions and jq
+        - ./data/functions/custom.js:/app/dist/src/functions/custom.js
+        - ./data/functions/jq.custom.definitions.js:/app/dist/src/functions/jq.custom.definitions.js
+        # Map custom sshkey to local node .ssh location
+        - ./data/ssh:$HOME_DIR/.ssh
+        - ./data/git/.gitconfig:$HOME_DIR/.gitconfig    
+        # Map custom logo
+        - ./data/mylogo.svg:/app/dist/views/assets/img/logo_ansible_forms_full_white.svg
+  - name: Default value
+    short: Set a default value
+    description: |
+      There is obviously the field property `default` you can use to manipulate a default.  And with `enum` fields, you can use `__auto__` for example to automatically select the first item.  
+         
+      But sometimes you want to have a dynamic default, based on an expression.  For simple fields, you use the `expression` field in combination with the field property `editable`, this will force the expression as the default, but allows the operator to override it.  
+      But in case you want an expression-based default on an `enum` field, it's a bit tricky, yet not undoable.  See the below example how we accomplish this.
+    language: yaml
+    code: |
+      # using client javascript manipulation
+
+      - type: expression
+        expression: "[{name:'bert'},{name:'ernie'},{name:'pino'}]"
+        name: dropdownsource
+        label: Dropdown source
+        runLocal: true
+      - type: expression
+        expression: "'pino'"
+        name: dropdownsourceDefault
+        label: Default source
+        runLocal: true
+      - type: enum
+        expression: "[...[{name:'$(dropdownsourceDefault)'}],...$(dropdownsource).filter(x => x.name!=='$(dropdownsourceDefault)')]"
+        name: dropdownwithdefault
+        label: Example with expression default by moving it to top
+        runLocal: true
+        default: __auto__     
+
+      # explained : 
+      # we take our default and merge it with the source where we filter out the default (to avoid doubles)    
+      # the default is thus shifted to the first element, which we can now select with the default `__auto__`

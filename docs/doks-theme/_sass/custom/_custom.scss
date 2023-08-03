@@ -1,0 +1,238 @@
+$blue:    #0d6efd;
+$indigo:  #6610f2;
+$purple:  #6f42c1;
+$pink:    #d63384;
+$red:     #dc3545;
+$orange:  #fd7e14;
+$yellow:  #ffc107;
+$green:   #198754;
+$teal:    #20c997;
+$cyan:    #0dcaf0;
+$white:    #fff;
+$gray-100: #f8f9fa;
+$gray-200: #e9ecef;
+$gray-300: #dee2e6;
+$gray-400: #ced4da;
+$gray-500: #adb5bd;
+$gray-600: #6c757d;
+$gray-700: #495057;
+$gray-800: #343a40;
+$gray-900: #212529;
+$black:    #000;
+$primary:       $blue;
+$secondary:     $gray-600;
+$success:       $green;
+$info:          $cyan;
+$warning:       $yellow;
+$danger:        $red;
+$light:         $gray-100;
+$dark:          $gray-900;
+
+.is-family-monospace{
+    font-family: "Source Code Pro",monospace;
+}
+.align-left{
+    text-align: left;
+}
+.d-inline-block{
+    display:inline-block;
+}
+.fw-bold{
+    font-weight: 700;
+}
+.has-text-primary{
+    color:$primary;
+}
+.has-text-secondary{
+    color:$secondary;
+}
+.has-text-info{
+    color:$info;
+}
+.has-text-danger{
+    color:$danger;
+}
+.has-text-warning{
+    color:$warning;
+}
+.has-text-success{
+    color:$success;
+}
+.has-text-light{
+    color:$light;
+}
+.has-text-dark{
+    color:$dark;
+}
+
+.tag:not(body){
+    align-items: center;
+    background-color: #f5f5f5;
+    border-radius: 0.375em;
+    color: #4a4a4a;
+    display: inline-flex;
+    font-size: .75rem;
+    height: 2em;
+    justify-content: center;
+    line-height: 1.5;
+    padding-left: 0.75em;
+    padding-right: 0.75em;
+    white-space: nowrap;    
+}
+
+div.highlighter-rouge {
+    position:relative;
+    button {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }    
+}
+
+.btn{
+    cursor: pointer!important;
+    &.btn-dark{
+        background-color:$dark;
+        color:$white;
+    }
+    &.btn-success{
+        background-color:$success;
+        color:$white;
+    }
+
+}
+
+.is-primary{
+    background-color:$primary;
+    color:$white;
+}
+.is-secondary{
+    background-color:$secondary;
+    color:$white;
+}
+.is-info{
+    background-color:$info;
+    color:$white;
+}
+.is-danger{
+    background-color:$danger;
+    color:$white;
+}
+.is-warning{
+    background-color:$warning;
+    color:$white;
+}
+.is-success{
+    background-color:$success;
+    color:$white;
+}
+.is-light{
+    background-color:$light;
+    color:$white;
+}
+.is-dark{
+    background-color:$dark;
+    color:$white;
+}        
+
+.tags {
+    .tag{
+        margin:0;
+        padding:0.5rem;
+
+        &.is-primary{
+            background-color:$primary;
+            color:$white;
+        }
+        &.is-secondary{
+            background-color:$secondary;
+            color:$white;
+        }
+        &.is-info{
+            background-color:$info;
+            color:$white;
+        }
+        &.is-danger{
+            background-color:$danger;
+            color:$white;
+        }
+        &.is-warning{
+            background-color:$warning;
+            color:$white;
+        }
+        &.is-success{
+            background-color:$success;
+            color:$white;
+        }
+        &.is-light{
+            background-color:$light;
+            color:$white;
+        }
+        &.is-dark{
+            background-color:$dark;
+            color:$white;
+        }        
+    }
+    &.has-addons{
+        .tag{
+            &:first-child{
+                border-top-right-radius: 0;
+                border-bottom-right-radius: 0;
+            }
+            &:last-child{
+                border-top-left-radius: 0;
+                border-bottom-left-radius: 0;
+            }            
+        }
+    }
+    padding:0;
+    margin:0;
+}
+
+.mb-1{
+    margin-bottom:0.2em;
+}
+
+.mt-2{
+    margin-top:0.4em;
+}
+
+
+table td{
+    vertical-align:top;
+    font-size:0.9rem;
+    line-height:1.5em;
+}
+
+.is-italic{
+    font-style: italic;
+}
+
+// to top button
+#toTop {
+    display: none; /* Hidden by default */
+    position: fixed; /* Fixed/sticky position */
+    bottom: 20px; /* Place the button at the bottom of the page */
+    right: 30px; /* Place the button 30px from the right */
+    z-index: 99; /* Make sure it does not overlap */
+    cursor: pointer; /* Add a mouse pointer on hover */
+    padding: 15px; /* Some padding */
+    border-radius: 50%; /* Rounded corners */
+    width: 60px;
+    height: 60px;
+    font-size: 18px; /* Increase font size */
+    text-align: center;
+  }
+
+  
+/* ----- Back ----- */
+.micro-nav__link {
+
+    &.active{
+        color:$warning;
+    }
+}
+
+.d-none{
+    display:none
+}
