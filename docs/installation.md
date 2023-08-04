@@ -62,6 +62,7 @@ The recommended way to install AnsibleForms is using `Docker Compose`, which is 
   </div>
 </div>
 
+
 ## Choose a location to install
 
 ```bash
