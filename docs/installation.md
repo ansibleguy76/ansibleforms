@@ -62,7 +62,7 @@ The recommended way to install AnsibleForms is using `Docker Compose`, which is 
     </div>
   </div>
   <div class="col-md-6">
-    <video width="320" height="240" controls>
+    <video controls class="m-0">
       <source src="/doks-theme/assets/videos/install_ansibleforms.mp4" type="video/mp4">
     Your browser does not support the video tag.
     </video>  
