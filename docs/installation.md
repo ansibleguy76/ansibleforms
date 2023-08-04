@@ -56,18 +56,14 @@ The recommended way to install AnsibleForms is using `Docker Compose`, which is 
 </div>
 
 <div class="rows">
-  <div class="col-md-6">
-    <div class="callout callout--warning">
-        <p><strong>Linux Flavour</strong> The examples below are for Redhat/CentOs, use apt-get or other package managers for your flavour of linux.</p>
-    </div>
+  <div class="col-md-6 callout callout--warning">
+      <p><strong>Linux Flavour</strong> The examples below are for Redhat/CentOs, use apt-get or other package managers for your flavour of linux.</p>
   </div>
-  <div class="col-md-6">
-    <video controls class="m-0">
+  <video controls class="col-md-6">
       <source src="/doks-theme/assets/videos/install_ansibleforms.mp4" type="video/mp4">
     Your browser does not support the video tag.
-    </video>  
+  </video>  
   </div>
-</div>
 
 ## Choose a location to install
 
