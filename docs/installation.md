@@ -50,11 +50,6 @@ The recommended way to install AnsibleForms is using `Docker Compose`, which is 
 * **Install Docker** : You need to have a container environment, and in this example we use Docker
 * **Install Docker Compose** : To spin-up AnsibleForms and MySql with docker, using a few simple configuration-files, we need Docker Compose
 
-<div class="callout callout--info">
-    <p><strong>Note</strong> The steps below are also explained on Github.  
-    <br><a class="btn btn-md" href="https://github.com/ansibleguy76/ansibleforms-docker">Read on Github</a></p>
-</div>
-
 <div class="rows">
   <div class="col-md-6 callout callout--warning">
       <p><strong>Linux Flavour</strong> The examples below are for Redhat/CentOs, use apt-get or other package managers for your flavour of linux.</p>
