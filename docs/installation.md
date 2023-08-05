@@ -55,8 +55,7 @@ The recommended way to install AnsibleForms is using `Docker Compose`, which is 
 </div>
 
 <a href="https://www.youtube.com/watch?v=i7ABlHngi1Q" class="btn btn--dark btn--rounded btn--w-icon">
-  <i class="fat fa-video"></i>
-  How to install AnsibleForms
+  <span class="icon"><i class="fat fa-video"></i></span> <span class="ml-2">How to install AnsibleForms</span>
 </a>
 
 ## Choose a location to install
