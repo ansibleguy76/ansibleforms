@@ -54,7 +54,7 @@ The recommended way to install AnsibleForms is using `Docker Compose`, which is 
       <p><strong>Linux Flavour</strong> The examples below are for Redhat/CentOs and Ubuntu/Debian, use apt-get or other package managers for your flavour of linux.</p>
 </div>
 
-<a href="https://www.youtube.com/watch?v=i7ABlHngi1Q" class="btn btn--dark btn--rounded btn--w-icon">
+<a href="https://www.youtube.com/watch?v=IHGIggmtTuA" class="btn btn--dark btn--rounded btn--w-icon">
   <span class="icon"><i class="fat fa-video"></i></span> <span class="ml-2">How to install AnsibleForms</span>
 </a>
 
