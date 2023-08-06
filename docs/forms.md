@@ -33,11 +33,11 @@ page_nav:
 
 # Forms.yaml
 
-<a href="https://www.youtube.com/watch?v=lIhYZ9Et5Ic" class="btn btn--dark btn--rounded btn--w-icon">
-  <span class="icon"><i class="fat fa-video"></i></span> <span class="ml-2">Create you first form</span>
-</a>
-
 {{ formsyaml.description }}
+
+<a href="https://www.youtube.com/watch?v=lIhYZ9Et5Ic" class="btn btn--dark btn--rounded btn--w-icon">
+  <span class="icon"><i class="fat fa-video"></i></span> <span class="ml-2">VIDEO : Create you first form</span>
+</a>
 
 The file below is a minimal sample forms.yaml file to start with.  
 If has only the required `default` category, the required `admin` and `public` roles and a very simple sample form with 1 text field.
