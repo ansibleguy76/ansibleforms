@@ -32,24 +32,33 @@ doks:
               item_icon: brackets-curly
             - item_name: FAQ
               item_url: '/faq' 
-              item_icon: square-question               
-        github_url: https://github.com/ansibleguy76
-        docker_url: https://hub.docker.com/r/ansibleguy/ansibleforms 
+              item_icon: square-question       
+        social:
+            - item_icon: github
+              item_name: Ansible Forms on Github
+              item_url: https://github.com/ansibleguy76
+            - item_icon: docker
+              item_name: Ansible Forms on Docker Hub
+              item_url: https://hub.docker.com/r/ansibleguy/ansibleforms 
+            - item_icon: youtube
+              item_name: Video's about ansible and Ansible Forms
+              item_url: https://www.youtube.com/@ansibleguy76/videos        
     footer:
         content:
             logo:
                 text: 
                 image: true
             copyright: Copyright &copy; 2023. - AnsibleForms <br>All rights reserved.
-        social_list:
-            #- network_name: facebook
-            #  profile_url: '#'
-            #- network_name: twitter
-            #  profile_url: '#'
-            #- network_name: instagram
-            #  profile_url: '#'
-            #- network_name: youtube
-            #  profile_url: '#'
+        social:
+            - item_icon: github
+              item_name: Ansible Forms on Github
+              item_url: https://github.com/ansibleguy76
+            - item_icon: docker
+              item_name: Ansible Forms on Docker Hub
+              item_url: https://hub.docker.com/r/ansibleguy/ansibleforms 
+            - item_icon: youtube
+              item_name: Video's about ansible and Ansible Forms
+              item_url: https://www.youtube.com/@ansibleguy76/videos       
     google_analytics:
         tracking_code: # Add your Google Analytics tracking code to activate Google Analytics
     comments:

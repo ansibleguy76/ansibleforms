@@ -15,13 +15,13 @@
 						<p class="site-footer__copyright">{{ site.doks.footer.content.copyright }}</p>
 					{% endif %}
 				</div><!-- /.col -->
-				{% if site.doks.footer.social_list %}
+				{% if site.doks.footer.social %}
 					<div class="col-sm-6 align-right">
 						<ul class="social-list">
-							{% for item in site.doks.footer.social_list %}
+							{% for item in site.doks.footer.social %}
 								<li>
-									<a href="{{ item.profile_url }}" target="_blank" class="social-list__item social-list__item--{{ item.network_name }}">
-										<i class="icon icon--{{ item.network_name }}"></i>
+									<a href="{{ item.item_url }}" target="_blank" class="social-list__item social-list__item--{{ item.item_icon }}">
+										<i class="fab fa-2x fa-{{ item.item_icon }}"></i>
 									</a>
 								</li>
 							{% endfor %}
