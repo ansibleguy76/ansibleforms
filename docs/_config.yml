@@ -60,7 +60,7 @@ doks:
               item_name: Video's about ansible and Ansible Forms
               item_url: https://www.youtube.com/@ansibleguy76/videos       
     google_analytics:
-        tracking_code: # Add your Google Analytics tracking code to activate Google Analytics
+        tracking_code: G-P2KE4SYQ47
     comments:
         disqus_forum_shortname: # Add your disqus forum shortname to activate comments
 
