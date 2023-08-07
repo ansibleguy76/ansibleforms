@@ -34,6 +34,7 @@ doks:
               item_url: '/faq' 
               item_icon: square-question               
         github_url: https://github.com/ansibleguy76
+        docker_url: https://hub.docker.com/r/ansibleguy/ansibleforms 
     footer:
         content:
             logo:
