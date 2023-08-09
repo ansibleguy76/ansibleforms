@@ -904,6 +904,7 @@
       // instead of taking the default value, see if it needs to be evaluated
       // allowing dynamic defaults
       getDefaultValue(fieldname,value){
+
         if(value!=undefined){
           
           var _value = this.replacePlaceholderInString(value).value
@@ -911,7 +912,7 @@
           if(this.fieldOptions[fieldname].evalDefault){
             var r=undefined
             try{
-              r=eval(_value)
+              r=Helpers.evalSandbox(_value)
               return r
             }catch(e){
               console.log(`Error evaluating default value : ${e}`)
@@ -1301,100 +1302,6 @@
       //----------------------------------------------------------------
       startDynamicFieldsLoop() {
         // this.$toast("Start eval")
-        function matchRuleShort(str, rule) {
-          var escapeRegex = (str) => str.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1"); // eslint-disable-line
-          return new RegExp("^" + rule.split("*").map(escapeRegex).join(".*") + "$").test(str); // eslint-disable-line
-        }
-
-        function compareProps(x1,x2,p){
-          for(let i=0;i<p.length;i++){
-            const x=p[i]
-
-            if(!matchRuleShort(x1[x],x2[x])){
-              return false
-            }
-          }
-          return true
-        }
-
-        function comparePropsRegex(x1,x2,p){
-          for(let i=0;i<p.length;i++){
-            const x=p[i]
-
-            if(!x1[x].match(x2[x])){
-              return false
-            }
-          }
-          return true
-        }
-
-        function dynamicSort(property) {
-            var sortOrder = 1;
-            if(property[0] === "-") {
-                sortOrder = -1;
-                property = property.substr(1);
-            }
-            return function (a,b) {
-                /* next line works with strings and numbers,
-                 * and you may want to customize it to your needs
-                 */
-                var result = (a[property] < b[property]) ? -1 : (a[property] > b[property]) ? 1 : 0;
-                return result * sortOrder;
-            }
-        }
-
-        function dynamicSortMultiple() {
-            /*
-             * save the arguments object as it will be overwritten
-             * note that arguments object is an array-like object
-             * consisting of the names of the properties to sort by
-             */
-            var props = arguments;
-            return function (obj1, obj2) {
-                var i = 0, result = 0, numberOfProperties = props.length;
-                /* try getting a different result from 0 (equal)
-                 * as long as we have extra properties to compare
-                 */
-                while(result === 0 && i < numberOfProperties) {
-                    result = dynamicSort(props[i])(obj1, obj2);
-                    i++;
-                }
-                return result;
-            }
-        }
-
-        class fnArray extends Array {
-            sortBy(...args) {
-                return this.sort(dynamicSortMultiple(...args));
-            }
-            distinctBy(...args) {
-                return this.filter((a, i) => this.findIndex((s) => compareProps(a,s,args)) === i)
-            }
-            filterBy(...args) {
-              let props=Object.keys(args[0])
-              return this.filter((x)=>{
-                return compareProps(x,args[0],props)
-              })
-            }
-            regexBy(...args) {
-              let props=Object.keys(args[0])
-              return this.filter((x)=>{
-                return comparePropsRegex(x,args[0],props)
-              })
-            }
-            selectAttr(...args) {
-              let props=Object.keys(args[0])
-
-              return this.map((x)=>{
-                let o = {}
-                for(let i=0;i<props.length;i++){
-                  o[props[i]]=x[args[0][props[i]]]
-                }
-                return o
-              })
-            }
-        }
-
         // console.log("invoking field expressions and queries")
         var ref=this;                                                           // a reference to 'this'
         ref.watchdog=0                                                          // a counter how many times we retry to find a value
@@ -1435,18 +1342,18 @@
                           // check if direct object attempt
                           // console.log(placeholderCheck.value)
                           if(placeholderCheck.value.at(0)=="{" && placeholderCheck.value.at(-1)=="}"){
-                            result=eval(`Object.assign(${placeholderCheck.value})`)
+                            result=Helpers.evalSandbox(`Object.assign(${placeholderCheck.value})`)
                           }else{
-                            result=eval(placeholderCheck.value)
+                            result=Helpers.evalSandbox(placeholderCheck.value)
                           }
                           
                           if(item.type=="expression" || item.type=="html") Vue.set(ref.form, item.name, result);
                           if((item.type=="query")||(item.type=="enum")) Vue.set(ref.queryresults, item.name, [].concat(result));
                           // table is special.  if external data is passed.  we take that instead of results.
-                          if(item.type=="table" && !ref.defaults(item.name)){
+                          if(item.type=="table" && !ref.defaults[item.name]){
                             Vue.set(ref.form, item.name, [].concat(result));
                           }
-                          if(item.type=="table" && ref.defaults(item.name)){
+                          if(item.type=="table" && ref.defaults[item.name]){
                             Vue.set(ref.form, item.name, [].concat(ref.defaults[item.name]));
                           }
                           if(placeholderCheck.hasPlaceholders){                 // if placeholders were found we set this a variable dynamic field.

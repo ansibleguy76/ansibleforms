@@ -40,7 +40,7 @@ The recommended way to install AnsibleForms is using `Docker Compose`, which is 
 
 <div class="callout callout--danger">
     <p><strong>Note</strong> Using docker and docker-compose for the first time, requires some basic linux skills and some knowledge about containers</p>
-    <p><a href="#todo">Download this document</a> to get you kick-started with containers and Docker</p>
+    <p><a href="/doks-theme/assets/files/docker and ansibleforms.pdf">Download this document</a> to get you kick-started with containers and Docker</p>
 </div>
 
 ## Prerequisites
@@ -50,60 +50,75 @@ The recommended way to install AnsibleForms is using `Docker Compose`, which is 
 * **Install Docker** : You need to have a container environment, and in this example we use Docker
 * **Install Docker Compose** : To spin-up AnsibleForms and MySql with docker, using a few simple configuration-files, we need Docker Compose
 
-<div class="callout callout--info">
-    <p><strong>Note</strong> The steps below are also explained on Github.  
-    <br><a class="btn btn-md" href="https://github.com/ansibleguy76/ansibleforms-docker">Read on Github</a></p>
-</div>
-
 <div class="callout callout--warning">
-    <p><strong>Linux Flavour</strong> The examples below are for Redhat/CentOs, use apt-get or other package managers for your flavour of linux.</p>
+      <p><strong>Linux Flavour</strong> The examples below are for Redhat/CentOs and Ubuntu/Debian, use apt-get or other package managers for your flavour of linux.</p>
 </div>
 
-
+<a href="https://www.youtube.com/watch?v=IHGIggmtTuA" class="btn btn--dark btn--rounded btn--w-icon">
+  <span class="icon"><i class="fat fa-video"></i></span> <span class="ml-2"> VIDEO How to install AnsibleForms</span>
+</a>
 
 ## Choose a location to install
 
 ```bash
-mkdir /srv/apps
+sudo mkdir /srv/apps
 cd /srv/apps
 ```
 
 ## Clone the docker-compose project
 
 ```bash
-yum install -y git
-‌‌git init
-git clone https://github.com/ansibleguy76/ansibleforms-docker.git
+# centos
+sudo yum install -y git
+
+# ubuntu
+sudo apt-get install -y git
+
+‌sudo ‌git init
+sudo git clone https://github.com/ansibleguy76/ansibleforms-docker.git
 
 cd ansibleforms-docker
 ```
 
-## Set permissions
+## Set proper permissions
 
 ```bash
 # write access will be needed on the datafolder
-chmod -R 664 ./data
+sudo chmod -R 664 ./data
 # the mysql init folder needs execute rights 
-chmod -R +x ./data/mysql/init/
+sudo chmod -R +x ./data/mysql/init/
 ```
 
-## Install Docker
+## Install Docker and docker-compose
+
+[Docker installation manuals](https://docs.docker.com/engine/install)
 
 ```bash
+# centos
 yum install -y docker-ce docker-ce-cli containerd.io docker-compose
 
+# ubuntu
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-compose
+
 # the below is to ensure dns works properly inside the dockerimages
-mkdir -p /etc/docker
-echo "{\"dns-opts\":[\"ndots:15\"]}" > /etc/docker/daemon.json
+sudo mkdir -p /etc/docker
+echo "{\"dns-opts\":[\"ndots:15\"]}" | sudo tee /etc/docker/daemon.json
 
 # start docker permanently as a service
-systemctl start docker
-systemctl enable docker
+sudo systemctl start docker
+sudo systemctl enable docker
 ```
 
 ## Customize
 
-Feel free to look at the variables in the `.env` file and `docker-compose.yaml` file.
+Feel free to look at the variables in the `.env` file and `docker-compose.yaml` file.  
+[Learn more about the environment variables](/customization)
+
+## Start docker-compose project
+
+```bash
+sudo docker-compose up -d
+```
 
 ## Test the application
 
@@ -215,22 +230,22 @@ The server app (express.js) will cover authentication, background database conne
 
 ```bash
 # remove nodejs if needed
-yum remove -y nodejs
+sudo yum remove -y nodejs
 # get repro
-yum install -y gcc-c++ make
+sudo yum install -y gcc-c++ make
 curl -sL https://rpm.nodesource.com/setup_14.x | sudo -E bash -
 
 # install nodejs
-yum install -y nodejs
+sudo yum install -y nodejs
 
 # create holder folder (can be custom)
-mkdir /srv/apps
+sudo mkdir /srv/apps
 cd /srv/apps
 
 # grab the code from github
-yum install -y git
-‌‌git init
-git clone https://github.com/ansibleguy76/ansibleforms.git
+sudo yum install -y git
+sud o‌‌git init
+sudo git clone https://github.com/ansibleguy76/ansibleforms.git
 
 # enter the app project
 cd ansibleforms
@@ -244,11 +259,11 @@ First we install all nodejs dependencies for both client & server
 
 ```bash
 cd server
-npm install
+sudo npm install
 
 cd ..
 cd client
-npm install
+sudo npm install
 
 cd ..
 ```
@@ -258,12 +273,12 @@ This application comes with an `.env.example` file that you must copy to `.env.d
 
 ```bash
 cd client
-cp .env.example .env.development
+sudo cp .env.example .env.development
 
 cd ..
 cd server
-cp .env.example .env.development
-cp ./persistent/forms.yaml.example ./persistent/forms.yaml
+sudo cp .env.example .env.development
+sudo cp ./persistent/forms.yaml.example ./persistent/forms.yaml
 ```
 
 ## Modify the .env.development (or .env.production) to your needs
@@ -297,7 +312,7 @@ When you test a vue2 application (client application), it typically spins up a t
 
 ```bash
 cd client
-npm run start
+sudo npm run start
 ```
 
 #### Run compiled in development
@@ -308,7 +323,7 @@ First we compile the client code, and bundle it in the server code
 
 ```bash
 cd client
-npm run bundle
+sudo npm run bundle
 ```
 
 Then we run the server code in development mode.  `npm run dev` will also copy the `.env.development` file into the `./dist` folder, so make sure it's there !
@@ -316,7 +331,7 @@ Then we run the server code in development mode.  `npm run dev` will also copy t
 ```bash
 cd ..
 cd server
-npm run dev
+sudo npm run dev
 ```
 
 ### Run in production with PM2
@@ -324,14 +339,14 @@ npm run dev
 Running the application in the commandline, makes it fragile when something goes wrong.  We need an environment where the nodejs application can run when logged of, where it can be monitored and even restarted in case of a crash.  That's were PM2 comes in. (https://pm2.keymetrics.io/)
 
 ```bash
-npm install -g pm2
+sudo npm install -g pm2
 ```
 
 We again compile the client code and bundle it in the server code
 
 ```bash
 cd client
-npm run bundle
+sudo npm run bundle
 ```
 
 We now compile the server code, but don't start it.
@@ -339,20 +354,20 @@ We now compile the server code, but don't start it.
 ```bash
 cd ..
 cd server
-npm run build
+sudo npm run build
 ```
 
 Then we copy a production ready environment file. (change it to fit your production environment)
 
 ```bash
-cp .env.example ./dist/.env.production
+sudo cp .env.example ./dist/.env.production
 ```
 
 Then we start it in PM2.  
 
 ```bash
 cd dist
-pm2 start ecosystem.config.js --env production
+sudo pm2 start ecosystem.config.js --env production
 ```
 
 Once started

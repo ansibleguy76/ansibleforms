@@ -13,6 +13,10 @@ buttons:
       content: AnsibleForms on Github
       url: 'https://github.com/ansibleguy76/ansibleforms'
       external_url: true
+    - icon: youtube
+      content: AnsibleForms on Youtube
+      url: 'https://www.youtube.com/@ansibleguy76/videos'
+      external_url: true      
 
 # Author box
 author:

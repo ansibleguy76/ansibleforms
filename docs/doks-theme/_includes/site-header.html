@@ -25,7 +25,9 @@
 							{% for item in site.doks.header.nav %}
 								<li><a href="{% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}{{ item.item_url }}" {% if item.item_url==url %}class="active"{% endif %}>{{ item.item_name }}</a></li>
 							{% endfor %}
-							<li><a href="{{ site.doks.header.github_url }}" target="_blank"><i class="fab fa-github fa-lg"></i></a></li>
+							{% for item in site.doks.header.social %}
+							<li><a href="{{ item.item_url }}" title="{{ item.item_name }}" target="_blank"><i class="fab fa-{{ item.item_icon }} fa-lg"></i></a></li>
+							{% endfor %}
 						</ul><!-- /.site-header__nav -->
 						<button class="offcanvas-toggle visible-xs">
 							<span></span>
