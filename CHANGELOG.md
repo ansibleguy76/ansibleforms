@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.15] - 2023-08-09
+
 ### Added
 
 -   Installation video to documentation
@@ -568,7 +570,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.14...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.15...HEAD
+
+[4.0.15]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.14...4.0.15
 
 [4.0.14]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.13...4.0.14
 
