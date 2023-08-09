@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 -   Installation video to documentation
+-   add fnGetNumberedName as local function
+
+### Fixed
+
+-   Table expression issue fixed
 
 ## [4.0.14] - 2023-08-03
 
