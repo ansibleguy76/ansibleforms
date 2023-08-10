@@ -389,3 +389,17 @@ The default admin user is :
 * username : admin
 * password : AnsibleForms!123
   
+## Upgrade
+
+Upgrading is as simple as
+
+```bash
+cd /srv/apps/ansibleforms-docker
+sudo docker-compose down
+sudo docker pull ansibleguy/ansibleforms:latest
+sudo docker-compose up -d
+```
+
+<a href="https://www.youtube.com/watch?v=5ZDJ8CcUx5c" class="btn btn--dark btn--rounded btn--w-icon">
+  <span class="icon"><i class="fat fa-video"></i></span> <span class="ml-2"> VIDEO How to upgrade AnsibleForms</span>
+</a>
