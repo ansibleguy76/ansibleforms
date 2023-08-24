@@ -94,5 +94,8 @@ RUN npm i --only=production
 # Copy transpiled js from builder stage into the final image
 COPY --from=tmp_builder /app/dist ./dist
 
+# Copy the ansible.cfg file to /etc/ansible/ directory
+COPY ansible.cfg /etc/ansible/ansible.cfg
+
 # Use js files to run the application
 ENTRYPOINT ["node", "./dist/index.js"]
