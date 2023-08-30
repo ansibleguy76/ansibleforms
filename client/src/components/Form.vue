@@ -252,6 +252,33 @@
                                 </div>                            
                               </template>
                         </date-picker>  
+                        <!-- type = file-->
+                        <div v-if="field.type=='file'" class="file has-name">
+                          <label class="file-label">
+                            <input class="file-input" 
+                              :required="field.required" 
+                              type="file" 
+                              :name="field.name" 
+                              @change="handleFiles($event.target.name, $event.target.files)"
+                              :class="{'is-danger':$v.form[field.name].$invalid}"
+                            >
+                            <span class="file-cta">
+                              <span class="file-icon">
+                                <font-awesome-icon :icon="field.icon || 'upload'" />
+                              </span>
+                              <span class="file-label">
+                                {{ field.placeholder || 'Choose a file...' }}
+                              </span>
+                            </span>
+                            <span v-if="$v.form[field.name].$model" class="file-name">
+                              {{ $v.form[field.name].$model.name }}
+                            </span>
+                            <span v-else class="file-name">
+                              No file chosen
+                            </span>
+                          </label>
+                        </div>                        
+                      
                         <!-- fields with icons -->
                         <div v-if="!['datetime','table','radio','enum','query','checkbox'].includes(field.type)" :class="{'has-icons-left':!!field.icon && !['query','enum','datetime'].includes(field.type)}" class="control">
                           <!-- type = expression -->
@@ -491,6 +518,7 @@
           showHidden:false,         // flag to show/hide hidden field / = debug mode
           jobId:undefined,          // holds the current jobid
           abortTriggered:false,     // flag abort is triggered,
+          pauseJsonOutput:false,    // flag to pause jsonoutput interval
           containerSize:{
             x:0,
             width:0
@@ -636,6 +664,10 @@
       } 
     },
     methods:{
+      // when file selected
+      handleFiles(name,files){
+        Vue.set(this.$v.form[name],'$model',files[0])
+      },
       // used for enum field, to know the width of the container
       calcContainerSize(){
         var rect=this.$refs["container"]?.getBoundingClientRect()
@@ -1575,7 +1607,9 @@
           }
           refreshCounter++;
           if(refreshCounter%ref.loopdivider==0){
-            ref.generateJsonOutput() // refresh json output
+            if(!ref.pauseJsonOutput && ref.showExtraVars){
+              ref.generateJsonOutput() // refresh json output
+            }
           }
           if(ref.watchdog>50 || ref.watchdog==0){
             ref.loopdelay=500
@@ -1747,18 +1781,25 @@
         return field
       },
       // generate the form json output
-      generateJsonOutput(){
+      generateJsonOutput(filedata={}){
         var ref=this
         this.formdata={}
         this.currentForm.fields.forEach((item, i) => {
           // this.checkDependencies(item) // hide field based on dependency
           if(this.visibility[item.name] && !item.noOutput){
             var fieldmodel = [].concat(item.model || [])
-            var outputObject = item.outputObject || item.type=="expression" || item.type=="table" || false
-            var outputValue = this.form[item.name]
+            var outputObject = item.outputObject || item.type=="expression" || item.type=="file" || item.type=="table" || false
+            var outputValue
+            // if uploaded file info, use that
+            if(item.name in filedata){
+              outputValue=filedata[item.name]
+            // else just use the formdata
+            }else{
+              outputValue = this.form[item.name]
+            }
             // if no model is given, we assign to the root
             if(!outputObject){  // do we need to flatten output ?
-              outputValue=this.getFieldValue(outputValue,item.valueColumn || "",true)
+                outputValue=this.getFieldValue(outputValue,item.valueColumn || "",true)
             }
             if(fieldmodel.length==0){
               this.formdata[item.name]=outputValue
@@ -1808,15 +1849,78 @@
           return true
         }
       },
+      async uploadFile(file){
+        var ref=this
+        ref.$toast.info(`Start uploading ${file.name}`)
+        var formData = new FormData();
+        formData.append("file", file);
+        const result = await axios.post('/api/v1/job/upload/', formData, TokenStorage.getAuthenticationMultipart())
+        return result.data
+      },
       // execute the form
-      executeForm(){
+      async executeForm(){
         // make sure, no delayed stuff is started.
         //
         var ref=this
         var postdata={}
+        postdata.files = {}
         if(ref.validateForm){ // final validation
 
-          this.generateJsonOutput()
+          // we find all file fields and check which ones have a file
+          this.currentForm.fields
+            .filter(f => (f.type=='file' && ref.form[f.name]?.name))
+            .forEach(f => {
+              postdata.files[f.name]=ref.form[f.name]
+            })     
+
+          // we try to upload all of them (concurrently put in sync/await)
+          try {
+
+            const fileKeys = Object.keys(postdata.files);
+            const totalFiles = fileKeys.length;
+
+            // Upload all files concurrently and track progress
+            let uploadedFilesCount = 0;
+            const uploadPromises = fileKeys.map(async (key) => {
+              try {
+                var result = await ref.uploadFile(postdata.files[key]);
+                var fileObj
+                // upload was success
+                if(result.status=="success"){
+                  // we get the uploaded file info
+                  fileObj = result.data.output
+                  // and store it
+                  postdata.files[key] = fileObj
+                  ref.$toast.success(`Finished uploading ${fileObj.originalname}`);
+                  // uploadedFilesCount++;
+                  // const progressPercentage = (uploadedFilesCount / totalFiles) * 100;
+                  // ref.$toast.info(`File uploaded ${uploadedFilesCount} of ${totalFiles} (${progressPercentage.toFixed(2)}%)`);
+                }
+                if(result.status=="error"){
+                  ref.$toast.error(result.data.error);
+                  throw(new Error(result.data.error))
+                }
+
+              } catch (e) {
+                console.log(e)
+                throw(new Error("Failed uploading files"))
+              }
+            });
+
+            await Promise.all(uploadPromises);
+            ref.$toast.info(`All files uploaded`);
+          }catch(e){
+            ref.$toast.error(e.message);
+            ref.resetResult()
+            // stop, don't execute job
+            throw new Error("Failed uploading files");
+            
+          }
+
+          // pause json output interval
+          this.pauseJsonOutput=true
+          // generate correct json output (and use the uploaded file info)
+          this.generateJsonOutput(postdata.files)
           postdata.extravars = this.formdata
           postdata.formName = this.currentForm.name;
           postdata.credentials = {}
@@ -1837,6 +1941,7 @@
                       }
                     })
               })
+
           this.jobResult.message= "Connecting with job api ";
           this.jobResult.status="info";
           axios.post("/api/v1/job/",postdata,TokenStorage.getAuthentication())
@@ -1870,6 +1975,8 @@
                 ref.resetResult()
               }
             })
+          // resume interval
+          this.pauseJsonOutput=false;
          }
       },
       pullGit(repo){

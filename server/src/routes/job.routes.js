@@ -1,9 +1,13 @@
 const express = require('express')
+const logger=require("../lib/logger")
 const router = express.Router()
 const jobController =   require('../controllers/job.controller');
+const uploadController =   require('../controllers/upload.controller');
 
 // get approvals count
 router.get('/approvals', jobController.findApprovals);
+// upload file
+router.post('/upload',uploadController.upload)
 // get a job
 router.get('/:id', jobController.getJob);
 // change a job (status changes)

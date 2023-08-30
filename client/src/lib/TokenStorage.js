@@ -13,6 +13,11 @@ var TokenStorage = {
       headers: { 'Authorization': 'Bearer ' + this.getToken() }
     };
   },
+  getAuthenticationMultipart() {
+    return {
+      headers: { 'Authorization': 'Bearer ' + this.getToken(), 'Content-Type': 'multipart/form-data'}
+    };
+  },
   getPayload(){
     var base64Url="";
     var base64="";

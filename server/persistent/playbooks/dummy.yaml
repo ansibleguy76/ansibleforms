@@ -4,4 +4,8 @@
   tasks:
     - name: Output 'Welcome'.
       debug:
-        msg: "Hi there and welcome to ansible"
+        msg: "{{ file }}"
+    - name: Output 'Welcome'.
+      debug:
+        msg: "{{ file2 }}"        
+    

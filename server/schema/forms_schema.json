@@ -899,7 +899,54 @@
                     "tableFields":       {"not":{}}
                   },
                   "required": ["expression"]
-                },                
+                },   
+                {
+                  "properties": {
+                    "type": {
+                      "enum": ["file"]
+                    },
+                    "dateType":          {"not":{}}, 
+                    "asCredential":      {"not":{}}, 
+                    "sameAs":            {"not":{}}, 
+                    "validIf":           {"not":{}}, 
+                    "validIfNot":        {"not":{}}, 
+                    "regex":             {"not":{}}, 
+                    "notIn":             {"not":{}}, 
+                    "in":                {"not":{}}, 
+                    "minValue":          {"not":{}}, 
+                    "maxValue":          {"not":{}}, 
+                    "minLength":         {"not":{}}, 
+                    "maxLength":         {"not":{}}, 
+                    "keydown":           {"not":{}}, 
+                    "refresh":           {"not":{}}, 
+                    "isHtml":            {"not":{}}, 
+                    "runLocal":          {"not":{}}, 
+                    "query":             {"not":{}}, 
+                    "outputObject":      {"not":{}}, 
+                    "columns":           {"not":{}}, 
+                    "pctColumns":        {"not":{}}, 
+                    "filterColumns":     {"not":{}}, 
+                    "allowDelete":       {"not":{}}, 
+                    "allowInsert":       {"not":{}}, 
+                    "deleteMarker":      {"not":{}}, 
+                    "insertMarker":      {"not":{}}, 
+                    "readonlyColumns":   {"not":{}}, 
+                    "insertColumns":     {"not":{}},  
+                    "sticky":            {"not":{}}, 
+                    "horizontal":        {"not":{}}, 
+                    "editable":          {"not":{}}, 
+                    "valueColumn":       {"not":{}}, 
+                    "previewColumn":     {"not":{}}, 
+                    "placeholderColumn": {"not":{}}, 
+                    "dbConfig":          {"not":{}}, 
+                    "help":              {"not":{}}, 
+                    "values":            {"not":{}}, 
+                    "multiple":          {"not":{}}, 
+                    "size":              {"not":{}}, 
+                    "hide":              {"not":{}}, 
+                    "tableFields":       {"not":{}}
+                  }
+                },                                
                 {
                   "properties": {
                     "type": {
@@ -950,7 +997,7 @@
               "properties": {
                 "type": {
                   "type": "string",
-                  "enum": ["text","textarea", "password", "checkbox", "enum", "query", "number", "radio", "expression","local","local_out","credential", "table","datetime","html"]
+                  "enum": ["text","textarea", "password", "checkbox", "enum", "query", "number", "radio", "expression","local","local_out","credential", "table","datetime","html","file"]
                 },
                 "name": {
                   "$id": "/formfield",

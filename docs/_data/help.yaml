@@ -354,6 +354,13 @@
     description: |
       Sometime, the job output is flooded with meaningless output, such as 'Gathering Facts', or 'Includes'.  You filter out these by add a piece of string in the taskname, i.e. `[low]` and then used regex `\\[low\\]` to hide this information.  
       The output has a button `Apply filter` for the filtering to take effect.
+  - name: UPLOAD_PATH
+    type: string
+    allowed: a valid path
+    short: The path for file uploads
+    default: "%PERSISTENT_FOLDER%/uploads"
+    description: |
+      Since 4.0.16, a new field type is introduced that allows file uploads.  The files are uploaded in this path.
 - name: Forms.yaml
   icon: fab,wpforms
   link: forms
@@ -1678,7 +1685,16 @@
                     - name: header
                       type: html
                       expression: | 
-                        '<h3 class="title is-3">Your own title</h3>'                                                                                                                                                        
+                        '<h3 class="title is-3">Your own title</h3>'          
+              - name: file
+                description: A file upload field, the file is uploaded prior to the job start and the extravars will contain the uploaded file info.
+                version: 4.0.16
+                examples:
+                - name: Software Image Upload
+                  code: |
+                    - type: file
+                      name: software_image
+                      label: Upload software image
               - name: number
                 description: A number input field
                 examples:
@@ -1902,7 +1918,7 @@
             type: string
             group: basic
             allowed: Free text
-            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, file
             short: Field label
             description: |
               A friendly name/label for the field
@@ -1910,7 +1926,7 @@
             type: string
             group: basic
             allowed: Free text
-            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, file
             short: In-field help value
             description: |
               Some form fields allow an in-field hint value.
@@ -1918,7 +1934,7 @@
             type: string
             group: basic
             allowed: Free text
-            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, file
             short: Field help message
             description: |
               Some fields require additional help information.
@@ -1931,7 +1947,7 @@
             description: |
               Some formfields can hold a nice looking icon.  The icon name is a free fontawesome 6 icon.
               You can find more information at [www.fontawesome.com](https://www.fontawesome.com)
-            with_types: text, number, expression, password, enum
+            with_types: text, number, expression, password, enum, file
           - name: group
             type: string
             group: visualization
