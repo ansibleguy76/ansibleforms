@@ -2230,6 +2230,22 @@
             description: |
               Forces a number-field to not be higher than...
             with_types: number
+          - name: minSize
+            allowed: Integer
+            group: validation
+            type: number
+            short: File minimum size
+            description: |
+              Forces a file-fields size to not be lower than...
+            with_types: file
+          - name: maxSize
+            allowed: Integer
+            group: validation
+            type: number
+            short: File maximum size
+            description: |
+              Forces a file-fields size to not be higher than...
+            with_types: file            
           - name: regex
             type: object
             group: validation
@@ -2239,7 +2255,7 @@
               This field requires an object with 2 attributes:
               * `expression` : The regular expression
               * `description` : A validation message to show when the regex is not matched.
-            with_types: text, expression, password, datetime
+            with_types: text, expression, password, datetime, file
             examples:
             - name: Validate email address
               code: |
@@ -2250,7 +2266,13 @@
               code: |
                 regex:
                   expression: "(?=^.{8,}$)(?=.*\d)(?=.*[!@#$%^&*]+)(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$"
-                  description: Must be complex (8 or longer ; uppercase ; lowercase ; numeric ; specials)              
+                  description: Must be complex (8 or longer ; uppercase ; lowercase ; numeric ; specials)
+            - name: Only pdf files
+              code: |
+                type: file
+                regex:
+                  expression: "pdf$"
+                  descriptoin: You can only upload pdf files           
           - name: notIn
             type: object
             group: validation

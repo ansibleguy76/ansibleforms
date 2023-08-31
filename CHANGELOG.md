@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Ansible has now default yaml stdout
 
+### Added
+
+-   New formfield type 'file' to upload files prior to job execution
+
 ## [4.0.15] - 2023-08-09
 
 ### Added

@@ -253,34 +253,39 @@
                               </template>
                         </date-picker>  
                         <!-- type = file-->
-                        <div v-if="field.type=='file'" class="file has-name">
-                          <label class="file-label">
-                            <input class="file-input" 
-                              :required="field.required" 
-                              type="file" 
-                              :name="field.name" 
-                              @change="handleFiles($event.target.name, $event.target.files)"
-                              :class="{'is-danger':$v.form[field.name].$invalid}"
-                            >
-                            <span class="file-cta">
-                              <span class="file-icon">
-                                <font-awesome-icon :icon="field.icon || 'upload'" />
+                        <div v-if="field.type=='file'">
+                          <div class="file has-name is-fullwidth">
+                            <label class="file-label">
+                              <input class="file-input" 
+                                :required="field.required" 
+                                type="file" 
+                                :name="field.name" 
+                                @change="handleFiles($event.target.name, $event.target.files)"
+                                :class="{'is-danger':$v.form[field.name].$invalid}"
+                              >
+                              <span class="file-cta">
+                                <span class="file-icon">
+                                  <font-awesome-icon :icon="field.icon || 'upload'" />
+                                </span>
+                                <span class="file-label">
+                                  {{ field.placeholder || 'Choose a file...' }}
+                                </span>
                               </span>
-                              <span class="file-label">
-                                {{ field.placeholder || 'Choose a file...' }}
+                              <span v-if="$v.form[field.name].$model" class="file-name">
+                                {{ $v.form[field.name].$model.name }}
                               </span>
-                            </span>
-                            <span v-if="$v.form[field.name].$model" class="file-name">
-                              {{ $v.form[field.name].$model.name }}
-                            </span>
-                            <span v-else class="file-name">
-                              No file chosen
-                            </span>
-                          </label>
-                        </div>                        
+                              <span v-else class="file-name">
+                                No file chosen
+                              </span>
+                            </label>
+                          </div>   
+                          <div v-if="fileProgress[field.name] && fileProgress[field.name]>0 && fileProgress[field.name]<100 ">
+                            <progress class="progress is-tiny" :value="fileProgress[field.name]" max="100">{{ fileProgress[field.name] }}%</progress>
+                          </div>      
+                        </div>               
                       
                         <!-- fields with icons -->
-                        <div v-if="!['datetime','table','radio','enum','query','checkbox'].includes(field.type)" :class="{'has-icons-left':!!field.icon && !['query','enum','datetime'].includes(field.type)}" class="control">
+                        <div v-if="!['datetime','table','radio','enum','query','checkbox','file'].includes(field.type)" :class="{'has-icons-left':!!field.icon && !['query','enum','datetime'].includes(field.type)}" class="control">
                           <!-- type = expression -->
                           <div v-if="field.type=='expression'" :class="{'is-loading':(dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running') &! fieldOptions[field.name].editable}" class="control">
                             <div v-if="!fieldOptions[field.name].viewable">
@@ -340,7 +345,7 @@
                             :placeholder="field.placeholder"
                             @change="evaluateDynamicFields(field.name)">
                     
-                          <!-- add left icon, but not for query, because that's a component with icon builtin -->
+                          <!-- add left icon, but not for expression, because that's a component with icon builtin -->
                           <span v-if="!!field.icon && !(field.type=='expression' && fieldOptions[field.name].viewable)" class="icon is-small is-left">
                             <font-awesome-icon :icon="field.icon" />
                           </span>
@@ -352,6 +357,8 @@
                         <p class="has-text-danger" v-if="'maxLength' in $v.form[field.name] && !$v.form[field.name].maxLength">Can not be more than {{$v.form[field.name].$params.maxLength.max}} characters long</p>
                         <p class="has-text-danger" v-if="'minValue' in $v.form[field.name] && !$v.form[field.name].minValue">Value cannot be lower than {{$v.form[field.name].$params.minValue.min}}</p>
                         <p class="has-text-danger" v-if="'maxValue' in $v.form[field.name] && !$v.form[field.name].maxValue">Value cannot be higher than {{$v.form[field.name].$params.maxValue.max}}</p>
+                        <p class="has-text-danger" v-if="'minSize' in $v.form[field.name] && !$v.form[field.name].minSize">{{$v.form[field.name].$params.minSize.description}}</p>
+                        <p class="has-text-danger" v-if="'maxSize' in $v.form[field.name] && !$v.form[field.name].maxSize">{{$v.form[field.name].$params.maxSize.description}}</p>
                         <p class="has-text-danger" v-if="'regex' in $v.form[field.name] && !$v.form[field.name].regex">{{$v.form[field.name].$params.regex.description}}</p>
                         <p class="has-text-danger" v-if="'validIf' in $v.form[field.name] && !$v.form[field.name].validIf">{{$v.form[field.name].$params.validIf.description}}</p>
                         <p class="has-text-danger" v-if="'validIfNot' in $v.form[field.name] && !$v.form[field.name].validIfNot">{{$v.form[field.name].$params.validIfNot.description}}</p>
@@ -519,6 +526,7 @@
           jobId:undefined,          // holds the current jobid
           abortTriggered:false,     // flag abort is triggered,
           pauseJsonOutput:false,    // flag to pause jsonoutput interval
+          fileProgress:{},
           containerSize:{
             x:0,
             width:0
@@ -555,18 +563,47 @@
               (value) => (value==true)
           )
         }
-        if("minValue" in ff){ attrs.minValue=minValue(ff.minValue)}
-        if("maxValue" in ff){ attrs.maxValue=maxValue(ff.maxValue)}
+        if("minSize" in ff){ 
+          if(ff.type=="file"){
+            description = `Size (${Helpers.humanFileSize(this.form[ff.name]?.size)}) cannot be lower than ${Helpers.humanFileSize(ff.minSize)}`
+            attrs.minSize = helpers.withParams(
+                {description: description,type:"minSize"},
+                (file) => !helpers.req(file?.name) || file?.size>=ff.minSize
+            )
+          }
+        }   
+        if("maxSize" in ff){ 
+          if(ff.type=="file"){
+            description = `Size (${Helpers.humanFileSize(this.form[ff.name]?.size)}) cannot be higher than ${Helpers.humanFileSize(ff.maxSize)}`
+            attrs.maxSize = helpers.withParams(
+                {description: description,type:"maxSize"},
+                (file) => !helpers.req(file?.name) || file?.size<=ff.maxSize
+            )
+          }
+        }                 
+        if("minValue" in ff){ 
+          attrs.minValue=minValue(ff.minValue)
+        }
+        if("maxValue" in ff){ 
+          attrs.maxValue=maxValue(ff.maxValue)
+        }
         if("minLength" in ff){ attrs.minLength=minLength(ff.minLength)}
         if("maxLength" in ff){ attrs.maxLength=maxLength(ff.maxLength)}
         // regex validation
         if("regex" in ff){
           regexObj = new RegExp(ff.regex.expression)
           description = ff.regex.description
-          attrs.regex = helpers.withParams(
-              {description: description,type:"regex"},
-              (value) => !helpers.req(value) || regexObj.test(value)
-          )
+          if(ff.type=="file"){
+            attrs.regex = helpers.withParams(
+                {description: description,type:"regex"},
+                (file) => !helpers.req(file?.name) || regexObj.test(file?.name)
+            )
+          }else{
+            attrs.regex = helpers.withParams(
+                {description: description,type:"regex"},
+                (value) => !helpers.req(value) || regexObj.test(value)
+            )
+          }
         }
         // validation based on value of another field
         if("validIf" in ff){
@@ -1849,12 +1886,16 @@
           return true
         }
       },
-      async uploadFile(file){
+      async uploadFile(fieldname,file){
         var ref=this
         ref.$toast.info(`Start uploading ${file.name}`)
         var formData = new FormData();
         formData.append("file", file);
-        const result = await axios.post('/api/v1/job/upload/', formData, TokenStorage.getAuthenticationMultipart())
+        const config = {
+          ...TokenStorage.getAuthenticationMultipart(),
+            onUploadProgress: progressEvent => {Vue.set(ref.fileProgress,fieldname,Math.round(progressEvent.loaded/progressEvent.total*100))}
+        }
+        const result = await axios.post('/api/v1/job/upload/', formData, config)
         return result.data
       },
       // execute the form
@@ -1883,7 +1924,7 @@
             let uploadedFilesCount = 0;
             const uploadPromises = fileKeys.map(async (key) => {
               try {
-                var result = await ref.uploadFile(postdata.files[key]);
+                var result = await ref.uploadFile(key,postdata.files[key]);
                 var fileObj
                 // upload was success
                 if(result.status=="success"){
@@ -1891,7 +1932,7 @@
                   fileObj = result.data.output
                   // and store it
                   postdata.files[key] = fileObj
-                  ref.$toast.success(`Finished uploading ${fileObj.originalname}`);
+                  // ref.$toast.success(`Finished uploading ${fileObj.originalname}`);
                   // uploadedFilesCount++;
                   // const progressPercentage = (uploadedFilesCount / totalFiles) * 100;
                   // ref.$toast.info(`File uploaded ${uploadedFilesCount} of ${totalFiles} (${progressPercentage.toFixed(2)}%)`);
@@ -1908,7 +1949,7 @@
             });
 
             await Promise.all(uploadPromises);
-            ref.$toast.info(`All files uploaded`);
+            // ref.$toast.info(`All files uploaded`);
           }catch(e){
             ref.$toast.error(e.message);
             ref.resetResult()
@@ -2290,5 +2331,7 @@ pre{
     color:#333;
 
   }
-
+.progress.is-tiny {
+    height: 0.2rem;
+}
 </style>
