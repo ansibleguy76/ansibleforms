@@ -25,7 +25,7 @@ Repo.findAll = function () {
           logger.notice("Force creating path : " + directory)
           fs.mkdirSync(directory, { recursive: true,force:true });
         }catch(err){
-          logger.error(err)
+          logger.error("Failed to create the path : ", err)
           reject(err)
           return;
         }
@@ -34,7 +34,7 @@ Repo.findAll = function () {
         .filter(dir => dir.isDirectory())
         .map(dir => dir.name)
     }catch(err){
-      logger.error(err)
+      logger.error("Failed to find the repo : ", err)
       reject(err)
       return;
     }
@@ -119,7 +119,7 @@ Repo.create = function (uri,command,username,email) {
           logger.notice("Force creating path : " + directory)
           fs.mkdirSync(directory, { recursive: true,force:true });
         }catch(err){
-          logger.error(err)
+          logger.error("Failed to create the path : ", err)
           reject(err)
           return;
         }

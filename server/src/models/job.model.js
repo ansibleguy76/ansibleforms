@@ -89,7 +89,7 @@ Exec.executeCommand = (cmd,jobid,counter) => {
               process.kill(child.pid,"SIGTERM");
             }
           })
-          .catch((error)=>{logger.error(error)})
+          .catch((error)=>{logger.error("Failed to create output : ", error)})
       })
       // add error eventlistener to the process to save output
       child.stderr.on('data',function(data){
@@ -102,7 +102,7 @@ Exec.executeCommand = (cmd,jobid,counter) => {
               process.kill(child.pid,"SIGTERM");
             }
           })
-          .catch((error)=>{logger.error(error)})
+          .catch((error)=>{logger.error("Failed to create output: ", error)})
       })
       // add exit eventlistener to the process to handle status update
       child.on('exit',function(data){
@@ -194,10 +194,10 @@ Job.endJobStatus = (jobid,counter,stream,status,message) => {
         .then(()=>{
            return Job.sendStatusNotification(jobid)
         })
-        .catch((error)=>logger.error(error))
+        .catch((error)=>logger.error("Failed to update job : ", error))
     })
     .catch((error)=>{
-      logger.error(error)
+      logger.error("Failed to create joboutput.", error)
     })
 }
 Job.printJobOutput = (data,type,jobid,counter,incrementIssue) => {
@@ -303,7 +303,7 @@ Job.findById = function (user,id,asText,logSafe=false) {
           })
       })
       .catch((err)=>{
-        logger.error(err.toString())
+        logger.error("Error : ", err)
         return []
       })
 };
@@ -428,7 +428,7 @@ Job.launch = function(form,formObj,user,creds,extravars,parentId=null,next) {
 
     })
     .catch((err)=>{
-      logger.error(err)
+      logger.error("Failed to create job : ", err)
       return Promise.resolve(err)
     })
 };
@@ -491,7 +491,7 @@ Job.continue = function(form,user,creds,extravars,jobid,next) {
                         try{
                           credentials[key]=await Credential.findByName(value)
                         }catch(err){
-                          logger.error(err)
+                          logger.error("Failed to find credentials by name : ", err)
                         }
                       }
 
@@ -602,7 +602,7 @@ Job.approve = function(user,id,next){
           Job.continue(j.form,user,credentials,extravars,id,(job)=>{
              next(job)
           })
-          .catch((err)=>{logger.error(err)})
+          .catch((err)=>{logger.error("Failed to continue the job : ", err)})
         }else{
           throw `Job ${id} is not in approval status (status=${j.status})`
         }
@@ -636,7 +636,7 @@ Job.sendApprovalNotification = function(approval,extravars,jobid){
       return Settings.mailsend(approval.notifications.join(","),subject,message)
     })
     .then((messageid)=>{logger.notice("Approval mail sent to " + approval.notifications.join(",") + " with id " + messageid)})
-    .catch((err)=>{logger.error(err.message)})
+    .catch((err)=>{logger.error("Failed : ", err)})
 }
 Job.sendStatusNotification = function(jobid){
   logger.notice(`Sending status mail for jobid ${jobid}`)
@@ -691,7 +691,7 @@ Job.sendStatusNotification = function(jobid){
                             .replaceAll("${color2}",color2)
             return Settings.mailsend(notifications.recipients.join(","),subject,message)
           })
-          .catch((err)=>{logger.error(err.message)})
+          .catch((err)=>{logger.error("Failed : ", err)})
       }
     })
     .then((messageid)=>{
@@ -701,7 +701,7 @@ Job.sendStatusNotification = function(jobid){
         logger.notice("Status mail sent with id " + messageid)}
       }
     )
-    .catch((err)=>{logger.error(err.message)})
+    .catch((err)=>{logger.error("Failed : ", err)})
 }
 Job.reject = function(user,id){
   return Job.findById(user,id,true)
@@ -750,7 +750,7 @@ Multistep.launch = async function(form,steps,user,extravars,creds,jobid,counter,
       Job.printJobOutput(`APPROVE [${form}] ${'*'.repeat(69-form.length)}`,"stdout",jobid,++counter)
       return Job.update({status:"approve",approval:JSON.stringify(approval),end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid)
         .then(()=>{return true})
-        .catch((error)=>{logger.error(error)})
+        .catch((error)=>{logger.error("Failed to update job : ", error)})
     }else{
       logger.notice("Continuing multistep " + form + " it has been approved")
       // reset flag for steps
@@ -797,7 +797,7 @@ Multistep.launch = async function(form,steps,user,extravars,creds,jobid,counter,
           // ------- SKIPPING HANDLED -----------------------
           logger.notice("Running step " + step.name)
           Job.update({step:step.name,status:"running"},jobid)
-            .catch((error)=>{logger.error(error)})
+            .catch((error)=>{logger.error("Failed to update job", error)})
            // set step in parent
           // if this step has an approval
           if(step.approval){
@@ -806,7 +806,7 @@ Multistep.launch = async function(form,steps,user,extravars,creds,jobid,counter,
               Job.sendApprovalNotification(step.approval,extravars,jobid)
               Job.printJobOutput(`APPROVE [${step.name}] ${'*'.repeat(69-step.name.length)}`,"stdout",jobid,++counter)
               Job.update({status:"approve",approval:JSON.stringify(step.approval),end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid)
-                .catch((error)=>{logger.error(error)})
+                .catch((error)=>{logger.error("Failed to update job", error)})
               approve=true // set approve flag
               return true // complete this step
             }else{
@@ -938,7 +938,7 @@ Ansible.launch=(playbook,ev,inv,tags,limit,c,d,v,k,credentials,jobid,counter,app
       Job.sendApprovalNotification(approval,ev,jobid)
       Job.printJobOutput(`APPROVE [${playbook}] ${'*'.repeat(69-playbook.length)}`,"stdout",jobid,++counter)
       Job.update({status:"approve",approval:JSON.stringify(approval),end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid)
-       .catch((error)=>{logger.error(error)})
+       .catch((error)=>{logger.error("Failed to update job : ", error)})
       return true
     }else{
       logger.notice("Continuing ansible " + playbook + " it has been approved")
@@ -1030,7 +1030,7 @@ Awx.abortJob = function (id, next) {
                   next(null,job)
                 })
                 .catch(function (error) {
-                  logger.error(error.message)
+                  logger.error("Failed to abort awx job : ", error)
                   next(`failed to abort awx job ${id}`)
                 })
           }else{
@@ -1040,12 +1040,12 @@ Awx.abortJob = function (id, next) {
           }
         })
         .catch(function (error) {
-          logger.error(error.message)
+          logger.error("Failed to abort awx job : ", error)
           next(`failed to abort awx job ${id}`)
         })
       })
       .catch((err)=>{
-        logger.error(err)
+        logger.error("Failed to get AWX configuration : ", err)
         next(`failed to get AWX configuration`)
       })
 };
@@ -1061,7 +1061,7 @@ Awx.launch = function (template,ev,inv,tags,limit,c,d,v,credentials,awxCredentia
         Job.sendApprovalNotification(approval,ev,jobid)
         Job.printJobOutput(`APPROVE [${template}] ${'*'.repeat(69-template.length)}`,"stdout",jobid,++counter)
         Job.update({status:"approve",approval:JSON.stringify(approval),end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid)
-         .catch((error)=>{logger.error(error)})
+         .catch((error)=>{logger.error("Failed to update job : ", error)})
         return true
       }else{
         logger.notice("Continuing awx " + template + " it has been approved")
@@ -1131,7 +1131,7 @@ Awx.launchTemplate = async function (template,ev,inventory,tags,limit,c,d,v,cred
   awxCredentialList=[...new Set(awxCredentialList)]
   return Awx.getConfig()
   .catch((err)=>{
-    logger.error(err)
+    logger.error("Failed to get AWX configuration : ", err)
     message= `failed to get AWX configuration`
     Job.endJobStatus(jobid,++counter,"stderr",status,message)
     throw message
@@ -1186,7 +1186,7 @@ Awx.launchTemplate = async function (template,ev,inventory,tags,limit,c,d,v,cred
                 message+="\r\n" + YAML.stringify(error.response.data)
                 Job.endJobStatus(jobid,++counter,"stderr","success",`Failed to launch template ${template.name}. ${message}`)
             }else{
-                logger.error(error)
+                logger.error("Failed to launch : ", error)
                 Job.endJobStatus(jobid,++counter,"stderr","success",`Failed to launch template ${template.name}. ${error}`)
             }
             throw message
@@ -1218,7 +1218,7 @@ Awx.launchTemplate = async function (template,ev,inventory,tags,limit,c,d,v,cred
 Awx.trackJob = function (job,jobid,counter,previousoutput,previousoutput2=undefined,lastrun=false,retryCount=0) {
   return Awx.getConfig()
   .catch((err)=>{
-    logger.error(err)
+    logger.error("Failed to get AWX configuration : ", err)
     failed(`failed to get AWX configuration`,jobid,counter)
     return Promise.resolve(err)
   })
@@ -1260,7 +1260,7 @@ Awx.trackJob = function (job,jobid,counter,previousoutput,previousoutput2=undefi
                   if(dbjobstatus && dbjobstatus=="abort"){
                     Job.printJobOutput("Abort requested","stderr",jobid,++counter)
                     Job.update({status:"aborting",end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid)
-                     .catch((error)=>{logger.error(error)})
+                     .catch((error)=>{logger.error("Failed to update job : ", error)})
                     Awx.abortJob(j.id,(error,res)=>{
                       if(error){
                         Job.endJobStatus(jobid,++counter,"stderr","failed","Abort failed \n"+error)
@@ -1339,7 +1339,7 @@ Awx.trackJob = function (job,jobid,counter,previousoutput,previousoutput2=undefi
 Awx.getJobTextOutput = function (job) {
   return Awx.getConfig()
   .catch((err)=>{
-    logger.error(err)
+    logger.error("Failed to get AWX configuration : ", err)
     failed(`failed to get AWX configuration`,jobid,counter)
     return Promise.resolve(err)
   })
@@ -1365,7 +1365,7 @@ Awx.getJobTextOutput = function (job) {
 Awx.findJobTemplateByName = function (name) {
   return Awx.getConfig()
   .catch((err)=>{
-    logger.error(err)
+    logger.error("Failed to get AWX configuration : ", err)
     result(`failed to get AWX configuration`)
   })
   .then((awxConfig)=>{
@@ -1405,7 +1405,7 @@ Awx.findJobTemplateByName = function (name) {
 Awx.findCredentialByName = function (name) {
   return Awx.getConfig()
   .catch((err)=>{
-    logger.error(err)
+    logger.error("Failed to get AWX configuration : ", err)
     result(`failed to get AWX configuration`)
     return Promise.resolve(err)
   })
@@ -1436,7 +1436,7 @@ Awx.findCredentialByName = function (name) {
 Awx.findCredentialsByTemplate = function (id) {
   return Awx.getConfig()
   .catch((err)=>{
-    logger.error(err)
+    logger.error("Failed to get AWX configuration : ", err)
     result(`failed to get AWX configuration`)
     return Promise.resolve(err)
   })
@@ -1463,7 +1463,7 @@ Awx.findCredentialsByTemplate = function (id) {
 Awx.findInventoryByName = function (name) {
   return Awx.getConfig()
   .catch((err)=>{
-    logger.error(err)
+    logger.error("Failed to get AWX configuration : ", err)
     result(`failed to get AWX configuration`)
     return Promise.resolve(err)
   })
@@ -1505,7 +1505,7 @@ Git.push = function (repo,ev,jobid,counter,approval,approved=false) {
         Job.sendApprovalNotification(approval,ev,jobid)
         Job.printJobOutput(`APPROVE [${repo.file}] ${'*'.repeat(69-repo.file.length)}`,"stdout",jobid,++counter)
         Job.update({status:"approve",approval:JSON.stringify(approval),end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid)
-         .catch((error)=>{logger.error(error)})
+         .catch((error)=>{logger.error("Failed to update job : ", error)})
         return true
       }else{
         logger.notice("Continuing awx " + repo.file + " it has been approved")

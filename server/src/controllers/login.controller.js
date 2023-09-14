@@ -22,7 +22,7 @@ function userToJwt(user){
   logger.info("Storing refreshtoken in database for user " + user.username)
   User.storeToken(user.username,user.type,refreshtoken,function(err,result){
     if(err){
-      logger.error(err)
+      logger.error("Failed to store token. ",err)
     }else{
       logger.info(result)
     }

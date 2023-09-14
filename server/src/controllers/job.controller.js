@@ -108,7 +108,7 @@ exports.launch = async function(req, res) {
             res.json(new RestResult("success","succesfully launched form",job,""))
           })
         }catch(err){
-          logger.error(err.toString())
+          logger.error("Error : ", err)
           res.json(new RestResult("success","failed to launch form",null,err.toString()))
         }
     }
@@ -127,7 +127,7 @@ exports.relaunchJob = async function(req, res) {
         res.json(new RestResult("success",`Job has been relaunched with job id ${job.id}`,"",""))
       })
     }catch(err){
-      logger.error(err.toString())
+      logger.error("Error : ", err)
       res.json(new RestResult("error",`Failed to relaunch : ${err.toString()}`,"",""))
     }
 };
@@ -145,7 +145,7 @@ exports.approveJob = async function(req, res) {
         res.json(new RestResult("success",`Job ${jobid} has been approved`,"",""))
       })
     }catch(err){
-      logger.error(err.toString())
+      logger.error("Error : ", err)
       res.json(new RestResult("error",`Failed to approve : ${err.toString()}`,"",""))
     }    
 };
@@ -162,7 +162,7 @@ exports.rejectJob = async function(req, res) {
       await Job.reject(user,jobid)
       res.json(new RestResult("success",`Job ${jobid} has been rejected`,"",""))
     }catch(err){
-      logger.error(err.toString())
+      logger.error("Error : ", err)
       res.json(new RestResult("error",`Failed to reject : ${err.toString()}`,"",""))
     }    
 

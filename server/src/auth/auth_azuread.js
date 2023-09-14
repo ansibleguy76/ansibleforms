@@ -40,8 +40,7 @@ exports.initialize = async () =>{
     }
 
   }catch(err){
-    logger.error("Failed to getting azureConfig or settings")
-    logger.error(err)
+    logger.error("Failed to getting azureConfig or settings. ",err)
     return false
   }
   try{
@@ -51,7 +50,7 @@ exports.initialize = async () =>{
       return true
     }
   }catch(err){
-    logger.error(err)
+    logger.error("Failed to remove strategy. ", err)
   }  
   if(!azureConfig || !url){
     logger.error("Could not enable Azure strategy, no config or url")
@@ -79,8 +78,7 @@ exports.initialize = async () =>{
     return true
 
   }catch(err){
-    logger.error("Failed to initialize Azure AD strategy")
-    logger.error(err)
+    logger.error("Failed to initialize Azure AD strategy. ",err)
     return false
   }
   
