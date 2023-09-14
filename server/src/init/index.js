@@ -1,11 +1,12 @@
 const logger=require("../lib/logger");
 var Ssh = require('../models/ssh.model');
 var Form = require('../models/form.model');
-var Job = require('../models/job.model')
+var Job = require('../models/job.model');
+
 
 Ssh.generate(false)
   .catch((err)=>{
-    logger.error("Failed to generate ssh keys : " + err)
+    logger.warning("Failed to generate ssh keys : " + err)
   })
 Form.initBackupFolder()
 
