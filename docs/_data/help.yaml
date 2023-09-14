@@ -3995,3 +3995,70 @@
       # explained : 
       # we take our default and merge it with the source where we filter out the default (to avoid doubles)    
       # the default is thus shifted to the first element, which we can now select with the default `__auto__`
+  - name: Query AWX/Tower
+    short: Query information from AWX or Tower
+    description: |
+      Sometimes you want to create dropdown boxes, with data from AWX or Tower.  
+      You can use `fn.fnRestBasic` or `fn.fnRestJwtSecure` to query to do this.  
+      
+    language: yaml
+    code: |
+      name: Query awx
+      type: awx
+      template: my_template # will be overwritten by the field __template__
+      description: ""
+      credentials:
+        - vmware
+      execution_environment: my_execution_environment
+      roles:
+        - public
+      categories: []
+      inventory: my_inventory # will be overwritten by the field __inventory__
+      tileClass: has-background-info-light
+      icon: bullseye
+      fields:
+        # make sure you add credentials called "awx_rest" where the password holds the token
+        # if you like basic authentication, switch the expressions below to fn.fnRestBasic instead
+
+        - name: organization
+          label: Organization
+          type: enum
+          default: __auto__
+          expression: "fn.fnRestJwtSecure('get','https://172.16.50.1/api/v2/organizations','','awx_rest','[.results[]]')"
+          columns:
+            - name
+          valueColumn: id # => we want the organisation field to hold the id !!
+        - name: __template__  # use this special name to override the template from the form
+          label: Inventory
+          type: enum
+          default: __auto__
+          expression: "fn.fnRestJwtSecure('get','https://172.16.50.1/api/v2/job_templates?organization=$(organization)','','awx_rest','[.results[]]')"
+          columns:
+            - name
+          valueColumn: name
+        - name: __inventory__  # use this special name to override the inventory from the form
+          label: Inventory
+          type: enum
+          default: __auto__
+          expression: "fn.fnRestJwtSecure('get','https://172.16.50.1/api/v2/inventories?organization=$(organization)','','awx_rest','[.results[]]')"
+          columns:
+            - name
+          valueColumn: name    
+        - name: __credentials__  # use this special name to override the credentials from the form
+          label: Inventory
+          type: enum
+          expression: "fn.fnRestJwtSecure('get','https://172.16.50.1/api/v2/credentials?organization=$(organization)','','awx_rest','[.results[]]')"
+          multiple: true
+          default: __auto__
+          columns:
+            - name
+          valueColumn: name     
+        - name: __execution_environment__  # use this special name to override the execution_environment from the form
+          label: Inventory
+          type: enum
+          expression: "fn.fnRestJwtSecure('get','https://172.16.50.1/api/v2/execution_environments?organization=$(organization)','','awx_rest','[.results[]]')"
+          default: __auto__
+          columns:
+            - name
+          valueColumn: name           
+  
