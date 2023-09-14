@@ -136,6 +136,13 @@
         },
         checkDatabase(){
           var ref=this;
+
+          // Check if the current route is '/install' and skip the database check
+          if (this.$route.path === '/install') {
+            this.isLoaded = true;
+            return; // Skip the database check
+          }
+
           console.log("Checking database")
           axios.get('/api/v1/schema')                               // check database
           .then((result)=>{
