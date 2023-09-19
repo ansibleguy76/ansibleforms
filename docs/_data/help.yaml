@@ -2771,8 +2771,7 @@
                     name: CMDB
                     type: mysql
                   query: SELECT id,name FROM users
-                  previewColumn:
-                  - name
+                  previewColumn: name
           - name: allowInsert
             type: boolean
             group: interaction
@@ -3211,8 +3210,7 @@
                       name: CMDB
                       type: mysql
                     query: SELECT id,name FROM users
-                    previewColumn:
-                    - name
+                    previewColumn: name
         - name: Repository
           itemName: attribute
           link: forms/form/repo
@@ -3460,6 +3458,27 @@
       description: Convert bytes to gigabytes
       code: | 
         ($(size_bytes)/1024/1024/1024).toFixed(2)  // toFixed is native javascript method
+    - name: Get a name with incremental numbering
+      description: |
+        When working with auto numbering, you might want to find the next name in an array of stings that some numbering.   
+        Also available as server side expression (prefixed with `fn.`)
+      code: |
+        fnGetNumberedName(['server001','server002','server005'],'server###','server001',false)
+        // result : "server006"
+
+        fnGetNumberedName(['server001','server002','server005'],'server###','server001',true)
+        // result : "server003"
+
+        fnGetNumberedName($(fieldlist),'server###','server001',true)
+        // use another expression field as input for the array
+
+        // fnGetNumberedName(array,pattern,default,fillgaps)
+        // This function searches for a numbered pattern in a list of string, 
+        // increases the highest number and returns a name like the pattern
+        // - array : an array object, you can use a placeholder to an expression where you know it's an array
+        // - pattern : a string that hold the # as a digit
+        // - default : if no value is found, return this default
+        // - fillgaps : a boolean to indicate it can fill gaps in the numbers, 1,2,3,6 => 4           
     - name: object-array manipulation
       description: |
         When working with object-arrays, you will want to control and manipulate that data.  
@@ -3775,6 +3794,9 @@
           '[.records[] | {"Available Capacity":.storage_capacity.available | fn2GB | fnRound }]')
         // note you need to pipe into the functions
     - name: Get a name with incremental numbering
+      description: |
+        In an array of strings containing incremental numbers (server001,server002, ...), you might want to search the next available name.  
+        Also available as local expression (without the `fn.` prefix)
       code: |
         fn.fnGetNumberedName(['server001','server002','server005'],'server###','server001',false)
         // result : "server006"
