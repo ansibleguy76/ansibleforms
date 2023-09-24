@@ -8,6 +8,17 @@ Postgres = {}
 Postgres.query=function(connection_name,query){
 
   return Credential.findByName(connection_name)
+  .then((creds)=>{
+    var config = {
+        host: creds.host,
+        user: creds.user,
+        password: creds.password,
+        database: creds.db_name||creds.user,
+        port: creds.port,
+    };
+
+    return config
+  })  
   .then((config)=>{
     logger.debug(`[${connection_name}] query : ${query}`)
     return new Promise((resolve,reject)=>{

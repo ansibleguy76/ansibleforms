@@ -37,6 +37,7 @@
                 <BulmaInput icon="lock" v-model="credential.password" type="password" label="Password" placeholder="Password" :required="true" :hasError="$v.credential.password.$invalid" :errors="[]" />
                 <BulmaInput icon="server" v-model="credential.host" label="Host" placeholder="Host" :required="true" :hasError="$v.credential.host.$invalid" :errors="[]" />
                 <BulmaInput icon="door-closed" v-model="credential.port" label="Port" placeholder="3306" :required="true" :hasError="$v.credential.port.$invalid" :errors="[]" />
+                <BulmaInput icon="database" v-model="credential.db_name" label="Database" placeholder="Database" />
                 <BulmaInput icon="info-circle" v-model="credential.description" label="Description" placeholder="Description" :required="true" :hasError="$v.credential.description.$invalid" :errors="[]" />
                 <BulmaSelect icon="database" v-model="credential.db_type" label="Database type" :list="['mysql','mssql','postgres','mongodb']"  />
                 <BulmaCheckbox checktype="checkbox" v-model="credential.secure" label="Secure connection" /><br><br>
@@ -80,6 +81,7 @@
             password:"",
             host:"",
             port:3306,
+            db_name:"",
             description:"",
             secure:false,
             db_type:""
