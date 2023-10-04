@@ -653,8 +653,8 @@
         return this.jobResult?.data?.output?.replace(/<span class='low[^<]*<\/span>/g,"").replace(/\r\n/g,"<br>").replace(/(<br>\s*){3,}/ig,"<br><br>") // eslint-disable-line
       },
       filteredSubJobOutput(){
-        if(!this.filterOutput) return this.subjob?.output?.replace(/\r\n/g,"<br>")
-        return this.subjob?.output?.replace(/<span class='low[^<]*<\/span>/g,"").replace(/\r\n/g,"<br>").replace(/(<br>\s*){3,}/ig,"<br><br>") // eslint-disable-line
+        if(!this.filterOutput) return this.subjob?.data?.output?.replace(/\r\n/g,"<br>")
+        return this.subjob?.data?.output?.replace(/<span class='low[^<]*<\/span>/g,"").replace(/\r\n/g,"<br>").replace(/(<br>\s*){3,}/ig,"<br><br>") // eslint-disable-line
       },      
       // form loaded and validation ready
       formIsReady(){
@@ -1311,6 +1311,7 @@
                 // other fields, grab a valid value
                 fieldvalue = ref.getFieldValue(ref.form[foundfield],column,true);// get value of aaa.bbb
               }
+
               // get dynamic field status
               if(foundfield in ref.dynamicFieldStatus){
                 targetflag = ref.dynamicFieldStatus[foundfield];                  // and what is the currect status of xxx, in case it's also dyanmic ?
@@ -1322,10 +1323,13 @@
             // if the variable is viable and not being changed, replace it
             // console.log(foundfield + "("+fieldvalue+")" + " -> targetflag = " + targetflag)
             // console.log(foundfield + " -> targetflag = " + targetflag)
-            if(((targetflag=="variable"||targetflag=="fixed"||targetflag=="default") && fieldvalue!==undefined && value!=undefined)||((ignoreIncomplete||false) && value!=undefined)){                // valid value ?
-                if(fieldvalue==undefined){
+            if(((targetflag=="variable"||targetflag=="fixed"||targetflag=="default") && fieldvalue!==undefined)||((ignoreIncomplete||false) && value!==undefined)){                // valid value ?
+                if(fieldvalue===undefined){
                   fieldvalue="__undefined__"   // catch undefined values
                 }
+                if(fieldvalue===null){
+                  fieldvalue="__null__"   // catch null values
+                }                
                 fieldvalue=ref.stringifyValue(fieldvalue)
                 // console.log("replacing placeholder")
                 value=value.replace(foundmatch,fieldvalue);               // replace the placeholder with the value
@@ -1335,6 +1339,7 @@
                 value=undefined      // cannot evaluate yet
             }
             hasPlaceholders=true;
+
         }
         if(retestRegex.test(value)){                     // still placeholders found ?
             value=undefined                           // cannot evaluate yet
@@ -1342,6 +1347,8 @@
         if(value!=undefined){
            value=value.replace("'__undefined__'","undefined")  // replace undefined values
            value=value.replace("__undefined__","undefined")
+           value=value.replace("'__null__'","null")  // replace undefined values
+           value=value.replace("__null__","null")
         }
         return {"hasPlaceholders":hasPlaceholders,"value":value}          // return the result
       },
@@ -1801,13 +1808,12 @@
               keys = Object.keys(field[0])    // get properties
               if(keys.length>0){
                 key = (keys.includes(column))?column:keys[0] // get column, fall back to first
-                field=field.map((item,i) => ((item)?(item[key]??item):undefined))  // flatten array
+                field=field.map((item) => ((item)?((item[key]==null)?null:(item[key]??item)):undefined))  // flatten array
               }else{
                 field=(!keepArray)?undefined:field // force undefined if we don't want arrays
               }
             } // no else, array is already flattened
             field=(!wasArray || !keepArray)?field[0]:field // if it wasn't an array, we take first again
-
           }else{
             field=(!keepArray)?undefined:field // force undefined if we don't want arrays
           }
@@ -1965,24 +1971,14 @@
           postdata.extravars = this.formdata
           postdata.formName = this.currentForm.name;
           postdata.credentials = {}
-          postdata.awxCredentials = {}
+          // add all fields that are marked as credential, and add them to the credentials object (in the root of the postdata)
           this.currentForm.fields
             .filter(f => f.asCredential==true)
             .forEach(f => {
               postdata.credentials[f.name]=this.formdata[f.name]
             })
-          if(this.currentForm.steps)
-            this.currentForm.steps
-              .forEach(s => {
-                if(s.awxCredentials)
-                  s.awxCredentials
-                    .forEach(f => {
-                      if(this.formdata[f]){
-                        postdata.awxCredentials[f]=this.formdata[f]
-                      }
-                    })
-              })
 
+ 
           this.jobResult.message= "Connecting with job api ";
           this.jobResult.status="info";
           axios.post("/api/v1/job/",postdata,TokenStorage.getAuthentication())

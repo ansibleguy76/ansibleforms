@@ -110,7 +110,9 @@
               },
               "template": {"not":{}},
               "repo": {"not":{}},
-              "steps": {"not":{}}
+              "steps": {"not":{}},
+              "awxCredentials": {"not":{}},
+              "executionEnvironment": {"not":{}}
             },
             "required": ["playbook"]
           },
@@ -133,11 +135,13 @@
               "playbook": {"not":{}},
               "template": {"not":{}},
               "inventory": {"not":{}},
+              "awxCredentials": {"not":{}},
               "tags": {"not":{}},
               "check": {"not":{}},
               "limit": {"not":{}},
               "diff": {"not":{}},
-              "steps": {"not":{}}
+              "steps": {"not":{}},
+              "executionEnvironment": {"not":{}}
             },
             "required": ["repo"]
           },
@@ -150,11 +154,13 @@
               "repo": {"not":{}},
               "template": {"not":{}},
               "inventory": {"not":{}},
+              "awxCredentials": {"not":{}},
               "tags": {"not":{}},
               "check": {"not":{}},
               "limit": {"not":{}},
               "diff": {"not":{}},
-              "key": {"not":{}}
+              "key": {"not":{}},
+              "executionEnvironment": {"not":{}}
             },
             "required": ["steps"]
           }
@@ -334,7 +340,8 @@
                       "template": {"not":{}},
                       "repo": {"not":{}},
                       "steps": {"not":{}},
-                      "awxCredentials": {"not":{}}
+                      "awxCredentials": {"not":{}},
+                      "executionEnvironment": {"not":{}}
                     },
                     "required": ["playbook"]
                   },
@@ -362,7 +369,8 @@
                       "limit": {"not":{}},
                       "diff": {"not":{}},
                       "steps": {"not":{}},
-                      "awxCredentials": {"not":{}}
+                      "awxCredentials": {"not":{}},
+                      "executionEnvironment": {"not":{}}
                     },
                     "required": ["repo"]
                   }
@@ -389,6 +397,14 @@
                     "default": ""
                   }
                 },
+                "credentials": {
+                  "type": "object",
+                  "patternProperties": {
+                    "^.*$": { "type": "string"}
+                  },
+                  "additionalProperties": false,
+                  "uniqueProperties": true            
+                },           
                 "inventory": {"type": "string"},
                 "tags": {"type": "string"},
                 "check": {"type": "boolean"},
@@ -481,7 +497,23 @@
             },
             "additionalProperties": false
           },
+          "credentials": {
+            "type": "object",
+            "patternProperties": {
+              "^.*$": { "type": "string"}
+            },
+            "additionalProperties": false,
+            "uniqueProperties": true            
+          },    
+          "awxCredentials": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "default": ""
+            }
+          },                              
           "inventory": {"type": "string"},
+          "executionEnvironment": {"type": "string"},
           "tags": {"type": "string"},
           "check": {"type": "boolean"},
           "limit": {"type": "string"},

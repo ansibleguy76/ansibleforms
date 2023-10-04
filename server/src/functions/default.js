@@ -9,6 +9,7 @@ const jq=require("node-jq")
 const YAML=require("yaml")
 const {exec} = require('child_process');
 const {inspect} = require('node:util')
+const JSONbig = require('json-bigint');
 const _ = require("lodash")
 const {firstBy,thenBy}=require("thenby")
 const ip=require("ip")
@@ -99,7 +100,7 @@ exports.fnJq=async function(input,jqe){
     try{
       result=await jq.run(jqDef+jqe, input, { input:"json",output:"json" })
     }catch(e){
-      logger.error("Error in fnJq : " + e)
+      logger.error("Error in fnJq : ",e)
     }
     return result
 }
@@ -162,7 +163,7 @@ exports.fnReadJsonFile = async function(path,jqe=null) {
       result=await jq.run(jqDef+jqe, result, { input:"json",output:"json" })
     }
   }catch(e){
-    logger.error("Error in fnReadJsonFile : " + e)
+    logger.error("Error in fnReadJsonFile : ",e)
   }
   return result
 };
@@ -176,7 +177,7 @@ exports.fnReadYamlFile = async function(path,jqe=null) {
       result=await jq.run(jqDef+jqe, result, { input:"json",output:"json" })
     }
   }catch(e){
-    logger.error("Error in fnReadYamlFile : " + e)
+    logger.error("Error in fnReadYamlFile : ",e)
   }
   return result
 };
@@ -191,7 +192,7 @@ exports.fnCredentials = async function(name){
   }
   return result
 }
-exports.fnRestBasic = async function(action,url,body,credential=null,jqe=null,sort=null){
+exports.fnRestBasic = async function(action,url,body,credential=null,jqe=null,sort=null,hasBigInt=false){
   var headers={}
   if(credential){
     try{
@@ -201,9 +202,9 @@ exports.fnRestBasic = async function(action,url,body,credential=null,jqe=null,so
     }
     headers.Authorization="Basic " + Buffer.from(restCreds.user + ':' + restCreds.password).toString('base64')
   }
-  return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort)
+  return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort,hasBigInt)
 }
-exports.fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort=null){
+exports.fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort=null,hasBigInt=false){
   if(!action || !url){
     logger.warning("[fnRest] No action or url defined")
     return undefined
@@ -214,6 +215,10 @@ exports.fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort
   var axiosConfig = {
     headers: {},
     httpsAgent:httpsAgent
+  }
+  if(hasBigInt){
+    logger.debug("Using bigint transform")
+    axiosConfig.transformResponse = (data => JSONbig.parse(data) )
   }
   if(typeof headers=="object"){
     axiosConfig.headers=headers
@@ -236,25 +241,25 @@ exports.fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort
     }
     if(sort)result=exports.fnSort(result,sort)
   }catch(e){
-    logger.error("Error in fnRestAdvanced : " + e)
+    logger.error("Error in fnRestAdvanced : ",e)
   }
   return result
 
 }
-exports.fnRestJwt = async function(action,url,body,token,jqe=null,sort=null){
+exports.fnRestJwt = async function(action,url,body,token,jqe=null,sort=null,hasBigInt=false){
   var headers={}
   if(token){
     headers.Authorization="Bearer " + token
   }
-  return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort)
+  return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort,hasBigInt)
 }
-exports.fnRestJwtSecure = async function(action,url,body,tokenname,jqe=null,sort=null){
+exports.fnRestJwtSecure = async function(action,url,body,tokenname,jqe=null,sort=null,hasBigInt=false){
   var headers={}
   if(tokenname){
     var token = await exports.fnCredentials(tokenname)
     headers.Authorization="Bearer " + token.password
   }
-  return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort)
+  return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort,hasBigInt)
 }
 exports.fnSsh = async function(user,host,cmd,jqe=null){
 

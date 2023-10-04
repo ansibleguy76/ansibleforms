@@ -16,6 +16,7 @@ var Credential=function(credential){
     this.host = credential.host;
     this.port = credential.port;
     this.user = credential.user;
+    this.db_name = credential.db_name;
     this.secure = (credential.secure)?1:0;
     this.password = encrypt(credential.password);
     this.description = credential.description;
@@ -81,7 +82,7 @@ Credential.findByName = function (name) {
   logger.debug(`Finding credential ${name}`)
   var cred = cache.get(name)
   if(cred==undefined){
-    return mysql.do("SELECT host,port,name,user,password,secure,db_type FROM AnsibleForms.`credentials` WHERE name=?;",name)
+    return mysql.do("SELECT host,port,db_name,name,user,password,secure,db_type FROM AnsibleForms.`credentials` WHERE name=?;",name)
     .then((res)=>{
       if(res.length>0){
         res[0].multipleStatements = true

@@ -14,6 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 -   New formfield type 'file' to upload files prior to job execution
+-   New Database property in credentials, needed for postgres, and can be used for mysql and mssql
+-   credentials property on forms => array of credentials to add
+-   awxCredentials property on forms => array of awxCredentials to add
+-   executionEnvironment property on forms => choose awx executionEnvironment
+
+### Fixed
+
+-   Int64 issues in rest results, new rest parameter 'hasBigInt'
 
 ## [4.0.15] - 2023-08-09
 

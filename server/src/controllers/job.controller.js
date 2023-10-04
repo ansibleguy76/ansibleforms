@@ -97,10 +97,7 @@ exports.launch = async function(req, res) {
         var form = req.body.formName || "";
         var extravars = req.body.extravars || {}
         var creds = req.body.credentials || {}
-        var awxCreds = req.body.awxCredentials || {}
-        for (const [key, value] of Object.entries(awxCreds)) {
-          creds["awx___"+key]=value
-        }
+        // new in 4.0.16, awxCreds are extracted from form and extravars
         var user = req?.user?.user || {}
         extravars.ansibleforms_user = user
         try{
@@ -108,8 +105,10 @@ exports.launch = async function(req, res) {
             res.json(new RestResult("success","succesfully launched form",job,""))
           })
         }catch(err){
-          logger.error("Error : ", err)
-          res.json(new RestResult("success","failed to launch form",null,err.toString()))
+          logger.error("Errors : ", err)
+          try{
+            res.json(new RestResult("success","failed to launch form",null,err.toString()))
+          }catch(e){}
         }
     }
 };
