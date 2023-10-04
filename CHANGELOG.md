@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 -   Ansible has now default yaml stdout
+-   fn.fnCredentials can have regex and a second ballback
 
 ### Added
 
@@ -22,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 -   Int64 issues in rest results, new rest parameter 'hasBigInt'
+-   Issue with null values in enum fields
 
 ## [4.0.15] - 2023-08-09
 
