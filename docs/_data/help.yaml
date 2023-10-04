@@ -4053,9 +4053,45 @@
   - name: Credentials
     short: Pass credentials
     description: |
-      Credentials can be safely passed as extravars by creating a hidden expression field.  
-      The value of the expression field is is the name of the stored credential you want to pass.  
-      And then simply add the field property `asCredential` as true.  
+      Credentials can be add in several ways.
+      * using the field-property `asCredential`  
+      * using the `credentials` form-property (key-value pairs)
+      * using an extravar called `__credentials__`
+    language: yaml
+    code: |
+      # assume you have 2 credentials created in Ansible Forms
+      # 1: vcenter
+      # 2: ad
+
+      # you want them exposed to the playbook as
+      # 1: vc_cred
+      # 2: ad_cred
+
+      # Method 1 : using asCredential field-property
+      fields:
+      - name: vc_cred
+        type: expression
+        runLocal: true
+        expression: "'vcenter'"
+      - name: ad_cred
+        type: expression
+        runLocal: true
+        expression: "'ad'"
+
+      # Method 2 : using credentials form-property   
+      name: myplaybook
+      type: ansible
+      credentials:
+        vc_cred: vcenter
+        ad_cred: ad
+
+      # Method 3 : using __credentials__ extravar
+      fields:
+      - name: __credentials__
+        type: expression
+        runLocal: true
+        expression: "{vc_cred: 'vcenter',ad_cred: 'ad'}"
+        # note : in the expression you can use placeholders to make them dynamic
   - name: Userinfo
     short: Pass the current user
     description: |
@@ -4063,7 +4099,7 @@
       You don't need to do anything.  
       It is sent as `ansibleforms_user`.
   - name: Userinfo Form
-    short: Access current user info
+    short: Access current user info in the form
     description: |
       The field `__user__` is automatically added in the form.
     language: yaml
@@ -4093,13 +4129,14 @@
         - ./data/git/.gitconfig:$HOME_DIR/.gitconfig    
         # Map custom logo
         - ./data/mylogo.svg:/app/dist/views/assets/img/logo_ansible_forms_full_white.svg
-  - name: Default value
-    short: Set a default value
+  - name: Default value on enum
+    short: Enum default value
     description: |
-      There is obviously the field property `default` you can use to manipulate a default.  And with `enum` fields, you can use `__auto__` for example to automatically select the first item.  
-         
-      But sometimes you want to have a dynamic default, based on an expression.  For simple fields, you use the `expression` field in combination with the field property `editable`, this will force the expression as the default, but allows the operator to override it.  
-      But in case you want an expression-based default on an `enum` field, it's a bit tricky, yet not undoable.  See the below example how we accomplish this.
+      There is obviously the field property `default` you can use to manipulate a default.  
+      And with `enum` fields, you can use `__auto__` for example to automatically select the first item.  
+
+      But sometimes you want to have a dynamic default, based on an expression.  
+      See the below example how we accomplish this.
     language: yaml
     code: |
       # using client javascript manipulation
@@ -4124,6 +4161,31 @@
       # explained : 
       # we take our default and merge it with the source where we filter out the default (to avoid doubles)    
       # the default is thus shifted to the first element, which we can now select with the default `__auto__`
+  - name: Expression default value
+    short: Expression default value
+    description: |
+      For text, number or date fields, you can use the `default` property to set a default value.  
+      But what if you want this to be dynamic?  Like an expression?  
+
+      You can do this in 2 ways:  
+      * `editable`: use the editable property to make an expression-field editable
+      * `evalDefault`: use the evalDefault property to evaluate the default as an expression
+    language: yaml
+    code: |
+      # using editable
+      - type: expression
+        expression: "'$(some_other_field)'.toLowerCase()"
+        name: field1
+        runLocal: true
+        editable: true # this will add an edit-button so you manually overwrite the expression value
+
+      # using evalDefault
+      - type: text
+        name: field1
+        default: "'$(some_other_field)'.toLowerCase()"
+        evalDefault: true # it will treat the default as if it was an expression.
+        # note : when `some_other_field` changes, the default will be re-evaluated
+        # note2 : works for other fields too.
   - name: Query AWX/Tower
     short: Query information from AWX or Tower
     description: |
