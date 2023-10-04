@@ -185,7 +185,8 @@
         return true;
       },
       highlightFilter(v,label=undefined){
-        var s=v+""
+        
+        var s=(v??"")+""
         var cols=[]
         if(this.filterColumns.length>0){
           cols=this.filterColumns
