@@ -4198,7 +4198,7 @@
       type: awx
       template: my_template # will be overwritten by the field __template__
       description: ""
-      credentials:
+      awxCredentials:
         - vmware
       execution_environment: my_execution_environment
       roles:
@@ -4235,7 +4235,7 @@
           columns:
             - name
           valueColumn: name    
-        - name: __credentials__  # use this special name to override the credentials from the form
+        - name: __awxCredentials__  # use this special name to override the credentials from the form
           label: Inventory
           type: enum
           expression: "fn.fnRestJwtSecure('get','https://172.16.50.1/api/v2/credentials?organization=$(organization)','','awx_rest','[.results[]]')"
