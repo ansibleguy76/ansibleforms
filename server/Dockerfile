@@ -46,6 +46,9 @@ RUN ansible-galaxy collection install community.general -p /usr/share/ansible/co
 RUN apk add --no-cache openssh
 RUN mkdir -p ~/.ssh
 
+# add sshpass
+RUN apk add --no-cache sshpass
+
 # add git
 RUN apk add --no-cache git
 
