@@ -4088,13 +4088,14 @@
       credentials:
         vc_cred: vcenter
         ad_cred: ad
+        veeam_cred : veeam_prod,veeam_dev # will first try veeam_prod, then as fallback veeam_dev
 
       # Method 3 : using __credentials__ extravar
       fields:
       - name: __credentials__
         type: expression
         runLocal: true
-        expression: "{vc_cred: 'vcenter',ad_cred: 'ad'}"
+        expression: "{vc_cred: 'vcenter',ad_cred: 'ad',veeam_cred:'$(veeam_server)'}"
         # note : in the expression you can use placeholders to make them dynamic
   - name: Userinfo
     short: Pass the current user
