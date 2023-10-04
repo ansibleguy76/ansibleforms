@@ -976,6 +976,48 @@
               - name: __playbook__
                 type: text
                 default: helloworld.yaml # this will overwrite the playbook name
+      - name: credentials
+        type: object
+        group: basic
+        version: 4.0.16
+        allowed: key-value pairs
+        short: Send credentials to your playbook/template
+        description: |
+          From the earlier versions, you could send credentials, stored in Ansible Forms, by using the field-property `asCredentials`.  
+          From now on, you can also define them statically in the form.  
+          Additionally, you can also set these dynamically by using the a field name __credentials__.  
+          **Note** : that this also works in steps, so each step can have its own set of credentials.  
+          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+        examples:
+        - name: Send vmware and microsoft credentials
+          code: |
+            credentials:
+              cred_vm: vcenter_creds # will take the credentials calld vcenter_creds and send them in the object `cred_vm`
+              cred_ms: ad_creds # will take the credentials called ad_creds and send them in the object `cred_ms`
+        - name: Dynamically send credentials
+          code: |
+            fields:
+              - name: my_vcenter_cred
+                type: enum
+                values:
+                  - vcenter_prod
+                  - vcenter_dev
+                default: ad_prod            
+              - name: __credentials__
+                type: expression
+                runLocal: true
+                hide: true
+                expression: "{vcenter:'$(my_vcenter_cred)'}"
+
+            # NOTE : this can also be done using `asCredential`
+
+              - name: vcenter
+                type: enum
+                values:
+                  - vcenter_prod
+                  - vcenter_dev
+                default: ad_prod                     
+                asCredential: true
       - name: repo
         type: object
         with_types: git
@@ -1014,6 +1056,48 @@
           **Note** : You can also dynamically set the inventory by using a field called `__inventory__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static inventory.  
           **Note** : Ansible core allows multiple inventories (so you can use an array), however awx does not support multiple inventories.
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+      - name: executionEnvironment
+        type: string
+        short: Execution Environment
+        group: workflow
+        description: |
+          In newer versions of AWX you can choose an execution environment.  Use this property to pass it to your template.
+            
+          **Note** : You can also dynamically set the executionEnvironment by using a field called `__executionEnvironment__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static executionEnvironment.  
+          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+      - name: awxCredentials
+        type: array
+        group: workflow
+        version: 4.0.16
+        allowed: name of credential in AWX
+        short: Add awx credentials to your template
+        description: |
+          In AWX you can set credentials on your template.   
+          From now on, you can also add credentials from Ansible Forms.
+          
+          **Note** : you can also set these dynamically by using the a field name __awxCredentials__.   It must be sent as extravar.  If this extravar is found it will overwrite the static awxCredentials.  
+          **Note** : this also works in steps, so each step can have its own set of awxCredentials.  
+          **Note** : the credentials will be added on top of the ones already selected in the template, they will be merged.  
+          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+        examples:
+        - name: Add awx credentials to your template
+          code: |
+            awx_credentials:
+              - vmware_prod
+              - ad_prod
+        - name: Dynamically send credentials
+          code: |
+            fields:
+              - name: my_ad_creds
+                type: enum
+                values:
+                  - ad_prod
+                  - ad_dev
+                default: ad_prod
+              - name: __awxCredentials__
+                type: expression
+                runLocal: true
+                expression: "['vmware_prod','$(my_ad_creds)']"
       - name: check
         type: boolean
         group: workflow
@@ -1099,6 +1183,7 @@
                 - info@ansibleguy.com
               onStatus:
                 - success
+            
       - name: onSubmit
         type: array
         group: interaction
@@ -1416,6 +1501,18 @@
               Ansible Forms allows to add an approval point before a job is ran.  
               An approval link is sent by email to a specific approver who can then approve or reject the job.  
               Every step can have a differnt approval point.
+            examples:
+            - name: Approve removal
+              code: |
+                approval:
+                  title: Please approve removal
+                  message: |
+                    You need to approve the removal of $(field1).  
+                    Double check please.
+                  roles:
+                    - public
+                  notifications:
+                    - info@ansibleforms.com    
           - name: notifications
             type: object
             group: interaction
@@ -2411,7 +2508,9 @@
             short: Send credential as extravar
             description: |
               Use the value of this field to search for a credential with the same name  
-              and send that credential (with user and password) hidden to the playbook as extravar.
+              and send that credential (with user and password) hidden to the playbook as extravar.  
+
+              Since 4.0.16, you can use this in combination with the `credentials` form-property.
             with_types: text, password, enum, expression
             examples:
               - name: Search and send the credential named 'vcenter'
@@ -3666,7 +3765,8 @@
           '',
           'name_of_credential_in_database',
           '[.records[] | {name:.name, email:.email, spouse:.relations.spouse}'],
-          'name'
+          'name',
+          false
         )
 
         // output : a full json object coming from rest, json transformed with jq, result sorted and transformed by javascript.
@@ -3678,6 +3778,7 @@
         // - credential-name : it will lookup the credentials as you have saved in the gui
         // - jq-expression : an optional jq-expression (https://jsplay.org)
         // - sort object : a sort object to order the result
+        // - hasBigInt : a boolean indicating if it should convert Int64 to string
     - name: rest api with token authentication
       code: |
         fn.fnRestJwt(
@@ -3686,7 +3787,8 @@
           '',
           'your_jwt_token_in_text',
           '[.records[] | {name:.name, age:.age}]',
-          ['age','name']
+          ['age','name'],
+          false
         )
 
         // output : a full json object coming from rest, json transformed with jq, result sorted, first by age, then by name
@@ -3698,6 +3800,7 @@
         // - token : it will be add as a Bearer Authorization header
         // - jq-expression : an optional jq-expression (https://jsplay.org)
         // - sort-object : a sort object to sort the result
+        // - hasBigInt : a boolean indicating if it should convert Int64 to string
     - name: rest api with secured token authentication
       code: |
         fn.fnRestJwtSecure(
@@ -3706,7 +3809,8 @@
           '',
           'name_of_credential_in_database',
           '[.records[] | {name:.name, age:.age}]',
-          ['age','name']
+          ['age','name'],
+          false
         )
 
         // output : a full json object coming from rest, json transformed with jq, result sorted, first by age, then by name
@@ -3717,7 +3821,8 @@
         // - body : in case of post and put
         // - credential_name : Encrypted credential will be looked up.  The password will be the token.
         // - jq-expression : an optional jq-expression (https://jsplay.org)
-        // - sort-object : a sort object to sort the result    
+        // - sort-object : a sort object to sort the result   
+        // - hasBigInt : a boolean indicating if it should convert Int64 to string 
     - name: rest api with custom headers
       code: |
         fn.fnRestAdvanced(
@@ -3726,7 +3831,8 @@
           '',
           {'a_custom_http_header','your_value'},
           '.records[].name',
-          {name:{ignoreCase:true,direction:'desc'}}
+          {name:{ignoreCase:true,direction:'desc'}},
+          false
         )
 
         // output : a full json object coming from rest, json transformed with jq, result sorted descending by name
@@ -3738,6 +3844,7 @@
         // - headers: an object of headers
         // - jq-expression : an optional jq-expression (https://jsplay.org)
         // - sort-object : a sorting object to order the results
+        // - hasBigInt : a boolean indicating if it should convert Int64 to string
     - name: get credentials
       code: |
         fn.fnCredentials('credentialname')
