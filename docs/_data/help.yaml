@@ -988,12 +988,16 @@
           Additionally, you can also set these dynamically by using the a field name __credentials__.  
           **Note** : that this also works in steps, so each step can have its own set of credentials.  
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+          **Note** : The credential can be a regex
+          **Note** : A second, fallback, credential kan be passed using a comma
         examples:
         - name: Send vmware and microsoft credentials
           code: |
             credentials:
               cred_vm: vcenter_creds # will take the credentials calld vcenter_creds and send them in the object `cred_vm`
               cred_ms: ad_creds # will take the credentials called ad_creds and send them in the object `cred_ms`
+              cred_netapp: cluster1,clusters2 # will first search for cluster1 and as fallback to cluster2
+              cred_veeam: veeam_server[0-9],veeam # will first search for a credential matching the regex, and as fallback search for veeam
         - name: Dynamically send credentials
           code: |
             fields:
@@ -3847,9 +3851,9 @@
         // - hasBigInt : a boolean indicating if it should convert Int64 to string
     - name: get credentials
       code: |
-        fn.fnCredentials('credentialname')
+        fn.fnCredentials('credentialname_or_regex','fallback_credentialname_or_regex')
 
-        // Try to used `fnRestBasic` and `fnRestJwtSecured` if possible, this avoids passwords and tokens going over the network.
+        // Try to use `fnRestBasic` and `fnRestJwtSecured` if possible, this avoids passwords and tokens going over the network.
 
         // output : a credential object with all properties (username, password, host, port)    
     - name: sort an array

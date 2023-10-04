@@ -181,11 +181,11 @@ exports.fnReadYamlFile = async function(path,jqe=null) {
   }
   return result
 };
-exports.fnCredentials = async function(name){
+exports.fnCredentials = async function(name,fallbackname=""){
   var result=undefined
   if(name){
     try{
-      result = await credentialModel.findByName(name)
+      result = await credentialModel.findByName(name,fallbackname)
     }catch(e){
       logger.error(e)
     }

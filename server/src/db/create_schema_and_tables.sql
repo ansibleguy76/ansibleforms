@@ -38,6 +38,7 @@ CREATE TABLE `credentials` (
   `secure` tinyint(4) DEFAULT NULL,
   `db_type` varchar(10) DEFAULT NULL,
   `db_name` varchar(255) DEFAULT NULL,  
+  `is_database` tinyint(4) DEFAULT 1,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_AnsibleForms_credentials_natural_key` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

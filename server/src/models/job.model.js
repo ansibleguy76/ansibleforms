@@ -342,7 +342,15 @@ Job.launch = async function(form,formObj,user,creds,extravars,parentId=null,next
 
           // if it were AF credentials, we get the credential now
           try{
-            credentials[key]=await Credential.findByName(value)
+            
+            if (value.includes(',')) {
+              // If value contains a comma, split it and call with two parameters
+              const [part1, part2] = value.split(',').map(val => val.trim());
+              credentials[key] = await Credential.findByName(part1, part2);
+            } else {
+              // If no comma, call with one parameter
+              credentials[key] = await Credential.findByName(value)
+            }
           }catch(err){
             logger.error("Cannot get credential." + err)
           }
@@ -453,7 +461,14 @@ Job.continue = async function(form,user,creds,extravars,jobid,next) {
           }
         }else{
           try{
-            credentials[key]=await Credential.findByName(value)
+            if (value.includes(',')) {
+              // If value contains a comma, split it and call with two parameters
+              const parts = value.split(',').map(val => val.trim());
+              credentials[key] = await Credential.findByName(parts[0], parts[1]);
+            } else {
+              // If no comma, call with one parameter
+              credentials[key] = await Credential.findByName(value)
+            }
           }catch(err){
             logger.error("Failed to find credentials by name : ", err)
           }

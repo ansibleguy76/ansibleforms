@@ -24,7 +24,7 @@ exports.create = function(req, res) {
     }else{
         Credential.create(new_credential)
         .then((credential)=>{ res.json(new RestResult("success","credential added",credential,"")) })
-        .catch((err)=>{ res.json(new RestResult("error","failed to create credential",null,err)) })
+        .catch((err)=>{ res.json(new RestResult("error","failed to create credential",null,err.message)) })
     }
 };
 exports.findById = function(req, res) {

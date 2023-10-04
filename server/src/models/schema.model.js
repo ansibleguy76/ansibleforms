@@ -253,6 +253,7 @@ function patchAll(){
   tablePromises.push(renameColumn("jobs","playbook","target","VARCHAR(250)")) // better column name
   tablePromises.push(addColumn("jobs","step","varchar(250)",true,"NULL")) // add column to hold current step
   tablePromises.push(addColumn("credentials","secure","tinyint(4)",true,"0")) // add column to have secure connection
+  tablePromises.push(addColumn("credentials","is_database","tinyint(4)",true,"1")) // add column to set credentials as database creds
   tablePromises.push(addColumn("credentials","db_type","varchar(10)",true,"NULL")) // add column to have db type
   tablePromises.push(addColumn("credentials","db_name","varchar(255)",true,"NULL")) // add column to have db type
   tablePromises.push(addColumn("awx","username","varchar(255)",true,"NULL")) // add column to have user based awx connection
