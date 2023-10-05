@@ -161,7 +161,7 @@ export default {
                     if(typeof obj == "object"){
                         defaulttype="object"
                     }
-                }catch(e){
+                }catch(err){
                     obj=undefined
                 }
                 if(typeof this.defaultValue == "object"){

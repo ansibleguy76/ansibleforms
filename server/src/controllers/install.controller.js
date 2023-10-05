@@ -16,8 +16,8 @@ exports.performChecks = async function (req, res) {
         : 'Some checks failed';
   
       res.json(new RestResult(overallStatus, message, summary, ''));
-    } catch (error) {
+    } catch (err) {
       // Handle unexpected errors here
-      res.json(new RestResult('error', 'Checks failed', null, error));
+      res.json(new RestResult('error', 'Checks failed', null, err.toString()));
     }
   };

@@ -13,12 +13,12 @@ exports.abortJob = function(req, res) {
   }
     Job.abort(jobid)
      .then((job)=>{res.json(new RestResult("success","job aborted",null,""))})
-     .catch((err)=>{res.json(new RestResult("error","failed to abort job",null,err))})
+     .catch((err)=>{res.json(new RestResult("error","failed to abort job",null,err.toString()))})
 };
 exports.updateJob = function(req, res) {
     Job.update(new Job(req.body),req.params.id)
       .then(()=>{res.json(new RestResult("success","job updated",null,""))})
-      .catch((err)=>{res.json(new RestResult("error","failed to update job",null,err))})
+      .catch((err)=>{res.json(new RestResult("error","failed to update job",null,err.toString()))})
 };
 exports.getJob = function(req, res) {
   var user = req.user.user
@@ -59,7 +59,7 @@ exports.getJob = function(req, res) {
           res.json(new RestResult("error","failed to find job",null,"No such job"))
         }
       })
-      .catch((err)=>{res.json(new RestResult("error","failed to find job",null,err))})
+      .catch((err)=>{res.json(new RestResult("error","failed to find job",null,err.toString()))})
 
 };
 exports.findAllJobs = function(req, res) {
@@ -67,7 +67,7 @@ exports.findAllJobs = function(req, res) {
     var records = req.query.records || 500
     Job.findAll(user,records)
     .then((jobs)=>{res.json(new RestResult("success","jobs found",jobs,""))})
-    .catch((err)=>{res.json(new RestResult("error","failed to find jobs",null,err))})
+    .catch((err)=>{res.json(new RestResult("error","failed to find jobs",null,err.toString()))})
 };
 exports.findApprovals = function(req, res) {
     var user = req.user.user

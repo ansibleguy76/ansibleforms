@@ -6,11 +6,11 @@ exports.findAllOr1 = function(req, res) {
   if(req.query.username){
     User.findByUsername(req.query.username)
     .then((user)=>{res.json(new RestResult("success","user found",user,""))})
-    .catch((err)=>{res.json(new RestResult("error","failed to find user",null,err))})
+    .catch((err)=>{res.json(new RestResult("error","failed to find user",null,err.toString()))})
   }else{
     User.findAll()
     .then((users)=>{res.json(new RestResult("success","users found",users,""));})
-    .catch((err)=>{res.json(new RestResult("error","failed to find users",null,err))})
+    .catch((err)=>{res.json(new RestResult("error","failed to find users",null,err.toString()))})
   }
 
 };
@@ -22,7 +22,7 @@ exports.create = function(req, res) {
     }else{
         User.create(new_user)
         .then((user)=>{res.json(new RestResult("success","user added",user,""))})
-        .catch((err)=>{res.json(new RestResult("error","failed to create user",null,err))})
+        .catch((err)=>{res.json(new RestResult("error","failed to create user",null,err.toString()))})
     }
 };
 exports.findById = function(req, res) {
@@ -31,10 +31,10 @@ exports.findById = function(req, res) {
       if(user.length>0){
         res.json(new RestResult("success","found user",user[0],""));
       }else{
-        res.json(new RestResult("error","failed to find user",null,err))
+        res.json(new RestResult("error","failed to find user",null,err.toString()))
       }
     })
-    .catch((err)=>{res.json(new RestResult("error","failed to find user",null,err))})
+    .catch((err)=>{res.json(new RestResult("error","failed to find user",null,err.toString()))})
 };
 exports.findByToken = function(req, res) {
     User.findById(req.user.user.username)
@@ -42,10 +42,10 @@ exports.findByToken = function(req, res) {
       if(user.length>0){
         res.json(new RestResult("success","found user",user[0].id,""));
       }else{
-        res.json(new RestResult("error","failed to find user",null,err))
+        res.json(new RestResult("error","failed to find user",null,err.toString()))
       }
     })
-    .catch((err)=>{res.json(new RestResult("error","failed to find user",null,err))})
+    .catch((err)=>{res.json(new RestResult("error","failed to find user",null,err.toString()))})
 };
 exports.update = function(req, res) {
     // don't tamper with username
@@ -68,10 +68,10 @@ exports.changePassword = function(req, res) {
     }else{
         User.update(new User(req.body),req.user.user.id)
         .then((user)=>{res.json(new RestResult("success","password changed",null,""))})
-        .catch((err)=>{res.json(new RestResult("error","failed to change password",null,err))})
+        .catch((err)=>{res.json(new RestResult("error","failed to change password",null,err.toString()))})
     }
   }else{
-    res.json(new RestResult("error","you can't change the password for an ldap user",null,err))
+    res.json(new RestResult("error","you can't change the password for an ldap user",null,err.toString()))
   }
 };
 exports.find = function(req, res) {
@@ -80,5 +80,5 @@ exports.find = function(req, res) {
 exports.delete = function(req, res) {
     User.delete( req.params.id)
     .then(()=>{res.json(new RestResult("success","user deleted",null,""))})
-    .catch((err)=>{res.json(new RestResult("error","failed to delete user",null,err))})
+    .catch((err)=>{res.json(new RestResult("error","failed to delete user",null,err.toString()))})
 };

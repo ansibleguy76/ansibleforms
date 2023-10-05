@@ -48,7 +48,7 @@ passport.use(
             user.type = 'ldap'
             user.groups = User.getGroups(user,result)
             user.roles = User.getRoles(user.groups,user)
-            logger.info("ldap login is ok => " + user.username)
+            logger.info("ldap login for " + user.username)
             return user
           })
           .catch((err)=>{
@@ -57,11 +57,11 @@ passport.use(
               try{
                 var errMessage=authConfig.ldapErrors[match[1]]
               }catch(e){
-                throw "Error " + match[1]
+                throw new Error("Error " + match[1])
               }
-              throw errMessage
+              throw new Error(errMessage)
             }
-            throw err
+            throw new Error(err)
           })
         // we have an authenticated user
         return done(null,user)

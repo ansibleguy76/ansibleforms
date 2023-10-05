@@ -17,7 +17,7 @@
           <div class="columns">
             <div class="column" v-if="credentialList && credentialList.length>0">
               <BulmaAdminTable
-                :dataList="credentialList.map(x => ({...x,allowtest:(x.is_database && x.db_type!='mongodb')}))"
+                :dataList="credentialList.map(x => ({...x,allowtest:(x.is_database )}))"
                 :labels="['Name','User','Host']"
                 :columns="['name','user','host']"
                 :filters="['name','user','host']"
@@ -107,8 +107,8 @@
         axios.get('/api/v1/credential/',TokenStorage.getAuthentication())
           .then((result)=>{
             ref.credentialList=result.data.data.output;
-          }),function(error){
-            ref.$toast.error(error.message);
+          }),function(err){
+            ref.$toast.error(err.toString());
           };
       },
       selectItem(value){
@@ -132,8 +132,8 @@
               }else{
                 ref.$toast.error(result.data.message + "\r\n" + result.data.data.error)
               }
-            }),function(error){
-              ref.$toast.error(error.message);
+            }),function(err){
+              ref.$toast.error(err.toString());
             };
         }
       },
@@ -145,8 +145,8 @@
             .then((result)=>{
               console.log("loaded credential item");
               ref.credential=result.data.data.output
-            }),function(error){
-              ref.$toast.error(error.message);
+            }),function(err){
+              ref.$toast.error(err.toString());
             };
         }else{
           console.log("No item selected")
@@ -166,8 +166,8 @@
               ref.credentialItem=undefined;
               ref.loadAll();
             }
-          }),function(error){
-            ref.$toast.error(error.message);
+          }),function(err){
+            ref.$toast.error(err.toString());
           };
       },updateCredential(){
         var ref= this;
@@ -180,8 +180,8 @@
                 ref.$toast.success("Credential is updated");
                 ref.loadAll();
               }
-            }),function(error){
-              ref.$toast.error(error.message);
+            }),function(err){
+              ref.$toast.error(err.toString());
             };
         }else{
           this.$toast.warning("Invalid form data")
@@ -198,8 +198,8 @@
                 ref.$toast.success("Created credential with new id " + result.data.data.output);
                 ref.loadAll();
               }
-            }),function(error){
-              ref.$toast.error(error.message);
+            }),function(err){
+              ref.$toast.error(err.toString());
             };
         }
       },showAlert(type,message){

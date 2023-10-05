@@ -96,8 +96,8 @@
             }else{
               ref.knownHostsList=result.data.data.output;
             }
-          }),function(error){
-            ref.$toast.error(error.message);
+          }),function(err){
+            ref.$toast.error(err.toString());
           };
       },
       reset(){
@@ -123,8 +123,8 @@
               ref.knownhostsItem=undefined;
               ref.loadAll();
             }
-          }),function(error){
-            ref.$toast.error(error.message);
+          }),function(err){
+            ref.$toast.error(err.toString());
           };
       },
       addHost(){
@@ -142,9 +142,9 @@
                 ref.$toast.success("Added host");
                 ref.loadAll();
               }
-            }),function(error){
+            }),function(err){
               ref.loading=false
-              ref.$toast.error(error.message);
+              ref.$toast.error(err.toString());
             };
         }
       },

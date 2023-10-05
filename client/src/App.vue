@@ -167,7 +167,7 @@
           })
           .catch(function(err){
             ref.$toast.error("Failed to check AnsibleForms database schema");
-            ref.errorMessage="Failed to check AnsibleForms database schema\n\n" + err
+            ref.errorMessage="Failed to check AnsibleForms database schema\n\n" + err.toString()
             ref.$router.replace({name:"Error"}).catch(err => {});
             ref.isLoaded=true
           });            

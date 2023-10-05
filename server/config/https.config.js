@@ -8,8 +8,8 @@ if(process.env.HTTPS=="1"){
     privatekey = fs.readFileSync(process.env.HTTPS_KEY || (__dirname + '/../persistent/certificates/key.pem'))
     certificate = fs.readFileSync(process.env.HTTPS_CERT || (__dirname + '/../persistent/certificates/cert.pem'))
   }catch(err){
-    logger.error("Failed to open https private key and certificate : " + err)
-    throw "Failed to open https private key and certificate : " + err
+    logger.error("Failed to open https private key and certificate : ",err)
+    throw new Error("Failed to open https private key and certificate : " + err.message)
   }
 }
 

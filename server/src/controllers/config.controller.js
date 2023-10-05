@@ -65,9 +65,9 @@ exports.restore = async function(req,res){
     if(lock.free){
       lock.set(user).catch(()=>{}) // set lock and fail silent
     }
-  }catch(e){
-    logger.error("Failed to get lock:" + e)
-    res.json(new RestResult("error","Failed to restore forms",null,"Failed to get lock : "+e))
+  }catch(err){
+    logger.error("Failed to get lock : ",err)
+    res.json(new RestResult("error","Failed to restore forms",null,"Failed to get lock : " + err.toString()))
     return true
   }
   if(lock.match || lock.free){
@@ -85,7 +85,7 @@ exports.restore = async function(req,res){
         res.json(new RestResult("error",`Failed to restore, no backup name provided`,null,"Failed to restore forms"))
       }
     }catch(err){
-      res.json(new RestResult("error","Failed to restore forms",null,err))
+      res.json(new RestResult("error","Failed to restore forms",null,err.toString()))
     }
   }else{
     res.json(new RestResult("error","Failed to restore forms",null,"Designer is locked by "+lock.username))
@@ -99,9 +99,9 @@ exports.save = async function(req,res){
     if(lock.free){
       lock.set(user).catch(()=>{}) // set lock and fail silent
     }
-  }catch(e){
-    logger.error("Failed to get lock:" + e)
-    res.json(new RestResult("error","Failed to save forms",null,"Failed to get lock : "+e))
+  }catch(err){
+    logger.error("Failed to get lock : ",err)
+    res.json(new RestResult("error","Failed to save forms",null,"Failed to get lock : " + err.toString()))
     return true
   }
   if(lock.match || lock.free){
@@ -118,7 +118,7 @@ exports.save = async function(req,res){
           res.json(new RestResult("error","Failed to save forms",null,"Failed to save forms"))
         }
       }catch(err){
-        res.json(new RestResult("error","Failed to save forms",null,err))
+        res.json(new RestResult("error","Failed to save forms",null,err.toString()))
       }
     }
   }else{
@@ -143,7 +143,7 @@ exports.validate = function(req,res){
         res.json(new RestResult("error","Failed to validate new forms config",null,"Failed to validate new forms config"))
       }
     }catch(err){
-      res.json(new RestResult("error","Failed to validate new forms config",null,err))
+      res.json(new RestResult("error","Failed to validate new forms config",null,err.toString()))
     }
   }
 }

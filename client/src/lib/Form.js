@@ -14,7 +14,7 @@ var Form = {
       })
       .catch(function(err){
         if(err.response && err.response.status!=401){
-          error("Could not get forms.yaml file\n\n" + err)
+          error("Could not get forms.yaml file\n\n" + err.toString())
         }
         if(err.response && err.response.status==401){
           error(err)
@@ -36,7 +36,7 @@ var Form = {
       })
       .catch(function(err){
         if(err.response && err.response.status!=401){
-          error("Could not get backups\n\n" + err)
+          error("Could not get backups\n\n" + err.toString())
         }
         if(err.response && err.response.status==401){
           error(err)
@@ -57,7 +57,7 @@ var Form = {
       })
       .catch(function(err){
         if(err.response && err.response.status!=401){
-          error("Could not restore\n\n" + err)
+          error("Could not restore\n\n" + err.toString())
         }
         if(err.response && err.response.status==401){
           error(err)

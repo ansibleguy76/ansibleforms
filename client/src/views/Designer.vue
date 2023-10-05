@@ -354,7 +354,7 @@
             if(result.name){
               return result
             }else {
-              throw "parsing issue"
+              throw new Error("parsing issue")
             }
           }catch{
             return {name:x,source:"Parsing issues"}
@@ -368,7 +368,7 @@
             if(Array.isArray(result) && result.length>0 && result[0].name && result[0].icon){
               return result
             }else {
-              throw "parsing issue"
+              throw new Error("parsing issue")
             }
           }catch{
             return undefined
@@ -384,7 +384,7 @@
             if(Array.isArray(result) && result.length>0 && result[0].name && result[0].groups){
               return result
             }else {
-              throw "parsing issue"
+              throw new Error("parsing issue")
             }
           }catch{
             return undefined
@@ -423,10 +423,10 @@
             if(tmp && tmp.name){
               return { id:x,source:tmp.source,name:tmp.name}
             }else {
-              throw "A form must have a few basic properties, like 'name'"
+              throw new Error("A form must have a few basic properties, like 'name'")
             }
-          }catch(e){
-            return { id:x,source:"Parsing issues",name:x,issue:e}
+          }catch(err){
+            return { id:x,source:"Parsing issues",name:x,issue:err.toString()}
           }
 
         })
@@ -547,7 +547,7 @@
           }
           ref.loaded=true
         },function(err){
-          ref.$toast.error(err)
+          ref.$toast.error(err.toString())
         })
       },
       loadBackups(){
@@ -556,7 +556,7 @@
           ref.backups=backups
           ref.loaded=true
         },function(err){
-          ref.$toast.error(err)
+          ref.$toast.error(err.toString())
         })
       },
       restore(){
@@ -568,7 +568,7 @@
           ref.loadForms()
           ref.loadBackups()
         },function(err){
-          ref.$toast.error(err)
+          ref.$toast.error(err.toString())
         })
       },
       validate() {
@@ -580,8 +580,8 @@
            }else{
              ref.$toast.success(result.data.message);
            }
-         }),function(error){
-           ref.$toast.error(error.message);
+         }),function(err){
+           ref.$toast.error(err.toString());
          };
       },
       getLock(){
@@ -597,8 +597,8 @@
             }else{
               ref.lock=result.data.data.output
             }
-          }),function(error){
-            ref.$toast.error(error.message);
+          }),function(err){
+            ref.$toast.error(err.toString());
             ref.lock=undefined
           };
       },
@@ -612,8 +612,8 @@
             }else{
                 ref.loadAll()
             }
-          }),function(error){
-            ref.$toast.error(error.message);
+          }),function(err){
+            ref.$toast.error(err.toString());
             ref.lock=undefined
           };
       },
@@ -641,8 +641,8 @@
               // ref.$toast.success(result.data.message);
               ref.loadAll()
             }
-          }),function(error){
-            ref.$toast.error(error.message);
+          }),function(err){
+            ref.$toast.error(err.toString());
           };
       },
       loadAll(){
@@ -668,8 +668,8 @@
                    ref.loadBackups()
                  }
                }
-             }),function(error){
-               ref.$toast.error(error.message);
+             }),function(err){
+               ref.$toast.error(err.toString());
              };
          }else{
            if(ref.warnings.length>0 || !ref.formConfig){

@@ -315,8 +315,8 @@
               ref.help=result.data.data.output
             }
             
-          }),function(error){
-            ref.$toast.error(error.message);
+          }),function(err){
+            ref.$toast.error(err.toString());
             ref.help=undefined
           };
       },

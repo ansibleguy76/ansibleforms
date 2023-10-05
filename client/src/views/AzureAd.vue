@@ -85,8 +85,8 @@
         axios.get('/api/v1/settings/',TokenStorage.getAuthentication())
           .then((result)=>{
             ref.settings=result.data.data.output;
-          }),function(error){
-            ref.$toast.error(error.message);
+          }),function(err){
+            ref.$toast.error(err.toString());
           };        
       },
       loadAzureAd(){
@@ -94,8 +94,8 @@
         axios.get('/api/v1/azuread/',TokenStorage.getAuthentication())
           .then((result)=>{
             ref.azuread=result.data.data.output;
-          }),function(error){
-            ref.$toast.error(error.message);
+          }),function(err){
+            ref.$toast.error(err.toString());
           };
       },updateAzureAd(){
         var ref= this;
@@ -108,8 +108,8 @@
                 ref.$toast.success("AzureAd is updated");
                 ref.loadAzureAd();
               }
-            }),function(error){
-              ref.$toast.error(error.message);
+            }),function(err){
+              ref.$toast.error(err.toString());
             };
         }else{
           this.$toast.warning("Invalid form data")
@@ -124,8 +124,8 @@
             }else{
               ref.$toast.success(result.data.message);
             }
-          }),function(error){
-            ref.$toast.error(error.message);
+          }),function(err){
+            ref.$toast.error(err.toString());
           };
       }
     },

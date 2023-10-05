@@ -21,7 +21,7 @@ if ( !fs.existsSync( log_config.path ) ) {
     // Create the directory if it does not exist
     fs.mkdirSync( log_config.path );
   }catch(err){
-    throw "Failed to create the path for the log files"
+    throw new Error("Failed to create the path for the log files")
   }
 
 }

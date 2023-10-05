@@ -808,8 +808,8 @@
             Copy(JSON.stringify(v))
           }
           this.$toast.success("Copied to clipboard")
-        }catch(e){
-          this.$toast.error("Error copying to clipboard : \n" + e)
+        }catch(err){
+          this.$toast.error("Error copying to clipboard : \n" + err.toString())
         }
       },
       // creates a list of fields per group
@@ -983,8 +983,8 @@
             try{
               r=Helpers.evalSandbox(_value)
               return r
-            }catch(e){
-              console.log(`Error evaluating default value : ${e}`)
+            }catch(err){
+              console.log(`Error evaluating default value : ${err.toString()}`)
             }
           }else{
             return _value
@@ -1020,10 +1020,10 @@
           // set default value
           Vue.set(this.form,fieldname,this.defaults[fieldname])
          
-        }catch(e){
+        }catch(err){
           // this error should not hit, unless we have a bug
-          console.log("Error: " + e)
-          throw e
+          console.log("Error: " + err.toString())
+          throw err
         }
       },
       // set dynamic field status, only for expressions,query and table
@@ -1444,7 +1444,7 @@
                           Vue.delete(ref.queryerrors, item.name);
                         }catch(err){
                           // console.log("Local eval failed : " + err)
-                          Vue.set(ref.queryerrors, item.name,err);
+                          Vue.set(ref.queryerrors, item.name,err.toString());
                           try{
                             ref.setFieldToDefault(item.name)
                           }catch(err){
@@ -1781,10 +1781,10 @@
               }
           })
           .catch(function(err){
-            console.log("error getting job " + err)
+            console.log("error getting job " + err.toString())
             ref.$toast.error("Failed to get job");
             if(err.response.status!=401){
-              ref.jobResult.message="Error in axios call to get job\n\n" + err
+              ref.jobResult.message="Error in axios call to get job\n\n" + err.toString()
               ref.jobResult.status="error";
             }
           })
@@ -1945,19 +1945,19 @@
                 }
                 if(result.status=="error"){
                   ref.$toast.error(result.data.error);
-                  throw(new Error(result.data.error))
+                  throw new Error(result.data.error)
                 }
 
               } catch (e) {
                 console.log(e)
-                throw(new Error("Failed uploading files"))
+                throw new Error("Failed uploading files")
               }
             });
 
             await Promise.all(uploadPromises);
             // ref.$toast.info(`All files uploaded`);
-          }catch(e){
-            ref.$toast.error(e.message);
+          }catch(err){
+            ref.$toast.error(err.toString());
             ref.resetResult()
             // stop, don't execute job
             throw new Error("Failed uploading files");
@@ -2047,7 +2047,7 @@
           try{
             var queryObject=JSON.parse(atob(ref.$route.query.base64values))
             // Vue.set(ref,"form",queryObject)
-          }catch(e){
+          }catch(err){
             ref.$toast.error("Couldn't parse your querystring")
           }
           for (const [key, value] of Object.entries(queryObject)) {
@@ -2090,7 +2090,7 @@
             if(item.type=="number"){
               try{
                 queryValue=parseInt(queryValue)
-              }catch(e){
+              }catch(err){
                 queryValue=0
               }
             }
@@ -2192,7 +2192,7 @@
             ref.startDynamicFieldsLoop()
           })
           .catch(function(err){
-            ref.$toast.error("Failed to pull from git " + err)
+            ref.$toast.error("Failed to pull from git " + err.toString())
             ref.pretasksFinished=true
             // start dynamic field loop (= infinite)
             ref.startDynamicFieldsLoop()

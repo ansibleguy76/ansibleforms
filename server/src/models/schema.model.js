@@ -12,9 +12,9 @@ const cache = new NodeCache({
 //user object create
 var Schema=function(){
 };
-function handleError(n){
-  logger.error(n.message)
-  throw(n)
+function handleError(err){
+  logger.error(err.toString())
+  throw(err)
 }
 
 function checkSchema(){

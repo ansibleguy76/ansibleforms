@@ -49,13 +49,9 @@ function sanitizeExpression(expr){
   return expr
 }
 async function doAsync (expr) {
-  try{
     var sanitized = sanitizeExpression(expr)
     var outcome = await eval(sanitized)
     return outcome
-  }catch(e){
-    throw e.message
-  }
 }
 // execute expression (cannot be a promise)
 Expression.execute = function (expr,noLog) {
@@ -64,12 +60,7 @@ Expression.execute = function (expr,noLog) {
   }else{
     logger.info(`Expression: ${expr}`)
   }
-  var expression = ""
-  try{
-    return doAsync(expr)
-  }catch(err){
-    throw err.message
-  }
+  return doAsync(expr)
 };
 
 

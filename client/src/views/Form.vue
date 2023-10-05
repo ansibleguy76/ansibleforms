@@ -37,7 +37,7 @@
           ref.formConfig=formConfig
           ref.componentKey++;
         },function(err){
-          ref.$toast.error(err)
+          ref.$toast.error(err.toString())
           if(ref.$route.name!="Login"){
             ref.$router.replace({name:"Error"}).catch(err => {});
           }

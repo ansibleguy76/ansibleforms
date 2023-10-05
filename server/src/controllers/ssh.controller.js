@@ -6,7 +6,7 @@ const logger=require("../lib/logger");
 exports.find = function(req, res) {
     Ssh.find()
       .then((sshkey)=>{res.json(new RestResult("success","Ssh key found",sshkey,""))})
-      .catch((err)=>{res.json(new RestResult("error","Failed to find ssh key",null,err))})
+      .catch((err)=>{res.json(new RestResult("error","Failed to find ssh key",null,err.toString()))})
 };
 exports.update = function(req, res) {
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
@@ -14,6 +14,6 @@ exports.update = function(req, res) {
     }else{
         Ssh.update(new Ssh(req.body))
           .then((ssh)=>{res.json(new RestResult("success","Ssh key updated",null,""))})
-          .catch((err)=>{res.json(new RestResult("error","Failed to update ssh key",null,err))})
+          .catch((err)=>{res.json(new RestResult("error","Failed to update ssh key",null,err.toString()))})
     }
 };

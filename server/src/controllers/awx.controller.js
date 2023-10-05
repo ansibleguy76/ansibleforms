@@ -11,7 +11,7 @@ exports.check = function(req, res) {
 exports.find = function(req, res) {
   Awx.find()
   .then((awx)=>{ res.json(new RestResult("success","Awx found",awx,"")); })
-  .catch((err)=>{ res.json(new RestResult("error","Failed to find awx",null,err)) })
+  .catch((err)=>{ res.json(new RestResult("error","Failed to find awx",null,err.toString())) })
 };
 exports.update = function(req, res) {
   if(req.body.constructor === Object && Object.keys(req.body).length === 0){
@@ -19,6 +19,6 @@ exports.update = function(req, res) {
   }else{
     Awx.update(new Awx(req.body))
     .then(()=>{ res.json(new RestResult("success","Awx updated",null,"")); })
-    .catch((err)=>{ res.json(new RestResult("error","Failed to update awx",null,err)) })
+    .catch((err)=>{ res.json(new RestResult("error","Failed to update awx",null,err.toString())) })
   }
 };

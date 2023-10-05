@@ -17,5 +17,5 @@ exports.hasSchema = function(req, res) {
 exports.create = function(req, res) {
     Schema.create()
       .then((result)=>{ res.json(new RestResult("success",result,null,""))})
-      .catch((err)=>{res.json(new RestResult("error",err,null,null))})
+      .catch((err)=>{res.json(new RestResult("error",err.toString(),null,null))})
 };

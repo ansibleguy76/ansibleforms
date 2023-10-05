@@ -81,8 +81,8 @@
         axios.get('/api/v1/ldap/',TokenStorage.getAuthentication())
           .then((result)=>{
             ref.ldap=result.data.data.output;
-          }),function(error){
-            ref.$toast.error(error.message);
+          }),function(err){
+            ref.$toast.error(err.toString());
           };
       },updateLdap(){
         var ref= this;
@@ -95,8 +95,8 @@
                 ref.$toast.success("Ldap is updated");
                 ref.loadLdap();
               }
-            }),function(error){
-              ref.$toast.error(error.message);
+            }),function(err){
+              ref.$toast.error(err.toString());
             };
         }else{
           this.$toast.warning("Invalid form data")
@@ -111,8 +111,8 @@
             }else{
               ref.$toast.success(result.data.message);
             }
-          }),function(error){
-            ref.$toast.error(error.message);
+          }),function(err){
+            ref.$toast.error(err.toString());
           };
       }
     },

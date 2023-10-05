@@ -56,8 +56,8 @@
                   ref.$toast.success("Password is changed");
                   ref.$router.push({name:"Home"}).catch(err => {});
               }
-            }),function(error){
-              ref.$toast.error(error.message);
+            }),function(err){
+              ref.$toast.error(err.toString());
             };
         }else{
           this.$toast.warning("Invalid form data")

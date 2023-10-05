@@ -6,7 +6,7 @@ var RestResult = require('../models/restResult.model');
 exports.find = function(req, res) {
     KnownHosts.findAll()
       .then((hosts)=>{res.json(new RestResult("success","Hosts found",hosts,""))})
-      .catch((err)=>{res.json(new RestResult("error","failed to find Hosts",null,err))})
+      .catch((err)=>{res.json(new RestResult("error","failed to find Hosts",null,err.toString()))})
 };
 exports.add = function(req, res) {
     //handles null error
@@ -15,14 +15,14 @@ exports.add = function(req, res) {
     }else{
         KnownHosts.add(req.body.host)
           .then((output)=>{res.json(new RestResult("success","Host added",output,""))})
-          .catch((err)=>{res.json(new RestResult("error","failed to add host",null,err))})
+          .catch((err)=>{res.json(new RestResult("error","failed to add host",null,err.toString()))})
     }
 };
 exports.remove = function(req, res) {
   if(req.query.name){
     KnownHosts.remove( req.query.name)
       .then(()=>{res.json(new RestResult("success","Host removed",null,""))})
-      .catch((err)=>{res.json(new RestResult("error","failed to remove host",null,err))})
+      .catch((err)=>{res.json(new RestResult("error","failed to remove host",null,err.toString()))})
   }else{
     res.json(new RestResult("error","no host name specified",null,""));
   }

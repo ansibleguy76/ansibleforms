@@ -20,8 +20,8 @@ exports.upload = function(req, res,next) {
 
   result(req, res, function (err) {
       if(err) {
-          logger.error(`Upload error : ${err.message}`)
-          return res.send(new RestResult("error","file upload failed",null,err.message))
+          logger.error(`Upload error : ${err.toString()}`)
+          return res.send(new RestResult("error","file upload failed",null,err.toString()))
       } 
       logger.info(`Uploaded file ${req.file.originalname} as ${req.file.path}`)
       return res.json(new RestResult("success","file uploaded",req.file,""))
