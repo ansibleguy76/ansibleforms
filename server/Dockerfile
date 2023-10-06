@@ -41,6 +41,10 @@ RUN ansible-galaxy collection install netapp.um_info -p /usr/share/ansible/colle
 RUN ansible-galaxy collection install amazon.aws -p /usr/share/ansible/collections
 RUN ansible-galaxy collection install netapp.storagegrid -p /usr/share/ansible/collections
 RUN ansible-galaxy collection install community.general -p /usr/share/ansible/collections
+RUN ansible-galaxy collection install community.mysql -p /usr/share/ansible/collections
+
+# add mariadb connector for mysql dump
+RUN apk add --no-cache mariadb-connector-c
 
 # add ssh
 RUN apk add --no-cache openssh
