@@ -110,7 +110,9 @@
               },
               "template": {"not":{}},
               "repo": {"not":{}},
-              "steps": {"not":{}}
+              "steps": {"not":{}},
+              "awxCredentials": {"not":{}},
+              "executionEnvironment": {"not":{}}
             },
             "required": ["playbook"]
           },
@@ -133,11 +135,13 @@
               "playbook": {"not":{}},
               "template": {"not":{}},
               "inventory": {"not":{}},
+              "awxCredentials": {"not":{}},
               "tags": {"not":{}},
               "check": {"not":{}},
               "limit": {"not":{}},
               "diff": {"not":{}},
-              "steps": {"not":{}}
+              "steps": {"not":{}},
+              "executionEnvironment": {"not":{}}
             },
             "required": ["repo"]
           },
@@ -150,11 +154,13 @@
               "repo": {"not":{}},
               "template": {"not":{}},
               "inventory": {"not":{}},
+              "awxCredentials": {"not":{}},
               "tags": {"not":{}},
               "check": {"not":{}},
               "limit": {"not":{}},
               "diff": {"not":{}},
-              "key": {"not":{}}
+              "key": {"not":{}},
+              "executionEnvironment": {"not":{}}
             },
             "required": ["steps"]
           }
@@ -334,7 +340,8 @@
                       "template": {"not":{}},
                       "repo": {"not":{}},
                       "steps": {"not":{}},
-                      "awxCredentials": {"not":{}}
+                      "awxCredentials": {"not":{}},
+                      "executionEnvironment": {"not":{}}
                     },
                     "required": ["playbook"]
                   },
@@ -362,7 +369,8 @@
                       "limit": {"not":{}},
                       "diff": {"not":{}},
                       "steps": {"not":{}},
-                      "awxCredentials": {"not":{}}
+                      "awxCredentials": {"not":{}},
+                      "executionEnvironment": {"not":{}}
                     },
                     "required": ["repo"]
                   }
@@ -389,6 +397,14 @@
                     "default": ""
                   }
                 },
+                "credentials": {
+                  "type": "object",
+                  "patternProperties": {
+                    "^.*$": { "type": "string"}
+                  },
+                  "additionalProperties": false,
+                  "uniqueProperties": true            
+                },           
                 "inventory": {"type": "string"},
                 "tags": {"type": "string"},
                 "check": {"type": "boolean"},
@@ -481,7 +497,23 @@
             },
             "additionalProperties": false
           },
+          "credentials": {
+            "type": "object",
+            "patternProperties": {
+              "^.*$": { "type": "string"}
+            },
+            "additionalProperties": false,
+            "uniqueProperties": true            
+          },    
+          "awxCredentials": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "default": ""
+            }
+          },                              
           "inventory": {"type": "string"},
+          "executionEnvironment": {"type": "string"},
           "tags": {"type": "string"},
           "check": {"type": "boolean"},
           "limit": {"type": "string"},
@@ -511,6 +543,8 @@
                     "query": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
+                    "minSize": {"not":{}},
+                    "maxSize": {"not":{}},
                     "expression": {"not":{}},
                     "runLocal": {"not":{}},
                     "dbConfig": {"not":{}},
@@ -540,6 +574,8 @@
                     "query": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
+                    "minSize": {"not":{}},
+                    "maxSize": {"not":{}},
                     "expression": {"not":{}},
                     "runLocal": {"not":{}},
                     "dbConfig": {"not":{}},
@@ -578,6 +614,8 @@
                     "query": {"not":{}},
                     "minLength": {"not":{}},
                     "maxLength": {"not":{}},
+                    "minSize": {"not":{}},
+                    "maxSize": {"not":{}},
                     "expression": {"not":{}},
                     "sticky": {"not":{}},
                     "horizontal": {"not":{}},
@@ -609,6 +647,8 @@
                     "regex": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
+                    "minSize": {"not":{}},
+                    "maxSize": {"not":{}},
                     "minLength": {"not":{}},
                     "maxLength": {"not":{}},
                     "sticky": {"not":{}},
@@ -643,6 +683,8 @@
                     "regex": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
+                    "minSize": {"not":{}},
+                    "maxSize": {"not":{}},
                     "minLength": {"not":{}},
                     "maxLength": {"not":{}},
                     "expression": {"not":{}},
@@ -677,6 +719,8 @@
                     "regex": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
+                    "minSize": {"not":{}},
+                    "maxSize": {"not":{}},
                     "minLength": {"not":{}},
                     "maxLength": {"not":{}},
                     "editable": {"not":{}},
@@ -707,6 +751,8 @@
                     "regex": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
+                    "minSize": {"not":{}},
+                    "maxSize": {"not":{}},
                     "minLength": {"not":{}},
                     "maxLength": {"not":{}},
                     "editable": {"not":{}},
@@ -732,6 +778,8 @@
                     "regex": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
+                    "minSize": {"not":{}},
+                    "maxSize": {"not":{}},
                     "minLength": {"not":{}},
                     "maxLength": {"not":{}},
                     "editable": {"not":{}},
@@ -758,6 +806,8 @@
                     "editable": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
+                    "minSize": {"not":{}},
+                    "maxSize": {"not":{}},
                     "minLength": {"not":{}},
                     "maxLength": {"not":{}},
                     "query": {"not":{}},
@@ -783,6 +833,8 @@
                     "editable": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
+                    "minSize": {"not":{}},
+                    "maxSize": {"not":{}},
                     "minLength": {"not":{}},
                     "maxLength": {"not":{}},
                     "query": {"not":{}},
@@ -806,6 +858,8 @@
                     "values": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
+                    "minSize": {"not":{}},
+                    "maxSize": {"not":{}},
                     "sticky": {"not":{}},
                     "horizontal": {"not":{}},
                     "pctColumns": {"not":{}},
@@ -830,6 +884,8 @@
                     "values": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
+                    "minSize": {"not":{}},
+                    "maxSize": {"not":{}},
                     "expression": {"not":{}},
                     "sticky": {"not":{}},
                     "horizontal": {"not":{}},
@@ -865,6 +921,8 @@
                     "in":                {"not":{}}, 
                     "minValue":          {"not":{}}, 
                     "maxValue":          {"not":{}}, 
+                    "minSize": {"not":{}},
+                    "maxSize": {"not":{}},
                     "minLength":         {"not":{}}, 
                     "maxLength":         {"not":{}}, 
                     "keydown":           {"not":{}}, 
@@ -899,7 +957,52 @@
                     "tableFields":       {"not":{}}
                   },
                   "required": ["expression"]
-                },                
+                },   
+                {
+                  "properties": {
+                    "type": {
+                      "enum": ["file"]
+                    },
+                    "dateType":          {"not":{}}, 
+                    "asCredential":      {"not":{}}, 
+                    "sameAs":            {"not":{}}, 
+                    "validIf":           {"not":{}}, 
+                    "validIfNot":        {"not":{}}, 
+                    "notIn":             {"not":{}}, 
+                    "in":                {"not":{}}, 
+                    "minValue":          {"not":{}}, 
+                    "maxValue":          {"not":{}}, 
+                    "minLength":         {"not":{}}, 
+                    "maxLength":         {"not":{}}, 
+                    "keydown":           {"not":{}}, 
+                    "refresh":           {"not":{}}, 
+                    "isHtml":            {"not":{}}, 
+                    "runLocal":          {"not":{}}, 
+                    "query":             {"not":{}}, 
+                    "outputObject":      {"not":{}}, 
+                    "columns":           {"not":{}}, 
+                    "pctColumns":        {"not":{}}, 
+                    "filterColumns":     {"not":{}}, 
+                    "allowDelete":       {"not":{}}, 
+                    "allowInsert":       {"not":{}}, 
+                    "deleteMarker":      {"not":{}}, 
+                    "insertMarker":      {"not":{}}, 
+                    "readonlyColumns":   {"not":{}}, 
+                    "insertColumns":     {"not":{}},  
+                    "sticky":            {"not":{}}, 
+                    "horizontal":        {"not":{}}, 
+                    "editable":          {"not":{}}, 
+                    "valueColumn":       {"not":{}}, 
+                    "previewColumn":     {"not":{}}, 
+                    "placeholderColumn": {"not":{}}, 
+                    "dbConfig":          {"not":{}}, 
+                    "values":            {"not":{}}, 
+                    "multiple":          {"not":{}}, 
+                    "size":              {"not":{}}, 
+                    "hide":              {"not":{}}, 
+                    "tableFields":       {"not":{}}
+                  }
+                },                                
                 {
                   "properties": {
                     "type": {
@@ -907,6 +1010,8 @@
                     },
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
+                    "minSize": {"not":{}},
+                    "maxSize": {"not":{}},
                     "minLength": {"not":{}},
                     "maxLength": {"not":{}},        
                     "values": {"not":{}},
@@ -929,6 +1034,8 @@
                     "regex": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
+                    "minSize": {"not":{}},
+                    "maxSize": {"not":{}},
                     "minLength": {"not":{}},
                     "sticky": {"not":{}},
                     "horizontal": {"not":{}},
@@ -950,7 +1057,7 @@
               "properties": {
                 "type": {
                   "type": "string",
-                  "enum": ["text","textarea", "password", "checkbox", "enum", "query", "number", "radio", "expression","local","local_out","credential", "table","datetime","html"]
+                  "enum": ["text","textarea", "password", "checkbox", "enum", "query", "number", "radio", "expression","local","local_out","credential", "table","datetime","html","file"]
                 },
                 "name": {
                   "$id": "/formfield",
@@ -1041,6 +1148,8 @@
                 },
                 "minValue": {"type": "integer"},
                 "maxValue": {"type": "integer"},
+                "minSize": {"type": "integer"},
+                "maxSize": {"type": "integer"},                
                 "minLength": {"type": "integer"},
                 "maxLength": {"type": "integer"},
                 "expression": {"type": "string"},

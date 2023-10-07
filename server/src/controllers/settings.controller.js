@@ -6,12 +6,12 @@ const logger = require('../lib/logger');
 exports.find = function(req, res) {
     Settings.find()
       .then((settings)=>{res.json(new RestResult("success","Settings found",settings,""))})
-      .catch((err)=>{res.json(new RestResult("error","Failed to find settings",null,err))})
+      .catch((err)=>{res.json(new RestResult("error","Failed to find settings",null,err.toString()))})
 };
 exports.mailcheck = function(req, res) {
   Settings.mailcheck(new Settings(req.body),req.body.to)
     .then((messageid)=>{res.json(new RestResult("success",`Mail sent with id ${messageid}`))})
-    .catch((err)=>{res.json(new RestResult("error","Mail check failed",null,err.message))})
+    .catch((err)=>{res.json(new RestResult("error","Mail check failed",null,err.toString()))})
 };
 exports.update = function(req, res) {
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
@@ -19,6 +19,6 @@ exports.update = function(req, res) {
     }else{
         Settings.update(new Settings(req.body))
           .then(()=>{res.json(new RestResult("success","Settings updated",null,""))})
-          .catch((err)=>{res.json(new RestResult("error","Failed to update settings",null,err))})
+          .catch((err)=>{res.json(new RestResult("error","Failed to update settings",null,err.toString()))})
     }
 };

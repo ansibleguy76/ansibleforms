@@ -63,8 +63,8 @@
             Copy(JSON.stringify(v))
           }
           this.$toast.success("Copied to clipboard")
-        }catch(e){
-          this.$toast.error("Error copying to clipboard : \n" + e)
+        }catch(err){
+          this.$toast.error("Error copying to clipboard : \n" + err.toString())
         }
       },
       loadSsh(){
@@ -72,8 +72,8 @@
         axios.get('/api/v1/sshkey/',TokenStorage.getAuthentication())
           .then((result)=>{
             ref.ssh=result.data.data.output;
-          }),function(error){
-            ref.$toast.error(error.message);
+          }),function(err){
+            ref.$toast.error(err.toString());
           };
       },updateSsh(){
         var ref= this;
@@ -88,8 +88,8 @@
                 ref.update=false;
                 ref.loadSsh();
               }
-            }),function(error){
-              ref.$toast.error(error.message);
+            }),function(err){
+              ref.$toast.error(err.toString());
             };
         }else{
           this.$toast.warning("Invalid form data")

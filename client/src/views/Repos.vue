@@ -103,8 +103,8 @@
             }else{
               ref.repoList=result.data.data.output;
             }
-          }),function(error){
-            ref.$toast.error(error.message);
+          }),function(err){
+            ref.$toast.error(err.toString());
           };
       },
       reset(){
@@ -136,8 +136,8 @@
                 ref.repoStatus=result.data.data.output
               }
               ref.loading=false
-            }),function(error){
-              ref.$toast.error(error.message);
+            }),function(err){
+              ref.$toast.error(err.toString());
               ref.loading=false
             };
         }else{
@@ -156,8 +156,8 @@
               ref.repoItem=undefined;
               ref.loadAll();
             }
-          }),function(error){
-            ref.$toast.error(error.message);
+          }),function(err){
+            ref.$toast.error(err.toString());
           };
       },newRepo(){
         var ref= this;
@@ -173,9 +173,9 @@
                 ref.$toast.success("Created repository");
                 ref.loadAll();
               }
-            }),function(error){
+            }),function(err){
               ref.loading=false
-              ref.$toast.error(error.message);
+              ref.$toast.error(err.toString());
             };
         }
       }

@@ -25,7 +25,7 @@ exports.execute = function(req, res) {
           })
           .catch((err)=>{
             logger.error(`Error in expression : ${err}`)
-            res.json(new RestResult("success","failed to execute expression " + expression,undefined,err))
+            res.json(new RestResult("success","failed to execute expression " + expression,undefined,err.toString()))
           })
     }
 };

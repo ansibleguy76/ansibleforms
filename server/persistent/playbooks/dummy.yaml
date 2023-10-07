@@ -1,7 +1,0 @@
----
-- name: This is a hello-world example
-  hosts: localhost
-  tasks:
-    - name: Output 'Welcome'.
-      debug:
-        msg: "Hi there and welcome to ansible"

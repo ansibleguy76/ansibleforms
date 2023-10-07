@@ -21,6 +21,7 @@ import Jobs from './views/Jobs.vue'
 import Logs from './views/Logs.vue'
 import Profile from './views/Profile.vue'
 import ReferenceGuide from './views/ReferenceGuide.vue'
+import Install from './views/Install.vue'
 import TokenStorage from './lib/TokenStorage.js'
 Vue.use(Router);
 const checkAdmin=(to, from, next) => {
@@ -78,6 +79,11 @@ export default new Router({
         name:"Schema",
         component:Schema
       },
+      {
+        path:"/install",
+        name:"Install",
+        component:Install
+      },      
       {
         path:"/reference-guide",
         name:"Reference Guide Home",

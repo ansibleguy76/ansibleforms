@@ -111,8 +111,8 @@
         axios.get('/api/v1/user/',TokenStorage.getAuthentication())
           .then((result)=>{
             ref.userList=result.data.data.output;
-          }),function(error){
-            ref.$toast.error(error.message);
+          }),function(err){
+            ref.$toast.error(err.toString());
           };
       },
       selectItem(value){
@@ -137,8 +137,8 @@
         axios.get('/api/v1/group/',TokenStorage.getAuthentication())
           .then((result)=>{
             ref.groupList=result.data.data.output;
-          }),function(error){
-            ref.$toast.error(error.message);
+          }),function(err){
+            ref.$toast.error(err.toString());
           };
       }
       ,groupName(id){
@@ -166,8 +166,8 @@
               console.log("loaded user item");
               ref.user=result.data.data.output
               ref.user.password=""
-            }),function(error){
-              ref.$toast.error(error.message);
+            }),function(err){
+              ref.$toast.error(err.toString());
             };
         }else{
           this.resetUser()
@@ -183,8 +183,8 @@
               ref.userItem=undefined;
               ref.loadAll();
             }
-          }),function(error){
-            ref.$toast.error(error.message);
+          }),function(err){
+            ref.$toast.error(err.toString());
           };
       },updateUser(changePassword=false){
         var ref= this;
@@ -204,8 +204,8 @@
                 }
                 ref.loadAll();
               }
-            }),function(error){
-              ref.$toast.error(error.message);
+            }),function(err){
+              ref.$toast.error(err.toString());
             };
         }else{
           this.$toast.warning("Invalid form data")
@@ -222,8 +222,8 @@
                 ref.$toast.success("Created user with new id " + result.data.data.output);
                 ref.loadAll();
               }
-            }),function(error){
-              ref.$toast.error(error.message);
+            }),function(err){
+              ref.$toast.error(err.toString());
             };
         }
       }

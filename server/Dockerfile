@@ -41,10 +41,17 @@ RUN ansible-galaxy collection install netapp.um_info -p /usr/share/ansible/colle
 RUN ansible-galaxy collection install amazon.aws -p /usr/share/ansible/collections
 RUN ansible-galaxy collection install netapp.storagegrid -p /usr/share/ansible/collections
 RUN ansible-galaxy collection install community.general -p /usr/share/ansible/collections
+RUN ansible-galaxy collection install community.mysql -p /usr/share/ansible/collections
+
+# add mariadb connector for mysql dump
+RUN apk add --no-cache mariadb-connector-c
 
 # add ssh
 RUN apk add --no-cache openssh
 RUN mkdir -p ~/.ssh
+
+# add sshpass
+RUN apk add --no-cache sshpass
 
 # add git
 RUN apk add --no-cache git
@@ -93,6 +100,9 @@ RUN npm i --only=production
 
 # Copy transpiled js from builder stage into the final image
 COPY --from=tmp_builder /app/dist ./dist
+
+# Copy the ansible.cfg file to /etc/ansible/ directory
+COPY ansible.cfg /etc/ansible/ansible.cfg
 
 # Use js files to run the application
 ENTRYPOINT ["node", "./dist/index.js"]

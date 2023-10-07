@@ -130,7 +130,7 @@ Form.load = function() {
   try{
     return Form.validate(forms)
   }catch(err){
-    logger.error(err)
+    logger.error("Failed to validate forms : ", err)
     throw err
   }
 };
@@ -215,7 +215,7 @@ Form.parse = function(data){
     logger.info("Parsing yaml data")
     formsConfig = YAML.parse(data.forms,{prettyErrors:true})
   }catch(err){
-    logger.error(err.toString())
+    logger.error("Error : ", err)
     throw ("failed to parse yaml : " + err.toString())
   }
   return formsConfig

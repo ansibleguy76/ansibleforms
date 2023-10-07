@@ -17,7 +17,7 @@
           <div class="columns">
             <div class="column" v-if="credentialList && credentialList.length>0">
               <BulmaAdminTable
-                :dataList="credentialList"
+                :dataList="credentialList.map(x => ({...x,allowtest:(x.is_database )}))"
                 :labels="['Name','User','Host']"
                 :columns="['name','user','host']"
                 :filters="['name','user','host']"
@@ -32,14 +32,16 @@
             </div>
             <transition name="add-column" appear>
               <div class="column" v-if="credentialItem!==undefined && !showDelete">
+                <BulmaCheckbox checktype="checkbox" v-model="credential.is_database" label="For database ?" /><br><br>
                 <BulmaInput icon="heading" v-model="credential.name" label="Name" placeholder="Name" :readonly="credentialItem!==-1" :required="true" :hasError="$v.credential.name.$invalid" :errors="[]" />
                 <BulmaInput icon="user" v-model="credential.user" label="Username" placeholder="Username" :required="true" :hasError="$v.credential.user.$invalid" :errors="[]" />
                 <BulmaInput icon="lock" v-model="credential.password" type="password" label="Password" placeholder="Password" :required="true" :hasError="$v.credential.password.$invalid" :errors="[]" />
-                <BulmaInput icon="server" v-model="credential.host" label="Host" placeholder="Host" :required="true" :hasError="$v.credential.host.$invalid" :errors="[]" />
-                <BulmaInput icon="door-closed" v-model="credential.port" label="Port" placeholder="3306" :required="true" :hasError="$v.credential.port.$invalid" :errors="[]" />
-                <BulmaInput icon="info-circle" v-model="credential.description" label="Description" placeholder="Description" :required="true" :hasError="$v.credential.description.$invalid" :errors="[]" />
-                <BulmaSelect icon="database" v-model="credential.db_type" label="Database type" :list="['mysql','mssql','postgres','mongodb']"  />
-                <BulmaCheckbox checktype="checkbox" v-model="credential.secure" label="Secure connection" /><br><br>
+                <BulmaInput icon="server" v-model="credential.host" label="Host" placeholder="Host" :required="!!credential.is_database" :hasError="$v.credential.host.$invalid" :errors="[]" />
+                <BulmaInput icon="door-closed" v-model="credential.port" label="Port" placeholder="3306" :required="!!credential.is_database" :hasError="$v.credential.port.$invalid" :errors="[]" />
+                <BulmaInput icon="info-circle" v-model="credential.description" label="Description" placeholder="Description" />
+                <BulmaInput v-if="!!credential.is_database" icon="database" v-model="credential.db_name" label="Database" placeholder="Database" />
+                <BulmaSelect v-if="!!credential.is_database" icon="database" v-model="credential.db_type" label="Database type" :list="['mysql','mssql','postgres','mongodb']"  />
+                <BulmaCheckbox v-if="!!credential.is_database" checktype="checkbox" v-model="credential.secure" label="Secure connection" /><br><br>
                 <BulmaButton v-if="credentialItem==-1" icon="save" label="Create Credential" @click="newCredential()"></BulmaButton>
                 <BulmaButton v-if="credentialItem!=-1" icon="save" label="Update Credential" @click="updateCredential()"></BulmaButton>
               </div>
@@ -75,11 +77,13 @@
     data(){
       return  {
           credential:{
+            is_database:false,
             name:"",
             user:"",
             password:"",
-            host:"",
+            host:"NA",
             port:3306,
+            db_name:"",
             description:"",
             secure:false,
             db_type:""
@@ -103,8 +107,8 @@
         axios.get('/api/v1/credential/',TokenStorage.getAuthentication())
           .then((result)=>{
             ref.credentialList=result.data.data.output;
-          }),function(error){
-            ref.$toast.error(error.message);
+          }),function(err){
+            ref.$toast.error(err.toString());
           };
       },
       selectItem(value){
@@ -128,8 +132,8 @@
               }else{
                 ref.$toast.error(result.data.message + "\r\n" + result.data.data.error)
               }
-            }),function(error){
-              ref.$toast.error(error.message);
+            }),function(err){
+              ref.$toast.error(err.toString());
             };
         }
       },
@@ -141,8 +145,8 @@
             .then((result)=>{
               console.log("loaded credential item");
               ref.credential=result.data.data.output
-            }),function(error){
-              ref.$toast.error(error.message);
+            }),function(err){
+              ref.$toast.error(err.toString());
             };
         }else{
           console.log("No item selected")
@@ -162,8 +166,8 @@
               ref.credentialItem=undefined;
               ref.loadAll();
             }
-          }),function(error){
-            ref.$toast.error(error.message);
+          }),function(err){
+            ref.$toast.error(err.toString());
           };
       },updateCredential(){
         var ref= this;
@@ -176,8 +180,8 @@
                 ref.$toast.success("Credential is updated");
                 ref.loadAll();
               }
-            }),function(error){
-              ref.$toast.error(error.message);
+            }),function(err){
+              ref.$toast.error(err.toString());
             };
         }else{
           this.$toast.warning("Invalid form data")
@@ -194,8 +198,8 @@
                 ref.$toast.success("Created credential with new id " + result.data.data.output);
                 ref.loadAll();
               }
-            }),function(error){
-              ref.$toast.error(error.message);
+            }),function(err){
+              ref.$toast.error(err.toString());
             };
         }
       },showAlert(type,message){
@@ -222,15 +226,12 @@
           required
         },
         host: {
-          required
+          database_required: function(value){return (helpers.req(value) && !!this.credential?.is_database) || !(this.credential?.is_database)}
         },
         port: {
-          required,
+          database_required: function(value){return (helpers.req(value) && !!this.credential?.is_database) || !(this.credential?.is_database)},
           numeric
-        },
-        description: {
-          required
-        },
+        }
       }
 
     },

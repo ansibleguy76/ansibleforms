@@ -205,7 +205,7 @@ export default {
         try{ 
             if(typeof this.values[0]=="object")
                 valueLength=Object.keys(this.values[0]).length 
-        }catch(e){
+        }catch(err){
             //
         }
         var columnsCount=this.columns?.length || valueLength

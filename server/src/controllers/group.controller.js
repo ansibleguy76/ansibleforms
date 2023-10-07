@@ -12,11 +12,11 @@ exports.find = function(req, res) {
           res.json(new RestResult("error","no such group found",null))
         }
       })
-      .catch((err)=>{res.json(new RestResult("error","failed to find group",null,err))})
+      .catch((err)=>{res.json(new RestResult("error","failed to find group",null,err.toString()))})
   }else{
     Group.findAll()
       .then((groups)=>{ res.json(new RestResult("success","groups found",groups,"")) })
-      .catch((err)=>{ res.json(new RestResult("error","failed to find groups",null,err)) })
+      .catch((err)=>{ res.json(new RestResult("error","failed to find groups",null,err.toString())) })
   }
 
 };
@@ -28,7 +28,7 @@ exports.create = function(req, res) {
     }else{
         Group.create(new_group)
           .then((group)=>{ res.json(new RestResult("success","group added",group,"")) })
-          .catch((err)=>{ res.json(new RestResult("error","failed to create group",null,err)) })
+          .catch((err)=>{ res.json(new RestResult("error","failed to create group",null,err.toString())) })
     }
 };
 exports.findById = function(req, res) {
@@ -48,7 +48,7 @@ exports.update = function(req, res) {
     }else{
         Group.update(new Group(req.body),req.params.id)
           .then(()=>{res.json(new RestResult("success","group updated",null,""))})
-          .catch((err)=>{res.json(new RestResult("error","failed to update group",null,err))})
+          .catch((err)=>{res.json(new RestResult("error","failed to update group",null,err.toString()))})
     }
 };
 exports.delete = function(req, res) {
@@ -61,5 +61,5 @@ exports.delete = function(req, res) {
         }
 
       })
-      .catch((err)=>{res.json(new RestResult("error","failed to delete group",null,err))})
+      .catch((err)=>{res.json(new RestResult("error","failed to delete group",null,err.toString()))})
 };

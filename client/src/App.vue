@@ -136,6 +136,13 @@
         },
         checkDatabase(){
           var ref=this;
+
+          // Check if the current route is '/install' and skip the database check
+          if (this.$route.path === '/install') {
+            this.isLoaded = true;
+            return; // Skip the database check
+          }
+
           console.log("Checking database")
           axios.get('/api/v1/schema')                               // check database
           .then((result)=>{
@@ -160,7 +167,7 @@
           })
           .catch(function(err){
             ref.$toast.error("Failed to check AnsibleForms database schema");
-            ref.errorMessage="Failed to check AnsibleForms database schema\n\n" + err
+            ref.errorMessage="Failed to check AnsibleForms database schema\n\n" + err.toString()
             ref.$router.replace({name:"Error"}).catch(err => {});
             ref.isLoaded=true
           });            

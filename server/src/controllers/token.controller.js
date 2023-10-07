@@ -43,7 +43,7 @@ exports.refresh = function(req, res) {
               }
             })
             .catch((err)=>{
-              logger.error(err.toString())
+              logger.error("Error : ", err)
               res.status(401).send({ error:true, message: 'Refresh token is unknown' });
             })
         }else{

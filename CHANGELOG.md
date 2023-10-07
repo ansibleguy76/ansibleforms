@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.16] - 2023-10-07
+
+### Changed
+
+-   Ansible has now default yaml stdout
+-   fn.fnCredentials can have regex and a second ballback
+
+### Added
+
+-   New formfield type 'file' to upload files prior to job execution
+-   New Database property in credentials, needed for postgres, and can be used for mysql and mssql
+-   credentials property on forms => array of credentials to add
+-   awxCredentials property on forms => array of awxCredentials to add
+-   executionEnvironment property on forms => choose awx executionEnvironment
+
+### Fixed
+
+-   Int64 issues in rest results, new rest parameter 'hasBigInt'
+-   Issue with null values in enum fields
+
 ## [4.0.15] - 2023-08-09
 
 ### Added
@@ -570,7 +590,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.15...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.16...HEAD
+
+[4.0.16]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.15...4.0.16
 
 [4.0.15]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.14...4.0.15
 

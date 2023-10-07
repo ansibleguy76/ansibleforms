@@ -80,6 +80,7 @@ module.exports = app => {
   const repoRoutes = require('./routes/repo.routes')
   const knownhostsRoutes = require('./routes/knownhosts.routes')
   const helpRoutes = require('./routes/help.routes')
+  const installRoutes = require('./routes/install.routes')
 
   // using json web tokens as middleware
   // the jwtauthentication strategy from passport (/auth/auth.js)
@@ -102,6 +103,7 @@ module.exports = app => {
 
   // api route for version
   app.use('/api/v1/version',cors(), versionRoutes)
+  app.use('/api/v1/install',cors(), installRoutes)
 
   app.use('/api/v1/lock',cors(),authobj, lockRoutes)
   app.use('/api/v1/help',cors(),authobj, helpRoutes)    

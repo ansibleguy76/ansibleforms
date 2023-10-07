@@ -231,8 +231,8 @@
         try{
           Copy(v)
           this.$toast.success("Copied to clipboard")
-        }catch(e){
-          this.$toast.error("Error copying to clipboard : \n" + e)
+        }catch(err){
+          this.$toast.error("Error copying to clipboard : \n" + err.toString())
         }
       },
       approvalAllowed(job){
@@ -310,7 +310,7 @@
             })
             .catch(function(err){
               if(err.response && err.response.status!=401){
-                ref.errorMessage="Could not get jobs\n\n" + err
+                ref.errorMessage="Could not get jobs\n\n" + err.toString()
               }else{
                 //ref.$toast.error("Failed to load jobs")
               }
@@ -334,7 +334,7 @@
               ref.$emit('refreshApprovals')
             })
             .catch(function(err){
-              console.error(`Error loading job ${item.id} : ${err}`)
+              console.error(`Error loading job ${item.id} : ${err.toString()}`)
             })
         });
       },
@@ -367,7 +367,7 @@
               }
           })
           .catch(function(err){
-            console.log("error getting job " + err)
+            console.log("error getting job " + err.toString())
             //ref.$toast.error("Failed to get job output");
           })
       },
@@ -407,7 +407,7 @@
               }
           })
           .catch(function(err){
-            console.log("error getting job " + err)
+            console.log("error getting job " + err.toString())
             ref.$toast.error("Failed to get job output");
           })
 
@@ -435,7 +435,7 @@
               // the last piece we assign the value to
               try{
                 outputValue=master[obj]
-              }catch(e){
+              }catch(err){
                 outputValue="/bad placeholder/"
               }
 
@@ -466,7 +466,7 @@
               ref.$emit('refreshApprovals')
           })
           .catch(function(err){
-            console.log("error deleting job " + err)
+            console.log("error deleting job " + err.toString())
             ref.$toast.error("Failed to delete job");
           })
       },
@@ -485,7 +485,7 @@
               }
           })
           .catch(function(err){
-            console.log("error aborting job " + err)
+            console.log("error aborting job " + err.toString())
             ref.$toast.error("Failed to abort job");
           })
       },
@@ -505,7 +505,7 @@
               ref.$emit('refreshApprovals')
           })
           .catch(function(err){
-            console.log("error relaunching job " + err)
+            console.log("error relaunching job " + err.toString())
             ref.$toast.error("Failed to relaunch job");
           })
       },
@@ -526,7 +526,7 @@
               }
           })
           .catch(function(err){
-            console.log("error approving job " + err)
+            console.log("error approving job " + err.toString())
             ref.$toast.error("Failed to approve job");
           })
       },
@@ -547,7 +547,7 @@
               }
           })
           .catch(function(err){
-            console.log("error rejecting job " + err)
+            console.log("error rejecting job " + err.toString())
             ref.$toast.error("Failed to reject job");
           })
       }

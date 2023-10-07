@@ -7,5 +7,5 @@ const inspect = require("util").inspect
 exports.get = function(req, res) {
     Help.get()
       .then((help)=>{ res.json(new RestResult("success","help found",help,"")) })
-      .catch((err)=>{ res.json(new RestResult("error","failed to find help",null,err)) })
+      .catch((err)=>{ res.json(new RestResult("error","failed to find help",null,err.toString())) })
 };

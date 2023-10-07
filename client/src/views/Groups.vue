@@ -126,8 +126,8 @@
         axios.get('/api/v1/group/',TokenStorage.getAuthentication())
           .then((result)=>{
             ref.groupList=result.data.data.output;
-          }),function(error){
-            ref.$toast.error(error.message);
+          }),function(err){
+            ref.$toast.error(err.toString());
           };
       },
       loadUserList(){
@@ -136,8 +136,8 @@
         axios.get('/api/v1/user/',TokenStorage.getAuthentication())
           .then((result)=>{
             ref.userList=result.data.data.output;
-          }),function(error){
-            ref.$toast.error(error.message);
+          }),function(err){
+            ref.$toast.error(err.toString());
           };
       },
       loadGroup(){
@@ -148,8 +148,8 @@
             .then((result)=>{
               console.log("loaded group item");
               ref.group=result.data.data.output
-            }),function(error){
-              ref.$toast.error(error.message);
+            }),function(err){
+              ref.$toast.error(err.toString());
             };
         }else{
           console.log("No item selected")
@@ -169,8 +169,8 @@
               ref.groupItem=undefined;
               ref.loadAll();
             }
-          }),function(error){
-            ref.$toast.error(error.message);
+          }),function(err){
+            ref.$toast.error(err.toString());
           };
       },
       newGroup(){
@@ -185,8 +185,8 @@
                 ref.$toast.success("Created group with new id " + result.data.data.output);
                 ref.loadAll();
               }
-            }),function(error){
-              ref.$toast.error(error.message);
+            }),function(err){
+              ref.$toast.error(err.toString());
             };
         }
       },

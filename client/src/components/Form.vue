@@ -252,8 +252,40 @@
                                 </div>                            
                               </template>
                         </date-picker>  
+                        <!-- type = file-->
+                        <div v-if="field.type=='file'">
+                          <div class="file has-name is-fullwidth">
+                            <label class="file-label">
+                              <input class="file-input" 
+                                :required="field.required" 
+                                type="file" 
+                                :name="field.name" 
+                                @change="handleFiles($event.target.name, $event.target.files)"
+                                :class="{'is-danger':$v.form[field.name].$invalid}"
+                              >
+                              <span class="file-cta">
+                                <span class="file-icon">
+                                  <font-awesome-icon :icon="field.icon || 'upload'" />
+                                </span>
+                                <span class="file-label">
+                                  {{ field.placeholder || 'Choose a file...' }}
+                                </span>
+                              </span>
+                              <span v-if="$v.form[field.name].$model" class="file-name">
+                                {{ $v.form[field.name].$model.name }}
+                              </span>
+                              <span v-else class="file-name">
+                                No file chosen
+                              </span>
+                            </label>
+                          </div>   
+                          <div v-if="fileProgress[field.name] && fileProgress[field.name]>0 && fileProgress[field.name]<100 ">
+                            <progress class="progress is-tiny" :value="fileProgress[field.name]" max="100">{{ fileProgress[field.name] }}%</progress>
+                          </div>      
+                        </div>               
+                      
                         <!-- fields with icons -->
-                        <div v-if="!['datetime','table','radio','enum','query','checkbox'].includes(field.type)" :class="{'has-icons-left':!!field.icon && !['query','enum','datetime'].includes(field.type)}" class="control">
+                        <div v-if="!['datetime','table','radio','enum','query','checkbox','file'].includes(field.type)" :class="{'has-icons-left':!!field.icon && !['query','enum','datetime'].includes(field.type)}" class="control">
                           <!-- type = expression -->
                           <div v-if="field.type=='expression'" :class="{'is-loading':(dynamicFieldStatus[field.name]==undefined || dynamicFieldStatus[field.name]=='running') &! fieldOptions[field.name].editable}" class="control">
                             <div v-if="!fieldOptions[field.name].viewable">
@@ -313,7 +345,7 @@
                             :placeholder="field.placeholder"
                             @change="evaluateDynamicFields(field.name)">
                     
-                          <!-- add left icon, but not for query, because that's a component with icon builtin -->
+                          <!-- add left icon, but not for expression, because that's a component with icon builtin -->
                           <span v-if="!!field.icon && !(field.type=='expression' && fieldOptions[field.name].viewable)" class="icon is-small is-left">
                             <font-awesome-icon :icon="field.icon" />
                           </span>
@@ -325,6 +357,8 @@
                         <p class="has-text-danger" v-if="'maxLength' in $v.form[field.name] && !$v.form[field.name].maxLength">Can not be more than {{$v.form[field.name].$params.maxLength.max}} characters long</p>
                         <p class="has-text-danger" v-if="'minValue' in $v.form[field.name] && !$v.form[field.name].minValue">Value cannot be lower than {{$v.form[field.name].$params.minValue.min}}</p>
                         <p class="has-text-danger" v-if="'maxValue' in $v.form[field.name] && !$v.form[field.name].maxValue">Value cannot be higher than {{$v.form[field.name].$params.maxValue.max}}</p>
+                        <p class="has-text-danger" v-if="'minSize' in $v.form[field.name] && !$v.form[field.name].minSize">{{$v.form[field.name].$params.minSize.description}}</p>
+                        <p class="has-text-danger" v-if="'maxSize' in $v.form[field.name] && !$v.form[field.name].maxSize">{{$v.form[field.name].$params.maxSize.description}}</p>
                         <p class="has-text-danger" v-if="'regex' in $v.form[field.name] && !$v.form[field.name].regex">{{$v.form[field.name].$params.regex.description}}</p>
                         <p class="has-text-danger" v-if="'validIf' in $v.form[field.name] && !$v.form[field.name].validIf">{{$v.form[field.name].$params.validIf.description}}</p>
                         <p class="has-text-danger" v-if="'validIfNot' in $v.form[field.name] && !$v.form[field.name].validIfNot">{{$v.form[field.name].$params.validIfNot.description}}</p>
@@ -491,6 +525,8 @@
           showHidden:false,         // flag to show/hide hidden field / = debug mode
           jobId:undefined,          // holds the current jobid
           abortTriggered:false,     // flag abort is triggered,
+          pauseJsonOutput:false,    // flag to pause jsonoutput interval
+          fileProgress:{},
           containerSize:{
             x:0,
             width:0
@@ -527,18 +563,47 @@
               (value) => (value==true)
           )
         }
-        if("minValue" in ff){ attrs.minValue=minValue(ff.minValue)}
-        if("maxValue" in ff){ attrs.maxValue=maxValue(ff.maxValue)}
+        if("minSize" in ff){ 
+          if(ff.type=="file"){
+            description = `Size (${Helpers.humanFileSize(this.form[ff.name]?.size)}) cannot be lower than ${Helpers.humanFileSize(ff.minSize)}`
+            attrs.minSize = helpers.withParams(
+                {description: description,type:"minSize"},
+                (file) => !helpers.req(file?.name) || file?.size>=ff.minSize
+            )
+          }
+        }   
+        if("maxSize" in ff){ 
+          if(ff.type=="file"){
+            description = `Size (${Helpers.humanFileSize(this.form[ff.name]?.size)}) cannot be higher than ${Helpers.humanFileSize(ff.maxSize)}`
+            attrs.maxSize = helpers.withParams(
+                {description: description,type:"maxSize"},
+                (file) => !helpers.req(file?.name) || file?.size<=ff.maxSize
+            )
+          }
+        }                 
+        if("minValue" in ff){ 
+          attrs.minValue=minValue(ff.minValue)
+        }
+        if("maxValue" in ff){ 
+          attrs.maxValue=maxValue(ff.maxValue)
+        }
         if("minLength" in ff){ attrs.minLength=minLength(ff.minLength)}
         if("maxLength" in ff){ attrs.maxLength=maxLength(ff.maxLength)}
         // regex validation
         if("regex" in ff){
           regexObj = new RegExp(ff.regex.expression)
           description = ff.regex.description
-          attrs.regex = helpers.withParams(
-              {description: description,type:"regex"},
-              (value) => !helpers.req(value) || regexObj.test(value)
-          )
+          if(ff.type=="file"){
+            attrs.regex = helpers.withParams(
+                {description: description,type:"regex"},
+                (file) => !helpers.req(file?.name) || regexObj.test(file?.name)
+            )
+          }else{
+            attrs.regex = helpers.withParams(
+                {description: description,type:"regex"},
+                (value) => !helpers.req(value) || regexObj.test(value)
+            )
+          }
         }
         // validation based on value of another field
         if("validIf" in ff){
@@ -588,8 +653,8 @@
         return this.jobResult?.data?.output?.replace(/<span class='low[^<]*<\/span>/g,"").replace(/\r\n/g,"<br>").replace(/(<br>\s*){3,}/ig,"<br><br>") // eslint-disable-line
       },
       filteredSubJobOutput(){
-        if(!this.filterOutput) return this.subjob?.output?.replace(/\r\n/g,"<br>")
-        return this.subjob?.output?.replace(/<span class='low[^<]*<\/span>/g,"").replace(/\r\n/g,"<br>").replace(/(<br>\s*){3,}/ig,"<br><br>") // eslint-disable-line
+        if(!this.filterOutput) return this.subjob?.data?.output?.replace(/\r\n/g,"<br>")
+        return this.subjob?.data?.output?.replace(/<span class='low[^<]*<\/span>/g,"").replace(/\r\n/g,"<br>").replace(/(<br>\s*){3,}/ig,"<br><br>") // eslint-disable-line
       },      
       // form loaded and validation ready
       formIsReady(){
@@ -636,6 +701,10 @@
       } 
     },
     methods:{
+      // when file selected
+      handleFiles(name,files){
+        Vue.set(this.$v.form[name],'$model',files[0])
+      },
       // used for enum field, to know the width of the container
       calcContainerSize(){
         var rect=this.$refs["container"]?.getBoundingClientRect()
@@ -739,8 +808,8 @@
             Copy(JSON.stringify(v))
           }
           this.$toast.success("Copied to clipboard")
-        }catch(e){
-          this.$toast.error("Error copying to clipboard : \n" + e)
+        }catch(err){
+          this.$toast.error("Error copying to clipboard : \n" + err.toString())
         }
       },
       // creates a list of fields per group
@@ -914,8 +983,8 @@
             try{
               r=Helpers.evalSandbox(_value)
               return r
-            }catch(e){
-              console.log(`Error evaluating default value : ${e}`)
+            }catch(err){
+              console.log(`Error evaluating default value : ${err.toString()}`)
             }
           }else{
             return _value
@@ -951,10 +1020,10 @@
           // set default value
           Vue.set(this.form,fieldname,this.defaults[fieldname])
          
-        }catch(e){
+        }catch(err){
           // this error should not hit, unless we have a bug
-          console.log("Error: " + e)
-          throw e
+          console.log("Error: " + err.toString())
+          throw err
         }
       },
       // set dynamic field status, only for expressions,query and table
@@ -1242,6 +1311,7 @@
                 // other fields, grab a valid value
                 fieldvalue = ref.getFieldValue(ref.form[foundfield],column,true);// get value of aaa.bbb
               }
+
               // get dynamic field status
               if(foundfield in ref.dynamicFieldStatus){
                 targetflag = ref.dynamicFieldStatus[foundfield];                  // and what is the currect status of xxx, in case it's also dyanmic ?
@@ -1253,10 +1323,13 @@
             // if the variable is viable and not being changed, replace it
             // console.log(foundfield + "("+fieldvalue+")" + " -> targetflag = " + targetflag)
             // console.log(foundfield + " -> targetflag = " + targetflag)
-            if(((targetflag=="variable"||targetflag=="fixed"||targetflag=="default") && fieldvalue!==undefined && value!=undefined)||((ignoreIncomplete||false) && value!=undefined)){                // valid value ?
-                if(fieldvalue==undefined){
+            if(((targetflag=="variable"||targetflag=="fixed"||targetflag=="default") && fieldvalue!==undefined)||((ignoreIncomplete||false) && value!==undefined)){                // valid value ?
+                if(fieldvalue===undefined){
                   fieldvalue="__undefined__"   // catch undefined values
                 }
+                if(fieldvalue===null){
+                  fieldvalue="__null__"   // catch null values
+                }                
                 fieldvalue=ref.stringifyValue(fieldvalue)
                 // console.log("replacing placeholder")
                 value=value.replace(foundmatch,fieldvalue);               // replace the placeholder with the value
@@ -1266,6 +1339,7 @@
                 value=undefined      // cannot evaluate yet
             }
             hasPlaceholders=true;
+
         }
         if(retestRegex.test(value)){                     // still placeholders found ?
             value=undefined                           // cannot evaluate yet
@@ -1273,6 +1347,8 @@
         if(value!=undefined){
            value=value.replace("'__undefined__'","undefined")  // replace undefined values
            value=value.replace("__undefined__","undefined")
+           value=value.replace("'__null__'","null")  // replace undefined values
+           value=value.replace("__null__","null")
         }
         return {"hasPlaceholders":hasPlaceholders,"value":value}          // return the result
       },
@@ -1368,7 +1444,7 @@
                           Vue.delete(ref.queryerrors, item.name);
                         }catch(err){
                           // console.log("Local eval failed : " + err)
-                          Vue.set(ref.queryerrors, item.name,err);
+                          Vue.set(ref.queryerrors, item.name,err.toString());
                           try{
                             ref.setFieldToDefault(item.name)
                           }catch(err){
@@ -1575,7 +1651,9 @@
           }
           refreshCounter++;
           if(refreshCounter%ref.loopdivider==0){
-            ref.generateJsonOutput() // refresh json output
+            if(!ref.pauseJsonOutput && ref.showExtraVars){
+              ref.generateJsonOutput() // refresh json output
+            }
           }
           if(ref.watchdog>50 || ref.watchdog==0){
             ref.loopdelay=500
@@ -1703,10 +1781,10 @@
               }
           })
           .catch(function(err){
-            console.log("error getting job " + err)
+            console.log("error getting job " + err.toString())
             ref.$toast.error("Failed to get job");
             if(err.response.status!=401){
-              ref.jobResult.message="Error in axios call to get job\n\n" + err
+              ref.jobResult.message="Error in axios call to get job\n\n" + err.toString()
               ref.jobResult.status="error";
             }
           })
@@ -1730,13 +1808,12 @@
               keys = Object.keys(field[0])    // get properties
               if(keys.length>0){
                 key = (keys.includes(column))?column:keys[0] // get column, fall back to first
-                field=field.map((item,i) => ((item)?(item[key]??item):undefined))  // flatten array
+                field=field.map((item) => ((item)?((item[key]==null)?null:(item[key]??item)):undefined))  // flatten array
               }else{
                 field=(!keepArray)?undefined:field // force undefined if we don't want arrays
               }
             } // no else, array is already flattened
             field=(!wasArray || !keepArray)?field[0]:field // if it wasn't an array, we take first again
-
           }else{
             field=(!keepArray)?undefined:field // force undefined if we don't want arrays
           }
@@ -1747,18 +1824,25 @@
         return field
       },
       // generate the form json output
-      generateJsonOutput(){
+      generateJsonOutput(filedata={}){
         var ref=this
         this.formdata={}
         this.currentForm.fields.forEach((item, i) => {
           // this.checkDependencies(item) // hide field based on dependency
           if(this.visibility[item.name] && !item.noOutput){
             var fieldmodel = [].concat(item.model || [])
-            var outputObject = item.outputObject || item.type=="expression" || item.type=="table" || false
-            var outputValue = this.form[item.name]
+            var outputObject = item.outputObject || item.type=="expression" || item.type=="file" || item.type=="table" || false
+            var outputValue
+            // if uploaded file info, use that
+            if(item.name in filedata){
+              outputValue=filedata[item.name]
+            // else just use the formdata
+            }else{
+              outputValue = this.form[item.name]
+            }
             // if no model is given, we assign to the root
             if(!outputObject){  // do we need to flatten output ?
-              outputValue=this.getFieldValue(outputValue,item.valueColumn || "",true)
+                outputValue=this.getFieldValue(outputValue,item.valueColumn || "",true)
             }
             if(fieldmodel.length==0){
               this.formdata[item.name]=outputValue
@@ -1808,35 +1892,93 @@
           return true
         }
       },
+      async uploadFile(fieldname,file){
+        var ref=this
+        ref.$toast.info(`Start uploading ${file.name}`)
+        var formData = new FormData();
+        formData.append("file", file);
+        const config = {
+          ...TokenStorage.getAuthenticationMultipart(),
+            onUploadProgress: progressEvent => {Vue.set(ref.fileProgress,fieldname,Math.round(progressEvent.loaded/progressEvent.total*100))}
+        }
+        const result = await axios.post('/api/v1/job/upload/', formData, config)
+        return result.data
+      },
       // execute the form
-      executeForm(){
+      async executeForm(){
         // make sure, no delayed stuff is started.
         //
         var ref=this
         var postdata={}
+        postdata.files = {}
         if(ref.validateForm){ // final validation
 
-          this.generateJsonOutput()
+          // we find all file fields and check which ones have a file
+          this.currentForm.fields
+            .filter(f => (f.type=='file' && ref.form[f.name]?.name))
+            .forEach(f => {
+              postdata.files[f.name]=ref.form[f.name]
+            })     
+
+          // we try to upload all of them (concurrently put in sync/await)
+          try {
+
+            const fileKeys = Object.keys(postdata.files);
+            const totalFiles = fileKeys.length;
+
+            // Upload all files concurrently and track progress
+            let uploadedFilesCount = 0;
+            const uploadPromises = fileKeys.map(async (key) => {
+              try {
+                var result = await ref.uploadFile(key,postdata.files[key]);
+                var fileObj
+                // upload was success
+                if(result.status=="success"){
+                  // we get the uploaded file info
+                  fileObj = result.data.output
+                  // and store it
+                  postdata.files[key] = fileObj
+                  // ref.$toast.success(`Finished uploading ${fileObj.originalname}`);
+                  // uploadedFilesCount++;
+                  // const progressPercentage = (uploadedFilesCount / totalFiles) * 100;
+                  // ref.$toast.info(`File uploaded ${uploadedFilesCount} of ${totalFiles} (${progressPercentage.toFixed(2)}%)`);
+                }
+                if(result.status=="error"){
+                  ref.$toast.error(result.data.error);
+                  throw new Error(result.data.error)
+                }
+
+              } catch (e) {
+                console.log(e)
+                throw new Error("Failed uploading files")
+              }
+            });
+
+            await Promise.all(uploadPromises);
+            // ref.$toast.info(`All files uploaded`);
+          }catch(err){
+            ref.$toast.error(err.toString());
+            ref.resetResult()
+            // stop, don't execute job
+            throw new Error("Failed uploading files");
+            
+          }
+
+          // pause json output interval
+          this.pauseJsonOutput=true
+          // generate correct json output (and use the uploaded file info)
+          this.generateJsonOutput(postdata.files)
           postdata.extravars = this.formdata
           postdata.formName = this.currentForm.name;
           postdata.credentials = {}
-          postdata.awxCredentials = {}
+          // add all fields that are marked as credential, and add them to the credentials object (in the root of the postdata)
           this.currentForm.fields
             .filter(f => f.asCredential==true)
             .forEach(f => {
               postdata.credentials[f.name]=this.formdata[f.name]
             })
-          if(this.currentForm.steps)
-            this.currentForm.steps
-              .forEach(s => {
-                if(s.awxCredentials)
-                  s.awxCredentials
-                    .forEach(f => {
-                      if(this.formdata[f]){
-                        postdata.awxCredentials[f]=this.formdata[f]
-                      }
-                    })
-              })
+
+ 
           this.jobResult.message= "Connecting with job api ";
           this.jobResult.status="info";
           axios.post("/api/v1/job/",postdata,TokenStorage.getAuthentication())
@@ -1870,6 +2012,8 @@
                 ref.resetResult()
               }
             })
+          // resume interval
+          this.pauseJsonOutput=false;
          }
       },
       pullGit(repo){
@@ -1903,7 +2047,7 @@
           try{
             var queryObject=JSON.parse(atob(ref.$route.query.base64values))
             // Vue.set(ref,"form",queryObject)
-          }catch(e){
+          }catch(err){
             ref.$toast.error("Couldn't parse your querystring")
           }
           for (const [key, value] of Object.entries(queryObject)) {
@@ -1946,7 +2090,7 @@
             if(item.type=="number"){
               try{
                 queryValue=parseInt(queryValue)
-              }catch(e){
+              }catch(err){
                 queryValue=0
               }
             }
@@ -2048,7 +2192,7 @@
             ref.startDynamicFieldsLoop()
           })
           .catch(function(err){
-            ref.$toast.error("Failed to pull from git " + err)
+            ref.$toast.error("Failed to pull from git " + err.toString())
             ref.pretasksFinished=true
             // start dynamic field loop (= infinite)
             ref.startDynamicFieldsLoop()
@@ -2183,5 +2327,7 @@ pre{
     color:#333;
 
   }
-
+.progress.is-tiny {
+    height: 0.2rem;
+}
 </style>

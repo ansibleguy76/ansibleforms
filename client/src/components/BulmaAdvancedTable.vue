@@ -185,7 +185,8 @@
         return true;
       },
       highlightFilter(v,label=undefined){
-        var s=v+""
+        
+        var s=(v??"")+""
         var cols=[]
         if(this.filterColumns.length>0){
           cols=this.filterColumns
@@ -336,7 +337,7 @@
               if(typeof obj == "object"){
                 defaulttype="object"
               }
-            }catch(e){
+            }catch(err){
               obj=undefined
             }
             if(typeof this.defaultValue == "object"){
@@ -353,8 +354,8 @@
                     if(this.objectEqual(obj,item)){
                         ref.select(i)
                     }
-                  }catch(e){
-                    console.log("Bad defaultvalue : "  + e)
+                  }catch(err){
+                    console.log("Bad defaultvalue : "  + err.toString())
                   }
                 })
               }

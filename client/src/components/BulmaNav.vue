@@ -30,7 +30,7 @@
                     <router-link class="navbar-item" v-if="isAdmin && authenticated" to="/logs">
                       <span class="icon"><font-awesome-icon icon="file-lines" /></span><span>Logs</span>
                     </router-link>
-                    <a class="navbar-item" href="https://www.ansibleforms.com/" target="_blank">
+                    <a class="navbar-item" href="https://ansibleforms.com/" target="_blank">
                       <span class="icon"><font-awesome-icon icon="globe" /></span><span>Documentation</span>
                     </a>
                     <router-link class="navbar-item" to="/reference-guide/forms">

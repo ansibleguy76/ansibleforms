@@ -9,6 +9,7 @@ MySql = {}
 MySql.clean=function(config){
   delete config.name
   delete config.db_type
+  delete config.db_name
   delete config.secure
   return config
 }
@@ -23,6 +24,10 @@ MySql.query=function(connection_name,query){
       try{
         logger.debug(`[${connection_name}] connection found : ${config.name}`)
         config.multipleStatements=true
+        // remove database if not defined
+        if(config.db_name){
+          config.database = config.db_name
+        }
         if(config.secure){
           config.ssl={
             sslmode:"required",

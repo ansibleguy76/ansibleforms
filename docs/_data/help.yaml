@@ -354,6 +354,13 @@
     description: |
       Sometime, the job output is flooded with meaningless output, such as 'Gathering Facts', or 'Includes'.  You filter out these by add a piece of string in the taskname, i.e. `[low]` and then used regex `\\[low\\]` to hide this information.  
       The output has a button `Apply filter` for the filtering to take effect.
+  - name: UPLOAD_PATH
+    type: string
+    allowed: a valid path
+    short: The path for file uploads
+    default: "%PERSISTENT_FOLDER%/uploads"
+    description: |
+      Since 4.0.16, a new field type is introduced that allows file uploads.  The files are uploaded in this path.
 - name: Forms.yaml
   icon: fab,wpforms
   link: forms
@@ -969,6 +976,52 @@
               - name: __playbook__
                 type: text
                 default: helloworld.yaml # this will overwrite the playbook name
+      - name: credentials
+        type: object
+        group: basic
+        version: 4.0.16
+        allowed: key-value pairs
+        short: Send credentials to your playbook/template
+        description: |
+          From the earlier versions, you could send credentials, stored in Ansible Forms, by using the field-property `asCredentials`.  
+          From now on, you can also define them statically in the form.  
+          Additionally, you can also set these dynamically by using the a field name __credentials__.  
+          **Note** : that this also works in steps, so each step can have its own set of credentials.  
+          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+          **Note** : The credential can be a regex
+          **Note** : A second, fallback, credential kan be passed using a comma
+        examples:
+        - name: Send vmware and microsoft credentials
+          code: |
+            credentials:
+              cred_vm: vcenter_creds # will take the credentials calld vcenter_creds and send them in the object `cred_vm`
+              cred_ms: ad_creds # will take the credentials called ad_creds and send them in the object `cred_ms`
+              cred_netapp: cluster1,clusters2 # will first search for cluster1 and as fallback to cluster2
+              cred_veeam: veeam_server[0-9],veeam # will first search for a credential matching the regex, and as fallback search for veeam
+        - name: Dynamically send credentials
+          code: |
+            fields:
+              - name: my_vcenter_cred
+                type: enum
+                values:
+                  - vcenter_prod
+                  - vcenter_dev
+                default: ad_prod            
+              - name: __credentials__
+                type: expression
+                runLocal: true
+                hide: true
+                expression: "{vcenter:'$(my_vcenter_cred)'}"
+
+            # NOTE : this can also be done using `asCredential`
+
+              - name: vcenter
+                type: enum
+                values:
+                  - vcenter_prod
+                  - vcenter_dev
+                default: ad_prod                     
+                asCredential: true
       - name: repo
         type: object
         with_types: git
@@ -1007,6 +1060,48 @@
           **Note** : You can also dynamically set the inventory by using a field called `__inventory__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static inventory.  
           **Note** : Ansible core allows multiple inventories (so you can use an array), however awx does not support multiple inventories.
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+      - name: executionEnvironment
+        type: string
+        short: Execution Environment
+        group: workflow
+        description: |
+          In newer versions of AWX you can choose an execution environment.  Use this property to pass it to your template.
+            
+          **Note** : You can also dynamically set the executionEnvironment by using a field called `__executionEnvironment__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static executionEnvironment.  
+          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+      - name: awxCredentials
+        type: array
+        group: workflow
+        version: 4.0.16
+        allowed: name of credential in AWX
+        short: Add awx credentials to your template
+        description: |
+          In AWX you can set credentials on your template.   
+          From now on, you can also add credentials from Ansible Forms.
+          
+          **Note** : you can also set these dynamically by using the a field name __awxCredentials__.   It must be sent as extravar.  If this extravar is found it will overwrite the static awxCredentials.  
+          **Note** : this also works in steps, so each step can have its own set of awxCredentials.  
+          **Note** : the credentials will be added on top of the ones already selected in the template, they will be merged.  
+          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+        examples:
+        - name: Add awx credentials to your template
+          code: |
+            awx_credentials:
+              - vmware_prod
+              - ad_prod
+        - name: Dynamically send credentials
+          code: |
+            fields:
+              - name: my_ad_creds
+                type: enum
+                values:
+                  - ad_prod
+                  - ad_dev
+                default: ad_prod
+              - name: __awxCredentials__
+                type: expression
+                runLocal: true
+                expression: "['vmware_prod','$(my_ad_creds)']"
       - name: check
         type: boolean
         group: workflow
@@ -1092,6 +1187,7 @@
                 - info@ansibleguy.com
               onStatus:
                 - success
+            
       - name: onSubmit
         type: array
         group: interaction
@@ -1409,6 +1505,18 @@
               Ansible Forms allows to add an approval point before a job is ran.  
               An approval link is sent by email to a specific approver who can then approve or reject the job.  
               Every step can have a differnt approval point.
+            examples:
+            - name: Approve removal
+              code: |
+                approval:
+                  title: Please approve removal
+                  message: |
+                    You need to approve the removal of $(field1).  
+                    Double check please.
+                  roles:
+                    - public
+                  notifications:
+                    - info@ansibleforms.com    
           - name: notifications
             type: object
             group: interaction
@@ -1678,7 +1786,16 @@
                     - name: header
                       type: html
                       expression: | 
-                        '<h3 class="title is-3">Your own title</h3>'                                                                                                                                                        
+                        '<h3 class="title is-3">Your own title</h3>'          
+              - name: file
+                description: A file upload field, the file is uploaded prior to the job start and the extravars will contain the uploaded file info.
+                version: 4.0.16
+                examples:
+                - name: Software Image Upload
+                  code: |
+                    - type: file
+                      name: software_image
+                      label: Upload software image
               - name: number
                 description: A number input field
                 examples:
@@ -1902,7 +2019,7 @@
             type: string
             group: basic
             allowed: Free text
-            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, file
             short: Field label
             description: |
               A friendly name/label for the field
@@ -1910,7 +2027,7 @@
             type: string
             group: basic
             allowed: Free text
-            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, file
             short: In-field help value
             description: |
               Some form fields allow an in-field hint value.
@@ -1918,7 +2035,7 @@
             type: string
             group: basic
             allowed: Free text
-            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, file
             short: Field help message
             description: |
               Some fields require additional help information.
@@ -1931,7 +2048,7 @@
             description: |
               Some formfields can hold a nice looking icon.  The icon name is a free fontawesome 6 icon.
               You can find more information at [www.fontawesome.com](https://www.fontawesome.com)
-            with_types: text, number, expression, password, enum
+            with_types: text, number, expression, password, enum, file
           - name: group
             type: string
             group: visualization
@@ -2214,6 +2331,22 @@
             description: |
               Forces a number-field to not be higher than...
             with_types: number
+          - name: minSize
+            allowed: Integer
+            group: validation
+            type: number
+            short: File minimum size
+            description: |
+              Forces a file-fields size to not be lower than...
+            with_types: file
+          - name: maxSize
+            allowed: Integer
+            group: validation
+            type: number
+            short: File maximum size
+            description: |
+              Forces a file-fields size to not be higher than...
+            with_types: file            
           - name: regex
             type: object
             group: validation
@@ -2223,7 +2356,7 @@
               This field requires an object with 2 attributes:
               * `expression` : The regular expression
               * `description` : A validation message to show when the regex is not matched.
-            with_types: text, expression, password, datetime
+            with_types: text, expression, password, datetime, file
             examples:
             - name: Validate email address
               code: |
@@ -2234,7 +2367,13 @@
               code: |
                 regex:
                   expression: "(?=^.{8,}$)(?=.*\d)(?=.*[!@#$%^&*]+)(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$"
-                  description: Must be complex (8 or longer ; uppercase ; lowercase ; numeric ; specials)              
+                  description: Must be complex (8 or longer ; uppercase ; lowercase ; numeric ; specials)
+            - name: Only pdf files
+              code: |
+                type: file
+                regex:
+                  expression: "pdf$"
+                  descriptoin: You can only upload pdf files           
           - name: notIn
             type: object
             group: validation
@@ -2373,7 +2512,9 @@
             short: Send credential as extravar
             description: |
               Use the value of this field to search for a credential with the same name  
-              and send that credential (with user and password) hidden to the playbook as extravar.
+              and send that credential (with user and password) hidden to the playbook as extravar.  
+
+              Since 4.0.16, you can use this in combination with the `credentials` form-property.
             with_types: text, password, enum, expression
             examples:
               - name: Search and send the credential named 'vcenter'
@@ -2733,8 +2874,7 @@
                     name: CMDB
                     type: mysql
                   query: SELECT id,name FROM users
-                  previewColumn:
-                  - name
+                  previewColumn: name
           - name: allowInsert
             type: boolean
             group: interaction
@@ -3173,8 +3313,7 @@
                       name: CMDB
                       type: mysql
                     query: SELECT id,name FROM users
-                    previewColumn:
-                    - name
+                    previewColumn: name
         - name: Repository
           itemName: attribute
           link: forms/form/repo
@@ -3422,6 +3561,27 @@
       description: Convert bytes to gigabytes
       code: | 
         ($(size_bytes)/1024/1024/1024).toFixed(2)  // toFixed is native javascript method
+    - name: Get a name with incremental numbering
+      description: |
+        When working with auto numbering, you might want to find the next name in an array of stings that some numbering.   
+        Also available as server side expression (prefixed with `fn.`)
+      code: |
+        fnGetNumberedName(['server001','server002','server005'],'server###','server001',false)
+        // result : "server006"
+
+        fnGetNumberedName(['server001','server002','server005'],'server###','server001',true)
+        // result : "server003"
+
+        fnGetNumberedName($(fieldlist),'server###','server001',true)
+        // use another expression field as input for the array
+
+        // fnGetNumberedName(array,pattern,default,fillgaps)
+        // This function searches for a numbered pattern in a list of string, 
+        // increases the highest number and returns a name like the pattern
+        // - array : an array object, you can use a placeholder to an expression where you know it's an array
+        // - pattern : a string that hold the # as a digit
+        // - default : if no value is found, return this default
+        // - fillgaps : a boolean to indicate it can fill gaps in the numbers, 1,2,3,6 => 4           
     - name: object-array manipulation
       description: |
         When working with object-arrays, you will want to control and manipulate that data.  
@@ -3609,7 +3769,8 @@
           '',
           'name_of_credential_in_database',
           '[.records[] | {name:.name, email:.email, spouse:.relations.spouse}'],
-          'name'
+          'name',
+          false
         )
 
         // output : a full json object coming from rest, json transformed with jq, result sorted and transformed by javascript.
@@ -3621,6 +3782,7 @@
         // - credential-name : it will lookup the credentials as you have saved in the gui
         // - jq-expression : an optional jq-expression (https://jsplay.org)
         // - sort object : a sort object to order the result
+        // - hasBigInt : a boolean indicating if it should convert Int64 to string
     - name: rest api with token authentication
       code: |
         fn.fnRestJwt(
@@ -3629,7 +3791,8 @@
           '',
           'your_jwt_token_in_text',
           '[.records[] | {name:.name, age:.age}]',
-          ['age','name']
+          ['age','name'],
+          false
         )
 
         // output : a full json object coming from rest, json transformed with jq, result sorted, first by age, then by name
@@ -3641,6 +3804,7 @@
         // - token : it will be add as a Bearer Authorization header
         // - jq-expression : an optional jq-expression (https://jsplay.org)
         // - sort-object : a sort object to sort the result
+        // - hasBigInt : a boolean indicating if it should convert Int64 to string
     - name: rest api with secured token authentication
       code: |
         fn.fnRestJwtSecure(
@@ -3649,7 +3813,8 @@
           '',
           'name_of_credential_in_database',
           '[.records[] | {name:.name, age:.age}]',
-          ['age','name']
+          ['age','name'],
+          false
         )
 
         // output : a full json object coming from rest, json transformed with jq, result sorted, first by age, then by name
@@ -3660,7 +3825,8 @@
         // - body : in case of post and put
         // - credential_name : Encrypted credential will be looked up.  The password will be the token.
         // - jq-expression : an optional jq-expression (https://jsplay.org)
-        // - sort-object : a sort object to sort the result    
+        // - sort-object : a sort object to sort the result   
+        // - hasBigInt : a boolean indicating if it should convert Int64 to string 
     - name: rest api with custom headers
       code: |
         fn.fnRestAdvanced(
@@ -3669,7 +3835,8 @@
           '',
           {'a_custom_http_header','your_value'},
           '.records[].name',
-          {name:{ignoreCase:true,direction:'desc'}}
+          {name:{ignoreCase:true,direction:'desc'}},
+          false
         )
 
         // output : a full json object coming from rest, json transformed with jq, result sorted descending by name
@@ -3681,11 +3848,12 @@
         // - headers: an object of headers
         // - jq-expression : an optional jq-expression (https://jsplay.org)
         // - sort-object : a sorting object to order the results
+        // - hasBigInt : a boolean indicating if it should convert Int64 to string
     - name: get credentials
       code: |
-        fn.fnCredentials('credentialname')
+        fn.fnCredentials('credentialname_or_regex','fallback_credentialname_or_regex')
 
-        // Try to used `fnRestBasic` and `fnRestJwtSecured` if possible, this avoids passwords and tokens going over the network.
+        // Try to use `fnRestBasic` and `fnRestJwtSecured` if possible, this avoids passwords and tokens going over the network.
 
         // output : a credential object with all properties (username, password, host, port)    
     - name: sort an array
@@ -3737,6 +3905,9 @@
           '[.records[] | {"Available Capacity":.storage_capacity.available | fn2GB | fnRound }]')
         // note you need to pipe into the functions
     - name: Get a name with incremental numbering
+      description: |
+        In an array of strings containing incremental numbers (server001,server002, ...), you might want to search the next available name.  
+        Also available as local expression (without the `fn.` prefix)
       code: |
         fn.fnGetNumberedName(['server001','server002','server005'],'server###','server001',false)
         // result : "server006"
@@ -3886,9 +4057,46 @@
   - name: Credentials
     short: Pass credentials
     description: |
-      Credentials can be safely passed as extravars by creating a hidden expression field.  
-      The value of the expression field is is the name of the stored credential you want to pass.  
-      And then simply add the field property `asCredential` as true.  
+      Credentials can be add in several ways.
+      * using the field-property `asCredential`  
+      * using the `credentials` form-property (key-value pairs)
+      * using an extravar called `__credentials__`
+    language: yaml
+    code: |
+      # assume you have 2 credentials created in Ansible Forms
+      # 1: vcenter
+      # 2: ad
+
+      # you want them exposed to the playbook as
+      # 1: vc_cred
+      # 2: ad_cred
+
+      # Method 1 : using asCredential field-property
+      fields:
+      - name: vc_cred
+        type: expression
+        runLocal: true
+        expression: "'vcenter'"
+      - name: ad_cred
+        type: expression
+        runLocal: true
+        expression: "'ad'"
+
+      # Method 2 : using credentials form-property   
+      name: myplaybook
+      type: ansible
+      credentials:
+        vc_cred: vcenter
+        ad_cred: ad
+        veeam_cred : veeam_prod,veeam_dev # will first try veeam_prod, then as fallback veeam_dev
+
+      # Method 3 : using __credentials__ extravar
+      fields:
+      - name: __credentials__
+        type: expression
+        runLocal: true
+        expression: "{vc_cred: 'vcenter',ad_cred: 'ad',veeam_cred:'$(veeam_server)'}"
+        # note : in the expression you can use placeholders to make them dynamic
   - name: Userinfo
     short: Pass the current user
     description: |
@@ -3896,7 +4104,7 @@
       You don't need to do anything.  
       It is sent as `ansibleforms_user`.
   - name: Userinfo Form
-    short: Access current user info
+    short: Access current user info in the form
     description: |
       The field `__user__` is automatically added in the form.
     language: yaml
@@ -3926,13 +4134,14 @@
         - ./data/git/.gitconfig:$HOME_DIR/.gitconfig    
         # Map custom logo
         - ./data/mylogo.svg:/app/dist/views/assets/img/logo_ansible_forms_full_white.svg
-  - name: Default value
-    short: Set a default value
+  - name: Default value on enum
+    short: Enum default value
     description: |
-      There is obviously the field property `default` you can use to manipulate a default.  And with `enum` fields, you can use `__auto__` for example to automatically select the first item.  
-         
-      But sometimes you want to have a dynamic default, based on an expression.  For simple fields, you use the `expression` field in combination with the field property `editable`, this will force the expression as the default, but allows the operator to override it.  
-      But in case you want an expression-based default on an `enum` field, it's a bit tricky, yet not undoable.  See the below example how we accomplish this.
+      There is obviously the field property `default` you can use to manipulate a default.  
+      And with `enum` fields, you can use `__auto__` for example to automatically select the first item.  
+
+      But sometimes you want to have a dynamic default, based on an expression.  
+      See the below example how we accomplish this.
     language: yaml
     code: |
       # using client javascript manipulation
@@ -3957,3 +4166,95 @@
       # explained : 
       # we take our default and merge it with the source where we filter out the default (to avoid doubles)    
       # the default is thus shifted to the first element, which we can now select with the default `__auto__`
+  - name: Expression default value
+    short: Expression default value
+    description: |
+      For text, number or date fields, you can use the `default` property to set a default value.  
+      But what if you want this to be dynamic?  Like an expression?  
+
+      You can do this in 2 ways:  
+      * `editable`: use the editable property to make an expression-field editable
+      * `evalDefault`: use the evalDefault property to evaluate the default as an expression
+    language: yaml
+    code: |
+      # using editable
+      - type: expression
+        expression: "'$(some_other_field)'.toLowerCase()"
+        name: field1
+        runLocal: true
+        editable: true # this will add an edit-button so you manually overwrite the expression value
+
+      # using evalDefault
+      - type: text
+        name: field1
+        default: "'$(some_other_field)'.toLowerCase()"
+        evalDefault: true # it will treat the default as if it was an expression.
+        # note : when `some_other_field` changes, the default will be re-evaluated
+        # note2 : works for other fields too.
+  - name: Query AWX/Tower
+    short: Query information from AWX or Tower
+    description: |
+      Sometimes you want to create dropdown boxes, with data from AWX or Tower.  
+      You can use `fn.fnRestBasic` or `fn.fnRestJwtSecure` to query to do this.  
+      
+    language: yaml
+    code: |
+      name: Query awx
+      type: awx
+      template: my_template # will be overwritten by the field __template__
+      description: ""
+      awxCredentials:
+        - vmware
+      execution_environment: my_execution_environment
+      roles:
+        - public
+      categories: []
+      inventory: my_inventory # will be overwritten by the field __inventory__
+      tileClass: has-background-info-light
+      icon: bullseye
+      fields:
+        # make sure you add credentials called "awx_rest" where the password holds the token
+        # if you like basic authentication, switch the expressions below to fn.fnRestBasic instead
+
+        - name: organization
+          label: Organization
+          type: enum
+          default: __auto__
+          expression: "fn.fnRestJwtSecure('get','https://172.16.50.1/api/v2/organizations','','awx_rest','[.results[]]')"
+          columns:
+            - name
+          valueColumn: id # => we want the organisation field to hold the id !!
+        - name: __template__  # use this special name to override the template from the form
+          label: Inventory
+          type: enum
+          default: __auto__
+          expression: "fn.fnRestJwtSecure('get','https://172.16.50.1/api/v2/job_templates?organization=$(organization)','','awx_rest','[.results[]]')"
+          columns:
+            - name
+          valueColumn: name
+        - name: __inventory__  # use this special name to override the inventory from the form
+          label: Inventory
+          type: enum
+          default: __auto__
+          expression: "fn.fnRestJwtSecure('get','https://172.16.50.1/api/v2/inventories?organization=$(organization)','','awx_rest','[.results[]]')"
+          columns:
+            - name
+          valueColumn: name    
+        - name: __awxCredentials__  # use this special name to override the credentials from the form
+          label: Inventory
+          type: enum
+          expression: "fn.fnRestJwtSecure('get','https://172.16.50.1/api/v2/credentials?organization=$(organization)','','awx_rest','[.results[]]')"
+          multiple: true
+          default: __auto__
+          columns:
+            - name
+          valueColumn: name     
+        - name: __execution_environment__  # use this special name to override the execution_environment from the form
+          label: Inventory
+          type: enum
+          expression: "fn.fnRestJwtSecure('get','https://172.16.50.1/api/v2/execution_environments?organization=$(organization)','','awx_rest','[.results[]]')"
+          default: __auto__
+          columns:
+            - name
+          valueColumn: name           
+  

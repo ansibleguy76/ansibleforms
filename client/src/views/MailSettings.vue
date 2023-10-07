@@ -82,8 +82,8 @@
         axios.get('/api/v1/settings/',TokenStorage.getAuthentication())
           .then((result)=>{
             ref.settings=result.data.data.output;
-          }),function(error){
-            ref.$toast.error(error.message);
+          }),function(err){
+            ref.$toast.error(err.toString());
           };
       },updateSettings(){
         var ref= this;
@@ -96,8 +96,8 @@
                 ref.$toast.success("Settings are updated");
                 ref.loadSettings();
               }
-            }),function(error){
-              ref.$toast.error(error.message);
+            }),function(err){
+              ref.$toast.error(err.toString());
             };
         }else{
           this.$toast.warning("Invalid form data")
@@ -113,8 +113,8 @@
               }else{
                 ref.$toast.success(result.data.message);
               }
-            }),function(error){
-              ref.$toast.error(error.message);
+            }),function(err){
+              ref.$toast.error(err.toString());
             };
           }else{
             this.$toast.warning("Invalid form data")

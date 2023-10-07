@@ -12,6 +12,7 @@ Mssql.query=async function(connection_name,query){
         server: creds.host,
         user: creds.user,
         password: creds.password,
+        database: creds.db_name,
         port: creds.port,
         options: {
             trustServerCertificate: true
@@ -20,6 +21,10 @@ Mssql.query=async function(connection_name,query){
     if(creds.secure){
       
       config.encrypt=true
+    }
+    // remove database if needed
+    if(!creds.db_name){
+      delete config.database
     }
     return config
   })

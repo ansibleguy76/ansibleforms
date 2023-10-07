@@ -13,12 +13,12 @@ exports.abortJob = function(req, res) {
   }
     Job.abort(jobid)
      .then((job)=>{res.json(new RestResult("success","job aborted",null,""))})
-     .catch((err)=>{res.json(new RestResult("error","failed to abort job",null,err))})
+     .catch((err)=>{res.json(new RestResult("error","failed to abort job",null,err.toString()))})
 };
 exports.updateJob = function(req, res) {
     Job.update(new Job(req.body),req.params.id)
       .then(()=>{res.json(new RestResult("success","job updated",null,""))})
-      .catch((err)=>{res.json(new RestResult("error","failed to update job",null,err))})
+      .catch((err)=>{res.json(new RestResult("error","failed to update job",null,err.toString()))})
 };
 exports.getJob = function(req, res) {
   var user = req.user.user
@@ -59,7 +59,7 @@ exports.getJob = function(req, res) {
           res.json(new RestResult("error","failed to find job",null,"No such job"))
         }
       })
-      .catch((err)=>{res.json(new RestResult("error","failed to find job",null,err))})
+      .catch((err)=>{res.json(new RestResult("error","failed to find job",null,err.toString()))})
 
 };
 exports.findAllJobs = function(req, res) {
@@ -67,7 +67,7 @@ exports.findAllJobs = function(req, res) {
     var records = req.query.records || 500
     Job.findAll(user,records)
     .then((jobs)=>{res.json(new RestResult("success","jobs found",jobs,""))})
-    .catch((err)=>{res.json(new RestResult("error","failed to find jobs",null,err))})
+    .catch((err)=>{res.json(new RestResult("error","failed to find jobs",null,err.toString()))})
 };
 exports.findApprovals = function(req, res) {
     var user = req.user.user
@@ -97,10 +97,7 @@ exports.launch = async function(req, res) {
         var form = req.body.formName || "";
         var extravars = req.body.extravars || {}
         var creds = req.body.credentials || {}
-        var awxCreds = req.body.awxCredentials || {}
-        for (const [key, value] of Object.entries(awxCreds)) {
-          creds["awx___"+key]=value
-        }
+        // new in 4.0.16, awxCreds are extracted from form and extravars
         var user = req?.user?.user || {}
         extravars.ansibleforms_user = user
         try{
@@ -108,8 +105,10 @@ exports.launch = async function(req, res) {
             res.json(new RestResult("success","succesfully launched form",job,""))
           })
         }catch(err){
-          logger.error(err.toString())
-          res.json(new RestResult("success","failed to launch form",null,err.toString()))
+          logger.error("Errors : ", err)
+          try{
+            res.json(new RestResult("success","failed to launch form",null,err.toString()))
+          }catch(e){}
         }
     }
 };
@@ -127,7 +126,7 @@ exports.relaunchJob = async function(req, res) {
         res.json(new RestResult("success",`Job has been relaunched with job id ${job.id}`,"",""))
       })
     }catch(err){
-      logger.error(err.toString())
+      logger.error("Error : ", err)
       res.json(new RestResult("error",`Failed to relaunch : ${err.toString()}`,"",""))
     }
 };
@@ -145,7 +144,7 @@ exports.approveJob = async function(req, res) {
         res.json(new RestResult("success",`Job ${jobid} has been approved`,"",""))
       })
     }catch(err){
-      logger.error(err.toString())
+      logger.error("Error : ", err)
       res.json(new RestResult("error",`Failed to approve : ${err.toString()}`,"",""))
     }    
 };
@@ -162,7 +161,7 @@ exports.rejectJob = async function(req, res) {
       await Job.reject(user,jobid)
       res.json(new RestResult("success",`Job ${jobid} has been rejected`,"",""))
     }catch(err){
-      logger.error(err.toString())
+      logger.error("Error : ", err)
       res.json(new RestResult("error",`Failed to reject : ${err.toString()}`,"",""))
     }    
 

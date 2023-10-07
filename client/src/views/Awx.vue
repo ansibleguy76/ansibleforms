@@ -72,8 +72,8 @@
         axios.get('/api/v1/awx/',TokenStorage.getAuthentication())
           .then((result)=>{
             ref.awx=result.data.data.output;
-          }),function(error){
-            ref.$toast.error(error.message);
+          }),function(err){
+            ref.$toast.error(err.toString());
           };
       },updateAwx(){
         var ref= this;
@@ -86,8 +86,8 @@
                 ref.$toast.success("Awx is updated");
                 ref.loadAwx();
               }
-            }),function(error){
-              ref.$toast.error(error.message);
+            }),function(err){
+              ref.$toast.error(err.toString());
             };
         }else{
           this.$toast.warning("Invalid form data")
@@ -102,8 +102,8 @@
             }else{
               ref.$toast.success(result.data.message);
             }
-          }),function(error){
-            ref.$toast.error(error.message);
+          }),function(err){
+            ref.$toast.error(err.toString());
           };
       }
     },

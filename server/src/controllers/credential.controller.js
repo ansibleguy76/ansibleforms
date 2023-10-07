@@ -9,11 +9,11 @@ exports.find = function(req, res) {
   if(req.query.name){
     Credential.findByName2(req.query.name)
     .then((credential)=>{res.json(new RestResult("success","credentials found",credential,""))})
-    .catch((err)=>{res.json(new RestResult("error","failed to find credentials",null,err))})
+    .catch((err)=>{res.json(new RestResult("error","failed to find credentials",null,err.toString()))})
   }else{
     Credential.findAll()
     .then((credentials)=>{res.json(new RestResult("success","credentials found",credentials,""))})
-    .catch((err)=>{res.json(new RestResult("error","failed to find credentials",null,err))})
+    .catch((err)=>{res.json(new RestResult("error","failed to find credentials",null,err.toString()))})
   }
 };
 exports.create = function(req, res) {
@@ -24,7 +24,7 @@ exports.create = function(req, res) {
     }else{
         Credential.create(new_credential)
         .then((credential)=>{ res.json(new RestResult("success","credential added",credential,"")) })
-        .catch((err)=>{ res.json(new RestResult("error","failed to create credential",null,err)) })
+        .catch((err)=>{ res.json(new RestResult("error","failed to create credential",null,err.toString())) })
     }
 };
 exports.findById = function(req, res) {
@@ -33,10 +33,10 @@ exports.findById = function(req, res) {
       if(credential.length>0){
         res.json(new RestResult("success","found credential",credential[0],""));
       }else{
-        res.json(new RestResult("error","failed to find credential",null,err))
+        res.json(new RestResult("error","failed to find credential",null,err.toString()))
       }
     })
-    .catch((err)=>{res.json(new RestResult("error","failed to find credential",null,err))})
+    .catch((err)=>{ res.json(new RestResult("error","failed to find credential",null,err.toString())) })
 };
 exports.update = function(req, res) {
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
@@ -44,13 +44,13 @@ exports.update = function(req, res) {
     }else{
         Credential.update(new Credential(req.body),req.params.id)
         .then((credential)=>{res.json(new RestResult("success","credential updated",null,""))})
-        .catch((err)=>{res.json(new RestResult("error","failed to update credential",null,err))})
+        .catch((err)=>{ res.json(new RestResult("error","failed to update credential",null,err.toString())) })
     }
 };
 exports.delete = function(req, res) {
     Credential.delete(req.params.id)
     .then(()=>{res.json(new RestResult("success","credential deleted",null,""))})
-    .catch((err)=>{res.json(new RestResult("error","failed to delete credential",null,err))})
+    .catch((err)=>{ res.json(new RestResult("error","failed to delete credential",null,err.toString())) })
 };
 exports.testDb = function(req,res){
     Credential.findById(req.params.id)
@@ -63,19 +63,18 @@ exports.testDb = function(req,res){
         }else if(db_type=='postgres'){
           return postgres.query(cred[0].name,'select 1')
         }else if(db_type=='mongodb'){
-          throw "Mongodb test is not implemented"
+          throw new Error("Mongodb test is not implemented")
         }else{
-          throw "Database type not set"
+          throw new Error("Database type not set")
         }
     })
-    .then(()=>{res.json(new RestResult("success","Database connection ok",null,""))})
+    .then(()=>{ res.json(new RestResult("success","Database connection ok",null,""))})
     .catch((err)=>{
-      if(err.includes("not set")){
+      if(err.message.includes("not set")){
         res.json(new RestResult("error","Database type not set",null,""))
       }else{
-        res.json(new RestResult("error","Database connection failed",null,err))
+        res.json(new RestResult("error","Database connection failed",null,err.toString()))
       }
-
     })
 
 }
