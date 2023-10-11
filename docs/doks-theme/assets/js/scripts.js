@@ -175,6 +175,6 @@
 
 
 	// search
-	$('#tipue_search_input').tipuesearch();	
+	// $('#tipue_search_input').tipuesearch();	
 
 }( jQuery ) );
