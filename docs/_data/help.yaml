@@ -4257,4 +4257,30 @@
           columns:
             - name
           valueColumn: name           
+  - name: Database upgrade to 8.x
+    short: Database upgrade to 8.x
+    description: |
+      At some point you will want to upgrade the MySql database.  
+      Initially, Ansible Forms came with MySql 5.7, but you can upgrade the database of course.  
+      With docker-compose you can simple change the mysql version number in the docker-compose.yaml file. (the current docker-compose file uses 8.1) 
+      After a docker-compose down/up, the new image will be pulled and installed.  
+      The upgrade is completely transparent, however, after an upgrade from 5.7 to 8.x you will get warnings about `caching_sha2_password`, a newer method of password handling.  
+      To remove the warning you need to do 2 steps:  
+
+      1) Connect to your mysql server and run this :  
+        
+      `ALTER USER 'root'@'%' IDENTIFIED WITH caching_sha2_password BY 'MyPassword';`  
+      `ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY 'MyPassword';`  
+        
+      **NOTE** : Obviously, you need to correct the username and password if you use another connection user and or password.  
+
+      2) In the `my.cnf` file, you need to change this :  
+        
+      ```
+      [mysqld]
+      default_authentication_plugin=caching_sha2_password
+      ```
+        
+      **NOTE** : in the docker-compose solution the location is `${your-docker-compose-path}/data/mysql/my.cnf`
+
   
