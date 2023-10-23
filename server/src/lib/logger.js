@@ -2,7 +2,6 @@ const winston = require('winston');
 require('winston-daily-rotate-file');
 require('winston-syslog').Syslog;
 const loggerConfig = require('../../config/log.config');
-
 const color = {
 'info': process.env.LOG_COLOR_INFO || "\x1b[32m",
 'error': process.env.LOG_COLOR_ERROR || "\x1b[31m",

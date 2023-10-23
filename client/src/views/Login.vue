@@ -68,34 +68,42 @@
             this.$toast.error("Failed to get settings")
           })
         },
-        getGroupsAndLogin(azuretoken){
-
+        getGroupsAndLogin(azuretoken, url = `${this.azureGraphUrl}/v1.0/me/transitiveMemberOf`, allGroups = []) {
           const config = {
-              headers: { 
-                Authorization: `Bearer ${azuretoken}`
-              }
+            headers: {
+              Authorization: `Bearer ${azuretoken}`
+            }
           };
-          axios.get(`${this.azureGraphUrl}/v1.0/me/transitiveMemberOf`,config)
-          .then((res) => {
-            const groups = res.data.value.map(x=>('azuread/'+x.displayName))
-            axios.post('/api/v1/auth/azureadoauth2/login',{azuretoken,groups})
-            .then((result)=>{
-              if(result.data.token){
-                TokenStorage.storeToken(result.data.token)
-                TokenStorage.storeRefreshToken(result.data.refreshtoken)
-                this.$emit("authenticated", result.data.token);   
-              }else{
-                this.$toast.error("Azure AD Login failed, no token found")
+
+          axios.get(url, config)
+            .then((res) => {
+              const groups = res.data.value.filter(x => x.displayName).map(x => ('azuread/' + x.displayName));
+              allGroups = allGroups.concat(groups);
+
+              if (res.data['@odata.nextLink']) {
+                // If there's a nextLink, make a recursive call to get the next page of data
+                this.getGroupsAndLogin(azuretoken, res.data['@odata.nextLink'], allGroups);
+              } else {
+                // No more nextLink, you have all the groups
+                axios.post('/api/v1/auth/azureadoauth2/login', { azuretoken, groups:allGroups })
+                  .then((result) => {
+                    if (result.data.token) {
+                      TokenStorage.storeToken(result.data.token);
+                      TokenStorage.storeRefreshToken(result.data.refreshtoken);
+                      this.$emit("authenticated", result.data.token);
+                    } else {
+                      this.$toast.error("Azure AD Login failed, no token found");
+                    }
+                  })
+                  .catch((err) => {
+                    console.log(err);
+                    this.$toast.error("Azure AD Login failed");
+                  });
               }
             })
-            .catch((err)=>{
-              console.log(err)
-              this.$toast.error("Azure AD Login failed")
-            })            
-          })
-          .catch((err)=>{
-            this.$toast.error("Failed to get groupmembership")
-          })
+            .catch((err) => {
+              this.$toast.error("Failed to get group membership");
+            });
         },
         login() {
 

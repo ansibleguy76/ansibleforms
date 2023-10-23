@@ -1,7 +1,7 @@
 <template>
   <section v-if="isAdmin" class="section">
     <div class="container">
-      <h1 class="title has-text-info"><font-awesome-icon icon="address-card" /> Azure AD</h1>
+      <h1 class="title has-text-info"><font-awesome-icon icon="address-card" /> MS Entra ID</h1>
       <div class="columns">
         <div class="column is-narrow">
           <BulmaSettingsMenu />
@@ -10,12 +10,12 @@
           <nav class="level">
             <!-- Left side -->
             <div class="level-left">
-              <p class="level-item"><BulmaButton icon="save" label="Update AzureAd" @click="updateAzureAd()"></BulmaButton></p>
+              <p class="level-item"><BulmaButton icon="save" label="Update" @click="updateAzureAd()"></BulmaButton></p>
             </div>
           </nav>      
           <div class="columns">
             <div class="column">
-              <BulmaCheckbox checktype="checkbox" v-model="azuread.enable" label="Enable Azure AD" />
+              <BulmaCheckbox checktype="checkbox" v-model="azuread.enable" label="Enable MS Entra ID" />
               <div class="mt-2">
                 <BulmaInput :disabled="!azuread.enable" icon="user-tag" v-model="azuread.client_id" label="Client Id" placeholder="" :required="true" :hasError="$v.azuread.client_id.$invalid" :errors="[]" />
                 <BulmaInput :disabled="!azuread.enable" icon="user-secret" v-model="azuread.secret_id" type="password" label="Secret Id" placeholder="" :required="true" :hasError="$v.azuread.secret_id.$invalid" :errors="[]" />
