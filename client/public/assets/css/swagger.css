@@ -1,4 +1,4 @@
-.topbar-wrapper img[alt="Swagger UI"] {
+.topbar-wrapper>a.link {
     content: url('/assets/img/logo_ansible_forms_full_white.svg');
 }
 

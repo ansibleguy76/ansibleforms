@@ -1288,14 +1288,13 @@
             foundfield=foundfield.replace(/\[[0-9]*\]/,'') // make xxx[y] => xxx
             fieldvalue = undefined
             targetflag = undefined
-            // console.log(foundfield + "("+fieldvalue+")" + " -> targetflag = " + targetflag)
             // mark the field as a dependent field
             if(foundfield in ref.form){      // does field xxx exist in our form ?
               // if the field exists
               // and it's from an expression or table
               //   or it's deep link in a column (colum has .)
               // and the reference field is an object
-              if(ref.fieldOptions[foundfield] && (["expression","table"].includes(ref.fieldOptions[foundfield].type)||column.includes(".")) && (typeof ref.form[foundfield]=="object")){
+              if(ref.fieldOptions[foundfield] && (["expression","table","constant"].includes(ref.fieldOptions[foundfield].type)||column.includes(".")) && ((typeof ref.form[foundfield]=="object") || (Array.isArray(ref.form[foundfield])))){
                 // objects and array should be stringified
                 fieldvalue=JSON.stringify(ref.form[foundfield])
                 // console.log(Helpers.replacePlaceholders(match[1],ref.form))
@@ -1582,6 +1581,10 @@
                       ref.$toast("Cannot reset field status " + item.name)
                     }
                   }
+                } else if(item.value && flag==undefined){
+                  ref.setFieldStatus(item.name,"running",false)
+                  if(item.type=="expression") Vue.set(ref.form, item.name, item.value);
+                  ref.setFieldStatus(item.name,"fixed")
                 }
               }else{  // not visible field
                 if(item.type=="expression"){
@@ -2106,7 +2109,7 @@
           Vue.set(ref.fieldOptions,item.name,{})                                // storing some easy to find options
           Vue.set(ref.fieldOptions[item.name],"evalDefault",item.evalDefault??false)
           if(["expression","query","enum","table","html"].includes(item.type)){
-            Vue.set(ref.fieldOptions[item.name],"isDynamic",!!(item.expression??item.query??false))
+            Vue.set(ref.fieldOptions[item.name],"isDynamic",!!(item.expression??item.query??item.value??false))
             Vue.set(ref.fieldOptions[item.name],"valueColumn",item.valueColumn||"")
             Vue.set(ref.fieldOptions[item.name],"placeholderColumn",item.placeholderColumn||"")
             Vue.set(ref.fieldOptions[item.name],"type",item.type)
@@ -2133,6 +2136,9 @@
         // initiate the constants
         if(ref.constants){
           Object.keys(ref.constants).forEach((item)=>{
+            ref.fieldOptions[item]={
+              type: "constant",
+            }
             Vue.set(ref.form,item,ref.constants[item])
           })
         }

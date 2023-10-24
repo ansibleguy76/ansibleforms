@@ -2267,6 +2267,30 @@
                 - name: your_choice
                   type: local
                   expression: "'You chose $(cities2.name) or just short $(cities2.short)'"
+          - name: value
+            type: any
+            group: data
+            short: A fixed value for the expression
+            description: |
+              To manually populate an expression field (dictionary, array, number, boolean, string).  
+              runLocal will be ignored.  
+            with_types: expression
+            version: 4.0.17
+            examples:
+            - name: list of cities
+              code: |
+                - name: cities
+                  type: expression
+                  value:
+                  - Rome
+                  - Paris
+            - name: custom object
+              code: |
+                - name: myObject
+                  type: expression
+                  value:
+                    foo: bar
+                    ping: pong
           - name: default
             type: many
             group: data

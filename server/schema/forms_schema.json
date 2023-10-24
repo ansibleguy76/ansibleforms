@@ -879,6 +879,32 @@
                 {
                   "properties": {
                     "type": {
+                      "enum": ["expression","local","local_out"]
+                    },
+                    "minValue": {"not":{}},
+                    "maxValue": {"not":{}},
+                    "minSize": {"not":{}},
+                    "maxSize": {"not":{}},
+                    "sticky": {"not":{}},
+                    "horizontal": {"not":{}},
+                    "pctColumns": {"not":{}},
+                    "filterColumns": {"not":{}},
+                    "dbConfig": {"not":{}},
+                    "multiple": {"not":{}},
+                    "allowDelete": {"not":{}},
+                    "allowInsert": {"not":{}},
+                    "deleteMarker": {"not":{}},
+                    "insertMarker": {"not":{}},
+                    "readonlyColumns": {"not":{}},
+                    "keydown": {"not":{}},
+                    "expression": {"not":{}},
+                    "outputObject": {"not":{}}
+                  },
+                  "required": ["value"]
+                },                
+                {
+                  "properties": {
+                    "type": {
                       "enum": ["expression"]
                     },
                     "values": {"not":{}},
@@ -1220,6 +1246,15 @@
                       ]                    
                   }
                 },
+                "value": {
+                  "anyOf": [
+                    {"type": "string"},
+                    {"type": "boolean"},
+                    {"type": "array"},
+                    {"type": "object"},
+                    {"type": "integer"}
+                  ]
+                },                
                 "multiple": {
                   "type": "boolean",
                   "default": false

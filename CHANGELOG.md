@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed 
 
 -  AzureAD only returned first 100 groups.
+-  Constants with arrays now work correctly
+
+### Added
+
+-  Expression field can now have property `value` for manual data assignment
 
 ## [4.0.16] - 2023-10-07
 
