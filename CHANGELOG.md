@@ -11,10 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -  AzureAD only returned first 100 groups.
 -  Constants with arrays now work correctly
+-  Little ldap test bug
+-  model bug, bad merging and weird caching
 
 ### Added
 
 -  Expression field can now have property `value` for manual data assignment
+-  Added form property ansibleCredentials, allowing to pass ansible_user and ansible_password
 
 ## [4.0.16] - 2023-10-07
 
