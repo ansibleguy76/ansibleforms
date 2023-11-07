@@ -7,17 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed 
+## [4.0.17] - 2023-11-07
 
--  AzureAD only returned first 100 groups.
--  Constants with arrays now work correctly
--  Little ldap test bug
--  model bug, bad merging and weird caching
+### Fixed
+
+-   AzureAD only returned first 100 groups.
+-   Constants with arrays now work correctly
+-   Little ldap test bug
+-   model bug, bad merging and weird caching
 
 ### Added
 
--  Expression field can now have property `value` for manual data assignment
--  Added form property ansibleCredentials, allowing to pass ansible_user and ansible_password
+-   Expression field can now have property `value` for manual data assignment
+-   Added form property ansibleCredentials, allowing to pass ansible_user and ansible_password
 
 ## [4.0.16] - 2023-10-07
 
@@ -602,7 +604,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.16...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.17...HEAD
+
+[4.0.17]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.16...4.0.17
 
 [4.0.16]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.15...4.0.16
 
