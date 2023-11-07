@@ -466,6 +466,7 @@
   import Helpers from './../lib/Helpers'
   import Copy from 'copy-to-clipboard'
   import 'vue-json-pretty/lib/styles.css';
+  import Lodash from 'lodash'
   import VueShowdown from 'vue-showdown';
   import { required, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
 
@@ -1344,10 +1345,10 @@
             value=undefined                           // cannot evaluate yet
         }
         if(value!=undefined){
-           value=value.replace("'__undefined__'","undefined")  // replace undefined values
-           value=value.replace("__undefined__","undefined")
-           value=value.replace("'__null__'","null")  // replace undefined values
-           value=value.replace("__null__","null")
+           value=value.replaceAll("'__undefined__'","undefined")  // replace undefined values
+           value=value.replaceAll("__undefined__","undefined")
+           value=value.replaceAll("'__null__'","null")  // replace undefined values
+           value=value.replaceAll("__null__","null")
         }
         return {"hasPlaceholders":hasPlaceholders,"value":value}          // return the result
       },
@@ -1829,26 +1830,28 @@
       // generate the form json output
       generateJsonOutput(filedata={}){
         var ref=this
-        this.formdata={}
+        var formdata={}
         this.currentForm.fields.forEach((item, i) => {
           // this.checkDependencies(item) // hide field based on dependency
           if(this.visibility[item.name] && !item.noOutput){
             var fieldmodel = [].concat(item.model || [])
             var outputObject = item.outputObject || item.type=="expression" || item.type=="file" || item.type=="table" || false
-            var outputValue
+            var outputValue = undefined
             // if uploaded file info, use that
             if(item.name in filedata){
               outputValue=filedata[item.name]
             // else just use the formdata
             }else{
-              outputValue = this.form[item.name]
+              // deep clone, otherwise weird effects
+              outputValue = JSON.parse(JSON.stringify(this.form[item.name]))
             }
             // if no model is given, we assign to the root
             if(!outputObject){  // do we need to flatten output ?
                 outputValue=this.getFieldValue(outputValue,item.valueColumn || "",true)
             }
             if(fieldmodel.length==0){
-              this.formdata[item.name]=outputValue
+              // deep clone = otherwise weird effects
+              formdata[item.name]=JSON.parse(JSON.stringify(outputValue))
             }else{
               fieldmodel.forEach((f)=>{
                 // convert fieldmodel for actual object
@@ -1856,9 +1859,15 @@
                 // using reduce, which is a recursive function
                 f.split(/\s*\.\s*/).reduce((master,obj, level,arr) => {
                   // if last
+                  
                   if (level === (arr.length - 1)){
                       // the last piece we assign the value to
-                      master[obj]=outputValue
+                      if(master[obj]===undefined){
+                        master[obj]=outputValue
+                      }else{
+                        master[obj]=Lodash.merge(master[obj],outputValue)
+                      }
+                      
                   }else{
                       // initialize first time to object
                       if(master[obj]===undefined){
@@ -1868,13 +1877,14 @@
                   // return the result for next reduce iteration
                   return master[obj]
 
-                },ref.formdata);
+                },formdata);
               })
 
             }
           }
         });
-
+        // update main data
+        Vue.set(this,"formdata",formdata)
       },
       // validate form before submit
       validateForm(){
@@ -1980,7 +1990,6 @@
             .forEach(f => {
               postdata.credentials[f.name]=this.formdata[f.name]
             })
-
  
           this.jobResult.message= "Connecting with job api ";
           this.jobResult.status="info";
