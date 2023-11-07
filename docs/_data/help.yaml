@@ -1022,6 +1022,14 @@
                   - vcenter_dev
                 default: ad_prod                     
                 asCredential: true
+      - name: ansibleCredentials
+        type: string
+        group: basic
+        version: 4.0.17
+        allowed: a local credentialname
+        short: Pass ansible_user and ansible_password to ansible playbook using stored credentials
+        description: |
+          Ansible allows to pass default ansible credentials in the form of 2 extravars ansible_user and ansible_password
       - name: repo
         type: object
         with_types: git
@@ -2270,7 +2278,7 @@
           - name: value
             type: any
             group: data
-            short: A fixed value for the expression
+            short: A fixed value (any type) for the expression
             description: |
               To manually populate an expression field (dictionary, array, number, boolean, string).  
               runLocal will be ignored.  
