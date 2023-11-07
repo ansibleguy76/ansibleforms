@@ -1,3 +1,9 @@
+// load the .env.development file ; it loads a bunch of environment variables
+// we are not doing this for production, where the variables are coming from the actual environment
+if (process.env.NODE_ENV !== 'production' || process.env.FORCE_DOTENV==1 || process.env.FORCE_DOTENV=="1" ){
+  console.log(`Importing .env file : ${__dirname}/../.env.${process.env.NODE_ENV}` )
+  require('dotenv').config({ path: `${__dirname}/../.env.${process.env.NODE_ENV}` })
+}
 // express is the base http server for nodejs
 const express = require('express');
 const session = require('express-session');
@@ -15,12 +21,6 @@ const bodyParser = require('body-parser');
 const passport = require('passport');
 // a small custom middleware to check whether the user is administrator
 const checkAdminMiddleware = require('./lib/common').checkAdminMiddleware
-// load the .env.development file ; it loads a bunch of environment variables
-// we are not doing this for production, where the variables are coming from the actual environment
-if (process.env.NODE_ENV !== 'production' || process.env.FORCE_DOTENV==1 || process.env.FORCE_DOTENV=="1" ){
-    console.log(`Importing .env file : ${__dirname}/../.env.${process.env.NODE_ENV}` )
-    require('dotenv').config({ path: `${__dirname}/../.env.${process.env.NODE_ENV}` })
-}
 
 // our personal app settings
 const appConfig = require('../config/app.config')

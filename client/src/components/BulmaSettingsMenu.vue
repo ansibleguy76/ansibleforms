@@ -31,7 +31,7 @@
           {group:"authentication",title:"Groups",to:"/groups"},
           {group:"authentication",title:"Users",to:"/users"},
           {group:"authentication",title:"Ldap",to:"/ldap"},
-          {group:"authentication",title:"Azure AD",to:"/azuread"},
+          {group:"authentication",title:"MS Entra ID",to:"/azuread"},
           {group:"connection",title:"Credentials",to:"/credentials"},
           {group:"connection",title:"Ssh",to:"/sshkey"},
           {group:"connection",title:"Known Hosts",to:"/knownhosts"},

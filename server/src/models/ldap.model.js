@@ -96,6 +96,7 @@ Ldap.check = function(ldapConfig){
       logger.notice("Certificates are valid")
       try{
         // logger.debug(JSON.stringify(options))
+        logger.notice("Authenticating")
         var user = await authenticate(options)
         resolve(user)
       }catch(err){
@@ -106,17 +107,21 @@ Ldap.check = function(ldapConfig){
           try{ em = YAML.stringify(err)}catch(e){em = err}
         }
         if(err.admin){
-          if(err.admin.code){
-            em = err
+          if(err.admin.lde_message){
+            try{ em = YAML.stringify(err.admin.lde_message)}catch(e){em = err}
+          }
+          else if(err.admin.code){
+            try{ em = YAML.stringify(err.admin)}catch(e){em = err}
             if(err.admin.code=="UNABLE_TO_VERIFY_LEAF_SIGNATURE"){
               em = "Unable to verify the certificate"
             }else if(err.admin.code==49){
               em = "Wrong binding credentials"
-            }else if(err.admin.code="ENOTFOUND"){
+            }else if(err.admin.code=="ENOTFOUND"){
               em = "Bad server or port (connection failed)"
             }
           }
         }
+        
         if(em.includes("user not found")){
           logger.notice("Checking ldap connection ok")
           resolve()
