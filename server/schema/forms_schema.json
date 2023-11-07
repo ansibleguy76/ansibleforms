@@ -122,6 +122,7 @@
                 "enum": ["awx"]
               },
               "playbook": {"not":{}},
+              "ansibleCredentials": {"not":{}},
               "repo": {"not":{}},
               "steps": {"not":{}}
             },
@@ -136,6 +137,7 @@
               "template": {"not":{}},
               "inventory": {"not":{}},
               "awxCredentials": {"not":{}},
+              "ansibleCredentials": {"not":{}},
               "tags": {"not":{}},
               "check": {"not":{}},
               "limit": {"not":{}},
@@ -155,6 +157,7 @@
               "template": {"not":{}},
               "inventory": {"not":{}},
               "awxCredentials": {"not":{}},
+              "ansibleCredentials": {"not":{}},
               "tags": {"not":{}},
               "check": {"not":{}},
               "limit": {"not":{}},
@@ -352,6 +355,7 @@
                       },
                       "playbook": {"not":{}},
                       "repo": {"not":{}},
+                      "ansibleCredentials": {"not":{}},
                       "steps": {"not":{}}
                     },
                     "required": ["template"]
@@ -364,6 +368,7 @@
                       "playbook": {"not":{}},
                       "template": {"not":{}},
                       "inventory": {"not":{}},
+                      "ansibleCredentials": {"not":{}},
                       "tags": {"not":{}},
                       "check": {"not":{}},
                       "limit": {"not":{}},
@@ -404,7 +409,10 @@
                   },
                   "additionalProperties": false,
                   "uniqueProperties": true            
-                },           
+                },    
+                "ansibleCredentials": {
+                  "type": "string"
+                },      
                 "inventory": {"type": "string"},
                 "tags": {"type": "string"},
                 "check": {"type": "boolean"},
@@ -511,7 +519,10 @@
               "type": "string",
               "default": ""
             }
-          },                              
+          }, 
+          "ansibleCredentials":{
+            "type": "string"
+          },                             
           "inventory": {"type": "string"},
           "executionEnvironment": {"type": "string"},
           "tags": {"type": "string"},
