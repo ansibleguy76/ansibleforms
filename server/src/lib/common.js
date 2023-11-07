@@ -28,6 +28,11 @@ Helpers.getError=function(err){
   }
 }
 
+Helpers.escapeStringForCommandLine=function(value) {
+  const escaped = value.replace(/'/g, "\\'")
+  return escaped;
+}
+
 Helpers.checkCertificate=function(cert){
   certs=cert.replace(/-----(\r\n|\n|\r)-----/gm,"-----|-----").split("|")
   if(certs.length>1){

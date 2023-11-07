@@ -20,7 +20,7 @@ function pushForminfoToExtravars(formObj,extravars,creds={}){
   // push top form fields to extravars
   // change in 4.0.16 => easier to process & available in playbook, might be handy
   // no credentials added here, because then can also come from asCredential property and these would get lost.
-  const topFields=['template','playbook','tags','limit','execution_environment','check','diff','verbose','keepExtravars','credentials','inventory','awxCredentials']
+  const topFields=['template','playbook','tags','limit','execution_environment','check','diff','verbose','keepExtravars','credentials','inventory','awxCredentials','ansibleCredentials']
   for (const fieldName of topFields) {
     // Check if the field exists in formObj and if the property is not present in extravars
     if (formObj.hasOwnProperty(fieldName) && extravars[`__${fieldName}__`] === undefined) {
@@ -44,19 +44,26 @@ Exec.executeCommand = (cmd,jobid,counter) => {
   var directory = cmd.directory
   var description = cmd.description
   var extravars = cmd.extravars
+  var hiddenExtravars = cmd.hiddenExtravars
   var extravarsFileName = cmd.extravarsFileName
+  var hiddenExtravarsFileName = cmd.hiddenExtravarsFileName
   var keepExtravars = cmd.keepExtravars
   var task = cmd.task
+
   // execute the procces
   return new Promise((resolve,reject)=>{
     logger.debug(`${description}, ${directory} > ${Helpers.logSafe(command)}`)
     try{
-      
+
 
       if(extravarsFileName){
         logger.debug(`Storing extravars to file ${extravarsFileName}`)
         var filepath=path.join(directory,extravarsFileName)
         fs.writeFileSync(filepath,extravars) 
+
+        logger.debug(`Storing hidden extravars to file ${hiddenExtravarsFileName}`)
+        var he_filepath=path.join(directory,hiddenExtravarsFileName)
+        fs.writeFileSync(he_filepath,hiddenExtravars)         
       }else{
         logger.warning("No filename was given")
       }
@@ -109,6 +116,9 @@ Exec.executeCommand = (cmd,jobid,counter) => {
         if(extravarsFileName && !keepExtravars){
           logger.debug(`Removing extavars file ${filepath}`)
           fs.unlinkSync(filepath)    
+        }
+        if(hiddenExtravarsFileName){
+          fs.unlinkSync(he_filepath) 
         }
              
       })
@@ -906,26 +916,40 @@ Ansible.launch=async (ev,credentials,jobid,counter,approval,approved=false)=>{
   var limit = extravars?.__limit__ || ""
   var keepExtravars = extravars?.__keepExtravars__ || false    
   var diff = extravars?.__diff__ || false  
+  var ansibleCredentials = extravars?.__ansibleCredentials__ || ""  
 
   // merge credentials now
   extravars = {...extravars,...credentials}
   // convert to string for the command
   extravars = JSON.stringify(extravars)
+  // define hiddenExtravars
+  var hiddenExtravars={}
+  if(ansibleCredentials){ 
+    const runCredential = await Credential.findByName(ansibleCredentials)
+    hiddenExtravars.ansible_user = runCredential.user
+    hiddenExtravars.ansible_password = runCredential.password
+  }
+  // convert to string for the command
+  hiddenExtravars = JSON.stringify(hiddenExtravars)  
+
   // make extravars file
   const extravarsFileName = `extravars_${jobid}.json`;
+  const hiddenExtravarsFileName = `he_${extravarsFileName}`
   logger.debug(`Extravars File: ${extravarsFileName}`);
   // prepare my ansible command
 
-  var command = `ansible-playbook -e '@${extravarsFileName}'`
+  var command = `ansible-playbook -e '@${extravarsFileName}' -e '@${hiddenExtravarsFileName}'`
+  
   inventory.forEach((item, i) => {  command += ` -i '${item}'` });
   if(tags){ command += ` -t '${tags}'` }
   if(check){ command += ` --check` }
   if(diff){ command += ` --diff` }
   if(verbose){ command += ` -vvv`}
   if(limit){ command += ` --limit '${limit}'`}
+   
   command += ` ${playbook}`
   var directory = ansibleConfig.path
-  var cmdObj = {directory:directory,command:command,description:"Running playbook",task:"Playbook",extravars:extravars,extravarsFileName:extravarsFileName,keepExtravars:keepExtravars}
+  var cmdObj = {directory:directory,command:command,description:"Running playbook",task:"Playbook",extravars:extravars,hiddenExtravars:hiddenExtravars,extravarsFileName:extravarsFileName,hiddenExtravarsFileName:hiddenExtravarsFileName,keepExtravars:keepExtravars}
 
   logger.notice("Running playbook : " + playbook)
   logger.debug("extravars : " + extravars)
