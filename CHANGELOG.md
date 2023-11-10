@@ -7,10 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.18] - 2023-11-10
+
 ### Fixed
 
-- javascript replace error with defaults
-- Newer Netapp collection 22.8.2
+-   javascript replace error with defaults
+-   Newer Netapp collection 22.8.2
 
 ## [4.0.17] - 2023-11-07
 
@@ -609,7 +611,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.17...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.18...HEAD
+
+[4.0.18]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.17...4.0.18
 
 [4.0.17]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.16...4.0.17
 
