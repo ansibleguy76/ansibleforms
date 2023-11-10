@@ -1088,7 +1088,7 @@
         }else{
           // console.log("found no in " + foundfield + " in " + field)
         }
-        foundfield=foundfield.replace(/\[[0-9]*\]/,'') // xxx[y] => xxx
+        foundfield=foundfield?.replace(/\[[0-9]*\]/,'') // xxx[y] => xxx
         if(fields.includes(foundfield)){                         // does field xxx exist in our form ?
           //console.log(foundfield + " is a real field")
           if(foundfield in ref.dynamicFieldDependencies){															 // did we declare it before ?
@@ -1270,7 +1270,7 @@
         // console.log("item = " + value)
         // console.log(typeof value)
         // console.log(testRegex)
-        value = value.replace(/\n+/g, '') // put everything in 1 line.
+        value = value?.replace(/\n+/g, ' ') // put everything in 1 line.
         matches=[...value.matchAll(testRegex)] // force match array
         for(match of matches){
             // console.log("-> match : " + match[0] + "->" + match[1])
@@ -1286,7 +1286,7 @@
                 column=ref.fieldOptions[foundfield].placeholderColumn||""        // get placeholder column
               }
             }
-            foundfield=foundfield.replace(/\[[0-9]*\]/,'') // make xxx[y] => xxx
+            foundfield=foundfield?.replace(/\[[0-9]*\]/,'') // make xxx[y] => xxx
             fieldvalue = undefined
             targetflag = undefined
             // mark the field as a dependent field
@@ -1302,7 +1302,7 @@
                 fieldvalue=JSON.stringify(Helpers.replacePlaceholders(match[1],ref.form)) // allow full object reference
                 // drop wrapping quotes
                 if(typeof fieldvalue=="string"){ // drop quotes if string
-                  fieldvalue=fieldvalue.replace(/^\"+/, '').replace(/\"+$/, ''); // eslint-disable-line
+                  fieldvalue=fieldvalue?.replace(/^\"+/, '').replace(/\"+$/, ''); // eslint-disable-line
                 }else{
                   // console.log(typeof fieldvalue)
                 }
@@ -1332,7 +1332,7 @@
                 }                
                 fieldvalue=ref.stringifyValue(fieldvalue)
                 // console.log("replacing placeholder")
-                value=value.replace(foundmatch,fieldvalue);               // replace the placeholder with the value
+                value=value?.replace(foundmatch,fieldvalue);               // replace the placeholder with the value
                 //  console.log("replaced")
                 //  console.log(foundmatch + " -> " + fieldvalue)
             }else{
