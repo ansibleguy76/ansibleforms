@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- javascript replace error with defaults
+- Newer Netapp collection 22.8.2
+
 ## [4.0.17] - 2023-11-07
 
 ### Fixed
