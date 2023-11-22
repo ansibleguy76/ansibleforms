@@ -28,6 +28,18 @@ var Helpers = {
     var i = size == 0 ? 0 : Math.floor(Math.log(size) / Math.log(1024));
     return (size / Math.pow(1024, i)).toFixed(2) * 1 + ' ' + ['B', 'kB', 'MB', 'GB', 'TB'][i];
   },
+  deepClone(o){
+    if(o===undefined){
+      return o
+    }
+    try{
+      return (JSON.parse(JSON.stringify(o)))
+    }catch(e){
+      console.error("Failed deepcloning - ",e)
+      return undefined
+    }
+    
+  },
   evalSandbox(expression){
     // local autonumbering
     function fnGetNumberedName(names,pattern,value,fillgap=false){
@@ -177,7 +189,8 @@ var Helpers = {
             return o
           })
         }
-    }    
+    }   
+    if(expression) 
     return eval(expression)          
   }
 

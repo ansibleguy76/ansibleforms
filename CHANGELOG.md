@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.19] - 2023-11-22
+
+### Fixed
+
+-   undefined error with json
+
+### Added
+
+-   Added AzureAD group filter to limit the number of groups
+
 ## [4.0.18] - 2023-11-10
 
 ### Fixed
@@ -611,7 +621,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.18...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.19...HEAD
+
+[4.0.19]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.18...4.0.19
 
 [4.0.18]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.17...4.0.18
 

@@ -39,6 +39,7 @@ exports.settings = async function(req,res){
     var settings={}
     // console.log(inspect(azure))
     settings.azureAdEnabled=azure.enable
+    settings.azureGroupfilter=azure.groupfilter
     settings.azureGraphUrl=authConfig.azureGraphUrl
     res.json(new RestResult("success","",settings,""))
   })

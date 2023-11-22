@@ -10,13 +10,14 @@ var AzureAd=function(azuread){
     this.client_id = azuread.client_id;
     this.secret_id = encrypt(azuread.secret_id);
     this.enable = (azuread.enable)?1:0;
+    this.groupfilter = azuread.groupfilter;
 };
 AzureAd.update = function (record) {
   logger.info(`Updating azuread`)
   return mysql.do("UPDATE AnsibleForms.`azuread` set ?", record)
 };
 AzureAd.isEnabled = function(){
-  return mysql.do("SELECT enable FROM AnsibleForms.`azuread` limit 1;")
+  return mysql.do("SELECT enable,groupfilter FROM AnsibleForms.`azuread` limit 1;")
     .then((res)=>{
       if(res.length>0){
         return res[0]

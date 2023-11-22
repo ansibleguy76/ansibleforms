@@ -452,6 +452,7 @@
                     "recipients"
                   ]
                 },
+                "hasApproval":{ "type": "boolean"},
                 "approval": {
                   "$id": "/approval",
                   "type": "object",
@@ -487,6 +488,7 @@
             "type": "string",
             "enum": ["ansible", "awx", "git","multistep"]
           },
+          "hasApproval":{ "type": "boolean"},
           "approval":{
             "$ref": "/approval"
           },
