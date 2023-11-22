@@ -1180,7 +1180,7 @@
         // check self references
         while(!finishedFlag){
           finishedFlag=true
-          temp = JSON.parse(JSON.stringify(ref.dynamicFieldDependencies));   // copy dependencies to temp
+          temp = Helpers.deepClone(ref.dynamicFieldDependencies);   // copy dependencies to temp
           for (const [key, value] of Object.entries(temp)) {
              // loop all found dependenies and dig deeper
              value.forEach((item,i) => {
@@ -1270,7 +1270,7 @@
         // console.log("item = " + value)
         // console.log(typeof value)
         // console.log(testRegex)
-        value = value?.replace(/\n+/g, ' ') // put everything in 1 line.
+        value = value?.replace(/\n+/g, '') // put everything in 1 line.
         matches=[...value.matchAll(testRegex)] // force match array
         for(match of matches){
             // console.log("-> match : " + match[0] + "->" + match[1])
@@ -1843,7 +1843,7 @@
             // else just use the formdata
             }else{
               // deep clone, otherwise weird effects
-              outputValue = JSON.parse(JSON.stringify(this.form[item.name]))
+              outputValue = Helpers.deepClone(this.form[item.name])
             }
             // if no model is given, we assign to the root
             if(!outputObject){  // do we need to flatten output ?
@@ -1851,7 +1851,7 @@
             }
             if(fieldmodel.length==0){
               // deep clone = otherwise weird effects
-              formdata[item.name]=JSON.parse(JSON.stringify(outputValue))
+              formdata[item.name]=Helpers.deepClone(outputValue)
             }else{
               fieldmodel.forEach((f)=>{
                 // convert fieldmodel for actual object
