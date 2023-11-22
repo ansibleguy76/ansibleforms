@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+-   undefined error with json
+
+### Added
+
+-   Added AzureAD group filter to limit the number of groups
+
 ## [4.0.18] - 2023-11-10
 
 ### Fixed
