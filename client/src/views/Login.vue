@@ -46,6 +46,7 @@
                   password: ""
               },
               azureAdEnabled:false,
+              azureGroupfilter:"",
               azureGraphUrl:"https://graph.microsoft.com"
           }
       },
@@ -56,6 +57,7 @@
           .then((result)=>{
             if(result.data?.status=='success'){
               this.azureAdEnabled=!!result.data.data.output.azureAdEnabled
+              this.azureGroupfilter=result.data.data.output.azureGroupfilter
               this.azureGraphUrl=result.data.data.output.azureGraphUrl
               if(azuretoken){
                 this.getGroupsAndLogin(azuretoken)
@@ -69,6 +71,7 @@
           })
         },
         getGroupsAndLogin(azuretoken, url = `${this.azureGraphUrl}/v1.0/me/transitiveMemberOf`, allGroups = []) {
+          var ref=this
           const config = {
             headers: {
               Authorization: `Bearer ${azuretoken}`
@@ -84,6 +87,18 @@
                 // If there's a nextLink, make a recursive call to get the next page of data
                 this.getGroupsAndLogin(azuretoken, res.data['@odata.nextLink'], allGroups);
               } else {
+                var validRegex=true
+                var regex
+                try{
+                  regex = new RegExp(ref.azureGroupfilter, 'g');
+                }catch(e){
+                  console.error("MS Entra ID Group filter is not a valid regular expression")
+                  validRegex=false
+                }
+                if(validRegex && ref.azureGroupfilter){
+                  allGroups = allGroups.filter(x => x.match(regex))
+                  console.log("Groups have been filtered")
+                }
                 // No more nextLink, you have all the groups
                 axios.post('/api/v1/auth/azureadoauth2/login', { azuretoken, groups:allGroups })
                   .then((result) => {

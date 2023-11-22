@@ -273,6 +273,7 @@ function patchAll(){
   buffer = fs.readFileSync(`${__dirname}/../db/create_azuread_table.sql`)
   sql = buffer.toString()
   tablePromises.push(addTable("azuread",sql)) // add azuread table
+  tablePromises.push(addColumn("azuread","groupfilter","varchar(250)",true,"NULL"))  // add column to limit azuread groups
   //tablePromises.push(addRecord("settings",["mail_server","mail_port","mail_secure","mail_username","mail_password","mail_from","url"],["''",25,0,"''","''","''","''"]))
   // buffer=fs.readFileSync(`${__dirname}/../db/create_settings_table.sql`)
   // sql=buffer.toString();

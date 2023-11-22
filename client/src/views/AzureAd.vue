@@ -19,6 +19,7 @@
               <div class="mt-2">
                 <BulmaInput :disabled="!azuread.enable" icon="user-tag" v-model="azuread.client_id" label="Client Id" placeholder="" :required="true" :hasError="$v.azuread.client_id.$invalid" :errors="[]" />
                 <BulmaInput :disabled="!azuread.enable" icon="user-secret" v-model="azuread.secret_id" type="password" label="Secret Id" placeholder="" :required="true" :hasError="$v.azuread.secret_id.$invalid" :errors="[]" />
+                <BulmaInput :disabled="!azuread.enable" icon="filter" v-model="azuread.groupfilter" label="Groupname Regex" placeholder="A regular expression to match groups" :required="false" :errors="[]" />
                 <div class="notification is-info-light content">
                   <strong>Required API Permissions</strong><br>
                   <ul>
@@ -67,7 +68,8 @@
           azuread:{
             client_id:"",
             secret_id:"",
-            enable:true
+            enable:true,
+            groupfilter:""
           },
           settings:{
             url:""
