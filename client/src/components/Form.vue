@@ -318,6 +318,7 @@
                             v-bind="field.attrs"
                             :required="field.required"
                             :type="field.type"
+                            :readonly="field.hide"
                             :placeholder="field.placeholder"
                             @keydown="(field.keydown)?evaluateDynamicFields(field.name):null"
                             @change="evaluateDynamicFields(field.name)">
@@ -722,7 +723,7 @@
         this.clip(url,true)
       },
       // to execute form events
-      doAction(a){
+      doAction(a,jobid){
         var ref=this
         const action=Object.keys(a)[0]
         const value=a[action]
@@ -745,7 +746,7 @@
         if(action=="load"){
           setTimeout(()=>{
             ref.reloadForm()
-            ref.$router.replace({name:"Form",query:{form:form}}).catch(err => {});
+            ref.$router.replace({name:"Form",query:{form:form,"__previous_jobid__":jobid}}).catch(err => {});
           },wait*1000)
         }
         if(action=="reload"){
@@ -1746,22 +1747,22 @@
                     // final result
                     if(ref.currentForm.onFinish){
                       ref.currentForm.onFinish.forEach((action, i) => {
-                        ref.doAction(action);
+                        ref.doAction(action,id);
                       });
                     }
                     if(this.jobResult.status=="success" && ref.currentForm.onSuccess){
                       ref.currentForm.onSuccess.forEach((action, i) => {
-                        ref.doAction(action);
+                        ref.doAction(action,id);
                       });
                     }
                     if(this.jobResult.status=="error" && ref.currentForm.onFailure){
                       ref.currentForm.onFailure.forEach((action, i) => {
-                        ref.doAction(action);
+                        ref.doAction(action,id);
                       });
                     }
                     if(this.jobResult.status=="warning" && ref.currentForm.onAbort){
                       ref.currentForm.onAbort.forEach((action, i) => {
-                        ref.doAction(action);
+                        ref.doAction(action,id);
                       });
                     }
                     this.abortTriggered=false
@@ -1808,15 +1809,18 @@
             field = [].concat(field ?? []); // force to array
           }
           if(field.length>0){                    // not emtpy
-            if(typeof field[0]==="object"){      // array of objects, analyse first object
-              keys = Object.keys(field[0])    // get properties
-              if(keys.length>0){
-                key = (keys.includes(column))?column:keys[0] // get column, fall back to first
-                field=field.map((item) => ((item)?((item[key]==null)?null:(item[key]??item)):undefined))  // flatten array
-              }else{
-                field=(!keepArray)?undefined:field // force undefined if we don't want arrays
-              }
-            } // no else, array is already flattened
+            if(column!="*"){
+              if(typeof field[0]==="object"){      // array of objects, analyse first object
+                keys = Object.keys(field[0])    // get properties
+                if(keys.length>0){
+                  key = (keys.includes(column))?column:keys[0] // get column, fall back to first
+                  field=field.map((item) => ((item)?((item[key]==null)?null:(item[key]??item)):undefined))  // flatten array
+                }else{
+                  field=(!keepArray)?undefined:field // force undefined if we don't want arrays
+                }
+              } // no else, array is already flattened
+            }
+
             field=(!wasArray || !keepArray)?field[0]:field // if it wasn't an array, we take first again
           }else{
             field=(!keepArray)?undefined:field // force undefined if we don't want arrays
@@ -2007,7 +2011,7 @@
                     this.jobResult.data.output = ""
                     if(ref.currentForm.onSubmit){
                       ref.currentForm.onSubmit.forEach((action, i) => {
-                        ref.doAction(action);
+                        ref.doAction(action,jobid);
                       });
                     }
                     // wait for 2 seconds, and get the output of the job

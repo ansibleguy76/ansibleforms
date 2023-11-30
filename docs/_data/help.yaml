@@ -1206,11 +1206,11 @@
         version: 3.1.0
         description: |
           Once a job is launched, Ansible Forms has a few status events you can act on.  
-          * **onSubmit** : Triggered the moment the submit button is pressed
-          * **onSuccess** : Triggered when the job is finished succesfully
-          * **onFailure** : Triggered when the job was not succesful
-          * **onAbort** : Triggered when the job was aborted
-          * **onFinish** : Triggered when the job is finished, regardless the status
+          * **onSubmit** : Triggered the moment the submit button is pressed  
+          * **onSuccess** : Triggered when the job is finished succesfully  
+          * **onFailure** : Triggered when the job was not succesful  
+          * **onAbort** : Triggered when the job was aborted  
+          * **onFinish** : Triggered when the job is finished, regardless the status  
             
           Follow the link above to learn about the possible job status actions
         examples:
@@ -1230,11 +1230,11 @@
         version: 3.1.0
         description: |
           Once a job is launched, Ansible Forms has a few status events you can act on.  
-          * **onSubmit** : Triggered the moment the submit button is pressed
-          * **onSuccess** : Triggered when the job is finished succesfully
-          * **onFailure** : Triggered when the job was not succesful
-          * **onAbort** : Triggered when the job was aborted
-          * **onFinish** : Triggered when the job is finished, regardless the status
+          * **onSubmit** : Triggered the moment the submit button is pressed  
+          * **onSuccess** : Triggered when the job is finished succesfully  
+          * **onFailure** : Triggered when the job was not succesful  
+          * **onAbort** : Triggered when the job was aborted  
+          * **onFinish** : Triggered when the job is finished, regardless the status  
             
           Follow the link above to learn about the possible job status actions
         examples:
@@ -1253,11 +1253,11 @@
         version: 3.1.0
         description: |
           Once a job is launched, Ansible Forms has a few status events you can act on.  
-          * **onSubmit** : Triggered the moment the submit button is pressed
-          * **onSuccess** : Triggered when the job is finished succesfully
-          * **onFailure** : Triggered when the job was not succesful
-          * **onAbort** : Triggered when the job was aborted
-          * **onFinish** : Triggered when the job is finished, regardless the status
+          * **onSubmit** : Triggered the moment the submit button is pressed  
+          * **onSuccess** : Triggered when the job is finished succesfully  
+          * **onFailure** : Triggered when the job was not succesful  
+          * **onAbort** : Triggered when the job was aborted  
+          * **onFinish** : Triggered when the job is finished, regardless the status  
             
           Follow the link above to learn about the possible job status actions
         examples:
@@ -1276,11 +1276,11 @@
         version: 3.1.0
         description: |
           Once a job is launched, Ansible Forms has a few status events you can act on.  
-          * **onSubmit** : Triggered the moment the submit button is pressed
-          * **onSuccess** : Triggered when the job is finished succesfully
-          * **onFailure** : Triggered when the job was not succesful
-          * **onAbort** : Triggered when the job was aborted
-          * **onFinish** : Triggered when the job is finished, regardless the status
+          * **onSubmit** : Triggered the moment the submit button is pressed  
+          * **onSuccess** : Triggered when the job is finished succesfully  
+          * **onFailure** : Triggered when the job was not succesful  
+          * **onAbort** : Triggered when the job was aborted  
+          * **onFinish** : Triggered when the job is finished, regardless the status  
             
           Follow the link above to learn about the possible job status actions
         examples:
@@ -1299,11 +1299,11 @@
         version: 3.1.0
         description: |
           Once a job is launched, Ansible Forms has a few status events you can act on.  
-          * **onSubmit** : Triggered the moment the submit button is pressed
-          * **onSuccess** : Triggered when the job is finished succesfully
-          * **onFailure** : Triggered when the job was not succesful
-          * **onAbort** : Triggered when the job was aborted
-          * **onFinish** : Triggered when the job is finished, regardless the status
+          * **onSubmit** : Triggered the moment the submit button is pressed  
+          * **onSuccess** : Triggered when the job is finished succesfully  
+          * **onFailure** : Triggered when the job was not succesful  
+          * **onAbort** : Triggered when the job was aborted  
+          * **onFinish** : Triggered when the job is finished, regardless the status  
             
           Follow the link above to learn about the possible job status actions
         examples:
@@ -2577,7 +2577,9 @@
             description: |
               When selecting from an `enum`-field (dropdown), either the first column or  
               the column defined in `valueColumn` is sent as an extravar.  
-              If you want the full selected record, use the property.
+              If you want the full selected record, use the property.  
+  
+              **New in v4.0.20** : valueColumn: "*" has the same behavior, and will output all columns
             with_types: enum
           - name: expression
             type: string
@@ -2836,6 +2838,8 @@
               When you select an item in an `enum` field, by default the first column is used to send as extravar.  
               By setting this property, you can change it to another field.  
               This setting is ignored when `outputObject` is true.  
+
+              **new in v4.0.20** : setting valueColumn to "*" will export all columns
             examples:
             - name: Export name
               code: |
@@ -2847,8 +2851,7 @@
                   query: SELECT name, username FROM users
                   columns:
                   - name
-                  valueColumn:
-                  - username
+                  valueColumn: username
           - name: placeholderColumn
             type: string
             group: data
@@ -2860,7 +2863,9 @@
               by default the first column is used as a value.  
               By setting this property you change the column to be used.  
               **NOTE** : this property is somewhat out-of-date since the introduction of the dot-notation.  
-              See examples below.
+              See examples below.  
+                
+              **New in v4.0.20** : setting placeholderColumn to "*" will output the entire record, instead of a single column.
             examples:
             - name: Export name
               code: |
@@ -3237,7 +3242,9 @@
               description: |
                 When selecting from an `enum` field (dropdown), either the first column or  
                 the column defined in `valueColumn` is sent as an extravar.  
-                If you want the full selected record, use the property.
+                If you want the full selected record, use the property.  
+                  
+                **new in v4.0.20** : you can also use valueColumn: "*" to export all columns
               with_types: enum
             - name: columns
               type: array
@@ -3314,6 +3321,8 @@
                 When you select an item in an `enum` field, by default the first column is used to send as extravar.  
                 By setting this property, you can change it to another field.  
                 This setting is ignored when `outputObject` is true.  
+                  
+                **new in v4.0.20** : setting value "*" will export all columns.
               examples:
               - name: Export name
                 code: |
@@ -3325,8 +3334,7 @@
                     query: SELECT name, username FROM users
                     columns:
                     - name
-                    valueColumn:
-                    - username
+                    valueColumn: username
             - name: previewColumn
               type: string
               default: first column
@@ -3526,7 +3534,12 @@
             allowed: number_of_seconds,name_of_form
             short: Load a form
             description: | 
-              This action allows you to load another form                                              
+              This action allows you to load another form.  
+
+              **new in v4.0.20** : the previous jobid is sent as \_\_previous\_\_jobid\_\_.  
+              You must make sure you have this field in your form, it will be populated with the previous jobid.  
+
+              This is particularly interesting to grab information from the previous job (for example, load output, ...)                                          
           examples: 
           - name: Clear and hide on submit
             language: YAML
@@ -3971,6 +3984,7 @@
       The power of this concept lies in the client web-application that is re-evaluating fields every 100ms.  With current processors and the chromium engine, this should be a very seamless experience.  
         
       **Note**: When you reference another enum field, you reference the selected values, NOT the full dropdown list.  Use the `placeholderColumn`-property or a dot-notation like `$(city.name)` 
+      **New in v4.0.20** : setting placeholderColumn to "*" will output the entire record, instead of a single column.
     language: yaml
     code: |
       - type: enum
@@ -4046,6 +4060,7 @@
       If the placeholder is pointing to an expression field, then either the full object is returned or you can have an advanced placeholder reference like `$(myarray[0].name)` where you can create javascript-like references.  
         
       **Note**: Important to know is that the placeholder is replaced BEFORE the evaluation of the expression.  If you expect the result to be a string, then you must wrap it with quotes!.
+      **New in v4.0.20** : setting placeholderColumn to "*" will output the entire record, instead of a single column.
     language: yaml
     code: |
       - name: field1
@@ -4129,6 +4144,12 @@
         runLocal: true
         expression: "{vc_cred: 'vcenter',ad_cred: 'ad',veeam_cred:'$(veeam_server)'}"
         # note : in the expression you can use placeholders to make them dynamic
+  - name: Jobid
+    short: Pass the current jobid
+    description: |
+      Ansible Forms automatically sends the current jobid in the extravars.  
+      You don't need to do anything.  
+      It is sent as `__jobid__`.
   - name: Userinfo
     short: Pass the current user
     description: |

@@ -327,6 +327,7 @@ Job.launch = async function(form,formObj,user,creds,extravars,parentId=null,next
   }
 
   logger.debug(`Job id ${jobid} is created`)
+  extravars["__jobid__"]=jobid
   // job created - return to client
   if(next)next({id:jobid})
 
@@ -425,6 +426,7 @@ Job.continue = async function(form,user,creds,extravars,jobid,next) {
   }
 
   pushForminfoToExtravars(formObj,extravars,creds)
+  extravars["__jobid__"]=jobid
 
   // console.log(formObj)
   // we have form and we have access
@@ -1048,8 +1050,13 @@ Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,ve
     counter=0
   }
   // get existing credentials in the template, and then add the external ones.
-  var awxCredentialList=await Awx.findCredentialsByTemplate(template.id)
-  logger.notice(`Found ${awxCredentialList.length} existing creds`)
+  var awxCredentialList=[]
+  try{
+    awxCredentialList=await Awx.findCredentialsByTemplate(template.id)
+    logger.notice(`Found ${awxCredentialList.length} existing creds`)
+  }catch(e){
+    logger.warning("No credentials available... could be workflow template")
+  }
   // add external ones
   for(let i=0;i<awxCredentials.length;i++){
       var ac=awxCredentials[i]
@@ -1101,7 +1108,8 @@ Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,ve
   }else{
     // prepare axiosConfig
     const axiosConfig = Awx.getAuthorization(awxConfig)
-    logger.debug("Lauching awx with data : " + JSON.stringify(postdata))
+    // logger.debug("Lauching awx with data : " + JSON.stringify(postdata))
+    logger.debug("Launching awx template")
     // launch awx job
     var axiosResult
     try{
@@ -1109,7 +1117,7 @@ Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,ve
     }catch(error){
       var message=`failed to launch ${template.name}`
       if(error.response){
-          logger.error(error.response.data)
+          logger.error("",error.response.data)
           message+="\r\n" + YAML.stringify(error.response.data)
           await Job.endJobStatus(jobid,++counter,"stderr","success",`Failed to launch template ${template.name}. ${message}`)
       }else{
