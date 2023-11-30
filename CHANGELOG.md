@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-   in remote expression functions, we throw errors so they show up in the form.
+-   added valueColumn "\*" and placeholderColumn "\*", to return all column, this also means that valueColumn "\*" results in the same as outputObject: true. 
+-   jobid is passed now as extravar and passed to nextform, incase an action exists
+-   you can now hide a text field
+
+### Fixed
+
+-   awx workflow template failed with 404
+
 ## [4.0.19] - 2023-11-22
 
 ### Fixed
