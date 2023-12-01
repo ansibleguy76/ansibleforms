@@ -747,8 +747,7 @@
                     "readonlyColumns": {"not":{}},
                     "isHtml": {"not":{}},
                     "dbConfig": {"not":{}},
-                    "hide": {"not":{}},
-                    "outputObject": {"not":{}}
+                    "hide": {"not":{}}
                   },
                   "required": ["values"]
                 },
