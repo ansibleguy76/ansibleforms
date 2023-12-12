@@ -16,7 +16,7 @@
           </nav>      
           <div class="columns">
             <div class="column">
-              <BulmaCheckbox checktype="checkbox" v-model="ldap.enable" label="Enable Ldap" /> <BulmaCheckbox v-if="ldap.enable" checktype="checkbox" v-model="ldap.enable_tls" label="Enable Tls" />
+              <BulmaCheckbox checktype="checkbox" v-model="ldap.enable" label="Enable Ldap" /> <BulmaCheckbox v-if="ldap.enable" checktype="checkbox" v-model="ldap.enable_tls" label="Enable Tls" /> <BulmaCheckbox v-if="ldap.enable" checktype="checkbox" v-model="ldap.is_advanced" label="Advanced settings" />
               <div>
                 <BulmaInput :disabled="!ldap.enable" icon="server" v-model="ldap.server" label="Server" placeholder="ldap.domain.local" :required="true" :hasError="$v.ldap.server.$invalid" :errors="[]" />
                 <BulmaInput :disabled="!ldap.enable" icon="arrows-alt-v" type="number" v-model="ldap.port" label="Port" placeholder="389" :required="true" :hasError="$v.ldap.port.$invalid" :errors="[]" />
@@ -24,6 +24,11 @@
                 <BulmaInput :disabled="!ldap.enable" icon="user" v-model="ldap.bind_user_dn" label="Bind User distinguished name" placeholder="Bind User distinguished name" :required="true" :hasError="$v.ldap.bind_user_dn.$invalid" :errors="[]" />
                 <BulmaInput :disabled="!ldap.enable" icon="lock" v-model="ldap.bind_user_pw" type="password" label="Bind User Password" placeholder="" :required="true" :hasError="$v.ldap.bind_user_pw.$invalid" :errors="[]" />
                 <BulmaInput :disabled="!ldap.enable" icon="portrait" v-model="ldap.username_attribute" label="Username Attribute" placeholder="sAMAccountName" :required="true" :hasError="$v.ldap.username_attribute.$invalid" :errors="[]" />
+                <BulmaInput :disabled="!ldap.enable" icon="users" v-model="ldap.groups_attribute" label="Groups Attribute" placeholder="memberOf" :required="true" :hasError="$v.ldap.groups_attribute.$invalid" :errors="[]" />
+                <BulmaInput v-show="ldap.is_advanced && ldap.enable" :disabled="!ldap.enable" icon="users-viewfinder" v-model="ldap.groups_search_base" label="Groups Search Base" placeholder="dc=domain,dc=local" />
+                <BulmaInput v-show="ldap.is_advanced && ldap.enable" :disabled="!ldap.enable" icon="users-rectangle" v-model="ldap.group_class" label="Group Class" placeholder="groupOfNames" />
+                <BulmaInput v-show="ldap.is_advanced && ldap.enable" :disabled="!ldap.enable" icon="users-line" v-model="ldap.group_member_attribute" label="Group Member Attribute" placeholder="memberUid" />
+                <BulmaInput v-show="ldap.is_advanced && ldap.enable" :disabled="!ldap.enable" icon="user-group" v-model="ldap.group_member_user_attribute" label="Group Member User Attribute" placeholder="uid" />
               </div>
             </div>
             <div v-if="ldap.enable_tls && ldap.enable" class="column">
@@ -67,11 +72,17 @@
             bind_user_dn:"",
             search_base:"",
             username_attribute:"",
+            groups_attribute:"",
             enable:true,
             enable_tls:true,
             ignore_certs:true,
+            groups_search_base: "",
+            group_class: "",
+            group_member_attribute: "",
+            group_member_user_attribute: "",         
             cert:"",
-            ca_bundle:""
+            ca_bundle:"",
+            is_advanced:false
           }
         }
     },
@@ -134,6 +145,9 @@
           required
         },
         username_attribute:{
+          required
+        },
+        groups_attribute:{
           required
         },
         cert:{

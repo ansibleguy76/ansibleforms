@@ -4,6 +4,7 @@ const User = require('./../models/user.model');
 const authConfig = require('../../config/auth.config.js')
 const logger=require("../lib/logger");
 const Helpers = require('../lib/common');
+const Ldap = require('../models/ldap.model')
 
 
 // create username / password login strategy
@@ -41,12 +42,15 @@ passport.use(
     async (username, password, done) => {
       // authentication against database first
       try{
+        var ldapConfig = await Ldap.find()
         var user = await User.checkLdap(username,password)
           .then((result)=>{
+            // logger.debug("Ldap object :")
+            // logger.debug(JSON.stringify(result))
             var user = {}
-            user.username = result.sAMAccountName
+            user.username = result[ldapConfig.username_attribute]
             user.type = 'ldap'
-            user.groups = User.getGroups(user,result)
+            user.groups = User.getGroups(user,result,ldapConfig)
             user.roles = User.getRoles(user.groups,user)
             logger.info("ldap login for " + user.username)
             return user

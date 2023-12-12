@@ -9,13 +9,13 @@ const {inspect}=require("node:util")
 const Helpers=require('../lib/common')
 const RestResult = require("../models/restResult.model")
 
-function userToJwt(user){
+function userToJwt(user,expiryDays){
 
   // is something like
   // {"username":"administrator","type":"local","roles":["public","admin"]}
 
   // we create 2 jwt tokens (accesstoken and refresh token)
-  const token = jwt.sign({user,access:true}, authConfig.secret,{ expiresIn: authConfig.jwtExpiration});
+  const token = jwt.sign({user,access:true}, authConfig.secret,{ expiresIn: expiryDays || authConfig.jwtExpiration});
   const refreshtoken = jwt.sign({user,refresh:true}, authConfig.secret,{ expiresIn: authConfig.jwtRefreshExpiration});
   logger.debug(JSON.stringify(user))
   // we store the tokens in the database, to later verify a refresh token action
@@ -82,6 +82,10 @@ exports.basic = async function(req, res,next) {
                 //return next(error);
               }
               // send the tokens to the requester
+              // if admin role, you can override the expirydays (for accesstoken only)
+              if(req.query.expiryDays && user?.roles?.includes("admin") && !isNan(req.query.expiryDays)){
+                return res.json(userToJwt(user,`${req.query.expiryDays}D`))
+              }
               return res.json(userToJwt(user));
             }
           );
@@ -124,6 +128,10 @@ exports.basic_ldap = async function(req, res,next) {
               return next(error);
             }
             // send the tokens to the requester
+            // if admin role, you can override the expirydays (for accesstoken only)
+            if(req.query.expiryDays && user?.roles?.includes("admin") && !isNan(req.query.expiryDays)){
+              return res.json(userToJwt(user,`${req.query.expiryDays}D`))
+            }            
             return res.json(userToJwt(user));
           }
         );
@@ -183,6 +191,10 @@ exports.azureadoauth2login = async function(req, res,next) {
     user.type = 'azuread'
     user.groups = groups
     user.roles = User.getRoles(user.groups,user)
+    // if admin role, you can override the expirydays (for accesstoken only)
+    if(req.query.expiryDays && user?.roles?.includes("admin") && !isNan(req.query.expiryDays)){
+      return res.json(userToJwt(user,`${req.query.expiryDays}D`))
+    }    
     res.json(userToJwt(user))
   }catch(err){
     logger.error(Helpers.getError(err))

@@ -120,6 +120,9 @@ User.getRoles = function(groups,user){
     forms = Form.load()
   }catch(e){
     logger.error(e)
+    if(groups.includes('local/admins')){
+      roles.push("admin")
+    }
     return roles
   }
   groups.forEach(function(group){
@@ -140,22 +143,15 @@ User.getRoles = function(groups,user){
 
   return roles
 }
-User.getGroups = function(user,groupObj){
-  var groupMatch=""
+User.getGroups = function(user,groupObj,ldapConfig={}){
   var group=""
   var groups = []
-  var forms=undefined
-  try{
-    forms = Form.load()
-  }catch(e){
-    logger.error(e)
-    return groups
-  }
+
   // ldap type
-  if(user.type=="ldap"){
-    if(groupObj.memberOf){
+  if(user.type=="ldap" && ldapConfig.groups_attribute){
+    if(groupObj[ldapConfig.groups_attribute]){
       // get the memberOf field, force to array
-      var ldapgroups = [].concat(groupObj.memberOf)
+      var ldapgroups = [].concat(groupObj[ldapConfig.groups_attribute])
       //logger.debug(`LDAP Groups = ${ldapgroups}`)
       // loop ldap groups
       ldapgroups.forEach(function(v,i,a){
@@ -208,6 +204,14 @@ User.checkLdap = function(username,password){
         username: username,
         // starttls: false
       }
+      // new in v4.0.20, add advanced ldap properties
+      if(ldapConfig.is_advanced){
+        if(ldapConfig.groups_search_base){ options.groupsSearchBase = ldapConfig.groups_search_base }
+        if(ldapConfig.group_class){ options.groupClass = ldapConfig.group_class }
+        if(ldapConfig.group_member_attribute){ options.groupMemberAttribute = ldapConfig.group_member_attribute }
+        if(ldapConfig.group_member_user_attribute){ options.groupMemberUserAttribute = ldapConfig.group_member_user_attribute }
+      }      
+      // console.log(options)
       // ldap-authentication has bad cert check, so we check first !!
       if(ldapConfig.enable_tls && !(ldapConfig.ignore_certs==1)){
         if(!helpers.checkCertificate(ldapConfig.cert)){
