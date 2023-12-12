@@ -69,20 +69,6 @@ const CheckModel = {
         }
     },
 
-    async getDatabaseVersion(databaseName) {
-        try {
-
-            // Check if the record exists
-            var query = `SELECT database_version FROM ${databaseName}.settings`
-            const result = await mysql.do(query);
-            return result[0].database_version;
-        } catch (error) {
-            logger.error('Version check failed:', error);
-            return 'Failed'; // Return 'Failed' if the check fails
-        }
-    },    
-    
-
     async performChecks() {
 
         const requiredTables = ['groups','users','tokens','credentials','ldap','awx','job_output','jobs','settings','azuread'];
