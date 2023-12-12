@@ -124,21 +124,6 @@ const CheckModel = {
             status : 'OK',
             label : `Application version = ${version}`
         };
-        var database_version = await this.getDatabaseVersion(databaseName)
-        summary["Database version"] = {
-            status : 'OK',
-            label : `Database version = ${database_version}`
-        };  
-        if(database_version == 'Failed' || database_version!=version){
-            if(database_version == 'Failed')
-                database_version = "UNKNOWN"
-            summary["Database version"].status = "Failed"
-            summary["Database version"].label = `Database version = ${database_version}`
-            summary["Application version"].status = "Failed"
-            summary["Application version"].label = `Application version = ${version} <-> ${database_version}`
-        }
-
-
 
 
         try {
