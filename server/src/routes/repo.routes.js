@@ -10,5 +10,7 @@ router.post('/', repoController.create);
 router.post('/known_hosts/', repoController.addKnownHosts);
 // create repo
 router.delete('/', repoController.delete);
+// pull repo
+router.post('/pull/:repositoryName', repoController.pull)
 
 module.exports = router

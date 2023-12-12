@@ -1,9 +1,112 @@
 'use strict';
 const exec = require('child_process').exec;
+const spawn = require('child_process').spawn;
+const execSync = require('child_process').execSync;
 const logger=require("../lib/logger")
 const path=require("path")
 const fs=require("fs")
 var config=require('../../config/app.config')
+
+
+var Exec=function(){}
+// tree kill should do the trick, but fails in alpine
+// so this piece of code does it
+Exec.killChildren = (pid) => {
+  const children = [];
+
+  try {
+    const psRes = execSync(`ps -opid="" -oppid="" |grep ${pid}`).toString().trim().split(/\n/);
+
+    (psRes || []).forEach(pidGroup => {
+      const [actual, parent] = pidGroup.trim().split(/ +/);
+
+      if (parent.toString() === pid.toString()) {
+        children.push(parseInt(actual, 10));
+      }
+    });
+  } catch (e) {}
+  try {
+    logger.debug(`Killing process ${pid}`)
+    process.kill(pid);
+    children.forEach(childPid => Exec.killChildren(childPid));
+  } catch (e) {}
+};
+
+Exec.maskGitToken =(data)=>{
+  if(data){
+    try{
+      // console.log(data.toString())
+      var masked = data.toString().replace(/(http[s]{0,1}):\/\/([^:]+):([^@]+)@(.*)/gm,"$1://$2:*******@$4")
+      // console.log("==> " + rep)
+      return masked
+    }catch(e){
+      logger.error("Failed to maskGitToken : ",e)
+      return data
+    }
+  }else{
+    return data
+  }
+}
+
+Exec.executeSilentCommand = (cmd) => {
+
+  return new Promise((resolve,reject)=>{
+    var command = cmd.command
+    var directory = cmd.directory
+    var description = cmd.description
+    // execute the procces
+    logger.debug(`${description}, ${directory} > ${Exec.maskGitToken(command)}`)
+    try{
+      var cmdlist = command.split(' ')
+      var basecmd = cmdlist[0]
+      var parameters = cmdlist.slice(1)
+      var child = spawn(basecmd,parameters,{shell:true,stdio:["ignore","pipe","pipe"],cwd:directory,detached:true});
+      var timeout = setTimeout(()=>{
+        Exec.killChildren(child.pid)
+      },60000)
+      var out=[]
+      out.push(`Running command : ${Exec.maskGitToken(command)}`)
+      // add output eventlistener to the process to save output
+      child.stdout.on('data',function(data){
+        // logger.debug(data)
+        data = Exec.maskGitToken(data)
+        out.push(data)
+      })
+      // add error eventlistener to the process to save output
+      child.stderr.on('data',function(data){
+        // save the output
+        // logger.debug(data)
+        data = Exec.maskGitToken(data)
+        out.push(data)
+      })
+      // add exit eventlistener to the process to handle status update
+      child.on('exit',function(data){
+        clearTimeout(timeout)
+        logger.info(description + " finished : " + data)
+        if(data!=0){
+          if(child.signalCode=='SIGTERM'){
+            out.push("The command timed out")
+          }
+          reject(out.join('\n'))
+        }else{
+          resolve(out.join('\n'))
+        }
+      })
+      // add error eventlistener to the process; set failed
+      child.on('error',function(data){
+        data = Exec.maskGitToken(data)
+        logger.error(data)
+        out.push(data)
+        reject(out.join('\n'))
+      })
+
+    }catch(e){
+      reject(e)
+    }
+  })
+
+}
+
 
 const Repo={
 
@@ -77,9 +180,9 @@ Repo.findByName = function (name,text){
         output.push(directory)
       }
 
-      info.stdout.on('data', function(a){
-        // logger.sill(a)
-        output.push(a)
+      info.stdout.on('data', function(data){
+        data = Exec.maskGitToken(data)
+        output.push(data)
       });
 
       info.on('exit',function(code){
@@ -107,10 +210,10 @@ Repo.findByName = function (name,text){
 }
 
 // run git clone
-Repo.create = function (uri,command,username,email) {
+Repo.create = function (uri,command) {
   return new Promise((resolve,reject)=>{
     try{
-      logger.notice("Creating repository " + (uri)?uri:command)
+      logger.notice(`Creating repository : ${Exec.maskGitToken((uri)?uri:command)}`)
       var directory = config.repoPath
       try{
         fs.accessSync(directory)
@@ -124,8 +227,8 @@ Repo.create = function (uri,command,username,email) {
           return;
         }
       }
-      var clone
-      var cmd
+
+      var cmd,parameters
       if(uri){
         cmd = `git clone --verbose ${uri}`
       }else if(command){
@@ -134,52 +237,27 @@ Repo.create = function (uri,command,username,email) {
         reject("No uri or command given")
         return;
       }
-      var repoNameRegex = new RegExp(".*/([^\.]+)\.git.*", "g");
-      var match = repoNameRegex.exec(uri);
-      if(match){
-        var repoName = match[1]
-        logger.notice(`Found repoName in command : ${repoName}`)
-        cmd = `${cmd} ; cd ${repoName}`
-      }else{
-        logger.error(`No repo name found in uri`)
-      }
-      if(username){
-        cmd = `${cmd} ; git config user.name "${username}"`
-      }
-      if(email){
-        cmd = `${cmd}; git config user.email ${email}`
+      if(!cmd.startsWith('git clone')){
+        reject("Not a git clone command")
+        return;
       }
       var hostRegex = new RegExp(".*@([^:]+):.*", "g");
+
       var match = hostRegex.exec(cmd);
-      if(match){
+      if(match && uri){
         var host = match[1]
         logger.notice(`Found host in command : ${host}; adding it to known_hosts`)
         cmd = `ssh-keyscan ${host} >> ~/.ssh/known_hosts ; ${cmd}`
       }else{
-        logger.error(`No host found in command`)
+        logger.warning(`No host found in command`)
       }
-
-      logger.notice(`Running cmd : ${cmd}`)
-      var clone = exec(cmd,{cwd:directory})
-      var output = []
-      clone.stdout.on('data', function(a){
-        logger.info(a)
-        output.push(a)
-      });
-
-      clone.on('exit',function(code){
-        logger.debug('exit')
-        if(code==0){
-          resolve(`repository created succesfully`)
-        }else{
-          reject(`\ncreating repository failed with code ${code}\n${output.join("\n")}`)
-        }
-      });
-
-      clone.stderr.on('data',function(a){
-        output.push(a)
-        logger.error('stderr:'+a);
-      });
+      Exec.executeSilentCommand({command:cmd,directory:config.repoPath,description:"Cloning repository"})
+      .then((out)=>{
+        resolve(out)
+      }).catch((e)=>{
+        reject(e)
+      })
+      
     }catch(e){
       logger.error(e)
       reject(e)
@@ -228,4 +306,12 @@ Repo.addKnownHosts = function (hosts) {
   })
 };
 
+// run a playbook
+Repo.pull = function (repo) {
+
+    var command = "git pull --verbose"
+    var directory = path.join(config.repoPath,repo)
+    return Exec.executeSilentCommand({directory:directory,command:command,description:"Pulling from git"})
+
+};
 module.exports= Repo;
