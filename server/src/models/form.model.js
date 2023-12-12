@@ -35,23 +35,27 @@ var Form=function(data){
 // since version 4.0.3 the backups go under folder => move backups there (should be only once)
 Form.initBackupFolder=function(){
   logger.info("Moving older form backups to new backup folder")
-  fs.mkdirSync(backupPath, { recursive: true })
-  // move old forms.bak.files
-  var files = fs.readdirSync(formFilePath)
-  if(files){
-    // filter only backup-files and folders
-    files=files.filter((item)=>item.match(/\.bak\.[0-9]*$/))
-    // read files
-    files.forEach((item, i) => {
-      try{
-        const from = path.join(formFilePath,item)
-        const to = path.join(backupPath,item)
-        logger.debug(`moving ${from} -> ${to}`)
-        fse.moveSync(from,to)
-      }catch(e){
-        logger.error(`failed to move item '${item}'.\n${e}`)
-      }
-    });
+  try{
+    fs.mkdirSync(backupPath, { recursive: true })
+    // move old forms.bak.files
+    var files = fs.readdirSync(formFilePath)
+    if(files){
+      // filter only backup-files and folders
+      files=files.filter((item)=>item.match(/\.bak\.[0-9]*$/))
+      // read files
+      files.forEach((item, i) => {
+        try{
+          const from = path.join(formFilePath,item)
+          const to = path.join(backupPath,item)
+          logger.debug(`moving ${from} -> ${to}`)
+          fse.moveSync(from,to)
+        }catch(e){
+          logger.error(`failed to move item '${item}'.\n`,e)
+        }
+      });
+    }
+  }catch(e){
+    logger.error("Failed to init backup folder\n",e)
   }  
   Form.removeOld(oldBackupDays)
 }
