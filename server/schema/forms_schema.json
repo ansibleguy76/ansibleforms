@@ -109,7 +109,6 @@
                 "enum": ["ansible"]
               },
               "template": {"not":{}},
-              "repo": {"not":{}},
               "steps": {"not":{}},
               "awxCredentials": {"not":{}},
               "executionEnvironment": {"not":{}}
@@ -123,7 +122,6 @@
               },
               "playbook": {"not":{}},
               "ansibleCredentials": {"not":{}},
-              "repo": {"not":{}},
               "steps": {"not":{}}
             },
             "required": ["template"]
@@ -131,29 +129,9 @@
           {
             "properties": {
               "type": {
-                "enum": ["git"]
-              },
-              "playbook": {"not":{}},
-              "template": {"not":{}},
-              "inventory": {"not":{}},
-              "awxCredentials": {"not":{}},
-              "ansibleCredentials": {"not":{}},
-              "tags": {"not":{}},
-              "check": {"not":{}},
-              "limit": {"not":{}},
-              "diff": {"not":{}},
-              "steps": {"not":{}},
-              "executionEnvironment": {"not":{}}
-            },
-            "required": ["repo"]
-          },
-          {
-            "properties": {
-              "type": {
                 "enum": ["multistep"]
               },
               "playbook": {"not":{}},
-              "repo": {"not":{}},
               "template": {"not":{}},
               "inventory": {"not":{}},
               "awxCredentials": {"not":{}},
@@ -341,7 +319,6 @@
                         "enum": ["ansible"]
                       },
                       "template": {"not":{}},
-                      "repo": {"not":{}},
                       "steps": {"not":{}},
                       "awxCredentials": {"not":{}},
                       "executionEnvironment": {"not":{}}
@@ -354,36 +331,16 @@
                         "enum": ["awx"]
                       },
                       "playbook": {"not":{}},
-                      "repo": {"not":{}},
                       "ansibleCredentials": {"not":{}},
                       "steps": {"not":{}}
                     },
                     "required": ["template"]
-                  },
-                  {
-                    "properties": {
-                      "type": {
-                        "enum": ["git"]
-                      },
-                      "playbook": {"not":{}},
-                      "template": {"not":{}},
-                      "inventory": {"not":{}},
-                      "ansibleCredentials": {"not":{}},
-                      "tags": {"not":{}},
-                      "check": {"not":{}},
-                      "limit": {"not":{}},
-                      "diff": {"not":{}},
-                      "steps": {"not":{}},
-                      "awxCredentials": {"not":{}},
-                      "executionEnvironment": {"not":{}}
-                    },
-                    "required": ["repo"]
                   }
               ],
               "properties":{
                 "type": {
                   "type": "string",
-                  "enum": ["ansible", "awx", "git"]
+                  "enum": ["ansible", "awx"]
                 },
                 "name": {"type": "string"},
                 "playbook": {"type": "string"},
@@ -392,9 +349,6 @@
                   "$ref": "/formfield"
                 },
                 "template": {"type": "string"},
-                "repo": {
-                  "$ref": "/repo"
-                },
                 "awxCredentials": {
                   "type": "array",
                   "items": {
@@ -486,7 +440,7 @@
           },
           "type": {
             "type": "string",
-            "enum": ["ansible", "awx", "git","multistep"]
+            "enum": ["ansible", "awx", "multistep"]
           },
           "hasApproval":{ "type": "boolean"},
           "approval":{
@@ -495,18 +449,6 @@
           "playbook": {"type": "string"},
           "key": {"type": "string"},
           "template": {"type": "string"},
-          "repo": {
-            "$id": "/repo",
-            "type": "object",
-            "required": [ "dir", "file", "push", "pull"],
-            "properties": {
-              "dir": { "type": "string"},
-              "file": { "type": "string"},
-              "push": { "type": "string"},
-              "pull": { "type": "string"}
-            },
-            "additionalProperties": false
-          },
           "credentials": {
             "type": "object",
             "patternProperties": {

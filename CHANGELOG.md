@@ -13,10 +13,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   added valueColumn "\*" and placeholderColumn "\*", to return all column, this also means that valueColumn "\*" results in the same as outputObject: true. 
 -   jobid is passed now as extravar and passed to nextform, incase an action exists
 -   you can now hide a text field
+-   more advanced ldap properties for non active directory ldap servers
+-   git repositories generic (for forms and playbook for example)
+-   added expiryDays to login api, for longlived tokens (admin only)
+-   added jwt tokenPrefix property on jwt functions
+-   allow admin role fallback for local/admins group in case no forms are found
+
+### Removed
+-   git repo type, you can no longer target git repo's from a form, this is breaking when you upgrade to 5.0.0 and use the formtype 'git'
 
 ### Fixed
 
 -   awx workflow template failed with 404
+-   ldap usernameattribute not used
 
 ## [4.0.19] - 2023-11-22
 
