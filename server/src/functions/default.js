@@ -255,18 +255,18 @@ exports.fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort
   return result
 
 }
-exports.fnRestJwt = async function(action,url,body,token,jqe=null,sort=null,hasBigInt=false){
+exports.fnRestJwt = async function(action,url,body,token,jqe=null,sort=null,hasBigInt=false,tokenPrefix="Bearer"){
   var headers={}
   if(token){
-    headers.Authorization="Bearer " + token
+    headers.Authorization=tokenPrefix + " " + token
   }
   return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort,hasBigInt)
 }
-exports.fnRestJwtSecure = async function(action,url,body,tokenname,jqe=null,sort=null,hasBigInt=false){
+exports.fnRestJwtSecure = async function(action,url,body,tokenname,jqe=null,sort=null,hasBigInt=false,tokenPrefix="Bearer"){
   var headers={}
   if(tokenname){
     var token = await exports.fnCredentials(tokenname)
-    headers.Authorization="Bearer " + token.password
+    headers.Authorization=tokenPrefix + " " + token.password
   }
   return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort,hasBigInt)
 }
