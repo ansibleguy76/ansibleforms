@@ -520,7 +520,7 @@
           visibility:{},            // holds which fields are visiable or not
           canSubmit:false,          // flag must be true to enable submit - allows to finish background queries - has a watchdog in case not possible
           validationsLoaded:false,  // ready flag if field validations are ready, we don't show the form otherwise
-          pretasksFinished:false,   // ready flag for form pre tasks (git => git pull)
+          pretasksFinished:false,   // ready flag for form pre tasks (future use - use to be gitpulls)
           loadMessage:"Loading form...",
           timeout:undefined,        // determines how long we should show the result of run
           showHelp:false,           // flag to show/hide form help
@@ -2032,11 +2032,6 @@
           this.pauseJsonOutput=false;
          }
       },
-      pullGit(repo){
-        var postdata={}
-        postdata.gitRepo = repo;
-        return axios.post("/api/v1/git/pull",postdata,TokenStorage.getAuthentication())
-      },
       initForm(){
         var ref=this
         this.pretasksFinished=false
@@ -2167,56 +2162,11 @@
         this.findVariableDependencies()
         this.findVariableDependentOf()
 
-        // set as ready
-        // if our type is git, we need to first pull git
-        if(!["git","multistep"].includes(this.currentForm.type)){
-          this.pretasksFinished=true
-          // start dynamic field loop (= infinite)
-          this.startDynamicFieldsLoop()
-        }else{
-          var gitpulls=[]
+        // for future use, run something before the form starts
+        this.pretasksFinished=true
+        // start dynamic field loop (= infinite)
+        this.startDynamicFieldsLoop()
 
-          if(this.currentForm.type=="git"){
-              gitpulls.push(this.pullGit(this.currentForm.repo))
-          }else if(this.currentForm.type=="multistep"){
-            this.currentForm.steps.forEach((step, i) => {
-              if(step.type=="git")
-                gitpulls.push(this.pullGit(step.repo))
-            });
-          }
-          // wait for all git pulls
-          Promise.all(gitpulls)
-          .then(results=>{
-            var status=true
-            results.forEach((result, i) => {
-              if(result){
-
-                if(result.data.status=="error"){
-                  ref.$toast.error(result.data.message)
-                  status=false
-                }
-
-              }else{
-                ref.$toast.error("Failed to pull from git")
-                status=false
-              }
-
-            });
-            if(status){
-              if(gitpulls.length>0)
-                ref.$toast.success("Git was pulled")
-            }
-            ref.pretasksFinished=true
-            // start dynamic field loop (= infinite)
-            ref.startDynamicFieldsLoop()
-          })
-          .catch(function(err){
-            ref.$toast.error("Failed to pull from git " + err.toString())
-            ref.pretasksFinished=true
-            // start dynamic field loop (= infinite)
-            ref.startDynamicFieldsLoop()
-          })
-        }
 
       },
     },

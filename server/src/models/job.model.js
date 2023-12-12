@@ -394,15 +394,6 @@ Job.launch = async function(form,formObj,user,creds,extravars,parentId=null,next
       notifications
     )
   }
-  if(jobtype=="git"){
-    return await Git.push(
-      formObj.repo,
-      extravars,
-      jobid,
-      null,
-      (parentId)?null:formObj.approval // if multistep: no individual approvals checks
-    )
-  }
   if(jobtype=="multistep"){
     return await Multistep.launch(
       form,
@@ -437,9 +428,6 @@ Job.continue = async function(form,user,creds,extravars,jobid,next) {
   }
   if(jobtype=="awx"){
     target=formObj.template
-  }
-  if(jobtype=="git"){
-    target=formObj?.repo?.file
   }
   if(jobtype=="multistep"){
     target=formObj.name
@@ -507,9 +495,6 @@ Job.continue = async function(form,user,creds,extravars,jobid,next) {
         formObj.approval,
         true
       )
-    }
-    if(jobtype=="git"){
-      return await Git.push(formObj.repo,extravars,jobid,++counter,formObj.approval,true)
     }
     if(jobtype=="multistep"){
       return await Multistep.launch(form,formObj.steps,user,extravars,creds,jobid,++counter,formObj.approval,step,true)
@@ -1367,42 +1352,4 @@ Awx.findInventoryByName = async function (name) {
   }
 };
 
-// git stuff
-var Git=function(){};
-Git.push = async function (repo,ev,jobid,counter,approval,approved=false) {
-    if(!counter){
-      counter=0
-    }else{
-      counter++
-    }
-    if(approval){
-      if(!approved){
-        await Job.sendApprovalNotification(approval,ev,jobid)
-        await Job.printJobOutput(`APPROVE [${repo.file}] ${'*'.repeat(69-repo.file.length)}`,"stdout",jobid,++counter)
-        await Job.update({status:"approve",approval:JSON.stringify(approval),end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid)
-        return true
-      }else{
-        logger.notice("Continuing awx " + repo.file + " it has been approved")
-      }
-    }
-    // we make a copy to not mutate
-    var extravars={...ev}
-    try{
-      // save the extravars as file - we do this in sync, should be fast
-      await Job.printJobOutput(`TASK [Writing YAML to local repo] ${'*'.repeat(72-26)}`,"stdout",jobid,++counter)
-      var yaml = YAML.stringify(extravars)
-      fs.writeFileSync(path.join(appConfig.repoPath,repo.dir,repo.file),yaml)
-      // log the save
-      await Job.printJobOutput(`ok: [Extravars Yaml file created : ${repo.file}]`,"stdout",jobid,++counter)
-      await Job.printJobOutput(`TASK [Committing changes] ${'*'.repeat(72-18)}`,"stdout",jobid,++counter)
-      // start commit
-      var command = `git commit --allow-empty -am "update from ansibleforms" && ${repo.push}`
-      var directory = path.join(appConfig.repoPath,repo.dir)
-      return await Exec.executeCommand({directory:directory,command:command,description:"Pushing to git",task:"Git push"},jobid,counter)
-
-    }catch(e){
-      logger.error("error : ",e)
-      await Job.endJobStatus(jobid,++counter,"stderr","failed",e)
-    }
-};
 module.exports= Job;
