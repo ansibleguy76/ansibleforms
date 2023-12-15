@@ -4161,5 +4161,17 @@
       ```
         
       **NOTE** : in the docker-compose solution the location is `${your-docker-compose-path}/data/mysql/my.cnf`
-
+  - name: About repositories
+    short: About repositories
+    description: |
+      Sometimes you want collaboration and versioning and then git repositories are perfect.  In version 5.0.0 you can now manage git repositories.  
+      Every repository is a subfolder of the repositories-path (REPO_PATH environment variable).  
+      Just go to settings / repositories and start managing repositories.  You can either at ssh-based repositories (with public key/known hosts) or https based repositories, public or private with username/password/token.  
+      You can use repositories for synching data-files (yaml files for example to feed formdata).
+      But also the forms.yaml and forms subfolder, as well as all the ansible playbooks and roles are perfect candidates for repositories.  
+      When creating a repository, you can choose if it's for forms or playbooks, which will then automatically override the FORMS_PATH and ANSIBLE_PATH environment variables.  
+      You can also choose if the repository must be cloned when AnsibleForms starts, and you can add cron-schedule to schedule recurring pull-actions.  
+      Additionally, in the swagger interface, you will find a clone and pull rest api for webhooks.  
+      In case you want long-lived access tokens for the webhooks, with swagger you can pass an expiryDays parameter (for admin roles only) and create long-lived tokens.
+      
   
