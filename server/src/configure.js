@@ -76,7 +76,6 @@ module.exports = app => {
   const profileRoutes = require('./routes/profile.routes')
   const sshRoutes = require('./routes/ssh.routes')
   const logRoutes = require('./routes/log.routes')
-  const repoRoutes = require('./routes/repo.routes')
   const knownhostsRoutes = require('./routes/knownhosts.routes')
   const helpRoutes = require('./routes/help.routes')
   const installRoutes = require('./routes/install.routes')
@@ -139,7 +138,6 @@ module.exports = app => {
   app.use(`${appConfig.baseUrl}api/v1/sshkey`,cors(), authobj, checkAdminMiddleware, sshRoutes)
   app.use(`${appConfig.baseUrl}api/v1/awx`,cors(), authobj, checkAdminMiddleware, awxRoutes)
   app.use(`${appConfig.baseUrl}api/v1/log`,cors(), authobj, checkAdminMiddleware, logRoutes)
-  app.use(`${appConfig.baseUrl}api/v1/repo`,cors(), authobj, checkAdminMiddleware, repoRoutes)
   app.use(`${appConfig.baseUrl}api/v1/repository`,cors(), authobj, checkAdminMiddleware, repositoryRoutes)
   app.use(`${appConfig.baseUrl}api/v1/knownhosts`,cors(), authobj, checkAdminMiddleware, knownhostsRoutes)
 
