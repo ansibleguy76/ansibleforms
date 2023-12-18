@@ -1454,7 +1454,7 @@
                         }
 
                       }else{
-                        axios.post("/api/v1/expression?noLog="+(!!item.noLog),{expression:placeholderCheck.value},TokenStorage.getAuthentication())
+                        axios.post(`${process.env.BASE_URL}api/v1/expression?noLog=${!!item.noLog}`,{expression:placeholderCheck.value},TokenStorage.getAuthentication())
                           .then((result)=>{
                             var restresult = result.data
                             if(restresult.status=="error"){
@@ -1523,7 +1523,7 @@
                   ref.setFieldStatus(item.name,"running",false)
                   placeholderCheck = ref.replacePlaceholders(item)     // check and replace placeholders
                   if(placeholderCheck.value!=undefined){                       // expression is clean ?
-                    axios.post("/api/v1/query?noLog="+(!!item.noLog),{query:placeholderCheck.value,config:item.dbConfig},TokenStorage.getAuthentication())
+                    axios.post(`${process.env.BASE_URL}api/v1/query?noLog=${!!item.noLog}`,{query:placeholderCheck.value,config:item.dbConfig},TokenStorage.getAuthentication())
                       .then((result)=>{
                         var restresult = result.data
                         if(restresult.data.error){
@@ -1701,7 +1701,7 @@
       abortJob(id){
         var ref=this
         this.$toast.warning("Aborting job " + id);
-        axios.post("/api/v1/job/" + id + "/abort",{},TokenStorage.getAuthentication())
+        axios.post(`${process.env.BASE_URL}api/v1/job/${id}/abort`,{},TokenStorage.getAuthentication())
           .then((result)=>{
             ref.abortTriggered=true
           })
@@ -1711,7 +1711,7 @@
         var ref = this;
         // console.log("=============================")
         // console.log("getting awx job")
-        axios.get("/api/v1/job/" + id,TokenStorage.getAuthentication())
+        axios.get(`${process.env.BASE_URL}api/v1/job/${id}`,TokenStorage.getAuthentication())
           .then((result)=>{
               // if we have decent data
               // console.log("job result - " + JSON.stringify(result))
@@ -1727,7 +1727,7 @@
                 if(this.jobResult.data.job_type=="multistep"){
                   if(this.jobResult.data.subjobs){
                     var lastsubjob = this.jobResult.data.subjobs.split(",").map(x=>parseInt(x)).slice(-1)[0]
-                    axios.get("/api/v1/job/" + lastsubjob,TokenStorage.getAuthentication())
+                    axios.get(`${process.env.BASE_URL}api/v1/job/${lastsubjob}`,TokenStorage.getAuthentication())
                       .then((subjobresult)=>{
                         ref.subjob=subjobresult.data
                       }).catch((e)=>{
@@ -1918,7 +1918,7 @@
           ...TokenStorage.getAuthenticationMultipart(),
             onUploadProgress: progressEvent => {Vue.set(ref.fileProgress,fieldname,Math.round(progressEvent.loaded/progressEvent.total*100))}
         }
-        const result = await axios.post('/api/v1/job/upload/', formData, config)
+        const result = await axios.post(`${process.env.BASE_URL}api/v1/job/upload/`, formData, config)
         return result.data
       },
       // execute the form
@@ -1997,7 +1997,7 @@
  
           this.jobResult.message= "Connecting with job api ";
           this.jobResult.status="info";
-          axios.post("/api/v1/job/",postdata,TokenStorage.getAuthentication())
+          axios.post(`${process.env.BASE_URL}api/v1/job/`,postdata,TokenStorage.getAuthentication())
             .then((result)=>{
                 if(result){
                   this.jobResult=result.data;

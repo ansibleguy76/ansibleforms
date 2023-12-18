@@ -45,7 +45,7 @@
         this.checkResults = {}; // Reset check results
         this.checksError = null; // Reset error message
   
-        axios.get("/api/v1/install")
+        axios.get(`${process.env.BASE_URL}api/v1/install`)
           .then((result) => {
             // Process check results from the API response
             const checks = result.data; // Assuming the API returns check results as an object

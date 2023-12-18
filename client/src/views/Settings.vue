@@ -14,7 +14,7 @@
             </div>
           </nav>
           <div class="box">
-            <BulmaInput icon="globe" v-model="settings.url" type="url" label="AnsibleForms Url" placeholder="https://ansibleforms:8443" :required="true" :hasError="$v.settings.url.$invalid" :errors="[]" />
+            <BulmaInput icon="globe" v-model="settings.url" help="" label="Public Root Url" placeholder="https://ansibleforms:8443" :required="true" :hasError="$v.settings.url.$invalid" :errors="[]" />
           </div>  
 
             <table class="table is-bordered is-striped is-fullwidth">
@@ -69,13 +69,13 @@
     methods:{
       loadSettings(){
         var ref= this;
-        axios.get('/api/v1/settings/',TokenStorage.getAuthentication())
+        axios.get(`${process.env.BASE_URL}api/v1/settings/`,TokenStorage.getAuthentication())
           .then((result)=>{
             ref.settings=result.data.data.output;
           }),function(err){
             ref.$toast.error(err.toString());
           };
-        axios.get('/api/v1/config/env',TokenStorage.getAuthentication())
+        axios.get(`${process.env.BASE_URL}api/v1/config/env`,TokenStorage.getAuthentication())
           .then((result)=>{
             ref.env=result.data.data.output;
           }),function(err){
@@ -84,7 +84,7 @@
       },updateSettings(){
         var ref= this;
         if (!this.$v.settings.$invalid) {
-          axios.put('/api/v1/settings/',this.settings,TokenStorage.getAuthentication())
+          axios.put(`${process.env.BASE_URL}api/v1/settings/`,this.settings,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
                 ref.$toast.error(result.data.message + ", " + result.data.data.error);
@@ -103,7 +103,11 @@
     validations: {
       settings:{
         url:{
-          required
+          required,
+          regex : helpers.withParams(
+              {description: "Must be a valid public url",type:"regex"},
+              (value) => !helpers.req(value) || (new RegExp("^https?:\/\/[^\/]+$").test(value)) // eslint-disable-line
+          )                
         }
       }
     },

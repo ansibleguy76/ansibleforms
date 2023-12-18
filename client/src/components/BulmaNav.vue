@@ -2,9 +2,9 @@
   <nav class="navbar is-primary is-spaced has-shadow" role="navigation" aria-label="main navigation">
       <div class="container">
           <div class="navbar-brand">
-          <a class="navbar-item" href="/">
+            <router-link class="navbar-item" to="/">
               <img src="/assets/img/logo_ansible_forms_full_white.svg" />
-          </a>
+            </router-link>
 
           <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbarAnsibleForms" v-on:click="showNav = !showNav" v-bind:class="{ 'is-active' : showNav }">
               <span aria-hidden="true"></span>
@@ -36,7 +36,7 @@
                     <router-link class="navbar-item" to="/reference-guide/forms">
                       <span class="icon"><font-awesome-icon icon="question-circle" /></span><span>Reference Guide</span>
                     </router-link>
-                    <a class="navbar-item" href="/api-docs" target="_blank">
+                    <a class="navbar-item" :href="`${baseUrl}api-docs`" target="_blank">
                       <span class="icon"><font-awesome-icon icon="code" /></span><span>Api docs</span>
                     </a>
                     <hr class="navbar-divider">
@@ -78,13 +78,15 @@
     },
     data(){
       return  {
-          showNav: false
+          showNav: false,
+          baseUrl: "/"
       }
     },methods:{
       logout(){
         this.$emit("logout");
       }
     },mounted(){
+      this.baseUrl = process.env.BASE_URL
     }
   }
 </script>

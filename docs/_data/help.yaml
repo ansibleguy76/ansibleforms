@@ -355,11 +355,21 @@
       The output has a button `Apply filter` for the filtering to take effect.
   - name: UPLOAD_PATH
     type: string
+    version: 4.0.16
     allowed: a valid path
     short: The path for file uploads
     default: "%PERSISTENT_FOLDER%/uploads"
     description: |
       Since 4.0.16, a new field type is introduced that allows file uploads.  The files are uploaded in this path.
+  - name: BASE_URL
+    type: string
+    allowed: a valid baes url
+    default: "/"
+    short: Set the base url
+    description: | 
+      By default AnsibleForms is hosted under root `/`, but you can choose a base url of choice.  
+      It must start and end with a `/`, for example `/myapp/`.
+    version: 5.0.0      
 - name: Forms.yaml
   icon: fab,wpforms
   link: forms
@@ -4174,5 +4184,9 @@
       You can also choose if the repository must be cloned when AnsibleForms starts, and you can add cron-schedule to schedule recurring pull-actions.  
       Additionally, in the swagger interface, you will find a clone and pull rest api for webhooks.  
       In case you want long-lived access tokens for the webhooks, with swagger you can pass an expiryDays parameter (for admin roles only) and create long-lived tokens.
-      
+  - name: Host Ansibleforms in a subfolder
+    short: Host Ansibleforms in a subfolder
+    description: |
+      In the case you want to host ansibleforms in subfolder, for example `https://af.domain.local/mysubfolder/`.  
+      You can use the environment variable `BASE_URL`.  Set it to `/mysubfolder/` (default is `/`).  
   

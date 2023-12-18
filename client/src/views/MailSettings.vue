@@ -79,7 +79,7 @@
     methods:{
       loadSettings(){
         var ref= this;
-        axios.get('/api/v1/settings/',TokenStorage.getAuthentication())
+        axios.get(`${process.env.BASE_URL}api/v1/settings/`,TokenStorage.getAuthentication())
           .then((result)=>{
             ref.settings=result.data.data.output;
           }),function(err){
@@ -88,7 +88,7 @@
       },updateSettings(){
         var ref= this;
         if (!this.$v.settings.$invalid) {
-          axios.put('/api/v1/settings/',this.settings,TokenStorage.getAuthentication())
+          axios.put(`${process.env.BASE_URL}api/v1/settings/`,this.settings,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
                 ref.$toast.error(result.data.message + ", " + result.data.data.error);
@@ -106,7 +106,7 @@
       testMail(){
         var ref= this;
         if (!this.$v.settings.$invalid && !this.$v.test.$invalid) {
-          axios.post('/api/v1/settings/mailcheck/',{...this.settings,...this.test},TokenStorage.getAuthentication())
+          axios.post(`${process.env.BASE_URL}api/v1/settings/mailcheck/`,{...this.settings,...this.test},TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
                 ref.$toast.error(result.data.message + ", " + result.data.data.error);

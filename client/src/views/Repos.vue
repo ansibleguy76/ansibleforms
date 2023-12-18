@@ -1,67 +1,60 @@
 <template>
   <section v-if="isAdmin" class="section">
-    <BulmaQuickView class="quickview" v-if="showOutput" title="Execution result" footer="" @close="showOutput=false">
+    <BulmaQuickView class="quickview" v-if="showOutput" title="Last execution result" footer="" @close="showOutput=false">
         <p class="is-family-code" v-html="output.split('\n').join('<br>')"></p>
-    </BulmaQuickView>    
-    <BulmaModal v-if="showDelete" title="Delete" action="Delete" @click="deleteRepo();showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete repository '{{ repoItem}}'</BulmaModal>
+    </BulmaQuickView>        
+    <BulmaModal v-if="showDelete && repository.name" title="Delete" action="Delete" @click="deleteRepository();showDelete=false" @close="removeDelete()" @cancel="removeDelete()">Are you sure you want to delete Repository '{{ repository.name}}'</BulmaModal>
     <div class="container">
-      <h1 class="title has-text-info"><font-awesome-icon :icon="['fab','git-square']" /> Repositories</h1>
+      <h1 class="title has-text-info"><font-awesome-icon :icon="['fab','git']" /> Repositories</h1>
       <div class="columns">
         <div class="column is-narrow">
           <BulmaSettingsMenu />
         </div>
-        <div class="column">    
+        <div class="column">         
           <nav class="level">
             <!-- Left side -->
             <div class="level-left">
-              <p class="level-item"><BulmaButton icon="plus" label="New Repo" @click="reset();loadRepo()"></BulmaButton></p>
+              <p class="level-item"><BulmaButton icon="plus" label="New Repository" @click="repositoryItem=-1;loadRepository()"></BulmaButton></p>
             </div>
           </nav>
           <div class="columns">
-            <div class="column" v-if="repoList && repoList.length>0">
+            <div class="column" v-if="repositoryList && repositoryList.length>0">
+              <div v-if="hasDoubles" class="notification is-warning is-light">
+                <strong>Warning:</strong><br>
+                You can have only 1 repository for forms or playbooks.
+              </div>
+              <div v-if="isDouble" class="notification is-warning is-light">
+                <strong>Warning:</strong><br>
+                A repository can either be for forms or for playbooks, but not both.
+              </div>              
               <BulmaAdminTable
-                :dataList="repoList"
-                :labels="['Name']"
-                :columns="['']"
-                identifier=""
-                :actions="[{name:'select',title:'show repository',icon:'info-circle',color:'has-text-link'},{name:'delete',title:'delete repository',icon:'times',color:'has-text-danger'},{name:'pull',title:'pull repository',icon:'refresh',color:'has-text-link'}]"
-                :currentItem="repoItem"
+                :dataList="repositoryList"
+                :labels="['Name','Status','Head','Type']"
+                :columns="['name','status','head','icon']"
+                :filters="['name','status']"
+                :icons="[false,false,false,true]"
+                identifier="name"
+                :actions="[{name:'select',title:'edit repository',icon:'pencil-alt',color:'has-text-warning'},{name:'delete',title:'delete repository',icon:'times',color:'has-text-danger'},{name:'clone',title:'clone',icon:'download',color:'has-text-info'},{name:'output',title:'info',icon:'circle-info',color:'has-text-link'}]"
+                :currentItem="repositoryItem"
                 @select="selectItem"
+                @clone="cloneItem"
                 @delete="deleteItem"
-                @pull="pullRepo"
+                @output="outputItem"
               />
             </div>
             <transition name="add-column" appear>
-              <div class="column is-two-thirds" v-if="repoItem!==undefined && !showDelete">
-                <div v-if="repoStatus || loading" class="box  is-family-monospace enable-line-break is-size-7">
-                  <span v-if="loading" class="icon"><font-awesome-icon icon="spinner" spin /></span><span v-if="loading">TIMEOUT = 60s</span>
-                  <div v-html="repoStatus"></div>
-                </div>
-             
-                <BulmaCheckbox v-if="!repoStatus && !loading" checktype="checkbox" v-model="repo.isAdvanced" label="Advanced" />
-                <div v-if="!repoStatus && !loading">
-                  <div v-if="repo.isAdvanced" class="notification is-warning is-light mt-3">
-                    <strong>Advanced mode</strong> : You need to run the git clone command manually.<br>
-                    The command MUST start with <code>git clone</code> and note that <strong>NO PROMPTS</strong> are allowed.<br><br>
-                    The command will timeout after 60 seconds.<br><br>
-                    current directory is <code>%REPO_PATH%</code> (see environment variables)
-                  </div>
-                  <div v-else class="notification is-info is-light mt-3">
-                    <strong>The following command will be ran :</strong><br>
-                    <div class="is-family-code">git clone --verbose {repository_uri};</div>
-                    <div class="mt-3"><strong>The repository_uri must something like :</strong><br>
-                      <div class="is-family-code">
-                      - git@{url}/{account_name}/{repository_name}.git<br>
-                      - https://{url}/{account_name}/{repository_name}.git<br>
-                      - https://{username}:{password/token}@{url}/{account_name}/{repository_name}.git
-                      </div>
-                    </div>
-                    <div class="mt-3"><strong>If you want to run your own custom command, use advanced mode</strong></div>
-                  </div>  
-                </div>
-                <BulmaInput v-if="!repoStatus && !loading && !repo.isAdvanced" :icon="['fab','git-square']" v-model="repo.uri" label="Repository Uri" placeholder="valid git uri" :required="true" :hasError="$v.repo.uri.$invalid" :errors="[]" />
-                <BulmaInput v-if="!repoStatus && !loading && repo.isAdvanced" :icon="['fab','git-square']" v-model="repo.command" label="Command" placeholder="git clone --verbose git@github.com:myrepo" :required="true" :hasError="$v.repo.command.$invalid" :errors="[]" />
-                <BulmaButton v-if="repoItem==-1 && !loading" icon="save" :label="(repo.isAdvanced)?'Run command':'Create Repository'" @click="newRepo()"></BulmaButton>
+              <div class="column" v-if="repositoryItem!==undefined && !showDelete">
+                <BulmaInput icon="heading" v-model="repository.name" label="Name" placeholder="my_repo_name" :readonly="repositoryItem!==-1" :required="true" :hasError="$v.repository.name.$invalid" :errors="[]" help="Alphanumeric with dash and hyphen" />
+                <BulmaInput icon="user" v-model="repository.user" label="Username" placeholder="my-user" :hasError="$v.repository.user.$invalid" :errors="[]" help="Alphnumeric with hyphen" />
+                <BulmaInput icon="lock" v-model="repository.password" type="password" label="Password" placeholder="Password or Token" />
+                <BulmaInput :icon="['fab','git']" v-model="repository.uri" label="Uri" placeholder="https://github.com/account/repo.git" :required="true" :hasError="$v.repository.uri.$invalid" :errors="[]" help="Only ssh or https uri's are allowed" />
+                <BulmaInput icon="stopwatch" v-model="repository.cron" label="Cron Schedule" placeholder="*/5 * L * 1,3L" :hasError="$v.repository.cron.$invalid" :errors="[]" help="Minute Hour DayOfMonth Month DayOfWeek" />
+                <BulmaInput icon="info-circle" v-model="repository.description" label="Description" placeholder="Description" :required="true" :hasError="$v.repository.description.$invalid" :errors="[]" />
+                <BulmaCheckbox checktype="checkbox" v-model="repository.use_for_forms" label="Use for forms ?" /><br>
+                <BulmaCheckbox checktype="checkbox" v-model="repository.use_for_playbooks" label="Use for playbooks ?" /><br>
+                <BulmaCheckbox checktype="checkbox" v-model="repository.rebase_on_start" label="Clone on app start ?" /><br><br>
+                <BulmaButton v-if="repositoryItem==-1" icon="save" label="Create Repository" @click="newRepository()"></BulmaButton>
+                <BulmaButton v-if="repositoryItem!=-1" icon="save" label="Update Repository" @click="updateRepository()"></BulmaButton>
               </div>
             </transition>
           </div>
@@ -75,211 +68,237 @@
   import axios from 'axios'
   import Vuelidate from 'vuelidate'
   import BulmaButton from './../components/BulmaButton.vue'
-  import BulmaCheckbox from './../components/BulmaCheckRadio.vue'
-  import BulmaInput from './../components/BulmaInput.vue'
   import BulmaAdminTable from './../components/BulmaAdminTable.vue'
-  // import BulmaTextArea from './../components/BulmaTextArea.vue'
+  import BulmaInput from './../components/BulmaInput.vue'
   import BulmaModal from './../components/BulmaModal.vue'
+  import BulmaCheckbox from './../components/BulmaCheckRadio.vue'
   import BulmaSettingsMenu from '../components/BulmaSettingsMenu.vue'
   import BulmaQuickView from './../components/BulmaQuickView.vue'
+  // import BulmaSelect from './../components/BulmaSelect.vue'
   import TokenStorage from './../lib/TokenStorage'
-  import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
-  Vue.use(Vuelidate)
+  import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs,numeric } from 'vuelidate/lib/validators'
 
+  Vue.use(Vuelidate)
   export default{
-    name: "Repos",
+    name:"Repositories",
     props:{
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean}
     },
-    components:{BulmaButton,BulmaInput,BulmaModal,BulmaQuickView,BulmaCheckbox,BulmaAdminTable,BulmaSettingsMenu},
+    components:{BulmaButton,BulmaInput,BulmaModal,BulmaQuickView,BulmaAdminTable,BulmaCheckbox,BulmaSettingsMenu},
     data(){
       return  {
-          loading:false,
-          repo:{
+          repository:{
+            name:"",
+            user:"",
+            password:"",
             uri:"",
-            isAdvanced:false,
-            command:""
+            description:"",
+            // use_for_forms:false,
+            // use_for_playbooks:false,
+            rebase_on_start:false
+            // cron:""
           },
+          interval:undefined,
           showDelete:false,
-          repoItem:undefined,
-          repoList:[],
+          repositoryItem:undefined,
+          repositoryList:[],
           output:"",
+          showOutput:false,
           alert:{
             timeout:undefined,
             message:"",
             type:""
-          },
-          repoStatus:"",
-          showOutput:false
+          }
         }
     },
+    computed:{
+      hasDoubles(){
+        return (this.repositoryList.filter(x => x.use_for_forms).length > 1 || this.repositoryList.filter(x => x.use_for_playbooks).length > 1)
+      },
+      isDouble(){
+        return (this.repositoryList.filter(x => x.use_for_forms && x.use_for_playbooks).length>0)
+      },      
+    },
+    beforeDestroy(){
+      clearInterval(this.interval)
+    },    
     methods:{
       loadAll(){
-        this.loadRepoList();
-        this.loadRepo();
-      },loadRepoList(){
+        this.loadRepositoryList();
+        this.loadRepository();
+      },
+      loadRepositoryList(){
         var ref= this;
-        axios.get('/api/v1/repo/',TokenStorage.getAuthentication())
+        axios.get(`${process.env.BASE_URL}api/v1/repository/`,TokenStorage.getAuthentication())
           .then((result)=>{
-            if(result.data.status=="error"){
-              ref.$toast.error(result.data.message);
-            }else{
-              ref.repoList=result.data.data.output;
-            }
+            ref.repositoryList=result.data.data.output.map((x)=>{
+              var icon = ""
+              if(x.use_for_forms){
+                icon = "table-list"
+              }
+              if(x.use_for_playbooks){
+                icon = "circle-play"
+              }
+              return {...x,icon:icon}
+            });
           }),function(err){
             ref.$toast.error(err.toString());
           };
       },
-      reset(){
-        this.repoItem=-1
-        this.known_hosts=-1
-        this.repo.uri=""
-        this.repo.command=""
-        this.repo.isAdvanced=false
+      selectItem(value,showOutput=false){
+        this.repositoryItem=value
+        this.loadRepository(showOutput)
       },
-      selectItem(value){
-        this.repoItem=value
-        this.loadRepo()
-      },
-      pullRepo(value){
-        var ref=this
-        this.repoItem=value
-        axios.post(`/api/v1/repo/pull/${encodeURI(value)}`,{},TokenStorage.getAuthentication())
-        .then((result)=>{
-              ref.loading=false
-              if(result.data.status=="error"){
-                ref.$toast.error(result.data.message);
-                ref.output = result.data.data.error
-              }else{
-                ref.reset()
-                ref.output = result.data.data.output
-                ref.loadAll();
-              }
-              ref.showOutput=true
-            }),function(err){
-              ref.loading=false
-              ref.$toast.error(err.toString());
-            };        
+      resetItem(){
+        this.repositoryItem=undefined
       },
       deleteItem(value){
         this.selectItem(value)
         this.showDelete=true
       },
-      loadRepo(){
+      cloneItem(value){
+        this.selectItem(value)
+        this.cloneRepository()
+      },
+      outputItem(value){
+        this.selectItem(value,true)
+      },    
+      removeDelete(){
+        this.showDelete=false
+        this.resetItem()
+      }, 
+      loadRepository(showOutput=false){
         var ref= this;
-        if(this.repoItem!=undefined && this.repoItem!=-1){
-          this.loading=true
-          axios.get('/api/v1/repo/?name=' + this.repoItem,TokenStorage.getAuthentication())
+        if(this.repositoryItem!=undefined && this.repositoryItem!=-1){
+
+          axios.get(`${process.env.BASE_URL}api/v1/repository/${this.repositoryItem}`,TokenStorage.getAuthentication())
             .then((result)=>{
-              if(result.data.status=="error"){
-                ref.$toast.error(result.data.message);
-              }else{
-                console.log("loaded repo item");
-                ref.repoStatus=result.data.data.output
+              console.log("loaded repository item");
+              ref.repository=result.data.data.output
+              if(showOutput){
+                ref.output=this.repository.output
+                ref.resetItem()
+                if(ref.output){
+                  ref.showOutput=true
+                }   
               }
-              ref.loading=false
+           
             }),function(err){
               ref.$toast.error(err.toString());
-              ref.loading=false
             };
         }else{
           console.log("No item selected")
-          this.reset()
-          this.repoStatus=undefined
+          this.repository = {
+            name:""
+          }
         }
-      },deleteRepo(){
+      },
+      deleteRepository(){
         var ref= this;
-        axios.delete('/api/v1/repo/?name='+this.repoItem,TokenStorage.getAuthentication())
+        axios.delete(`${process.env.BASE_URL}api/v1/repository/${this.repositoryItem}`,TokenStorage.getAuthentication())
           .then((result)=>{
             if(result.data.status=="error"){
-              ref.$toast.error(result.data.message);
-              ref.output = result.data.data.error;
-              ref.showOutput=true
+              ref.$toast.error(result.data.message + ", " + result.data.data.error);
             }else{
-              ref.$toast.success("Repo is removed");
-              ref.repoItem=undefined;
+              ref.$toast.success("Repository is removed");
+              ref.repositoryItem=undefined;
               ref.loadAll();
             }
-            
           }),function(err){
             ref.$toast.error(err.toString());
           };
-      },newRepo(){
+      },updateRepository(){
         var ref= this;
-        if ((!this.$v.repo.command.$invalid && this.repo.isAdvanced) || (!this.$v.repo.uri.$invalid && !this.repo.isAdvanced)) {
-          this.loading=true
-          axios.post('/api/v1/repo/',this.repo,TokenStorage.getAuthentication())
+        if (!this.$v.repository.$invalid) {
+          // clone the selected item
+          var postdata = JSON.parse(JSON.stringify(this.repository))
+          // and remove status data
+          delete postdata.output
+          delete postdata.status
+          delete postdata.head
+          axios.put(`${process.env.BASE_URL}api/v1/repository/${this.repositoryItem}`,postdata,TokenStorage.getAuthentication())
             .then((result)=>{
-              ref.loading=false
               if(result.data.status=="error"){
-                ref.$toast.error(result.data.message);
-                ref.output = result.data.data.error
+                ref.$toast.error(result.data.message + ", " + result.data.data.error);
               }else{
-                ref.reset()
-                ref.output = result.data.data.output
+                ref.$toast.success("Repository is updated");
                 ref.loadAll();
               }
-              ref.showOutput=true
             }),function(err){
-              ref.loading=false
-              ref.reset()
               ref.$toast.error(err.toString());
             };
         }else{
-          ref.$toast.warning('Invalid formdata')
+          this.$toast.warning("Invalid form data")
         }
-      }
-      ,showAlert(type,message){
-          var ref=this;
-          this.alert.message=message;
-          if(type){
-            this.alert.type=type
-          }else{
-            this.alert.type="is-info"
-          }
-          clearTimeout(this.alert.timeout)
-          this.alert.timeout = setTimeout(function(){ref.alert.message=""}, 5000);
-      }
+      },newRepository(){
+        var ref= this;
+        if (!this.$v.repository.$invalid) {
+          axios.post(`${process.env.BASE_URL}api/v1/repository/`,this.repository,TokenStorage.getAuthentication())
+            .then((result)=>{
+              if(result.data.status=="error"){
+                ref.$toast.error(result.data.message + ", " + result.data.data.error);
+              }else{
+                Vue.set(ref,"repositoryItem",result.data.data.output)
+                ref.$toast.success("Created repository with new id " + result.data.data.output);
+                ref.loadAll();
+              }
+            }),function(err){
+              ref.$toast.error(err.toString());
+            };
+        }
+      },cloneRepository(){
+        var ref= this;
+        axios.post(`${process.env.BASE_URL}api/v1/repository/${this.repositoryItem}/clone`,{},TokenStorage.getAuthentication())
+        setTimeout(()=>{ref.loadAll()},500)
+        this.resetItem()
+        this.loadAll()
+      }      
     },
     validations: {
-      repo:{
-        uri: {
-          requiredIf:requiredIf(function(repo){
-            return !repo.isAdvanced
-          })
-        },
-        command: {
-          requiredIf:requiredIf(function(repo){
-            return repo.isAdvanced
-          })
-        },
-        email:{
+      repository:{
+        name: {
           required,
-          email
+          regex : helpers.withParams(
+              {description: "User must be a valid repository name",type:"regex"},
+              (value) => !helpers.req(value) || (new RegExp("^[a-z0-9_-]{1,50}$").test(value)) // eslint-disable-line
+          )             
         },
-        username:{
+        uri: {
+          required,
+          regex : helpers.withParams(
+              {description: "Must be valid git repository uri",type:"regex"},
+              (value) => !helpers.req(value) || (new RegExp("^git@.+$|^https:\/\/.+$").test(value)) // eslint-disable-line
+          )             
+        },
+        description: {
           required
+        },
+        cron: {
+          regex : helpers.withParams(
+              {description: "User must be a valid github user (alphanumeric / hyphens)",type:"regex"},
+              (value) => !helpers.req(value) || (new RegExp("^[0-9-,*/]+ [0-9-,*/]+ [0-9-,*/L]+ [0-9-,*/]+ [0-9-,*/L]+$").test(value)) // eslint-disable-line
+          )                    
+        },
+        user: {
+          maxLength:39,
+          regex : helpers.withParams(
+              {description: "User must be a valid github user (alphanumeric / hyphens)",type:"regex"},
+              (value) => !helpers.req(value) || (new RegExp("^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$").test(value)) // eslint-disable-line
+          )          
         }
       }
+
     },
     mounted() { // when the Vue app is booted up, this is run automatically.
         this.loadAll();
+        this.interval=setInterval(this.loadRepositoryList,7000) // reload running jobs every 7s
     }
   }
 </script>
 <style scoped>
   .cursor-progress{
     cursor:progress;
-  }
-  .is-text-overflow {
-      flex: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-  }
-  .enable-line-break {
-      white-space: pre-wrap;
   }
   .table td,.table th{
     max-width: 0;
@@ -317,23 +336,5 @@
   }
   .quickview{
     z-index:91000;
-  }
-  .cursor-progress{
-    cursor:progress;
-  }
-  .select, .select select{
-    width:100%;
-  }
-  .is-not-clickable{
-    cursor:default!important;
-  }
-  .pop-enter-active,
-  .pop-leave-active {
-    transform: scale(1.2);
-    transition: all 0.2s ease-in-out;
-  }
-  .pop-enter,
-  .pop-leave-to {
-    transform: scale(1);
   }  
 </style>

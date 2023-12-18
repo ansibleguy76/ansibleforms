@@ -89,7 +89,7 @@
     methods:{
       loadLdap(){
         var ref= this;
-        axios.get('/api/v1/ldap/',TokenStorage.getAuthentication())
+        axios.get(`${process.env.BASE_URL}api/v1/ldap/`,TokenStorage.getAuthentication())
           .then((result)=>{
             ref.ldap=result.data.data.output;
           }),function(err){
@@ -98,7 +98,7 @@
       },updateLdap(){
         var ref= this;
         if (!this.$v.ldap.$invalid) {
-          axios.put('/api/v1/ldap/',this.ldap,TokenStorage.getAuthentication())
+          axios.put(`${process.env.BASE_URL}api/v1/ldap/`,this.ldap,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
                 ref.$toast.error(result.data.message + ", " + result.data.data.error);
@@ -115,7 +115,7 @@
       },
       testLdap(){
         var ref= this;
-        axios.post('/api/v1/ldap/check/',this.ldap,TokenStorage.getAuthentication())
+        axios.post(`${process.env.BASE_URL}api/v1/ldap/check/`,this.ldap,TokenStorage.getAuthentication())
           .then((result)=>{
             if(result.data.status=="error"){
               ref.$toast.error(result.data.message + ", " + result.data.data.error);

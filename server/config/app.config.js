@@ -2,6 +2,7 @@ const logger=require("../src/lib/logger");
 const path=require("path")
 var app_config = {
   port: process.env.PORT || 8000,
+  baseUrl: process.env.BASE_URL || "/",
   nodeEnvironment: process.env.NODE_ENV || "production",
   showDesigner: process.env.SHOW_DESIGNER ?? true,
   formsPath: process.env.FORMS_PATH || path.resolve(__dirname + "/../persistent/forms.yaml"),

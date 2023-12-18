@@ -123,7 +123,7 @@
       loadGroupList(){
         var ref= this;
         this.groupList=[];
-        axios.get('/api/v1/group/',TokenStorage.getAuthentication())
+        axios.get(`${process.env.BASE_URL}api/v1/group/`,TokenStorage.getAuthentication())
           .then((result)=>{
             ref.groupList=result.data.data.output;
           }),function(err){
@@ -133,7 +133,7 @@
       loadUserList(){
         var ref= this;
         this.userList=[];
-        axios.get('/api/v1/user/',TokenStorage.getAuthentication())
+        axios.get(`${process.env.BASE_URL}api/v1/user/`,TokenStorage.getAuthentication())
           .then((result)=>{
             ref.userList=result.data.data.output;
           }),function(err){
@@ -144,7 +144,7 @@
         var ref= this;
         if(this.groupItem!=undefined && this.groupItem!=-1){
 
-          axios.get('/api/v1/group/' + this.groupItem,TokenStorage.getAuthentication())
+          axios.get(`${process.env.BASE_URL}api/v1/group/${this.groupItem}`,TokenStorage.getAuthentication())
             .then((result)=>{
               console.log("loaded group item");
               ref.group=result.data.data.output
@@ -160,7 +160,7 @@
       },
       deleteGroup(){
         var ref= this;
-        axios.delete('/api/v1/group/'+this.groupItem,TokenStorage.getAuthentication())
+        axios.delete(`${process.env.BASE_URL}api/v1/group/${this.groupItem}`,TokenStorage.getAuthentication())
           .then((result)=>{
             if(result.data.status=="error"){
               ref.$toast.error(result.data.message + ", " + result.data.data.error);
@@ -176,7 +176,7 @@
       newGroup(){
         var ref= this;
         if (!this.$v.group.$invalid) {
-          axios.post('/api/v1/group/',this.group,TokenStorage.getAuthentication())
+          axios.post(`${process.env.BASE_URL}api/v1/group/`,this.group,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
                 ref.$toast.error(result.data.message + ", " + result.data.data.error);
