@@ -189,7 +189,7 @@
       },newCredential(){
         var ref= this;
         if (!this.$v.credential.$invalid) {
-          axios.post(`${process.env.BASE_URL}/api/v1/credential/`,this.credential,TokenStorage.getAuthentication())
+          axios.post(`${process.env.BASE_URL}api/v1/credential/`,this.credential,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
                 ref.$toast.error(result.data.message + ", " + result.data.data.error);
