@@ -37,14 +37,18 @@
               <span :key="'action_'+a.name" v-else class="icon has-text-grey-light"><font-awesome-icon :icon="a.icon" /></span>
             </template>
           </td>
-          <td
+          <template v-for="column,i in columns">
+          <td v-if="(icons.length<=i)?true:!icons[i]"
             class="is-clickable"
             @click="(identifier)?action(actions[0].name,item[identifier]):action(actions[0].name,item)"
-            v-for="column in columns"
             :key="'item_'+item.name+'_value_'+column"
           >
             {{ (column)?item[column]:item }}
           </td>
+          <td v-else :key="'item_'+item.name+'_value_'+column">
+            <span v-if="(column)?item[column]:item" class="icon"><font-awesome-icon :icon="(column)?item[column]:item" /></span>
+          </td>
+          </template>
         </tr>
       </tbody>
     </table>
@@ -67,6 +71,7 @@
       labels:{type:Array},
       columns:{type:Array},
       filters:{type:Array,default:()=>{return []}},
+      icons:{type:Array,default:()=>{return []}},
       actions:{type:Array},
       identifier:{type:String},
       currentItem:{type:[String,Number]},
