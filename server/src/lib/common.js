@@ -12,20 +12,23 @@ Helpers.checkCertificateBase64=function(cert){
   return (Buffer.from(b64, 'base64').toString('base64') === b64)
 }
 
-Helpers.getError=function(err){
+Helpers.getError=function(err,prefix=""){
+  var m = undefined
   if(err){
     if(err.message){
-      return err.message
+      m=err.message
     }else{
       if(typeof err == 'string'){
-        return err
+        m=err
       }else{
-        return 'Could not extract error from err object'
+        m='Could not extract error from err object'
       }
     }
-  }else{
-    return undefined
   }
+  if(prefix){
+    return `${prefix} : ${m}`
+  }
+  return m
 }
 
 Helpers.escapeStringForCommandLine=function(value) {
