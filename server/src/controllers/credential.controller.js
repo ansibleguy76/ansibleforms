@@ -33,7 +33,7 @@ exports.findById = function(req, res) {
       if(credential.length>0){
         res.json(new RestResult("success","found credential",credential[0],""));
       }else{
-        res.json(new RestResult("error","failed to find credential",null,err.toString()))
+        res.json(new RestResult("error","failed to find credential",null,""))
       }
     })
     .catch((err)=>{ res.json(new RestResult("error","failed to find credential",null,err.toString())) })
