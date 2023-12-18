@@ -6,24 +6,26 @@ const algorithm = 'aes-256-ctr';
 const iv = crypto.randomBytes(16);
 
 const encrypt = (text) => {
-
-    const cipher = crypto.createCipheriv(algorithm, appConfig.encryptionSecret, iv);
-
-    const encrypted = Buffer.concat([cipher.update(text), cipher.final()]);
-
-    return encrypted.toString('hex') + "." + iv.toString('hex')
-
+    if(text){
+      const cipher = crypto.createCipheriv(algorithm, appConfig.encryptionSecret, iv);
+      const encrypted = Buffer.concat([cipher.update(text), cipher.final()]);
+      return encrypted.toString('hex') + "." + iv.toString('hex')
+    }else{
+      return ""
+    }
 };
 
 const decrypt = (hash) => {
-    const tmp = hash.split(".")
-    const hash2 = {content:tmp[0],iv:tmp[1]}
+    if(hash){
+      const tmp = hash.split(".")
+      const hash2 = {content:tmp[0],iv:tmp[1]}
+      const decipher = crypto.createDecipheriv(algorithm, appConfig.encryptionSecret, Buffer.from(hash2.iv, 'hex'));
+      const decrpyted = Buffer.concat([decipher.update(Buffer.from(hash2.content, 'hex')), decipher.final()]);
+      return decrpyted.toString();
+    }else{
+      return ""
+    }
 
-    const decipher = crypto.createDecipheriv(algorithm, appConfig.encryptionSecret, Buffer.from(hash2.iv, 'hex'));
-
-    const decrpyted = Buffer.concat([decipher.update(Buffer.from(hash2.content, 'hex')), decipher.final()]);
-
-    return decrpyted.toString();
 };
 // promise wrapper for bcrypthash
 const hashPassword = (pw) => {
