@@ -190,7 +190,7 @@ exports.azureadoauth2login = async function(req, res,next) {
     user.id = payload.oid
     user.type = 'azuread'
     user.groups = groups
-    user.roles = User.getRoles(user.groups,user)
+    user.roles = await User.getRoles(user.groups,user)
     // if admin role, you can override the expirydays (for accesstoken only)
     if(req.query.expiryDays && user?.roles?.includes("admin") && !isNan(req.query.expiryDays)){
       return res.json(userToJwt(user,`${req.query.expiryDays}D`))

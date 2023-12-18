@@ -8,9 +8,10 @@ const {exec} = require('child_process');
 const Helpers = require('../lib/common.js')
 const Settings = require('./settings.model')
 const logger=require("../lib/logger");
-const appConfig = require('../../config/app.config')
+const ansibleConfig = require('../../config/ansible.config.js')
 const dbConfig = require('../../config/db.config')
-const ansibleConfig = require('./../../config/ansible.config');
+const appConfig = require('../../config/app.config.js')
+const Repository = require('./repository.model.js')
 const mysql = require('./db.model')
 const Form = require('./form.model')
 const Credential = require('./credential.model');
@@ -244,13 +245,13 @@ Job.findAll = async function (user,records) {
     }else{
       query = "SELECT id,form,target,status,start,end,user,user_type,job_type,parent_id,approval FROM AnsibleForms.`jobs` WHERE (user=? AND user_type=?) OR (status='approve') ORDER BY id DESC LIMIT " +records + ";"
     }
-    return await mysql.do(query,[user.username,user.type])
+    return await mysql.do(query,[user.username,user.type],true)
 };
 Job.findApprovals = async function (user) {
     logger.debug("Finding all approval jobs")
     var count=0
     var query = "SELECT approval FROM AnsibleForms.`jobs` WHERE status='approve' AND approval IS NOT NULL;"
-    const res = await mysql.do(query)
+    const res = await mysql.do(query,undefined,true)
 
     if(user.roles.includes("admin")){
       return res.length
@@ -277,7 +278,7 @@ Job.findById = async function (user,id,asText,logSafe=false) {
     }
     // get normal data
     try{
-      var res = await mysql.do(query,params)
+      var res = await mysql.do(query,params,true)
 
       if(res.length!=1){
           throw `Job ${id} not found, or access denied`
@@ -286,7 +287,7 @@ Job.findById = async function (user,id,asText,logSafe=false) {
       // mask passwords
       if(logSafe) job.extravars=Helpers.logSafe(job.extravars)
       // get output summary
-      res = await mysql.do("SELECT COALESCE(output,'') output,COALESCE(`timestamp`,'') `timestamp`,COALESCE(output_type,'stdout') output_type FROM AnsibleForms.`job_output` WHERE job_id=? ORDER by job_output.order;",id)
+      res = await mysql.do("SELECT COALESCE(output,'') output,COALESCE(`timestamp`,'') `timestamp`,COALESCE(output_type,'stdout') output_type FROM AnsibleForms.`job_output` WHERE job_id=? ORDER by job_output.order;",id,true)
       return [{...job,...{output:Helpers.formatOutput(res,asText)}}]
 
     }catch(err){
@@ -298,7 +299,7 @@ Job.launch = async function(form,formObj,user,creds,extravars,parentId=null,next
   // a formobj can be a full step pushed
   if(!formObj){
     // we load it, it's an actual form
-    formObj = Form.loadByName(form,user)
+    formObj = await Form.loadByName(form,user)
     if(!formObj){
       throw "No such form or access denied"
     }
@@ -411,7 +412,7 @@ Job.launch = async function(form,formObj,user,creds,extravars,parentId=null,next
 Job.continue = async function(form,user,creds,extravars,jobid,next) {
   var formObj
   // we load it, it's an actual form
-  formObj = Form.loadByName(form,user,true)
+  formObj = await Form.loadByName(form,user,true)
   if(!formObj){
     throw "No such form or access denied"
   }
@@ -579,10 +580,11 @@ Job.sendApprovalNotification = async function(approval,extravars,jobid){
     var message = buffer.toString()
     var color = "#158cba"
     var color2 = "#ffa73b"
-    var logo = `${url}/assets/img/logo.png`
+    var logo = `${url}${appConfig.baseUrl}assets/img/logo.png`
     var approvalMessage = Helpers.replacePlaceholders(approval.message,extravars)
     message = message.replace("${message}",approvalMessage)
                     .replaceAll("${url}",url)
+                    .replaceAll("${baseurl",appConfig.baseUrl)
                     .replaceAll("${jobid}",jobid)
                     .replaceAll("${title}",subject)
                     .replaceAll("${logo}",logo)
@@ -636,9 +638,10 @@ Job.sendStatusNotification = async function(jobid){
       var message = buffer.toString()
       var color = "#158cba"
       var color2 = "#ffa73b"
-      var logo = `${url}/assets/img/logo.png`
+      var logo = `${url}${appConfig.baseUrl}assets/img/logo.png`
       message = message.replace("${message}",job.output.replaceAll("\r\n","<br>"))
                       .replaceAll("${url}",url)
+                      .replaceAll("${baseurl",appConfig.baseUrl)
                       .replaceAll("${jobid}",jobid)
                       .replaceAll("${title}",subject)
                       .replaceAll("${logo}",logo)
@@ -935,7 +938,8 @@ Ansible.launch=async (ev,credentials,jobid,counter,approval,approved=false)=>{
   if(limit){ command += ` --limit '${limit}'`}
    
   command += ` ${playbook}`
-  var directory = ansibleConfig.path
+  var directory = await Repository.getAnsiblePath()
+  var directory = directory || ansibleConfig.path
   var cmdObj = {directory:directory,command:command,description:"Running playbook",task:"Playbook",extravars:extravars,hiddenExtravars:hiddenExtravars,extravarsFileName:extravarsFileName,hiddenExtravarsFileName:hiddenExtravarsFileName,keepExtravars:keepExtravars}
 
   logger.notice("Running playbook : " + playbook)

@@ -116,32 +116,36 @@ User.getRoles = function(groups,user){
   var roles = ["public"]
   var forms=undefined
   var full_username = `${user.type}/${user.username}`
-  try{
-    forms = Form.load()
-  }catch(e){
-    logger.error(e)
-    if(groups.includes('local/admins')){
-      roles.push("admin")
-    }
-    return roles
-  }
-  groups.forEach(function(group){
+  return Form.load()
+  .then((forms)=>{
+    // derive roles from forms
+    groups.forEach(function(group){
       // add all the roles that match the group
       forms.roles.forEach(function(role){
         if(role.groups && role.groups.includes(group)){
           roles.push(role.name)
         }
       })
-  })
+    })
 
-  // add all the roles that match the user
-  forms.roles.forEach(function(role){
-    if(role.users && role.users.includes(full_username)){
-      roles.push(role.name)
+    // add all the roles that match the user
+    forms.roles.forEach(function(role){
+      if(role.users && role.users.includes(full_username)){
+        roles.push(role.name)
+      }
+    })
+
+    return roles
+  })
+  .catch((e)=>{
+    // return temp role if needed
+    logger.error(e)
+    if(groups.includes('local/admins')){
+      roles.push("admin")
     }
+    return roles
   })
 
-  return roles
 }
 User.getGroups = function(user,groupObj,ldapConfig={}){
   var group=""
