@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   awx workflow template failed with 404
 -   ldap usernameattribute not used
+-   fixed database query issue for postgres
 
 ## [4.0.19] - 2023-11-22
 
