@@ -71,7 +71,7 @@ const CheckModel = {
 
     async performChecks() {
 
-        const requiredTables = ['groups','users','tokens','credentials','ldap','awx','job_output','jobs','settings','azuread'];
+        const requiredTables = ['groups','users','tokens','credentials','ldap','awx','job_output','jobs','settings','azuread','repositories'];
         const requiredRecords = [
             {label:'Group admins',tableName:'groups',query:{'name':'admins'}},
             {label:'User admin',tableName:'users',query:{'username':'admin'}},

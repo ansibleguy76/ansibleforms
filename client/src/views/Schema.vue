@@ -26,7 +26,7 @@
                 </button>
               </div>
             </form>
-            <div v-else class="box">
+            <div v-if="error=='FATAL ERROR'" class="box">
               <div class="content">
                 Something went wrong.  Most likely the database is simply not reachable.   
               </div>
