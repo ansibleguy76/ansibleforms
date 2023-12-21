@@ -35,8 +35,8 @@
       "description": "Operations on ldap configuration"
     },
     {
-      "name": "Azure AD config",
-      "description": "Operations on azure ad configuration"
+      "name": "MS Entra Id config",
+      "description": "Operations on MS Entra Id (aka azure AD) configuration"
     },    
     {
       "name": "credentials",
@@ -2803,7 +2803,7 @@
         }
       }
     },
-    "/repository{repositoryName}": {
+    "/repository/{repositoryName}": {
       "get": {
         "tags": [
           "repositories"
