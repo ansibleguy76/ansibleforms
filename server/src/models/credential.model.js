@@ -85,7 +85,7 @@ Credential.findByName = async function (name,fallbackName="") {
 
   if (cred === undefined) {
     var result
-    var sql = "SELECT host,port,db_name,name,user,password,secure,db_type FROM AnsibleForms.`credentials` WHERE name REGEXP ?"
+    var sql = "SELECT host,port,db_name,name,user,password,secure,db_type,is_database FROM AnsibleForms.`credentials` WHERE name REGEXP ?"
     var res = await mysql.do(sql,name)
     if(res.length>0){
       result = res[0]

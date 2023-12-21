@@ -16,7 +16,7 @@ Postgres.query=function(connection_name,query){
         database: creds.db_name||creds.user,
         port: creds.port,
     };
-
+    // console.log(config)
     return config
   })  
   .then((config)=>{
