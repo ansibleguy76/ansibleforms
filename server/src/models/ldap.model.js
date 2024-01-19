@@ -49,7 +49,7 @@ Ldap.find = function(){
 Ldap.check = function(ldapConfig){
   return new Promise(async (resolve,reject)=>{
 
-    const { authenticate } = require('ldap-authentication')
+    const { authenticate } = require('../lib/ldap-authentication')
     // auth with admin
     var badCertificates=false
     let options = {
