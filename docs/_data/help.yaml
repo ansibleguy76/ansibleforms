@@ -1017,7 +1017,16 @@
           In newer versions of AWX you can choose an execution environment.  Use this property to pass it to your template.
             
           **Note** : You can also dynamically set the executionEnvironment by using a field called `__executionEnvironment__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static executionEnvironment.  
-          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.   
+      - name: instanceGroups
+        type: array
+        short: Instance Groups
+        group: workflow
+        description: |
+          In newer versions of AWX you can choose instance groups.  Use this property to pass it to your template.
+            
+          **Note** : You can also dynamically set the instanceGroups by using a field called `__instanceGroups__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static instanceGroups.  
+          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.                       
       - name: awxCredentials
         type: array
         group: workflow
@@ -1744,6 +1753,23 @@
                       - Debian
                       default: CentOS
                       required: true 
+                - name: Radio with labels
+                  version: 5.0.0
+                  code: |
+                    - type: radio
+                      name: linuxfavourite
+                      label: Choose your favorite linux flavour
+                      values:
+                      - label: CentOS
+                        value: c_os
+                      - label: Ubuntu
+                        value: ubu
+                      - label: Red Hat
+                        value: rht
+                      - label: Debian
+                        value: deb
+                      default: c_os
+                      required: true                       
               - name: enum
                 description: A multi-column filterable dropdown box
                 extra: |

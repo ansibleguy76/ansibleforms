@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   added expiryDays to login api, for longlived tokens (admin only)
 -   added jwt tokenPrefix property on jwt functions
 -   allow admin role fallback for local/admins group in case no forms are found
+-   radio button values property can now have array of objects (label, value)
+-   instanceGroups property on forms => choose awx instanceGroups
+-   enable verbose checkbox for quick ansible verbose mode
 
 ### Removed
 -   git repo type, you can no longer target git repo's from a form, this is breaking when you upgrade to 5.0.0 and use the formtype 'git'
@@ -27,6 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   awx workflow template failed with 404
 -   ldap usernameattribute not used
 -   fixed database query issue for postgres
+-   use ldap-authentication main code (no npm)
+-   try ldap group objectName first
 
 ## [4.0.19] - 2023-11-22
 
