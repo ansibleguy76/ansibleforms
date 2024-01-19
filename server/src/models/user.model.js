@@ -3,7 +3,7 @@ const crypto = require("../lib/crypto")
 const logger=require("../lib/logger");
 const authConfig = require('../../config/auth.config')
 const appConfig = require('../../config/app.config')
-const ldapAuthentication = require('ldap-authentication').authenticate
+const ldapAuthentication = require('../lib/ldap-authentication').authenticate
 const Ldap = require('./ldap.model')
 const Form = require('./form.model')
 const YAML = require('yaml')
@@ -160,7 +160,9 @@ User.getGroups = function(user,groupObj,ldapConfig={}){
       // loop ldap groups
       ldapgroups.forEach(function(v,i,a){
         // grab groupname part
-        var groupMatch=v.match("^[cCnN]{2}=([^,]*)")
+        // logger.debug(JSON.stringify(v))
+        var groupObject = v["objectName"] || v // https://github.com/ansibleguy76/ansibleforms/issues/119 first try objectName and then fall back.  Different flavours of ldap servers return different group objects.  Until someone else hit's another flavour, these are the ones we implement.
+        var groupMatch=groupObject.match("^[cCnN]{2}=([^,]*)")
         if(groupMatch.length>0){
           // prefix with ldap
           group="ldap/" + groupMatch[1]
