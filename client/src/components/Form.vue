@@ -27,11 +27,15 @@
             </span>
             <span>Show Extravars</span>
           </button>
-          <!-- debug button - show hidden expressions -->
+          <!-- debug buttons - show hidden expressions -->
+          <span  v-show="!hideForm" v-if="isAdmin" title="Enable verbose ansible logging" class="icon is-clickable is-pulled-right" @click="enableVerbose=!enableVerbose">
+              <font-awesome-icon :icon="(enableVerbose?['far','square-check']:['far', 'square'])" />
+          </span>          
           <span  v-show="!hideForm" v-if="isAdmin" title="Show hidden fields" class="icon is-clickable is-pulled-right" :class="{'has-text-success':!showHidden,'has-text-danger':showHidden}" @click="showHidden=!showHidden">
               <font-awesome-icon :icon="(showHidden?'search-minus':'search-plus')" />
           </span>
-          <span  v-show="!hideForm" title="Copy form link with values" class="icon is-clickable is-pulled-right has-text-link" @click="getFormUrl()">
+
+          <span  v-show="!hideForm" title="Copy form link with values (experimental)" class="icon is-clickable is-pulled-right has-text-link" @click="getFormUrl()">
               <font-awesome-icon icon="link" />
           </span>
           <span class="icon is-pulled-right" v-show="loopbusy">
@@ -197,7 +201,7 @@
                         </div>
                         <!-- type = radio -->
                         <div v-if="field.type=='radio'" >
-                          <BulmaCheckRadio :val="radiovalue" checktype="radio" v-for="radiovalue in field.values" :key="field.name+'_'+radiovalue" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="radiovalue"  @change="evaluateDynamicFields(field.name)" />
+                          <BulmaCheckRadio :val="(typeof radiovalue=='string')?radiovalue:radiovalue.value" checktype="radio" v-for="radiovalue in field.values" :key="field.name+'_'+radiovalue" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="(typeof radiovalue=='string')?radiovalue:radiovalue.label"  @change="evaluateDynamicFields(field.name)" />
                         </div>
                         <!-- type = table -->
                         <div v-if="field.type=='table'">
@@ -525,6 +529,7 @@
           timeout:undefined,        // determines how long we should show the result of run
           showHelp:false,           // flag to show/hide form help
           showHidden:false,         // flag to show/hide hidden field / = debug mode
+          enableVerbose:false,      // flag to enable verbose mode
           jobId:undefined,          // holds the current jobid
           abortTriggered:false,     // flag abort is triggered,
           pauseJsonOutput:false,    // flag to pause jsonoutput interval
@@ -975,7 +980,6 @@
       // instead of taking the default value, see if it needs to be evaluated
       // allowing dynamic defaults
       getDefaultValue(fieldname,value){
-
         if(value!=undefined){
           
           var _value = this.replacePlaceholderInString(value).value
@@ -989,6 +993,7 @@
               console.log(`Error evaluating default value : ${err.toString()}`)
             }
           }else{
+            // console.log(`return _value : ${_value}`)
             return _value
           }       
         }else{
@@ -1065,7 +1070,6 @@
           if(item.name in ref.externalData){
             ref.defaults[item.name]=ref.externalData[item.name]
           }else{
-            // console.log(`defaulting ${item.name} -> ${item.default}`)
             ref.defaults[item.name]=ref.getDefaultValue(item.name,item.default)
           }      
         })
@@ -1986,6 +1990,10 @@
           // generate correct json output (and use the uploaded file info)
           this.generateJsonOutput(postdata.files)
           postdata.extravars = this.formdata
+          if(this.enableVerbose){
+            postdata.extravars.__verbose__=true
+          }          
+          postdata.extravars.__verbose__ = this.enableVerbose
           postdata.formName = this.currentForm.name;
           postdata.credentials = {}
           // add all fields that are marked as credential, and add them to the credentials object (in the root of the postdata)
@@ -2093,6 +2101,15 @@
             item.runLocal=true
           }                   
         })        
+        // initiate the constants
+        if(ref.constants){
+          Object.keys(ref.constants).forEach((item)=>{
+            ref.fieldOptions[item]={
+              type: "constant",
+            }
+            Vue.set(ref.form,item,ref.constants[item])
+          })
+        }        
         // initialize defaults
         this.currentForm.fields.forEach((item, i) => {
           // extra query parameters and store in externalData
@@ -2125,7 +2142,7 @@
             if(item.refresh && typeof item.refresh=='string' && /[0-9]+s/.test(item.refresh)){
               Vue.set(ref.fieldOptions[item.name],"refresh",item.refresh)
             }
-            Vue.set(ref.form,item.name,ref.externalData[item.name]??this.getDefaultValue(item.name,item.default))
+            Vue.set(ref.form,item.name,ref.externalData[item.name]??ref.getDefaultValue(item.name,item.default))
             if(item.type=="table" && !ref.defaults[item.name]){
               Vue.set(ref.form,item.name,[])
             }
@@ -2137,19 +2154,13 @@
             if(item.type=="checkbox"){
               fallbackvalue=false
             }
-            Vue.set(ref.form,item.name,ref.externalData[item.name]??this.getDefaultValue(item.name,item.default)??fallbackvalue)
+            
+            Vue.set(ref.form,item.name,ref.externalData[item.name]??ref.getDefaultValue(item.name,item.default)??fallbackvalue)
+            // console.log(`Defaulting field ${item.name} -> ${item.default} -> ${ref.form[item.name]}`)
           }         
           Vue.set(ref.visibility,item.name,true)
         });
-        // initiate the constants
-        if(ref.constants){
-          Object.keys(ref.constants).forEach((item)=>{
-            ref.fieldOptions[item]={
-              type: "constant",
-            }
-            Vue.set(ref.form,item,ref.constants[item])
-          })
-        }
+
         // see if the help should be show initially
         if(this.currentForm.showHelp && this.currentForm.showHelp===true){
           this.showHelp=true

@@ -21,7 +21,7 @@ function pushForminfoToExtravars(formObj,extravars,creds={}){
   // push top form fields to extravars
   // change in 4.0.16 => easier to process & available in playbook, might be handy
   // no credentials added here, because then can also come from asCredential property and these would get lost.
-  const topFields=['template','playbook','tags','limit','execution_environment','check','diff','verbose','keepExtravars','credentials','inventory','awxCredentials','ansibleCredentials']
+  const topFields=['template','playbook','tags','limit','executionEnvironment','check','diff','verbose','keepExtravars','credentials','inventory','awxCredentials','ansibleCredentials','instanceGroups']
   for (const fieldName of topFields) {
     // Check if the field exists in formObj and if the property is not present in extravars
     if (formObj.hasOwnProperty(fieldName) && extravars[`__${fieldName}__`] === undefined) {
@@ -1013,6 +1013,7 @@ Awx.launch = async function (ev,credentials,jobid,counter,approval,approved=fals
     // get awx data from the extravars
     var invent = extravars?.__inventory__
     var execenv = extravars?.__executionEnvironment__
+    var instanceGroups = extravars?.__instanceGroups__
     var tags = extravars?.__tags__ || ""
     var check = extravars?.__check__ || false
     var verbose = extravars?.__verbose__ || false  
@@ -1024,7 +1025,7 @@ Awx.launch = async function (ev,credentials,jobid,counter,approval,approved=fals
     try{
       const jobTemplate = await Awx.findJobTemplateByName(template)
       logger.debug("Found jobtemplate, id = " + jobTemplate.id)
-      await Awx.launchTemplate(jobTemplate,ev,invent,tags,limit,check,diff,verbose,credentials,awxCredentials,execenv,jobid,++counter)
+      await Awx.launchTemplate(jobTemplate,ev,invent,tags,limit,check,diff,verbose,credentials,awxCredentials,execenv,instanceGroups,jobid,++counter)
       return true
     }catch(err){
       message="failed to launch awx template " + template + "\n" + err.message
@@ -1033,7 +1034,7 @@ Awx.launch = async function (ev,credentials,jobid,counter,approval,approved=fals
       throw new Error(message)
     } 
 }
-Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,verbose,credentials,awxCredentials,execenv,jobid,counter) {
+Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,verbose,credentials,awxCredentials,execenv,instanceGroups,jobid,counter) {
   var message=""
   if(!counter){
     counter=0
@@ -1054,10 +1055,18 @@ Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,ve
       awxCredentialList.push(credId)
   }
   awxCredentialList=[...new Set(awxCredentialList)]
+
   // get inventory
   var inventory=await Awx.findInventoryByName(invent)
   // get execution environment
   var executionEnvironment=await Awx.findExecutionEnvironmentByName(execenv)
+
+  // get instance groups
+  var instanceGroupIds=[]
+  for (let index = 0; index < instanceGroups.length; index++) {
+    instanceGroupIds.push(await Awx.findInstanceGroupByName(instanceGroups[index]))
+  };
+
   // get config and go
   const awxConfig = await Awx.getConfig()
   if(!awxConfig)throw new Error("Failed to get AWX configuration")
@@ -1072,6 +1081,7 @@ Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,ve
   }
   if(awxCredentialList.length>0){ postdata.credentials=awxCredentialList }
   if(executionEnvironment){ postdata.execution_environment=executionEnvironment.id }
+  if(instanceGroupIds.length>0){ postdata.instance_groups = instanceGroupIds}
   if(inventory){ postdata.inventory=inventory.id }
   if(check){ postdata.job_type="check" } else{ postdata.job_type="run" }
   if(diff){ postdata.diff_mode=true } else{ postdata.diff_mode=false }
@@ -1082,6 +1092,8 @@ Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,ve
   logger.notice("Running template : " + template.name)
   logger.info("extravars : " + extravars)
   logger.info("inventory : " + inventory)
+  logger.info("execution_environment : " + executionEnvironment)
+  logger.info("instance_groups : " + instanceGroups)
   logger.info("credentials : " + awxCredentialList)
   logger.info("check : " + check)
   logger.info("diff : " + diff)
@@ -1315,12 +1327,41 @@ Awx.findExecutionEnvironmentByName = async function (name) {
   logger.info(`searching execution environment ${name}`)
   // prepare axiosConfig
   const axiosConfig = Awx.getAuthorization(awxConfig)
-  const axiosResult = await axios.get(awxConfig.uri + "/api/v2/execution_environments/?name=" + encodeURI(name),axiosConfig)
+  message=`could not find execution environment ${name}`
+  var axiosResult
+  try{
+    axiosResult = await axios.get(awxConfig.uri + "/api/v2/execution_environments/?name=" + encodeURI(name),axiosConfig)
+  }catch(error){
+    throw new Error(`${message}, ${error.message}`)
+  }            
   var execution_environment = axiosResult.data.results.find(function(x, index) { return x.name == name })
   if(execution_environment){
     return execution_environment
   }else{
-    message=`could not find execution environment ${name}`
+
+    logger.error(message)
+    throw new Error(message)
+  }
+};
+Awx.findInstanceGroupByName = async function (name) {
+  if(!name)return undefined
+  const awxConfig = await Awx.getConfig()
+  if(!awxConfig)throw new Error("Failed to get AWX configuration")
+  var message=""
+  logger.info(`searching instance group ${name}`)
+  // prepare axiosConfig
+  const axiosConfig = Awx.getAuthorization(awxConfig)
+  message=`could not find instance group ${name}`
+  var axiosResult
+  try{
+    axiosResult = await axios.get(awxConfig.uri + "/api/v2/instance_groups/?name=" + encodeURI(name),axiosConfig)
+  }catch(error){
+    throw new Error(`${message}, ${error.message}`)
+  }        
+  var instance_group = axiosResult.data.results.find(function(x, index) { return x.name == name })
+  if(instance_group){
+    return instance_group
+  }else{
     logger.error(message)
     throw new Error(message)
   }
@@ -1345,15 +1386,22 @@ Awx.findInventoryByName = async function (name) {
   logger.info(`searching inventory ${name}`)
   // prepare axiosConfig
   const axiosConfig = Awx.getAuthorization(awxConfig)
-  const axiosResult = await axios.get(awxConfig.uri + "/api/v2/inventories/?name=" + encodeURI(name),axiosConfig)
+  message=`could not find inventory ${name}`
+  var axiosResult
+  try{
+    axiosResult = await axios.get(awxConfig.uri + "/api/v2/inventories/?name=" + encodeURI(name),axiosConfig)
+  }catch(error){
+    throw new Error(`${message}, ${error.message}`)
+  }    
   var inventory = axiosResult.data.results.find(function(x, index) { return x.name == name })
   if(inventory){
     return inventory
   }else{
-    message=`could not find inventory ${name}`
     logger.error(message)
     throw new Error(message)
   }
+
+
 };
 
 module.exports= Job;
