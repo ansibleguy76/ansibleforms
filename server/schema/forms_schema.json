@@ -473,10 +473,17 @@
           "inventory": {"type": "string"},
           "executionEnvironment": {"type": "string"},
           "instanceGroups": {
-            "type": "array", 
-            "items": { 
-              "type": "string" 
-            }
+             "anyOf": [
+                {
+                  "type": "array", 
+                  "items": { 
+                    "type": "string" 
+                  }
+                },
+                {
+                  "type": "string"
+                }
+             ]
           },
           "tags": {"type": "string"},
           "check": {"type": "boolean"},

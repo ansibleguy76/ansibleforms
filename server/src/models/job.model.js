@@ -1013,7 +1013,7 @@ Awx.launch = async function (ev,credentials,jobid,counter,approval,approved=fals
     // get awx data from the extravars
     var invent = extravars?.__inventory__
     var execenv = extravars?.__executionEnvironment__
-    var instanceGroups = extravars?.__instanceGroups__
+    var instanceGroups = [].concat(extravars?.__instanceGroups__ || []) // always array ! force to array
     var tags = extravars?.__tags__ || ""
     var check = extravars?.__check__ || false
     var verbose = extravars?.__verbose__ || false  
@@ -1081,7 +1081,7 @@ Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,ve
   }
   if(awxCredentialList.length>0){ postdata.credentials=awxCredentialList }
   if(executionEnvironment){ postdata.execution_environment=executionEnvironment.id }
-  if(instanceGroupIds.length>0){ postdata.instance_groups = instanceGroupIds}
+  if(instanceGroups){ postdata.instance_groups = instanceGroupIds.map(x => x.id)}
   if(inventory){ postdata.inventory=inventory.id }
   if(check){ postdata.job_type="check" } else{ postdata.job_type="run" }
   if(diff){ postdata.diff_mode=true } else{ postdata.diff_mode=false }
