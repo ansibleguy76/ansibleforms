@@ -131,7 +131,7 @@
               lang="yaml"
               theme="monokai"
               width="100%"
-              height="60vh"
+              height="70vh"
               :lazymodel="true"
               @dirty="formDirty=true"
               :options="{
@@ -256,7 +256,7 @@
                 />
             </div>
             <div class="column is-one-third">
-              <aside class="menu">
+              <aside class="menu sticky">
                 <template v-for="f in files">
                   <p :key="'file'+f" class="menu-label">
                     <span>{{f||"Base file"}}</span>
@@ -738,4 +738,12 @@
   .pop-leave-to {
     transform: scale(1);
   }
+  .menu.sticky {
+    position: sticky;
+    max-height: 70vh;
+    overflow-y: scroll;
+    width: 100%;
+  }
+
+ 
 </style>
