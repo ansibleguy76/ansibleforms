@@ -70,7 +70,7 @@ exports.testDb = function(req,res){
     })
     .then(()=>{ res.json(new RestResult("success","Database connection ok",null,""))})
     .catch((err)=>{
-      if(err.message.includes("not set")){
+      if(err.message?.includes("not set")){
         res.json(new RestResult("error","Database type not set",null,""))
       }else{
         res.json(new RestResult("error","Database connection failed",null,err.toString()))
