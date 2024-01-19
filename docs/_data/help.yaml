@@ -1019,11 +1019,12 @@
           **Note** : You can also dynamically set the executionEnvironment by using a field called `__executionEnvironment__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static executionEnvironment.  
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.   
       - name: instanceGroups
-        type: array
+        type: array or string
         short: Instance Groups
         group: workflow
         description: |
-          In newer versions of AWX you can choose instance groups.  Use this property to pass it to your template.
+          In newer versions of AWX you can choose instance groups.  Use this property to pass it to your template.  
+          It can be a single string (name of instancegroup) or an array (list of names).
             
           **Note** : You can also dynamically set the instanceGroups by using a field called `__instanceGroups__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static instanceGroups.  
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.                       
