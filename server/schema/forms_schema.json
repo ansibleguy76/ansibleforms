@@ -111,7 +111,8 @@
               "template": {"not":{}},
               "steps": {"not":{}},
               "awxCredentials": {"not":{}},
-              "executionEnvironment": {"not":{}}
+              "executionEnvironment": {"not":{}},
+              "instanceGroups": {"not":{}}
             },
             "required": ["playbook"]
           },
@@ -141,7 +142,8 @@
               "limit": {"not":{}},
               "diff": {"not":{}},
               "key": {"not":{}},
-              "executionEnvironment": {"not":{}}
+              "executionEnvironment": {"not":{}},
+              "instanceGroups": {"not":{}}
             },
             "required": ["steps"]
           }
@@ -321,7 +323,8 @@
                       "template": {"not":{}},
                       "steps": {"not":{}},
                       "awxCredentials": {"not":{}},
-                      "executionEnvironment": {"not":{}}
+                      "executionEnvironment": {"not":{}},
+                      "instanceGroups": {"not":{}}
                     },
                     "required": ["playbook"]
                   },
@@ -469,6 +472,12 @@
           },                             
           "inventory": {"type": "string"},
           "executionEnvironment": {"type": "string"},
+          "instanceGroups": {
+            "type": "array", 
+            "items": { 
+              "type": "string" 
+            }
+          },
           "tags": {"type": "string"},
           "check": {"type": "boolean"},
           "limit": {"type": "string"},
