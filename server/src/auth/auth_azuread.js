@@ -2,6 +2,7 @@ const passport = require('passport');
 const User = require('../models/user.model');
 const jwt = require('jsonwebtoken');
 const authConfig = require('../../config/auth.config.js')
+const appConfig = require('../../config/app.config')
 const Settings = require('../models/settings.model')
 const AzureAd = require('../models/azureAd.model.js')
 const logger=require("../lib/logger");
@@ -64,7 +65,7 @@ exports.initialize = async () =>{
         {
           clientID: azureConfig.client_id,
           clientSecret: azureConfig.secret_id,
-          callbackURL: `${url}/api/v1/auth/azureadoauth2/callback`,
+          callbackURL: `${url}${appConfig.baseUrl}api/v1/auth/azureadoauth2/callback`,
           resource: '00000003-0000-0000-c000-000000000000' // required, or it will not work
         },
         // mandatory verify passport method

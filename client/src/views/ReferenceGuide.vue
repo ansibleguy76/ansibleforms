@@ -307,7 +307,7 @@
     methods:{
       getHelp(){
         var ref=this
-        axios.get('/api/v1/help',TokenStorage.getAuthentication())
+        axios.get(`${process.env.BASE_URL}api/v1/help`,TokenStorage.getAuthentication())
           .then((result)=>{
             if(result.data.status=="error"){
               ref.$toast.error(result.data.message)

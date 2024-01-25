@@ -4,6 +4,7 @@ const User = require('./../models/user.model');
 const authConfig = require('../../config/auth.config.js')
 const logger=require("../lib/logger");
 const Helpers = require('../lib/common');
+const Ldap = require('../models/ldap.model')
 
 
 // create username / password login strategy
@@ -14,7 +15,7 @@ passport.use(
       // authentication against database first
       try{
         var user = await User.authenticate(username,password)
-          .then((result)=>{
+          .then(async (result)=>{
             var user = {}
             // user found in db
             if(!result.isValid) throw "Wrong password"
@@ -22,7 +23,7 @@ passport.use(
             user.id = result.user.id
             user.type = 'local'
             user.groups = User.getGroups(user,result.user.groups)
-            user.roles = User.getRoles(user.groups,user)
+            user.roles = await User.getRoles(user.groups,user)
             logger.info("local login is ok => " + user.username)
             return user
           })
@@ -41,13 +42,16 @@ passport.use(
     async (username, password, done) => {
       // authentication against database first
       try{
+        var ldapConfig = await Ldap.find()
         var user = await User.checkLdap(username,password)
-          .then((result)=>{
+          .then(async (result)=>{
+            // logger.debug("Ldap object :")
+            // logger.debug(JSON.stringify(result))
             var user = {}
-            user.username = result.sAMAccountName
+            user.username = result[ldapConfig.username_attribute]
             user.type = 'ldap'
-            user.groups = User.getGroups(user,result)
-            user.roles = User.getRoles(user.groups,user)
+            user.groups = User.getGroups(user,result,ldapConfig)
+            user.roles = await User.getRoles(user.groups,user)
             logger.info("ldap login for " + user.username)
             return user
           })

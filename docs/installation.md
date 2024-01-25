@@ -131,6 +131,7 @@ sudo docker-compose up -d
   * Add users and groups
   * Add AWX connection
   * Add credentials for custom external connections such as other mysql servers or credentials for rest api's or tho pass to ansible playbooks
+  * Connect to git repositories and choose whether you want you forms and/or playbooks to sync with a repository
 
 ## File structure
 

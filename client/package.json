@@ -1,6 +1,6 @@
 {
   "name": "ansible_forms_vue",
-  "version": "4.0.19",
+  "version": "5.0.0",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
@@ -12,9 +12,9 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
-    "core-js": "~3.33.2",
+    "core-js": "~3.34.0",
     "vue": "~2.7.15",
-    "axios": "~1.6.0",
+    "axios": "~1.6.2",
     "es6-promise": "~4.2.8",
     "vuelidate": "~0.7.7",
     "vue-router": "~3.5.4",
@@ -54,7 +54,7 @@
     "eslint": "~6.8.0",
     "eslint-plugin-vue": "~6.2.2",
     "vue-template-compiler": "~2.6.11",
-    "nodemon": "~3.0.1",
+    "nodemon": "~3.0.2",
     "sass" :"~1.49.11",
     "sass-loader":"10.1.1"
   },

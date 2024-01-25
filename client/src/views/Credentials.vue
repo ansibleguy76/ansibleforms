@@ -104,7 +104,7 @@
         this.loadCredential();
       },loadCredentialList(){
         var ref= this;
-        axios.get('/api/v1/credential/',TokenStorage.getAuthentication())
+        axios.get(`${process.env.BASE_URL}api/v1/credential/`,TokenStorage.getAuthentication())
           .then((result)=>{
             ref.credentialList=result.data.data.output;
           }),function(err){
@@ -125,7 +125,7 @@
       testItem(value){
         var ref= this;
         if(value){
-          axios.get('/api/v1/credential/testdb/' + value,TokenStorage.getAuthentication())
+          axios.get(`${process.env.BASE_URL}api/v1/credential/testdb/` + value,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=='success'){
                 ref.$toast.success(result.data.message)
@@ -141,7 +141,7 @@
         var ref= this;
         if(this.credentialItem!=undefined && this.credentialItem!=-1){
 
-          axios.get('/api/v1/credential/' + this.credentialItem,TokenStorage.getAuthentication())
+          axios.get(`${process.env.BASE_URL}api/v1/credential/${this.credentialItem}`,TokenStorage.getAuthentication())
             .then((result)=>{
               console.log("loaded credential item");
               ref.credential=result.data.data.output
@@ -157,7 +157,7 @@
       },
       deleteCredential(){
         var ref= this;
-        axios.delete('/api/v1/credential/'+this.credentialItem,TokenStorage.getAuthentication())
+        axios.delete(`${process.env.BASE_URL}api/v1/credential/${this.credentialItem}`,TokenStorage.getAuthentication())
           .then((result)=>{
             if(result.data.status=="error"){
               ref.$toast.error(result.data.message + ", " + result.data.data.error);
@@ -172,7 +172,7 @@
       },updateCredential(){
         var ref= this;
         if (!this.$v.credential.$invalid) {
-          axios.put('/api/v1/credential/'+this.credentialItem,this.credential,TokenStorage.getAuthentication())
+          axios.put(`${process.env.BASE_URL}api/v1/credential/${this.credentialItem}`,this.credential,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
                 ref.$toast.error(result.data.message + ", " + result.data.data.error);
@@ -189,7 +189,7 @@
       },newCredential(){
         var ref= this;
         if (!this.$v.credential.$invalid) {
-          axios.post('/api/v1/credential/',this.credential,TokenStorage.getAuthentication())
+          axios.post(`${process.env.BASE_URL}api/v1/credential/`,this.credential,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
                 ref.$toast.error(result.data.message + ", " + result.data.data.error);

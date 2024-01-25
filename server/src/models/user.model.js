@@ -3,7 +3,7 @@ const crypto = require("../lib/crypto")
 const logger=require("../lib/logger");
 const authConfig = require('../../config/auth.config')
 const appConfig = require('../../config/app.config')
-const ldapAuthentication = require('ldap-authentication').authenticate
+const ldapAuthentication = require('../lib/ldap-authentication').authenticate
 const Ldap = require('./ldap.model')
 const Form = require('./form.model')
 const YAML = require('yaml')
@@ -116,51 +116,53 @@ User.getRoles = function(groups,user){
   var roles = ["public"]
   var forms=undefined
   var full_username = `${user.type}/${user.username}`
-  try{
-    forms = Form.load()
-  }catch(e){
-    logger.error(e)
-    return roles
-  }
-  groups.forEach(function(group){
+  return Form.load()
+  .then((forms)=>{
+    // derive roles from forms
+    groups.forEach(function(group){
       // add all the roles that match the group
       forms.roles.forEach(function(role){
         if(role.groups && role.groups.includes(group)){
           roles.push(role.name)
         }
       })
-  })
+    })
 
-  // add all the roles that match the user
-  forms.roles.forEach(function(role){
-    if(role.users && role.users.includes(full_username)){
-      roles.push(role.name)
+    // add all the roles that match the user
+    forms.roles.forEach(function(role){
+      if(role.users && role.users.includes(full_username)){
+        roles.push(role.name)
+      }
+    })
+
+    return roles
+  })
+  .catch((e)=>{
+    // return temp role if needed
+    logger.error(e)
+    if(groups.includes('local/admins')){
+      roles.push("admin")
     }
+    return roles
   })
 
-  return roles
 }
-User.getGroups = function(user,groupObj){
-  var groupMatch=""
+User.getGroups = function(user,groupObj,ldapConfig={}){
   var group=""
   var groups = []
-  var forms=undefined
-  try{
-    forms = Form.load()
-  }catch(e){
-    logger.error(e)
-    return groups
-  }
+
   // ldap type
-  if(user.type=="ldap"){
-    if(groupObj.memberOf){
+  if(user.type=="ldap" && ldapConfig.groups_attribute){
+    if(groupObj[ldapConfig.groups_attribute]){
       // get the memberOf field, force to array
-      var ldapgroups = [].concat(groupObj.memberOf)
+      var ldapgroups = [].concat(groupObj[ldapConfig.groups_attribute])
       //logger.debug(`LDAP Groups = ${ldapgroups}`)
       // loop ldap groups
       ldapgroups.forEach(function(v,i,a){
         // grab groupname part
-        var groupMatch=v.match("^[cCnN]{2}=([^,]*)")
+        // logger.debug(JSON.stringify(v))
+        var groupObject = v["objectName"] || v // https://github.com/ansibleguy76/ansibleforms/issues/119 first try objectName and then fall back.  Different flavours of ldap servers return different group objects.  Until someone else hit's another flavour, these are the ones we implement.
+        var groupMatch=groupObject.match("^[cCnN]{2}=([^,]*)")
         if(groupMatch.length>0){
           // prefix with ldap
           group="ldap/" + groupMatch[1]
@@ -208,6 +210,14 @@ User.checkLdap = function(username,password){
         username: username,
         // starttls: false
       }
+      // new in v4.0.20, add advanced ldap properties
+      if(ldapConfig.is_advanced){
+        if(ldapConfig.groups_search_base){ options.groupsSearchBase = ldapConfig.groups_search_base }
+        if(ldapConfig.group_class){ options.groupClass = ldapConfig.group_class }
+        if(ldapConfig.group_member_attribute){ options.groupMemberAttribute = ldapConfig.group_member_attribute }
+        if(ldapConfig.group_member_user_attribute){ options.groupMemberUserAttribute = ldapConfig.group_member_user_attribute }
+      }      
+      // console.log(options)
       // ldap-authentication has bad cert check, so we check first !!
       if(ldapConfig.enable_tls && !(ldapConfig.ignore_certs==1)){
         if(!helpers.checkCertificate(ldapConfig.cert)){

@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "description": "This is the swagger interface for AnsibleForms.\r\nUse the `/auth/login` api with basic authentication to obtain a JWT token.\r\nThen use the access token, prefixed with the word '**Bearer**' to use all other api's.\r\nNote that the access token is limited in time.  You can then either login again and get a new set of tokens or use the `/token` api and the refresh token to obtain a new set (preferred).",
-    "version": "4.0.19",
+    "version": "5.0.0",
     "title": "AnsibleForms",
     "contact": {
       "email": "info@ansibleforms.com"
@@ -35,8 +35,8 @@
       "description": "Operations on ldap configuration"
     },
     {
-      "name": "Azure AD config",
-      "description": "Operations on azure ad configuration"
+      "name": "MS Entra Id config",
+      "description": "Operations on MS Entra Id (aka azure AD) configuration"
     },    
     {
       "name": "credentials",
@@ -86,6 +86,15 @@
             "basicAuth": []
           }
         ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "expiryDays",
+            "type": "integer",
+            "required": false,
+            "description": "Expiry days, only for admins"
+          }
+        ],        
         "summary": "Get authorization bearer token",
         "produces": [
           "application/json"
@@ -2671,7 +2680,7 @@
         }
       }
     },
-    "/repo": {
+    "/repository": {
       "get": {
         "tags": [
           "repositories"
@@ -2685,21 +2694,136 @@
         "produces": [
           "application/json"
         ],
-        "parameters":[
-          {
-            "in": "query",
-            "name": "name",
+        "responses": {
+          "200": {
+            "description": "successful operation",
             "schema": {
-              "type": "string"
-            },
-            "description": "Get specific repo name"
+              "type": "object",
+              "example": {
+                  "status": "success",
+                  "message": "repositories found",
+                  "data": {
+                      "output": [
+                          {
+                              "id": 1,
+                              "name": "myrepo",
+                              "user": "myaccount",
+                              "uri": "https://github.com/vcmirko/dev_forms.git",
+                              "description": "test repo",
+                              "status": "success",
+                              "output": "Running command : git pull --verbose\r\nPOST git-upload-pack (155 bytes)\n\r\nPOST git-upload-pack (373 bytes)\n\r\nFrom https://github.com/vcmirko/dev_forms\n   56bda5d..42fcf72  main       -> origin/main\n\r\nUpdating 56bda5d..42fcf72\nFast-forward\n\r\n",
+                              "head": "42fcf72\n",
+                              "rebase_on_start": 1
+                          }
+                      ],
+                      "error": ""
+                  }
+              }
+            }
           },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "repositories"
+        ],
+        "security": [
           {
-            "in": "query",
-            "name": "text",
-            "type": "boolean",
-            "required": false,
-            "description": "Get plain text output."
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "form payload",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "example": "my_name"
+                },
+                "user": {
+                  "type": "string",
+                  "example": "myuser"
+                },
+                "password": {
+                  "type": "string",
+                  "example": "mypersonalaccesstoken"
+                },                                                
+                "uri": {
+                  "type": "string",
+                  "example": "git@github.com:myrepo"
+                },
+                "description": {
+                  "type": "string",
+                  "example": "My cool repository"
+                },                
+                "rebase_on_start": {
+                  "type": "boolean",
+                  "example": true
+                }
+              }
+            }
+          }
+        ],
+        "summary": "Create new repository",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example":{
+                "status": "success",
+                "message": "repository added",
+                "data": {
+                    "output": 2,
+                    "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/repository/{repositoryName}": {
+      "get": {
+        "tags": [
+          "repositories"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get a repository by name",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "repositoryName",
+            "type": "string",
+            "required": true,
+            "description": "The repository name"
           }
         ],
         "responses": {
@@ -2707,17 +2831,28 @@
             "description": "successful operation",
             "schema": {
               "type": "object",
-              "example": {
+              "example":{
                 "status": "success",
-                "message": "repositories found",
+                "message": "found repository",
                 "data": {
-                  "output": [
-                    "vmware",
-                    "backup"
-                  ],
-                  "error": ""
+                    "output": {
+                        "id": 1,
+                        "name": "myrepo",
+                        "user": "myuser",
+                        "password": "ghp_xxxxxxxxxxxxx",
+                        "uri": "https://github.com/myaccount/myrepo.git",
+                        "description": "test repo",
+                        "use_for_forms": 1,
+                        "use_for_playbooks": 0,
+                        "cron": null,
+                        "status": "success",
+                        "output": "Running command : git pull --verbose\r\nPOST git-upload-pack (155 bytes)\n\r\nPOST git-upload-pack (373 bytes)\n\r\nFrom https://github.com/myaccount/myrepo\n   56bda5d..42fcf72  main       -> origin/main\n\r\nUpdating 56bda5d..42fcf72\nFast-forward\n\r\n",
+                        "head": "42fcf72\n",
+                        "rebase_on_start": 1
+                    },
+                    "error": ""
                 }
-              }
+              } 
             }
           },
           "401": {
@@ -2776,7 +2911,7 @@
           }
         }
       },
-      "post": {
+      "put": {
         "tags": [
           "repositories"
         ],
@@ -2792,23 +2927,35 @@
             "schema": {
               "type": "object",
               "properties": {
+                "name": {
+                  "type": "string",
+                  "example": "my_name"
+                },
+                "user": {
+                  "type": "string",
+                  "example": "myuser"
+                },
+                "password": {
+                  "type": "string",
+                  "example": "mypersonalaccesstoken"
+                },                                                
                 "uri": {
                   "type": "string",
                   "example": "git@github.com:myrepo"
                 },
-                "username": {
+                "description": {
                   "type": "string",
-                  "example": "AnsibleForms"
-                },
-                "email": {
-                  "type": "string",
-                  "example": "info@ansibleforms.com"
+                  "example": "My cool repository"
+                },                
+                "rebase_on_start": {
+                  "type": "boolean",
+                  "example": true
                 }
               }
             }
           }
         ],
-        "summary": "Create new repository",
+        "summary": "Update a repository",
         "produces": [
           "application/json"
         ],
@@ -2819,9 +2966,57 @@
               "type": "object",
               "example": {
                 "status": "success",
-                "message": "repository created",
+                "message": "repository updated",
                 "data": {
-                  "output": "Cloning into...",
+                    "output": "",
+                    "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },    
+    "/repository/{repositoryName}/clone": {
+      "post": {
+        "tags": [
+          "repositories"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "repositoryName",
+            "type": "string",
+            "required": true,
+            "description": "The repository name"
+          }
+        ],
+        "summary": "Clones a repistory",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "Repository is cloned",
+                "data": {
+                  "output": "",
                   "error": ""
                 }
               }
@@ -2836,7 +3031,55 @@
           }
         }
       }
-    },
+    },      
+    "/repository/{repositoryName}/pull": {
+      "post": {
+        "tags": [
+          "repositories"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "repositoryName",
+            "type": "string",
+            "required": true,
+            "description": "The repository name"
+          }
+        ],
+        "summary": "Pulls a repistory",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "Repository is pulled",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },    
     "/version": {
       "get": {
         "tags": [

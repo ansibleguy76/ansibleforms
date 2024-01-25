@@ -59,7 +59,6 @@ module.exports = app => {
   // import api routes
   const awxRoutes = require('./routes/awx.routes')
   const jobRoutes = require('./routes/job.routes')
-  const gitRoutes = require('./routes/git.routes')
   const queryRoutes = require('./routes/query.routes')
   const expressionRoutes = require('./routes/expression.routes')
   const userRoutes = require('./routes/user.routes')
@@ -77,10 +76,17 @@ module.exports = app => {
   const profileRoutes = require('./routes/profile.routes')
   const sshRoutes = require('./routes/ssh.routes')
   const logRoutes = require('./routes/log.routes')
-  const repoRoutes = require('./routes/repo.routes')
   const knownhostsRoutes = require('./routes/knownhosts.routes')
   const helpRoutes = require('./routes/help.routes')
   const installRoutes = require('./routes/install.routes')
+  const repositoryRoutes = require('./routes/repository.routes')
+
+  // mysql2 has a bug that can throw an uncaught exception if the mysql server crashes (not enough mem for example)
+  // also git commands can chain child processes and cause issues
+  process.on('uncaughtException', function(err) {
+    // handle the error safely
+    console.error("An uncaught exception happened, ignore... ",err)
+})
 
   // using json web tokens as middleware
   // the jwtauthentication strategy from passport (/auth/auth.js)
@@ -90,51 +96,51 @@ module.exports = app => {
   // api routes for browser only (no cors)
   const swaggerOptions = {
     customSiteTitle: "Ansibleforms Swagger UI",
-    customfavIcon: "/favicon.svg",
-    customCssUrl: "/assets/css/swagger.css",
+    customfavIcon: `${appConfig.baseUrl}favicon.svg`,
+    customCssUrl: `${appConfig.baseUrl}assets/css/swagger.css`,
     docExpansion:"none"
   }
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument,swaggerOptions));
-  app.use('/api/v1/schema', schemaRoutes)
+  // change basePath dynamically
+  swaggerDocument.basePath = `${appConfig.baseUrl}api/v1`
+  app.use(`${appConfig.baseUrl}api-docs`, swaggerUi.serve, swaggerUi.setup(swaggerDocument,swaggerOptions));
+  app.use(`${appConfig.baseUrl}api/v1/schema`, schemaRoutes)
 
   // api routes for querying
-  app.use('/api/v1/query',cors(), authobj, queryRoutes)
-  app.use('/api/v1/expression',cors(), authobj, expressionRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/query`,cors(), authobj, queryRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/expression`,cors(), authobj, expressionRoutes)
 
   // api route for version
-  app.use('/api/v1/version',cors(), versionRoutes)
-  app.use('/api/v1/install',cors(), installRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/version`,cors(), versionRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/install`,cors(), installRoutes)
 
-  app.use('/api/v1/lock',cors(),authobj, lockRoutes)
-  app.use('/api/v1/help',cors(),authobj, helpRoutes)    
+  app.use(`${appConfig.baseUrl}api/v1/lock`,cors(),authobj, lockRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/help`,cors(),authobj, helpRoutes)    
 
   // api route for profile
-  app.use('/api/v1/profile',cors(), authobj, profileRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/profile`,cors(), authobj, profileRoutes)
 
   // api routes for authorization
-  app.use('/api/v1/auth',cors(), loginRoutes)
-  app.use('/api/v1/token',cors(), tokenRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/auth`,cors(), loginRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/token`,cors(), tokenRoutes)
 
   // api routes for automation actions
 
-  // app.use('/api/v1/ansible',cors(), authobj, ansibleRoutes)
-  app.use('/api/v1/git',cors(), authobj, gitRoutes)
-  // app.use('/api/v1/multistep',cors(), authobj, multistepRoutes)
+  // app.use(`${appConfig.baseUrl}api/v1/multistep`,cors(), authobj, multistepRoutes)
 
   // api routes for admin management
-  app.use('/api/v1/job',cors(), authobj, jobRoutes)
-  app.use('/api/v1/user',cors(), authobj, checkAdminMiddleware, userRoutes)
-  app.use('/api/v1/group',cors(), authobj, checkAdminMiddleware, groupRoutes)
-  app.use('/api/v1/ldap',cors(), authobj, checkAdminMiddleware, ldapRoutes)
-  app.use('/api/v1/azuread',cors(), authobj, checkAdminMiddleware, azureadRoutes)
-  app.use('/api/v1/settings',cors(), authobj, checkAdminMiddleware, settingsRoutes)
-  app.use('/api/v1/credential',cors(), authobj, checkAdminMiddleware, credentialRoutes)
-  app.use('/api/v1/sshkey',cors(), authobj, checkAdminMiddleware, sshRoutes)
-  app.use('/api/v1/awx',cors(), authobj, checkAdminMiddleware, awxRoutes)
-  app.use('/api/v1/log',cors(), authobj, checkAdminMiddleware, logRoutes)
-  app.use('/api/v1/repo',cors(), authobj, checkAdminMiddleware, repoRoutes)
-  app.use('/api/v1/knownhosts',cors(), authobj, checkAdminMiddleware, knownhostsRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/job`,cors(), authobj, jobRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/user`,cors(), authobj, checkAdminMiddleware, userRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/group`,cors(), authobj, checkAdminMiddleware, groupRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/ldap`,cors(), authobj, checkAdminMiddleware, ldapRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/azuread`,cors(), authobj, checkAdminMiddleware, azureadRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/settings`,cors(), authobj, checkAdminMiddleware, settingsRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/credential`,cors(), authobj, checkAdminMiddleware, credentialRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/sshkey`,cors(), authobj, checkAdminMiddleware, sshRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/awx`,cors(), authobj, checkAdminMiddleware, awxRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/log`,cors(), authobj, checkAdminMiddleware, logRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/repository`,cors(), authobj, checkAdminMiddleware, repositoryRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/knownhosts`,cors(), authobj, checkAdminMiddleware, knownhostsRoutes)
 
   // routes for form config (extra middleware in the routes itself)
-  app.use('/api/v1/config',cors(), authobj, configRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/config`,cors(), authobj, configRoutes)
 }

@@ -27,11 +27,15 @@
             </span>
             <span>Show Extravars</span>
           </button>
-          <!-- debug button - show hidden expressions -->
+          <!-- debug buttons - show hidden expressions -->
+          <span  v-show="!hideForm" v-if="isAdmin" title="Enable verbose ansible logging" class="icon is-clickable is-pulled-right" @click="enableVerbose=!enableVerbose">
+              <font-awesome-icon :icon="(enableVerbose?['far','square-check']:['far', 'square'])" />
+          </span>          
           <span  v-show="!hideForm" v-if="isAdmin" title="Show hidden fields" class="icon is-clickable is-pulled-right" :class="{'has-text-success':!showHidden,'has-text-danger':showHidden}" @click="showHidden=!showHidden">
               <font-awesome-icon :icon="(showHidden?'search-minus':'search-plus')" />
           </span>
-          <span  v-show="!hideForm" title="Copy form link with values" class="icon is-clickable is-pulled-right has-text-link" @click="getFormUrl()">
+
+          <span  v-show="!hideForm" title="Copy form link with values (experimental)" class="icon is-clickable is-pulled-right has-text-link" @click="getFormUrl()">
               <font-awesome-icon icon="link" />
           </span>
           <span class="icon is-pulled-right" v-show="loopbusy">
@@ -197,7 +201,7 @@
                         </div>
                         <!-- type = radio -->
                         <div v-if="field.type=='radio'" >
-                          <BulmaCheckRadio :val="radiovalue" checktype="radio" v-for="radiovalue in field.values" :key="field.name+'_'+radiovalue" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="radiovalue"  @change="evaluateDynamicFields(field.name)" />
+                          <BulmaCheckRadio :val="(typeof radiovalue=='string')?radiovalue:radiovalue.value" checktype="radio" v-for="radiovalue in field.values" :key="field.name+'_'+radiovalue" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="(typeof radiovalue=='string')?radiovalue:radiovalue.label"  @change="evaluateDynamicFields(field.name)" />
                         </div>
                         <!-- type = table -->
                         <div v-if="field.type=='table'">
@@ -318,6 +322,7 @@
                             v-bind="field.attrs"
                             :required="field.required"
                             :type="field.type"
+                            :readonly="field.hide"
                             :placeholder="field.placeholder"
                             @keydown="(field.keydown)?evaluateDynamicFields(field.name):null"
                             @change="evaluateDynamicFields(field.name)">
@@ -519,11 +524,12 @@
           visibility:{},            // holds which fields are visiable or not
           canSubmit:false,          // flag must be true to enable submit - allows to finish background queries - has a watchdog in case not possible
           validationsLoaded:false,  // ready flag if field validations are ready, we don't show the form otherwise
-          pretasksFinished:false,   // ready flag for form pre tasks (git => git pull)
+          pretasksFinished:false,   // ready flag for form pre tasks (future use - use to be gitpulls)
           loadMessage:"Loading form...",
           timeout:undefined,        // determines how long we should show the result of run
           showHelp:false,           // flag to show/hide form help
           showHidden:false,         // flag to show/hide hidden field / = debug mode
+          enableVerbose:false,      // flag to enable verbose mode
           jobId:undefined,          // holds the current jobid
           abortTriggered:false,     // flag abort is triggered,
           pauseJsonOutput:false,    // flag to pause jsonoutput interval
@@ -722,7 +728,7 @@
         this.clip(url,true)
       },
       // to execute form events
-      doAction(a){
+      doAction(a,jobid){
         var ref=this
         const action=Object.keys(a)[0]
         const value=a[action]
@@ -745,7 +751,7 @@
         if(action=="load"){
           setTimeout(()=>{
             ref.reloadForm()
-            ref.$router.replace({name:"Form",query:{form:form}}).catch(err => {});
+            ref.$router.replace({name:"Form",query:{form:form,"__previous_jobid__":jobid}}).catch(err => {});
           },wait*1000)
         }
         if(action=="reload"){
@@ -974,7 +980,6 @@
       // instead of taking the default value, see if it needs to be evaluated
       // allowing dynamic defaults
       getDefaultValue(fieldname,value){
-
         if(value!=undefined){
           
           var _value = this.replacePlaceholderInString(value).value
@@ -988,6 +993,7 @@
               console.log(`Error evaluating default value : ${err.toString()}`)
             }
           }else{
+            // console.log(`return _value : ${_value}`)
             return _value
           }       
         }else{
@@ -1064,7 +1070,6 @@
           if(item.name in ref.externalData){
             ref.defaults[item.name]=ref.externalData[item.name]
           }else{
-            // console.log(`defaulting ${item.name} -> ${item.default}`)
             ref.defaults[item.name]=ref.getDefaultValue(item.name,item.default)
           }      
         })
@@ -1453,7 +1458,7 @@
                         }
 
                       }else{
-                        axios.post("/api/v1/expression?noLog="+(!!item.noLog),{expression:placeholderCheck.value},TokenStorage.getAuthentication())
+                        axios.post(`${process.env.BASE_URL}api/v1/expression?noLog=${!!item.noLog}`,{expression:placeholderCheck.value},TokenStorage.getAuthentication())
                           .then((result)=>{
                             var restresult = result.data
                             if(restresult.status=="error"){
@@ -1522,7 +1527,7 @@
                   ref.setFieldStatus(item.name,"running",false)
                   placeholderCheck = ref.replacePlaceholders(item)     // check and replace placeholders
                   if(placeholderCheck.value!=undefined){                       // expression is clean ?
-                    axios.post("/api/v1/query?noLog="+(!!item.noLog),{query:placeholderCheck.value,config:item.dbConfig},TokenStorage.getAuthentication())
+                    axios.post(`${process.env.BASE_URL}api/v1/query?noLog=${!!item.noLog}`,{query:placeholderCheck.value,config:item.dbConfig},TokenStorage.getAuthentication())
                       .then((result)=>{
                         var restresult = result.data
                         if(restresult.data.error){
@@ -1700,7 +1705,7 @@
       abortJob(id){
         var ref=this
         this.$toast.warning("Aborting job " + id);
-        axios.post("/api/v1/job/" + id + "/abort",{},TokenStorage.getAuthentication())
+        axios.post(`${process.env.BASE_URL}api/v1/job/${id}/abort`,{},TokenStorage.getAuthentication())
           .then((result)=>{
             ref.abortTriggered=true
           })
@@ -1710,7 +1715,7 @@
         var ref = this;
         // console.log("=============================")
         // console.log("getting awx job")
-        axios.get("/api/v1/job/" + id,TokenStorage.getAuthentication())
+        axios.get(`${process.env.BASE_URL}api/v1/job/${id}`,TokenStorage.getAuthentication())
           .then((result)=>{
               // if we have decent data
               // console.log("job result - " + JSON.stringify(result))
@@ -1726,7 +1731,7 @@
                 if(this.jobResult.data.job_type=="multistep"){
                   if(this.jobResult.data.subjobs){
                     var lastsubjob = this.jobResult.data.subjobs.split(",").map(x=>parseInt(x)).slice(-1)[0]
-                    axios.get("/api/v1/job/" + lastsubjob,TokenStorage.getAuthentication())
+                    axios.get(`${process.env.BASE_URL}api/v1/job/${lastsubjob}`,TokenStorage.getAuthentication())
                       .then((subjobresult)=>{
                         ref.subjob=subjobresult.data
                       }).catch((e)=>{
@@ -1746,22 +1751,22 @@
                     // final result
                     if(ref.currentForm.onFinish){
                       ref.currentForm.onFinish.forEach((action, i) => {
-                        ref.doAction(action);
+                        ref.doAction(action,id);
                       });
                     }
                     if(this.jobResult.status=="success" && ref.currentForm.onSuccess){
                       ref.currentForm.onSuccess.forEach((action, i) => {
-                        ref.doAction(action);
+                        ref.doAction(action,id);
                       });
                     }
                     if(this.jobResult.status=="error" && ref.currentForm.onFailure){
                       ref.currentForm.onFailure.forEach((action, i) => {
-                        ref.doAction(action);
+                        ref.doAction(action,id);
                       });
                     }
                     if(this.jobResult.status=="warning" && ref.currentForm.onAbort){
                       ref.currentForm.onAbort.forEach((action, i) => {
-                        ref.doAction(action);
+                        ref.doAction(action,id);
                       });
                     }
                     this.abortTriggered=false
@@ -1808,15 +1813,18 @@
             field = [].concat(field ?? []); // force to array
           }
           if(field.length>0){                    // not emtpy
-            if(typeof field[0]==="object"){      // array of objects, analyse first object
-              keys = Object.keys(field[0])    // get properties
-              if(keys.length>0){
-                key = (keys.includes(column))?column:keys[0] // get column, fall back to first
-                field=field.map((item) => ((item)?((item[key]==null)?null:(item[key]??item)):undefined))  // flatten array
-              }else{
-                field=(!keepArray)?undefined:field // force undefined if we don't want arrays
-              }
-            } // no else, array is already flattened
+            if(column!="*"){
+              if(typeof field[0]==="object"){      // array of objects, analyse first object
+                keys = Object.keys(field[0])    // get properties
+                if(keys.length>0){
+                  key = (keys.includes(column))?column:keys[0] // get column, fall back to first
+                  field=field.map((item) => ((item)?((item[key]==null)?null:(item[key]??item)):undefined))  // flatten array
+                }else{
+                  field=(!keepArray)?undefined:field // force undefined if we don't want arrays
+                }
+              } // no else, array is already flattened
+            }
+
             field=(!wasArray || !keepArray)?field[0]:field // if it wasn't an array, we take first again
           }else{
             field=(!keepArray)?undefined:field // force undefined if we don't want arrays
@@ -1914,7 +1922,7 @@
           ...TokenStorage.getAuthenticationMultipart(),
             onUploadProgress: progressEvent => {Vue.set(ref.fileProgress,fieldname,Math.round(progressEvent.loaded/progressEvent.total*100))}
         }
-        const result = await axios.post('/api/v1/job/upload/', formData, config)
+        const result = await axios.post(`${process.env.BASE_URL}api/v1/job/upload/`, formData, config)
         return result.data
       },
       // execute the form
@@ -1982,6 +1990,10 @@
           // generate correct json output (and use the uploaded file info)
           this.generateJsonOutput(postdata.files)
           postdata.extravars = this.formdata
+          if(this.enableVerbose){
+            postdata.extravars.__verbose__=true
+          }          
+          postdata.extravars.__verbose__ = this.enableVerbose
           postdata.formName = this.currentForm.name;
           postdata.credentials = {}
           // add all fields that are marked as credential, and add them to the credentials object (in the root of the postdata)
@@ -1993,7 +2005,7 @@
  
           this.jobResult.message= "Connecting with job api ";
           this.jobResult.status="info";
-          axios.post("/api/v1/job/",postdata,TokenStorage.getAuthentication())
+          axios.post(`${process.env.BASE_URL}api/v1/job/`,postdata,TokenStorage.getAuthentication())
             .then((result)=>{
                 if(result){
                   this.jobResult=result.data;
@@ -2007,7 +2019,7 @@
                     this.jobResult.data.output = ""
                     if(ref.currentForm.onSubmit){
                       ref.currentForm.onSubmit.forEach((action, i) => {
-                        ref.doAction(action);
+                        ref.doAction(action,jobid);
                       });
                     }
                     // wait for 2 seconds, and get the output of the job
@@ -2027,11 +2039,6 @@
           // resume interval
           this.pauseJsonOutput=false;
          }
-      },
-      pullGit(repo){
-        var postdata={}
-        postdata.gitRepo = repo;
-        return axios.post("/api/v1/git/pull",postdata,TokenStorage.getAuthentication())
       },
       initForm(){
         var ref=this
@@ -2094,6 +2101,15 @@
             item.runLocal=true
           }                   
         })        
+        // initiate the constants
+        if(ref.constants){
+          Object.keys(ref.constants).forEach((item)=>{
+            ref.fieldOptions[item]={
+              type: "constant",
+            }
+            Vue.set(ref.form,item,ref.constants[item])
+          })
+        }        
         // initialize defaults
         this.currentForm.fields.forEach((item, i) => {
           // extra query parameters and store in externalData
@@ -2126,7 +2142,7 @@
             if(item.refresh && typeof item.refresh=='string' && /[0-9]+s/.test(item.refresh)){
               Vue.set(ref.fieldOptions[item.name],"refresh",item.refresh)
             }
-            Vue.set(ref.form,item.name,ref.externalData[item.name]??this.getDefaultValue(item.name,item.default))
+            Vue.set(ref.form,item.name,ref.externalData[item.name]??ref.getDefaultValue(item.name,item.default))
             if(item.type=="table" && !ref.defaults[item.name]){
               Vue.set(ref.form,item.name,[])
             }
@@ -2138,19 +2154,13 @@
             if(item.type=="checkbox"){
               fallbackvalue=false
             }
-            Vue.set(ref.form,item.name,ref.externalData[item.name]??this.getDefaultValue(item.name,item.default)??fallbackvalue)
+            
+            Vue.set(ref.form,item.name,ref.externalData[item.name]??ref.getDefaultValue(item.name,item.default)??fallbackvalue)
+            // console.log(`Defaulting field ${item.name} -> ${item.default} -> ${ref.form[item.name]}`)
           }         
           Vue.set(ref.visibility,item.name,true)
         });
-        // initiate the constants
-        if(ref.constants){
-          Object.keys(ref.constants).forEach((item)=>{
-            ref.fieldOptions[item]={
-              type: "constant",
-            }
-            Vue.set(ref.form,item,ref.constants[item])
-          })
-        }
+
         // see if the help should be show initially
         if(this.currentForm.showHelp && this.currentForm.showHelp===true){
           this.showHelp=true
@@ -2163,56 +2173,11 @@
         this.findVariableDependencies()
         this.findVariableDependentOf()
 
-        // set as ready
-        // if our type is git, we need to first pull git
-        if(!["git","multistep"].includes(this.currentForm.type)){
-          this.pretasksFinished=true
-          // start dynamic field loop (= infinite)
-          this.startDynamicFieldsLoop()
-        }else{
-          var gitpulls=[]
+        // for future use, run something before the form starts
+        this.pretasksFinished=true
+        // start dynamic field loop (= infinite)
+        this.startDynamicFieldsLoop()
 
-          if(this.currentForm.type=="git"){
-              gitpulls.push(this.pullGit(this.currentForm.repo))
-          }else if(this.currentForm.type=="multistep"){
-            this.currentForm.steps.forEach((step, i) => {
-              if(step.type=="git")
-                gitpulls.push(this.pullGit(step.repo))
-            });
-          }
-          // wait for all git pulls
-          Promise.all(gitpulls)
-          .then(results=>{
-            var status=true
-            results.forEach((result, i) => {
-              if(result){
-
-                if(result.data.status=="error"){
-                  ref.$toast.error(result.data.message)
-                  status=false
-                }
-
-              }else{
-                ref.$toast.error("Failed to pull from git")
-                status=false
-              }
-
-            });
-            if(status){
-              if(gitpulls.length>0)
-                ref.$toast.success("Git was pulled")
-            }
-            ref.pretasksFinished=true
-            // start dynamic field loop (= infinite)
-            ref.startDynamicFieldsLoop()
-          })
-          .catch(function(err){
-            ref.$toast.error("Failed to pull from git " + err.toString())
-            ref.pretasksFinished=true
-            // start dynamic field loop (= infinite)
-            ref.startDynamicFieldsLoop()
-          })
-        }
 
       },
     },

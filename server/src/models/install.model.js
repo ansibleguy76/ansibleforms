@@ -69,23 +69,9 @@ const CheckModel = {
         }
     },
 
-    async getDatabaseVersion(databaseName) {
-        try {
-
-            // Check if the record exists
-            var query = `SELECT database_version FROM ${databaseName}.settings`
-            const result = await mysql.do(query);
-            return result[0].database_version;
-        } catch (error) {
-            logger.error('Version check failed:', error);
-            return 'Failed'; // Return 'Failed' if the check fails
-        }
-    },    
-    
-
     async performChecks() {
 
-        const requiredTables = ['groups','users','tokens','credentials','ldap','awx','job_output','jobs','settings','azuread'];
+        const requiredTables = ['groups','users','tokens','credentials','ldap','awx','job_output','jobs','settings','azuread','repositories'];
         const requiredRecords = [
             {label:'Group admins',tableName:'groups',query:{'name':'admins'}},
             {label:'User admin',tableName:'users',query:{'username':'admin'}},
@@ -124,21 +110,6 @@ const CheckModel = {
             status : 'OK',
             label : `Application version = ${version}`
         };
-        var database_version = await this.getDatabaseVersion(databaseName)
-        summary["Database version"] = {
-            status : 'OK',
-            label : `Database version = ${database_version}`
-        };  
-        if(database_version == 'Failed' || database_version!=version){
-            if(database_version == 'Failed')
-                database_version = "UNKNOWN"
-            summary["Database version"].status = "Failed"
-            summary["Database version"].label = `Database version = ${database_version}`
-            summary["Application version"].status = "Failed"
-            summary["Application version"].label = `Application version = ${version} <-> ${database_version}`
-        }
-
-
 
 
         try {

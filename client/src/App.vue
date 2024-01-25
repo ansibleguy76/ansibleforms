@@ -112,7 +112,7 @@
         loadVersion(){
           var ref=this;
 
-          axios.get('/api/v1/version')                               // check database
+          axios.get(`${process.env.BASE_URL}api/v1/version`)                               // check database
             .then((result)=>{
               if(result.data.status=="success"){
                 ref.version=result.data.message
@@ -124,7 +124,7 @@
         },
         loadApprovals(){
           var ref=this;
-          axios.get('/api/v1/job/approvals',TokenStorage.getAuthentication())                               // check database
+          axios.get(`${process.env.BASE_URL}api/v1/job/approvals`,TokenStorage.getAuthentication())                               // check database
             .then((result)=>{
               if(result.data.status=="success"){
                 ref.approvals=result.data.data.output || 0
@@ -138,13 +138,12 @@
           var ref=this;
 
           // Check if the current route is '/install' and skip the database check
-          if (this.$route.path === '/install') {
+          if (this.$route.path === `${process.env.BASE_URL}install`) {
             this.isLoaded = true;
             return; // Skip the database check
           }
-
           console.log("Checking database")
-          axios.get('/api/v1/schema')                               // check database
+          axios.get(`${process.env.BASE_URL}api/v1/schema`)                               // check database
           .then((result)=>{
             if(result.data.status=="error"){
               ref.errorMessage=result.data.message;
@@ -159,6 +158,8 @@
               }
               ref.isLoaded=true
             }else{
+              ref.errorMessage=result.data.message;
+              ref.errorData=result.data.data;              
               this.loadVersion()
               this.login()
               ref.isLoaded=true

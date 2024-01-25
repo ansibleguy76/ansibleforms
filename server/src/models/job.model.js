@@ -8,9 +8,10 @@ const {exec} = require('child_process');
 const Helpers = require('../lib/common.js')
 const Settings = require('./settings.model')
 const logger=require("../lib/logger");
-const appConfig = require('../../config/app.config')
+const ansibleConfig = require('../../config/ansible.config.js')
 const dbConfig = require('../../config/db.config')
-const ansibleConfig = require('./../../config/ansible.config');
+const appConfig = require('../../config/app.config.js')
+const Repository = require('./repository.model.js')
 const mysql = require('./db.model')
 const Form = require('./form.model')
 const Credential = require('./credential.model');
@@ -20,7 +21,7 @@ function pushForminfoToExtravars(formObj,extravars,creds={}){
   // push top form fields to extravars
   // change in 4.0.16 => easier to process & available in playbook, might be handy
   // no credentials added here, because then can also come from asCredential property and these would get lost.
-  const topFields=['template','playbook','tags','limit','execution_environment','check','diff','verbose','keepExtravars','credentials','inventory','awxCredentials','ansibleCredentials']
+  const topFields=['template','playbook','tags','limit','executionEnvironment','check','diff','verbose','keepExtravars','credentials','inventory','awxCredentials','ansibleCredentials','instanceGroups']
   for (const fieldName of topFields) {
     // Check if the field exists in formObj and if the property is not present in extravars
     if (formObj.hasOwnProperty(fieldName) && extravars[`__${fieldName}__`] === undefined) {
@@ -244,13 +245,13 @@ Job.findAll = async function (user,records) {
     }else{
       query = "SELECT id,form,target,status,start,end,user,user_type,job_type,parent_id,approval FROM AnsibleForms.`jobs` WHERE (user=? AND user_type=?) OR (status='approve') ORDER BY id DESC LIMIT " +records + ";"
     }
-    return await mysql.do(query,[user.username,user.type])
+    return await mysql.do(query,[user.username,user.type],true)
 };
 Job.findApprovals = async function (user) {
     logger.debug("Finding all approval jobs")
     var count=0
     var query = "SELECT approval FROM AnsibleForms.`jobs` WHERE status='approve' AND approval IS NOT NULL;"
-    const res = await mysql.do(query)
+    const res = await mysql.do(query,undefined,true)
 
     if(user.roles.includes("admin")){
       return res.length
@@ -277,7 +278,7 @@ Job.findById = async function (user,id,asText,logSafe=false) {
     }
     // get normal data
     try{
-      var res = await mysql.do(query,params)
+      var res = await mysql.do(query,params,true)
 
       if(res.length!=1){
           throw `Job ${id} not found, or access denied`
@@ -286,7 +287,7 @@ Job.findById = async function (user,id,asText,logSafe=false) {
       // mask passwords
       if(logSafe) job.extravars=Helpers.logSafe(job.extravars)
       // get output summary
-      res = await mysql.do("SELECT COALESCE(output,'') output,COALESCE(`timestamp`,'') `timestamp`,COALESCE(output_type,'stdout') output_type FROM AnsibleForms.`job_output` WHERE job_id=? ORDER by job_output.order;",id)
+      res = await mysql.do("SELECT COALESCE(output,'') output,COALESCE(`timestamp`,'') `timestamp`,COALESCE(output_type,'stdout') output_type FROM AnsibleForms.`job_output` WHERE job_id=? ORDER by job_output.order;",id,true)
       return [{...job,...{output:Helpers.formatOutput(res,asText)}}]
 
     }catch(err){
@@ -298,7 +299,7 @@ Job.launch = async function(form,formObj,user,creds,extravars,parentId=null,next
   // a formobj can be a full step pushed
   if(!formObj){
     // we load it, it's an actual form
-    formObj = Form.loadByName(form,user)
+    formObj = await Form.loadByName(form,user)
     if(!formObj){
       throw "No such form or access denied"
     }
@@ -327,6 +328,7 @@ Job.launch = async function(form,formObj,user,creds,extravars,parentId=null,next
   }
 
   logger.debug(`Job id ${jobid} is created`)
+  extravars["__jobid__"]=jobid
   // job created - return to client
   if(next)next({id:jobid})
 
@@ -393,15 +395,6 @@ Job.launch = async function(form,formObj,user,creds,extravars,parentId=null,next
       notifications
     )
   }
-  if(jobtype=="git"){
-    return await Git.push(
-      formObj.repo,
-      extravars,
-      jobid,
-      null,
-      (parentId)?null:formObj.approval // if multistep: no individual approvals checks
-    )
-  }
   if(jobtype=="multistep"){
     return await Multistep.launch(
       form,
@@ -419,12 +412,13 @@ Job.launch = async function(form,formObj,user,creds,extravars,parentId=null,next
 Job.continue = async function(form,user,creds,extravars,jobid,next) {
   var formObj
   // we load it, it's an actual form
-  formObj = Form.loadByName(form,user,true)
+  formObj = await Form.loadByName(form,user,true)
   if(!formObj){
     throw "No such form or access denied"
   }
 
   pushForminfoToExtravars(formObj,extravars,creds)
+  extravars["__jobid__"]=jobid
 
   // console.log(formObj)
   // we have form and we have access
@@ -435,9 +429,6 @@ Job.continue = async function(form,user,creds,extravars,jobid,next) {
   }
   if(jobtype=="awx"){
     target=formObj.template
-  }
-  if(jobtype=="git"){
-    target=formObj?.repo?.file
   }
   if(jobtype=="multistep"){
     target=formObj.name
@@ -505,9 +496,6 @@ Job.continue = async function(form,user,creds,extravars,jobid,next) {
         formObj.approval,
         true
       )
-    }
-    if(jobtype=="git"){
-      return await Git.push(formObj.repo,extravars,jobid,++counter,formObj.approval,true)
     }
     if(jobtype=="multistep"){
       return await Multistep.launch(form,formObj.steps,user,extravars,creds,jobid,++counter,formObj.approval,step,true)
@@ -592,10 +580,11 @@ Job.sendApprovalNotification = async function(approval,extravars,jobid){
     var message = buffer.toString()
     var color = "#158cba"
     var color2 = "#ffa73b"
-    var logo = `${url}/assets/img/logo.png`
+    var logo = `${url}${appConfig.baseUrl}assets/img/logo.png`
     var approvalMessage = Helpers.replacePlaceholders(approval.message,extravars)
     message = message.replace("${message}",approvalMessage)
                     .replaceAll("${url}",url)
+                    .replaceAll("${baseurl",appConfig.baseUrl)
                     .replaceAll("${jobid}",jobid)
                     .replaceAll("${title}",subject)
                     .replaceAll("${logo}",logo)
@@ -649,9 +638,10 @@ Job.sendStatusNotification = async function(jobid){
       var message = buffer.toString()
       var color = "#158cba"
       var color2 = "#ffa73b"
-      var logo = `${url}/assets/img/logo.png`
+      var logo = `${url}${appConfig.baseUrl}assets/img/logo.png`
       message = message.replace("${message}",job.output.replaceAll("\r\n","<br>"))
                       .replaceAll("${url}",url)
+                      .replaceAll("${baseurl",appConfig.baseUrl)
                       .replaceAll("${jobid}",jobid)
                       .replaceAll("${title}",subject)
                       .replaceAll("${logo}",logo)
@@ -948,7 +938,8 @@ Ansible.launch=async (ev,credentials,jobid,counter,approval,approved=false)=>{
   if(limit){ command += ` --limit '${limit}'`}
    
   command += ` ${playbook}`
-  var directory = ansibleConfig.path
+  var directory = await Repository.getAnsiblePath()
+  var directory = directory || ansibleConfig.path
   var cmdObj = {directory:directory,command:command,description:"Running playbook",task:"Playbook",extravars:extravars,hiddenExtravars:hiddenExtravars,extravarsFileName:extravarsFileName,hiddenExtravarsFileName:hiddenExtravarsFileName,keepExtravars:keepExtravars}
 
   logger.notice("Running playbook : " + playbook)
@@ -1022,6 +1013,7 @@ Awx.launch = async function (ev,credentials,jobid,counter,approval,approved=fals
     // get awx data from the extravars
     var invent = extravars?.__inventory__
     var execenv = extravars?.__executionEnvironment__
+    var instanceGroups = [].concat(extravars?.__instanceGroups__ || []) // always array ! force to array
     var tags = extravars?.__tags__ || ""
     var check = extravars?.__check__ || false
     var verbose = extravars?.__verbose__ || false  
@@ -1033,7 +1025,7 @@ Awx.launch = async function (ev,credentials,jobid,counter,approval,approved=fals
     try{
       const jobTemplate = await Awx.findJobTemplateByName(template)
       logger.debug("Found jobtemplate, id = " + jobTemplate.id)
-      await Awx.launchTemplate(jobTemplate,ev,invent,tags,limit,check,diff,verbose,credentials,awxCredentials,execenv,jobid,++counter)
+      await Awx.launchTemplate(jobTemplate,ev,invent,tags,limit,check,diff,verbose,credentials,awxCredentials,execenv,instanceGroups,jobid,++counter)
       return true
     }catch(err){
       message="failed to launch awx template " + template + "\n" + err.message
@@ -1042,14 +1034,19 @@ Awx.launch = async function (ev,credentials,jobid,counter,approval,approved=fals
       throw new Error(message)
     } 
 }
-Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,verbose,credentials,awxCredentials,execenv,jobid,counter) {
+Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,verbose,credentials,awxCredentials,execenv,instanceGroups,jobid,counter) {
   var message=""
   if(!counter){
     counter=0
   }
   // get existing credentials in the template, and then add the external ones.
-  var awxCredentialList=await Awx.findCredentialsByTemplate(template.id)
-  logger.notice(`Found ${awxCredentialList.length} existing creds`)
+  var awxCredentialList=[]
+  try{
+    awxCredentialList=await Awx.findCredentialsByTemplate(template.id)
+    logger.notice(`Found ${awxCredentialList.length} existing creds`)
+  }catch(e){
+    logger.warning("No credentials available... could be workflow template")
+  }
   // add external ones
   for(let i=0;i<awxCredentials.length;i++){
       var ac=awxCredentials[i]
@@ -1058,10 +1055,18 @@ Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,ve
       awxCredentialList.push(credId)
   }
   awxCredentialList=[...new Set(awxCredentialList)]
+
   // get inventory
   var inventory=await Awx.findInventoryByName(invent)
   // get execution environment
   var executionEnvironment=await Awx.findExecutionEnvironmentByName(execenv)
+
+  // get instance groups
+  var instanceGroupIds=[]
+  for (let index = 0; index < instanceGroups.length; index++) {
+    instanceGroupIds.push(await Awx.findInstanceGroupByName(instanceGroups[index]))
+  };
+
   // get config and go
   const awxConfig = await Awx.getConfig()
   if(!awxConfig)throw new Error("Failed to get AWX configuration")
@@ -1076,6 +1081,7 @@ Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,ve
   }
   if(awxCredentialList.length>0){ postdata.credentials=awxCredentialList }
   if(executionEnvironment){ postdata.execution_environment=executionEnvironment.id }
+  if(instanceGroups){ postdata.instance_groups = instanceGroupIds.map(x => x.id)}
   if(inventory){ postdata.inventory=inventory.id }
   if(check){ postdata.job_type="check" } else{ postdata.job_type="run" }
   if(diff){ postdata.diff_mode=true } else{ postdata.diff_mode=false }
@@ -1086,6 +1092,8 @@ Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,ve
   logger.notice("Running template : " + template.name)
   logger.info("extravars : " + extravars)
   logger.info("inventory : " + inventory)
+  logger.info("execution_environment : " + executionEnvironment)
+  logger.info("instance_groups : " + instanceGroups)
   logger.info("credentials : " + awxCredentialList)
   logger.info("check : " + check)
   logger.info("diff : " + diff)
@@ -1101,7 +1109,8 @@ Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,ve
   }else{
     // prepare axiosConfig
     const axiosConfig = Awx.getAuthorization(awxConfig)
-    logger.debug("Lauching awx with data : " + JSON.stringify(postdata))
+    // logger.debug("Lauching awx with data : " + JSON.stringify(postdata))
+    logger.debug("Launching awx template")
     // launch awx job
     var axiosResult
     try{
@@ -1109,7 +1118,7 @@ Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,ve
     }catch(error){
       var message=`failed to launch ${template.name}`
       if(error.response){
-          logger.error(error.response.data)
+          logger.error("",error.response.data)
           message+="\r\n" + YAML.stringify(error.response.data)
           await Job.endJobStatus(jobid,++counter,"stderr","success",`Failed to launch template ${template.name}. ${message}`)
       }else{
@@ -1318,12 +1327,41 @@ Awx.findExecutionEnvironmentByName = async function (name) {
   logger.info(`searching execution environment ${name}`)
   // prepare axiosConfig
   const axiosConfig = Awx.getAuthorization(awxConfig)
-  const axiosResult = await axios.get(awxConfig.uri + "/api/v2/execution_environments/?name=" + encodeURI(name),axiosConfig)
+  message=`could not find execution environment ${name}`
+  var axiosResult
+  try{
+    axiosResult = await axios.get(awxConfig.uri + "/api/v2/execution_environments/?name=" + encodeURI(name),axiosConfig)
+  }catch(error){
+    throw new Error(`${message}, ${error.message}`)
+  }            
   var execution_environment = axiosResult.data.results.find(function(x, index) { return x.name == name })
   if(execution_environment){
     return execution_environment
   }else{
-    message=`could not find execution environment ${name}`
+
+    logger.error(message)
+    throw new Error(message)
+  }
+};
+Awx.findInstanceGroupByName = async function (name) {
+  if(!name)return undefined
+  const awxConfig = await Awx.getConfig()
+  if(!awxConfig)throw new Error("Failed to get AWX configuration")
+  var message=""
+  logger.info(`searching instance group ${name}`)
+  // prepare axiosConfig
+  const axiosConfig = Awx.getAuthorization(awxConfig)
+  message=`could not find instance group ${name}`
+  var axiosResult
+  try{
+    axiosResult = await axios.get(awxConfig.uri + "/api/v2/instance_groups/?name=" + encodeURI(name),axiosConfig)
+  }catch(error){
+    throw new Error(`${message}, ${error.message}`)
+  }        
+  var instance_group = axiosResult.data.results.find(function(x, index) { return x.name == name })
+  if(instance_group){
+    return instance_group
+  }else{
     logger.error(message)
     throw new Error(message)
   }
@@ -1348,53 +1386,22 @@ Awx.findInventoryByName = async function (name) {
   logger.info(`searching inventory ${name}`)
   // prepare axiosConfig
   const axiosConfig = Awx.getAuthorization(awxConfig)
-  const axiosResult = await axios.get(awxConfig.uri + "/api/v2/inventories/?name=" + encodeURI(name),axiosConfig)
+  message=`could not find inventory ${name}`
+  var axiosResult
+  try{
+    axiosResult = await axios.get(awxConfig.uri + "/api/v2/inventories/?name=" + encodeURI(name),axiosConfig)
+  }catch(error){
+    throw new Error(`${message}, ${error.message}`)
+  }    
   var inventory = axiosResult.data.results.find(function(x, index) { return x.name == name })
   if(inventory){
     return inventory
   }else{
-    message=`could not find inventory ${name}`
     logger.error(message)
     throw new Error(message)
   }
+
+
 };
 
-// git stuff
-var Git=function(){};
-Git.push = async function (repo,ev,jobid,counter,approval,approved=false) {
-    if(!counter){
-      counter=0
-    }else{
-      counter++
-    }
-    if(approval){
-      if(!approved){
-        await Job.sendApprovalNotification(approval,ev,jobid)
-        await Job.printJobOutput(`APPROVE [${repo.file}] ${'*'.repeat(69-repo.file.length)}`,"stdout",jobid,++counter)
-        await Job.update({status:"approve",approval:JSON.stringify(approval),end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid)
-        return true
-      }else{
-        logger.notice("Continuing awx " + repo.file + " it has been approved")
-      }
-    }
-    // we make a copy to not mutate
-    var extravars={...ev}
-    try{
-      // save the extravars as file - we do this in sync, should be fast
-      await Job.printJobOutput(`TASK [Writing YAML to local repo] ${'*'.repeat(72-26)}`,"stdout",jobid,++counter)
-      var yaml = YAML.stringify(extravars)
-      fs.writeFileSync(path.join(appConfig.repoPath,repo.dir,repo.file),yaml)
-      // log the save
-      await Job.printJobOutput(`ok: [Extravars Yaml file created : ${repo.file}]`,"stdout",jobid,++counter)
-      await Job.printJobOutput(`TASK [Committing changes] ${'*'.repeat(72-18)}`,"stdout",jobid,++counter)
-      // start commit
-      var command = `git commit --allow-empty -am "update from ansibleforms" && ${repo.push}`
-      var directory = path.join(appConfig.repoPath,repo.dir)
-      return await Exec.executeCommand({directory:directory,command:command,description:"Pushing to git",task:"Git push"},jobid,counter)
-
-    }catch(e){
-      logger.error("error : ",e)
-      await Job.endJobStatus(jobid,++counter,"stderr","failed",e)
-    }
-};
 module.exports= Job;

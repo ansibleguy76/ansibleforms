@@ -3,7 +3,7 @@ import TokenStorage from './TokenStorage'
 var Form = {
 
   load(success,error){
-    axios.get(`/api/v1/config?timestamp=${new Date().getTime()}`,TokenStorage.getAuthentication())                               // load forms
+    axios.get(`${process.env.BASE_URL}api/v1/config?timestamp=${new Date().getTime()}`,TokenStorage.getAuthentication())                               // load forms
       .then((result)=>{
         var formConfig=result.data;
         if(!formConfig.error){
@@ -25,7 +25,7 @@ var Form = {
       })
   },
   backups(success,error){
-    axios.get(`/api/v1/config/backups?timestamp=${new Date().getTime()}`,TokenStorage.getAuthentication())                               // load forms
+    axios.get(`${process.env.BASE_URL}api/v1/config/backups?timestamp=${new Date().getTime()}`,TokenStorage.getAuthentication())                               // load forms
       .then((result)=>{
         var backups=result.data;
         if(!backups.error){
@@ -47,7 +47,7 @@ var Form = {
       })
   },
   restore(backupName,backupBeforeRestore,success,error){
-    axios.post(`/api/v1/config/restore/${backupName}?backupBeforeRestore=${backupBeforeRestore}`,TokenStorage.getAuthentication())                               // load forms
+    axios.post(`${process.env.BASE_URL}api/v1/config/restore/${backupName}?backupBeforeRestore=${backupBeforeRestore}`,TokenStorage.getAuthentication())                               // load forms
       .then((result)=>{
         if(result.data.status=="success"){
           success(result.data.message)

@@ -17,7 +17,13 @@ var Ldap=function(ldap){
     this.bind_user_pw = encrypt(ldap.bind_user_pw);
     this.search_base = ldap.search_base;
     this.username_attribute = ldap.username_attribute;
+    this.groups_attribute = ldap.groups_attribute;
     this.enable = (ldap.enable)?1:0;
+    this.is_advanced = (ldap.is_advanced)?1:0;
+    this.groups_search_base = (ldap.is_advanced)?ldap.groups_search_base:""
+    this.group_class = (ldap.is_advanced)?ldap.group_class:""
+    this.group_member_attribute = (ldap.is_advanced)?ldap.group_member_attribute:""
+    this.group_member_user_attribute = (ldap.is_advanced)?ldap.group_member_user_attribute:""
 };
 Ldap.update = function (record) {
   logger.info(`Updating ldap ${record.server}`)
@@ -43,7 +49,7 @@ Ldap.find = function(){
 Ldap.check = function(ldapConfig){
   return new Promise(async (resolve,reject)=>{
 
-    const { authenticate } = require('ldap-authentication')
+    const { authenticate } = require('../lib/ldap-authentication')
     // auth with admin
     var badCertificates=false
     let options = {
@@ -64,6 +70,14 @@ Ldap.check = function(ldapConfig){
       username: "dummyuser_for_check",
       // starttls: false
     }
+    // new in v4.0.20, add advanced ldap properties
+    if(ldapConfig.is_advanced){
+      if(ldapConfig.groups_search_base){ options.groupsSearchBase = ldapConfig.groups_search_base }
+      if(ldapConfig.group_class){ options.groupClass = ldapConfig.group_class }
+      if(ldapConfig.group_member_attribute){ options.groupMemberAttribute = ldapConfig.group_member_attribute }
+      if(ldapConfig.group_member_user_attribute){ options.groupMemberUserAttribute = ldapConfig.group_member_user_attribute }
+    }
+    // console.log(options)
     // ldap-authentication has bad cert check, so we check first !!
     if(ldapConfig.enable_tls && !(ldapConfig.ignore_certs==1)){
       if(!Helpers.checkCertificate(ldapConfig.cert)){

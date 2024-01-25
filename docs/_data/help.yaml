@@ -328,8 +328,7 @@
     default: "%PERSISTENT_FOLDER%/repositories"
     version: 3.0.0
     description: |
-      Ansible Forms target a git repository.  The extravars will be save to a local repository and a git push is triggered.  
-      This path is the root path for your local repositories.
+      This path is the root path for your local repositories, allowing you to integrate data with git repositories.
   - name: ENCRYPTION_SECRET
     type: string
     allowed: a strong encryption string
@@ -356,11 +355,21 @@
       The output has a button `Apply filter` for the filtering to take effect.
   - name: UPLOAD_PATH
     type: string
+    version: 4.0.16
     allowed: a valid path
     short: The path for file uploads
     default: "%PERSISTENT_FOLDER%/uploads"
     description: |
       Since 4.0.16, a new field type is introduced that allows file uploads.  The files are uploaded in this path.
+  - name: BASE_URL
+    type: string
+    allowed: a valid baes url
+    default: "/"
+    short: Set the base url
+    description: | 
+      By default AnsibleForms is hosted under root `/`, but you can choose a base url of choice.  
+      It must start and end with a `/`, for example `/myapp/`.
+    version: 5.0.0      
 - name: Forms.yaml
   icon: fab,wpforms
   link: forms
@@ -815,59 +824,24 @@
                   groupname1: has-background-info-light
                   groupname2: has-background-success-light    
                 fields:                                        # list of field objects      
-        - name: git
-          description: | 
-            Updates a file in a repository.   
-            The repository must be added in the settings.  
-          examples:
-          - name: Git Form
-            code: |
-              - name: Update repo
-                roles:                                         # reference to roles defined earlier
-                - vmware
-                description: Updates a repo in git
-                image: https://picsum.photos/64                # an image url (can be base64)
-                categories:                                    # reference to categories defined earlier
-                - Demo
-                - Vmware/Linux                                 # Add to a subcategory using the `/` separator
-                tileClass: has-background-danger               # a bulma background color style (https://bulma.io)
-                type: git                                      # type is awx, ansible, git or multistep
-                repo:
-                  dir: myrepodir
-                  file: myrepofile.yaml
-                  push: git push origin main
-                  pull: git pull origin main
-                fieldGroupClasses:                             # give fieldgroups a custom background
-                  groupname1: has-background-info-light
-                  groupname2: has-background-success-light    
-                fields:                                        # list of field objects      
         - name: multistep
           description: |
             Executes multiple jobs sequentially.  
-            Each step can be a different type (ansible, awx, git).
+            Each step can be a different type (ansible, awx).
           examples:
           - name: Multistep form
             code: |
               - name: Create VM
                 roles:                                         # reference to roles defined earlier
                 - vmware
-                description: Updates a repo in git
+                description: Create and start a vm
                 image: https://picsum.photos/64                # an image url (can be base64)
                 categories:                                    # reference to categories defined earlier
                 - Demo
                 - Vmware
                 tileClass: has-background-danger               # a bulma background color style (https://bulma.io)
-                type: multistep                                # type is awx, ansible, git or multistep
+                type: multistep                                # type is awx, ansible or multistep
                 steps:
-                - type: git
-                  name: Sync repository
-                  repo:
-                    dir: myrepodir
-                    file: myrepofile.yaml
-                    push: git push origin main
-                    pull: git pull origin main
-                    key: repoInfo                              # a specific key in the extravars
-                  continue: true                               # continue even this step fails
                 - type: awx
                   name: Create vm
                   template: Create VM
@@ -886,9 +860,7 @@
                 fields:                                        # list of field objects      
         short: Form type
         description: | 
-          Our form eventually sends extravars to a target.  That target can be an ansible-playbook, an awx-template a git repository or a multistep (which is a list or combination of multiple playbooks/templates/repositories, executed sequentially).
-            
-          *Note* : In case of git, the repository is pulled before the form is loaded.
+          Our form eventually sends extravars to a target.  That target can be an ansible-playbook, an awx-template or a multistep (which is a list or combination of multiple playbooks/templates, executed sequentially).
         examples:
         - name: Run AWX Template Create VM
           code: |
@@ -900,30 +872,17 @@
             name: Delete vm
             type: ansible
             template: delete_vm.yaml
-        - name: Update git repo
-          code: |
-            name: Update sourcecontrol
-            type: git
-            repo:
-              dir: my_project
-              file: test.yaml
-              push: git push origin main
-              pull: git pull origin main  
         - name: Run multistep job
           code: |
             name: Trigger awx job
             type: multistep
             steps:
-            - name: Update git
-              type: git
-              repo:
-                dir: vmware_inventory
-                file: virtual_machines.yaml
-                push: git push origin main
-                pull: git pull origin main  
-            - name: Update vms
+            - name: Create vm
               type: awx
-              template: Create VM                        
+              template: create_vm        
+            - name: Start vm
+              type: awx
+              template: start_vm                                 
       - name: template
         type: string
         with_types: awx
@@ -1030,24 +989,6 @@
         short: Pass ansible_user and ansible_password to ansible playbook using stored credentials
         description: |
           Ansible allows to pass default ansible credentials in the form of 2 extravars ansible_user and ansible_password
-      - name: repo
-        type: object
-        with_types: git
-        group: basic
-        allowed: a repo object
-        objectLink: forms/form/repo
-        docsObjectLink: "#repository-object"
-        short: Repository
-        description: |
-          This attribute is only used when the form type is `git`.  
-        examples:
-        - name: Push to git
-          code: |
-            repo:
-              dir: vmware_inventory
-              file: virtual_machines.yaml
-              push: git push origin main
-              pull: git pull origin main  
       - name: steps
         type: array
         with_types: multistep
@@ -1071,12 +1012,24 @@
       - name: executionEnvironment
         type: string
         short: Execution Environment
+        version: 5.0.0
         group: workflow
         description: |
           In newer versions of AWX you can choose an execution environment.  Use this property to pass it to your template.
             
           **Note** : You can also dynamically set the executionEnvironment by using a field called `__executionEnvironment__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static executionEnvironment.  
-          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.   
+      - name: instanceGroups
+        type: array or string
+        short: Instance Groups
+        version: 5.0.0
+        group: workflow
+        description: |
+          In newer versions of AWX you can choose instance groups.  Use this property to pass it to your template.  
+          It can be a single string (name of instancegroup) or an array (list of names).
+            
+          **Note** : You can also dynamically set the instanceGroups by using a field called `__instanceGroups__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static instanceGroups.  
+          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.                       
       - name: awxCredentials
         type: array
         group: workflow
@@ -1206,11 +1159,11 @@
         version: 3.1.0
         description: |
           Once a job is launched, Ansible Forms has a few status events you can act on.  
-          * **onSubmit** : Triggered the moment the submit button is pressed
-          * **onSuccess** : Triggered when the job is finished succesfully
-          * **onFailure** : Triggered when the job was not succesful
-          * **onAbort** : Triggered when the job was aborted
-          * **onFinish** : Triggered when the job is finished, regardless the status
+          * **onSubmit** : Triggered the moment the submit button is pressed  
+          * **onSuccess** : Triggered when the job is finished succesfully  
+          * **onFailure** : Triggered when the job was not succesful  
+          * **onAbort** : Triggered when the job was aborted  
+          * **onFinish** : Triggered when the job is finished, regardless the status  
             
           Follow the link above to learn about the possible job status actions
         examples:
@@ -1230,11 +1183,11 @@
         version: 3.1.0
         description: |
           Once a job is launched, Ansible Forms has a few status events you can act on.  
-          * **onSubmit** : Triggered the moment the submit button is pressed
-          * **onSuccess** : Triggered when the job is finished succesfully
-          * **onFailure** : Triggered when the job was not succesful
-          * **onAbort** : Triggered when the job was aborted
-          * **onFinish** : Triggered when the job is finished, regardless the status
+          * **onSubmit** : Triggered the moment the submit button is pressed  
+          * **onSuccess** : Triggered when the job is finished succesfully  
+          * **onFailure** : Triggered when the job was not succesful  
+          * **onAbort** : Triggered when the job was aborted  
+          * **onFinish** : Triggered when the job is finished, regardless the status  
             
           Follow the link above to learn about the possible job status actions
         examples:
@@ -1253,11 +1206,11 @@
         version: 3.1.0
         description: |
           Once a job is launched, Ansible Forms has a few status events you can act on.  
-          * **onSubmit** : Triggered the moment the submit button is pressed
-          * **onSuccess** : Triggered when the job is finished succesfully
-          * **onFailure** : Triggered when the job was not succesful
-          * **onAbort** : Triggered when the job was aborted
-          * **onFinish** : Triggered when the job is finished, regardless the status
+          * **onSubmit** : Triggered the moment the submit button is pressed  
+          * **onSuccess** : Triggered when the job is finished succesfully  
+          * **onFailure** : Triggered when the job was not succesful  
+          * **onAbort** : Triggered when the job was aborted  
+          * **onFinish** : Triggered when the job is finished, regardless the status  
             
           Follow the link above to learn about the possible job status actions
         examples:
@@ -1276,11 +1229,11 @@
         version: 3.1.0
         description: |
           Once a job is launched, Ansible Forms has a few status events you can act on.  
-          * **onSubmit** : Triggered the moment the submit button is pressed
-          * **onSuccess** : Triggered when the job is finished succesfully
-          * **onFailure** : Triggered when the job was not succesful
-          * **onAbort** : Triggered when the job was aborted
-          * **onFinish** : Triggered when the job is finished, regardless the status
+          * **onSubmit** : Triggered the moment the submit button is pressed  
+          * **onSuccess** : Triggered when the job is finished succesfully  
+          * **onFailure** : Triggered when the job was not succesful  
+          * **onAbort** : Triggered when the job was aborted  
+          * **onFinish** : Triggered when the job is finished, regardless the status  
             
           Follow the link above to learn about the possible job status actions
         examples:
@@ -1299,11 +1252,11 @@
         version: 3.1.0
         description: |
           Once a job is launched, Ansible Forms has a few status events you can act on.  
-          * **onSubmit** : Triggered the moment the submit button is pressed
-          * **onSuccess** : Triggered when the job is finished succesfully
-          * **onFailure** : Triggered when the job was not succesful
-          * **onAbort** : Triggered when the job was aborted
-          * **onFinish** : Triggered when the job is finished, regardless the status
+          * **onSubmit** : Triggered the moment the submit button is pressed  
+          * **onSuccess** : Triggered when the job is finished succesfully  
+          * **onFailure** : Triggered when the job was not succesful  
+          * **onAbort** : Triggered when the job was aborted  
+          * **onFinish** : Triggered when the job is finished, regardless the status  
             
           Follow the link above to learn about the possible job status actions
         examples:
@@ -1368,14 +1321,9 @@
               description: |
                 Targets an Awx Template.  
                 The AWX Connection token must be set in the settings.
-            - name: git
-              description: | 
-                Updates a file in a repository.   
-                The repository must be added in the settings.  
             short: Step type
             description: | 
-              Every step can be an ansible-playbook, an awx-template or a git repository.  
-              *Note* : In case of git, the repository is pulled before the form is loaded.
+              Every step can be an ansible-playbook or an awx-template
             examples:
             - name: Run AWX Template Helloworld
               code: |
@@ -1387,15 +1335,6 @@
                 name: Delete vm
                 type: ansible
                 template: delete_vm.yaml
-            - name: Update git repo
-              code: |
-                name: Update sourcecontrol
-                type: git
-                repo:
-                  dir: my_project
-                  file: test.yaml
-                  push: git push origin main
-                  pull: git pull origin main  
           - name: template
             type: string
             group: basic
@@ -1448,23 +1387,6 @@
                   - name: __playbook__
                     type: text
                     default: helloworld.yaml # this will overwrite the playbook name
-          - name: repo
-            type: object
-            allowed: a repo object
-            group: basic
-            with_types: git
-            objectLink: forms/form/repo
-            short: Repository
-            description: |
-              This attribute is only used when the form type is `git`.  
-            examples:
-            - name: Push to git
-              code: |
-                repo:
-                  dir: vmware_inventory
-                  file: virtual_machines.yaml
-                  push: git push origin main
-                  pull: git pull origin main  
           - name: inventory
             type: string
             group: workflow
@@ -1553,71 +1475,41 @@
             examples:
             - name: Resize volume
               code: |
-                # This example might need a little explanation :
-                #
-                # When the operator opens the form :
-                # - Phase 1 : the git repo (from step 1) is pulled and the local copy is now up-to-date
-                # - Phase 2 : the form loads the local file volume.yaml
-                # - Phase 3 : the operator sets a new size
-                # - Phase 4 : the expression 'new_data' merges the new size in the original data
-                #             at this moment the extravars contains 2 parts:
-                #               original : the contents of volume.yaml
-                #               new_data : the contents of volume.yaml with updated size info 
-                # - Phase 5 : the operator submits the form
-                # - Phase 6 : step 1 is executed
-                #             the extravar 'new_data' is send as step 1 (using the 'key' attribute !)
-                #             the 'new_data' is saved as volume.yaml (overwrite repo data)
-                #             the git repo is pushed and updated
-                # - Phase 7 : step 2 is executed
-                #             the awx template 'volume resize' is triggered
-                #             the awx templates project is set to reload from git on run
-                #             awx pulls from git and is now aware of the new inventory data (new volume size)
-                #             the tempate is executed
-                #             ansibles idempotency sees the size change and resizes the volume
                 name: Resize volume
                 type: multistep
                 steps:
-                - name: Push to git
-                  type: git
-                  repo:
-                    dir: storage
-                    file: volume.yaml
-                    push: git push origin main
-                    pull: git pull origin main
-                  key: new_data
-                - name: Resize volume
+                - name: Create datastore
                   type: awx
-                  template: volume resize
-                  key: new_data
+                  template: create_datastore
+                  key: datastore        # to create the datastore, we only send the datastore info        
+                - name: Create vm
+                  type: awx
+                  template: create_vm
                 fields:
-                  - name: original
-                    type: expression
-                    expression: fn.fnReadYamlFile('/root/ansible_forms/server/persistent/repositories/storage/volume.yaml')
-                    label: original yaml from git (pull)
-                  - name: size
+                  - name: datastore
+                    type: text
+                    model: datastore.name
+                  - name: datastore_size
                     type: number
-                    label: new size
-                    required: true
-                  - name: new_data
-                    label: new yaml for git (push)
-                    type: expression
-                    expression: (()=>{ return {...$(original),...{'size':$(size)}} })()
-                    runLocal: true
-
-                # the expression above is vanilla ES6 javascript.  using the 'spread' operator (... the 3 dots), 
-                # the new size is merged into the original data
-                # https://atomizedobjects.com/blog/javascript/how-to-merge-two-objects-in-javascript/
+                    model: datastore.size
+                  - name: vm
+                    type: text
+                    model: vm.name
+                  - name: vm_size
+                    type: number
+                    model: vm.size
 
                 # the extravars of the above example will be somewhat like this :
-                original:
-                    name: volumex
+                datastore: 
+                    name: ds1
                     size: 123
-                    server_id: 5
-                new_data:         # the step is referencing this key, only this is send as extravars to the step.
-                    name: volumex
-                    size: 500      # the new size is merged
-                    server_id: 5
+                vm:        
+                    name: vm1
+                    size: 100
 
+                # Step 1 will not receive the full set of extravars, due to the 'key: datastore'  
+                #        it will receive only 'name' (ds1) and 'size' (123) (the contents of key 'datastore')
+                # Step 2 has no key set, and will receive the full extravars
                 # Extra : Every step can reference its own key and thus send a piece of the extravars
           - name: ifExtraVar
             type: extravar reference
@@ -1864,6 +1756,23 @@
                       - Debian
                       default: CentOS
                       required: true 
+                - name: Radio with labels
+                  version: 5.0.0
+                  code: |
+                    - type: radio
+                      name: linuxfavourite
+                      label: Choose your favorite linux flavour
+                      values:
+                      - label: CentOS
+                        value: c_os
+                      - label: Ubuntu
+                        value: ubu
+                      - label: Red Hat
+                        value: rht
+                      - label: Debian
+                        value: deb
+                      default: c_os
+                      required: true                       
               - name: enum
                 description: A multi-column filterable dropdown box
                 extra: |
@@ -2577,7 +2486,9 @@
             description: |
               When selecting from an `enum`-field (dropdown), either the first column or  
               the column defined in `valueColumn` is sent as an extravar.  
-              If you want the full selected record, use the property.
+              If you want the full selected record, use the property.  
+  
+              **New in v4.0.20** : valueColumn: "*" has the same behavior, and will output all columns
             with_types: enum
           - name: expression
             type: string
@@ -2836,6 +2747,8 @@
               When you select an item in an `enum` field, by default the first column is used to send as extravar.  
               By setting this property, you can change it to another field.  
               This setting is ignored when `outputObject` is true.  
+
+              **new in v4.0.20** : setting valueColumn to "*" will export all columns
             examples:
             - name: Export name
               code: |
@@ -2847,8 +2760,7 @@
                   query: SELECT name, username FROM users
                   columns:
                   - name
-                  valueColumn:
-                  - username
+                  valueColumn: username
           - name: placeholderColumn
             type: string
             group: data
@@ -2860,7 +2772,9 @@
               by default the first column is used as a value.  
               By setting this property you change the column to be used.  
               **NOTE** : this property is somewhat out-of-date since the introduction of the dot-notation.  
-              See examples below.
+              See examples below.  
+                
+              **New in v4.0.20** : setting placeholderColumn to "*" will output the entire record, instead of a single column.
             examples:
             - name: Export name
               code: |
@@ -3237,7 +3151,9 @@
               description: |
                 When selecting from an `enum` field (dropdown), either the first column or  
                 the column defined in `valueColumn` is sent as an extravar.  
-                If you want the full selected record, use the property.
+                If you want the full selected record, use the property.  
+                  
+                **new in v4.0.20** : you can also use valueColumn: "*" to export all columns
               with_types: enum
             - name: columns
               type: array
@@ -3314,6 +3230,8 @@
                 When you select an item in an `enum` field, by default the first column is used to send as extravar.  
                 By setting this property, you can change it to another field.  
                 This setting is ignored when `outputObject` is true.  
+                  
+                **new in v4.0.20** : setting value "*" will export all columns.
               examples:
               - name: Export name
                 code: |
@@ -3325,8 +3243,7 @@
                     query: SELECT name, username FROM users
                     columns:
                     - name
-                    valueColumn:
-                    - username
+                    valueColumn: username
             - name: previewColumn
               type: string
               default: first column
@@ -3346,52 +3263,6 @@
                       type: mysql
                     query: SELECT id,name FROM users
                     previewColumn: name
-        - name: Repository
-          itemName: attribute
-          link: forms/form/repo
-          icon: fab,git
-          description: |
-            One of the form destination types is `git`.  This allows the form to update a file in a git repository.  
-            To define the git connection, a repo-object attribute is required.
-          items:
-          - name: dir
-            type: string
-            required: true
-            allowed: a subfolder in the repositories folder
-            short: Directory
-            description: | 
-              Ansible Forms can hold multiple local copies of repositories that can be pulled and push using forms.  
-              Each copy goes in a subfolder of the repositories folder.  Use this attribute to define the subfolder name.
-          - name: file
-            type: string
-            required: true
-            allowed: a repository filename
-            short: File
-            description: | 
-              This property hold the filename of a yaml file that can be updated with the forms extravars.
-          - name: push
-            type: string
-            required: true
-            allowed: a git push command
-            short: Push command
-            description: | 
-              When the form is submitted the git-step will push the extravars (or subset) using this git command.
-          - name: pull
-            type: string
-            required: true
-            allowed: a git pull command
-            short: Pull command
-            description: | 
-              Before the form is loaded the repository is pulled using this command.
-          examples:
-          - name: Pull from main branch
-            language: YAML
-            code: |
-              repo:
-                dir: vmware_inventory
-                file: virtual_machines.yaml
-                push: git push origin main
-                pull: git pull origin main      
         - name: Approval point
           itemName: attribute
           link: forms/form/approval
@@ -3526,7 +3397,12 @@
             allowed: number_of_seconds,name_of_form
             short: Load a form
             description: | 
-              This action allows you to load another form                                              
+              This action allows you to load another form.  
+
+              **new in v4.0.20** : the previous jobid is sent as \_\_previous\_\_jobid\_\_.  
+              You must make sure you have this field in your form, it will be populated with the previous jobid.  
+
+              This is particularly interesting to grab information from the previous job (for example, load output, ...)                                          
           examples: 
           - name: Clear and hide on submit
             language: YAML
@@ -3624,7 +3500,7 @@
                 .filterBy({property1:'value1'},{property2:'value2'}, ...}}  // filters the array by property value (* wildcards allowed)
                 .regexBy({property1:'regex1'},{property2:'regex2'}, ...}}   // filters the array by property matched against regex
                 .distinctBy('property1','property2', ...)                   // will make the array entries unique by property
-                .selectAttr('property1','property2')                        // only selects a certain property
+                .selectAttr({prop1:'property1',prop2:'property2'})          // only selects a certain property, and you can relabel them
                 .sortBy('property1','-property2', ...)                      // will order the array.  To have descending add a "-" (minus) before the property
 
             mylist:
@@ -3654,7 +3530,7 @@
           fnArray.from($(mylist))         // take data from another field 'mylist'
           .regexBy({name:'.*man$'})       // name must end with 'man'
           .filterBy({has_ability:true})   // must have abilities
-          .selectAttr('name','ability')   // only take properties name and ability
+          .selectAttr({name:'name',ability:'ability'})   // only take properties name and ability
           .sortBy('-name')                // sort by name descending
 
           /*
@@ -3837,6 +3713,7 @@
         // - jq-expression : an optional jq-expression (https://jsplay.org)
         // - sort-object : a sort object to sort the result
         // - hasBigInt : a boolean indicating if it should convert Int64 to string
+        // - tokenPrefix : a prefix, defaults to 'Bearer' (v5.0.0)
     - name: rest api with secured token authentication
       code: |
         fn.fnRestJwtSecure(
@@ -3859,6 +3736,7 @@
         // - jq-expression : an optional jq-expression (https://jsplay.org)
         // - sort-object : a sort object to sort the result   
         // - hasBigInt : a boolean indicating if it should convert Int64 to string 
+        // - tokenPrefix : a prefix, defaults to 'Bearer' (v5.0.0)
     - name: rest api with custom headers
       code: |
         fn.fnRestAdvanced(
@@ -3971,6 +3849,7 @@
       The power of this concept lies in the client web-application that is re-evaluating fields every 100ms.  With current processors and the chromium engine, this should be a very seamless experience.  
         
       **Note**: When you reference another enum field, you reference the selected values, NOT the full dropdown list.  Use the `placeholderColumn`-property or a dot-notation like `$(city.name)` 
+      **New in v4.0.20** : setting placeholderColumn to "*" will output the entire record, instead of a single column.
     language: yaml
     code: |
       - type: enum
@@ -4046,6 +3925,7 @@
       If the placeholder is pointing to an expression field, then either the full object is returned or you can have an advanced placeholder reference like `$(myarray[0].name)` where you can create javascript-like references.  
         
       **Note**: Important to know is that the placeholder is replaced BEFORE the evaluation of the expression.  If you expect the result to be a string, then you must wrap it with quotes!.
+      **New in v4.0.20** : setting placeholderColumn to "*" will output the entire record, instead of a single column.
     language: yaml
     code: |
       - name: field1
@@ -4129,6 +4009,12 @@
         runLocal: true
         expression: "{vc_cred: 'vcenter',ad_cred: 'ad',veeam_cred:'$(veeam_server)'}"
         # note : in the expression you can use placeholders to make them dynamic
+  - name: Jobid
+    short: Pass the current jobid
+    description: |
+      Ansible Forms automatically sends the current jobid in the extravars.  
+      You don't need to do anything.  
+      It is sent as `__jobid__`.
   - name: Userinfo
     short: Pass the current user
     description: |
@@ -4314,5 +4200,22 @@
       ```
         
       **NOTE** : in the docker-compose solution the location is `${your-docker-compose-path}/data/mysql/my.cnf`
-
+  - name: About repositories
+    short: About repositories
+    description: |
+      Sometimes you want collaboration and versioning and then git repositories are perfect.  
+      In version 5.0.0 you can now manage git repositories.  
+      Every repository is a subfolder of the repositories-path (`REPO_PATH` environment variable).  
+      Just go to settings / repositories and start managing repositories.  You can either add ssh-based repositories (with public key/known hosts) or https based repositories, public or private with username/password/token.  
+      You can use repositories for synching data-files (yaml files for example to feed formdata).
+      But also the forms.yaml and forms subfolder, as well as all the ansible playbooks and roles are perfect candidates for repositories.  
+      When creating a repository, you can choose if it's for forms or playbooks, which will then automatically override the `FORMS_PATH` and `ANSIBLE_PATH` environment variables.  
+      You can also choose if the repository must be cloned when AnsibleForms starts, and you can add cron-schedule to schedule recurring pull-actions.  
+      Additionally, in the swagger interface, you will find a clone and pull rest api for webhooks.  
+      In case you want long-lived access tokens for the webhooks, with swagger you can pass an expiryDays parameter (for admin roles only) and create long-lived tokens.
+  - name: Host Ansibleforms in a subfolder
+    short: Host Ansibleforms in a subfolder
+    description: |
+      In the case you want to host ansibleforms in subfolder, for example `https://af.domain.local/mysubfolder/`.  
+      You can use the environment variable `BASE_URL`.  Set it to `/mysubfolder/` (default is `/`).  
   

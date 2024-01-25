@@ -4,30 +4,35 @@ const fsPromises=require("fs").promises
 const YAML=require("yaml")
 var config=require('../../config/app.config')
 const moment = require("moment")
+const Repository = require("./repository.model");
+const Repo = require("./repo.model");
 
 //lock object create
 var Lock=function(){
 
 };
-Lock.status = function(user){
-  return Lock.get()
-    .then((lock)=>{
-      const lck=YAML.parse(lock)
-      const match=((user.username===lck.username)&&(user.type===lck.type))
-      const result={
-        lock:lck,
-        match:match,
-        free:false,
-      }
-      return Promise.resolve(result)
-    })
-    .catch((e)=>{
-      if(e.code==="ENOENT"){
-        return Promise.resolve({free:true})
-      }else{
-        return Promise.reject(e.toString())
-      }
-    })
+Lock.status = async function(user){
+  const hasFormsRepository = await Repository.hasFormsRepository()
+  if(hasFormsRepository){
+    throw new Error("Designer is disabled, Forms repository found.")
+  }
+  try{
+    const lock = await Lock.get()
+    const lck=YAML.parse(lock)
+    const match=((user.username===lck.username)&&(user.type===lck.type))
+    const result={
+      lock:lck,
+      match:match,
+      free:false,
+    }
+    return result
+  }catch(e){
+    if(e.code==="ENOENT"){
+      return {free:true}
+    }else{
+      throw e
+    }
+  }
 }
 Lock.set = function (user) {
   if(config.showDesigner){

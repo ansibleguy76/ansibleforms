@@ -35,8 +35,10 @@ page_nav:
 * **Job History & Log** : See the history of your jobs, abort running and relaunch
 * **Environment variables** : Customizable with environment variables
 * **Credential manager** : Securily store, get and pass credentials to playbooks
+* **Repository integration** : Sync your forms config files, ansible playbooks and other required files with a git repo
 * **Ansible and AWX** : Forms can target a local ansible instance or AWX/Tower
 * **Swagger API** : Has a rest-api and Swagger documentation
+* **Job History & Log** : See the history of your jobs* 
 * **Designer** : Although the forms are NOT built using a graphical designer, a YAML based editor/designer with validation is present
 
 # Form Capabilities
@@ -51,8 +53,7 @@ page_nav:
 * **Visualization** : Many nice visualizations, such as icons, images, colors, responsive grid-system, help descriptions, ...
 * **Field validations** : Many types of field validations, such min,max,regex,in, ...
 * **Group fields** : Group fields together, vertically and horizontally
-* **Advanced output modelling** : Model your form content is as json-output in the way you want it
-* **Job History & Log** : See the history of your jobs
+* **Advanced output modelling** : Model your form content into objects, the way you want it
 * **Approval points** : Stop the execution of a form for approval
 * **Multistep forms** : Execute multiple playbooks in steps from a single form
 * **Email notifications** : Send email notifications after form execution

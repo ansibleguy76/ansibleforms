@@ -16,7 +16,7 @@ app.use(express.static(publicPath, staticConf))
 
 // allow browser history
 const history = require('connect-history-api-fallback')
-app.use('/', history())
+app.use(`${appConfig.baseUrl}`, history())
 
 // choose whether to start https or http server
 var httpServer

@@ -82,7 +82,7 @@
         var ref=this
         if(!this.isLoading && (this.refresh ||force)){
           this.isLoading=true;
-          axios.get("/api/v1/log?lines="+this.lines||100,TokenStorage.getAuthentication())
+          axios.get(`${process.env.BASE_URL}api/v1/log?lines=${this.lines||100}`,TokenStorage.getAuthentication())
             .then((result)=>{
                 if(result.data!="..."){
                   ref.log=result.data

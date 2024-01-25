@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.0] - 2024-01-25
+
+### Added
+
+-   in remote expression functions, we throw errors so they show up in the form.
+-   added valueColumn "\*" and placeholderColumn "\*", to return all column, this also means that valueColumn "\*" results in the same as outputObject: true. 
+-   jobid is passed now as extravar and passed to nextform, incase an action exists
+-   you can now hide a text field
+-   more advanced ldap properties for non active directory ldap servers
+-   git repositories generic (for forms and playbook for example)
+-   added expiryDays to login api, for longlived tokens (admin only)
+-   added jwt tokenPrefix property on jwt functions
+-   allow admin role fallback for local/admins group in case no forms are found
+-   radio button values property can now have array of objects (label, value)
+-   instanceGroups property on forms => choose awx instanceGroups
+-   enable verbose checkbox for quick ansible verbose mode
+
+### Removed
+
+-   git repo type, you can no longer target git repo's from a form, this is breaking when you upgrade to 5.0.0 and use the formtype 'git'
+
+### Fixed
+
+-   awx workflow template failed with 404
+-   ldap usernameattribute not used
+-   fixed database query issue for postgres
+-   use ldap-authentication main code (no npm)
+-   try ldap group objectName first
+
 ## [4.0.19] - 2023-11-22
 
 ### Fixed
@@ -621,7 +650,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.19...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.0...HEAD
+
+[5.0.0]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.19...5.0.0
 
 [4.0.19]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.18...4.0.19
 

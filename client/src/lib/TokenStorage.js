@@ -39,7 +39,7 @@ var TokenStorage = {
       try{
         console.log("Getting new token from server...")
         axios
-          .post('/api/v1/token', { refreshtoken: this.getRefreshToken() })
+          .post(`${process.env.BASE_URL}api/v1/token`, { refreshtoken: this.getRefreshToken() })
           .then(response => {
             if(response.error){
               console.log("Getting token was error from server")

@@ -3,19 +3,15 @@ const logger = require('../lib/logger');
 const dbConfig = require('../../config/db.config')
 const client = require('mysql2');
 
-// mysql2 has a bug that can throw an uncaught exception if the mysql server crashes (not enough mem for example)
-process.on('uncaughtException', function(err) {
-  // handle the error safely
-  logger.error("An uncaught exception happened in db.model.js. ",err)
-})
-
 dbConfig.multipleStatements=true
 delete dbConfig.name // remove unsupported property
 MySql = {}
 
-MySql.do=function(query,vars){
+MySql.do=function(query,vars,silent=false){
   return new Promise((resolve,reject) => {
-    logger.info("[ansibleforms] running query : " + query)
+    if(!silent){
+      logger.info("[ansibleforms] running query : " + query)
+    }
     var conn
     try{
       var conn = client.createConnection(dbConfig)
@@ -33,7 +29,9 @@ MySql.do=function(query,vars){
           logger.error("[ansibleforms] Query error : " + err)
           reject(err)
         }else{
-          logger.debug("[ansibleforms] query result : " + JSON.stringify(result))
+          if(!silent){
+            logger.debug("[ansibleforms] query result : " + JSON.stringify(result))
+          }
           resolve(result)
         }
       })

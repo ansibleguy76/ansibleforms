@@ -34,8 +34,9 @@ exports.fnGetNumberedName=function(names,pattern,value,fillgap=false){
   var re=new RegExp("[^\#]*(\#+)[^\#]*")
   var patternmatch=re.exec(pattern)
   if(!names || !Array.isArray(names)){
-    logger.warning("fnGetNumberedName, No input or no array")
-    return value
+    const e = "[fnGetNumberedName] No input or no array"
+    logger.warning(e)
+    throw(new Error(e))
   }
   if(patternmatch && patternmatch.length==2){
   	nrsequence=patternmatch[1]
@@ -72,11 +73,13 @@ exports.fnGetNumberedName=function(names,pattern,value,fillgap=false){
       var tmp = pattern.replace(nrsequence,nr.toString().padStart(nrsequence.length,"0"))
       return tmp
     }else{
-      logger.warning("fnGetNumberedName, no pattern matches found in the list")
+      const e = "fnGetNumberedName, no pattern matches found in the list"
+      logger.warning(e)
     	return value
     }
   }else{
-    logger.warning("fnGetNumberedName, no pattern found, use ### for numbers")
+    const e = "fnGetNumberedName, no pattern found, use ### for numbers"
+    logger.warning(e)
 	  return value
   }
 }
@@ -101,6 +104,7 @@ exports.fnJq=async function(input,jqe){
       result=await jq.run(jqDef+jqe, input, { input:"json",output:"json" })
     }catch(e){
       logger.error("Error in fnJq : ",e)
+      throw(e)
     }
     return result
 }
@@ -110,12 +114,14 @@ exports.fnCopy=function(input){
 exports.fnSort=function(input,sort){
   let result=input
   if(!Array.isArray(input)){
-    logger.warning("Warning in fnSort : input is not an array")
-    return result
+    const e = "Warning in fnSort : input is not an array"
+    logger.warning(e)
+    throw(new Error(e))
   }
   if(!sort){
-    logger.warning("Warning in fnSort : sort list not provided")
-    return result
+    const e = "Warning in fnSort : sort list not provided"
+    logger.warning(e)
+    throw(new Error(e))
   }
   logger.debug("[fnSort] sorting result")
   // force sort to array
@@ -149,7 +155,8 @@ exports.fnSort=function(input,sort){
   try{
     result.sort(s)
   }catch(e){
-    logger.error("[fnSort] error in fnSort")
+    logger.error("[fnSort] error in fnSort : ",e)
+    throw(e)
   }
   return result
 }
@@ -164,6 +171,7 @@ exports.fnReadJsonFile = async function(path,jqe=null) {
     }
   }catch(e){
     logger.error("Error in fnReadJsonFile : ",e)
+    throw(e)
   }
   return result
 };
@@ -178,6 +186,7 @@ exports.fnReadYamlFile = async function(path,jqe=null) {
     }
   }catch(e){
     logger.error("Error in fnReadYamlFile : ",e)
+    throw(e)
   }
   return result
 };
@@ -186,8 +195,10 @@ exports.fnCredentials = async function(name,fallbackname=""){
   if(name){
     try{
       result = await credentialModel.findByName(name,fallbackname)
+      // console.log(result)
     }catch(e){
-      logger.error(e)
+      logger.error("Error getting credentials",e)
+      throw(e)
     }
   }
   return result
@@ -195,19 +206,16 @@ exports.fnCredentials = async function(name,fallbackname=""){
 exports.fnRestBasic = async function(action,url,body,credential=null,jqe=null,sort=null,hasBigInt=false){
   var headers={}
   if(credential){
-    try{
-      restCreds = await exports.fnCredentials(credential)
-    }catch(e){
-      logger.error(e)
-    }
+    restCreds = await exports.fnCredentials(credential)
     headers.Authorization="Basic " + Buffer.from(restCreds.user + ':' + restCreds.password).toString('base64')
   }
   return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort,hasBigInt)
 }
 exports.fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort=null,hasBigInt=false){
   if(!action || !url){
-    logger.warning("[fnRest] No action or url defined")
-    return undefined
+    const e = "[fnRest] No action or url defined"
+    logger.warning(e)
+    throw(new Error(e))
   }
   const httpsAgent = new https.Agent({
     rejectUnauthorized: false,
@@ -242,22 +250,23 @@ exports.fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort
     if(sort)result=exports.fnSort(result,sort)
   }catch(e){
     logger.error("Error in fnRestAdvanced : ",e)
+    throw(e)
   }
   return result
 
 }
-exports.fnRestJwt = async function(action,url,body,token,jqe=null,sort=null,hasBigInt=false){
+exports.fnRestJwt = async function(action,url,body,token,jqe=null,sort=null,hasBigInt=false,tokenPrefix="Bearer"){
   var headers={}
   if(token){
-    headers.Authorization="Bearer " + token
+    headers.Authorization=tokenPrefix + " " + token
   }
   return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort,hasBigInt)
 }
-exports.fnRestJwtSecure = async function(action,url,body,tokenname,jqe=null,sort=null,hasBigInt=false){
+exports.fnRestJwtSecure = async function(action,url,body,tokenname,jqe=null,sort=null,hasBigInt=false,tokenPrefix="Bearer"){
   var headers={}
   if(tokenname){
     var token = await exports.fnCredentials(tokenname)
-    headers.Authorization="Bearer " + token.password
+    headers.Authorization=tokenPrefix + " " + token.password
   }
   return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort,hasBigInt)
 }

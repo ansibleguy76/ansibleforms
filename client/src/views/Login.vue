@@ -15,7 +15,7 @@
               </div>
             </div>
             <div class="box" v-if="azureAdEnabled">
-              <a v-if="azureAdEnabled" title="Azure" class="button is-light" href="/api/v1/auth/azureadoauth2">
+              <a v-if="azureAdEnabled" title="Azure" class="button is-light" :href="`${process.env.BASE_URL}api/v1/auth/azureadoauth2`">
                 <span class="icon"><img src="/assets/img/azure.svg" alt="Azure" /></span>
               </a>
             </div>
@@ -53,7 +53,7 @@
       methods: {
         getSettings(azuretoken){
           var ref=this
-          axios.get("/api/v1/auth/settings")
+          axios.get(`${process.env.BASE_URL}api/v1/auth/settings`)
           .then((result)=>{
             if(result.data?.status=='success'){
               this.azureAdEnabled=!!result.data.data.output.azureAdEnabled
@@ -100,7 +100,7 @@
                   console.log("Groups have been filtered")
                 }
                 // No more nextLink, you have all the groups
-                axios.post('/api/v1/auth/azureadoauth2/login', { azuretoken, groups:allGroups })
+                axios.post(`${process.env.BASE_URL}api/v1/auth/azureadoauth2/login`, { azuretoken, groups:allGroups })
                   .then((result) => {
                     if (result.data.token) {
                       TokenStorage.storeToken(result.data.token);
@@ -128,7 +128,7 @@
             var postconfig={
               headers:{'Authorization':basicAuth}
             }
-            axios.post("/api/v1/auth/login",{},postconfig)
+            axios.post(`${process.env.BASE_URL}api/v1/auth/login`,{},postconfig)
               .then((result)=>{
                 if(result.data.token){
                   console.log("Login success, storing tokens")

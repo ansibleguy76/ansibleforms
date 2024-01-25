@@ -10,10 +10,13 @@ const Ajv = require('ajv');
 const ajv = new Ajv()
 const path=require("path")
 const AJVErrorParser = require('ajv-error-parser');
+const Repository = require('./repository.model')
 const Helpers = require("../lib/common")
-const {inspect} = require("node:util")
+const {inspect} = require("node:util");
+const Repo = require('./repo.model');
 
 const backupPath = appConfig.formsBackupPath
+
 const formFilePath = path.dirname(appConfig.formsPath)
 const formFileName = path.basename(appConfig.formsPath)
 const formsPath = path.join(formFilePath,"forms")
@@ -35,38 +38,45 @@ var Form=function(data){
 // since version 4.0.3 the backups go under folder => move backups there (should be only once)
 Form.initBackupFolder=function(){
   logger.info("Moving older form backups to new backup folder")
-  fs.mkdirSync(backupPath, { recursive: true })
-  // move old forms.bak.files
-  var files = fs.readdirSync(formFilePath)
-  if(files){
-    // filter only backup-files and folders
-    files=files.filter((item)=>item.match(/\.bak\.[0-9]*$/))
-    // read files
-    files.forEach((item, i) => {
-      try{
-        const from = path.join(formFilePath,item)
-        const to = path.join(backupPath,item)
-        logger.debug(`moving ${from} -> ${to}`)
-        fse.moveSync(from,to)
-      }catch(e){
-        logger.error(`failed to move item '${item}'.\n${e}`)
-      }
-    });
+  try{
+    fs.mkdirSync(backupPath, { recursive: true })
+    // move old forms.bak.files
+    var files = fs.readdirSync(formFilePath)
+    if(files){
+      // filter only backup-files and folders
+      files=files.filter((item)=>item.match(/\.bak\.[0-9]*$/))
+      // read files
+      files.forEach((item, i) => {
+        try{
+          const from = path.join(formFilePath,item)
+          const to = path.join(backupPath,item)
+          logger.debug(`moving ${from} -> ${to}`)
+          fse.moveSync(from,to)
+        }catch(e){
+          logger.error(`failed to move item '${item}'.\n`,e)
+        }
+      });
+    }
+  }catch(e){
+    logger.error("Failed to init backup folder\n",e)
   }  
   Form.removeOld(oldBackupDays)
 }
 // load the forms config
-Form.load = function() {
-  logger.info(`Loading ${appConfig.formsPath}`)
+Form.load = async function() {
+
+
   var forms=undefined
   var rawdata=undefined
-  var formsdirpath=path.join(path.dirname(appConfig.formsPath),"/forms");
+  var appFormsPath = (await Repository.getFormsPath()) || appConfig.formsPath
+  logger.info(`Loading ${appFormsPath}`)  
+  var formsdirpath=path.join(path.dirname(appFormsPath),"/forms");
   var formfilesraw=[]
   var formfiles=[]
   var files=undefined
   try{
     // read base forms.yaml
-    rawdata = fs.readFileSync(appConfig.formsPath,'utf8');
+    rawdata = fs.readFileSync(appFormsPath,'utf8');
     // read extra form files
     try{
       files = fs.readdirSync(formsdirpath)
@@ -86,16 +96,16 @@ Form.load = function() {
       logger.warning("No forms directory... loading only forms.yaml")
     }
 
-  }catch(e){
-    logger.error("Error reading the forms.yaml file : " + e)
-    throw `Error reading the forms.yaml file : ${e}`
+  }catch(err){
+    logger.error("Error : ",err)
+    throw new Error(Helpers.getError(err,"Error reading the forms.yaml file"))
   }
   // parse base yaml
   try{
     forms = YAML.parse(rawdata)
-  }catch(e){
-    logger.error("Error parsing the forms.yaml file : " + e)
-    throw `Error parsing the forms.yaml file : ${e}`
+  }catch(err){
+    logger.error("Error",err)
+    throw new Error(Helpers.getError(err,"Error parsing the forms.yaml file"))
   }
   // parse extra files
   formfilesraw.forEach((item,i)=>{
@@ -130,8 +140,8 @@ Form.load = function() {
   try{
     return Form.validate(forms)
   }catch(err){
-    logger.error("Failed to validate forms : ", err)
-    throw err
+    logger.error("Validation error : ", err)
+    throw new Error(Helpers.getError(err,"Failed to validate forms"))
   }
 };
 // load the forms config
@@ -202,7 +212,7 @@ Form.validate = function(forms){
 
       })
       logger.error(ajvMessages)
-      throw `${ajvMessages.join("\r\n")}`
+      throw new Error(`${ajvMessages.join("\r\n")}`)
     }else{
       logger.debug("Valid forms.yaml")
       return forms
@@ -216,7 +226,7 @@ Form.parse = function(data){
     formsConfig = YAML.parse(data.forms,{prettyErrors:true})
   }catch(err){
     logger.error("Error : ", err)
-    throw ("failed to parse yaml : " + err.toString())
+    throw new Error(Helpers.getError(err,"Failed to parse yaml"))
   }
   return formsConfig
 }
@@ -329,11 +339,10 @@ Form.save = function(data){
     logger.debug(`Writing base file '${appConfig.formsPath}'`)
     fs.writeFileSync(appConfig.formsPath,YAML.stringify(formsConfig)); // write basefile
   }
-  catch(e) {
+  catch(err) {
     // handle error
-    var msg=`Failed to save forms. ${e}`
-    logger.error(msg)
-    throw msg
+    logger.error("Failed to save forms : ",err)
+    throw new Error(Helpers.getError(err,"Failed to save forms"))
   }
   finally {
     try {
@@ -371,8 +380,8 @@ Form.restore = function(backupName,backupBeforeRestore){
     return false
   }
 }
-Form.loadByName = function(form,user,forApproval=false){
-  var forms = Form.load()
+Form.loadByName = async function(form,user,forApproval=false){
+  var forms = await Form.load()
   var formObj = forms?.forms.filter(x => x.name==form)
   if(formObj.length>0){
     if(forApproval){

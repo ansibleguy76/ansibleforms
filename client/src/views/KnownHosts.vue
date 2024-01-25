@@ -89,7 +89,7 @@
         this.loadKnownHostsList();
       },loadKnownHostsList(){
         var ref= this;
-        axios.get('/api/v1/knownHosts/',TokenStorage.getAuthentication())
+        axios.get(`${process.env.BASE_URL}api/v1/knownHosts/`,TokenStorage.getAuthentication())
           .then((result)=>{
             if(result.data.status=="error"){
               ref.$toast.error(result.data.message);
@@ -114,7 +114,7 @@
       },
       removeHost(){
         var ref= this;
-        axios.delete('/api/v1/knownhosts/?name='+encodeURIComponent(this.knownhostsItem),TokenStorage.getAuthentication())
+        axios.delete(`${process.env.BASE_URL}api/v1/knownhosts/?name=${encodeURIComponent(this.knownhostsItem)}`,TokenStorage.getAuthentication())
           .then((result)=>{
             if(result.data.status=="error"){
               ref.$toast.error(result.data.message + ", " + result.data.data.error);
@@ -132,7 +132,7 @@
         if (!this.$v.host.$invalid) {
           this.loading=true
           var host=this.host
-          axios.post('/api/v1/knownhosts/',{host},TokenStorage.getAuthentication())
+          axios.post(`${process.env.BASE_URL}api/v1/knownhosts/`,{host},TokenStorage.getAuthentication())
             .then((result)=>{
               ref.loading=false
               if(result.data.status=="error"){
