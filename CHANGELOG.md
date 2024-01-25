@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.0] - 2024-01-25
+
 ### Added
 
 -   in remote expression functions, we throw errors so they show up in the form.
@@ -23,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   enable verbose checkbox for quick ansible verbose mode
 
 ### Removed
+
 -   git repo type, you can no longer target git repo's from a form, this is breaking when you upgrade to 5.0.0 and use the formtype 'git'
 
 ### Fixed
@@ -647,7 +650,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.19...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.0...HEAD
+
+[5.0.0]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.19...5.0.0
 
 [4.0.19]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.18...4.0.19
 
