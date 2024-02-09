@@ -1839,58 +1839,63 @@
       generateJsonOutput(filedata={}){
         var ref=this
         var formdata={}
-        this.currentForm.fields.forEach((item, i) => {
-          // this.checkDependencies(item) // hide field based on dependency
-          if(this.visibility[item.name] && !item.noOutput){
-            var fieldmodel = [].concat(item.model || [])
-            var outputObject = item.outputObject || item.type=="expression" || item.type=="file" || item.type=="table" || false
-            var outputValue = undefined
-            // if uploaded file info, use that
-            if(item.name in filedata){
-              outputValue=filedata[item.name]
-            // else just use the formdata
-            }else{
-              // deep clone, otherwise weird effects
-              outputValue = Helpers.deepClone(this.form[item.name])
-            }
-            // if no model is given, we assign to the root
-            if(!outputObject){  // do we need to flatten output ?
-                outputValue=this.getFieldValue(outputValue,item.valueColumn || "",true)
-            }
-            if(fieldmodel.length==0){
-              // deep clone = otherwise weird effects
-              formdata[item.name]=Helpers.deepClone(outputValue)
-            }else{
-              fieldmodel.forEach((f)=>{
-                // convert fieldmodel for actual object
-                // svm.lif.name => svm["lif"].name = formvalue
-                // using reduce, which is a recursive function
-                f.split(/\s*\.\s*/).reduce((master,obj, level,arr) => {
-                  // if last
-                  
-                  if (level === (arr.length - 1)){
-                      // the last piece we assign the value to
-                      if(master[obj]===undefined){
-                        master[obj]=outputValue
-                      }else{
-                        master[obj]=Lodash.merge(master[obj],outputValue)
-                      }
-                      
-                  }else{
-                      // initialize first time to object
-                      if(master[obj]===undefined){
-                        master[obj]={}
-                      }
-                  }
-                  // return the result for next reduce iteration
-                  return master[obj]
+        try{
+          this.currentForm.fields.forEach((item, i) => {
+            // this.checkDependencies(item) // hide field based on dependency
+            if(this.visibility[item.name] && !item.noOutput){
+              var fieldmodel = [].concat(item.model || [])
+              var outputObject = item.outputObject || item.type=="expression" || item.type=="file" || item.type=="table" || false
+              var outputValue = undefined
+              // if uploaded file info, use that
+              if(item.name in filedata){
+                outputValue=filedata[item.name]
+              // else just use the formdata
+              }else{
+                // deep clone, otherwise weird effects
+                outputValue = Helpers.deepClone(this.form[item.name])
+              }
+              // if no model is given, we assign to the root
+              if(!outputObject){  // do we need to flatten output ?
+                  outputValue=this.getFieldValue(outputValue,item.valueColumn || "",true)
+              }
+              if(fieldmodel.length==0){
+                // deep clone = otherwise weird effects
+                formdata[item.name]=Helpers.deepClone(outputValue)
+              }else{
+                fieldmodel.forEach((f)=>{
+                  // convert fieldmodel for actual object
+                  // svm.lif.name => svm["lif"].name = formvalue
+                  // using reduce, which is a recursive function
+                  f.split(/\s*\.\s*/).reduce((master,obj, level,arr) => {
+                    // if last
+                    
+                    if (level === (arr.length - 1)){
+                        // the last piece we assign the value to
+                        if(master[obj]===undefined){
+                          master[obj]=outputValue
+                        }else{
+                          master[obj]=Lodash.merge(master[obj],outputValue)
+                        }
+                        
+                    }else{
+                        // initialize first time to object
+                        if(master[obj]===undefined){
+                          master[obj]={}
+                        }
+                    }
+                    // return the result for next reduce iteration
+                    return master[obj]
 
-                },formdata);
-              })
+                  },formdata);
+                })
 
+              }
             }
-          }
-        });
+          });
+        }catch(err){
+          console.log(err)
+          ref.$toast.error("Failed to generate json output.\r\nContact the developer.\r\n" + (err.message || err.toString()))
+        }
         // update main data
         Vue.set(this,"formdata",formdata)
       },
