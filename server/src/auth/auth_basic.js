@@ -20,6 +20,9 @@ passport.use(
             // user found in db
             if(!result.isValid) throw "Wrong password"
             user.username = result.user.username
+            if(result.user.email){
+              user.email = result.user.email
+            }
             user.id = result.user.id
             user.type = 'local'
             user.groups = User.getGroups(user,result.user.groups)
@@ -49,6 +52,7 @@ passport.use(
             // logger.debug(JSON.stringify(result))
             var user = {}
             user.username = result[ldapConfig.username_attribute]
+            user.email = result[ldapConfig.mail_attribute]
             user.type = 'ldap'
             user.groups = User.getGroups(user,result,ldapConfig)
             user.roles = await User.getRoles(user.groups,user)
