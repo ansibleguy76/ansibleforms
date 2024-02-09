@@ -20,7 +20,7 @@ RUN apk add py3-pip
 
 # install some python dependencies
 RUN pip3 install requests six
-RUN apk add --update --no-cache --virtual .build-deps g++ gcc libxml2-dev libxslt-dev python3-dev
+RUN apk add --update --no-cache --virtual .build-deps g++ gcc libxml2-dev libxslt-dev unixodbc-dev python3-dev postgresql-dev
 RUN apk add --no-cache libxslt
 RUN apk add --no-cache mysql-client
 RUN apk add --no-cache curl
