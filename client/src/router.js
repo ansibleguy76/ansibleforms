@@ -2,6 +2,7 @@ import Vue from 'vue'
 import Router from 'vue-router'
 import Forms from './views/Forms.vue'
 import Form from './views/Form.vue'
+import FormReload from './views/FormReload.vue'
 import Login from './views/Login.vue'
 import ErrorVue from './views/Error.vue'
 import Schema from './views/Schema.vue'
@@ -60,6 +61,10 @@ export default new Router({
         name:"Form",
         component:Form
       },
+      {
+        path: '/form-reload',
+        component:FormReload
+      },      
       {
         path:"/login",
         name:"Login",
