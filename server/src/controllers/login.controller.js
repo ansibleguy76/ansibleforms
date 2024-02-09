@@ -83,7 +83,7 @@ exports.basic = async function(req, res,next) {
               }
               // send the tokens to the requester
               // if admin role, you can override the expirydays (for accesstoken only)
-              if(req.query.expiryDays && user?.roles?.includes("admin") && !isNan(req.query.expiryDays)){
+              if(req.query.expiryDays && user?.roles?.includes("admin") && !isNaN(req.query.expiryDays)){
                 return res.json(userToJwt(user,`${req.query.expiryDays}D`))
               }
               return res.json(userToJwt(user));

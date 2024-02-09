@@ -4,6 +4,20 @@ const ldap = require('ldapjs')
 // convert a SearchResultEntry object in ldapjs 3.0
 // to a user object to maintain backward compatibility
 
+// added by Mirko for 5.0.1 => ü in results
+function unescapeLdapResult(ldapResult) {
+  // Regular expression to match the escaped sequences
+  const regex = /\\([0-9a-fA-F]{2})\\([0-9a-fA-F]{2})/g;
+
+  // Replace each escaped sequence with its Unicode character
+  return ldapResult.replace(regex, (match, p1, p2) => {
+      // Convert the hex codes to a Buffer
+      const bytes = Buffer.from([parseInt(p1, 16), parseInt(p2, 16)]);
+      // Convert the Buffer to a UTF-8 String
+      return bytes.toString('utf8');
+  });
+}
+
 function _searchResultToUser(pojo) {
   assert(pojo.type == 'SearchResultEntry')
   let user = { dn: pojo.objectName }
@@ -85,7 +99,7 @@ async function _searchUser(
     let searchOptions = {
       filter: filter,
       scope: 'sub',
-      attributes: attributes,
+      attributes: attributes
     }
     if (attributes) {
       searchOptions.attributes = attributes
@@ -212,6 +226,7 @@ async function authenticateWithAdmin(
     )
   }
   var userDn = user.dn
+  userDn = unescapeLdapResult(userDn)
   let ldapUserClient
   try {
     ldapUserClient = await _ldapBind(userDn, userPassword, starttls, ldapOpts)

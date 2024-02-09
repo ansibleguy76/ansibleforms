@@ -25,6 +25,7 @@
                 <BulmaInput :disabled="!ldap.enable" icon="lock" v-model="ldap.bind_user_pw" type="password" label="Bind User Password" placeholder="" :required="true" :hasError="$v.ldap.bind_user_pw.$invalid" :errors="[]" />
                 <BulmaInput :disabled="!ldap.enable" icon="portrait" v-model="ldap.username_attribute" label="Username Attribute" placeholder="sAMAccountName" :required="true" :hasError="$v.ldap.username_attribute.$invalid" :errors="[]" />
                 <BulmaInput :disabled="!ldap.enable" icon="users" v-model="ldap.groups_attribute" label="Groups Attribute" placeholder="memberOf" :required="true" :hasError="$v.ldap.groups_attribute.$invalid" :errors="[]" />
+                <BulmaInput :disabled="!ldap.enable" icon="envelope" v-model="ldap.mail_attribute" label="Mail Attribute" placeholder="mail" :required="true" :hasError="$v.ldap.mail_attribute.$invalid" :errors="[]" />
                 <BulmaInput v-show="ldap.is_advanced && ldap.enable" :disabled="!ldap.enable" icon="users-viewfinder" v-model="ldap.groups_search_base" label="Groups Search Base" placeholder="dc=domain,dc=local" />
                 <BulmaInput v-show="ldap.is_advanced && ldap.enable" :disabled="!ldap.enable" icon="users-rectangle" v-model="ldap.group_class" label="Group Class" placeholder="groupOfNames" />
                 <BulmaInput v-show="ldap.is_advanced && ldap.enable" :disabled="!ldap.enable" icon="users-line" v-model="ldap.group_member_attribute" label="Group Member Attribute" placeholder="memberUid" />
@@ -79,6 +80,7 @@
             groups_search_base: "",
             group_class: "",
             group_member_attribute: "",
+            mail_attribute: "",
             group_member_user_attribute: "",         
             cert:"",
             ca_bundle:"",
@@ -148,6 +150,9 @@
           required
         },
         groups_attribute:{
+          required
+        },
+        mail_attribute:{
           required
         },
         cert:{
