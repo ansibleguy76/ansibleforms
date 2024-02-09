@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+-   login expiryDays didn't work
+-   fixed non-ascii codes in ldap
+-   fixed approvals, broken since 4.0.19
+
+### Added
+-   add a form-reload route
+-   added mail attribute ldap
+
 ## [5.0.0] - 2024-01-25
 
 ### Added
