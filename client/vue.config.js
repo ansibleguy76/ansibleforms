@@ -3,6 +3,7 @@
 /**
  * @type {import('@vue/cli-service').ProjectOptions}
  */
+ require("dotenv").config()
  const configureAPI = require('./../server/src/configure')
  const appConfig = require('./../server/config/app.config')
 
