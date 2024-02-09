@@ -2,6 +2,7 @@ const Certinfo=require("cert-info")
 const restResult=require("../models/restResult.model")
 const logger=require("./logger")
 const config=require("../../config/app.config")
+const Help = require("../models/help.model")
 var Helpers = function(){
 
 }
