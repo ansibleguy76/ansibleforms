@@ -1,8 +1,8 @@
 'use strict';
 
 //awx object create - not used, but you could create an instance with it
-var RestResult=function(status,message,output,error){
-    if(!output){
+var RestResult=function(status,message,output,error,forExpression=false){
+    if(!output && !forExpression){
       if(output!==undefined) output=""
     }
     if(!error){
