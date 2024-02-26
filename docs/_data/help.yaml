@@ -2432,19 +2432,21 @@
               - version: 4.0.9
                 type: added
                 description: model can now be an array
+              - version: 5.0.1
+                type: added
+                description: you can now model arrays
             examples:
               - name: Model 2 fields together as a single object
                 code: |
                   - name: diskName
                     type: text
-                    model: disk.name
+                    model: disk[0].name
                   - name: diskSize
                     type: number
-                    model: disk.size
-
+                    model: disk[0].size
                   # the extravars of this example will be like this :
                   disk:
-                    name: mydisk
+                  - name: mydisk
                     size: 123
           - name: asCredential
             type: boolean

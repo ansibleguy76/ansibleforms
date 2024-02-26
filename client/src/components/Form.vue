@@ -41,6 +41,9 @@
           <span class="icon is-pulled-right" v-show="loopbusy">
             <font-awesome-icon icon="spinner" size="lg" class="has-text-warning" spin /> 
           </span>
+          <span class="icon is-pulled-right has-tooltip-arrow has-tooltip-multiline has-tooltip-warning" v-show="!canSubmit" :data-tooltip="unevaluatedFieldsWarning">
+            <font-awesome-icon icon="exclamation-triangle" size="lg" class="has-text-warning" /> 
+          </span>          
           <!-- reload button -->
           <button @click="reloadForm" class="button is-white is-small mr-3">
             <span class="has-text-info icon">
@@ -380,7 +383,7 @@
           <!-- job buttons -->
           <hr v-if="!!currentForm" />
           <!-- play button -->
-          <button v-if="!!currentForm && !jobResult.message" class="button is-primary is-fullwidth" @click="jobResult.message='initializing'"><span class="icon"><font-awesome-icon icon="play" /></span><span>Run</span></button>
+          <button v-if="!!currentForm && !jobResult.message" class="button is-primary is-fullwidth has-tooltip-multiline has-tooltip-arrow has-tooltip-warning" :data-tooltip="(!canSubmit)?unevaluatedFieldsWarning:undefined" :disabled="!canSubmit" @click="jobResult.message='initializing'"><span class="icon"><font-awesome-icon icon="play" /></span><span>Run</span></button>
           <div class="columns">
             <!-- progress/close button -->
             <div class="column">
@@ -513,6 +516,7 @@
           subjob:{},                // output of last subjob
           dynamicFieldDependencies:{},      // which fields need to be re-evaluated if other fields change
           dynamicFieldDependentOf:{},       // which fields are dependend from others
+          unevaluatedFields:[],     // list of unevaluatedFields
           defaults:{},              // holds default info per field
           dynamicFieldStatus:{},    // holds the status of dynamics fields (running=currently being evaluated, variable=depends on others, fixed=only need 1-time lookup, default=has defaulted, undefined=trigger eval/query)
           queryresults:{},          // holds the results of dynamic dropdown boxes
@@ -654,6 +658,14 @@
       return obj
     },
     computed: {
+      // unevaluatedFieldsWarning
+      unevaluatedFieldsWarning(){
+        if(this.canSubmit){
+          return undefined
+        }else{
+          return this.unevaluatedFields.join(",") + " " + ((this.unevaluatedFields.length==1)?"is":"are") + " unevaluated..."
+        }
+      },
       // joboutput
       filteredJobOutput(){
         if(!this.filterOutput) return this.jobResult?.data?.output?.replace(/\r\n/g,"<br>")
@@ -1396,6 +1408,7 @@
           //console.log("enter loop");
           // ref.$toast("... loop ...")
           hasUnevaluatedFields=false;                                           // reset flag
+          ref.unevaluatedFields=[];                                             // the list of unevaluatedfields - reset
           // console.log("-------------------------------")
           ref.currentForm.fields.forEach(
             function(item,index){
@@ -1408,6 +1421,7 @@
                   // console.log("eval expression " + item.name)
                   // console.log(`[${item.name}][${flag}] : evaluating`)
                   hasUnevaluatedFields=true                                       // set the un-eval flag if this is required
+                  ref.unevaluatedFields.push(item.name)
                   // set flag running
                   ref.setFieldStatus(item.name,"running",false)
                   placeholderCheck = ref.replacePlaceholders(item)     // check and replace placeholders
@@ -1524,6 +1538,7 @@
                    // console.log("eval query : " + item.name)
                   // set flag running
                   hasUnevaluatedFields=true
+                  ref.unevaluatedFields.push(item.name)
                   ref.setFieldStatus(item.name,"running",false)
                   placeholderCheck = ref.replacePlaceholders(item)     // check and replace placeholders
                   if(placeholderCheck.value!=undefined){                       // expression is clean ?
@@ -1653,6 +1668,7 @@
               if(ref.watchdog>50){  // is it taking too long ?
                 ref.jobResult.message=""   // stop and reset
                 ref.$toast.warning("It took too long to evaluate all fields before run.\r\nLet the form stabilize and try again.")
+                ref.$toast.warning(ref.unevaluatedFieldsWarning)
               }else{
                 //ref.$toast.info(`Stabilizing form...${ref.watchdog}`)
               }
@@ -1862,31 +1878,88 @@
                 // deep clone = otherwise weird effects
                 formdata[item.name]=Helpers.deepClone(outputValue)
               }else{
+
+                // here we build the full model object
                 fieldmodel.forEach((f)=>{
                   // convert fieldmodel for actual object
                   // svm.lif.name => svm["lif"].name = formvalue
                   // using reduce, which is a recursive function
                   f.split(/\s*\.\s*/).reduce((master,obj, level,arr) => {
+
+                    var arrsplit = undefined                    
+
                     // if last
-                    
                     if (level === (arr.length - 1)){
-                        // the last piece we assign the value to
+                    
+
+                      // the last piece we assign the value to
+                      // if the last piece is an array, we need to create the array first
+                      if(obj.match(/.*\[[0-9]+\]$/)){
+                        // split the array name and index
+                        arrsplit=obj.split(/\[([0-9]+)\]$/)
+                        // if the array doesn't exist, we create it
+                        if(master[arrsplit[0]]===undefined){
+                          master[arrsplit[0]]=[]
+                        }
+                        // if the array index doesn't exist, we create it
+                        if(master[arrsplit[0]][arrsplit[1]]===undefined){
+                          master[arrsplit[0]][arrsplit[1]]={}
+                        }
+                        // assign the value to the array index
+                        master[arrsplit[0]][arrsplit[1]]=outputValue
+                        
+                        return master[arrsplit[0]][arrsplit[1]]
+                        
+                      }else{ // just an object
+
+                        // if the object doesn't exist, we create it
                         if(master[obj]===undefined){
                           master[obj]=outputValue
                         }else{
                           master[obj]=Lodash.merge(master[obj],outputValue)
                         }
                         
+                        // return the result for next reduce iteration
+                        return master[obj]           
+                        
+                      }
+
+                                    
+
                     }else{
-                        // initialize first time to object
+                      // initialize first time to object or array
+
+                      // if the object is an array, we need to create the array first
+                      if(obj.match(/.*\[[0-9]+\]$/)){
+                        // split the array name and index
+                        arrsplit=obj.split(/\[([0-9]+)\]$/)
+                        // if the array doesn't exist, we create it
+                        if(master[arrsplit[0]]===undefined){
+                          master[arrsplit[0]]=[]
+                        }
+                        // if the array index doesn't exist, we create it
+                        if(master[arrsplit[0]][arrsplit[1]]===undefined){
+                          master[arrsplit[0]][arrsplit[1]]={}
+                        }
+
+                        // return the result for next reduce iteration
+                        return master[arrsplit[0]][arrsplit[1]]
+
+                      }else{ // just an object
+
+                        // if the object doesn't exist, we create it
                         if(master[obj]===undefined){
                           master[obj]={}
                         }
+                        // return the result for next reduce iteration
+                        return master[obj]
+                      }
+
                     }
-                    // return the result for next reduce iteration
-                    return master[obj]
+
 
                   },formdata);
+
                 })
 
               }

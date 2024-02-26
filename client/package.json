@@ -24,6 +24,7 @@
     "bulmaswatch": "0.8.1",
     "bulma" : "0.9.4",
     "bulma-quickview" : "*",
+    "@creativebulma/bulma-tooltip" : "*",    
     "lodash" : "~4.17.21",
     "bulma-checkradio": "~2.1.3",
     "bulma-pageloader": "~0.3.0",

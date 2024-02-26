@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 -   add a form-reload route
 -   added mail attribute ldap
+-   improved error message on unevaluated fields
+-   allow to model arrays like foo.bar[0].ping.pong[1]
 
 ## [5.0.0] - 2024-01-25
 
