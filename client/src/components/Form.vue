@@ -41,7 +41,7 @@
           <span class="icon is-pulled-right" v-show="loopbusy">
             <font-awesome-icon icon="spinner" size="lg" class="has-text-warning" spin /> 
           </span>
-          <span class="icon is-pulled-right has-tooltip-arrow has-tooltip-multiline has-tooltip-warning" v-show="!canSubmit" :data-tooltip="unevaluatedFieldsWarning">
+          <span class="icon is-pulled-right has-tooltip-arrow has-tooltip-multiline has-tooltip-warning" v-show="!canSubmit && !loopbusy" :data-tooltip="unevaluatedFieldsWarning">
             <font-awesome-icon icon="exclamation-triangle" size="lg" class="has-text-warning" /> 
           </span>          
           <!-- reload button -->
@@ -365,13 +365,13 @@
                         <p class="has-text-danger" v-if="'maxLength' in $v.form[field.name] && !$v.form[field.name].maxLength">Can not be more than {{$v.form[field.name].$params.maxLength.max}} characters long</p>
                         <p class="has-text-danger" v-if="'minValue' in $v.form[field.name] && !$v.form[field.name].minValue">Value cannot be lower than {{$v.form[field.name].$params.minValue.min}}</p>
                         <p class="has-text-danger" v-if="'maxValue' in $v.form[field.name] && !$v.form[field.name].maxValue">Value cannot be higher than {{$v.form[field.name].$params.maxValue.max}}</p>
-                        <p class="has-text-danger" v-if="'minSize' in $v.form[field.name] && !$v.form[field.name].minSize">{{$v.form[field.name].$params.minSize.description}}</p>
-                        <p class="has-text-danger" v-if="'maxSize' in $v.form[field.name] && !$v.form[field.name].maxSize">{{$v.form[field.name].$params.maxSize.description}}</p>
-                        <p class="has-text-danger" v-if="'regex' in $v.form[field.name] && !$v.form[field.name].regex">{{$v.form[field.name].$params.regex.description}}</p>
-                        <p class="has-text-danger" v-if="'validIf' in $v.form[field.name] && !$v.form[field.name].validIf">{{$v.form[field.name].$params.validIf.description}}</p>
-                        <p class="has-text-danger" v-if="'validIfNot' in $v.form[field.name] && !$v.form[field.name].validIfNot">{{$v.form[field.name].$params.validIfNot.description}}</p>
-                        <p class="has-text-danger" v-if="'notIn' in $v.form[field.name] && !$v.form[field.name].notIn">{{$v.form[field.name].$params.notIn.description}}</p>
-                        <p class="has-text-danger" v-if="'in' in $v.form[field.name] && !$v.form[field.name].in">{{$v.form[field.name].$params.in.description}}</p>
+                        <p class="has-text-danger" v-if="'minSize' in $v.form[field.name] && !$v.form[field.name].minSize">{{ replacePlaceholderInString($v.form[field.name].$params.minSize.description,true).value }}</p>
+                        <p class="has-text-danger" v-if="'maxSize' in $v.form[field.name] && !$v.form[field.name].maxSize">{{ replacePlaceholderInString($v.form[field.name].$params.maxSize.description,true).value }}</p>
+                        <p class="has-text-danger" v-if="'regex' in $v.form[field.name] && !$v.form[field.name].regex">{{ replacePlaceholderInString($v.form[field.name].$params.regex.description,true).value }}</p>
+                        <p class="has-text-danger" v-if="'validIf' in $v.form[field.name] && !$v.form[field.name].validIf">{{ replacePlaceholderInString($v.form[field.name].$params.validIf.description,true).value }}</p>
+                        <p class="has-text-danger" v-if="'validIfNot' in $v.form[field.name] && !$v.form[field.name].validIfNot">{{ replacePlaceholderInString($v.form[field.name].$params.validIfNot.description,true).value }}</p>
+                        <p class="has-text-danger" v-if="'notIn' in $v.form[field.name] && !$v.form[field.name].notIn">{{ replacePlaceholderInString($v.form[field.name].$params.notIn.description,true).value }}</p>
+                        <p class="has-text-danger" v-if="'in' in $v.form[field.name] && !$v.form[field.name].in">{{ replacePlaceholderInString($v.form[field.name].$params.in.description,true).value }}</p>
                         <p class="has-text-danger" v-if="'sameAs' in $v.form[field.name] && !$v.form[field.name].sameAs">Field must be identical to '{{$v.form[field.name].$params.sameAs.eq}}'</p>
                       </div>
                     </div>
