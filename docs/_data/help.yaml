@@ -2324,7 +2324,7 @@
               Enforces a validation where the current field can not be one of the values in a list (referencing another field).
               This field requires an object with 2 attributes:
               * `field` : The name of the field that holds the list
-              * `description` : A validation message to show when the validation is not met.
+              * `description` : A validation message to show when the validation is not met. (**new in v5.0.1** : can have placeholder)
             with_types: text, expression, password, datetime
             examples:
             - name: Check if ip exists
@@ -2341,7 +2341,7 @@
               Enforces a validation where the current field must be one of the values in a list (referencing another field).
               This field requires an object with 2 attributes:
               * `field` : The name of the field that holds the list
-              * `description` : A validation message to show when the validation is not met.
+              * `description` : A validation message to show when the validation is not met. (**new in v5.0.1** : can have placeholder)
             with_types: text, expression, password, datetime
             examples:
             - name: Check if ip is in range
@@ -2358,7 +2358,7 @@
               Enforces a validation where a referencing (expression) field must be true.
               This field requires an object with 2 attributes:
               * `field` : The name of the referencing field
-              * `description` : A validation message to show when the validation is not met.
+              * `description` : A validation message to show when the validation is not met.  (**new in v5.0.1** : can have placeholder)
             examples:
             - name: Ip must be pingable
               code: |
@@ -2374,7 +2374,7 @@
               Enforces a validation where a referencing (expression) field must be false.
               This field requires an object with 2 attributes:
               * `field` : The name of the referencing field
-              * `description` : A validation message to show when the validation is not met.
+              * `description` : A validation message to show when the validation is not met. (**new in v5.0.1** : can have placeholder)
             examples:
             - name: Check if powered off
               code: |
@@ -3091,7 +3091,7 @@
                 Enforces a validation where the current field can not be one of the values in a list (referencing another field).
                 This field requires an object with 2 attributes:
                 * `field` : The name of the field that holds the list
-                * `description` : A validation message to show when the validation is not met.
+                * `description` : A validation message to show when the validation is not met. (**new in v5.0.1** : can have placeholder)
               with_types: text, expression, password, datetime
               examples:
               - name: Check if ip exists
@@ -3137,7 +3137,7 @@
                 Enforces a validation where the current field must be one of the values in a list (referencing another field).
                 This field requires an object with 2 attributes:
                 * `field` : The name of the field that holds the list
-                * `description` : A validation message to show when the validation is not met.
+                * `description` : A validation message to show when the validation is not met. (**new in v5.0.1** : can have placeholder)
               with_types: text, expression, password, datetime
               examples:
               - name: Check if ip is in range
