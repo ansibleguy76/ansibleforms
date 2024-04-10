@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.1] - 2024-04-10
+
+### Fixed
+
+-   login expiryDays didn't work
+-   fixed non-ascii codes in ldap
+-   fixed approvals, broken since 4.0.19
+
+### Added
+
+-   add a form-reload route
+-   added mail attribute ldap
+-   improved error message on unevaluated fields
+-   allow to model arrays like foo.bar[0].ping.pong[1]
+-   allow placeholders in description fields of field validation
+
 ## [5.0.0] - 2024-01-25
 
 ### Added
@@ -650,7 +666,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.0...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.1...HEAD
+
+[5.0.1]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.0...5.0.1
 
 [5.0.0]: https://github.com/ansibleguy76/ansibleforms/compare/4.0.19...5.0.0
 

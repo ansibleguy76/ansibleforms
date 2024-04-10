@@ -266,12 +266,15 @@ function patchAll(){
   tablePromises.push(setUtf8mb4CharacterSet("jobs","approval","longtext")) // allow emoticon or utf16 character
   tablePromises.push(setUtf8mb4CharacterSet("job_output","output","longtext")) // allow emoticon or utf16 character
   // patches to db for v4.0.20
-  tablePromises.push(addColumn("ldap","groups_search_base","varchar(255)",true,"NULL")) // add column to have groups search base  
-  tablePromises.push(addColumn("ldap","groups_attribute","varchar(255)",false,"'memberOf'")) // add column to have groups attribute  
-  tablePromises.push(addColumn("ldap","group_class","varchar(255)",true,"NULL")) // add column to have group class
-  tablePromises.push(addColumn("ldap","group_member_attribute","varchar(255)",true,"NULL")) // add column to have group member attribute
-  tablePromises.push(addColumn("ldap","group_member_user_attribute","varchar(255)",true,"NULL")) // add column to have group member user attribute
+  tablePromises.push(addColumn("ldap","groups_search_base","varchar(250)",true,"NULL")) // add column to have groups search base  
+  tablePromises.push(addColumn("ldap","groups_attribute","varchar(250)",false,"'memberOf'")) // add column to have groups attribute  
+  tablePromises.push(addColumn("ldap","group_class","varchar(250)",true,"NULL")) // add column to have group class
+  tablePromises.push(addColumn("ldap","group_member_attribute","varchar(250)",true,"NULL")) // add column to have group member attribute
+  tablePromises.push(addColumn("ldap","group_member_user_attribute","varchar(250)",true,"NULL")) // add column to have group member user attribute
   tablePromises.push(addColumn("ldap","is_advanced","tinyint(4)",true,"0")) // is advanced config
+  // patches to db for v5.0.1
+  tablePromises.push(addColumn("ldap","mail_attribute","varchar(250)",true,"NULL")) // add column to have mail attribute
+  tablePromises.push(addColumn("users","email","varchar(250)",true,"NULL")) // add column to have email
   buffer = fs.readFileSync(`${__dirname}/../db/create_settings_table.sql`)
   sql = buffer.toString()
   tablePromises.push(addTable("settings",sql)) // add settings table

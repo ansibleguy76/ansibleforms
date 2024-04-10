@@ -14,6 +14,9 @@ var User=function(user){
     if(user.username!=undefined){
       this.username = user.username;
     }
+    if(user.email!=undefined){
+      this.email = user.email;
+    }    
     if(user.password!=undefined){
       this.password = user.password;
     }
@@ -72,7 +75,7 @@ User.findByUsername = function (username) {
 };
 User.authenticate = function (username,password) {
     logger.info(`Checking password for user ${username}`)
-    var query = "SELECT users.id,`username`,`password`,GROUP_CONCAT(groups.name) `groups` FROM AnsibleForms.`users`,AnsibleForms.`groups` WHERE `users`.group_id=`groups`.id AND username=?;"
+    var query = "SELECT users.*,GROUP_CONCAT(groups.name) `groups` FROM AnsibleForms.`users`,AnsibleForms.`groups` WHERE `users`.group_id=`groups`.id AND username=?;"
     return mysql.do(query,username)
       .then((res)=>{
         if(res.length > 0 && res[0].password){
@@ -248,7 +251,7 @@ User.checkLdap = function(username,password){
         throw "Certificate is not valid"
       }else{
         logger.info(`Checking ldap for user ${username}`)
-        // logger.debug(JSON.stringify(options))
+        logger.debug(JSON.stringify(options))
         return ldapAuthentication(options)
       }
     })

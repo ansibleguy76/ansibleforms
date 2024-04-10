@@ -38,6 +38,7 @@
               <div class="column" v-if="userItem!==undefined && !showDelete">
                 <template v-if="!changePassword">
                   <BulmaInput icon="user" v-model="user.username" label="Username" :readonly="userItem!==-1" placeholder="Username" :required="true" :hasError="$v.user.username.$invalid" :errors="[]" />
+                  <BulmaInput icon="envelope" v-model="user.email" label="Email" :readonly="userItem!==-1" placeholder="Email" :hasError="$v.user.email.$invalid" :errors="[]" />
                   <BulmaInput v-if="userItem==-1" icon="lock" type="password" v-model="user.password" label="Password" placeholder="Password" :required="true" :hasError="$v.user.password.$invalid" :errors="[{if:!$v.user.password.regex,label:$v.user.password.$params.regex.description}]" />
                   <BulmaInput v-if="userItem==-1" icon="lock" type="password" v-model="user.password2" label="Password Again" placeholder="Password" :required="true" :hasError="$v.user.password2.$invalid" :errors="[{if:!$v.user.password2.sameAsPassword,label:'Passwords are not the same'}]" />
                   <BulmaSelect icon="users" label="Select a group" :list="groupList" valuecol="id" :required="true" :hasError="$v.user.group_id.$invalid" labelcol="name" v-model="user.group_id" :errors="[]" />
@@ -91,6 +92,7 @@
             username:"",
             password:"",
             password2:"",
+            email:"",
             group_id:undefined
           },
           showDelete:false,
@@ -154,6 +156,7 @@
           username:"",
           password:"",
           password2:"",
+          email:"",
           group_id:undefined
         }
       }
@@ -240,6 +243,9 @@
               {description: "Must contain at least 1 numeric, 1 special, 1 upper and 1 lower character",type:"regex"},
               (value) => !helpers.req(value) || (new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\\$%\\^&\\*])").test(value))
           )
+        },
+        email:{
+          email
         },
         group_id: {
           required

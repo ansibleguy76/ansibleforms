@@ -24,6 +24,7 @@ var Ldap=function(ldap){
     this.group_class = (ldap.is_advanced)?ldap.group_class:""
     this.group_member_attribute = (ldap.is_advanced)?ldap.group_member_attribute:""
     this.group_member_user_attribute = (ldap.is_advanced)?ldap.group_member_user_attribute:""
+    this.mail_attribute = ldap.mail_attribute
 };
 Ldap.update = function (record) {
   logger.info(`Updating ldap ${record.server}`)

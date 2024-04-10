@@ -13,6 +13,7 @@ CREATE TABLE `users`(
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `username` varchar(255) NOT NULL,
   `password` varchar(255) NOT NULL,
+  `email` varchar(255) NOT NULL,
   `group_id` int(11) NOT NULL,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_AnsibleForms_users_natural_key` (`username`),
@@ -54,6 +55,13 @@ CREATE TABLE `ldap` (
   `bind_user_pw` text DEFAULT NULL,
   `search_base` varchar(250) DEFAULT NULL,
   `username_attribute` varchar(250) DEFAULT NULL,
+  `groups_search_base` varchar(250) DEFAULT NULL,
+  `groups_attribute` varchar(250) DEFAULT NULL,
+  `group_class` varchar(250) DEFAULT NULL,
+  `group_member_attribute` varchar(250) DEFAULT NULL,
+  `group_member_user_attribute` varchar(250) DEFAULT NULL,
+  `is_advanced` tinyint(4) DEFAULT NULL,
+  `mail_attribute` varchar(250) DEFAULT NULL,
   `enable` tinyint(4) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 DROP TABLE IF EXISTS `awx`;
@@ -117,7 +125,7 @@ CREATE TABLE `azuread` (
 INSERT INTO AnsibleForms.azuread(client_id,secret_id,enable) VALUES('','',0);
 INSERT INTO AnsibleForms.groups(name) VALUES('admins');
 INSERT INTO AnsibleForms.awx(uri,token,username,password) VALUES('','','','');
-INSERT INTO AnsibleForms.users(username,password,group_id) VALUES('admin','$2b$10$Z/W0HXNBk2aLR4yVLkq5L..C8tXg.G.o1vkFr8D2lw8JSgWRCNiCa',1);
+INSERT INTO AnsibleForms.users(username,password,email,group_id) VALUES('admin','$2b$10$Z/W0HXNBk2aLR4yVLkq5L..C8tXg.G.o1vkFr8D2lw8JSgWRCNiCa','',1);
 INSERT INTO AnsibleForms.ldap(server,port,ignore_certs,enable_tls,cert,ca_bundle,bind_user_dn,bind_user_pw,search_base,username_attribute,enable) VALUES('',389,1,0,'','','','','','sAMAccountName',0);
 INSERT INTO AnsibleForms.settings(mail_server,mail_port,mail_secure,mail_username,mail_password,mail_from,url) VALUES('',25,0,'','','','');
 SET FOREIGN_KEY_CHECKS=1;

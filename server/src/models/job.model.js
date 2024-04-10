@@ -871,16 +871,7 @@ Ansible.launch=async (ev,credentials,jobid,counter,approval,approved=false)=>{
   }else{
     counter++
   }
-  if(approval){
-    if(!approved){
-      await Job.sendApprovalNotification(approval,ev,jobid)
-      await Job.printJobOutput(`APPROVE [${playbook}] ${'*'.repeat(69-playbook.length)}`,"stdout",jobid,++counter)
-      await Job.update({status:"approve",approval:JSON.stringify(approval),end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid)
-      return true
-    }else{
-      logger.notice("Continuing ansible " + playbook + " it has been approved")
-    }
-  }
+
   // we make a copy, we don't want to mutate the original
   var extravars={...ev}
   // ansible can have multiple inventories
@@ -907,7 +898,16 @@ Ansible.launch=async (ev,credentials,jobid,counter,approval,approved=false)=>{
   var keepExtravars = extravars?.__keepExtravars__ || false    
   var diff = extravars?.__diff__ || false  
   var ansibleCredentials = extravars?.__ansibleCredentials__ || ""  
-
+  if(approval){
+    if(!approved){
+      await Job.sendApprovalNotification(approval,ev,jobid)
+      await Job.printJobOutput(`APPROVE [${playbook}] ${'*'.repeat(69-playbook.length)}`,"stdout",jobid,++counter)
+      await Job.update({status:"approve",approval:JSON.stringify(approval),end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid)
+      return true
+    }else{
+      logger.notice("Continuing ansible " + playbook + " it has been approved")
+    }
+  }
   // merge credentials now
   extravars = {...extravars,...credentials}
   // convert to string for the command
@@ -997,16 +997,7 @@ Awx.launch = async function (ev,credentials,jobid,counter,approval,approved=fals
     }else{
       counter++
     }
-    if(approval){
-      if(!approved){
-        await Job.sendApprovalNotification(approval,ev,jobid)
-        await Job.printJobOutput(`APPROVE [${template}] ${'*'.repeat(69-template.length)}`,"stdout",jobid,++counter)
-        await Job.update({status:"approve",approval:JSON.stringify(approval),end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid)
-        return true
-      }else{
-        logger.notice("Continuing awx " + template + " it has been approved")
-      }
-    }
+
     // we make a copy, we don't mutate the original
     var extravars={...ev}
 
@@ -1021,7 +1012,16 @@ Awx.launch = async function (ev,credentials,jobid,counter,approval,approved=fals
     var diff = extravars?.__diff__ || false  
     var template = extravars?.__template__ 
     var awxCredentials = extravars?.__awxCredentials__ || []
-
+    if(approval){
+      if(!approved){
+        await Job.sendApprovalNotification(approval,ev,jobid)
+        await Job.printJobOutput(`APPROVE [${template}] ${'*'.repeat(69-template.length)}`,"stdout",jobid,++counter)
+        await Job.update({status:"approve",approval:JSON.stringify(approval),end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid)
+        return true
+      }else{
+        logger.notice("Continuing awx " + template + " it has been approved")
+      }
+    }
     try{
       const jobTemplate = await Awx.findJobTemplateByName(template)
       logger.debug("Found jobtemplate, id = " + jobTemplate.id)
