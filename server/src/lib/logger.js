@@ -23,29 +23,44 @@ const formatNoColor = winston.format.combine(
   ),
 )
 
+const transportConsole = new winston.transports.Console({
+  stderrLevels: ["error"],
+  level:loggerConfig.consolelevel,
+  format:formatColor
+});
+
+const transportDailyRotateFileErrors = new winston.transports.DailyRotateFile({
+  filename: loggerConfig.path + "/ansibleforms.errors.%DATE%.log",
+  datePattern: 'YYYY-MM-DD',
+  maxFiles: '30d',
+  zippedArchive: true,
+  level: 'error',
+  format:formatNoColor
+});
+
+const transportDailyRotateFile = new winston.transports.DailyRotateFile({
+  level: loggerConfig.level,
+  filename: loggerConfig.path + "/ansibleforms.%DATE%.log",
+  datePattern: 'YYYY-MM-DD',
+  zippedArchive: true,
+  maxFiles: '30d',    
+  format:formatColor
+});
+
 var transports = [
-  new winston.transports.Console({
-    stderrLevels: ["error"],
-    level:loggerConfig.consolelevel,
-    format:formatColor
-  }),
-  new winston.transports.DailyRotateFile({
-    filename: loggerConfig.path + "/ansibleforms.errors.%DATE%.log",
-    datePattern: 'YYYY-MM-DD',
-    maxFiles: '30d',
-    zippedArchive: true,
-    level: 'error',
-    format:formatNoColor
-  }),
-  new winston.transports.DailyRotateFile({
-    level: loggerConfig.level,
-    filename: loggerConfig.path + "/ansibleforms.%DATE%.log",
-    datePattern: 'YYYY-MM-DD',
-    zippedArchive: true,
-    maxFiles: '30d',    
-    format:formatColor
-  }),
+  transportConsole,
+  transportDailyRotateFileErrors,
+  transportDailyRotateFile,
 ]
+
+transportDailyRotateFile.on('error', error => {
+  console.error('Error in transportDailyRotateFile:', error);
+});
+
+transportDailyRotateFileErrors.on('error', error => {
+  console.error('Error in transportDailyRotateFileErrors:', error);
+});
+
 
 if(loggerConfig.sysloghost){
   transports.push(
