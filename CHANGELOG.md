@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   added mail attribute ldap
 -   improved error message on unevaluated fields
 -   allow to model arrays like foo.bar[0].ping.pong[1]
+-   allow placeholders in description fields of field validation
 
 ## [5.0.0] - 2024-01-25
 
