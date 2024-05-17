@@ -5,6 +5,7 @@ const fs=require("fs")
 const os=require("os")
 const fse=require("fs-extra")
 const moment=require("moment")
+const execSync = require('child_process').execSync;
 const YAML=require("yaml")
 const Ajv = require('ajv');
 const ajv = new Ajv()
@@ -71,12 +72,25 @@ Form.load = async function() {
   var appFormsPath = (await Repository.getFormsPath()) || appConfig.formsPath
   logger.info(`Loading ${appFormsPath}`)  
   var formsdirpath=path.join(path.dirname(appFormsPath),"/forms");
+  var formslibdirpath=path.join(path.dirname(appFormsPath),"/lib");
   var formfilesraw=[]
   var formfiles=[]
   var files=undefined
   try{
     // read base forms.yaml
-    rawdata = fs.readFileSync(appFormsPath,'utf8');
+    rawdata = '';
+    try {
+      if (appConfig.useYtt) {
+        logger.info(`interpreting ${appFormsPath} with ytt.`);
+        rawdata = execSync(`ytt -f ${appFormsPath} -f ${formslibdirpath}`, {encoding: 'utf-8'});
+      } else {
+        rawdata = fs.readFileSync(appFormsPath, 'utf8');
+      }
+    } catch (e) {
+      logger.error(`failed to load '${appFormsPath}'.\n${e}`);
+    }
+
+
     // read extra form files
     try{
       files = fs.readdirSync(formsdirpath)
@@ -86,9 +100,20 @@ Form.load = async function() {
         // read files
         files.forEach((item, i) => {
           try{
-            formfilesraw.push({name:item,value:fs.readFileSync(path.join(formsdirpath,item),'utf8')})
+            var itemFormPath = path.join(formsdirpath, item);
+            var itemRawData = '';
+            if (appConfig.useYtt) {
+              logger.info(`interpreting ${itemFormPath} with ytt.`);
+              itemRawData = execSync(`ytt -f ${itemFormPath} -f ${formslibdirpath}`,{ encoding: 'utf-8' });
+            } else {
+              itemRawData =fs.readFileSync(itemFormPath,'utf8');
+            }
+            formfilesraw.push({
+              name: item,
+              value: itemRawData
+            })
           }catch(e){
-            logger.error(`failed to load file '${item}'.\n${e}`)
+            logger.error(`failed to load file '${item}'.\n${e}`);
           }
         });
       }
