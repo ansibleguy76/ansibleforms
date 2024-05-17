@@ -5,6 +5,7 @@ var app_config = {
   baseUrl: process.env.BASE_URL || "/",
   nodeEnvironment: process.env.NODE_ENV || "production",
   showDesigner: process.env.SHOW_DESIGNER ?? true,
+  useYtt: process.env.USE_YTT ?? false,
   formsPath: process.env.FORMS_PATH || path.resolve(__dirname + "/../persistent/forms.yaml"),
   lockPath: process.env.LOCK_PATH || path.resolve(__dirname + "/../persistent/ansibleForms.lock"),
   helpPath: path.resolve(__dirname + "/../help.yaml"),

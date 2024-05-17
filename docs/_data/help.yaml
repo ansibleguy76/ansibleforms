@@ -116,6 +116,18 @@
       Although we encourage you to use an editor such as **Visual Studio Code** to edit the forms.yaml file, preferably with some form of source control.  Ansible Forms comes with an internal yaml designer.  
       And although only admins can see the designer, you might want to disable it completely by setting this variable to 0.
     version: 4.0.0
+  - name: USE_YTT
+    type: number
+    choices:
+      - name: 0
+        description: Does not execute ytt on the forms.yaml
+      - name: 1
+        description: Executes ytt on the forms.yaml
+    default: 0
+    short: Enable the ytt interpreter
+    description: |
+      https://github.com/carvel-dev/ytt is a tool for yaml templating. It can be activated by this variable.
+    version: 5.0.1
   - name: LOG_LEVEL
     type: string
     choices:
