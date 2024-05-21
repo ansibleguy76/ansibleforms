@@ -33,6 +33,18 @@ var Form=function(data){
   this.forms = data.forms;
 };
 
+/**
+ * Compute ytt cli options for library data values based on provided env vars
+ */
+function getYttLibDataOpts() {
+  var yttLibDataOpts = '';
+  Object.entries(process.env).filter( ([key, value]) => key.startsWith('YTT_LIB_DATA_')).forEach( ([key, value]) => {
+    const libName = key.replace('YTT_LIB_DATA_', '').toLowerCase();
+    yttLibDataOpts += ` --data-values-file @${libName}:data=${value}`;
+  });
+  return yttLibDataOpts;
+}
+
 // create the backup path and 
 // since version 4.0.3 the backups go under folder => move backups there (should be only once)
 Form.initBackupFolder=function(){
@@ -74,17 +86,21 @@ Form.load = async function() {
   var formfilesraw=[]
   var formfiles=[]
   var files=undefined
-  var ytt_data_opt = ''
+
+  var ytt_env_data_opt = ''
   if ('YTT_VARS_PREFIX' in process.env) {
-    ytt_data_opt = `--data-values-env ${process.env.YTT_VARS_PREFIX}`
+    ytt_env_data_opt = ` --data-values-env ${process.env.YTT_VARS_PREFIX}`;
   }
+  var yttLibDataOpts = getYttLibDataOpts();
+
   try{
     // read base forms.yaml
     rawdata = '';
     try {
       if (appConfig.useYtt) {
         logger.info(`interpreting ${appFormsPath} with ytt.`);
-        rawdata = execSync(`ytt -f ${appFormsPath} -f ${formslibdirpath} ${ytt_data_opt}`, {encoding: 'utf-8'});
+        logger.debug(`executing 'ytt -f ${appFormsPath} -f ${formslibdirpath}${ytt_env_data_opt}${yttLibDataOpts}'`)
+        rawdata = execSync(`ytt -f ${appFormsPath} -f ${formslibdirpath}${ytt_env_data_opt}${yttLibDataOpts}`, {encoding: 'utf-8'});
       } else {
         rawdata = fs.readFileSync(appFormsPath, 'utf8');
       }
@@ -106,7 +122,8 @@ Form.load = async function() {
             var itemRawData = '';
             if (appConfig.useYtt) {
               logger.info(`interpreting ${itemFormPath} with ytt.`);
-              itemRawData = execSync(`ytt -f ${itemFormPath} -f ${formslibdirpath} ${ytt_data_opt}`,{ encoding: 'utf-8' });
+              logger.debug(`executing 'ytt -f ${itemFormPath} -f ${formslibdirpath}${ytt_env_data_opt}'`)
+              itemRawData = execSync(`ytt -f ${itemFormPath} -f ${formslibdirpath}${ytt_env_data_opt}`,{ encoding: 'utf-8' });
             } else {
               itemRawData =fs.readFileSync(itemFormPath,'utf8');
             }
