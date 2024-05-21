@@ -100,7 +100,13 @@ Form.load = async function() {
       if (appConfig.useYtt) {
         logger.info(`interpreting ${appFormsPath} with ytt.`);
         logger.debug(`executing 'ytt -f ${appFormsPath} -f ${formslibdirpath}${ytt_env_data_opt}${yttLibDataOpts}'`)
-        rawdata = execSync(`ytt -f ${appFormsPath} -f ${formslibdirpath}${ytt_env_data_opt}${yttLibDataOpts}`, {encoding: 'utf-8'});
+        rawdata = execSync(
+            `ytt -f ${appFormsPath} -f ${formslibdirpath}${ytt_env_data_opt}${yttLibDataOpts}`,
+            {
+              env: process.env,
+              encoding: 'utf-8'
+            }
+        );
       } else {
         rawdata = fs.readFileSync(appFormsPath, 'utf8');
       }
@@ -123,7 +129,13 @@ Form.load = async function() {
             if (appConfig.useYtt) {
               logger.info(`interpreting ${itemFormPath} with ytt.`);
               logger.debug(`executing 'ytt -f ${itemFormPath} -f ${formslibdirpath}${ytt_env_data_opt}'`)
-              itemRawData = execSync(`ytt -f ${itemFormPath} -f ${formslibdirpath}${ytt_env_data_opt}`,{ encoding: 'utf-8' });
+              itemRawData = execSync(
+                  `ytt -f ${itemFormPath} -f ${formslibdirpath}${ytt_env_data_opt}`,
+                  {
+                    env: process.env,
+                    encoding: 'utf-8'
+                  }
+              );
             } else {
               itemRawData =fs.readFileSync(itemFormPath,'utf8');
             }
