@@ -13,8 +13,6 @@ const path=require("path")
 const AJVErrorParser = require('ajv-error-parser');
 const Repository = require('./repository.model')
 const Helpers = require("../lib/common")
-const {inspect} = require("node:util");
-const Repo = require('./repo.model');
 
 const backupPath = appConfig.formsBackupPath
 
@@ -76,13 +74,17 @@ Form.load = async function() {
   var formfilesraw=[]
   var formfiles=[]
   var files=undefined
+  var ytt_data_opt = ''
+  if ('YTT_VARS_PREFIX' in process.env) {
+    ytt_data_opt = `--data-values-env ${process.env.YTT_VARS_PREFIX}`
+  }
   try{
     // read base forms.yaml
     rawdata = '';
     try {
       if (appConfig.useYtt) {
         logger.info(`interpreting ${appFormsPath} with ytt.`);
-        rawdata = execSync(`ytt -f ${appFormsPath} -f ${formslibdirpath}`, {encoding: 'utf-8'});
+        rawdata = execSync(`ytt -f ${appFormsPath} -f ${formslibdirpath} ${ytt_data_opt}`, {encoding: 'utf-8'});
       } else {
         rawdata = fs.readFileSync(appFormsPath, 'utf8');
       }
@@ -104,7 +106,7 @@ Form.load = async function() {
             var itemRawData = '';
             if (appConfig.useYtt) {
               logger.info(`interpreting ${itemFormPath} with ytt.`);
-              itemRawData = execSync(`ytt -f ${itemFormPath} -f ${formslibdirpath}`,{ encoding: 'utf-8' });
+              itemRawData = execSync(`ytt -f ${itemFormPath} -f ${formslibdirpath} ${ytt_data_opt}`,{ encoding: 'utf-8' });
             } else {
               itemRawData =fs.readFileSync(itemFormPath,'utf8');
             }
