@@ -275,6 +275,8 @@ function patchAll(){
   // patches to db for v5.0.1
   tablePromises.push(addColumn("ldap","mail_attribute","varchar(250)",true,"NULL")) // add column to have mail attribute
   tablePromises.push(addColumn("users","email","varchar(250)",true,"NULL")) // add column to have email
+  // patches to db for v5.0.2
+  tablePromises.push(addColumn("jobs","awx_id","int(11)",true,"NULL")) // add for future tracking
   buffer = fs.readFileSync(`${__dirname}/../db/create_settings_table.sql`)
   sql = buffer.toString()
   tablePromises.push(addTable("settings",sql)) // add settings table
