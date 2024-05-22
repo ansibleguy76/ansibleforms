@@ -15,8 +15,10 @@
                 <table class="table is-bordered is-striped">
                   <tbody>
                     <tr><th>Databaseschema</th><td>AnsibleForms</td></tr>
+                    <tr><th>Tables</th><td>All required tables</td></tr>
                     <tr><th>Users</th><td>admin (pw = AnsibleForms!123)</td></tr>
                     <tr><th>Groups</th><td>admins</td></tr>
+                    
                   </tbody>
                 </table>
               </div>
@@ -65,7 +67,7 @@
         },
         failed(){
           if(Array.isArray(this.errorData.error)){
-            return this.errorData.error.join('<br>')
+            return this.errorData.error.map((e)=>{return e.message}).join('<br>')
           }else {
             return this.errorData.error
           }
