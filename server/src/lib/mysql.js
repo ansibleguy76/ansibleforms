@@ -11,6 +11,7 @@ MySql.clean=function(config){
   delete config.db_type
   delete config.db_name
   delete config.secure
+  delete config.is_database
   return config
 }
 
