@@ -91,7 +91,8 @@
           "S. Mer",
           "J. Szkudlarek",
           "J. Burkle",
-          "A. Mikhaylov"
+          "A. Mikhaylov",
+          "mdaugs"
         ]
       }
     },
