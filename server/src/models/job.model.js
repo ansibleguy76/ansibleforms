@@ -376,16 +376,20 @@ Job.launch = async function(form,formObj,user,creds,extravars,parentId=null,next
   }
 
   if(jobtype=="ansible"){
-    return await Ansible.launch(
+    const jobRes = await Ansible.launch(
       extravars,
       credentials,
       jobid,
       null,
       (parentId)?null:formObj.approval // if multistep: no individual approvals checks
     )
+    if (parentId && !jobRes) {
+      throw `Job #${jobid} FAILED.`;
+    }
+    return jobRes;
   }
   if(jobtype=="awx"){
-    return await Awx.launch(
+    const jobRes = await Awx.launch(
       extravars,
       credentials,
       jobid,
@@ -394,9 +398,13 @@ Job.launch = async function(form,formObj,user,creds,extravars,parentId=null,next
       null,
       notifications
     )
+    if (parentId && !jobRes) {
+      throw `Job #${jobid} FAILED.`;
+    }
+    return jobRes;
   }
   if(jobtype=="multistep"){
-    return await Multistep.launch(
+    const jobRes = await Multistep.launch(
       form,
       formObj.steps,
       user,
@@ -406,6 +414,10 @@ Job.launch = async function(form,formObj,user,creds,extravars,parentId=null,next
       null,
       formObj.approval
     )
+    if (parentId && !jobRes) {
+      throw `Job #${jobid} FAILED.`;
+    }
+    return jobRes;
   }
 
 };
