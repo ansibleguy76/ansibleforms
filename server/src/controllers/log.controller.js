@@ -6,3 +6,13 @@ exports.get = function(req, res) {
       .then((log)=>{res.send(log)})
       .catch((err)=>{res.send("...")})
 };
+
+exports.download = function(req,res){
+    try{
+        var file = Log.getFileName()
+        res.download(file)
+    }catch(err){
+        // return 404
+        res.status(404).send(err.toString())
+    }
+}
