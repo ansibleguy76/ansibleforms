@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Adding
+-   Now allowing string (credential name) or array (of names) as dbConfig (dbtype is fetched from the database, with mysql fallback)
+    When using array, the resultsets are merged.
+-   Added ytt implementation to template yaml files (credits mdaugs)
+
+### Changed
+
+-   job api return objects (extravars, notifications, credentials, ...) instead of json strings
+-   awx job id is added to the database
+
+### Fixed
+
+-   radio button errors
+-   some issue with the designer when a field without name was added
+-   multistep was always successfull (tx to mdaugs)
+
 ## [5.0.1] - 2024-04-10
 
 ### Fixed
