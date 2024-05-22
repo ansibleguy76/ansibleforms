@@ -124,12 +124,18 @@
               </span>
               <span>Refresh</span>
             </button>
-            <button @click="hide=!hide" v-if="jobId" class="button is-light is-small">
+            <button @click="hide=!hide" v-if="jobId" class="button is-light mr-3 is-small">
               <span class="icon has-text-info">
                 <font-awesome-icon icon="eye-slash" />
               </span>
               <span v-text="(hide)?'Remove filter':'Apply filter'"></span>
-            </button>            
+            </button>       
+            <button @click="download(jobId)" class="button is-light is-small">
+              <span class="icon has-text-info">
+                <font-awesome-icon icon="download" />
+              </span>
+              <span>Download Job</span>
+            </button>
 
             <div class="box mt-3">
               <div class="columns">
@@ -182,6 +188,7 @@
   import moment from 'moment'
   import TokenStorage from './../lib/TokenStorage'
   import VueJsonPretty from 'vue-json-pretty';
+  import Helpers from './../lib/Helpers'
   import Copy from 'copy-to-clipboard'
   import 'vue-json-pretty/lib/styles.css';
 
@@ -354,10 +361,11 @@
                 // import the data if output returned
                 if(!sub){
                   ref.job=result.data.data;
-                  if(ref.job.extravars){
-                    ref.job.extravars=JSON.parse(ref.job.extravars)
-                    ref.job.approval=JSON.parse(ref.job.approval)
-                  }
+                  // in 5.0.2 extravars and approval are returned as objects
+                  // if(ref.job.extravars){
+                  //   ref.job.extravars=JSON.parse(ref.job.extravars)
+                  //   ref.job.approval=JSON.parse(ref.job.approval)
+                  // }
                   if(ref.subjobId)
                     ref.loadOutput(ref.subjobId,true)
                 }else{
@@ -371,6 +379,22 @@
             //ref.$toast.error("Failed to get job output");
           })
       },
+      downloadWithAxios(url, headers) {
+        var ref=this
+        axios({
+          method: 'get',
+          headers,
+          url,
+          responseType: 'arraybuffer',
+        })
+        .then((response) => {
+          Helpers.forceFileDownload(response)
+        })
+        .catch((err) => ref.$toast.error(err.toString()))
+      },   
+      download(id){
+        this.downloadWithAxios(`${process.env.BASE_URL}api/v1/job/${id}/download`,TokenStorage.getAuthentication())
+      },      
       showApproval(id,reject){
         var ref=this
         this.jobId=id
@@ -379,30 +403,30 @@
               if(result.data.data!==undefined){
                 // import the data if output returned
                 ref.job=result.data.data;
-                if(ref.job.extravars && ref.job.approval){
-                  ref.job.extravars=JSON.parse(ref.job.extravars) || {}
-                  ref.job.approval=JSON.parse(ref.job.approval) || {}
-                  ref.approvalMessage=ref.replacePlaceholders(ref.job.approval?.message)
-                  ref.approvalTitle=ref.replacePlaceholders(ref.job.apprival?.title) || "Approve"
-                  if(ref.job.approval){
-                    if(reject){
-                      ref.showReject=true
-                    }else{
-                      ref.showApprove=true
-                    }
-
-                  }else{
-                    ref.$toast.error("No approval information for this job found");
-                  }
+                // if(ref.job.approval.keys().length>0){
+                // in 5.0.2 extravars and approval are returned as objects
+                // ref.job.extravars=JSON.parse(ref.job.extravars) || {}
+                // ref.job.approval=JSON.parse(ref.job.approval) || {}
+                ref.approvalMessage=ref.replacePlaceholders(ref.job.approval?.message || "")
+                ref.approvalTitle=ref.replacePlaceholders(ref.job.approval?.title) || "Approve"
+                // if(ref.job.approval.keys().length>0){
+                if(reject){
+                  ref.showReject=true
                 }else{
-                  ref.approvalMessage=""
-                  ref.approvalTitle=ref.replacePlaceholders(ref.job.apprival?.title) || "Approve"
-                  if(reject){
-                    ref.showReject=true
-                  }else{
-                    ref.showApprove=true
-                  }
+                  ref.showApprove=true
                 }
+                //   }else{
+                //     ref.$toast.error("No approval information for this job found");
+                //   }
+                // }else{
+                //   ref.approvalMessage=""
+                //   ref.approvalTitle=ref.replacePlaceholders(ref.job.approval?.title) || "Approve"
+                //   if(reject){
+                //     ref.showReject=true
+                //   }else{
+                //     ref.showApprove=true
+                //   }
+                // }
 
               }
           })
@@ -591,11 +615,8 @@
           return this.jobs.filter(x => (x.start && moment().diff(x.start,'hours')<6) && (x.status=="running" || x.status=="aborting" || x.status=="abort"))
       },
       subjobs(){
-        if(this.job && this.job.subjobs){
-          return this.job.subjobs.split(",").map(x => parseInt(x))
-        }else{
-          return []
-        }
+          return this.job?.subjobs || []
+
       },
       subjobId(){
         return this.subjobs.slice(-1)[0]

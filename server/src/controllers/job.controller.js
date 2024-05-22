@@ -4,6 +4,7 @@ var RestResult = require('../models/restResult.model');
 const Credential = require('../models/credential.model');
 const logger=require("../lib/logger");
 const dbConfig = require('../../config/db.config')
+const stream = require('stream');
 
 exports.abortJob = function(req, res) {
   var jobid = req.params.id;
@@ -14,11 +15,6 @@ exports.abortJob = function(req, res) {
     Job.abort(jobid)
      .then((job)=>{res.json(new RestResult("success","job aborted",null,""))})
      .catch((err)=>{res.json(new RestResult("error","failed to abort job",null,err.toString()))})
-};
-exports.updateJob = function(req, res) {
-    Job.update(new Job(req.body),req.params.id)
-      .then(()=>{res.json(new RestResult("success","job updated",null,""))})
-      .catch((err)=>{res.json(new RestResult("error","failed to update job",null,err.toString()))})
 };
 exports.getJob = function(req, res) {
   var user = req.user.user
@@ -54,6 +50,12 @@ exports.getJob = function(req, res) {
             restResult.message = "job is rejected"
           }
           restResult.data = job[0]
+          // change in 5.0.2, result is now objects
+          restResult.data.extravars = JSON.parse(job[0].extravars || "{}")
+          restResult.data.credentials = JSON.parse(job[0].credentials || "{}")
+          restResult.data.approval = JSON.parse(job[0].approval || "{}")
+          restResult.data.notifications = JSON.parse(job[0].notifications || "{}")
+          restResult.data.subjobs = (job[0].subjobs || "").split(",").filter(x=>x!="").map(x=>parseInt(x))
           res.json(restResult);
         }else{
           res.json(new RestResult("error","failed to find job",null,"No such job"))
@@ -81,6 +83,29 @@ exports.findApprovals = function(req, res) {
     })
     .catch((err)=>{res.json(new RestResult("error","failed to find approval jobs",null,err))})
 };
+exports.download = async function(req,res){
+  try{
+    var user = req.user.user
+    var job = await Job.findById(user,req.params.id,true,true)
+    if(job.length>0){
+      var fileName = `ansibleforms-job-${job[0].id}.txt`;
+      var joboutput = job[0].output || ""
+      // convert output string to stream
+  
+      var readStream = new stream.PassThrough();
+      readStream.write(joboutput);
+      readStream.end();
+    
+      res.set('Content-disposition', 'attachment; filename="' + fileName + '"');
+      res.set('Content-Type', 'text/plain');
+    
+      readStream.pipe(res);
+    }
+  }catch(err){
+      // return 404
+      res.status(404).send(err.toString())
+  }
+}
 exports.deleteJob = function(req, res) {
     Job.delete( req.params.id)
     .then((job)=>{res.json(new RestResult("success","job deleted",null,""))})

@@ -336,7 +336,7 @@ Job.launch = async function(form,formObj,user,creds,extravars,parentId=null,next
   // if credentials are requested, we now get them.
   var credentials={}
 
-  // perhaps credentials were pass through extravars, they have precedence over the others !
+  // perhaps credentials were passed through extravars, they have precedence over the others !
   try{
     const afCreds = extravars.__credentials__ || creds || {}
     if(afCreds){
@@ -463,7 +463,7 @@ Job.continue = async function(form,user,creds,extravars,jobid,next) {
         }else{
           try{
             if (value.includes(',')) {
-              // If value contains a comma, split it and call with two parameters
+              // If value contains a comma, split it and call with two parameters (fall back credential)
               const parts = value.split(',').map(val => val.trim());
               credentials[key] = await Credential.findByName(parts[0], parts[1]);
             } else {
@@ -802,9 +802,12 @@ Multistep.launch = async function(form,steps,user,extravars,creds,jobid,counter,
                   if(!finalSuccessStatus){
                     await Job.printJobOutput(`ALWAYS step ${step.name}`,"stdout",jobid,++counter)
                   }
-                  await Job.launch(form,step,user,creds,ev,jobid,function(job){
+                  var jobSuccess = await Job.launch(form,step,user,creds,ev,jobid,function(job){
                       Job.printJobOutput(`ok: [Launched step ${step.name} with jobid '${job.id}']`,"stdout",jobid,++counter)
                   })
+                  if(!jobSuccess){
+                    throw new Error(`Check the step-logs for jobid '${job.id}' for more information`)
+                  }
                   // job was success
                   ok++
                   continue
@@ -1133,6 +1136,7 @@ Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,ve
     if(job){
       logger.info(`awx job id = ${job.id}`)
       // log launch
+      await Job.update({awx_id:job.id},jobid)
       await Job.printJobOutput(`Launched template ${template.name} with jobid ${job.id}`,"stdout",jobid,++counter)
       // track the job in the background
       return Awx.trackJob(job,jobid,++counter)
