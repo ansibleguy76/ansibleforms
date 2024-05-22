@@ -4255,7 +4255,7 @@
 
       A `lib` directory needs to exist within the root directory and is automatically included for the ytt call.
       Data can be provided globally by setting prefixed environment variables:  
-      
+
       ```bash
       YTT_VARS_PREFIX=YTT_VAR
       YTT_VAR_INVENTORY_PATH=/tmp/inventory.yml
@@ -4304,5 +4304,5 @@
           type: text
           label: Message
           default: Object($(demo)).message
-          eval_default: true
+          evalDefault: true
       ```      
