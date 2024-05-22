@@ -57,7 +57,7 @@
   Vue.use(Vuelidate)
 
   export default{
-    name: "AzureAd",
+    name: "AfAzureAd",
     props:{
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean}

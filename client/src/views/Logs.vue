@@ -52,7 +52,7 @@
   import TokenStorage from './../lib/TokenStorage'
 
   export default{
-    name: "Logs",
+    name: "AfLogs",
     props:{
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean}

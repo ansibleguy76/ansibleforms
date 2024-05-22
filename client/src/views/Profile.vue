@@ -30,7 +30,7 @@
   Vue.use(Vuelidate)
 
   export default{
-    name: "Users",
+    name: "AfUsers",
     props:{
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean}

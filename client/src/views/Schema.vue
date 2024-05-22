@@ -44,7 +44,7 @@
 
 
   export default {
-      name: 'Schema',
+      name: 'AfSchema',
       props:{
         schema:{type:Object},
         errorMessage:{type:String},

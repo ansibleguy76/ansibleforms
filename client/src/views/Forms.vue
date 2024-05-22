@@ -21,7 +21,7 @@
   import Forms from './../components/Forms.vue'
   export default{
     components:{Categories,Forms},
-    name:"AFForms",
+    name:"AfForms",
     props:{
     },
     data(){

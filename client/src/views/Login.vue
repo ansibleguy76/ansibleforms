@@ -37,7 +37,7 @@
 
   export default {
       components:{BulmaInput},
-      name: 'Login',
+      name: 'AfLogin',
       data() {
           return {
               loading:false,
