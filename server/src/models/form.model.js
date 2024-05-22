@@ -5,6 +5,7 @@ const fs=require("fs")
 const os=require("os")
 const fse=require("fs-extra")
 const moment=require("moment")
+const execSync = require('child_process').execSync;
 const YAML=require("yaml")
 const Ajv = require('ajv');
 const ajv = new Ajv()
@@ -33,6 +34,18 @@ ajv.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
 var Form=function(data){
   this.forms = data.forms;
 };
+
+/**
+ * Compute ytt cli options for library data values based on provided env vars
+ */
+function getYttLibDataOpts() {
+  var yttLibDataOpts = '';
+  Object.entries(process.env).filter( ([key, value]) => key.startsWith('YTT_LIB_DATA_')).forEach( ([key, value]) => {
+    const libName = key.replace('YTT_LIB_DATA_', '').toLowerCase();
+    yttLibDataOpts += ` --data-values-file @${libName}:data=${value}`;
+  });
+  return yttLibDataOpts;
+}
 
 // create the backup path and 
 // since version 4.0.3 the backups go under folder => move backups there (should be only once)
@@ -71,12 +84,37 @@ Form.load = async function() {
   var appFormsPath = (await Repository.getFormsPath()) || appConfig.formsPath
   logger.info(`Loading ${appFormsPath}`)  
   var formsdirpath=path.join(path.dirname(appFormsPath),"/forms");
+  var formslibdirpath=path.join(path.dirname(appFormsPath),"/lib");
   var formfilesraw=[]
   var formfiles=[]
   var files=undefined
+
+  var ytt_env_data_opt = ''
+  if ('YTT_VARS_PREFIX' in process.env) {
+    ytt_env_data_opt = ` --data-values-env ${process.env.YTT_VARS_PREFIX}`;
+  }
+  var yttLibDataOpts = getYttLibDataOpts();
+
   try{
     // read base forms.yaml
-    rawdata = fs.readFileSync(appFormsPath,'utf8');
+    rawdata = '';
+    try {
+      if (appConfig.useYtt) {
+        logger.info(`interpreting ${appFormsPath} with ytt.`);
+        logger.debug(`executing 'ytt -f ${appFormsPath} -f ${formslibdirpath}${ytt_env_data_opt}${yttLibDataOpts}'`)
+        rawdata = execSync(
+            `ytt -f ${appFormsPath} -f ${formslibdirpath}${ytt_env_data_opt}${yttLibDataOpts}`,
+            {
+              env: process.env,
+              encoding: 'utf-8'
+            }
+        );
+      } else {
+        rawdata = fs.readFileSync(appFormsPath, 'utf8');
+      }
+    } catch (e) {
+      logger.error(`failed to load '${appFormsPath}'.\n${e}`);
+    }
     // read extra form files
     try{
       files = fs.readdirSync(formsdirpath)
@@ -86,9 +124,27 @@ Form.load = async function() {
         // read files
         files.forEach((item, i) => {
           try{
-            formfilesraw.push({name:item,value:fs.readFileSync(path.join(formsdirpath,item),'utf8')})
+            var itemFormPath = path.join(formsdirpath, item);
+            var itemRawData = '';
+            if (appConfig.useYtt) {
+              logger.info(`interpreting ${itemFormPath} with ytt.`);
+              logger.debug(`executing 'ytt -f ${itemFormPath} -f ${formslibdirpath}${ytt_env_data_opt}'`)
+              itemRawData = execSync(
+                  `ytt -f ${itemFormPath} -f ${formslibdirpath}${ytt_env_data_opt}`,
+                  {
+                    env: process.env,
+                    encoding: 'utf-8'
+                  }
+              );
+            } else {
+              itemRawData =fs.readFileSync(itemFormPath,'utf8');
+            }
+            formfilesraw.push({
+              name: item,
+              value: itemRawData
+            })
           }catch(e){
-            logger.error(`failed to load file '${item}'.\n${e}`)
+            logger.error(`failed to load file '${item}'.\n${e}`);
           }
         });
       }
@@ -136,6 +192,10 @@ Form.load = async function() {
         logger.error(`failed to merge file '${item.name}' into forms.yaml.\n${e}`)
       }
   });
+
+  // dump forms to disk
+
+  fs.writeFileSync('/tmp/forms.yaml',YAML.stringify(forms))
 
   try{
     return Form.validate(forms)
