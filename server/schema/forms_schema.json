@@ -1185,18 +1185,28 @@
                 "previewColumn": {"type": "string"},
                 "placeholderColumn": {"type": "string"},
                 "dbConfig": {
-                  "type": "object",
-                  "required": [
-                    "name",
-                    "type"
-                  ],
-                  "properties": {
-                    "name": {"type": "string"},
-                    "type": {
-                      "type": "string",
-                      "enum": ["mysql", "mssql", "postgres", "mongodb"]
+                  "anyOf": [
+                    {"type": "string"},
+                    {
+                      "type": "object",
+                      "required": [
+                        "name",
+                        "type"
+                      ],
+                      "properties": {
+                        "name": {"type": "string"},
+                        "type": {
+                          "type": "string",
+                          "enum": ["mysql", "mssql", "postgres", "mongodb"]
+                        }
+                      }                        
+                    },
+                    {
+                      "type": "array",
+                      "items": { "type": "string" }
                     }
-                  }
+                  ]
+
                 },
                 "model": {
                   "anyOf": [{"type": "string"},
