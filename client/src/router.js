@@ -71,6 +71,10 @@ export default new Router({
         component:Login
       },
       {
+          path:"/logout",
+          name:"Logout"
+      },
+      {
         path:"/profile",
         name:"Profile",
         component:Profile

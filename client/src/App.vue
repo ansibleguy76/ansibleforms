@@ -211,9 +211,9 @@
         logout() {
             TokenStorage.clear()
             this.formConfig=undefined
-            this.$router.replace({ name: "Login" }).catch(err => {});
             this.refreshAuthenticated()
             this.resetProfile()
+            this.$router.replace({ name: "Logout" }).catch(err => {});
         }
     }
   }
