@@ -1,6 +1,7 @@
 'use strict';
 const User = require("../models/user.model")
 const AzureAd = require("../models/azureAd.model")
+const OIDC = require("../models/oidc.model")
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
 var authConfig = require('../../config/auth.config')
@@ -35,13 +36,19 @@ function userToJwt(user,expiryDays){
 // get login settings
 exports.settings = async function(req,res){
   AzureAd.isEnabled()
-  .then((azure)=>{
+  .then((azure)=> {
     var settings={}
     // console.log(inspect(azure))
     settings.azureAdEnabled=azure.enable
     settings.azureGroupfilter=azure.groupfilter
     settings.azureGraphUrl=authConfig.azureGraphUrl
-    res.json(new RestResult("success","",settings,""))
+
+    OIDC.isEnabled().then((oidc) => {
+      settings.oidcEnabled=oidc.enabled
+      settings.oidcIssuer=oidc.issuer
+      settings.oidcGroupfilter=oidc.groupfilter
+      res.json(new RestResult("success","",settings,""))
+    })
   })
   .catch((err)=>{res.json(new RestResult("error","failed to get app settings",null,Helpers.getError(err)))})
 }
