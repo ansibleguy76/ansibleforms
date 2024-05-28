@@ -16,7 +16,7 @@ OIDC.update = function (record) {
   return mysql.do("UPDATE AnsibleForms.`oidc` set ?", record)
 };
 OIDC.isEnabled = function(){
-  return mysql.do("SELECT enabled,groupfilter FROM AnsibleForms.`oidc` limit 1;")
+  return mysql.do("SELECT enabled,groupfilter, issuer FROM AnsibleForms.`oidc` limit 1;")
     .then((res)=>{
       if(res.length>0){
         return res[0]

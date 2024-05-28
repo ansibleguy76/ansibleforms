@@ -172,7 +172,7 @@ exports.errorHandler = async function(err,req, res,next) {
 /**
  * generate the callback options for login via Azure AD or OIDC
  */
-const callbackOptions = function(res, next, tokenName) {
+const authCallback = function(req, res, next) {
   return async (err, token) => {
     try {
       // if we have an error; we return it
@@ -180,7 +180,7 @@ const callbackOptions = function(res, next, tokenName) {
         logger.error(Helpers.getError(err))
         return next(err)
       }else{
-        res.redirect(`/#/login?${tokenName}=${token}`)
+        res.redirect(`/#/login?token=${token}`)
       }
 
     } catch (err) {
@@ -230,7 +230,7 @@ exports.azureadoauth2 = async function(req, res,next) {
 // callback with the Azure AD user info
 exports.azureadoauth2callback = async function(req, res,next) {
   logger.debug("Callback")
-  passport.authenticate('azure_ad_oauth2', callbackOptions(res, next, 'azuretoken'))(req, res, next)
+  passport.authenticate('azure_ad_oauth2', authCallback(req, res, next))(req, res, next)
 };
 // callback with the Azure AD user info
 exports.azureadoauth2login = async function(req, res,next) {
@@ -249,13 +249,13 @@ exports.oidc = async function(req, res,next) {
   passport.authenticate('oidc')(req,res,next)
 };
 
-// callback with the Azure AD user info
+// callback with the OIDC user info
 exports.oidcCallback = async function(req, res,next) {
   logger.debug("Callback")
-  passport.authenticate('oidc', callbackOptions(res, next, 'oidctoken'))(req, res, next)
+  passport.authenticate('oidc', authCallback(req, res, next))(req, res, next)
 };
-// callback with the Azure AD user info
-exports.oidcLogin = async function(req, res,next) {
+// callback with the OIDC user info
+exports.oidcLogin = async function(req, res, next) {
   try {
     await tokenLogin('oidc', req, res, next)
   } catch(err){
