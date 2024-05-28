@@ -15,16 +15,16 @@
           </nav>      
           <div class="columns">
             <div class="column">
-              <BulmaCheckbox checktype="checkbox" v-model="oidc.enable" label="Enable OIDC" />
+              <BulmaCheckbox checktype="checkbox" v-model="oidc.enabled" label="Enable OIDC" />
               <div class="mt-2">
-                <BulmaInput :disabled="!oidc.enable" icon="id-card" v-model="oidc.issuer" label="Issuer URL" placeholder="" :required="true" :hasError="$v.oidc.issuer.$invalid" :errors="[]" />
-                <BulmaInput :disabled="!oidc.enable" icon="user-tag" v-model="oidc.client_id" label="Client Id" placeholder="" :required="true" :hasError="$v.oidc.client_id.$invalid" :errors="[]" />
-                <BulmaInput :disabled="!oidc.enable" icon="user-secret" v-model="oidc.secret_id" type="password" label="Secret Id" placeholder="" :required="true" :hasError="$v.oidc.secret_id.$invalid" :errors="[]" />
-                <BulmaInput :disabled="!oidc.enable" icon="filter" v-model="oidc.groupfilter" label="Groupname Regex" placeholder="A regular expression to match groups" :required="false" :errors="[]" />
+                <BulmaInput :disabled="!oidc.enabled" icon="id-card" v-model="oidc.issuer" label="Issuer URL" placeholder="" :required="true" :hasError="$v.oidc.issuer.$invalid" :errors="[]" />
+                <BulmaInput :disabled="!oidc.enabled" icon="user-tag" v-model="oidc.client_id" label="Client Id" placeholder="" :required="true" :hasError="$v.oidc.client_id.$invalid" :errors="[]" />
+                <BulmaInput :disabled="!oidc.enabled" icon="user-secret" v-model="oidc.secret_id" type="password" label="Secret Id" placeholder="" :required="true" :hasError="$v.oidc.secret_id.$invalid" :errors="[]" />
+                <BulmaInput :disabled="!oidc.enabled" icon="filter" v-model="oidc.groupfilter" label="Groupname Regex" placeholder="A regular expression to match groups" :required="false" :errors="[]" />
                 <div class="notification is-info-light content">
                   <p><strong>Callback Url </strong>: {{ callbackUrl }} <span v-if="!settings.url" class="tag is-danger"><font-awesome-icon icon="circle-exclamation" class="mr-1" /> You have not set the Ansible Form Url (see: 'General > Ansible Forms' settings page)</span></p>
                 </div>
-                <!-- <BulmaButton :disabled="!oidc.enable" icon="check" label="Test OIDC" @click="testOidc()"></BulmaButton> -->
+                <!-- <BulmaButton :disabled="!oidc.enabled" icon="check" label="Test OIDC" @click="testOidc()"></BulmaButton> -->
                 
               </div>
             </div>
@@ -60,7 +60,7 @@
             issuer: "",
             client_id:"",
             secret_id:"",
-            enable:true,
+            enabled:true,
             groupfilter:""
           },
           settings:{
@@ -127,17 +127,17 @@
       oidc:{
         issuer: {
           required:requiredIf(function(oidc){
-            return oidc.enable
+            return oidc.enabled
           })
         },
         client_id: {
           required:requiredIf(function(oidc){
-            return oidc.enable
+            return oidc.enabled
           })
         },
         secret_id:{
           required:requiredIf(function(oidc){
-            return oidc.enable
+            return oidc.enabled
           })
         }
 

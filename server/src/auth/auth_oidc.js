@@ -25,7 +25,7 @@ exports.initialize = async () =>{
   var url
   try{
     oidc = await OIDC.isEnabled()
-    oidcEnabled = !!oidc.enable
+    oidcEnabled = !!oidc.enabled
     if(!oidcEnabled){
       logger.info("OIDC is not enabled")
     }else{
@@ -44,7 +44,6 @@ exports.initialize = async () =>{
   try{
     logger.debug("Removing the strategy OIDC")
     passport.unuse('oidc')
-    authClient = undefined
     if(!oidcEnabled){
       return true
     }
@@ -59,16 +58,17 @@ exports.initialize = async () =>{
     logger.debug("Fetching OIDC Issuer")
     const oidcIssuer = await openidClient.Issuer.discover(oidcConfig.issuer)
     authClient = new oidcIssuer.Client({
-      clientID: oidcConfig.client_id,
-      clientSecret: oidcConfig.secret_id,
+      client_id: oidcConfig.client_id,
+      client_secret: oidcConfig.secret_id,
       redirect_uris: [`${url}${appConfig.baseUrl}api/v1/auth/oidc/callback`],
       post_logout_redirect_uris: [`${url}${appConfig.baseUrl}api/v1/auth/oidc/logout`],
       response_types: ['code'],
     });
+
     logger.debug("Adding the strategy OIDC")
     passport.use(
       'oidc',
-      new openidClient.Strategy({oidcClient},
+      new openidClient.Strategy({client: authClient},
         // mandatory verify passport method
         async function (tokenSet, userinfo, done) {
           done(null, tokenSet.claims())

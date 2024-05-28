@@ -8,7 +8,7 @@ var OIDC=function(oidc){
     this.issuer = oidc.issuer;
     this.client_id = oidc.client_id;
     this.secret_id = encrypt(oidc.secret_id);
-    this.enable = (oidc.enable)?1:0;
+    this.enabled = (oidc.enabled)?1:0;
     this.groupfilter = oidc.groupfilter;
 };
 OIDC.update = function (record) {
@@ -16,7 +16,7 @@ OIDC.update = function (record) {
   return mysql.do("UPDATE AnsibleForms.`oidc` set ?", record)
 };
 OIDC.isEnabled = function(){
-  return mysql.do("SELECT enable,groupfilter FROM AnsibleForms.`oidc` limit 1;")
+  return mysql.do("SELECT enabled,groupfilter FROM AnsibleForms.`oidc` limit 1;")
     .then((res)=>{
       if(res.length>0){
         return res[0]

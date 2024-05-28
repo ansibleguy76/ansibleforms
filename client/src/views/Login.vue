@@ -94,7 +94,7 @@
             }
           };
 
-          const groupListIdentifier = type === 'azuread' ? 'azuread' : 'groups'
+          const groupListIdentifier = type === 'azuread' ? 'azuread' : 'roles'
 
           axios.get(url, config)
             .then((res) => {
