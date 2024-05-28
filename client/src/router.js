@@ -11,6 +11,7 @@ import Repos from './views/Repos.vue'
 import Users from './views/Users.vue'
 import Ldap from './views/Ldap.vue'
 import AzureAd from './views/AzureAd.vue'
+import OIDC from './views/OIDC.vue'
 import Settings from './views/Settings.vue'
 import MailSettings from './views/MailSettings.vue'
 import Awx from './views/Awx.vue'
@@ -148,7 +149,13 @@ export default new Router({
         name:"AzureAd",
         component:AzureAd,
         beforeEnter: checkAdmin
-      },    
+      },
+      {
+          path:"/oidc",
+          name:"OIDC",
+          component:OIDC,
+          beforeEnter: checkAdmin
+      },
       {
         path:"/settings",
         name:"Settings",
