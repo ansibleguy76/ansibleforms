@@ -209,11 +209,19 @@
           }
         },
         logout() {
-            TokenStorage.clear()
-            this.formConfig=undefined
-            this.refreshAuthenticated()
-            this.resetProfile()
-            this.$router.replace({ name: "Logout" }).catch(err => {});
+          TokenStorage.clear()
+          this.formConfig=undefined
+          this.refreshAuthenticated()
+          this.resetProfile()
+          axios.get(`${process.env.BASE_URL}api/v1/auth/logout`).then((res) => {
+            const logoutUrl = res.data?.data?.output?.logoutUrl
+            if (logoutUrl) {
+              location.replace(logoutUrl)
+            }
+          }).catch((err) => {
+            console.log(err)
+            this.$toast.error("Could not log out")
+          })
         }
     }
   }

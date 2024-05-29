@@ -61,7 +61,7 @@ exports.initialize = async () =>{
       client_id: oidcConfig.client_id,
       client_secret: oidcConfig.secret_id,
       redirect_uris: [`${url}${appConfig.baseUrl}api/v1/auth/oidc/callback`],
-      post_logout_redirect_uris: [`${url}${appConfig.baseUrl}api/v1/auth/oidc/logout`],
+      post_logout_redirect_uris: [`${url}${appConfig.baseUrl}`],
       response_types: ['code'],
     });
 
@@ -86,8 +86,9 @@ exports.initialize = async () =>{
   
 }
 
-exports.logout = async (req, res) => {
+exports.getLogoutUrl = () => {
   if (typeof authClient !== 'undefined' && authClient !== null) {
-    res.redirect(authClient.endSessionUrl());
+    return authClient.endSessionUrl()
   }
+  return ''
 }

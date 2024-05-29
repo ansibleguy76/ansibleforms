@@ -72,13 +72,6 @@ export default new Router({
         component:Login
       },
       {
-          path:"/logout",
-          name:"Logout",
-          redirect: to => {
-              return { path: '/logout' }
-          },
-      },
-      {
         path:"/profile",
         name:"Profile",
         component:Profile

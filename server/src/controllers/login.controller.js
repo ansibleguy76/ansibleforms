@@ -9,6 +9,7 @@ const logger=require("../lib/logger");
 const {inspect}=require("node:util")
 const Helpers=require('../lib/common')
 const RestResult = require("../models/restResult.model")
+const auth_oidc = require("../auth/auth_oidc");
 
 function userToJwt(user,expiryDays){
 
@@ -153,15 +154,15 @@ exports.basic_ldap = async function(req, res,next) {
 /**
  * perform logout actions
  */
-exports.logout = async function(req, res,next){
-  try {
+exports.logout = async function(req, res, next){
+  req.logout((err) => {
+    if (err) {
+      logger.error(Helpers.getError(error))
+      return next(err)
+    }
     const auth_oidc = require('../auth/auth_oidc');
-    await auth_oidc.logout(req, res)
-    res.redirect('/login')
-  } catch (error) {
-    logger.error(Helpers.getError(error))
-    return next(error);
-  }
+    res.json(new RestResult("success","",{logoutUrl: auth_oidc.getLogoutUrl()},""))
+  });
 };
 
 // catches middleware error (non implemented strategy for example)
@@ -202,8 +203,6 @@ const extractAzureUser = async function(payload, groups) {
 };
 
 const extractOidcUser = async function(payload, groups) {
-  logger.debug("Getting OIDC user info")
-  logger.debug(JSON.stringify(payload))
   return {
     username: payload.preferred_username,
     groups: groups
