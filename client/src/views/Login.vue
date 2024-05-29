@@ -38,6 +38,7 @@
   import TokenStorage from './../lib/TokenStorage'
   import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
   import axios from 'axios'
+  import jwt from 'jsonwebtoken'
   Vue.use(Vuelidate)
 
   export default {
@@ -79,68 +80,72 @@
                 this.getGroupsAndLogin(token, `${this.oidcIssuer}/protocol/openid-connect/userinfo`, 'oidc')
               }
             }else{
-              // this.$toast.error(result.data.data.error)
+              this.$toast.error(result.data.data.error)
             }
           })
           .catch((err)=>{
-            this.$toast.error("Failed to get settings")
+            this.$toast.error(`Failed to get settings: ${err}`)
           })
         },
         getGroupsAndLogin(token, url = `${this.azureGraphUrl}/v1.0/me/transitiveMemberOf`, type='azuread', allGroups = []) {
-          var ref=this
-          const config = {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          };
-
-          const groupListIdentifier = type === 'azuread' ? 'azuread' : 'roles'
-
-          axios.get(url, config)
-            .then((res) => {
-              console.log("user info:")
-              console.log(res)
-              const groups = res.data.value.filter(x => x.displayName).map(x => (`${groupListIdentifier}/` + x.displayName));
-              allGroups = allGroups.concat(groups);
-
-              if (res.data['@odata.nextLink']) {
-                // If there's a nextLink, make a recursive call to get the next page of data
-                this.getGroupsAndLogin(token, res.data['@odata.nextLink'], allGroups);
-              } else {
-                var validRegex=true
-                var regex
-                const groupfilter = type === 'azuread' ? ref.azureGroupfilter : ref.oidcGroupfilter
-                try{
-                  regex = new RegExp(groupfilter, 'g');
-                }catch(e){
-                  console.error("Identity Provider Group filter is not a valid regular expression")
-                  validRegex=false
-                }
-                if(validRegex && groupfilter){
-                  allGroups = allGroups.filter(x => x.match(regex))
-                  console.log("Groups have been filtered")
-                }
-                const loginProvider = type === 'azuread' ? 'azureadoauth2' : 'oidc'
-                // No more nextLink, you have all the groups
-                axios.post(`${ref.baseUrl}api/v1/auth/${loginProvider}/login`, { token, groups:allGroups })
-                  .then((result) => {
-                    if (result.data.token) {
-                      TokenStorage.storeToken(result.data.token);
-                      TokenStorage.storeRefreshToken(result.data.refreshtoken);
-                      this.$emit("authenticated", result.data.token);
-                    } else {
-                      this.$toast.error("Identity Provider Login failed, no token found");
-                    }
-                  })
-                  .catch((err) => {
-                    console.log(err);
-                    this.$toast.error("Identity Provider Login failed");
-                  });
+          if (type === 'azuread') {
+            const config = {
+              headers: {
+                Authorization: `Bearer ${token}`
               }
-            })
-            .catch((err) => {
-              this.$toast.error("Failed to get group membership");
-            });
+            };
+
+            axios.get(url, config)
+                .then((res) => {
+                  const groups = res.data.value.filter(x => x.displayName).map(x => (`azuread/` + x.displayName));
+                  allGroups = allGroups.concat(groups);
+
+                  if (res.data['@odata.nextLink']) {
+                    // If there's a nextLink, make a recursive call to get the next page of data
+                    this.getGroupsAndLogin(token, res.data['@odata.nextLink'], allGroups);
+                  } else {
+                    // No more nextLink, you have all the groups
+                    this.tokenLogin(token, allGroups)
+                  }
+                })
+                .catch((err) => {
+                  this.$toast.error("Failed to get group membership");
+                });
+          }
+          else {
+            const payload = jwt.decode(token, {complete: true}).payload
+            this.tokenLogin(token, payload.groups || [], 'oidc')
+          }
+        },
+        tokenLogin(token, allGroups, type='azuread') {
+          var validRegex=true
+          var regex
+          const groupfilter = type === 'azuread' ? this.azureGroupfilter : this.oidcGroupfilter
+          try{
+            regex = new RegExp(groupfilter, 'g');
+          }catch(e){
+            console.error("Identity Provider Group filter is not a valid regular expression")
+            validRegex=false
+          }
+          if(validRegex && groupfilter){
+            allGroups = allGroups.filter(x => x.match(regex))
+          }
+          const loginProvider = type === 'azuread' ? 'azureadoauth2' : 'oidc'
+
+          axios.post(`${this.baseUrl}api/v1/auth/${loginProvider}/login`, { token:token, groups:allGroups })
+          .then((result) => {
+            if (result.data.token) {
+              TokenStorage.storeToken(result.data.token);
+              TokenStorage.storeRefreshToken(result.data.refreshtoken);
+              this.$emit("authenticated", result.data.token);
+            } else {
+              this.$toast.error("Identity Provider Login failed, no token found");
+            }
+          })
+          .catch((err) => {
+            console.log(err);
+            this.$toast.error("Identity Provider Login failed");
+          });
         },
         login() {
           var ref=this

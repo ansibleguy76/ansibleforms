@@ -157,7 +157,7 @@ exports.logout = async function(req, res,next){
   try {
     const auth_oidc = require('../auth/auth_oidc');
     await auth_oidc.logout(req, res)
-    res.redirect('/')
+    res.redirect('/login')
   } catch (error) {
     logger.error(Helpers.getError(error))
     return next(error);
@@ -172,8 +172,11 @@ exports.errorHandler = async function(err,req, res,next) {
 /**
  * generate the callback options for login via Azure AD or OIDC
  */
-const authCallback = function(req, res, next) {
+const authCallback = function(req, res, next, type='azuread') {
   return async (err, token) => {
+    if (type !== 'azuread') {
+      token = jwt.sign(token, type);
+    }
     try {
       // if we have an error; we return it
       if (err) {
@@ -190,29 +193,36 @@ const authCallback = function(req, res, next) {
   }
 };
 
+const extractAzureUser = async function(payload, groups) {
+  return {
+    username: payload.upn,
+    id: payload.oid,
+    groups: groups,
+  }
+};
+
+const extractOidcUser = async function(payload, groups) {
+  logger.debug("Getting OIDC user info")
+  logger.debug(JSON.stringify(payload))
+  return {
+    username: payload.preferred_username,
+    groups: groups
+  }
+};
+
 /**
  * Function to perform login via token from identity provider (Azure AD / OIDC)
  */
 const tokenLogin = async function(type, req, res) {
   logger.debug("Login")
-  const user={}
-  var token = ''
-  switch (type) {
-    case 'azuread':
-      token=req.body.azuretoken
-      user.type = 'azuread'
-      break
-    case 'oidc':
-      token=req.body.oidctoken
-      user.type = 'oidc'
-      break
-  }
-  var groups=req.body.groups
-  var payload = jwt.decode(token, '', true);
-  user.username = payload.upn
-  user.id = payload.oid
-  user.groups = groups
-  user.roles = await User.getRoles(user.groups,user)
+  var payload = type === 'azuread' ? jwt.decode(req.body.token, '', true) : jwt.verify(req.body.token, type);
+
+  const user= type === 'azuread' ?
+      await extractAzureUser(payload, req.body.groups) :
+      await extractOidcUser(payload, req.body.groups);
+  user.type = type
+  user.roles = await User.getRoles(user.groups, user)
+
   // if admin role, you can override the expirydays (for accesstoken only)
   if(req.query.expiryDays && user?.roles?.includes("admin") && !isNan(req.query.expiryDays)){
     return res.json(userToJwt(user,`${req.query.expiryDays}D`))
@@ -229,7 +239,6 @@ exports.azureadoauth2 = async function(req, res,next) {
 
 // callback with the Azure AD user info
 exports.azureadoauth2callback = async function(req, res,next) {
-  logger.debug("Callback")
   passport.authenticate('azure_ad_oauth2', authCallback(req, res, next))(req, res, next)
 };
 // callback with the Azure AD user info
@@ -242,17 +251,16 @@ exports.azureadoauth2login = async function(req, res,next) {
   }
 };
 
-// this redirects to Azure AD login but with the proper application client id & secret
+// this redirects to OIDC Provider login but with the proper application client id & secret
 exports.oidc = async function(req, res,next) {
   logger.debug("Redirect to Open ID Issuer")
-  // redirect to azure
+  // redirect to Open ID Connect Provider
   passport.authenticate('oidc')(req,res,next)
 };
 
 // callback with the OIDC user info
 exports.oidcCallback = async function(req, res,next) {
-  logger.debug("Callback")
-  passport.authenticate('oidc', authCallback(req, res, next))(req, res, next)
+  passport.authenticate('oidc', authCallback(req, res, next, 'oidc'))(req, res, next)
 };
 // callback with the OIDC user info
 exports.oidcLogin = async function(req, res, next) {
