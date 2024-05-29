@@ -73,7 +73,10 @@ export default new Router({
       },
       {
           path:"/logout",
-          name:"Logout"
+          name:"Logout",
+          redirect: to => {
+              return { path: '/logout' }
+          },
       },
       {
         path:"/profile",
