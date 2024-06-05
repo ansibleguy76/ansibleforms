@@ -21,7 +21,7 @@ function pushForminfoToExtravars(formObj,extravars,creds={}){
   // push top form fields to extravars
   // change in 4.0.16 => easier to process & available in playbook, might be handy
   // no credentials added here, because then can also come from asCredential property and these would get lost.
-  const topFields=['template','playbook','tags','limit','executionEnvironment','check','diff','verbose','keepExtravars','credentials','inventory','awxCredentials','ansibleCredentials','instanceGroups']
+  const topFields=['template','playbook','tags','limit','executionEnvironment','check','diff','verbose','keepExtravars','credentials','inventory','awxCredentials','ansibleCredentials','vaultCredentials','instanceGroups']
   for (const fieldName of topFields) {
     // Check if the field exists in formObj and if the property is not present in extravars
     if (formObj.hasOwnProperty(fieldName) && extravars[`__${fieldName}__`] === undefined) {
@@ -901,6 +901,7 @@ Ansible.launch=async (ev,credentials,jobid,counter,approval,approved=false)=>{
   var keepExtravars = extravars?.__keepExtravars__ || false    
   var diff = extravars?.__diff__ || false  
   var ansibleCredentials = extravars?.__ansibleCredentials__ || ""  
+  var vaultCredentials = extravars?.__vaultCredentials__ || ""
   if(approval){
     if(!approved){
       await Job.sendApprovalNotification(approval,ev,jobid)
@@ -917,22 +918,44 @@ Ansible.launch=async (ev,credentials,jobid,counter,approval,approved=false)=>{
   extravars = JSON.stringify(extravars)
   // define hiddenExtravars
   var hiddenExtravars={}
-  if(ansibleCredentials){ 
-    const runCredential = await Credential.findByName(ansibleCredentials)
-    hiddenExtravars.ansible_user = runCredential.user
-    hiddenExtravars.ansible_password = runCredential.password
+  try{
+    if(ansibleCredentials){ 
+      const runCredential = await Credential.findByName(ansibleCredentials)
+      hiddenExtravars.ansible_user = runCredential.user
+      hiddenExtravars.ansible_password = runCredential.password
+    }
+    // convert to string for the command
+    hiddenExtravars = JSON.stringify(hiddenExtravars)  
+  }catch(err){
+    logger.error("Failed to get ansible credentials : ",err)
+    await Job.endJobStatus(jobid,++counter,"stderr","failed","[ERROR]: Failed to get ansible credentials")
+    return false
   }
-  // convert to string for the command
-  hiddenExtravars = JSON.stringify(hiddenExtravars)  
-
+  // define vaultPassword
+  var vaultPassword=""
+  try{
+    if(vaultCredentials){
+      const vaultCredential = await Credential.findByName(vaultCredentials)
+      vaultPassword = vaultCredential.password
+    }
+  }catch(err){
+    logger.error("Failed to get vault credentials : ",err)
+    await Job.endJobStatus(jobid,++counter,"stderr","failed","[ERROR]: Failed to get vault credentials")
+    return false
+  }
   // make extravars file
   const extravarsFileName = `extravars_${jobid}.json`;
   const hiddenExtravarsFileName = `he_${extravarsFileName}`
   logger.debug(`Extravars File: ${extravarsFileName}`);
   // prepare my ansible command
 
-  var command = `ansible-playbook -e '@${extravarsFileName}' -e '@${hiddenExtravarsFileName}'`
-  
+  var command
+  if(!vaultPassword){
+    command = `ansible-playbook -e '@${extravarsFileName}' -e '@${hiddenExtravarsFileName}'`
+  }else{
+    command = `echo ${Buffer.from(vaultPassword).toString('base64')} | base64 --decode | ansible-playbook -e '@${extravarsFileName}' -e '@${hiddenExtravarsFileName}' --vault-password-file=/bin/cat`
+  }
+
   inventory.forEach((item, i) => {  command += ` -i '${item}'` });
   if(tags){ command += ` -t '${tags}'` }
   if(check){ command += ` --check` }

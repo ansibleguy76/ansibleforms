@@ -1001,6 +1001,14 @@
         short: Pass ansible_user and ansible_password to ansible playbook using stored credentials
         description: |
           Ansible allows to pass default ansible credentials in the form of 2 extravars ansible_user and ansible_password
+      - name: vaultCredentials
+        type: string
+        group: basic
+        version: 5.0.2
+        allowed: a local credentialname
+        short: Pass vault password to ansible playbook using stored credentials
+        description: |
+          Ansible can encrypt variables in a vault, to unlock the vault a password is needed.  This password can be stored in Ansible Forms (as credential) and passed to the playbook..           
       - name: steps
         type: array
         with_types: multistep
@@ -4251,8 +4259,12 @@
   - name: Enable ytt
     short: Enable ytt
     description: |
-      In the case you want to use ytt, tt can be enabled by setting `USE_YTT=1`.  
+      In the case you want to use ytt, it can be enabled by setting `USE_YTT=1`.  
+      Read more info about ytt (https://carvel.dev/ytt/).  
+        
+      **NOTE** : when using ytt, you must disable the designer, the designer will convert the yaml files to intermediate json and will drop the ytt syntax (which is yaml comments).
 
+        
       A `lib` directory needs to exist within the root directory and is automatically included for the ytt call.
       Data can be provided globally by setting prefixed environment variables:  
 

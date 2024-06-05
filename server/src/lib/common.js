@@ -81,10 +81,13 @@ Helpers.checkAdminMiddleware = (req, res, next) =>  {
 }
 // checks for passwords from credentials and masks them
 Helpers.logSafe = (v)=>{
+  var result
   if(!v){
     return ""
   }
-  return v.replace(/"password":"[^"]+"/g,'"password":"**NOLOG**"')
+  result = v.replaceAll(/"password":"[^"]+"/g,'"password":"**NOLOG**"')
+  result = result.replace(/echo .* base64 --decode/g,"echo **NOLOG**")
+  return result
 }
 // a smart object placeholder replacer
 Helpers.replacePlaceholders = (msg,extravars)=>{

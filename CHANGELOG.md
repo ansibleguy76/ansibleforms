@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Now allowing string (credential name) or array (of names) as dbConfig (dbtype is fetched from the database, with mysql fallback)
     When using array, the resultsets are merged.
 -   Added ytt implementation to template yaml files (credits mdaugs)
+-   Vault credentials, pass a vault password to ansible playbook.
 
 ### Changed
 

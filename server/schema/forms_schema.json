@@ -121,6 +121,7 @@
               "type": {
                 "enum": ["awx"]
               },
+              "vaultCredentials": {"not":{}},
               "playbook": {"not":{}},
               "ansibleCredentials": {"not":{}},
               "steps": {"not":{}}
@@ -133,6 +134,7 @@
                 "enum": ["multistep"]
               },
               "playbook": {"not":{}},
+              "vaultCredentials": {"not":{}},
               "template": {"not":{}},
               "inventory": {"not":{}},
               "awxCredentials": {"not":{}},
@@ -334,6 +336,7 @@
                         "enum": ["awx"]
                       },
                       "playbook": {"not":{}},
+                      "vaultCredentials": {"not":{}},
                       "ansibleCredentials": {"not":{}},
                       "steps": {"not":{}}
                     },
@@ -367,9 +370,8 @@
                   "additionalProperties": false,
                   "uniqueProperties": true            
                 },    
-                "ansibleCredentials": {
-                  "type": "string"
-                },      
+                "ansibleCredentials": {"type": "string"},  
+                "vaultCredentials": {"type": "string"},  
                 "inventory": {"type": "string"},
                 "tags": {"type": "string"},
                 "check": {"type": "boolean"},
@@ -467,9 +469,8 @@
               "default": ""
             }
           }, 
-          "ansibleCredentials":{
-            "type": "string"
-          },                             
+          "ansibleCredentials": {"type": "string"},         
+          "vaultCredentials": {"type": "string"},  
           "inventory": {"type": "string"},
           "executionEnvironment": {"type": "string"},
           "instanceGroups": {
