@@ -205,7 +205,7 @@ const extractAzureUser = async function(payload, groups) {
 const extractOidcUser = async function(payload, groups) {
   return {
     username: payload.preferred_username,
-    groups: groups
+    groups: groups.map(g => `oidc/${g}`)
   }
 };
 
