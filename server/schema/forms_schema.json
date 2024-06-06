@@ -74,7 +74,7 @@
             "items": {
               "type": "string",
               "default": "",
-              "pattern": "(\\blocal\\b|\\bldap\\b|\\bazuread\\b)\\/.+"
+              "pattern": "(\\blocal\\b|\\bldap\\b|\\bazuread\\b|\\boidc\\b)\\/.+"
             }
           },
           "users": {
@@ -82,7 +82,7 @@
             "items": {
               "type": "string",
               "default": "",
-              "pattern": "(\\blocal\\b|\\bldap\\b|\\bazuread\\b)\\/.+"
+              "pattern": "(\\blocal\\b|\\bldap\\b|\\bazuread\\b|\\boidc\\b)\\/.+"
             }            
           }                    
         },
