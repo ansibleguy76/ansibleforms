@@ -128,6 +128,18 @@
     description: |
       https://github.com/carvel-dev/ytt is a tool for yaml templating. It can be activated by this variable.
     version: 5.0.2
+  - name: SKIP_SCHEMA_CHECK
+    type: number
+    choices:
+      - name: 0
+        description: Does check the schema when querying '/'
+      - name: 1
+        description: Does not check the schema when querying '/'
+    default: 0
+    short: Skip the schema check
+    description: |
+      Schema check is performed whenever fetching '/'. This can be skipped.
+    version: 5.0.2
   - name: LOG_LEVEL
     type: string
     choices:

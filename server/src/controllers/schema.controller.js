@@ -1,8 +1,13 @@
 'use strict';
 const Schema = require('../models/schema.model');
-var RestResult = require('../models/restResult.model');
+var RestResult = require('../models/restResult.model');// our personal app settings
+const appConfig = require('../../config/app.config')
 
 exports.hasSchema = function(req, res) {
+    if (appConfig.skipSchemaCheck) {
+        return res.json(new RestResult("success", "Schema check skipped due to configuration.", [], []))
+    }
+
     Schema.hasSchema()
       .then((result)=>{ res.json(new RestResult("success","schema and tables are ok",result.data?.success,result.data?.failed)) })
       .catch((result)=>{ 

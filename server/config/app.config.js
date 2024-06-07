@@ -7,6 +7,7 @@ var app_config = {
   showDesigner: (process.env.SHOW_DESIGNER ?? 1)==1,
   formsPath: process.env.FORMS_PATH || path.resolve(__dirname + "/../persistent/forms.yaml"),
   useYtt: (process.env.USE_YTT ?? 0)==1,
+  skipSchemaCheck: (process.env.SKIP_SCHEMA_CHECK ?? 0) == 1,
   lockPath: process.env.LOCK_PATH || path.resolve(__dirname + "/../persistent/ansibleForms.lock"),
   helpPath: path.resolve(__dirname + "/../help.yaml"),
   encryptionSecret: ((process.env.ENCRYPTION_SECRET + "vOVH6sdmpNWjRRIqCc7rdxs01lwHzfr3").substring(0,32)) || "vOVH6sdmpNWjRRIqCc7rdxs01lwHzfr3",
