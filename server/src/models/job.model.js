@@ -630,7 +630,7 @@ Job.sendStatusNotification = async function(jobid){
       const url = config.url?.replace(/\/$/g,'') // remove trailing slash if present
 
       if(!url){
-        logger.warn(`Host URL is not set, no status mail can be sent. Go to 'settings' to correct this.`)
+        logger.warning(`Host URL is not set, no status mail can be sent. Go to 'settings' to correct this.`)
         return false
       }
       var subject = `AnsibleForms '${job.form}' [${job.job_type}] (${jobid}) - ${job.status} `
