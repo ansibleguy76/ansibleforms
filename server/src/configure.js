@@ -51,7 +51,8 @@ module.exports = app => {
   const auth_azuread = require('./auth/auth_azuread');  
   auth_azuread.initialize()
 
-
+  const auth_oidc = require('./auth/auth_oidc');
+  auth_oidc.initialize()
 
   app.use(bodyParser.json({limit: '50mb'}));
   app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
@@ -65,6 +66,7 @@ module.exports = app => {
   const groupRoutes = require('./routes/group.routes')
   const ldapRoutes = require('./routes/ldap.routes')
   const azureadRoutes = require('./routes/azuread.routes')
+  const oidcRoutes = require('./routes/oidc.routes')
   const settingsRoutes = require('./routes/settings.routes')
   const credentialRoutes = require('./routes/credential.routes')
   const loginRoutes = require('./routes/login.routes')
@@ -133,6 +135,7 @@ module.exports = app => {
   app.use(`${appConfig.baseUrl}api/v1/group`,cors(), authobj, checkAdminMiddleware, groupRoutes)
   app.use(`${appConfig.baseUrl}api/v1/ldap`,cors(), authobj, checkAdminMiddleware, ldapRoutes)
   app.use(`${appConfig.baseUrl}api/v1/azuread`,cors(), authobj, checkAdminMiddleware, azureadRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/oidc`,cors(), authobj, checkAdminMiddleware, oidcRoutes)
   app.use(`${appConfig.baseUrl}api/v1/settings`,cors(), authobj, checkAdminMiddleware, settingsRoutes)
   app.use(`${appConfig.baseUrl}api/v1/credential`,cors(), authobj, checkAdminMiddleware, credentialRoutes)
   app.use(`${appConfig.baseUrl}api/v1/sshkey`,cors(), authobj, checkAdminMiddleware, sshRoutes)

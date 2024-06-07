@@ -285,9 +285,13 @@ function patchAll(){
   sql = buffer.toString()
   tablePromises.push(addTable("azuread",sql)) // add azuread table
 
+  buffer = fs.readFileSync(`${__dirname}/../db/create_oidc_table.sql`)
+  sql = buffer.toString()
+  tablePromises.push(addTable("oidc",sql)) // add oidc table
+
   buffer = fs.readFileSync(`${__dirname}/../db/create_repositories_table.sql`)
   sql = buffer.toString()
-  tablePromises.push(addTable("repositories",sql)) // add azuread table  
+  tablePromises.push(addTable("repositories",sql)) // add repositories table
 
   tablePromises.push(addColumn("azuread","groupfilter","varchar(250)",true,"NULL"))  // add column to limit azuread groups
   //tablePromises.push(addRecord("settings",["mail_server","mail_port","mail_secure","mail_username","mail_password","mail_from","url"],["''",25,0,"''","''","''","''"]))
