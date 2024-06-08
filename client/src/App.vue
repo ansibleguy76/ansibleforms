@@ -209,7 +209,7 @@
           }
         },
         logout() {
-          var userType=this.profile.type
+          var userType=this.profile?.type || "local"
           TokenStorage.clear()
           this.formConfig=undefined
           this.refreshAuthenticated()
