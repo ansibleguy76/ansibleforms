@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     When using array, the resultsets are merged.
 -   Added ytt implementation to template yaml files (credits mdaugs)
 -   Vault credentials, pass a vault password to ansible playbook.
+-   OIDC authentication (credits mdaugs)
 
 ### Changed
 
