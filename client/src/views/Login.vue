@@ -14,15 +14,13 @@
           
               </div>
             </div>
-            <div class="box" v-if="azureAdEnabled">
-              <a v-if="azureAdEnabled" title="Azure" class="button is-light" :href="`${baseUrl}api/v1/auth/azureadoauth2`">
+            <div class="box" v-if="azureAdEnabled || oidcEnabled">
+              <a v-if="azureAdEnabled" title="Azure" class="button is-light mr-3" :href="`${baseUrl}api/v1/auth/azureadoauth2`">
                 <span class="icon"><img src="/assets/img/azure.svg" alt="Azure" /></span>
               </a>
-            </div>
-            <div class="box" v-if="oidcEnabled">
-              <a v-if="oidcEnabled" title="OIDC" class="button is-light" :href="`${baseUrl}api/v1/auth/oidc`">
+              <a v-if="oidcEnabled" title="OIDC" class="button is-light mr-3" :href="`${baseUrl}api/v1/auth/oidc`">
                 <span class="icon"><img src="/assets/img/openid.svg" alt="OIDC" /></span>
-              </a>
+              </a>              
             </div>
           </div>
         </div>
