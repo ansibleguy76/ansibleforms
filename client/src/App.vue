@@ -209,19 +209,28 @@
           }
         },
         logout() {
+          var userType=this.profile.type
           TokenStorage.clear()
           this.formConfig=undefined
           this.refreshAuthenticated()
           this.resetProfile()
-          axios.get(`${process.env.BASE_URL}api/v1/auth/logout`).then((res) => {
-            const logoutUrl = res.data?.data?.output?.logoutUrl
-            if (logoutUrl) {
-              location.replace(logoutUrl)
-            }
-          }).catch((err) => {
-            console.log(err)
-            this.$toast.error("Could not log out")
-          })
+          // added by mirko => redirect to login page if not oidc, no logout required, the token is simply removed
+          if(userType=="local" || userType=="ldap" || userType=="azuread"){
+            this.$router.replace({ name: "Login", query: {from: this.$route.fullPath} }).catch(err => {});  
+          }
+          // to doublecheck (mdaugs) if this really needed, ...
+          if(userType=="oidc"){
+            axios.get(`${process.env.BASE_URL}api/v1/auth/logout`).then((res) => {
+              const logoutUrl = res.data?.data?.output?.logoutUrl
+              if (logoutUrl) {
+                location.replace(logoutUrl)
+              }
+            }).catch((err) => {
+              console.log(err)
+              this.$toast.error("Could not log out")
+            })
+          }
+
         }
     }
   }
