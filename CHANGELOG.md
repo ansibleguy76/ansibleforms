@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.2] - 2024-06-10
+
 ### Adding
+
 -   Now allowing string (credential name) or array (of names) as dbConfig (dbtype is fetched from the database, with mysql fallback)
     When using array, the resultsets are merged.
 -   Added ytt implementation to template yaml files (credits mdaugs)
@@ -684,7 +687,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.1...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.2...HEAD
+
+[5.0.2]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.1...5.0.2
 
 [5.0.1]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.0...5.0.1
 
