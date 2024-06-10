@@ -15,12 +15,12 @@
               </div>
             </div>
             <div class="box" v-if="azureAdEnabled || oidcEnabled">
-              <a v-if="azureAdEnabled" title="Azure" class="button is-light mr-3" :href="`${baseUrl}api/v1/auth/azureadoauth2`">
-                <span class="icon"><img src="/assets/img/azure.svg" alt="Azure" /></span>
-              </a>
-              <a v-if="oidcEnabled" title="OIDC" class="button is-light mr-3" :href="`${baseUrl}api/v1/auth/oidc`">
-                <span class="icon"><img src="/assets/img/openid.svg" alt="OIDC" /></span>
-              </a>              
+              <button v-if="azureAdEnabled" title="Azure" class="button is-light mr-3">
+                <span class="icon" @click="authAzureAd"><img src="/assets/img/azure.svg" alt="Azure" /></span>
+              </button>
+              <button v-if="oidcEnabled" title="OIDC" class="button is-light mr-3">
+                <span class="icon" @click="authOidc"><img src="/assets/img/openid.svg" alt="OIDC" /></span>
+              </button>              
             </div>
           </div>
         </div>
@@ -59,6 +59,14 @@
           }
       },
       methods: {
+        authAzureAd(){
+          localStorage.setItem("authIssuer", "azuread");  // set cookie to azuread
+          window.location.replace(`${this.baseUrl}api/v1/auth/azureadoauth2`) // redirect to azuread
+        },
+        authOidc(){
+          localStorage.setItem("authIssuer", "oidc");   // set cookie to oidc
+          window.location.replace(`${this.baseUrl}api/v1/auth/oidc`) // redirect to oidc
+        },
         getSettings(token){
           var ref=this
           axios.get(`${ref.baseUrl}api/v1/auth/settings`)
@@ -71,11 +79,14 @@
               this.oidcEnabled=!!result.data.data.output.oidcEnabled
               this.oidcGroupfilter=result.data.data.output.oidcGroupfilter
               this.oidcIssuer=result.data.data.output.oidcIssuer
-
+              
               if(token && this.azureAdEnabled){
-                this.getGroupsAndLogin(token)
-              } else if (token && this.oidcEnabled) {
-                this.getGroupsAndLogin(token, `${this.oidcIssuer}/protocol/openid-connect/userinfo`, 'oidc')
+                if(localStorage.getItem("authIssuer")=="azuread") // get cookie and see if we issued azuread
+                  this.getGroupsAndLogin(token)
+              } 
+              if (token && this.oidcEnabled) { // get cookie ans see if we issued oidc
+                if(localStorage.getItem("authIssuer")=="oidc")
+                  this.getGroupsAndLogin(token, `${this.oidcIssuer}/protocol/openid-connect/userinfo`, 'oidc')
               }
             }else{
               this.$toast.error(result.data.data.error)
@@ -147,6 +158,7 @@
         },
         login() {
           var ref=this
+          localStorage.removeItem("authIssuer") // remove cookie, regular login
           if (!this.$v.user.$invalid) {
             console.log("Logging in")
             var basicAuth = 'Basic ' + new Buffer(this.user.username + ':' + this.user.password).toString('base64')
