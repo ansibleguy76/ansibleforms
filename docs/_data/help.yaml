@@ -116,6 +116,18 @@
       Although we encourage you to use an editor such as **Visual Studio Code** to edit the forms.yaml file, preferably with some form of source control.  Ansible Forms comes with an internal yaml designer.  
       And although only admins can see the designer, you might want to disable it completely by setting this variable to 0.
     version: 4.0.0
+  - name: USE_YTT
+    type: number
+    choices:
+      - name: 0
+        description: Does not execute ytt on the forms.yaml
+      - name: 1
+        description: Executes ytt on the forms.yaml
+    default: 0
+    short: Enable the ytt interpreter
+    description: |
+      https://github.com/carvel-dev/ytt is a tool for yaml templating. It can be activated by this variable.
+    version: 5.0.2
   - name: LOG_LEVEL
     type: string
     choices:
@@ -989,6 +1001,14 @@
         short: Pass ansible_user and ansible_password to ansible playbook using stored credentials
         description: |
           Ansible allows to pass default ansible credentials in the form of 2 extravars ansible_user and ansible_password
+      - name: vaultCredentials
+        type: string
+        group: basic
+        version: 5.0.2
+        allowed: a local credentialname
+        short: Pass vault password to ansible playbook using stored credentials
+        description: |
+          Ansible can encrypt variables in a vault, to unlock the vault a password is needed.  This password can be stored in Ansible Forms (as credential) and passed to the playbook..           
       - name: steps
         type: array
         with_types: multistep
@@ -2599,29 +2619,45 @@
               An expression is by default readonly.  
               By setting this property, you can flip the expression field to a regular text field.
           - name: dbConfig
-            type: object
+            type: string, array or object
             group: data
             with_types: enum, expression, table
-            short: A database connection object
+            short: A database connection 
             description: |
               When you want to query data from a database, you will need the proper connection information.  
-              This object has 2 properties : `name` (pointing to a stored credential name) and `type` (mysql, sql, postgres, mongodb).  
+              We use a credential name to lookup the connection details.  Legacy was to pass an object (name and type).  
+              Since version 5.0.2 you can just specify the name of the credential.  The type is fetched from the credential itself (mysql, mssql, postgres or mongodb). 
+              In case of no type set, mysql is assumed.   
+              Additionally you can set an array of credential names, to use multiple databases with a single query.  The result will be a join of the results.  
+              Doubles will not be removed automatically.  
             examples:
-            - name: get information from a mysql database
+            - name: get information from a mysql database (legacy example)
               code: |
                 - name: cities
                   type: enum
-                  dbConfig:
+                  dbConfig: 
                     name: CMDB_CONN
                     type: mysql
                   query: select name, country from cities
+            - name: get information from a mysql database (new example)
+              code: |
+                - name: cities
+                  type: enum
+                  dbConfig: CMDB_CONN # type is derived from the credential
+                  query: select name, country from cities     
+            - name: get information from a mysql database (array example)
+              code: |
+                - name: cities
+                  type: enum
+                  dbConfig: # the query will be a join of the results of the 2 databases
+                  - CMDB_CONN1
+                  - CMDB_CONN2
+                  query: select name, country from cities                                  
             - name: get information from a mongodb
               code: |
                 - name: user
                   type: expression
-                  dbConfig:
-                    name: USER_DB_CONN
-                    type: mongodb
+                  dbConfig: USER_DB_CONN
                   query: cmdb~users~{"name":"ansibleguy"}
                   # the query in mongodb has 3 parts, separated by ~  
                   # database, collection and the query in valid json
@@ -4220,4 +4256,65 @@
     description: |
       In the case you want to host ansibleforms in subfolder, for example `https://af.domain.local/mysubfolder/`.  
       You can use the environment variable `BASE_URL`.  Set it to `/mysubfolder/` (default is `/`).  
-  
+  - name: Enable ytt
+    short: Enable ytt
+    description: |
+      In the case you want to use ytt, it can be enabled by setting `USE_YTT=1`.  
+      Read more info about ytt (https://carvel.dev/ytt/).  
+        
+      **NOTE** : when using ytt, you must disable the designer, the designer will convert the yaml files to intermediate json and will drop the ytt syntax (which is yaml comments).
+
+        
+      A `lib` directory needs to exist within the root directory and is automatically included for the ytt call.
+      Data can be provided globally by setting prefixed environment variables:  
+
+      ```bash
+      YTT_VARS_PREFIX=YTT_VAR
+      YTT_VAR_INVENTORY_PATH=/tmp/inventory.yml
+      YTT_VAR_default_host=localhost
+      ```  
+      Or by providing library data files:
+      ```bash
+      YTT_LIB_DATA_DEMO=/tmp/demo_data.yml
+      ```  
+      ```yaml
+      # /tmp/demo_data.yml
+      message: 'hello demo'
+      ```
+      **The library `demo` needs to exists in the ytt context (lib/_ytt_lib/demo/values.yml)**
+      ```yaml
+      # lib/_ytt_lib/demo/values.yml
+      #@ data/values
+      ---
+      demo: {}
+      ```  
+        
+      Then, the loaded data can be used:
+      ```yaml
+      # forms.yaml
+      #@ load("@ytt:data", "data")
+      #@ load("@ytt:library", "library")
+      #@ demo = library.get("demo")
+      ---
+      categories:
+        - name: Default
+          icon: bars
+      roles:
+        - name: admin
+          groups:
+            - local/admins
+      constants:
+        data_values: #@ data.values
+        demo: #@ demo.data_values()
+      forms:
+        - name: Demo Form
+          type: ansible
+          inventory: #@ data.values.INVENTORY_PATH
+          playbook: dummy.yml
+      fields:
+        - name: var_message
+          type: text
+          label: Message
+          default: Object($(demo)).message
+          evalDefault: true
+      ```      

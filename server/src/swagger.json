@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "description": "This is the swagger interface for AnsibleForms.\r\nUse the `/auth/login` api with basic authentication to obtain a JWT token.\r\nThen use the access token, prefixed with the word '**Bearer**' to use all other api's.\r\nNote that the access token is limited in time.  You can then either login again and get a new set of tokens or use the `/token` api and the refresh token to obtain a new set (preferred).",
-    "version": "5.0.1",
+    "version": "5.0.2",
     "title": "AnsibleForms",
     "contact": {
       "email": "info@ansibleforms.com"
@@ -37,7 +37,11 @@
     {
       "name": "MS Entra Id config",
       "description": "Operations on MS Entra Id (aka azure AD) configuration"
-    },    
+    },
+    {
+      "name": "Open ID Connect config",
+      "description": "Operations on Open ID Connect (OIDC) configuration"
+    },
     {
       "name": "credentials",
       "description": "Operations on credentials"
@@ -1808,7 +1812,117 @@
           }
         }
       }
-    },    
+    },
+    "/oidc": {
+      "get": {
+        "tags": [
+          "OIDC config"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Get OIDC configuration",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "OIDC",
+                "data": {
+                  "output": {
+                    "issuer": "issuer",
+                    "client_id": "client_id",
+                    "secret_id": "*** secret_id ***",
+                    "redirect_uris": "redirect_uris",
+                    "post_logout_redirect_uris": "post_logout_redirect_uris",
+                    "enable": 1
+                  },
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "OIDC config"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "OIDC config",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "issuer": {
+                  "type": "string",
+                  "example": "https://server.example.com"
+                },
+                "client_id": {
+                  "type": "string",
+                  "example": "my_client_id"
+                },
+                "bind_user_pw": {
+                  "type": "string",
+                  "example": "my_secret_id"
+                },
+                "enable": {
+                  "type": "boolean",
+                  "example": true
+                }
+              }
+            }
+          }
+        ],
+        "summary": "Set OIDC configuration",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "OIDC updated",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
     "/credential": {
       "get": {
         "tags": [

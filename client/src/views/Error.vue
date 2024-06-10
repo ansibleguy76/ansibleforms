@@ -34,7 +34,7 @@
         errorMessage:{type:String},
         errorData:{type:Object}
       },
-      name: 'Error',
+      name: 'AfError',
       data() {
           return {
           }

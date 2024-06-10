@@ -1,7 +1,7 @@
 <template>
   <section v-if="isAdmin" class="section">
     <div class="container">
-      <h1 class="title has-text-info"><font-awesome-icon icon="address-card" /> MS Entra ID</h1>
+      <h1 class="title has-text-info"><font-awesome-icon icon="address-card" /> Open ID Connect</h1>
       <div class="columns">
         <div class="column is-narrow">
           <BulmaSettingsMenu />
@@ -10,30 +10,21 @@
           <nav class="level">
             <!-- Left side -->
             <div class="level-left">
-              <p class="level-item"><BulmaButton icon="save" label="Update" @click="updateAzureAd()"></BulmaButton></p>
+              <p class="level-item"><BulmaButton icon="save" label="Update" @click="updateOidc()"></BulmaButton></p>
             </div>
           </nav>      
           <div class="columns">
             <div class="column">
-              <BulmaCheckbox checktype="checkbox" v-model="azuread.enable" label="Enable MS Entra ID" />
+              <BulmaCheckbox checktype="checkbox" v-model="oidc.enabled" label="Enable OIDC" />
               <div class="mt-2">
-                <BulmaInput :disabled="!azuread.enable" icon="user-tag" v-model="azuread.client_id" label="Client Id" placeholder="" :required="true" :hasError="$v.azuread.client_id.$invalid" :errors="[]" />
-                <BulmaInput :disabled="!azuread.enable" icon="user-secret" v-model="azuread.secret_id" type="password" label="Secret Id" placeholder="" :required="true" :hasError="$v.azuread.secret_id.$invalid" :errors="[]" />
-                <BulmaInput :disabled="!azuread.enable" icon="filter" v-model="azuread.groupfilter" label="Groupname Regex" placeholder="A regular expression to match groups" :required="false" :errors="[]" />
+                <BulmaInput :disabled="!oidc.enabled" icon="id-card" v-model="oidc.issuer" label="Issuer URL" placeholder="" :required="true" :hasError="$v.oidc.issuer.$invalid" :errors="[]" />
+                <BulmaInput :disabled="!oidc.enabled" icon="user-tag" v-model="oidc.client_id" label="Client Id" placeholder="" :required="true" :hasError="$v.oidc.client_id.$invalid" :errors="[]" />
+                <BulmaInput :disabled="!oidc.enabled" icon="user-secret" v-model="oidc.secret_id" type="password" label="Secret Id" placeholder="" :required="true" :hasError="$v.oidc.secret_id.$invalid" :errors="[]" />
+                <BulmaInput :disabled="!oidc.enabled" icon="filter" v-model="oidc.groupfilter" label="Groupname Regex" placeholder="A regular expression to match groups" :required="false" :errors="[]" />
                 <div class="notification is-info-light content">
-                  <strong>Required API Permissions</strong><br>
-                  <ul>
-                    <li>Delegated User.Read</li>
-                    <li>Delegated GroupMember.Read.All</li>
-                  </ul>
-                  <strong>Required Group Claims</strong>
-                  <ul>
-                    <li>Security Groups</li>
-                    <li>Access > samAccountName</li>
-                  </ul>
                   <p><strong>Callback Url </strong>: {{ callbackUrl }} <span v-if="!settings.url" class="tag is-danger"><font-awesome-icon icon="circle-exclamation" class="mr-1" /> You have not set the Ansible Form Url (see: 'General > Ansible Forms' settings page)</span></p>
                 </div>
-                <!-- <BulmaButton :disabled="!azuread.enable" icon="check" label="Test AzureAd" @click="testAzureAd()"></BulmaButton> -->
+                <!-- <BulmaButton :disabled="!oidc.enabled" icon="check" label="Test OIDC" @click="testOidc()"></BulmaButton> -->
                 
               </div>
             </div>
@@ -57,7 +48,7 @@
   Vue.use(Vuelidate)
 
   export default{
-    name: "AfAzureAd",
+    name: "AfOidc",
     props:{
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean}
@@ -65,10 +56,11 @@
     components:{BulmaButton,BulmaInput,BulmaCheckbox,BulmaSettingsMenu},
     data(){
       return  {
-          azuread:{
+          oidc:{
+            issuer: "",
             client_id:"",
             secret_id:"",
-            enable:true,
+            enabled:true,
             groupfilter:""
           },
           settings:{
@@ -78,7 +70,7 @@
     },
     computed:{
       callbackUrl(){
-        return `${this.settings.url || "https://**************"}${process.env.BASE_URL}api/v1/auth/azureadoauth2/callback`
+        return `${this.settings.url || "https://**************"}${process.env.BASE_URL}api/v1/auth/oidc/callback`
       }
     },
     methods:{
@@ -91,24 +83,24 @@
             ref.$toast.error(err.toString());
           };        
       },
-      loadAzureAd(){
+      loadOidc(){
         var ref= this;
-        axios.get(`${process.env.BASE_URL}api/v1/azuread/`,TokenStorage.getAuthentication())
+        axios.get(`${process.env.BASE_URL}api/v1/oidc/`,TokenStorage.getAuthentication())
           .then((result)=>{
-            ref.azuread=result.data.data.output;
+            ref.oidc=result.data.data.output;
           }),function(err){
             ref.$toast.error(err.toString());
           };
-      },updateAzureAd(){
+      },updateOidc(){
         var ref= this;
-        if (!this.$v.azuread.$invalid) {
-          axios.put(`${process.env.BASE_URL}api/v1/azuread/`,this.azuread,TokenStorage.getAuthentication())
+        if (!this.$v.oidc.$invalid) {
+          axios.put(`${process.env.BASE_URL}api/v1/oidc/`,this.oidc,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
                 ref.$toast.error(result.data.message + ", " + result.data.data.error);
               }else{
-                ref.$toast.success("AzureAd is updated");
-                ref.loadAzureAd();
+                ref.$toast.success("OIDC is updated");
+                ref.loadOidc();
               }
             }),function(err){
               ref.$toast.error(err.toString());
@@ -117,9 +109,9 @@
           this.$toast.warning("Invalid form data")
         }
       },
-      testAzureAd(){
+      testOidc(){
         var ref= this;
-        axios.post(`${process.env.BASE_URL}api/v1/azuread/check/`,this.azuread,TokenStorage.getAuthentication())
+        axios.post(`${process.env.BASE_URL}api/v1/oidc/check/`,this.oidc,TokenStorage.getAuthentication())
           .then((result)=>{
             if(result.data.status=="error"){
               ref.$toast.error(result.data.message + ", " + result.data.data.error);
@@ -132,15 +124,20 @@
       }
     },
     validations: {
-      azuread:{
+      oidc:{
+        issuer: {
+          required:requiredIf(function(oidc){
+            return oidc.enabled
+          })
+        },
         client_id: {
-          required:requiredIf(function(azuread){
-            return azuread.enable
+          required:requiredIf(function(oidc){
+            return oidc.enabled
           })
         },
         secret_id:{
-          required:requiredIf(function(azuread){
-            return azuread.enable
+          required:requiredIf(function(oidc){
+            return oidc.enabled
           })
         }
 
@@ -148,7 +145,7 @@
 
     },
     mounted() { // when the Vue app is booted up, this is run automatically.
-        this.loadAzureAd();
+        this.loadOidc();
         this.loadSettings();
     }
   }

@@ -10,8 +10,8 @@ router.get('/approvals', jobController.findApprovals);
 router.post('/upload',uploadController.upload)
 // get a job
 router.get('/:id', jobController.getJob);
-// change a job (status changes)
-router.put('/:id', jobController.updateJob);
+// download a job
+router.get('/:id/download', jobController.download);
 // delete a job
 router.delete('/:id', jobController.deleteJob);
 // launch job

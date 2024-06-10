@@ -38,7 +38,7 @@
   Vue.use(Vuelidate)
 
   export default{
-    name: "Sshkey",
+    name: "AfSshkey",
     props:{
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean}

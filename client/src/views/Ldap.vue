@@ -58,7 +58,7 @@
   Vue.use(Vuelidate)
 
   export default{
-    name: "Ldap",
+    name: "AfLdap",
     props:{
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean}

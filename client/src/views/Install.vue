@@ -30,7 +30,7 @@
   import axios from 'axios';
   
   export default {
-    name: "Install",
+    name: "AfInstall",
     data() {
       return {
         isLoading: false,

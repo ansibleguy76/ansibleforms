@@ -6,7 +6,7 @@ FROM node:16-alpine AS node
 
 FROM node AS nodebase
 
-RUN wget -O /bin/ytt github.com/vmware-tanzu/carvel-ytt/releases/download/v0.44.0/ytt-linux-amd64
+RUN wget -O /bin/ytt github.com/vmware-tanzu/carvel-ytt/releases/download/v0.49.0/ytt-linux-amd64
 RUN chmod -R +x /bin/ytt
 
 # Use /app as CWD
@@ -25,6 +25,7 @@ RUN apk add --no-cache libxslt
 RUN apk add --no-cache mysql-client
 RUN apk add --no-cache curl
 RUN apk add --no-cache py3-pyldap
+RUN apk add --no-cache tzdata
 RUN pip3 install --no-cache-dir lxml
 RUN apk del .build-deps
 RUN pip3 install PyMySQL

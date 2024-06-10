@@ -51,9 +51,9 @@
                     <router-link class="navbar-item" to="/profile" v-if="authenticated && profile.type=='local' && profile.id">
                       <span class="icon"><font-awesome-icon icon="key" /></span><span>Change password</span>
                     </router-link>
-                    <router-link class="navbar-item" to="/login" v-on:click.native="logout()" replace>
+                    <a href="javascript:void" class="navbar-item"  @click="$emit('logout')">
                       <span class="icon"><font-awesome-icon icon="sign-out-alt" /></span><span>Logout</span>
-                    </router-link>
+                    </a>
                     <a href="javascript:void" @click="$emit('profile')" class="navbar-item">
                       <span class="icon"><font-awesome-icon icon="address-card" /></span> <span>About me</span>
                     </a>
@@ -81,11 +81,8 @@
           showNav: false,
           baseUrl: "/"
       }
-    },methods:{
-      logout(){
-        this.$emit("logout");
-      }
-    },mounted(){
+    },
+    mounted(){
       this.baseUrl = process.env.BASE_URL
     }
   }

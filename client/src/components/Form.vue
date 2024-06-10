@@ -204,7 +204,7 @@
                         </div>
                         <!-- type = radio -->
                         <div v-if="field.type=='radio'" >
-                          <BulmaCheckRadio :val="(typeof radiovalue=='string')?radiovalue:radiovalue.value" checktype="radio" v-for="radiovalue in field.values" :key="field.name+'_'+radiovalue" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="(typeof radiovalue=='string')?radiovalue:radiovalue.label"  @change="evaluateDynamicFields(field.name)" />
+                          <BulmaCheckRadio :val="(typeof radiovalue=='string')?radiovalue:radiovalue.value" checktype="radio" v-for="radiovalue in field.values" :key="field.name+'_'+((typeof radiovalue=='string')?radiovalue:radiovalue.value)" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="(typeof radiovalue=='string')?radiovalue:radiovalue.label"  @change="evaluateDynamicFields(field.name)" />
                         </div>
                         <!-- type = table -->
                         <div v-if="field.type=='table'">
@@ -424,6 +424,13 @@
           <button v-if="jobResult.data && !!jobResult.data.output" class="button has-text-light" :class="{ 'has-background-success' : jobResult.status=='success', 'has-background-warning' : jobResult.status=='warning', 'has-background-danger' : jobResult.status=='error','has-background-info' : jobResult.status=='info'}" @click="resetResult()">
             <span class="icon"><font-awesome-icon icon="times" /></span>
             <span>Close output</span>
+          </button>
+          <!-- download job button -->
+          <button v-if="jobResult.data && !!jobResult.data.output" class="button ml-3 has-text-light has-background-info" @click="download(jobId)">
+            <span class="icon has-text-light">
+              <font-awesome-icon icon="download" />
+            </span>
+            <span>Download output</span>
           </button>
         </div>
         <!-- extra vars column -->
@@ -1157,6 +1164,7 @@
         var fields=[]
         // create a list of the fields
         this.currentForm.fields.forEach((item,i) => {
+          if(!item?.name) return
           fields.push(item.name)
         })
         // whilst checking, we also check if fields are unique
@@ -1168,6 +1176,7 @@
         // do the analysis
         this.currentForm.fields.forEach((item,i) => {
           // while we are looping, we also check if there are issues
+          if(!item?.name) return
           if(item.dependencies){
             item.dependencies.forEach((dep)=>{
               if(!(fields.includes(dep.name) || ( dep.name.startsWith("!") && fields.includes(dep.name.slice(1))  ))){
@@ -1228,6 +1237,7 @@
         var fields=[]
         // create a list of the fields
         this.currentForm.fields.forEach((item,i) => {
+          if(!item?.name) return
           fields.push(item.name)
         })
         this.currentForm.fields.forEach((item,i) => {
@@ -1726,6 +1736,22 @@
             ref.abortTriggered=true
           })
       },
+      downloadWithAxios(url, headers) {
+        var ref=this
+        axios({
+          method: 'get',
+          headers,
+          url,
+          responseType: 'arraybuffer',
+        })
+        .then((response) => {
+          Helpers.forceFileDownload(response)
+        })
+        .catch((err) => ref.$toast.error(err.toString()))
+      },   
+      download(id){
+        this.downloadWithAxios(`${process.env.BASE_URL}api/v1/job/${id}/download`,TokenStorage.getAuthentication())
+      },        
       // get job output
       getJob(id,final){
         var ref = this;
@@ -1745,8 +1771,8 @@
                   this.jobResult.message = result.data.message
                 }
                 if(this.jobResult.data.job_type=="multistep"){
-                  if(this.jobResult.data.subjobs){
-                    var lastsubjob = this.jobResult.data.subjobs.split(",").map(x=>parseInt(x)).slice(-1)[0]
+                  if(this.jobResult.data.subjobs.length>0){
+                    var lastsubjob = this.jobResult.data.subjobs.slice(-1)[0]
                     axios.get(`${process.env.BASE_URL}api/v1/job/${lastsubjob}`,TokenStorage.getAuthentication())
                       .then((subjobresult)=>{
                         ref.subjob=subjobresult.data

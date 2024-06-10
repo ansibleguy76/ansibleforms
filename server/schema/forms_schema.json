@@ -74,7 +74,7 @@
             "items": {
               "type": "string",
               "default": "",
-              "pattern": "(\\blocal\\b|\\bldap\\b|\\bazuread\\b)\\/.+"
+              "pattern": "(\\blocal\\b|\\bldap\\b|\\bazuread\\b|\\boidc\\b)\\/.+"
             }
           },
           "users": {
@@ -82,7 +82,7 @@
             "items": {
               "type": "string",
               "default": "",
-              "pattern": "(\\blocal\\b|\\bldap\\b|\\bazuread\\b)\\/.+"
+              "pattern": "(\\blocal\\b|\\bldap\\b|\\bazuread\\b|\\boidc\\b)\\/.+"
             }            
           }                    
         },
@@ -121,6 +121,7 @@
               "type": {
                 "enum": ["awx"]
               },
+              "vaultCredentials": {"not":{}},
               "playbook": {"not":{}},
               "ansibleCredentials": {"not":{}},
               "steps": {"not":{}}
@@ -133,6 +134,7 @@
                 "enum": ["multistep"]
               },
               "playbook": {"not":{}},
+              "vaultCredentials": {"not":{}},
               "template": {"not":{}},
               "inventory": {"not":{}},
               "awxCredentials": {"not":{}},
@@ -334,6 +336,7 @@
                         "enum": ["awx"]
                       },
                       "playbook": {"not":{}},
+                      "vaultCredentials": {"not":{}},
                       "ansibleCredentials": {"not":{}},
                       "steps": {"not":{}}
                     },
@@ -367,9 +370,8 @@
                   "additionalProperties": false,
                   "uniqueProperties": true            
                 },    
-                "ansibleCredentials": {
-                  "type": "string"
-                },      
+                "ansibleCredentials": {"type": "string"},  
+                "vaultCredentials": {"type": "string"},  
                 "inventory": {"type": "string"},
                 "tags": {"type": "string"},
                 "check": {"type": "boolean"},
@@ -467,9 +469,8 @@
               "default": ""
             }
           }, 
-          "ansibleCredentials":{
-            "type": "string"
-          },                             
+          "ansibleCredentials": {"type": "string"},         
+          "vaultCredentials": {"type": "string"},  
           "inventory": {"type": "string"},
           "executionEnvironment": {"type": "string"},
           "instanceGroups": {
@@ -1185,18 +1186,28 @@
                 "previewColumn": {"type": "string"},
                 "placeholderColumn": {"type": "string"},
                 "dbConfig": {
-                  "type": "object",
-                  "required": [
-                    "name",
-                    "type"
-                  ],
-                  "properties": {
-                    "name": {"type": "string"},
-                    "type": {
-                      "type": "string",
-                      "enum": ["mysql", "mssql", "postgres", "mongodb"]
+                  "anyOf": [
+                    {"type": "string"},
+                    {
+                      "type": "object",
+                      "required": [
+                        "name",
+                        "type"
+                      ],
+                      "properties": {
+                        "name": {"type": "string"},
+                        "type": {
+                          "type": "string",
+                          "enum": ["mysql", "mssql", "postgres", "mongodb"]
+                        }
+                      }                        
+                    },
+                    {
+                      "type": "array",
+                      "items": { "type": "string" }
                     }
-                  }
+                  ]
+
                 },
                 "model": {
                   "anyOf": [{"type": "string"},

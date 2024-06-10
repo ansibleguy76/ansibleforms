@@ -16,6 +16,11 @@
           </div>
         </div>
         <div class="level-right">
+          <!-- add a download button -->
+          <button class="button is-info level-item" @click="download()">
+            <span class="icon"><font-awesome-icon icon="download" /></span>
+            <span>Download</span>
+          </button>
           <button :disabled="refresh" class="button is-info level-item" @click="load(true)">
             <span class="icon"><font-awesome-icon icon="arrow-rotate-right" :spin="refresh" /></span>
             <span>Refresh</span>
@@ -50,9 +55,10 @@
   import LogViewer from '@femessage/log-viewer'
   import BulmaCheckRadio from './../components/BulmaCheckRadio.vue'
   import TokenStorage from './../lib/TokenStorage'
+  import Helpers from './../lib/Helpers'
 
   export default{
-    name: "Logs",
+    name: "AfLogs",
     props:{
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean}
@@ -93,6 +99,22 @@
               //
             })
         }
+      },
+      downloadWithAxios(url, headers) {
+        var ref=this
+        axios({
+          method: 'get',
+          headers,
+          url,
+          responseType: 'arraybuffer',
+        })
+        .then((response) => {
+          Helpers.forceFileDownload(response)
+        })
+        .catch((err) => ref.$toast.error(err.toString()))
+      },   
+      download(){
+        this.downloadWithAxios(`${process.env.BASE_URL}api/v1/log/download`,TokenStorage.getAuthentication())
       }
     },
     mounted() { // when the Vue app is booted up, this is run automatically.

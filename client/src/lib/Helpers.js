@@ -1,4 +1,3 @@
-const inspect = require('util').inspect
 var Helpers = {
   htmlEncode(v){
       return v.toString().replace(/[\u00A0-\u9999<>\&]/g, function(i) { //eslint-disable-line
@@ -27,6 +26,15 @@ var Helpers = {
   humanFileSize(size) {
     var i = size == 0 ? 0 : Math.floor(Math.log(size) / Math.log(1024));
     return (size / Math.pow(1024, i)).toFixed(2) * 1 + ' ' + ['B', 'kB', 'MB', 'GB', 'TB'][i];
+  },
+  forceFileDownload(response) {
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    let filename = response.headers['content-disposition'].split('filename=')[1].replace(/"/g, '')
+    link.href = url
+    link.setAttribute('download', filename)
+    document.body.appendChild(link)
+    link.click()
   },
   deepClone(o){
     if(o===undefined){

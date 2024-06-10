@@ -91,7 +91,8 @@
           "S. Mer",
           "J. Szkudlarek",
           "J. Burkle",
-          "A. Mikhaylov"
+          "A. Mikhaylov",
+          "mdaugs"
         ]
       }
     },
@@ -208,11 +209,28 @@
           }
         },
         logout() {
-            TokenStorage.clear()
-            this.formConfig=undefined
-            this.$router.replace({ name: "Login" }).catch(err => {});
-            this.refreshAuthenticated()
-            this.resetProfile()
+          var userType=this.profile?.type || "local"
+          TokenStorage.clear()
+          this.formConfig=undefined
+          this.refreshAuthenticated()
+          this.resetProfile()
+          // added by mirko => redirect to login page if not oidc, no logout required, the token is simply removed
+          if(userType=="local" || userType=="ldap" || userType=="azuread"){
+            this.$router.replace({ name: "Login", query: {from: this.$route.fullPath} }).catch(err => {});  
+          }
+          // to doublecheck (mdaugs) if this really needed, ...
+          if(userType=="oidc"){
+            axios.get(`${process.env.BASE_URL}api/v1/auth/logout`).then((res) => {
+              const logoutUrl = res.data?.data?.output?.logoutUrl
+              if (logoutUrl) {
+                location.replace(logoutUrl)
+              }
+            }).catch((err) => {
+              console.log(err)
+              this.$toast.error("Could not log out")
+            })
+          }
+
         }
     }
   }

@@ -55,7 +55,7 @@
   Vue.use(Vuelidate)
 
   export default{
-    name: "KnownHosts",
+    name: "AfKnownHosts",
     props:{
       authenticated:{type:Boolean},
       isAdmin:{type:Boolean}

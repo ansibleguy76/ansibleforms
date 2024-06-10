@@ -5,6 +5,7 @@ const client = require('mysql2');
 
 dbConfig.multipleStatements=true
 delete dbConfig.name // remove unsupported property
+delete dbConfig.is_database // remove unsupported property
 MySql = {}
 
 MySql.do=function(query,vars,silent=false){
