@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Added ytt implementation to template yaml files (credits mdaugs)
 -   Vault credentials, pass a vault password to ansible playbook.
 -   OIDC authentication (credits mdaugs)
+-   Ansibleforms will now wait for mysql to be ready before initializing
 
 ### Changed
 
@@ -24,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   radio button errors
 -   some issue with the designer when a field without name was added
 -   multistep was always successfull (tx to mdaugs)
+-   using cookie session instead express session
 
 ## [5.0.1] - 2024-04-10
 
