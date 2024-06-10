@@ -4,7 +4,7 @@ var RestResult = require('../models/restResult.model');// our personal app setti
 const appConfig = require('../../config/app.config')
 
 exports.hasSchema = function(req, res) {
-    if (appConfig.skipSchemaCheck) {
+    if (!req.originalUrl.includes("schema") && appConfig.skipSchemaCheck) {
         return res.json(new RestResult("success", "Schema check skipped due to configuration.", [], []))
     }
 
