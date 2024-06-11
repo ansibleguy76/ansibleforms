@@ -953,7 +953,7 @@ Ansible.launch=async (ev,credentials,jobid,counter,approval,approved=false)=>{
   if(!vaultPassword){
     command = `ansible-playbook -e '@${extravarsFileName}' -e '@${hiddenExtravarsFileName}'`
   }else{
-    command = `echo ${Buffer.from(vaultPassword).toString('base64')} | base64 --decode | ansible-playbook -e '@${extravarsFileName}' -e '@${hiddenExtravarsFileName}' --vault-password-file=/bin/cat`
+    command = `echo ${Buffer.from(vaultPassword).toString('base64')} | base64 -d | ansible-playbook -e '@${extravarsFileName}' -e '@${hiddenExtravarsFileName}' --vault-password-file=/bin/cat`
   }
 
   inventory.forEach((item, i) => {  command += ` -i '${item}'` });
