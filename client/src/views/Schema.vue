@@ -7,7 +7,7 @@
             <div class="notification is-danger" v-if="error!=''" v-text="error"></div>
             <div class="notification is-success" v-if="success" v-html="success"></div>
             <div class="notification is-warning" v-if="failed" v-html="failed"></div>
-            <form action="" class="box" v-if="error!='FATAL ERROR' && error!=''">
+            <form action="" class="box" v-if="error!='FATAL ERROR' && error!='' && success==''">
               <div class="content">
                 If this is the first time setup and you don't have your own schema and tables.<br><br>
                 Would you like me to try and create the schema and tables ?<br>
@@ -28,6 +28,13 @@
                 </button>
               </div>
             </form>
+            <form action="" class="box" v-else>
+              <div class="content">
+                It appears that you have an unuseable schema.  Part of the tables is present, and part is missing.<br>
+                Please contact your database or application administrator to either restore from a backup, or create the missing tables.  
+                For now there is nothing I can do for you, until the schema and tables are in a consistent state.
+              </div>
+            </form>            
             <div v-if="error=='FATAL ERROR'" class="box">
               <div class="content">
                 Something went wrong.  Most likely the database is simply not reachable.   
@@ -67,7 +74,7 @@
         },
         failed(){
           if(Array.isArray(this.errorData.error)){
-            return this.errorData.error.map((e)=>{return e.message}).join('<br>')
+            return this.errorData.error.join('<br>')
           }else {
             return this.errorData.error
           }

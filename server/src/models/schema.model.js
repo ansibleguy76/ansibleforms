@@ -2,6 +2,7 @@
 const bcrypt = require('bcrypt');
 const logger=require("../lib/logger");
 const mysql = require("./db.model")
+const Helpers = require("../lib/common")
 const fs = require('fs');
 const NodeCache = require("node-cache")
 
@@ -13,8 +14,7 @@ const cache = new NodeCache({
 var Schema=function(){
 };
 function handleError(err){
-  logger.error(err.toString())
-  throw(err)
+  throw err
 }
 
 function checkSchema(){
@@ -31,7 +31,9 @@ function checkSchema(){
         }else{
           message=`Schema '${db}' is not present`
           logger.warning(message)
-          throw({message:message,data:{success:"",failed:message}})
+          var err = new Error(message)
+          err.result = {message:[message],data:{success:[],failed:[message]}}
+          throw err
         }
       }
     })
@@ -223,7 +225,7 @@ function checkTable(table){
       }else{
         message=`Table '${table}' is not present`
         logger.warning(message)
-        throw({message:message,data:{success:"",failed:message}})
+        throw new Error(message)
       }
     })
 
@@ -353,7 +355,7 @@ function checkAll(){
           if(x.status === "fulfilled")
             success.push(x.v)
           if(x.status === "rejected")
-            failed.push(x.e)
+            failed.push(x.e.message)
         })
         messages=messages.concat(success).concat(failed); // overal message
         if(failed.length==0){
@@ -367,10 +369,14 @@ function checkAll(){
           }).catch((res)=>{
             messages=messages.concat(res)
             failed=failed.concat(res)
-            throw({message:messages,data:{success:"",failed:failed}}) // throw failed
+            var err = new Error(messages.toString())
+            err.result = {message:messages,data:{success:[],failed:failed}}
+            throw err
           })
         }else {
-          throw({message:messages,data:{success:success,failed:failed}}) // throw failed
+          var err = new Error(messages.toString())
+          err.result = {message:messages,data:{success:success,failed:failed}}
+          throw err // throw failed
         }
       },
       handleError
@@ -383,14 +389,18 @@ Schema.create = function () {
   logger.notice(`Trying to create database schema 'AnsibleForms' and tables`)
   const buffer=fs.readFileSync(`${__dirname}/../db/create_schema_and_tables.sql`)
   const query=buffer.toString();
+  cache.del('result') // clear cache
   return mysql.do(query)
     .then((res)=>{
       if(res.length > 0){
         logger.notice(`Created schema 'AnsibleForms' and tables`)
         return `Created schema 'AnsibleForms' and tables`
       }else{
-        throw {message:`Failed to create schema 'AnsibleForms' and/or tables`,data:{success:"",failed:`Failed to create schema 'AnsibleForms' and/or tables`}}
+        var err = new Error(`Failed to create schema 'AnsibleForms' and/or tables`)
+        err.result = {message:[`Failed to create schema 'AnsibleForms' and/or tables`],data:{success:[],failed:[`Failed to create schema 'AnsibleForms' and/or tables`]}}
+        throw err
       }
+      
     })
 };
 

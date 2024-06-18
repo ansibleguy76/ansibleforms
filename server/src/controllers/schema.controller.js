@@ -1,11 +1,13 @@
 'use strict';
 const Schema = require('../models/schema.model');
 var RestResult = require('../models/restResult.model');
+var util = require('util');
 
 exports.hasSchema = function(req, res) {
     Schema.hasSchema()
       .then((result)=>{ res.json(new RestResult("success","schema and tables are ok",result.data?.success,result.data?.failed)) })
-      .catch((result)=>{ 
+      .catch((err)=>{ 
+        var result = err.result // we check if the error has a result
         if(!result?.data){
           res.json(new RestResult("error","FATAL ERROR",[],[result.message])) 
         }else{
