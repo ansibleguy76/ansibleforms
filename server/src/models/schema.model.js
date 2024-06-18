@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const logger=require("../lib/logger");
 const mysql = require("./db.model")
 const Helpers = require("../lib/common")
+const appConfig = require('../../config/app.config')
 const fs = require('fs');
 const NodeCache = require("node-cache")
 
@@ -329,7 +330,7 @@ function checkAll(){
   var resultobj=undefined
   resultobj=cache.get('result')  // get from cache, we only check the schema once (or once a day)
   if(resultobj){
-    logger.debug("Schema check from cache")
+    // logger.debug("Schema check from cache")
     return Promise.resolve(resultobj)
   }
   return checkSchema() // schema
@@ -387,21 +388,25 @@ Schema.hasSchema = function(){
 }
 Schema.create = function () {
   logger.notice(`Trying to create database schema 'AnsibleForms' and tables`)
-  const buffer=fs.readFileSync(`${__dirname}/../db/create_schema_and_tables.sql`)
-  const query=buffer.toString();
-  cache.del('result') // clear cache
-  return mysql.do(query)
-    .then((res)=>{
-      if(res.length > 0){
-        logger.notice(`Created schema 'AnsibleForms' and tables`)
-        return `Created schema 'AnsibleForms' and tables`
-      }else{
-        var err = new Error(`Failed to create schema 'AnsibleForms' and/or tables`)
-        err.result = {message:[`Failed to create schema 'AnsibleForms' and/or tables`],data:{success:[],failed:[`Failed to create schema 'AnsibleForms' and/or tables`]}}
-        throw err
-      }
-      
-    })
+  if(appConfig.allowSchemaCreation){ // added in 5.0.3
+    const buffer=fs.readFileSync(`${__dirname}/../db/create_schema_and_tables.sql`)
+    const query=buffer.toString();
+    cache.del('result') // clear cache
+    return mysql.do(query)
+      .then((res)=>{
+        if(res.length > 0){
+          logger.notice(`Created schema 'AnsibleForms' and tables`)
+          return `Created schema 'AnsibleForms' and tables`
+        }else{
+          var err = new Error(`Failed to create schema 'AnsibleForms' and/or tables`)
+          throw err
+        }
+        
+      })
+  }else{
+    var err = new Error(`Schema creation is disabled`)
+    return Promise.reject(err)
+  }
 };
 
 module.exports= Schema;

@@ -103,6 +103,22 @@
     default: https://graph.microsoft.com
     description: |
       This variable is used to acquire data from the Azure AD api.      
+  - name: ALLOW_SCHEMA_CREATION
+    type: number
+    choices:
+    - name: 0
+      description: Disables schema creation
+    - name: 1
+      description: Enables schema creation
+    default: 1    
+    short: Enable the schema creation
+    description: | 
+      When you start Ansible Forms for the first time and there is no database, Ansible Forms will present you the option to create the schema. 
+      Although this is fairly handy, you might want to disable this option to prevent accidental schema re-creation.  
+      Also note that if you use the docker-compose solution, the database is created as part of the Mysql initialization.  
+      If you use a different database, you might want to enable this option, to at the very least create the schema the very first time.  
+      If you want to disable this option, set this variable to 0.
+    version: 5.0.3      
   - name: SHOW_DESIGNER
     type: number
     choices:
