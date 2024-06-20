@@ -4,6 +4,8 @@ var RestResult = require('../models/restResult.model');
 const mysql=require("../lib/mysql")
 const postgres=require("../lib/postgres")
 const mssql=require("../lib/mssql")
+const oracle=require("../lib/oracle")
+const mongodb=require("../lib/mongodb")
 
 exports.find = function(req, res) {
   if(req.query.name){
@@ -62,8 +64,10 @@ exports.testDb = function(req,res){
           return mssql.query(cred[0].name,'select 1')
         }else if(db_type=='postgres'){
           return postgres.query(cred[0].name,'select 1')
+        }else if(db_type=='oracle'){
+          return oracle.query(cred[0].name,'select 1')          
         }else if(db_type=='mongodb'){
-          throw new Error("Mongodb test is not implemented")
+          return mongodb.query(cred[0].name,'admin~system.version~{}')
         }else{
           throw new Error("Database type not set")
         }
