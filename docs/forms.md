@@ -72,7 +72,10 @@ forms: # a list of forms
         label: Username
 ```
 
-To add more forms, you either extend the forms-list property in the forms.yaml file, or you make seperate yaml files under the forms folder.  Each file must contain [a single form item](#form-object).
+To add more forms, you either extend the forms-list property in the forms.yaml file, or you make seperate yaml files under the forms folder.  Each file must contain [a single form item](#form-object).  
+  
+**YAML FROM REPOSITORY** : The `forms.yaml` and `forms/` folder can be placed in the root of a repository and loaded from there.  
+**YAML FROM DATABASE** : The `forms.yaml` can also be stored in the database and will have preference over the `forms.yaml` file.  
 
 <table class="table-responsive">
       <thead>
