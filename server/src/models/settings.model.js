@@ -1,9 +1,12 @@
 'use strict';
 const logger=require("../lib/logger");
 const mysql=require("./db.model")
-const Helpers=require("../lib/common")
+const helpers=require("../lib/common")
 const nodemailer=require("nodemailer")
 const {encrypt,decrypt} = require("../lib/crypto")
+const Repository = require('./repository.model')
+const appConfig = require("./../../config/app.config")
+const fs = require('fs')
 
 //mail object create
 var Settings=function(settings){
@@ -16,11 +19,28 @@ var Settings=function(settings){
     }
     this.mail_from = settings.mail_from;
     this.url = settings.url;
+    this.forms_yaml = settings.forms_yaml || "";
 };
 Settings.update = function (record) {
     logger.info(`Updating settings`)
     return mysql.do("UPDATE AnsibleForms.`settings` set ?", record)
 };
+Settings.importFormsFileFromYaml = async function(){
+
+  var appFormsPath = (await Repository.getFormsPath()) || appConfig.formsPath   
+  if(!fs.existsSync(appFormsPath)){
+    logger.error(`Forms path ${appFormsPath} doesn't exist`)
+    throw new Error(`Forms path ${appFormsPath} doesn't exist`)
+  }else{
+    logger.notice(`Loading ${appFormsPath} into the database`)  
+    let formsFile = fs.readFileSync(appFormsPath, 'utf8')
+    var settings = await Settings.find()
+    settings.forms_yaml = formsFile
+    await Settings.update(settings)
+    return "Forms.yaml imported successfully"
+  }
+
+}
 Settings.find = function () {
 
   return mysql.do("SELECT * FROM AnsibleForms.`settings` limit 1;")
