@@ -641,7 +641,7 @@ Job.sendStatusNotification = async function(jobid){
       var logo = `${url}${appConfig.baseUrl}assets/img/logo.png`
       message = message.replace("${message}",job.output.replaceAll("\r\n","<br>"))
                       .replaceAll("${url}",url)
-                      .replaceAll("${baseurl",appConfig.baseUrl)
+                      .replaceAll("${baseurl}",appConfig.baseUrl)
                       .replaceAll("${jobid}",jobid)
                       .replaceAll("${title}",subject)
                       .replaceAll("${logo}",logo)
