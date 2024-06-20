@@ -2,6 +2,7 @@ const passport = require('passport');
 const basicStrategy = require('modern-passport-http').BasicStrategy;
 const User = require('./../models/user.model');
 const authConfig = require('../../config/auth.config.js')
+const appConfig = require('../../config/app.config.js')
 const logger=require("../lib/logger");
 const Helpers = require('../lib/common');
 const Ldap = require('../models/ldap.model')
@@ -14,6 +15,16 @@ passport.use(
     async (username, password, done) => {
       // authentication against database first
       try{
+        if(appConfig.enableBypass){
+          user = {}
+          user.id = 0
+          user.username = 'bypass admin'
+          user.type = 'bypass'
+          user.groups = []
+          user.roles = ['admin']
+          logger.warning("Logging in with bypass")
+          return done(null,user)
+        }
         var user = await User.authenticate(username,password)
           .then(async (result)=>{
             var user = {}
