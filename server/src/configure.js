@@ -23,48 +23,48 @@ const passport = require('passport');
 // a small custom middleware to check whether the user is administrator
 const checkAdminMiddleware = require('./lib/common').checkAdminMiddleware
 
-// our personal app settings
-const appConfig = require('../config/app.config')
-const logger = require("./lib/logger");
-const schemaRoutes = require("./routes/schema.routes");
-const queryRoutes = require("./routes/query.routes");
-const expressionRoutes = require("./routes/expression.routes");
-const versionRoutes = require("./routes/version.routes");
-const installRoutes = require("./routes/install.routes");
-const lockRoutes = require("./routes/lock.routes");
-const helpRoutes = require("./routes/help.routes");
-const profileRoutes = require("./routes/profile.routes");
-const loginRoutes = require("./routes/login.routes");
-const tokenRoutes = require("./routes/token.routes");
-const jobRoutes = require("./routes/job.routes");
-const userRoutes = require("./routes/user.routes");
-const groupRoutes = require("./routes/group.routes");
-const ldapRoutes = require("./routes/ldap.routes");
-const azureadRoutes = require("./routes/azuread.routes");
-const oidcRoutes = require("./routes/oidc.routes");
-const settingsRoutes = require("./routes/settings.routes");
-const credentialRoutes = require("./routes/credential.routes");
-const sshRoutes = require("./routes/ssh.routes");
-const awxRoutes = require("./routes/awx.routes");
-const logRoutes = require("./routes/log.routes");
-const repositoryRoutes = require("./routes/repository.routes");
-const knownhostsRoutes = require("./routes/knownhosts.routes");
-const configRoutes = require("./routes/config.routes");
-
-// we use 4 authentications/authorization strategies
-// - basic : with username and password to get jwt tokens
-// - azure-ad-oauth2 : microsoft login
-// - oidc : open id connect
-// - jwt : to use the jwt tokens
-// passport (the auth lib used) is smart, if basic authentication headers are detected
-// then the basic authentication strategy kicks and the basic login procedure starts
-require('./auth/auth_basic');
-require('./auth/auth_jwt');
-const auth_azuread = require('./auth/auth_azuread');
-const auth_oidc = require('./auth/auth_oidc');
-
 // start the app
 module.exports = app => {
+
+  // our personal app settings
+  const appConfig = require('../config/app.config')
+  const logger = require("./lib/logger");
+  const schemaRoutes = require("./routes/schema.routes");
+  const queryRoutes = require("./routes/query.routes");
+  const expressionRoutes = require("./routes/expression.routes");
+  const versionRoutes = require("./routes/version.routes");
+  const installRoutes = require("./routes/install.routes");
+  const lockRoutes = require("./routes/lock.routes");
+  const helpRoutes = require("./routes/help.routes");
+  const profileRoutes = require("./routes/profile.routes");
+  const loginRoutes = require("./routes/login.routes");
+  const tokenRoutes = require("./routes/token.routes");
+  const jobRoutes = require("./routes/job.routes");
+  const userRoutes = require("./routes/user.routes");
+  const groupRoutes = require("./routes/group.routes");
+  const ldapRoutes = require("./routes/ldap.routes");
+  const azureadRoutes = require("./routes/azuread.routes");
+  const oidcRoutes = require("./routes/oidc.routes");
+  const settingsRoutes = require("./routes/settings.routes");
+  const credentialRoutes = require("./routes/credential.routes");
+  const sshRoutes = require("./routes/ssh.routes");
+  const awxRoutes = require("./routes/awx.routes");
+  const logRoutes = require("./routes/log.routes");
+  const repositoryRoutes = require("./routes/repository.routes");
+  const knownhostsRoutes = require("./routes/knownhosts.routes");
+  const configRoutes = require("./routes/config.routes");
+
+  // we use 4 authentications/authorization strategies
+  // - basic : with username and password to get jwt tokens
+  // - azure-ad-oauth2 : microsoft login
+  // - oidc : open id connect
+  // - jwt : to use the jwt tokens
+  // passport (the auth lib used) is smart, if basic authentication headers are detected
+  // then the basic authentication strategy kicks and the basic login procedure starts
+  require('./auth/auth_basic');
+  require('./auth/auth_jwt');
+  const auth_azuread = require('./auth/auth_azuread');
+  const auth_oidc = require('./auth/auth_oidc');
 
   // first time run init
   // from now on, it's async => we wait for mysql to be ready
