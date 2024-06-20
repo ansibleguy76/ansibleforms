@@ -290,13 +290,17 @@ function patchAll(){
 
   buffer = fs.readFileSync(`${__dirname}/../db/create_oidc_table.sql`)
   sql = buffer.toString()
-  tablePromises.push(addTable("oidc",sql)) // add oidc table
+  tablePromises.push(addTable("oidc",sql)) // add oidc table  // added in 5.0.2
 
   buffer = fs.readFileSync(`${__dirname}/../db/create_repositories_table.sql`)
   sql = buffer.toString()
   tablePromises.push(addTable("repositories",sql)) // add repositories table
 
   tablePromises.push(addColumn("azuread","groupfilter","varchar(250)",true,"NULL"))  // add column to limit azuread groups
+
+  tablePromises.push(addColumn("settings","forms_yaml","longtext",true,"NULL"))  // add forms_yaml column
+  tablePromises.push(setUtf8mb4CharacterSet("settings","forms_yaml","longtext")) // allow emoticon or utf16 characters  
+
   //tablePromises.push(addRecord("settings",["mail_server","mail_port","mail_secure","mail_username","mail_password","mail_from","url"],["''",25,0,"''","''","''","''"]))
   // buffer=fs.readFileSync(`${__dirname}/../db/create_settings_table.sql`)
   // sql=buffer.toString();
