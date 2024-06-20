@@ -7,9 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-   Option to disable/enable schema creation (ALLOW_SCHEMA_CREATION)
+-   Forms yaml can now be in the database (overriding the local file)
+-   Database queries are by default no longer logged, use ENABLE_DB_QUERY_LOGGING to enable it again
+-   Mongodb connection test
+
+### Changed
+
+-   Improved schema creation error messages and error handling
+-   Schema patching is now done at application initialization
+-   Rewrote database connections with await/async
+
 ### Fixed
 
 -   Vault credentials, alpine requires decode -d instead --decode
+-   Type on jobstatus notification template
 
 ## [5.0.2] - 2024-06-10
 
