@@ -119,6 +119,33 @@
       If you use a different database, you might want to enable this option, to at the very least create the schema the very first time.  
       If you want to disable this option, set this variable to 0.
     version: 5.0.3      
+  - name: ENABLE_BYPASS
+    type: number
+    choices:
+    - name: 0
+      description: Disables the bypass admin authentication
+    - name: 1
+      description: Enables the bypass admin authentication
+    default: 0
+    short: Enable the bypass admin authentication
+    description: | 
+      When you have locked yourself out, you can enable the bypass admin authentication, by setting this variable to 1.  
+      This will allow you to login as temp admin with any combination of username and password.  You can then fix the issue and disable this option again.  
+      **Note** : This option will allow ANYONE to login as admin, so use with caution and disable as soon as possible.  
+    version: 5.0.3
+  - name: ENABLE_DB_QUERY_LOGGING
+    type: number
+    choices:
+    - name: 0
+      description: Disables the database query logging
+    - name: 1
+      description: Enables the database query logging
+    default: 0
+    short: Enable the database query logging
+    description: | 
+      When you want to see the database queries that are executed, you can enable this option by setting this variable to 1.  
+      introduced, due to massive amount of logging of database queries, which can be useful for debugging, but not for production.
+    version: 5.0.3    
   - name: SHOW_DESIGNER
     type: number
     choices:
@@ -1815,7 +1842,7 @@
                   The enum field will create a powerfull dropdown box with multi-column, multiselect and filter capabilities. The enum field can be used in 3 ways.
 
                   * **fixed list** : simply use the `values` property to set a fixed list
-                  * **database query** : you can use the query and dbConfig property to query a mysql, mssql, postgres or mongodb.
+                  * **database query** : you can use the query and dbConfig property to query a mysql, mssql, postgres, oracle or mongodb.
                   * **expression** : you can use the expression property to create data. in this case the output of the expression can be :
                     * **single item** : a single item like a string, integer, ...
                     * **array of items** : an array of strings, integers, ...
@@ -1837,7 +1864,7 @@
                 help: |
                   The expression field is the most powerfull field. It can calculate, manipulate, get, post, ... The expression can hold any type of information, array, objects, ... And the extravars-output will takeover the information. The expression field can be used in 2 ways.  
                     
-                  * **database query** : you can use the query and dbConfig property to query a mysql, mssql server, postgres or mongodb.
+                  * **database query** : you can use the query and dbConfig property to query a mysql, mssql server, postgres, oracle or mongodb.
                   * **expression** : you can use the expression property to create or retrieve data. in this case the output of the expression can be any type.  
                   The expression itself is pure javascript. You can do inline javascript or you can use a function. Read more on security concerns about expressions You can extend the functions with your own in the custom.js file. You can have synchronous and asynchronous functions. This allows you to retrieve any kind of data, whether it's reading a file or accessing a rest-api, or querying a foreign database. You can run the expression locally (`runLocal`) in the browser for simple expressions. This is faster and there is no limitation on the expression.  
                   Use the alias type `local` to quickly make an expression type with runLocal, hide and noOutput.  
@@ -1860,7 +1887,7 @@
                   A table field allows you to manually add multi object arrays.  
                   You can start from an empty list, but you can also retrieve existing data first using :  
 
-                  * **database query** : you can use the query and dbConfig property to query a mysql, mssql server, postgres or mongodb.
+                  * **database query** : you can use the query and dbConfig property to query a mysql, mssql server, postgres, oracle or mongodb.
                   * **expression** : you can use the expression property to create or retrieve data. in this case the output of the expression can be any type.    
                 examples:
                 - name: Table
@@ -2642,7 +2669,7 @@
             description: |
               When you want to query data from a database, you will need the proper connection information.  
               We use a credential name to lookup the connection details.  Legacy was to pass an object (name and type).  
-              Since version 5.0.2 you can just specify the name of the credential.  The type is fetched from the credential itself (mysql, mssql, postgres or mongodb). 
+              Since version 5.0.2 you can just specify the name of the credential.  The type is fetched from the credential itself (mysql, mssql, postgres, oracle or mongodb). 
               In case of no type set, mysql is assumed.   
               Additionally you can set an array of credential names, to use multiple databases with a single query.  The result will be a join of the results.  
               Doubles will not be removed automatically.  
