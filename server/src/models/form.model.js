@@ -15,6 +15,7 @@ const Repository = require('./repository.model')
 const Helpers = require("../lib/common")
 const {inspect} = require("node:util");
 const Repo = require('./repo.model');
+const Settings = require('./settings.model');
 
 const backupPath = appConfig.formsBackupPath
 
@@ -81,8 +82,17 @@ Form.load = async function() {
 
   var forms=undefined
   var rawdata=undefined
-  var appFormsPath = (await Repository.getFormsPath()) || appConfig.formsPath
-  logger.info(`Loading ${appFormsPath}`)  
+
+  var settings = await Settings.find()
+  var appFormsPath=undefined
+  if(settings.forms_yaml){
+    logger.info(`Using forms yaml from database`)
+    appFormsPath = (await Repository.getFormsPath(false)) || appConfig.formsPath    
+  }else{
+    appFormsPath = (await Repository.getFormsPath()) || appConfig.formsPath    
+    logger.info(`Loading ${appFormsPath}`)  
+  }
+
   var formsdirpath=path.join(path.dirname(appFormsPath),"/forms");
   var formslibdirpath=path.join(path.dirname(appFormsPath),"/lib");
   var formfilesraw=[]
@@ -98,22 +108,27 @@ Form.load = async function() {
   try{
     // read base forms.yaml
     rawdata = '';
-    try {
-      if (appConfig.useYtt) {
-        logger.info(`interpreting ${appFormsPath} with ytt.`);
-        logger.debug(`executing 'ytt -f ${appFormsPath} -f ${formslibdirpath}${ytt_env_data_opt}${yttLibDataOpts}'`)
-        rawdata = execSync(
-            `ytt -f ${appFormsPath} -f ${formslibdirpath}${ytt_env_data_opt}${yttLibDataOpts}`,
-            {
-              env: process.env,
-              encoding: 'utf-8'
-            }
-        );
-      } else {
-        rawdata = fs.readFileSync(appFormsPath, 'utf8');
+    if(settings.forms_yaml){
+      rawdata = settings.forms_yaml // loading from db
+      // console.log(rawdata)
+    }else{
+      try {
+        if (appConfig.useYtt) {
+          logger.info(`interpreting ${appFormsPath} with ytt.`);
+          logger.debug(`executing 'ytt -f ${appFormsPath} -f ${formslibdirpath}${ytt_env_data_opt}${yttLibDataOpts}'`)
+          rawdata = execSync(
+              `ytt -f ${appFormsPath} -f ${formslibdirpath}${ytt_env_data_opt}${yttLibDataOpts}`,
+              {
+                env: process.env,
+                encoding: 'utf-8'
+              }
+          );
+        } else {
+          rawdata = fs.readFileSync(appFormsPath, 'utf8');
+        }
+      } catch (e) {
+        logger.error(`failed to load '${appFormsPath}'.\n${e}`);
       }
-    } catch (e) {
-      logger.error(`failed to load '${appFormsPath}'.\n${e}`);
     }
     // read extra form files
     try{
