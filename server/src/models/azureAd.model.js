@@ -1,7 +1,7 @@
 'use strict';
 const logger=require("../lib/logger");
 const mysql=require("./db.model")
-const Helpers=require("../lib/common")
+const helpers=require("../lib/common")
 const YAML=require("yaml")
 const {encrypt,decrypt} = require("../lib/crypto")
 
