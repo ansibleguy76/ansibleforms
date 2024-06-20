@@ -31,7 +31,7 @@
               </form>
               <form action="" class="box" v-else>
                 <div class="content">
-                  It appears that you have an unuseable schema.  Part of the tables is present, and part is missing.<br>
+                  It appears that you have an unuseable schema.  Part of the database is present, and part is missing.<br>
                   Please contact your database or application administrator to either restore from a backup, or create the missing tables.  
                   For now there is nothing I can do for you, until the schema and tables are in a consistent state.
                 </div>
