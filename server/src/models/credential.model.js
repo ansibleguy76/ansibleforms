@@ -24,26 +24,26 @@ var Credential=function(credential){
     this.db_type = credential.db_type;
 };
 
-Credential.create = function (record) {
+Credential.create = async function (record) {
     logger.info(`Creating credential ${record.name}`)
-    return mysql.do("INSERT INTO AnsibleForms.`credentials` set ?", record)
-    .then((res)=>{ return res.insertId })
+    var res = await mysql.do("INSERT INTO AnsibleForms.`credentials` set ?", record)
+    return res.insertId
 };
-Credential.update = function (record,id) {
+Credential.update = async function (record,id) {
     logger.info(`Updating credential ${record.name}`)
-    return mysql.do("UPDATE AnsibleForms.`credentials` set ? WHERE id=?", [record,id])
-    .then((res)=>{
-      cache.del(record.name)
-      return res
-    })
+    var res = await mysql.do("UPDATE AnsibleForms.`credentials` set ? WHERE id=?", [record,id])
+    cache.del(record.name)
+    return res
 };
-Credential.delete = function(id){
+Credential.delete = async function(id){
     logger.info(`Deleting credential ${id}`)
-    return mysql.do("DELETE FROM AnsibleForms.`credentials` WHERE id = ? AND name<>'admins'", [id])
+    var res = await mysql.do("DELETE FROM AnsibleForms.`credentials` WHERE id = ? AND name<>'admins'", [id])
+    return res
 };
-Credential.findAll = function () {
+Credential.findAll = async function () {
     logger.info("Finding all credentials")
-    return mysql.do("SELECT id,name,user,host,port,description,secure,db_type,db_name,is_database FROM AnsibleForms.`credentials`;")
+    var res = await mysql.do("SELECT id,name,user,host,port,description,secure,db_type,db_name,is_database FROM AnsibleForms.`credentials`;")
+    return res
 };
 Credential.findById = function (id) {
     logger.info(`Finding credential ${id}`)
