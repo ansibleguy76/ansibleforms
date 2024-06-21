@@ -1,10 +1,11 @@
 'use strict';
 const Schema = require('../models/schema.model');
 var RestResult = require('../models/restResult.model');
-var Helpers = require('../lib/common')
+var helpers = require('../lib/common')
 var util = require('util');
 
 exports.hasSchema = function(req, res) {
+
     Schema.hasSchema()
       .then((result)=>{ res.json(new RestResult("success","schema and tables are ok",result.data?.success,result.data?.failed)) })
       .catch((err)=>{ 
@@ -14,13 +15,13 @@ exports.hasSchema = function(req, res) {
         }else{
           res.json(new RestResult("error","schema and tables are not ok",result.data?.success,result.data?.failed)) 
         }
-        
       })
+
 };
 exports.create = function(req, res) {
     Schema.create()
       .then((result)=>{ res.json(new RestResult("success",result,null,"")) })
       .catch((err)=>{
-        res.json(new RestResult("error",Helpers.getError(err),null,null))
+        res.json(new RestResult("error",helpers.getError(err),null,null))
       })
 };

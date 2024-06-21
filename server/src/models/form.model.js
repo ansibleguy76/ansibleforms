@@ -83,9 +83,9 @@ Form.load = async function() {
   var forms=undefined
   var rawdata=undefined
 
-  var settings = await Settings.find()
+  var settings = await Settings.findFormsYaml()
   var appFormsPath=undefined
-  if(settings.forms_yaml){
+  if(settings.forms_yaml && appConfig.enableFormsYamlInDatabase){
     logger.info(`Using forms yaml from database`)
     appFormsPath = (await Repository.getFormsPath(false)) || appConfig.formsPath    
   }else{

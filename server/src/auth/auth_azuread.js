@@ -33,7 +33,7 @@ exports.initialize = async () =>{
       logger.info("Azure AD is not enabled")
     }else{
       azureConfig = await AzureAd.find()
-      settings = await Settings.find()
+      settings = await Settings.findUrl()
       url = settings.url?.replace(/\/$/g,'')
       if(!url){
         logger.error("AnsibleForms Url is not set")

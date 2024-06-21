@@ -34,7 +34,7 @@ Settings.importFormsFileFromYaml = async function(){
   }else{
     logger.notice(`Loading ${appFormsPath} into the database`)  
     let formsFile = fs.readFileSync(appFormsPath, 'utf8')
-    var settings = await Settings.find()
+    var settings = await Settings.findFormsYaml()
     settings.forms_yaml = formsFile
     await Settings.update(settings)
     return "Forms.yaml imported successfully"
@@ -54,6 +54,53 @@ Settings.find = function () {
           logger.error("Couldn't decrypt mail password, did the secretkey change ?")
           res[0].mail_password=""
         }
+        res[0].enableFormsYamlInDatabase = appConfig.enableFormsYamlInDatabase
+        return res[0]
+      }else{
+        logger.error("No settings record in the database, something is wrong")
+        throw "No settings record in the database, something is wrong"
+      }
+    })
+
+};
+Settings.findMailSettings = function () {
+  return mysql.do("SELECT mail_server,mail_port,mail_secure,mail_username,mail_password,mail_from FROM AnsibleForms.`settings` limit 1;")
+    .then((res)=>{
+      if(res.length>0){
+        try{
+          if(res[0].mail_password!=""){
+            res[0].mail_password=decrypt(res[0].mail_password)
+          }
+        }catch(e){
+          logger.error("Couldn't decrypt mail password, did the secretkey change ?")
+          res[0].mail_password=""
+        }
+        return res[0]
+      }else{
+        logger.error("No settings record in the database, something is wrong")
+        throw "No settings record in the database, something is wrong"
+      }
+    })
+
+};
+Settings.findUrl = function () {
+
+  return mysql.do("SELECT url FROM AnsibleForms.`settings` limit 1;")
+    .then((res)=>{
+      if(res.length>0){
+        return res[0]
+      }else{
+        logger.error("No settings record in the database, something is wrong")
+        throw "No settings record in the database, something is wrong"
+      }
+    })
+
+};
+Settings.findFormsYaml = function () {
+
+  return mysql.do("SELECT forms_yaml FROM AnsibleForms.`settings` limit 1;")
+    .then((res)=>{
+      if(res.length>0){
         return res[0]
       }else{
         logger.error("No settings record in the database, something is wrong")
@@ -77,7 +124,7 @@ Settings.mailcheck = function(config,to){
   return Settings.maildo(config,to,subject,message)
 }
 Settings.mailsend = function(to,subject,message){
-  return Settings.find()
+  return Settings.findMailSettings()
     .then((config)=>{
       return Settings.maildo(config,to,subject,message)
     })
