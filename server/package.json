@@ -35,6 +35,7 @@
     "fs-extra": "~11.2.0",
     "ip": "2.0.1",
     "json-bigint": "~1.0.0",
+    "ldap-authentication": "~3.2.1",
     "ldapjs": "~3.0.7",
     "lodash": "~4.17.21",
     "modern-passport-http": "~0.3.0",
