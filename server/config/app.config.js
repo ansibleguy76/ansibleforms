@@ -2,7 +2,7 @@ const logger=require("../src/lib/logger");
 const path=require("path")
 var app_config = {
   port: process.env.PORT || 8000,
-  baseUrl: process.env.BASE_URL?.replace(/\/$/, "") || "/",
+  baseUrl: process.env.BASE_URL || "/",
   nodeEnvironment: process.env.NODE_ENV || "production",
   showDesigner: (process.env.SHOW_DESIGNER ?? 1)==1,
   allowSchemaCreation: (process.env.ALLOW_SCHEMA_CREATION ?? 1)==1,
@@ -19,5 +19,6 @@ var app_config = {
   filterJobOutputRegex: process.env.REGEX_FILTER_JOB_OUTPUT || "\\[low\\]",
   enableBypass: (process.env.ENABLE_BYPASS ?? 0)==1,
   enableDbQueryLogging: (process.env.ENABLE_DB_QUERY_LOGGING ?? 0)==1,
+  enableFormsYamlInDatabase: (process.env.ENABLE_FORMS_YAML_IN_DATABASE ?? 0)==1,
 };
 module.exports = app_config;
