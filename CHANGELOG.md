@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.3] - 2024-06-21
+
 ### Added
 
 -   Option to disable/enable schema creation (ALLOW_SCHEMA_CREATION)
@@ -707,7 +709,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.2...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.3...HEAD
+
+[5.0.3]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.2...5.0.3
 
 [5.0.2]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.1...5.0.2
 
