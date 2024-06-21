@@ -1,7 +1,7 @@
 <template>
   <section class="hero has-background-light is-fullheight">
     <div class="hero-body">
-      <div class="container">
+      <div v-if="!loading" class="container">
         <div class="columns is-centered">
           <div class="column is-6-tablet is-6-desktop is-6-widescreen">
             <div class="notification is-danger" v-if="error!=''" v-text="error"></div>
@@ -69,7 +69,8 @@
       },
       data() {
           return {
-              error:(this.errorMessage=="schema and tables are ok")?"":this.errorMessage
+              error:(this.errorMessage=="schema and tables are ok")?"":this.errorMessage,
+              loading:false
           }
       },
       computed:{
@@ -91,10 +92,12 @@
       methods: {
           create() {
             var ref=this
+            ref.loading=true
             this.$toast.info("Creating... wait a moment")
             axios.post(`${process.env.BASE_URL}api/v1/schema`,{})
               .then((result)=>{
-
+                this.$emit('recheckSchema')
+                ref.loading=false
                 if(result.data.status!="error"){
                   ref.error=""
                   this.$toast.success(result.data.message)
@@ -102,11 +105,9 @@
                 }else{
                   ref.error=result.data.message
                 }
-                console.log(result)
               }).catch(function (error) {
                   ref.error=error
               })
-            console.log("creating")
           }
       }
   }

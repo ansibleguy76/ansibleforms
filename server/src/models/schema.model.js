@@ -5,7 +5,8 @@ const mysql = require("./db.model")
 const Helpers = require("../lib/common")
 const appConfig = require('../../config/app.config')
 const fs = require('fs');
-const NodeCache = require("node-cache")
+const NodeCache = require("node-cache");
+const { check } = require('./ldap.model');
 
 const cache = new NodeCache({
     stdTTL: 14400,
@@ -14,55 +15,48 @@ const cache = new NodeCache({
 //user object create
 var Schema=function(){
 };
-function handleError(err){
-  throw err
-}
 
-function checkSchema(){
+// Check if the AnsibleForms schema exists
+async function checkSchema(){
   var message
   var db="AnsibleForms"
   logger.debug("checking schema " + db)
-  return mysql.do(`SHOW DATABASES LIKE '${db}'`)
-    .then((res)=>{
-      if(res){
-        if(res.length>0){
-          message=`Schema '${db}' is present`
-          logger.debug(message)
-          return message
-        }else{
-          message=`Schema '${db}' is not present`
-          logger.warning(message)
-          var err = new Error(message)
-          err.result = {message:[message],data:{success:[],failed:[message]}}
-          throw err
-        }
-      }
-    })
+  var res = await mysql.do(`SHOW DATABASES LIKE '${db}'`)
+  if(res){
+    if(res.length>0){
+      message=`Schema '${db}' is present`
+      logger.debug(message)
+      return message
+    }else{
+      message=`Schema '${db}' is not present`
+      logger.warning(message)
+      var err = new Error(message)
+      err.result = {message:[message],data:{success:[],failed:[message]}}
+      throw err
+    }
+  }
 }
-function dropIndex(table,index){
+
+// Check if a table exists
+async function checkTable(table){
   var message
   var db="AnsibleForms"
-  logger.debug(`dropping index '${index}' on table '${table}'`)
-  var checksql = `SHOW INDEX FROM ${db}.${table} WHERE Key_name='${index}'`
-  var sql = `DROP INDEX \`PRIMARY\` ON ${db}.${table}`
-  return mysql.do(checksql)
-    .then((checkres)=>{
-      if(checkres.length>0){
-        return mysql.do(sql)
-      }
-      return false
-    })
-    .then((res)=>{
-      if(!res){
-        message=`Index '${index}' is already dropped on '${table}'`
-        logger.debug(message)
-        return message
-      }
-      message=`Index '${index}' dropped on '${table}'`
-      logger.warning(message)
-      return message
-    })
+  logger.debug("checking table " + table)
+  var sql = `SHOW TABLES FROM ${db} WHERE Tables_in_${db}='${table}'`
+  var res = await mysql.do(sql)
+
+  if(res.length>0){
+    message=`Table '${table}' is present`
+    logger.debug(message)
+    return message
+  }else{
+    message=`Table '${table}' is not present`
+    logger.warning(message)
+    throw new Error(message)
+  }
 }
+
+// PATCHING : add a column to a table
 function addColumn(table,name,fieldtype,nullable,defaultvalue){
   var message
   var db="AnsibleForms"
@@ -93,6 +87,8 @@ function addColumn(table,name,fieldtype,nullable,defaultvalue){
       return message
     })
 }
+
+// PATCHING : Add a table to the schema
 function addTable(table,sql){
   var message
   var db="AnsibleForms"
@@ -116,54 +112,8 @@ function addTable(table,sql){
       return message
     })
 }
-function renameColumn(table,name,newname,fieldtype){
-  var message
-  var db="AnsibleForms"
-  var checksql = `SHOW COLUMNS FROM ${db}.${table} WHERE Field='${newname}'`
-  var sql = `ALTER TABLE ${db}.${table} CHANGE \`${name}\` \`${newname}\` ${fieldtype}`
-  logger.debug(`rename column '${name}'->'${newname}' on table '${table}'`)
-  return mysql.do(checksql)
-    .then((checkres)=>{
-      if(checkres.length==0){
-        return mysql.do(sql)
-      }
-      return false
-    })
-    .then((res)=>{
-      if(!res){
-        message=`Column '${name}' is already present on '${table}'`
-        logger.debug(message)
-        return message
-      }
-      message=`renamed column '${name}'->'${newname}' on '${table}'`
-      logger.warning(message)
-      return message
-    })
-}
-function resizeColumn(table,name,fieldtype){
-  var message
-  var db="AnsibleForms"
-  var checksql = `SHOW COLUMNS FROM ${db}.${table} WHERE Field='${name}' and type='${fieldtype}'`
-  var sql = `ALTER TABLE ${db}.${table} MODIFY \`${name}\` ${fieldtype}`
-  logger.debug(`resize column '${name}'->'${fieldtype}' on table '${table}'`)
-  return mysql.do(checksql)
-    .then((checkres)=>{
-      if(checkres.length==0){
-        return mysql.do(sql)
-      }
-      return false
-    })
-    .then((res)=>{
-      if(!res){
-        message=`Column '${name}' has already correct size on '${table}'`
-        logger.debug(message)
-        return message
-      }
-      message=`resized column '${name}'->'${fieldtype}' on '${table}'`
-      logger.warning(message)
-      return message
-    })
-}
+
+// PATCHING : Set the charset of a column to utf8mb4
 function setUtf8mb4CharacterSet(table,name,fieldtype){
   var message
   var db="AnsibleForms"
@@ -188,229 +138,276 @@ function setUtf8mb4CharacterSet(table,name,fieldtype){
       return message
     })
 }
-function addRecord(table,names,values){
-  var message
-  var db="AnsibleForms"
-  logger.debug("checking record in table " + table)
-  var checksql = `SELECT * FROM ${db}.${table}`
-  var sql = `INSERT INTO ${db}.${table}(${names.join(",")}) VALUES(${values.join(",")});`
-  return mysql.do(checksql)
-    .then((checkres)=>{
-      if(checkres.length==0){
-        return mysql.do(sql)
-      }
-      return false
-    })
-    .then((res)=>{
-      if(!res){
-        message=`Record in '${table}' is present`
-        logger.debug(message)
-        return message
-      }
-      message=`added record in '${table}'`
-      logger.warning(message)
-      return message
-    })
-}
-function checkTable(table){
-  var message
-  var db="AnsibleForms"
-  logger.debug("checking table " + table)
-  var sql = `SHOW TABLES FROM ${db} WHERE Tables_in_${db}='${table}'`
-  return mysql.do(sql)
-    .then((res)=>{
-      if(res.length>0){
-        message=`Table '${table}' is present`
-        logger.debug(message)
-        return message
-      }else{
-        message=`Table '${table}' is not present`
-        logger.warning(message)
-        throw new Error(message)
-      }
-    })
 
-}
-function reflect(promise){
-    return promise.then(function(v){ return {v:v, status: "fulfilled" }},
-                        function(e){ return {e:e, status: "rejected" }});
-}
-function patchAll(){
-  var messages=[]
-  var success=[]
-  var failed=[]
-  var tablePromises=[]
+async function patchVersion4(messages,success,failed){
+
   var buffer
   var sql
-  // patches to db for v2.1.4
-  tablePromises.push(dropIndex("tokens","PRIMARY")) // drop primary ; allow multi devices
-  tablePromises.push(addColumn("tokens","timestamp","datetime",false,"current_timestamp()")) // add timestamp for cleanup
-  tablePromises.push(addColumn("awx","ignore_certs","tinyint(4)",true,"1")) // add for awx certficate validation
-  tablePromises.push(addColumn("awx","ca_bundle","text",true,"NULL")) // add for awx certficate validation
-  tablePromises.push(addColumn("jobs","job_type","varchar(20)",true,"NULL")) // add for git addition
-  tablePromises.push(addColumn("jobs","extravars","mediumtext",true,"NULL")) // add for extravars
-  tablePromises.push(addColumn("jobs","credentials","mediumtext",true,"NULL")) // add for credentials
-  tablePromises.push(addColumn("jobs","notifications","mediumtext",true,"NULL")) // add for notifications
-  tablePromises.push(addColumn("jobs","approval","mediumtext",true,"NULL")) // add for approval info
-  tablePromises.push(addColumn("jobs","parent_id","int(11)",true,"NULL")) // add for multistep
-  tablePromises.push(renameColumn("jobs","playbook","target","VARCHAR(250)")) // better column name
-  tablePromises.push(addColumn("jobs","step","varchar(250)",true,"NULL")) // add column to hold current step
-  tablePromises.push(addColumn("credentials","secure","tinyint(4)",true,"0")) // add column to have secure connection
-  tablePromises.push(addColumn("credentials","is_database","tinyint(4)",true,"1")) // add column to set credentials as database creds
-  tablePromises.push(addColumn("credentials","db_type","varchar(10)",true,"NULL")) // add column to have db type
-  tablePromises.push(addColumn("credentials","db_name","varchar(255)",true,"NULL")) // add column to have db type
-  tablePromises.push(addColumn("awx","username","varchar(255)",true,"NULL")) // add column to have user based awx connection
-  tablePromises.push(addColumn("awx","password","text",true,"NULL")) // add column to have user based awx connection
-  tablePromises.push(addColumn("awx","use_credentials","tinyint(4)",false,"0")) // add column to have user based awx connection
-  tablePromises.push(resizeColumn("tokens","username_type","VARCHAR(10)")) // azuread is longer
-  // patches to db for v4.0.10
-  tablePromises.push(setUtf8mb4CharacterSet("jobs","extravars","longtext")) // allow emoticon or utf16 character
-  tablePromises.push(setUtf8mb4CharacterSet("jobs","notifications","longtext")) // allow emoticon or utf16 character
-  tablePromises.push(setUtf8mb4CharacterSet("jobs","approval","longtext")) // allow emoticon or utf16 character
-  tablePromises.push(setUtf8mb4CharacterSet("job_output","output","longtext")) // allow emoticon or utf16 character
-  // patches to db for v4.0.20
-  tablePromises.push(addColumn("ldap","groups_search_base","varchar(250)",true,"NULL")) // add column to have groups search base  
-  tablePromises.push(addColumn("ldap","groups_attribute","varchar(250)",false,"'memberOf'")) // add column to have groups attribute  
-  tablePromises.push(addColumn("ldap","group_class","varchar(250)",true,"NULL")) // add column to have group class
-  tablePromises.push(addColumn("ldap","group_member_attribute","varchar(250)",true,"NULL")) // add column to have group member attribute
-  tablePromises.push(addColumn("ldap","group_member_user_attribute","varchar(250)",true,"NULL")) // add column to have group member user attribute
-  tablePromises.push(addColumn("ldap","is_advanced","tinyint(4)",true,"0")) // is advanced config
-  // patches to db for v5.0.1
-  tablePromises.push(addColumn("ldap","mail_attribute","varchar(250)",true,"NULL")) // add column to have mail attribute
-  tablePromises.push(addColumn("users","email","varchar(250)",true,"NULL")) // add column to have email
-  // patches to db for v5.0.2
-  tablePromises.push(addColumn("jobs","awx_id","int(11)",true,"NULL")) // add for future tracking
+
+  // patches to db for v4.x.x
+  // Before version 4.0.0, the schema was not utf8mb4, so we need to change the charset of some columns, due to some emoticons or utf16 characters
+  // Also the ldap was enhanced for openLDAP and required some additional columns
+  await checkPromise(setUtf8mb4CharacterSet("jobs","extravars","longtext"),messages,success,failed) // allow emoticon or utf16 character
+  await checkPromise(setUtf8mb4CharacterSet("jobs","notifications","longtext"),messages,success,failed) // allow emoticon or utf16 character
+  await checkPromise(setUtf8mb4CharacterSet("jobs","approval","longtext"),messages,success,failed) // allow emoticon or utf16 character
+  await checkPromise(setUtf8mb4CharacterSet("job_output","output","longtext"),messages,success,failed) // allow emoticon or utf16 character
+  await checkPromise(addColumn("ldap","groups_search_base","varchar(250)",true,"NULL"),messages,success,failed) // add column to have groups search base
+  await checkPromise(addColumn("ldap","groups_attribute","varchar(250)",false,"'memberOf'"),messages,success,failed) // add column to have groups attribute
+  await checkPromise(addColumn("ldap","group_class","varchar(250)",true,"NULL"),messages,success,failed) // add column to have group class
+  await checkPromise(addColumn("ldap","group_member_attribute","varchar(250)",true,"NULL"),messages,success,failed) // add column to have group member attribute
+  await checkPromise(addColumn("ldap","group_member_user_attribute","varchar(250)",true,"NULL"),messages,success,failed) // add column to have group member user attribute
+  await checkPromise(addColumn("ldap","is_advanced","tinyint(4)",true,"0"),messages,success,failed) // is advanced config
+  await checkPromise(addColumn("ldap","mail_attribute","varchar(250)",true,"NULL"),messages,success,failed) // add column to have mail attribute
+
+  // also the settings tables was not present before 4.0.0, it contains the URL and mail settings for notification
+  // later the column forms_yaml was added to store the forms in yaml format (but that was in 5.x.x)
   buffer = fs.readFileSync(`${__dirname}/../db/create_settings_table.sql`)
   sql = buffer.toString()
-  tablePromises.push(addTable("settings",sql)) // add settings table
-  
+  await checkPromise(addTable("settings",sql),messages,success,failed) // add settings table  
+
+}
+
+// PATCHING : Patch All
+async function patchVersion5(messages,success,failed){
+
+  var buffer
+  var sql
+
+  // patches to db for v5.x.x
+  // Before version 5, the users didn't have an email.  The was on request
+  // AF passes the user object and the email address can then be used in ansible for notifications
+  await checkPromise(addColumn("users","email","varchar(250)",true,"NULL"),messages,success,failed) // add column to have email
+
+  // Azure AD integration was added in 5.0.0, so we need to add the table and columns
   buffer = fs.readFileSync(`${__dirname}/../db/create_azuread_table.sql`)
   sql = buffer.toString()
-  tablePromises.push(addTable("azuread",sql)) // add azuread table
+  await checkPromise(addTable("azuread",sql),messages,success,failed) // add azuread table    
 
-  buffer = fs.readFileSync(`${__dirname}/../db/create_oidc_table.sql`)
-  sql = buffer.toString()
-  tablePromises.push(addTable("oidc",sql)) // add oidc table  // added in 5.0.2
+  // A bit later, the groupfilter was added to limit the groups that can be used in AF, because the list can be very long and that's part of the JWT token
+  // which introduced a limit 
+  await checkPromise(addColumn("azuread","groupfilter","varchar(250)",true,"NULL"),messages,success,failed)  // add column to limit azuread groups  
 
+  // on request, the awx_id was added to the jobs table, to later retrieve it for future tracking
+  await checkPromise(addColumn("jobs","awx_id","int(11)",true,"NULL"),messages,success,failed) // add for future tracking
+
+  // A new feature was added, the repositories table, to store the repositories for the forms and playbooks
+  // A real gamechanger, because now the forms and playbooks can be stored in a git repository
   buffer = fs.readFileSync(`${__dirname}/../db/create_repositories_table.sql`)
   sql = buffer.toString()
-  tablePromises.push(addTable("repositories",sql)) // add repositories table
+  await checkPromise(addTable("repositories",sql),messages,success,failed) // add repositories table
 
-  tablePromises.push(addColumn("azuread","groupfilter","varchar(250)",true,"NULL"))  // add column to limit azuread groups
+  // In a first pull requests, mdaug was so kind to contribute the oidc table, to have OpenID Connect integration
+  buffer = fs.readFileSync(`${__dirname}/../db/create_oidc_table.sql`)
+  sql = buffer.toString()
+  await checkPromise(addTable("oidc",sql),messages,success,failed) // add oidc table 
 
-  tablePromises.push(addColumn("settings","forms_yaml","longtext",true,"NULL"))  // add forms_yaml column
-  tablePromises.push(setUtf8mb4CharacterSet("settings","forms_yaml","longtext")) // allow emoticon or utf16 characters  
+  // In 5.0.3, the settings was extended with a new column, forms_yaml, to store the forms in yaml format
+  // If you use GIT to store the forms, but not the master forms.yaml, you can now store it in the database
+  
+  await checkPromise(addColumn("settings","forms_yaml","longtext",true,"NULL"),messages,success,failed)  // add forms_yaml column
+  await checkPromise(setUtf8mb4CharacterSet("settings","forms_yaml","longtext"),messages,success,failed) // allow emoticon or utf16 characters
 
-  //tablePromises.push(addRecord("settings",["mail_server","mail_port","mail_secure","mail_username","mail_password","mail_from","url"],["''",25,0,"''","''","''","''"]))
-  // buffer=fs.readFileSync(`${__dirname}/../db/create_settings_table.sql`)
-  // sql=buffer.toString();
-  // tablePromises.push(addTable("settings",sql)) // add new table for overriding env variables
-  return Promise.all(tablePromises.map(reflect))
-    .then((results)=>{ // all table results are back
-        // separate success from failed
-        results.map(x => {
-          if(x.status === "fulfilled")
-            success.push(x.v)
-          if(x.status === "rejected")
-            failed.push(x.e)
-        })
-        messages=messages.concat(success).concat(failed); // overal message
-        logger.debug("Patching database finished")
-        if(failed.length==0){
-          logger.notice("Patching database successful")
-          return Promise.resolve(messages) // return success
-        }else {
-          return Promise.reject(failed) // throw failed
-        }
-      },
-      handleError
-    )
 }
-function checkAll(){
+
+// PATCHING : Patch All
+async function patchAll(messages,success,failed){
+
+  var buffer
+  var sql
+
+  await checkPromise(patchVersion4(messages,success,failed),messages,success,failed)
+  await checkPromise(patchVersion5(messages,success,failed),messages,success,failed)
+
+}
+async function checkPromise(promise,messages,success,failed){
+  try{
+    var res = await promise
+    messages.push(res)
+    success.push(res)
+  }catch(e){
+    messages.push(e.message)
+    failed.push(e.message)
+  }
+}
+
+async function checkTables(tables,messages,success,failed){
+
+  for(var i=0;i<tables.length;i++){
+    await checkPromise(checkTable(tables[i]),messages,success,failed)
+  }
+
+}
+
+async function checkAll(){
   var messages=[]
   var success=[]
   var failed=[]
-  var tablePromises=[]
   var resultobj=undefined
   resultobj=cache.get('result')  // get from cache, we only check the schema once (or once a day)
   if(resultobj){
-    // logger.debug("Schema check from cache")
-    return Promise.resolve(resultobj)
+    logger.debug("Schema check from cache")
+    return resultobj
   }
-  return checkSchema() // schema
-    .then((res)=>{     // if success
-      messages.push(res); // add schema result
-      success.push(res);  // add schema success
-      // check all tables as promise
-      tablePromises.push(checkTable("credentials"))
-      tablePromises.push(checkTable("groups"))
-      tablePromises.push(checkTable("job_output"))
-      tablePromises.push(checkTable("jobs"))
-      tablePromises.push(checkTable("ldap"))
-      tablePromises.push(checkTable("tokens"))
-      tablePromises.push(checkTable("users"))
-      tablePromises.push(checkTable("awx"))
-      // tablePromises.push(checkTable("settings"))
-      // wait for all results
-      return Promise.all(tablePromises.map(reflect)) // map succes status
-    },handleError) // stop if schema does not exist or other error (db connect failed ?)
-    .then((results)=>{ // all table results are back
-        // separate success from failed
-        results.map(x => {
-          if(x.status === "fulfilled")
-            success.push(x.v)
-          if(x.status === "rejected")
-            failed.push(x.e.message)
-        })
-        messages=messages.concat(success).concat(failed); // overal message
-        if(failed.length==0){
-          return patchAll().then((res)=>{
-            messages=messages.concat(res)
-            success=success.concat(res)
-            logger.debug("Schema check to cache")
-            resultobj={message:messages,data:{success:success,failed:failed}}
-            cache.set('result',resultobj)
-            return resultobj // return success
-          }).catch((res)=>{
-            messages=messages.concat(res)
-            failed=failed.concat(res)
-            var err = new Error(messages.toString())
-            err.result = {message:messages,data:{success:[],failed:failed}}
-            throw err
-          })
-        }else {
-          var err = new Error(messages.toString())
-          err.result = {message:messages,data:{success:success,failed:failed}}
-          throw err // throw failed
-        }
-      },
-      handleError
-    )
+
+  // check the database
+  await checkPromise(checkSchema(),messages,success,failed)
+
+  if(failed.length>0){
+    // if schema does not exist, we can't check the tables // throw now
+    resultobj={message:messages,data:{success:success,failed:failed}}
+    var err = new Error(messages.toString())
+    err.result = resultobj
+    throw err
+  }
+
+  // check all the tables
+  var tables=["credentials","groups","job_output","jobs","ldap","tokens","users","awx"]
+  await checkPromise(checkTables(tables,messages,success,failed),messages,success,failed)
+
+  if(failed.length>0){
+    // some of the tables are missing, we can't patch them // throw now
+    resultobj={message:messages,data:{success:success,failed:failed}}
+    var err = new Error(messages.toString())
+    err.result = resultobj
+    throw err
+  }
+
+  // patch the tables
+  await checkPromise(patchAll(messages,success,failed),messages,success,failed)
+
+  if(failed.length>0){
+    // some of the patches failed // throw now
+    resultobj={message:messages,data:{success:success,failed:failed}}
+    var err = new Error(messages.toString())
+    err.result = resultobj
+    throw err
+  }
+
+  // all passed fine
+  logger.debug("Schema check to cache")
+  resultobj={message:messages,data:{success:success,failed:failed}}
+  cache.set('result',resultobj)
+  return resultobj
 }
 Schema.hasSchema = function(){
   return checkAll()
 }
-Schema.create = function () {
+Schema.create = async function () {
   logger.notice(`Trying to create database schema 'AnsibleForms' and tables`)
   if(appConfig.allowSchemaCreation){ // added in 5.0.3
     const buffer=fs.readFileSync(`${__dirname}/../db/create_schema_and_tables.sql`)
     const query=buffer.toString();
     cache.del('result') // clear cache
-    return mysql.do(query)
-      .then((res)=>{
-        if(res.length > 0){
-          logger.notice(`Created schema 'AnsibleForms' and tables`)
-          return `Created schema 'AnsibleForms' and tables`
-        }else{
-          var err = new Error(`Failed to create schema 'AnsibleForms' and/or tables`)
-          throw err
-        }
-        
-      })
+    var res = await mysql.do(query)
+    if(res.length > 0){
+      logger.notice(`Created schema 'AnsibleForms' and tables`)
+      return `Created schema 'AnsibleForms' and tables`
+    }else{
+      var err = new Error(`Failed to create schema 'AnsibleForms' and/or tables`)
+      throw err
+    }
+
   }else{
-    var err = new Error(`Schema creation is disabled`)
-    return Promise.reject(err)
+    throw new Error(`Schema creation is disabled`)
   }
 };
 
 module.exports= Schema;
+
+// function addRecord(table,names,values){
+//   var message
+//   var db="AnsibleForms"
+//   logger.debug("checking record in table " + table)
+//   var checksql = `SELECT * FROM ${db}.${table}`
+//   var sql = `INSERT INTO ${db}.${table}(${names.join(",")}) VALUES(${values.join(",")});`
+//   return mysql.do(checksql)
+//     .then((checkres)=>{
+//       if(checkres.length==0){
+//         return mysql.do(sql)
+//       }
+//       return false
+//     })
+//     .then((res)=>{
+//       if(!res){
+//         message=`Record in '${table}' is present`
+//         logger.debug(message)
+//         return message
+//       }
+//       message=`added record in '${table}'`
+//       logger.warning(message)
+//       return message
+//     })
+// }
+
+// function dropIndex(table,index){
+//   var message
+//   var db="AnsibleForms"
+//   logger.debug(`dropping index '${index}' on table '${table}'`)
+//   var checksql = `SHOW INDEX FROM ${db}.${table} WHERE Key_name='${index}'`
+//   var sql = `DROP INDEX \`PRIMARY\` ON ${db}.${table}`
+//   return mysql.do(checksql)
+//     .then((checkres)=>{
+//       if(checkres.length>0){
+//         return mysql.do(sql)
+//       }
+//       return false
+//     })
+//     .then((res)=>{
+//       if(!res){
+//         message=`Index '${index}' is already dropped on '${table}'`
+//         logger.debug(message)
+//         return message
+//       }
+//       message=`Index '${index}' dropped on '${table}'`
+//       logger.warning(message)
+//       return message
+//     })
+// }
+// function renameColumn(table,name,newname,fieldtype){
+//   var message
+//   var db="AnsibleForms"
+//   var checksql = `SHOW COLUMNS FROM ${db}.${table} WHERE Field='${newname}'`
+//   var sql = `ALTER TABLE ${db}.${table} CHANGE \`${name}\` \`${newname}\` ${fieldtype}`
+//   logger.debug(`rename column '${name}'->'${newname}' on table '${table}'`)
+//   return mysql.do(checksql)
+//     .then((checkres)=>{
+//       if(checkres.length==0){
+//         return mysql.do(sql)
+//       }
+//       return false
+//     })
+//     .then((res)=>{
+//       if(!res){
+//         message=`Column '${name}' is already present on '${table}'`
+//         logger.debug(message)
+//         return message
+//       }
+//       message=`renamed column '${name}'->'${newname}' on '${table}'`
+//       logger.warning(message)
+//       return message
+//     })
+// }
+// function resizeColumn(table,name,fieldtype){
+//   var message
+//   var db="AnsibleForms"
+//   var checksql = `SHOW COLUMNS FROM ${db}.${table} WHERE Field='${name}' and type='${fieldtype}'`
+//   var sql = `ALTER TABLE ${db}.${table} MODIFY \`${name}\` ${fieldtype}`
+//   logger.debug(`resize column '${name}'->'${fieldtype}' on table '${table}'`)
+//   return mysql.do(checksql)
+//     .then((checkres)=>{
+//       if(checkres.length==0){
+//         return mysql.do(sql)
+//       }
+//       return false
+//     })
+//     .then((res)=>{
+//       if(!res){
+//         message=`Column '${name}' has already correct size on '${table}'`
+//         logger.debug(message)
+//         return message
+//       }
+//       message=`resized column '${name}'->'${fieldtype}' on '${table}'`
+//       logger.warning(message)
+//       return message
+//     })
+// }
