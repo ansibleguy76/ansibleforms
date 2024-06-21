@@ -1713,7 +1713,7 @@
     "/azuread": {
       "get": {
         "tags": [
-          "Azure AD config"
+          "MS Entra Id config"
         ],
         "security": [
           {
@@ -1816,7 +1816,7 @@
     "/oidc": {
       "get": {
         "tags": [
-          "OIDC config"
+          "Open ID Connect config"
         ],
         "security": [
           {
