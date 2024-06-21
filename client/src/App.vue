@@ -60,7 +60,7 @@
       </div>
     </BulmaModal>    
     <BulmaNav v-if="version" :isAdmin="isAdmin" @profile="showProfile=true" @about="showAbout=true" :approvals="approvals" :authenticated="authenticated" :profile="profile" @logout="logout()" :version="version" />
-    <router-view v-if="isLoaded" :isAdmin="isAdmin" :profile="profile" :authenticated="authenticated" :errorMessage="errorMessage" :errorData="errorData" @authenticated="login()" @logout="logout()" @refreshApprovals="loadApprovals()" />
+    <router-view v-if="isLoaded" :isAdmin="isAdmin" :profile="profile" :authenticated="authenticated" :errorMessage="errorMessage" :errorData="errorData" @recheckSchema="checkDatabase()"  @authenticated="login()" @logout="logout()" @refreshApprovals="loadApprovals()" />
   </div>
 </template>
 <script>
@@ -144,7 +144,9 @@
             return; // Skip the database check
           }
           console.log("Checking database")
-          axios.get(`${process.env.BASE_URL}api/v1/schema`)                               // check database
+          // create timestamp to add to api call to prevent caching
+          var timestamp = new Date().getTime();
+          axios.get(`${process.env.BASE_URL}api/v1/schema?${timestamp}`)                               // check database
           .then((result)=>{
             if(result.data.status=="error"){
               ref.errorMessage=result.data.message;

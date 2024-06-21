@@ -6,6 +6,7 @@ var config=require('../../config/app.config')
 const moment = require("moment")
 const Repository = require("./repository.model");
 const Repo = require("./repo.model");
+const Settings = require("./settings.model");
 
 //lock object create
 var Lock=function(){
@@ -13,9 +14,13 @@ var Lock=function(){
 };
 Lock.status = async function(user){
   const hasFormsRepository = await Repository.hasFormsRepository()
+  const settings = await Settings.findFormsYaml()
   if(hasFormsRepository){
     throw new Error("Designer is disabled, Forms repository found.")
   }
+  if(settings.forms_yaml){
+    throw new Error("Designer is disabled, Forms are stored in the database.")
+  }  
   try{
     const lock = await Lock.get()
     const lck=YAML.parse(lock)

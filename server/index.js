@@ -12,16 +12,20 @@ const appConfig = require('./config/app.config')
 const { resolve } = require('path')
 const publicPath = resolve(__dirname, './views')
 const staticConf = { maxAge: '1y', etag: false }
-app.use(express.static(publicPath, staticConf))
+app.use(appConfig.baseUrl,express.static(publicPath, staticConf))
 
 // allow browser history
 const history = require('connect-history-api-fallback')
 app.use(`${appConfig.baseUrl}`, history())
 
+
+
 // choose whether to start https or http server
 var httpServer
 const httpsConfig = require('./config/https.config');
 const logger = require('./src/lib/logger');
+logger.notice(`Serving static files from ${publicPath}`)
+logger.notice(`Exposing app under ${appConfig.baseUrl}`)
 if(httpsConfig.https){
   logger.notice("Running https !")
   var credentials = {key: httpsConfig.httpsKey, cert: httpsConfig.httpsCert};

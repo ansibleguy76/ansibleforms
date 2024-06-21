@@ -124,13 +124,16 @@ Repository.hasFormsRepository = async function(){
     return false
   }
 }
-Repository.getFormsPath = async function(){
+Repository.getFormsPath = async function(searchYaml=true){
   try{
     var repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_forms")
     if(repositories.length>0){
 
       var repoPath = path.join(appConfig.repoPath,repositories[0].name)
-      fs.accessSync(path.join(repoPath,"forms.yaml"))
+      if(searchYaml){
+        // logger.debug("Checking if forms.yaml exists...")
+        fs.accessSync(path.join(repoPath,"forms.yaml"))
+      }
       return path.join(repoPath,"forms.yaml")
     }
     return ""

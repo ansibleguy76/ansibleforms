@@ -63,20 +63,18 @@ module.exports = app => {
   // then the basic authentication strategy kicks and the basic login procedure starts
   require('./auth/auth_basic');
   require('./auth/auth_jwt');
-  const auth_azuread = require('./auth/auth_azuread');
-  const auth_oidc = require('./auth/auth_oidc');
 
   // first time run init
   // from now on, it's async => we wait for mysql to be ready
   const init = require('./init/')
   init()
-      .then(()=> {
-        auth_azuread.initialize()
-        auth_oidc.initialize()
+      .then(async ()=> {
+        const auth_azuread = require('./auth/auth_azuread');
+        const auth_oidc = require('./auth/auth_oidc');        
+        await auth_azuread.initialize() // we wait for the azuread to be ready
+        await auth_oidc.initialize() // we wait for the oidc to be ready
       })
-      .catch(
-          r => logger.error(r)
-      );
+      .catch( e => logger.error(e) );
 
   // passport
   app.use(session({
@@ -169,3 +167,4 @@ module.exports = app => {
   // routes for form config (extra middleware in the routes itself)
   app.use(`${appConfig.baseUrl}api/v1/config`,cors(), authobj, configRoutes)
 }
+

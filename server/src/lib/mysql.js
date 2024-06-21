@@ -1,6 +1,6 @@
 //- MYSQL Module
 const logger = require('./logger');
-const client = require('mysql2');
+const client = require('mysql2/promise');
 const Credential = require('../models/credential.model')
 const util = require('util')
 
@@ -15,54 +15,33 @@ MySql.clean=function(config){
   return config
 }
 
-MySql.query=function(connection_name,query){
+// rewrite with await 5.0.3
+
+MySql.query = async function (connection_name, query) {
   // get credentials
-  return Credential.findByName(connection_name)
-  .then((config)=>{
-    logger.debug(`[${connection_name}] query : ${query}`)
-    return new Promise((resolve,reject)=>{
-      var conn
-      try{
-        logger.debug(`[${connection_name}] connection found : ${config.name}`)
-        config.multipleStatements=true
-        // remove database if not defined
-        if(config.db_name){
-          config.database = config.db_name
-        }
-        if(config.secure){
-          config.ssl={
-            sslmode:"required",
-            rejectUnauthorized:false
-          }
-        }else{
-          config.ssl={
-            sslmode:"none",
-            rejectUnauthorized:false
-          }
-        }
-        // get connection
-        config=MySql.clean(config) // remove unsupported properties
-        // logger.notice(util.inspect(config))
-        conn = client.createConnection(config)
-
-        // get data
-        conn.query(query,function(err,result){
-          // logger.debug(`[${connection_name}] closing connection`)
-          if(err){
-            reject(`[${connection_name}] query error : ${err.toString()}`)
-          }else{
-            conn.end()
-            // logger.debug("["+connection_name+"] query result 1 : " + JSON.stringify(result))
-            resolve(result)
-          }
-
-        })
-      }catch(err){
-        reject(`[${connection_name}] connection error : ${err.toString()}`)
-      }
-
-    })
-
-  })
-};
+  var config = await Credential.findByName(connection_name)
+  logger.debug(`[${connection_name}] query : ${query}`)
+  var conn
+  try{
+    conn = await client.createConnection(MySql.clean(config))
+    var result
+    try{
+      [result] = await conn.query(query)
+      return result
+    }catch(err){
+      logger.error(`[${connection_name}] query error : ${err.toString()}`)
+      throw err
+    }
+  }catch(err){
+    logger.error(`[${connection_name}] connection error : ${err.toString()}`)
+    throw err
+  }finally{
+    try{
+      await conn.end()
+    }catch(e){
+      logger.error(`[${connection_name}] ${e}`)
+      throw e
+    }
+  }
+}
 module.exports = MySql

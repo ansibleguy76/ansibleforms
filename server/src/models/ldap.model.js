@@ -1,7 +1,7 @@
 'use strict';
 const logger=require("../lib/logger");
 const mysql=require("./db.model")
-const Helpers=require("../lib/common")
+const helpers=require("../lib/common")
 const YAML=require("yaml")
 const {encrypt,decrypt} = require("../lib/crypto")
 
@@ -81,10 +81,10 @@ Ldap.check = function(ldapConfig){
     // console.log(options)
     // ldap-authentication has bad cert check, so we check first !!
     if(ldapConfig.enable_tls && !(ldapConfig.ignore_certs==1)){
-      if(!Helpers.checkCertificate(ldapConfig.cert)){
+      if(!helpers.checkCertificate(ldapConfig.cert)){
         badCertificates=true
       }
-      if(!Helpers.checkCertificate(ldapConfig.ca_bundle)){
+      if(!helpers.checkCertificate(ldapConfig.ca_bundle)){
         badCertificates=true
       }
     }else{

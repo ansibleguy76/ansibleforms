@@ -4,7 +4,7 @@ const Lock=require("../models/lock.model")
 const Help=require("../models/help.model")
 const path=require("path")
 const logger=require("../lib/logger")
-const Helpers=require("../lib/common")
+const helpers=require("../lib/common")
 const YAML=require("yaml")
 var RestResult = require('../models/restResult.model');
 const {inspect} = require("node:util")
@@ -13,7 +13,7 @@ exports.findAll = async function(req,res){
     var forms = await Form.load()
     res.json(forms)
   }catch(err){
-    res.json({error:Helpers.getError(err)})
+    res.json({error:helpers.getError(err)})
   }
 }
 
@@ -22,7 +22,7 @@ exports.backups = function(req,res){
     var backups = Form.backups()
     res.json(backups)
   }catch(err){
-    res.json({error:Helpers.getError(err)})
+    res.json({error:helpers.getError(err)})
   }
 }
 exports.env = function(req,res){
@@ -67,7 +67,7 @@ exports.restore = async function(req,res){
     }
   }catch(err){
     logger.error("Failed to get lock : ",err)
-    res.json(new RestResult("error","Failed to restore forms",null,Helpers.getError(err,"Failed to get lock : ")))
+    res.json(new RestResult("error","Failed to restore forms",null,helpers.getError(err,"Failed to get lock : ")))
     return true
   }
   if(lock.match || lock.free){
@@ -85,7 +85,7 @@ exports.restore = async function(req,res){
         res.json(new RestResult("error",`Failed to restore, no backup name provided`,null,"Failed to restore forms"))
       }
     }catch(err){
-      res.json(new RestResult("error","Failed to restore forms",null,Helpers.getError(err)))
+      res.json(new RestResult("error","Failed to restore forms",null,helpers.getError(err)))
     }
   }else{
     res.json(new RestResult("error","Failed to restore forms",null,"Designer is locked by "+lock.username))
@@ -101,7 +101,7 @@ exports.save = async function(req,res){
     }
   }catch(err){
     logger.error("Failed to get lock : ",err)
-    res.json(new RestResult("error","Failed to save forms",null,Helpers.getError(err,"Faild to get lock")))
+    res.json(new RestResult("error","Failed to save forms",null,helpers.getError(err,"Faild to get lock")))
     return true
   }
   if(lock.match || lock.free){
@@ -118,7 +118,7 @@ exports.save = async function(req,res){
           res.json(new RestResult("error","Failed to save forms",null,"Failed to save forms"))
         }
       }catch(err){
-        res.json(new RestResult("error","Failed to save forms",null,Helpers.getError(err)))
+        res.json(new RestResult("error","Failed to save forms",null,helpers.getError(err)))
       }
     }
   }else{
@@ -143,7 +143,7 @@ exports.validate = function(req,res){
         res.json(new RestResult("error","Failed to validate new forms config",null,"Failed to validate new forms config"))
       }
     }catch(err){
-      res.json(new RestResult("error","Failed to validate new forms config",null,Helpers.getError(err)))
+      res.json(new RestResult("error","Failed to validate new forms config",null,helpers.getError(err)))
     }
   }
 }
