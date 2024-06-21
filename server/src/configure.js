@@ -64,7 +64,6 @@ module.exports = app => {
   require('./auth/auth_basic');
   require('./auth/auth_jwt');
 
-
   // first time run init
   // from now on, it's async => we wait for mysql to be ready
   const init = require('./init/')
@@ -168,3 +167,4 @@ module.exports = app => {
   // routes for form config (extra middleware in the routes itself)
   app.use(`${appConfig.baseUrl}api/v1/config`,cors(), authobj, configRoutes)
 }
+
