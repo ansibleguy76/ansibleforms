@@ -1,22 +1,48 @@
 const assert = require('assert')
 const ldap = require('ldapjs')
 
+// convert an escaped utf8 string returned from ldapjs
+function _isHex(c) {
+  return (
+    (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')
+  )
+}
+function _parseEscapedHexToUtf8(s) {
+  // convert 'cn=\\e7\\a0\\94\\e5\\8f\\91A\\e9\\83\\a8,ou=users,dc=example,dc=com'
+  // to 'cn=研发A部,ou=users,dc=example,dc=com'
+  let ret = Buffer.alloc(0)
+  let len = s.length
+  for (let i = 0; i < len; i++) {
+    let c = s[i]
+    let item
+    if (c == '\\' && i < len - 2 && _isHex(s[i + 1]) && _isHex(s[i + 2])) {
+      item = Buffer.from(s.substring(i + 1, i + 3), 'hex')
+      i += 2
+    } else {
+      item = Buffer.from(c)
+    }
+    ret = Buffer.concat([ret, item])
+  }
+  return ret.toString()
+}
+
+function _recursiveParseHexString(obj) {
+  if (Array.isArray(obj)) {
+    return obj.map((ele) => _recursiveParseHexString(ele))
+  }
+  if (typeof obj == 'string') {
+    return _parseEscapedHexToUtf8(obj)
+  }
+  if (typeof obj == 'object') {
+    for (let key in obj) {
+      obj[key] = _recursiveParseHexString(obj[key])
+    }
+    return obj
+  }
+  return obj
+}
 // convert a SearchResultEntry object in ldapjs 3.0
 // to a user object to maintain backward compatibility
-
-// added by Mirko for 5.0.1 => ü in results
-function unescapeLdapResult(ldapResult) {
-  // Regular expression to match the escaped sequences
-  const regex = /\\([0-9a-fA-F]{2})\\([0-9a-fA-F]{2})/g;
-
-  // Replace each escaped sequence with its Unicode character
-  return ldapResult.replace(regex, (match, p1, p2) => {
-      // Convert the hex codes to a Buffer
-      const bytes = Buffer.from([parseInt(p1, 16), parseInt(p2, 16)]);
-      // Convert the Buffer to a UTF-8 String
-      return bytes.toString('utf8');
-  });
-}
 
 function _searchResultToUser(pojo) {
   assert(pojo.type == 'SearchResultEntry')
@@ -25,13 +51,13 @@ function _searchResultToUser(pojo) {
     user[attribute.type] =
       attribute.values.length == 1 ? attribute.values[0] : attribute.values
   })
-  return user
+  return _recursiveParseHexString(user)
 }
 // bind and return the ldap client
 function _ldapBind(dn, password, starttls, ldapOpts) {
   return new Promise(function (resolve, reject) {
     ldapOpts.connectTimeout = ldapOpts.connectTimeout || 5000
-    var client = ldap.createClient(ldapOpts)
+    let client = ldap.createClient(ldapOpts)
 
     client.on('connect', function () {
       if (starttls) {
@@ -43,7 +69,6 @@ function _ldapBind(dn, password, starttls, ldapOpts) {
           client.bind(dn, password, function (err) {
             if (err) {
               reject(err)
-              client.unbind()
               return
             }
             ldapOpts.log && ldapOpts.log.trace('bind success!')
@@ -54,7 +79,6 @@ function _ldapBind(dn, password, starttls, ldapOpts) {
         client.bind(dn, password, function (err) {
           if (err) {
             reject(err)
-            client.unbind()
             return
           }
           ldapOpts.log && ldapOpts.log.trace('bind success!')
@@ -92,23 +116,22 @@ async function _searchUser(
   attributes = null
 ) {
   return new Promise(function (resolve, reject) {
-    var filter = new ldap.filters.EqualityFilter({
+    let filter = new ldap.filters.EqualityFilter({
       attribute: usernameAttribute,
       value: username,
     })
     let searchOptions = {
       filter: filter,
       scope: 'sub',
-      attributes: attributes
+      attributes: attributes,
     }
     if (attributes) {
       searchOptions.attributes = attributes
     }
     ldapClient.search(searchBase, searchOptions, function (err, res) {
-      var user = null
+      let user = null
       if (err) {
         reject(err)
-        ldapClient.unbind()
         return
       }
       res.on('searchEntry', function (entry) {
@@ -124,7 +147,6 @@ async function _searchUser(
       })
       res.on('error', function (err) {
         reject(err)
-        ldapClient.unbind()
       })
       res.on('end', function (result) {
         if (result.status != 0) {
@@ -132,7 +154,6 @@ async function _searchUser(
         } else {
           resolve(user)
         }
-        ldapClient.unbind()
       })
     })
   })
@@ -155,19 +176,17 @@ async function _searchUserGroups(
         scope: 'sub',
       },
       function (err, res) {
-        var groups = []
+        let groups = []
         if (err) {
           reject(err)
-          ldapClient.unbind()
           return
         }
         res.on('searchEntry', function (entry) {
-          groups.push(entry.pojo)
+          groups.push(_recursiveParseHexString(entry.pojo))
         })
         res.on('searchReference', function (referral) {})
         res.on('error', function (err) {
           reject(err)
-          ldapClient.unbind()
         })
         res.on('end', function (result) {
           if (result.status != 0) {
@@ -175,7 +194,6 @@ async function _searchUserGroups(
           } else {
             resolve(groups)
           }
-          ldapClient.unbind()
         })
       }
     )
@@ -197,7 +215,7 @@ async function authenticateWithAdmin(
   groupMemberUserAttribute = 'dn',
   attributes = null
 ) {
-  var ldapAdminClient
+  let ldapAdminClient
   try {
     ldapAdminClient = await _ldapBind(
       adminDn,
@@ -208,14 +226,13 @@ async function authenticateWithAdmin(
   } catch (error) {
     throw { admin: error }
   }
-  var user = await _searchUser(
+  let user = await _searchUser(
     ldapAdminClient,
     userSearchBase,
     usernameAttribute,
     username,
     attributes
   )
-  ldapAdminClient.unbind()
   if (!user || !user.dn) {
     ldapOpts.log &&
       ldapOpts.log.trace(
@@ -225,27 +242,15 @@ async function authenticateWithAdmin(
       'user not found or usernameAttribute is wrong'
     )
   }
-  var userDn = user.dn
-  userDn = unescapeLdapResult(userDn)
+  let userDn = user.dn
   let ldapUserClient
   try {
     ldapUserClient = await _ldapBind(userDn, userPassword, starttls, ldapOpts)
   } catch (error) {
     throw error
   }
-  ldapUserClient.unbind()
   if (groupsSearchBase && groupClass && groupMemberAttribute) {
-    try {
-      ldapAdminClient = await _ldapBind(
-        adminDn,
-        adminPassword,
-        starttls,
-        ldapOpts
-      )
-    } catch (error) {
-      throw error
-    }
-    var groups = await _searchUserGroups(
+    let groups = await _searchUserGroups(
       ldapAdminClient,
       groupsSearchBase,
       user,
@@ -254,7 +259,6 @@ async function authenticateWithAdmin(
       groupMemberUserAttribute
     )
     user.groups = groups
-    ldapAdminClient.unbind()
   }
   return user
 }
@@ -281,10 +285,9 @@ async function authenticateWithUser(
   }
   if (!usernameAttribute || !userSearchBase) {
     // if usernameAttribute is not provided, no user detail is needed.
-    ldapUserClient.unbind()
     return true
   }
-  var user = await _searchUser(
+  let user = await _searchUser(
     ldapUserClient,
     userSearchBase,
     usernameAttribute,
@@ -300,14 +303,8 @@ async function authenticateWithUser(
       'user logged in, but user details could not be found. Probabaly usernameAttribute or userSearchBase is wrong?'
     )
   }
-  ldapUserClient.unbind()
   if (groupsSearchBase && groupClass && groupMemberAttribute) {
-    try {
-      ldapUserClient = await _ldapBind(userDn, userPassword, starttls, ldapOpts)
-    } catch (error) {
-      throw error
-    }
-    var groups = await _searchUserGroups(
+    let groups = await _searchUserGroups(
       ldapUserClient,
       groupsSearchBase,
       user,
@@ -316,7 +313,6 @@ async function authenticateWithUser(
       groupMemberUserAttribute
     )
     user.groups = groups
-    ldapUserClient.unbind()
   }
   return user
 }
@@ -335,7 +331,7 @@ async function verifyUserExists(
   groupMemberUserAttribute = 'dn',
   attributes = null
 ) {
-  var ldapAdminClient
+  let ldapAdminClient
   try {
     ldapAdminClient = await _ldapBind(
       adminDn,
@@ -346,14 +342,13 @@ async function verifyUserExists(
   } catch (error) {
     throw { admin: error }
   }
-  var user = await _searchUser(
+  let user = await _searchUser(
     ldapAdminClient,
     userSearchBase,
     usernameAttribute,
     username,
     attributes
   )
-  ldapAdminClient.unbind()
   if (!user || !user.dn) {
     ldapOpts.log &&
       ldapOpts.log.trace(
@@ -364,17 +359,7 @@ async function verifyUserExists(
     )
   }
   if (groupsSearchBase && groupClass && groupMemberAttribute) {
-    try {
-      ldapAdminClient = await _ldapBind(
-        adminDn,
-        adminPassword,
-        starttls,
-        ldapOpts
-      )
-    } catch (error) {
-      throw error
-    }
-    var groups = await _searchUserGroups(
+    let groups = await _searchUserGroups(
       ldapAdminClient,
       groupsSearchBase,
       user,
@@ -383,7 +368,6 @@ async function verifyUserExists(
       groupMemberUserAttribute
     )
     user.groups = groups
-    ldapAdminClient.unbind()
   }
   return user
 }
@@ -478,3 +462,9 @@ class LdapAuthenticationError extends Error {
 
 module.exports.authenticate = authenticate
 module.exports.LdapAuthenticationError = LdapAuthenticationError
+
+module.exports.exportForTesting = {
+  _isHex,
+  _parseEscapedHexToUtf8,
+  _recursiveParseHexString,
+}

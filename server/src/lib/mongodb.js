@@ -5,49 +5,40 @@ const Credential = require('../models/credential.model')
 
 Mongo = {}
 
-Mongo.query=async function(connection_name,query){
-  // does the pool exist already, if not let's add it
-  // logger.info("["+connection_name+"] running query : " + query)
-  var config=undefined
+Mongo.query = async function (connection_name, query) {
+
   var queryarr = query.split("~")
+  var queryJson
   if(queryarr.length!=3){
-    return Promise.reject("["+connection_name+"] query must contain 3 parts separated with '~'. " + query)
+    throw new Error("["+connection_name+"] query must contain 3 parts separated with '~'. " + query)
   }
+  var dbName = queryarr[0]
+  var collectionName = queryarr[1]
   try{
-    var queryprep = JSON.parse(queryarr[2])
+    queryJson = JSON.parse(queryarr[2])
   }catch(err){
-    return Promise.reject("["+connection_name+"] query must be valid json. Use double quotes, not single quotes.  " + queryarr[2])
+    throw new Error("["+connection_name+"] query must be valid json. Use double quotes, not single quotes.  " + queryarr[2])
   }
-
-  Credential.findByName(connection_name)
-  .then((config)=>{
-    Client.connect(uri,function(err,db){
-      if(err){
-        throw ("["+connection_name+"] Connection error : " + err)
-      }else{
-        return new Promise((resolve,reject)=>{
-          var dbo=db.db(queryarr[0])
-          dbo.collection(queryarr[1]).find(queryprep).toArray(function(err,result){
-            db.close()
-            if(err){
-              reject(`[${connection_name}] query error : ${err.toString()}`)
-            }
-            resolve(result)
-          })
-        })
-
-      }
-    })
-  })
-
+  var config = await Credential.findByName(connection_name)
   var uri = `mongodb://${encodeURI(config.user)}:${encodeURI(config.password)}@${config.host}:${config.port}`
-  // logger.debug("["+connection_name+"] uri : " + uri)
+  var client
   try{
-
+    client = await Client.connect(uri)
+    var db = client.db(dbName)
+    var collection = db.collection(collectionName)
+    var result = await collection.find(queryJson).toArray()
+    return result
   }catch(err){
-    logger.error("["+connection_name+"] " + err)
-    callback(null,null)
+    logger.error("["+connection_name+"] ", err)
+    throw err
+  }finally{
+    try{
+      client.close()
+    }catch(e){
+      logger.error("["+connection_name+"] ",e)
+      throw e
+    }
   }
 
-};
+}
 module.exports = Mongo

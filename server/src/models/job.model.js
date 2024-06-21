@@ -572,7 +572,7 @@ Job.approve = async function(user,id,next){
 Job.sendApprovalNotification = async function(approval,extravars,jobid){
   if(!approval?.notifications?.length>0)return false
   try{
-    const config = await Settings.find()
+    const config = await Settings.findUrl()
     const url = config.url?.replace(/\/$/g,'') // remove trailing slash if present
 
     var subject = Helpers.replacePlaceholders(approval.title,extravars) || "AnsibleForms Approval Request"
@@ -626,7 +626,7 @@ Job.sendStatusNotification = async function(jobid){
       return false
     }else{
       // we have notifications, correct status => let's send the mail
-      const config = await Settings.find()
+      const config = await Settings.findUrl()
       const url = config.url?.replace(/\/$/g,'') // remove trailing slash if present
 
       if(!url){
@@ -641,7 +641,7 @@ Job.sendStatusNotification = async function(jobid){
       var logo = `${url}${appConfig.baseUrl}assets/img/logo.png`
       message = message.replace("${message}",job.output.replaceAll("\r\n","<br>"))
                       .replaceAll("${url}",url)
-                      .replaceAll("${baseurl",appConfig.baseUrl)
+                      .replaceAll("${baseurl}",appConfig.baseUrl)
                       .replaceAll("${jobid}",jobid)
                       .replaceAll("${title}",subject)
                       .replaceAll("${logo}",logo)
@@ -953,7 +953,7 @@ Ansible.launch=async (ev,credentials,jobid,counter,approval,approved=false)=>{
   if(!vaultPassword){
     command = `ansible-playbook -e '@${extravarsFileName}' -e '@${hiddenExtravarsFileName}'`
   }else{
-    command = `echo ${Buffer.from(vaultPassword).toString('base64')} | base64 --decode | ansible-playbook -e '@${extravarsFileName}' -e '@${hiddenExtravarsFileName}' --vault-password-file=/bin/cat`
+    command = `echo ${Buffer.from(vaultPassword).toString('base64')} | base64 -d | ansible-playbook -e '@${extravarsFileName}' -e '@${hiddenExtravarsFileName}' --vault-password-file=/bin/cat`
   }
 
   inventory.forEach((item, i) => {  command += ` -i '${item}'` });

@@ -1,33 +1,35 @@
 //- MYSQL Module
 const logger = require('./logger');
-const {Client} = require('pg');
+const Oracledb = require('oracledb');
 const Credential = require('../models/credential.model')
 
-Postgres = {}
+Oracle = {}
 
 // rewritten with await 5.0.3
-Postgres.query = async function (connection_name, query) {
+Oracle.query = async function (connection_name, query) {
   var creds = await Credential.findByName(connection_name)
+  var connection
   var config = {
-      host: creds.host,
       user: creds.user,
       password: creds.password,
-      database: creds.db_name||creds.user,
-      port: creds.port,
+      connectionString: (creds.db_name)?`${creds.host}:${creds.port}/${creds.db_name}`:`${creds.host}:${creds.port}`
   };
-  var client
+
   try{
-    client = new Client(config)
-    await client.connect()
-    var result = await client.query(query)
+    connection = await Oracledb.getConnection(config)
+  }catch(err){
+    logger.error(`[${connection_name}] connection error`,err)
+    throw err
+  }
+  try{
+    const result = await connection.execute(query)
     return result?.rows
   }catch(err){
     logger.error(`[${connection_name}] query error`,err)
     throw err
   }finally{
     try{
-      // logger.debug("["+connection_name+"] Closing connection")
-      await client.end()
+      await connection.close()
     }catch(e){
       logger.error(`[${connection_name}] connection error`,e)
       throw e
@@ -35,4 +37,4 @@ Postgres.query = async function (connection_name, query) {
   }
 }
 
-module.exports = Postgres
+module.exports = Oracle

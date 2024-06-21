@@ -103,6 +103,62 @@
     default: https://graph.microsoft.com
     description: |
       This variable is used to acquire data from the Azure AD api.      
+  - name: ALLOW_SCHEMA_CREATION
+    type: number
+    choices:
+    - name: 0
+      description: Disables schema creation
+    - name: 1
+      description: Enables schema creation
+    default: 1    
+    short: Enable the schema creation
+    description: | 
+      When you start Ansible Forms for the first time and there is no database, Ansible Forms will present you the option to create the schema. 
+      Although this is fairly handy, you might want to disable this option to prevent accidental schema re-creation.  
+      Also note that if you use the docker-compose solution, the database is created as part of the Mysql initialization.  
+      If you use a different database, you might want to enable this option, to at the very least create the schema the very first time.  
+      If you want to disable this option, set this variable to 0.
+    version: 5.0.3      
+  - name: ENABLE_BYPASS
+    type: number
+    choices:
+    - name: 0
+      description: Disables the bypass admin authentication
+    - name: 1
+      description: Enables the bypass admin authentication
+    default: 0
+    short: Enable the bypass admin authentication
+    description: | 
+      When you have locked yourself out, you can enable the bypass admin authentication, by setting this variable to 1.  
+      This will allow you to login as temp admin with any combination of username and password.  You can then fix the issue and disable this option again.  
+      **Note** : This option will allow ANYONE to login as admin, so use with caution and disable as soon as possible.  
+    version: 5.0.3
+  - name: ENABLE_DB_QUERY_LOGGING
+    type: number
+    choices:
+    - name: 0
+      description: Disables the database query logging
+    - name: 1
+      description: Enables the database query logging
+    default: 0
+    short: Enable the database query logging
+    description: | 
+      When you want to see the database queries that are executed, you can enable this option by setting this variable to 1.  
+      introduced, due to massive amount of logging of database queries, which can be useful for debugging, but not for production.
+    version: 5.0.3    
+  - name: ENABLE_FORMS_YAML_IN_DATABASE
+    type: number
+    choices:
+    - name: 0
+      description: Disables the forms.yaml in database
+    - name: 1
+      description: Enables the forms.yaml in database
+    default: 0
+    short: Enable the forms.yaml in database
+    description: | 
+      If you use git repositories to store the forms, you can choose to store the master forms.yaml in git as well.  
+      Or, you can choose to have the forms.yaml in the database instead.  Having a clean separation : master forms.yaml in database, and the actual forms in git.
+    version: 5.0.3
   - name: SHOW_DESIGNER
     type: number
     choices:
@@ -373,15 +429,15 @@
     default: "%PERSISTENT_FOLDER%/uploads"
     description: |
       Since 4.0.16, a new field type is introduced that allows file uploads.  The files are uploaded in this path.
-  - name: BASE_URL
-    type: string
-    allowed: a valid baes url
-    default: "/"
-    short: Set the base url
-    description: | 
-      By default AnsibleForms is hosted under root `/`, but you can choose a base url of choice.  
-      It must start and end with a `/`, for example `/myapp/`.
-    version: 5.0.0      
+  # - name: BASE_URL
+  #   type: string
+  #   allowed: a valid base url
+  #   default: "/"
+  #   short: Set the base url
+  #   description: | 
+  #     By default AnsibleForms is hosted under root `/`, but you can choose a base url of choice.  
+  #     It must start and end with a `/`, for example `/myapp/`.
+  #   version: 5.0.0      
 - name: Forms.yaml
   icon: fab,wpforms
   link: forms
@@ -1799,7 +1855,7 @@
                   The enum field will create a powerfull dropdown box with multi-column, multiselect and filter capabilities. The enum field can be used in 3 ways.
 
                   * **fixed list** : simply use the `values` property to set a fixed list
-                  * **database query** : you can use the query and dbConfig property to query a mysql, mssql, postgres or mongodb.
+                  * **database query** : you can use the query and dbConfig property to query a mysql, mssql, postgres, oracle or mongodb.
                   * **expression** : you can use the expression property to create data. in this case the output of the expression can be :
                     * **single item** : a single item like a string, integer, ...
                     * **array of items** : an array of strings, integers, ...
@@ -1821,7 +1877,7 @@
                 help: |
                   The expression field is the most powerfull field. It can calculate, manipulate, get, post, ... The expression can hold any type of information, array, objects, ... And the extravars-output will takeover the information. The expression field can be used in 2 ways.  
                     
-                  * **database query** : you can use the query and dbConfig property to query a mysql, mssql server, postgres or mongodb.
+                  * **database query** : you can use the query and dbConfig property to query a mysql, mssql server, postgres, oracle or mongodb.
                   * **expression** : you can use the expression property to create or retrieve data. in this case the output of the expression can be any type.  
                   The expression itself is pure javascript. You can do inline javascript or you can use a function. Read more on security concerns about expressions You can extend the functions with your own in the custom.js file. You can have synchronous and asynchronous functions. This allows you to retrieve any kind of data, whether it's reading a file or accessing a rest-api, or querying a foreign database. You can run the expression locally (`runLocal`) in the browser for simple expressions. This is faster and there is no limitation on the expression.  
                   Use the alias type `local` to quickly make an expression type with runLocal, hide and noOutput.  
@@ -1844,7 +1900,7 @@
                   A table field allows you to manually add multi object arrays.  
                   You can start from an empty list, but you can also retrieve existing data first using :  
 
-                  * **database query** : you can use the query and dbConfig property to query a mysql, mssql server, postgres or mongodb.
+                  * **database query** : you can use the query and dbConfig property to query a mysql, mssql server, postgres, oracle or mongodb.
                   * **expression** : you can use the expression property to create or retrieve data. in this case the output of the expression can be any type.    
                 examples:
                 - name: Table
@@ -2626,7 +2682,7 @@
             description: |
               When you want to query data from a database, you will need the proper connection information.  
               We use a credential name to lookup the connection details.  Legacy was to pass an object (name and type).  
-              Since version 5.0.2 you can just specify the name of the credential.  The type is fetched from the credential itself (mysql, mssql, postgres or mongodb). 
+              Since version 5.0.2 you can just specify the name of the credential.  The type is fetched from the credential itself (mysql, mssql, postgres, oracle or mongodb). 
               In case of no type set, mysql is assumed.   
               Additionally you can set an array of credential names, to use multiple databases with a single query.  The result will be a join of the results.  
               Doubles will not be removed automatically.  

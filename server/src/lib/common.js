@@ -1,4 +1,4 @@
-const Certinfo=require("cert-info")
+const certinfo=require("cert-info")
 const restResult=require("../models/restResult.model")
 const logger=require("./logger")
 const config=require("../../config/app.config")
@@ -55,7 +55,7 @@ Helpers.checkCertificate=function(cert){
       logger.debug("Base64 is valid...")
       try{
         var tmp
-        tmp = Certinfo.info(c)
+        tmp = certinfo.info(c)
         logger.debug(JSON.stringify(tmp))
       }catch(e){
         logger.error("Certificate cannot be parsed...")

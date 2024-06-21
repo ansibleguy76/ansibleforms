@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken');
 var authConfig = require('../../config/auth.config')
 const logger=require("../lib/logger");
 const {inspect}=require("node:util")
-const Helpers=require('../lib/common')
+const helpers=require('../lib/common')
 const RestResult = require("../models/restResult.model")
 const auth_oidc = require("../auth/auth_oidc");
 
@@ -51,7 +51,7 @@ exports.settings = async function(req,res){
       res.json(new RestResult("success","",settings,""))
     })
   })
-  .catch((err)=>{res.json(new RestResult("error","failed to get app settings",null,Helpers.getError(err)))})
+  .catch((err)=>{res.json(new RestResult("error","failed to get app settings",null,helpers.getError(err)))})
 }
 // basic authentication with local users
 exports.basic = async function(req, res,next) {
@@ -63,7 +63,7 @@ exports.basic = async function(req, res,next) {
       async (err, user) => {
         try {
           // if we have an error; we return it
-          var e=Helpers.getError(err)
+          var e=helpers.getError(err)
           if (e || !user) {
             // basic authentication returned no result, move to next middleware (ldap)
             if(e.includes('not found')){
@@ -86,7 +86,7 @@ exports.basic = async function(req, res,next) {
             { session: false },
             async (error) => {
               if (error){
-                logger.error(Helpers.getError(error))
+                logger.error(helpers.getError(error))
                 //return next(error);
               }
               // send the tokens to the requester
@@ -98,7 +98,7 @@ exports.basic = async function(req, res,next) {
             }
           );
         } catch (error) {
-          logger.error(Helpers.getError(error))
+          logger.error(helpers.getError(error))
           //return next(error);
         }
       }
@@ -114,7 +114,7 @@ exports.basic_ldap = async function(req, res,next) {
     async (err, user) => {
       try {
         // if we have an error; we return it
-        var e=Helpers.getError(err)
+        var e=helpers.getError(err)
         if (e || !user) {
           var error={token:""}
           if(e){
@@ -132,7 +132,7 @@ exports.basic_ldap = async function(req, res,next) {
           { session: false },
           async (error) => {
             if (error){
-              logger.error(Helpers.getError(error))
+              logger.error(helpers.getError(error))
               return next(error);
             }
             // send the tokens to the requester
@@ -144,7 +144,7 @@ exports.basic_ldap = async function(req, res,next) {
           }
         );
       } catch (error) {
-        logger.error(Helpers.getError(error))
+        logger.error(helpers.getError(error))
         return next(error);
       }
     }
@@ -157,7 +157,7 @@ exports.basic_ldap = async function(req, res,next) {
 exports.logout = async function(req, res, next){
   req.logout((err) => {
     if (err) {
-      logger.error(Helpers.getError(error))
+      logger.error(helpers.getError(error))
       return next(err)
     }
     const auth_oidc = require('../auth/auth_oidc');
@@ -181,14 +181,14 @@ const authCallback = function(req, res, next, type='azuread') {
     try {
       // if we have an error; we return it
       if (err) {
-        logger.error(Helpers.getError(err))
+        logger.error(helpers.getError(err))
         return next(err)
       }else{
         res.redirect(`/#/login?token=${token}`)
       }
 
     } catch (err) {
-      logger.error(Helpers.getError(err))
+      logger.error(helpers.getError(err))
       return next(err)
     }
   }
@@ -245,7 +245,7 @@ exports.azureadoauth2login = async function(req, res,next) {
   try {
     await tokenLogin('azuread', req, res, next)
   } catch(err){
-    logger.error(Helpers.getError(err))
+    logger.error(helpers.getError(err))
     next(err)
   }
 };
@@ -266,7 +266,7 @@ exports.oidcLogin = async function(req, res, next) {
   try {
     await tokenLogin('oidc', req, res, next)
   } catch(err){
-    logger.error(Helpers.getError(err))
+    logger.error(helpers.getError(err))
     next(err)
   }
 };

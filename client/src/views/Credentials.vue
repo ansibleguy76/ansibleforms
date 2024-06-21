@@ -39,8 +39,8 @@
                 <BulmaInput icon="server" v-model="credential.host" label="Host" placeholder="Host" :required="!!credential.is_database" :hasError="$v.credential.host.$invalid" :errors="[]" />
                 <BulmaInput icon="door-closed" v-model="credential.port" label="Port" placeholder="3306" :required="!!credential.is_database" :hasError="$v.credential.port.$invalid" :errors="[]" />
                 <BulmaInput icon="info-circle" v-model="credential.description" label="Description" placeholder="Description" />
-                <BulmaInput v-if="!!credential.is_database" icon="database" v-model="credential.db_name" label="Database" placeholder="Database" />
-                <BulmaSelect v-if="!!credential.is_database" icon="database" v-model="credential.db_type" label="Database type" :list="['mysql','mssql','postgres','mongodb']"  />
+                <BulmaSelect v-if="!!credential.is_database" icon="database" v-model="credential.db_type" label="Database type" :list="['mysql','mssql','postgres','mongodb','oracle']"  />
+                <BulmaInput v-if="!!credential.is_database" icon="database" v-model="credential.db_name" :label="(credential.db_type=='oracle')?'Service':'Database'" :placeholder="(credential.db_type=='oracle')?'Service Name':'Database Name'" />
                 <BulmaCheckbox v-if="!!credential.is_database" checktype="checkbox" v-model="credential.secure" label="Secure connection" /><br><br>
                 <BulmaButton v-if="credentialItem==-1" icon="save" label="Create Credential" @click="newCredential()"></BulmaButton>
                 <BulmaButton v-if="credentialItem!=-1" icon="save" label="Update Credential" @click="updateCredential()"></BulmaButton>

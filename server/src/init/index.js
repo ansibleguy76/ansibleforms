@@ -4,27 +4,68 @@ async function init(){
   var Ssh = require('../models/ssh.model');
   var Form = require('../models/form.model');
   var Job = require('../models/job.model');
+  var Schema = require('../models/schema.model');
   const mysql=require("../models/db.model");
   const Repository = require('../models/repository.model');
   const parser = require("cron-parser")
   const dayjs = require("dayjs")
+  const util = require('util')
 
-    // this is at startup, don't start the app until mysql is ready
-    // rewrite with await
-    console.log("Waiting for mysql to start")
-    async function sleep(millis) {
-      return new Promise(resolve => setTimeout(resolve, millis));
+  // this is at startup, don't start the app until mysql is ready
+  // rewrite with await
+  logger.info("Waiting for mysql to start")
+  async function sleep(millis) {
+    return new Promise(resolve => setTimeout(resolve, millis));
+  }
+  var MYSQL_IS_READY = false
+  while(!MYSQL_IS_READY){
+    try{
+      await mysql.do("SELECT 1")
+      MYSQL_IS_READY = true
+    }catch(e){
+      logger.log("Mysql not ready yet")
+      await sleep(5000)
     }
-    var MYSQL_IS_READY = false
-    while(!MYSQL_IS_READY){
-      try{
-        await mysql.do("SELECT 1")
-        MYSQL_IS_READY = true
-      }catch(e){
-        console.log("Mysql not ready yet")
-        await sleep(5000)
+  }
+
+  logger.info("Mysql is ready")
+
+  // check Schema
+  try{
+    var schemaresult = await Schema.hasSchema()
+    if(schemaresult.data.failed.length>0){
+      logger.warning("Schema is not up to date")
+      for(let i=0;i<schemaresult.data.success.length;i++){
+        logger.info(schemaresult.data.success[i])
       }
+      for(let i=0;i<schemaresult.data.failed.length;i++){
+        logger.error(schemaresult.data.failed[i])
+      }
+    }else{
+      logger.info("Schema is up to date")
+      // for(let i=0;i<schemaresult.data.success.length;i++){
+      //   logger.info(schemaresult.data.success[i])
+      // }      
     }
+
+  }catch(err){
+    var result = err.result
+    if(result?.data){
+      if(result.data.failed.length>0){
+        for(let i=0;i<result.data.success.length;i++){
+          logger.info(result.data.success[i])
+        }
+        for(let i=0;i<result.data.failed.length;i++){
+          logger.error(result.data.failed[i])
+        }
+      }
+    }else{
+      logger.error("Fatal error : " + err)
+      throw err
+    }
+
+  }
+
 
   Ssh.generate(false)
     .catch((err)=>{

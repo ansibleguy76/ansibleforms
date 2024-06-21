@@ -1,6 +1,7 @@
 <template>
   <div class="field">
     <label v-if="label!=''" class="label">{{label}} <span v-if="required" class="has-text-danger">*</span></label>
+    <p class="is-size-7" v-if="help!=''">{{ help  }}</p>
     <textarea class="textarea is-family-monospace" rows="10" @keyup.enter="$emit('enterClicked')"  :readonly="readonly" v-focus="focus" :type="type" :value="value" :class="{'is-danger':hasError}" @input="$emit('input', $event.target.value)" :placeholder="placeholder"></textarea>
     <p class="has-text-danger" v-for="e in errors" :key="e.label" :class="{'is-hidden':!e.if}">{{ e.label }}</p>
   </div>
@@ -31,6 +32,7 @@
       label:{type:String,default:""},
       hasError:{type:Boolean,default:false},
       errors:{type:Array},
+      help:{type:String,default:""}
     },data(){
       return{
       }

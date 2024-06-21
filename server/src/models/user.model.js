@@ -251,7 +251,7 @@ User.checkLdap = function(username,password){
         throw "Certificate is not valid"
       }else{
         logger.info(`Checking ldap for user ${username}`)
-        logger.debug(JSON.stringify(options))
+        // logger.debug(JSON.stringify(options))
         return ldapAuthentication(options)
       }
     })

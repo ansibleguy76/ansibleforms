@@ -5,6 +5,7 @@ const mysql=require("../lib/mysql")
 const mssql=require("../lib/mssql")
 const postgres=require("../lib/postgres")
 const mongodb=require("../lib/mongodb")
+const oracle=require("../lib/oracle")
 
 //reporter object create
 var Query=function(){
@@ -31,18 +32,20 @@ Query.findAll = async function (query,cfg,noLog) {
     config.push(cfg)
   }
 
-  if(noLog){
-    logger.info(`[${config.type}][${config.name}] Running query : noLog is applied`)
-  }else{
-    logger.info(`[${config.type}][${config.name}] Running query ${query}`)
-  }
+
   for await (var c of config){
+
     var res = []
     if(!c.type){ // if no type is given, we try to find the credential
       logger.debug(`[${c.name}] No type is passed, looking up credential`)
       var cred = await Credential.findByName(c.name)
       c.type = cred.db_type || "mysql"
     }
+    if(noLog){
+      logger.info(`[${c.type}][${c.name}] Running query : noLog is applied`)
+    }else{
+      logger.info(`[${c.type}][${c.name}] Running query ${query}`)
+    }        
     if(c.type=="mssql"){  // use mssql connection lib
       res = await mssql.query(c.name,query)
       if(!noLog){
@@ -62,7 +65,13 @@ Query.findAll = async function (query,cfg,noLog) {
         logger.debug(`[${c.name}] query result : ${JSON.stringify(res)}`)
       }
       result = result.concat(res)
-    }else if(config.type=="mongodb"){  // use postgres connection lib
+    }else if(c.type=="oracle"){  // use postgres connection lib
+      res = await oracle.query(c.name,query)
+      if(!noLog){
+        logger.debug(`[${c.name}] query result : ${JSON.stringify(res)}`)
+      }
+      result = result.concat(res)      
+    }else if(c.type=="mongodb"){  // use postgres connection lib
       res = await mongodb.query(c.name,query)
       if(!noLog){
         logger.debug(`[${c.name}] query result : ${JSON.stringify(res)}`)

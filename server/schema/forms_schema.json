@@ -1198,7 +1198,7 @@
                         "name": {"type": "string"},
                         "type": {
                           "type": "string",
-                          "enum": ["mysql", "mssql", "postgres", "mongodb"]
+                          "enum": ["mysql", "mssql", "postgres", "mongodb","oracle"]
                         }
                       }                        
                     },
