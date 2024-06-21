@@ -15,8 +15,23 @@
           </nav>
           <div class="box">
             <BulmaInput icon="globe" v-model="settings.url" help="" label="Public Root Url" placeholder="https://ansibleforms:8443" :required="true" :hasError="$v.settings.url.$invalid" :errors="[]" />
-            <p class="has-text-weight-bold mb-2">Forms YAML</p>
-            <p class="is-size-6 mb-2">In case you want the forms.yaml file in the database instead of loaded from the filesystem.  <BulmaButton icon="file-import" label="Import from forms.yaml" @click="importYamlFile()"></BulmaButton></p>
+          </div>
+          <div class="box" v-if="settings.enableFormsYamlInDatabase">
+            <p class="mb-2">
+              In case you want the main forms.yaml file in the database instead of loaded from the filesystem. 
+              <strong class="ml-3">Note that the designer will be disabled.</strong>
+            </p>
+            <div class="level">
+              <div class="level-left">
+                <p class="level-item has-text-weight-bold">
+                  Forms YAML
+                </p>
+              </div>
+              <div class="level-right">
+                <p class="level-item"><BulmaButton icon="file-import" label="Import from file" @click="importYamlFile()"></BulmaButton></p>
+              </div>
+            </div>
+            
             <VueCodeEditor
                   v-model="settings.forms_yaml"
                   @init="editorInit"
@@ -92,6 +107,8 @@
           env:[]
 
         }
+    },
+    computed:{
     },
     methods:{
       importYamlFile(){
