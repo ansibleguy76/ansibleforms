@@ -3,7 +3,7 @@ const crypto = require("../lib/crypto")
 const logger=require("../lib/logger");
 const authConfig = require('../../config/auth.config')
 const appConfig = require('../../config/app.config')
-const ldapAuthentication = require('ldap-authentication').authenticate
+const ldapAuthentication = require('../lib/ldap-authentication').authenticate
 const Ldap = require('./ldap.model')
 const Form = require('./form.model')
 const YAML = require('yaml')
@@ -251,7 +251,7 @@ User.checkLdap = function(username,password){
         throw "Certificate is not valid"
       }else{
         logger.info(`Checking ldap for user ${username}`)
-        logger.debug(JSON.stringify(options))
+        // logger.debug(JSON.stringify(options))
         return ldapAuthentication(options)
       }
     })
