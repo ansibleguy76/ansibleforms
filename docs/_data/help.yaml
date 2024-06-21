@@ -146,6 +146,19 @@
       When you want to see the database queries that are executed, you can enable this option by setting this variable to 1.  
       introduced, due to massive amount of logging of database queries, which can be useful for debugging, but not for production.
     version: 5.0.3    
+  - name: ENABLE_FORMS_YAML_IN_DATABASE
+    type: number
+    choices:
+    - name: 0
+      description: Disables the forms.yaml in database
+    - name: 1
+      description: Enables the forms.yaml in database
+    default: 0
+    short: Enable the forms.yaml in database
+    description: | 
+      If you use git repositories to store the forms, you can choose to store the master forms.yaml in git as well.  
+      Or, you can choose to have the forms.yaml in the database instead.  Having a clean separation : master forms.yaml in database, and the actual forms in git.
+    version: 5.0.3
   - name: SHOW_DESIGNER
     type: number
     choices:
@@ -416,15 +429,15 @@
     default: "%PERSISTENT_FOLDER%/uploads"
     description: |
       Since 4.0.16, a new field type is introduced that allows file uploads.  The files are uploaded in this path.
-  - name: BASE_URL
-    type: string
-    allowed: a valid baes url
-    default: "/"
-    short: Set the base url
-    description: | 
-      By default AnsibleForms is hosted under root `/`, but you can choose a base url of choice.  
-      It must start and end with a `/`, for example `/myapp/`.
-    version: 5.0.0      
+  # - name: BASE_URL
+  #   type: string
+  #   allowed: a valid base url
+  #   default: "/"
+  #   short: Set the base url
+  #   description: | 
+  #     By default AnsibleForms is hosted under root `/`, but you can choose a base url of choice.  
+  #     It must start and end with a `/`, for example `/myapp/`.
+  #   version: 5.0.0      
 - name: Forms.yaml
   icon: fab,wpforms
   link: forms
