@@ -127,7 +127,20 @@ Form.load = async function() {
           rawdata = fs.readFileSync(appFormsPath, 'utf8');
         }
       } catch (e) {
-        logger.error(`failed to load '${appFormsPath}'.\n${e}`);
+        logger.error(`Failed to load '${appFormsPath}'.`,e);
+
+      }
+      if(!rawdata){
+        try{
+          logger.warning("No forms found in database or forms.yaml... creating empty one from template")
+          fs.copyFileSync(path.join(__dirname,"../../templates/forms.yaml"),appFormsPath)
+          logger.warning("File copied")
+          rawdata = fs.readFileSync(appFormsPath, 'utf8');
+        } catch (e) {
+          logger.error(`Failed to copy forms from template and/or to load '${appFormsPath}'.`,e);
+          throw new Error(Helpers.getError(e,"Error reading the forms"))
+        }
+
       }
     }
     // read extra form files
@@ -159,7 +172,7 @@ Form.load = async function() {
               value: itemRawData
             })
           }catch(e){
-            logger.error(`failed to load file '${item}'.\n${e}`);
+            logger.error(`Failed to load file '${item}'`,e);
           }
         });
       }
@@ -186,7 +199,7 @@ Form.load = async function() {
       logger.error(`failed to parse file '${item.name}'.\n${e}`)
     }
   })
-  if(!forms.forms){
+  if(!forms?.forms){
     forms.forms=[]
   }
   // merge extra files
