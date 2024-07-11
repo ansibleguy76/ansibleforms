@@ -4217,7 +4217,7 @@
       description: ""
       awxCredentials:
         - vmware
-      execution_environment: my_execution_environment
+      executionEnvironment: my_execution_environment
       roles:
         - public
       categories: []
@@ -4261,7 +4261,7 @@
           columns:
             - name
           valueColumn: name     
-        - name: __execution_environment__  # use this special name to override the execution_environment from the form
+        - name: __executionEnvironment__  # use this special name to override the executionEnvironment from the form
           label: Inventory
           type: enum
           expression: "fn.fnRestJwtSecure('get','https://172.16.50.1/api/v2/execution_environments?organization=$(organization)','','awx_rest','[.results[]]')"
@@ -4307,11 +4307,11 @@
       You can also choose if the repository must be cloned when AnsibleForms starts, and you can add cron-schedule to schedule recurring pull-actions.  
       Additionally, in the swagger interface, you will find a clone and pull rest api for webhooks.  
       In case you want long-lived access tokens for the webhooks, with swagger you can pass an expiryDays parameter (for admin roles only) and create long-lived tokens.
-  - name: Host Ansibleforms in a subfolder
-    short: Host Ansibleforms in a subfolder
-    description: |
-      In the case you want to host ansibleforms in subfolder, for example `https://af.domain.local/mysubfolder/`.  
-      You can use the environment variable `BASE_URL`.  Set it to `/mysubfolder/` (default is `/`).  
+  # - name: Host Ansibleforms in a subfolder
+  #   short: Host Ansibleforms in a subfolder
+  #   description: |
+  #     In the case you want to host ansibleforms in subfolder, for example `https://af.domain.local/mysubfolder/`.  
+  #     You can use the environment variable `BASE_URL`.  Set it to `/mysubfolder/` (default is `/`).  
   - name: Enable ytt
     short: Enable ytt
     description: |
