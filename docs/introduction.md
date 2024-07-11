@@ -40,13 +40,14 @@ page_nav:
 * **Swagger API** : Has a rest-api and Swagger documentation
 * **Job History & Log** : See the history of your jobs* 
 * **Designer** : Although the forms are NOT built using a graphical designer, a YAML based editor/designer with validation is present
+* **Git integration** : Sync your forms config files, ansible playbooks and other required files with a git repo
 
 # Form Capabilities
 
 * **Categories** : Group multiple forms under categories
 * **Role based access** : Limit forms based on roles
 * **Cascaded dropdowns** : Allow references between fields to create responsive, cascaded dropdown boxes
-* **Database sources** : Import data into fields from databases (MySql, MSSql, Postgres, Mongo)
+* **Database sources** : Import data into fields from databases (MySql, MSSql, Postgres, Mongo, Oracle)
 * **Expression based sources** : Import data using serverside expressions (javascript), such as Rest API's, json-files, yaml-files, ... and filter, manipulate and sort them
 * **Local expressions** : Use the power of javascript (local browser sandbox) to calculate, manipulate, generate, ... 
 * **Field dependencies** : Show/hide fields based on values of other fields
