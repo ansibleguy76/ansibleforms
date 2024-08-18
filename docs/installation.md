@@ -34,9 +34,14 @@ AnsibleForms can be installed in a few ways.
 </div>
 
 
-# Install using Docker-Compose
+# Install using Docker-Compose 
 
-The recommended way to install AnsibleForms is using `Docker Compose`, which is the fastest way to start AnsibleForms with Docker.  However, if you are skilled with docker and/or Kubernetes, the [docker-compose (with Kubernetes sample)](https://github.com/ansibleguy76/ansibleforms-docker), together with the environment variables should get you started as well.
+The recommended way to install AnsibleForms is using `Docker Compose`, which is the fastest way to start AnsibleForms with Docker.  However, if you are skilled with docker, podman and/or Kubernetes, the [docker-compose (with Kubernetes sample)](https://github.com/ansibleguy76/ansibleforms-docker), together with the environment variables should get you started as well.
+
+<div class="callout callout--danger">
+    <p><strong>Note</strong> You can also use Podman and Podman-Compose.  The commands are similar (docker- > podman and docker-compose -> podman-compose)</p>
+</div>
+
 
 <div class="callout callout--danger">
     <p><strong>Note</strong> Using docker and docker-compose for the first time, requires some basic linux skills and some knowledge about containers</p>
@@ -45,7 +50,7 @@ The recommended way to install AnsibleForms is using `Docker Compose`, which is 
 
 ## Prerequisites
 
-* **Linux machine** : Any flavour should do, The need of CPU and memory is not very high, but, of course can grow if you start a lot of playbooks simultaniously
+* **Linux machine** : Any flavour should do, The need of CPU and memory is not very high, but, of course can grow if you start a lot of playbooks simultaniously. When using Podman, I recommand Debian (ubuntu has some issues with Podman)
 * **Github access** : The easiest way is to download or clone the docker-compose project on Github
 * **Install Docker** : You need to have a container environment, and in this example we use Docker
 * **Install Docker Compose** : To spin-up AnsibleForms and MySql with docker, using a few simple configuration-files, we need Docker Compose
@@ -68,10 +73,8 @@ cd /srv/apps
 ## Clone the docker-compose project
 
 ```bash
-# centos
-sudo yum install -y git
 
-# ubuntu
+# ubuntu or debian
 sudo apt-get install -y git
 
 ‌sudo ‌git init
@@ -94,10 +97,7 @@ sudo chmod -R +x ./data/mysql/init/
 [Docker installation manuals](https://docs.docker.com/engine/install)
 
 ```bash
-# centos
-yum install -y docker-ce docker-ce-cli containerd.io docker-compose
-
-# ubuntu
+# ubuntu / debian
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin docker-compose
 
 # the below is to ensure dns works properly inside the dockerimages
@@ -109,6 +109,13 @@ sudo systemctl start docker
 sudo systemctl enable docker
 ```
 
+## Install Podman and podman-compose
+
+```bash
+# ubuntu / debian
+sudo apt-get install -y podman podman-compose
+```
+
 ## Customize
 
 Feel free to look at the variables in the `.env` file and `docker-compose.yaml` file.  
@@ -118,6 +125,10 @@ Feel free to look at the variables in the `.env` file and `docker-compose.yaml` 
 
 ```bash
 sudo docker-compose up -d
+# note, with some plavors and versions, it's `docker compose` (with a space)
+# or
+sudo podman-compose up -d
+# note that podman is service-less.  You can run it as any user.  Your choice to use sudo or not.
 ```
 
 ## Test the application
