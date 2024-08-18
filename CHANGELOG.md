@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-   If forms.yaml is missing, it will be auto created. This is useful for new installations without docker-compose
+-   Same for certificates
+
+### Changed
+
+-   Async await replacements for promises (readability)
+
+### Fixed
+
+-   Some credentials bugfixes
+
 ## [5.0.3] - 2024-06-21
 
 ### Added
