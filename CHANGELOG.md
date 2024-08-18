@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.4] - 2024-08-18
+
 ### Added
 
 -   If forms.yaml is missing, it will be auto created. This is useful for new installations without docker-compose
@@ -722,7 +724,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.3...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.4...HEAD
+
+[5.0.4]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.3...5.0.4
 
 [5.0.3]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.2...5.0.3
 
