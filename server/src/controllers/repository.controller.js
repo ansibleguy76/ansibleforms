@@ -47,6 +47,11 @@ exports.clone = function(req, res) {
   .then(()=>{res.json(new RestResult("success","repository cloned",null,""))})
   .catch((err)=>{ res.json(new RestResult("error","failed to clone repository",null,err.toString())) })
 };
+exports.reset = function(req, res) {
+    Repository.reset(req.params.name)
+    .then(()=>{res.json(new RestResult("success","repository reset",null,""))})
+    .catch((err)=>{ res.json(new RestResult("error","failed to reset repository",null,err.toString())) })
+  };
 exports.pull = function(req, res) {
   Repository.pull(req.params.name)
   .then(()=>{res.json(new RestResult("success","repository pulled",null,""))})

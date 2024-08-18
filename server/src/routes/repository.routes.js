@@ -13,6 +13,8 @@ router.put('/:name', repositoryController.update);
 router.delete('/:name', repositoryController.delete);
 // Clone a repository by name
 router.post('/:name/clone/', repositoryController.clone);
+// reset a repository by name
+router.post('/:name/reset/', repositoryController.reset);
 // Pull a repository by name
 router.post('/:name/pull/', repositoryController.pull);
 
