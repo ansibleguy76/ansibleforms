@@ -13,6 +13,7 @@ exports.findAll = async function(req,res){
     var forms = await Form.load()
     res.json(forms)
   }catch(err){
+    // console.log(err)
     res.json({error:helpers.getError(err)})
   }
 }

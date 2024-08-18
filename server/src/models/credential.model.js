@@ -12,24 +12,29 @@ const cache = new NodeCache({
 
 //credential object create
 var Credential=function(credential){
-    this.name = credential.name;
-    this.host = credential.host;
-    this.port = credential.port;
-    this.user = credential.user;
-    this.db_name = credential.db_name;
-    this.secure = (credential.secure)?1:0;
-    this.is_database = (credential.is_database)?1:0;
-    this.password = encrypt(credential.password);
-    this.description = credential.description || "";
-    this.db_type = credential.db_type;
+  if(credential.name!=undefined){this.name = credential.name }
+  if(credential.host!=undefined){this.host = credential.host }
+  if(credential.port!=undefined){this.port = credential.port }
+  if(credential.user!=undefined){this.user = credential.user }
+  if(credential.db_name!=undefined){this.db_name = credential.db_name }
+  if(credential.secure!=undefined){this.secure = (credential.secure)?1:0 }
+  if(credential.is_database!=undefined){this.is_database = (credential.is_database)?1:0 }
+  if(credential.password!=undefined){this.password = encrypt(credential.password) }
+  if(credential.description!=undefined){this.description = credential.description }
+  if(credential.db_type!=undefined){this.db_type = credential.db_type }
 };
 
 Credential.create = async function (record) {
+    if(!record.name){
+      throw "Name is required"
+    }  
     logger.info(`Creating credential ${record.name}`)
     var res = await mysql.do("INSERT INTO AnsibleForms.`credentials` set ?", record)
     return res.insertId
 };
 Credential.update = async function (record,id) {
+    const r = await Credential.findById(id) // quickly search name
+    record.name = r[0].name  
     logger.info(`Updating credential ${record.name}`)
     var res = await mysql.do("UPDATE AnsibleForms.`credentials` set ? WHERE id=?", [record,id])
     cache.del(record.name)

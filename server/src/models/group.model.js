@@ -15,13 +15,13 @@ Group.update = function (record,id) {
     logger.info(`Updating group ${record.name}`)
     return mysql.do("UPDATE AnsibleForms.`groups` set ? WHERE name=?", [record,id])
 };
-Group.delete = function(id){
+Group.delete = async function(id){
     if(id==1){
       logger.warning("Someone is trying to remove the admins group !")
-      return new Promise.reject("You cannot delete group 'admins'")
+      throw new Error("You cannot delete group 'admins'")
     }else{
       logger.info(`Deleting group ${id}`)
-      return mysql.do("DELETE FROM AnsibleForms.`groups` WHERE id = ? AND name<>'admins' AND NOT EXISTS(SELECT id FROM AnsibleForms.users u WHERE u.group_id=groups.id)", [id])
+      return await mysql.do("DELETE FROM AnsibleForms.`groups` WHERE id = ? AND name<>'admins' AND NOT EXISTS(SELECT id FROM AnsibleForms.users u WHERE u.group_id=groups.id)", [id])
     }
 
 };

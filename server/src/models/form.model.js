@@ -99,9 +99,9 @@ Form.load = async function() {
   var formfiles=[]
   var files=undefined
 
-  var ytt_env_data_opt = ''
+  var yttEnvDataOpt = ''
   if ('YTT_VARS_PREFIX' in process.env) {
-    ytt_env_data_opt = ` --data-values-env ${process.env.YTT_VARS_PREFIX}`;
+    yttEnvDataOpt = ` --data-values-env ${process.env.YTT_VARS_PREFIX}`;
   }
   var yttLibDataOpts = getYttLibDataOpts();
 
@@ -115,9 +115,9 @@ Form.load = async function() {
       try {
         if (appConfig.useYtt) {
           logger.info(`interpreting ${appFormsPath} with ytt.`);
-          logger.debug(`executing 'ytt -f ${appFormsPath} -f ${formslibdirpath}${ytt_env_data_opt}${yttLibDataOpts}'`)
+          logger.debug(`executing 'ytt -f ${appFormsPath} -f ${formslibdirpath}${yttEnvDataOpt}${yttLibDataOpts}'`)
           rawdata = execSync(
-              `ytt -f ${appFormsPath} -f ${formslibdirpath}${ytt_env_data_opt}${yttLibDataOpts}`,
+              `ytt -f ${appFormsPath} -f ${formslibdirpath}${yttEnvDataOpt}${yttLibDataOpts}`,
               {
                 env: process.env,
                 encoding: 'utf-8'
@@ -127,7 +127,21 @@ Form.load = async function() {
           rawdata = fs.readFileSync(appFormsPath, 'utf8');
         }
       } catch (e) {
-        logger.error(`failed to load '${appFormsPath}'.\n${e}`);
+        logger.error(`Failed to load '${appFormsPath}'.`,e);
+
+      }
+      if(!rawdata){
+        try{
+          logger.warning("No forms found in database or forms.yaml... creating empty one from template")
+          var formsTemplatePath = path.join(__dirname,"../../templates/forms.yaml.template")
+          fs.copyFileSync(formsTemplatePath,appFormsPath)
+          logger.warning("File copied")
+          rawdata = fs.readFileSync(appFormsPath, 'utf8');
+        } catch (e) {
+          logger.error(`Failed to copy forms from template and/or to load '${appFormsPath}'.`,e);
+          throw new Error(Helpers.getError(e,"Error reading the forms"))
+        }
+
       }
     }
     // read extra form files
@@ -143,9 +157,9 @@ Form.load = async function() {
             var itemRawData = '';
             if (appConfig.useYtt) {
               logger.info(`interpreting ${itemFormPath} with ytt.`);
-              logger.debug(`executing 'ytt -f ${itemFormPath} -f ${formslibdirpath}${ytt_env_data_opt}'`)
+              logger.debug(`executing 'ytt -f ${itemFormPath} -f ${formslibdirpath}${yttEnvDataOpt}'`)
               itemRawData = execSync(
-                  `ytt -f ${itemFormPath} -f ${formslibdirpath}${ytt_env_data_opt}`,
+                  `ytt -f ${itemFormPath} -f ${formslibdirpath}${yttEnvDataOpt}`,
                   {
                     env: process.env,
                     encoding: 'utf-8'
@@ -159,7 +173,7 @@ Form.load = async function() {
               value: itemRawData
             })
           }catch(e){
-            logger.error(`failed to load file '${item}'.\n${e}`);
+            logger.error(`Failed to load file '${item}'`,e);
           }
         });
       }
@@ -186,7 +200,7 @@ Form.load = async function() {
       logger.error(`failed to parse file '${item.name}'.\n${e}`)
     }
   })
-  if(!forms.forms){
+  if(!forms?.forms){
     forms.forms=[]
   }
   // merge extra files

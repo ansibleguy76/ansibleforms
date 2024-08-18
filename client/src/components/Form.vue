@@ -1740,7 +1740,7 @@
         var ref=this
         axios({
           method: 'get',
-          headers,
+          headers: headers.headers,
           url,
           responseType: 'arraybuffer',
         })

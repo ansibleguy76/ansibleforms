@@ -51,15 +51,16 @@ exports.update = function(req, res) {
           .catch((err)=>{res.json(new RestResult("error","failed to update group",null,err.toString()))})
     }
 };
-exports.delete = function(req, res) {
-    Group.delete( req.params.id)
-      .then((deleted)=>{
-        if(deleted.affectedRows==1){
-          res.json(new RestResult("success","group deleted",null,""))
-        }else{
-          res.json(new RestResult("error","unknown group or group has users",null,`affected rows : ${deleted.affectedRows}`))
-        }
+exports.delete = async function(req, res) {
+  try{
+    const deleted = await Group.delete( req.params.id)
+    if(deleted.affectedRows==1){
+      res.json(new RestResult("success","group deleted",null,""))
+    }else{
+      res.json(new RestResult("error","unknown group or group has users",null,`affected rows : ${deleted.affectedRows}`))
+    }
+  }catch(err){
+    res.json(new RestResult("error","failed to delete group",null,err.toString()))
+  }
 
-      })
-      .catch((err)=>{res.json(new RestResult("error","failed to delete group",null,err.toString()))})
 };

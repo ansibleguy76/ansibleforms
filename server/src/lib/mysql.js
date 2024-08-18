@@ -23,6 +23,27 @@ MySql.query = async function (connection_name, query) {
   logger.debug(`[${connection_name}] query : ${query}`)
   var conn
   try{
+
+    // fixed in 5.0.4
+    config.multipleStatements=true
+    // remove database if not defined
+    if(config.db_name){
+      config.database = config.db_name
+    }
+    if(config.secure){
+      config.ssl={
+        sslmode:"required",
+        rejectUnauthorized:false
+      }
+    }else{
+      config.ssl={
+        sslmode:"none",
+        rejectUnauthorized:false
+      }
+    }
+    // get connection
+    config=MySql.clean(config) // remove unsupported properties      
+
     conn = await client.createConnection(MySql.clean(config))
     var result
     try{

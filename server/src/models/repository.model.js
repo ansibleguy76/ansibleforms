@@ -44,6 +44,11 @@ Repository.update = function (record,name) {
       return res
     })
 };
+Repository.reset = async function(name){
+  logger.info(`Resetting repository ${name}`)
+  await Repo.delete(name) // delete the repo on disk
+  await Repository.clone(name) // recreate the repo
+}
 Repository.delete = function(name){
     logger.info(`Deleting repository ${name}`)
     Repo.delete(name)

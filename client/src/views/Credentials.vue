@@ -151,7 +151,16 @@
         }else{
           console.log("No item selected")
           this.credential = {
-            name:""
+            is_database:false,
+            name:"",
+            user:"",
+            password:"",
+            host:"NA",
+            port:3306,
+            db_name:"",
+            description:"",
+            secure:false,
+            db_type:""
           }
         }
       },
