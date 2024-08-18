@@ -3837,7 +3837,7 @@
           'get',
           'https://resturl/api/',
           '',
-          {'a_custom_http_header','your_value'},
+          {'a_custom_http_header':'your_value'},
           '.records[].name',
           {name:{ignoreCase:true,direction:'desc'}},
           false
