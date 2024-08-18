@@ -158,7 +158,6 @@ async function patchVersion4(messages,success,failed){
   await checkPromise(addColumn("ldap","group_member_user_attribute","varchar(250)",true,"NULL"),messages,success,failed) // add column to have group member user attribute
   await checkPromise(addColumn("ldap","is_advanced","tinyint(4)",true,"0"),messages,success,failed) // is advanced config
   await checkPromise(addColumn("ldap","mail_attribute","varchar(250)",true,"NULL"),messages,success,failed) // add column to have mail attribute
-
   // also the settings tables was not present before 4.0.0, it contains the URL and mail settings for notification
   // later the column forms_yaml was added to store the forms in yaml format (but that was in 5.x.x)
   buffer = fs.readFileSync(`${__dirname}/../db/create_settings_table.sql`)
@@ -189,6 +188,9 @@ async function patchVersion5(messages,success,failed){
 
   // on request, the awx_id was added to the jobs table, to later retrieve it for future tracking
   await checkPromise(addColumn("jobs","awx_id","int(11)",true,"NULL"),messages,success,failed) // add for future tracking
+
+  // patch for awx credentials, the use_credentials was added to the awx table, to allow the use of credentials
+  await checkPromise(addColumn("awx","use_credentials","tinyint(4)",true,"0"),messages,success,failed) // bugfix for awx credentials   
 
   // A new feature was added, the repositories table, to store the repositories for the forms and playbooks
   // A real gamechanger, because now the forms and playbooks can be stored in a git repository
