@@ -182,12 +182,17 @@
   import TokenStorage from './../lib/TokenStorage'
   import BulmaHelpTable from './../components/BulmaHelpTable.vue'
   import BulmaExampleTable from './../components/BulmaExampleTable.vue'
-  import 'highlight.js/styles/agate.css'
-  import VueHighlightJS from 'vue-highlight.js';
-  //import 'highlight.js/styles/default.css';
-  // import javascript from 'highlight.js/lib/languages/javascript';
-  import 'vue-highlight.js/lib/allLanguages'
-  // import yaml from 'highlight.js/lib/languages/yaml';
+
+  import 'highlight.js/styles/agate.css'  
+  import hljs from 'highlight.js/lib/core';
+  import javascript from 'highlight.js/lib/languages/javascript';
+  import yaml from 'highlight.js/lib/languages/yaml';
+  import vuePlugin from "@highlightjs/vue-plugin";
+
+  hljs.registerLanguage('javascript', javascript);
+  hljs.registerLanguage('yaml', yaml);
+  Vue.use(vuePlugin);  
+
   import VueShowDown from 'vue-showdown'
   Vue.use(VueShowDown)
   // Vue.use(VueHighlightJS, {
@@ -197,7 +202,7 @@
   //       javascript
   //     }
   //   });
-  Vue.use(VueHighlightJS,{auto: true});
+
 
   export default{
     components:{BulmaHelpTable,BulmaExampleTable},

@@ -64,8 +64,8 @@
             </p>
             <div v-for="e,i in f.examples" :key="e.name">
               <p class="has-text-weight-bold mt-2">{{ i+1 }}) {{ e.name }}</p>
-              <highlight-code
-                lang="YAML"
+              <highlightjs
+                language="YAML"
                 :code="e.code"
               />
             </div>

@@ -147,8 +147,8 @@
                         <div class="mb-3"
                           @dblclick="clip(field.expression,true)"
                           v-if="field.expression && fieldOptions[field.name].debug">
-                          <highlight-code
-                            lang="javascript"
+                          <highlightjs
+                            language="javascript"
                             :code="field.expression"
                           />
                         </div>
@@ -156,8 +156,8 @@
                         <div class="mb-3"
                           @dblclick="clip(fieldOptions[field.name].expressionEval,true)"
                           v-if="field.expression && fieldOptions[field.name].debug && dynamicFieldStatus[field.name]!='fixed'">
-                          <highlight-code
-                            lang="javascript"
+                          <highlightjs
+                            language="javascript"
                             :code="fieldOptions[field.name].expressionEval"
                           />
                         </div>
@@ -473,11 +473,14 @@
   import DatePicker from 'vue2-datepicker';
   import 'vue2-datepicker/index.css';
 
-  // load javascript highlight, for debug view
   import 'highlight.js/styles/monokai-sublime.css'
-  import VueHighlightJS from 'vue-highlight.js';
+  import hljs from 'highlight.js/lib/core';
   import javascript from 'highlight.js/lib/languages/javascript';
-  import vue from 'vue-highlight.js/lib/languages/vue';
+  import vuePlugin from "@highlightjs/vue-plugin";
+
+  hljs.registerLanguage('javascript', javascript);
+
+  Vue.use(vuePlugin);  
   import Helpers from './../lib/Helpers'
   import Copy from 'copy-to-clipboard'
   import 'vue-json-pretty/lib/styles.css';
@@ -487,12 +490,6 @@
 
   Vue.use(Vuelidate)
   Vue.use(VueShowdown)
-  Vue.use(VueHighlightJS, {
-    // Register only languages that you want
-      languages: {
-        javascript
-      }
-    });
 
   export default{
     name:"Form",
