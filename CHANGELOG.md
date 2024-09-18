@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.5] - 2024-09-18
+
 ## [5.0.4] - 2024-08-18
 
 ### Added
@@ -724,7 +726,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.4...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.5...HEAD
+
+[5.0.5]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.4...5.0.5
 
 [5.0.4]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.3...5.0.4
 
