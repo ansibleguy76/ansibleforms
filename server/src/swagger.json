@@ -109,8 +109,8 @@
             "schema": {
               "type": "object",
               "example": {
-                "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoiQWRtaW5pc3RyYXRvciIsInR5cGUiOiJsZGFwIiwicm9sZXMiOlsicHVibGljIiwiYWRtaW4iXX0sImlhdCI6MTYzODc4Nzk3OSwiZXhwIjoxNjM4Nzg5Nzc5fQ.7QA4n3JlPVuatTY7e1dKLQbB4PlW72Jkep_oRe9kevM",
-                "refreshtoken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoiQWRtaW5pc3RyYXRvciIsInR5cGUiOiJsZGFwIiwicm9sZXMiOlsicHVibGljIiwiYWRtaW4iXX0sImlhdCI6MTYzODc4Nzk3OSwiZXhwIjoxNjM4ODc0Mzc5fQ.ku8-MOflGvdMNR7fZkGn28zSDaG4i2QClqOy4P35zYA"
+                "token": "<jwt_token>",
+                "refreshtoken": "<jwt_token>"
               }
             }
           }
@@ -147,8 +147,8 @@
             "schema": {
               "type": "object",
               "example": {
-                "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoiQWRtaW5pc3RyYXRvciIsInR5cGUiOiJsZGFwIiwicm9sZXMiOlsicHVibGljIiwiYWRtaW4iXX0sImlhdCI6MTYzODgwNjM3MCwiZXhwIjoxNjM4ODA4MTcwfQ.Q0dZCAVcVH6r7j_oUTzAoKp7OyR4kYi-NDxPB1v8-UA",
-                "refreshtoken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoiQWRtaW5pc3RyYXRvciIsInR5cGUiOiJsZGFwIiwicm9sZXMiOlsicHVibGljIiwiYWRtaW4iXX0sImlhdCI6MTYzODgwNjM3MCwiZXhwIjoxNjM4ODkyNzcwfQ.ZIMquso87x8FD5XytyWDi-eMXr2OJBUeXfBGMwk5w04"
+                "token": "<jwt_token>",
+                "refreshtoken": "<jwt_token>"
               }
             }
           }
