@@ -34,7 +34,7 @@
   import BulmaSettingsMenu from '../components/BulmaSettingsMenu.vue'
   import TokenStorage from './../lib/TokenStorage'
   import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
-  const privatekey = helpers.regex("privatekey",/^-----BEGIN (.+) PRIVATE KEY-----([^-!]+)-----END \1 PRIVATE KEY-----\r?\n$/gm)
+  const privatekey = helpers.regex("privatekey",/^-----BEGIN ([A-Z ]+ PRIVATE KEY)-----\r?\n([^-]+)\r?\n-----END \1-----\r?\n$/gm)
   Vue.use(Vuelidate)
 
   export default{

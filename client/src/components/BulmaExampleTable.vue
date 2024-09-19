@@ -26,8 +26,8 @@
       <p v-if="f.description">
         <VueShowdown :markdown="highlight(f.description)" flavor="github" :options="{ghCodeBlocks:true}" />
       </p>
-      <highlight-code v-if="f.code"
-        :lang="f.language || 'javascript'"
+      <highlightjs v-if="f.code"
+        :language="f.language || 'javascript'"
         :code="f.code"
       />
     </div>

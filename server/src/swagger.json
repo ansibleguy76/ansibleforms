@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "description": "This is the swagger interface for AnsibleForms.\r\nUse the `/auth/login` api with basic authentication to obtain a JWT token.\r\nThen use the access token, prefixed with the word '**Bearer**' to use all other api's.\r\nNote that the access token is limited in time.  You can then either login again and get a new set of tokens or use the `/token` api and the refresh token to obtain a new set (preferred).",
-    "version": "5.0.4",
+    "version": "5.0.5",
     "title": "AnsibleForms",
     "contact": {
       "email": "info@ansibleforms.com"
@@ -109,8 +109,8 @@
             "schema": {
               "type": "object",
               "example": {
-                "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoiQWRtaW5pc3RyYXRvciIsInR5cGUiOiJsZGFwIiwicm9sZXMiOlsicHVibGljIiwiYWRtaW4iXX0sImlhdCI6MTYzODc4Nzk3OSwiZXhwIjoxNjM4Nzg5Nzc5fQ.7QA4n3JlPVuatTY7e1dKLQbB4PlW72Jkep_oRe9kevM",
-                "refreshtoken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoiQWRtaW5pc3RyYXRvciIsInR5cGUiOiJsZGFwIiwicm9sZXMiOlsicHVibGljIiwiYWRtaW4iXX0sImlhdCI6MTYzODc4Nzk3OSwiZXhwIjoxNjM4ODc0Mzc5fQ.ku8-MOflGvdMNR7fZkGn28zSDaG4i2QClqOy4P35zYA"
+                "token": "**********************",
+                "refreshtoken": "***********************"
               }
             }
           }
@@ -147,8 +147,8 @@
             "schema": {
               "type": "object",
               "example": {
-                "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoiQWRtaW5pc3RyYXRvciIsInR5cGUiOiJsZGFwIiwicm9sZXMiOlsicHVibGljIiwiYWRtaW4iXX0sImlhdCI6MTYzODgwNjM3MCwiZXhwIjoxNjM4ODA4MTcwfQ.Q0dZCAVcVH6r7j_oUTzAoKp7OyR4kYi-NDxPB1v8-UA",
-                "refreshtoken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InVzZXJuYW1lIjoiQWRtaW5pc3RyYXRvciIsInR5cGUiOiJsZGFwIiwicm9sZXMiOlsicHVibGljIiwiYWRtaW4iXX0sImlhdCI6MTYzODgwNjM3MCwiZXhwIjoxNjM4ODkyNzcwfQ.ZIMquso87x8FD5XytyWDi-eMXr2OJBUeXfBGMwk5w04"
+                "token": "************************",
+                "refreshtoken": "**********************"
               }
             }
           }
@@ -220,7 +220,7 @@
               "properties": {
                 "password": {
                   "type": "string",
-                  "example": "MyPassword01!"
+                  "example": "************"
                 }
               }
             }
@@ -1581,7 +1581,7 @@
                 },
                 "bind_user_pw": {
                   "type": "string",
-                  "example": "MyPassword01!"
+                  "example": "************"
                 },
                 "username_attribute": {
                   "type": "string",
@@ -1671,7 +1671,7 @@
                 },
                 "bind_user_pw": {
                   "type": "string",
-                  "example": "MyPassword01!"
+                  "example": "************"
                 },
                 "username_attribute": {
                   "type": "string",
@@ -2038,7 +2038,7 @@
                 },
                 "password": {
                   "type": "string",
-                  "example": "MyPassword01!"
+                  "example": "************"
                 },
                 "description": {
                   "type": "string",
@@ -2113,7 +2113,7 @@
                     "id": 2,
                     "name": "cmdb",
                     "user": "root",
-                    "password": "MySecretPassword01!",
+                    "password": "************",
                     "host": "172.16.50.1",
                     "port": 3306,
                     "description": "Mysql connection for cmdb"
@@ -2162,7 +2162,7 @@
                 },
                 "password": {
                   "type": "string",
-                  "example": "MyPassword01!"
+                  "example": "************"
                 },
                 "host": {
                   "type": "string",
@@ -2383,7 +2383,7 @@
                 },
                 "password": {
                   "type": "string",
-                  "example": "MyPassword01!"
+                  "example": "************"
                 },
                 "group_id": {
                   "type": "integer",
@@ -2499,11 +2499,11 @@
               "properties": {
                 "password": {
                   "type": "string",
-                  "example": "MyPassword01!"
+                  "example": "************"
                 },
                 "password2": {
                   "type": "string",
-                  "example": "MyPassword01!"
+                  "example": "************"
                 },
                 "group_id": {
                   "type": "integer",
