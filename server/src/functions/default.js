@@ -12,7 +12,7 @@ const {inspect} = require('node:util')
 const JSONbig = require('json-bigint');
 const _ = require("lodash")
 const {firstBy,thenBy}=require("thenby")
-const ip=require("ip")
+const ip=require("../lib/ip")
 const dayjs=require("dayjs")
 const credentialModel = require("../models/credential.model")
 // import definitions as strings
