@@ -1,6 +1,6 @@
 {
   "name": "ansible_forms",
-  "version": "5.0.5",
+  "version": "5.0.6",
   "repository": {
     "type": "git",
     "url": "git://github.com/ansibleguy76/ansibleforms.git"
@@ -33,7 +33,6 @@
     "express": "~4.21.0",
     "cookie-session": "~2.1.0",
     "fs-extra": "~11.2.0",
-    "ip": "2.0.1",
     "json-bigint": "~1.0.0",
     "ldap-authentication": "~3.2.4",
     "ldapjs": "~3.0.7",

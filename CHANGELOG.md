@@ -7,7 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+-   Removed ip lib parts CVE related
+
 ## [5.0.5] - 2024-09-18
+
+### Fixed
+
+-   Fixed regex for ssh key
+-   New version highlight for CVE
+-   Bumped several versions
 
 ## [5.0.4] - 2024-08-18
 
