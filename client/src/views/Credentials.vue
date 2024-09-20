@@ -33,13 +33,13 @@
             <transition name="add-column" appear>
               <div class="column" v-if="credentialItem!==undefined && !showDelete">
                 <BulmaCheckbox checktype="checkbox" v-model="credential.is_database" label="For database ?" /><br><br>
-                <BulmaInput icon="heading" v-model="credential.name" label="Name" placeholder="Name" :readonly="credentialItem!==-1" :required="true" :hasError="$v.credential.name.$invalid" :errors="[]" />
-                <BulmaInput icon="user" v-model="credential.user" label="Username" placeholder="Username" :required="true" :hasError="$v.credential.user.$invalid" :errors="[]" />
-                <BulmaInput icon="lock" v-model="credential.password" type="password" label="Password" placeholder="Password" :required="true" :hasError="$v.credential.password.$invalid" :errors="[]" />
-                <BulmaInput icon="server" v-model="credential.host" label="Host" placeholder="Host" :required="!!credential.is_database" :hasError="$v.credential.host.$invalid" :errors="[]" />
-                <BulmaInput icon="door-closed" v-model="credential.port" label="Port" placeholder="3306" :required="!!credential.is_database" :hasError="$v.credential.port.$invalid" :errors="[]" />
+                <BulmaInput icon="heading" v-model="credential.name" label="Name" placeholder="Name" :readonly="credentialItem!==-1" :required="true" :hasError="v$.credential.name.$invalid" :errors="[]" />
+                <BulmaInput icon="user" v-model="credential.user" label="Username" placeholder="Username" :required="true" :hasError="v$.credential.user.$invalid" :errors="[]" />
+                <BulmaInput icon="lock" v-model="credential.password" type="password" label="Password" placeholder="Password" :required="true" :hasError="v$.credential.password.$invalid" :errors="[]" />
+                <BulmaInput icon="server" v-model="credential.host" label="Host" placeholder="Host" :required="!!credential.is_database" :hasError="v$.credential.host.$invalid" :errors="[]" />
+                <BulmaInput icon="door-closed" v-model="credential.port" label="Port" placeholder="3306" :required="!!credential.is_database" :hasError="v$.credential.port.$invalid" :errors="[]" />
                 <BulmaInput icon="info-circle" v-model="credential.description" label="Description" placeholder="Description" />
-                <BulmaSelect v-if="!!credential.is_database" icon="database" v-model="credential.db_type" label="Database type" :list="['mysql','mssql','postgres','mongodb','oracle']"  />
+                <BulmaSelect v-if="!!credential.is_database" icon="database" v-model="credential.db_type" :required="true" label="Database type" :list="['mysql','mssql','postgres','mongodb','oracle']" :hasError="v$.credential.db_type.$invalid"  />
                 <BulmaInput v-if="!!credential.is_database" icon="database" v-model="credential.db_name" :label="(credential.db_type=='oracle')?'Service':'Database'" :placeholder="(credential.db_type=='oracle')?'Service Name':'Database Name'" />
                 <BulmaCheckbox v-if="!!credential.is_database" checktype="checkbox" v-model="credential.secure" label="Secure connection" /><br><br>
                 <BulmaButton v-if="credentialItem==-1" icon="save" label="Create Credential" @click="newCredential()"></BulmaButton>
@@ -55,7 +55,6 @@
 <script>
   import Vue from 'vue'
   import axios from 'axios'
-  import Vuelidate from 'vuelidate'
   import BulmaButton from './../components/BulmaButton.vue'
   import BulmaAdminTable from './../components/BulmaAdminTable.vue'
   import BulmaInput from './../components/BulmaInput.vue'
@@ -64,9 +63,9 @@
   import BulmaSettingsMenu from '../components/BulmaSettingsMenu.vue'
   import BulmaSelect from './../components/BulmaSelect.vue'
   import TokenStorage from './../lib/TokenStorage'
-  import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs,numeric } from 'vuelidate/lib/validators'
+  import { useVuelidate } from "@vuelidate/core"
+  import { required,helpers,numeric } from "@vuelidate/validators"
 
-  Vue.use(Vuelidate)
   export default{
     name:"AfCredentials",
     props:{
@@ -74,6 +73,9 @@
       isAdmin:{type:Boolean}
     },
     components:{BulmaButton,BulmaInput,BulmaModal,BulmaAdminTable,BulmaCheckbox,BulmaSelect,BulmaSettingsMenu},
+    setup(){
+      return { v$: useVuelidate() }
+    },
     data(){
       return  {
           credential:{
@@ -180,7 +182,7 @@
           };
       },updateCredential(){
         var ref= this;
-        if (!this.$v.credential.$invalid) {
+        if (!this.v$.credential.$invalid) {
           axios.put(`${process.env.BASE_URL}api/v1/credential/${this.credentialItem}`,this.credential,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
@@ -197,7 +199,7 @@
         }
       },newCredential(){
         var ref= this;
-        if (!this.$v.credential.$invalid) {
+        if (!this.v$.credential.$invalid) {
           axios.post(`${process.env.BASE_URL}api/v1/credential/`,this.credential,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
@@ -223,26 +225,30 @@
           this.alert.timeout = setTimeout(function(){ref.alert.message=""}, 5000);
       }
     },
-    validations: {
-      credential:{
-        name: {
-          required
-        },
-        user: {
-          required
-        },
-        password: {
-          required
-        },
-        host: {
-          database_required: function(value){return (helpers.req(value) && !!this.credential?.is_database) || !(this.credential?.is_database)}
-        },
-        port: {
-          database_required: function(value){return (helpers.req(value) && !!this.credential?.is_database) || !(this.credential?.is_database)},
-          numeric
+    validations() {
+      return{
+        credential:{
+          name: {
+            required
+          },
+          user: {
+            required
+          },
+          password: {
+            required
+          },
+          host: {
+            database_required: function(value){return (helpers.req(value) && !!this.credential?.is_database) || !(this.credential?.is_database)}
+          },
+          port: {
+            database_required: function(value){return (helpers.req(value) && !!this.credential?.is_database) || !(this.credential?.is_database)},
+            numeric
+          },
+          db_type: {
+            database_required: function(value){return (helpers.req(value) && !!this.credential?.is_database) || !(this.credential?.is_database)}
+          }
         }
       }
-
     },
     mounted() { // when the Vue app is booted up, this is run automatically.
         this.loadAll();

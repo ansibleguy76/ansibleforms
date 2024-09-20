@@ -5,8 +5,8 @@
         <div class="columns is-centered">
           <div class="column is-5-tablet is-4-desktop is-3-widescreen">
             <div class="box">
-              <BulmaInput icon="lock" focus="true" v-model="user.password" @enterClicked="update()" label="Password" type="password" placeholder="***********" :required="true" :hasError="$v.user.password.$invalid" :errors="[]" />
-              <BulmaInput icon="lock" type="password" v-model="user.password2" @enterClicked="update()" label="Password Again" placeholder="Password" :required="true" :hasError="$v.user.password2.$invalid" :errors="[{if:!$v.user.password2.sameAsPassword,label:'Passwords are not the same'}]" />
+              <BulmaInput icon="lock" focus="true" v-model="user.password" @enterClicked="update()" label="Password" type="password" placeholder="***********" :required="true" :hasError="v$.user.password.$invalid" :errors="[{if:v$.user.password.passwordComplexity.$invalid,label:v$.user.password.passwordComplexity.$params.description}]" />
+              <BulmaInput icon="lock" type="password" v-model="user.password2" @enterClicked="update()" label="Password Again" placeholder="Password" :required="true" :hasError="v$.user.password2.$invalid" :errors="[{if:v$.user.password2.sameAsPassword.$invalid,label:'Passwords are not the same'}]" />
               <div class="field">
                 <button class="button is-light" @click="update()">
                   <span class="icon has-text-info"><font-awesome-icon icon="key" /></span><span>Change Password</span>
@@ -20,14 +20,11 @@
   </section>
 </template>
 <script>
-  import Vue from 'vue'
   import axios from 'axios'
-  import Vuelidate from 'vuelidate'
   import BulmaInput from './../components/BulmaInput.vue'
   import TokenStorage from './../lib/TokenStorage'
-  import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
-
-  Vue.use(Vuelidate)
+  import { useVuelidate } from '@vuelidate/core'
+  import { required, helpers,sameAs } from '@vuelidate/validators'
 
   export default{
     name: "AfUsers",
@@ -36,6 +33,9 @@
       isAdmin:{type:Boolean}
     },
     components:{BulmaInput},
+    setup(){
+      return { v$: useVuelidate() }
+    },
     data(){
       return  {
           user:{
@@ -47,7 +47,7 @@
     methods:{
       update(){
         var ref= this;
-        if (!this.$v.user.password.$invalid && !this.$v.user.password2.$invalid) {
+        if (!this.v$.user.password.$invalid && !this.v$.user.password2.$invalid) {
           axios.put(`${process.env.BASE_URL}api/v1/profile`,this.user,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
@@ -64,18 +64,20 @@
         }
       }
     },
-    validations: {
-      user:{
-        password: {
-          required,
-          minLength:8,
-          regex : helpers.withParams(
-              {description: "Must contain at least 1 numeric, 1 special, 1 upper and 1 lower character",type:"regex"},
-              (value) => !helpers.req(value) || (new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\\$%\\^&\\*])").test(value))
-          )
-        },
-        password2:{
-          sameAsPassword: sameAs('password')
+    validations(){ 
+      return {
+        user:{
+          password: {
+            required,
+            minLength:8,
+            passwordComplexity : helpers.withParams(
+                {description: "Must contain at least 1 numeric, 1 special, 1 upper and 1 lower character",type:"regex"},
+                (value) => !helpers.req(value) || (new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\\$%\\^&\\*])").test(value))
+            )
+          },
+          password2:{
+            sameAsPassword: sameAs(this.user.password)
+          }
         }
       }
 

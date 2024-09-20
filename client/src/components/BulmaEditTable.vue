@@ -6,7 +6,7 @@
               <!-- add field label -->
               <label class="label has-text-dark">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span></label>
               <!-- type = checkbox -->
-              <BulmaCheckRadio v-if="field.type=='checkbox'" checktype="checkbox" :disabled="action=='Edit' && readonlyColumns.includes(field.name)" v-model="editedItem[field.name]" :name="field.name" :label="field.placeholder"/>
+              <BulmaCheckRadio v-if="field.type=='checkbox'" checktype="checkbox" :disabled="action=='Edit' && readonlyColumns.includes(field.name)" :type="{'is-danger is-block':v$.editedItem[field.name].$invalid}" v-model="editedItem[field.name]" :name="field.name" :label="field.placeholder"/>
               <!-- <label v-if="field.type=='checkbox'" class="checkbox">
                 <input v-if="field.type=='checkbox'" :disabled="readonlyColumns.includes(field.name)" :autofocus="index==0" :checked="editedItem[field.name]" v-model="editedItem[field.name]" :name="field.name" type="checkbox">
                 {{ field.placeholder }}
@@ -14,15 +14,15 @@
               <date-picker v-if="field.type=='datetime'"
                 :type="field.dateType"
                 value-type="format"
-                v-model="$v.editedItem[field.name].$model"
+                v-model="v$.editedItem[field.name].$model"
               >
                   <template #input>
                     <div :class="{'has-icons-left':!!field.icon}" class="control">
                       <input 
-                        :class="{'is-danger':$v.editedItem[field.name].$invalid}"
+                        :class="{'is-danger':v$.editedItem[field.name].$invalid}"
                         class="input"
                         :name="field.name"
-                        v-model="$v.editedItem[field.name].$model"
+                        v-model="v$.editedItem[field.name].$model"
                         @change="evaluateDynamicFields(field.name)"
                         :required="field.required"
                         type="text"
@@ -36,15 +36,15 @@
                
               <BulmaAdvancedSelect
                 v-if="field.type=='query' || field.type=='enum'"
-                :defaultValue="stringify($v.editedItem[field.name].$model,field)||field.default||''"
+                :defaultValue="stringify(v$.editedItem[field.name].$model,field)||field.default||''"
                 :required="field.required||false"
                 :multiple="false"
                 :name="field.name"
                 :placeholder="field.placeholder||'Select...'"
                 :values="field.values||form[field.from]||[]"
-                :hasError="$v.editedItem[field.name].$invalid"
+                :hasError="v$.editedItem[field.name].$invalid"
                 :isLoading="!field.values && !['fixed','variable'].includes(dynamicFieldStatus[field.from])"
-                v-model="$v.editedItem[field.name].$model"
+                v-model="v$.editedItem[field.name].$model"
                 :icon="field.icon"
                 :columns="field.columns||[]"
                 :pctColumns="field.pctColumns||[]"
@@ -58,7 +58,7 @@
               </BulmaAdvancedSelect>     
                              
               <div v-if="!['datetime','checkbox','query','enum'].includes(field.type)" :class="{'has-icons-left':!!field.icon}" class="control">
-                <input v-if="field.type=='text' || field.type=='password'" :disabled="action=='Edit' && readonlyColumns.includes(field.name)" :autofocus="index==0" :class="{'is-danger':$v.editedItem[field.name].$invalid}" class="input" :type="field.type" v-model="$v.editedItem[field.name].$model" :placeholder="field.placeholder" :name="field.name">
+                <input v-if="field.type=='text' || field.type=='password'" :disabled="action=='Edit' && readonlyColumns.includes(field.name)" :autofocus="index==0" :class="{'is-danger':v$.editedItem[field.name].$invalid}" class="input" :type="field.type" v-model="v$.editedItem[field.name].$model" :placeholder="field.placeholder" :name="field.name">
                 <input v-if="field.type=='number'" :disabled="action=='Edit' && readonlyColumns.includes(field.name)" :autofocus="index==0" class="input" type="number" v-model="editedItem[field.name]" :placeholder="field.placeholder" :name="field.name">
 
                 <!-- add left icon, but not for query, because that's a component with icon builtin -->
@@ -67,14 +67,14 @@
                 </span>
               </div>
 
-              <p class="has-text-danger" v-if="!$v.editedItem[field.name].required">This field is required</p>
-              <p class="has-text-danger" v-if="'minLength' in $v.editedItem[field.name] && !$v.editedItem[field.name].minLength">Must be at least {{$v.editedItem[field.name].$params.minLength.min}} characters long</p>
-              <p class="has-text-danger" v-if="'maxLength' in $v.editedItem[field.name] && !$v.editedItem[field.name].maxLength">Can not be more than {{$v.editedItem[field.name].$params.maxLength.max}} characters long</p>
-              <p class="has-text-danger" v-if="'minValue' in $v.editedItem[field.name] && !$v.editedItem[field.name].minValue">Value cannot be lower than {{$v.editedItem[field.name].$params.minValue.min}}</p>
-              <p class="has-text-danger" v-if="'maxValue' in $v.editedItem[field.name] && !$v.editedItem[field.name].maxValue">Value cannot be higher than {{$v.editedItem[field.name].$params.maxValue.max}}</p>
-              <p class="has-text-danger" v-if="'regex' in $v.editedItem[field.name] && !$v.editedItem[field.name].regex">{{$v.editedItem[field.name].$params.regex.description}}</p>
-              <p class="has-text-danger" v-if="'notIn' in $v.editedItem[field.name] && !$v.editedItem[field.name].notIn">{{$v.editedItem[field.name].$params.notIn.description}}</p>
-              <p class="has-text-danger" v-if="'in' in $v.editedItem[field.name] && !$v.editedItem[field.name].in">{{$v.editedItem[field.name].$params.in.description}}</p>
+              <p class="has-text-danger" v-if="field.required && v$.editedItem[field.name].required.$invalid && v$.editedItem[field.name].$errors.length>0">This field is required</p>
+              <p class="has-text-danger" v-if="'minLength' in v$.editedItem[field.name] && v$.editedItem[field.name].minLength.$invalid">Must be at least {{v$.editedItem[field.name].minLength.$params.min}} characters long</p>
+              <p class="has-text-danger" v-if="'maxLength' in v$.editedItem[field.name] && v$.editedItem[field.name].maxLength.$invalid">Can not be more than {{v$.editedItem[field.name].maxLength.$params.max}} characters long</p>
+              <p class="has-text-danger" v-if="'minValue' in v$.editedItem[field.name] && v$.editedItem[field.name].minValue.$invalid">Value cannot be lower than {{v$.editedItem[field.name].minValue.$params.min}}</p>
+              <p class="has-text-danger" v-if="'maxValue' in v$.editedItem[field.name] && v$.editedItem[field.name].maxValue.$invalid">Value cannot be higher than {{v$.editedItem[field.name].maxValue.$params.max}}</p>
+              <p class="has-text-danger" v-if="'regex' in v$.editedItem[field.name] && v$.editedItem[field.name].regex.$invalid">{{v$.editedItem[field.name].regex.$params.description}}</p>
+              <p class="has-text-danger" v-if="'notIn' in v$.editedItem[field.name] && v$.editedItem[field.name].notIn.$invalid">{{v$.editedItem[field.name].notIn.$params.description}}</p>
+              <p class="has-text-danger" v-if="'in' in v$.editedItem[field.name] && v$.editedItem[field.name].in.$invalid">{{v$.editedItem[field.name].in.$params.description}}</p>
 
           </div>
         </BulmaModal>
@@ -168,15 +168,14 @@
 <script>
     import Vue from 'vue'
     import BulmaModal from './BulmaModal.vue'
-    import Vuelidate from 'vuelidate'
     import BulmaAdvancedSelect from './BulmaAdvancedSelect'
     import Helpers from './../lib/Helpers.js'
     import BulmaCheckRadio from './BulmaCheckRadio'
     import DatePicker from 'vue2-datepicker';
-   import 'vue2-datepicker/index.css';    
-    import { required,minValue,maxValue,minLength,maxLength, helpers,requiredIf } from 'vuelidate/lib/validators'
+    import 'vue2-datepicker/index.css';    
+    import { useVuelidate } from '@vuelidate/core'
+    import { minValue,maxValue,minLength,maxLength, helpers,requiredIf } from '@vuelidate/validators'
 
-    Vue.use(Vuelidate)
     export default{
         name:'BulmaEditTable',
         components:{BulmaModal,BulmaAdvancedSelect,BulmaCheckRadio,DatePicker},
@@ -213,6 +212,9 @@
             insertColumns:{type: Array},
             hasError:{type: Boolean}
         },
+        setup(){
+          return { v$: useVuelidate() }
+        },
         data: function(){
             return {
                 sort: {
@@ -238,9 +240,26 @@
             var attrs = {}
             var regexObj
             var description
-            attrs.required=requiredIf(function(){
-              return !!ff.required
-            })
+            // required validation for simple fields
+            if(ff.type!='checkbox' && ff.type!='enum'){
+              attrs.required=requiredIf(function(){
+                return !!ff.required
+              })
+            }
+            // required validation for expression field
+            if((ff.type=="enum") && ff.required){
+              attrs.required=helpers.withParams(
+                  {description: "This field is required"},
+                  (value) => (value!=undefined && value!=null && value!='__auto__' && value!='__none__' && value!='__all__')
+              )
+            }
+            // required validation for checkbox (MUST be true)
+            if(ff.type=='checkbox' && ff.required){
+              attrs.required=helpers.withParams(
+                  {description: "This field is required"},
+                  (value) => (value==true)
+              )
+            }        
             if("minValue" in ff){ attrs.minValue=minValue(ff.minValue)}
             if("maxValue" in ff){ attrs.maxValue=maxValue(ff.maxValue)}
             if("minLength" in ff){ attrs.minLength=minLength(ff.minLength)}
@@ -395,6 +414,7 @@
             },
             saveItem:function(){
               var ref=this
+              this.v$.editedItem.$touch()
               this.tableFields.forEach((item)=>{
                 if(item.type=="query" || item.type=="enum"){
                   if(!item.outputObject){
@@ -407,7 +427,7 @@
                   }
                 }
               })
-              if(!this.$v.editedItem.$invalid){
+              if(!this.v$.editedItem.$invalid){
                 if(this.action=="Add"){
                   if(this.insert_marker){
                     Vue.set(this.editedItem,this.insert_marker,true)

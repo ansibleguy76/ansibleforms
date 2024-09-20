@@ -5,8 +5,8 @@
         <div class="columns is-centered is-vcentered vh-90">
           <div class="column is-6-tablet is-6-desktop is-4-widescreen">
             <div class="box">
-              <BulmaInput icon="user" focus="true" v-model="user.username" label="Username" placeholder="Username" :required="true" :hasError="$v.user.username.$invalid" :errors="[]" />
-              <BulmaInput icon="lock" v-model="user.password" @enterClicked="login()" label="Password" type="password" placeholder="***********" :required="true" :hasError="$v.user.password.$invalid" :errors="[]" />
+              <BulmaInput icon="user" focus="true" v-model="user.username" label="Username" placeholder="Username" :required="true" :hasError="v$.user.username.$invalid" :errors="[]" />
+              <BulmaInput icon="lock" v-model="user.password" @enterClicked="login()" label="Password" type="password" placeholder="***********" :required="true" :hasError="v$.user.password.$invalid" :errors="[]" />
               <div class="field">
                 <button class="button is-light mr-1" @click="login()">
                   <span class="icon has-text-info"><font-awesome-icon icon="right-to-bracket" /></span><span>Login</span>
@@ -30,18 +30,19 @@
 </template>
 
 <script>
-  import Vue from 'vue'
-  import Vuelidate from 'vuelidate'
   import BulmaInput from './../components/BulmaInput.vue'
   import TokenStorage from './../lib/TokenStorage'
-  import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
+  import { useVuelidate } from '@vuelidate/core'
+  import { required } from '@vuelidate/validators'
   import axios from 'axios'
   import jwt from 'jsonwebtoken'
-  Vue.use(Vuelidate)
-
+  
   export default {
       components:{BulmaInput},
       name: 'AfLogin',
+      setup(){
+        return { v$: useVuelidate() }
+      },
       data() {
           return {
               loading:false,
@@ -159,7 +160,7 @@
         login() {
           var ref=this
           localStorage.removeItem("authIssuer") // remove cookie, regular login
-          if (!this.$v.user.$invalid) {
+          if (!this.v$.user.$invalid) {
             console.log("Logging in")
             var basicAuth = 'Basic ' + new Buffer(this.user.username + ':' + this.user.password).toString('base64')
             var postconfig={

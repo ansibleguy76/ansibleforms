@@ -23,7 +23,7 @@
             </div>
             <transition name="add-column" appear>
               <div class="column" v-if="!showDelete">
-                <BulmaInput icon="server" v-model="host" label="Known hosts" placeholder="github.com,bitbucket.com,172.16.0.1,..." :required="true" :hasError="$v.host.$invalid" :errors="[]" />
+                <BulmaInput icon="server" v-model="host" label="Known hosts" placeholder="github.com,bitbucket.com,172.16.0.1,..." :required="true" :hasError="v$.host.$invalid" :errors="[]" />
                 <BulmaButton v-if="!loading" icon="server" label="Add to known hosts" @click="addHost()"></BulmaButton>
               </div>
             </transition>
@@ -40,9 +40,8 @@
   </section>
 </template>
 <script>
-  import Vue from 'vue'
+
   import axios from 'axios'
-  import Vuelidate from 'vuelidate'
   import BulmaButton from '../components/BulmaButton.vue'
   import BulmaInput from '../components/BulmaInput.vue'
   import BulmaAdminTable from '../components/BulmaAdminTable.vue'
@@ -50,9 +49,9 @@
   import _ from 'lodash'
   import BulmaSettingsMenu from '../components/BulmaSettingsMenu.vue'
   import TokenStorage from '../lib/TokenStorage'
-  import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
+  import { useVuelidate } from '@vuelidate/core'
+  import { required, helpers } from '@vuelidate/validators'
   const gitclone = helpers.regex("gitclone",/^git clone --quiet .+$/g)
-  Vue.use(Vuelidate)
 
   export default{
     name: "AfKnownHosts",
@@ -61,6 +60,9 @@
       isAdmin:{type:Boolean}
     },
     components:{BulmaButton,BulmaInput,BulmaModal,BulmaAdminTable,BulmaSettingsMenu},
+    setup(){
+      return { v$: useVuelidate() }
+    },
     data(){
       return  {
           loading:false,
@@ -129,7 +131,7 @@
       },
       addHost(){
         var ref= this;
-        if (!this.$v.host.$invalid) {
+        if (!this.v$.host.$invalid) {
           this.loading=true
           var host=this.host
           axios.post(`${process.env.BASE_URL}api/v1/knownhosts/`,{host},TokenStorage.getAuthentication())

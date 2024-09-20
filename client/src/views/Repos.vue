@@ -44,12 +44,12 @@
             </div>
             <transition name="add-column" appear>
               <div class="column" v-if="repositoryItem!==undefined && !showDelete">
-                <BulmaInput icon="heading" v-model="repository.name" label="Name" placeholder="my_repo_name" :readonly="repositoryItem!==-1" :required="true" :hasError="$v.repository.name.$invalid" :errors="[]" help="Alphanumeric with dash and hyphen" />
-                <BulmaInput icon="user" v-model="repository.user" label="Username" placeholder="my-user" :hasError="$v.repository.user.$invalid" :errors="[]" help="Alphnumeric with hyphen" />
+                <BulmaInput icon="heading" v-model="repository.name" label="Name" placeholder="my_repo_name" :readonly="repositoryItem!==-1" :required="true" :hasError="v$.repository.name.$invalid" :errors="[]" help="Alphanumeric with dash and hyphen" />
+                <BulmaInput icon="user" v-model="repository.user" label="Username" placeholder="my-user" :hasError="v$.repository.user.$invalid" :errors="[]" help="Alphnumeric with hyphen" />
                 <BulmaInput icon="lock" v-model="repository.password" type="password" label="Password" placeholder="Password or Token" />
-                <BulmaInput :icon="['fab','git']" v-model="repository.uri" label="Uri" placeholder="https://github.com/account/repo.git" :required="true" :hasError="$v.repository.uri.$invalid" :errors="[]" help="Only ssh or https uri's are allowed" />
-                <BulmaInput icon="stopwatch" v-model="repository.cron" label="Cron Schedule" placeholder="*/5 * L * 1,3L" :hasError="$v.repository.cron.$invalid" :errors="[]" help="Minute Hour DayOfMonth Month DayOfWeek" />
-                <BulmaInput icon="info-circle" v-model="repository.description" label="Description" placeholder="Description" :required="true" :hasError="$v.repository.description.$invalid" :errors="[]" />
+                <BulmaInput :icon="['fab','git']" v-model="repository.uri" label="Uri" placeholder="https://github.com/account/repo.git" :required="true" :hasError="v$.repository.uri.$invalid" :errors="[]" help="Only ssh or https uri's are allowed" />
+                <BulmaInput icon="stopwatch" v-model="repository.cron" label="Cron Schedule" placeholder="*/5 * L * 1,3L" :hasError="v$.repository.cron.$invalid" :errors="[]" help="Minute Hour DayOfMonth Month DayOfWeek" />
+                <BulmaInput icon="info-circle" v-model="repository.description" label="Description" placeholder="Description" :required="true" :hasError="v$.repository.description.$invalid" :errors="[]" />
                 <BulmaCheckbox checktype="checkbox" v-model="repository.use_for_forms" label="Use for forms ?" /><br>
                 <BulmaCheckbox checktype="checkbox" v-model="repository.use_for_playbooks" label="Use for playbooks ?" /><br>
                 <BulmaCheckbox checktype="checkbox" v-model="repository.rebase_on_start" label="Clone on app start ?" /><br><br>
@@ -66,7 +66,6 @@
 <script>
   import Vue from 'vue'
   import axios from 'axios'
-  import Vuelidate from 'vuelidate'
   import BulmaButton from './../components/BulmaButton.vue'
   import BulmaAdminTable from './../components/BulmaAdminTable.vue'
   import BulmaInput from './../components/BulmaInput.vue'
@@ -76,9 +75,9 @@
   import BulmaQuickView from './../components/BulmaQuickView.vue'
   // import BulmaSelect from './../components/BulmaSelect.vue'
   import TokenStorage from './../lib/TokenStorage'
-  import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs,numeric } from 'vuelidate/lib/validators'
+  import { useVuelidate } from '@vuelidate/core'
+  import { required, helpers } from '@vuelidate/validators'
 
-  Vue.use(Vuelidate)
   export default{
     name:"AfRepositories",
     props:{
@@ -86,6 +85,9 @@
       isAdmin:{type:Boolean}
     },
     components:{BulmaButton,BulmaInput,BulmaModal,BulmaQuickView,BulmaAdminTable,BulmaCheckbox,BulmaSettingsMenu},
+    setup(){
+      return { v$: useVuelidate() }
+    },
     data(){
       return  {
           repository:{
@@ -210,7 +212,7 @@
           };
       },updateRepository(){
         var ref= this;
-        if (!this.$v.repository.$invalid) {
+        if (!this.v$.repository.$invalid) {
           // clone the selected item
           var postdata = JSON.parse(JSON.stringify(this.repository))
           // and remove status data
@@ -233,7 +235,7 @@
         }
       },newRepository(){
         var ref= this;
-        if (!this.$v.repository.$invalid) {
+        if (!this.v$.repository.$invalid) {
           axios.post(`${process.env.BASE_URL}api/v1/repository/`,this.repository,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){

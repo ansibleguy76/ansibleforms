@@ -18,14 +18,14 @@
             <div class="column">
               <BulmaCheckbox checktype="checkbox" v-model="ldap.enable" label="Enable Ldap" /> <BulmaCheckbox v-if="ldap.enable" checktype="checkbox" v-model="ldap.enable_tls" label="Enable Tls" /> <BulmaCheckbox v-if="ldap.enable" checktype="checkbox" v-model="ldap.is_advanced" label="Advanced settings" />
               <div>
-                <BulmaInput :disabled="!ldap.enable" icon="server" v-model="ldap.server" label="Server" placeholder="ldap.domain.local" :required="true" :hasError="$v.ldap.server.$invalid" :errors="[]" />
-                <BulmaInput :disabled="!ldap.enable" icon="arrows-alt-v" type="number" v-model="ldap.port" label="Port" placeholder="389" :required="true" :hasError="$v.ldap.port.$invalid" :errors="[]" />
-                <BulmaInput :disabled="!ldap.enable" icon="search" v-model="ldap.search_base" label="Search Base" placeholder="dc=domain,dc=local" :required="true" :hasError="$v.ldap.search_base.$invalid" :errors="[]" />
-                <BulmaInput :disabled="!ldap.enable" icon="user" v-model="ldap.bind_user_dn" label="Bind User distinguished name" placeholder="Bind User distinguished name" :required="true" :hasError="$v.ldap.bind_user_dn.$invalid" :errors="[]" />
-                <BulmaInput :disabled="!ldap.enable" icon="lock" v-model="ldap.bind_user_pw" type="password" label="Bind User Password" placeholder="" :required="true" :hasError="$v.ldap.bind_user_pw.$invalid" :errors="[]" />
-                <BulmaInput :disabled="!ldap.enable" icon="portrait" v-model="ldap.username_attribute" label="Username Attribute" placeholder="sAMAccountName" :required="true" :hasError="$v.ldap.username_attribute.$invalid" :errors="[]" />
-                <BulmaInput :disabled="!ldap.enable" icon="users" v-model="ldap.groups_attribute" label="Groups Attribute" placeholder="memberOf" :required="true" :hasError="$v.ldap.groups_attribute.$invalid" :errors="[]" />
-                <BulmaInput :disabled="!ldap.enable" icon="envelope" v-model="ldap.mail_attribute" label="Mail Attribute" placeholder="mail" :required="true" :hasError="$v.ldap.mail_attribute.$invalid" :errors="[]" />
+                <BulmaInput :disabled="!ldap.enable" icon="server" v-model="ldap.server" label="Server" placeholder="ldap.domain.local" :required="true" :hasError="v$.ldap.server.$invalid" :errors="[]" />
+                <BulmaInput :disabled="!ldap.enable" icon="arrows-alt-v" type="number" v-model="ldap.port" label="Port" placeholder="389" :required="true" :hasError="v$.ldap.port.$invalid" :errors="[]" />
+                <BulmaInput :disabled="!ldap.enable" icon="search" v-model="ldap.search_base" label="Search Base" placeholder="dc=domain,dc=local" :required="true" :hasError="v$.ldap.search_base.$invalid" :errors="[]" />
+                <BulmaInput :disabled="!ldap.enable" icon="user" v-model="ldap.bind_user_dn" label="Bind User distinguished name" placeholder="Bind User distinguished name" :required="true" :hasError="v$.ldap.bind_user_dn.$invalid" :errors="[]" />
+                <BulmaInput :disabled="!ldap.enable" icon="lock" v-model="ldap.bind_user_pw" type="password" label="Bind User Password" placeholder="" :required="true" :hasError="v$.ldap.bind_user_pw.$invalid" :errors="[]" />
+                <BulmaInput :disabled="!ldap.enable" icon="portrait" v-model="ldap.username_attribute" label="Username Attribute" placeholder="sAMAccountName" :required="true" :hasError="v$.ldap.username_attribute.$invalid" :errors="[]" />
+                <BulmaInput :disabled="!ldap.enable" icon="users" v-model="ldap.groups_attribute" label="Groups Attribute" placeholder="memberOf" :required="true" :hasError="v$.ldap.groups_attribute.$invalid" :errors="[]" />
+                <BulmaInput :disabled="!ldap.enable" icon="envelope" v-model="ldap.mail_attribute" label="Mail Attribute" placeholder="mail" :required="true" :hasError="v$.ldap.mail_attribute.$invalid" :errors="[]" />
                 <BulmaInput v-show="ldap.is_advanced && ldap.enable" :disabled="!ldap.enable" icon="users-viewfinder" v-model="ldap.groups_search_base" label="Groups Search Base" placeholder="dc=domain,dc=local" />
                 <BulmaInput v-show="ldap.is_advanced && ldap.enable" :disabled="!ldap.enable" icon="users-rectangle" v-model="ldap.group_class" label="Group Class" placeholder="groupOfNames" />
                 <BulmaInput v-show="ldap.is_advanced && ldap.enable" :disabled="!ldap.enable" icon="users-line" v-model="ldap.group_member_attribute" label="Group Member Attribute" placeholder="memberUid" />
@@ -34,8 +34,8 @@
             </div>
             <div v-if="ldap.enable_tls && ldap.enable" class="column">
               <BulmaCheckbox checktype="checkbox" v-model="ldap.ignore_certs" label="Ignore Certificate Errors" />
-              <BulmaTextArea v-if="!ldap.ignore_certs" v-model="ldap.cert" label="Ldap Certificate" placeholder="-----BEGIN CERTIFICATE-----" :hasError="$v.ldap.cert.$invalid" :errors="[]" />
-              <BulmaTextArea v-if="!ldap.ignore_certs" v-model="ldap.ca_bundle" label="Ca Bundle" placeholder="-----BEGIN CERTIFICATE-----" :hasError="$v.ldap.ca_bundle.$invalid" :errors="[]" />
+              <BulmaTextArea v-if="!ldap.ignore_certs" v-model="ldap.cert" label="Ldap Certificate" placeholder="-----BEGIN CERTIFICATE-----" :hasError="v$.ldap.cert.$invalid" :errors="[]" />
+              <BulmaTextArea v-if="!ldap.ignore_certs" v-model="ldap.ca_bundle" label="Ca Bundle" placeholder="-----BEGIN CERTIFICATE-----" :hasError="v$.ldap.ca_bundle.$invalid" :errors="[]" />
             </div>
           </div>
         </div>
@@ -44,18 +44,15 @@
   </section>
 </template>
 <script>
-  import Vue from 'vue'
   import axios from 'axios'
-  import Vuelidate from 'vuelidate'
   import BulmaButton from './../components/BulmaButton.vue'
   import BulmaInput from './../components/BulmaInput.vue'
   import BulmaCheckbox from './../components/BulmaCheckRadio.vue'
   import BulmaTextArea from './../components/BulmaTextArea.vue'
   import BulmaSettingsMenu from '../components/BulmaSettingsMenu.vue'
   import TokenStorage from './../lib/TokenStorage'
-  import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
-
-  Vue.use(Vuelidate)
+  import { useVuelidate } from '@vuelidate/core'
+  import { required, requiredIf } from '@vuelidate/validators'
 
   export default{
     name: "AfLdap",
@@ -64,6 +61,9 @@
       isAdmin:{type:Boolean}
     },
     components:{BulmaButton,BulmaInput,BulmaCheckbox,BulmaTextArea,BulmaSettingsMenu},
+    setup(){
+      return { v$: useVuelidate() }
+    },
     data(){
       return  {
           ldap:{
@@ -99,7 +99,7 @@
           };
       },updateLdap(){
         var ref= this;
-        if (!this.$v.ldap.$invalid) {
+        if (!this.v$.ldap.$invalid) {
           axios.put(`${process.env.BASE_URL}api/v1/ldap/`,this.ldap,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){

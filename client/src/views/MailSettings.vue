@@ -18,8 +18,8 @@
             <h3 class="subtitle"><font-awesome-icon icon="envelope" /> <span class="mr-3">Mail Settings</span><BulmaCheckbox checktype="checkbox" v-model="settings.mail_secure" label="Enable Tls" /><BulmaCheckbox checktype="checkbox" v-model="test.enabled" label="Test Mail" /></h3>
             <div class="columns">
               <div class="column">
-                <BulmaInput icon="server" v-model="settings.mail_server" label="Server" placeholder="mail_domain.local" :required="true" :hasError="$v.settings.mail_server.$invalid" :errors="[]" />
-                <BulmaInput icon="arrows-alt-v" type="number" v-model="settings.mail_port" label="Port" placeholder="25" :required="true" :hasError="$v.settings.mail_port.$invalid" :errors="[]" />
+                <BulmaInput icon="server" v-model="settings.mail_server" label="Server" placeholder="mail_domain.local" :required="true" :hasError="v$.settings.mail_server.$invalid" :errors="[]" />
+                <BulmaInput icon="arrows-alt-v" type="number" v-model="settings.mail_port" label="Port" placeholder="25" :required="true" :hasError="v$.settings.mail_port.$invalid" :errors="[]" />
               </div>
               <div class="column">
                 <BulmaInput icon="user" v-model="settings.mail_username" label="Username" placeholder="username" :required="false" :hasError="false" :errors="[]" />
@@ -27,8 +27,8 @@
 
               </div>
               <div class="column">
-                <BulmaInput icon="envelope" v-model="settings.mail_from" type="email" label="Mail from" placeholder="" :required="true" :hasError="$v.settings.mail_from.$invalid" :errors="[]" />
-                <BulmaInput v-if="test.enabled" icon="envelope" v-model="test.to" type="email" label="Mail to" placeholder="" :required="true" :hasError="$v.test.to.$invalid" :errors="[]" />
+                <BulmaInput icon="envelope" v-model="settings.mail_from" type="email" label="Mail from" placeholder="" :required="true" :hasError="v$.settings.mail_from.$invalid" :errors="[{if:v$.settings.mail_from.email.$invalid,label:v$.settings.mail_from.email.$message}]" />
+                <BulmaInput v-if="test.enabled" icon="envelope" v-model="test.to" type="email" label="Mail to" placeholder="" :required="true" :hasError="v$.test.to.$invalid" :errors="[{if:v$.test.to.email.$invalid,label:v$.test.to.email.$message}]" />
                 <BulmaButton v-if="test.enabled" icon="check" label="Test Mail Settings" @click="testMail()"></BulmaButton>
               </div>
             </div>
@@ -41,17 +41,14 @@
   </section>
 </template>
 <script>
-  import Vue from 'vue'
   import axios from 'axios'
-  import Vuelidate from 'vuelidate'
   import BulmaButton from '../components/BulmaButton.vue'
   import BulmaInput from '../components/BulmaInput.vue'
   import BulmaCheckbox from '../components/BulmaCheckRadio.vue'
   import BulmaSettingsMenu from '../components/BulmaSettingsMenu.vue'
   import TokenStorage from '../lib/TokenStorage'
-  import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
-
-  Vue.use(Vuelidate)
+  import { useVuelidate } from '@vuelidate/core'
+  import { required, email } from '@vuelidate/validators'
 
   export default{
     name: "AfMailSettings",
@@ -60,6 +57,9 @@
       isAdmin:{type:Boolean}
     },
     components:{BulmaButton,BulmaInput,BulmaCheckbox,BulmaSettingsMenu},
+    setup(){
+      return { v$: useVuelidate() }
+    },
     data(){
       return  {
           settings:{
@@ -87,7 +87,7 @@
           };
       },updateSettings(){
         var ref= this;
-        if (!this.$v.settings.$invalid) {
+        if (!this.v$.settings.$invalid) {
           axios.put(`${process.env.BASE_URL}api/v1/settings/`,this.settings,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
@@ -105,7 +105,7 @@
       },
       testMail(){
         var ref= this;
-        if (!this.$v.settings.$invalid && !this.$v.test.$invalid) {
+        if (!this.v$.settings.$invalid && !this.v$.test.$invalid) {
           axios.post(`${process.env.BASE_URL}api/v1/settings/mailcheck/`,{...this.settings,...this.test},TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){

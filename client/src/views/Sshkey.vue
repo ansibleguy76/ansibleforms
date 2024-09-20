@@ -7,7 +7,7 @@
           <BulmaSettingsMenu />
         </div>
         <div class="column">        
-          <BulmaTextArea v-if="update" v-model="ssh.key" label="Private Key" placeholder="-----BEGIN RSA PRIVATE KEY-----" :hasError="$v.ssh.key.$invalid" :errors="[{if:$v.ssh.key.$invalid,label:'Enter a valid private key followed by a new line'}]" />
+          <BulmaTextArea v-if="update" v-model="ssh.key" label="Private Key" placeholder="-----BEGIN RSA PRIVATE KEY-----" :hasError="v$.ssh.key.$invalid" :errors="[{if:v$.ssh.key.$invalid,label:'Enter a valid private key followed by a new line'}]" />
           <div class="field"  v-if="!update">
             <label class="label">Private Key</label>
             <p @click="update=true"  class="box is-clickable is-family-monospace enable-line-break is-size-7">{{ ssh.art }}</p>
@@ -25,18 +25,15 @@
   </section>
 </template>
 <script>
-  import Vue from 'vue'
   import axios from 'axios'
-  import Vuelidate from 'vuelidate'
   import Copy from 'copy-to-clipboard'
   import BulmaButton from './../components/BulmaButton.vue'
   import BulmaTextArea from './../components/BulmaTextArea.vue'
   import BulmaSettingsMenu from '../components/BulmaSettingsMenu.vue'
   import TokenStorage from './../lib/TokenStorage'
-  import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
-  const privatekey = helpers.regex("privatekey",/^-----BEGIN ([A-Z ]+ PRIVATE KEY)-----\r?\n([^-]+)\r?\n-----END \1-----\r?\n$/gm)
-  Vue.use(Vuelidate)
-
+  import { useVuelidate } from '@vuelidate/core'
+  import { required, helpers } from '@vuelidate/validators'
+  
   export default{
     name: "AfSshkey",
     props:{
@@ -44,6 +41,9 @@
       isAdmin:{type:Boolean}
     },
     components:{BulmaButton,BulmaTextArea,BulmaSettingsMenu},
+    setup(){
+      return { v$: useVuelidate() }
+    },
     data(){
       return  {
           update:false,
@@ -77,7 +77,7 @@
           };
       },updateSsh(){
         var ref= this;
-        if (!this.$v.ssh.$invalid) {
+        if (!this.v$.ssh.$invalid) {
           axios.put(`${process.env.BASE_URL}api/v1/sshkey/`,this.ssh,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
@@ -96,11 +96,13 @@
         }
       }
     },
-    validations: {
-      ssh:{
-        key: {
-          required,
-          privatekey
+    validations() {
+      return {
+        ssh: {
+          key: {
+            required,
+            privatekey: helpers.regex(/^-----BEGIN ([A-Z ]+ PRIVATE KEY)-----\r?\n([^-]+)\r?\n-----END \1-----\r?\n$/gm)
+          }
         }
       }
     },
