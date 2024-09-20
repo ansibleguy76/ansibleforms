@@ -17,9 +17,9 @@
             <div class="column">
               <BulmaCheckbox checktype="checkbox" v-model="oidc.enabled" label="Enable OIDC" />
               <div class="mt-2">
-                <BulmaInput :disabled="!oidc.enabled" icon="id-card" v-model="oidc.issuer" label="Issuer URL" placeholder="" :required="true" :hasError="$v.oidc.issuer.$invalid" :errors="[]" />
-                <BulmaInput :disabled="!oidc.enabled" icon="user-tag" v-model="oidc.client_id" label="Client Id" placeholder="" :required="true" :hasError="$v.oidc.client_id.$invalid" :errors="[]" />
-                <BulmaInput :disabled="!oidc.enabled" icon="user-secret" v-model="oidc.secret_id" type="password" label="Secret Id" placeholder="" :required="true" :hasError="$v.oidc.secret_id.$invalid" :errors="[]" />
+                <BulmaInput :disabled="!oidc.enabled" icon="id-card" v-model="oidc.issuer" label="Issuer URL" placeholder="" :required="true" :hasError="v$.oidc.issuer.$invalid" :errors="[]" />
+                <BulmaInput :disabled="!oidc.enabled" icon="user-tag" v-model="oidc.client_id" label="Client Id" placeholder="" :required="true" :hasError="v$.oidc.client_id.$invalid" :errors="[]" />
+                <BulmaInput :disabled="!oidc.enabled" icon="user-secret" v-model="oidc.secret_id" type="password" label="Secret Id" placeholder="" :required="true" :hasError="v$.oidc.secret_id.$invalid" :errors="[]" />
                 <BulmaInput :disabled="!oidc.enabled" icon="filter" v-model="oidc.groupfilter" label="Groupname Regex" placeholder="A regular expression to match groups" :required="false" :errors="[]" />
                 <div class="notification is-info-light content">
                   <p><strong>Callback Url </strong>: {{ callbackUrl }} <span v-if="!settings.url" class="tag is-danger"><font-awesome-icon icon="circle-exclamation" class="mr-1" /> You have not set the Ansible Form Url (see: 'General > Ansible Forms' settings page)</span></p>
@@ -35,17 +35,14 @@
   </section>
 </template>
 <script>
-  import Vue from 'vue'
   import axios from 'axios'
-  import Vuelidate from 'vuelidate'
   import BulmaButton from '../components/BulmaButton.vue'
   import BulmaInput from '../components/BulmaInput.vue'
   import BulmaCheckbox from '../components/BulmaCheckRadio.vue'
   import TokenStorage from '../lib/TokenStorage'
   import BulmaSettingsMenu from '../components/BulmaSettingsMenu.vue'
-  import { requiredIf } from 'vuelidate/lib/validators'
-
-  Vue.use(Vuelidate)
+  import { useVuelidate } from '@vuelidate/core'
+  import { requiredIf } from '@vuelidate/validators'
 
   export default{
     name: "AfOidc",
@@ -54,6 +51,9 @@
       isAdmin:{type:Boolean}
     },
     components:{BulmaButton,BulmaInput,BulmaCheckbox,BulmaSettingsMenu},
+    setup(){
+      return { v$: useVuelidate() }
+    },
     data(){
       return  {
           oidc:{
@@ -93,7 +93,7 @@
           };
       },updateOidc(){
         var ref= this;
-        if (!this.$v.oidc.$invalid) {
+        if (!this.v$.oidc.$invalid) {
           axios.put(`${process.env.BASE_URL}api/v1/oidc/`,this.oidc,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){

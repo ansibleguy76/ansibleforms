@@ -128,7 +128,7 @@
                             <!-- copy -->
                             <span
                               class="icon is-clickable has-text-info"
-                              @click="clip((field.type=='expression')?$v.form[field.name].$model:queryresults[field.name])"
+                              @click="clip((field.type=='expression')?v$.form[field.name].$model:queryresults[field.name])"
                               v-if="field.expression && fieldOptions[field.name].viewable && !fieldOptions[field.name].editable"
                             >
                               <font-awesome-icon icon="copy" />
@@ -164,10 +164,10 @@
                         <!-- START FIELD BUILD -->
                         <!-- type = checkbox -->
                         <div v-if="field.type=='checkbox'">
-                          <BulmaCheckRadio checktype="checkbox" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="field.placeholder" @change="evaluateDynamicFields(field.name)" />
+                          <BulmaCheckRadio checktype="checkbox" v-model="v$.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':v$.form[field.name].$invalid}" :label="field.placeholder" @change="evaluateDynamicFields(field.name)" />
                         </div>
                         <!-- type = html -->
-                        <div class="mt-3" v-if="field.type=='html'" v-html="$v.form[field.name].$model || ''"></div>
+                        <div class="mt-3" v-if="field.type=='html'" v-html="v$.form[field.name].$model || ''"></div>
                         <!-- type = enum/query -->
                         <div v-if="field.type=='query' || field.type=='enum'">
                           <BulmaAdvancedSelect
@@ -179,9 +179,9 @@
                             :name="field.name"
                             :placeholder="field.placeholder||'Select...'"
                             :values="field.values||queryresults[field.name]||[]"
-                            :hasError="$v.form[field.name].$invalid"
+                            :hasError="v$.form[field.name].$invalid"
                             :isLoading="!field.values && !['fixed','variable'].includes(dynamicFieldStatus[field.name])"
-                            v-model="$v.form[field.name].$model"
+                            v-model="v$.form[field.name].$model"
                             :icon="field.icon"
                             :columns="field.columns||[]"
                             :pctColumns="field.pctColumns||[]"
@@ -204,7 +204,7 @@
                         </div>
                         <!-- type = radio -->
                         <div v-if="field.type=='radio'" >
-                          <BulmaCheckRadio :val="(typeof radiovalue=='string')?radiovalue:radiovalue.value" checktype="radio" v-for="radiovalue in field.values" :key="field.name+'_'+((typeof radiovalue=='string')?radiovalue:radiovalue.value)" v-model="$v.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':$v.form[field.name].$invalid}" :label="(typeof radiovalue=='string')?radiovalue:radiovalue.label"  @change="evaluateDynamicFields(field.name)" />
+                          <BulmaCheckRadio :val="(typeof radiovalue=='string')?radiovalue:radiovalue.value" checktype="radio" v-for="radiovalue in field.values" :key="field.name+'_'+((typeof radiovalue=='string')?radiovalue:radiovalue.value)" v-model="v$.form[field.name].$model" :name="field.name" :type="{'is-danger is-block':v$.form[field.name].$invalid}" :label="(typeof radiovalue=='string')?radiovalue:radiovalue.label"  @change="evaluateDynamicFields(field.name)" />
                         </div>
                         <!-- type = table -->
                         <div v-if="field.type=='table'">
@@ -213,7 +213,7 @@
                             :dynamicFieldStatus="dynamicFieldStatus"
                             :form="form"
                             :tableFields="field.tableFields"
-                            :hasError="$v.form[field.name].$invalid"
+                            :hasError="v$.form[field.name].$invalid"
                             :click="false"
                             tableClass="table is-striped is-bordered is-narrow"
                             :allowInsert="field.allowInsert && true"
@@ -226,29 +226,29 @@
                             :values="form[field.name]||[]"
                             @input="evaluateDynamicFields(field.name)"
                             @warning="addTableWarnings(field.name,...arguments)"
-                            v-model="$v.form[field.name].$model" />
+                            v-model="v$.form[field.name].$model" />
                           <!-- raw table data -->
                           <div
                             @dblclick="setExpressionFieldViewable(field.name,false)"
                             v-if="fieldOptions[field.name].viewable"
                             class="box limit-height is-limited mb-3">
-                            <vue-json-pretty :data="$v.form[field.name].$model"></vue-json-pretty>
+                            <vue-json-pretty :data="v$.form[field.name].$model"></vue-json-pretty>
                           </div>
                         </div>
                         <date-picker v-if="field.type=='datetime'"
                             :type="field.dateType"
                             value-type="format"
-                            v-model="$v.form[field.name].$model"
+                            v-model="v$.form[field.name].$model"
                             @change="evaluateDynamicFields(field.name)"
                         >
                               <template #input>
                                 <div :class="{'has-icons-left':!!field.icon}" class="control">
                                   <input 
                                     @focus="inputFocus"
-                                    :class="{'is-danger':$v.form[field.name].$invalid}"
+                                    :class="{'is-danger':v$.form[field.name].$invalid}"
                                     class="input"
                                     :name="field.name"
-                                    v-model="$v.form[field.name].$model"
+                                    v-model="v$.form[field.name].$model"
                                     @change="evaluateDynamicFields(field.name)"
                                     :required="field.required"
                                     type="text"
@@ -268,7 +268,7 @@
                                 type="file" 
                                 :name="field.name" 
                                 @change="handleFiles($event.target.name, $event.target.files)"
-                                :class="{'is-danger':$v.form[field.name].$invalid}"
+                                :class="{'is-danger':v$.form[field.name].$invalid}"
                               >
                               <span class="file-cta">
                                 <span class="file-icon">
@@ -278,8 +278,8 @@
                                   {{ field.placeholder || 'Choose a file...' }}
                                 </span>
                               </span>
-                              <span v-if="$v.form[field.name].$model" class="file-name">
-                                {{ $v.form[field.name].$model.name }}
+                              <span v-if="v$.form[field.name].$model" class="file-name">
+                                {{ v$.form[field.name].$model.name }}
                               </span>
                               <span v-else class="file-name">
                                 No file chosen
@@ -298,29 +298,29 @@
                             <div v-if="!fieldOptions[field.name].viewable">
                               <input v-if="fieldOptions[field.name].editable" type="text"
                                 @focus="inputFocus"
-                                :class="{'is-danger':$v.form[field.name].$invalid,'has-text-info':!fieldOptions[field.name].editable}"
-                                v-model="$v.form[field.name].$model"
+                                :class="{'is-danger':v$.form[field.name].$invalid,'has-text-info':!fieldOptions[field.name].editable}"
+                                v-model="v$.form[field.name].$model"
                                 class="input"
                                 :name="field.name"
                                 :required="field.required"
                                 @change="evaluateDynamicFields(field.name)"
                                 >
-                              <p @dblclick="setExpressionFieldViewable(field.name,true)" v-if="!fieldOptions[field.name].editable && !field.isHtml" class="input has-text-info" :class="{'is-danger':$v.form[field.name].$invalid}" v-text="stringify($v.form[field.name].$model)"></p>
-                              <p @dblclick="setExpressionFieldViewable(field.name,true)" v-if="!fieldOptions[field.name].editable && field.isHtml" class="input has-text-info" :class="{'is-danger':$v.form[field.name].$invalid}" v-html="stringify($v.form[field.name].$model)"></p>
+                              <p @dblclick="setExpressionFieldViewable(field.name,true)" v-if="!fieldOptions[field.name].editable && !field.isHtml" class="input has-text-info" :class="{'is-danger':v$.form[field.name].$invalid}" v-text="stringify(v$.form[field.name].$model)"></p>
+                              <p @dblclick="setExpressionFieldViewable(field.name,true)" v-if="!fieldOptions[field.name].editable && field.isHtml" class="input has-text-info" :class="{'is-danger':v$.form[field.name].$invalid}" v-html="stringify(v$.form[field.name].$model)"></p>
                             </div>
                             <!-- expression raw data -->
                             <div
                               @dblclick="setExpressionFieldViewable(field.name,false)"
                               v-else
                               class="box limit-height is-limited mb-3">
-                              <vue-json-pretty :data="$v.form[field.name].$model"></vue-json-pretty>
+                              <vue-json-pretty :data="v$.form[field.name].$model"></vue-json-pretty>
                             </div>
                           </div>
                           <!-- type = text or password-->
                           <input v-if="field.type=='text' || field.type=='password'"
                             @focus="inputFocus"
-                            :class="{'is-danger':$v.form[field.name].$invalid}"
-                            v-model="$v.form[field.name].$model"
+                            :class="{'is-danger':v$.form[field.name].$invalid}"
+                            v-model="v$.form[field.name].$model"
                             class="input" :name="field.name"
                             v-bind="field.attrs"
                             :required="field.required"
@@ -332,8 +332,8 @@
                           <!-- type = textarea-->
                           <textarea v-if="field.type=='textarea'"
                             @focus="inputFocus"
-                            :class="{'is-danger':$v.form[field.name].$invalid}"
-                            v-model="$v.form[field.name].$model"
+                            :class="{'is-danger':v$.form[field.name].$invalid}"
+                            v-model="v$.form[field.name].$model"
                             class="textarea" :name="field.name"
                             v-bind="field.attrs"
                             :required="field.required"
@@ -343,8 +343,8 @@
                           <!-- type = number -->
                           <input v-if="field.type=='number'"
                             @focus="inputFocus"
-                            :class="{'is-danger':$v.form[field.name].$invalid}"
-                            v-model.number="$v.form[field.name].$model"
+                            :class="{'is-danger':v$.form[field.name].$invalid}"
+                            v-model.number="v$.form[field.name].$model"
                             class="input"
                             :name="field.name"
                             v-bind="field.attrs"
@@ -360,19 +360,19 @@
                         </div>
                         <!-- add help and validation alerts -->
                         <p class="help" v-if="!!field.help">{{ field.help}}</p>
-                        <p class="has-text-danger" v-if="$v.form[field.name].required==false">This field is required</p>
-                        <p class="has-text-danger" v-if="'minLength' in $v.form[field.name] && !$v.form[field.name].minLength">Must be at least {{$v.form[field.name].$params.minLength.min}} characters long</p>
-                        <p class="has-text-danger" v-if="'maxLength' in $v.form[field.name] && !$v.form[field.name].maxLength">Can not be more than {{$v.form[field.name].$params.maxLength.max}} characters long</p>
-                        <p class="has-text-danger" v-if="'minValue' in $v.form[field.name] && !$v.form[field.name].minValue">Value cannot be lower than {{$v.form[field.name].$params.minValue.min}}</p>
-                        <p class="has-text-danger" v-if="'maxValue' in $v.form[field.name] && !$v.form[field.name].maxValue">Value cannot be higher than {{$v.form[field.name].$params.maxValue.max}}</p>
-                        <p class="has-text-danger" v-if="'minSize' in $v.form[field.name] && !$v.form[field.name].minSize">{{ replacePlaceholderInString($v.form[field.name].$params.minSize.description,true).value }}</p>
-                        <p class="has-text-danger" v-if="'maxSize' in $v.form[field.name] && !$v.form[field.name].maxSize">{{ replacePlaceholderInString($v.form[field.name].$params.maxSize.description,true).value }}</p>
-                        <p class="has-text-danger" v-if="'regex' in $v.form[field.name] && !$v.form[field.name].regex">{{ replacePlaceholderInString($v.form[field.name].$params.regex.description,true).value }}</p>
-                        <p class="has-text-danger" v-if="'validIf' in $v.form[field.name] && !$v.form[field.name].validIf">{{ replacePlaceholderInString($v.form[field.name].$params.validIf.description,true).value }}</p>
-                        <p class="has-text-danger" v-if="'validIfNot' in $v.form[field.name] && !$v.form[field.name].validIfNot">{{ replacePlaceholderInString($v.form[field.name].$params.validIfNot.description,true).value }}</p>
-                        <p class="has-text-danger" v-if="'notIn' in $v.form[field.name] && !$v.form[field.name].notIn">{{ replacePlaceholderInString($v.form[field.name].$params.notIn.description,true).value }}</p>
-                        <p class="has-text-danger" v-if="'in' in $v.form[field.name] && !$v.form[field.name].in">{{ replacePlaceholderInString($v.form[field.name].$params.in.description,true).value }}</p>
-                        <p class="has-text-danger" v-if="'sameAs' in $v.form[field.name] && !$v.form[field.name].sameAs">Field must be identical to '{{$v.form[field.name].$params.sameAs.eq}}'</p>
+                        <p class="has-text-danger" v-if="field.required && v$.form[field.name].required.$invalid && v$.form[field.name].$errors.length>0">This field is required</p>
+                        <p class="has-text-danger" v-if="'minLength' in v$.form[field.name] && v$.form[field.name].minLength.$invalid">Must be at least {{ v$.form[field.name].minLength.$params.min }} characters long</p>
+                        <p class="has-text-danger" v-if="'maxLength' in v$.form[field.name] && v$.form[field.name].maxLength.$invalid">Can not be more than {{ v$.form[field.name].maxLength.$params.max }} characters long</p>
+                        <p class="has-text-danger" v-if="'minValue' in v$.form[field.name] && v$.form[field.name].minValue.$invalid">Value cannot be lower than {{ v$.form[field.name].minValue.$params.min }}</p>
+                        <p class="has-text-danger" v-if="'maxValue' in v$.form[field.name] && v$.form[field.name].maxValue.$invalid">Value cannot be higher than {{ v$.form[field.name].maxValue.$params.max }}</p>
+                        <p class="has-text-danger" v-if="'minSize' in v$.form[field.name] && v$.form[field.name].minSize.$invalid">{{ replacePlaceholderInString(v$.form[field.name].minSize.$params.description,true).value }}</p>
+                        <p class="has-text-danger" v-if="'maxSize' in v$.form[field.name] && v$.form[field.name].maxSize.$invalid">{{ replacePlaceholderInString(v$.form[field.name].maxSize.$params.description,true).value }}</p>
+                        <p class="has-text-danger" v-if="'regex' in v$.form[field.name] && v$.form[field.name].regex.$invalid">{{ replacePlaceholderInString(v$.form[field.name].regex.$params.description,true).value }}</p>
+                        <p class="has-text-danger" v-if="'validIf' in v$.form[field.name] && v$.form[field.name].validIf.$invalid">{{ replacePlaceholderInString(v$.form[field.name].validIf.$params.description,true).value }}</p>
+                        <p class="has-text-danger" v-if="'validIfNot' in v$.form[field.name] && v$.form[field.name].validIfNot.$invalid">{{ replacePlaceholderInString(v$.form[field.name].validIfNot.$params.description,true).value }}</p>
+                        <p class="has-text-danger" v-if="'notIn' in v$.form[field.name] && !v$.form[field.name].notIn.$invalid">{{ replacePlaceholderInString(v$.form[field.name].notIn.$params.description,true).value }}</p>
+                        <p class="has-text-danger" v-if="'in' in v$.form[field.name] && v$.form[field.name].in.$invalid">{{ replacePlaceholderInString(v$.form[field.name].in.$params.description,true).value }}</p>
+                        <p class="has-text-danger" v-if="'sameAs' in v$.form[field.name] && v$.form[field.name].sameAs.$invalid">{{ v$.form[field.name].sameAs.$params.description }}</p>
                       </div>
                     </div>
                   </transition>
@@ -462,7 +462,6 @@
 <script>
   import Vue from 'vue'
   import axios from 'axios'
-  import Vuelidate from 'vuelidate'
   import TokenStorage from './../lib/TokenStorage'
   import VueJsonPretty from 'vue-json-pretty';
   import BulmaAdvancedSelect from './BulmaAdvancedSelect.vue'
@@ -480,15 +479,15 @@
 
   hljs.registerLanguage('javascript', javascript);
 
-  Vue.use(vuePlugin);  
   import Helpers from './../lib/Helpers'
   import Copy from 'copy-to-clipboard'
   import 'vue-json-pretty/lib/styles.css';
   import Lodash from 'lodash'
   import VueShowdown from 'vue-showdown';
-  import { required, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
+  import { useVuelidate } from '@vuelidate/core'
+  import { minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from '@vuelidate/validators'
 
-  Vue.use(Vuelidate)
+  Vue.use(vuePlugin);  
   Vue.use(VueShowdown)
 
   export default{
@@ -498,6 +497,9 @@
       currentForm:{type:Object},
       constants:{type:Object},
       isAdmin:{type:Boolean}
+    },
+    setup(){
+      return { v$: useVuelidate() }
     },
     data(){
       return  {
@@ -653,7 +655,14 @@
           )
         }
         // field must be identical as other field
-        if("sameAs" in ff){ attrs.sameAs=sameAs(ff.sameAs)}
+        if("sameAs" in ff){ 
+          // attrs.sameAs=sameAs(self.form[ff.sameAs])
+          description = `Must match the field '${self.currentForm.fields.find((x)=>ff.sameAs==x.name).label || ff.sameAs}'`
+          attrs.sameAs = helpers.withParams(
+              {description: description,type:"sameAs"},
+              (value) => !helpers.req(value) || (self.form[ff.sameAs]!=undefined && value==self.form[ff.sameAs])
+          )
+        }
         obj.form[ff.name]=attrs
       });
       // flag validations are ready
@@ -726,7 +735,7 @@
     methods:{
       // when file selected
       handleFiles(name,files){
-        Vue.set(this.$v.form[name],'$model',files[0])
+        Vue.set(this.v$.form[name],'$model',files[0])
       },
       // used for enum field, to know the width of the container
       calcContainerSize(){
@@ -790,7 +799,7 @@
       },
       // flags expression field as editable
       setExpressionFieldEditable(fieldname,value){
-        if(typeof this.$v.form[fieldname].$model=='string' || typeof this.$v.form[fieldname].$model=='number' || this.$v.form[fieldname].$model==undefined){
+        if(typeof this.v$.form[fieldname].$model=='string' || typeof this.v$.form[fieldname].$model=='number' || this.v$.form[fieldname].$model==undefined){
           Vue.set(this.fieldOptions[fieldname],'editable',value)   // flag editable
         }else{
           this.$toast.warning("You can only edit string or number expression fields.")
@@ -893,7 +902,7 @@
             }
             // new in 4.0.13 - dependency on validated
             if(item.isValid != undefined){
-              tmp = item.isValid!=this.$v.form[fieldname].$invalid
+              tmp = item.isValid!=this.v$.form[fieldname].$invalid
               if(isAnd && ((!inversed && !tmp) || ((inversed && tmp))) ){
                 result=false
                 // console.log("and not valid")
@@ -2000,10 +2009,10 @@
         var ref=this
         var isValid=true
         // final touch to force validation
-        this.$v.form.$touch();
+        this.v$.form.$touch();
         // loop all fields and check if it valid, skip hidden fields
         this.currentForm.fields.forEach((item, i) => {
-          if(this.visibility[item.name] && this.$v.form[item.name].$invalid){
+          if(this.visibility[item.name] && this.v$.form[item.name].$invalid){
             isValid=false
           }
         })
@@ -2267,7 +2276,7 @@
           this.showHelp=true
         }
         // reset the form
-        this.$v.form.$reset();
+        this.v$.form.$reset();
         // set all defaults
         this.initiateDefaults()
         // find all variable dependencies (in both ways)

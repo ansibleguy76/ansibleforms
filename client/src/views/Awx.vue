@@ -17,14 +17,14 @@
           <div class="columns">
             <div class="column">
               <BulmaCheckbox checktype="checkbox" v-model="awx.use_credentials" label="Use Credentials" />
-              <BulmaInput icon="globe" v-model="awx.uri" label="Uri" placeholder="https://awx.domain.local" :required="true" :hasError="$v.awx.uri.$invalid" :errors="[]" />
-              <BulmaInput icon="user" v-if="awx.use_credentials" v-model="awx.username" label="Username" placeholder="Username" :required="true" :hasError="$v.awx.username.$invalid" :errors="[]" />
-              <BulmaInput icon="lock" v-if="!awx.use_credentials" type="password" v-model="awx.token" label="Token" :required="true" :hasError="$v.awx.token.$invalid" :errors="[]" />
-              <BulmaInput icon="lock" v-if="awx.use_credentials" type="password" v-model="awx.password" label="Password" :required="true" :hasError="$v.awx.password.$invalid" :errors="[]" />
+              <BulmaInput icon="globe" v-model="awx.uri" label="Uri" placeholder="https://awx.domain.local" :required="true" :hasError="v$.awx.uri.$invalid" :errors="[]" />
+              <BulmaInput icon="user" v-if="awx.use_credentials" v-model="awx.username" label="Username" placeholder="Username" :required="true" :hasError="v$.awx.username.$invalid" :errors="[]" />
+              <BulmaInput icon="lock" v-if="!awx.use_credentials" type="password" v-model="awx.token" label="Token" :required="true" :hasError="v$.awx.token.$invalid" :errors="[]" />
+              <BulmaInput icon="lock" v-if="awx.use_credentials" type="password" v-model="awx.password" label="Password" :required="true" :hasError="v$.awx.password.$invalid" :errors="[]" />
             </div>
             <div class="column">
               <BulmaCheckbox checktype="checkbox" v-model="awx.ignore_certs" label="Ignore Certificate Errors" />
-              <BulmaTextArea v-if="!awx.ignore_certs" v-model="awx.ca_bundle" label="Ca Bundle" placeholder="-----BEGIN CERTIFICATE-----" :hasError="$v.awx.ca_bundle.$invalid" :errors="[]" />
+              <BulmaTextArea v-if="!awx.ignore_certs" v-model="awx.ca_bundle" label="Ca Bundle" placeholder="-----BEGIN CERTIFICATE-----" :hasError="v$.awx.ca_bundle.$invalid" :errors="[]" />
             </div>
           </div>
         </div>
@@ -33,18 +33,16 @@
   </section>
 </template>
 <script>
-  import Vue from 'vue'
+
   import axios from 'axios'
-  import Vuelidate from 'vuelidate'
+  import { useVuelidate } from '@vuelidate/core'
   import BulmaButton from './../components/BulmaButton.vue'
   import BulmaInput from './../components/BulmaInput.vue'
   import BulmaCheckbox from './../components/BulmaCheckRadio.vue'
   import BulmaTextArea from './../components/BulmaTextArea.vue'
   import BulmaSettingsMenu from '../components/BulmaSettingsMenu.vue'
   import TokenStorage from './../lib/TokenStorage'
-  import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
-
-  Vue.use(Vuelidate)
+  import { required, requiredIf } from '@vuelidate/validators'
 
   export default{
     name: "AfAwx",
@@ -53,6 +51,9 @@
       isAdmin:{type:Boolean}
     },
     components:{BulmaButton,BulmaInput,BulmaCheckbox,BulmaTextArea,BulmaSettingsMenu},
+    setup(){
+      return { v$: useVuelidate() }
+    },
     data(){
       return  {
           awx:{
@@ -77,7 +78,7 @@
           };
       },updateAwx(){
         var ref= this;
-        if (!this.$v.awx.$invalid) {
+        if (!this.v$.awx.$invalid) {
           axios.put(`${process.env.BASE_URL}api/v1/awx/`,this.awx,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){

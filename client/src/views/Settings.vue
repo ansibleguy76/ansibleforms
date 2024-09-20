@@ -14,7 +14,7 @@
             </div>
           </nav>
           <div class="box">
-            <BulmaInput icon="globe" v-model="settings.url" help="" label="Public Root Url" placeholder="https://ansibleforms:8443" :required="true" :hasError="$v.settings.url.$invalid" :errors="[]" />
+            <BulmaInput icon="globe" v-model="settings.url" help="" label="Public Root Url" placeholder="https://ansibleforms:8443" :required="true" :hasError="v$.settings.url.$invalid" :errors="[]" />
           </div>
           <div class="box" v-if="settings.enableFormsYamlInDatabase">
             <p class="mb-2">
@@ -79,17 +79,14 @@
   </section>
 </template>
 <script>
-  import Vue from 'vue'
   import axios from 'axios'
-  import Vuelidate from 'vuelidate'
   import BulmaButton from './../components/BulmaButton.vue'
   import BulmaInput from './../components/BulmaInput.vue'
   import VueCodeEditor from './../components/VueCodeEditor';
   import BulmaSettingsMenu from '../components/BulmaSettingsMenu.vue'
   import TokenStorage from './../lib/TokenStorage'
-  import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
-
-  Vue.use(Vuelidate)
+  import { useVuelidate } from '@vuelidate/core'
+  import { required, helpers } from '@vuelidate/validators'
 
   export default{
     name: "AfSettings",
@@ -98,6 +95,9 @@
       isAdmin:{type:Boolean}
     },
     components:{BulmaButton,BulmaInput,VueCodeEditor,BulmaSettingsMenu},
+    setup(){
+      return { v$: useVuelidate() }
+    },
     data(){
       return  {
           settings:{
@@ -141,7 +141,7 @@
           }
       },updateSettings(){
         var ref= this;
-        if (!this.$v.settings.$invalid) {
+        if (!this.v$.settings.$invalid) {
           axios.put(`${process.env.BASE_URL}api/v1/settings/`,this.settings,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){

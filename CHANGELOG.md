@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 -   Removed ip lib parts CVE related
+-   Updated to vuelidate 2+ (CVE related)
 
 ## [5.0.5] - 2024-09-18
 

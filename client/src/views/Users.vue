@@ -37,19 +37,19 @@
             <transition name="add-column" appear>
               <div class="column" v-if="userItem!==undefined && !showDelete">
                 <template v-if="!changePassword">
-                  <BulmaInput icon="user" v-model="user.username" label="Username" :readonly="userItem!==-1" placeholder="Username" :required="true" :hasError="$v.user.username.$invalid" :errors="[]" />
-                  <BulmaInput icon="envelope" v-model="user.email" label="Email" :readonly="userItem!==-1" placeholder="Email" :hasError="$v.user.email.$invalid" :errors="[]" />
-                  <BulmaInput v-if="userItem==-1" icon="lock" type="password" v-model="user.password" label="Password" placeholder="Password" :required="true" :hasError="$v.user.password.$invalid" :errors="[{if:!$v.user.password.regex,label:$v.user.password.$params.regex.description}]" />
-                  <BulmaInput v-if="userItem==-1" icon="lock" type="password" v-model="user.password2" label="Password Again" placeholder="Password" :required="true" :hasError="$v.user.password2.$invalid" :errors="[{if:!$v.user.password2.sameAsPassword,label:'Passwords are not the same'}]" />
-                  <BulmaSelect icon="users" label="Select a group" :list="groupList" valuecol="id" :required="true" :hasError="$v.user.group_id.$invalid" labelcol="name" v-model="user.group_id" :errors="[]" />
+                  <BulmaInput icon="user" v-model="user.username" label="Username" :readonly="userItem!==-1" placeholder="Username" :required="true" :hasError="v$.user.username.$invalid" :errors="[]" />
+                  <BulmaInput icon="envelope" v-model="user.email" label="Email" :readonly="userItem!==-1" placeholder="Email" :hasError="v$.user.email.$invalid" :errors="[]" />
+                  <BulmaInput v-if="userItem==-1" icon="lock" type="password" v-model="user.password" label="Password" placeholder="Password" :required="true" :hasError="v$.user.password.$invalid" :errors="[{if:v$.user.password.passwordComplexity.$invalid,label:v$.user.password.passwordComplexity.$params.description}]" />
+                  <BulmaInput v-if="userItem==-1" icon="lock" type="password" v-model="user.password2" label="Password Again" placeholder="Password" :required="true" :hasError="v$.user.password2.$invalid" :errors="[{if:v$.user.password2.sameAsPassword.$invalid,label:'Passwords are not the same'}]" />
+                  <BulmaSelect icon="users" label="Select a group" :list="groupList" valuecol="id" :required="true" :hasError="v$.user.group_id.$invalid" labelcol="name" v-model="user.group_id" :errors="[]" />
                   <BulmaButton v-if="userItem==-1" icon="save" label="Create User" @click="newUser()"></BulmaButton>
                   <BulmaButton v-if="userItem!=-1" icon="save" label="Update User" @click="updateUser(false)"></BulmaButton>
                 </template>
                 <template v-if="changePassword">
                   <h2 class="subtitle"><font-awesome-icon icon="user" /> {{ user.username }}</h2>
                   <div v-if="!passwordChanged">
-                    <BulmaInput icon="lock" type="password" v-model="user.password" label="Password" placeholder="Password" :required="true" :hasError="$v.user.password.$invalid" :errors="[{if:!$v.user.password.regex,label:$v.user.password.$params.regex.description}]" />
-                    <BulmaInput icon="lock" type="password" v-model="user.password2" label="Password Again" placeholder="Password" :required="true" :hasError="$v.user.password2.$invalid" :errors="[{if:!$v.user.password2.sameAsPassword,label:'Passwords are not the same'}]" />
+                    <BulmaInput icon="lock" type="password" v-model="user.password" label="Password" placeholder="Password" :required="true" :hasError="v$.user.password.$invalid" :errors="[{if:v$.user.password.passwordComplexity.$invalid,label:v$.user.password.passwordComplexity.$params.description}]" />
+                    <BulmaInput icon="lock" type="password" v-model="user.password2" label="Password Again" placeholder="Password" :required="true" :hasError="v$.user.password2.$invalid" :errors="[{if:v$.user.password2.sameAsPassword.$invalid,label:'Passwords are not the same'}]" />
                     <BulmaButton icon="save" label="Change password" @click="updateUser(true)"></BulmaButton>
                   </div>
                   <div v-else class="notification is-primary is-light">
@@ -67,7 +67,6 @@
 <script>
   import Vue from 'vue'
   import axios from 'axios'
-  import Vuelidate from 'vuelidate'
   import BulmaButton from './../components/BulmaButton.vue'
   import BulmaSelect from './../components/BulmaSelect.vue'
   import BulmaInput from './../components/BulmaInput.vue'
@@ -75,9 +74,8 @@
   import BulmaModal from './../components/BulmaModal.vue'
   import BulmaSettingsMenu from '../components/BulmaSettingsMenu.vue'
   import TokenStorage from './../lib/TokenStorage'
-  import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
-
-  Vue.use(Vuelidate)
+  import { useVuelidate } from '@vuelidate/core'
+  import { required, email, helpers,sameAs } from '@vuelidate/validators'
 
   export default{
     name: "AfUsers",
@@ -86,6 +84,9 @@
       isAdmin:{type:Boolean}
     },
     components:{BulmaButton,BulmaSelect,BulmaInput,BulmaModal,BulmaAdminTable,BulmaSettingsMenu},
+    setup(){
+      return { v$: useVuelidate() }
+    },
     data(){
       return  {
           user:{
@@ -191,7 +192,7 @@
           };
       },updateUser(changePassword=false){
         var ref= this;
-        if ((!this.$v.user.group_id.$invalid && !changePassword)||(!this.$v.user.password.$invalid && !this.$v.user.password2.$invalid && changePassword)) {
+        if ((!this.v$.user.group_id.$invalid && !changePassword)||(!this.v$.user.password.$invalid && !this.v$.user.password2.$invalid && changePassword)) {
           axios.put(`${process.env.BASE_URL}api/v1/user/${this.userItem}`,this.user,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
@@ -215,7 +216,7 @@
         }
       },newUser(){
         var ref= this;
-        if (!this.$v.user.$invalid) {
+        if (!this.v$.user.$invalid) {
           axios.post(`${process.env.BASE_URL}api/v1/user/`,this.user,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
@@ -231,30 +232,31 @@
         }
       }
     },
-    validations: {
-      user:{
-        username: {
-          required
-        },
-        password: {
-          required,
-          minLength:8,
-          regex : helpers.withParams(
-              {description: "Must contain at least 1 numeric, 1 special, 1 upper and 1 lower character",type:"regex"},
-              (value) => !helpers.req(value) || (new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\\$%\\^&\\*])").test(value))
-          )
-        },
-        email:{
-          email
-        },
-        group_id: {
-          required
-        },
-        password2:{
-          sameAsPassword: sameAs('password')
+    validations() {
+      return {
+        user:{
+          username: {
+            required
+          },
+          password: {
+            required,
+            minLength:8,
+            passwordComplexity : helpers.withParams(
+                {description: "Must contain at least 1 numeric, 1 special, 1 upper and 1 lower character",type:"regex"},
+                (value) => !helpers.req(value) || (new RegExp("^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\\$%\\^&\\*])").test(value))
+            )
+          },
+          email:{
+            email
+          },
+          group_id: {
+            required
+          },
+          password2:{
+            sameAsPassword: sameAs(this.user.password)
+          }
         }
       }
-
     },
     mounted() { // when the Vue app is booted up, this is run automatically.
         this.loadAll();

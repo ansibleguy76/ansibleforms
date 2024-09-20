@@ -34,7 +34,7 @@
             </div>
             <transition name="add-column" appear>
               <div class="column" v-if="groupItem==-1 && !showDelete">
-                  <BulmaInput icon="users" v-model="group.name" label="Name" placeholder="Name" :required="true" :hasError="$v.group.name.$invalid" :errors="[]" />
+                  <BulmaInput icon="users" v-model="group.name" label="Name" placeholder="Name" :required="true" :hasError="v$.group.name.$invalid" :errors="[]" />
                   <BulmaButton icon="save" label="Create Group" @click="newGroup()"></BulmaButton>
               </div>
               <div class="column" v-if="groupItem>0 && !showDelete">
@@ -62,16 +62,15 @@
 <script>
   import Vue from 'vue'
   import axios from 'axios'
-  import Vuelidate from 'vuelidate'
   import BulmaButton from './../components/BulmaButton.vue'
   import BulmaInput from './../components/BulmaInput.vue'
   import BulmaAdminTable from './../components/BulmaAdminTable.vue'
   import BulmaModal from './../components/BulmaModal.vue'
   import BulmaSettingsMenu from '../components/BulmaSettingsMenu.vue'
   import TokenStorage from './../lib/TokenStorage'
-  import { required, email, minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from 'vuelidate/lib/validators'
+  import { useVuelidate } from '@vuelidate/core'
+  import { required } from "@vuelidate/validators"
 
-  Vue.use(Vuelidate)
   export default{
     name:"Groups",
     props:{
@@ -79,6 +78,9 @@
       isAdmin:{type:Boolean}
     },
     components:{BulmaButton,BulmaInput,BulmaModal,BulmaAdminTable,BulmaSettingsMenu},
+    setup(){
+      return { v$: useVuelidate() }
+    },
     data(){
       return  {
           group:{
@@ -175,7 +177,7 @@
       },
       newGroup(){
         var ref= this;
-        if (!this.$v.group.$invalid) {
+        if (!this.v$.group.$invalid) {
           axios.post(`${process.env.BASE_URL}api/v1/group/`,this.group,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
