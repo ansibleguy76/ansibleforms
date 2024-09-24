@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.6] - 2024-09-20
+
 ### Fixed
 
 -   Removed ip lib parts CVE related
@@ -741,7 +743,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.5...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.6...HEAD
+
+[5.0.6]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.5...5.0.6
 
 [5.0.5]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.4...5.0.5
 
