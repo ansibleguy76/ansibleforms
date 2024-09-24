@@ -1,0 +1,111 @@
+# take latest debian image as base
+FROM debian as debianbase
+
+# Use /app as CWD
+WORKDIR /app
+
+# apt update
+RUN apt update
+RUN apt upgrade
+
+# install basics
+RUN apt install -y wget curl tzdata software-properties-common gnupg gnupg1 gnupg2
+
+# add ansible repository
+RUN wget -O - "https://keyserver.ubuntu.com/pks/lookup?fingerprint=on&op=get&search=0x6125E2A8C77F2818FB7BD15B93C4A3FD7BB9C367" | gpg --dearmour -o /usr/share/keyrings/ansible-archive-keyring.gpg
+RUN UBUNTU_CODENAME=jammy && echo "deb [signed-by=/usr/share/keyrings/ansible-archive-keyring.gpg] http://ppa.launchpad.net/ansible/ansible/ubuntu jammy main" | tee /etc/apt/sources.list.d/ansible.list
+RUN apt update
+RUN apt upgrade
+
+# install ansible
+RUN apt install -y ansible
+
+# install npm # node package manager
+RUN apt install -y npm
+
+# install nvm # node version manager and node 16
+ENV NODE_VERSION=16.20.2
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+ENV NVM_DIR=/root/.nvm
+RUN . "$NVM_DIR/nvm.sh" && nvm install ${NODE_VERSION}
+RUN . "$NVM_DIR/nvm.sh" && nvm use v${NODE_VERSION}
+RUN . "$NVM_DIR/nvm.sh" && nvm alias default v${NODE_VERSION}
+ENV PATH="/root/.nvm/versions/node/v${NODE_VERSION}/bin/:${PATH}"
+RUN node --version
+RUN npm --version
+
+# install debian python packages
+RUN apt install -y pipx python3-pip python3-lxml python3-pyldap python3-pymysql python3-boto3 ansible
+
+# install netapp python sdk
+RUN pipx install netapp_ontap 
+RUN pipx install solidfire-sdk-python --include-deps
+RUN pipx ensurepath
+
+# install mariadb-client
+RUN apt install -y mariadb-client
+
+# install ytt
+RUN wget -O /bin/ytt github.com/vmware-tanzu/carvel-ytt/releases/download/v0.49.0/ytt-linux-amd64
+RUN chmod -R +x /bin/ytt
+
+# run ansible galaxy modules
+RUN ansible-galaxy collection install netapp.ontap -p /usr/share/ansible/collections
+RUN ansible-galaxy collection install netapp.elementsw -p /usr/share/ansible/collections
+RUN ansible-galaxy collection install netapp.um_info -p /usr/share/ansible/collections
+RUN ansible-galaxy collection install amazon.aws -p /usr/share/ansible/collections
+RUN ansible-galaxy collection install netapp.storagegrid -p /usr/share/ansible/collections
+RUN ansible-galaxy collection install community.general -p /usr/share/ansible/collections
+RUN ansible-galaxy collection install community.mysql -p /usr/share/ansible/collections
+
+##################################################
+# builder stage
+# intermediate build from node16 image to compile application
+# why from diff image?  for faster build, this image has node preinstalled and can start building immediately
+# if only the node app changes, the intermediate image can be cached and the final image will be faster to build
+
+FROM node:16-alpine AS tmp_builder
+
+# Use /app
+WORKDIR /app
+
+# Copy package.json and package-lock.json to /app
+COPY package*.json ./
+
+# Install all dependencies
+RUN npm install -g
+
+RUN npm install
+
+# Copy the rest of the code
+COPY . .
+
+# Invoke the build script to transpile code to js
+RUN npm run build
+
+# Remove persistent subfolder
+RUN rm -rf ./dist/persistent
+
+##################################################
+# final build
+# take base and install production app dependencies
+# copy built app from intermediate
+
+FROM debianbase as final
+
+# Copy package.json and package-lock.json
+COPY package*.json ./
+
+# Copy transpiled js from builder stage into the final image
+COPY --from=tmp_builder /app/dist ./dist
+
+# Install only production dependencies
+# the build was done in alpine, so we need to remove any previous node_modules
+RUN rm -rf ./dist/node_modules
+RUN npm install --only=production
+
+# Copy the ansible.cfg file to /etc/ansible/ directory
+COPY ansible.cfg /etc/ansible/ansible.cfg
+
+# Use js files to run the application
+ENTRYPOINT ["node", "./dist/index.js"]
