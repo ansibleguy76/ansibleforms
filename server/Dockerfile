@@ -6,35 +6,22 @@ FROM node:16-alpine AS node
 
 FROM node AS nodebase
 
-RUN wget -O /bin/ytt github.com/vmware-tanzu/carvel-ytt/releases/download/v0.49.0/ytt-linux-amd64
-RUN chmod -R +x /bin/ytt
-
 # Use /app as CWD
 WORKDIR /app
 
-# install ansible
-RUN apk add ansible
+# Install github package
+RUN wget -O /bin/ytt github.com/vmware-tanzu/carvel-ytt/releases/download/v0.49.0/ytt-linux-amd64
+RUN chmod -R +x /bin/ytt
 
-# upgrade pip
-RUN apk add py3-pip
+# isntall apk packages
+RUN apk add py3-pip py3-pyldap libxslt mysql-client curl tzdata mariadb-connector-c openssh sshpass git vim
 
-# install some python dependencies
-RUN pip3 install requests six
-RUN apk add --update --no-cache --virtual .build-deps g++ gcc libxml2-dev libxslt-dev unixodbc-dev python3-dev postgresql-dev
-RUN apk add --no-cache libxslt
-RUN apk add --no-cache mysql-client
-RUN apk add --no-cache curl
-RUN apk add --no-cache py3-pyldap
-RUN apk add --no-cache tzdata
-RUN pip3 install --no-cache-dir lxml
-RUN apk del .build-deps
-RUN pip3 install PyMySQL
-RUN pip3 install netapp_lib
-RUN pip3 install netapp_ontap
-RUN pip3 install solidfire-sdk-python
-RUN pip3 install boto3
-RUN pip3 install boto
-RUN pip3 install botocore
+# install some dev packages
+# RUN apk add --update --no-cache --virtual .build-deps g++ gcc libxml2-dev libxslt-dev unixodbc-dev python3-dev postgresql-dev && apk del .build-deps
+# looks like this is no longer needed
+
+# install pip3 packages
+RUN pip3 install requests six PyMySQL netapp_lib netapp_ontap solidfire-sdk-python boto3 boto botocore lxml ansible
 
 # run ansible galaxy modules
 RUN ansible-galaxy collection install netapp.ontap -p /usr/share/ansible/collections
@@ -45,18 +32,8 @@ RUN ansible-galaxy collection install netapp.storagegrid -p /usr/share/ansible/c
 RUN ansible-galaxy collection install community.general -p /usr/share/ansible/collections
 RUN ansible-galaxy collection install community.mysql -p /usr/share/ansible/collections
 
-# add mariadb connector for mysql dump
-RUN apk add --no-cache mariadb-connector-c
-
-# add ssh
-RUN apk add --no-cache openssh
+# make ssh directory
 RUN mkdir -p ~/.ssh
-
-# add sshpass
-RUN apk add --no-cache sshpass
-
-# add git
-RUN apk add --no-cache git
 
 # update npm
 RUN npm install -g npm@9.8.1
@@ -64,6 +41,7 @@ RUN npm install -g npm@9.8.1
 ##################################################
 # builder stage
 # intermediate build to compile application
+# can run in parallel with base stage
 
 FROM node AS tmp_builder
 
@@ -73,9 +51,10 @@ WORKDIR /app
 # Copy package.json and package-lock.json to /app
 COPY package*.json ./
 
-# Install all dependencies
+# Update npm
 RUN npm install -g npm@9.8.1
 
+# install node modules
 RUN npm install
 
 # Copy the rest of the code

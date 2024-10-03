@@ -135,13 +135,13 @@
     validations: {
       azuread:{
         client_id: {
-          required:requiredIf(function(azuread){
-            return azuread.enable
+          required:requiredIf(function(){
+            return !!this.azuread.enable
           })
         },
         secret_id:{
-          required:requiredIf(function(azuread){
-            return azuread.enable
+          required:requiredIf(function(){
+            return !!this.azuread.enable
           })
         }
 

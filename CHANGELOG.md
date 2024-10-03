@@ -7,12 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.7] - 2024-10-03
+
+### Added
+
+-   Added scm branch option to pass to awx
+
+### Fixed
+
+-   AzureAD with more than 100 groups was not working anymore since introduction of OIDC
+-   Mysql check during init failed and skipped part of init
+-   App now properly waits for mysql to be ready before starting
+-   Vuelidate 2+ was not working properly for dependent required fields
+
 ## [5.0.6] - 2024-09-20
 
 ### Fixed
 
 -   Removed ip lib parts CVE related
 -   Updated to vuelidate 2+ (CVE related)
+
+### Added
+
+-   New dockerfile with debian
 
 ## [5.0.5] - 2024-09-18
 
@@ -739,7 +756,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.6...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.7...HEAD
+
+[5.0.7]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.6...5.0.7
 
 [5.0.6]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.5...5.0.6
 

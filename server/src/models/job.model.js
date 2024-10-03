@@ -21,7 +21,7 @@ function pushForminfoToExtravars(formObj,extravars,creds={}){
   // push top form fields to extravars
   // change in 4.0.16 => easier to process & available in playbook, might be handy
   // no credentials added here, because then can also come from asCredential property and these would get lost.
-  const topFields=['template','playbook','tags','limit','executionEnvironment','check','diff','verbose','keepExtravars','credentials','inventory','awxCredentials','ansibleCredentials','vaultCredentials','instanceGroups']
+  const topFields=['template','playbook','tags','limit','executionEnvironment','check','diff','verbose','keepExtravars','credentials','inventory','awxCredentials','ansibleCredentials','vaultCredentials','instanceGroups','scmBranch']
   for (const fieldName of topFields) {
     // Check if the field exists in formObj and if the property is not present in extravars
     if (formObj.hasOwnProperty(fieldName) && extravars[`__${fieldName}__`] === undefined) {
@@ -1032,6 +1032,7 @@ Awx.launch = async function (ev,credentials,jobid,counter,approval,approved=fals
     var execenv = extravars?.__executionEnvironment__
     var instanceGroups = [].concat(extravars?.__instanceGroups__ || []) // always array ! force to array
     var tags = extravars?.__tags__ || ""
+    var scmBranch = extravars?.__scmBranch__ || ""
     var check = extravars?.__check__ || false
     var verbose = extravars?.__verbose__ || false  
     var limit = extravars?.__limit__ || ""
@@ -1051,7 +1052,7 @@ Awx.launch = async function (ev,credentials,jobid,counter,approval,approved=fals
     try{
       const jobTemplate = await Awx.findJobTemplateByName(template)
       logger.debug("Found jobtemplate, id = " + jobTemplate.id)
-      await Awx.launchTemplate(jobTemplate,ev,invent,tags,limit,check,diff,verbose,credentials,awxCredentials,execenv,instanceGroups,jobid,++counter)
+      await Awx.launchTemplate(jobTemplate,ev,invent,tags,limit,check,diff,verbose,credentials,awxCredentials,execenv,instanceGroups,scmBranch,jobid,++counter)
       return true
     }catch(err){
       message="failed to launch awx template " + template + "\n" + err.message
@@ -1060,7 +1061,7 @@ Awx.launch = async function (ev,credentials,jobid,counter,approval,approved=fals
       throw new Error(message)
     } 
 }
-Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,verbose,credentials,awxCredentials,execenv,instanceGroups,jobid,counter) {
+Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,verbose,credentials,awxCredentials,execenv,instanceGroups,scmBranch,jobid,counter) {
   var message=""
   if(!counter){
     counter=0
@@ -1113,6 +1114,7 @@ Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,ve
   if(diff){ postdata.diff_mode=true } else{ postdata.diff_mode=false }
   if(verbose) { postdata.verbosity=3}
   if(limit){ postdata.limit=limit}
+  if(scmBranch){ postdata.scm_branch=scmBranch}
   if(tags){ postdata.job_tags=tags }
 
   logger.notice("Running template : " + template.name)
@@ -1126,6 +1128,7 @@ Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,ve
   logger.info("verbose : " + verbose)      
   logger.info("tags : " + tags)
   logger.info("limit : " + limit)
+  logger.info("scm_branch : " + scmBranch)
   // post
   if(template.related===undefined){
     message=`Failed to launch, no launch attribute found for template ${template.name}`

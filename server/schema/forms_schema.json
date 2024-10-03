@@ -112,6 +112,7 @@
               "steps": {"not":{}},
               "awxCredentials": {"not":{}},
               "executionEnvironment": {"not":{}},
+              "scm_branch": {"not":{}},
               "instanceGroups": {"not":{}}
             },
             "required": ["playbook"]
@@ -142,6 +143,7 @@
               "tags": {"not":{}},
               "check": {"not":{}},
               "limit": {"not":{}},
+              "scm_branch": {"not":{}},
               "diff": {"not":{}},
               "key": {"not":{}},
               "executionEnvironment": {"not":{}},
@@ -326,7 +328,8 @@
                       "steps": {"not":{}},
                       "awxCredentials": {"not":{}},
                       "executionEnvironment": {"not":{}},
-                      "instanceGroups": {"not":{}}
+                      "instanceGroups": {"not":{}},
+                      "scm_branch": {"not":{}}
                     },
                     "required": ["playbook"]
                   },
@@ -489,6 +492,7 @@
           "tags": {"type": "string"},
           "check": {"type": "boolean"},
           "limit": {"type": "string"},
+          "scm_branch": {"type": "string"},
           "diff": {"type": "boolean"},
           "help": {"type": "string"},
           "source": {"type": "string"},

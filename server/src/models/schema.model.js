@@ -1,12 +1,9 @@
 'use strict';
-const bcrypt = require('bcrypt');
 const logger=require("../lib/logger");
 const mysql = require("./db.model")
-const Helpers = require("../lib/common")
 const appConfig = require('../../config/app.config')
 const fs = require('fs');
 const NodeCache = require("node-cache");
-const { check } = require('./ldap.model');
 
 const cache = new NodeCache({
     stdTTL: 14400,

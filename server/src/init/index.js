@@ -13,17 +13,18 @@ async function init(){
 
   // this is at startup, don't start the app until mysql is ready
   // rewrite with await
-  logger.info("Waiting for mysql to start")
+
   async function sleep(millis) {
     return new Promise(resolve => setTimeout(resolve, millis));
   }
   var MYSQL_IS_READY = false
   while(!MYSQL_IS_READY){
     try{
+      logger.info("Waiting for mysql to start")      
       await mysql.do("SELECT 1")
       MYSQL_IS_READY = true
     }catch(e){
-      logger.log("Mysql not ready yet")
+      logger.warning("Mysql not ready yet")
       await sleep(5000)
     }
   }

@@ -35,7 +35,6 @@ MySql.do = async function (query, vars, silent = false) {
       await conn.end()
     } catch (e) {
       logger.error('[ansibleforms] ' + e)
-      throw e
     }
   }
 }
