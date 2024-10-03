@@ -112,7 +112,7 @@
 
                   if (res.data['@odata.nextLink']) {
                     // If there's a nextLink, make a recursive call to get the next page of data
-                    this.getGroupsAndLogin(token, res.data['@odata.nextLink'], allGroups);
+                    this.getGroupsAndLogin(token, res.data['@odata.nextLink'], type, allGroups); 
                   } else {
                     // No more nextLink, you have all the groups
                     this.tokenLogin(token, allGroups)
@@ -122,15 +122,25 @@
                   this.$toast.error("Failed to get group membership");
                 });
           }
-          else {
+          else if (type === 'oidc') {
             const payload = jwt.decode(token, {complete: true}).payload
             this.tokenLogin(token, payload.groups || [], 'oidc')
+          }else{
+            this.$toast.error("Invalid Identity Provider type, contact developer")
           }
         },
         tokenLogin(token, allGroups, type='azuread') {
           var validRegex=true
           var regex
-          const groupfilter = type === 'azuread' ? this.azureGroupfilter : this.oidcGroupfilter
+          var groupfilter
+          if(type === 'azuread'){
+            groupfilter = this.azureGroupfilter
+          }else if(type === 'oidc'){
+            groupfilter = this.oidcGroupfilter
+          }else{
+            this.$toast.error("Invalid Identity Provider type, contact developer")
+            return false
+          }
           try{
             regex = new RegExp(groupfilter, 'g');
           }catch(e){
