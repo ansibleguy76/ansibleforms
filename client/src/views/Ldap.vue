@@ -156,13 +156,13 @@
           required
         },
         cert:{
-          requiredIf:requiredIf(function(ldap){
-            return ldap.enable_tls && !ldap.ignore_certs
+          requiredIf:requiredIf(function(){
+            return !!this.ldap.enable_tls && !this.ldap.ignore_certs
           })
         },
         ca_bundle:{
-          requiredIf:requiredIf(function(ldap){
-            return ldap.enable_tls && !ldap.ignore_certs
+          requiredIf:requiredIf(function(){
+            return !!this.ldap.enable_tls && !this.ldap.ignore_certs
           })
         }
 

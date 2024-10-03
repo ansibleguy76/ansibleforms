@@ -126,18 +126,18 @@
     validations: {
       oidc:{
         issuer: {
-          required:requiredIf(function(oidc){
-            return oidc.enabled
+          required:requiredIf(function(){
+            return !!this.oidc.enabled
           })
         },
         client_id: {
-          required:requiredIf(function(oidc){
-            return oidc.enabled
+          required:requiredIf(function(){
+            return !!this.oidc.enabled
           })
         },
         secret_id:{
-          required:requiredIf(function(oidc){
-            return oidc.enabled
+          required:requiredIf(function(){
+            return !!this.oidc.enabled
           })
         }
 

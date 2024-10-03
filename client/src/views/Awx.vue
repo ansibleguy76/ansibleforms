@@ -114,23 +114,23 @@
           required
         },
         token:{
-          required:requiredIf(function(awx){
-            return !awx.use_credentials
+          required:requiredIf(function(){
+            return !this.awx.use_credentials
           })
         },  
         ca_bundle:{
-          required:requiredIf(function(awx){
-            return !awx.ignore_certs
+          required:requiredIf(function(){
+            return !this.awx.ignore_certs
           })
         },
         username:{
-          required:requiredIf(function(awx){
-            return awx.use_credentials
+          required:requiredIf(function(){
+            return !!this.awx.use_credentials
           })
         },
         password:{
-          required:requiredIf(function(awx){
-            return awx.use_credentials
+          required:requiredIf(function(){
+            return this.awx.use_credentials
           })
         }                     
       }
