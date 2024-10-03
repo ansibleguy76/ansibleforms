@@ -1106,6 +1106,16 @@
             
           **Note** : You can also dynamically set the instanceGroups by using a field called `__instanceGroups__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static instanceGroups.  
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.                       
+      - name: scmBranch
+        type: string
+        short: SCM Branch
+        version: 5.0.0
+        group: workflow
+        description: |
+          Awx allows to pass the scm branch.  Use this property to pass it to your template.
+            
+          **Note** : You can also dynamically set the scmBranch by using a field called `__scmBranch__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static scmBranch.  
+          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.
       - name: awxCredentials
         type: array
         group: workflow
