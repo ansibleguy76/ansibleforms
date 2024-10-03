@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-   Added scm branch option to pass to awx
+
+### Fixed
+
+-   AzureAD with more than 100 groups was not working anymore since introduction of OIDC
+-   Mysql check during init failed and skipped part of init
+-   App now properly waits for mysql to be ready before starting
+-   Vuelidate 2+ was not working properly for dependent required fields
+
+
 ## [5.0.6] - 2024-09-20
 
 ### Fixed
