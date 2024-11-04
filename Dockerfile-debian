@@ -125,10 +125,10 @@ RUN mv /app/client/dist/* ./dist/views
 FROM debianbase as final
 
 # Copy package.json and package-lock.json
-COPY package*.json ./
+COPY ./server/package*.json ./
 
 # Copy transpiled js from builder stage into the final image
-COPY --from=tmp_builder /app/dist ./dist
+COPY --from=tmp_builder /app/server/dist ./dist
 
 # Install only production dependencies
 # the build was done in alpine, so we need to remove any previous node_modules

@@ -104,7 +104,7 @@ RUN mv /app/client/dist/* ./dist/views
 FROM nodebase as final
 
 # Copy package.json and package-lock.json
-COPY package*.json ./
+COPY ./server/package*.json ./
 
 # Install only production dependencies
 RUN npm i --only=production
