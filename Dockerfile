@@ -45,26 +45,56 @@ RUN npm install -g npm@9.8.1
 
 FROM node AS tmp_builder
 
-# Use /app
-WORKDIR /app
-
-# Copy package.json and package-lock.json to /app
-COPY package*.json ./
-
 # Update npm
 RUN npm install -g npm@9.8.1
+
+# Install vue cli service
+RUN npm install -g @vue/cli-service
+
+# Use /app/client
+WORKDIR /app/client
+
+# Copy client package.json and package-lock.json to /app/client
+COPY ./client/package*.json ./
+
+# install node modules for client
+RUN npm install
+
+# Copy the rest of the code
+COPY ./client .
+
+# build client
+RUN npm run build
+
+# Use /app/server
+WORKDIR /app/server
+
+# Copy package.json and package-lock.json to /app/server
+COPY ./server/package*.json ./
 
 # install node modules
 RUN npm install
 
 # Copy the rest of the code
-COPY . .
+COPY ./server .
+
+# Copy the docs help file to /app/server
+COPY ./docs/_data/help.yaml .
 
 # Invoke the build script to transpile code to js
 RUN npm run build
 
 # Remove persistent subfolder
 RUN rm -rf ./dist/persistent
+
+# Remove client subfolder
+RUN rm -rf ./dist/views
+
+# Create the views folder
+RUN mkdir -p ./dist/views
+
+# move client build to server
+RUN mv /app/client/dist/* ./dist/views
 
 ##################################################
 # final build
@@ -80,10 +110,10 @@ COPY package*.json ./
 RUN npm i --only=production
 
 # Copy transpiled js from builder stage into the final image
-COPY --from=tmp_builder /app/dist ./dist
+COPY --from=tmp_builder /app/server/dist ./dist
 
 # Copy the ansible.cfg file to /etc/ansible/ directory
-COPY ansible.cfg /etc/ansible/ansible.cfg
+COPY ./server/ansible.cfg /etc/ansible/ansible.cfg
 
 # Use js files to run the application
 ENTRYPOINT ["node", "./dist/index.js"]

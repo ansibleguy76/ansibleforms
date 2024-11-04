@@ -1,0 +1,8 @@
+**/node_modules/
+node_modules
+**/vue.config.js
+vue.config.js
+Dockerfile
+.env.*
+.env
+README.md
