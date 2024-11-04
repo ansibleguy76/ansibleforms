@@ -64,7 +64,7 @@ RUN ansible-galaxy collection install community.mysql -p /usr/share/ansible/coll
 # why from diff image?  for faster build, this image has node preinstalled and can start building immediately
 # if only the node app changes, the intermediate image can be cached and the final image will be faster to build
 
-FROM node AS tmp_builder
+FROM node:16-alpine AS tmp_builder
 
 # Update npm
 RUN npm install -g npm@9.8.1
@@ -128,7 +128,7 @@ FROM debianbase as final
 COPY package*.json ./
 
 # Copy transpiled js from builder stage into the final image
-COPY --from=tmp_builder /app/server/dist ./dist
+COPY --from=tmp_builder /app/dist ./dist
 
 # Install only production dependencies
 # the build was done in alpine, so we need to remove any previous node_modules
