@@ -24,8 +24,8 @@ exports.refresh = function(req, res) {
               var body = jwtPayload.user
               if(new Date(jwtPayload.exp*1000)>new Date()){
                 // logger.info("refresh token is not expired")
-                const token = jwt.sign({ user: body,access:true }, authConfig.secret,{ expiresIn: authConfig.jwtExpiration, issuer: process.env.BASE_URL});
-                const refreshtoken = jwt.sign({ user: body,refresh:true }, authConfig.secret,{ expiresIn: authConfig.jwtRefreshExpiration, issuer: process.env.BASE_URL});
+                const token = jwt.sign({ user: body,access:true }, authConfig.secret,{ expiresIn: authConfig.jwtExpiration, issuer: process.env.JWT_ISSUER || "ansibleforms"});
+                const refreshtoken = jwt.sign({ user: body,refresh:true }, authConfig.secret,{ expiresIn: authConfig.jwtRefreshExpiration, issuer: process.env.JWT_ISSUER || "ansibleforms"});
                 User.storeToken(username,username_type,refreshtoken)
                   .then(()=>{
                     logger.info("Token is renewed and stored")

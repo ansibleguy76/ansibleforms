@@ -17,8 +17,8 @@ function userToJwt(user,expiryDays){
   // {"username":"administrator","type":"local","roles":["public","admin"]}
 
   // we create 2 jwt tokens (accesstoken and refresh token)
-  const token = jwt.sign({user,access:true}, authConfig.secret,{ expiresIn: expiryDays || authConfig.jwtExpiration, issuer: process.env.BASE_URL});
-  const refreshtoken = jwt.sign({user,refresh:true}, authConfig.secret,{ expiresIn: authConfig.jwtRefreshExpiration, issuer: process.env.BASE_URL});
+  const token = jwt.sign({user,access:true}, authConfig.secret,{ expiresIn: expiryDays || authConfig.jwtExpiration, issuer: process.env.JWT_ISSUER || "ansibleforms"});
+  const refreshtoken = jwt.sign({user,refresh:true}, authConfig.secret,{ expiresIn: authConfig.jwtRefreshExpiration, issuer: process.env.JWT_ISSUER || "ansibleforms"});
   logger.debug(JSON.stringify(user))
   // we store the tokens in the database, to later verify a refresh token action
   logger.info("Storing refreshtoken in database for user " + user.username)
