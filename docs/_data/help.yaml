@@ -4347,7 +4347,7 @@
       # /tmp/demo_data.yml
       message: 'hello demo'
       ```
-      **The library `demo` needs to exists in the ytt context (lib/_ytt_lib/demo/values.yml)**
+      **The library `demo` needs to exist in the ytt context (lib/_ytt_lib/demo/values.yml)**
       ```yaml
       # lib/_ytt_lib/demo/values.yml
       #@ data/values
@@ -4383,4 +4383,14 @@
           label: Message
           default: Object($(demo)).message
           evalDefault: true
-      ```      
+      ```
+
+      By default, templating with symlinks is disabled in ytt, but it is possible to enable them using one of the following environment variables:
+      ```bash
+      YTT_ALLOW_SYMLINK_DESTINATIONS=/paths/to/allow
+      # or
+      YTT_DANGEROUS_ALLOW_ALL_SYMLINK_DESTINATIONS=true
+      ```
+      These are mapped to their corresponding command line options.
+      **NOTE** : enabling this may come with certain risks.
+      More info: https://carvel.dev/ytt/docs/latest/faq/#how-can-i-use-files-that-are-symlinks
