@@ -43,10 +43,25 @@
     "roles": {
       "type": "array",
       "contains": {
-        "const": {
-          "name": "public",
-          "groups": []
-        }
+        "type": "object",
+        "properties": {
+          "name": { "const": "public"},
+          "groups": { "const": []},
+          "options": {
+            "type": "object",
+            "properties": {
+              "showDesigner": { "type": "boolean"},
+              "showLogs": { "type": "boolean" },
+              "showDebugButtons": { "type": "boolean" },
+              "showSettings": { "type": "boolean" },
+              "showExtravars": { "type": "boolean" },
+              "extendedTokenExpiration": { "type": "boolean" },
+              "jwtExpirationDays": { "type": "number" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
       },
       "items": {
         "type": "object",
@@ -69,6 +84,19 @@
             "$id": "/role",
             "type": "string"
           },
+          "options": {
+            "type": "object",
+            "properties": {
+              "showDesigner": { "type": "boolean"},
+              "showLogs": { "type": "boolean" },
+              "showDebugButtons": { "type": "boolean" },
+              "showSettings": { "type": "boolean" },
+              "showExtravars": { "type": "boolean" },
+              "extendedTokenExpiration": { "type": "boolean" },
+              "tokenExpirationDays": { "type": "number" }
+            },
+            "additionalProperties": false
+          },
           "groups": {
             "type": "array",
             "items": {
@@ -86,7 +114,7 @@
             }            
           }                    
         },
-        "additionalProperties": true
+        "additionalProperties": false
       }
     },
     "constants":{
@@ -266,8 +294,16 @@
             "$ref": "/icon"
           },
           "tileClass": {
-            "type": "string",
-            "pattern": "^has-background-.+"
+            "anyOf":[
+              {
+                "type": "string",
+                "pattern": "^has-background-.+"
+              },
+              {
+                "type": "string",
+                "pattern": "^bg-.+"
+              }
+            ]
           },
           "verbose": {
             "type": "boolean"
@@ -358,6 +394,7 @@
                   "$ref": "/formfield"
                 },
                 "template": {"type": "string"},
+                "abortable": {"type": "boolean"},
                 "awxCredentials": {
                   "type": "array",
                   "items": {
@@ -456,6 +493,7 @@
           },
           "playbook": {"type": "string"},
           "key": {"type": "string"},
+          "abortable": {"type": "boolean"},
           "template": {"type": "string"},
           "credentials": {
             "type": "object",
@@ -534,9 +572,11 @@
                     "deleteMarker": {"not":{}},
                     "insertMarker": {"not":{}},
                     "refresh": {"not":{}},
+                    "switch": {"not":{}},
                     "readonlyColumns": {"not":{}},
                     "values": {"not":{}},
                     "isHtml": {"not":{}},
+                    "accept": {"not":{}},
                     "multiple": {"not":{}},
                     "outputObject": {"not":{}}
                   }
@@ -560,6 +600,7 @@
                     "pctColumns": {"not":{}},
                     "filterColumns": {"not":{}},
                     "hide": {"not":{}},
+                    "accept": {"not":{}},
                     "allowDelete": {"not":{}},
                     "allowInsert": {"not":{}},
                     "deleteMarker": {"not":{}},
@@ -574,6 +615,7 @@
                     "asCredential": {"not":{}},
                     "keydown": {"not":{}},
                     "refresh": {"not":{}},
+                    "switch": {"not":{}},
                     "readonlyColumns": {"not":{}},
                     "values": {"not":{}},
                     "isHtml": {"not":{}},
@@ -603,6 +645,8 @@
                     "values": {"not":{}},
                     "multiple": {"not":{}},
                     "refresh": {"not":{}},
+                    "switch": {"not":{}},
+                    "accept": {"not":{}},
                     "allowDelete": {"not":{}},
                     "allowInsert": {"not":{}},
                     "deleteMarker": {"not":{}},
@@ -638,6 +682,7 @@
                     "isHtml": {"not":{}},
                     "dbConfig": {"not":{}},
                     "hide": {"not":{}},
+                    "accept": {"not":{}},
                     "allowDelete": {"not":{}},
                     "allowInsert": {"not":{}},
                     "deleteMarker": {"not":{}},
@@ -645,6 +690,7 @@
                     "readonlyColumns": {"not":{}},
                     "multiple": {"not":{}},
                     "asCredential": {"not":{}},
+                    "switch": {"not":{}},
                     "outputObject": {"not":{}}
                   },
                   "required": ["values"]
@@ -674,6 +720,7 @@
                     "dbConfig": {"not":{}},
                     "refresh": {"not":{}},
                     "hide": {"not":{}},
+                    "accept": {"not":{}},
                     "values": {"not":{}},
                     "allowDelete": {"not":{}},
                     "allowInsert": {"not":{}},
@@ -703,6 +750,7 @@
                     "runLocal": {"not":{}},
                     "keydown": {"not":{}},
                     "refresh": {"not":{}},
+                    "accept": {"not":{}},
                     "allowDelete": {"not":{}},
                     "allowInsert": {"not":{}},
                     "deleteMarker": {"not":{}},
@@ -710,6 +758,7 @@
                     "readonlyColumns": {"not":{}},
                     "isHtml": {"not":{}},
                     "dbConfig": {"not":{}},
+                    "switch": {"not":{}},
                     "hide": {"not":{}}
                   },
                   "required": ["values"]
@@ -717,33 +766,6 @@
                 {
                   "properties": {
                     "type": {
-                      "enum": ["query"]
-                    },
-                    "values": {"not":{}},
-                    "regex": {"not":{}},
-                    "minValue": {"not":{}},
-                    "maxValue": {"not":{}},
-                    "minSize": {"not":{}},
-                    "maxSize": {"not":{}},
-                    "minLength": {"not":{}},
-                    "maxLength": {"not":{}},
-                    "editable": {"not":{}},
-                    "expression": {"not":{}},
-                    "keydown": {"not":{}},
-                    "allowDelete": {"not":{}},
-                    "allowInsert": {"not":{}},
-                    "deleteMarker": {"not":{}},
-                    "insertMarker": {"not":{}},
-                    "readonlyColumns": {"not":{}},
-                    "isHtml": {"not":{}},
-                    "runLocal": {"not":{}},
-                    "hide": {"not":{}}
-                  },
-                  "required": ["query", "dbConfig"]
-                },
-                {
-                  "properties": {
-                    "type": {
                       "enum": ["enum"]
                     },
                     "values": {"not":{}},
@@ -764,6 +786,7 @@
                     "readonlyColumns": {"not":{}},
                     "isHtml": {"not":{}},
                     "runLocal": {"not":{}},
+                    "switch": {"not":{}},
                     "hide": {"not":{}}
                   },
                   "required": ["query", "dbConfig"]
@@ -771,33 +794,6 @@
                 {
                   "properties": {
                     "type": {
-                      "enum": ["query"]
-                    },
-                    "values": {"not":{}},
-                    "regex": {"not":{}},
-                    "editable": {"not":{}},
-                    "minValue": {"not":{}},
-                    "maxValue": {"not":{}},
-                    "minSize": {"not":{}},
-                    "maxSize": {"not":{}},
-                    "minLength": {"not":{}},
-                    "maxLength": {"not":{}},
-                    "query": {"not":{}},
-                    "keydown": {"not":{}},
-                    "allowDelete": {"not":{}},
-                    "allowInsert": {"not":{}},
-                    "deleteMarker": {"not":{}},
-                    "insertMarker": {"not":{}},
-                    "readonlyColumns": {"not":{}},
-                    "isHtml": {"not":{}},
-                    "dbConfig": {"not":{}},
-                    "hide": {"not":{}}
-                  },
-                  "required": ["expression"]
-                },
-                {
-                  "properties": {
-                    "type": {
                       "enum": ["enum"]
                     },
                     "values": {"not":{}},
@@ -811,6 +807,7 @@
                     "maxLength": {"not":{}},
                     "query": {"not":{}},
                     "keydown": {"not":{}},
+                    "accept": {"not":{}},
                     "allowDelete": {"not":{}},
                     "allowInsert": {"not":{}},
                     "deleteMarker": {"not":{}},
@@ -818,6 +815,7 @@
                     "readonlyColumns": {"not":{}},
                     "isHtml": {"not":{}},
                     "dbConfig": {"not":{}},
+                    "switch": {"not":{}},
                     "hide": {"not":{}}
                   },
                   "required": ["expression"]
@@ -838,12 +836,14 @@
                     "filterColumns": {"not":{}},
                     "dbConfig": {"not":{}},
                     "multiple": {"not":{}},
+                    "accept": {"not":{}},
                     "allowDelete": {"not":{}},
                     "allowInsert": {"not":{}},
                     "deleteMarker": {"not":{}},
                     "insertMarker": {"not":{}},
                     "readonlyColumns": {"not":{}},
                     "keydown": {"not":{}},
+                    "switch": {"not":{}},
                     "outputObject": {"not":{}}
                   },
                   "required": ["expression"]
@@ -863,6 +863,7 @@
                     "filterColumns": {"not":{}},
                     "dbConfig": {"not":{}},
                     "multiple": {"not":{}},
+                    "accept": {"not":{}},
                     "allowDelete": {"not":{}},
                     "allowInsert": {"not":{}},
                     "deleteMarker": {"not":{}},
@@ -870,6 +871,7 @@
                     "readonlyColumns": {"not":{}},
                     "keydown": {"not":{}},
                     "expression": {"not":{}},
+                    "switch": {"not":{}},
                     "outputObject": {"not":{}}
                   },
                   "required": ["value"]
@@ -891,12 +893,14 @@
                     "filterColumns": {"not":{}},
                     "multiple": {"not":{}},
                     "runLocal": {"not":{}},
+                    "accept": {"not":{}},
                     "allowDelete": {"not":{}},
                     "allowInsert": {"not":{}},
                     "deleteMarker": {"not":{}},
                     "insertMarker": {"not":{}},
                     "readonlyColumns": {"not":{}},
                     "keydown": {"not":{}},
+                    "switch": {"not":{}},
                     "outputObject": {"not":{}}
                   },
                   "required": ["query", "dbConfig"]
@@ -919,6 +923,7 @@
                     "in":                {"not":{}}, 
                     "minValue":          {"not":{}}, 
                     "maxValue":          {"not":{}}, 
+                    "accept": {"not":{}},
                     "minSize": {"not":{}},
                     "maxSize": {"not":{}},
                     "minLength":         {"not":{}}, 
@@ -952,6 +957,7 @@
                     "size":              {"not":{}}, 
                     "hide":              {"not":{}}, 
                     "icon":              {"not":{}}, 
+                    "switch": {"not":{}},
                     "tableFields":       {"not":{}}
                   },
                   "required": ["expression"]
@@ -998,6 +1004,7 @@
                     "multiple":          {"not":{}}, 
                     "size":              {"not":{}}, 
                     "hide":              {"not":{}}, 
+                    "switch": {"not":{}},
                     "tableFields":       {"not":{}}
                   }
                 },                                
@@ -1014,11 +1021,13 @@
                     "maxLength": {"not":{}},        
                     "values": {"not":{}},
                     "from": {"not":{}},
+                    "accept": {"not":{}},
                     "outputObject": {"not":{}},
                     "columns": {"not":{}},
                     "pctColumns": {"not":{}},
                     "filterColumns": {"not":{}},
                     "previewColumn": {"not":{}},
+                    "switch": {"not":{}},
                     "valueColumn": {"not":{}}
                   },
                   "required": ["dateType"]
@@ -1042,11 +1051,13 @@
                     "filterColumns": {"not":{}},
                     "maxLength": {"not":{}},
                     "multiple": {"not":{}},
+                    "accept": {"not":{}},
                     "refresh": {"not":{}},
                     "outputObject": {"not":{}},
                     "keydown": {"not":{}},
                     "isHtml": {"not":{}},
                     "icon": {"not":{}},
+                    "switch": {"not":{}},
                     "default": {"not":{}}
                   },
                   "required": ["tableFields"]
@@ -1055,7 +1066,7 @@
               "properties": {
                 "type": {
                   "type": "string",
-                  "enum": ["text","textarea", "password", "checkbox", "enum", "query", "number", "radio", "expression","local","local_out","credential", "table","datetime","html","file"]
+                  "enum": ["text","textarea", "password", "checkbox", "enum", "number", "radio", "expression","local","local_out","credential", "table","datetime","html","file"]
                 },
                 "name": {
                   "$id": "/formfield",
@@ -1071,6 +1082,10 @@
                     {"type": "array"},
                     {"type": "integer"}
                   ]
+                },
+                "accept": {
+                  "type": "array",
+                  "items": {"type": "string"}
                 },
                 "evalDefault": {"type": "boolean"},
                 "dateType": {"type": "string","enum":["date","datetime","year","month","time","week"]},
@@ -1159,6 +1174,7 @@
                 "runLocal": {"type": "boolean"},
                 "query": {"type": "string"},
                 "outputObject": {"type": "boolean"},
+                "switch": {"type": "boolean"},
                 "columns": {
                   "type": "array",
                   "items": {"type": "string"}
@@ -1312,6 +1328,7 @@
                           "pctColumns": {"not":{}},
                           "filterColumns": {"not":{}},
                           "previewColumn": {"not":{}},
+                          "switch": {"not":{}},
                           "valueColumn": {"not":{}}
                         }
                       },
@@ -1337,6 +1354,7 @@
                           "pctColumns": {"not":{}},
                           "filterColumns": {"not":{}},
                           "previewColumn": {"not":{}},
+                          "switch": {"not":{}},
                           "valueColumn": {"not":{}}
                         }
                       },      
@@ -1358,6 +1376,7 @@
                           "pctColumns": {"not":{}},
                           "filterColumns": {"not":{}},
                           "previewColumn": {"not":{}},
+                          "switch": {"not":{}},
                           "valueColumn": {"not":{}}
                         },
                         "required": ["dateType"]
@@ -1378,6 +1397,7 @@
                           "pctColumns": {"not":{}},
                           "filterColumns": {"not":{}},
                           "previewColumn": {"not":{}},
+                          "switch": {"not":{}},
                           "valueColumn": {"not":{}}
                         }
                       },
@@ -1419,6 +1439,7 @@
                           "pctColumns": {"not":{}},
                           "filterColumns": {"not":{}},
                           "previewColumn": {"not":{}},
+                          "switch": {"not":{}},
                           "valueColumn": {"not":{}}
                         },
                         "required": ["values"]
@@ -1426,7 +1447,7 @@
                       {
                         "properties": {
                           "type": {
-                            "enum": ["query","enum"]
+                            "enum": ["enum"]
                           },
                           "regex": {"not":{}},
                           "minValue": {"not":{}},
@@ -1441,7 +1462,7 @@
                     "properties": {
                       "type": {
                         "type": "string",
-                        "enum": ["text","textarea", "password", "checkbox", "enum", "query", "number","datetime","html"]
+                        "enum": ["text","textarea", "password", "checkbox", "enum", "number","datetime","html"]
                       },
                       "name": {"type": "string"},
                       "label": {"type": "string"},
@@ -1449,6 +1470,7 @@
                       "from": {"type": "string"},
                       "sticky": {"type": "boolean"},
                       "horizontal": {"type": "boolean"},
+                      "switch": {"type": "boolean"},
                       "default": {
                         "anyOf": [{"type": "string"},
                           {"type": "boolean"},
