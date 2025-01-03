@@ -11,6 +11,7 @@ const Ajv = require('ajv');
 const ajv = new Ajv()
 const path=require("path")
 const AJVErrorParser = require('ajv-error-parser');
+const quote = require('shell-quote/quote');
 const Repository = require('./repository.model')
 const Helpers = require("../lib/common")
 const {inspect} = require("node:util");
@@ -25,6 +26,8 @@ const formsPath = path.join(formFilePath,"forms")
 const formsBackupPath = path.join(backupPath,'forms')
 const formFileBackupPath = path.join(backupPath,formFileName)
 const oldBackupDays = appConfig.oldBackupDays
+
+const pathDelimiterRegex = new RegExp(`(?<!\\\\)${path.delimiter}`, 'g');
 
 function getBackupSuffix(t){
   var backuppartre=new RegExp("(\.bak\.[0-9]{17})$","g")
@@ -41,11 +44,30 @@ var Form=function(data){
  */
 function getYttLibDataOpts() {
   var yttLibDataOpts = '';
-  Object.entries(process.env).filter( ([key, value]) => key.startsWith('YTT_LIB_DATA_')).forEach( ([key, value]) => {
-    const libName = key.replace('YTT_LIB_DATA_', '').toLowerCase();
-    yttLibDataOpts += ` --data-values-file @${libName}:data=${value}`;
-  });
+  for (const [libName, value] of Object.entries(appConfig.yttLibData)) {
+    yttLibDataOpts += ` --data-values-file @${quote([libName])}:data=${quote([value])}`;
+  }
   return yttLibDataOpts;
+}
+
+/**
+ * Compute extra ytt cli options based on provided env vars
+ */
+function getYttEnvDataOpts() {
+  var yttEnvDataOpts = '';
+  if (appConfig.yttVarsPrefix || false) {
+    yttEnvDataOpts += ` --data-values-env ${quote([appConfig.yttVarsPrefix])}`;
+  }
+  if (appConfig.yttAllowSymlinkDestinations || false) {
+    // path.delimiter separated list of paths (delimiter can be escaped with '\')
+    for (const allowedPath of appConfig.yttAllowSymlinkDestinations.split(pathDelimiterRegex)) {
+      yttEnvDataOpts += ` --allow-symlink-destination ${quote([allowedPath.replace(/\\(.)/g, '$1')])}`;
+    }
+  }
+  if (appConfig.yttDangerousAllowAllSymlinkDestinations) {
+    yttEnvDataOpts += " --dangerous-allow-all-symlink-destinations";
+  }
+  return yttEnvDataOpts;
 }
 
 // create the backup path and 
@@ -99,11 +121,8 @@ Form.load = async function() {
   var formfiles=[]
   var files=undefined
 
-  var yttEnvDataOpt = ''
-  if ('YTT_VARS_PREFIX' in process.env) {
-    yttEnvDataOpt = ` --data-values-env ${process.env.YTT_VARS_PREFIX}`;
-  }
   var yttLibDataOpts = getYttLibDataOpts();
+  var yttEnvDataOpts = getYttEnvDataOpts();
 
   try{
     // read base forms.yaml
@@ -115,9 +134,9 @@ Form.load = async function() {
       try {
         if (appConfig.useYtt) {
           logger.info(`interpreting ${appFormsPath} with ytt.`);
-          logger.debug(`executing 'ytt -f ${appFormsPath} -f ${formslibdirpath}${yttEnvDataOpt}${yttLibDataOpts}'`)
+          logger.debug(`executing 'ytt -f ${quote([appFormsPath])} -f ${quote([formslibdirpath])}${yttEnvDataOpts}${yttLibDataOpts}'`);
           rawdata = execSync(
-              `ytt -f ${appFormsPath} -f ${formslibdirpath}${yttEnvDataOpt}${yttLibDataOpts}`,
+              `ytt -f ${quote([appFormsPath])} -f ${quote([formslibdirpath])}${yttEnvDataOpts}${yttLibDataOpts}`,
               {
                 env: process.env,
                 encoding: 'utf-8'
@@ -157,9 +176,9 @@ Form.load = async function() {
             var itemRawData = '';
             if (appConfig.useYtt) {
               logger.info(`interpreting ${itemFormPath} with ytt.`);
-              logger.debug(`executing 'ytt -f ${itemFormPath} -f ${formslibdirpath}${yttEnvDataOpt}'`)
+              logger.debug(`executing 'ytt -f ${quote([itemFormPath])} -f ${quote([formslibdirpath])}${yttEnvDataOpts}'`);
               itemRawData = execSync(
-                  `ytt -f ${itemFormPath} -f ${formslibdirpath}${yttEnvDataOpt}`,
+                  `ytt -f ${quote([itemFormPath])} -f ${quote([formslibdirpath])}${yttEnvDataOpts}`,
                   {
                     env: process.env,
                     encoding: 'utf-8'
