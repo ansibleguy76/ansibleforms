@@ -102,7 +102,7 @@ exports.save = async function(req,res){
     }
   }catch(err){
     logger.error("Failed to get lock : ",err)
-    res.json(new RestResult("error","Failed to save forms",null,helpers.getError(err,"Faild to get lock")))
+    res.json(new RestResult("error","Failed to save forms",null,helpers.getError(err,"Failed to get lock")))
     return true
   }
   if(lock.match || lock.free){
