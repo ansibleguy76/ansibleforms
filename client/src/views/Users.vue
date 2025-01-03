@@ -17,7 +17,7 @@
           <div class="columns">
             <div class="column" v-if="userList && userList.length>0 && groupList && groupList.length>0">
               <BulmaAdminTable
-                :dataList="userList.map(x => ({...x,allowselect:(x.id!=1),allowdelete:(x.id!=1),group:groupName(x.group_id)}))"
+                :dataList="userList.map(x => ({...x,group:groupName(x.group_id)}))"
                 :labels="['Name','Group']"
                 :columns="['username','group']"
                 :filters="['username','group']"
