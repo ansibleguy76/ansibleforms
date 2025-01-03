@@ -64,6 +64,26 @@
     short: Certificate
     default: "%PERSISTENT_FOLDER%/certificates/cert.pem"
     description: The path to the server certificate, in BASE64/PEM format.
+  - name: ADMIN_USERNAME
+    type: string
+    allowed: a valid username
+    short: Admin username
+    version: 5.0.8
+    default: admin
+    description: |
+      The admin username is the first user that can login to the application.  
+      This user has full access to the application and is created at first start if not present.
+      This user will be added to the `admins` group, which will be created as well if not present.
+  - name: ADMIN_PASSWORD
+    type: string
+    allowed: a valid password
+    short: Admin password
+    version: 5.0.8
+    default: AnsibleForms!123
+    description: |
+      The admin password is the password for first user that can login to the application.  
+      This user has full access to the application and is created at first start if not present.
+      This user will be added to the `admins` group, which will be created as well if not present.
   - name: FORMS_PATH
     type: string
     allowed: a valid file path
@@ -184,6 +204,42 @@
     description: |
       https://github.com/carvel-dev/ytt is a tool for yaml templating. It can be activated by this variable.
     version: 5.0.2
+  - name: YTT_ALLOW_SYMLINK_DESTINATIONS
+    type: string
+    allowed: valid paths
+    short: Ytt allowed symlink destinations
+    default: ""
+    description: |
+      Ytt disables templating with symlinks by default.  If you want to allow symlink use on specific directories, this variable can be set to the path(s) where the symlinks are allowed (multiple paths separated by Node's `path.delimiter`). Note: enabling this may come with some risks, see ytt FAQ for more info.
+    version: 5.0.8
+  - name: YTT_DANGEROUS_ALLOW_ALL_SYMLINK_DESTINATIONS
+    type: number
+    choices:
+      - name: 0
+        description: Disables all symlink destinations
+      - name: 1
+        description: Enables all symlink destinations
+    default: 0
+    short: Ytt dangerous allow all symlink destinations
+    description: |
+      Ytt disables templating with symlinks by default.  If you want to allow all symlink use EVERYWHERE, you can set this variable to 1. Note: enabling this comes with some risks (hence the 'DANGEROUS' part), see ytt FAQ for more info.
+    version: 5.0.8
+  - name: YTT_VARS_PREFIX
+    type: string
+    allowed: a valid prefix
+    short: Ytt vars prefix
+    default: ""
+    description: |
+      Environment variable prefix for ytt to get data values from. For example, when set to `MY_PREFIX`, `MY_PREFIX_my_var=value` results to the ytt data value `my_var=value`.
+    version: 5.0.8
+  - name: YTT_LIB_DATA_{dynamic}
+    type: string
+    allowed: a valid lib data value
+    short: Ytt lib data
+    default: ""
+    description: |
+      This is not a single variable but rather an infinite amount of variables.  You can set as many as you want.  The dynamic part is the name of the lib data.  For example `YTT_LIB_DATA_MYLIB=values.yml` results in the contents of `values.yml` to be used by ytt in the `mylib` library.
+    version: 5.0.8
   - name: LOG_LEVEL
     type: string
     choices:
@@ -380,6 +436,16 @@
       Once the access token is expired, and the client tries to connect to the server, the client hits a 401 error (unauthorized). the client application captures this error, and calls the refresh api with its refresh token.  If the refresh token is valid, the client gets a new set of access and refresh tokens and retries the last unauthorized api call with the renew access token.  
       With this mechanism, the client can keep the user-connection open for a long time and avoid a sudden logout during a save action.  
       If the client has not connected back to the server during the expiration time of the refresh token, the client is logged of and authentication is required again.
+  - name: ACCESS_TOKEN_ISSUER
+    type: string
+    allowed: a valid issuer string
+    short: Issuer of the access token
+    default: ansibleforms
+    version: 5.0.8
+    description: |
+      The issuer of the access token is the name of the application that issues the token.  
+      This is used to verify the token on the server side.
+      Also reverse proxies can be picky about the issuer being present.
   - name: HOME_PATH
     type: string
     allowed: a valid path
@@ -481,7 +547,19 @@
     short: Roles
     description: | 
       The roles provide RBAC.  Each role has a name and 1 or more groups (local, ldap or azuread).  The `admin` and `public` rol is mandatory.  
-      Since version 4.0.11 you can also add users (local, ldap or azuread)
+      Since version 4.0.11 you can also add users (local, ldap or azuread).  
+      Since version 5.0.8 options are introduced to add specific role-options.  
+      - showDesigner: The user can see the designer
+      - showSettings: The user can see the settings page
+      - showDebugButtons: The user can see the debug buttons on a form
+      - showExtravars: The user can see the extravars on a form
+      - showLogs: The user can see the logs page
+      - extendedTokenExpiration: The user can request a token with a longer expiration time (for coding api purposes for example)  
+        
+      When options are not set, the admin role will have all options.  
+      When options are set on the public role, they will have the lowest precedence and can be used as default options for all roles.  
+      You can add options on role level, which will override the public role options.
+
     examples:
     - name: Roles
       code: |
@@ -494,6 +572,12 @@
         - name: operator
           groups:
           - local/operator
+        - name: architect
+          groups:
+          - local/architect
+          options:
+            showDesigner: true # architects can see the designer
+            showLogs: true     # architects can see the logs
         - name: demo
           groups:
           - local/demo
@@ -502,6 +586,9 @@
           - local/myuser
         - name: public        # is mandatory
           groups: []  
+          options:
+            showDebugButtons: true  # everyone can see the debug buttons
+            showExtravars: true     # everyone can see the extravars
   - name: constants
     type: object
     allowed: Free object structure
@@ -1197,6 +1284,14 @@
 
           **Note** : You can also dynamically set this property by using a field called `__keepExtravars__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static diff field.  The field must result in a boolean (expression or checkbox)          
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+      - name: abortable
+        type: boolean
+        short: Allow aborting the job
+        group: workflow
+        version: 5.0.8
+        default: true
+        description: |
+          By default you can allow the user to abort the job.  Use this attribute to disable this behaviour.
       - name: tags
         type: string
         allowed: comma separated tag-list
@@ -1826,6 +1921,7 @@
                       name: areyousure
                       label: Confirmation
                       default: false
+                      switch: true
                       placeholder: are you sure?
               - name: radio
                 description: A radio field (multi options)
@@ -1977,6 +2073,7 @@
                           label: membership
                           placeholder: Paid yet ?
                           type: checkbox
+                          switch: true
                           required: true
                           default: true                                
             short: Field type
@@ -2319,6 +2416,14 @@
             description: A default can be treated as javascript and can thus hold expressions like `'$(other_field)'.toUpperCase()` or `Math.PI` or `Date.getDate.toISOString()`
             version: 4.0.5
             with_types: text, textarea, number, expression, password, enum, radio, checkbox, datetime
+          - name: switch
+            type: boolean
+            group: visualization
+            default: false
+            short: Show checkbox as switch
+            description: A checkbox can be shown as a switch, enabling a more modern look.
+            version: 4.0.5
+            with_types: checkbox
           - name: required
             type: boolean
             group: validation
