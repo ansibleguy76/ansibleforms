@@ -18,16 +18,16 @@
                 <router-link class="navbar-item" to="/jobs" v-if="authenticated">
                   <span class="icon"><font-awesome-icon icon="history" /></span><span>Job log </span><span v-if="approvals" class="ml-1 is-warning tag">{{approvals}} {{(approvals==1)?"approval":"approvals"}} waiting</span>
                 </router-link>
-                <router-link class="navbar-item" :to="'/designer?form='+($route.query.form||'')" v-if="isAdmin && authenticated">
+                <router-link class="navbar-item" :to="'/designer?form='+($route.query.form||'')" v-if="(profile?.options?.showDesigner ?? isAdmin) && authenticated">
                   <span class="icon"><font-awesome-icon icon="edit" /></span><span>Designer</span>
                 </router-link>
-                <router-link class="navbar-item" to="/settings" v-if="isAdmin && authenticated">
+                <router-link class="navbar-item" to="/settings" v-if="(profile?.options?.showSettings ?? isAdmin) && authenticated">
                       <span class="icon"><font-awesome-icon icon="cog" /></span><span>Settings</span>
                 </router-link>
                 <div class="navbar-item has-dropdown is-hoverable" v-if="authenticated" >
                   <a class="navbar-link"><span class="icon"><font-awesome-icon icon="question-circle" /></span></a>
                   <div class="navbar-dropdown">
-                    <router-link class="navbar-item" v-if="isAdmin && authenticated" to="/logs">
+                    <router-link class="navbar-item" v-if="(profile?.options?.showLogs ?? isAdmin) && authenticated" to="/logs">
                       <span class="icon"><font-awesome-icon icon="file-lines" /></span><span>Logs</span>
                     </router-link>
                     <a class="navbar-item" href="https://ansibleforms.com/" target="_blank">
