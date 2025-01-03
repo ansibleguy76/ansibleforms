@@ -549,6 +549,7 @@
       The roles provide RBAC.  Each role has a name and 1 or more groups (local, ldap or azuread).  The `admin` and `public` rol is mandatory.  
       Since version 4.0.11 you can also add users (local, ldap or azuread).  
       Since version 5.0.8 options are introduced to add specific role-options.  
+
       - showDesigner: The user can see the designer
       - showSettings: The user can see the settings page
       - showDebugButtons: The user can see the debug buttons on a form
@@ -723,7 +724,26 @@
         short: User
         version: 4.0.10
         description: |
-          A list of local or ldap users.  They must be in the format of `local/username` or `ldap/username` or `azuread/username`         
+          A list of local or ldap users.  They must be in the format of `local/username` or `ldap/username` or `azuread/username`     
+      - name: options
+        type: object
+        allowed: Key value pairs
+        short: Role options
+        version: 5.0.8
+        description: |
+          Since version 5.0.8 you can add specific role options.  The options are used to enable or disable certain features for a role.  
+          The options are:
+
+          - showDesigner: The user can see the designer
+          - showSettings: The user can see the settings page
+          - showDebugButtons: The user can see the debug buttons on a form
+          - showExtravars: The user can see the extravars on a form
+          - showLogs: The user can see the logs page
+          - extendedTokenExpiration: The user can request a token with a longer expiration time (for coding api purposes for example)  
+
+          When options are not set, the admin role will have all options.  
+          When options are set on the public role, they will have the lowest precedence and can be used as default options for all roles.  
+          You can add options on role level, which will override the public role options.    
       examples:
       - name: Roles
         language: YAML
@@ -738,11 +758,20 @@
             - local/operator
             users:
             - azuread/mike
+          - name: architect
+            groups:
+            - local/architect
+            options:
+              showDesigner: true # architects can see the designer
+              showLogs: true     # architects can see the logs
           - name: demo
             groups:
             - local/demo
           - name: public        # is mandatory
-            groups: []    
+            groups: []  
+            options:
+              showDebugButtons: true  # everyone can see the debug buttons
+              showExtravars: true     # everyone can see the extravars              
     - name: Form
       icon: fas,rectangle-list
       link: forms/form
