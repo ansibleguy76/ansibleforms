@@ -37,9 +37,6 @@ User.create = function (record) {
     })
 };
 User.update = function (record,id) {
-  if(id==1 && record.group_id!=undefined && record.group_id!=1){
-    return Promise.reject("You cannot change the 'admin' user out of the 'admins' group.")
-  }
   if(record.password){
     logger.info(`Updating user with password ${(record.username)?record.username:id}`)
     return crypto.hashPassword(record.password)
@@ -54,12 +51,8 @@ User.update = function (record,id) {
 
 };
 User.delete = function(id){
-    if(id==1){
-      return Promise.reject("You cannot delete user 'admin'")
-    }else{
-      logger.info(`Deleting user ${id}`)
-      return mysql.do("DELETE FROM AnsibleForms.`users` WHERE id = ? AND username<>'admin'", [id])
-    }
+    logger.info(`Deleting user ${id}`)
+    return mysql.do("DELETE FROM AnsibleForms.`users` WHERE id = ?", [id])
 };
 User.findAll = function () {
     logger.info("Finding all users")
@@ -115,10 +108,14 @@ User.checkToken = function (username,username_type,refresh_token) {
       }
     })
 };
-User.getRoles = function(groups,user){
-  var roles = ["public"]
-  var forms=undefined
+User.getRolesAndOptions = function(groups,user){
+  var result = {}
+  var roles = []
+  var options = {}
   var full_username = `${user.type}/${user.username}`
+
+  logger.debug(`Getting roles and options for ${full_username}`)
+
   return Form.load()
   .then((forms)=>{
     // derive roles from forms
@@ -127,18 +124,38 @@ User.getRoles = function(groups,user){
       forms.roles.forEach(function(role){
         if(role.groups && role.groups.includes(group)){
           roles.push(role.name)
+          if(role.options){
+            for (const [key, value] of Object.entries(role.options)) {
+              logger.debug(`Adding option ${key} = ${value}`)
+              if(options[key]===undefined){
+                options[key] = value
+              }else{
+                options[key] = options[key] && value
+              }
+            }
+          }                
         }
       })
     })
 
-    // add all the roles that match the user
+    logger.debug(`Adding public role to ${full_username}`)
+    roles.push("public")
+    // if the public role has any option set, we add it to the options, we don't overwrite
     forms.roles.forEach(function(role){
-      if(role.users && role.users.includes(full_username)){
-        roles.push(role.name)
+      if(role.name=="public" && role.options){
+        for (const [key, value] of Object.entries(role.options)) {
+          if(options[key]===undefined){
+            logger.debug(`Adding public option ${key} = ${value}`)
+            options[key] = value
+          }
+        }
       }
     })
 
-    return roles
+    result.roles = roles
+    result.options = options
+
+    return result
   })
   .catch((e)=>{
     // return temp role if needed
