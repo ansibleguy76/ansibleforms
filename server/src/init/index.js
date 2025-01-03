@@ -5,11 +5,14 @@ async function init(){
   var Form = require('../models/form.model');
   var Job = require('../models/job.model');
   var Schema = require('../models/schema.model');
+  var adminGroupId = undefined
   const mysql=require("../models/db.model");
   const Repository = require('../models/repository.model');
   const parser = require("cron-parser")
   const dayjs = require("dayjs")
-  const util = require('util')
+  const appConfig = require("../../config/app.config")
+  const User = require("../models/user.model")
+  const Group = require("../models/group.model")
 
   // this is at startup, don't start the app until mysql is ready
   // rewrite with await
@@ -65,6 +68,40 @@ async function init(){
       throw err
     }
 
+  }
+
+  // check admins groups
+  try{
+    var adminGroupName = "admins"
+    var adminGroup = await Group.findByName(adminGroupName)
+    if(adminGroup.length==0){
+      logger.warning(`Group ${adminGroupName} not found, creating it`)
+      adminGroup = {}
+      adminGroup.id = await Group.create(new Group({name:adminGroup}))
+    }else{
+      adminGroup = adminGroup[0]
+    }
+    adminGroupId = adminGroup.id
+  }catch(err){
+    logger.error("Failed to check/create admins group : " + err)
+    throw err
+  }
+
+  // check admin user
+  logger.info("Checking admin user exists")
+  try{
+    var adminUsername = appConfig.adminUsername
+    var adminUser = await User.findByUsername(adminUsername)
+    if(adminUser.length==0){
+      logger.warning(`Admin user ${adminUsername} not found, creating it`)
+      var adminPassword = appConfig.adminPassword
+      await User.create(new User({username:adminUsername,email:'',password:adminPassword,group_id:adminGroupId}))
+    }else{
+      adminUser = adminUser[0]
+    }
+  }catch(err){
+    logger.error("Failed to check/create admin user : " + err)
+    throw err
   }
 
 
