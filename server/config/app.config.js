@@ -8,6 +8,10 @@ var app_config = {
   allowSchemaCreation: (process.env.ALLOW_SCHEMA_CREATION ?? 1)==1,
   formsPath: process.env.FORMS_PATH || path.resolve(__dirname + "/../persistent/forms.yaml"),
   useYtt: (process.env.USE_YTT ?? 0)==1,
+  yttDangerousAllowAllSymlinkDestinations: (process.env.YTT_DANGEROUS_ALLOW_ALL_SYMLINK_DESTINATIONS ?? 0)==1,
+  yttAllowSymlinkDestinations: process.env.YTT_ALLOW_SYMLINK_DESTINATIONS || "",
+  yttLibData: {},
+  yttVarsPrefix: process.env.YTT_VARS_PREFIX || "",
   lockPath: process.env.LOCK_PATH || path.resolve(__dirname + "/../persistent/ansibleForms.lock"),
   helpPath: path.resolve(__dirname + "/../help.yaml"),
   encryptionSecret: ((process.env.ENCRYPTION_SECRET + "vOVH6sdmpNWjRRIqCc7rdxs01lwHzfr3").substring(0,32)) || "vOVH6sdmpNWjRRIqCc7rdxs01lwHzfr3",
@@ -20,5 +24,14 @@ var app_config = {
   enableBypass: (process.env.ENABLE_BYPASS ?? 0)==1,
   enableDbQueryLogging: (process.env.ENABLE_DB_QUERY_LOGGING ?? 0)==1,
   enableFormsYamlInDatabase: (process.env.ENABLE_FORMS_YAML_IN_DATABASE ?? 0)==1,
+  adminUsername: process.env.ADMIN_USERNAME || "admin",
+  adminPassword: process.env.ADMIN_PASSWORD || "AnsibleForms!123"
 };
+
+// process dynamic YTT_LIB_DATA_ environment variables
+Object.entries(process.env).filter( ([key, value]) => key.startsWith('YTT_LIB_DATA_')).forEach( ([key, value]) => {
+  const libName = key.replace('YTT_LIB_DATA_', '').toLowerCase();
+  app_config.yttLibData[libName] = value;
+});
+
 module.exports = app_config;
