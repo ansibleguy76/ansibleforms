@@ -21,7 +21,7 @@
           </article>
           <!-- top form buttons -->
           <!-- show extra vars -->
-          <button @click="generateJsonOutput();showExtraVars=true" class="button is-white is-small mr-3" v-show="!hideForm">
+          <button v-if="profile?.options?.showExtravars ?? true" @click="generateJsonOutput();showExtraVars=true" class="button is-white is-small mr-3" v-show="!hideForm">
             <span class="has-text-info icon">
               <font-awesome-icon icon="eye" />
             </span>
@@ -31,7 +31,7 @@
           <span  v-show="!hideForm" v-if="isAdmin" title="Enable verbose ansible logging" class="icon is-clickable is-pulled-right" @click="enableVerbose=!enableVerbose">
               <font-awesome-icon :icon="(enableVerbose?['far','square-check']:['far', 'square'])" />
           </span>          
-          <span  v-show="!hideForm" v-if="isAdmin" title="Show hidden fields" class="icon is-clickable is-pulled-right" :class="{'has-text-success':!showHidden,'has-text-danger':showHidden}" @click="showHidden=!showHidden">
+          <span  v-show="!hideForm" v-if="profile?.options?.showDebugButtons ?? isAdmin" title="Show hidden fields" class="icon is-clickable is-pulled-right" :class="{'has-text-success':!showHidden,'has-text-danger':showHidden}" @click="showHidden=!showHidden">
               <font-awesome-icon :icon="(showHidden?'search-minus':'search-plus')" />
           </span>
 
@@ -97,7 +97,7 @@
                               class="icon is-clickable"
                               :class="{'has-text-success':!fieldOptions[field.name].debug,'has-text-danger':fieldOptions[field.name].debug}"
                               @click="setExpressionFieldDebug(field.name,!fieldOptions[field.name].debug)"
-                              v-if="field.expression && isAdmin"
+                              v-if="field.expression && (profile?.options?.showDebugButtons ?? isAdmin)"
                             >
                               <font-awesome-icon :icon="(fieldOptions[field.name].debug?'search-minus':'search-plus')" />
                             </span>
@@ -121,7 +121,7 @@
                             <span
                               class="icon is-clickable has-text-success"
                               @click="setExpressionFieldViewable(field.name,true)"
-                              v-if="field.expression && !fieldOptions[field.name].viewable && !fieldOptions[field.name].editable"
+                              v-if="field.expression && !fieldOptions[field.name].viewable && !fieldOptions[field.name].editable && (profile?.options?.showDebugButtons ?? isAdmin)"
                             >
                               <font-awesome-icon icon="eye" />
                             </span>
@@ -394,7 +394,7 @@
               </button>
             </div>
             <!-- abort job button -->
-            <div class="column" v-if="jobResult.status=='info' && !abortTriggered">
+            <div class="column" v-if="jobResult.status=='info' && !abortTriggered && (currentForm.abortable || true)">
               <button  class="button is-fullwidth has-background-warning" @click="abortJob(jobId)">
                 <span class="icon"><font-awesome-icon icon="times" /></span>
                 <span>Abort Job</span>
@@ -444,16 +444,43 @@
             <span>Close</span>
           </button>
           <!-- copy extravars button -->
-          <button @click="clip(formdata)" class="ml-2 button is-white is-small">
+          <button v-if="!viewAsYaml" @click="clip(formdata)" class="ml-2 button is-white is-small">
             <span class=" has-text-info icon">
               <font-awesome-icon icon="copy" />
             </span>
             <span>Copy to clipboard</span>
           </button>
+          <!-- copy extravars button -->
+          <button v-else @click="clip(formdataYaml,true)" class="ml-2 button is-white is-small">
+            <span class=" has-text-info icon">
+              <font-awesome-icon icon="copy" />
+            </span>
+            <span>Copy to clipboard</span>
+          </button>    
+          <!-- copy extravars button -->
+          <button v-if="!viewAsYaml" @click="viewAsYaml=true" class="ml-2 button is-white is-small">
+            <span class=" has-text-info icon">
+              <font-awesome-icon icon="eye" />
+            </span>
+            <span>View as yaml</span>
+          </button>
+          <!-- copy extravars button -->
+          <button v-else @click="viewAsYaml=false" class="ml-2 button is-white is-small">
+            <span class=" has-text-info icon">
+              <font-awesome-icon icon="eye" />
+            </span>
+            <span>View as json</span>
+          </button>                    
           <!-- extravars raw -->
-          <div class="box mt-4 is-limited">
+          <div v-if="!viewAsYaml" class="box mt-4 is-limited">
             <vue-json-pretty :data="formdata"></vue-json-pretty>
           </div>
+          <div v-else class="box mt-4 is-limited">
+            <highlightjs
+              language="yaml"
+              :code="formdataYaml"
+            />            
+          </div>          
         </div>
       </div>
     </div>
@@ -470,14 +497,17 @@
   import BulmaCheckRadio from './BulmaCheckRadio.vue'
   import BulmaEditTable from './BulmaEditTable.vue'
   import DatePicker from 'vue2-datepicker';
+  import YAML from 'yaml'
   import 'vue2-datepicker/index.css';
 
   import 'highlight.js/styles/monokai-sublime.css'
   import hljs from 'highlight.js/lib/core';
   import javascript from 'highlight.js/lib/languages/javascript';
+  import yaml from 'highlight.js/lib/languages/yaml';
   import vuePlugin from "@highlightjs/vue-plugin";
 
   hljs.registerLanguage('javascript', javascript);
+  hljs.registerLanguage('yaml', yaml);
 
   import Helpers from './../lib/Helpers'
   import Copy from 'copy-to-clipboard'
@@ -487,6 +517,7 @@
   import { useVuelidate } from '@vuelidate/core'
   import { minValue,maxValue,minLength,maxLength,helpers,requiredIf,sameAs } from '@vuelidate/validators'
 
+  
   Vue.use(vuePlugin);  
   Vue.use(VueShowdown)
 
@@ -496,7 +527,8 @@
     props:{
       currentForm:{type:Object},
       constants:{type:Object},
-      isAdmin:{type:Boolean}
+      isAdmin:{type:Boolean},
+      profile:{type:Object}
     },
     setup(){
       return { v$: useVuelidate() }
@@ -517,6 +549,7 @@
               error:""
             }
           },
+          viewAsYaml:false,         // flag to show extravars as yaml
           watchdog:0,               // main loop counter 
           loopdelay:100,            // main loop delay
           subjob:{},                // output of last subjob
@@ -671,6 +704,10 @@
       return obj
     },
     computed: {
+      // get the formdata as yaml
+      formdataYaml(){
+        return YAML.stringify(this.formdata)
+      },
       // unevaluatedFieldsWarning
       unevaluatedFieldsWarning(){
         if(this.canSubmit){

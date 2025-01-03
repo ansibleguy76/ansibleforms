@@ -1,9 +1,8 @@
 <template>
-    <Form v-if="currentForm" :isAdmin="isAdmin" :constants="formConfig.constants||{}" :token="token" :key="componentKey" @rerender="load" @refreshApprovals="$emit('refreshApprovals')" :currentForm="currentForm" />
+    <Form v-if="currentForm" :isAdmin="isAdmin" :profile="profile" :constants="formConfig.constants||{}" :token="token" :key="componentKey" @rerender="load" @refreshApprovals="$emit('refreshApprovals')" :currentForm="currentForm" />
 </template>
 <script>
-  import Vue from 'vue'
-  import axios from 'axios'
+
   import Form from './../components/Form.vue'
   import FormLib from './../lib/Form'
   export default{
@@ -11,7 +10,8 @@
     components:{Form},
     props:{
       token:{type:String},
-      isAdmin:{type:Boolean}
+      isAdmin:{type:Boolean},
+      profile:{type:Object}
     },
     data(){
       return  {
