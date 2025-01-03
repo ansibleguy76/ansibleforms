@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+-   Regex in repo's
+-   Jwt token issuer added (use env variable ACCESS_TOKEN_ISSUER) - credits to le-martre for the fix
+
+### Changed
+
+-   The admin user can now be removed, and will be recreated automatically if needed at first start.
+    use env variables ADMIN_USERNAME and ADMIN_PASSWORD.
+
+### Added
+
+-   YTT extra environment variable (see help)
+-   Role options (showDesigner, showLogs, showSettings, ...) allowing for custom semi-admin or designer roles
+
 ## [5.0.7] - 2024-10-03
 
 ### Added
