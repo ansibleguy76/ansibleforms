@@ -77,7 +77,7 @@ async function init(){
     if(adminGroup.length==0){
       logger.warning(`Group ${adminGroupName} not found, creating it`)
       adminGroup = {}
-      adminGroup.id = await Group.create(new Group({name:adminGroup}))
+      adminGroup.id = await Group.create(new Group({name:adminGroupName}))
     }else{
       adminGroup = adminGroup[0]
     }
