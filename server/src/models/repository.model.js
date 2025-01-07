@@ -20,6 +20,7 @@ var Repository=function(repository){
     this.uri = repository.uri;
     this.cron = repository.cron;
     this.user = repository.user;
+    this.branch = repository.branch; // added in 5.0.8
     this.use_for_forms = (repository.use_for_forms)?1:0;
     this.rebase_on_start = (repository.rebase_on_start)?1:0;    
     this.use_for_playbooks = (repository.use_for_playbooks)?1:0;
@@ -56,7 +57,7 @@ Repository.delete = function(name){
 };
 Repository.findAll = function () {
     // logger.info("Finding all repositories")
-    return mysql.do("SELECT id,name,user,uri,description,use_for_forms,use_for_playbooks,cron,status,output,head,rebase_on_start FROM AnsibleForms.`repositories`;",undefined,true)
+    return mysql.do("SELECT id,name,branch,user,uri,description,use_for_forms,use_for_playbooks,cron,status,output,head,rebase_on_start FROM AnsibleForms.`repositories`;",undefined,true)
 };
 // Repository.findById = function (id) {
 //     logger.info(`Finding repository ${id}`)
@@ -165,7 +166,8 @@ Repository.clone = async function(name){
       await mysql.do("update AnsibleForms.`repositories` set status = ? where name = ?",["running",name])
       var repo = await Repository.findByName(name)
       var uri = Repository.getPrivateUri(repo)
-      output = await Repo.clone(uri,name)
+      var branch = repo.branch || undefined
+      output = await Repo.clone(uri,name,branch)
       status="success"
     }catch(e){
       output = e.message

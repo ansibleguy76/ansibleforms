@@ -166,7 +166,7 @@ Repo.info = async function (name) {
 };
 
 // run git clone
-Repo.clone = async function (uri,name) {
+Repo.clone = async function (uri,name,branch=undefined) {
 
     var directory = config.repoPath
     var exists = true
@@ -194,7 +194,11 @@ Repo.clone = async function (uri,name) {
 
       var cmd
       if(uri){
-        cmd = `git clone --verbose ${uri} ${name}`
+        if(branch){
+          cmd = `git clone -b ${branch} --verbose ${uri} ${name}`
+        }else{
+          cmd = `git clone --verbose ${uri} ${name}`
+        }
       }else{
         throw new Error("No uri given")
       }

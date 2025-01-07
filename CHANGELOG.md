@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   YTT extra environment variable (see help)
 -   Role options (showDesigner, showLogs, showSettings, ...) allowing for custom semi-admin or designer roles
+-   Added branch to repos
 
 ## [5.0.7] - 2024-10-03
 

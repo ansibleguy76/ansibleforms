@@ -29,8 +29,8 @@
               </div>              
               <BulmaAdminTable
                 :dataList="repositoryList"
-                :labels="['Name','Status','Head','Type']"
-                :columns="['name','status','head','icon']"
+                :labels="['Name','Branch','Status','Head','Type']"
+                :columns="['name','branch','status','head','icon']"
                 :filters="['name','status']"
                 :icons="[false,false,false,true]"
                 identifier="name"
@@ -45,6 +45,7 @@
             <transition name="add-column" appear>
               <div class="column" v-if="repositoryItem!==undefined && !showDelete">
                 <BulmaInput icon="heading" v-model="repository.name" label="Name" placeholder="my_repo_name" :readonly="repositoryItem!==-1" :required="true" :hasError="v$.repository.name.$invalid" :errors="[]" help="Alphanumeric with underscore and hyphen" />
+                <BulmaInput icon="code-branch" v-model="repository.branch" label="Branch" placeholder="master" :hasError="v$.repository.branch.$invalid" :errors="[]" />
                 <BulmaInput icon="user" v-model="repository.user" label="Username" placeholder="my-user" :hasError="v$.repository.user.$invalid" :errors="[]" help="Alphanumeric with hyphen" />
                 <BulmaInput icon="lock" v-model="repository.password" type="password" label="Password" placeholder="Password or Token" />
                 <BulmaInput :icon="['fab','git']" v-model="repository.uri" label="Uri" placeholder="https://github.com/account/repo.git" :required="true" :hasError="v$.repository.uri.$invalid" :errors="[]" help="Only ssh or https uri's are allowed" />
@@ -78,6 +79,7 @@
   import { useVuelidate } from '@vuelidate/core'
   import { required, helpers } from '@vuelidate/validators'
 
+
   export default{
     name:"AfRepositories",
     props:{
@@ -92,6 +94,7 @@
       return  {
           repository:{
             name:"",
+            branch:"",
             user:"",
             password:"",
             uri:"",
@@ -265,6 +268,12 @@
               {description: "User must be a valid repository name",type:"regex"},
               (value) => !helpers.req(value) || (new RegExp("^[a-zA-Z0-9_-]{1,50}$").test(value)) // eslint-disable-line
           )             
+        },
+        branch: {
+          regex : helpers.withParams(
+              {description: "Must be valid git branch name",type:"regex"},
+              (value) => !helpers.req(value) || (new RegExp("^[^\s]+$").test(value)) // eslint-disable-line
+          )     
         },
         uri: {
           required,
