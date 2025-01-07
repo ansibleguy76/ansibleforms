@@ -104,13 +104,45 @@ async function init(){
     throw err
   }
 
+  // let's check other database records like settings,ldap,awx,oidc and azuread. if no record exists, create them, this is for fresh install
+  logger.info("Checking database records")
+  const records = {
+    azuread:{client_id:'',secret_id:'',enable:0,groupfilter:''},
+    oidc:{issuer:'',client_id:'',secret_id:'',enabled:0,groupfilter:''},
+    awx:{uri:'',token:'',username:'', password:'',ignore_certs:0,use_credentials:0,ca_bundle:''},
+    ldap:{server:'',port:389,ignore_certs:1,enable_tls:0,cert:'',ca_bundle:'',bind_user_dn:'',bind_user_pw:'',search_base:'',username_attribute:'sAMAccountName',groups_attribute:'memberOf',enable:0,is_advanced:0,groups_search_base:'',group_class:'',group_member_attribute:'',group_member_user_attribute:''},    
+    settings:{mail_server:'',mail_port:25,mail_secure:0,mail_username:'',mail_password:'',mail_from:'',url:'',forms_yaml:''}    
+  }
+ 
+  for(let record in records){
+    try{
+      var result = await mysql.do(`SELECT * FROM AnsibleForms.${record}`)
+      if(result.length==0){
+        logger.warning(`No record found for ${record}, creating it`)
+        var obj = records[record]
+        var keys = Object.keys(obj)
+        var values = keys.map((key)=>{return obj[key]})
+        var sql = `INSERT INTO AnsibleForms.${record}(${keys.join(",")}) VALUES(${values.map(()=>{return "?"}).join(",")})`
+        await mysql.do(sql,values)
+      }
+    }catch(err){
+      logger.error(`Failed to check/create ${record} : ` + err)
+      throw err
+    }
+  }
 
+  logger.info("All database records are checked")
+
+  logger.info("Checking ssh keys")
   Ssh.generate(false)
     .catch((err)=>{
       logger.warning("Failed to generate ssh keys : " + err)
     })
+
+  logger.info("Checking backup folder")
   Form.initBackupFolder()
 
+  logger.info("Checking old jobs")
   Job.abandon(true)
   .then((changed)=>{
     logger.warning(`Abandoned ${changed} jobs`)

@@ -7,4 +7,4 @@ CREATE TABLE `oidc` (
   `enabled` tinyint(4) DEFAULT NULL,
   `groupfilter` varchar(250) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-INSERT INTO AnsibleForms.oidc(issuer, client_id,secret_id,enabled,groupfilter) VALUES('', '','',0,'');
+

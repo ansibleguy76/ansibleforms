@@ -3,12 +3,7 @@ const logger=require("../lib/logger");
 const mysql = require("./db.model")
 const appConfig = require('../../config/app.config')
 const fs = require('fs');
-const NodeCache = require("node-cache");
 
-const cache = new NodeCache({
-    stdTTL: 14400,
-    checkperiod: (14400 * 0.5)
-});
 //user object create
 var Schema=function(){
 };
@@ -206,6 +201,9 @@ async function patchVersion5(messages,success,failed){
   await checkPromise(addColumn("settings","forms_yaml","longtext",true,"NULL"),messages,success,failed)  // add forms_yaml column
   await checkPromise(setUtf8mb4CharacterSet("settings","forms_yaml","longtext"),messages,success,failed) // allow emoticon or utf16 characters
 
+  // In 5.0.8, the repositories table was extended with a new column, branch, to store the branch of the repository
+  await checkPromise(addColumn("repositories","branch","varchar(250)",true,"NULL"),messages,success,failed) // add branch column
+
 }
 
 // PATCHING : Patch All
@@ -242,11 +240,6 @@ async function checkAll(){
   var success=[]
   var failed=[]
   var resultobj=undefined
-  resultobj=cache.get('result')  // get from cache, we only check the schema once (or once a day)
-  if(resultobj){
-    logger.debug("Schema check from cache")
-    return resultobj
-  }
 
   // check the database
   await checkPromise(checkSchema(),messages,success,failed)
@@ -283,9 +276,7 @@ async function checkAll(){
   }
 
   // all passed fine
-  logger.debug("Schema check to cache")
   resultobj={message:messages,data:{success:success,failed:failed}}
-  cache.set('result',resultobj)
   return resultobj
 }
 Schema.hasSchema = function(){
@@ -296,7 +287,6 @@ Schema.create = async function () {
   if(appConfig.allowSchemaCreation){ // added in 5.0.3
     const buffer=fs.readFileSync(`${__dirname}/../db/create_schema_and_tables.sql`)
     const query=buffer.toString();
-    cache.del('result') // clear cache
     var res = await mysql.do(query)
     if(res.length > 0){
       logger.notice(`Created schema 'AnsibleForms' and tables`)
