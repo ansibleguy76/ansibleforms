@@ -17,9 +17,6 @@
                     <tbody>
                       <tr><th>Databaseschema</th><td>AnsibleForms</td></tr>
                       <tr><th>Tables</th><td>All required tables</td></tr>
-                      <tr><th>Users</th><td>admin (pw = AnsibleForms!123)</td></tr>
-                      <tr><th>Groups</th><td>admins</td></tr>
-                      
                     </tbody>
                   </table>
                 </div>
