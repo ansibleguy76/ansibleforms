@@ -1,5 +1,5 @@
 <template>
-  <section v-if="isAdmin" class="section">
+  <section v-if="profile?.options?.showSettings ?? isAdmin" class="section">
     <BulmaQuickView class="quickview" v-if="showOutput" title="Last execution result" footer="" @close="showOutput=false">
         <p class="is-family-code" v-html="output.split('\n').join('<br>')"></p>
     </BulmaQuickView>        
@@ -84,7 +84,8 @@
     name:"AfRepositories",
     props:{
       authenticated:{type:Boolean},
-      isAdmin:{type:Boolean}
+      isAdmin:{type:Boolean},
+      profile:{type:Object}
     },
     components:{BulmaButton,BulmaInput,BulmaModal,BulmaQuickView,BulmaAdminTable,BulmaCheckbox,BulmaSettingsMenu},
     setup(){

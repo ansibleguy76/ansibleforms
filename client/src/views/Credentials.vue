@@ -1,5 +1,5 @@
 <template>
-  <section v-if="isAdmin" class="section">
+  <section v-if="profile?.options?.showSettings ?? isAdmin" class="section">
     <BulmaModal v-if="showDelete && credential.name" title="Delete" action="Delete" @click="deleteCredential();showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete Credential '{{ credential.name}}'</BulmaModal>
     <div class="container">
       <h1 class="title has-text-info"><font-awesome-icon icon="lock" /> Credentials</h1>
@@ -70,7 +70,8 @@
     name:"AfCredentials",
     props:{
       authenticated:{type:Boolean},
-      isAdmin:{type:Boolean}
+      isAdmin:{type:Boolean},
+      profile:{type:Object}
     },
     components:{BulmaButton,BulmaInput,BulmaModal,BulmaAdminTable,BulmaCheckbox,BulmaSelect,BulmaSettingsMenu},
     setup(){

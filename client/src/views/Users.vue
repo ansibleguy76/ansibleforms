@@ -1,5 +1,5 @@
 <template>
-  <section v-if="isAdmin" class="section">
+  <section v-if="profile?.options?.showSettings ?? isAdmin" class="section">
     <BulmaModal v-if="showDelete && user.username" title="Delete" action="Delete" @click="deleteUser();showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete User '{{ user.username}}'</BulmaModal>
     <div class="container">
       <h1 class="title has-text-info"><font-awesome-icon icon="user" /> Users</h1>
@@ -81,7 +81,8 @@
     name: "AfUsers",
     props:{
       authenticated:{type:Boolean},
-      isAdmin:{type:Boolean}
+      isAdmin:{type:Boolean},
+      profile:{type:Object}
     },
     components:{BulmaButton,BulmaSelect,BulmaInput,BulmaModal,BulmaAdminTable,BulmaSettingsMenu},
     setup(){

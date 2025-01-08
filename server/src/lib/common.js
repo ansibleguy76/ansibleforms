@@ -70,14 +70,49 @@ Helpers.checkCertificate=function(cert){
 Helpers.checkAdminMiddleware = (req, res, next) =>  {
       try{
         if(!req.user.user.roles.includes("admin")) {
-          res.status(401).json(new restResult("error","you are not an admin"))
+          res.status(401).json(new restResult("error","No access",null,"You are not an admin"))
         } else {
           //logger.debug("You are admin, access to user management")
           next()
         }
       }catch(e){
-        res.status(401).json(new restResult("error","you are not an admin"))
+        res.status(401).json(new restResult("error","No access",null,"You are not an admin"))
       }
+}
+Helpers.checkSettingsMiddleware = (req, res, next) => {
+  try {
+    if (!(req.user.user.options?.showSettings ?? req.user.user.roles.includes("admin"))) {
+      res.status(401).json(new restResult("error", "No access",null,"You do not have access to settings"));
+    } else {
+      next();
+    }
+  } catch (e) {
+    res.status(401).json(new restResult("error", "No access",null,"You do not have access to settings"));
+  }
+}
+
+Helpers.checkDesignerMiddleware = (req, res, next) => {
+  try {
+    if (!(req.user.user.options?.showDesigner ?? req.user.user.roles.includes("admin"))) {
+      res.status(401).json(new restResult("error", "No access",null,"You do not have access to designer"));
+    } else {
+      next();
+    }
+  } catch (e) {
+    res.status(401).json(new restResult("error", "No access",null,"You do not have access to designer"));
+  }
+}
+
+Helpers.checkLogsMiddleware = (req, res, next) => {
+  try {
+    if (!(req.user.user.options?.showLogs ?? req.user.user.roles.includes("admin"))) {
+      res.status(401).json(new restResult("error", "No access",null,"You do not have access to logs"));
+    } else {
+      next();
+    }
+  } catch (e) {
+    res.status(401).json(new restResult("error", "No access",null,"You do not have access to logs"));
+  }
 }
 // checks for passwords from credentials and masks them
 Helpers.logSafe = (v)=>{

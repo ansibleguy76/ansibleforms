@@ -1,5 +1,5 @@
 <template>
-  <section v-if="isAdmin" class="section">
+  <section v-if="profile?.options?.showDesigner ?? isAdmin" class="section">
     <div class="container">
       <h1 class="title has-text-info"><font-awesome-icon icon="file-lines" /> Logs</h1>
       <nav class="level">
@@ -49,9 +49,7 @@
   </section>
 </template>
 <script>
-  import Vue from 'vue'
   import axios from 'axios'
-  import Copy from 'copy-to-clipboard'
   import LogViewer from '@femessage/log-viewer'
   import BulmaCheckRadio from './../components/BulmaCheckRadio.vue'
   import TokenStorage from './../lib/TokenStorage'
@@ -61,7 +59,8 @@
     name: "AfLogs",
     props:{
       authenticated:{type:Boolean},
-      isAdmin:{type:Boolean}
+      isAdmin:{type:Boolean},
+      profile:{type:Object}
     },
     components:{LogViewer,BulmaCheckRadio},
     data(){

@@ -20,8 +20,9 @@ const swaggerDocument = require('./swagger.json');
 const bodyParser = require('body-parser');
 // a plugin to help with authentication and authorization
 const passport = require('passport');
-// a small custom middleware to check whether the user is administrator
-const checkAdminMiddleware = require('./lib/common').checkAdminMiddleware
+// a small custom middleware to check whether the user has access to routes
+const checkSettingsMiddleware = require('./lib/common').checkSettingsMiddleware
+const checkLogsMiddleware = require('./lib/common').checkLogsMiddleware
 
 // start the app
 module.exports = app => {
@@ -151,18 +152,18 @@ module.exports = app => {
 
   // api routes for admin management
   app.use(`${appConfig.baseUrl}api/v1/job`,cors(), authobj, jobRoutes)
-  app.use(`${appConfig.baseUrl}api/v1/user`,cors(), authobj, checkAdminMiddleware, userRoutes)
-  app.use(`${appConfig.baseUrl}api/v1/group`,cors(), authobj, checkAdminMiddleware, groupRoutes)
-  app.use(`${appConfig.baseUrl}api/v1/ldap`,cors(), authobj, checkAdminMiddleware, ldapRoutes)
-  app.use(`${appConfig.baseUrl}api/v1/azuread`,cors(), authobj, checkAdminMiddleware, azureadRoutes)
-  app.use(`${appConfig.baseUrl}api/v1/oidc`,cors(), authobj, checkAdminMiddleware, oidcRoutes)
-  app.use(`${appConfig.baseUrl}api/v1/settings`,cors(), authobj, checkAdminMiddleware, settingsRoutes)
-  app.use(`${appConfig.baseUrl}api/v1/credential`,cors(), authobj, checkAdminMiddleware, credentialRoutes)
-  app.use(`${appConfig.baseUrl}api/v1/sshkey`,cors(), authobj, checkAdminMiddleware, sshRoutes)
-  app.use(`${appConfig.baseUrl}api/v1/awx`,cors(), authobj, checkAdminMiddleware, awxRoutes)
-  app.use(`${appConfig.baseUrl}api/v1/log`,cors(), authobj, checkAdminMiddleware, logRoutes)
-  app.use(`${appConfig.baseUrl}api/v1/repository`,cors(), authobj, checkAdminMiddleware, repositoryRoutes)
-  app.use(`${appConfig.baseUrl}api/v1/knownhosts`,cors(), authobj, checkAdminMiddleware, knownhostsRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/user`,cors(), authobj, checkSettingsMiddleware, userRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/group`,cors(), authobj, checkSettingsMiddleware, groupRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/ldap`,cors(), authobj, checkSettingsMiddleware, ldapRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/azuread`,cors(), authobj, checkSettingsMiddleware, azureadRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/oidc`,cors(), authobj, checkSettingsMiddleware, oidcRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/settings`,cors(), authobj, checkSettingsMiddleware, settingsRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/credential`,cors(), authobj, checkSettingsMiddleware, credentialRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/sshkey`,cors(), authobj, checkSettingsMiddleware, sshRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/awx`,cors(), authobj, checkSettingsMiddleware, awxRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/log`,cors(), authobj, checkLogsMiddleware, logRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/repository`,cors(), authobj, checkSettingsMiddleware, repositoryRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/knownhosts`,cors(), authobj, checkSettingsMiddleware, knownhostsRoutes)
 
   // routes for form config (extra middleware in the routes itself)
   app.use(`${appConfig.baseUrl}api/v1/config`,cors(), authobj, configRoutes)

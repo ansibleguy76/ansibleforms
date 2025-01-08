@@ -1,5 +1,5 @@
 <template>
-  <section v-if="isAdmin" class="section">
+  <section v-if="profile?.options?.showSettings ?? isAdmin" class="section">
     <div class="container">
       <h1 class="title has-text-info"><font-awesome-icon icon="cogs" /> Settings</h1>
       <div class="columns">
@@ -92,7 +92,8 @@
     name: "AfSettings",
     props:{
       authenticated:{type:Boolean},
-      isAdmin:{type:Boolean}
+      isAdmin:{type:Boolean},
+      profile:{type:Object}
     },
     components:{BulmaButton,BulmaInput,VueCodeEditor,BulmaSettingsMenu},
     setup(){

@@ -31,7 +31,7 @@ var TokenStorage = {
       // console.log(JSON.parse(jsonPayload))
       return JSON.parse(jsonPayload)
     }catch(err){
-      console.log("Error in getPayload: " + err)
+      // console.log("Error in getPayload: " + err)
       return {}
     }
   },
