@@ -55,10 +55,9 @@
               "showDebugButtons": { "type": "boolean" },
               "showSettings": { "type": "boolean" },
               "showExtravars": { "type": "boolean" },
-              "extendedTokenExpiration": { "type": "boolean" },
-              "jwtExpirationDays": { "type": "number" }
+              "extendedTokenExpiration": { "type": "boolean" }
             },
-            "additionalProperties": false
+            "additionalProperties": true
           }
         },
         "additionalProperties": false
@@ -92,10 +91,9 @@
               "showDebugButtons": { "type": "boolean" },
               "showSettings": { "type": "boolean" },
               "showExtravars": { "type": "boolean" },
-              "extendedTokenExpiration": { "type": "boolean" },
-              "tokenExpirationDays": { "type": "number" }
+              "extendedTokenExpiration": { "type": "boolean" }
             },
-            "additionalProperties": false
+            "additionalProperties": true
           },
           "groups": {
             "type": "array",
