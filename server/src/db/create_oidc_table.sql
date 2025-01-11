@@ -7,4 +7,3 @@ CREATE TABLE `oidc` (
   `enabled` tinyint(4) DEFAULT NULL,
   `groupfilter` varchar(250) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-

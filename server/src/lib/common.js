@@ -68,16 +68,16 @@ Helpers.checkCertificate=function(cert){
 }
 // a middleware in the routes to check if use is administrator
 Helpers.checkAdminMiddleware = (req, res, next) =>  {
-      try{
-        if(!req.user.user.roles.includes("admin")) {
-          res.status(401).json(new restResult("error","No access",null,"You are not an admin"))
-        } else {
-          //logger.debug("You are admin, access to user management")
-          next()
-        }
-      }catch(e){
-        res.status(401).json(new restResult("error","No access",null,"You are not an admin"))
-      }
+  try{
+    if(!req.user.user.roles.includes("admin")) {
+      res.status(401).json(new restResult("error","No access",null,"You are not an admin"))
+    } else {
+      //logger.debug("You are admin, access to user management")
+      next()
+    }
+  }catch(e){
+    res.status(401).json(new restResult("error","No access",null,"You are not an admin"))
+  }
 }
 Helpers.checkSettingsMiddleware = (req, res, next) => {
   try {

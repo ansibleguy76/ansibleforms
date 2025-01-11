@@ -45,7 +45,7 @@ exports.update = function(req, res) {
         res.status(400).send({ error:true, message: 'Please provide all required fields' });
     }else{
         Credential.update(new Credential(req.body),req.params.id)
-        .then((credential)=>{res.json(new RestResult("success","credential updated",null,""))})
+        .then(()=>{res.json(new RestResult("success","credential updated",null,""))})
         .catch((err)=>{ res.json(new RestResult("error","failed to update credential",null,err.toString())) })
     }
 };

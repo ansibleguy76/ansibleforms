@@ -1,6 +1,6 @@
 // load the .env.development file ; it loads a bunch of environment variables
 // we are not doing this for production, where the variables are coming from the actual environment
-if ((process.env.NODE_ENV || "production") !== 'production' || process.env.FORCE_DOTENV==1 || process.env.FORCE_DOTENV=="1" ){
+if (process.env.NODE_ENV !== 'production' || process.env.FORCE_DOTENV==1 || process.env.FORCE_DOTENV=="1" ){
   console.log(`Importing .env file : ${__dirname}/../.env.${process.env.NODE_ENV}` )
   require('dotenv').config({ path: `${__dirname}/../.env.${process.env.NODE_ENV}` })
 }
@@ -20,6 +20,7 @@ const swaggerDocument = require('./swagger.json');
 const bodyParser = require('body-parser');
 // a plugin to help with authentication and authorization
 const passport = require('passport');
+
 // a small custom middleware to check whether the user has access to routes
 const checkSettingsMiddleware = require('./lib/common').checkSettingsMiddleware
 const checkLogsMiddleware = require('./lib/common').checkLogsMiddleware
