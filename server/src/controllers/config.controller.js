@@ -26,11 +26,13 @@ exports.backups = function(req,res){
     res.json({error:helpers.getError(err)})
   }
 }
-exports.env = function(req,res){
-  Help.get()
-  .then((help)=>{
-    // logger.debug(inspect(help))
-    var help = help.filter(x => x.name=='Environment Variables')[0].items
+exports.env = async function(req,res){
+  try{
+    // get help
+    var help = await Help.get()
+    // only get the environment variables
+    help = help.filter(x => x.name=='Environment Variables')[0].items
+    // cleanup a bit (hide passwords and secrets and set default values)
     var env = help.map(x => {
       var item={}
       item.name = x.name
@@ -50,13 +52,13 @@ exports.env = function(req,res){
       if(x.name.includes('PASSWORD') || x.name.includes('SECRET')){
         item.value="*** NOT REVEALED ***"
       }      
-
-
       return item
     });
     // logger.debug(inspect(env))
     res.json(new RestResult("success","Environment variables found",env,""))
-  })
+  }catch(err){
+    res.json(new RestResult("error","Failed to get environment variables",null,helpers.getError(err)))
+  }
 }
 exports.restore = async function(req,res){
   var lock=undefined
@@ -89,7 +91,7 @@ exports.restore = async function(req,res){
       res.json(new RestResult("error","Failed to restore forms",null,helpers.getError(err)))
     }
   }else{
-    res.json(new RestResult("error","Failed to restore forms",null,"Designer is locked by "+lock.username))
+    res.json(new RestResult("error","Failed to restore forms",null,"Designer is locked by "+lock.lock.username))
   }
 }
 exports.save = async function(req,res){
@@ -98,7 +100,11 @@ exports.save = async function(req,res){
   try{
     lock = await Lock.status(user)
     if(lock.free){
-      lock.set(user).catch(()=>{}) // set lock and fail silent
+      try{
+        await Lock.set(user)
+      }catch(err){
+        // fail silent
+      }
     }
   }catch(err){
     logger.error("Failed to get lock : ",err)
@@ -123,7 +129,7 @@ exports.save = async function(req,res){
       }
     }
   }else{
-    res.json(new RestResult("error","Failed to save forms",null,"Designer is locked by "+lock.username))
+    res.json(new RestResult("error","Failed to save forms",null,"Designer is locked by "+lock.lock.username))
   }
 
 }
