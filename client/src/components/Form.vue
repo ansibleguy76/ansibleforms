@@ -394,7 +394,7 @@
               </button>
             </div>
             <!-- abort job button -->
-            <div class="column" v-if="jobResult.status=='info' && !abortTriggered && (currentForm.abortable || true)">
+            <div class="column" v-if="jobResult.status=='info' && !abortTriggered && (currentForm.abortable ?? true)">
               <button  class="button is-fullwidth has-background-warning" @click="abortJob(jobId)">
                 <span class="icon"><font-awesome-icon icon="times" /></span>
                 <span>Abort Job</span>
