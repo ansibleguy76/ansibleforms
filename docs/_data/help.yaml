@@ -2890,6 +2890,14 @@
                   query: cmdb~users~{"name":"ansibleguy"}
                   # the query in mongodb has 3 parts, separated by ~  
                   # database, collection and the query in valid json      
+          - name: multiple
+            type: boolean
+            group: data
+            default: false
+            with_types: enum
+            short: Allow multiple selection
+            description: |
+              When you want to select multiple items from a dropdown box, set this property to true.  `horizontal: true` will automatically trigger multiple.
           - name: sticky
             type: boolean
             group: visualization
