@@ -24,6 +24,7 @@ var app_config = {
   enableBypass: (process.env.ENABLE_BYPASS ?? 0)==1,
   enableDbQueryLogging: (process.env.ENABLE_DB_QUERY_LOGGING ?? 0)==1,
   enableFormsYamlInDatabase: (process.env.ENABLE_FORMS_YAML_IN_DATABASE ?? 0)==1,
+  processMaxBuffer: process.env.PROCESS_MAX_BUFFER || (1024 * 1024),
   adminUsername: process.env.ADMIN_USERNAME || "admin",
   adminPassword: process.env.ADMIN_PASSWORD || "AnsibleForms!123"
 };

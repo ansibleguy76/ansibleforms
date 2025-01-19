@@ -240,6 +240,14 @@
     description: |
       This is not a single variable but rather an infinite amount of variables.  You can set as many as you want.  The dynamic part is the name of the lib data.  For example `YTT_LIB_DATA_MYLIB=values.yml` results in the contents of `values.yml` to be used by ytt in the `mylib` library.
     version: 5.0.8
+  - name: PROCESS_MAX_BUFFER
+    type: number
+    allowed: a valid number
+    short: Maximum buffer size
+    default: 1024 * 1024
+    description: |
+      The maximum buffer size for the process execution.  If you have large output, you might want to increase this value.
+    version: 5.0.8
   - name: LOG_LEVEL
     type: string
     choices:
