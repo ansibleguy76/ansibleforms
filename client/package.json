@@ -28,7 +28,7 @@
     "bulma-quickview": "*",
     "bulmaswatch": "0.8.1",
     "copy-to-clipboard": "~3.3.3",
-    "core-js": "~3.39",
+    "core-js": "~3.40.0",
     "es6-promise": "~4.2.8",
     "highlight.js": "^10.7.2",
     "jsonwebtoken": "^9.0.2",
