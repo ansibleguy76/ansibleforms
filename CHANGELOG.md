@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.8] - 2025-02-13
+
 ### Fixed
 
 -   Regex in repo's
@@ -773,7 +775,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.7...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.8...HEAD
+
+[5.0.8]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.7...5.0.8
 
 [5.0.7]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.6...5.0.7
 
