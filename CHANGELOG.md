@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Regex in repo's
 -   Jwt token issuer added (use env variable ACCESS_TOKEN_ISSUER) - credits to le-martre for the fix
+-   maxBuffer causing abort by operator, adding PROCESS_MAX_BUFFER variable.
 
 ### Changed
 
