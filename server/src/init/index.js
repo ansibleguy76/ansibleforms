@@ -5,11 +5,14 @@ async function init(){
   var Form = require('../models/form.model');
   var Job = require('../models/job.model');
   var Schema = require('../models/schema.model');
+  var adminGroupId = undefined
   const mysql=require("../models/db.model");
   const Repository = require('../models/repository.model');
   const parser = require("cron-parser")
   const dayjs = require("dayjs")
-  const util = require('util')
+  const appConfig = require("../../config/app.config")
+  const User = require("../models/user.model")
+  const Group = require("../models/group.model")
 
   // this is at startup, don't start the app until mysql is ready
   // rewrite with await
@@ -67,13 +70,79 @@ async function init(){
 
   }
 
+  // check admins groups
+  try{
+    var adminGroupName = "admins"
+    var adminGroup = await Group.findByName(adminGroupName)
+    if(adminGroup.length==0){
+      logger.warning(`Group ${adminGroupName} not found, creating it`)
+      adminGroup = {}
+      adminGroup.id = await Group.create(new Group({name:adminGroupName}))
+    }else{
+      adminGroup = adminGroup[0]
+    }
+    adminGroupId = adminGroup.id
+  }catch(err){
+    logger.error("Failed to check/create admins group : " + err)
+    throw err
+  }
 
+  // check admin user
+  logger.info("Checking admin user exists")
+  try{
+    var adminUsername = appConfig.adminUsername
+    var adminUser = await User.findByUsername(adminUsername)
+    if(adminUser.length==0){
+      logger.warning(`Admin user ${adminUsername} not found, creating it`)
+      var adminPassword = appConfig.adminPassword
+      await User.create(new User({username:adminUsername,email:'',password:adminPassword,group_id:adminGroupId}))
+    }else{
+      adminUser = adminUser[0]
+    }
+  }catch(err){
+    logger.error("Failed to check/create admin user : " + err)
+    throw err
+  }
+
+  // let's check other database records like settings,ldap,awx,oidc and azuread. if no record exists, create them, this is for fresh install
+  logger.info("Checking database records")
+  const records = {
+    azuread:{client_id:'',secret_id:'',enable:0,groupfilter:''},
+    oidc:{issuer:'',client_id:'',secret_id:'',enabled:0,groupfilter:''},
+    awx:{uri:'',token:'',username:'', password:'',ignore_certs:0,use_credentials:0,ca_bundle:''},
+    ldap:{server:'',port:389,ignore_certs:1,enable_tls:0,cert:'',ca_bundle:'',bind_user_dn:'',bind_user_pw:'',search_base:'',username_attribute:'sAMAccountName',groups_attribute:'memberOf',enable:0,is_advanced:0,groups_search_base:'',group_class:'',group_member_attribute:'',group_member_user_attribute:''},    
+    settings:{mail_server:'',mail_port:25,mail_secure:0,mail_username:'',mail_password:'',mail_from:'',url:'',forms_yaml:''}    
+  }
+ 
+  for(let record in records){
+    try{
+      var result = await mysql.do(`SELECT * FROM AnsibleForms.${record}`)
+      if(result.length==0){
+        logger.warning(`No record found for ${record}, creating it`)
+        var obj = records[record]
+        var keys = Object.keys(obj)
+        var values = keys.map((key)=>{return obj[key]})
+        var sql = `INSERT INTO AnsibleForms.${record}(${keys.join(",")}) VALUES(${values.map(()=>{return "?"}).join(",")})`
+        await mysql.do(sql,values)
+      }
+    }catch(err){
+      logger.error(`Failed to check/create ${record} : ` + err)
+      throw err
+    }
+  }
+
+  logger.info("All database records are checked")
+
+  logger.info("Checking ssh keys")
   Ssh.generate(false)
     .catch((err)=>{
       logger.warning("Failed to generate ssh keys : " + err)
     })
+
+  logger.info("Checking backup folder")
   Form.initBackupFolder()
 
+  logger.info("Checking old jobs")
   Job.abandon(true)
   .then((changed)=>{
     logger.warning(`Abandoned ${changed} jobs`)

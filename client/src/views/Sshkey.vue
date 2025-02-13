@@ -1,5 +1,5 @@
 <template>
-  <section v-if="isAdmin" class="section">
+  <section v-if="profile?.options?.showSettings ?? isAdmin" class="section">
     <div class="container">
       <h1 class="title has-text-info"><font-awesome-icon icon="key" /> SSH Key</h1>
       <div class="columns">
@@ -38,7 +38,8 @@
     name: "AfSshkey",
     props:{
       authenticated:{type:Boolean},
-      isAdmin:{type:Boolean}
+      isAdmin:{type:Boolean},
+      profile:{type:Object}
     },
     components:{BulmaButton,BulmaTextArea,BulmaSettingsMenu},
     setup(){

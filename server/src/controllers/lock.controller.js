@@ -18,7 +18,8 @@ exports.set = function(req, res) {
       .catch((err)=>{ res.json(new RestResult("error","failed to create lock",null,Helpers.getError(err))) })
 };
 exports.delete = function(req, res) {
-    Lock.delete()
+    const user = req.user.user
+    Lock.delete(user)
       .then(()=>{res.json(new RestResult("success","lock deleted",null,"")) })
       .catch((err)=>{res.json(new RestResult("error","failed to delete lock",null,Helpers.getError(err)))})
 };

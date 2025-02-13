@@ -12,9 +12,9 @@ exports.abortJob = function(req, res) {
     res.json(new RestResult("error","You must provide a jobid","",""));
     return false
   }
-    Job.abort(jobid)
-     .then((job)=>{res.json(new RestResult("success","job aborted",null,""))})
-     .catch((err)=>{res.json(new RestResult("error","failed to abort job",null,err.toString()))})
+  Job.abort(jobid)
+    .then((job)=>{res.json(new RestResult("success","job aborted",null,""))})
+    .catch((err)=>{res.json(new RestResult("error","failed to abort job",null,err.toString()))})
 };
 exports.getJob = function(req, res) {
   var user = req.user.user

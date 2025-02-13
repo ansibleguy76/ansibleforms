@@ -56,6 +56,10 @@
           <ul>
             <li v-for="r in profile.roles" :key="r"><font-awesome-icon icon="check" /> {{ r }}</li>
           </ul>
+          <strong class="mt-2">Options : </strong>
+          <ul>
+            <li v-for="o in Object.keys(profile.options)" :key="o"><font-awesome-icon icon="check" /> {{ o }} : {{ profile.options[o] }}</li>
+          </ul>          
         </div>              
       </div>
     </BulmaModal>    
@@ -107,6 +111,7 @@
           // console.log("checking if is admin")
           var payload = TokenStorage.getPayload()
           if(payload.user && payload.user.roles){
+            this.profile = payload.user            
             this.isAdmin=payload.user.roles.includes("admin")
           }
         },

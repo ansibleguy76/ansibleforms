@@ -6,19 +6,26 @@ const passport = require('passport');
 const jwt = require('jsonwebtoken');
 var authConfig = require('../../config/auth.config')
 const logger=require("../lib/logger");
-const {inspect}=require("node:util")
 const helpers=require('../lib/common')
 const RestResult = require("../models/restResult.model")
-const auth_oidc = require("../auth/auth_oidc");
 
 function userToJwt(user,expiryDays){
 
   // is something like
   // {"username":"administrator","type":"local","roles":["public","admin"]}
 
+  var tokenExpiresIn
+
+  if(expiryDays && (user?.options["extendedTokenExpiration"] ?? false) && !isNaN(expiryDays)){  
+    tokenExpiresIn = `${expiryDays}D`
+    logger.info("Extended token expiration requested for " + user.username)
+  }else{
+    tokenExpiresIn = authConfig.jwtExpiration
+  }
+
   // we create 2 jwt tokens (accesstoken and refresh token)
-  const token = jwt.sign({user,access:true}, authConfig.secret,{ expiresIn: expiryDays || authConfig.jwtExpiration});
-  const refreshtoken = jwt.sign({user,refresh:true}, authConfig.secret,{ expiresIn: authConfig.jwtRefreshExpiration});
+  const token = jwt.sign({user,access:true}, authConfig.secret,{ expiresIn: tokenExpiresIn, issuer: authConfig.jwtIssuer});
+  const refreshtoken = jwt.sign({user,refresh:true}, authConfig.secret,{ expiresIn: authConfig.jwtRefreshExpiration, issuer: authConfig.jwtIssuer});
   logger.debug(JSON.stringify(user))
   // we store the tokens in the database, to later verify a refresh token action
   logger.info("Storing refreshtoken in database for user " + user.username)
@@ -90,11 +97,7 @@ exports.basic = async function(req, res,next) {
                 //return next(error);
               }
               // send the tokens to the requester
-              // if admin role, you can override the expirydays (for accesstoken only)
-              if(req.query.expiryDays && user?.roles?.includes("admin") && !isNaN(req.query.expiryDays)){
-                return res.json(userToJwt(user,`${req.query.expiryDays}D`))
-              }
-              return res.json(userToJwt(user));
+              return res.json(userToJwt(user,req.query.expiryDays));
             }
           );
         } catch (error) {
@@ -136,11 +139,7 @@ exports.basic_ldap = async function(req, res,next) {
               return next(error);
             }
             // send the tokens to the requester
-            // if admin role, you can override the expirydays (for accesstoken only)
-            if(req.query.expiryDays && user?.roles?.includes("admin") && !isNan(req.query.expiryDays)){
-              return res.json(userToJwt(user,`${req.query.expiryDays}D`))
-            }            
-            return res.json(userToJwt(user));
+            return res.json(userToJwt(user,req.query.expiryDays));
           }
         );
       } catch (error) {
@@ -171,12 +170,32 @@ exports.errorHandler = async function(err,req, res,next) {
 };
 
 /**
- * generate the callback options for login via Azure AD or OIDC
+ * generate the callback options for login via identity provider oauth2
+ * 
+ * Some information about how the identity provide mechanism works:
+ * 
+ * 1. The user clicks on the identity provider login button
+ * 2. A browser storage authIssuer key is set with the identity provider name (azuread, oidc, ...)
+ * 3. The user is redirected to the ansibleforms backend server identity provider api https://ansibleformsurl/auth/azureadoauth2 or https://ansibleformsurl/auth/oidc, ...
+ * 4. The backend uses passport to authenticate the user with the identity provider and redirects the user away to the identity provider (microsft, google, ...)
+ * 5. The identity provider authenticates the user and redirects the user back to the callback url https://ansibleformsurl/auth/azureadoauth2/callback or https://ansibleformsurl/auth/oidc/callback
+ * 6. The backend server receives the callback and uses passport to verify the returned payload.  it passes the payload to an authCallback function
+ * 7. The authCallback function redirects the user back to the frontend with a token (#/login?token=) azuread already passed a token, oidc has a raw payload and we create a manual token.
+ * 8. The frontend uses the oauth2 token to grab more group information and filter the group information with a filter defined in the database with the identity provider
+ * 9. The frontend redirects the user to the backend /auth/azureadaoath/login endpoint with the token and the group information
+ * 10. The backend grabs more information from payload if needed (username,...) and assembles a user-object, the roles and options are added
+ * 11. The backend converts the user object to json and signs it as a jwt token an returns it in the response
+ * 12. The frontend grabs the token and stores it in the local storage, ready for jwt-bearer authentication
+ * 
  */
-const authCallback = function(req, res, next, type='azuread') {
-  return async (err, token) => {
-    if (type !== 'azuread') {
-      token = jwt.sign(token, type);
+const authCallback = function(req, res, next, type) {
+  return async (err, payload) => {
+    // we assume the payload is a jwt token, with azuread this is the case
+    var token = payload
+    // in case of oidc, the payload is not a token, but a raw object
+    // we need to create a token from it, we use the type 'oidc' as the secret
+    if(type=="oidc"){
+      token = jwt.sign(payload, type);
     }
     try {
       // if we have an error; we return it
@@ -198,36 +217,16 @@ const extractAzureUser = async function(payload, groups) {
   return {
     username: payload.upn,
     id: payload.oid,
-    groups: groups,
+    groups: groups.map(g => `azuread/${g}`) // groups are prefixed with azuread/ to avoid conflicts with oidc groups etc
   }
 };
 
 const extractOidcUser = async function(payload, groups) {
   return {
     username: payload.preferred_username,
-    groups: groups.map(g => `oidc/${g}`)
+    groups: groups.map(g => `oidc/${g}`) // groups are prefixed with oidc/ to avoid conflicts with azuread groups etc
   }
 };
-
-/**
- * Function to perform login via token from identity provider (Azure AD / OIDC)
- */
-const tokenLogin = async function(type, req, res) {
-  logger.debug("Login")
-  var payload = type === 'azuread' ? jwt.decode(req.body.token, '', true) : jwt.verify(req.body.token, type);
-
-  const user= type === 'azuread' ?
-      await extractAzureUser(payload, req.body.groups) :
-      await extractOidcUser(payload, req.body.groups);
-  user.type = type
-  user.roles = await User.getRoles(user.groups, user)
-
-  // if admin role, you can override the expirydays (for accesstoken only)
-  if(req.query.expiryDays && user?.roles?.includes("admin") && !isNan(req.query.expiryDays)){
-    return res.json(userToJwt(user,`${req.query.expiryDays}D`))
-  }
-  res.json(userToJwt(user))
-}
 
 // this redirects to Azure AD login but with the proper application client id & secret
 exports.azureadoauth2 = async function(req, res,next) {
@@ -236,14 +235,22 @@ exports.azureadoauth2 = async function(req, res,next) {
   passport.authenticate('azure_ad_oauth2')(req,res,next)
 };
 
-// callback with the Azure AD user info
+// callback with the Azure AD access token
 exports.azureadoauth2callback = async function(req, res,next) {
-  passport.authenticate('azure_ad_oauth2', authCallback(req, res, next))(req, res, next)
+  passport.authenticate('azure_ad_oauth2', authCallback(req, res, next,"azuread"))(req, res, next)
 };
-// callback with the Azure AD user info
+// callback with the Azure AD user info (including groups)
 exports.azureadoauth2login = async function(req, res,next) {
   try {
-    await tokenLogin('azuread', req, res, next)
+    var payload = jwt.decode(req.body.token, '', true)
+    const user = await extractAzureUser(payload, req.body.groups)
+    user.type = "azuread"
+    const ro = await User.getRolesAndOptions(user.groups,user)
+    user.roles = ro.roles
+    user.options = ro.options  
+    // return token
+    res.json(userToJwt(user))
+
   } catch(err){
     logger.error(helpers.getError(err))
     next(err)
@@ -257,14 +264,22 @@ exports.oidc = async function(req, res,next) {
   passport.authenticate('oidc')(req,res,next)
 };
 
-// callback with the OIDC user info
+// callback with the OIDC access token
 exports.oidcCallback = async function(req, res,next) {
   passport.authenticate('oidc', authCallback(req, res, next, 'oidc'))(req, res, next)
 };
-// callback with the OIDC user info
+// callback with the OIDC user info (including groups)
 exports.oidcLogin = async function(req, res, next) {
   try {
-    await tokenLogin('oidc', req, res, next)
+    var payload = jwt.verify(req.body.token, 'oidc'); // verify, with secret "oidc"
+    const user = await extractOidcUser(payload, req.body.groups)
+    user.type = "oidc"
+    const ro = await User.getRolesAndOptions(user.groups,user)
+    user.roles = ro.roles
+    user.options = ro.options  
+    // return token
+    res.json(userToJwt(user))
+
   } catch(err){
     logger.error(helpers.getError(err))
     next(err)

@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.8] - 2025-02-13
+
+### Fixed
+
+-   Regex in repo's
+-   Jwt token issuer added (use env variable ACCESS_TOKEN_ISSUER) - credits to le-martre for the fix
+-   maxBuffer causing abort by operator, adding PROCESS_MAX_BUFFER variable.
+
+### Changed
+
+-   The admin user can now be removed, and will be recreated automatically if needed at first start.
+    use env variables ADMIN_USERNAME and ADMIN_PASSWORD.
+
+### Added
+
+-   YTT extra environment variable (see help)
+-   Role options (showDesigner, showLogs, showSettings, ...) allowing for custom semi-admin or designer roles
+-   Added branch to repos
+
 ## [5.0.7] - 2024-10-03
 
 ### Added
@@ -756,7 +775,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.7...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.8...HEAD
+
+[5.0.8]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.7...5.0.8
 
 [5.0.7]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.6...5.0.7
 

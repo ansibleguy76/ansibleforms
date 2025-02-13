@@ -26,12 +26,29 @@ import ReferenceGuide from './views/ReferenceGuide.vue'
 import Install from './views/Install.vue'
 import TokenStorage from './lib/TokenStorage.js'
 Vue.use(Router);
-const checkAdmin=(to, from, next) => {
+
+const checkDesigner=(to, from, next) => {
   var payload = TokenStorage.getPayload()
-  if(payload?.user?.roles?.includes("admin")){
+  if(payload?.user?.options?.showDesigner ?? payload?.user?.roles?.includes("admin")){
     next()
   }else{
-    console.log("You are not an admin user")
+    console.log("You are not allowed to access designer")
+  }
+}
+const checkLogs=(to, from, next) => {
+  var payload = TokenStorage.getPayload()
+  if(payload?.user?.options?.showLogs ?? payload?.user?.roles?.includes("admin")){
+    next()
+  }else{
+    console.log("You are not allowed to access logs")
+  }
+}
+const checkSettings=(to, from, next) => {
+  var payload = TokenStorage.getPayload()
+  if(payload?.user?.options?.showSettings ?? payload?.user?.roles?.includes("admin")){
+    next()
+  }else{
+    console.log("You are not allowed to access settings")
   }
 }
 
@@ -120,85 +137,85 @@ export default new Router({
         path:"/groups",
         name:"Groups",
         component:Groups,
-        beforeEnter: checkAdmin
+        beforeEnter: checkSettings
       },
       {
         path:"/repos",
         name:"Repos",
         component:Repos,
-        beforeEnter: checkAdmin
+        beforeEnter: checkSettings
       },
       {
         path:"/users",
         name:"Users",
         component:Users,
-        beforeEnter: checkAdmin
+        beforeEnter: checkSettings
       },
       {
         path:"/ldap",
         name:"Ldap",
         component:Ldap,
-        beforeEnter: checkAdmin
+        beforeEnter: checkSettings
       },
       {
         path:"/azuread",
         name:"AzureAd",
         component:AzureAd,
-        beforeEnter: checkAdmin
+        beforeEnter: checkSettings
       },
       {
           path:"/oidc",
           name:"OIDC",
           component:OIDC,
-          beforeEnter: checkAdmin
+          beforeEnter: checkSettings
       },
       {
         path:"/settings",
         name:"Settings",
         component:Settings,
-        beforeEnter: checkAdmin
+        beforeEnter: checkSettings
       },        
       {
         path:"/mail_settings",
         name:"Settings Mail",
         component:MailSettings,
-        beforeEnter: checkAdmin
+        beforeEnter: checkSettings
       },
       {
         path:"/awx",
         name:"Awx",
         component:Awx,
-        beforeEnter: checkAdmin
+        beforeEnter: checkSettings
       },
       {
         path:"/credentials",
         name:"Credentials",
         component:Credentials,
-        beforeEnter: checkAdmin
+        beforeEnter: checkSettings
       },
       {
         path:"/sshkey",
         name:"Sshkey",
         component:Sshkey,
-        beforeEnter: checkAdmin
+        beforeEnter: checkSettings
       },
       {
         path:"/knownhosts",
         name:"KnownHost",
         component:KnownHosts,
-        beforeEnter: checkAdmin
+        beforeEnter: checkSettings
       },      
       {
         path:"/logs",
         name:"Logs",
         component:Logs,
-        beforeEnter: checkAdmin
+        beforeEnter: checkLogs
       },
       {
         path:"/designer",
         name:"Designer",
         component:Designer,
-        beforeEnter: checkAdmin
+        beforeEnter: checkDesigner
       },
       {
         path:"/jobs",

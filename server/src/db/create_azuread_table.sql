@@ -6,4 +6,4 @@ CREATE TABLE `azuread` (
   `enable` tinyint(4) DEFAULT NULL,
   `groupfilter` varchar(250) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-INSERT INTO AnsibleForms.azuread(client_id,secret_id,enable,groupfilter) VALUES('','',0,'');
+

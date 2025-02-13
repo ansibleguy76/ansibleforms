@@ -1,5 +1,5 @@
 <template>
-  <section v-if="isAdmin" class="section">
+  <section v-if="profile?.options?.showSettings ?? isAdmin" class="section">
     <BulmaModal v-if="showDelete" title="Delete" action="Delete" @click="removeHost();showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete knownhostssitory '{{ knownhostsItem}}'</BulmaModal>
     <div class="container">
       <h1 class="title has-text-info"><font-awesome-icon :icon="['fab','git-square']" /> Known Hosts</h1>
@@ -57,7 +57,8 @@
     name: "AfKnownHosts",
     props:{
       authenticated:{type:Boolean},
-      isAdmin:{type:Boolean}
+      isAdmin:{type:Boolean},
+      profile:{type:Object}
     },
     components:{BulmaButton,BulmaInput,BulmaModal,BulmaAdminTable,BulmaSettingsMenu},
     setup(){

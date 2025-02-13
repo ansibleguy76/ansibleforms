@@ -1,5 +1,5 @@
 <template>
-  <section v-if="isAdmin && loaded" class="section">
+  <section v-if="(profile?.options?.showDesigner ?? isAdmin) && loaded" class="section">
     <BulmaQuickView class="quickview" v-if="warnings && showWarnings" title="Form warnings" footer="" @close="showWarnings=false">
         <p v-for="w,i in warnings" :key="'warning'+i" class="mb-3" v-html="w"></p>
     </BulmaQuickView>
@@ -297,7 +297,8 @@
     name: "Designer",
     props:{
       authenticated:{type:Boolean},
-      isAdmin:{type:Boolean}
+      isAdmin:{type:Boolean},
+      profile:{type:Object}
     },
     components:{VueCodeEditor,BulmaModal,BulmaQuickView,BulmaAdvancedSelect,BulmaCheckRadio},
     data(){
@@ -652,7 +653,11 @@
       },
       save(close=false) {
        var ref= this;
-       this.$refs.saveButton.focus()
+       try{
+        this.$refs.saveButton.focus()
+       }catch{ 
+        // do nothing
+       }
        this.$nextTick(()=>{
          if(ref.warnings.length==0 && ref.formConfig && ref.formDirty){
            axios.post(`${process.env.BASE_URL}api/v1/config/`,{forms:ref.formConfig},TokenStorage.getAuthentication())

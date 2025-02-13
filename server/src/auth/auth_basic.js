@@ -37,7 +37,9 @@ passport.use(
             user.id = result.user.id
             user.type = 'local'
             user.groups = User.getGroups(user,result.user.groups)
-            user.roles = await User.getRoles(user.groups,user)
+            const ro = await User.getRolesAndOptions(user.groups,user)
+            user.roles = ro.roles
+            user.options = ro.options
             logger.info("local login is ok => " + user.username)
             return user
           })
@@ -66,7 +68,9 @@ passport.use(
             user.email = result[ldapConfig.mail_attribute]
             user.type = 'ldap'
             user.groups = User.getGroups(user,result,ldapConfig)
-            user.roles = await User.getRoles(user.groups,user)
+            const ro = await User.getRolesAndOptions(user.groups,user)
+            user.roles = ro.roles
+            user.options = ro.options
             logger.info("ldap login for " + user.username)
             return user
           })

@@ -50,6 +50,7 @@ Exec.executeCommand = (cmd,jobid,counter) => {
   var hiddenExtravarsFileName = cmd.hiddenExtravarsFileName
   var keepExtravars = cmd.keepExtravars
   var task = cmd.task
+  const ac = new AbortController()
 
   // execute the procces
   return new Promise((resolve,reject)=>{
@@ -69,7 +70,13 @@ Exec.executeCommand = (cmd,jobid,counter) => {
         logger.warning("No filename was given")
       }
 
-      var child = exec(command,{cwd:directory,encoding: "UTF-8"});
+      // adding abort signal
+      var child = exec(command,{cwd:directory,signal:ac.signal,maxBuffer:appConfig.processMaxBuffer,encoding: "UTF-8"});
+
+      // capture the abort event, logging only
+      ac.signal.addEventListener('abort', (event) => {
+        logger.warning("Operator aborted the process")
+      }, { once: true });
 
       // add output eventlistener to the process to save output
       child.stdout.on('data',function(data){
@@ -78,8 +85,8 @@ Exec.executeCommand = (cmd,jobid,counter) => {
           .then((status)=>{
             // if abort request found ; kill the process
             if(status=="abort"){
-              logger.warning("Abort is requested, killing child")
-              process.kill(child.pid,"SIGTERM");
+              logger.warning("Abort is requested, aborting child")
+              ac.abort("Aborted by operator")
             }
           })
           .catch((error)=>{logger.error("Failed to create output : ", error)})
@@ -91,18 +98,27 @@ Exec.executeCommand = (cmd,jobid,counter) => {
           .then((status)=>{
             // if abort request found ; kill the process
             if(status=="abort"){
-              logger.warning("Abort is requested, killing child")
-              process.kill(child.pid,"SIGTERM");
+              logger.warning("Abort is requested, aborting child")
+              ac.abort("Aborted by operator")
             }
           })
           .catch((error)=>{logger.error("Failed to create output: ", error)})
       })
+
+
+
       // add exit eventlistener to the process to handle status update
-      child.on('exit',function(data){
+      child.on('exit',async function(data){
         // if the exit was an actual request ; set aborted
         if(child.signalCode=='SIGTERM'){
-          Job.endJobStatus(jobid,++counter,"stderr","aborted",`${task} was aborted by operator`)
-          reject(`${task} was aborted by operator`)
+          const statusResult = await mysql.do("SELECT status FROM AnsibleForms.`jobs` WHERE id=?;", [jobid])      
+          if(statusResult[0].status=="abort"){    
+            Job.endJobStatus(jobid,++counter,"stderr","aborted",`${task} was aborted by the operator`)
+            reject(`${task} was aborted by the operator`)
+          }else{
+            Job.endJobStatus(jobid,++counter,"stderr","failed",`${task} was aborted by the main process.  Likely some buffer or memory error occured.  Also check the maxBuffer option.`)
+            reject(`${task} was aborted by the main process`)
+          }
         }else{ // if the exit was natural; set the jobstatus (either success or failed)
           if(data!=0){
             jobstatus="failed"

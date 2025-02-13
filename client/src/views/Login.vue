@@ -83,7 +83,7 @@
               
               if(token && this.azureAdEnabled){
                 if(localStorage.getItem("authIssuer")=="azuread") // get cookie and see if we issued azuread
-                  this.getGroupsAndLogin(token)
+                  this.getGroupsAndLogin(token, `${this.azureGraphUrl}/v1.0/me/transitiveMemberOf`, 'azuread')
               } 
               if (token && this.oidcEnabled) { // get cookie ans see if we issued oidc
                 if(localStorage.getItem("authIssuer")=="oidc")
@@ -97,7 +97,10 @@
             this.$toast.error(`Failed to get settings: ${err}`)
           })
         },
-        getGroupsAndLogin(token, url = `${this.azureGraphUrl}/v1.0/me/transitiveMemberOf`, type='azuread', allGroups = []) {
+        getGroupsAndLogin(token, url, type, allGroups = []) {
+          // implement azuread group lookup
+          // azuread has a group lookup api, we get the groups from the api
+          // this must be done from the client side, because the server side might not have access to the graph api
           if (type === 'azuread') {
             const config = {
               headers: {
@@ -107,7 +110,8 @@
 
             axios.get(url, config)
                 .then((res) => {
-                  const groups = res.data.value.filter(x => x.displayName).map(x => (`azuread/` + x.displayName));
+                  // filter out groups with no displayName and map to an array of group names
+                  const groups = res.data.value.filter(x => x.displayName).map(x => x.displayName);
                   allGroups = allGroups.concat(groups);
 
                   if (res.data['@odata.nextLink']) {
@@ -115,13 +119,16 @@
                     this.getGroupsAndLogin(token, res.data['@odata.nextLink'], type, allGroups); 
                   } else {
                     // No more nextLink, you have all the groups
-                    this.tokenLogin(token, allGroups)
+                    this.tokenLogin(token, allGroups, 'azuread');
                   }
                 })
                 .catch((err) => {
                   this.$toast.error("Failed to get group membership");
                 });
           }
+          // implement oidc group lookup
+          // oidc has no group lookup api, the groups are part of the payload
+          // we decode the token and get the groups from the payload
           else if (type === 'oidc') {
             const payload = jwt.decode(token, {complete: true}).payload
             this.tokenLogin(token, payload.groups || [], 'oidc')
@@ -129,9 +136,12 @@
             this.$toast.error("Invalid Identity Provider type, contact developer")
           }
         },
-        tokenLogin(token, allGroups, type='azuread') {
+        tokenLogin(token, allGroups, type) {
           var validRegex=true
           var regex
+
+          // implement a group filter reduction to reduce the jwt token payload, because this can because very large if you are in a lot of groups
+          // a header maximum could be reached and fail the login
           var groupfilter
           if(type === 'azuread'){
             groupfilter = this.azureGroupfilter

@@ -28,66 +28,62 @@ import "./../public/assets/main.scss"
 axios.interceptors.response.use( (response) => {
   // Return a successful response back to the calling service
   return response;
-}, (error) => {
+}, async (error) => {
   // Return any error which is not due to authentication back to the calling service
   if (error.response?.status !== 401) {
-    return new Promise((resolve, reject) => {
-      reject(error);
-    });
+    throw error;
   }else{
-    // Logout user if token refresh didn't work or user is disabled
-    if (error.config.url == `${process.env.BASE_URL}api/v1/token` || error.response.message == 'Account is disabled.') {
-      // temp vue to have toast
+    console.log("Unauthorized detected")
+    console.log("Error : " + error)
+
+    var originConfig = error?.config || {};
+    const originUrl = error?.config?.url || "";
+    const originResponseMessage = error?.response?.message || "";
+    const originResponseErrorMessage = error?.response?.data?.error || "";
+
+    try{
+      if(!originConfig || !originUrl){
+        throw new Error("Unauthorized detected, redirecting to login (no origin config or url)")
+      }
+
+      console.log("Origin url : " + originUrl)
+      console.log("Origin response message : " + originResponseMessage)
+      console.log("Origin response error message : " + originResponseErrorMessage)
+
+      // Logout user if token refresh didn't work or user is disabled or there was no access to the resource, not token related
+      if (originUrl == `/api/v1/token` || originResponseMessage == 'Account is disabled.' || originResponseMessage.includes('No Access')) {
+
+        // clear our tokens from browser and push to login
+        TokenStorage.clear();
+        router.push({ name: 'Login', query: {from: this?.$route?.fullPath || ""} }).catch(err => {});        
+        throw new Error("Unauthorized detected, redirecting to login (no access)")
+      }
+
+      // Try request again with new token
+      console.log("Trying to refresh tokens")
+      const newToken = await TokenStorage.getNewToken();
+
+      console.log("Retrying previous call with new tokens")
+      // New request with new token
+      originConfig.headers['Authorization'] = `Bearer ${newToken}`;
+      const retryResponse = await axios.request(originConfig);
+      if(retryResponse.error){
+        throw retryResponse.error;
+      }else{
+        return retryResponse;
+      }
+
+    }catch(e){
+
       const vm = new Vue({})
       var message = "Unauthorized.  Access denied."
-      if(error.response.data && error.response.data.message){
-        message += "\r\n" + error.response.data.message
+      if(originResponseMessage){
+        message = [message,originResponseMessage,originResponseErrorMessage,e.message].join("\r\n")
       }
       vm.$toast.warning(message)
-      // clear our tokens from browser and push to login
-      TokenStorage.clear();
-      router.push({ name: 'Login', query: {from: this.$route.fullPath} }).catch(err => {});
 
-      return new Promise((resolve, reject) => {
-        reject(message);
-      });
-    }
+      throw e
 
-    // Try request again with new token
-    //console.log("Trying to refresh tokens")
-    try{
-      return TokenStorage.getNewToken()
-        .then((token) => {
-          // console.log("Refresh done")
-            //console.log("Retrying previous call with new tokens")
-            // New request with new token
-            const config = error.config;
-            config.headers['Authorization'] = `Bearer ${token}`;
-
-            return new Promise((resolve, reject) => {
-              axios.request(config).then(response => {
-                if(response.error){
-                  Promise.reject(error);
-                  reject(error);
-                  router.push({ name: 'Login', query: {from: this.$route.fullPath} }).catch(err => {});
-                }else{
-                  resolve(response);
-                }
-              }).catch((error) => {
-                Promise.reject(error);
-                reject(error);
-                router.push({ name: 'Login', query: {from: this.$route.fullPath} }).catch(err => {});
-              })
-            });
-        })
-        .catch((from) => {
-          // token refresh error -> let's login, unless we are already there
-          if(!from.includes("/login")){
-            router.push({ name: 'Login', query:{from:from}}).catch(err => {});
-          }
-        });
-    }catch(err){
-      console.log(err)
     }
   }
 });
