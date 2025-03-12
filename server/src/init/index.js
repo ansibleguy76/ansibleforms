@@ -8,11 +8,17 @@ async function init(){
   var adminGroupId = undefined
   const mysql=require("../models/db.model");
   const Repository = require('../models/repository.model');
+  const Datasource = require('../models/datasource.model');
+  const Schedule = require('../models/schedule.model');
   const parser = require("cron-parser")
   const dayjs = require("dayjs")
   const appConfig = require("../../config/app.config")
   const User = require("../models/user.model")
   const Group = require("../models/group.model")
+  const dbConfig = require("../../config/db.config")
+  const YAML=require("yaml")
+  const path = require('path');
+  const fs = require('fs'); 
 
   // this is at startup, don't start the app until mysql is ready
   // rewrite with await
@@ -173,12 +179,14 @@ async function init(){
   })
   .catch((e)=>{})
 
-  logger.info("Initializing repository cron schedules")
+  logger.info("Initializing cron schedules")
   // this is hourly, abandon running jobs older than a day.
-  setInterval(()=>{
-    mysql.do("SELECT name,cron FROM AnsibleForms.`repositories` WHERE status<>'running' AND cron<>''",undefined,true)
-    .then((repositories)=>{
-      repositories.map((repo)=>{
+  setInterval(async ()=>{
+
+    // find any repositories with cron schedules that need to run
+    try{
+      const repositories = await mysql.do("SELECT name,cron FROM AnsibleForms.`repositories` WHERE COALESCE(status,'')<>'running' AND cron<>''",undefined,true)
+      repositories.map(async (repo)=>{
         try{
           const interval = parser.parseExpression(repo.cron) 
           const next = interval.next().toDate()
@@ -186,19 +194,141 @@ async function init(){
           const now = dayjs()
           const minutes = date.diff(now,'m')
           if(minutes==0){
-            Repository.pull(repo.name)
+            Repository.pull(repo.name).catch((e)=>{}) // we don't wait for the pull to finish to continue
           }else{
             // logger.debug(`Not time yet, ${minutes} minutes to go`)
           }
         }catch(e){
           logger.error(`Failed to parse cron schedule ${repo.cron}`)
         }       
-
       })
-    })
-    .catch((e)=>{})  
+    }catch(e){} 
+
+    // find any datasources with cron schedules that need to run
+    try{
+      // datasource cron schedules
+      const datasources = await mysql.do("SELECT id,name,cron FROM AnsibleForms.`datasource` WHERE COALESCE(status,'')<>'running' AND COALESCE(status,'')<>'queued' AND cron<>''",undefined,true)
+      datasources.map(async(ds)=>{
+        try{
+          const interval = parser.parseExpression(ds.cron) 
+          const next = interval.next().toDate()
+          const date = dayjs(next)
+          const now = dayjs()
+          const minutes = date.diff(now,'m')
+          if(minutes==0){
+            // time to run
+            await Datasource.queue(ds.id)
+
+          }else{
+            // logger.debug(`Not time yet, ${minutes} minutes to go`)
+          }
+        }catch(e){
+          logger.error(`Failed to queue datasource`,e)
+        }       
+      })
+    }catch(e){}
+
+    // find any schedules with cron schedules that need to run
+    try{
+      // schedule cron schedules
+      const schedules = await mysql.do("SELECT id,name,cron FROM AnsibleForms.`schedule` WHERE COALESCE(status,'')<>'running' AND COALESCE(status,'')<>'queued' AND cron<>''",undefined,true)
+      schedules.map(async(schedule)=>{
+        try{
+          const interval = parser.parseExpression(schedule.cron) 
+          const next = interval.next().toDate()
+          const date = dayjs(next)
+          const now = dayjs()
+          const minutes = date.diff(now,'m')
+          if(minutes==0){
+            // time to run
+            await Schedule.queue(schedule.id)
+
+          }else{
+            // logger.debug(`Not time yet, ${minutes} minutes to go`)
+          }
+        }catch(e){
+          logger.error(`Failed to queue schedule`,e)
+        }       
+      })
+    }catch(e){}
+
+
   },56000) // run every 55 second, should hit 0 minutes once
 
+
+  // now we check if there are any datasources that need to be imported, every 10 seconds
+  // we only import 1 datasource that is with the lowest queue_id while there are no datasources with status running
+  // in the interval, we only import one datasource
+
+  async function checkDatasources() {
+    try {
+      // logger.info("Checking datasources")
+      // check if another one is still running... skip if it is (in theory not possible)
+      // but in case 2 instances are running against the same database
+      const running = await mysql.do("SELECT id FROM AnsibleForms.`datasource` WHERE state='running'", undefined, true);
+      // still running, don't do anything
+      if (running.length > 0) {
+        logger.error("Datasource is running, skipping, this is not normal, this means 2 instances are running against the same database");
+        return;
+      }
+      // logger.info("No datasource is running, checking for queued datasources")
+      const datasources = await mysql.do("SELECT id FROM AnsibleForms.`datasource` WHERE state='queued' ORDER BY queue_id LIMIT 1", undefined, true);
+      if (datasources.length > 0) {
+        logger.info("Found queued datasource");
+        const ds = datasources[0];
+        logger.info(`Importing datasource ${ds.id}`);
+        try {
+          await Datasource.import(ds.id);
+        } catch (e) {
+          logger.error(`Failed to import datasource ${ds.id} : ` + e);
+        }
+      }
+    } catch (e) {
+      logger.error(e);
+    } finally {
+      // Schedule the next execution
+      setTimeout(checkDatasources, 10000);
+    }
+  }
+  
+  // Initial call to start the process
+  setTimeout(checkDatasources, 10000);
+
+  // just like datasource, be also process schedules, some database layout
+
+  async function checkSchedules(){
+    try{
+      // logger.info("Checking schedules")
+      // check if another one is still running... skip if it is (in theory not possible)
+      // but in case 2 instances are running against the same database
+      const running = await mysql.do("SELECT id FROM AnsibleForms.`schedule` WHERE state='running'",undefined,true)
+      // still running, don't do anything
+      if(running.length>0){
+        logger.error("Schedule is running, skipping, this is not normal, this means 2 instances are running against the same database")
+        return
+      }
+      // logger.info("No schedule is running, checking for queued schedules")
+      const schedules = await mysql.do("SELECT id FROM AnsibleForms.`schedule` WHERE state='queued' ORDER BY queue_id LIMIT 1",undefined,true)
+      if(schedules.length>0){
+        logger.info("Found queued schedule")
+        const schedule = schedules[0]
+        logger.info(`Importing schedule ${schedule.id}`)
+        try{
+          await Schedule.launch(schedule.id)
+        }catch(e){
+          logger.error(`Failed to import schedule ${schedule.id} : ` + e)
+        }
+      }
+    }catch(e){
+      logger.error(e)
+    }finally{
+      // Schedule the next execution
+      setTimeout(checkSchedules,10000)
+    }
+  }
+
+  // Initial call to start the process
+  setTimeout(checkSchedules,10000)
 }
 
 module.exports = init

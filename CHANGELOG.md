@@ -7,13 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+-   Reduce formConfig by roles // https://github.com/ansibleguy76/ansibleforms/issues/262
+-   User-based roles fix // https://github.com/ansibleguy76/ansibleforms/issues/264
+
+### Added
+
+-   Added 2 env vars VUE_APP_NAV_HOME_LABEL and VUE_APP_NAV_HOME_ICON and a forms nav link 
+-   Datasources and schema see documentation for more info
+-   Schedules, allow scheduled forms
+
 ## [5.0.8] - 2025-02-13
 
 ### Fixed
 
 -   Regex in repo's
 -   Jwt token issuer added (use env variable ACCESS_TOKEN_ISSUER) - credits to le-martre for the fix
--   maxBuffer causing abort by operator, adding PROCESS_MAX_BUFFER variable.
+-   maxBuffer causing abort by operator, adding PROCESS_MAX_BUFFER variable. // https://github.com/ansibleguy76/ansibleforms/issues/247
 
 ### Changed
 

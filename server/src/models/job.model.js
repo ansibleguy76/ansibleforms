@@ -311,7 +311,7 @@ Job.findById = async function (user,id,asText,logSafe=false) {
       return []
     }
 };
-Job.launch = async function(form,formObj,user,creds,extravars,parentId=null,next) {
+Job.launch = async function(form,formObj,user,creds,extravars,parentId=null,next,async=false) {
   // a formobj can be a full step pushed
   if(!formObj){
     // we load it, it's an actual form
@@ -346,7 +346,8 @@ Job.launch = async function(form,formObj,user,creds,extravars,parentId=null,next
   logger.debug(`Job id ${jobid} is created`)
   extravars["__jobid__"]=jobid
   // job created - return to client
-  if(next)next({id:jobid})
+  if(next && !async)
+    next({id:jobid})
 
   // the rest is now happening in the background
   // if credentials are requested, we now get them.

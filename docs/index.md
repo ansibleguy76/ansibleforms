@@ -64,6 +64,14 @@ grid_navigation:
       excerpt: More examples and more answers
       cta: Read more
       url: '/faq'          
+    - title: Schemas
+      excerpt: Create custom database schemas
+      cta: Read more
+      url: '/schema'
+    - title: Datasources
+      excerpt: Import data
+      cta: Read more
+      url: '/datasource'      
     - title: GUI
       excerpt: About the GUI
       cta: Read more

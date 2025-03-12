@@ -101,7 +101,6 @@ Form.initBackupFolder=function(){
 // load the forms config
 Form.load = async function() {
 
-
   var forms=undefined
   var rawdata=undefined
 

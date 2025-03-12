@@ -189,6 +189,19 @@ exports.fnReadYamlFile = async function(path,jqe=null) {
   }
   return result
 };
+exports.fnDnsResolve = async function(hostname,type) {
+  logger.debug("[fnDnsResolve] dns resolve is happening")
+  const dns=require("dns");
+  return new Promise((resolve,reject) => {
+    dns.resolve(hostname,type,(err,addresses) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve(addresses)
+      }
+    })
+  })
+}
 exports.fnCredentials = async function(name,fallbackname=""){
   var result=undefined
   if(name){

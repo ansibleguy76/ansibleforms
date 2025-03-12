@@ -13,4 +13,9 @@ router.get('/env', checkSettingsMiddleware, configController.env);
 
 // get the config (no admin)
 router.get('/', configController.findAll);
+// get list, just the icons and names (no admin)
+router.get('/formlist', configController.findList);
+// get one config (no admin)
+router.get('/form', configController.findOne);
+// 
 module.exports = router

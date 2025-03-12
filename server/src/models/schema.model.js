@@ -204,6 +204,17 @@ async function patchVersion5(messages,success,failed){
   // In 5.0.8, the repositories table was extended with a new column, branch, to store the branch of the repository
   await checkPromise(addColumn("repositories","branch","varchar(250)",true,"NULL"),messages,success,failed) // add branch column
 
+  // In 5.0.9, A new feature was added, the datasource_schemas table, to store the datasource schemas
+  buffer = fs.readFileSync(`${__dirname}/../db/create_datasource_tables.sql`)
+  sql = buffer.toString()
+  await checkPromise(addTable("datasource",sql),messages,success,failed) // add datasource_schemas table
+
+  // In 5.0.9, We add a scheduler
+  buffer = fs.readFileSync(`${__dirname}/../db/create_schedule_table.sql`)
+  sql = buffer.toString()
+  await checkPromise(addTable("schedule",sql),messages,success,failed) // add datasource_schemas table
+
+
 }
 
 // PATCHING : Patch All

@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "description": "This is the swagger interface for AnsibleForms.\r\nUse the `/auth/login` api with basic authentication to obtain a JWT token.\r\nThen use the access token, prefixed with the word '**Bearer**' to use all other api's.\r\nNote that the access token is limited in time.  You can then either login again and get a new set of tokens or use the `/token` api and the refresh token to obtain a new set (preferred).",
-    "version": "5.0.8",
+    "version": "5.0.9",
     "title": "AnsibleForms",
     "contact": {
       "email": "info@ansibleforms.com"
@@ -73,6 +73,14 @@
     {
       "name": "general settings",
       "description": "Get and set general settings and test mail"
+    },
+    {
+      "name": "datasources",
+      "description": "Operations about datasources"
+    },
+    {
+      "name": "schedules",
+      "description": "Operations about schedules"
     }
   ],
   "schemes": [
@@ -98,7 +106,7 @@
             "required": false,
             "description": "Expiry days, requires extendedTokenExpiration option to be set to true in role-options"
           }
-        ],        
+        ],
         "summary": "Get authorization bearer token",
         "produces": [
           "application/json"
@@ -280,11 +288,17 @@
                 },
                 "extravars": {
                   "type": "object",
-                  "example": {"name":"vm1","datacenter":"dc1","cluster":"cluster1"}
+                  "example": {
+                    "name": "vm1",
+                    "datacenter": "dc1",
+                    "cluster": "cluster1"
+                  }
                 },
                 "credentials": {
                   "type": "object",
-                  "example": {"vcenterCredentials":"VCENTER"}
+                  "example": {
+                    "vcenterCredentials": "VCENTER"
+                  }
                 }
               }
             }
@@ -760,7 +774,7 @@
                   "type": "string",
                   "example": "MySecretTokenForAWX"
                 },
-                "use_credentials":{
+                "use_credentials": {
                   "type": "boolean",
                   "example": false
                 },
@@ -771,7 +785,7 @@
                 "password": {
                   "type": "string",
                   "example": "MySecretPasswordForAWX"
-                }                                
+                }
               }
             }
           }
@@ -830,7 +844,7 @@
                   "type": "string",
                   "example": "MySecretTokenForAWX"
                 },
-                "use_credentials":{
+                "use_credentials": {
                   "type": "boolean",
                   "example": false
                 },
@@ -841,7 +855,7 @@
                 "password": {
                   "type": "string",
                   "example": "MySecretPasswordForAWX"
-                }  
+                }
               }
             }
           }
@@ -961,7 +975,7 @@
                   "type": "string",
                   "example": "ansibleforms@domain.local"
                 },
-                "url":{
+                "url": {
                   "type": "string",
                   "example": "https://ansibleforms"
                 }
@@ -1272,7 +1286,7 @@
         }
       }
     },
-    "/config/backups":{
+    "/config/backups": {
       "get": {
         "tags": [
           "forms config"
@@ -1292,20 +1306,19 @@
             "schema": {
               "type": "array",
               "example": [
-                  {
-                    "file": "forms.yaml.bak.20220202211155442",
-                    "date": "2022-02-02 21:11:55"
-                  },
-                  {
-                    "file": "forms.yaml.bak.20220202210424591",
-                    "date": "2022-02-02 21:04:24"
-                  },
-                  {
-                    "file": "forms.yaml.bak.20220202154024068",
-                    "date": "2022-02-02 15:40:24"
-                  }
-                ]
-
+                {
+                  "file": "forms.yaml.bak.20220202211155442",
+                  "date": "2022-02-02 21:11:55"
+                },
+                {
+                  "file": "forms.yaml.bak.20220202210424591",
+                  "date": "2022-02-02 21:04:24"
+                },
+                {
+                  "file": "forms.yaml.bak.20220202154024068",
+                  "date": "2022-02-02 15:40:24"
+                }
+              ]
             }
           },
           "401": {
@@ -1937,7 +1950,7 @@
         "produces": [
           "application/json"
         ],
-        "parameters":[
+        "parameters": [
           {
             "in": "query",
             "name": "name",
@@ -2283,12 +2296,12 @@
             "schema": {
               "type": "object",
               "example": {
-                  "status": "success",
-                  "message": "Mysql connection success",
-                  "data": {
-                    "output": "",
-                    "error": ""
-                  }
+                "status": "success",
+                "message": "Mysql connection success",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
               }
             }
           },
@@ -2316,7 +2329,7 @@
         "produces": [
           "application/json"
         ],
-        "parameters":[
+        "parameters": [
           {
             "in": "query",
             "name": "username",
@@ -2601,7 +2614,7 @@
         "produces": [
           "application/json"
         ],
-        "parameters":[
+        "parameters": [
           {
             "in": "query",
             "name": "name",
@@ -2814,24 +2827,24 @@
             "schema": {
               "type": "object",
               "example": {
-                  "status": "success",
-                  "message": "repositories found",
-                  "data": {
-                      "output": [
-                          {
-                              "id": 1,
-                              "name": "myrepo",
-                              "user": "myaccount",
-                              "uri": "https://github.com/vcmirko/dev_forms.git",
-                              "description": "test repo",
-                              "status": "success",
-                              "output": "Running command : git pull --verbose\r\nPOST git-upload-pack (155 bytes)\n\r\nPOST git-upload-pack (373 bytes)\n\r\nFrom https://github.com/vcmirko/dev_forms\n   56bda5d..42fcf72  main       -> origin/main\n\r\nUpdating 56bda5d..42fcf72\nFast-forward\n\r\n",
-                              "head": "42fcf72\n",
-                              "rebase_on_start": 1
-                          }
-                      ],
-                      "error": ""
-                  }
+                "status": "success",
+                "message": "repositories found",
+                "data": {
+                  "output": [
+                    {
+                      "id": 1,
+                      "name": "myrepo",
+                      "user": "myaccount",
+                      "uri": "https://github.com/vcmirko/dev_forms.git",
+                      "description": "test repo",
+                      "status": "success",
+                      "output": "Running command : git pull --verbose\r\nPOST git-upload-pack (155 bytes)\n\r\nPOST git-upload-pack (373 bytes)\n\r\nFrom https://github.com/vcmirko/dev_forms\n   56bda5d..42fcf72  main       -> origin/main\n\r\nUpdating 56bda5d..42fcf72\nFast-forward\n\r\n",
+                      "head": "42fcf72\n",
+                      "rebase_on_start": 1
+                    }
+                  ],
+                  "error": ""
+                }
               }
             }
           },
@@ -2871,7 +2884,7 @@
                 "password": {
                   "type": "string",
                   "example": "mypersonalaccesstoken"
-                },                                                
+                },
                 "uri": {
                   "type": "string",
                   "example": "git@github.com:myrepo"
@@ -2879,7 +2892,7 @@
                 "description": {
                   "type": "string",
                   "example": "My cool repository"
-                },                
+                },
                 "rebase_on_start": {
                   "type": "boolean",
                   "example": true
@@ -2897,12 +2910,12 @@
             "description": "successful operation",
             "schema": {
               "type": "object",
-              "example":{
+              "example": {
                 "status": "success",
                 "message": "repository added",
                 "data": {
-                    "output": 2,
-                    "error": ""
+                  "output": 2,
+                  "error": ""
                 }
               }
             }
@@ -2945,28 +2958,28 @@
             "description": "successful operation",
             "schema": {
               "type": "object",
-              "example":{
+              "example": {
                 "status": "success",
                 "message": "found repository",
                 "data": {
-                    "output": {
-                        "id": 1,
-                        "name": "myrepo",
-                        "user": "myuser",
-                        "password": "ghp_xxxxxxxxxxxxx",
-                        "uri": "https://github.com/myaccount/myrepo.git",
-                        "description": "test repo",
-                        "use_for_forms": 1,
-                        "use_for_playbooks": 0,
-                        "cron": null,
-                        "status": "success",
-                        "output": "Running command : git pull --verbose\r\nPOST git-upload-pack (155 bytes)\n\r\nPOST git-upload-pack (373 bytes)\n\r\nFrom https://github.com/myaccount/myrepo\n   56bda5d..42fcf72  main       -> origin/main\n\r\nUpdating 56bda5d..42fcf72\nFast-forward\n\r\n",
-                        "head": "42fcf72\n",
-                        "rebase_on_start": 1
-                    },
-                    "error": ""
+                  "output": {
+                    "id": 1,
+                    "name": "myrepo",
+                    "user": "myuser",
+                    "password": "ghp_xxxxxxxxxxxxx",
+                    "uri": "https://github.com/myaccount/myrepo.git",
+                    "description": "test repo",
+                    "use_for_forms": 1,
+                    "use_for_playbooks": 0,
+                    "cron": null,
+                    "status": "success",
+                    "output": "Running command : git pull --verbose\r\nPOST git-upload-pack (155 bytes)\n\r\nPOST git-upload-pack (373 bytes)\n\r\nFrom https://github.com/myaccount/myrepo\n   56bda5d..42fcf72  main       -> origin/main\n\r\nUpdating 56bda5d..42fcf72\nFast-forward\n\r\n",
+                    "head": "42fcf72\n",
+                    "rebase_on_start": 1
+                  },
+                  "error": ""
                 }
-              } 
+              }
             }
           },
           "401": {
@@ -2991,7 +3004,7 @@
         "produces": [
           "application/json"
         ],
-        "parameters":[
+        "parameters": [
           {
             "in": "query",
             "name": "name",
@@ -3052,7 +3065,7 @@
                 "password": {
                   "type": "string",
                   "example": "mypersonalaccesstoken"
-                },                                                
+                },
                 "uri": {
                   "type": "string",
                   "example": "git@github.com:myrepo"
@@ -3060,7 +3073,7 @@
                 "description": {
                   "type": "string",
                   "example": "My cool repository"
-                },                
+                },
                 "rebase_on_start": {
                   "type": "boolean",
                   "example": true
@@ -3082,8 +3095,8 @@
                 "status": "success",
                 "message": "repository updated",
                 "data": {
-                    "output": "",
-                    "error": ""
+                  "output": "",
+                  "error": ""
                 }
               }
             }
@@ -3097,7 +3110,7 @@
           }
         }
       }
-    },    
+    },
     "/repository/{repositoryName}/clone": {
       "post": {
         "tags": [
@@ -3145,7 +3158,7 @@
           }
         }
       }
-    },      
+    },
     "/repository/{repositoryName}/pull": {
       "post": {
         "tags": [
@@ -3193,7 +3206,7 @@
           }
         }
       }
-    },    
+    },
     "/version": {
       "get": {
         "tags": [
@@ -3283,20 +3296,20 @@
                 "message": "successfully executed expression fn.fnRestBasic('get','https://gorest.co.in/public/v1/users','','','[.data[]]')",
                 "data": {
                   "output": [
-                      {
-                          "id": 2514,
-                          "name": "sss",
-                          "email": "a@a.com",
-                          "gender": "female",
-                          "status": "active"
-                      },
-                      {
-                          "id": 2058,
-                          "name": "Z57KQEB51",
-                          "email": "f3d3ulp9fiwj@gmail.com",
-                          "gender": "male",
-                          "status": "active"
-                      }
+                    {
+                      "id": 2514,
+                      "name": "sss",
+                      "email": "a@a.com",
+                      "gender": "female",
+                      "status": "active"
+                    },
+                    {
+                      "id": 2058,
+                      "name": "Z57KQEB51",
+                      "email": "f3d3ulp9fiwj@gmail.com",
+                      "gender": "male",
+                      "status": "active"
+                    }
                   ],
                   "error": ""
                 }
@@ -3334,7 +3347,7 @@
                 "query"
               ],
               "properties": {
-                "config":{
+                "config": {
                   "type": "object",
                   "example": {
                     "name": "MSSQL",
@@ -3370,29 +3383,1063 @@
                 "status": "success",
                 "message": "query ran successfully",
                 "data": {
-                    "output": [
-                        {
-                            "name": "london",
-                            "country": "UK"
-                        },
-                        {
-                            "name": "paris",
-                            "country": "FRANCE"
-                        },
-                        {
-                            "name": "brussels",
-                            "country": "BELGIUM"
-                        },
-                        {
-                            "name": "amsterdam",
-                            "country": "HOLLAND"
-                        },
-                        {
-                            "name": "berlin",
-                            "country": "GERMANY"
-                        }
-                    ],
-                    "error": ""
+                  "output": [
+                    {
+                      "name": "london",
+                      "country": "UK"
+                    },
+                    {
+                      "name": "paris",
+                      "country": "FRANCE"
+                    },
+                    {
+                      "name": "brussels",
+                      "country": "BELGIUM"
+                    },
+                    {
+                      "name": "amsterdam",
+                      "country": "HOLLAND"
+                    },
+                    {
+                      "name": "berlin",
+                      "country": "GERMANY"
+                    }
+                  ],
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/datasource": {
+      "get": {
+        "tags": [
+          "datasources"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Retrieve all datasources",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "datasources found",
+                "data": {
+                  "output": [
+                    {
+                      "id": 1,
+                      "name": "datasource1",
+                      "schema": "schema1",
+                      "cron": "0 * * * *",
+                      "status": "success",
+                      "output": "",
+                      "queue_id": 641,
+                      "last_run": "2025-03-10T11:59:38.000Z",
+                      "state": "idle",
+                      "form": null,
+                      "extra_vars": null
+                    },
+                    {
+                      "id": 3,
+                      "name": "datasource2",
+                      "schema": "schema1",
+                      "cron": "0 * * * *",
+                      "status": "success",
+                      "output": "",
+                      "queue_id": 641,
+                      "last_run": "2025-03-10T11:59:48.000Z",
+                      "state": "idle",
+                      "form": null,
+                      "extra_vars": null
+                    },
+                    {
+                      "id": 4,
+                      "name": "excel",
+                      "schema": "schema_excel",
+                      "cron": "",
+                      "status": "success",
+                      "output": "1",
+                      "queue_id": 432,
+                      "last_run": "2025-03-05T10:22:09.000Z",
+                      "state": "idle",
+                      "form": "datasource_excel",
+                      "extra_vars": null
+                    }
+                  ],
+                  "error": ""
+                }
+              }
+            }
+          }
+        },
+        "401": {
+          "description": "unauthorized",
+          "schema": {
+            "type": "string",
+            "example": "Authorize with a valid Bearer access token"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "datasources"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Create a new datasource",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "datasource",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "schema": {
+                  "type": "string"
+                },
+                "extra_vars": {
+                  "type": "string"
+                },
+                "form": {
+                  "type": "string"
+                },
+                "cron": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "datasource added",
+                "data": {
+                  "output": 2,
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/datasource/{id}": {
+      "get": {
+        "tags": [
+          "datasources"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Retrieve a single datasource with id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the datasource to get."
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "found datasource",
+                "data": {
+                  "output": {
+                    "id": 6,
+                    "name": "datasource3",
+                    "schema": "cm_storage",
+                    "cron": "* * * * *",
+                    "status": "success",
+                    "output": "",
+                    "queue_id": 651,
+                    "last_run": "2025-03-10T12:26:43.000Z",
+                    "state": "idle",
+                    "form": "test",
+                    "extra_vars": ""
+                  },
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "datasources"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update a datasource with id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the datasource to update."
+          },
+          {
+            "in": "body",
+            "name": "datasource",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "schema": {
+                  "type": "string"
+                },
+                "extra_vars": {
+                  "type": "string"
+                },
+                "form": {
+                  "type": "string"
+                },
+                "cron": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "datasource updated",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "datasources"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete a datasource with id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the datasource to delete."
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "datasource deleted",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/datasource/{id}/import": {
+      "post": {
+        "tags": [
+          "datasources"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Import a datasource by id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the datasource to import."
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "datasource imported",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/datasource/schema": {
+      "get": {
+        "tags": [
+          "datasources"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Retrieve all datasourceSchemas",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "schemas found",
+                "data": {
+                  "output": [
+                    {
+                      "id": 3,
+                      "name": "team",
+                      "description": null,
+                      "table_definitions": "hobby:\n- name: name\n  unique: true\nperson:\n- name: firstname\n  unique: true\n- name: lastname\n  unique: true\n- name: age\n  type: int\n- name: hobby\n  foreign_key: hobby\n  constraint_actions: delete_set_null\n",
+                      "status": "success",
+                      "output": ""
+                    }
+                  ],
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "datasources"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Create a new datasourceSchema",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "datasourceSchema",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "table_definitions": {
+                  "type": "string"
+                },
+                "force": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "datasourceSchema added",
+                "data": {
+                  "output": 2,
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/datasource/schema/{id}": {
+      "get": {
+        "tags": [
+          "datasources"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Retrieve a single datasourceSchema with id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the datasourceSchema to get."
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "found datasourceSchema",
+                "data": {
+                  "output": {
+                    "id": 3,
+                    "name": "team",
+                    "description": null,
+                    "table_definitions": "hobby:\n- name: name\n  unique: true\nperson:\n- name: firstname\n  unique: true\n- name: lastname\n  unique: true\n- name: age\n  type: int\n- name: hobby\n  foreign_key: hobby\n  constraint_actions: delete_set_null\n",
+                    "status": "success",
+                    "output": ""
+                  },
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "datasources"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update a datasourceSchema with id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the datasourceSchema to update."
+          },
+          {
+            "in": "body",
+            "name": "datasourceSchema",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "table_definitions": {
+                  "type": "string"
+                },
+                "force": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "datasourceSchema updated",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "datasources"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete a datasourceSchema with id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the datasourceSchema to delete."
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "datasourceSchema deleted",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/datasource/schema/{id}/reset": {
+      "post": {
+        "tags": [
+          "datasources"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Reset a datasourceSchema by id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the datasourceSchema to reset."
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "datasourceSchema reset",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/schedule": {
+      "get": {
+        "tags": [
+          "schedules"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Retrieve all schedules",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "schedules found",
+                "data": {
+                  "output": [
+                    {
+                      "id": 1,
+                      "name": "schedule1",
+                      "cron": "0 * * * *",
+                      "status": "success",
+                      "output": "",
+                      "queue_id": 641,
+                      "last_run": "2025-03-10T11:59:38.000Z",
+                      "state": "idle",
+                      "form": null,
+                      "extra_vars": null
+                    },
+                    {
+                      "id": 3,
+                      "name": "schedule2",
+                      "cron": "0 * * * *",
+                      "status": "success",
+                      "output": "",
+                      "queue_id": 641,
+                      "last_run": "2025-03-10T11:59:48.000Z",
+                      "state": "idle",
+                      "form": null,
+                      "extra_vars": null
+                    }
+                  ],
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "schedules"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Create a new schedule",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "schedule",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "extra_vars": {
+                  "type": "string"
+                },
+                "form": {
+                  "type": "string"
+                },
+                "cron": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "schedule added",
+                "data": {
+                  "output": 2,
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/schedule/{id}": {
+      "get": {
+        "tags": [
+          "schedules"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Retrieve a single schedule with id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the schedule to get."
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "found schedule",
+                "data": {
+                  "output": {
+                    "id": 6,
+                    "name": "schedule3",
+                    "cron": "* * * * *",
+                    "status": "success",
+                    "output": "",
+                    "queue_id": 651,
+                    "last_run": "2025-03-10T12:26:43.000Z",
+                    "state": "idle",
+                    "form": "test",
+                    "extra_vars": ""
+                  },
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "schedules"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Update a schedule with id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the schedule to update."
+          },
+          {
+            "in": "body",
+            "name": "schedule",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "extra_vars": {
+                  "type": "string"
+                },
+                "form": {
+                  "type": "string"
+                },
+                "cron": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "schedule updated",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "schedules"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Delete a schedule with id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the schedule to delete."
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "schedule deleted",
+                "data": {
+                  "output": "",
+                  "error": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "unauthorized",
+            "schema": {
+              "type": "string",
+              "example": "Authorize with a valid Bearer access token"
+            }
+          }
+        }
+      }
+    },
+    "/schedule/{id}/launch": {
+      "post": {
+        "tags": [
+          "schedules"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "Launch a schedule by id",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "type": "integer",
+            "required": true,
+            "description": "Numeric ID of the schedule to launch."
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "object",
+              "example": {
+                "status": "success",
+                "message": "schedule launched",
+                "data": {
+                  "output": "",
+                  "error": ""
                 }
               }
             }

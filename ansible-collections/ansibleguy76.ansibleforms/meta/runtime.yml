@@ -1,0 +1,8 @@
+---
+# Collections must specify a minimum required ansible version to upload
+# to galaxy
+requires_ansible: '>=2.9.10'
+action_groups:
+  ansibleguy76_ansibleforms:
+    - af_datasource_import
+

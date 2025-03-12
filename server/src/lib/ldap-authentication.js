@@ -215,7 +215,7 @@ async function authenticateWithAdmin(
   groupMemberUserAttribute = 'dn',
   attributes = null
 ) {
-  let ldapAdminClient
+    let ldapAdminClient
   try {
     ldapAdminClient = await _ldapBind(
       adminDn,

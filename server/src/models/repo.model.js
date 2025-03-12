@@ -1,38 +1,16 @@
 'use strict';
 const exec = require('child_process').exec;
-const spawn = require('child_process').spawn;
-const execSync = require('child_process').execSync;
+const Cmd = require("../lib/cmd")
 const logger=require("../lib/logger")
 const path=require("path")
 const fs=require("fs")
 var config=require('../../config/app.config')
 
+const Repo={
 
-var Exec=function(){}
-// tree kill should do the trick, but fails in alpine
-// so this piece of code does it
-Exec.killChildren = (pid) => {
-  const children = [];
+}
 
-  try {
-    const psRes = execSync(`ps -opid="" -oppid="" |grep ${pid}`).toString().trim().split(/\n/);
-
-    (psRes || []).forEach(pidGroup => {
-      const [actual, parent] = pidGroup.trim().split(/ +/);
-
-      if (parent.toString() === pid.toString()) {
-        children.push(parseInt(actual, 10));
-      }
-    });
-  } catch (e) {}
-  try {
-    logger.debug(`Killing process ${pid}`)
-    process.kill(pid);
-    children.forEach(childPid => Exec.killChildren(childPid));
-  } catch (e) {}
-};
-
-Exec.maskGitToken =(data)=>{
+Repo.maskGitToken =(data)=>{
   if(data){
     try{
       // console.log(data.toString())
@@ -46,91 +24,6 @@ Exec.maskGitToken =(data)=>{
   }else{
     return data
   }
-}
-
-Exec.executeSilentCommand = async (cmd,silent=false,singleLine=false) => {
-  return new Promise((resolve,reject)=>{
-    try{
-      var command = cmd.command
-      var directory = cmd.directory
-      var description = cmd.description
-      // execute the procces
-      logger.debug(`${description}, ${directory} > ${Exec.maskGitToken(command)}`)
-  
-      var cmdlist = command.split(' ')
-      var basecmd = cmdlist[0]
-      var parameters = cmdlist.slice(1)
-      var child = spawn(basecmd,parameters,{shell:true,stdio:["ignore","pipe","pipe"],cwd:directory,detached:true});
-        var timeout = setTimeout(()=>{
-          Exec.killChildren(child.pid)
-        },60000)
-        var out=[]
-        if(!singleLine){
-          out.push(`Running command : ${Exec.maskGitToken(command)}`)
-        }
-        if(!silent){
-          logger.notice(`Running command : ${Exec.maskGitToken(command)}`)          
-        }
-        
-        // add output eventlistener to the process to save output
-        child.stdout.on('data',function(data){
-          var txt=data.toString()
-          txt = Exec.maskGitToken(txt)
-          out.push(txt)
-        })
-        // add error eventlistener to the process to save output
-        child.stderr.on('data',function(data){
-          var txt=data.toString()
-          txt = Exec.maskGitToken(txt)
-          out.push(txt)
-        })
-        // add exit eventlistener to the process to handle status update
-        child.on('exit',function(data){
-          clearTimeout(timeout)
-          logger.info(description + " finished : " + data)
-          // always push something to
-          out.push("")
-          if(data!=0){
-            if(child.signalCode=='SIGTERM'){
-              out.push("The command timed out")
-            }
-
-            if(singleLine){
-              reject(new Error(out[0]))
-              return
-            }else{
-              reject(new Error(out.join("\r\n")))
-              return
-            }
-          }
-          if(singleLine){
-            resolve(out[0])
-            return
-          }else{
-            resolve(out.join('\r\n'))
-            return 
-          }
-
-        })
-        // add error eventlistener to the process; set failed
-        child.on('error',function(data){
-          var txt=data.toString()
-          txt = Exec.maskGitToken(txt)
-          out.push(txt)
-          reject(new Error(out.join('\n')))
-          return
-        })
-
-    }catch(e){
-      reject(e.message)
-    }   
-  })
-
-}
-
-
-const Repo={
-
 }
 
 Repo.color = function(t){
@@ -161,7 +54,7 @@ Repo.info = async function (name) {
     }else{
       throw new Error("No name given")
     }
-    return await Exec.executeSilentCommand({command:cmd,directory:directory,description:"Getting repository info"},true,true)
+    return await Cmd.executeSilentCommand({command:cmd,directory:directory,description:"Getting repository info"},true,true)
 
 };
 
@@ -213,7 +106,8 @@ Repo.clone = async function (uri,name,branch=undefined) {
       }else{
         logger.warning(`No host found in command`)
       }
-      return await Exec.executeSilentCommand({command:cmd,directory:directory,description:"Cloning repository"})
+      var maskedCommand = Repo.maskGitToken(cmd)
+      return await Cmd.executeSilentCommand({command:cmd,directory:directory,description:"Cloning repository",maskedCommand:maskedCommand})
 
     }
 };
@@ -254,6 +148,6 @@ Repo.addKnownHosts = async function (hosts) {
 Repo.pull = async function (name) {
       var command = "git pull --verbose"
       var directory = path.join(config.repoPath,name)
-      return await Exec.executeSilentCommand({directory:directory,command:command,description:"Pulling from git"},true)
+      return await Cmd.executeSilentCommand({directory:directory,command:command,description:"Pulling from git"},true)
 };
 module.exports= Repo;

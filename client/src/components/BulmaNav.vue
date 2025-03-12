@@ -15,6 +15,9 @@
 
           <div id="navbarAnsibleForms" class="navbar-menu" v-bind:class="{ 'is-active' : showNav }">
               <div class="navbar-end">
+                <router-link class="navbar-item" to="/" v-if="authenticated">
+                  <span class="icon"><font-awesome-icon :icon="navHomeIcon" /></span><span>{{ navHomeLabel }}</span>
+                </router-link>                
                 <router-link class="navbar-item" to="/jobs" v-if="authenticated">
                   <span class="icon"><font-awesome-icon icon="history" /></span><span>Job log </span><span v-if="approvals" class="ml-1 is-warning tag">{{approvals}} {{(approvals==1)?"approval":"approvals"}} waiting</span>
                 </router-link>
@@ -79,11 +82,14 @@
     data(){
       return  {
           showNav: false,
-          baseUrl: "/"
+          baseUrl: "/",
+          navHomeLabel:{type:String},
+          navHomeIcon:{type:String}
       }
     },
     mounted(){
-      this.baseUrl = process.env.BASE_URL
+      this.navHomeLabel = process.env.VUE_APP_NAV_HOME_LABEL || "Forms"
+      this.navHomeIcon = process.env.VUE_APP_NAV_HOME_ICON || "rectangle-list"
     }
   }
 </script>
