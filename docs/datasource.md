@@ -68,7 +68,7 @@ It has the following properties:
 
 - **datasource**: The datasource `dict` that is passed by Ansible Forms.
 - **import_path**: The root `path` for the structure of the csv files
-- **mysql**: The mysql `credentials` dict that is passed by Ansible Forms.  Use the credential `\_\_self\_\_`, this will inject the mysql connection credential.
+- **mysql_conn**: The mysql `credentials` dict that is passed by Ansible Forms.  Use the credential `\_\_self\_\_`, this will inject the mysql connection credential.
 - **force**: A `boolean` flag to ignore the `.ready` file (default: false)
 - **keep**: A `boolean` flag to keep the csv files after import (default: false)
 
@@ -76,9 +76,9 @@ Example :
 ```yaml
 - name: Import csv files.
   ansibleguy76.ansibleforms.af_datasource_import:
-    datasource: "{{ datasource }}" # datasource is auto injected by ansibleforms
-    mysql: "{{ mysql_conn }}"      # use credentials form property
-    import_path: "./datasources"   # relative patch from the playbook
+    datasource: "{{ datasource }}"             # datasource is auto injected by ansibleforms
+    mysql_conn: "{{ import_mysql_conn }}"      # you can have ansibleforms inject these credentials
+    import_path: "./datasources"               # relative patch from the playbook, add it as an extravar if you want
     force: false
     keep: false
 ```
