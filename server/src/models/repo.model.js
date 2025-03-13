@@ -72,7 +72,7 @@ Repo.clone = async function (uri,name,branch=undefined) {
       logger.notice("Repository already exists, pulling instead")
       return await Repo.pull(name)
     }else{
-      logger.notice(`Cloning repository : ${Exec.maskGitToken(uri)}`)
+      logger.notice(`Cloning repository : ${Repo.maskGitToken(uri)}`)
       try{
         fs.accessSync(config.repoPath)
       }catch(e){
