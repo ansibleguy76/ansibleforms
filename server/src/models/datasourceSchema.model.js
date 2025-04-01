@@ -60,7 +60,7 @@ DsSchema.update = async function (record,id) {
   return await mysql.do("UPDATE AnsibleForms.`datasource_schemas` set ? WHERE id=?", [record,id])
 };
 DsSchema.delete = async function(id){
-  const schema = await DsSchema.getSchema(id)
+  const schema = await DsSchema.findById(id)
   // remove schema path recursively
   logger.info(`Removing schema path ${schema.path}`)
   try{
