@@ -256,7 +256,7 @@ Job.delete = async function(id){
 Job.findAll = async function (user,records) {
     logger.info("Finding all jobs")
     var query
-    if(user.roles.includes("admin")){
+    if(user.roles.includes("admin") || user.options?.showAllJobLogs){
       query = "SELECT id,form,target,status,start,end,user,user_type,job_type,parent_id,approval FROM AnsibleForms.`jobs` ORDER BY id DESC LIMIT " +records + ";"
     }else{
       query = "SELECT id,form,target,status,start,end,user,user_type,job_type,parent_id,approval FROM AnsibleForms.`jobs` WHERE (user=? AND user_type=?) OR (status='approve') ORDER BY id DESC LIMIT " +records + ";"
@@ -523,7 +523,7 @@ Job.continue = async function(form,user,creds,extravars,jobid,next) {
   }
 
 };
-Job.relaunch = async function(user,id,next){
+Job.relaunch = async function(user,id,verbose,next){
   const job = await Job.findById(user,id,true)
 
   if(job.length==1){
@@ -532,6 +532,9 @@ Job.relaunch = async function(user,id,next){
     var credentials = {}
     if(j.extravars){
       extravars = JSON.parse(j.extravars)
+    }
+    if(verbose){
+      extravars["__verbose__"]=true
     }
     if(j.credentials){
       credentials = JSON.parse(j.credentials)
@@ -1015,11 +1018,11 @@ Awx.abortJob = async function (id, next) {
   const axiosConfig = getAuthorization(awxConfig)
   // we first need to check if we CAN cancel
   try{
-    const axiosResult = await axios.get(awxConfig.uri + "/api/v2/jobs/" + id + "/cancel/",axiosConfig)
+    const axiosResult = await axios.get(awxConfig.uri + "/jobs/" + id + "/cancel/",axiosConfig)
     var job = axiosResult.data
     if(job && job.can_cancel){
         logger.info(`can cancel job id = ${id}`)
-        const axiosResult = await axios.post(awxConfig.uri + "/api/v2/jobs/" + id + "/cancel/",{},axiosConfig)
+        const axiosResult = await axios.post(awxConfig.uri + "/jobs/" + id + "/cancel/",{},axiosConfig)
         job = axiosResult.data
         next(null,job)
     }else{
@@ -1330,14 +1333,14 @@ Awx.findJobTemplateByName = async function (name) {
   logger.info(`searching job template ${name}`)
   // prepare axiosConfig
   const axiosConfig = Awx.getAuthorization(awxConfig)
-  var axiosResult = await axios.get(awxConfig.uri + "/api/v2/job_templates/?name=" + encodeURI(name),axiosConfig)
+  var axiosResult = await axios.get(awxConfig.uri + "/job_templates/?name=" + encodeURI(name),axiosConfig)
   var job_template = axiosResult.data.results.find(function(x, index) { return x.name == name })
   if(job_template){
     return job_template
   }else{
     logger.info("Template not found, looking for workflow job template")
     // trying workflow job templates
-    axiosResult = await axios.get(awxConfig.uri + "/api/v2/workflow_job_templates/?name=" + encodeURI(name),axiosConfig)
+    axiosResult = await axios.get(awxConfig.uri + "/workflow_job_templates/?name=" + encodeURI(name),axiosConfig)
     var job_template = axiosResult.data.results.find(function(x, index) { return x.name == name })
     if(job_template){
       return job_template
@@ -1356,7 +1359,7 @@ Awx.findCredentialByName = async function (name) {
   logger.info(`searching credential ${name}`)
   // prepare axiosConfig
   const axiosConfig = Awx.getAuthorization(awxConfig)
-  const axiosResult = await axios.get(awxConfig.uri + "/api/v2/credentials/?name=" + encodeURI(name),axiosConfig)
+  const axiosResult = await axios.get(awxConfig.uri + "/credentials/?name=" + encodeURI(name),axiosConfig)
   var credential = axiosResult.data.results.find(function(x, index) { return x.name == name })
   if(credential){
     return credential.id
@@ -1377,7 +1380,7 @@ Awx.findExecutionEnvironmentByName = async function (name) {
   message=`could not find execution environment ${name}`
   var axiosResult
   try{
-    axiosResult = await axios.get(awxConfig.uri + "/api/v2/execution_environments/?name=" + encodeURI(name),axiosConfig)
+    axiosResult = await axios.get(awxConfig.uri + "/execution_environments/?name=" + encodeURI(name),axiosConfig)
   }catch(error){
     throw new Error(`${message}, ${error.message}`)
   }            
@@ -1401,7 +1404,7 @@ Awx.findInstanceGroupByName = async function (name) {
   message=`could not find instance group ${name}`
   var axiosResult
   try{
-    axiosResult = await axios.get(awxConfig.uri + "/api/v2/instance_groups/?name=" + encodeURI(name),axiosConfig)
+    axiosResult = await axios.get(awxConfig.uri + "/instance_groups/?name=" + encodeURI(name),axiosConfig)
   }catch(error){
     throw new Error(`${message}, ${error.message}`)
   }        
@@ -1419,7 +1422,7 @@ Awx.findCredentialsByTemplate = async function (id) {
   logger.info(`searching credentials for template id ${id}`)
   // prepare axiosConfig
   const axiosConfig = Awx.getAuthorization(awxConfig)
-  const axiosResult = await axios.get(awxConfig.uri + "/api/v2/job_templates/"+id+"/credentials/",axiosConfig)
+  const axiosResult = await axios.get(awxConfig.uri + "/job_templates/"+id+"/credentials/",axiosConfig)
   if(axiosResult.data?.results?.length){
     return axiosResult.data.results.map(x=>x.id)
   }
@@ -1436,7 +1439,7 @@ Awx.findInventoryByName = async function (name) {
   message=`could not find inventory ${name}`
   var axiosResult
   try{
-    axiosResult = await axios.get(awxConfig.uri + "/api/v2/inventories/?name=" + encodeURI(name),axiosConfig)
+    axiosResult = await axios.get(awxConfig.uri + "/inventories/?name=" + encodeURI(name),axiosConfig)
   }catch(error){
     throw new Error(`${message}, ${error.message}`)
   }    
