@@ -213,6 +213,8 @@
                             :dynamicFieldStatus="dynamicFieldStatus"
                             :form="form"
                             :tableFields="field.tableFields"
+                            :tableTitleAdd="field.tableTitleAdd"
+                            :tableTitleEdit="field.tableTitleEdit"
                             :hasError="v$.form[field.name].$invalid"
                             :click="false"
                             tableClass="table is-striped is-bordered is-narrow"

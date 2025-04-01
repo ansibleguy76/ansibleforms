@@ -1,6 +1,6 @@
 <template>
     <div>
-        <BulmaModal type="large" v-if="showEdit" :title="action" action="Save" @click="saveItem()" @close="showEdit=false" @cancel="showEdit=false">
+        <BulmaModal type="large" v-if="showEdit" :title="modalTitle" action="Save" @click="saveItem()" @close="showEdit=false" @cancel="showEdit=false">
           <div v-for="field,index in editFields" :key="field.name" class="field mt-3">
 
               <!-- add field label -->
@@ -184,6 +184,16 @@
                 type: Array,
                 required: true
             },
+            tableTitleAdd: {
+                type: String,
+                required: false,
+                default: 'Add'
+            },
+            tableTitleEdit: {
+                type: String,
+                required: false,
+                default: 'Edit'
+            },
             tableClass: {
                 type: String,
                 required: false,
@@ -332,6 +342,15 @@
             },
             filterRow: function () {
                 return this.tableFields.findIndex( (e) => e.filterable ) >= 0;
+            },
+            modalTitle: function(){
+                if(this.action.toLowerCase()=="add"){
+                    return this.tableTitleAdd || this.action
+                }else if(this.action.toLowerCase()=="edit"){
+                    return this.tableTitleEdit || this.action
+                }else{
+                   return this.action
+                }
             },
             getTableClass(){
                 var tmp=this.tableClass
