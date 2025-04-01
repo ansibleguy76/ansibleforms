@@ -44,6 +44,11 @@ options:
       - Keep the csv files after import
     type: bool
 
+  hash_ids:
+    description:
+      - Hash the id's in the csv files (in case the id's and foreign keys are strings)
+    type: bool
+
 '''
 EXAMPLES = """
 - name: Import csv files.
@@ -53,6 +58,7 @@ EXAMPLES = """
     import_path: "./datasources"
     force: false
     keep: false
+    hash_ids: false
 """
 
 RETURN = """
@@ -642,8 +648,11 @@ def fix_csvs(datasource_config):
     csv_import_path = datasource_config["csv_import_path"]
     table_info = datasource_config["table_info"]
     tables = datasource_config["tables"]
+    foreign_keys = datasource_config["foreign_keys"]
+    hash_ids = datasource_config["hash_ids"]
     csv_files = []
     for table in tables:
+        table_foreign_keys = [fk["COLUMN_NAME"] for fk in foreign_keys if fk["TABLE_NAME"] == table]
         file_path = get_csv_path(csv_import_path, table)
         # check if the file exists
         if os.path.exists(file_path): 
@@ -681,6 +690,14 @@ def fix_csvs(datasource_config):
             # compare headers with columns
             if compare_headers_with_columns(headers, columns, table) == "ADD_ID":
                 data["id"] = r"\N"
+            elif hash_ids:
+                # hash the id's
+                data["id"] = data["id"].apply(lambda x: hash(x)%(10**9))
+            
+            # hash the foreign keys
+            if hash_ids:
+                for fk in table_foreign_keys:
+                    data[fk] = data[fk].apply(lambda x: hash(x)%(10**9))
 
             # check if the arrays are equal (same order too)
             if columns != headers:
@@ -688,6 +705,9 @@ def fix_csvs(datasource_config):
                 data = data.reindex(columns=columns)
                 data.to_csv(file_path, index=False, sep=",", header=True, doublequote=True, escapechar="\\",quoting=csv.QUOTE_ALL,lineterminator="\n")
                 warn(f"Reordered columns in csv for table {table}")
+            elif hash_ids:
+                data.to_csv(file_path, index=False, sep=",", header=True, doublequote=True, escapechar="\\",quoting=csv.QUOTE_ALL,lineterminator="\n")
+                warn(f"Hashed id's in csv for table {table}")
             else:
                 pass
                 debug(f"Columns in csv are in correct order for table {table}")
@@ -714,7 +734,8 @@ def run_module():
         mysql_conn  = dict(type='dict', required=True), # mysql connection details
         import_path = dict(type='str', required=True),  # import path
         force       = dict(type='bool', required=False, default=False), # force import
-        keep        = dict(type='bool', required=False, default=False) # keep csv files
+        keep        = dict(type='bool', required=False, default=False), # keep csv files
+        hash_ids    = dict(type='bool', required=False, default=False) # hash id's
     )
 
     module = AnsibleModule(
@@ -735,6 +756,7 @@ def run_module():
     import_path                        = module.params['import_path']
     force                              = module.params['force']
     keep                               = module.params['keep']
+    hash_ids                           = module.params['hash_ids']
 
 
 
@@ -749,6 +771,7 @@ def run_module():
         mysql_conn, cursor_mysql = open_database(MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD)
         # get the datasource config
         datasource_config = get_datasource_config(cursor_mysql, ds, MYSQL_DATABASE, import_path)
+        datasource_config["hash_ids"] = hash_ids
         csv_import_path = datasource_config["csv_import_path"]    
         iso_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         marker_file = os.path.join(csv_import_path, f"{iso_time}.importing")
@@ -841,6 +864,7 @@ def run_module():
             error("Error: " + str(e))
             # if(LOG_CONSOLE_LEVEL == "DEBUG"):
             #     traceback.print_exc()
+            err = str(e)
 
             
         finally:

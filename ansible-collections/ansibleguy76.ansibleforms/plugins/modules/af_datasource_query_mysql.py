@@ -40,7 +40,7 @@ options:
     type: str
 '''
 EXAMPLES = """
-- name: Import csv files.
+- name: Create csv files from mysql queries.
   ansibleguy76.ansibleforms.af_datasource_query_mysql:
     datasource: "{{ datasource }}"
     mysql_conn: "{{ mysql_conn }}"
@@ -125,18 +125,27 @@ def run_module():
         cursor_mysql = mysql_conn.cursor()
 
         # get absolute path
-        query_path = os.path.abspath(QUERY_PATH)
+        query_path = os.path.join(os.path.abspath(QUERY_PATH), SCHEMA)
 
-        for file in os.listdir(query_path,):
-
-            schema, table, extension = file.split('.')
-            if schema != SCHEMA:
+        for file in os.listdir(query_path):
+            
+            # get table name
+            try:
+              table,extension = file.split('.')
+              if extension != 'sql':
+                # wrong file format
                 continue
-            path = os.path.join(import_path, schema, DATASOURCE)
+            except:
+              # wrong file format
+              continue
+            
+            # make target path
+            path = os.path.join(import_path, SCHEMA, DATASOURCE)
             if not os.path.exists(path):
                 os.makedirs(path)
-            sql_file_path = os.path.join(query_path, file)
-            with open(sql_file_path, 'r') as f:
+
+            # read the sql file
+            with open(file, 'r') as f:
                 sql = f.read()
                 # replace new lines with space
                 # remove \r
