@@ -1,6 +1,6 @@
 namespace: ansibleguy76
 name: ansibleforms
-version: 0.0.7
+version: 0.0.12
 readme: README.md
 authors:
 - AnsibleGuy <info@ansibleguy.com>
