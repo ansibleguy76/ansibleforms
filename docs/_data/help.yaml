@@ -503,6 +503,14 @@
     default: "%PERSISTENT_FOLDER%/uploads"
     description: |
       Since 4.0.16, a new field type is introduced that allows file uploads.  The files are uploaded in this path.
+  - name: AWX_API_PREFIX
+    type: string
+    version: 5.0.9
+    allowed: a relative url path
+    short: The prefix for the AWX API
+    default: /api/v2
+    description: |
+      Ansible Forms can connect to an AWX instance.  This is the prefix of the API, which is typically `/api/v2`.
   - name: VUE_APP_NAV_HOME_LABEL
     type: string
     version: 5.0.9
@@ -571,6 +579,7 @@
       - showExtravars: The user can see the extravars on a form
       - showLogs: The user can see the logs page
       - extendedTokenExpiration: The user can request a token with a longer expiration time (for coding api purposes for example)  
+      - showAllJobLogs: The user can see all job logs (not only his own) (Added in 5.0.9)
         
       When options are not set, the admin role will have all options.  
       When options are set on the public role, they will have the lowest precedence and can be used as default options for all roles.  
@@ -2933,6 +2942,24 @@
               A `enum` field is by default a dropdown box.  However, you can change that behavior by setting this property.  
               The unselected values are on the left and the selected values on the right.  This works in combiniation with sticky.  
               PctColumns are disabled, due to the space it consumes horizontally.
+          - name: tableTitleAdd
+            type: string
+            group: visualization
+            version: 5.0.9
+            with_type: table
+            short: Optional title for the table add action
+            description: |
+              When you add a record in a table, the default title is `Add`.  
+              You can change this to something more meaningful by setting this property.
+          - name: tableTitleEdit
+            type: string
+            group: visualization
+            version: 5.0.9
+            with_type: table
+            short: Optional title for the table edit action
+            description: |
+              When you edit a record in a table, the default title is `Edit`.  
+              You can change this to something more meaningful by setting this property.
           - name: columns
             type: array
             group: visualization
