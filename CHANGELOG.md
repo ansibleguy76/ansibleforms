@@ -11,12 +11,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Reduce formConfig by roles // https://github.com/ansibleguy76/ansibleforms/issues/262
 -   User-based roles fix // https://github.com/ansibleguy76/ansibleforms/issues/264
+-   Ldap DN with comma's, are now properly escaped
 
 ### Added
 
 -   Added 2 env vars VUE_APP_NAV_HOME_LABEL and VUE_APP_NAV_HOME_ICON and a forms nav link 
 -   Datasources and schema see documentation for more info
 -   Schedules, allow scheduled forms
+-   hvac pip lib for hashi vault integration
+-   awxApiPrefix, default to /api/v2, for future AAP changes (https://github.com/ansibleguy76/ansibleforms/issues/279)
+-   Added 2 table field properties tableTitleAdd, tableTitleEdit (https://github.com/ansibleguy76/ansibleforms/issues/277)
+-   Added option showAllJobLogs (https://github.com/ansibleguy76/ansibleforms/issues/273)
+-   Added option to relaunch verbose (https://github.com/ansibleguy76/ansibleforms/issues/280)
 
 ## [5.0.8] - 2025-02-13
 
