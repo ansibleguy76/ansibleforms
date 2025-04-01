@@ -5,4 +5,6 @@ requires_ansible: '>=2.9.10'
 action_groups:
   ansibleguy76_ansibleforms:
     - af_datasource_import
+    - af_datasource_excel
+    - af_datasource_query_mysql
 
