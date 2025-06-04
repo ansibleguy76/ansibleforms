@@ -19,6 +19,9 @@ import Designer from './views/Designer.vue'
 import Credentials from './views/Credentials.vue'
 import Sshkey from './views/Sshkey.vue'
 import KnownHosts from './views/KnownHosts.vue'
+import DatasourceSchemas from './views/DatasourceSchemas.vue'
+import Datasources from './views/Datasources.vue'
+import Schedules from './views/Schedules.vue'
 import Jobs from './views/Jobs.vue'
 import Logs from './views/Logs.vue'
 import Profile from './views/Profile.vue'
@@ -149,6 +152,24 @@ export default new Router({
         path:"/users",
         name:"Users",
         component:Users,
+        beforeEnter: checkSettings
+      },
+      {
+        path:"/datasourceSchemas",
+        name:"DatasourceSchemas",
+        component:DatasourceSchemas,
+        beforeEnter: checkSettings
+      },
+      {
+        path:"/datasources",
+        name:"Datasources",
+        component:Datasources,
+        beforeEnter: checkSettings
+      },
+      {
+        path:"/schedules",
+        name:"Schedules",
+        component:Schedules,
         beforeEnter: checkSettings
       },
       {

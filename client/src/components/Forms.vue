@@ -1,5 +1,5 @@
 <template>
-  <article class="tile is-child box" v-if="formConfig && formConfig.forms">
+  <article class="tile is-child box" v-if="formConfig?.forms">
     <div class="field">
       <p class="control has-icons-left">
         <input class="input" type="text" v-model="search" placeholder="Search">
@@ -33,8 +33,6 @@
   </article>
 </template>
 <script>
-  import Vue from 'vue'
-  import TokenStorage from './../lib/TokenStorage'
   export default{
     name:"FormTiles",
     props:{
@@ -58,30 +56,10 @@
         return decodeURIComponent(this.$route.query?.category || "")
       },
       getForms(){
-        return this.filterAllowedForms(this.currentCategory)
+        return this.filterForms(this.currentCategory)
       },
     },
     methods:{
-
-      filterAllowedForms(category){
-        // get the token payload
-        var payload=TokenStorage.getPayload()
-        var intersect=[]
-        return this.filterForms(category).filter((item)=>{ // loop all forms
-          if(item.roles){
-            // if roles are defined, find a match with the payload roles
-            intersect = item.roles.filter(role => payload.user.roles.includes(role));
-          }else{
-            intersect=[]
-          }
-          // allow form if user is admin, or has a matching role
-          if(this.isAdmin(payload) || (intersect && intersect.length>0)){
-            return true
-          }else{
-            return false
-          }
-        }).sort((a, b) => (a.name||"").toLowerCase() > (b.name||"").toLowerCase() && 1 || -1)
-      },
 
       // filter all the forms per category
       filterForms(category){
@@ -117,9 +95,6 @@
           }
         }
         return true
-      },
-      isAdmin(payload){
-        return payload.user.roles.includes("admin")
       },
       getFormClass(form){
         return (form.tileClass==undefined)?'has-background-primary-light':form.tileClass

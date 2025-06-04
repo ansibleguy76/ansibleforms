@@ -7,13 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.9] - 2025-06-04
+
+### Fixed
+
+-   Reduce formConfig by roles // <https://github.com/ansibleguy76/ansibleforms/issues/262>
+-   User-based roles fix // <https://github.com/ansibleguy76/ansibleforms/issues/264>
+-   Ldap DN with comma's, are now properly escaped // bump ldap-authentication - ldapjs => ldapts
+
+### Added
+
+-   Added 2 env vars VUE_APP_NAV_HOME_LABEL and VUE_APP_NAV_HOME_ICON and a forms nav link 
+-   Datasources and schema see documentation for more info
+-   Schedules, allow scheduled forms
+-   hvac pip lib for hashi vault integration
+-   awxApiPrefix, default to /api/v2, for future AAP changes (<https://github.com/ansibleguy76/ansibleforms/issues/279>)
+-   Added 2 table field properties tableTitleAdd, tableTitleEdit (<https://github.com/ansibleguy76/ansibleforms/issues/277>)
+-   Added option showAllJobLogs (<https://github.com/ansibleguy76/ansibleforms/issues/273>)
+-   Added option to relaunch verbose (<https://github.com/ansibleguy76/ansibleforms/issues/280>)
+
 ## [5.0.8] - 2025-02-13
 
 ### Fixed
 
 -   Regex in repo's
 -   Jwt token issuer added (use env variable ACCESS_TOKEN_ISSUER) - credits to le-martre for the fix
--   maxBuffer causing abort by operator, adding PROCESS_MAX_BUFFER variable.
+-   maxBuffer causing abort by operator, adding PROCESS_MAX_BUFFER variable. // <https://github.com/ansibleguy76/ansibleforms/issues/247>
 
 ### Changed
 
@@ -775,7 +794,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.8...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.9...HEAD
+
+[5.0.9]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.8...5.0.9
 
 [5.0.8]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.7...5.0.8
 

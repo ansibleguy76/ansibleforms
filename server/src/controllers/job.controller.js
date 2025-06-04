@@ -141,13 +141,14 @@ exports.relaunchJob = async function(req, res) {
 
     // get the form data
     var jobid = req.params.id;
+    var verbose = (req.query.verbose || "false")=="true"
     if(!jobid){
       res.json(new RestResult("error","You must provide a jobid","",""));
       return false
     }
     var user = req?.user?.user || {}
     try{
-      await Job.relaunch(user,jobid,(job)=>{
+      await Job.relaunch(user,jobid,verbose,(job)=>{
         res.json(new RestResult("success",`Job has been relaunched with job id ${job.id}`,"",""))
       })
     }catch(err){

@@ -12,3 +12,16 @@ exports.fnMultiply = function(a,b) {
   logger.debug("[fnMultiply] multiply is happening")
   return a*b
 };
+exports.fnDnsResolve = async function(hostname,type) {
+  logger.debug("[fnDnsResolve] dns resolve is happening")
+  const dns=require("dns");
+  return new Promise((resolve,reject) => {
+    dns.resolve(hostname,type,(err,addresses) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve(addresses)
+      }
+    })
+  })
+}

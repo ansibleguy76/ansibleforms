@@ -55,6 +55,9 @@ module.exports = app => {
   const repositoryRoutes = require("./routes/repository.routes");
   const knownhostsRoutes = require("./routes/knownhosts.routes");
   const configRoutes = require("./routes/config.routes");
+  const datasourceSchemaRoutes = require("./routes/datasourceSchema.routes");
+  const datasourceRoutes = require("./routes/datasource.routes");
+  const scheduleRoutes = require("./routes/schedule.routes");
 
   // we use 4 authentications/authorization strategies
   // - basic : with username and password to get jwt tokens
@@ -165,6 +168,9 @@ module.exports = app => {
   app.use(`${appConfig.baseUrl}api/v1/log`,cors(), authobj, checkLogsMiddleware, logRoutes)
   app.use(`${appConfig.baseUrl}api/v1/repository`,cors(), authobj, checkSettingsMiddleware, repositoryRoutes)
   app.use(`${appConfig.baseUrl}api/v1/knownhosts`,cors(), authobj, checkSettingsMiddleware, knownhostsRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/datasource/schema`,cors(), authobj, checkSettingsMiddleware, datasourceSchemaRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/datasource`,cors(), authobj, checkSettingsMiddleware, datasourceRoutes)
+  app.use(`${appConfig.baseUrl}api/v1/schedule`,cors(), authobj, checkSettingsMiddleware, scheduleRoutes)
 
   // routes for form config (extra middleware in the routes itself)
   app.use(`${appConfig.baseUrl}api/v1/config`,cors(), authobj, configRoutes)

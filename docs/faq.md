@@ -20,8 +20,8 @@ page_nav:
         content: Expressions
         url: '/expressions'
     next:
-        content: The GUI
-        url: '/gui'        
+        content: Schemas
+        url: '/schema'        
 ---
 
 {% assign help = site.data.help %}

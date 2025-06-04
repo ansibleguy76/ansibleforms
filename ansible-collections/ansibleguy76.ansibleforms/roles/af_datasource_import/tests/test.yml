@@ -1,0 +1,5 @@
+---
+- name: Test playbook
+  hosts: localhost
+  roles:
+    - ansibleguy76.ansibleforms.af_datasource_import

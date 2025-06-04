@@ -1,5 +1,5 @@
 <template>
-    <Form v-if="currentForm" :isAdmin="isAdmin" :profile="profile" :constants="formConfig.constants||{}" :token="token" :key="componentKey" @rerender="load" @refreshApprovals="$emit('refreshApprovals')" :currentForm="currentForm" />
+    <Form :isAdmin="isAdmin" :profile="profile" :constants="formConfig.constants||{}" :token="token" :key="componentKey" @rerender="load" @refreshApprovals="$emit('refreshApprovals')" :currentForm="currentForm" />
 </template>
 <script>
 
@@ -16,16 +16,8 @@
     data(){
       return  {
         componentKey:0,
+        currentForm:undefined,
         formConfig:undefined
-      }
-    },
-    computed: {
-      currentForm(){
-        if(this.formConfig){
-          return this.formConfig.forms.find((item)=>item.name==this.$route.query.form)
-        }else{
-          return undefined
-        }
       }
     },
     watch: {
@@ -33,8 +25,9 @@
     methods:{
       load(){
         var ref=this
-        FormLib.load(function(formConfig){
+        FormLib.getForm(ref.$route.query.form,function(formConfig){
           ref.formConfig=formConfig
+          ref.currentForm=formConfig.forms[0]
           ref.componentKey++;
         },function(err){
           ref.$toast.error(err.toString())

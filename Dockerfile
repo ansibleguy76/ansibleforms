@@ -21,7 +21,7 @@ RUN apk add py3-pip py3-pyldap libxslt mysql-client curl tzdata mariadb-connecto
 # looks like this is no longer needed
 
 # install pip3 packages
-RUN pip3 install requests six PyMySQL netapp_lib netapp_ontap solidfire-sdk-python boto3 boto botocore lxml ansible
+RUN pip3 install pandas PyYAML openpyxl hvac pyVim pyvmomi jinja2 requests six PyMySQL netapp_lib netapp_ontap solidfire-sdk-python boto3 boto botocore lxml ansible
 
 # run ansible galaxy modules
 RUN ansible-galaxy collection install netapp.ontap -p /usr/share/ansible/collections
@@ -31,6 +31,7 @@ RUN ansible-galaxy collection install amazon.aws -p /usr/share/ansible/collectio
 RUN ansible-galaxy collection install netapp.storagegrid -p /usr/share/ansible/collections
 RUN ansible-galaxy collection install community.general -p /usr/share/ansible/collections
 RUN ansible-galaxy collection install community.mysql -p /usr/share/ansible/collections
+RUN ansible-galaxy collection install ansibleguy76.ansibleforms -p /usr/share/ansible/collections
 
 # make ssh directory
 RUN mkdir -p ~/.ssh

@@ -503,15 +503,30 @@
     default: "%PERSISTENT_FOLDER%/uploads"
     description: |
       Since 4.0.16, a new field type is introduced that allows file uploads.  The files are uploaded in this path.
-  # - name: BASE_URL
-  #   type: string
-  #   allowed: a valid base url
-  #   default: "/"
-  #   short: Set the base url
-  #   description: | 
-  #     By default AnsibleForms is hosted under root `/`, but you can choose a base url of choice.  
-  #     It must start and end with a `/`, for example `/myapp/`.
-  #   version: 5.0.0      
+  - name: AWX_API_PREFIX
+    type: string
+    version: 5.0.9
+    allowed: a relative url path
+    short: The prefix for the AWX API
+    default: /api/v2
+    description: |
+      Ansible Forms can connect to an AWX instance.  This is the prefix of the API, which is typically `/api/v2`.
+  - name: VUE_APP_NAV_HOME_LABEL
+    type: string
+    version: 5.0.9
+    allowed: a suiting label
+    short: The label of home navigation link
+    default: Forms
+    description: |
+      In the navigation bar, A home link is shown.  You can set the label/name of this link with this variable, for example `Services`.  Use in combination with `VUE_APP_NAV_HOME_ICON`.
+  - name: VUE_APP_NAV_HOME_ICON
+    type: string
+    version: 5.0.9
+    allowed: a valid free fontawesome icon
+    short: The icon of navigation home link
+    default: rectangle-list
+    description: |
+      In the navigation bar, A home link is shown.  You can set the icon of this link with this variable, for example `play` or `house`.  Use in combination with `VUE_APP_NAV_HOME_LABEL`.
 - name: Forms.yaml
   icon: fab,wpforms
   link: forms
@@ -564,6 +579,7 @@
       - showExtravars: The user can see the extravars on a form
       - showLogs: The user can see the logs page
       - extendedTokenExpiration: The user can request a token with a longer expiration time (for coding api purposes for example)  
+      - showAllJobLogs: The user can see all job logs (not only his own) (Added in 5.0.9)
         
       When options are not set, the admin role will have all options.  
       When options are set on the public role, they will have the lowest precedence and can be used as default options for all roles.  
@@ -2926,6 +2942,24 @@
               A `enum` field is by default a dropdown box.  However, you can change that behavior by setting this property.  
               The unselected values are on the left and the selected values on the right.  This works in combiniation with sticky.  
               PctColumns are disabled, due to the space it consumes horizontally.
+          - name: tableTitleAdd
+            type: string
+            group: visualization
+            version: 5.0.9
+            with_type: table
+            short: Optional title for the table add action
+            description: |
+              When you add a record in a table, the default title is `Add`.  
+              You can change this to something more meaningful by setting this property.
+          - name: tableTitleEdit
+            type: string
+            group: visualization
+            version: 5.0.9
+            with_type: table
+            short: Optional title for the table edit action
+            description: |
+              When you edit a record in a table, the default title is `Edit`.  
+              You can change this to something more meaningful by setting this property.
           - name: columns
             type: array
             group: visualization
@@ -3909,6 +3943,13 @@
         //  
         // You must use 'known_hosts' and 'public-key' to setup non-interactive password-less authentication.
         // In the settings you can find the public-key and add your target-host to known_hosts
+    - name: get DNS info
+      code: |
+        fn.fnDnsResolve('ansibleguy.com','A')
+
+        // fn.fnDnsResolve(fqdn,type)
+        // - fqdn : a fully qualified domain name
+        // - type : the type of dns record (A,AAAA,MX,NS,CNAME,TXT,SRV,PTR)
     - name: read json file
       code: |
         fn.fnReadJsonFile('/tmp/file.json','.[].name')
@@ -4363,6 +4404,30 @@
         evalDefault: true # it will treat the default as if it was an expression.
         # note : when `some_other_field` changes, the default will be re-evaluated
         # note2 : works for other fields too.
+
+      # more complex evalDefault example
+      - name: checkbox
+        type: checkbox
+      - name: textfield1
+        type: text
+        line: line2
+        default: ping
+      - name: textfield2
+        type: text
+        line: line2
+        default: pong
+      - name: checkbox3
+        type: checkbox
+        line: line3
+        label: This checkbox will default check if checkbox or textfield1==textfield2
+        default: |
+          (
+            (c=false,t1="",t2="") => { return c || (t1==t2) }
+          )( $(checkbox) , "$(textfield1)" , "$(textfield2)" )
+          
+        evalDefault: true
+          
+
   - name: Query AWX/Tower
     short: Query information from AWX or Tower
     description: |

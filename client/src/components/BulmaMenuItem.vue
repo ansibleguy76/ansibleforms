@@ -10,7 +10,6 @@
         :parent="path"
         :menu="item"
         :forms="forms"
-        :roles="roles"
       />
     </ul>
   </li>
@@ -24,8 +23,7 @@
       currentPath:{type:String,default:""},
       parent:{type:String,default:""},
       menu:{type:Object},
-      forms:{type:Array},
-      roles:{type:Array}
+      forms:{type:Array}
     },
     components:{BulmaMenuItem},
     computed:{
@@ -58,23 +56,6 @@
           this.$router.replace({ path:"/", query:{category:encodeURIComponent(path)}}).catch((e)=>{})
         else
           this.$router.replace({ path:"/" }).catch((e)=>{})
-      },
-      filterAllowedForms(category){
-        var intersect=[]
-        return this.filterForms(category).filter((item)=>{ // loop all forms
-          if(item.roles){
-            // if roles are defined, find a match with the payload roles
-            intersect = item.roles.filter(role => this.roles.includes(role));
-          }else{
-            intersect=[]
-          }
-          // allow form if user is admin, or has a matching role
-          if(this.isAdmin() || (intersect && intersect.length>0)){
-            return true
-          }else{
-            return false
-          }
-        })
       },
       // filter all the forms per category
       filterForms(category){
@@ -112,11 +93,8 @@
       },
       countFormsByCategory(category){
         // count the forms in a category
-        return this.filterAllowedForms(category).length
-      },
-      isAdmin(){
-        return this.roles.includes("admin")
-      },
+        return this.filterForms(category).length
+      }
     }
   }
 </script>

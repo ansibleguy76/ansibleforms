@@ -7,9 +7,92 @@ const logger=require("../lib/logger")
 const helpers=require("../lib/common")
 const YAML=require("yaml")
 var RestResult = require('../models/restResult.model');
-const {inspect} = require("node:util")
+const {inspect} = require("node:util");
+const { user } = require("../../config/db.config");
+exports.findList = async function(req,res){
+  try{
+    var userRoles = req?.user?.user?.roles || []
+    var formConfig = await Form.load()
+    // filter forms based on user roles, only return the forms, only return the properties
+    // icon, image, name, description, tileClass
+    var forms = formConfig.forms.filter(form => {
+        if(userRoles.includes("admin")){
+          return true
+        }
+        if(form.roles){
+          for(var role of form.roles){
+            if(userRoles.includes(role)){
+              return true
+            }
+          }
+        }
+        return false
+      }).map(form => {
+        return {
+          icon: form.icon,
+          image: form.image,
+          name: form.name,
+          categories: form.categories,
+          description: form.description,
+          tileClass: form.tileClass
+        }
+      }
+    )
+    formConfig.forms = forms
+    // remove roles and remove constants
+    delete formConfig.roles
+    delete formConfig.constants
+    // this is sufficient for frontend to display the forms
+    res.json(formConfig)
+  }catch(err){
+    // console.log(err)
+    res.json({error:helpers.getError(err)})
+  }
+}
+exports.findOne = async function(req,res){
+  try{
+    var userRoles = req?.user?.user?.roles || []
+    var formConfig = await Form.load()
+    var formName = req.query.name
+    if(formName){
+      var forms = formConfig.forms.filter((form) => {
+        if(userRoles.includes("admin")){
+          return true
+        }
+        if(form.roles){
+          for(var role of form.roles){
+            if(userRoles.includes(role)){
+              return true
+            }
+          }
+        }
+        return false
+      }).filter((form) => {
+        return form.name == formName
+      })
+      if(forms.length>0){
+        formConfig.forms = forms
+        delete formConfig.roles
+        delete formConfig.categories
+        res.json(formConfig)
+      }else{
+        res.json({error:"Form not found"})
+      }
+    }else{
+      res.json({error:"Form name not provided"})
+    }
+  }catch(err){
+    // console.log(err)
+    res.json({error:helpers.getError(err)})
+  }
+}
 exports.findAll = async function(req,res){
   try{
+    var user = req?.user?.user || {}
+    if(!user.roles.includes("admin") && !user.options?.showDesigner){
+      res.json({error:"Only admins or designers can access the full forms configuration"})
+      return
+    }
     var forms = await Form.load()
     res.json(forms)
   }catch(err){

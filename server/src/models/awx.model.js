@@ -6,6 +6,7 @@ const logger=require("../lib/logger");
 const mysql=require("./db.model")
 const {encrypt,decrypt} = require("../lib/crypto")
 const NodeCache = require("node-cache")
+const appConfig = require("../../config/app.config")
 
 // we store the awx config for 1 hour (no need to go to database each time)
 const cache = new NodeCache({
@@ -36,52 +37,44 @@ var Awx=function(awx){
 };
 
 // get the awx config from cache or database (=wrapper function)
-Awx.getConfig = function(){
+Awx.getConfig = async function(){
   var awxConfig=cache.get("awxConfig")
   if(awxConfig==undefined){
-    return Awx.find()
-      .then((awx)=>{
-        cache.set("awxConfig",awx)
-        logger.debug("Cached awxConfig from database")
-        return awx
-      })
+    awxConfig = await Awx.find()
+    cache.set("awxConfig",awxConfig)
+    return awxConfig
   }else{
-    // logger.debug("Getting awxConfig from cache")
-    return Promise.resolve(awxConfig)
+    logger.debug("Getting awxConfig from cache")
+    return awxConfig
   }
 };
-Awx.update = function (record) {
-  logger.info(`Updating awx ${record.name}`)
-  return mysql.do("UPDATE AnsibleForms.`awx` set ?", record)
-    .then((res)=>{
-      cache.del("awxConfig")
-      return res
-    })
+Awx.update = async function (record) {
+  logger.info(`Updating awx`)
+  await mysql.do("UPDATE AnsibleForms.`awx` set ?", record)
+  cache.del("awxConfig")
+  return record
 };
-Awx.find = function() {
-  return mysql.do("SELECT * FROM AnsibleForms.`awx` limit 1;")
-    .then((res)=>{
-      if(res.length>0){
-        try{
-          res[0].token=decrypt(res[0].token)
-        }catch(e){
-          // logger.error("Couldn't decrypt awx token, did the secretkey change ?")
-          res[0].token=""
-        }
-        try{
-          res[0].password=decrypt(res[0].password)
-        }catch(e){
-          // logger.error("Couldn't decrypt awx token, did the secretkey change ?")
-          res[0].password=""
-        }        
-        return res[0]
-      }else{
-        logger.error("No awx record in the database, something is wrong")
-        throw "No awx record in the database, something is wrong"
-      }
-    })
-
-};
+Awx.find = async function() {
+  const result = await mysql.do("SELECT * FROM AnsibleForms.`awx` limit 1;")
+  if(result.length>0){
+    try{
+      result[0].token=decrypt(result[0].token)
+    }catch(e){
+      // logger.error("Couldn't decrypt awx token, did the secretkey change ?")
+      result[0].token=""
+    }
+    try{
+      result[0].password=decrypt(result[0].password)
+    }catch(e){
+      // logger.error("Couldn't decrypt awx token, did the secretkey change ?")
+      result[0].password=""
+    }        
+    return result[0]
+  }else{
+    logger.error("No awx record in the database, something is wrong")
+    throw "No awx record in the database, something is wrong"
+  }
+}
 Awx.getAuthorization= function(awxConfig,encrypted=false){
   var axiosConfig = {}
   if(awxConfig.use_credentials){
@@ -105,16 +98,23 @@ Awx.getAuthorization= function(awxConfig,encrypted=false){
   return axiosConfig
 }
 
-Awx.check = function (awxConfig) {
-  logger.info(`Checking AWX connection`)
+Awx.check = async function (awxConfig) {
+  // this awxConfig comes from the client, not from the database
+  // add the api prefix to the uri 
+  awxConfig.uri = `${awxConfig.uri}${appConfig.awxApiPrefix}`
+  logger.info(`Checking AWX connection at ${awxConfig.uri}`)
   const axiosConfig = Awx.getAuthorization(awxConfig,true)
-  return axios.get(awxConfig.uri + "/api/v2/job_templates/",axiosConfig)
-    .then((axiosresult)=>{
-      if(axiosresult?.data?.results){
-        return "Awx Connection is OK"
-      }else{
-        throw new Error("Awx Connection failed")
-      }
-    })
-};
+  try{
+    const axiosresult = await axios.get(awxConfig.uri + "/job_templates/",axiosConfig)
+    if(axiosresult?.data?.results){
+      return "Awx Connection is OK"
+    }else{
+      throw new Error("Awx Connection failed")
+    }
+  }catch(e){
+    logger.error("Error while checking AWX connection",e)
+    throw e
+  }
+}
+
 module.exports= Awx;

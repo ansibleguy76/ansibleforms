@@ -9,7 +9,6 @@
           parent=""
           :menu="item"
           :forms="forms"
-          :roles="roles"
       />
     </ul>
   </aside>
@@ -33,10 +32,7 @@
         return decodeURIComponent(this.$route.query?.category || "")
       },
       forms(){
-        return (this.formConfig?.forms.map(x=>{return {categories:x.categories,roles:x.roles}}) ||[])
-      },
-      roles(){
-        return TokenStorage.getPayload().user.roles
+        return (this.formConfig?.forms.map(x=>{return {categories:x.categories}}) ||[])
       }
     },
     methods:{

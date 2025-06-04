@@ -14,7 +14,7 @@ var app_config = {
   yttVarsPrefix: process.env.YTT_VARS_PREFIX || "",
   lockPath: process.env.LOCK_PATH || path.resolve(__dirname + "/../persistent/ansibleForms.lock"),
   helpPath: path.resolve(__dirname + "/../help.yaml"),
-  encryptionSecret: ((process.env.ENCRYPTION_SECRET + "vOVH6sdmpNWjRRIqCc7rdxs01lwHzfr3").substring(0,32)) || "vOVH6sdmpNWjRRIqCc7rdxs01lwHzfr3",
+  encryptionSecret: ((process.env.ENCRYPTION_SECRET || "undefinedvOVH6sdmpNWjRRIqCc7rdxs" + "vOVH6sdmpNWjRRIqCc7rdxs01lwHzfr3").substring(0,32)),
   homePath: process.env.HOME_PATH || require('os').homedir(),
   uploadPath: process.env.UPLOAD_PATH || path.resolve(__dirname + "/../persistent/uploads"),
   repoPath: process.env.REPO_PATH || path.resolve(__dirname + "/../persistent/repositories"),
@@ -26,7 +26,8 @@ var app_config = {
   enableFormsYamlInDatabase: (process.env.ENABLE_FORMS_YAML_IN_DATABASE ?? 0)==1,
   processMaxBuffer: process.env.PROCESS_MAX_BUFFER || (1024 * 1024),
   adminUsername: process.env.ADMIN_USERNAME || "admin",
-  adminPassword: process.env.ADMIN_PASSWORD || "AnsibleForms!123"
+  adminPassword: process.env.ADMIN_PASSWORD || "AnsibleForms!123",
+  awxApiPrefix: process.env.AWX_API_PREFIX || "/api/v2",
 };
 
 // process dynamic YTT_LIB_DATA_ environment variables

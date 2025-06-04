@@ -1,8 +1,5 @@
 const fs = require("fs")
 const path =require("path")
-if(process.env.LOG_CONSOLE_LEVEL=="silly"){ // old loglevel
-  process.env.LOG_CONSOLE_LEVEL="debug"
-}
 
 var log_config = {
   level: process.env.LOG_LEVEL || "notice",

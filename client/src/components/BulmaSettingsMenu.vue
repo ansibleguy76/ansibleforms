@@ -38,6 +38,9 @@
           {group:"connection",title:"Known Hosts",to:"/knownhosts"},
           {group:"connection",title:"AWX",to:"/awx"},
           {group:"connection",title:"Repositories",to:"/repos"},
+          {group:"datasource",title:"Data Schemas",to:"/datasourceSchemas"},
+          {group:"datasource",title:"Data Sources",to:"/datasources"},
+          {group:"schedule",title:"Schedules",to:"/schedules"},
         ]
       }
     },methods:{

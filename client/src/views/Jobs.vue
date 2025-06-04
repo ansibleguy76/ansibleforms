@@ -1,7 +1,7 @@
 <template>
   <section class="section">
     <BulmaModal v-if="showDelete" title="Delete" action="Delete" @click="deleteJob(tempJobId);showDelete=false" @close="showDelete=false" @cancel="showDelete=false">Are you sure you want to delete job '{{ tempJobId }}'</BulmaModal>
-    <BulmaModal v-if="showRelaunch" title="Relaunch" action="Relaunch" @click="relaunchJob(tempJobId);showRelaunch=false" @close="showRelaunch=false" @cancel="showRelaunch=false">Are you sure you want to relaunch job '{{ tempJobId }}'</BulmaModal>
+    <BulmaModal v-if="showRelaunch" title="Relaunch" action="Relaunch" @click="relaunchJob(tempJobId,tempVerbose);showRelaunch=false" @close="showRelaunch=false" @cancel="showRelaunch=false">Are you sure you want to relaunch job '{{ tempJobId }}'<br>Verbose : <input type="checkbox" v-model="tempVerbose"></BulmaModal>
     <BulmaModal v-if="showAbort" title="Abort" action="Abort" @click="abortJob(tempJobId);showAbort=false" @close="showAbort=false" @cancel="showAbort=false">Are you sure you want to abort job '{{ tempJobId }}'</BulmaModal>
     <BulmaModal v-if="showApprove" :title="approvalTitle" action="Approve" @click="approveJob(jobId);showApprove=false" @close="showApprove=false" @cancel="showApprove=false">You are about to approve job '{{ jobId }}'<br><div v-if="approvalMessage" class="is-divider" data-content="Approval info"></div><div v-html="approvalMessage"></div></BulmaModal>
     <BulmaModal v-if="showReject" title="Reject" action="Reject" @click="rejectJob(jobId);showReject=false" @close="showReject=false" @cancel="showReject=false">You are about to reject job '{{ jobId }}'<br><div v-if="approvalMessage" class="is-divider" data-content="Approval info"></div><div v-html="approvalMessage"></div></BulmaModal>
@@ -210,6 +210,7 @@
         approvalTitle:"",
         showExtraVars:false,
         tempJobId:undefined,
+        tempVerbose:false,
         showDelete:false,
         showRelaunch:false,
         showAbort:false,
@@ -513,10 +514,11 @@
             ref.$toast.error("Failed to abort job");
           })
       },
-      relaunchJob(id){
+      relaunchJob(id,verbose=false){
         var ref=this
         this.jobId=id
-        axios.post(`${process.env.BASE_URL}api/v1/job/${id}/relaunch`,{},TokenStorage.getAuthentication())
+        this.tempVerbose=false
+        axios.post(`${process.env.BASE_URL}api/v1/job/${id}/relaunch?verbose=${verbose}`,{},TokenStorage.getAuthentication())
           .then((result)=>{
               // console.log(result)
               if(result.data.status=="success"){

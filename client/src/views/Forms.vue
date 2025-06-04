@@ -37,7 +37,7 @@
     },
     mounted() { // when the Vue app is booted up, this is run automatically.
       var ref=this
-      Form.load(function(formConfig){
+      Form.getList(function(formConfig){
         ref.formConfig=formConfig
       },function(err){
         ref.$toast.error(err.toString())

@@ -3,7 +3,7 @@ const crypto = require("../lib/crypto")
 const logger=require("../lib/logger");
 const authConfig = require('../../config/auth.config')
 const appConfig = require('../../config/app.config')
-const ldapAuthentication = require('../lib/ldap-authentication').authenticate
+const ldapAuthentication = require('ldap-authentication').authenticate
 const Ldap = require('./ldap.model')
 const Form = require('./form.model')
 const YAML = require('yaml')
@@ -122,8 +122,10 @@ User.getRolesAndOptions = function(groups,user){
     groups.forEach(function(group){
       // add all the roles that match the group
       forms.roles.forEach(function(role){
-        if(role.groups && role.groups.includes(group)){
-          roles.push(role.name)
+        if((role.groups && role.groups.includes(group)) || (role.users && role.users.includes(full_username))){
+          if(!roles.includes(role.name)){
+            roles.push(role.name)
+          }
           if(role.options){
             for (const [key, value] of Object.entries(role.options)) {
               logger.debug(`Adding option ${key} = ${value}`)
