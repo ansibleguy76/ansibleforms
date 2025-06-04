@@ -4404,6 +4404,30 @@
         evalDefault: true # it will treat the default as if it was an expression.
         # note : when `some_other_field` changes, the default will be re-evaluated
         # note2 : works for other fields too.
+
+      # more complex evalDefault example
+      - name: checkbox
+        type: checkbox
+      - name: textfield1
+        type: text
+        line: line2
+        default: ping
+      - name: textfield2
+        type: text
+        line: line2
+        default: pong
+      - name: checkbox3
+        type: checkbox
+        line: line3
+        label: This checkbox will default check if checkbox or textfield1==textfield2
+        default: |
+          (
+            (c=false,t1="",t2="") => { return c || (t1==t2) }
+          )( $(checkbox) , "$(textfield1)" , "$(textfield2)" )
+          
+        evalDefault: true
+          
+
   - name: Query AWX/Tower
     short: Query information from AWX or Tower
     description: |
