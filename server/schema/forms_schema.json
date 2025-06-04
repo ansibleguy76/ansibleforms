@@ -1107,7 +1107,8 @@
                   "anyOf": [{"type": "string"},
                     {"type": "boolean"},
                     {"type": "array"},
-                    {"type": "integer"}
+                    {"type": "integer"},
+                    {"type": "object"}
                   ]
                 },
                 "accept": {
@@ -1338,8 +1339,7 @@
                     "type": "object",
                     "required": [
                       "type",
-                      "name",
-                      "label"
+                      "name"
                     ],
                     "oneOf": [{
                         "properties": {
@@ -1352,6 +1352,7 @@
                           "from": {"not":{}},
                           "sticky": {"not":{}},
                           "horizontal": {"not":{}},
+                          "multiple": {"not":{}},
                           "outputObject": {"not":{}},
                           "columns": {"not":{}},
                           "pctColumns": {"not":{}},
@@ -1372,6 +1373,7 @@
                           "maxLength": {"not":{}},        
                           "regex": {"not":{}},
                           "values": {"not":{}},
+                          "multiple": {"not":{}},
                           "from": {"not":{}},
                           "sticky": {"not":{}},
                           "horizontal": {"not":{}},
@@ -1399,6 +1401,7 @@
                           "values": {"not":{}},
                           "from": {"not":{}},
                           "sticky": {"not":{}},
+                          "multiple": {"not":{}},
                           "horizontal": {"not":{}},
                           "outputObject": {"not":{}},
                           "columns": {"not":{}},
@@ -1422,6 +1425,7 @@
                           "outputObject": {"not":{}},
                           "columns": {"not":{}},
                           "sticky": {"not":{}},
+                          "multiple": {"not":{}},
                           "horizontal": {"not":{}},
                           "pctColumns": {"not":{}},
                           "filterColumns": {"not":{}},
@@ -1443,6 +1447,7 @@
                           "values": {"not":{}},
                           "from": {"not":{}},
                           "sticky": {"not":{}},
+                          "multiple": {"not":{}},
                           "horizontal": {"not":{}},
                           "outputObject": {"not":{}},
                           "columns": {"not":{}},
@@ -1497,6 +1502,7 @@
                       "label": {"type": "string"},
                       "placeholder": {"type": "string"},
                       "from": {"type": "string"},
+                      "multiple": {"type": "boolean"},
                       "sticky": {"type": "boolean"},
                       "horizontal": {"type": "boolean"},
                       "switch": {"type": "boolean"},
