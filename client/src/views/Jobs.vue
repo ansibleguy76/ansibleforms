@@ -349,7 +349,7 @@
       formatTime(t){
         var result = ''
         if(t){
-          result = moment(t).format('YYYY-MM-DD HH:mm:ss')
+          result = moment.utc(t).format('YYYY-MM-DD HH:mm:ss')
         }
         return result
       },

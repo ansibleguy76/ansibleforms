@@ -39,6 +39,7 @@
     "lodash": "~4.17.21",
     "modern-passport-http": "~0.3.0",
     "moment": "~2.30.1",
+    "moment-timezone": "0.6.0",
     "mongodb": "~6.17.0",
     "oracledb": "~6.8.0",
     "mssql": "~11.0.1",

@@ -9,6 +9,7 @@ const Helpers = require('../lib/common.js')
 const Settings = require('./settings.model')
 const logger=require("../lib/logger");
 const ansibleConfig = require('../../config/ansible.config.js')
+const loggerConfig = require('../../config/log.config.js')
 const dbConfig = require('../../config/db.config')
 const appConfig = require('../../config/app.config.js')
 const Repository = require('./repository.model.js')
@@ -257,9 +258,9 @@ Job.findAll = async function (user,records) {
     logger.info("Finding all jobs")
     var query
     if(user.roles.includes("admin") || user.options?.showAllJobLogs){
-      query = "SELECT id,form,target,status,start,end,user,user_type,job_type,parent_id,approval FROM AnsibleForms.`jobs` ORDER BY id DESC LIMIT " +records + ";"
+      query = "SELECT id,form,target,status,CONVERT_TZ(start, 'UTC', '"+ loggerConfig.tz +"') AS start,CONVERT_TZ(end, 'UTC', '"+ loggerConfig.tz +"') AS end,user,user_type,job_type,parent_id,approval FROM AnsibleForms.`jobs` ORDER BY id DESC LIMIT " +records + ";"
     }else{
-      query = "SELECT id,form,target,status,start,end,user,user_type,job_type,parent_id,approval FROM AnsibleForms.`jobs` WHERE (user=? AND user_type=?) OR (status='approve') ORDER BY id DESC LIMIT " +records + ";"
+      query = "SELECT id,form,target,status,CONVERT_TZ(start, 'UTC', '"+ loggerConfig.tz +"') AS start,CONVERT_TZ(end, 'UTC', '"+ loggerConfig.tz +"') AS end,user,user_type,job_type,parent_id,approval FROM AnsibleForms.`jobs` WHERE (user=? AND user_type=?) OR (status='approve') ORDER BY id DESC LIMIT " +records + ";"
     }
     return await mysql.do(query,[user.username,user.type],true)
 };
@@ -303,7 +304,17 @@ Job.findById = async function (user,id,asText,logSafe=false) {
       // mask passwords
       if(logSafe) job.extravars=Helpers.logSafe(job.extravars)
       // get output summary
-      res = await mysql.do("SELECT COALESCE(output,'') output,COALESCE(`timestamp`,'') `timestamp`,COALESCE(output_type,'stdout') output_type FROM AnsibleForms.`job_output` WHERE job_id=? ORDER by job_output.order;",id,true)
+      res = await mysql.do(
+        `SELECT 
+          COALESCE(output,'') output,
+          COALESCE(CONVERT_TZ(\`timestamp\`, 'UTC', '${loggerConfig.tz}'), '') \`timestamp\`,
+          COALESCE(output_type,'stdout') output_type 
+        FROM AnsibleForms.\`job_output\` 
+        WHERE job_id=? 
+        ORDER BY job_output.order;`,
+        id,
+        true
+      )
       return [{...job,...{output:Helpers.formatOutput(res,asText)}}]
 
     }catch(err){
