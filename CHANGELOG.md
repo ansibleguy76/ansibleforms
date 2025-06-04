@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Reduce formConfig by roles // https://github.com/ansibleguy76/ansibleforms/issues/262
 -   User-based roles fix // https://github.com/ansibleguy76/ansibleforms/issues/264
--   Ldap DN with comma's, are now properly escaped
+-   Ldap DN with comma's, are now properly escaped // bump ldap-authentication - ldapjs => ldapts
 
 ### Added
 
