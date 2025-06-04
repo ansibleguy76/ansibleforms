@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+-   Enum with multiple and objects were not always selecting correct defaults
+
+### Breaking Changes
+
+-   Removed old deprecated type "query" (is enum now)
+
 ## [5.0.9] - 2025-06-04
 
 ### Fixed
