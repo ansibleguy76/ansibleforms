@@ -1,6 +1,6 @@
 {
   "name": "ansible_forms_vue",
-  "version": "5.0.9",
+  "version": "5.0.10",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
