@@ -112,12 +112,18 @@
               <span class="tag is-info mr-1 ml-3">{{ job.job_type || 'ansible'}}</span>
               <span class="tag" :class="{'is-success':job.status=='success','is-danger':job.status=='failed'}">{{ job.status }}</span>
             </h3>
-            <button @click="showExtraVars=true" class="button is-light is-small mr-3">
+            <button @click="showExtraVars=true;showArtifacts=false" class="button is-light is-small mr-3">
               <span class="icon has-text-info">
                 <font-awesome-icon icon="eye" />
               </span>
               <span>Show Extravars</span>
             </button>
+            <button v-if="job.job_type=='awx'" @click="showArtifacts=true;showExtraVars=false" class="button is-light is-small mr-3">
+              <span class="icon has-text-info">
+                <font-awesome-icon icon="square-poll-vertical" />
+              </span>
+              <span>Show Artifacts</span>
+            </button>            
             <button @click="loadOutput(jobId)" v-if="jobId" class="button is-light mr-3 is-small">
               <span class="icon has-text-info">
                 <font-awesome-icon icon="sync-alt" />
@@ -174,6 +180,28 @@
               <vue-json-pretty :data="job.extravars"></vue-json-pretty>
             </div>
           </div>
+          <!-- artificats column -->
+          <div v-else-if="showArtifacts" class="column is-clipped-horizontal">
+            <h3 class="subtitle">Artifacts</h3>
+            <!-- close extravar view button -->
+            <button @click="showArtifacts=false" class="button is-light is-small">
+              <span class="icon has-text-info">
+                <font-awesome-icon icon="times" />
+              </span>
+              <span>Close</span>
+            </button>
+            <!-- copy extravars button -->
+            <button @click="clip(job.awx_artifacts)" class="ml-2 button is-light is-small">
+              <span class="icon has-text-info">
+                <font-awesome-icon icon="copy" />
+              </span>
+              <span>Copy to clipboard</span>
+            </button>
+            <!-- extravars raw -->
+            <div class="box mt-4 is-limited">
+              <vue-json-pretty :data="job.awx_artifacts"></vue-json-pretty>
+            </div>
+          </div>          
         </div>
 
       </div>
@@ -209,6 +237,7 @@
         approvalMessage:"",
         approvalTitle:"",
         showExtraVars:false,
+        showArtifacts:false,
         tempJobId:undefined,
         tempVerbose:false,
         showDelete:false,
@@ -349,7 +378,7 @@
       formatTime(t){
         var result = ''
         if(t){
-          result = moment(t).format('YYYY-MM-DD HH:mm:ss')
+          result = moment.utc(t).format('YYYY-MM-DD HH:mm:ss')
         }
         return result
       },

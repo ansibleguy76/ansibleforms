@@ -27,7 +27,7 @@ var app_config = {
   processMaxBuffer: process.env.PROCESS_MAX_BUFFER || (1024 * 1024),
   adminUsername: process.env.ADMIN_USERNAME || "admin",
   adminPassword: process.env.ADMIN_PASSWORD || "AnsibleForms!123",
-  awxApiPrefix: process.env.AWX_API_PREFIX || "/api/v2",
+  awxApiPrefix: process.env.AWX_API_PREFIX || "/api/v2"
 };
 
 // process dynamic YTT_LIB_DATA_ environment variables

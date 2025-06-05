@@ -2,6 +2,7 @@ const winston = require('winston');
 require('winston-daily-rotate-file');
 require('winston-syslog').Syslog;
 const loggerConfig = require('../../config/log.config');
+const moment = require('moment-timezone');
 const color = {
 'info': process.env.LOG_COLOR_INFO || "\x1b[32m",
 'error': process.env.LOG_COLOR_ERROR || "\x1b[31m",
@@ -10,18 +11,24 @@ const color = {
 'debug' : process.env.LOG_COLOR_DEBUG || "\x1b[36m"
 };
 
-const formatColor = winston.format.combine(
-  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
-  winston.format.printf(
-    (info) => `${info.timestamp} ${color[info.level] || ''}${info.level}: ${info.message}\x1b[0m`,
-  ),
-)
-const formatNoColor = winston.format.combine(
-  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
-  winston.format.printf(
-    (info) => `${info.timestamp} ${info.level}: ${info.message}`,
-  ),
-)
+const getTimestamp = () => {
+  const tz = loggerConfig.tz;
+  return moment().tz(tz).format('YYYY-MM-DD HH:mm:ss:ms');
+};
+
+const formatColor = winston.format.printf(
+  (info) => {
+    const timestamp = getTimestamp();
+    return `${timestamp} ${color[info.level] || ''}${info.level}: ${info.message}\x1b[0m`;
+  }
+);
+
+const formatNoColor = winston.format.printf(
+  (info) => {
+    const timestamp = getTimestamp();
+    return `${timestamp} ${info.level}: ${info.message}`;
+  }
+);
 
 const transportConsole = new winston.transports.Console({
   stderrLevels: ["error"],

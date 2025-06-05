@@ -5,9 +5,18 @@ const OIDC = require("../models/oidc.model")
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
 var authConfig = require('../../config/auth.config')
+var appConfig = require('../../config/app.config')
 const logger=require("../lib/logger");
 const helpers=require('../lib/common')
 const RestResult = require("../models/restResult.model")
+
+function hasValidLoginOption(user) {
+  if(user.options.enableLogin === false) {
+    logger.warning(`Login is disabled for user '${user.username}' in the configuration (enableLogin option is set to false), please check your settings`)
+    return false;
+  } 
+  return true;
+}
 
 function userToJwt(user,expiryDays){
 
@@ -96,6 +105,9 @@ exports.basic = async function(req, res,next) {
                 logger.error(helpers.getError(error))
                 //return next(error);
               }
+              if(!hasValidLoginOption(user)){
+                return res.status(401).json({ error: "Not authenticated, login is not enabled for this user." });
+              }        
               // send the tokens to the requester
               return res.json(userToJwt(user,req.query.expiryDays));
             }
@@ -137,6 +149,10 @@ exports.basic_ldap = async function(req, res,next) {
             if (error){
               logger.error(helpers.getError(error))
               return next(error);
+            }
+          
+            if(!hasValidLoginOption(user)){
+              return res.status(401).json({ error: "Not authenticated, login is not enabled for this user." });
             }
             // send the tokens to the requester
             return res.json(userToJwt(user,req.query.expiryDays));
@@ -248,6 +264,9 @@ exports.azureadoauth2login = async function(req, res,next) {
     const ro = await User.getRolesAndOptions(user.groups,user)
     user.roles = ro.roles
     user.options = ro.options  
+    if(!hasValidLoginOption(user)){
+      return res.status(401).json({ error: "Not authenticated, login is not enabled for this user." });
+    }     
     // return token
     res.json(userToJwt(user))
 
@@ -277,6 +296,9 @@ exports.oidcLogin = async function(req, res, next) {
     const ro = await User.getRolesAndOptions(user.groups,user)
     user.roles = ro.roles
     user.options = ro.options  
+    if(!hasValidLoginOption(user)){
+      return res.status(401).json({ error: "Not authenticated, login is not enabled for this user." });
+    }     
     // return token
     res.json(userToJwt(user))
 

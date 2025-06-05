@@ -4,7 +4,7 @@
           <div v-for="field,index in editFields" :key="field.name" class="field mt-3">
 
               <!-- add field label -->
-              <label class="label has-text-dark">{{ field.label }} <span v-if="field.required" class="has-text-danger">*</span></label>
+              <label class="label has-text-dark">{{ field.label || field.name }} <span v-if="field.required" class="has-text-danger">*</span></label>
               <!-- type = checkbox -->
               <BulmaCheckRadio v-if="field.type=='checkbox'" checktype="checkbox" :disabled="action=='Edit' && readonlyColumns.includes(field.name)" :type="{'is-danger is-block':v$.editedItem[field.name].$invalid}" v-model="editedItem[field.name]" :name="field.name" :label="field.placeholder"/>
               <!-- <label v-if="field.type=='checkbox'" class="checkbox">
@@ -33,12 +33,12 @@
                     </div>                            
                   </template>
               </date-picker>   
-               
+               <!-- :defaultValue="stringify(v$.editedItem[field.name].$model,field)||field.default||''" -->
               <BulmaAdvancedSelect
-                v-if="field.type=='query' || field.type=='enum'"
-                :defaultValue="stringify(v$.editedItem[field.name].$model,field)||field.default||''"
+                v-if="field.type=='enum'"
+                :defaultValue="v$.editedItem[field.name].$model || field.default"
                 :required="field.required||false"
-                :multiple="false"
+                :multiple="field.multiple||false"
                 :name="field.name"
                 :placeholder="field.placeholder||'Select...'"
                 :values="field.values||form[field.from]||[]"
@@ -86,7 +86,7 @@
                     <slot v-for="field in tableFields" :name="'table-header-' + field.name" :field="field">
                         <th :class="field.headClass" :key="'table-header-' + field.name" @click="toggleSort(field)" :width="field.width || ''">
                             <div class="field-controls">
-                                <span>{{ field.label }}</span>
+                                <span>{{ field.label || field.name }}</span>
                                 <span class="icon is-small" v-if="field.sortable">
                                     <i v-if="sort.field == field.name && sort.desc" class="fa fa-sort-desc"></i>
                                     <i v-else-if="sort.field == field.name && !sort.desc" class="fa fa-sort-asc"></i>
@@ -102,7 +102,7 @@
                   <td></td>
                   <template v-for="field in tableFields">
                     <td :key="'table-filter-' + field.name" v-if="field.filterable" :class="field.bodyClass">
-                        <input type="text" class="input" :placeholder="'Filter ' + field.label" @input="filterData(field, $event.target.value.toUpperCase())">
+                        <input type="text" class="input" :placeholder="'Filter ' + (field.label || field.name)" @input="filterData(field, $event.target.value.toUpperCase())">
                     </td>
                     <td :key="'table-filter-' + field.name" v-else :class="field.bodyClass"></td>
                   </template>
@@ -369,8 +369,12 @@
                 if(field.columns && field.columns.length>0){
                   return field.columns[0]
                 }
-                if(Object.keys(this.editedItem[field.name]) && Object.keys(this.editedItem[field.name]).length>0){
-                  return Object.keys(this.editedItem[field.name])[0]
+                try{
+                  if(Object.keys(this.editedItem[field.name])?.length>0){
+                    return Object.keys(this.editedItem[field.name])[0]
+                  }
+                }catch(e){
+                  return undefined
                 }
                 return undefined
               }else{
@@ -434,18 +438,18 @@
             saveItem:function(){
               var ref=this
               this.v$.editedItem.$touch()
-              this.tableFields.forEach((item)=>{
-                if(item.type=="query" || item.type=="enum"){
-                  if(!item.outputObject){
-                    console.log(item.name)
-                    var valueLabel=this.getValueLabel(item)
-                    console.log(valueLabel)
-                    // if(valueLabel){
-                    //   ref.editedItem[item.name]=ref.editedItem[item.name][valueLabel]
-                    // }
-                  }
-                }
-              })
+              // this.tableFields.forEach((item)=>{
+              //   if(item.type=="enum"){
+              //     if(!item.outputObject){
+              //       // console.log(item.name)
+              //       var valueLabel=this.getValueLabel(item)
+              //       console.log(valueLabel)
+              //       // if(valueLabel){
+              //       //   ref.editedItem[item.name]=ref.editedItem[item.name][valueLabel]
+              //       // }
+              //     }
+              //   }
+              // })
               if(!this.v$.editedItem.$invalid){
                 if(this.action=="Add"){
                   if(this.insert_marker){

@@ -103,6 +103,7 @@ CREATE TABLE `jobs` (
   `step` varchar(250) DEFAULT NULL,
   `parent_id` int(11) DEFAULT NULL,
   `awx_id` int(11) DEFAULT NULL,
+  `awx_artifacts` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8;
 CREATE TABLE `job_output` (

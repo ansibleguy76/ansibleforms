@@ -602,7 +602,7 @@
           })
         }
         // required validation for expression field
-        if(((ff.type=="expression")||(ff.type=="query")||(ff.type=="enum")) && ff.required){
+        if(((ff.type=="expression")||(ff.type=="enum")) && ff.required){
           attrs.required=helpers.withParams(
               {description: "This field is required"},
               (value) => (value!=undefined && value!=null && value!='__auto__' && value!='__none__' && value!='__all__')
@@ -1498,7 +1498,7 @@
                           }
                           
                           if(item.type=="expression" || item.type=="html") Vue.set(ref.form, item.name, result);
-                          if((item.type=="query")||(item.type=="enum")) Vue.set(ref.queryresults, item.name, [].concat(result));
+                          if(item.type=="enum") Vue.set(ref.queryresults, item.name, [].concat(result));
                           // table is special.  if external data is passed.  we take that instead of results.
                           if(item.type=="table" && !ref.defaults[item.name]){
                             Vue.set(ref.form, item.name, [].concat(result));
@@ -1542,7 +1542,7 @@
                             if(restresult.status=="success"){
                               // console.log("expression for "+item.name+" triggered : result found -> "+ JSON.stringify(restresult.data.output));
                               if(item.type=="expression") Vue.set(ref.form, item.name, restresult.data.output);
-                              if((item.type=="query")||(item.type=="enum")){
+                              if(item.type=="enum"){
                                 if(restresult.data.output==undefined){
                                   Vue.set(ref.queryresults, item.name, [])
                                 }else{
@@ -1615,7 +1615,7 @@
                         }
                         if(restresult.status=="success"){
                            //console.log("query "+item.name+" triggered : items found -> "+ restresult.data.output.length);
-                          if((item.type=="query")||(item.type=="enum")){
+                          if(item.type=="enum"){
                             Vue.set(ref.queryresults, item.name, restresult.data.output);
                           }else{
                             Vue.set(ref.form, item.name, restresult.data.output);
@@ -1665,7 +1665,7 @@
               }else{  // not visible field
                 if(item.type=="expression"){
                   ref.setFieldToDefault(item.name)
-                }else if(item.type=="query" || item.type=="enum" || item.type=="table"){
+                }else if(item.type=="enum" || item.type=="table"){
                   // console.log("resetting " + item.name)
                   ref.resetField(item.name)
                 }
@@ -2282,7 +2282,7 @@
           }
           Vue.set(ref.fieldOptions,item.name,{})                                // storing some easy to find options
           Vue.set(ref.fieldOptions[item.name],"evalDefault",item.evalDefault??false)
-          if(["expression","query","enum","table","html"].includes(item.type)){
+          if(["expression","enum","table","html"].includes(item.type)){
             Vue.set(ref.fieldOptions[item.name],"isDynamic",!!(item.expression??item.query??item.value??false))
             Vue.set(ref.fieldOptions[item.name],"valueColumn",item.valueColumn||"")
             Vue.set(ref.fieldOptions[item.name],"placeholderColumn",item.placeholderColumn||"")

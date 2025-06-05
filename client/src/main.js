@@ -33,6 +33,7 @@ axios.interceptors.response.use( (response) => {
   if (error.response?.status !== 401) {
     throw error;
   }else{
+
     console.log("Unauthorized detected")
     console.log("Error : " + error)
 
@@ -40,6 +41,13 @@ axios.interceptors.response.use( (response) => {
     const originUrl = error?.config?.url || "";
     const originResponseMessage = error?.response?.message || "";
     const originResponseErrorMessage = error?.response?.data?.error || "";
+    const unauthorizedMessages = [
+      "Unauthorized",
+      "Access denied",
+      "No Access",
+      "Account is disabled.",
+      "login is not enabled"
+    ];
 
     try{
       if(!originConfig || !originUrl){
@@ -51,12 +59,15 @@ axios.interceptors.response.use( (response) => {
       console.log("Origin response error message : " + originResponseErrorMessage)
 
       // Logout user if token refresh didn't work or user is disabled or there was no access to the resource, not token related
-      if (originUrl == `/api/v1/token` || originResponseMessage == 'Account is disabled.' || originResponseMessage.includes('No Access')) {
+      if (originUrl == `/api/v1/token` || unauthorizedMessages.some(msg => originResponseMessage.includes(msg)) || unauthorizedMessages.some(msg => originResponseErrorMessage.includes(msg))) {
 
         // clear our tokens from browser and push to login
         TokenStorage.clear();
-        router.push({ name: 'Login', query: {from: this?.$route?.fullPath || ""} }).catch(err => {});        
-        throw new Error("Unauthorized detected, redirecting to login (no access)")
+        router.push({ name: 'Login', query: {from: this?.$route?.fullPath || ""} }).catch(err => {});      
+        if(originResponseErrorMessage){
+          throw new Error(originResponseErrorMessage)
+        }  
+        throw new Error("Unauthorized.  Access denied")
       }
 
       // Try request again with new token
@@ -76,9 +87,13 @@ axios.interceptors.response.use( (response) => {
     }catch(e){
 
       const vm = new Vue({})
-      var message = "Unauthorized.  Access denied."
-      if(originResponseMessage){
-        message = [message,originResponseMessage,originResponseErrorMessage,e.message].join("\r\n")
+      var message
+      if (e?.message) {
+        message = e.message;
+      } else if (e?.response?.data?.error) {
+        message = e.response.data.error;
+      } else {
+        message = "Unauthorized.  Access denied";
       }
       vm.$toast.warning(message)
 

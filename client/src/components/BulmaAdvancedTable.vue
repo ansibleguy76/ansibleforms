@@ -60,7 +60,7 @@
       multiple:{type:Boolean},
       required:{type:Boolean},
       name:{type:String,required:true},
-      defaultValue:{type:[String,Array,Object]},
+      defaultValue:{type:[String,Array,Object,Number]},
       status:{type:String},
       sizeClass:{type:String},
       columns:{type:Array},
@@ -340,12 +340,22 @@
             }catch(err){
               obj=undefined
             }
+            if(this.multiple && !Array.isArray(this.defaultValue || [])){
+              console.log("You can't set a default value for a multiple select that is not an array")
+              this.$toast.error("You can't set a default value for a multiple select that is not an array")
+              return
+            }
+            if(!this.multiple && Array.isArray(this.defaultValue || [])){
+              console.log("You can't set a default value for a non multiple select that is an array")
+              this.$toast.error("You can't set a default value for a non multiple select that is an array")
+              return
+            }            
             if(typeof this.defaultValue == "object"){
               obj=this.defaultValue
               defaulttype="object"
             }
             if(defaulttype=="object" && !Array.isArray(this.defaultValue)){
-              // we search for the value by property
+              // enum of type object // compare objects
               if(obj){
                 // loop all values
                 this.values.forEach((item,i) => {
@@ -360,6 +370,15 @@
                 })
               }
 
+            }else if(ref.multiple && Array.isArray(this.defaultValue) && ref.defaultValue.length>0 && typeof ref.defaultValue[0] == "object"){
+                // multiple enum of type object // compare objects
+                for(var i=0;i<this.values.length;i++){
+                    for(var j=0;j<this.defaultValue.length;j++){
+                      if(this.objectEqual(this.values[i],this.values[j])){
+                        ref.select(i)
+                      }
+                    }
+                }           
             }else{
               // we search for the value by string
               this.values.forEach((item,i) => {

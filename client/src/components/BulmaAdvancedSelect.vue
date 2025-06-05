@@ -129,7 +129,7 @@ export default {
         required: { type: Boolean },
         isLoading: { type: Boolean },
         name: { type: String, required: true },
-        defaultValue: { type: [String, Array,Object] },
+        defaultValue: { type: [String, Array,Object, Number] },
         placeholder: { type: String },
         icon: { type: String },
         sizeClass: { type: String },
@@ -213,8 +213,8 @@ export default {
             var dt = this.$refs["dt"]?.getBoundingClientRect()
             var dtleft = dt?.left||0
             var dtright = (dt?.right||0)
-            var ww = this.containerSize.width
-            var wx = this.containerSize.x         
+            var ww = this.containerSize?.width
+            var wx = this.containerSize?.x         
             var widthIfLeft = (ww+wx-dtleft-25)
             var widthIfRight = (dtright-wx-25)
             var width=((this.isRight)?widthIfRight:widthIfLeft)

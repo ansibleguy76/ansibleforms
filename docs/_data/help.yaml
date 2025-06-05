@@ -296,6 +296,14 @@
       When you run ansibleforms, by default the application also logs to the console.  
       For example with docker you can use the command docker logs to access this console log.  
       This console log has a seperate loglevel.
+  - name: LOG_TZ
+    type: string
+    allowed: a valid timezone string
+    short: Log timezone
+    default: UTC
+    version: 5.0.10
+    description: |
+      Sets the timezone for log timestamps. Use a valid IANA timezone string (e.g., UTC, Europe/Amsterdam, America/New_York).  Also used for the job timestamps.
   - name: LOG_SYSLOG_HOST
     type: string
     allowed: a valid IP or FQDN
@@ -580,10 +588,14 @@
       - showLogs: The user can see the logs page
       - extendedTokenExpiration: The user can request a token with a longer expiration time (for coding api purposes for example)  
       - showAllJobLogs: The user can see all job logs (not only his own) (Added in 5.0.9)
+      - enableLogin: The user can login.  
         
       When options are not set, the admin role will have all options.  
       When options are set on the public role, they will have the lowest precedence and can be used as default options for all roles.  
-      You can add options on role level, which will override the public role options.
+      You can add options on role level, which will override the public role options.  
+
+      The enableLogin option is different, that is for the backend.  By default everyone can login.  
+      You can set it to false on public and then enable on the roles you want to give access.  Watch out you don't lock yourself out.  
 
     examples:
     - name: Roles
@@ -4038,9 +4050,10 @@
           'get',
           'https://resturl/api/',
           '',
-          {'a_custom_http_header':'your_value'},
+          {'a_custom_http_header':'your_value','Authorization':'basic base64(my_rest_credential)'},
           '.records[].name',
           {name:{ignoreCase:true,direction:'desc'}},
+          false,
           false
         )
 
@@ -4054,6 +4067,12 @@
         // - jq-expression : an optional jq-expression (https://jsplay.org)
         // - sort-object : a sorting object to order the results
         // - hasBigInt : a boolean indicating if it should convert Int64 to string
+        // - raw : return data and response_headers  
+          
+        // 3 function-placeholders are allowed in the headers:
+        // - base64(credential_name) : will create a base64 encoded "username:password".  prefix with "basic" if required
+        // - username(credential_name) : will add the username of the credential
+        // - password(credential_name) : will add the password of the credential
     - name: get credentials
       code: |
         fn.fnCredentials('credentialname_or_regex','fallback_credentialname_or_regex')

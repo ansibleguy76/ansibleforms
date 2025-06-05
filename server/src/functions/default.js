@@ -223,7 +223,7 @@ exports.fnRestBasic = async function(action,url,body,credential=null,jqe=null,so
   }
   return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort,hasBigInt)
 }
-exports.fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort=null,hasBigInt=false){
+exports.fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort=null,hasBigInt=false,raw=false){
   if(!action || !url){
     const e = "[fnRest] No action or url defined"
     logger.warning(e)
@@ -240,6 +240,44 @@ exports.fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort
     logger.debug("Using bigint transform")
     axiosConfig.transformResponse = (data => JSONbig.parse(data) )
   }
+
+  // added in 5.0.10
+  if (headers && typeof headers === "object") {
+    for (const key in headers) {
+
+      if (typeof headers[key] === "string") {
+        // logger.debug(`[fnRestAdvanced] processing header ${key} with value ${headers[key]}`);
+        let m;
+        // basic(credential_name)
+        if ((m = headers[key].match(/base64\(([^)]+)\)/i))) {
+          // logger.debug(`[fnRestAdvanced] base64 encoding for header ${key} with credential ${m[1]}`);
+          const cred = await exports.fnCredentials(m[1]);
+          if (cred && cred.user && cred.password) {
+            headers[key] = headers[key].replace(/base64\(([^)]+)\)/i,Buffer.from(cred.user + ":" + cred.password).toString("base64"))
+          }
+        }
+        // password(credential_name)
+        else if ((m = headers[key].match(/password\(([^)]+)\)/i))) {
+          // logger.debug(`[fnRestAdvanced] password substitution for header ${key} with credential ${m[1]}`);
+          const cred = await exports.fnCredentials(m[1]);
+          if (cred && cred.password) {
+            headers[key]=headers[key].replace(/password\([^)]+\)/i, cred.password);
+          }
+        }
+        // username(credential_name)
+        else if ((m = headers[key].match(/username\(([^)]+)\)/i))) {
+          // logger.debug(`[fnRestAdvanced] username substitution for header ${key} with credential ${m[1]}`);
+          const cred = await exports.fnCredentials(m[1]);
+          if (cred && cred.user) {
+            headers[key]=headers[key].replace(/username\([^)]+\)/i, cred.user);
+          }
+        }
+      }
+    }
+  }
+
+  // logger.debug(`[fnRestAdvanced] action: ${action}, url: ${url}, body: ${JSON.stringify(body)}, headers: ${JSON.stringify(headers)}`)
+
   if(typeof headers=="object"){
     axiosConfig.headers=headers
   }
@@ -255,6 +293,7 @@ exports.fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort
     }else if(action=="put"){
       data = await axios.put(url,body,axiosConfig);
     }
+    if(raw) return {data:data.data,response_headers:data.headers} // return raw data
     result=data.data
     if(jqe){
       result=await jq.run(jqDef+jqe, result, { input:"json",output:"json" })

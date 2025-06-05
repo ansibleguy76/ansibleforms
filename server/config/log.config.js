@@ -12,7 +12,8 @@ var log_config = {
   syslogpath: process.env.LOG_SYSLOG_PATH || "/dev/log",
   sysloglocalhost: process.env.LOG_SYSLOG_SOURCE || "localhost",
   syslogtype: process.env.LOG_SYSLOG_TYPE || "BSD",
-  syslogappname: process.env.LOG_SYSLOG_APPNAME || "AnsibleForms"
+  syslogappname: process.env.LOG_SYSLOG_APPNAME || "AnsibleForms",
+  tz: process.env.LOG_TZ || "UTC",
 };
 if ( !fs.existsSync( log_config.path ) ) {
   try{
