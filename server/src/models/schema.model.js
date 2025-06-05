@@ -222,9 +222,6 @@ async function patchVersion5(messages,success,failed){
 // PATCHING : Patch All
 async function patchAll(messages,success,failed){
 
-  var buffer
-  var sql
-
   await checkPromise(patchVersion4(messages,success,failed),messages,success,failed)
   await checkPromise(patchVersion5(messages,success,failed),messages,success,failed)
 

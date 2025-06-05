@@ -26,7 +26,7 @@ passport.use(
           return done(null,user)
         }
         var result = await User.authenticate(username,password)
-        if(!result){
+        if(!result.isValid){
           return done(new Error("Wrong password"))
         }
         var user = {}

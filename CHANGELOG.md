@@ -11,11 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   LOG_TZ env var for timezone (both for logging and returning job logs)  Client convertion is disabled, so the client will always show the time in the timezone of the server.
 -   Added new role option `enableLogin` to allow login for this role.  If not set, login is enabled.  Set to false on the public role to disable login overall, and set to true of the roles that should allow login.
-
+-   fn.fnRestAdvanced allows 3 placeholderfunctions (base64, username and password)
+-   fn.fnRestAdvanced allows a new "raw" parameter to return the data + the response_headers
 
 ### Fixed
 
 -   Enum with multiple and objects were not always selecting correct defaults
+-   5.0.9 had awx issues.
 
 ### Breaking Changes
 

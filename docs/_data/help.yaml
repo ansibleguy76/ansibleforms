@@ -4050,9 +4050,10 @@
           'get',
           'https://resturl/api/',
           '',
-          {'a_custom_http_header':'your_value'},
+          {'a_custom_http_header':'your_value','Authorization':'basic base64(my_rest_credential)'},
           '.records[].name',
           {name:{ignoreCase:true,direction:'desc'}},
+          false,
           false
         )
 
@@ -4066,6 +4067,12 @@
         // - jq-expression : an optional jq-expression (https://jsplay.org)
         // - sort-object : a sorting object to order the results
         // - hasBigInt : a boolean indicating if it should convert Int64 to string
+        // - raw : return data and response_headers  
+          
+        // 3 function-placeholders are allowed in the headers:
+        // - base64(credential_name) : will create a base64 encoded "username:password".  prefix with "basic" if required
+        // - username(credential_name) : will add the username of the credential
+        // - password(credential_name) : will add the password of the credential
     - name: get credentials
       code: |
         fn.fnCredentials('credentialname_or_regex','fallback_credentialname_or_regex')

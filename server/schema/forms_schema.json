@@ -142,7 +142,8 @@
               "awxCredentials": {"not":{}},
               "executionEnvironment": {"not":{}},
               "scm_branch": {"not":{}},
-              "instanceGroups": {"not":{}}
+              "instanceGroups": {"not":{}},
+              "expression": {"not":{}}
             },
             "required": ["playbook"]
           },
@@ -154,10 +155,34 @@
               "vaultCredentials": {"not":{}},
               "playbook": {"not":{}},
               "ansibleCredentials": {"not":{}},
-              "steps": {"not":{}}
+              "steps": {"not":{}},
+              "expression": {"not":{}}
             },
             "required": ["template"]
           },
+          {
+            "properties": {
+              "type": {
+                "enum": ["expression"]
+              },
+              "vaultCredentials": {"not":{}},
+              "playbook": {"not":{}},
+              "ansibleCredentials": {"not":{}},
+              "template": {"not":{}},
+              "steps": {"not":{}},
+              "inventory": {"not":{}},
+              "awxCredentials": {"not":{}},
+              "tags": {"not":{}},
+              "check": {"not":{}},
+              "limit": {"not":{}},
+              "scm_branch": {"not":{}},
+              "diff": {"not":{}},
+              "key": {"not":{}},
+              "executionEnvironment": {"not":{}},
+              "instanceGroups": {"not":{}}              
+            },
+            "required": ["expression"]
+          },          
           {
             "properties": {
               "type": {
@@ -176,7 +201,8 @@
               "diff": {"not":{}},
               "key": {"not":{}},
               "executionEnvironment": {"not":{}},
-              "instanceGroups": {"not":{}}
+              "instanceGroups": {"not":{}},
+              "expression": {"not":{}}
             },
             "required": ["steps"]
           }
