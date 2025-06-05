@@ -158,7 +158,7 @@ async function patchVersion4(messages,success,failed){
 
 }
 
-// PATCHING : Patch All
+// PATCHING : version 5
 async function patchVersion5(messages,success,failed){
 
   var buffer
@@ -214,6 +214,8 @@ async function patchVersion5(messages,success,failed){
   sql = buffer.toString()
   await checkPromise(addTable("schedule",sql),messages,success,failed) // add datasource_schemas table
 
+  // In 5.0.10, we add a new column to the jobs table, to store the awx artifacts
+  await checkPromise(addColumn("jobs","awx_artifacts","longtext",true,"NULL"),messages,success,failed) // add awx_artifacts column
 
 }
 
