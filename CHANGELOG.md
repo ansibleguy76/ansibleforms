@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.10] - 2025-06-05
+
 ### Added
 
 -   LOG_TZ env var for timezone (both for logging and returning job logs)  Client convertion is disabled, so the client will always show the time in the timezone of the server.
@@ -810,7 +812,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.9...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.10...HEAD
+
+[5.0.10]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.9...5.0.10
 
 [5.0.9]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.8...5.0.9
 
