@@ -17,6 +17,7 @@ const mysql = require('./db.model')
 const Form = require('./form.model')
 const Credential = require('./credential.model');
 const { getAuthorization } = require('./awx.model');
+const {inspect} = require('util');
 
 function pushForminfoToExtravars(formObj,extravars,creds={}){
   // push top form fields to extravars
@@ -35,6 +36,10 @@ function pushForminfoToExtravars(formObj,extravars,creds={}){
 }
 function delay(t, v) {
     return new Promise(resolve => setTimeout(resolve, t, v));
+}
+
+function getTimestamp(){
+  return moment.utc(Date.now()).format('YYYY-MM-DD HH:mm:ss')
 }
 
 var Exec = function(){}
@@ -159,7 +164,7 @@ var Job=function(job){
       this.user = job.user;
       this.user_type = job.user_type;
       this.job_type = job.job_type;
-      this.start = moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')
+      this.start = getTimestamp();
       this.extravars = job.extravars;
       this.credentials = job.credentials;
       this.notifications = job.notifications;
@@ -194,20 +199,20 @@ Job.abandon = async function (all=false) {
   return res.changedRows
 };
 Job.update = async function (record,id) {
-  logger.notice(`Updating job ${id} ${record.status}`)
+  logger.notice(`Updating job ${id} -> ${record.status}`)
   try{
     await mysql.do("UPDATE AnsibleForms.`jobs` set ? WHERE id=?", [record,id])
   }catch(error){
     logger.error("Failed to update job",error)
   }
 };
-Job.endJobStatus = async (jobid,counter,stream,status,message) => {
+Job.endJobStatus = async (jobid,counter,stream,status,message,awx_artifacts={}) => {
   // logger.error("------------------------------+++++++++++++++++++++++++++++++----------------------")
   // logger.error(`jobid = ${jobid} ; counter = ${counter} ; status = ${status} ; message = ${message}`)
   // logger.error("------------------------------+++++++++++++++++++++++++++++++----------------------")
   try{
     await Job.createOutput({output:message,output_type:stream,job_id:jobid,order:counter})
-    await Job.update({status:status,end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid)
+    await Job.update({status:status,end:getTimestamp(),awx_artifacts:JSON.stringify(awx_artifacts)},jobid)
     return await Job.sendStatusNotification(jobid)
   }catch(error){
     logger.error("Failed to create joboutput.", error)
@@ -301,6 +306,8 @@ Job.findById = async function (user,id,asText,logSafe=false) {
           throw `Job ${id} not found, or access denied`
       }
       var job = res[0]
+      // convert artifacts
+      job.awx_artifacts = JSON.parse(job.awx_artifacts || "{}")
       // mask passwords
       if(logSafe) job.extravars=Helpers.logSafe(job.extravars)
       // get output summary
@@ -710,7 +717,7 @@ Job.reject = async function(user,id){
     if(j.status=="approve"){
       logger.notice(`Rejecting job ${id} with form ${j.form}`)
       await Job.printJobOutput(`changed: [rejected by ${user.username}]`,"stderr",id,++counter)
-      return await Job.update({status:"rejected",end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},id)
+      return await Job.update({status:"rejected",end:getTimestamp()},id)
     }else{
       throw `Job ${id} is not in rejectable status (status=${j.status})`
     }
@@ -734,7 +741,7 @@ Multistep.launch = async function(form,steps,user,extravars,creds,jobid,counter,
     if(!approved){
       await Job.sendApprovalNotification(approval,extravars,jobid)
       await Job.printJobOutput(`APPROVE [${form}] ${'*'.repeat(69-form.length)}`,"stdout",jobid,++counter)
-      await Job.update({status:"approve",approval:JSON.stringify(approval),end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid)
+      await Job.update({status:"approve",approval:JSON.stringify(approval),end:getTimestamp()},jobid)
       return true
 
     }else{
@@ -792,7 +799,7 @@ Multistep.launch = async function(form,steps,user,extravars,creds,jobid,counter,
               await Job.sendApprovalNotification(step.approval,extravars,jobid)
               await Job.printJobOutput(`APPROVE [${step.name}] ${'*'.repeat(69-step.name.length)}`,"stdout",jobid,++counter)
               try{
-                await Job.update({status:"approve",approval:JSON.stringify(step.approval),end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid)
+                await Job.update({status:"approve",approval:JSON.stringify(step.approval),end:getTimestamp()},jobid)
               }catch(error){
                 logger.error("Failed to update job", error)
               }
@@ -937,7 +944,7 @@ Ansible.launch=async (ev,credentials,jobid,counter,approval,approved=false)=>{
     if(!approved){
       await Job.sendApprovalNotification(approval,ev,jobid)
       await Job.printJobOutput(`APPROVE [${playbook}] ${'*'.repeat(69-playbook.length)}`,"stdout",jobid,++counter)
-      await Job.update({status:"approve",approval:JSON.stringify(approval),end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid)
+      await Job.update({status:"approve",approval:JSON.stringify(approval),end:getTimestamp()},jobid)
       return true
     }else{
       logger.notice("Continuing ansible " + playbook + " it has been approved")
@@ -1029,11 +1036,11 @@ Awx.abortJob = async function (id, next) {
   const axiosConfig = getAuthorization(awxConfig)
   // we first need to check if we CAN cancel
   try{
-    const axiosResult = await axios.get(awxConfig.uri + "/jobs/" + id + "/cancel/",axiosConfig)
+    const axiosResult = await axios.get(awxConfig.uri + appConfig.awxApiPrefix + "/jobs/" + id + "/cancel/",axiosConfig)
     var job = axiosResult.data
     if(job && job.can_cancel){
         logger.info(`can cancel job id = ${id}`)
-        const axiosResult = await axios.post(awxConfig.uri + "/jobs/" + id + "/cancel/",{},axiosConfig)
+        const axiosResult = await axios.post(awxConfig.uri + appConfig.awxApiPrefix + "/jobs/" + id + "/cancel/",{},axiosConfig)
         job = axiosResult.data
         next(null,job)
     }else{
@@ -1074,7 +1081,7 @@ Awx.launch = async function (ev,credentials,jobid,counter,approval,approved=fals
       if(!approved){
         await Job.sendApprovalNotification(approval,ev,jobid)
         await Job.printJobOutput(`APPROVE [${template}] ${'*'.repeat(69-template.length)}`,"stdout",jobid,++counter)
-        await Job.update({status:"approve",approval:JSON.stringify(approval),end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid)
+        await Job.update({status:"approve",approval:JSON.stringify(approval),end:getTimestamp()},jobid)
         return true
       }else{
         logger.notice("Continuing awx " + template + " it has been approved")
@@ -1208,6 +1215,7 @@ Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,ve
   }
 
 };
+
 Awx.trackJob = async function (job,jobid,counter,previousoutput,previousoutput2=undefined,lastrun=false,retryCount=0) {
   const awxConfig = await Awx.getConfig()
   if(!awxConfig)throw new Error("Failed to get AWX configuration")
@@ -1236,7 +1244,7 @@ Awx.trackJob = async function (job,jobid,counter,previousoutput,previousoutput2=
               output = output.substring(previousoutput.length)
             }else{
               if(output && previousoutput2){
-                // here we have an output problem, the incremental of AWX can sometime deviate
+                // here we have an output problem, the incremental of AWX can sometimes deviate
                 // and the last output was wrong, in this case we remove the last output from the db and take the second last output
                 // as last reference.
                 incrementIssue=true
@@ -1249,19 +1257,19 @@ Awx.trackJob = async function (job,jobid,counter,previousoutput,previousoutput2=
         const dbjobstatus = await Job.printJobOutput(output,"stdout",jobid,++counter,incrementIssue)
         if(dbjobstatus && dbjobstatus=="abort"){
           await Job.printJobOutput("Abort requested","stderr",jobid,++counter)
-          await Job.update({status:"aborting",end:moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')},jobid)
+          await Job.update({status:"aborting",end:getTimestamp()},jobid)
           await Awx.abortJob(j.id,(error,res)=>{
             if(error){
-              Job.endJobStatus(jobid,++counter,"stderr","failed","Abort failed \n"+error)
+              Job.endJobStatus(jobid,++counter,"stderr","failed","Abort failed \n"+error,j.artifacts)
             }else{
-              Job.endJobStatus(jobid,++counter,"stderr","aborted","Aborted job")
+              Job.endJobStatus(jobid,++counter,"stderr","aborted","Aborted job",j.artifacts)
             }
           })
           return "Abort requested"
         }else{
           if(j.finished && lastrun){
             if(j.status==="successful"){
-              await Job.endJobStatus(jobid,++counter,"stdout","success",`Successfully completed template ${j.name}`)
+              await Job.endJobStatus(jobid,++counter,"stdout","success",`Successfully completed template ${j.name}`,j.artifacts)
               return true
             }else{
               // if error, end with status (aborted or failed)
@@ -1271,7 +1279,7 @@ Awx.trackJob = async function (job,jobid,counter,previousoutput,previousoutput2=
                 status="aborted"
                 message=`Template ${j.name} was aborted`
               }
-              await Job.endJobStatus(jobid,++counter,"stderr",status,message)
+              await Job.endJobStatus(jobid,++counter,"stderr",status,message,j.artifacts)
               return message
             }
           }else{
@@ -1344,14 +1352,14 @@ Awx.findJobTemplateByName = async function (name) {
   logger.info(`searching job template ${name}`)
   // prepare axiosConfig
   const axiosConfig = Awx.getAuthorization(awxConfig)
-  var axiosResult = await axios.get(awxConfig.uri + "/job_templates/?name=" + encodeURI(name),axiosConfig)
+  var axiosResult = await axios.get(awxConfig.uri  + appConfig.awxApiPrefix + "/job_templates/?name=" + encodeURI(name),axiosConfig)
   var job_template = axiosResult.data.results.find(function(x, index) { return x.name == name })
   if(job_template){
     return job_template
   }else{
     logger.info("Template not found, looking for workflow job template")
     // trying workflow job templates
-    axiosResult = await axios.get(awxConfig.uri + "/workflow_job_templates/?name=" + encodeURI(name),axiosConfig)
+    axiosResult = await axios.get(awxConfig.uri + appConfig.awxApiPrefix + "/workflow_job_templates/?name=" + encodeURI(name),axiosConfig)
     var job_template = axiosResult.data.results.find(function(x, index) { return x.name == name })
     if(job_template){
       return job_template
@@ -1370,7 +1378,7 @@ Awx.findCredentialByName = async function (name) {
   logger.info(`searching credential ${name}`)
   // prepare axiosConfig
   const axiosConfig = Awx.getAuthorization(awxConfig)
-  const axiosResult = await axios.get(awxConfig.uri + "/credentials/?name=" + encodeURI(name),axiosConfig)
+  const axiosResult = await axios.get(awxConfig.uri + appConfig.awxApiPrefix + "/credentials/?name=" + encodeURI(name),axiosConfig)
   var credential = axiosResult.data.results.find(function(x, index) { return x.name == name })
   if(credential){
     return credential.id
@@ -1391,7 +1399,7 @@ Awx.findExecutionEnvironmentByName = async function (name) {
   message=`could not find execution environment ${name}`
   var axiosResult
   try{
-    axiosResult = await axios.get(awxConfig.uri + "/execution_environments/?name=" + encodeURI(name),axiosConfig)
+    axiosResult = await axios.get(awxConfig.uri + appConfig.awxApiPrefix + "/execution_environments/?name=" + encodeURI(name),axiosConfig)
   }catch(error){
     throw new Error(`${message}, ${error.message}`)
   }            
@@ -1415,7 +1423,7 @@ Awx.findInstanceGroupByName = async function (name) {
   message=`could not find instance group ${name}`
   var axiosResult
   try{
-    axiosResult = await axios.get(awxConfig.uri + "/instance_groups/?name=" + encodeURI(name),axiosConfig)
+    axiosResult = await axios.get(awxConfig.uri + appConfig.awxApiPrefix + "/instance_groups/?name=" + encodeURI(name),axiosConfig)
   }catch(error){
     throw new Error(`${message}, ${error.message}`)
   }        
@@ -1433,7 +1441,7 @@ Awx.findCredentialsByTemplate = async function (id) {
   logger.info(`searching credentials for template id ${id}`)
   // prepare axiosConfig
   const axiosConfig = Awx.getAuthorization(awxConfig)
-  const axiosResult = await axios.get(awxConfig.uri + "/job_templates/"+id+"/credentials/",axiosConfig)
+  const axiosResult = await axios.get(awxConfig.uri + appConfig.awxApiPrefix + "/job_templates/"+id+"/credentials/",axiosConfig)
   if(axiosResult.data?.results?.length){
     return axiosResult.data.results.map(x=>x.id)
   }
@@ -1450,7 +1458,7 @@ Awx.findInventoryByName = async function (name) {
   message=`could not find inventory ${name}`
   var axiosResult
   try{
-    axiosResult = await axios.get(awxConfig.uri + "/inventories/?name=" + encodeURI(name),axiosConfig)
+    axiosResult = await axios.get(awxConfig.uri + appConfig.awxApiPrefix + "/inventories/?name=" + encodeURI(name),axiosConfig)
   }catch(error){
     throw new Error(`${message}, ${error.message}`)
   }    
