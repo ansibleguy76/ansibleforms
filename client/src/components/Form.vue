@@ -10,7 +10,15 @@
     </BulmaQuickView>
 
     <div class="container">
-      <div class="columns" v-if="formIsReady">
+      <div v-if="formIsReady && !currentForm">
+        <div v-for="(err, i) in load_errors" :key="'loaderr'+i" class="notification is-danger">
+          {{ err }}
+        </div>
+        <div v-for="(warn, i) in load_warnings" :key="'loadwarn'+i" class="notification is-warning">
+          {{ warn }}
+        </div>
+      </div>
+      <div class="columns" v-if="formIsReady && currentForm">
         <!-- form column -->
         <div ref="container" class="column is-clipped-horizontal">
           <!-- form title -->
@@ -530,7 +538,9 @@
       currentForm:{type:Object},
       constants:{type:Object},
       isAdmin:{type:Boolean},
-      profile:{type:Object}
+      profile:{type:Object},
+      load_errors:{type:Array},
+      load_warnings:{type:Array},
     },
     setup(){
       return { v$: useVuelidate() }
@@ -729,7 +739,7 @@
       },      
       // form loaded and validation ready
       formIsReady(){
-        return this.validationsLoaded && this.currentForm && this.pretasksFinished
+        return (this.validationsLoaded && this.currentForm && this.pretasksFinished) || this.load_errors?.length>0 || this.load_warnings?.length>0
       },
       // computed list of the field-groups (to generate fieldform-sections)
       fieldgroups(){

@@ -1,5 +1,5 @@
 <template>
-    <Form v-if="formConfig" :isAdmin="isAdmin" :profile="profile" :constants="formConfig.constants||{}" :token="token" :key="componentKey" @rerender="load" @refreshApprovals="$emit('refreshApprovals')" :currentForm="currentForm" />
+    <Form v-if="formConfig" :isAdmin="isAdmin" :load_errors="formConfig.errors" :load_warnings="formConfig.warnings" :profile="profile" :constants="formConfig.constants||{}" :token="token" :key="componentKey" @rerender="load" @refreshApprovals="$emit('refreshApprovals')" :currentForm="currentForm" />
 </template>
 <script>
 
@@ -27,7 +27,7 @@
         var ref=this
         FormLib.getForm(ref.$route.query.form,function(formConfig){
           ref.formConfig=formConfig
-          ref.currentForm=formConfig.forms[0]
+          ref.currentForm=formConfig?.forms[0]
           ref.componentKey++;
         },function(err){
           ref.$toast.error(err.toString())

@@ -35,12 +35,14 @@
 <script>
   export default{
     name:"FormTiles",
+ 
     props:{
       formConfig:{type:Object}
     },
     data(){
       return  {
-        search:""
+        search:"",
+        showWarnings:false
       }
     },
     computed:{
@@ -57,7 +59,7 @@
       },
       getForms(){
         return this.filterForms(this.currentCategory)
-      },
+      }
     },
     methods:{
 
