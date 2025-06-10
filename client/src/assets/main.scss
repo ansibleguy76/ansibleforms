@@ -1,0 +1,78 @@
+@charset "utf-8";
+
+// customize here !!
+// you can change all the looks if you want
+// https://bulma.io/documentation/customize/variables/
+
+@use "variables" as *;
+@use "bulma/sass" with (
+// mine
+  $gap: $gap,
+  $fullhd: $fullhd,
+  $fullhd-enabled: $fullhd-enabled,
+  $widescreen: $widescreen,
+  $widescreen-enabled: $widescreen-enabled,
+
+  $grey-darker: $grey-darker,
+  $grey-dark: $grey-dark,
+  $grey: $grey,
+  $grey-light: $grey-light,
+  $grey-lighter: $grey-lighter,
+
+  $orange: $orange,
+  $green: $green,
+  $cyan: $cyan,
+  $red: $red,
+  $white: $white,
+
+  $primary: $primary,
+  $warning: $warning,
+  $danger: $danger,
+
+  $border: $border,
+  $family-sans-serif: $family-sans-serif,
+  $body-size: $body-size,
+
+  $radius: $radius,
+  $radius-small: $radius-small,
+  $radius-large: $radius-large,
+
+  $subtitle-color: $subtitle-color,
+
+  $button-border-color: $button-border-color,
+
+  $navbar-background-color: $navbar-background-color,
+  $navbar-item-color: $navbar-item-color,
+  $navbar-dropdown-arrow: $navbar-dropdown-arrow,
+
+  $box-shadow: $box-shadow,
+  $card-shadow: $card-shadow,
+  $modal-content-width: $modal-content-width
+);
+
+@use "overrides";
+
+article.message table {
+  tr:last-child {
+    th,td{
+      border-bottom-width:1px;
+    }
+  }
+  td,th{
+    border-width:1px;
+    color:#363636;
+    border-color:#ccc;
+  }
+}
+article.message p {
+  color:#363636
+}
+
+@media screen and (min-width: 1025px) {
+    .navbar-item.is-hoverable:hover .navbar-dropdown {
+        display: block !important;
+    }
+    .navbar-item.is-hoverable:focus-within .navbar-dropdown {
+        display: none;
+    }
+}

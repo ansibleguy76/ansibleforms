@@ -15,8 +15,6 @@
   </li>
 </template>
 <script>
-  import Vue from 'vue'
-  import BulmaMenuItem from './BulmaMenuItem'
   export default{
     name:"BulmaMenuItem",
     props:{
@@ -25,7 +23,9 @@
       menu:{type:Object},
       forms:{type:Array}
     },
-    components:{BulmaMenuItem},
+    components:{
+      BulmaMenuItem: () => import('./BulmaMenuItem.vue')
+    },
     computed:{
       path(){
         return (this.parent)?this.parent+'/'+this.menu.name:this.menu.name

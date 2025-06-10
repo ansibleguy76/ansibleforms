@@ -91,7 +91,9 @@
   import TokenStorage from './../lib/TokenStorage'
   import { useVuelidate } from '@vuelidate/core'
   import { required, helpers } from '@vuelidate/validators'
-
+  import 'brace/ext/language_tools'; // language extension prerequisite...
+  import 'brace/mode/yaml';
+  import 'brace/theme/monokai';
 
   export default{
     name:"AfDatasourceSchemas",
@@ -136,7 +138,7 @@
       },
       loadDatasourceSchemaList(){
         var ref= this;
-        axios.get(`${process.env.BASE_URL}api/v1/datasource/schema`,TokenStorage.getAuthentication())
+        axios.get(`/api/v1/datasource/schema`,TokenStorage.getAuthentication())
           .then((result)=>{
             ref.datasourceSchemaList=result.data.data.output
           }),function(err){
@@ -169,7 +171,7 @@
         var ref= this;
         if(this.datasourceSchemaItem!=undefined && this.datasourceSchemaItem!=-1){
 
-          axios.get(`${process.env.BASE_URL}api/v1/datasource/schema/${this.datasourceSchemaItem}`,TokenStorage.getAuthentication())
+          axios.get(`/api/v1/datasource/schema/${this.datasourceSchemaItem}`,TokenStorage.getAuthentication())
             .then((result)=>{
               console.log("loaded datasourceSchema item");
               ref.datasourceSchema=result.data.data.output
@@ -193,7 +195,7 @@
       },
       deleteDatasourceSchema(){
         var ref= this;
-        axios.delete(`${process.env.BASE_URL}api/v1/datasource/schema/${this.datasourceSchemaItem}`,TokenStorage.getAuthentication())
+        axios.delete(`/api/v1/datasource/schema/${this.datasourceSchemaItem}`,TokenStorage.getAuthentication())
           .then((result)=>{
             if(result.data.status=="error"){
               ref.$toast.error(result.data.message + ", " + result.data.data.error);
@@ -214,7 +216,7 @@
           delete postdata.output
           delete postdata.status
           delete postdata.head
-          axios.put(`${process.env.BASE_URL}api/v1/datasource/schema/${this.datasourceSchemaItem}`,postdata,TokenStorage.getAuthentication())
+          axios.put(`/api/v1/datasource/schema/${this.datasourceSchemaItem}`,postdata,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
                 ref.$toast.error(result.data.message + ", " + result.data.data.error);
@@ -231,7 +233,7 @@
       },newDatasourceSchema(){
         var ref= this;
         if (!this.v$.datasourceSchema.$invalid) {
-          axios.post(`${process.env.BASE_URL}api/v1/datasource/schema/`,this.datasourceSchema,TokenStorage.getAuthentication())
+          axios.post(`/api/v1/datasource/schema/`,this.datasourceSchema,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
                 ref.$toast.error(result.data.message + ", " + result.data.data.error);
@@ -246,16 +248,14 @@
         }           
       },resetDatasourceSchema(){
         var ref= this;
-        axios.post(`${process.env.BASE_URL}api/v1/datasource/schema/${this.datasourceSchemaItem}/reset`,{},TokenStorage.getAuthentication())
+        axios.post(`/api/v1/datasource/schema/${this.datasourceSchemaItem}/reset`,{},TokenStorage.getAuthentication())
         setTimeout(()=>{ref.loadAll()},500)
         this.resetItem()
         this.loadAll()
       },      
       editorInit: function () {
           // vue2-code-editor/node_modules/
-          require('brace/ext/language_tools') //language extension prerequsite...
-          require('brace/mode/yaml')
-          require('brace/theme/monokai')
+          
       }             
     },
     validations: {

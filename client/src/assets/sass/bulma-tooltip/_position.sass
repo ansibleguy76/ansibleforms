@@ -1,0 +1,128 @@
+$tooltip-arrow-size: null !default
+$tooltip-background-color: null !default
+$tooltip-background-opacity: null !default
+
+=tooltip-hover
+	&:hover::before,
+	&:hover::after,
+	&.has-tooltip-active::before,
+	&.has-tooltip-active::after
+		@content
+
+=tooltip-arrow-top
+	&.has-tooltip-arrow
+		&::after
+			top: 0
+			right: auto
+			bottom: auto
+			left: 50%
+			margin-top: $tooltip-arrow-size * -1 + 1
+			margin-right: auto
+			margin-bottom: auto
+			margin-left: $tooltip-arrow-size * -1 + 1
+			border-color: rgba($tooltip-background-color, $tooltip-background-opacity) transparent transparent transparent
+
+=tooltip-box-top
+	&::before
+		top: 0
+		right: auto
+		bottom: auto
+		left: 50%
+		top: 0
+		margin-top: $tooltip-arrow-size * -1 + 1
+		margin-bottom: auto
+		transform: translate(-50%, -100%)
+
+=tooltip-top
+	+tooltip-arrow-top
+	+tooltip-box-top
+
+=tooltip-arrow-bottom
+	&.has-tooltip-arrow
+		&::after
+			top: auto
+			right: auto
+			bottom: -1px
+			left: 50%
+			margin-top: auto
+			margin-right: auto
+			margin-bottom: $tooltip-arrow-size * -1 + 1
+			margin-left: $tooltip-arrow-size * -1 + 1
+			border-color: transparent transparent rgba($tooltip-background-color, $tooltip-background-opacity) transparent
+
+=tooltip-box-bottom
+	&::before
+		top: auto
+		right: auto
+		bottom: 0
+		left: 50%
+		margin-top: auto
+		margin-bottom: $tooltip-arrow-size * -1 + 1
+		transform: translate(-50%, 100%)
+
+=tooltip-bottom
+	+tooltip-arrow-bottom
+	+tooltip-box-bottom
+
+
+=tooltip-arrow-left
+	&.has-tooltip-arrow
+		&::after
+			top: auto
+			right: auto
+			bottom: 50%
+			left: 0
+			margin-top: auto
+			margin-right: auto
+			margin-bottom: $tooltip-arrow-size * -1
+			margin-left: $tooltip-arrow-size * -1 + 1
+			border-color: transparent transparent transparent rgba($tooltip-background-color, $tooltip-background-opacity)
+
+=tooltip-box-left
+	&::before
+		top: auto
+		right: auto
+		bottom: 50%
+		left: $tooltip-arrow-size * -1 + 1
+		transform: translate(-100%, 50%)
+
+=tooltip-left
+	+tooltip-arrow-left
+	+tooltip-box-left
+
+
+=tooltip-arrow-right
+	&.has-tooltip-arrow
+		&::after
+			top: auto
+			right: 0
+			bottom: 50%
+			left: auto
+			margin-top: auto
+			margin-right: $tooltip-arrow-size * -1
+			margin-bottom: $tooltip-arrow-size * -1
+			margin-left: auto
+			border-color: transparent rgba($tooltip-background-color, $tooltip-background-opacity) transparent transparent
+
+=tooltip-box-right
+	&::before
+		top: auto
+		right: $tooltip-arrow-size * -1 + 1
+		bottom: 50%
+		left: auto
+		margin-top: auto
+		transform: translate(100%, 50%)
+
+=tooltip-right
+	+tooltip-arrow-right
+	+tooltip-box-right
+
+=tooltip-direction($direction)
+	@if $direction == 'top'
+		@include tooltip-top
+	@else if $direction == 'right'
+		@include tooltip-right
+	@else if $direction == 'bottom'
+		@include tooltip-bottom
+	@else if $direction == 'left'
+		@include tooltip-left

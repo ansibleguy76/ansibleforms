@@ -168,9 +168,9 @@
 <script>
     import Vue from 'vue'
     import BulmaModal from './BulmaModal.vue'
-    import BulmaAdvancedSelect from './BulmaAdvancedSelect'
+    import BulmaAdvancedSelect from './BulmaAdvancedSelect.vue'
     import Helpers from './../lib/Helpers.js'
-    import BulmaCheckRadio from './BulmaCheckRadio'
+    import BulmaCheckRadio from './BulmaCheckRadio.vue'
     import DatePicker from 'vue2-datepicker';
     import 'vue2-datepicker/index.css';    
     import { useVuelidate } from '@vuelidate/core'

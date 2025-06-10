@@ -136,7 +136,7 @@
       },
       loadRepositoryList(){
         var ref= this;
-        axios.get(`${process.env.BASE_URL}api/v1/repository/`,TokenStorage.getAuthentication())
+        axios.get(`/api/v1/repository/`,TokenStorage.getAuthentication())
           .then((result)=>{
             ref.repositoryList=result.data.data.output.map((x)=>{
               var icon = ""
@@ -178,7 +178,7 @@
         var ref= this;
         if(this.repositoryItem!=undefined && this.repositoryItem!=-1){
 
-          axios.get(`${process.env.BASE_URL}api/v1/repository/${this.repositoryItem}`,TokenStorage.getAuthentication())
+          axios.get(`/api/v1/repository/${this.repositoryItem}`,TokenStorage.getAuthentication())
             .then((result)=>{
               console.log("loaded repository item");
               ref.repository=result.data.data.output
@@ -202,7 +202,7 @@
       },
       deleteRepository(){
         var ref= this;
-        axios.delete(`${process.env.BASE_URL}api/v1/repository/${this.repositoryItem}`,TokenStorage.getAuthentication())
+        axios.delete(`/api/v1/repository/${this.repositoryItem}`,TokenStorage.getAuthentication())
           .then((result)=>{
             if(result.data.status=="error"){
               ref.$toast.error(result.data.message + ", " + result.data.data.error);
@@ -223,7 +223,7 @@
           delete postdata.output
           delete postdata.status
           delete postdata.head
-          axios.put(`${process.env.BASE_URL}api/v1/repository/${this.repositoryItem}`,postdata,TokenStorage.getAuthentication())
+          axios.put(`/api/v1/repository/${this.repositoryItem}`,postdata,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
                 ref.$toast.error(result.data.message + ", " + result.data.data.error);
@@ -240,7 +240,7 @@
       },newRepository(){
         var ref= this;
         if (!this.v$.repository.$invalid) {
-          axios.post(`${process.env.BASE_URL}api/v1/repository/`,this.repository,TokenStorage.getAuthentication())
+          axios.post(`/api/v1/repository/`,this.repository,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
                 ref.$toast.error(result.data.message + ", " + result.data.data.error);
@@ -255,7 +255,7 @@
         }
       },cloneRepository(){
         var ref= this;
-        axios.post(`${process.env.BASE_URL}api/v1/repository/${this.repositoryItem}/clone`,{},TokenStorage.getAuthentication())
+        axios.post(`/api/v1/repository/${this.repositoryItem}/clone`,{},TokenStorage.getAuthentication())
         setTimeout(()=>{ref.loadAll()},500)
         this.resetItem()
         this.loadAll()

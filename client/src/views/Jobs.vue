@@ -334,7 +334,7 @@
         var ref= this;
         if(!this.isLoading){
           this.isLoading=true;
-          axios.get(`${process.env.BASE_URL}api/v1/job?records=${ref.lines}`,TokenStorage.getAuthentication())                               // load forms
+          axios.get(`/api/v1/job?records=${ref.lines}`,TokenStorage.getAuthentication())                               // load forms
             .then((result)=>{
               ref.jobs=result.data.data.output;
               ref.isLoading=false
@@ -357,7 +357,7 @@
       loadRunningJobs(){
         var ref= this;
         this.runningJobs.forEach((item, i) => {
-          axios.get(`${process.env.BASE_URL}api/v1/job/${item.id}`,TokenStorage.getAuthentication())                               // load forms
+          axios.get(`/api/v1/job/${item.id}`,TokenStorage.getAuthentication())                               // load forms
             .then((result)=>{
               var idx = ref.getJobIndex(item.id)
               if(result.data.data && ref.noOfRecords!=result.data.data.no_of_records){
@@ -385,7 +385,7 @@
       loadOutput(id,sub=false){
         var ref=this
         if(!sub)this.jobId=id
-        axios.get(`${process.env.BASE_URL}api/v1/job/${id}`,TokenStorage.getAuthentication())
+        axios.get(`/api/v1/job/${id}`,TokenStorage.getAuthentication())
           .then((result)=>{
               if(result.data.data!==undefined){
                 // import the data if output returned
@@ -423,12 +423,12 @@
         .catch((err) => ref.$toast.error(err.toString()))
       },   
       download(id){
-        this.downloadWithAxios(`${process.env.BASE_URL}api/v1/job/${id}/download`,TokenStorage.getAuthentication())
+        this.downloadWithAxios(`/api/v1/job/${id}/download`,TokenStorage.getAuthentication())
       },      
       showApproval(id,reject){
         var ref=this
         this.jobId=id
-        axios.get(`${process.env.BASE_URL}api/v1/job/${id}`,TokenStorage.getAuthentication())
+        axios.get(`/api/v1/job/${id}`,TokenStorage.getAuthentication())
           .then((result)=>{
               if(result.data.data!==undefined){
                 // import the data if output returned
@@ -506,7 +506,7 @@
       deleteJob(id){
         var ref=this
         this.jobId=id
-        axios.delete(`${process.env.BASE_URL}api/v1/job/${id}`,TokenStorage.getAuthentication())
+        axios.delete(`/api/v1/job/${id}`,TokenStorage.getAuthentication())
           .then((result)=>{
               // console.log(result)
               if(result.data.status=="success"){
@@ -527,7 +527,7 @@
       abortJob(id){
         var ref=this
         this.jobId=id
-        axios.post(`${process.env.BASE_URL}api/v1/job/${id}/abort`,{},TokenStorage.getAuthentication())
+        axios.post(`/api/v1/job/${id}/abort`,{},TokenStorage.getAuthentication())
           .then((result)=>{
               // console.log(result)
               if(result.data.status=="success"){
@@ -547,7 +547,7 @@
         var ref=this
         this.jobId=id
         this.tempVerbose=false
-        axios.post(`${process.env.BASE_URL}api/v1/job/${id}/relaunch?verbose=${verbose}`,{},TokenStorage.getAuthentication())
+        axios.post(`/api/v1/job/${id}/relaunch?verbose=${verbose}`,{},TokenStorage.getAuthentication())
           .then((result)=>{
               // console.log(result)
               if(result.data.status=="success"){
@@ -567,7 +567,7 @@
       approveJob(id){
         var ref=this
         this.jobId=id
-        axios.post(`${process.env.BASE_URL}api/v1/job/${id}/approve`,{},TokenStorage.getAuthentication())
+        axios.post(`/api/v1/job/${id}/approve`,{},TokenStorage.getAuthentication())
           .then((result)=>{
               // console.log(result)
               if(result.data.status=="success"){
@@ -588,7 +588,7 @@
       rejectJob(id){
         var ref=this
         this.jobId=id
-        axios.post(`${process.env.BASE_URL}api/v1/job/${id}/reject`,{},TokenStorage.getAuthentication())
+        axios.post(`/api/v1/job/${id}/reject`,{},TokenStorage.getAuthentication())
           .then((result)=>{
               // console.log(result)
               if(result.data.status=="success"){

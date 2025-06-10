@@ -4,7 +4,7 @@
           <p v-for="w,i in formConfig.warnings" :key="'warning'+i" class="mb-3" v-html="w"></p>
           <p v-for="w,i in formConfig.errors" :key="'warning'+i" class="mb-3" v-html="w"></p>
     </BulmaQuickView>     
-    <div class="container">
+    <div class="container is-fullhd">
       <button v-if="formConfig?.warnings?.length>0 || formConfig?.errors?.length>0" @click="showWarnings=!showWarnings" class="button is-small is-light is-warning mr-3 mb-2">
           <span class="icon">
             <font-awesome-icon icon="exclamation-triangle" />
@@ -25,7 +25,6 @@
   </section>
 </template>
 <script>
-  import Vue from 'vue'
   import Categories from './../components/Categories.vue'
   import Form from './../lib/Form'
   import Forms from './../components/Forms.vue'

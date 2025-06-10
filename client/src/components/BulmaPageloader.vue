@@ -6,8 +6,7 @@
   </div>
 </template>
 <script>
-  import Vue from 'vue'
-  import "../../public/assets/bulma_pageloader.scss"
+  import "@/assets/scss/bulma-pageloader/index.scss"
   export default{
     name:"BulmaPageloader",
     props:{

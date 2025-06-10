@@ -89,6 +89,9 @@
   import TokenStorage from './../lib/TokenStorage'
   import { useVuelidate } from '@vuelidate/core'
   import { required, helpers } from '@vuelidate/validators'
+  import 'brace/ext/language_tools'; // language extension prerequisite...
+  import 'brace/mode/yaml';
+  import 'brace/theme/monokai';  
 
   export default{
     name:"AfSchedules",
@@ -256,9 +259,7 @@
       }, 
       editorInit: function () {
           // vue2-code-editor/node_modules/
-          require('brace/ext/language_tools') //language extension prerequsite...
-          require('brace/mode/yaml')
-          require('brace/theme/monokai')
+
       }           
     },
     validations: {

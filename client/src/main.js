@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import Toast from "vue-toastification";
 // Import the CSS or use your own!
-import "./../public/assets/toast.scss";
+import "@/assets/scss/vue-toastification/index.scss";
 import { POSITION } from "vue-toastification";
 const options = {
     // You can set your default options here
@@ -21,7 +21,7 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 library.add(far,fas,fab) // add all solid icons
 Vue.component('font-awesome-icon', FontAwesomeIcon)
 // parse scss, including bulma
-import "./../public/assets/main.scss"
+import "@/assets/main.scss"
 
 // this is the token refresh control
 // if we get a 401 error, we should try to refresh the tokens first and and have second attempt

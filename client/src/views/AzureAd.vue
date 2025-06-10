@@ -80,13 +80,13 @@
     },
     computed:{
       callbackUrl(){
-        return `${this.settings.url || "https://**************"}${process.env.BASE_URL}api/v1/auth/azureadoauth2/callback`
+        return `${this.settings.url || "https://**************"}/api/v1/auth/azureadoauth2/callback`
       }
     },
     methods:{
       loadSettings(){
         var ref=this
-        axios.get(`${process.env.BASE_URL}api/v1/settings/`,TokenStorage.getAuthentication())
+        axios.get(`/api/v1/settings/`,TokenStorage.getAuthentication())
           .then((result)=>{
             ref.settings=result.data.data.output;
           }),function(err){
@@ -95,7 +95,7 @@
       },
       loadAzureAd(){
         var ref= this;
-        axios.get(`${process.env.BASE_URL}api/v1/azuread/`,TokenStorage.getAuthentication())
+        axios.get(`/api/v1/azuread/`,TokenStorage.getAuthentication())
           .then((result)=>{
             ref.azuread=result.data.data.output;
           }),function(err){
@@ -104,7 +104,7 @@
       },updateAzureAd(){
         var ref= this;
         if (!this.v$.azuread.$invalid) {
-          axios.put(`${process.env.BASE_URL}api/v1/azuread/`,this.azuread,TokenStorage.getAuthentication())
+          axios.put(`/api/v1/azuread/`,this.azuread,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
                 ref.$toast.error(result.data.message + ", " + result.data.data.error);
@@ -121,7 +121,7 @@
       },
       testAzureAd(){
         var ref= this;
-        axios.post(`${process.env.BASE_URL}api/v1/azuread/check/`,this.azuread,TokenStorage.getAuthentication())
+        axios.post(`/api/v1/azuread/check/`,this.azuread,TokenStorage.getAuthentication())
           .then((result)=>{
             if(result.data.status=="error"){
               ref.$toast.error(result.data.message + ", " + result.data.data.error);

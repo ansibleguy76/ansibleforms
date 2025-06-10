@@ -5,9 +5,7 @@
   </span>
 </template>
 <script>
-  import Vue from 'vue'
-  import BulmaCheckRadio from "bulma-checkradio"
-  import "../../public/assets/bulma_checkradio.scss"
+  import "@/assets/sass/bulma-checkradio/index.sass"
   export default{
     name:"BulmaRadio",
     props: ['type','value', 'val','label','checktype','disabled'],

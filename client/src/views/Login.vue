@@ -16,10 +16,10 @@
             </div>
             <div class="box" v-if="azureAdEnabled || oidcEnabled">
               <button v-if="azureAdEnabled" title="Azure" class="button is-light mr-3">
-                <span class="icon" @click="authAzureAd"><img src="/assets/img/azure.svg" alt="Azure" /></span>
+                <span class="icon" @click="authAzureAd"><img src="@/assets/img/azure.svg" alt="Azure" /></span>
               </button>
               <button v-if="oidcEnabled" title="OIDC" class="button is-light mr-3">
-                <span class="icon" @click="authOidc"><img src="/assets/img/openid.svg" alt="OIDC" /></span>
+                <span class="icon" @click="authOidc"><img src="@/assets/img/openid.svg" alt="OIDC" /></span>
               </button>              
             </div>
           </div>
@@ -34,8 +34,8 @@
   import TokenStorage from './../lib/TokenStorage'
   import { useVuelidate } from '@vuelidate/core'
   import { required } from '@vuelidate/validators'
+  import { jwtDecode } from "jwt-decode";
   import axios from 'axios'
-  import jwt from 'jsonwebtoken'
   
   export default {
       components:{BulmaInput},
@@ -50,7 +50,6 @@
                   username: "",
                   password: ""
               },
-              baseUrl:"/",
               azureAdEnabled:false,
               azureGroupfilter:"",
               azureGraphUrl:"https://graph.microsoft.com",
@@ -62,15 +61,15 @@
       methods: {
         authAzureAd(){
           localStorage.setItem("authIssuer", "azuread");  // set cookie to azuread
-          window.location.replace(`${this.baseUrl}api/v1/auth/azureadoauth2`) // redirect to azuread
+          window.location.replace(`/api/v1/auth/azureadoauth2`) // redirect to azuread
         },
         authOidc(){
           localStorage.setItem("authIssuer", "oidc");   // set cookie to oidc
-          window.location.replace(`${this.baseUrl}api/v1/auth/oidc`) // redirect to oidc
+          window.location.replace(`/api/v1/auth/oidc`) // redirect to oidc
         },
         getSettings(token){
           var ref=this
-          axios.get(`${ref.baseUrl}api/v1/auth/settings`)
+          axios.get(`/api/v1/auth/settings`)
           .then((result)=>{
             if(result.data?.status=='success'){
               this.azureAdEnabled=!!result.data.data.output.azureAdEnabled
@@ -130,7 +129,7 @@
           // oidc has no group lookup api, the groups are part of the payload
           // we decode the token and get the groups from the payload
           else if (type === 'oidc') {
-            const payload = jwt.decode(token, {complete: true}).payload
+            const payload = jwtDecode(token, {complete: true}).payload
             this.tokenLogin(token, payload.groups || [], 'oidc')
           }else{
             this.$toast.error("Invalid Identity Provider type, contact developer")
@@ -162,7 +161,7 @@
           }
           const loginProvider = type === 'azuread' ? 'azureadoauth2' : 'oidc'
 
-          axios.post(`${this.baseUrl}api/v1/auth/${loginProvider}/login`, { token:token, groups:allGroups })
+          axios.post(`/api/v1/auth/${loginProvider}/login`, { token:token, groups:allGroups })
           .then((result) => {
             if (result.data.token) {
               TokenStorage.storeToken(result.data.token);
@@ -182,11 +181,11 @@
           localStorage.removeItem("authIssuer") // remove cookie, regular login
           if (!this.v$.user.$invalid) {
             console.log("Logging in")
-            var basicAuth = 'Basic ' + new Buffer(this.user.username + ':' + this.user.password).toString('base64')
+            var basicAuth = 'Basic ' + Buffer.from(this.user.username + ':' + this.user.password, 'utf-8').toString('base64')
             var postconfig={
               headers:{'Authorization':basicAuth}
             }
-            axios.post(`${ref.baseUrl}api/v1/auth/login`,{},postconfig)
+            axios.post(`/api/v1/auth/login`,{},postconfig)
               .then((result)=>{
                 if(result.data.token){
                   console.log("Login success, storing tokens")
@@ -216,7 +215,6 @@
 
       },
       mounted(){
-        this.baseUrl = process.env.BASE_URL
         if(this.$route.query.token){
           this.loading=true
           this.getSettings(this.$route.query.token)
@@ -232,7 +230,7 @@
 </script>
 <style scoped>
   .hero{
-    background: url(/assets/img/bg.jpg) no-repeat center center fixed; 
+    background: url(@/assets/img/bg.jpg) no-repeat center center fixed; 
     -webkit-background-size: cover;
     -moz-background-size: cover;
     -o-background-size: cover;

@@ -1,6 +1,8 @@
-let ace = require('brace');
+import ace from 'brace';
+import 'brace/ext/emmet';
+import 'brace/ext/searchbox';
 
-module.exports = {
+export default{
     render: function (h) {
         let height = this.height ? this.px(this.height) : '100%'
         let width = this.width ? this.px(this.width) : '100%'
@@ -69,9 +71,6 @@ module.exports = {
         let vm = this;
         let lang = this.lang || 'text';
         let theme = this.theme || 'chrome';
-
-        require('brace/ext/emmet');
-        require('brace/ext/searchbox');
 
         let editor = vm.editor = ace.edit(this.$el);
 

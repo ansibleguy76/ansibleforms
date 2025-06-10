@@ -3,10 +3,10 @@
       <div class="container">
           <div class="navbar-brand">
             <router-link class="navbar-item" to="/" v-if="authenticated">
-              <img src="/assets/img/logo_ansible_forms_full_white.svg" />
+              <img src="@/assets/img/logo_ansible_forms_full_white.svg" />
             </router-link>
             <router-link class="navbar-item" to="/login" v-else>
-              <img src="/assets/img/logo_ansible_forms_full_white.svg" />
+              <img src="@/assets/img/logo_ansible_forms_full_white.svg" />
             </router-link>            
 
           <a role="button" class="navbar-burger burger" aria-label="menu" aria-expanded="false" data-target="navbarAnsibleForms" v-on:click="showNav = !showNav" v-bind:class="{ 'is-active' : showNav }">
@@ -42,7 +42,7 @@
                     <router-link class="navbar-item" to="/reference-guide/forms">
                       <span class="icon"><font-awesome-icon icon="question-circle" /></span><span>Reference Guide</span>
                     </router-link>
-                    <a class="navbar-item" :href="`${baseUrl}api-docs`" target="_blank">
+                    <a class="navbar-item" :href="`/api-docs`" target="_blank">
                       <span class="icon"><font-awesome-icon icon="code" /></span><span>Api docs</span>
                     </a>
                     <hr class="navbar-divider">
@@ -71,8 +71,6 @@
   </nav>
 </template>
 <script>
-  import Vue from 'vue'
-  import TokenStorage from '../lib/TokenStorage'
   export default{
     name:"BulmaNav",
     props:{
@@ -85,14 +83,13 @@
     data(){
       return  {
           showNav: false,
-          baseUrl: "/",
           navHomeLabel:{type:String},
           navHomeIcon:{type:String}
       }
     },
     mounted(){
-      this.navHomeLabel = process.env.VUE_APP_NAV_HOME_LABEL || "Forms"
-      this.navHomeIcon = process.env.VUE_APP_NAV_HOME_ICON || "rectangle-list"
+      this.navHomeLabel = import.meta.env.VITE_NAV_HOME_LABEL || "Forms";
+      this.navHomeIcon = import.meta.env.VITE_NAV_HOME_ICON || "rectangle-list";
     }
   }
 </script>

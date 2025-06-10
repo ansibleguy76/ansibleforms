@@ -19,8 +19,7 @@
   </transition>
 </template>
 <script>
-  import Vue from 'vue'
-  import "../../public/assets/bulma_quickview.scss"
+  import "@/assets/scss/bulma-quickview/index.scss"
   export default{
     name:"BulmaQuickView",
     props:{

@@ -48,7 +48,7 @@
       update(){
         var ref= this;
         if (!this.v$.user.password.$invalid && !this.v$.user.password2.$invalid) {
-          axios.put(`${process.env.BASE_URL}api/v1/profile`,this.user,TokenStorage.getAuthentication())
+          axios.put(`/api/v1/profile`,this.user,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
                 ref.$toast.error(result.data.message + ", " + result.data.data.error);

@@ -22,7 +22,7 @@
         <!-- form column -->
         <div ref="container" class="column is-clipped-horizontal">
           <!-- form title -->
-          <h1 class="title">{{ currentForm.name }} <span v-if="currentForm.help" class="tag is-light is-clickable" @click="showHelp=!showHelp"><span class="icon has-text-info"><font-awesome-icon icon="question-circle" /></span><span v-if="showHelp">Hide help</span><span v-else>Show help</span></span></h1>
+          <h1 class="title">{{ currentForm.name }} <span v-if="currentForm.help" class="tag is-white is-clickable" @click="showHelp=!showHelp"><span class="icon has-text-info"><font-awesome-icon icon="question-circle" /></span><span v-if="showHelp">Hide help</span><span v-else>Show help</span></span></h1>
           <!-- help pane -->
           <article v-if="currentForm.help && showHelp" class="message is-light">
             <div class="message-body content"><VueShowdown :markdown="currentForm.help" flavor="github" :options="{ghCodeBlocks:true}" /></div>
@@ -522,6 +522,7 @@
   import Helpers from './../lib/Helpers'
   import Copy from 'copy-to-clipboard'
   import 'vue-json-pretty/lib/styles.css';
+  import '@/assets/sass/bulma-tooltip/index.sass';
   import Lodash from 'lodash'
   import VueShowdown from 'vue-showdown';
   import { useVuelidate } from '@vuelidate/core'
@@ -1537,7 +1538,7 @@
                         }
 
                       }else{
-                        axios.post(`${process.env.BASE_URL}api/v1/expression?noLog=${!!item.noLog}`,{expression:placeholderCheck.value},TokenStorage.getAuthentication())
+                        axios.post(`/api/v1/expression?noLog=${!!item.noLog}`,{expression:placeholderCheck.value},TokenStorage.getAuthentication())
                           .then((result)=>{
                             var restresult = result.data
                             if(restresult.status=="error"){
@@ -1607,7 +1608,7 @@
                   ref.setFieldStatus(item.name,"running",false)
                   placeholderCheck = ref.replacePlaceholders(item)     // check and replace placeholders
                   if(placeholderCheck.value!=undefined){                       // expression is clean ?
-                    axios.post(`${process.env.BASE_URL}api/v1/query?noLog=${!!item.noLog}`,{query:placeholderCheck.value,config:item.dbConfig},TokenStorage.getAuthentication())
+                    axios.post(`/api/v1/query?noLog=${!!item.noLog}`,{query:placeholderCheck.value,config:item.dbConfig},TokenStorage.getAuthentication())
                       .then((result)=>{
                         var restresult = result.data
                         if(restresult.data.error){
@@ -1786,7 +1787,7 @@
       abortJob(id){
         var ref=this
         this.$toast.warning("Aborting job " + id);
-        axios.post(`${process.env.BASE_URL}api/v1/job/${id}/abort`,{},TokenStorage.getAuthentication())
+        axios.post(`/api/v1/job/${id}/abort`,{},TokenStorage.getAuthentication())
           .then((result)=>{
             ref.abortTriggered=true
           })
@@ -1805,14 +1806,14 @@
         .catch((err) => ref.$toast.error(err.toString()))
       },   
       download(id){
-        this.downloadWithAxios(`${process.env.BASE_URL}api/v1/job/${id}/download`,TokenStorage.getAuthentication())
+        this.downloadWithAxios(`/api/v1/job/${id}/download`,TokenStorage.getAuthentication())
       },        
       // get job output
       getJob(id,final){
         var ref = this;
         // console.log("=============================")
         // console.log("getting awx job")
-        axios.get(`${process.env.BASE_URL}api/v1/job/${id}`,TokenStorage.getAuthentication())
+        axios.get(`/api/v1/job/${id}`,TokenStorage.getAuthentication())
           .then((result)=>{
               // if we have decent data
               // console.log("job result - " + JSON.stringify(result))
@@ -1828,7 +1829,7 @@
                 if(this.jobResult.data.job_type=="multistep"){
                   if(this.jobResult.data.subjobs.length>0){
                     var lastsubjob = this.jobResult.data.subjobs.slice(-1)[0]
-                    axios.get(`${process.env.BASE_URL}api/v1/job/${lastsubjob}`,TokenStorage.getAuthentication())
+                    axios.get(`/api/v1/job/${lastsubjob}`,TokenStorage.getAuthentication())
                       .then((subjobresult)=>{
                         ref.subjob=subjobresult.data
                       }).catch((e)=>{
@@ -2081,7 +2082,7 @@
           ...TokenStorage.getAuthenticationMultipart(),
             onUploadProgress: progressEvent => {Vue.set(ref.fileProgress,fieldname,Math.round(progressEvent.loaded/progressEvent.total*100))}
         }
-        const result = await axios.post(`${process.env.BASE_URL}api/v1/job/upload/`, formData, config)
+        const result = await axios.post(`/api/v1/job/upload/`, formData, config)
         return result.data
       },
       // execute the form
@@ -2164,7 +2165,7 @@
  
           this.jobResult.message= "Connecting with job api ";
           this.jobResult.status="info";
-          axios.post(`${process.env.BASE_URL}api/v1/job/`,postdata,TokenStorage.getAuthentication())
+          axios.post(`/api/v1/job/`,postdata,TokenStorage.getAuthentication())
             .then((result)=>{
                 if(result){
                   this.jobResult=result.data;

@@ -87,7 +87,7 @@
         var ref=this
         if(!this.isLoading && (this.refresh ||force)){
           this.isLoading=true;
-          axios.get(`${process.env.BASE_URL}api/v1/log?lines=${this.lines||100}`,TokenStorage.getAuthentication())
+          axios.get(`/api/v1/log?lines=${this.lines||100}`,TokenStorage.getAuthentication())
             .then((result)=>{
                 if(result.data!="..."){
                   ref.log=result.data
@@ -113,7 +113,7 @@
         .catch((err) => ref.$toast.error(err.toString()))
       },   
       download(){
-        this.downloadWithAxios(`${process.env.BASE_URL}api/v1/log/download`,TokenStorage.getAuthentication())
+        this.downloadWithAxios(`/api/v1/log/download`,TokenStorage.getAuthentication())
       }
     },
     mounted() { // when the Vue app is booted up, this is run automatically.

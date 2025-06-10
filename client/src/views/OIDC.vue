@@ -71,13 +71,13 @@
     },
     computed:{
       callbackUrl(){
-        return `${this.settings.url || "https://**************"}${process.env.BASE_URL}api/v1/auth/oidc/callback`
+        return `${this.settings.url || "https://**************"}/api/v1/auth/oidc/callback`
       }
     },
     methods:{
       loadSettings(){
         var ref=this
-        axios.get(`${process.env.BASE_URL}api/v1/settings/`,TokenStorage.getAuthentication())
+        axios.get(`/api/v1/settings/`,TokenStorage.getAuthentication())
           .then((result)=>{
             ref.settings=result.data.data.output;
           }),function(err){
@@ -86,7 +86,7 @@
       },
       loadOidc(){
         var ref= this;
-        axios.get(`${process.env.BASE_URL}api/v1/oidc/`,TokenStorage.getAuthentication())
+        axios.get(`/api/v1/oidc/`,TokenStorage.getAuthentication())
           .then((result)=>{
             ref.oidc=result.data.data.output;
           }),function(err){
@@ -95,7 +95,7 @@
       },updateOidc(){
         var ref= this;
         if (!this.v$.oidc.$invalid) {
-          axios.put(`${process.env.BASE_URL}api/v1/oidc/`,this.oidc,TokenStorage.getAuthentication())
+          axios.put(`/api/v1/oidc/`,this.oidc,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
                 ref.$toast.error(result.data.message + ", " + result.data.data.error);
@@ -112,7 +112,7 @@
       },
       testOidc(){
         var ref= this;
-        axios.post(`${process.env.BASE_URL}api/v1/oidc/check/`,this.oidc,TokenStorage.getAuthentication())
+        axios.post(`/api/v1/oidc/check/`,this.oidc,TokenStorage.getAuthentication())
           .then((result)=>{
             if(result.data.status=="error"){
               ref.$toast.error(result.data.message + ", " + result.data.data.error);

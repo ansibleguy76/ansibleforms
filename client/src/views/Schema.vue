@@ -91,7 +91,7 @@
             var ref=this
             ref.loading=true
             this.$toast.info("Creating... wait a moment")
-            axios.post(`${process.env.BASE_URL}api/v1/schema`,{})
+            axios.post(`/api/v1/schema`,{})
               .then((result)=>{
                 this.$emit('recheckSchema')
                 ref.loading=false

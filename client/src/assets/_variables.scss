@@ -1,3 +1,5 @@
+@use "sass:color";
+
 // mine
 $gap: 32px;
 $fullhd: 1800px + (2 * $gap);
@@ -19,6 +21,7 @@ $orange: #e99002;
 $green: #43ac6a;
 $cyan: #5bc0de;
 $red: #f04124;
+$white: #ffffff;
 
 $primary: #008cba !default;
 $warning: $orange;
@@ -38,13 +41,10 @@ $radius-large: 0;
 $subtitle-color: $grey;
 
 $button-background-color: $grey-lighter;
-$button-border-color: darken($button-background-color, 5);
+$button-border-color: color.adjust($button-background-color, $lightness: -5%);
 
 $navbar-background-color: #767676;
-$navbar-item-color: rgba(#fff, 0.6);
-$navbar-item-hover-color: #fff;
-$navbar-item-active-color: #fff;
-$navbar-item-hover-background-color: rgba(#000, 0.1);
+$navbar-item-color: rgba(#fff,1);
 $navbar-dropdown-arrow: $navbar-item-color;
 
 $bulmaswatch-import-font: true !default;

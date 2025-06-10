@@ -87,6 +87,9 @@
   import TokenStorage from './../lib/TokenStorage'
   import { useVuelidate } from '@vuelidate/core'
   import { required, helpers } from '@vuelidate/validators'
+  import 'brace/ext/language_tools'; // language extension prerequisite...
+  import 'brace/mode/yaml';
+  import 'brace/theme/monokai';
 
   export default{
     name: "AfSettings",
@@ -114,7 +117,7 @@
     methods:{
       importYamlFile(){
         var ref= this;
-        axios.put(`${process.env.BASE_URL}api/v1/settings/importFormsFileFromYaml`,{},TokenStorage.getAuthentication())
+        axios.put(`/api/v1/settings/importFormsFileFromYaml`,{},TokenStorage.getAuthentication())
           .then((result)=>{
             if(result.data.status=="error"){
                 ref.$toast.error(result.data.message + ", " + result.data.data.error);
@@ -128,13 +131,13 @@
       },
       loadSettings(){
         var ref= this;
-        axios.get(`${process.env.BASE_URL}api/v1/settings/`,TokenStorage.getAuthentication())
+        axios.get(`/api/v1/settings/`,TokenStorage.getAuthentication())
           .then((result)=>{
             ref.settings=result.data.data.output;
           }),function(err){
             ref.$toast.error(err.toString());
           };
-        axios.get(`${process.env.BASE_URL}api/v1/config/env`,TokenStorage.getAuthentication())
+        axios.get(`/api/v1/config/env`,TokenStorage.getAuthentication())
           .then((result)=>{
             ref.env=result.data.data.output;
           }),function(err){
@@ -143,7 +146,7 @@
       },updateSettings(){
         var ref= this;
         if (!this.v$.settings.$invalid) {
-          axios.put(`${process.env.BASE_URL}api/v1/settings/`,this.settings,TokenStorage.getAuthentication())
+          axios.put(`/api/v1/settings/`,this.settings,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
                 ref.$toast.error(result.data.message + ", " + result.data.data.error);
@@ -159,10 +162,7 @@
         }
       },
       editorInit: function () {
-          // vue2-code-editor/node_modules/
-          require('brace/ext/language_tools') //language extension prerequsite...
-          require('brace/mode/yaml')
-          require('brace/theme/monokai')
+
       }      
     },
     validations: {

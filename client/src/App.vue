@@ -118,7 +118,7 @@
         loadVersion(){
           var ref=this;
 
-          axios.get(`${process.env.BASE_URL}api/v1/version`)                               // check database
+          axios.get(`/api/v1/version`)                               // check database
             .then((result)=>{
               if(result.data.status=="success"){
                 ref.version=result.data.message
@@ -130,7 +130,7 @@
         },
         loadApprovals(){
           var ref=this;
-          axios.get(`${process.env.BASE_URL}api/v1/job/approvals`,TokenStorage.getAuthentication())                               // check database
+          axios.get(`/api/v1/job/approvals`,TokenStorage.getAuthentication())                               // check database
             .then((result)=>{
               if(result.data.status=="success"){
                 ref.approvals=result.data.data.output || 0
@@ -144,14 +144,14 @@
           var ref=this;
 
           // Check if the current route is '/install' and skip the database check
-          if (this.$route.path === `${process.env.BASE_URL}install`) {
+          if (this.$route.path === `/install`) {
             this.isLoaded = true;
             return; // Skip the database check
           }
           console.log("Checking database")
           // create timestamp to add to api call to prevent caching
           var timestamp = new Date().getTime();
-          axios.get(`${process.env.BASE_URL}api/v1/schema?${timestamp}`)                               // check database
+          axios.get(`/api/v1/schema?${timestamp}`)                               // check database
           .then((result)=>{
             if(result.data.status=="error"){
               ref.errorMessage=result.data.message;
@@ -227,7 +227,7 @@
           }
           // to doublecheck (mdaugs) if this really needed, ...
           if(userType=="oidc"){
-            axios.get(`${process.env.BASE_URL}api/v1/auth/logout`).then((res) => {
+            axios.get(`/api/v1/auth/logout`).then((res) => {
               const logoutUrl = res.data?.data?.output?.logoutUrl
               if (logoutUrl) {
                 location.replace(logoutUrl)

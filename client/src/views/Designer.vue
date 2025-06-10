@@ -292,7 +292,10 @@
   import Helpers from './../lib/Helpers'
   import moment from 'moment'
   import Form from './../lib/Form'
-
+  import 'brace/ext/language_tools'; // language extension prerequisite...
+  import 'brace/mode/yaml';
+  import 'brace/theme/monokai';
+  
   export default{
     name: "Designer",
     props:{
@@ -574,7 +577,7 @@
       },
       validate() {
        var ref= this;
-       axios.post(`${process.env.BASE_URL}api/v1/config/check`,{forms:this.formConfig},TokenStorage.getAuthentication())
+       axios.post(`/api/v1/config/check`,{forms:this.formConfig},TokenStorage.getAuthentication())
          .then((result)=>{
            if(result.data.status=="error"){
              ref.$toast.error(result.data.data.error);
@@ -587,7 +590,7 @@
       },
       getLock(){
         var ref=this
-        axios.get(`${process.env.BASE_URL}api/v1/lock`,TokenStorage.getAuthentication())
+        axios.get(`/api/v1/lock`,TokenStorage.getAuthentication())
           .then((result)=>{
             if(result.data.status=="error" && result.data.data?.error.startsWith("Designer is disabled")){
               ref.$toast.error(result.data.data?.error)
@@ -606,7 +609,7 @@
       setLock(proceed){
         var ref=this
         if(!proceed)return false
-        return axios.post(`${process.env.BASE_URL}api/v1/lock`,{},TokenStorage.getAuthentication())
+        return axios.post(`/api/v1/lock`,{},TokenStorage.getAuthentication())
           .then((result)=>{
             if(result.data.status=="error"){
                 ref.$toast.error("Failed to set lock");
@@ -633,7 +636,7 @@
       deleteLock(proceed){
         var ref=this
         if(!proceed)return false
-        return axios.delete(`${process.env.BASE_URL}api/v1/lock`,{},TokenStorage.getAuthentication())
+        return axios.delete(`/api/v1/lock`,{},TokenStorage.getAuthentication())
           .then((result)=>{
             if(result.data.status=="error"){
                 ref.$toast.error("Failed to remove lock");
@@ -660,7 +663,7 @@
        }
        this.$nextTick(()=>{
          if(ref.warnings.length==0 && ref.formConfig && ref.formDirty){
-           axios.post(`${process.env.BASE_URL}api/v1/config/`,{forms:ref.formConfig},TokenStorage.getAuthentication())
+           axios.post(`/api/v1/config/`,{forms:ref.formConfig},TokenStorage.getAuthentication())
              .then((result)=>{
                if(result.data.status=="error"){
                  ref.$toast.error(result.data.data.error);
@@ -690,9 +693,7 @@
       },
       editorInit: function () {
           // vue2-code-editor/node_modules/
-          require('brace/ext/language_tools') //language extension prerequsite...
-          require('brace/mode/yaml')
-          require('brace/theme/monokai')
+
       }
     },
     mounted() { // when the Vue app is booted up, this is run automatically.

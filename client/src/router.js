@@ -56,7 +56,6 @@ const checkSettings=(to, from, next) => {
 }
 
 export default new Router({
-  base: process.env.BASE_URL, // automatically append base url to routes
   linkExactActiveClass: 'is-active',
   scrollBehavior (to, from, savedPosition) {
     if (to && to.hash) {

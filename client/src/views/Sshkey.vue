@@ -70,7 +70,7 @@
       },
       loadSsh(){
         var ref= this;
-        axios.get(`${process.env.BASE_URL}api/v1/sshkey/`,TokenStorage.getAuthentication())
+        axios.get(`/api/v1/sshkey/`,TokenStorage.getAuthentication())
           .then((result)=>{
             ref.ssh=result.data.data.output;
           }),function(err){
@@ -79,7 +79,7 @@
       },updateSsh(){
         var ref= this;
         if (!this.v$.ssh.$invalid) {
-          axios.put(`${process.env.BASE_URL}api/v1/sshkey/`,this.ssh,TokenStorage.getAuthentication())
+          axios.put(`/api/v1/sshkey/`,this.ssh,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
                 ref.$toast.error(result.data.message + ", " + result.data.data.error);

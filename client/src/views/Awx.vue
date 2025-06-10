@@ -71,7 +71,7 @@
     methods:{
       loadAwx(){
         var ref= this;
-        axios.get(`${process.env.BASE_URL}api/v1/awx/`,TokenStorage.getAuthentication())
+        axios.get(`/api/v1/awx/`,TokenStorage.getAuthentication())
           .then((result)=>{
             ref.awx=result.data.data.output;
           }),function(err){
@@ -80,7 +80,7 @@
       },updateAwx(){
         var ref= this;
         if (!this.v$.awx.$invalid) {
-          axios.put(`${process.env.BASE_URL}api/v1/awx/`,this.awx,TokenStorage.getAuthentication())
+          axios.put(`/api/v1/awx/`,this.awx,TokenStorage.getAuthentication())
             .then((result)=>{
               if(result.data.status=="error"){
                 ref.$toast.error(result.data.message + ", " + result.data.data.error);
@@ -97,7 +97,7 @@
       },
       testAwx(){
         var ref= this;
-        axios.post(`${process.env.BASE_URL}api/v1/awx/check/`,this.awx,TokenStorage.getAuthentication())
+        axios.post(`/api/v1/awx/check/`,this.awx,TokenStorage.getAuthentication())
           .then((result)=>{
             if(result.data.status=="error"){
               ref.$toast.error(result.data.message + ", " + result.data.data.error);

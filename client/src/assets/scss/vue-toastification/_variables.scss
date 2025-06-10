@@ -1,4 +1,7 @@
+@use "@/assets/variables" as *;
+
 $vt-namespace: 'Vue-Toastification' !default;
+
 $vt-toast-min-width: 326px !default;
 $vt-toast-max-width: 600px !default;
 $vt-toast-background: #ffffff !default;
