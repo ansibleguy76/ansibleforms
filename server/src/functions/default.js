@@ -1,31 +1,39 @@
-// export default functions that are handy and usable with the javascrip expression field
-// expand if you need, you will to do a rebuild
-const https=require('https')
-const axios=require("axios")
-const fs = require("fs")
-const logger=require("../lib/logger");
-const jq=require("node-jq")
-const YAML=require("yaml")
-const {exec} = require('child_process');
-const {inspect} = require('node:util')
-const JSONbig = require('json-bigint');
-const _ = require("lodash")
-const {firstBy,thenBy}=require("thenby")
-const ip=require("../lib/ip")
-const dayjs=require("dayjs")
-const credentialModel = require("../models/credential.model")
-// import definitions as strings
-require.extensions['.definitions'] = function (module, filename) {
-    module.exports = fs.readFileSync(filename, 'utf8');
-};
-// import jq definitions
-var jqDef = require("./jq.definitions");
-const Helpers = require('../lib/common');
-jqDef+= require("./jq.custom.definitions")
-jqDef=jqDef.replace(/(\r\n|\n|\r)/gm, "");
-logger.debug("jq definitions loaded : " + jqDef)
+// Core Node.js modules
+import fs from "fs";
+import fsPromises from 'fs/promises';
+import path from 'path';
+import dns from 'dns';
+import https from 'https';
+import { fileURLToPath } from 'url';
+import { exec } from 'child_process';
+import { inspect } from 'node:util';
 
-exports.fnGetNumberedName=function(names,pattern,value,fillgap=false){
+// Third-party modules
+import axios from "axios";
+import jq from "node-jq";
+import yaml from "yaml";
+import JSONbig from 'json-bigint';
+import dayjs from "dayjs";
+import thenbypkg from "thenby";
+
+const { firstBy } = thenbypkg;
+
+// Project-specific modules
+import logger from "../lib/logger.js";
+import ip from "../lib/ip.js";
+import credentialModel from "../models/credential.model.js";
+import Helpers from '../lib/common.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const jqDef = await fsPromises.readFile(path.join(__dirname, 'jq.definitions'), 'utf8');
+const jqCustomDef = await fsPromises.readFile(new URL('./jq.custom.definitions', import.meta.url), 'utf8');
+
+const combinedJqDef = (jqDef + jqCustomDef).replace(/(\r\n|\n|\r)/gm, "");
+logger.debug("jq definitions loaded : " + combinedJqDef)
+
+const fnGetNumberedName=function(names,pattern,value,fillgap=false){
   var nr=null
   var nrsequence
   var regex
@@ -82,35 +90,35 @@ exports.fnGetNumberedName=function(names,pattern,value,fillgap=false){
 	  return value
   }
 }
-exports.fnCidr=function(i,n){
+const fnCidr=function(i,n){
   return ip.subnet(i,n)
 }
-exports.fnTime=function(d){
+const fnTime=function(d){
   if(d==undefined){
     return dayjs()
   }else{
     return dayjs(d)
   }
 }
-exports.fnJq=async function(input,jqe){
-    const jq = require('node-jq')
+const fnJq=async function(input,jqe){
     let result=undefined
     if(!jqe){
       logger.warning("[fnJq] jq is empty")
       return result
     }
     try{
-      result=await jq.run(jqDef+jqe, input, { input:"json",output:"json" })
+      result=await jq.run(combinedJqDef+jqe, input, { input:"json",output:"json" })
     }catch(e){
       logger.error("Error in fnJq : ",e)
       throw(e)
     }
     return result
 }
-exports.fnCopy=function(input){
+const fnCopy=function(input){
     return input
-},
-exports.fnSort=function(input,sort){
+}
+
+const fnSort=function(input,sort){
   let result=input
   if(!Array.isArray(input)){
     const e = "Warning in fnSort : input is not an array"
@@ -159,14 +167,14 @@ exports.fnSort=function(input,sort){
   }
   return result
 }
-exports.fnReadJsonFile = async function(path,jqe=null) {
+const fnReadJsonFile = async function(path,jqe=null) {
   if(!path)return undefined
   let result=undefined
   try{
     let rawdata = fs.readFileSync(path,'utf8');
     result = JSON.parse(rawdata)
     if(jqe){
-      result=await jq.run(jqDef+jqe, result, { input:"json",output:"json" })
+      result=await jq.run(combinedJqDef+jqe, result, { input:"json",output:"json" })
     }
   }catch(e){
     logger.error("Error in fnReadJsonFile : ",e)
@@ -174,14 +182,14 @@ exports.fnReadJsonFile = async function(path,jqe=null) {
   }
   return result
 };
-exports.fnReadYamlFile = async function(path,jqe=null) {
+const fnReadYamlFile = async function(path,jqe=null) {
   if(!path)return undefined
   let result=undefined
   try{
     let rawdata = fs.readFileSync(path,'utf8');
-    result = YAML.parse(rawdata)
+    result = yaml.parse(rawdata)
     if(jqe){
-      result=await jq.run(jqDef+jqe, result, { input:"json",output:"json" })
+      result=await jq.run(combinedJqDef+jqe, result, { input:"json",output:"json" })
     }
   }catch(e){
     logger.error("Error in fnReadYamlFile : ",e)
@@ -189,9 +197,8 @@ exports.fnReadYamlFile = async function(path,jqe=null) {
   }
   return result
 };
-exports.fnDnsResolve = async function(hostname,type) {
+const fnDnsResolve = async function(hostname,type) {
   logger.debug("[fnDnsResolve] dns resolve is happening")
-  const dns=require("dns");
   return new Promise((resolve,reject) => {
     dns.resolve(hostname,type,(err,addresses) => {
       if (err) {
@@ -202,7 +209,7 @@ exports.fnDnsResolve = async function(hostname,type) {
     })
   })
 }
-exports.fnCredentials = async function(name,fallbackname=""){
+const fnCredentials = async function(name,fallbackname=""){
   var result=undefined
   if(name){
     try{
@@ -215,15 +222,15 @@ exports.fnCredentials = async function(name,fallbackname=""){
   }
   return result
 }
-exports.fnRestBasic = async function(action,url,body,credential=null,jqe=null,sort=null,hasBigInt=false){
+const fnRestBasic = async function(action,url,body,credential=null,jqe=null,sort=null,hasBigInt=false){
   var headers={}
   if(credential){
-    restCreds = await exports.fnCredentials(credential)
+    restCreds = await fnCredentials(credential)
     headers.Authorization="Basic " + Buffer.from(restCreds.user + ':' + restCreds.password).toString('base64')
   }
-  return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort,hasBigInt)
+  return await fnRestAdvanced(action,url,body,headers,jqe,sort,hasBigInt)
 }
-exports.fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort=null,hasBigInt=false,raw=false){
+const fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort=null,hasBigInt=false,raw=false){
   if(!action || !url){
     const e = "[fnRest] No action or url defined"
     logger.warning(e)
@@ -251,7 +258,7 @@ exports.fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort
         // basic(credential_name)
         if ((m = headers[key].match(/base64\(([^)]+)\)/i))) {
           // logger.debug(`[fnRestAdvanced] base64 encoding for header ${key} with credential ${m[1]}`);
-          const cred = await exports.fnCredentials(m[1]);
+          const cred = await fnCredentials(m[1]);
           if (cred && cred.user && cred.password) {
             headers[key] = headers[key].replace(/base64\(([^)]+)\)/i,Buffer.from(cred.user + ":" + cred.password).toString("base64"))
           }
@@ -259,7 +266,7 @@ exports.fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort
         // password(credential_name)
         else if ((m = headers[key].match(/password\(([^)]+)\)/i))) {
           // logger.debug(`[fnRestAdvanced] password substitution for header ${key} with credential ${m[1]}`);
-          const cred = await exports.fnCredentials(m[1]);
+          const cred = await fnCredentials(m[1]);
           if (cred && cred.password) {
             headers[key]=headers[key].replace(/password\([^)]+\)/i, cred.password);
           }
@@ -267,7 +274,7 @@ exports.fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort
         // username(credential_name)
         else if ((m = headers[key].match(/username\(([^)]+)\)/i))) {
           // logger.debug(`[fnRestAdvanced] username substitution for header ${key} with credential ${m[1]}`);
-          const cred = await exports.fnCredentials(m[1]);
+          const cred = await fnCredentials(m[1]);
           if (cred && cred.user) {
             headers[key]=headers[key].replace(/username\([^)]+\)/i, cred.user);
           }
@@ -283,6 +290,7 @@ exports.fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort
   }
 
   let result=[]
+  let data=null
   try{
     if(action=="get"){
       data = await axios.get(url,axiosConfig);
@@ -296,9 +304,9 @@ exports.fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort
     if(raw) return {data:data.data,response_headers:data.headers} // return raw data
     result=data.data
     if(jqe){
-      result=await jq.run(jqDef+jqe, result, { input:"json",output:"json" })
+      result=await jq.run(combinedJqDef+jqe, result, { input:"json",output:"json" })
     }
-    if(sort)result=exports.fnSort(result,sort)
+    if(sort)result=fnSort(result,sort)
   }catch(e){
     logger.error("Error in fnRestAdvanced : ",e)
     throw(e)
@@ -306,22 +314,22 @@ exports.fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort
   return result
 
 }
-exports.fnRestJwt = async function(action,url,body,token,jqe=null,sort=null,hasBigInt=false,tokenPrefix="Bearer"){
+const fnRestJwt = async function(action,url,body,token,jqe=null,sort=null,hasBigInt=false,tokenPrefix="Bearer"){
   var headers={}
   if(token){
     headers.Authorization=tokenPrefix + " " + token
   }
-  return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort,hasBigInt)
+  return await fnRestAdvanced(action,url,body,headers,jqe,sort,hasBigInt)
 }
-exports.fnRestJwtSecure = async function(action,url,body,tokenname,jqe=null,sort=null,hasBigInt=false,tokenPrefix="Bearer"){
+const fnRestJwtSecure = async function(action,url,body,tokenname,jqe=null,sort=null,hasBigInt=false,tokenPrefix="Bearer"){
   var headers={}
   if(tokenname){
-    var token = await exports.fnCredentials(tokenname)
+    var token = await fnCredentials(tokenname)
     headers.Authorization=tokenPrefix + " " + token.password
   }
-  return await exports.fnRestAdvanced(action,url,body,headers,jqe,sort,hasBigInt)
+  return await fnRestAdvanced(action,url,body,headers,jqe,sort,hasBigInt)
 }
-exports.fnSsh = async function(user,host,cmd,jqe=null){
+const fnSsh = async function(user,host,cmd,jqe=null){
 
   result= await new Promise((resolve,reject)=>{
     const u=user.replaceAll('"','\"') // escape quote in user to avoid code injection
@@ -360,9 +368,26 @@ exports.fnSsh = async function(user,host,cmd,jqe=null){
     })  
   })
   if(jqe){
-    result=await jq.run(jqDef+jqe, result, { input:"json",output:"json" })
+    result=await jq.run(combinedJqDef+jqe, result, { input:"json",output:"json" })
   }
   return result
 
 }
 // etc
+export default {
+  fnGetNumberedName,
+  fnCidr,
+  fnTime,
+  fnJq,
+  fnCopy,
+  fnSort,
+  fnReadJsonFile,
+  fnReadYamlFile,
+  fnDnsResolve,
+  fnCredentials,
+  fnRestBasic,
+  fnRestAdvanced,
+  fnRestJwt,
+  fnRestJwtSecure,
+  fnSsh
+};

@@ -1,12 +1,12 @@
 'use strict';
-const Job = require('../models/job.model');
-var RestResult = require('../models/restResult.model');
-const Credential = require('../models/credential.model');
-const logger=require("../lib/logger");
-const dbConfig = require('../../config/db.config')
-const stream = require('stream');
+import Job from '../models/job.model.js';
+import RestResult from '../models/restResult.model.js';
+import Credential from '../models/credential.model.js';
+import logger from "../lib/logger.js";
+import dbConfig from '../../config/db.config.js';
+import stream from 'stream';
 
-exports.abortJob = function(req, res) {
+const abortJob = function(req, res) {
   var jobid = req.params.id;
   if(!jobid){
     res.json(new RestResult("error","You must provide a jobid","",""));
@@ -16,7 +16,7 @@ exports.abortJob = function(req, res) {
     .then((job)=>{res.json(new RestResult("success","job aborted",null,""))})
     .catch((err)=>{res.json(new RestResult("error","failed to abort job",null,err.toString()))})
 };
-exports.getJob = function(req, res) {
+const getJob = function(req, res) {
   var user = req.user.user
     Job.findById(user,req.params.id,(req.query.text=="true"),true)
       .then((job)=>{
@@ -64,14 +64,14 @@ exports.getJob = function(req, res) {
       .catch((err)=>{res.json(new RestResult("error","failed to find job",null,err.toString()))})
 
 };
-exports.findAllJobs = function(req, res) {
+const findAllJobs = function(req, res) {
     var user = req?.user?.user || {}
     var records = req.query.records || 500
     Job.findAll(user,records)
     .then((jobs)=>{res.json(new RestResult("success","jobs found",jobs,""))})
     .catch((err)=>{res.json(new RestResult("error","failed to find jobs",null,err.toString()))})
 };
-exports.findApprovals = function(req, res) {
+const findApprovals = function(req, res) {
     var user = req.user.user
     Job.findApprovals(user)
     .then((count)=>{
@@ -83,7 +83,7 @@ exports.findApprovals = function(req, res) {
     })
     .catch((err)=>{res.json(new RestResult("error","failed to find approval jobs",null,err))})
 };
-exports.download = async function(req,res){
+const download = async function(req,res){
   try{
     var user = req.user.user
     var job = await Job.findById(user,req.params.id,true,true)
@@ -106,13 +106,13 @@ exports.download = async function(req,res){
       res.status(404).send(err.toString())
   }
 }
-exports.deleteJob = function(req, res) {
+const deleteJob = function(req, res) {
     Job.delete( req.params.id)
     .then((job)=>{res.json(new RestResult("success","job deleted",null,""))})
     .catch((err)=>{res.json(new RestResult("error","failed to delete job",null,err))})
 };
 // this is the main launch code for everything
-exports.launch = async function(req, res) {
+const launch = async function(req, res) {
     //handles null error
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
         // wrong implementation -> send 400 error
@@ -137,7 +137,7 @@ exports.launch = async function(req, res) {
         }
     }
 };
-exports.relaunchJob = async function(req, res) {
+const relaunchJob = async function(req, res) {
 
     // get the form data
     var jobid = req.params.id;
@@ -156,7 +156,7 @@ exports.relaunchJob = async function(req, res) {
       res.json(new RestResult("error",`Failed to relaunch : ${err.toString()}`,"",""))
     }
 };
-exports.approveJob = async function(req, res) {
+const approveJob = async function(req, res) {
 
     // get the form data
     var jobid = req.params.id;
@@ -174,7 +174,7 @@ exports.approveJob = async function(req, res) {
       res.json(new RestResult("error",`Failed to approve : ${err.toString()}`,"",""))
     }    
 };
-exports.rejectJob = async function(req, res) {
+const rejectJob = async function(req, res) {
 
     // get the form data
     var jobid = req.params.id;
@@ -191,4 +191,17 @@ exports.rejectJob = async function(req, res) {
       res.json(new RestResult("error",`Failed to reject : ${err.toString()}`,"",""))
     }    
 
+};
+
+export default {
+  abortJob,
+  getJob,
+  findAllJobs,
+  findApprovals,
+  download,
+  deleteJob,
+  launch,
+  relaunchJob,
+  approveJob,
+  rejectJob
 };

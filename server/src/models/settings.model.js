@@ -1,12 +1,11 @@
 'use strict';
-const logger=require("../lib/logger");
-const mysql=require("./db.model")
-const helpers=require("../lib/common")
-const nodemailer=require("nodemailer")
-const {encrypt,decrypt} = require("../lib/crypto")
-const Repository = require('./repository.model')
-const appConfig = require("./../../config/app.config")
-const fs = require('fs')
+import logger from "../lib/logger.js";
+import mysql from "./db.model.js";
+import nodemailer from "nodemailer";
+import crypto from "../lib/crypto.js";
+import Repository from './repository.model.js';
+import appConfig from "./../../config/app.config.js";
+import fs from 'fs';
 
 //mail object create
 var Settings=function(settings){
@@ -15,7 +14,7 @@ var Settings=function(settings){
     this.mail_secure = (settings.mail_secure)?1:0;
     this.mail_username = settings.mail_username;
     if(settings.mail_password){
-      this.mail_password = encrypt(settings.mail_password);
+      this.mail_password = crypto.encrypt(settings.mail_password);
     }
     this.mail_from = settings.mail_from;
     this.url = settings.url;
@@ -48,7 +47,7 @@ Settings.find = function () {
       if(res.length>0){
         try{
           if(res[0].mail_password!=""){
-            res[0].mail_password=decrypt(res[0].mail_password)
+            res[0].mail_password=crypto.decrypt(res[0].mail_password)
           }
         }catch(e){
           logger.error("Couldn't decrypt mail password, did the secretkey change ?")
@@ -173,4 +172,4 @@ Settings.maildo = function(config,to,subject,message){
       }
   })
 }
-module.exports= Settings;
+export default  Settings;

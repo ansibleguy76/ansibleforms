@@ -1,9 +1,9 @@
 'use strict';
-const Expression = require('../models/expression.model');
-var RestResult = require('../models/restResult.model');
-const logger=require("../lib/logger")
+import Expression from '../models/expression.model.js';
+import RestResult from '../models/restResult.model.js';
+import logger from '../lib/logger.js';
 
-exports.execute = function(req, res) {
+const execute = function(req, res) {
     //handles null error
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
         res.status(400).json(RestResult("error","no data was sent","",""));
@@ -29,3 +29,7 @@ exports.execute = function(req, res) {
           })
     }
 };
+
+export default {
+  execute
+}

@@ -1,11 +1,8 @@
 'use strict';
-// const Cmd = require("../lib/cmd")
-const YAML = require('yaml')
-const logger=require("../lib/logger")
-const path=require("path")
-const mysql = require('./db.model')
-const fs=require("fs")
-var config=require('../../config/app.config')
+import yaml from 'yaml';
+import logger from "../lib/logger.js";
+import mysql from './db.model.js';
+import fs from "fs";
 
 // DsSchema
 // - name
@@ -111,7 +108,7 @@ DsSchema.reset = async function(id){
   logger.info(`Resetting schema ${schema.name}`)
 
   // parse table_definitions from yaml
-  const table_definitions = YAML.parse(schema.table_definitions)
+  const table_definitions = yaml.parse(schema.table_definitions)
   const tables = [];
 
   for (const table_name in table_definitions) {
@@ -245,4 +242,4 @@ DsSchema.reset = async function(id){
 }
 
 
-module.exports= DsSchema;
+export default  DsSchema;

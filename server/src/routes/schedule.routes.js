@@ -1,6 +1,6 @@
-const express = require('express')
-const router = express.Router()
-const scheduleController =   require('../controllers/schedule.controller');
+import express from 'express';
+const router = express.Router();
+import scheduleController from '../controllers/schedule.controller.js';
 // Retrieve all schedules
 router.get('/', scheduleController.findAllOr1);
 // Create a new schedule
@@ -14,4 +14,4 @@ router.delete('/:id', scheduleController.delete);
 // reset a schedule by name
 router.post('/:id/launch/', scheduleController.launch);
 
-module.exports = router
+export default router

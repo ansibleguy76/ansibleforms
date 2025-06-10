@@ -1,7 +1,7 @@
-const spawn = require('child_process').spawn;
-const logger = require('./logger')
-const fs = require('fs');
-const path = require('path');
+import { spawn } from 'child_process';
+import logger from './logger.js';
+import fs from 'fs';
+
 const binPath = 'ssh-keygen'
 
 // SSH KEY GEN LIBRARY 
@@ -182,4 +182,4 @@ Keygen.keygen = async function(opts, callback){
   }
 };
 
-module.exports = Keygen
+export default Keygen

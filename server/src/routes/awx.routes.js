@@ -1,6 +1,6 @@
-const express = require('express')
-const router = express.Router()
-const awxController =   require('../controllers/awx.controller');
+import express from 'express';
+const router = express.Router();
+import awxController from '../controllers/awx.controller.js';
 
 // get awx config
 router.get('/', awxController.find);
@@ -9,4 +9,4 @@ router.put('/', awxController.update);
 // check awx config
 router.post('/check/', awxController.check);
 
-module.exports = router
+export default router

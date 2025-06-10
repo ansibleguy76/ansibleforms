@@ -1,23 +1,31 @@
 'use strict';
-const appConfig = require('./../../config/app.config');
-const logger=require("../lib/logger")
-const fs=require("fs")
-const os=require("os")
-const fse=require("fs-extra")
-const moment=require("moment")
-const execSync = require('child_process').execSync;
-const YAML=require("yaml")
-const Ajv = require('ajv');
-const ajv = new Ajv()
-const path=require("path")
-const AJVErrorParser = require('ajv-error-parser');
-const quote = require('shell-quote/quote');
-const Repository = require('./repository.model')
-const Helpers = require("../lib/common")
-const {inspect} = require("node:util");
-const Repo = require('./repo.model');
-const Settings = require('./settings.model');
-const e = require('express');
+import appConfig from './../../config/app.config.js';
+import logger from "../lib/logger.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import fse from "fs-extra";
+import moment from "moment";
+import { execSync } from 'child_process';
+import yaml from "yaml";
+import Ajv from 'ajv';
+const ajv = new Ajv();
+import AJVErrorParser from 'ajv-error-parser';
+import quote from 'shell-quote/quote.js';
+import Repository from './repository.model.js';
+import Helpers from "../lib/common.js";
+import Settings from './settings.model.js';
+import os from 'os';
+
+// Construct __dirname for ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load JSON schemas synchronously
+const baseSchema = JSON.parse(fs.readFileSync(path.join(__dirname, "../../schema/base_schema.json"), "utf8"));
+const formSchema = JSON.parse(fs.readFileSync(path.join(__dirname, "../../schema/form_schema.json"), "utf8"));
+const formsSchema = JSON.parse(fs.readFileSync(path.join(__dirname, "../../schema/forms_schema.json"), "utf8"));
+const jsonSchemaDraft6 = JSON.parse(fs.readFileSync(path.join(__dirname, "../../node_modules/ajv/lib/refs/json-schema-draft-06.json"), "utf8"));
 
 const backupPath = appConfig.formsBackupPath
 
@@ -35,7 +43,7 @@ function getBackupSuffix(t){
   var backuppart=backuppartre.exec(t)[1]
   return backuppart
 }
-ajv.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
+ajv.addMetaSchema(jsonSchemaDraft6);
 var Form=function(data){
   this.forms = data.forms;
 };
@@ -151,7 +159,7 @@ async function getBaseConfig(formsPath) {
 
   // now let's see if it's valid yaml
   try{
-    const forms = YAML.parse(rawdata)
+    const forms = yaml.parse(rawdata)
     logger.debug("Base forms loaded and is valid YAML")
     return forms;
   }catch(err){
@@ -209,14 +217,14 @@ function getFormsFromFile(formsPath,filename){
 
   logger.info(`merging file ${filename}`)
   try{
-    const data = YAML.parse(rawData);
+    const data = yaml.parse(rawData);
     var forms = [].concat(data || [])
     for(let form of forms){
       form.source = filename; // add source to the form
     }
     return forms;
   } catch (e) {
-    throw new Error(`Failed to parse '${formPath}' as YAML.`,e);
+    throw new Error(`Failed to parse '${formPath}' as yaml.`,e);
   }  
 }
 
@@ -238,8 +246,8 @@ function checkFormRole(form, userRoles) {
 }
 
 // load the forms config
-Form.load = async function(userRoles,formName='',loadFullConfig=false) {
-  
+Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=false) {
+  logger.debug(`Loading forms with userRoles=${userRoles}, formName=${formName}, loadFullConfig=${loadFullConfig}, baseOnly=${baseOnly}`)
   var existingFormNames=[]
   var errors = []
   var warnings = []
@@ -266,7 +274,15 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false) {
   baseConfig = Form.validateConfig(baseConfig); // throws if not valid with the error messages
   logger.debug("Base config validated against schema")
 
+  // just interested in the base config, no forms needed
+  if(baseOnly){
+    // if we only want the base config, return it now
+    logger.debug("Returning base config only, no forms requested")
+    return baseConfig;
+  }
+
   baseConfig.forms = []; // initialize forms array  
+
 
   var unvalidatedForms = unvalidatedBase.forms || []; // get the forms from the base config, will be deprecated in the future
   if (unvalidatedForms.length > 0){
@@ -305,6 +321,10 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false) {
       if(!f?.name){
         error(`Form found with no name.`)
         return // skip this form if no name is given
+      }
+      if(formName && f.name != formName){
+        logger.debug(`Skipping form ${f.name}, not requested.`)
+        continue // skip this form if it is not the one we are looking for
       }
       if(existingFormNames.includes(f.name)){
         warn(`skipping duplicate form ${f.name}`)
@@ -361,9 +381,8 @@ Form.backups = function() {
 };
 Form.validateConfig = function(obj){
   if(obj){
-    var schema = require("../../schema/base_schema.json")
     logger.debug("validating base against schema")
-    const valid = ajv.validate(schema, obj)
+    const valid = ajv.validate(baseSchema, obj)
     if (!valid){
       var ajvMessages = AJVErrorParser.parseErrors(ajv.errors)
       ajvMessages=ajvMessages.map(x => {
@@ -395,11 +414,10 @@ Form.validateConfig = function(obj){
 }
 Form.validateForm = function(obj){
   if(obj){
-    var schema = require("../../schema/form_schema.json")
     var valid = false
     logger.debug("validating form against schema")
     try{
-      valid = ajv.validate(schema, obj)
+      valid = ajv.validate(formSchema, obj)
     } catch (e) {
       logger.error("Failed to validate form against schema",e)
       throw new Error(Helpers.getError(e,"Failed to validate form against schema"))
@@ -437,9 +455,8 @@ Form.validateForm = function(obj){
 }
 Form.validate = function(forms){
   if(forms){
-    var schema = require("../../schema/forms_schema.json")
     logger.debug("validating forms.yaml against schema")
-    const valid = ajv.validate(schema, forms)
+    const valid = ajv.validate(formsSchema, forms)
     if (!valid){
       var ajvMessages = AJVErrorParser.parseErrors(ajv.errors)
       ajvMessages=ajvMessages.map(x => {
@@ -492,7 +509,7 @@ Form.parse = function(data){
   var formsConfig = undefined
   try{
     logger.info("Parsing yaml data")
-    formsConfig = YAML.parse(data.forms,{prettyErrors:true})
+    formsConfig = yaml.parse(data.forms,{prettyErrors:true})
   }catch(err){
     logger.error("Error : ", err)
     throw new Error(Helpers.getError(err,"Failed to parse yaml"))
@@ -589,11 +606,11 @@ Form.save = function(data){
       var formnames=forms.map(x => x.name)
       if(forms.length==1){
         logger.debug(`saving single form '${forms[0].name}' to '${tmpfile}'`)
-        fs.writeFileSync(tmpfile,YAML.stringify(forms[0]));
+        fs.writeFileSync(tmpfile,yaml.stringify(forms[0]));
       }
       if(forms.length>1){
         logger.debug(`saving forms ${formnames} to '${tmpfile}'`)
-        fs.writeFileSync(tmpfile,YAML.stringify(forms));
+        fs.writeFileSync(tmpfile,yaml.stringify(forms));
       }
     }
     // backup current forms config
@@ -606,7 +623,7 @@ Form.save = function(data){
     fse.copySync(tmpDir,formsPath) // copy from temp
 
     logger.debug(`Writing base file '${appConfig.formsPath}'`)
-    fs.writeFileSync(appConfig.formsPath,YAML.stringify(formsConfig)); // write basefile
+    fs.writeFileSync(appConfig.formsPath,yaml.stringify(formsConfig)); // write basefile
   }
   catch(err) {
     // handle error
@@ -649,27 +666,27 @@ Form.restore = function(backupName,backupBeforeRestore){
     return false
   }
 }
-Form.loadByName = async function(form,user,forApproval=false){
-  var forms = await Form.load()
-  var formObj = forms?.forms.filter(x => x.name==form)
-  if(formObj.length>0){
-    if(forApproval){
-      return formObj[0]
-    }
-    logger.debug(`Form ${form} is found, checking access...`)
-    var access = formObj[0].roles.filter(role => user?.roles?.includes(role))
-    if(access.length>0 || user?.roles?.includes("admin")){
-      return formObj[0]
-      //logger.debug(`Form ${form}, access allowed...`)
-    }else {
-      logger.warning(`Form ${form}, no access...`)
-      return null
-    }
-  }else{
-    return null
-  }
+// Form.loadByName = async function(form,user,forApproval=false){
+//   var forms = await Form.load()
+//   var formObj = forms?.forms.filter(x => x.name==form)
+//   if(formObj.length>0){
+//     if(forApproval){
+//       return formObj[0]
+//     }
+//     logger.debug(`Form ${form} is found, checking access...`)
+//     var access = formObj[0].roles.filter(role => user?.roles?.includes(role))
+//     if(access.length>0 || user?.roles?.includes("admin")){
+//       return formObj[0]
+//       //logger.debug(`Form ${form}, access allowed...`)
+//     }else {
+//       logger.warning(`Form ${form}, no access...`)
+//       return null
+//     }
+//   }else{
+//     return null
+//   }
 
-}
+// }
 // create the backup path and 
 // since version 4.0.3 the backups go under folder => move backups there (should be only once)
 Form.initBackupFolder=function(){
@@ -698,4 +715,4 @@ Form.initBackupFolder=function(){
   }  
   Form.removeOld(oldBackupDays)
 }
-module.exports= Form;
+export default  Form;

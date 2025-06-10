@@ -1,41 +1,42 @@
-// load our api logic based on express
-const express = require('express')
-const app = express()
-// run configure
-const configureAPI = require('./src/configure')
-configureAPI(app)
+import express from 'express';
+import ansibleforms from './src/app.js';
+import appConfig from './config/app.config.js';
+import { resolve } from 'path';
+import history from 'connect-history-api-fallback';
+import httpsConfig from './config/https.config.js';
+import logger from './src/lib/logger.js';
+import https from 'https';
+import http from 'http';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-// load our custom app config
-const appConfig = require('./config/app.config')
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const app = express();
+// load the ansibleforms app
+ansibleforms.load(app);
 
 // set the start directory to load our vue app (frontend/gui)
-const { resolve } = require('path')
-const publicPath = resolve(__dirname, './views')
-const staticConf = { maxAge: '1y', etag: false }
-app.use(appConfig.baseUrl,express.static(publicPath, staticConf))
+const publicPath = resolve(__dirname, './views');
+const staticConf = { maxAge: '1y', etag: false };
+app.use("/", express.static(publicPath, staticConf));
 
 // allow browser history
-const history = require('connect-history-api-fallback')
-app.use(`${appConfig.baseUrl}`, history())
-
-
+app.use(`/`, history());
 
 // choose whether to start https or http server
-var httpServer
-const httpsConfig = require('./config/https.config');
-const logger = require('./src/lib/logger');
-logger.notice(`Serving static files from ${publicPath}`)
-logger.notice(`Exposing app under ${appConfig.baseUrl}`)
-if(httpsConfig.https){
-  logger.notice("Running https !")
-  var credentials = {key: httpsConfig.httpsKey, cert: httpsConfig.httpsCert};
-  const https = require('https');
+let httpServer;
+logger.notice(`Serving static files from ${publicPath}`);
+logger.notice(`Exposing app under /`);
+if (httpsConfig.https) {
+  logger.notice("Running https !");
+  const credentials = { key: httpsConfig.httpsKey, cert: httpsConfig.httpsCert };
   httpServer = https.createServer(credentials, app);
-}else{
-  logger.notice("Running http !")
-  const http = require('http');
+} else {
+  logger.notice("Running http !");
   httpServer = http.createServer(app);
 }
 
 // start the webserver and listen on the port we choose
-httpServer.listen(appConfig.port, () => logger.notice(`App running on port ${appConfig.port}!`))
+httpServer.listen(appConfig.port, () => logger.notice(`App running on port ${appConfig.port}!`));

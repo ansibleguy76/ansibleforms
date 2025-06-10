@@ -1,14 +1,12 @@
 'use strict';
-const logger=require("../lib/logger");
-const mysql=require("./db.model")
-const helpers=require("../lib/common")
-const YAML=require("yaml")
-const {encrypt,decrypt} = require("../lib/crypto")
+import logger from "../lib/logger.js";
+import mysql from "./db.model.js";
+import crypto from "../lib/crypto.js";
 
 //azuread object create
 var AzureAd=function(azuread){
     this.client_id = azuread.client_id;
-    this.secret_id = encrypt(azuread.secret_id);
+    this.secret_id = crypto.encrypt(azuread.secret_id);
     this.enable = (azuread.enable)?1:0;
     this.groupfilter = azuread.groupfilter;
 };
@@ -34,7 +32,7 @@ AzureAd.find = function(){
       if(res.length>0){
         try{
           if(res[0].secret_id!=""){
-            res[0].secret_id=decrypt(res[0].secret_id)
+            res[0].secret_id=crypto.decrypt(res[0].secret_id)
           }
         }catch(e){
           logger.error("Couldn't decrypt azuread secret id, did the secretkey change ?")
@@ -54,4 +52,4 @@ AzureAd.check = function(azureadConfig){
   })
 }
 
-module.exports= AzureAd;
+export default AzureAd;

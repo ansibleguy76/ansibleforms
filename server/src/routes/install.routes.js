@@ -1,8 +1,8 @@
-const express = require('express')
-const router = express.Router()
-const installController = require('../controllers/install.controller');
+import express from 'express';
+const router = express.Router();
+import installController from '../controllers/install.controller.js';
 
 // check the app version
 router.get('/', installController.performChecks);
 
-module.exports = router
+export default router

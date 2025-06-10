@@ -1,6 +1,7 @@
-const express = require('express')
-const router = express.Router()
-const credentialController =   require('../controllers/credential.controller');
+import express from 'express';
+import credentialController from '../controllers/credential.controller.js';
+const router = express.Router();
+
 // Retrieve all credentials
 router.get('/', credentialController.find);
 // Create a new credential
@@ -14,4 +15,4 @@ router.delete('/:id', credentialController.delete);
 
 router.get('/testdb/:id', credentialController.testDb)
 
-module.exports = router
+export default router

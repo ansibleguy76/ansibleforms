@@ -1,10 +1,9 @@
 //- MYSQL Module
-const logger = require('./logger');
-const client = require('mysql2/promise');
-const Credential = require('../models/credential.model')
-const util = require('util')
+import logger from './logger.js';
+import client from 'mysql2/promise.js';
+import Credential from '../models/credential.model.js';
 
-MySql = {}
+const MySql = {}
 
 MySql.clean=function(config){
   delete config.name
@@ -61,8 +60,8 @@ MySql.query = async function (connection_name, query) {
       await conn.end()
     }catch(e){
       logger.error(`[${connection_name}] ${e}`)
-      throw e
+      // throw e
     }
   }
 }
-module.exports = MySql
+export default MySql

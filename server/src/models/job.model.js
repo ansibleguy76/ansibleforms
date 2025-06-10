@@ -1,23 +1,27 @@
 'use strict';
-const axios=require('axios')
-const fs=require('fs')
-const path=require('path')
-const YAML = require('yaml')
-const moment= require('moment')
-const {exec} = require('child_process');
-const Helpers = require('../lib/common.js')
-const Settings = require('./settings.model')
-const logger=require("../lib/logger");
-const ansibleConfig = require('../../config/ansible.config.js')
-const loggerConfig = require('../../config/log.config.js')
-const dbConfig = require('../../config/db.config')
-const appConfig = require('../../config/app.config.js')
-const Repository = require('./repository.model.js')
-const mysql = require('./db.model')
-const Form = require('./form.model')
-const Credential = require('./credential.model');
-const { getAuthorization } = require('./awx.model');
-const {inspect} = require('util');
+import axios from 'axios';
+import fs from 'fs';
+import yaml from 'yaml';
+import moment from 'moment';
+import { exec } from 'child_process';
+import Helpers from '../lib/common.js';
+import Settings from './settings.model.js';
+import logger from "../lib/logger.js";
+import ansibleConfig from '../../config/ansible.config.js';
+import loggerConfig from '../../config/log.config.js';
+import dbConfig from '../../config/db.config.js';
+import appConfig from '../../config/app.config.js';
+import Repository from './repository.model.js';
+import mysql from './db.model.js';
+import Form from './form.model.js';
+import Credential from './credential.model.js';
+import AwxModel from './awx.model.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 
 function pushForminfoToExtravars(formObj,extravars,creds={}){
   // push top form fields to extravars
@@ -330,13 +334,15 @@ Job.findById = async function (user,id,asText,logSafe=false) {
     }
 };
 Job.launch = async function(form,formObj,user,creds,extravars,parentId=null,next,async=false) {
+
   // a formobj can be a full step pushed
   if(!formObj){
     // we load it, it's an actual form
-    formObj = await Form.loadByName(form,user)
-    if(!formObj){
+    const formConfig = await Form.load(user?.roles,form)
+    if(formConfig.forms.length==0){
       throw "No such form or access denied"
     }
+    formObj = formConfig.forms[0] // we take the first one, as it should be the only one
   }
 
   pushForminfoToExtravars(formObj,extravars,creds)
@@ -447,10 +453,11 @@ Job.launch = async function(form,formObj,user,creds,extravars,parentId=null,next
 Job.continue = async function(form,user,creds,extravars,jobid,next) {
   var formObj
   // we load it, it's an actual form
-  formObj = await Form.loadByName(form,user,true)
-  if(!formObj){
+  const forms = await Form.load(user?.roles,form)
+  if(!forms){
     throw "No such form or access denied"
   }
+  formObj = forms[0] // we take the first one, as it should be the only one
 
   pushForminfoToExtravars(formObj,extravars,creds)
   extravars["__jobid__"]=jobid
@@ -618,11 +625,10 @@ Job.sendApprovalNotification = async function(approval,extravars,jobid){
     var message = buffer.toString()
     var color = "#158cba"
     var color2 = "#ffa73b"
-    var logo = `${url}${appConfig.baseUrl}assets/img/logo.png`
+    var logo = `${url}/assets/img/logo.png`
     var approvalMessage = Helpers.replacePlaceholders(approval.message,extravars)
     message = message.replace("${message}",approvalMessage)
                     .replaceAll("${url}",url)
-                    .replaceAll("${baseurl",appConfig.baseUrl)
                     .replaceAll("${jobid}",jobid)
                     .replaceAll("${title}",subject)
                     .replaceAll("${logo}",logo)
@@ -676,10 +682,10 @@ Job.sendStatusNotification = async function(jobid){
       var message = buffer.toString()
       var color = "#158cba"
       var color2 = "#ffa73b"
-      var logo = `${url}${appConfig.baseUrl}assets/img/logo.png`
+      var logo = `${url}/assets/img/logo.png`
       message = message.replace("${message}",job.output.replaceAll("\r\n","<br>"))
                       .replaceAll("${url}",url)
-                      .replaceAll("${baseurl}",appConfig.baseUrl)
+
                       .replaceAll("${jobid}",jobid)
                       .replaceAll("${title}",subject)
                       .replaceAll("${logo}",logo)
@@ -1025,8 +1031,8 @@ Ansible.launch=async (ev,credentials,jobid,counter,approval,approved=false)=>{
 
 // awx stuff, interaction with awx
 var Awx = function(){}
-Awx.getConfig = require('./awx.model').getConfig
-Awx.getAuthorization= require('./awx.model').getAuthorization
+Awx.getConfig = AwxModel.getConfig;
+Awx.getAuthorization = AwxModel.getAuthorization;
 Awx.abortJob = async function (id, next) {
 
   const awxConfig = await Awx.getConfig()
@@ -1186,7 +1192,7 @@ Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,ve
       var message=`failed to launch ${template.name}`
       if(error.response){
           logger.error("",error.response.data)
-          message+="\r\n" + YAML.stringify(error.response.data)
+          message+="\r\n" + yaml.stringify(error.response.data)
           await Job.endJobStatus(jobid,++counter,"stderr","success",`Failed to launch template ${template.name}. ${message}`)
       }else{
           logger.error("Failed to launch : ", error)
@@ -1473,4 +1479,4 @@ Awx.findInventoryByName = async function (name) {
 
 };
 
-module.exports= Job;
+export default  Job;

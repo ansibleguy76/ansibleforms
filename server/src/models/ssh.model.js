@@ -1,11 +1,11 @@
 'use strict';
-const logger=require("../lib/logger");
-const config=require("../../config/app.config")
-const fs=require("fs")
-const path=require("path")
-const keygen = require('../lib/ssh-keygen').keygen;
-const privateKeyPath = path.join(config.homePath,'/.ssh/id_rsa');
-const publicKeyPath = path.join(config.homePath,'/.ssh/id_rsa.pub');
+import logger from "../lib/logger.js";
+import config from "../../config/app.config.js";
+import fs from "fs";
+import path from "path";
+import ssh_keygen from "../lib/ssh-keygen.js";
+const privateKeyPath = path.join(config.homePath, '/.ssh/id_rsa');
+const publicKeyPath = path.join(config.homePath, '/.ssh/id_rsa.pub');
 
 // constructor for ssh config
 var Ssh=function(ssh){
@@ -13,7 +13,7 @@ var Ssh=function(ssh){
 };
 // generate new keys (used only once during startup of ansibleforms (in the init/index.js))
 Ssh.generate = function(force){
-  return keygen({
+  return ssh_keygen.keygen({
     path: privateKeyPath,
     read: true,
     force: force,
@@ -39,7 +39,7 @@ Ssh.update = function (record) {
       // write new private key
       fs.writeFileSync(privateKeyPath,record.key,{mode:0o600})
       // autogenerate new public key
-      return keygen({
+      return ssh_keygen.keygen({
         publicOnly: true,
         path: privateKeyPath,
         read: true,
@@ -67,7 +67,7 @@ Ssh.find = function () {
   var pubkey=''
 
   logger.info("Reading sshkey key")
-  return keygen({              // get random art for private key
+  return ssh_keygen.keygen({              // get random art for private key
     randomArt: true,
     path: privateKeyPath
   })
@@ -85,4 +85,4 @@ Ssh.find = function () {
   })
 
 };
-module.exports= Ssh;
+export default  Ssh;

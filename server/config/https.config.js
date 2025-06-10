@@ -1,6 +1,11 @@
-const fs=require('fs')
-const path=require('path')
-const logger=require("../src/lib/logger");
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import logger from '../src/lib/logger.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 var privatekey=undefined
 var certificate=undefined
 
@@ -44,8 +49,8 @@ if(process.env.HTTPS=="1"){
   }
 }
 
-module.exports = {
+export default {
   https: (process.env.HTTPS=="1") || false,
-  httpsKey:privatekey,
-  httpsCert:certificate
+  httpsKey: privatekey,
+  httpsCert: certificate
 };

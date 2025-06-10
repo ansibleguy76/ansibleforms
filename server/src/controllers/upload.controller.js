@@ -1,22 +1,21 @@
 'use strict';
-const appConfig = require('../../config/app.config')
-const multer = require('multer');
-const logger=require("../lib/logger");
-var RestResult = require('../models/restResult.model');
+import appConfig from '../../config/app.config.js';
+import multer from 'multer';
+import logger from '../lib/logger.js';
+import RestResult from '../models/restResult.model.js';
+import fs from 'fs';
 
-// const upload = multer({ dest: appConfig.uploadPath });
-const fs = require('fs')
 
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        fs.mkdirSync(appConfig.uploadPath, { recursive: true })
-        cb(null, appConfig.uploadPath)
-    }
+  destination: (req, file, cb) => {
+    fs.mkdirSync(appConfig.uploadPath, { recursive: true })
+    cb(null, appConfig.uploadPath)
+  }
 })
-const upload = multer({ storage: storage });
 
-exports.upload = function(req, res,next) {
-  const result = upload.single('file')
+const uploadMulter = multer({ storage: storage });
+const upload = function(req, res,next) {
+  const result = uploadMulter.single('file')
 
   result(req, res, function (err) {
       if(err) {
@@ -26,6 +25,10 @@ exports.upload = function(req, res,next) {
       logger.info(`Uploaded file ${req.file.originalname} as ${req.file.path}`)
       return res.json(new RestResult("success","file uploaded",req.file,""))
   })    
+};
+
+export default {
+  upload
 };
       
 

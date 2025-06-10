@@ -1,5 +1,6 @@
-const ip = exports;
-const { Buffer } = require('buffer');
+import { Buffer } from 'buffer';
+
+const ip = {};
 
 ip.toBuffer = function (ip, buff, offset) {
   offset = ~~offset;
@@ -395,3 +396,5 @@ ip.normalizeToLong = function (addr) {
 
   return val >>> 0;
 };
+
+export default ip

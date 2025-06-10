@@ -1,9 +1,9 @@
 'use strict';
 
-const logger=require("../lib/logger")
-const Job = require("./job.model")
-const YAML = require('yaml')
-const mysql = require('./db.model')
+import logger from "../lib/logger.js";
+import Job from "./job.model.js";
+import yaml from "yaml";
+import mysql from "./db.model.js";
 
 //user object create
 var Ds=function(ds){
@@ -60,7 +60,7 @@ Ds.import = async function(id){
   var form = ds.form
   // var extravars = ds
   var user = {}
-  var extravars = YAML.parse(ds.extra_vars || '{}')
+  var extravars = yaml.parse(ds.extra_vars || '{}')
   user.id = 0
   user.username = 'Datasource Service'
   user.type = 'datasource'
@@ -93,4 +93,4 @@ Ds.import = async function(id){
 }
 
 
-module.exports= Ds;
+export default  Ds;

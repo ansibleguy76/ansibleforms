@@ -1,16 +1,11 @@
-const passport = require('passport');
-const User = require('../models/user.model');
-const jwt = require('jsonwebtoken');
-const authConfig = require('../../config/auth.config.js')
-const appConfig = require('../../config/app.config')
-const Settings = require('../models/settings.model')
-const AzureAd = require('../models/azureAd.model.js')
-const logger=require("../lib/logger");
-const axios=require("axios")
-const {inspect} = require("node:util")
-const azureAdOAuth2Strategy = require('@outlinewiki/passport-azure-ad-oauth2');
+import passport from 'passport';
+import appConfig from '../../config/app.config.js';
+import Settings from '../models/settings.model.js';
+import AzureAd from '../models/azureAd.model.js';
+import logger from '../lib/logger.js';
+import azureAdOAuth2Strategy from '@outlinewiki/passport-azure-ad-oauth2';
 
-exports.initialize = async () =>{
+const initialize = async () =>{
   
   logger.debug("Initializing Azure AD strategy")
   passport.serializeUser(function(user, done) {
@@ -65,7 +60,7 @@ exports.initialize = async () =>{
         {
           clientID: azureConfig.client_id,
           clientSecret: azureConfig.secret_id,
-          callbackURL: `${url}${appConfig.baseUrl}api/v1/auth/azureadoauth2/callback`,
+          callbackURL: `${url}/api/v1/auth/azureadoauth2/callback`,
           resource: '00000003-0000-0000-c000-000000000000' // required, or it will not work
         },
         // mandatory verify passport method
@@ -84,3 +79,7 @@ exports.initialize = async () =>{
   }
   
 }
+
+export default {
+  initialize
+};

@@ -1,7 +1,17 @@
 'use strict';
-const logger = require("../lib/logger");
-const mysql = require("./db.model");
-const version = require('../../package.json').version
+import logger from "../lib/logger.js";
+import mysql from "./db.model.js";
+import fs from 'fs';
+import path from 'path';
+
+let version = 'unknown';
+try {
+    const packageJsonPath = path.resolve(process.cwd(), 'package.json');
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
+    version = packageJson.version || 'unknown';
+} catch (err) {
+    // fallback or log error if needed
+}
 
 const CheckModel = {
     async checkDatabaseConnection() {
@@ -141,4 +151,4 @@ const CheckModel = {
 
 };
 
-module.exports = CheckModel;
+export default CheckModel;

@@ -1,8 +1,8 @@
 'use strict';
-const logger=require("../lib/logger");
-const mysql=require("./db.model");
-const {encrypt,decrypt}=require("../lib/crypto")
-const NodeCache = require("node-cache")
+import logger from "../lib/logger.js";
+import mysql from "./db.model.js";
+import crypto from "../lib/crypto.js";
+import NodeCache from "node-cache";
 
 const cache = new NodeCache({
     stdTTL: 3600,
@@ -19,7 +19,7 @@ var Credential=function(credential){
   if(credential.db_name!=undefined){this.db_name = credential.db_name }
   if(credential.secure!=undefined){this.secure = (credential.secure)?1:0 }
   if(credential.is_database!=undefined){this.is_database = (credential.is_database)?1:0 }
-  if(credential.password!=undefined){this.password = encrypt(credential.password) }
+  if(credential.password!=undefined){this.password = crypto.encrypt(credential.password) }
   if(credential.description!=undefined){this.description = credential.description }
   if(credential.db_type!=undefined){this.db_type = credential.db_type }
 };
@@ -56,7 +56,7 @@ Credential.findById = function (id) {
     .then((res)=>{
       if(res.length>0){
         try{
-          res[0].password = decrypt(res[0].password)
+          res[0].password = crypto.decrypt(res[0].password)
         }catch(e){
           logger.error("Failed to decrypt the password.  Did the secretkey change ?")
           res[0].password = ""
@@ -130,4 +130,4 @@ Credential.findByName = async function (name,fallbackName="") {
   }
 };
 
-module.exports= Credential;
+export default Credential;

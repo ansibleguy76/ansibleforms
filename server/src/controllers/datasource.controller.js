@@ -1,8 +1,8 @@
 "use strict";
-const Ds = require("../models/datasource.model");
-var RestResult = require("../models/restResult.model");
+import Ds from "../models/datasource.model.js";
+import RestResult from "../models/restResult.model.js";
 
-exports.findAllOr1 = async function(req, res) {
+const findAllOr1 = async function(req, res) {
   if(req.query.name){
     try {
       const datasource = await Ds.findByName(req.query.name);
@@ -20,7 +20,7 @@ exports.findAllOr1 = async function(req, res) {
   }
 };
 
-exports.create = async function (req, res) {
+const create = async function (req, res) {
   try {
     const new_datasource = new Ds(req.body);
     //handles null error
@@ -35,7 +35,7 @@ exports.create = async function (req, res) {
     res.json(new RestResult("error", "failed to create datasource", null, err.toString()));
   }
 };
-exports.findById = async function (req, res) {
+const findById = async function (req, res) {
   try {
     const datasource = await Ds.findById(req.params.id);
     if (datasource.length > 0) {
@@ -47,7 +47,7 @@ exports.findById = async function (req, res) {
     res.json(new RestResult("error", "failed to find datasource", null, err.toString()));
   }
 };
-exports.update = async function (req, res) {
+const update = async function (req, res) {
   try {
     delete req.body.datasourcename;
     if (req.body.constructor === Object && Object.keys(req.body).length === 0) {
@@ -60,7 +60,7 @@ exports.update = async function (req, res) {
     res.json(new RestResult("error", "failed to update datasource", null, err.toString()));
   }
 };
-exports.delete = async function (req, res) {
+const deleteDatasource = async function (req, res) {
   try {
     await Ds.delete(req.params.id);
     res.json(new RestResult("success", "datasource deleted", null, ""));
@@ -68,11 +68,20 @@ exports.delete = async function (req, res) {
     res.json(new RestResult("error", "failed to delete datasource", null, err.toString()));
   }
 };
-exports.import = async function (req, res) {
+const importDatasource = async function (req, res) {
   try {
     await Ds.queue(req.params.id);
     res.json(new RestResult("success", "datasource imported", null, ""));
   } catch (err) {
     res.json(new RestResult("error", "failed to import datasource", null, err.toString()));
   }
+};
+
+export default {
+  findAllOr1,
+  create,
+  findById,
+  update,
+  "delete": deleteDatasource,
+  "import": importDatasource
 };

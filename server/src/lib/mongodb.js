@@ -1,9 +1,9 @@
 //- MYSQL Module
-const logger = require('./logger');
-const Client = require('mongodb').MongoClient;
-const Credential = require('../models/credential.model')
+import logger from './logger.js';
+import { MongoClient as Client } from 'mongodb';
+import Credential from '../models/credential.model.js';
 
-Mongo = {}
+const Mongo = {}
 
 Mongo.query = async function (connection_name, query) {
 
@@ -36,9 +36,9 @@ Mongo.query = async function (connection_name, query) {
       client.close()
     }catch(e){
       logger.error("["+connection_name+"] ",e)
-      throw e
+      //throw e
     }
   }
 
 }
-module.exports = Mongo
+export default Mongo

@@ -1,0 +1,174 @@
+import './load-env.js'; // load the .env file if not in production => must be the first import
+// Node.js core modules
+import path from "path";
+import { fileURLToPath } from "url";
+import fs from "fs";
+
+// Third-party modules
+import session from "cookie-session";
+import cors from "cors";
+import swaggerUi from "swagger-ui-express";
+import bodyParser from "body-parser";
+import passport from "passport";
+
+// App configuration and utilities
+import appConfig from "../config/app.config.js";
+import logger from "./lib/logger.js";
+import Middleware from "./lib/middleware.js";
+import init from "./init/index.js";
+
+// Authentication strategies
+import auth_azuread from "./auth/auth_azuread.js";
+import auth_oidc from "./auth/auth_oidc.js";
+import "./auth/auth_basic.js";
+import "./auth/auth_jwt.js";
+
+// API route handlers
+import schemaRoutes from "./routes/schema.routes.js";
+import queryRoutes from "./routes/query.routes.js";
+import expressionRoutes from "./routes/expression.routes.js";
+import versionRoutes from "./routes/version.routes.js";
+import installRoutes from "./routes/install.routes.js";
+import lockRoutes from "./routes/lock.routes.js";
+import helpRoutes from "./routes/help.routes.js";
+import profileRoutes from "./routes/profile.routes.js";
+import loginRoutes from "./routes/login.routes.js";
+import tokenRoutes from "./routes/token.routes.js";
+import jobRoutes from "./routes/job.routes.js";
+import userRoutes from "./routes/user.routes.js";
+import groupRoutes from "./routes/group.routes.js";
+import ldapRoutes from "./routes/ldap.routes.js";
+import azureadRoutes from "./routes/azuread.routes.js";
+import oidcRoutes from "./routes/oidc.routes.js";
+import settingsRoutes from "./routes/settings.routes.js";
+import credentialRoutes from "./routes/credential.routes.js";
+import sshRoutes from "./routes/ssh.routes.js";
+import awxRoutes from "./routes/awx.routes.js";
+import logRoutes from "./routes/log.routes.js";
+import repositoryRoutes from "./routes/repository.routes.js";
+import knownhostsRoutes from "./routes/knownhosts.routes.js";
+import configRoutes from "./routes/config.routes.js";
+import datasourceSchemaRoutes from "./routes/datasourceSchema.routes.js";
+import datasourceRoutes from "./routes/datasource.routes.js";
+import scheduleRoutes from "./routes/schedule.routes.js";
+
+// __dirname and __filename setup for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const swaggerDocument = JSON.parse(fs.readFileSync(path.join(__dirname, "swagger.json"), "utf8"));
+
+// a small custom middleware to check whether the user has access to routes
+
+// start the app
+const load = (app) => {
+  // first time run of the app
+  // from now on, it's async => we wait for mysql to be ready
+  init()
+    .then(async () => {
+
+      await auth_azuread.initialize(); // we wait for the azuread to be ready
+      await auth_oidc.initialize(); // we wait for the oidc to be ready
+
+      // passport
+      app.use(
+        session({
+          secret: "AnsibleForms",
+          resave: false,
+          saveUninitialized: true,
+        })
+      );
+      app.use(passport.initialize());
+      app.use(passport.session());
+
+      // register regenerate & save after the cookieSession middleware initialization
+      app.use(function (request, response, next) {
+        if (request.session && !request.session.regenerate) {
+          request.session.regenerate = (cb) => {
+            cb();
+          };
+        }
+        if (request.session && !request.session.save) {
+          request.session.save = (cb) => {
+            cb();
+          };
+        }
+        next();
+      });
+
+      app.use(bodyParser.json({ limit: "50mb" }));
+      app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
+
+      // mysql2 has a bug that can throw an uncaught exception if the mysql server crashes (not enough mem for example)
+      // also git commands can chain child processes and cause issues
+      process.on("uncaughtException", function (err) {
+        // handle the error safely
+        console.error("An uncaught exception happened, ignore... ", err);
+      });
+
+      // using json web tokens as middleware
+      // the jwtauthentication strategy from passport (/auth/auth.js)
+      // is used as a middleware.  Every route will check the token for validity
+      const authobj = passport.authenticate("jwt", { session: false });
+
+      // api routes for browser only (no cors)
+      const swaggerOptions = {
+        customSiteTitle: "Ansibleforms Swagger UI",
+        customfavIcon: `/favicon.svg`,
+        customCssUrl: `/assets/css/swagger.css`,
+        docExpansion: "none",
+      };
+      // change basePath dynamically
+      swaggerDocument.basePath = `/api/v1`;
+      app.use(`/api-docs`, swaggerUi.serve, swaggerUi.setup(swaggerDocument, swaggerOptions));
+      app.use(`/api/v1/schema`, schemaRoutes);
+
+      // api routes for querying
+      app.use(`/api/v1/query`, cors(), authobj, queryRoutes);
+      app.use(`/api/v1/expression`, cors(), authobj, expressionRoutes);
+
+      // api route for version
+      app.use(`/api/v1/version`, cors(), versionRoutes);
+      app.use(`/api/v1/install`, cors(), installRoutes);
+
+      app.use(`/api/v1/lock`, cors(), authobj, lockRoutes);
+      app.use(`/api/v1/help`, cors(), authobj, helpRoutes);
+
+      // api route for profile
+      app.use(`/api/v1/profile`, cors(), authobj, profileRoutes);
+
+      // api routes for authorization
+      app.use(`/api/v1/auth`, cors(), loginRoutes);
+      app.use(`/api/v1/token`, cors(), tokenRoutes);
+
+      // api routes for automation actions
+
+      // app.use(`/api/v1/multistep`,cors(), authobj, multistepRoutes)
+
+      // api routes for admin management
+      app.use(`/api/v1/job`, cors(), authobj, jobRoutes);
+      app.use(`/api/v1/user`, cors(), authobj, Middleware.checkSettingsMiddleware, userRoutes);
+      app.use(`/api/v1/group`, cors(), authobj, Middleware.checkSettingsMiddleware, groupRoutes);
+      app.use(`/api/v1/ldap`, cors(), authobj, Middleware.checkSettingsMiddleware, ldapRoutes);
+      app.use(`/api/v1/azuread`, cors(), authobj, Middleware.checkSettingsMiddleware, azureadRoutes);
+      app.use(`/api/v1/oidc`, cors(), authobj, Middleware.checkSettingsMiddleware, oidcRoutes);
+      app.use(`/api/v1/settings`, cors(), authobj, Middleware.checkSettingsMiddleware, settingsRoutes);
+      app.use(`/api/v1/credential`, cors(), authobj, Middleware.checkSettingsMiddleware, credentialRoutes);
+      app.use(`/api/v1/sshkey`, cors(), authobj, Middleware.checkSettingsMiddleware, sshRoutes);
+      app.use(`/api/v1/awx`, cors(), authobj, Middleware.checkSettingsMiddleware, awxRoutes);
+      app.use(`/api/v1/log`, cors(), authobj, Middleware.checkLogsMiddleware, logRoutes);
+      app.use(`/api/v1/repository`, cors(), authobj, Middleware.checkSettingsMiddleware, repositoryRoutes);
+      app.use(`/api/v1/knownhosts`, cors(), authobj, Middleware.checkSettingsMiddleware, knownhostsRoutes);
+      app.use(`/api/v1/datasource/schema`, cors(), authobj, Middleware.checkSettingsMiddleware, datasourceSchemaRoutes);
+      app.use(`/api/v1/datasource`, cors(), authobj, Middleware.checkSettingsMiddleware, datasourceRoutes);
+      app.use(`/api/v1/schedule`, cors(), authobj, Middleware.checkSettingsMiddleware, scheduleRoutes);
+
+      // routes for form config (extra middleware in the routes itself)
+      app.use(`/api/v1/config`, cors(), authobj, configRoutes);
+    })
+    .catch((e) => logger.error(e));
+};
+
+export default {
+  load
+}

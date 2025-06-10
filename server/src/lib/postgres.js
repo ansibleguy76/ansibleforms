@@ -1,9 +1,9 @@
 //- MYSQL Module
-const logger = require('./logger');
-const {Client} = require('pg');
-const Credential = require('../models/credential.model')
+import logger from './logger.js';
+import { Client } from 'pg';
+import Credential from '../models/credential.model.js';
 
-Postgres = {}
+const Postgres = {}
 
 // rewritten with await 5.0.3
 Postgres.query = async function (connection_name, query) {
@@ -30,9 +30,9 @@ Postgres.query = async function (connection_name, query) {
       await client.end()
     }catch(e){
       logger.error(`[${connection_name}] connection error`,e)
-      throw e
+      //throw e
     }
   }
 }
 
-module.exports = Postgres
+export default Postgres

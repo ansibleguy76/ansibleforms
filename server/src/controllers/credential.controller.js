@@ -1,13 +1,13 @@
 'use strict';
-const Credential = require('../models/credential.model');
-var RestResult = require('../models/restResult.model');
-const mysql=require("../lib/mysql")
-const postgres=require("../lib/postgres")
-const mssql=require("../lib/mssql")
-const oracle=require("../lib/oracle")
-const mongodb=require("../lib/mongodb")
+import Credential from '../models/credential.model.js';
+import RestResult from '../models/restResult.model.js';
+import mysql from '../lib/mysql.js';
+import postgres from '../lib/postgres.js';
+import mssql from '../lib/mssql.js';
+import oracle from '../lib/oracle.js';
+import mongodb from '../lib/mongodb.js';
 
-exports.find = function(req, res) {
+const find = function(req, res) {
   if(req.query.name){
     Credential.findByName2(req.query.name)
     .then((credential)=>{res.json(new RestResult("success","credentials found",credential,""))})
@@ -18,7 +18,7 @@ exports.find = function(req, res) {
     .catch((err)=>{res.json(new RestResult("error","failed to find credentials",null,err.toString()))})
   }
 };
-exports.create = function(req, res) {
+const create = function(req, res) {
     const new_credential = new Credential(req.body);
     //handles null error
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
@@ -29,7 +29,7 @@ exports.create = function(req, res) {
         .catch((err)=>{ res.json(new RestResult("error","failed to create credential",null,err.toString())) })
     }
 };
-exports.findById = function(req, res) {
+const findById = function(req, res) {
     Credential.findById(req.params.id)
     .then((credential)=>{
       if(credential.length>0){
@@ -40,7 +40,7 @@ exports.findById = function(req, res) {
     })
     .catch((err)=>{ res.json(new RestResult("error","failed to find credential",null,err.toString())) })
 };
-exports.update = function(req, res) {
+const update = function(req, res) {
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
         res.status(400).send({ error:true, message: 'Please provide all required fields' });
     }else{
@@ -49,12 +49,13 @@ exports.update = function(req, res) {
         .catch((err)=>{ res.json(new RestResult("error","failed to update credential",null,err.toString())) })
     }
 };
-exports.delete = function(req, res) {
+const deleteCredential = function(req, res) {
     Credential.delete(req.params.id)
     .then(()=>{res.json(new RestResult("success","credential deleted",null,""))})
     .catch((err)=>{ res.json(new RestResult("error","failed to delete credential",null,err.toString())) })
 };
-exports.testDb = function(req,res){
+
+const testDb = function(req,res){
     Credential.findById(req.params.id)
     .then((cred)=>{
         var db_type = cred[0].db_type
@@ -81,4 +82,13 @@ exports.testDb = function(req,res){
       }
     })
 
+}
+
+export default {
+  find,
+  create,
+  findById,
+  update,
+  "delete": deleteCredential,
+  testDb
 }

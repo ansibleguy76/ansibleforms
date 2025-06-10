@@ -1,9 +1,9 @@
 'use strict';
-const fs=require("fs")
-const config=require("../../config/log.config")
-const path=require("path")
-const readLastLines=require("read-last-lines")
-const moment=require("moment")
+import fs from "fs";
+import config from "../../config/log.config.js";
+import path from "path";
+import readLastLines from "read-last-lines";
+import moment from "moment";
 
 const Log = {
 
@@ -25,4 +25,4 @@ Log.getFileName = function(){
   }
 }
 
-module.exports= Log;
+export default Log;

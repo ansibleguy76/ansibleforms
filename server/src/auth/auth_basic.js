@@ -1,11 +1,11 @@
-const passport = require('passport');
-const basicStrategy = require('modern-passport-http').BasicStrategy;
-const User = require('./../models/user.model');
-const authConfig = require('../../config/auth.config.js')
-const appConfig = require('../../config/app.config.js')
-const logger=require("../lib/logger");
-const Helpers = require('../lib/common');
-const Ldap = require('../models/ldap.model')
+import passport from 'passport';
+import { BasicStrategy as basicStrategy } from 'modern-passport-http';
+import User from './../models/user.model.js';
+import authConfig from '../../config/auth.config.js';
+import appConfig from '../../config/app.config.js';
+import logger from '../lib/logger.js';
+import Helpers from '../lib/common.js';
+import Ldap from '../models/ldap.model.js';
 
 
 // create username / password login strategy

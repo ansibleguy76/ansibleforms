@@ -1,6 +1,6 @@
-const express = require('express')
-const router = express.Router()
-const repositoryController =   require('../controllers/repository.controller');
+import express from 'express';
+const router = express.Router();
+import repositoryController from '../controllers/repository.controller.js';
 // Retrieve all repositorys
 router.get('/', repositoryController.find);
 // Create a new repository
@@ -18,4 +18,4 @@ router.post('/:name/reset/', repositoryController.reset);
 // Pull a repository by name
 router.post('/:name/pull/', repositoryController.pull);
 
-module.exports = router
+export default router

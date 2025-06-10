@@ -1,10 +1,11 @@
-const express = require('express')
-const router = express.Router()
-const logController =   require('../controllers/log.controller');
+import express from 'express';
+import logController from '../controllers/log.controller.js';
+
+const router = express.Router();
 
 // get a job
 router.get('/', logController.get);
 // download a log file
 router.get('/download', logController.download);
 
-module.exports = router
+export default router

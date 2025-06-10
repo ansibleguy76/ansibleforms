@@ -1,6 +1,7 @@
-const express = require('express')
-const router = express.Router()
-const knownhostsController =   require('../controllers/knownhosts.controller');
+import express from 'express';
+import knownhostsController from '../controllers/knownhosts.controller.js';
+
+const router = express.Router();
 
 // get 
 router.get('/', knownhostsController.find);
@@ -9,4 +10,4 @@ router.post('/', knownhostsController.add);
 // remove
 router.delete('/', knownhostsController.remove);
 
-module.exports = router
+export default router

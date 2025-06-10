@@ -1,13 +1,14 @@
 //- MYSQL Module
-const logger = require('../lib/logger');
-const dbConfig = require('../../config/db.config')
-const client = require('mysql2/promise');
-const appConfig = require('../../config/app.config')
+import logger from '../lib/logger.js';
+import dbConfig from '../../config/db.config.js';
+import client from 'mysql2/promise';
+import appConfig from '../../config/app.config.js';
 
 dbConfig.multipleStatements=true
 delete dbConfig.name // remove unsupported property
 delete dbConfig.is_database // remove unsupported property
-MySql = {}
+
+const MySql = {}
 
 // rewritten with await 5.0.3
 MySql.do = async function (query, vars, silent = false) {
@@ -40,4 +41,4 @@ MySql.do = async function (query, vars, silent = false) {
 }
 
 
-module.exports = MySql
+export default MySql;

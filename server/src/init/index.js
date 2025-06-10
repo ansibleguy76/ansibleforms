@@ -1,24 +1,22 @@
-async function init(){
+import logger from "../lib/logger.js";
+import Ssh from '../models/ssh.model.js';
+import Form from '../models/form.model.js';
+import Job from '../models/job.model.js';
+import Schema from '../models/schema.model.js';
+import mysql from "../models/db.model.js";
+import Repository from '../models/repository.model.js';
+import Datasource from '../models/datasource.model.js';
+import Schedule from '../models/schedule.model.js';
+import parser from "cron-parser";
+import dayjs from "dayjs";
+import appConfig from "../../config/app.config.js";
+import User from "../models/user.model.js";
+import Group from "../models/group.model.js";
 
-  const logger=require("../lib/logger");
-  var Ssh = require('../models/ssh.model');
-  var Form = require('../models/form.model');
-  var Job = require('../models/job.model');
-  var Schema = require('../models/schema.model');
-  var adminGroupId = undefined
-  const mysql=require("../models/db.model");
-  const Repository = require('../models/repository.model');
-  const Datasource = require('../models/datasource.model');
-  const Schedule = require('../models/schedule.model');
-  const parser = require("cron-parser")
-  const dayjs = require("dayjs")
-  const appConfig = require("../../config/app.config")
-  const User = require("../models/user.model")
-  const Group = require("../models/group.model")
-  const dbConfig = require("../../config/db.config")
-  const YAML=require("yaml")
-  const path = require('path');
-  const fs = require('fs'); 
+const init = async function(){
+
+
+  let adminGroupId = undefined;
 
   // this is at startup, don't start the app until mysql is ready
   // rewrite with await
@@ -256,6 +254,7 @@ async function init(){
   },56000) // run every 55 second, should hit 0 minutes once
 
 
+
   // now we check if there are any datasources that need to be imported, every 10 seconds
   // we only import 1 datasource that is with the lowest queue_id while there are no datasources with status running
   // in the interval, we only import one datasource
@@ -331,4 +330,4 @@ async function init(){
   setTimeout(checkSchedules,10000)
 }
 
-module.exports = init
+export default init

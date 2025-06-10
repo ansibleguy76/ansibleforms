@@ -1,13 +1,20 @@
 'use strict';
-const Form=require("../models/form.model")
-const Lock=require("../models/lock.model")
-const Help=require("../models/help.model")
-const path=require("path")
-const logger=require("../lib/logger")
-const helpers=require("../lib/common")
-const YAML=require("yaml")
-var RestResult = require('../models/restResult.model');
-exports.findList = async function(req,res){
+import Form from "../models/form.model.js";
+import Lock from "../models/lock.model.js";
+import Help from "../models/help.model.js";
+import path from "path";
+import logger from "../lib/logger.js";
+import helpers from "../lib/common.js";
+import RestResult from "../models/restResult.model.js";
+import os from "os";
+
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+
+const findList = async function(req,res){
   try{
     logger.info("Getting forms list")
     var userRoles = req?.user?.user?.roles || []
@@ -24,7 +31,7 @@ exports.findList = async function(req,res){
     res.json({error:helpers.getError(err)})
   }
 }
-exports.findOne = async function(req,res){
+const findOne = async function(req,res){
   try{
     var userRoles = req?.user?.user?.roles || []
     var formName = req.query.name
@@ -43,7 +50,7 @@ exports.findOne = async function(req,res){
     res.json({error:helpers.getError(err)})
   }
 }
-exports.findAll = async function(req,res){
+const findAll = async function(req,res){
   try{
     var user = req?.user?.user || {}
     if(!user.roles.includes("admin") && !user.options?.showDesigner){
@@ -58,7 +65,7 @@ exports.findAll = async function(req,res){
   }
 }
 
-exports.backups = function(req,res){
+const backups = function(req,res){
   try{
     var backups = Form.backups()
     res.json(backups)
@@ -66,7 +73,7 @@ exports.backups = function(req,res){
     res.json({error:helpers.getError(err)})
   }
 }
-exports.env = async function(req,res){
+const env = async function(req,res){
   try{
     // get help
     var help = await Help.get()
@@ -83,7 +90,7 @@ exports.env = async function(req,res){
         item.set=false
         item.value=x.default
         if(item.name=='HOME_PATH'){
-          item.value=require('os').homedir()
+          item.value=os.homedir()
         }        
         if(item.value && item.value.toString().includes('PERSISTENT')){
           item.value=item.value?.replace("%PERSISTENT_FOLDER%",path.resolve(__dirname + "/../../persistent"))
@@ -100,7 +107,7 @@ exports.env = async function(req,res){
     res.json(new RestResult("error","Failed to get environment variables",null,helpers.getError(err)))
   }
 }
-exports.restore = async function(req,res){
+const restore = async function(req,res){
   var lock=undefined
   var user=req.user.user
   try{
@@ -134,7 +141,7 @@ exports.restore = async function(req,res){
     res.json(new RestResult("error","Failed to restore forms",null,"Designer is locked by "+lock.lock.username))
   }
 }
-exports.save = async function(req,res){
+const save = async function(req,res){
   var lock=undefined
   var user=req.user.user
   try{
@@ -173,7 +180,7 @@ exports.save = async function(req,res){
   }
 
 }
-exports.validate = function(req,res){
+const validate = function(req,res){
   const newConfig = new Form(req.body);
   //handles null error
   if(req.body.constructor === Object && Object.keys(req.body).length === 0){
@@ -194,3 +201,14 @@ exports.validate = function(req,res){
     }
   }
 }
+
+export default {
+  findList,
+  findOne,
+  findAll,
+  backups,
+  env,
+  restore,
+  save,
+  validate
+};

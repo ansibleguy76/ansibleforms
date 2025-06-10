@@ -1,7 +1,7 @@
-const express = require('express')
-const router = express.Router()
-const queryController =   require('../controllers/query.controller');
+import express from 'express';
+const router = express.Router();
+import queryController from '../controllers/query.controller.js';
 
 // run a database query
 router.post('/', queryController.findAll);
-module.exports = router
+export default router

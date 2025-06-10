@@ -1,4 +1,4 @@
-FROM node:16-alpine AS node
+FROM node:20-alpine AS node
 
 ##################################################
 # base stage
@@ -20,8 +20,13 @@ RUN apk add py3-pip py3-pyldap libxslt mysql-client curl tzdata mariadb-connecto
 # RUN apk add --update --no-cache --virtual .build-deps g++ gcc libxml2-dev libxslt-dev unixodbc-dev python3-dev postgresql-dev && apk del .build-deps
 # looks like this is no longer needed
 
-# install pip3 packages
-RUN pip3 install pandas PyYAML openpyxl hvac pyVim pyvmomi jinja2 requests six PyMySQL netapp_lib netapp_ontap solidfire-sdk-python boto3 boto botocore lxml ansible
+# Create and activate a virtual environment
+RUN python3 -m venv /venv
+ENV PATH="/venv/bin:$PATH"
+RUN pip install --upgrade pip
+
+# Now install your packages in the venv
+RUN pip install pandas PyYAML openpyxl hvac pyVim pyvmomi jinja2 requests six PyMySQL netapp_lib netapp_ontap solidfire-sdk-python boto3 boto botocore lxml ansible
 
 # run ansible galaxy modules
 RUN ansible-galaxy collection install netapp.ontap -p /usr/share/ansible/collections
@@ -37,20 +42,22 @@ RUN ansible-galaxy collection install ansibleguy76.ansibleforms -p /usr/share/an
 RUN mkdir -p ~/.ssh
 
 # update npm
-RUN npm install -g npm@9.8.1
+RUN npm install -g npm@11.4.1
 
 ##################################################
 # builder stage
-# intermediate build to compile application
+# intermediate build to compile the client application with vite
 # can run in parallel with base stage
 
 FROM node AS tmp_builder
 
 # Update npm
-RUN npm install -g npm@9.8.1
+RUN npm install -g npm@11.4.1
 
-# Install vue cli service
-RUN npm install -g @vue/cli-service
+########## prep client ###########
+
+# Install vite
+RUN npm install -g vite
 
 # Use /app/client
 WORKDIR /app/client
@@ -61,11 +68,13 @@ COPY ./client/package*.json ./
 # install node modules for client
 RUN npm install
 
-# Copy the rest of the code
-COPY ./client .
+# copy all
+COPY ./client ./
 
 # build client
 RUN npm run build
+
+######### prep server ##########
 
 # Use /app/server
 WORKDIR /app/server
@@ -74,7 +83,7 @@ WORKDIR /app/server
 COPY ./server/package*.json ./
 
 # install node modules
-RUN npm install
+RUN npm install --omit=dev
 
 # Copy the rest of the code
 COPY ./server .
@@ -82,20 +91,15 @@ COPY ./server .
 # Copy the docs help file to /app/server
 COPY ./docs/_data/help.yaml .
 
-# Invoke the build script to transpile code to js
-RUN npm run build
+# clean persistent subfolder
+RUN rm -rf ./persistent
+RUN rm .env.*
+RUN rm -rf ./views
+RUN mkdir ./views
 
-# Remove persistent subfolder
-RUN rm -rf ./dist/persistent
+# Copy built client files to server views directory
+RUN cp -r ../client/dist/. ./views
 
-# Remove client subfolder
-RUN rm -rf ./dist/views
-
-# Create the views folder
-RUN mkdir -p ./dist/views
-
-# move client build to server
-RUN mv /app/client/dist/* ./dist/views
 
 ##################################################
 # final build
@@ -104,17 +108,14 @@ RUN mv /app/client/dist/* ./dist/views
 
 FROM nodebase as final
 
-# Copy package.json and package-lock.json
-COPY ./server/package*.json ./
+# for now we still run the app under dist..
+WORKDIR /app/dist
 
-# Install only production dependencies
-RUN npm i --only=production
-
-# Copy transpiled js from builder stage into the final image
-COPY --from=tmp_builder /app/server/dist ./dist
+# copy the server code, no more compiling needed sing ESM
+COPY --from=tmp_builder /app/server/. ./
 
 # Copy the ansible.cfg file to /etc/ansible/ directory
 COPY ./server/ansible.cfg /etc/ansible/ansible.cfg
 
 # Use js files to run the application
-ENTRYPOINT ["node", "./dist/index.js"]
+ENTRYPOINT ["node", "./index.js"]

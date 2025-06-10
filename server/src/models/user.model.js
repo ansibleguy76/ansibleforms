@@ -1,13 +1,13 @@
 'use strict';
-const crypto = require("../lib/crypto")
-const logger=require("../lib/logger");
-const authConfig = require('../../config/auth.config')
-const appConfig = require('../../config/app.config')
-const ldapAuthentication = require('ldap-authentication').authenticate
-const Ldap = require('./ldap.model')
-const Form = require('./form.model')
-const YAML = require('yaml')
-const mysql = require('./db.model')
+import crypto from "../lib/crypto.js";
+import logger from "../lib/logger.js";
+import authConfig from '../../config/auth.config.js';
+import appConfig from '../../config/app.config.js';
+import { authenticate as ldapAuthentication } from 'ldap-authentication';
+import Ldap from './ldap.model.js';
+import Form from './form.model.js';
+import yaml from 'yaml';
+import mysql from './db.model.js';
 
 //user object create
 var User=function(user){
@@ -108,67 +108,65 @@ User.checkToken = function (username,username_type,refresh_token) {
       }
     })
 };
-User.getRolesAndOptions = function(groups,user){
-  var result = {}
-  var roles = []
-  var options = {}
-  var full_username = `${user.type}/${user.username}`
+User.getRolesAndOptions = async function(groups, user) {
+  var result = {};
+  var roles = [];
+  var options = {};
+  var full_username = `${user.type}/${user.username}`;
 
-  logger.debug(`Getting roles and options for ${full_username}`)
+  logger.debug(`Getting roles and options for ${full_username}`);
 
-  return Form.load()
-  .then((forms)=>{
+  try {
+    const baseConfig = await Form.load(null, null, null, true);
     // derive roles from forms
-    groups.forEach(function(group){
+    groups.forEach(function(group) {
       // add all the roles that match the group
-      forms.roles.forEach(function(role){
-        if((role.groups && role.groups.includes(group)) || (role.users && role.users.includes(full_username))){
-          if(!roles.includes(role.name)){
-            roles.push(role.name)
+      baseConfig.roles.forEach(function(role) {
+        if ((role.groups && role.groups.includes(group)) || (role.users && role.users.includes(full_username))) {
+          if (!roles.includes(role.name)) {
+            roles.push(role.name);
           }
-          if(role.options){
+          if (role.options) {
             for (const [key, value] of Object.entries(role.options)) {
-              logger.debug(`Adding option ${key} = ${value}`)
-              if(options[key]===undefined){
-                options[key] = value
-              }else{
-                options[key] = options[key] && value
+              logger.debug(`Adding option ${key} = ${value}`);
+              if (options[key] === undefined) {
+                options[key] = value;
+              } else {
+                options[key] = options[key] && value;
               }
             }
-          }                
+          }
         }
-      })
-    })
+      });
+    });
 
-    logger.debug(`Adding public role to ${full_username}`)
-    roles.push("public")
+    logger.debug(`Adding public role to ${full_username}`);
+    roles.push("public");
     // if the public role has any option set, we add it to the options, we don't overwrite
-    forms.roles.forEach(function(role){
-      if(role.name=="public" && role.options){
+    forms.roles.forEach(function(role) {
+      if (role.name == "public" && role.options) {
         for (const [key, value] of Object.entries(role.options)) {
-          if(options[key]===undefined){
-            logger.debug(`Adding public option ${key} = ${value}`)
-            options[key] = value
+          if (options[key] === undefined) {
+            logger.debug(`Adding public option ${key} = ${value}`);
+            options[key] = value;
           }
         }
       }
-    })
+    });
 
-    result.roles = roles
-    result.options = options
+    result.roles = roles;
+    result.options = options;
 
-    return result
-  })
-  .catch((e)=>{
+    return result;
+  } catch (e) {
+    logger.error(e);
     // return temp role if needed
-    logger.error(e)
-    if(groups.includes('local/admins')){
-      roles.push("admin")
+    if (groups.includes('local/admins')) {
+      roles.push("admin");
     }
-    return roles
-  })
-
-}
+    return roles;
+  }
+};
 User.getGroups = function(user,groupObj,ldapConfig={}){
   var group=""
   var groups = []
@@ -279,7 +277,7 @@ User.checkLdap = function(username,password){
       if(err.message){
         em=err.message
       }else{
-        try{em = YAML.stringify(err)}catch(e){em = err}
+        try{em = yaml.stringify(err)}catch(e){em = err}
       }
 
       if(err.admin){
@@ -299,4 +297,4 @@ User.checkLdap = function(username,password){
 }
 
 
-module.exports= User;
+export default  User;

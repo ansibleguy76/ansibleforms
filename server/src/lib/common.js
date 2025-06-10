@@ -1,8 +1,7 @@
-const certinfo=require("cert-info")
-const restResult=require("../models/restResult.model")
-const logger=require("./logger")
-const config=require("../../config/app.config")
-const Help = require("../models/help.model")
+import certinfo from "cert-info";
+import logger from "./logger.js";
+import config from "../../config/app.config.js";
+
 var Helpers = function(){
 
 }
@@ -66,54 +65,7 @@ Helpers.checkCertificate=function(cert){
   // we parsed all certificates, no errors found
   return true
 }
-// a middleware in the routes to check if use is administrator
-Helpers.checkAdminMiddleware = (req, res, next) =>  {
-  try{
-    if(!req.user.user.roles.includes("admin")) {
-      res.status(401).json(new restResult("error","No access",null,"You are not an admin"))
-    } else {
-      //logger.debug("You are admin, access to user management")
-      next()
-    }
-  }catch(e){
-    res.status(401).json(new restResult("error","No access",null,"You are not an admin"))
-  }
-}
-Helpers.checkSettingsMiddleware = (req, res, next) => {
-  try {
-    if (!(req.user.user.options?.showSettings ?? req.user.user.roles.includes("admin"))) {
-      res.status(401).json(new restResult("error", "No access",null,"You do not have access to settings"));
-    } else {
-      next();
-    }
-  } catch (e) {
-    res.status(401).json(new restResult("error", "No access",null,"You do not have access to settings"));
-  }
-}
 
-Helpers.checkDesignerMiddleware = (req, res, next) => {
-  try {
-    if (!(req.user.user.options?.showDesigner ?? req.user.user.roles.includes("admin"))) {
-      res.status(401).json(new restResult("error", "No access",null,"You do not have access to designer"));
-    } else {
-      next();
-    }
-  } catch (e) {
-    res.status(401).json(new restResult("error", "No access",null,"You do not have access to designer"));
-  }
-}
-
-Helpers.checkLogsMiddleware = (req, res, next) => {
-  try {
-    if (!(req.user.user.options?.showLogs ?? req.user.user.roles.includes("admin"))) {
-      res.status(401).json(new restResult("error", "No access",null,"You do not have access to logs"));
-    } else {
-      next();
-    }
-  } catch (e) {
-    res.status(401).json(new restResult("error", "No access",null,"You do not have access to logs"));
-  }
-}
 // checks for passwords from credentials and masks them
 Helpers.logSafe = (v)=>{
   var result
@@ -265,7 +217,6 @@ Helpers.formatOutput = (records,asText)=>{
         }        
         // summary line ?
         if(line.match('ok=.*failed.*')){
-          hide=false
           matchfound=true
           previousformat=""
           line=line.replace(/(ok=[1-9]+[0-9]*)/g, "<span class='tag is-success'>$1</span>")
@@ -299,5 +250,4 @@ Helpers.formatOutput = (records,asText)=>{
   })
   return output.join("\r\n") // return all as one nice merged string
 }
-
-module.exports = Helpers
+export default Helpers

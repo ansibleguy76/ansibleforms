@@ -1,6 +1,6 @@
-const express = require('express')
-const router = express.Router()
-const datasourceSchemaController =   require('../controllers/datasourceSchema.controller');
+import express from 'express';
+const router = express.Router();
+import datasourceSchemaController from '../controllers/datasourceSchema.controller.js';
 // Retrieve all datasourceSchemas
 router.get('/', datasourceSchemaController.findAllOr1);
 // Create a new datasourceSchema
@@ -14,4 +14,4 @@ router.delete('/:id', datasourceSchemaController.delete);
 // reset a datasourceSchema by name
 router.post('/:id/reset/', datasourceSchemaController.reset);
 
-module.exports = router
+export default router

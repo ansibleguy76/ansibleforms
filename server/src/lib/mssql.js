@@ -1,10 +1,9 @@
 //- MYSQL Module
-const logger = require('./logger');
-const client = require('mssql');
-const Credential = require('../models/credential.model')
-const Helpers = require('./common')
+import logger from './logger.js';
+import client from 'mssql';
+import Credential from '../models/credential.model.js';
 
-Mssql = {}
+const Mssql = {}
 
 // rewrite with await 5.0.3
 
@@ -50,10 +49,10 @@ Mssql.query = async function (connection_name, query) {
       conn.close()
     }catch(e){
       logger.error(`[${connection_name}] connection error`,e)
-      throw e
+      //throw e
     }
   }
 
 }
 
-module.exports = Mssql
+export default Mssql

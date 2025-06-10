@@ -1,8 +1,7 @@
-const passport = require('passport');
-const authConfig = require('../../config/auth.config.js')
-const logger=require("../lib/logger");
-const JWTstrategy = require('passport-jwt').Strategy;
-const ExtractJWT = require('passport-jwt').ExtractJwt;
+import passport from 'passport';
+import authConfig from '../../config/auth.config.js';
+import logger from '../lib/logger.js';
+import { Strategy as JWTstrategy, ExtractJwt as ExtractJWT } from 'passport-jwt';
 
 passport.use(
   new JWTstrategy(

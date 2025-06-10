@@ -1,6 +1,6 @@
-const express = require('express')
-const router = express.Router()
-const groupController =   require('../controllers/group.controller');
+import express from 'express';
+const router = express.Router();
+import groupController from '../controllers/group.controller.js';
 // Retrieve all groups
 router.get('/', groupController.find);
 // Create a new group
@@ -12,4 +12,4 @@ router.put('/:id', groupController.update);
 // Delete a group with id
 router.delete('/:id', groupController.delete);
 
-module.exports = router
+export default router

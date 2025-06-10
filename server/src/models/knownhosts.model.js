@@ -1,8 +1,9 @@
 'use strict';
-const exec = require('child_process').exec;
-const logger=require("../lib/logger")
-const fs=require("fs")
-const {inspect} = require("node:util")
+import { exec } from 'child_process';
+import logger from '../lib/logger.js';
+import fs from 'fs';
+import { inspect } from 'node:util';
+import os from 'os';
 
 const KnownHosts={
 
@@ -15,7 +16,8 @@ KnownHosts.findAll = function () {
   return new Promise((resolve,reject)=>{
     var known_hosts
     var hosts
-    const homedir = require('os').homedir();
+    
+    const homedir = os.homedir();
     try{
       known_hosts=fs.readFileSync(`${homedir}/.ssh/known_hosts`)
       hosts=known_hosts.toString().split((/\r?\n/))
@@ -36,7 +38,7 @@ KnownHosts.remove = function (host) {
       }else{
         logger.notice(`Removing host ${host}`)
         var escaped = escapeRegExp(host)
-        const homedir = require('os').homedir();
+        const homedir = os.homedir();
         var cmd = `sed --in-place '/${escaped}/d' ${homedir}/.ssh/known_hosts`
         logger.notice(`Running cmd : ${cmd}`)
         var known_hosts = exec(cmd,{})
@@ -111,4 +113,4 @@ KnownHosts.add = function (host) {
   })
 };
 
-module.exports= KnownHosts;
+export default  KnownHosts;

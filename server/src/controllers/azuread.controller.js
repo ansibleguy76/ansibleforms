@@ -1,20 +1,20 @@
 'use strict';
-const AzureAd = require('../models/azureAd.model.js');
-const azureConfig = require('../auth/auth_azuread');
-var RestResult = require('../models/restResult.model');
-const logger = require('../lib/logger');
+import AzureAd from '../models/azureAd.model.js';
+import azureConfig from '../auth/auth_azuread.js';
+import RestResult from '../models/restResult.model.js';
+import logger from '../lib/logger.js';
 
-exports.find = function(req, res) {
+const find = function(req, res) {
   AzureAd.find()
   .then((azuread)=>{ res.json(new RestResult("success","AzureAd found",azuread,"")); })
   .catch((err) => { res.json(new RestResult("error","Failed to find azuread",null,err.toString())) })
 };
-exports.check = function(req, res) {
+const check = function(req, res) {
   AzureAd.check(new AzureAd(req.body))
   .then(()=>{ res.json(new RestResult("success","AzureAd connection ok")) })
   .catch((err) => { res.json(new RestResult("error","AzureAd check failed",null,err.toString())) })
 };
-exports.update = function(req, res) {
+const update = function(req, res) {
   if(req.body.constructor === Object && Object.keys(req.body).length === 0){
     res.status(400).send({ error:true, message: 'Please provide all required fields' });
   }else{
@@ -26,3 +26,9 @@ exports.update = function(req, res) {
     .catch((err) => { res.json(new RestResult("error","Failed to update azuread",null,err.toString())) })
   }
 };
+
+export default {
+  find,
+  check,
+  update
+}

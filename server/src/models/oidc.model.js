@@ -1,13 +1,13 @@
 'use strict';
-const logger=require("../lib/logger");
-const mysql=require("./db.model")
-const {encrypt,decrypt} = require("../lib/crypto")
+import logger from "../lib/logger.js";
+import mysql from "./db.model.js";
+import crypto from "../lib/crypto.js";
 
 //oidc object create
 var OIDC=function(oidc){
     this.issuer = oidc.issuer;
     this.client_id = oidc.client_id;
-    this.secret_id = encrypt(oidc.secret_id);
+    this.secret_id = cryto.encrypt(oidc.secret_id);
     this.enabled = (oidc.enabled)?1:0;
     this.groupfilter = oidc.groupfilter;
 };
@@ -33,7 +33,7 @@ OIDC.find = function(){
       if(res.length>0){
         try{
           if(res[0].secret_id!=""){
-            res[0].secret_id=decrypt(res[0].secret_id)
+            res[0].secret_id=crypto.decrypt(res[0].secret_id)
           }
         }catch(e){
           logger.error("Couldn't decrypt OIDC secret id, did the secretkey change ?")
@@ -53,4 +53,4 @@ OIDC.check = function(oidcConfig){
   })
 }
 
-module.exports= OIDC;
+export default  OIDC;

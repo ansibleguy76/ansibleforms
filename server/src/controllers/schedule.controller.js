@@ -1,8 +1,8 @@
 "use strict";
-const Schedule = require("../models/schedule.model");
-var RestResult = require("../models/restResult.model");
+import Schedule from "../models/schedule.model.js";
+import RestResult from "../models/restResult.model.js";
 
-exports.findAllOr1 = async function(req, res) {
+const findAllOr1 = async function(req, res) {
   if(req.query.name){
     try {
       const schedule = await Schedule.findByName(req.query.name);
@@ -20,7 +20,7 @@ exports.findAllOr1 = async function(req, res) {
   }
 };
 
-exports.create = async function (req, res) {
+const create = async function (req, res) {
   try {
     const new_schedule = new Schedule(req.body);
     //handles null error
@@ -35,7 +35,7 @@ exports.create = async function (req, res) {
     res.json(new RestResult("error", "failed to create schedule", null, err.toString()));
   }
 };
-exports.findById = async function (req, res) {
+const findById = async function (req, res) {
   try {
     const schedule = await Schedule.findById(req.params.id);
     if (schedule.length > 0) {
@@ -47,7 +47,7 @@ exports.findById = async function (req, res) {
     res.json(new RestResult("error", "failed to find schedule", null, err.toString()));
   }
 };
-exports.update = async function (req, res) {
+const update = async function (req, res) {
   try {
     delete req.body.schedulename;
     if (req.body.constructor === Object && Object.keys(req.body).length === 0) {
@@ -60,7 +60,7 @@ exports.update = async function (req, res) {
     res.json(new RestResult("error", "failed to update schedule", null, err.toString()));
   }
 };
-exports.delete = async function (req, res) {
+const deleteSchedule = async function (req, res) {
   try {
     await Schedule.delete(req.params.id);
     res.json(new RestResult("success", "schedule deleted", null, ""));
@@ -68,11 +68,20 @@ exports.delete = async function (req, res) {
     res.json(new RestResult("error", "failed to delete schedule", null, err.toString()));
   }
 };
-exports.launch = async function (req, res) {
+const launch = async function (req, res) {
   try {
     await Schedule.queue(req.params.id);
     res.json(new RestResult("success", "schedule imported", null, ""));
   } catch (err) {
     res.json(new RestResult("error", "failed to import schedule", null, err.toString()));
   }
+};
+
+export default {
+  findAllOr1,
+  create,
+  findById,
+  update,
+  delete: deleteSchedule,
+  launch
 };
