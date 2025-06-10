@@ -7,7 +7,7 @@ import mysql from "../models/db.model.js";
 import Repository from '../models/repository.model.js';
 import Datasource from '../models/datasource.model.js';
 import Schedule from '../models/schedule.model.js';
-import parser from "cron-parser";
+import { CronExpressionParser } from "cron-parser";
 import dayjs from "dayjs";
 import appConfig from "../../config/app.config.js";
 import User from "../models/user.model.js";
@@ -186,7 +186,7 @@ const init = async function(){
       const repositories = await mysql.do("SELECT name,cron FROM AnsibleForms.`repositories` WHERE COALESCE(status,'')<>'running' AND cron<>''",undefined,true)
       repositories.map(async (repo)=>{
         try{
-          const interval = parser.parseExpression(repo.cron) 
+          const interval = CronExpressionParser.parse(repo.cron) 
           const next = interval.next().toDate()
           const date = dayjs(next)
           const now = dayjs()
@@ -208,7 +208,7 @@ const init = async function(){
       const datasources = await mysql.do("SELECT id,name,cron FROM AnsibleForms.`datasource` WHERE COALESCE(status,'')<>'running' AND COALESCE(status,'')<>'queued' AND cron<>''",undefined,true)
       datasources.map(async(ds)=>{
         try{
-          const interval = parser.parseExpression(ds.cron) 
+          const interval = CronExpressionParser.parse(ds.cron) 
           const next = interval.next().toDate()
           const date = dayjs(next)
           const now = dayjs()
@@ -232,7 +232,7 @@ const init = async function(){
       const schedules = await mysql.do("SELECT id,name,cron FROM AnsibleForms.`schedule` WHERE COALESCE(status,'')<>'running' AND COALESCE(status,'')<>'queued' AND cron<>''",undefined,true)
       schedules.map(async(schedule)=>{
         try{
-          const interval = parser.parseExpression(schedule.cron) 
+          const interval = CronExpressionParser.parse(schedule.cron) 
           const next = interval.next().toDate()
           const date = dayjs(next)
           const now = dayjs()
