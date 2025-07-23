@@ -96,6 +96,7 @@ CREATE TABLE `jobs` (
   `user` varchar(250) DEFAULT NULL,
   `user_type` varchar(10) DEFAULT NULL,
   `job_type` varchar(20) DEFAULT NULL,
+  `abort_requested` tinyint(4) DEFAULT NULL,
   `extravars` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `credentials` mediumtext DEFAULT NULL,
   `notifications` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,

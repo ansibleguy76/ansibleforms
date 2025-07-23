@@ -2,7 +2,6 @@
 import AzureAd from '../models/azureAd.model.js';
 import azureConfig from '../auth/auth_azuread.js';
 import RestResult from '../models/restResult.model.js';
-import logger from '../lib/logger.js';
 
 const find = function(req, res) {
   AzureAd.find()

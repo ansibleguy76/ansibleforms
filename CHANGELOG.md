@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+-   multi default in enum field broken
+
+### Changed
+
+-   Backend rewritten to ESM (export default / import) -> no more "require" and no more "babel" and no more compiled code
+-   Parsing of forms rewritten with individual form validation, should be more stable and faster
+-   Backend bumped to Node.js 20
+-   Most packages are updated to latest versions
+-   Frontend rewritten to work with Vite (still vue2 for now) -> no more "webpack"
+-   New sass-dart and bumped bulma framework to 1.0.4
+
+### Breaking Changes
+
+-   Since "require" can not be used anymore, the backend code is now ESM only.
+    This means that you can not use "require" anymore, but you can use "import" and "export default".  Than means that custom functions must be rewritten to use the new ESM syntax. (/functions/custom.js is an example where this could break)
+-   Maybe not breaking, but the old theme is broken for bulma v1, so it might look a bit different here and there. (but not that v6 will have bootstrap)
+-   Since many packages are updated, I might have missed some breaking changes like OIDC, AzureAD.  Ldap has been tested and works.
+
 ## [5.0.10] - 2025-06-05
 
 ### Added

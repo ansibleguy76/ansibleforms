@@ -1,6 +1,7 @@
 {
   "name": "ansible_forms",
-  "version": "5.0.11",
+  "version": "5.1.0",
+  
   "type": "module",
   "repository": {
     "type": "git",
@@ -11,18 +12,16 @@
     "start": "npm run prod",
     "build": "npm-run-all clean transpile",
     "copy": "cp .env.development ./dist/.env.development",
-    "server": "node ./dist",
-    "dev": "NODE_ENV=development nodemon ./src/index.js",
+    "server": "NODE_ENV=development node ./",
+    "dev": "NODE_ENV=development nodemon --watch src --watch schema --watch config ./src/index.js",
     "prod": "NODE_ENV=production npm-run-all build server",
     "copyviews": "mkdir -p ./dist/views && cp -R ../client/dist/* ./dist/views/",
-    "transpile": "babel ./ --ignore node_modules --out-dir dist --copy-files",
     "clean": "rimraf dist"
   },
   "dependencies": {
     "@outlinewiki/passport-azure-ad-oauth2": "~0.1.0",
-    "ajv": "~6.12.6",
-    "ajv-error-parser": "~1.0.7",
-    "axios": "~1.9.0",
+    "ajv": "~8.17.1",
+    "axios": "~1.10.0",
     "bcrypt": "~6.0.0",
     "cert-info": "~1.5.1",
     "connect-history-api-fallback": "~2.0.0",
@@ -47,10 +46,10 @@
     "node-cache": "~5.1.2",
     "node-jq": "~6.0.1",
     "nodemailer": "~7.0.3",
-    "openid-client": "^6.5.1",
+    "openid-client": "^6.6.1",
     "passport": "~0.7.0",
     "passport-jwt": "~4.0.1",
-    "pg": "~8.16.0",
+    "pg": "~8.16.2",
     "read-last-lines": "~1.8.0",
     "swagger-ui-express": "~5.0.1",
     "thenby": "~1.3.4",
@@ -62,7 +61,7 @@
     "dotenv": "~16.5.0"    
   },
   "devDependencies": {
-    "eslint": "~8.56.0",
+    "eslint": "~9.29.0",
     "nodemon": "~3.1.10",
     "npm-run-all": "*",
     "rifraf": "~2.0.3"
@@ -70,14 +69,15 @@
   "eslintConfig": {
     "root": true,
     "env": {
-      "node": true
+      "node": true,
+      "es2022": true
     },
     "extends": [
-      "plugin:vue/essential",
       "eslint:recommended"
     ],
     "parserOptions": {
-      "parser": "babel-eslint"
+      "ecmaVersion": "latest",
+      "sourceType": "module"
     },
     "rules": {
       "no-unused-vars": "off"

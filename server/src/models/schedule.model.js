@@ -59,6 +59,9 @@ Schedule.launch = async function(id){
   var form = schedule.form
   // var extravars = schedule
   var user = {}
+  if(schedule.extra_vars && typeof schedule.extra_vars !== 'object'){
+    throw new Error("Extra vars is not a valid dictionary.")
+  }
   var extravars = yaml.parse(schedule.extra_vars || '{}')
   user.id = 0
   user.username = 'Schedule Service'
@@ -83,7 +86,7 @@ Schedule.launch = async function(id){
       status = "failed"
     }
   }catch(err){
-    logger.error("Errors : ", err)
+    logger.error("Errors in schedule launch: ", err)
     output = "Failed to launch : "+err.message
     status = "failed"
   }  

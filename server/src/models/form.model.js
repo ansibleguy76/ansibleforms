@@ -6,16 +6,18 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fse from "fs-extra";
 import moment from "moment";
+import Errors from '../lib/errors.js';
 import { execSync } from 'child_process';
 import yaml from "yaml";
 import Ajv from 'ajv';
-const ajv = new Ajv();
-import AJVErrorParser from 'ajv-error-parser';
 import quote from 'shell-quote/quote.js';
 import Repository from './repository.model.js';
 import Helpers from "../lib/common.js";
 import Settings from './settings.model.js';
 import os from 'os';
+import AJVErrorParser from './ajvErrorParser.model.js';
+
+const ajv = new Ajv({allErrors: true});
 
 // Construct __dirname for ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -123,7 +125,7 @@ async function getBaseConfig(formsPath) {
       logger.info(`Using forms yaml from database`)      
       rawdata = settings.forms_yaml // loading from db
     }else{
-      logger.warning("No forms.yaml found in database, falling back to disk file")
+      logger.warning("No forms found in the database, falling back to disk file")
     }
   }else{
     logger.info(`Loading ${formsPath}`)  
@@ -181,7 +183,8 @@ function getFormInfo(form,formName='',loadFullConfig=false) {
       name: form.name,
       categories: form.categories || [],
       description: form.description || '',
-      tileClass: form.tileClass || ''
+      tileClass: form.tileClass || '',
+      order: form.order ?? Number.MAX_SAFE_INTEGER,
     };
   }
   else if(form.name == formName) {
@@ -332,6 +335,9 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
       }
       if(!checkFormRole(f,userRoles)){
         logger.debug(`User has no access to form ${f.name}.`)
+        if(formName) { // if we are looking for a specific form, and no access, throw an error
+          throw new Errors.AccessDeniedError(`Access denied to form ${f.name}.`); 
+        } 
         continue // skip this form if user has no access to it
       }
       existingFormNames.push(f.name) // collect all form names        
@@ -339,7 +345,8 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
       try{
         form = getFormInfo(f,formName,loadFullConfig); // retreive only the necessary form info
       } catch (e) {
-        error(`Failed to validate form '${f.name}'.`,e);
+        // convert e to proper string
+        error(`Failed to validate form '${f.name}'.\r\n${e.message}`);
       }  
       if(form){
         baseConfig.forms.push(form);   // merge the form into the base forms
@@ -382,9 +389,11 @@ Form.backups = function() {
 Form.validateConfig = function(obj){
   if(obj){
     logger.debug("validating base against schema")
-    const valid = ajv.validate(baseSchema, obj)
+    const validate = ajv.compile(baseSchema)
+    const valid = validate(obj)
+
     if (!valid){
-      var ajvMessages = AJVErrorParser.parseErrors(ajv.errors)
+      var ajvMessages = AJVErrorParser.parseErrors(validate.errors)
       ajvMessages=ajvMessages.map(x => {
         try{
           var tmp=`${x}`
@@ -410,20 +419,17 @@ Form.validateConfig = function(obj){
       logger.debug("Valid base")
       return obj
     }
+    
   }
 }
 Form.validateForm = function(obj){
   if(obj){
-    var valid = false
+
     logger.debug("validating form against schema")
-    try{
-      valid = ajv.validate(formSchema, obj)
-    } catch (e) {
-      logger.error("Failed to validate form against schema",e)
-      throw new Error(Helpers.getError(e,"Failed to validate form against schema"))
-    }
+    const validate = ajv.compile(formSchema)
+    const valid = validate(obj)
     if (!valid){
-      var ajvMessages = AJVErrorParser.parseErrors(ajv.errors)
+      var ajvMessages = AJVErrorParser.parseErrors(validate.errors)
       ajvMessages=ajvMessages.map(x => {
         try{
           var tmp=`${x}`
@@ -448,7 +454,7 @@ Form.validateForm = function(obj){
       logger.error(ajvMessages)
       throw new Error(`${ajvMessages.join("\r\n")}`)
     }else{
-      logger.debug("Valid forms.yaml")
+      logger.debug("Validated")
       return obj
     }
   }
@@ -456,9 +462,11 @@ Form.validateForm = function(obj){
 Form.validate = function(forms){
   if(forms){
     logger.debug("validating forms.yaml against schema")
-    const valid = ajv.validate(formsSchema, forms)
+    const validate = ajv.compile(formsSchema)
+    const valid = validate(forms)
+    console.log(validate.errors)
     if (!valid){
-      var ajvMessages = AJVErrorParser.parseErrors(ajv.errors)
+      var ajvMessages = AJVErrorParser.parseErrors(validate.errors)
       ajvMessages=ajvMessages.map(x => {
         try{
           var tmp=`${x}`

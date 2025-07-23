@@ -209,6 +209,7 @@
         ],
         "properties": {
           "name": {"type": "string"},
+          "order": {"type": "number"},
           "roles": {
             "type": "array",
             "items": {
@@ -434,8 +435,7 @@
                   "patternProperties": {
                     "^.*$": { "type": "string"}
                   },
-                  "additionalProperties": false,
-                  "uniqueProperties": true            
+                  "additionalProperties": false          
                 },    
                 "ansibleCredentials": {"type": "string"},  
                 "vaultCredentials": {"type": "string"},  
@@ -527,8 +527,7 @@
             "patternProperties": {
               "^.*$": { "type": "string"}
             },
-            "additionalProperties": false,
-            "uniqueProperties": true            
+            "additionalProperties": false          
           },    
           "awxCredentials": {
             "type": "array",
@@ -1225,7 +1224,12 @@
                 "ignoreIncomplete": {"type": "boolean"},
                 "noLog": {"type": "boolean"},
                 "keydown": {"type": "boolean"},
-                "refresh": {"type": ["boolean","string"]},
+                "refresh": {
+                  "anyOf": [
+                    { "type": "boolean" },
+                    { "type": "string" }
+                  ]
+                },
                 "isHtml": {"type": "boolean"},
                 "runLocal": {"type": "boolean"},
                 "query": {"type": "string"},
@@ -1354,8 +1358,7 @@
                         }
                       }                      
                     ]
-                  },
-                  "additionalProperties": false
+                  }
                 },
                 "hide": {"type": "boolean"},
                 "icon": {

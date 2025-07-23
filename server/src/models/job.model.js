@@ -5,6 +5,7 @@ import yaml from 'yaml';
 import moment from 'moment';
 import { exec } from 'child_process';
 import Helpers from '../lib/common.js';
+import Errors from '../lib/errors.js';
 import Settings from './settings.model.js';
 import logger from "../lib/logger.js";
 import ansibleConfig from '../../config/ansible.config.js';
@@ -18,6 +19,7 @@ import Credential from './credential.model.js';
 import AwxModel from './awx.model.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { abort } from 'process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -92,9 +94,9 @@ Exec.executeCommand = (cmd,jobid,counter) => {
       child.stdout.on('data',function(data){
         // save the output ; but whilst saving, we quickly check the status to detect abort
         Job.createOutput({output:data,output_type:"stdout",job_id:jobid,order:++counter})
-          .then((status)=>{
+          .then((abort_requested)=>{
             // if abort request found ; kill the process
-            if(status=="abort"){
+            if(abort_requested){
               logger.warning("Abort is requested, aborting child")
               ac.abort("Aborted by operator")
             }
@@ -102,17 +104,18 @@ Exec.executeCommand = (cmd,jobid,counter) => {
           .catch((error)=>{logger.error("Failed to create output : ", error)})
       })
       // add error eventlistener to the process to save output
-      child.stderr.on('data',function(data){
+      child.stderr.on('data',async function(data){
         // save the output ; but whilst saving, we quickly check the status to detect abort
-        Job.createOutput({output:data,output_type:"stderr",job_id:jobid,order:++counter})
-          .then((status)=>{
-            // if abort request found ; kill the process
-            if(status=="abort"){
-              logger.warning("Abort is requested, aborting child")
-              ac.abort("Aborted by operator")
-            }
-          })
-          .catch((error)=>{logger.error("Failed to create output: ", error)})
+        try {
+          const abort_requested = await Job.createOutput({output:data,output_type:"stderr",job_id:jobid,order:++counter});
+          // if abort request found ; kill the process
+          if(abort_requested){
+            logger.warning("Abort is requested, aborting child")
+            ac.abort("Aborted by operator")
+          }
+        } catch (error) {
+          logger.error("Failed to create output: ", error)
+        }
       })
 
 
@@ -121,22 +124,23 @@ Exec.executeCommand = (cmd,jobid,counter) => {
       child.on('exit',async function(data){
         // if the exit was an actual request ; set aborted
         if(child.signalCode=='SIGTERM'){
-          const statusResult = await mysql.do("SELECT status FROM AnsibleForms.`jobs` WHERE id=?;", [jobid])      
-          if(statusResult[0].status=="abort"){    
-            Job.endJobStatus(jobid,++counter,"stderr","aborted",`${task} was aborted by the operator`)
+          const abort_requested = await Job.isAbortRequested(jobid)    
+          if(abort_requested){    
+            await Job.resetAbortRequested(jobid) // reset the abort requested flag
+            await Job.endJobStatus(jobid,++counter,"stderr","aborted",`${task} was aborted by the operator`)
             reject(`${task} was aborted by the operator`)
           }else{
-            Job.endJobStatus(jobid,++counter,"stderr","failed",`${task} was aborted by the main process.  Likely some buffer or memory error occured.  Also check the maxBuffer option.`)
+            await Job.endJobStatus(jobid,++counter,"stderr","failed",`${task} was aborted by the main process.  Likely some buffer or memory error occured.  Also check the maxBuffer option.`)
             reject(`${task} was aborted by the main process`)
           }
         }else{ // if the exit was natural; set the jobstatus (either success or failed)
           if(data!=0){
             jobstatus="failed"
             logger.error(`[${jobid}] Failed with code ${data}`)
-            Job.endJobStatus(jobid,++counter,"stderr",jobstatus,`[ERROR]: ${task} failed with status (${data})`)
+            await Job.endJobStatus(jobid,++counter,"stderr",jobstatus,`[ERROR]: ${task} failed with status (${data})`)
             reject(`${task} failed with status (${data})`)
           }else{
-            Job.endJobStatus(jobid,++counter,"stdout",jobstatus,`ok: [${task} finished] with status (${data})`)
+            await Job.endJobStatus(jobid,++counter,"stdout",jobstatus,`ok: [${task} finished] with status (${data})`)
             resolve(true)
           }
         }
@@ -150,8 +154,8 @@ Exec.executeCommand = (cmd,jobid,counter) => {
              
       })
       // add error eventlistener to the process; set failed
-      child.on('error',function(data){
-        Job.endJobStatus(jobid,++counter,"stderr","failed",`${task} failed : `+data)
+      child.on('error',async function(data){
+        await Job.endJobStatus(jobid,++counter,"stderr","failed",`${task} failed : `+data)
       })
 
     }catch(e){
@@ -195,15 +199,20 @@ Job.create = async function (record) {
 Job.abandon = async function (all=false) {
   // abandon jobs
   logger.notice(`Abandoning jobs`)
-  var sql = "UPDATE AnsibleForms.`jobs` set status='abandoned' where (status='running' or status='abort') " // remove all jobs
+  var sql = "UPDATE AnsibleForms.`jobs` set status='abandoned',abort_requested=0 where (status='running' or abort_requested) " // remove all jobs
   if(!all){
     sql = sql + "and (start >= (NOW() - INTERVAL 1 DAY))" // remove jobs that are 1 day old
   }
   const res = await mysql.do(sql)
   return res.changedRows
 };
+Job.resetAbortRequested = async function (id) {
+  logger.debug(`Resetting abort requested for job ${id}`)
+  const res = await mysql.do("UPDATE AnsibleForms.`jobs` set abort_requested=0 WHERE id=?", [id])
+}
+
 Job.update = async function (record,id) {
-  logger.notice(`Updating job ${id} -> ${record.status}`)
+  logger.notice(`Updating job ${id} -> status=${record.status}`)
   try{
     await mysql.do("UPDATE AnsibleForms.`jobs` set ? WHERE id=?", [record,id])
   }catch(error){
@@ -228,13 +237,21 @@ Job.printJobOutput = async(data,type,jobid,counter,incrementIssue) => {
     }
     return await Job.createOutput({output:data,output_type:type,job_id:jobid,order:counter})
 }
+Job.isAbortRequested = async function(id){
+  const res = await mysql.do("SELECT abort_requested FROM AnsibleForms.`jobs` WHERE id=?;", [id])
+  return !!res[0].abort_requested
+}
 Job.abort = async function (id) {
   logger.notice(`Aborting job ${id}`)
-  const res = await mysql.do("UPDATE AnsibleForms.`jobs` set status='abort' WHERE id=? AND status='running'", [id])
+  const abort_requested = await Job.isAbortRequested(id)
+  if(abort_requested){
+    throw new Errors.ConflictError("Abort already requested for this job")
+  }
+  const res = await mysql.do("UPDATE AnsibleForms.`jobs` set abort_requested=1 WHERE id=? AND status='running'", [id])
   if(res.changedRows==1){
       return res
   }else{
-      throw new Error("This job cannot be aborted")
+      throw new Errors.ConflictError("This job was not running")
   }
 };
 Job.deleteOutput = async function (record) {
@@ -245,23 +262,22 @@ Job.createOutput = async function (record) {
   // logger.debug(`Creating job output`)
   if(record.output){
     // insert output and return status in 1 go
-    const res = await mysql.do("SELECT status FROM AnsibleForms.`jobs` WHERE id=?;INSERT INTO AnsibleForms.`job_output` set ?;", [record.job_id,record])
-
-    if(res.length==2){
-      return res[0][0].status
-    }else{
-      throw "Failed to get job status"
-    }
-
-  }else{
-    // no output, just return status
-    const res = await mysql.do("SELECT status FROM AnsibleForms.`jobs` WHERE id=?;", record.job_id)
-    return res[0].status
+    const check = await Job.checkExists(record.job_id)
+    const dummy = await mysql.do("INSERT INTO AnsibleForms.`job_output` set ?;", [record])
   }
+  return await Job.isAbortRequested(record.job_id)
 };
 Job.delete = async function(id){
   logger.notice(`Deleting job ${id}`)
   return await mysql.do("DELETE FROM AnsibleForms.`jobs` WHERE id = ? OR parent_id = ?", [id,id])
+}
+Job.checkExists = async function(id){
+  const res = await mysql.do("SELECT id FROM AnsibleForms.`jobs` WHERE id = ?", [id])
+  if(res.length==1){
+    return
+  }else{
+    throw new Errors.NotFoundError(`Job ${id} not found`)
+  }
 }
 Job.findAll = async function (user,records) {
     logger.info("Finding all jobs")
@@ -295,6 +311,7 @@ Job.findById = async function (user,id,asText,logSafe=false) {
     logger.info(`Finding job ${id}` )
     var query
     var params
+    const check = await Job.checkExists(id)
     if(user.roles.includes("admin")){
       query = "SELECT j.*,sj.subjobs,j2.no_of_records,o.counter FROM AnsibleForms.jobs j LEFT JOIN (SELECT parent_id,GROUP_CONCAT(id separator ',') subjobs FROM AnsibleForms.jobs GROUP BY parent_id) sj ON sj.parent_id=j.id,(SELECT COUNT(id) no_of_records FROM AnsibleForms.jobs)j2,(SELECT max(`order`)+1 counter FROM AnsibleForms.job_output WHERE job_output.job_id=?)o WHERE j.id=?;"
       params = [id,id,user.username,user.type]
@@ -307,7 +324,7 @@ Job.findById = async function (user,id,asText,logSafe=false) {
       var res = await mysql.do(query,params,true)
 
       if(res.length!=1){
-          throw `Job ${id} not found, or access denied`
+          throw new Errors.AccessDeniedError(`You do not have access to job ${id}`)
       }
       var job = res[0]
       // convert artifacts
@@ -326,7 +343,7 @@ Job.findById = async function (user,id,asText,logSafe=false) {
         id,
         true
       )
-      return [{...job,...{output:Helpers.formatOutput(res,asText)}}]
+      return {...job,...{output:Helpers.formatOutput(res,asText)}}
 
     }catch(err){
       logger.error("Error : ", err)
@@ -340,7 +357,7 @@ Job.launch = async function(form,formObj,user,creds,extravars,parentId=null,next
     // we load it, it's an actual form
     const formConfig = await Form.load(user?.roles,form)
     if(formConfig.forms.length==0){
-      throw "No such form or access denied"
+      throw new Errors.NotFoundError(`No such form '${form}'`)
     }
     formObj = formConfig.forms[0] // we take the first one, as it should be the only one
   }
@@ -353,7 +370,7 @@ Job.launch = async function(form,formObj,user,creds,extravars,parentId=null,next
   var target=formObj.name
 
   if(!target){
-    throw "Invalid form or step info"
+    throw new Errors.ConflictError("Invalid form or step info")
   }
 
   // create a new job in the database
@@ -364,7 +381,7 @@ Job.launch = async function(form,formObj,user,creds,extravars,parentId=null,next
     jobid = await Job.create(new Job({form:form,target:target,user:user.username,user_type:user.type,status:"running",job_type:jobtype,parent_id:parentId,extravars:JSON.stringify(extravars),credentials:JSON.stringify(creds),notifications:JSON.stringify(notifications)}))
   }catch(err){
     logger.error("Failed to create job",err)
-    throw err
+    throw new Errors.ApiError(`Failed to create job for form ${form} : ${err.message}`)
   }
 
   logger.debug(`Job id ${jobid} is created`)
@@ -453,11 +470,12 @@ Job.launch = async function(form,formObj,user,creds,extravars,parentId=null,next
 Job.continue = async function(form,user,creds,extravars,jobid,next) {
   var formObj
   // we load it, it's an actual form
-  const forms = await Form.load(user?.roles,form)
-  if(!forms){
-    throw "No such form or access denied"
+  const check = await Job.checkExists(jobid)
+  const formConfig = await Form.load(user?.roles,form)
+  if(formConfig.forms.length==0){
+    throw new Errors.NotFoundError(`No such form '${form}'`)
   }
-  formObj = forms[0] // we take the first one, as it should be the only one
+  formObj = formConfig.forms[0] // we take the first one, as it should be the only one
 
   pushForminfoToExtravars(formObj,extravars,creds)
   extravars["__jobid__"]=jobid
@@ -476,141 +494,127 @@ Job.continue = async function(form,user,creds,extravars,jobid,next) {
     target=formObj.name
   }
   if(!target){
-    throw "Invalid form or step info"
-    return false
+    // throw "Invalid form or step info"
+    throw new Errors.ConflictError("Invalid form or step info")
   }
-  var res = await Job.findById(user,jobid,true)
+  const job = await Job.findById(user,jobid,true)
 
-  if(res.length>0){
-    var step=res[0].step
-    var counter=res[0].counter
-    await Job.printJobOutput(`changed: [approved by ${user.username}]`,"stdout",jobid,++counter)
+  var step=job.step
+  var counter=job.counter
+  await Job.printJobOutput(`changed: [approved by ${user.username}]`,"stdout",jobid,++counter)
+  await Job.update({status:"running"},jobid)
 
-    res = await Job.update({status:"running"},jobid)
+  next({id:jobid}) // continue result for feedback
 
-    next({id:jobid}) // continue result for feedback
-
-    // the rest is now happening in the background
-    // if credentials are requested, we now get them.
-    var credentials={}
-    if(creds){
-      for (const [key, value] of Object.entries(creds)) {
-        if(value=="__self__"){
-          credentials[key]={
-            host:dbConfig.host,
-            user:dbConfig.user,
-            port:dbConfig.port,
-            password:dbConfig.password
+  // the rest is now happening in the background
+  // if credentials are requested, we now get them.
+  var credentials={}
+  if(creds){
+    for (const [key, value] of Object.entries(creds)) {
+      if(value=="__self__"){
+        credentials[key]={
+          host:dbConfig.host,
+          user:dbConfig.user,
+          port:dbConfig.port,
+          password:dbConfig.password
+        }
+      }else{
+        try{
+          if (value.includes(',')) {
+            // If value contains a comma, split it and call with two parameters (fall back credential)
+            const parts = value.split(',').map(val => val.trim());
+            credentials[key] = await Credential.findByName(parts[0], parts[1]);
+          } else {
+            // If no comma, call with one parameter
+            credentials[key] = await Credential.findByName(value)
           }
-        }else{
-          try{
-            if (value.includes(',')) {
-              // If value contains a comma, split it and call with two parameters (fall back credential)
-              const parts = value.split(',').map(val => val.trim());
-              credentials[key] = await Credential.findByName(parts[0], parts[1]);
-            } else {
-              // If no comma, call with one parameter
-              credentials[key] = await Credential.findByName(value)
-            }
-          }catch(err){
-            logger.error("Failed to find credentials by name : ", err)
-          }
+        }catch(err){
+          logger.error("Failed to find credentials by name : ", err)
         }
       }
     }
+  }
 
-    if(jobtype=="ansible"){
-      return await Ansible.launch(
-        extravars,
-        credentials,
-        jobid,
-        ++counter,
-        formObj.approval,
-        true
-      )
-    }
-    if(jobtype=="awx"){
-      return await Awx.launch(
-        extravars,
-        credentials,
-        jobid,
-        ++counter,
-        formObj.approval,
-        true
-      )
-    }
-    if(jobtype=="multistep"){
-      return await Multistep.launch(form,formObj.steps,user,extravars,creds,jobid,++counter,formObj.approval,step,true)
-    }
-
-  }else{
-    logger.error("No job found with id " + jobid)
+  if(jobtype=="ansible"){
+    return await Ansible.launch(
+      extravars,
+      credentials,
+      jobid,
+      ++counter,
+      formObj.approval,
+      true
+    )
+  }
+  if(jobtype=="awx"){
+    return await Awx.launch(
+      extravars,
+      credentials,
+      jobid,
+      ++counter,
+      formObj.approval,
+      true
+    )
+  }
+  if(jobtype=="multistep"){
+    return await Multistep.launch(form,formObj.steps,user,extravars,creds,jobid,++counter,formObj.approval,step,true)
   }
 
 };
 Job.relaunch = async function(user,id,verbose,next){
-  const job = await Job.findById(user,id,true)
 
-  if(job.length==1){
-    var j=job[0]
-    var extravars = {}
-    var credentials = {}
-    if(j.extravars){
-      extravars = JSON.parse(j.extravars)
-    }
-    if(verbose){
-      extravars["__verbose__"]=true
-    }
-    if(j.credentials){
-      credentials = JSON.parse(j.credentials)
-    }
-    if(!["running","aborting","abort"].includes(j.status)){
-      logger.notice(`Relaunching job ${id} with form ${j.form}`)
-      await Job.launch(j.form,null,user,credentials,extravars,null,(out)=>{
-        next(out)
-      })
-    }else{
-      throw `Job ${id} is not in a status to be relaunched (status=${j.status})`
-    }
-  }else{
-    throw `Job ${id} not found`
+  const job = await Job.findById(user,id,true)
+  var extravars = {}
+  var credentials = {}
+  if(job.extravars){
+    extravars = JSON.parse(job.extravars)
   }
+  if(verbose){
+    extravars["__verbose__"]=true
+  }
+  if(job.credentials){
+    credentials = JSON.parse(job.credentials)
+  }
+  if(job.status!="running" && !job.abort_requested){
+    logger.notice(`Relaunching job ${id} with form ${job.form}`)
+    await Job.launch(job.form,null,user,credentials,extravars,null,(out)=>{
+      next(out)
+    })
+  }else{
+    throw new Errors.ConflictError(`Job ${id} is not in a status to be relaunched (status=${job.status})`)
+  }
+
 
 }
 Job.approve = async function(user,id,next){
+
   const job = await Job.findById(user,id,true)
 
-  if(job.length==1){
-    var j=job[0]
-    var approval=JSON.parse(j.approval)
-    if(approval){
-      var access = approval?.roles.filter(role => user?.roles?.includes(role))
-      if(access?.length>0 || user?.roles?.includes("admin")){
-        logger.notice(`Approve allowed for user ${user.username}`)
-      }else {
-        logger.warning(`Approve denied for user ${user.username}`)
-        throw `Approve denied for user ${user.username}`
-      }
+  var approval=JSON.parse(job.approval)
+  if(approval){
+    var access = approval?.roles.filter(role => user?.roles?.includes(role))
+    if(access?.length>0 || user?.roles?.includes("admin")){
+      logger.notice(`Approve allowed for user ${user.username}`)
+    }else {
+      logger.warning(`Approve denied for user ${user.username}`)
+      throw new Errors.AccessDeniedError(`Approve denied for user ${user.username}`)
     }
-    var extravars = {}
-    var credentials = {}
-    if(j.extravars){
-      extravars = JSON.parse(j.extravars)
-    }
-    if(j.credentials){
-      credentials = JSON.parse(j.credentials)
-    }
-    if(j.status=="approve"){
-      logger.notice(`Approving job ${id} with form ${j.form}`)
-      await Job.continue(j.form,user,credentials,extravars,id,(job)=>{
-          next(job)
-      })
-      .catch((err)=>{logger.error("Failed to continue the job : ", err)})
-    }else{
-      throw `Job ${id} is not in approval status (status=${j.status})`
-    }
+  }
+  var extravars = {}
+  var credentials = {}
+  if(job.extravars){
+    extravars = JSON.parse(job.extravars)
+  }
+  if(job.credentials){
+    credentials = JSON.parse(job.credentials)
+  }
+  if(job.status=="approve"){
+    logger.notice(`Approving job ${id} with form ${job.form}`)
+    await Job.continue(job.form,user,credentials,extravars,id,(job)=>{
+        next(job)
+    })
+    .catch((err)=>{logger.error("Failed to continue the job : ", err)})
   }else{
-    throw `Job ${id} not found`
+    throw new Errors.ConflictError(`Job ${id} is not in approval status (status=${job.status})`)
   }
 
 }
@@ -647,14 +651,7 @@ Job.sendStatusNotification = async function(jobid){
       roles:["admin"]
     }
 
-    logger.notice(`Finding jobid ${jobid}`)
-    const j = await Job.findById(user,jobid,false,true)  // first get job
-
-    if(!j.length==1){
-      logger.error(`No job found with jobid ${jobid}`)
-      return false
-    }
-    var job=j[0]
+    const job = await Job.findById(user,jobid,false,true)  // first get job
     var notifications=JSON.parse(job.notifications) // get notifications if any
     if(notifications && notifications.on){
       logger.warning("Deprecated property 'on'.  Use 'onStatus' instead.  This property will be removed in future versions.")
@@ -705,31 +702,28 @@ Job.sendStatusNotification = async function(jobid){
     
 }
 Job.reject = async function(user,id){
+
   const job = await Job.findById(user,id,true)
 
-  if(job.length==1){
-    var j=job[0]
-    var approval=JSON.parse(j.approval)
-    if(approval){
-      var access = approval?.roles.filter(role => user?.roles?.includes(role))
-      if(access?.length>0 || user?.roles?.includes("admin")){
-        logger.notice(`Reject allowed for user ${user.username}`)
-      }else {
-        logger.warning(`Reject denied for user ${user.username}`)
-        throw `Reject denied for user ${user.username}`
-      }
+  var approval=JSON.parse(job.approval)
+  if(approval){
+    var access = approval?.roles.filter(role => user?.roles?.includes(role))
+    if(access?.length>0 || user?.roles?.includes("admin")){
+      logger.notice(`Reject allowed for user ${user.username}`)
+    }else {
+      logger.warning(`Reject denied for user ${user.username}`)
+      throw new Errors.AccessDeniedError(`Reject denied for user ${user.username}`)
     }
-    var counter=j.counter
-    if(j.status=="approve"){
-      logger.notice(`Rejecting job ${id} with form ${j.form}`)
-      await Job.printJobOutput(`changed: [rejected by ${user.username}]`,"stderr",id,++counter)
-      return await Job.update({status:"rejected",end:getTimestamp()},id)
-    }else{
-      throw `Job ${id} is not in rejectable status (status=${j.status})`
-    }
-  }else{
-    throw `Job ${id} not found`
   }
+  var counter=job.counter
+  if(job.status=="approve"){
+    logger.notice(`Rejecting job ${id} with form ${job.form}`)
+    await Job.printJobOutput(`changed: [rejected by ${user.username}]`,"stderr",id,++counter)
+    return await Job.update({status:"rejected",end:getTimestamp()},id)
+  }else{
+    throw new Errors.ConflictError(`Job ${id} is not in rejectable status (status=${job.status})`)
+  }
+
 
 }
 // Multistep stuff
@@ -759,7 +753,7 @@ Multistep.launch = async function(form,steps,user,extravars,creds,jobid,counter,
   var ok=0
   var failed=0
   var skipped=0
-  var aborted=false
+  var abort_requested=false
 
   try{
     var finalSuccessStatus=true  // multistep success from start to end ?
@@ -816,13 +810,10 @@ Multistep.launch = async function(form,steps,user,extravars,creds,jobid,counter,
             }
           }
           // print title of new step and check abort
-          const status = await Job.printJobOutput(`STEP [${step.name}] ${'*'.repeat(72-step.name.length)}`,"stdout",jobid,++counter)
-          if(status=="abort"){
-            aborted=true
-          }
-  
-          // if aborted is requested, stop the flow
-          if(aborted){
+          var abort_requested = await Job.printJobOutput(`STEP [${step.name}] ${'*'.repeat(72-step.name.length)}`,"stdout",jobid,++counter)
+
+            // if aborted is requested, stop the flow
+          if(abort_requested){
               skipped++
               logger.debug("skipping: step " + step.name)
               finalSuccessStatus=false
@@ -850,7 +841,7 @@ Multistep.launch = async function(form,steps,user,extravars,creds,jobid,counter,
                       Job.printJobOutput(`ok: [Launched step ${step.name} with jobid '${job.id}']`,"stdout",jobid,++counter)
                   })
                   if(!jobSuccess){
-                    throw new Error(`Check the step-logs for jobid '${job.id}' for more information`)
+                    throw new Errors.ApiError(`Check the step-logs for jobid '${jobid}' for more information`)
                   }
                   // job was success
                   ok++
@@ -897,8 +888,9 @@ Multistep.launch = async function(form,steps,user,extravars,creds,jobid,counter,
         }
 
       }else{  // no multistep success
-        if(aborted){
+        if(abort_requested){
           // if aborted mark as such
+          await Job.resetAbortRequested(jobid)
           await Job.endJobStatus(jobid,++counter,"stderr","aborted","multistep was aborted")
         }else{
           // else, mark failed
@@ -1033,30 +1025,26 @@ Ansible.launch=async (ev,credentials,jobid,counter,approval,approved=false)=>{
 var Awx = function(){}
 Awx.getConfig = AwxModel.getConfig;
 Awx.getAuthorization = AwxModel.getAuthorization;
-Awx.abortJob = async function (id, next) {
+Awx.abortJob = async function (id) {
 
   const awxConfig = await Awx.getConfig()
-  if(!awxConfig)throw new Error("Failed to get AWX configuration")
+  if(!awxConfig)throw new Errors.ApiError("Failed to get AWX configuration")
   var message=""
   logger.info(`aborting awx job ${id}`)
-  const axiosConfig = getAuthorization(awxConfig)
-  // we first need to check if we CAN cancel
-  try{
-    const axiosResult = await axios.get(awxConfig.uri + appConfig.awxApiPrefix + "/jobs/" + id + "/cancel/",axiosConfig)
-    var job = axiosResult.data
-    if(job && job.can_cancel){
-        logger.info(`can cancel job id = ${id}`)
-        const axiosResult = await axios.post(awxConfig.uri + appConfig.awxApiPrefix + "/jobs/" + id + "/cancel/",{},axiosConfig)
-        job = axiosResult.data
-        next(null,job)
-    }else{
-        message=`cannot cancel job id ${id}`
-        logger.error(message)
-        next(message)
+  const axiosConfig = Awx.getAuthorization(awxConfig)
+  try {
+    const axiosResult = await axios.post(awxConfig.uri + appConfig.awxApiPrefix + "/jobs/" + id + "/cancel/",{},axiosConfig);
+    const job = axiosResult.data;
+    return job;
+  } catch (error) {
+    if (error.response && error.response.status === 405) {
+      const message = `cannot cancel job id ${id}`;
+      logger.error(message);
+      throw new Errors.ConflictError(message);
+    } else {
+      logger.error("Failed to abort awx job : ", error);
+      throw new Errors.ApiError(`Failed to abort awx job ${id} : ${error.message}`);
     }
-  }catch(error) {
-      logger.error("Failed to abort awx job : ", error)
-      next(`failed to abort awx job ${id}`)
   }
 
 };
@@ -1102,7 +1090,7 @@ Awx.launch = async function (ev,credentials,jobid,counter,approval,approved=fals
       message="failed to launch awx template " + template + "\n" + err.message
       // any error, we just end the job, no need to throw an error.
       await Job.endJobStatus(jobid,++counter,"stdout","failed",message)
-      throw new Error(message)
+      throw new Errors.ApiError(message)
     } 
 }
 Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,verbose,credentials,awxCredentials,execenv,instanceGroups,scmBranch,jobid,counter) {
@@ -1140,7 +1128,7 @@ Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,ve
 
   // get config and go
   const awxConfig = await Awx.getConfig()
-  if(!awxConfig)throw new Error("Failed to get AWX configuration")
+  if(!awxConfig)throw new Errors.ApiError("Failed to get AWX configuration")
 
   var extravars={...ev} // we make a copy of the main extravars
   // merge credentials now
@@ -1178,7 +1166,7 @@ Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,ve
     message=`Failed to launch, no launch attribute found for template ${template.name}`
     logger.error(message)
     await Job.endJobStatus(jobid,++counter,"stderr","failed",message)
-    throw new Error(message)
+    throw new Errors.ConflictError(message)
   }else{
     // prepare axiosConfig
     const axiosConfig = Awx.getAuthorization(awxConfig)
@@ -1198,7 +1186,7 @@ Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,ve
           logger.error("Failed to launch : ", error)
           await Job.endJobStatus(jobid,++counter,"stderr","success",`Failed to launch template ${template.name}. ${error}`)
       }
-      throw new Error(message)
+      throw new Errors.ApiError(message)
     }
 
     // get awx job (= remote job !!)
@@ -1215,7 +1203,7 @@ Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,ve
       message=`could not launch job template ${template.name}`
       await Job.endJobStatus(jobid,counter,"stderr","failed",`Failed to launch template ${template.name}`)
       logger.error(message)
-      throw new Error(message)
+      throw new Errors.ApiError(message)
     }
 
   }
@@ -1260,18 +1248,22 @@ Awx.trackJob = async function (job,jobid,counter,previousoutput,previousoutput2=
             }
         }
         // the increment issue (if true) will remove the last entry before add the new (corrected) one.
-        const dbjobstatus = await Job.printJobOutput(output,"stdout",jobid,++counter,incrementIssue)
-        if(dbjobstatus && dbjobstatus=="abort"){
+        const abort_requested = await Job.printJobOutput(output,"stdout",jobid,++counter,incrementIssue)
+        if(abort_requested){
           await Job.printJobOutput("Abort requested","stderr",jobid,++counter)
-          await Job.update({status:"aborting",end:getTimestamp()},jobid)
-          await Awx.abortJob(j.id,(error,res)=>{
-            if(error){
-              Job.endJobStatus(jobid,++counter,"stderr","failed","Abort failed \n"+error,j.artifacts)
-            }else{
-              Job.endJobStatus(jobid,++counter,"stderr","aborted","Aborted job",j.artifacts)
-            }
-          })
-          return "Abort requested"
+          try{
+            // we try to abort the job
+            await Awx.abortJob(j.id)
+            await Job.resetAbortRequested(jobid)
+            await Job.endJobStatus(jobid,++counter,"stderr","aborted","Aborted job",j.artifacts)
+            return "Aborted job"
+          }catch (error){
+              // abort failed... , revert abort request
+              await Job.printJobOutput("Abort request denied, reverting abort request","stderr",jobid,++counter)
+              await Job.resetAbortRequested(jobid)
+              return Awx.trackJob(j,jobid,++counter,o,previousoutput,j.finished)
+          }
+          
         }else{
           if(j.finished && lastrun){
             if(j.status==="successful"){
@@ -1284,6 +1276,7 @@ Awx.trackJob = async function (job,jobid,counter,previousoutput,previousoutput2=
               if(j.status=="canceled"){
                 status="aborted"
                 message=`Template ${j.name} was aborted`
+                await Job.resetAbortRequested(jobid)
               }
               await Job.endJobStatus(jobid,++counter,"stderr",status,message,j.artifacts)
               return message
@@ -1335,9 +1328,9 @@ Awx.trackJob = async function (job,jobid,counter,previousoutput,previousoutput2=
 Awx.getJobTextOutput = async function (job) {
   if(!job)return undefined
   const awxConfig = await Awx.getConfig()
-  if(!awxConfig)throw new Error("Failed to get AWX configuration")
+  if(!awxConfig)throw new Errors.ApiError("Failed to get AWX configuration")
   if(job.related===undefined){
-    throw "No such job"
+    throw new Errors.ConflictError("No related attribute found for job " + job.id)
   }else{
     if(!job.related.stdout){
       // workflow job... just return status
@@ -1353,7 +1346,7 @@ Awx.getJobTextOutput = async function (job) {
 Awx.findJobTemplateByName = async function (name) {
   if(!name)return undefined
   const awxConfig = await Awx.getConfig()
-  if(!awxConfig)throw new Error("Failed to get AWX configuration")
+  if(!awxConfig)throw new Errors.ApiError("Failed to get AWX configuration")
   var message=""
   logger.info(`searching job template ${name}`)
   // prepare axiosConfig
@@ -1372,14 +1365,14 @@ Awx.findJobTemplateByName = async function (name) {
     }else{
       message=`could not find job template ${name}`
       logger.error(message)
-      throw new Error(message)
+      throw new Errors.NotFoundError(message)
     }
   }
 };
 Awx.findCredentialByName = async function (name) {
   if(!name)return undefined
   const awxConfig = await Awx.getConfig()
-  if(!awxConfig)throw new Error("Failed to get AWX configuration")
+  if(!awxConfig)throw new Errors.ApiError("Failed to get AWX configuration")
   var message=""
   logger.info(`searching credential ${name}`)
   // prepare axiosConfig
@@ -1391,13 +1384,13 @@ Awx.findCredentialByName = async function (name) {
   }else{
     message=`could not find credential ${name}`
     logger.error(message)
-    throw new Error(message)
+    throw new Errors.NotFoundError(message)
   }
 };
 Awx.findExecutionEnvironmentByName = async function (name) {
   if(!name)return undefined
   const awxConfig = await Awx.getConfig()
-  if(!awxConfig)throw new Error("Failed to get AWX configuration")
+  if(!awxConfig)throw new Errors.ApiError("Failed to get AWX configuration")
   var message=""
   logger.info(`searching execution environment ${name}`)
   // prepare axiosConfig
@@ -1407,7 +1400,7 @@ Awx.findExecutionEnvironmentByName = async function (name) {
   try{
     axiosResult = await axios.get(awxConfig.uri + appConfig.awxApiPrefix + "/execution_environments/?name=" + encodeURI(name),axiosConfig)
   }catch(error){
-    throw new Error(`${message}, ${error.message}`)
+    throw new Errors.ApiError(`${message}, ${error.message}`)
   }            
   var execution_environment = axiosResult.data.results.find(function(x, index) { return x.name == name })
   if(execution_environment){
@@ -1415,13 +1408,13 @@ Awx.findExecutionEnvironmentByName = async function (name) {
   }else{
 
     logger.error(message)
-    throw new Error(message)
+    throw new Errors.NotFoundError(message)
   }
 };
 Awx.findInstanceGroupByName = async function (name) {
   if(!name)return undefined
   const awxConfig = await Awx.getConfig()
-  if(!awxConfig)throw new Error("Failed to get AWX configuration")
+  if(!awxConfig)throw new Errors.ApiError("Failed to get AWX configuration")
   var message=""
   logger.info(`searching instance group ${name}`)
   // prepare axiosConfig
@@ -1431,19 +1424,19 @@ Awx.findInstanceGroupByName = async function (name) {
   try{
     axiosResult = await axios.get(awxConfig.uri + appConfig.awxApiPrefix + "/instance_groups/?name=" + encodeURI(name),axiosConfig)
   }catch(error){
-    throw new Error(`${message}, ${error.message}`)
+    throw new Errors.ApiError(`${message}, ${error.message}`)
   }        
   var instance_group = axiosResult.data.results.find(function(x, index) { return x.name == name })
   if(instance_group){
     return instance_group
   }else{
     logger.error(message)
-    throw new Error(message)
+    throw new Errors.NotFoundError(message)
   }
 };
 Awx.findCredentialsByTemplate = async function (id) {
   const awxConfig = await Awx.getConfig()
-  if(!awxConfig)throw new Error("Failed to get AWX configuration")
+  if(!awxConfig)throw new Errors.ApiError("Failed to get AWX configuration")
   logger.info(`searching credentials for template id ${id}`)
   // prepare axiosConfig
   const axiosConfig = Awx.getAuthorization(awxConfig)
@@ -1456,7 +1449,7 @@ Awx.findCredentialsByTemplate = async function (id) {
 Awx.findInventoryByName = async function (name) {
   if(!name)return undefined
   const awxConfig = await Awx.getConfig()
-  if(!awxConfig)throw new Error("Failed to get AWX configuration")
+  if(!awxConfig)throw new Errors.ApiError("Failed to get AWX configuration")
   var message=""
   logger.info(`searching inventory ${name}`)
   // prepare axiosConfig
@@ -1466,14 +1459,14 @@ Awx.findInventoryByName = async function (name) {
   try{
     axiosResult = await axios.get(awxConfig.uri + appConfig.awxApiPrefix + "/inventories/?name=" + encodeURI(name),axiosConfig)
   }catch(error){
-    throw new Error(`${message}, ${error.message}`)
+    throw new Errors.ApiError(`${message}, ${error.message}`)
   }    
   var inventory = axiosResult.data.results.find(function(x, index) { return x.name == name })
   if(inventory){
     return inventory
   }else{
     logger.error(message)
-    throw new Error(message)
+    throw new Errors.NotFoundError(message)
   }
 
 

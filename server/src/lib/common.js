@@ -112,7 +112,7 @@ Helpers.findExtravar =(data,expr)=>{
   return outputValue
 }
 Helpers.friendlyAJVError= (e,property,label,o)=>{
-  const re= new RegExp(`${property}\\[([0-9]+)\\][.]*`)
+  const re= new RegExp(`${property}\\.([0-9]+)*`)
   const matches = e.match(re)    
   var value = `${e}`
   var changed = false

@@ -307,15 +307,15 @@ const init = async function(){
         return
       }
       // logger.info("No schedule is running, checking for queued schedules")
-      const schedules = await mysql.do("SELECT id FROM AnsibleForms.`schedule` WHERE state='queued' ORDER BY queue_id LIMIT 1",undefined,true)
+      const schedules = await mysql.do("SELECT id, name FROM AnsibleForms.`schedule` WHERE state='queued' ORDER BY queue_id LIMIT 1",undefined,true)
       if(schedules.length>0){
         logger.info("Found queued schedule")
         const schedule = schedules[0]
-        logger.info(`Importing schedule ${schedule.id}`)
+        logger.info(`Importing schedule '${schedule.name}'`)
         try{
           await Schedule.launch(schedule.id)
         }catch(e){
-          logger.error(`Failed to import schedule ${schedule.id} : ` + e)
+          logger.error(`Failed to launch schedule '${schedule.name}' : ` + e)
         }
       }
     }catch(e){

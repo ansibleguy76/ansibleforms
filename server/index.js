@@ -15,28 +15,33 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 // load the ansibleforms app
-ansibleforms.load(app);
+async function start(){
+  await ansibleforms.load(app);
 
-// set the start directory to load our vue app (frontend/gui)
-const publicPath = resolve(__dirname, './views');
-const staticConf = { maxAge: '1y', etag: false };
-app.use("/", express.static(publicPath, staticConf));
+  // set the start directory to load our vue app (frontend/gui)
+  const publicPath = resolve(__dirname, './views');
+  const staticConf = { maxAge: '1y', etag: false };
+  // allow browser history
+  app.use(`/`, history()); // this order is important, it must be before the static files middleware  
+  app.use("/", express.static(publicPath, staticConf));
 
-// allow browser history
-app.use(`/`, history());
 
-// choose whether to start https or http server
-let httpServer;
-logger.notice(`Serving static files from ${publicPath}`);
-logger.notice(`Exposing app under /`);
-if (httpsConfig.https) {
-  logger.notice("Running https !");
-  const credentials = { key: httpsConfig.httpsKey, cert: httpsConfig.httpsCert };
-  httpServer = https.createServer(credentials, app);
-} else {
-  logger.notice("Running http !");
-  httpServer = http.createServer(app);
+
+  // choose whether to start https or http server
+  let httpServer;
+  logger.notice(`Serving static files from ${publicPath}`);
+  logger.notice(`Exposing app under /`);
+  if (httpsConfig.https) {
+    logger.notice("Running https !");
+    const credentials = { key: httpsConfig.httpsKey, cert: httpsConfig.httpsCert };
+    httpServer = https.createServer(credentials, app);
+  } else {
+    logger.notice("Running http !");
+    httpServer = http.createServer(app);
+  }
+
+  // start the webserver and listen on the port we choose
+  httpServer.listen(appConfig.port,  () => logger.notice(`App running on port ${appConfig.port}!`));
+
 }
-
-// start the webserver and listen on the port we choose
-httpServer.listen(appConfig.port, () => logger.notice(`App running on port ${appConfig.port}!`));
+start()

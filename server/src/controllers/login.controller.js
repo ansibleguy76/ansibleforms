@@ -181,7 +181,7 @@ const logout = async function(req, res, next){
 
 // catches middleware error (non implemented strategy for example)
 const errorHandler = async function(err,req, res,next) {
-  res.redirect(`/#/login?error=${err}`)
+  res.redirect(`/login?error=${err}`)
 };
 
 /**
@@ -195,7 +195,7 @@ const errorHandler = async function(err,req, res,next) {
  * 4. The backend uses passport to authenticate the user with the identity provider and redirects the user away to the identity provider (microsft, google, ...)
  * 5. The identity provider authenticates the user and redirects the user back to the callback url https://ansibleformsurl/auth/azureadoauth2/callback or https://ansibleformsurl/auth/oidc/callback
  * 6. The backend server receives the callback and uses passport to verify the returned payload.  it passes the payload to an authCallback function
- * 7. The authCallback function redirects the user back to the frontend with a token (#/login?token=) azuread already passed a token, oidc has a raw payload and we create a manual token.
+ * 7. The authCallback function redirects the user back to the frontend with a token (/login?token=) azuread already passed a token, oidc has a raw payload and we create a manual token.
  * 8. The frontend uses the oauth2 token to grab more group information and filter the group information with a filter defined in the database with the identity provider
  * 9. The frontend redirects the user to the backend /auth/azureadaoath/login endpoint with the token and the group information
  * 10. The backend grabs more information from payload if needed (username,...) and assembles a user-object, the roles and options are added
@@ -218,7 +218,7 @@ const authCallback = function(req, res, next, type) {
         logger.error(helpers.getError(err))
         return next(err)
       }else{
-        res.redirect(`/#/login?token=${token}`)
+        res.redirect(`/login?token=${token}`)
       }
 
     } catch (err) {
@@ -252,11 +252,13 @@ const azureadoauth2 = async function(req, res,next) {
 
 // callback with the Azure AD access token
 const azureadoauth2callback = async function(req, res,next) {
+  logger.debug("Azure AD callback")
   passport.authenticate('azure_ad_oauth2', authCallback(req, res, next,"azuread"))(req, res, next)
 };
 // callback with the Azure AD user info (including groups)
 const azureadoauth2login = async function(req, res,next) {
   try {
+    logger.debug("Azure AD login")
     var payload = jwt.decode(req.body.token, '', true)
     const user = await extractAzureUser(payload, req.body.groups)
     user.type = "azuread"

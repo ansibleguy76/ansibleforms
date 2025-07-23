@@ -71,6 +71,7 @@
   </nav>
 </template>
 <script>
+  import axios from 'axios'
   export default{
     name:"BulmaNav",
     props:{
@@ -88,8 +89,17 @@
       }
     },
     mounted(){
-      this.navHomeLabel = import.meta.env.VITE_NAV_HOME_LABEL || "Forms";
-      this.navHomeIcon = import.meta.env.VITE_NAV_HOME_ICON || "rectangle-list";
+      // Fetch config from /api/v2/app/config and set navHomeLabel and navHomeIcon
+      axios.get('/api/v2/app/config')
+        .then(res => {
+          const cfg = res.data;
+          this.navHomeLabel = cfg.navHomeLabel || "Forms";
+          this.navHomeIcon = cfg.navHomeIcon || "rectangle-list";
+        })
+        .catch(() => {
+          this.navHomeLabel = "Forms";
+          this.navHomeIcon = "rectangle-list";
+        });
     }
   }
 </script>

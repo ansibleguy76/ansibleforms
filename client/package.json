@@ -1,6 +1,6 @@
 {
   "name": "ansible_forms_vue",
-  "version": "5.0.11",
+  "version": "5.1.0",
   "private": true,
   "scripts": {
     "dev": "vite",

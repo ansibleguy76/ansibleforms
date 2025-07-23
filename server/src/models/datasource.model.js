@@ -84,7 +84,7 @@ Ds.import = async function(id){
       status = "failed"
     }
   }catch(err){
-    logger.error("Errors : ", err)
+    logger.error("Errors in ds import : ", err)
     output = "Failed to launch : "+err.message
     status = "failed"
   }  

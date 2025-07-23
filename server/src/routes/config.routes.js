@@ -11,7 +11,7 @@ router.get('/backups', middleware.checkDesignerMiddleware, configController.back
 router.get('/env', middleware.checkSettingsMiddleware, configController.env);
 
 // get the config (no admin)
-router.get('/', configController.findAll);
+router.get('/', middleware.checkDesignerMiddleware, configController.findAll);
 // get list, just the icons and names (no admin)
 router.get('/formlist', configController.findList);
 // get one config (no admin)

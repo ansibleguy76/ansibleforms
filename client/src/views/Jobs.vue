@@ -61,9 +61,9 @@
           <template v-for="j in displayedJobs">
             <tr :key="j.id" :class="{'has-background-success-light':(j.status=='success' && j.id!=jobId),'has-background-danger-light':(j.status=='failed' && j.id!=jobId),'has-background-warning':(j.status=='approve' && j.id!=jobId),'has-text-black':(j.status=='approve' && j.id!=jobId),'has-background-warning-light':(['aborted','abandoned','warning','rejected'].includes(j.status) && j.id!=jobId),'has-background-info':j.id==jobId,'has-text-white':j.id==jobId}">
               <td class="has-background-info-light">
-                <span v-if="j.status!='running'&&j.status!='aborting'&&j.status!='abort'" class="icon has-text-info is-clickable" @click="tempJobId=j.id;showRelaunch=true" title="Relaunch job"><font-awesome-icon icon="redo" /></span>
-                <span v-if="j.status && (j.status=='running')" class="icon has-text-warning is-clickable" @click="tempJobId=j.id;showAbort=true" title="Abort job"><font-awesome-icon icon="ban" /></span>
-                <span v-if="j.status!='running' && j.status!='aborting' || isAdmin" class="icon has-text-danger is-clickable" @click="tempJobId=j.id;showDelete=true" title="Delete job"><font-awesome-icon icon="trash-alt" /></span>
+                <span v-if="j.status!='running' && !j.request_abort" class="icon has-text-info is-clickable" @click="tempJobId=j.id;showRelaunch=true" title="Relaunch job"><font-awesome-icon icon="redo" /></span>
+                <span v-if="j.status=='running' && !j.request_abort" class="icon has-text-warning is-clickable" @click="tempJobId=j.id;showAbort=true" title="Abort job"><font-awesome-icon icon="ban" /></span>
+                <span v-if="j.status!='running' && !j.request_abort || isAdmin" class="icon has-text-danger is-clickable" @click="tempJobId=j.id;showDelete=true" title="Delete job"><font-awesome-icon icon="trash-alt" /></span>
                 <span v-if="j.status=='approve' && approvalAllowed(j)" class="icon has-text-success is-clickable" @click="showApproval(j.id)" title="Approve job"><font-awesome-icon icon="circle-check" /></span>
                 <span v-if="j.status=='approve' && approvalAllowed(j)" class="icon has-text-danger is-clickable" @click="showApproval(j.id,true)" title="Reject job"><font-awesome-icon icon="circle-xmark" /></span>
               </td>
@@ -247,7 +247,6 @@
         showReject:false,
         collapsed:[],
         interval:undefined,
-        interval2:undefined,
         lines:500,
         noOfRecords:0,
         filter:"",
@@ -643,7 +642,7 @@
         }
       },
       runningJobs(){
-          return this.jobs.filter(x => (x.start && moment().diff(x.start,'hours')<6) && (x.status=="running" || x.status=="aborting" || x.status=="abort"))
+          return this.jobs.filter(x => (x.start && moment().diff(x.start,'hours')<6) && (x.status=="running" || x.request_abort))
       },
       subjobs(){
           return this.job?.subjobs || []
@@ -664,11 +663,10 @@
       }
       this.loadJobs(true);
       this.$emit('refreshApprovals')
-      this.interval=setInterval(this.loadRunningJobs,5000) // reload running jobs every 2s
+      this.interval=setInterval(this.loadRunningJobs,5000) // reload running jobs every 5s
     },
     beforeDestroy(){
       clearInterval(this.interval)
-      clearInterval(this.interval2)
     }
   }
 </script>

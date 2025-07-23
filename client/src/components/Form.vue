@@ -11,11 +11,9 @@
 
     <div class="container">
       <div v-if="formIsReady && !currentForm">
-        <div v-for="(err, i) in load_errors" :key="'loaderr'+i" class="notification is-danger">
-          {{ err }}
+        <div v-for="(err, i) in load_errors" v-html="err.replace(/\n/g,'<br>')" :key="'loaderr'+i" class="notification is-danger mb-2"></div>
         </div>
-        <div v-for="(warn, i) in load_warnings" :key="'loadwarn'+i" class="notification is-warning">
-          {{ warn }}
+        <div v-for="(warn, i) in load_warnings" v-html="warn.replace(/\n/g,'<br>')" :key="'loadwarn'+i" class="notification is-warning">
         </div>
       </div>
       <div class="columns" v-if="formIsReady && currentForm">
@@ -601,7 +599,7 @@
       var obj = {
         form:{}
       }
-      this.currentForm.fields.forEach((ff, i) => {
+      this.currentForm?.fields.forEach((ff, i) => {
         var attrs = {}
         var field
         var regexObj
@@ -745,7 +743,7 @@
       // computed list of the field-groups (to generate fieldform-sections)
       fieldgroups(){
         // make groupname array with empty at start
-        if(this.currentForm.fields){
+        if(this.currentForm?.fields){
           return this.currentForm.fields.reduce(function(pV,cV,cI){
             if("group" in cV){
               return [...pV, cV.group];

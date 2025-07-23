@@ -1,9 +1,9 @@
 'use strict';
 
 // eslint-disable-next-line no-unused-vars
-import * as fn from './../functions/default.js';
+import fn from './../functions/default.js';
 // eslint-disable-next-line no-unused-vars
-import * as fnc from './../functions/custom.js';
+import fnc from './../functions/custom.js';
 // use as fn.xxxxx (where xxxxx is you own function name)
 
 import logger from "../lib/logger.js";
@@ -51,8 +51,9 @@ function sanitizeExpression(expr){
 }
 async function doAsync (expr) {
     var sanitized = sanitizeExpression(expr)
-    var outcome = await eval(sanitized)
-    return outcome
+    return await (function(fn, fnc) {
+      return eval(sanitized);
+    })(fn, fnc);
 }
 // execute expression (cannot be a promise)
 Expression.execute = function (expr,noLog) {

@@ -68,7 +68,14 @@
         var f=this.filterFormsBySearch || []
         if(!category){
           // if no category is given, pass all forms (=all)
-          return f
+          return f.sort((a, b) => {
+            const orderA = a.order ?? Number.MAX_SAFE_INTEGER;
+            const orderB = b.order ?? Number.MAX_SAFE_INTEGER;
+            if (orderA !== orderB) {
+              return orderA - orderB;
+            }
+            return a.name.localeCompare(b.name);
+          })
         }else{
           return f.filter((item)=>{
             if(item.categories!=undefined){
@@ -81,7 +88,14 @@
               // if no category was give, add to Default
               return (category=="Default")
             }
-          })
+            }).sort((a, b) => {
+              const orderA = a.order ?? Number.MAX_SAFE_INTEGER;
+              const orderB = b.order ?? Number.MAX_SAFE_INTEGER;
+              if (orderA !== orderB) {
+              return orderA - orderB;
+              }
+              return a.name.localeCompare(b.name);
+            })
         }
       },
       inCategory(c,category){

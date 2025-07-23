@@ -71,9 +71,9 @@ const deleteSchedule = async function (req, res) {
 const launch = async function (req, res) {
   try {
     await Schedule.queue(req.params.id);
-    res.json(new RestResult("success", "schedule imported", null, ""));
+    res.json(new RestResult("success", "schedule launched", null, ""));
   } catch (err) {
-    res.json(new RestResult("error", "failed to import schedule", null, err.toString()));
+    res.json(new RestResult("error", "failed to launch schedule", null, err.toString()));
   }
 };
 

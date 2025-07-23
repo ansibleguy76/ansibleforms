@@ -374,7 +374,7 @@
                 // multiple enum of type object // compare objects
                 for(var i=0;i<this.values.length;i++){
                     for(var j=0;j<this.defaultValue.length;j++){
-                      if(this.objectEqual(this.values[i],this.values[j])){
+                      if(this.objectEqual(this.values[i],this.defaultValue[j])){
                         ref.select(i)
                       }
                     }

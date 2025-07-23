@@ -220,6 +220,10 @@ async function patchVersion5(messages, success, failed) {
 
   // In 5.0.10, we add a new column to the jobs table, to store the awx artifacts
   await checkPromise(addColumn("jobs", "awx_artifacts", "longtext", true, "NULL"), messages, success, failed); // add awx_artifacts column
+
+  // In 5.1.0, add abort_requested bit to jobs table, default 0
+  await checkPromise(addColumn("jobs", "abort_requested", "tinyint(4)", true, "NULL"), messages, success, failed); // add abort_requested column
+
 }
 
 // PATCHING : Patch All
