@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 -   multi default in enum field broken
+-   verbose was not working well
+-   textarea field in table field
+
+## Added
+
+-   updateMarker to table field
 
 ### Changed
 
@@ -19,12 +25,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Most packages are updated to latest versions
 -   Frontend rewritten to work with Vite (still vue2 for now) -> no more "webpack"
 -   New sass-dart and bumped bulma framework to 1.0.4
+-   Password decryption had a bug in v6beta
 
 ### Breaking Changes
 
 -   Since "require" can not be used anymore, the backend code is now ESM only.
     This means that you can not use "require" anymore, but you can use "import" and "export default".  Than means that custom functions must be rewritten to use the new ESM syntax. (/functions/custom.js is an example where this could break)
--   Maybe not breaking, but the old theme is broken for bulma v1, so it might look a bit different here and there. (but not that v6 will have bootstrap)
+-   Maybe not breaking, but the old theme is broken for bulma v1, so it might look a bit different here and there. (but note that v6 will have bootstrap)
 -   Since many packages are updated, I might have missed some breaking changes like OIDC, AzureAD.  Ldap has been tested and works.
 
 ## [5.0.10] - 2025-06-05
