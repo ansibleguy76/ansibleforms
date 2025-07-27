@@ -16,6 +16,7 @@
     /*      allowDelete: Boolean                                      */
     /*      deleteMarker: String                                      */
     /*      insertMarker: String                                      */
+    /*      updateMarker: String                                      */
     /*      readonlyColumns: Array                                    */
     /*      insertColumns: Array                                      */
     /*      hasError: Boolean                                         */
@@ -69,6 +70,7 @@
         allowDelete: { type: Boolean, default: true },
         deleteMarker: { type: String, default: "" },
         insertMarker: { type: String, default: "" },
+        updateMarker: { type: String, default: "" },
         readonlyColumns: { type: Array },
         insertColumns: { type: Array },
         hasError: { type: Boolean }
@@ -208,10 +210,10 @@
             if (newValues?.length > 0) {
                 const fields = props.tableFields.map(x => x.name);
                 const data = Object.keys(newValues[0]);
-                const missing = Helpers.findMissing(data, fields);
-                if (missing.length > 0) {
-                    emit('warning', missing);
-                }
+                // const missing = Helpers.findMissing(data, fields);
+                // if (missing.length > 0) {
+                //     emit('warning', missing);
+                // }
             }
         },
         { immediate: true }
@@ -301,15 +303,7 @@
 
     function saveItem() {
         v$.value.editedItem.$touch();
-        // props.tableFields.forEach((item) => {
-        //     if (item.type == "enum") {
-        //         if (!item.outputObject) {
-        //             var valueLabel = getValueLabel(item);
-        //             if (valueLabel)
-        //                 editedItem.value[item.name] = editedItem.value[item.name][valueLabel];
-        //         }
-        //     }
-        // });
+
         if (!v$.value.editedItem.$invalid) {
             if (action.value == "Add") {
                 if (insert_marker.value) {
@@ -321,6 +315,14 @@
                     rows.value.splice(editIndex.value, 0, editedItem.value);
                 }
             } else {
+                if (props.updateMarker && !editedItem.value[props.updateMarker] && !editedItem.value[insert_marker.value]) {
+                    // compare original and edited item
+                    const original = rows.value[editIndex.value];
+                    const edited = editedItem.value;
+                    if (JSON.stringify(original) !== JSON.stringify(edited)) {
+                        editedItem.value[props.updateMarker] = true; // mark as updated
+                    }
+                }
                 rows.value[editIndex.value] = editedItem.value;
             }
             emit('update:model-value', rows.value);
@@ -335,7 +337,7 @@
     }
 
     function updateEditedItem(value) {
-        editedItem.value = value;
+        editedItem.value = Helpers.deepClone(value);
         v$.value.editedItem.$touch();
     }
 
@@ -351,10 +353,15 @@
     function init(){
 
         insert_marker.value = props.insertMarker;
-        
+        // force insert marker if delete marker is set, we need to have an insert marker
         if((props.deleteMarker || !props.allowDelete) && (!insert_marker.value || insert_marker.value.length == 0)) {
             insert_marker.value = "__inserted__";
         }
+        // force insert marker if update marker is set, we need to have an insert marker
+        if (props.updateMarker && (!insert_marker.value || insert_marker.value.length == 0)) {
+            insert_marker.value = "__inserted__";
+        }
+
         rows.value = props.values;
 
     }

@@ -1443,6 +1443,7 @@
                                         :allowDelete="field.allowDelete && true"
                                         :deleteMarker="field.deleteMarker || ''"
                                         :insertMarker="field.insertMarker || ''"
+                                        :updateMarker="field.updateMarker || ''"
                                         :readonlyColumns="field.readonlyColumns || []"
                                         :insertColumns="field.insertColumns || []"
                                         :dynamicFieldStatus="dynamicFieldStatus"

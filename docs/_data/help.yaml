@@ -1357,6 +1357,14 @@
         default: true
         description: |
           By default you can allow the user to abort the job.  Use this attribute to disable this behaviour.
+      - name: order
+        type: integer
+        group: visualization
+        version: 5.1.0
+        short: Order of the form in the list
+        description: |
+          The order of the form in the list of forms.  Forms are sorted by this order, so you can have a specific order in the list.
+          **Note** : If you do not set this property, it will be ordered alphabetically by name.
       - name: tags
         type: string
         allowed: comma separated tag-list
@@ -2084,6 +2092,7 @@
                       allowDelete: true
                       insertMarker: isNewItem
                       deleteMarker: isRemovedItem
+                      updateMarker: isUpdatedItem
                       readonlyColumns:
                       - department
                       - firstname
@@ -3184,6 +3193,27 @@
                       icon: user
                     - name: lastname
                       type: text  
+          - name: updateMarker
+            type: string
+            group: output
+            with_types: table
+            short: Adds an additional updatemarker field
+            version: 5.1.0
+            description: |
+              In addition to the insert and delete markers, you can also add an update marker.
+            examples:
+            - name: Mark updated record
+              code: |
+                - type: table
+                  name: member
+                  expression: "[{firstname:'ansible',lastname:'guy'}]"
+                  updateMarker: updated
+                  tableFields:
+                    - name: firstname
+                      type: text
+                      icon: user
+                    - name: lastname
+                      type: text
           - name: readonlyColumns
             type: array
             group: interaction

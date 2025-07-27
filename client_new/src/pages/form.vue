@@ -698,8 +698,9 @@ onBeforeUnmount(() => {
                 </BsButton>
 
                 <!-- enable verbose logging -->
-                <BsInputCheckboxRaw v-model="enableVerbose" :label="'checkmode'" v-show="!hideForm"
+                <BsInputCheckboxRaw v-model="enableVerbose" :label="'verbose'" v-show="!hideForm"
                   cssClass="ms-2 d-inline-block" />
+
               </template>
             </AppForm>
           </div>
