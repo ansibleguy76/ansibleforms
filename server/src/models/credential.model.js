@@ -73,7 +73,7 @@ Credential.findByName2 = function (name) {
     .then((res)=>{
       if(res.length>0){
         try{
-          res[0].password = decrypt(res[0].password)
+          res[0].password = crypto.decrypt(res[0].password)
         }catch(e){
           logger.error("Failed to decrypt the password.  Did the secretkey change ?")
           res[0].password = ""
@@ -110,9 +110,8 @@ Credential.findByName = async function (name,fallbackName="") {
         delete result.db_type
         delete result.is_database
       }
-      
       try{
-        result.password = decrypt(result.password)
+        result.password = crypto.decrypt(result.password)
       }catch(e){
         logger.error("Failed to decrypt the password.  Did the secretkey change ?")
         result.password = ""
