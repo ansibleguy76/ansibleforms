@@ -228,6 +228,7 @@
                             :allowDelete="field.allowDelete && true"
                             :deleteMarker="field.deleteMarker || ''"
                             :insertMarker="field.insertMarker || ''"
+                            :updateMarker="field.updateMarker || ''"
                             :readonlyColumns="field.readonlyColumns || []"
                             :insertColumns="field.insertColumns || []"
                             :isLoading="!['fixed','variable'].includes(dynamicFieldStatus[field.name]) && (field.expression!=undefined || field.query!=undefined)"
@@ -2151,7 +2152,6 @@
           if(this.enableVerbose){
             postdata.extravars.__verbose__=true
           }          
-          postdata.extravars.__verbose__ = this.enableVerbose
           postdata.formName = this.currentForm.name;
           postdata.credentials = {}
           // add all fields that are marked as credential, and add them to the credentials object (in the root of the postdata)

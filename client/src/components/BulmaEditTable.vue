@@ -11,6 +11,16 @@
                 <input v-if="field.type=='checkbox'" :disabled="readonlyColumns.includes(field.name)" :autofocus="index==0" :checked="editedItem[field.name]" v-model="editedItem[field.name]" :name="field.name" type="checkbox">
                 {{ field.placeholder }}
               </label> -->
+              <textarea
+                v-if="field.type=='textarea'"
+                :disabled="action=='Edit' && readonlyColumns.includes(field.name)"
+                :autofocus="index==0"
+                :class="{'is-danger':v$.editedItem[field.name].$invalid}"
+                class="textarea"
+                v-model="v$.editedItem[field.name].$model"
+                :placeholder="field.placeholder"
+                :name="field.name">
+              </textarea>
               <date-picker v-if="field.type=='datetime'"
                 :type="field.dateType"
                 value-type="format"
@@ -57,7 +67,7 @@
                 >
               </BulmaAdvancedSelect>     
                              
-              <div v-if="!['datetime','checkbox','query','enum'].includes(field.type)" :class="{'has-icons-left':!!field.icon}" class="control">
+              <div v-if="!['datetime','checkbox','query','enum','textarea'].includes(field.type)" :class="{'has-icons-left':!!field.icon}" class="control">
                 <input v-if="field.type=='text' || field.type=='password'" :disabled="action=='Edit' && readonlyColumns.includes(field.name)" :autofocus="index==0" :class="{'is-danger':v$.editedItem[field.name].$invalid}" class="input" :type="field.type" v-model="v$.editedItem[field.name].$model" :placeholder="field.placeholder" :name="field.name">
                 <input v-if="field.type=='number'" :disabled="action=='Edit' && readonlyColumns.includes(field.name)" :autofocus="index==0" class="input" type="number" v-model="editedItem[field.name]" :placeholder="field.placeholder" :name="field.name">
 
@@ -218,6 +228,7 @@
             allowDelete:{type: Boolean, default: true},
             deleteMarker:{type: String, default: ""},
             insertMarker:{type: String, default: ""},
+            updateMarker:{type: String, default: ""},
             readonlyColumns:{type: Array},
             insertColumns:{type: Array},
             hasError:{type: Boolean}
@@ -325,7 +336,12 @@
         },
         mounted: function () {
           this.insert_marker=this.insertMarker
+          // some times we MUST have an insert marker, because if you delete a row that was inserted, we need to know it was inserted before and not an original record.
           if((this.deleteMarker || !this.allowDelete) && (!this.insert_marker || this.insert_marker.length==0)){
+            this.insert_marker="__inserted__"
+          }
+          // if there is an update marker, we also need an insert marker (otherwise we can't know if the row was inserted or updated)
+          if(this.updateMarker && (!this.insert_marker || this.insert_marker.length==0)){
             this.insert_marker="__inserted__"
           }
           Vue.set(this,"rows",this.values)
@@ -410,7 +426,8 @@
             },
             editItem: function(index){
               var ref=this
-              this.editedItem=this.rows[index];
+              // copy / clone
+              this.editedItem=Helpers.deepClone(this.rows[index]);
               this.action="Edit";
               this.editIndex=index;
               this.showEdit=true;
@@ -438,18 +455,7 @@
             saveItem:function(){
               var ref=this
               this.v$.editedItem.$touch()
-              // this.tableFields.forEach((item)=>{
-              //   if(item.type=="enum"){
-              //     if(!item.outputObject){
-              //       // console.log(item.name)
-              //       var valueLabel=this.getValueLabel(item)
-              //       console.log(valueLabel)
-              //       // if(valueLabel){
-              //       //   ref.editedItem[item.name]=ref.editedItem[item.name][valueLabel]
-              //       // }
-              //     }
-              //   }
-              // })
+
               if(!this.v$.editedItem.$invalid){
                 if(this.action=="Add"){
                   if(this.insert_marker){
@@ -462,6 +468,19 @@
                     this.rows.splice(this.editIndex,0,this.editedItem)
                   }
                 }else{
+
+                  // if there is an update marker, and insert or update was not set, we compare the original row with the edited row
+                  if(this.updateMarker && !this.editedItem[this.updateMarker] && !this.editedItem[this.insert_marker]) {
+
+                    const original = this.rows[this.editIndex];
+                    const edited = this.editedItem;
+                    // Deep compare original and edited
+                    const isDifferent = JSON.stringify(original) !== JSON.stringify(edited);
+                    if (isDifferent) {
+                      Vue.set(this.editedItem, this.updateMarker, true);
+                    }     
+                  }
+             
                   Vue.set(this.rows,this.editIndex,this.editedItem)
                 }
                 this.$emit('input', this.rows)
