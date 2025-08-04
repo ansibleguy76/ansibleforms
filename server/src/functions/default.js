@@ -225,7 +225,7 @@ const fnCredentials = async function(name,fallbackname=""){
 const fnRestBasic = async function(action,url,body,credential=null,jqe=null,sort=null,hasBigInt=false){
   var headers={}
   if(credential){
-    restCreds = await fnCredentials(credential)
+    const restCreds = await fnCredentials(credential)
     headers.Authorization="Basic " + Buffer.from(restCreds.user + ':' + restCreds.password).toString('base64')
   }
   return await fnRestAdvanced(action,url,body,headers,jqe,sort,hasBigInt)
