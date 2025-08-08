@@ -1484,7 +1484,7 @@
                                         <BsInputForForm v-else @dblclick="setExpressionFieldViewable(field.name, true)" type="expression" :icon="field.icon" :hasError="v$.form[field.name].$invalid" cssClass="text-info" v-model="v$.form[field.name].$model" :name="field.name" :isHtml="field.isHtml"  :errors="v$.form[field.name].$errors" />
                                     </div>
                                     <!-- expression raw data -->
-                                    <div @dblclick="setExpressionFieldViewable(field.name, false)" v-else class="card p-2 limit-height is-limited">
+                                    <div @dblclick="setExpressionFieldViewable(field.name, false)" v-else class="card p-2 limit-height">
                                         <!-- <pre v-highlightjs><code lang="json">{{ v$.form[field.name].$model }}</code></pre> -->
                                          <VueJsonPretty :data="v$.form[field.name].$model" />
                                     </div>
