@@ -1515,8 +1515,8 @@
     </div>
 </template>
 <style scoped lang="scss">
-.limit-height {
 
+.limit-height {
     max-height: 300px;
     overflow-y: scroll;
     overflow-x: clip;
