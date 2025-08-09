@@ -1378,8 +1378,6 @@
               //   or it's deep link in a column (colum has .)
               // and the reference field is an object
               if(ref.fieldOptions[foundfield] && (["expression","table","constant"].includes(ref.fieldOptions[foundfield].type)||column.includes(".")) && ((typeof ref.form[foundfield]=="object") || (Array.isArray(ref.form[foundfield])))){
-                // objects and array should be stringified
-                fieldvalue=JSON.stringify(ref.form[foundfield])
                 // console.log(Helpers.replacePlaceholders(match[1],ref.form))
                 fieldvalue=JSON.stringify(Helpers.replacePlaceholders(match[1],ref.form)) // allow full object reference
                 // drop wrapping quotes
