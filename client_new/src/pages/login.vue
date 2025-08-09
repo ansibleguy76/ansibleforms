@@ -64,12 +64,12 @@ function getGroupsAndLogin(token, url = `${azureGraphUrl.value}/v1.0/me/transiti
 
       axios.get(url, config)
          .then((res) => {
-            const groups = res.data.value.filter(x => x.displayName).map(x => (`azuread/` + x.displayName));
+            const groups = res.data.value.filter(x => x.displayName);
             allGroups = allGroups.concat(groups);
 
             if (res.data['@odata.nextLink']) {
                // If there's a nextLink, make a recursive call to get the next page of data
-               getGroupsAndLogin(token, res.data['@odata.nextLink'], allGroups);
+               getGroupsAndLogin(token, res.data['@odata.nextLink'], type, allGroups);
             } else {
                // No more nextLink, you have all the groups
                tokenLogin(token, allGroups)
