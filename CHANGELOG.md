@@ -12,10 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   multi default in enum field broken
 -   verbose was not working well
 -   textarea field in table field
+-   placeholder (issue 320)
+-   scrollbar (issue 318)
+-   EntraId groups (issue 316)
 
 ## Added
 
 -   updateMarker to table field
+-   multi awx (314)
 
 ### Changed
 
