@@ -19,7 +19,6 @@ import Credential from './credential.model.js';
 import AwxModel from './awx.model.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { abort } from 'process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,7 +28,7 @@ function pushForminfoToExtravars(formObj,extravars,creds={}){
   // push top form fields to extravars
   // change in 4.0.16 => easier to process & available in playbook, might be handy
   // no credentials added here, because then can also come from asCredential property and these would get lost.
-  const topFields=['template','playbook','tags','limit','executionEnvironment','check','diff','verbose','keepExtravars','credentials','inventory','awxCredentials','ansibleCredentials','vaultCredentials','instanceGroups','scmBranch']
+  const topFields=['template','awx','playbook','tags','limit','executionEnvironment','check','diff','verbose','keepExtravars','credentials','inventory','awxCredentials','ansibleCredentials','vaultCredentials','instanceGroups','scmBranch']
   for (const fieldName of topFields) {
     // Check if the field exists in formObj and if the property is not present in extravars
     if (formObj.hasOwnProperty(fieldName) && extravars[`__${fieldName}__`] === undefined) {
@@ -1025,9 +1024,9 @@ Ansible.launch=async (ev,credentials,jobid,counter,approval,approved=false)=>{
 var Awx = function(){}
 Awx.getConfig = AwxModel.getConfig;
 Awx.getAuthorization = AwxModel.getAuthorization;
-Awx.abortJob = async function (id) {
+Awx.abortJob = async function (awxName,id) {
 
-  const awxConfig = await Awx.getConfig()
+  const awxConfig = await Awx.getConfig(awxName)
   if(!awxConfig)throw new Errors.ApiError("Failed to get AWX configuration")
   var message=""
   logger.info(`aborting awx job ${id}`)
@@ -1070,6 +1069,8 @@ Awx.launch = async function (ev,credentials,jobid,counter,approval,approved=fals
     var limit = extravars?.__limit__ || ""
     var diff = extravars?.__diff__ || false  
     var template = extravars?.__template__ 
+    var awxName = extravars?.__awx__ || ""
+    logger.debug("awxName : " + awxName)
     var awxCredentials = extravars?.__awxCredentials__ || []
     if(approval){
       if(!approved){
@@ -1082,9 +1083,9 @@ Awx.launch = async function (ev,credentials,jobid,counter,approval,approved=fals
       }
     }
     try{
-      const jobTemplate = await Awx.findJobTemplateByName(template)
+      const jobTemplate = await Awx.findJobTemplateByName(awxName,template)
       logger.debug("Found jobtemplate, id = " + jobTemplate.id)
-      await Awx.launchTemplate(jobTemplate,ev,invent,tags,limit,check,diff,verbose,credentials,awxCredentials,execenv,instanceGroups,scmBranch,jobid,++counter)
+      await Awx.launchTemplate(awxName,jobTemplate,ev,invent,tags,limit,check,diff,verbose,credentials,awxCredentials,execenv,instanceGroups,scmBranch,jobid,++counter)
       return true
     }catch(err){
       message="failed to launch awx template " + template + "\n" + err.message
@@ -1093,7 +1094,7 @@ Awx.launch = async function (ev,credentials,jobid,counter,approval,approved=fals
       throw new Errors.ApiError(message)
     } 
 }
-Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,verbose,credentials,awxCredentials,execenv,instanceGroups,scmBranch,jobid,counter) {
+Awx.launchTemplate = async function (awxName,template,ev,invent,tags,limit,check,diff,verbose,credentials,awxCredentials,execenv,instanceGroups,scmBranch,jobid,counter) {
   var message=""
   if(!counter){
     counter=0
@@ -1101,7 +1102,7 @@ Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,ve
   // get existing credentials in the template, and then add the external ones.
   var awxCredentialList=[]
   try{
-    awxCredentialList=await Awx.findCredentialsByTemplate(template.id)
+    awxCredentialList=await Awx.findCredentialsByTemplate(awxName,template.id)
     logger.notice(`Found ${awxCredentialList.length} existing creds`)
   }catch(e){
     logger.warning("No credentials available... could be workflow template")
@@ -1109,25 +1110,25 @@ Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,ve
   // add external ones
   for(let i=0;i<awxCredentials.length;i++){
       var ac=awxCredentials[i]
-      var credId=await Awx.findCredentialByName(ac)
+      var credId=await Awx.findCredentialByName(awxName,ac)
       logger.debug(`Found awx credential '${ac}'; id = ${credId}`)
       awxCredentialList.push(credId)
   }
   awxCredentialList=[...new Set(awxCredentialList)]
 
   // get inventory
-  var inventory=await Awx.findInventoryByName(invent)
+  var inventory=await Awx.findInventoryByName(awxName,invent)
   // get execution environment
-  var executionEnvironment=await Awx.findExecutionEnvironmentByName(execenv)
+  var executionEnvironment=await Awx.findExecutionEnvironmentByName(awxName,execenv)
 
   // get instance groups
   var instanceGroupIds=[]
   for (let index = 0; index < instanceGroups.length; index++) {
-    instanceGroupIds.push(await Awx.findInstanceGroupByName(instanceGroups[index]))
+    instanceGroupIds.push(await Awx.findInstanceGroupByName(awxName,instanceGroups[index]))
   };
 
   // get config and go
-  const awxConfig = await Awx.getConfig()
+  const awxConfig = await Awx.getConfig(awxName)
   if(!awxConfig)throw new Errors.ApiError("Failed to get AWX configuration")
 
   var extravars={...ev} // we make a copy of the main extravars
@@ -1197,7 +1198,7 @@ Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,ve
       await Job.update({awx_id:job.id},jobid)
       await Job.printJobOutput(`Launched template ${template.name} with jobid ${job.id}`,"stdout",jobid,++counter)
       // track the job in the background
-      return Awx.trackJob(job,jobid,++counter)
+      return Awx.trackJob(awxName,job,jobid,++counter)
     }else{
       // no awx job, end failed
       message=`could not launch job template ${template.name}`
@@ -1210,8 +1211,8 @@ Awx.launchTemplate = async function (template,ev,invent,tags,limit,check,diff,ve
 
 };
 
-Awx.trackJob = async function (job,jobid,counter,previousoutput,previousoutput2=undefined,lastrun=false,retryCount=0) {
-  const awxConfig = await Awx.getConfig()
+Awx.trackJob = async function (awxName,job,jobid,counter,previousoutput,previousoutput2=undefined,lastrun=false,retryCount=0) {
+  const awxConfig = await Awx.getConfig(awxName)
   if(!awxConfig)throw new Error("Failed to get AWX configuration")
   var message=""
   logger.info(`searching for job with id ${job.id}`)
@@ -1226,7 +1227,7 @@ Awx.trackJob = async function (job,jobid,counter,previousoutput,previousoutput2=
       logger.debug(`awx job status : ` + j.status)
       try{
         // get text output
-        const o = await Awx.getJobTextOutput(job)
+        const o = await Awx.getJobTextOutput(awxName,job)
 
         var incrementIssue=false
         var output=o
@@ -1253,7 +1254,7 @@ Awx.trackJob = async function (job,jobid,counter,previousoutput,previousoutput2=
           await Job.printJobOutput("Abort requested","stderr",jobid,++counter)
           try{
             // we try to abort the job
-            await Awx.abortJob(j.id)
+            await Awx.abortJob(awxName,j.id)
             await Job.resetAbortRequested(jobid)
             await Job.endJobStatus(jobid,++counter,"stderr","aborted","Aborted job",j.artifacts)
             return "Aborted job"
@@ -1261,7 +1262,7 @@ Awx.trackJob = async function (job,jobid,counter,previousoutput,previousoutput2=
               // abort failed... , revert abort request
               await Job.printJobOutput("Abort request denied, reverting abort request","stderr",jobid,++counter)
               await Job.resetAbortRequested(jobid)
-              return Awx.trackJob(j,jobid,++counter,o,previousoutput,j.finished)
+              return Awx.trackJob(awxName,j,jobid,++counter,o,previousoutput,j.finished)
           }
           
         }else{
@@ -1288,9 +1289,9 @@ Awx.trackJob = async function (job,jobid,counter,previousoutput,previousoutput2=
                 logger.debug("Getting final stdout")
               }
               if(incrementIssue){
-                return await Awx.trackJob(j,jobid,++counter,o,previousoutput2,j.finished)
+                return await Awx.trackJob(awxName,j,jobid,++counter,o,previousoutput2,j.finished)
               }
-              return await Awx.trackJob(j,jobid,++counter,o,previousoutput,j.finished)
+              return await Awx.trackJob(awxName,j,jobid,++counter,o,previousoutput,j.finished)
             })
           }
         }
@@ -1304,7 +1305,7 @@ Awx.trackJob = async function (job,jobid,counter,previousoutput,previousoutput2=
         }else{
           logger.warning(`Retrying jobid ${jobid} [${retryCount}]`)
           await delay(1000)
-          return await Awx.trackJob(job,jobid,counter,previousoutput,previousoutput2,lastrun,retryCount)
+          return await Awx.trackJob(awxName,job,jobid,counter,previousoutput,previousoutput2,lastrun,retryCount)
         }
       }
     }else{
@@ -1316,7 +1317,7 @@ Awx.trackJob = async function (job,jobid,counter,previousoutput,previousoutput2=
       }else{
         logger.warning(`Retrying jobid ${jobid} [${retryCount}]`)
         await delay(1000)
-        return await Awx.trackJob(job,jobid,counter,previousoutput,previousoutput2,lastrun,retryCount)
+        return await Awx.trackJob(awxName,job,jobid,counter,previousoutput,previousoutput2,lastrun,retryCount)
       }
     }
   }catch(e){
@@ -1325,9 +1326,9 @@ Awx.trackJob = async function (job,jobid,counter,previousoutput,previousoutput2=
   }  
 
 };
-Awx.getJobTextOutput = async function (job) {
+Awx.getJobTextOutput = async function (awxName,job) {
   if(!job)return undefined
-  const awxConfig = await Awx.getConfig()
+  const awxConfig = await Awx.getConfig(awxName)
   if(!awxConfig)throw new Errors.ApiError("Failed to get AWX configuration")
   if(job.related===undefined){
     throw new Errors.ConflictError("No related attribute found for job " + job.id)
@@ -1343,9 +1344,9 @@ Awx.getJobTextOutput = async function (job) {
   }
 
 };
-Awx.findJobTemplateByName = async function (name) {
+Awx.findJobTemplateByName = async function (awxName,name) {
   if(!name)return undefined
-  const awxConfig = await Awx.getConfig()
+  const awxConfig = await Awx.getConfig(awxName)
   if(!awxConfig)throw new Errors.ApiError("Failed to get AWX configuration")
   var message=""
   logger.info(`searching job template ${name}`)
@@ -1369,9 +1370,9 @@ Awx.findJobTemplateByName = async function (name) {
     }
   }
 };
-Awx.findCredentialByName = async function (name) {
+Awx.findCredentialByName = async function (awxName,name) {
   if(!name)return undefined
-  const awxConfig = await Awx.getConfig()
+  const awxConfig = await Awx.getConfig(awxName)
   if(!awxConfig)throw new Errors.ApiError("Failed to get AWX configuration")
   var message=""
   logger.info(`searching credential ${name}`)
@@ -1387,9 +1388,9 @@ Awx.findCredentialByName = async function (name) {
     throw new Errors.NotFoundError(message)
   }
 };
-Awx.findExecutionEnvironmentByName = async function (name) {
+Awx.findExecutionEnvironmentByName = async function (awxName,name) {
   if(!name)return undefined
-  const awxConfig = await Awx.getConfig()
+  const awxConfig = await Awx.getConfig(awxName)
   if(!awxConfig)throw new Errors.ApiError("Failed to get AWX configuration")
   var message=""
   logger.info(`searching execution environment ${name}`)
@@ -1411,9 +1412,9 @@ Awx.findExecutionEnvironmentByName = async function (name) {
     throw new Errors.NotFoundError(message)
   }
 };
-Awx.findInstanceGroupByName = async function (name) {
+Awx.findInstanceGroupByName = async function (awxName,name) {
   if(!name)return undefined
-  const awxConfig = await Awx.getConfig()
+  const awxConfig = await Awx.getConfig(awxName)
   if(!awxConfig)throw new Errors.ApiError("Failed to get AWX configuration")
   var message=""
   logger.info(`searching instance group ${name}`)
@@ -1434,8 +1435,8 @@ Awx.findInstanceGroupByName = async function (name) {
     throw new Errors.NotFoundError(message)
   }
 };
-Awx.findCredentialsByTemplate = async function (id) {
-  const awxConfig = await Awx.getConfig()
+Awx.findCredentialsByTemplate = async function (awxName,id) {
+  const awxConfig = await Awx.getConfig(awxName)
   if(!awxConfig)throw new Errors.ApiError("Failed to get AWX configuration")
   logger.info(`searching credentials for template id ${id}`)
   // prepare axiosConfig
@@ -1446,9 +1447,9 @@ Awx.findCredentialsByTemplate = async function (id) {
   }
   return []
 };
-Awx.findInventoryByName = async function (name) {
+Awx.findInventoryByName = async function (awxName,name) {
   if(!name)return undefined
-  const awxConfig = await Awx.getConfig()
+  const awxConfig = await Awx.getConfig(awxName)
   if(!awxConfig)throw new Errors.ApiError("Failed to get AWX configuration")
   var message=""
   logger.info(`searching inventory ${name}`)

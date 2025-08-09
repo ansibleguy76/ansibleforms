@@ -1268,6 +1268,24 @@
             
           **Note** : You can also dynamically set the scmBranch by using a field called `__scmBranch__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static scmBranch.  
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.
+      - name: awx
+        type: string
+        group: workflow
+        version: 6.0.0
+        allowed: name of awx instance
+        short: Add awx instance to your template
+        description: |
+          From now on you can have multiple AWX instances.
+          The database will be updated during upgrade but you will need to set your current AWX instance to default.
+       
+          
+          **Note** : you can also set these dynamically by using a field called `__awx__`.   It must be sent as extravar.  If this extravar is found it will overwrite the static awx.  
+          **Note** : this also works in steps, so each step can have its own set of awx instances.  
+          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+        examples:
+        - name: Add awx instance to your template
+          code: |
+            awx: my_awx_instance
       - name: awxCredentials
         type: array
         group: workflow
@@ -4477,8 +4495,8 @@
         evalDefault: true
           
 
-  - name: Query AWX/Tower
-    short: Query information from AWX or Tower
+  - name: Query AWX/Tower/AAP
+    short: Query information from AWX or Ansible Automation Platform
     description: |
       Sometimes you want to create dropdown boxes, with data from AWX or Tower.  
       You can use `fn.fnRestBasic` or `fn.fnRestJwtSecure` to query to do this.  
@@ -4487,6 +4505,7 @@
     code: |
       name: Query awx
       type: awx
+      awx: myAwxConfigName
       template: my_template # will be overwritten by the field __template__
       description: ""
       awxCredentials:

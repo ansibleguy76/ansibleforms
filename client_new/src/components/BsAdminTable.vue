@@ -42,6 +42,10 @@ import FaIcon from './FaIcon.vue';
             type: Array,
             required: true
         },
+        checkboxFields: {
+            type: Array,
+            default: () => []
+        },
         busyItems: {
             type: Object,
             default: () => {
@@ -186,7 +190,21 @@ import FaIcon from './FaIcon.vue';
                     </span>
                 </td>
                 <template v-for="(column, columnIndex) in columns">
-                    <td role="button" @click="emit(actions[0].name, item)" :class="{ 'bg-primary-subtle': pagination.currentId == item[idKey] }" v-if="!fields[columnIndex].hidden || false" v-html="highlight(item, column, columnIndex)"></td>
+                    <td
+                        role="button"
+                        @click="emit(actions[0].name, item)"
+                        :class="{ 'bg-primary-subtle': pagination.currentId == item[idKey] }"
+                        v-if="!fields[columnIndex].hidden || false"
+                    >
+                        <template v-if="checkboxFields.includes(column)">
+                            <span v-if="item[column]">
+                                <FaIcon icon="check" color="success" />
+                            </span>
+                        </template>
+                        <template v-else>
+                            <span v-html="highlight(item, column, columnIndex)"></span>
+                        </template>
+                    </td>
                 </template>
             </tr>
         </tbody>

@@ -75,13 +75,19 @@ CREATE TABLE `ldap` (
 -- create awx table
 DROP TABLE IF EXISTS `awx`;
 CREATE TABLE `awx` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(250) NOT NULL,
+  `description` text DEFAULT NULL,
+  `is_default` tinyint(1) DEFAULT 0,
   `uri` varchar(250) NOT NULL,
   `username` varchar(250) NOT NULL,
   `token` text NOT NULL,
   `password` text NOT NULL,
   `use_credentials` tinyint(4) DEFAULT NULL,
   `ignore_certs` tinyint(4) DEFAULT NULL,
-  `ca_bundle` text DEFAULT NULL
+  `ca_bundle` text DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_AnsibleForms_awx_natural_key` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 -- create job_output and jobs tables
 DROP TABLE IF EXISTS `job_output`;

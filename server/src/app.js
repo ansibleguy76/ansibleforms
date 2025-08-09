@@ -51,6 +51,7 @@ import datasourceSchemaRoutes from "./routes/datasourceSchema.routes.js";
 import datasourceRoutes from "./routes/datasource.routes.js";
 import scheduleRoutes from "./routes/schedule.routes.js";
 import appRoutes from "./routes/app.routes.js";
+import awxRoutesv2 from "./routes/awx.routes.v2.js";
 
 // __dirname and __filename setup for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -157,6 +158,7 @@ const load = async (app) => {
   app.use(`/api/v1/credential`, cors(), authobj, Middleware.checkSettingsMiddleware, credentialRoutes);
   app.use(`/api/v1/sshkey`, cors(), authobj, Middleware.checkSettingsMiddleware, sshRoutes);
   app.use(`/api/v1/awx`, cors(), authobj, Middleware.checkSettingsMiddleware, awxRoutes);
+  app.use(`/api/v2/awx`, cors(), authobj, Middleware.checkSettingsMiddleware, awxRoutesv2);
   app.use(`/api/v1/log`, cors(), authobj, Middleware.checkLogsMiddleware, logRoutes);
   app.use(`/api/v1/repository`, cors(), authobj, Middleware.checkSettingsMiddleware, repositoryRoutes);
   app.use(`/api/v1/knownhosts`, cors(), authobj, Middleware.checkSettingsMiddleware, knownhostsRoutes);

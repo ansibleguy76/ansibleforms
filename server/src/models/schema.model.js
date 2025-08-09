@@ -51,7 +51,58 @@ async function checkTable(table) {
     throw new Error(message);
   }
 }
+function addIdPrimaryKey(table) {
+  var message;
+  var db = "AnsibleForms";
+  var checksql = `SHOW COLUMNS FROM ${db}.${table} WHERE Field='id'`;
+  var sql = `ALTER TABLE ${db}.${table} ADD COLUMN id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY`;
+  logger.debug(`adding id primary key column on table '${table}'`);
+  return mysql
+    .do(checksql)
+    .then((checkres) => {
+      if (checkres.length == 0) {
+        return mysql.do(sql);
+      }
+      return false;
+    })
+    .then((res) => {
+      if (!res) {
+        message = `Column 'id' is already present on '${table}'`;
+        logger.debug(message);
+        return message;
+      }
+      message = `added id primary key column on '${table}'`;
+      logger.warning(message);
+      return message;
+    });
+}
 
+function addUniqueKey(table, column) {
+  var message;
+  var db = "AnsibleForms";
+  var indexName = `unique_${column}`;
+  var checksql = `SHOW INDEX FROM ${db}.${table} WHERE Key_name='${indexName}'`;
+  var sql = `ALTER TABLE ${db}.${table} ADD UNIQUE KEY ${indexName} (${column})`;
+  logger.debug(`adding unique key '${indexName}' on column '${column}' in table '${table}'`);
+  return mysql
+    .do(checksql)
+    .then((checkres) => {
+      if (checkres.length == 0) {
+        return mysql.do(sql);
+      }
+      return false;
+    })
+    .then((res) => {
+      if (!res) {
+        message = `Unique key '${indexName}' is already present on '${table}'`;
+        logger.debug(message);
+        return message;
+      }
+      message = `added unique key '${indexName}' on '${table}'`;
+      logger.warning(message);
+      return message;
+    });
+}
 // PATCHING : add a column to a table
 function addColumn(table, name, fieldtype, nullable, defaultvalue) {
   var message;
@@ -84,6 +135,7 @@ function addColumn(table, name, fieldtype, nullable, defaultvalue) {
       return message;
     });
 }
+
 
 // PATCHING : Add a table to the schema
 function addTable(table, sql) {
@@ -224,6 +276,12 @@ async function patchVersion5(messages, success, failed) {
   // In 5.1.0, add abort_requested bit to jobs table, default 0
   await checkPromise(addColumn("jobs", "abort_requested", "tinyint(4)", true, "NULL"), messages, success, failed); // add abort_requested column
 
+  // In 6.0.0, we allow multiple awx instances, so we need to add id, name and description to the awx table
+  await checkPromise(addIdPrimaryKey("awx"), messages, success, failed); // add id column with auto_increment primary key
+  await checkPromise(addColumn("awx", "name", "varchar(250)", true, "NULL"), messages, success, failed); // add name column
+  await checkPromise(addUniqueKey("awx", "name"), messages, success, failed); // make name unique
+  await checkPromise(addColumn("awx", "description", "varchar(250)", true, "NULL"), messages, success, failed); // add description column
+  await checkPromise(addColumn("awx", "is_default", "tinyint(4)", true, "0"), messages, success, failed); // add is_default column
 }
 
 // PATCHING : Patch All

@@ -40,6 +40,10 @@
         busyItems: {
             type: Object,
             default: () => ({})
+        },
+        apiVersion: {
+            type: [String, Number],
+            default: 1
         }
     })
 
@@ -138,16 +142,30 @@
     }
     async function loadList(type,isFlat=false) {
         try {
-            const result = await axios.get(`/api/v1/${type}/`, TokenStorage.getAuthentication());
-            if(isFlat){
-                return result.data.data.output.map((item,index) => {
-                    return { id: index, name: item }
-                });
+            const result = await axios.get(`/api/v${props.apiVersion}/${type}/`, TokenStorage.getAuthentication());
+            if(props.apiVersion == 1) {
+                if(isFlat){
+                    return result.data.data.output.map((item,index) => {
+                        return { id: index, name: item }
+                    });
+                }
+                return result.data.data.output;
+            } else if (props.apiVersion == 2) {
+                if(isFlat){
+                    return result.data.records.map((item, index) => {
+                        return { id: index, name: item.name }
+                    });
+                }
+                return result.data.records;
+            } else {
+                throw new Error("Unsupported API version");
             }
-            return result.data.data.output;
         } catch (err) {
             toast.error(err.message)
         }
+
+
+
     }
     async function loadItem() {
         if (itemId.value) {
@@ -156,8 +174,14 @@
                 if (isFlat) {
                     item.value = itemList.value[itemId.value]
                 } else {
-                    result = await axios.get(`/api/v1/${objectType}/${itemId.value}`, TokenStorage.getAuthentication())
-                    item.value = result.data.data.output
+                    result = await axios.get(`/api/v${props.apiVersion}/${objectType}/${itemId.value}`, TokenStorage.getAuthentication())
+                    if (props.apiVersion == 1) {
+                        item.value = result.data.data.output;
+                    } else if (props.apiVersion == 2) {
+                        item.value = result.data;
+                    } else {
+                        throw new Error("Unsupported API version");
+                    }
                     for (const field of fields) {
                         if (field.type == 'checkbox') {
                             item.value[field.key] = !!item.value[field.key]
@@ -230,11 +254,16 @@
         invalid = isInvalid.value
         if (!invalid) {
             try {
-                const result = await axios.post(`/api/v1/${objectType}/`, item.value, TokenStorage.getAuthentication())
+                const result = await axios.post(`/api/v${props.apiVersion}/${objectType}/`, item.value, TokenStorage.getAuthentication())
 
-                if (result.data.status == "error") {
-                    toast.error(result.data.message + ", " + result.data.data.error);
-                } else {
+                if (props.apiVersion == 1) {
+                    if (result.data.status == "error") {
+                        toast.error(result.data.message + ", " + result.data.data.error);
+                    } else {
+                        toast.success(objectTitle('', 'is created'));
+                        loadItems();
+                    }
+                } else if (props.apiVersion == 2) {
                     toast.success(objectTitle('', 'is created'));
                     loadItems();
                 }
@@ -255,7 +284,7 @@
         }
         if (!invalid) {
             try {
-                const result = await axios.put(`/api/v1/${objectType}/${itemId.value}`, item.value, TokenStorage.getAuthentication())
+                const result = await axios.put(`/api/v${props.apiVersion}/${objectType}/${itemId.value}`, item.value, TokenStorage.getAuthentication())
                 if (result.data.status == "error") {
                     toast.error(result.data.message + ", " + result.data.data.error);
                 } else {
@@ -273,9 +302,9 @@
         try {
             var result
             if(isFlat){
-                result = await axios.delete(`/api/v1/${objectType}?name=${encodeURIComponent(item.name)}`, TokenStorage.getAuthentication())
+                result = await axios.delete(`/api/v${props.apiVersion}/${objectType}?name=${encodeURIComponent(item.name)}`, TokenStorage.getAuthentication())
             }else{
-                result = await axios.delete(`/api/v1/${objectType}/${itemId.value}`, TokenStorage.getAuthentication())
+                result = await axios.delete(`/api/v${props.apiVersion}/${objectType}/${itemId.value}`, TokenStorage.getAuthentication())
             }
             if (result.data.status == "error") {
                 toast.error(result.data.message + ", " + result.data.data.error);
@@ -311,20 +340,27 @@
     function showField(field) {
         if (field.readonly) return false
         if (field.noInput) return false
-        if (field.type == 'password' && ["new","change_password"].includes(action.value)) return true
+        var depShow = true
+        if (field.dependency) {
+            const depValue = item.value[field.dependency];
+            if (field.negateDependency) {
+                depShow = !depValue;
+            } else {
+                depShow = depValue;
+            }
+        }        
+        if (field.type == 'password' && ["new","change_password"].includes(action.value)) return (true && depShow)
         if (field.type != 'password' && action.value == 'change_password') return false
         if (field.type == 'password' && action.value != 'change_password') return false
-        if (field.dependency && !item.value[field.dependency]) {
-            return false
-        }
-        return true
+
+        return depShow;
     }
     function removeUnwantedProperties(){
         for (const field of fields) {
             if (field.type == 'password' && !["new","change_password"].includes(action.value)) {
                 delete item.value[field.key]
             }
-            if (field.type != 'password' && field.key!=idKey && action.value=='change_password') {
+            if (field.type != 'password' && field.key!=idKey && !field.password_related && action.value=='change_password') {
                 delete item.value[field.key]
             }
         }
@@ -367,6 +403,9 @@
         }
         return false
     })
+    const checkboxFields = computed(() => {
+        return fields.filter(field => field.type === 'checkbox').map(field => field.key);
+    });
 
 
     // HOOKS
@@ -422,6 +461,7 @@
                 :idKey="idKey"
                 :actions="actions" 
                 :removeDoubles="removeDoubles"
+                :checkboxFields="checkboxFields"
                 @preview="previewItem" 
                 @edit="editItem" 
                 @test="testItem" 

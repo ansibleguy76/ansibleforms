@@ -12,6 +12,7 @@
           "enum": ["ansible"]
         },
         "template": {"not":{}},
+        "awx": {"not":{}},
         "steps": {"not":{}},
         "awxCredentials": {"not":{}},
         "executionEnvironment": {"not":{}},
@@ -43,6 +44,7 @@
         "playbook": {"not":{}},
         "ansibleCredentials": {"not":{}},
         "template": {"not":{}},
+        "awx": {"not":{}},
         "steps": {"not":{}},
         "inventory": {"not":{}},
         "awxCredentials": {"not":{}},
@@ -65,6 +67,7 @@
         "playbook": {"not":{}},
         "vaultCredentials": {"not":{}},
         "template": {"not":{}},
+        "awx": {"not":{}},
         "inventory": {"not":{}},
         "awxCredentials": {"not":{}},
         "ansibleCredentials": {"not":{}},
@@ -260,6 +263,7 @@
                   "enum": ["ansible"]
                 },
                 "template": {"not":{}},
+                "awx": {"not":{}},
                 "steps": {"not":{}},
                 "awxCredentials": {"not":{}},
                 "executionEnvironment": {"not":{}},
@@ -293,6 +297,7 @@
             "$ref": "/formfield"
           },
           "template": {"type": "string"},
+          "awx": {"type": "string"},
           "abortable": {"type": "boolean"},
           "awxCredentials": {
             "type": "array",
@@ -390,6 +395,7 @@
     "key": {"type": "string"},
     "abortable": {"type": "boolean"},
     "template": {"type": "string"},
+    "awx": {"type": "string"},
     "credentials": {
       "type": "object",
       "patternProperties": {

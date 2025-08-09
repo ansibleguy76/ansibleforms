@@ -7,21 +7,26 @@ import TokenStorage from "@/lib/TokenStorage";
 
 const toast = useToast();
 const authenticated = ref(false);
+const tests = ref({});
 
-async function test_connection(ldap) {
-    try {
-        const result = await axios.post(
-            `/api/v1/awx/check`,
-            ldap,
-            TokenStorage.getAuthentication()
-        );
-        if (result.data.status == "error") {
-            toast.error(result.data.message + ", " + result.data.data.error);
+async function test_connection(item) {
+    if (item) {
+        if (!tests.value[item.id]) {
+            try {
+                tests.value[item.id] = "Testing...";
+                const result = await axios.get(
+                    `/api/v2/awx/check/${item.id}`,
+                    TokenStorage.getAuthentication()
+                );
+                toast.success(result.data.result);
+            } catch (err) {
+                toast.error(err.message);
+            } finally {
+                delete tests.value[item.id];
+            }
         } else {
-            toast.success(result.data.message);
+            toast.warning("Test already in progress");
         }
-    } catch (err) {
-        toast.error(err.message);
     }
 }
 
@@ -37,7 +42,7 @@ onMounted(async () => {
     <div class="flex-shrink-0">
         <main class="d-flex flex-nowrap container-xxl">
             <AppSidebar />
-            <AppAdminSingle v-if="authenticated" :settings="settings.aap" @test="test_connection" />
+            <AppAdminMulti v-if="authenticated" :settings="settings.aap" @test="test_connection" :busyItems="tests" :apiVersion="2" />
         </main>
     </div>
 </template>
