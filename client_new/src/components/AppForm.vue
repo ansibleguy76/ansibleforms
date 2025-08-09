@@ -842,8 +842,6 @@
 
             if (foundfield in form.value) {      // does field xxx exist in our form ?
                 if (fieldOptions.value[foundfield] && (["expression", "table", "constant"].includes(fieldOptions.value[foundfield].type) || column.includes(".")) && ((typeof form.value[foundfield] == "object") || (Array.isArray(form.value[foundfield])))) {
-                    console.log(`[replacePlaceholderInString] ${foundfield}`)
-                    fieldvalue = JSON.stringify(form.value[foundfield])
                     fieldvalue = JSON.stringify(Helpers.replacePlaceholders(match[1], form.value)) // allow full object reference
                     if (typeof fieldvalue == "string") { // drop quotes if string
                         fieldvalue = fieldvalue?.replace(/^\"+/, '').replace(/\"+$/, ''); // eslint-disable-line

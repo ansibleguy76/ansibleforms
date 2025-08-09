@@ -132,6 +132,15 @@ const Helpers = {
     }
     return field;
   },
+  replacePlaceholders(match,object){
+    if(match.match(/^[a-zA-Z0-9_\-\[\]\.]*$/)){ /* eslint-disable-line */
+      var to_eval="object"+match.replaceAll("[",".").replaceAll("]",".").split(".").filter(x=>!(x==="")).map(x=>{return "["+((/^-?\d+$/.test(x))?x:"'"+x+"'")+"]"}).join("")
+      // console.log(to_eval)
+      return eval(to_eval)
+    } else{
+      return `$(${match})` // return original
+    }
+  },  
   forceFileDownload(response) {
     const url = window.URL.createObjectURL(new Blob([response.data]))
     const link = document.createElement('a')
