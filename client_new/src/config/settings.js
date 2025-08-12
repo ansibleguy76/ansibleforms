@@ -248,6 +248,7 @@ export default {
             { name: 'test', title: `Test Connection`, icon: 'plug', color: 'test' }
         ],
         fields: [
+            { key: 'id', label: 'ID', sortable: false, required: false, filterable: false, readonly: true, hidden: true, icon: 'key', noInput: true },            
             { key: "use_credentials", label: "Use credentials", type: "checkbox", isAction: true, hidden: true, password_related: true },
             { key: "ignore_certs", label: "Ignore Certs", type: "checkbox", isAction: true, hidden: true },
             { key: "is_default", label: "Is Default", type: "checkbox", isAction: true },

@@ -85,9 +85,7 @@ class Awx {
   }
   static async update(record, id = 1) {
     // Find the existing record to get the name (if needed)
-    const existing = await Awx.findById(id);
-    record.name = existing.name;
-    logger.info(`Updating awx ${record.name}`);
+    logger.info(`Updating awx id ${id}`);
     if (record.is_default) {
       await Awx.unsetDefault();
     }
