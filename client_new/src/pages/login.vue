@@ -64,7 +64,7 @@ function getGroupsAndLogin(token, url = `${azureGraphUrl.value}/v1.0/me/transiti
 
       axios.get(url, config)
          .then((res) => {
-            const groups = res.data.value.filter(x => x.displayName);
+            const groups = res.data.value.filter(x => x.displayName).map(x => x.displayName);
             allGroups = allGroups.concat(groups);
 
             if (res.data['@odata.nextLink']) {
