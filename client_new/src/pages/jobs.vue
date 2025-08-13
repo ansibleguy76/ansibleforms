@@ -200,6 +200,10 @@
 
     // load job output
     async function loadOutput(id, sub=false){
+        if (!id) {
+            job.value = null;
+            return;
+        }
         if(!sub){
             jobId.value=id
         }
@@ -332,6 +336,8 @@
                     break;
                 case 'delete':
                     result = await axios.delete(uri,TokenStorage.getAuthentication())
+                    id = undefined // reset id after delete
+                    jobId.value=undefined
                     break;
                 case 'patch':
                     result = await axios.patch(uri,{},TokenStorage.getAuthentication())

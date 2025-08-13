@@ -266,9 +266,26 @@ Job.createOutput = async function (record) {
   }
   return await Job.isAbortRequested(record.job_id)
 };
-Job.delete = async function(id){
+Job.delete = async function(user,id){
   logger.notice(`Deleting job ${id}`)
+
+  var query
+  var params
+  const check = await Job.checkExists(id)
+  if(user.roles.includes("admin")){
+    query = "SELECT j.*,sj.subjobs,j2.no_of_records,o.counter FROM AnsibleForms.jobs j LEFT JOIN (SELECT parent_id,GROUP_CONCAT(id separator ',') subjobs FROM AnsibleForms.jobs GROUP BY parent_id) sj ON sj.parent_id=j.id,(SELECT COUNT(id) no_of_records FROM AnsibleForms.jobs)j2,(SELECT max(`order`)+1 counter FROM AnsibleForms.job_output WHERE job_output.job_id=?)o WHERE j.id=?;"
+    params = [id,id,user.username,user.type]
+  }else{
+    query = "SELECT j.*,sj.subjobs,j2.no_of_records,o.counter FROM AnsibleForms.jobs j LEFT JOIN (SELECT parent_id,GROUP_CONCAT(id separator ',') subjobs FROM AnsibleForms.jobs GROUP BY parent_id) sj ON sj.parent_id=j.id,(SELECT COUNT(id) no_of_records FROM AnsibleForms.jobs WHERE user=? AND user_type=?)j2,(SELECT max(`order`)+1 counter FROM AnsibleForms.job_output WHERE job_output.job_id=?)o WHERE j.id=? AND ((j.user=? AND j.user_type=?) OR (j.status='approve'));"
+    params = [user.username,user.type,id,id,user.username,user.type]
+  }
+  // get normal data
+  var res = await mysql.do(query,params,true)
+  if(res.length!=1){
+      throw new Errors.AccessDeniedError(`You do not have access to job ${id}`)
+  }  
   return await mysql.do("DELETE FROM AnsibleForms.`jobs` WHERE id = ? OR parent_id = ?", [id,id])
+
 }
 Job.checkExists = async function(id){
   const res = await mysql.do("SELECT id FROM AnsibleForms.`jobs` WHERE id = ?", [id])

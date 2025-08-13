@@ -103,7 +103,8 @@ const download = async function(req,res){
   }
 }
 const deleteJob = function(req, res) {
-    Job.delete( req.params.id)
+    var user = req?.user?.user || {};
+    Job.delete(user, req.params.id)
     .then((job)=>{res.json(new RestResult("success","job deleted",null,""))})
     .catch((err)=>{res.json(new RestResult("error","failed to delete job",null,err))})
 };
