@@ -84,6 +84,14 @@
       The admin password is the password for first user that can login to the application.  
       This user has full access to the application and is created at first start if not present.
       This user will be added to the `admins` group, which will be created as well if not present.
+  - name: BACKUP_PATH
+    type: string
+    allowed: a valid directory path
+    short: Backup path
+    default: "%PERSISTENT_FOLDER%/backups"
+    description: |
+      Ansible Forms can backup the database and forms.  This is the path where the backups are stored.
+      The backup folder is created at first start if not present and a timestamp folder is created for each backup.
   - name: FORMS_PATH
     type: string
     allowed: a valid file path
@@ -589,6 +597,7 @@
       - extendedTokenExpiration: The user can request a token with a longer expiration time (for coding api purposes for example)  
       - showAllJobLogs: The user can see all job logs (not only his own) (Added in 5.0.9)
       - enableLogin: The user can login.  
+      - allowDatabaseOps: The user can perform database operations, such as backup and restore.
         
       When options are not set, the admin role will have all options.  
       When options are set on the public role, they will have the lowest precedence and can be used as default options for all roles.  
@@ -776,6 +785,9 @@
           - showExtravars: The user can see the extravars on a form
           - showLogs: The user can see the logs page
           - extendedTokenExpiration: The user can request a token with a longer expiration time (for coding api purposes for example)  
+          - showAllJobLogs: The user can see all job logs (not only his own) (Added in 5.0.9)
+          - enableLogin: The user can login.  
+          - allowDatabaseOps: The user can perform database operations, such as backup and restore.
 
           When options are not set, the admin role will have all options.  
           When options are set on the public role, they will have the lowest precedence and can be used as default options for all roles.  

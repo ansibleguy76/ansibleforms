@@ -57,6 +57,7 @@
               "showExtravars": { "type": "boolean" },
               "extendedTokenExpiration": { "type": "boolean" },
               "showAllJobLogs": { "type": "boolean" },
+              "allowDatabaseOps": { "type": "boolean" },
               "enableLogin": { "type": "boolean" }
             },
             "additionalProperties": true
@@ -94,6 +95,8 @@
               "showSettings": { "type": "boolean" },
               "showExtravars": { "type": "boolean" },
               "extendedTokenExpiration": { "type": "boolean" },
+              "showAllJobLogs": { "type": "boolean" },
+              "allowDatabaseOps": { "type": "boolean" },
               "enableLogin": { "type": "boolean" }
             },
             "additionalProperties": true

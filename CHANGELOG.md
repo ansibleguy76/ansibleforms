@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   updateMarker to table field
 -   multi awx (314)
+-   backup/restore api (/api/v2/database (get, post/backup, post/restore?folder=))
+-   new role option allowDatabaseOps
 
 ### Changed
 

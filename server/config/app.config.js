@@ -33,6 +33,7 @@ var app_config = {
   adminUsername: process.env.ADMIN_USERNAME || "admin",
   adminPassword: process.env.ADMIN_PASSWORD || "AnsibleForms!123",
   awxApiPrefix: process.env.AWX_API_PREFIX || "/api/v2",
+  backupPath: process.env.BACKUP_PATH || path.resolve(__dirname + "/../persistent/backups"),
 };
 
 // process dynamic YTT_LIB_DATA_ environment variables

@@ -106,7 +106,7 @@ RUN cp -r ../client/dist/. ./views
 # take base and install production app dependencies
 # copy built app from intermediate
 
-FROM nodebase as final
+FROM nodebase AS final
 
 # for now we still run the app under dist..
 WORKDIR /app/dist
