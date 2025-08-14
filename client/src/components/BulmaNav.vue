@@ -42,9 +42,9 @@
                     <router-link class="navbar-item" to="/reference-guide/forms">
                       <span class="icon"><font-awesome-icon icon="question-circle" /></span><span>Reference Guide</span>
                     </router-link>
-                    <a class="navbar-item" :href="`/api-docs`" target="_blank">
+                    <router-link class="navbar-item" to="/api-docs" target="_blank">
                       <span class="icon"><font-awesome-icon icon="code" /></span><span>Api docs</span>
-                    </a>
+                    </router-link>
                     <hr class="navbar-divider">
                     <a class="navbar-item" @click="$emit('about')">
                       <span class="icon"><font-awesome-icon icon="code-branch" /></span><span>About v{{version}}</span>

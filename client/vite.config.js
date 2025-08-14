@@ -17,7 +17,7 @@ export default defineConfig({
     host: true,
     https: false,
     proxy: {
-      '/api': {
+      '/api/': {
         target: 'http://172.16.50.4:3001', // Change to your Express backend URL/port
         changeOrigin: true,
         secure: false,

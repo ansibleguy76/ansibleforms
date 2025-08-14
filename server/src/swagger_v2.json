@@ -1,0 +1,319 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "AnsibleForms API v2",
+    "version": "2.0.0",
+    "description": "API documentation for AnsibleForms v2 endpoints: AWX, Job, and Database."
+  },
+  "tags": [
+  { "name": "authentication", "description": "Authentication and refresh tokens" },
+  { "name": "awx", "description": "AWX configuration and management" },
+  { "name": "job", "description": "Job management and operations" },
+  { "name": "database", "description": "Database backup and restore" }
+  ],
+  "servers": [
+    { "url": "/api/v2" }
+  ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": ["authentication"],
+        "summary": "Get authorization bearer token",
+        "description": "Use basic authentication to obtain a JWT token. Then use the access token, prefixed with 'Bearer', to use all other APIs. The access token is limited in time. You can login again to get a new set of tokens or use the /token API and the refresh token to obtain a new set (preferred).",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "expiryDays": {
+                    "type": "integer",
+                    "description": "Expiry days, requires extendedTokenExpiration option to be set to true in role-options"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accessToken": { "type": "string" },
+                    "refreshToken": { "type": "string" },
+                    "expiresIn": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        },
+        "security": [ { "basicAuth": [] } ]
+      }
+    },
+    "/token": {
+      "post": {
+        "tags": ["authentication"],
+        "summary": "Refresh tokens",
+        "description": "Use the refresh token to obtain a new access token.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "refreshToken": { "type": "string", "description": "Refresh token" }
+                },
+                "required": ["refreshToken"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accessToken": { "type": "string" },
+                    "refreshToken": { "type": "string" },
+                    "expiresIn": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/awx": {
+      "get": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["awx"],
+        "summary": "List all AWX or filter by name",
+        "parameters": [ { "name": "name", "in": "query", "schema": { "type": "string" }, "required": false } ],
+        "responses": { "200": { "description": "AWX list or single AWX" } }
+      },
+      "post": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["awx"],
+        "summary": "Create a new AWX",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Awx" } } } },
+        "responses": { "201": { "description": "AWX created" } }
+      }
+    },
+    "/awx/{id}": {
+      "get": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["awx"],
+        "summary": "Get AWX by ID",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "AWX object" }, "404": { "description": "Not found" } }
+      },
+      "put": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["awx"],
+        "summary": "Update AWX by ID",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Awx" } } } },
+        "responses": { "200": { "description": "AWX updated" }, "404": { "description": "Not found" } }
+      },
+      "delete": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["awx"],
+        "summary": "Delete AWX by ID",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "AWX deleted" }, "404": { "description": "Not found" } }
+      }
+    },
+    "/awx/check/{id}": {
+      "get": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["awx"],
+        "summary": "Check AWX connection by ID",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "Check result" }, "404": { "description": "Not found" } }
+      }
+    },
+    "/job": {
+      "get": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["job"],
+        "summary": "List all jobs",
+        "parameters": [ { "name": "records", "in": "query", "schema": { "type": "integer" }, "required": false } ],
+        "responses": { "200": { "description": "Job list" } }
+      },
+      "post": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["job"],
+        "summary": "Launch a new job",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/JobLaunch" } } } },
+        "responses": { "200": { "description": "Job launched" } }
+      }
+    },
+    "/job/approvals": {
+      "get": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["job"],
+        "summary": "Get approvals count",
+        "responses": { "200": { "description": "Approvals count" } }
+      }
+    },
+    "/job/upload": {
+      "post": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["job"],
+        "summary": "Upload a file for a job",
+        "requestBody": { "required": true, "content": { "multipart/form-data": { "schema": { "type": "object", "properties": { "file": { "type": "string", "format": "binary" } } } } } },
+        "responses": { "200": { "description": "File uploaded" } }
+      }
+    },
+    "/job/{id}": {
+      "get": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["job"],
+        "summary": "Get job by ID",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "Job object" }, "404": { "description": "Not found" } }
+      },
+      "delete": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["job"],
+        "summary": "Delete job by ID",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "Job deleted" }, "404": { "description": "Not found" } }
+      }
+    },
+    "/job/{id}/download": {
+      "get": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["job"],
+        "summary": "Download job output by ID",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "Job output file" }, "404": { "description": "Not found" } }
+      }
+    },
+    "/job/{id}/abort": {
+      "post": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["job"],
+        "summary": "Abort job by ID",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "Job aborted" }, "404": { "description": "Not found" } }
+      }
+    },
+    "/job/{id}/relaunch": {
+      "post": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["job"],
+        "summary": "Relaunch job by ID",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "Job relaunched" }, "404": { "description": "Not found" } }
+      }
+    },
+    "/job/{id}/approve": {
+      "post": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["job"],
+        "summary": "Approve job by ID",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "Job approved" }, "404": { "description": "Not found" } }
+      }
+    },
+    "/job/{id}/reject": {
+      "post": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["job"],
+        "summary": "Reject job by ID",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "Job rejected" }, "404": { "description": "Not found" } }
+      }
+    },
+    "/database": {
+      "get": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["database"],
+        "summary": "List all database backups",
+        "responses": { "200": { "description": "Backup list" } }
+      }
+    },
+    "/database/backup": {
+      "post": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["database"],
+        "summary": "Create a database backup",
+        "responses": { "200": { "description": "Backup created" } }
+      }
+    },
+    "/database/restore": {
+      "post": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["database"],
+        "summary": "Restore database from backup",
+        "requestBody": { "required": false, "content": { "application/json": { "schema": { "type": "object", "properties": { "folder": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "Restore completed" } }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "basicAuth": {
+        "type": "http",
+        "scheme": "basic",
+        "description": "Basic authentication for login."
+      },
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT Bearer token. Authenticate via /auth/login, then use 'Authorize' here."
+      }
+    },
+    "schemas": {
+      "Awx": {
+        "type": "object",
+        "description": "AWX configuration object.",
+        "properties": {
+          "id": { "type": "integer", "description": "Unique identifier for the AWX config.", "example": 1 },
+          "name": { "type": "string", "description": "Name of the AWX instance.", "example": "awx-main" },
+          "description": { "type": "string", "description": "Description of the AWX instance.", "example": "Main AWX server for production" },
+          "is_default": { "type": "boolean", "description": "Whether this AWX is the default.", "example": true },
+          "uri": { "type": "string", "description": "Base URL of the AWX instance.", "example": "https://awx.example.com" },
+          "use_credentials": { "type": "boolean", "description": "Use username/password instead of token.", "example": false },
+          "username": { "type": "string", "description": "Username for AWX (if use_credentials is true).", "example": "admin" },
+          "password": { "type": "string", "description": "Password for AWX (if use_credentials is true).", "example": "secret" },
+          "token": { "type": "string", "description": "API token for AWX (if use_credentials is false).", "example": "awxapitoken123" },
+          "ignore_certs": { "type": "boolean", "description": "Ignore SSL certificate errors.", "example": false },
+          "ca_bundle": { "type": "string", "description": "CA bundle for SSL verification.", "example": "-----BEGIN CERTIFICATE-----..." }
+        },
+        "security": [
+          { "bearerAuth": [] }
+        ],
+        "required": ["name", "uri"]
+      },
+      "JobLaunch": {
+        "type": "object",
+        "description": "Job launch request object.",
+        "properties": {
+          "formName": { "type": "string", "description": "Name of the form to launch.", "example": "Create Virtual Machine" },
+          "extravars": { "type": "object", "description": "Extra variables for the job.", "example": { "vm_name": "test-vm", "datacenter": "dc1" } },
+          "credentials": { "type": "object", "description": "Credentials for the job.", "example": { "vcenter": "VCENTER_CRED" } },
+          "notifications": { "type": "object", "description": "Notification settings for the job.", "example": { "email": "user@example.com" } },
+          "job_type": { "type": "string", "description": "Type of job (e.g., ansible, awx, multistep).", "example": "ansible" },
+          "target": { "type": "string", "description": "Target resource for the job.", "example": "vm1" }
+        },
+        "required": ["formName"]
+      }
+    }
+  }
+}

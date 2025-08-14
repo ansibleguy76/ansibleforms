@@ -58,7 +58,8 @@ import databaseRoutes from "./routes/database.routes.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const swaggerDocument = JSON.parse(fs.readFileSync(path.join(__dirname, "swagger.json"), "utf8"));
+const swaggerDocumentV1 = JSON.parse(fs.readFileSync(path.join(__dirname, "swagger_v1.json"), "utf8"));
+const swaggerDocumentV2 = JSON.parse(fs.readFileSync(path.join(__dirname, "swagger_v2.json"), "utf8"));
 
 // a small custom middleware to check whether the user has access to routes
 
@@ -111,16 +112,19 @@ const load = async (app) => {
   // is used as a middleware.  Every route will check the token for validity
   const authobj = passport.authenticate("jwt", { session: false });
 
-  // api routes for browser only (no cors)
+  // api docs for v1 and v2
   const swaggerOptions = {
     customSiteTitle: "Ansibleforms Swagger UI",
     customfavIcon: `/favicon.svg`,
     customCssUrl: `/assets/css/swagger.css`,
     docExpansion: "none",
   };
-  // change basePath dynamically
-  swaggerDocument.basePath = `/api/v1`;
-  app.use(`/api-docs`, cors(), swaggerUi.serve, swaggerUi.setup(swaggerDocument, swaggerOptions));
+  // v1 docs
+  swaggerDocumentV1.basePath = `/api/v1`;
+  app.use(`/api/v1/docs`, cors(), swaggerUi.serveFiles(swaggerDocumentV1, swaggerOptions), swaggerUi.setup(swaggerDocumentV1, swaggerOptions));
+  // v2 docs
+  swaggerDocumentV2.basePath = `/api/v2`;
+  app.use(`/api/v2/docs`, cors(), swaggerUi.serveFiles(swaggerDocumentV2, swaggerOptions), swaggerUi.setup(swaggerDocumentV2, swaggerOptions));
   app.use(`/api/v1/schema`, schemaRoutes);
 
   // api routes for querying
@@ -139,8 +143,10 @@ const load = async (app) => {
 
   // api routes for authorization
   app.use(`/api/v1/auth`, cors(), loginRoutes);
+  app.use(`/api/v2/auth`, cors(), loginRoutes);
 
   app.use(`/api/v1/token`, cors(), tokenRoutes);
+  app.use(`/api/v2/token`, cors(), tokenRoutes);
 
   // api routes for the vue3 app
   app.use(`/api/v2/app`, cors(), appRoutes);

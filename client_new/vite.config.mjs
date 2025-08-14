@@ -71,12 +71,7 @@ export default defineConfig({
   server: {
     port: 8000,
     proxy: {
-      '/api': {
-        target: 'http://172.16.50.4:3001',
-        changeOrigin: true,
-        secure: false,
-      },
-      '/api-docs': {
+      '/api/': {
         target: 'http://172.16.50.4:3001',
         changeOrigin: true,
         secure: false,

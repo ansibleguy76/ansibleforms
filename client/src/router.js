@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import Forms from './views/Forms.vue'
+import ApiDocs from './views/ApiDocs.vue'
 import Form from './views/Form.vue'
 import FormReload from './views/FormReload.vue'
 import Login from './views/Login.vue'
@@ -246,6 +247,11 @@ export default new Router({
         path:"/jobs/:id",
         name:"JobLog",
         component:Jobs
+      },
+      {
+        path:"/api-docs",
+        name:"ApiDocs",
+        component:ApiDocs
       }
   ]
 })
