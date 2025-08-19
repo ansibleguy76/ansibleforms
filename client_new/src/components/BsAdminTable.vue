@@ -28,8 +28,8 @@
     /*                                                   */
     /*****************************************************/
 
-    import BsPagination from './BsPagination.vue';
-import FaIcon from './FaIcon.vue';
+
+    import dayjs from 'dayjs';
 
     // INIT
 
@@ -136,7 +136,10 @@ import FaIcon from './FaIcon.vue';
     const highlight = (item, column, columnIndex) => {
         var text = '';
         const field = props.fields[columnIndex]; // what field is this?
-        if (field.type == 'select') {  // is this a select field? => then get the label from the parentList
+        if (field.type === 'datetime') {
+            const val = item[column];
+            text = val ? dayjs(val).format('YYYY-MM-DD HH:mm:ss') : '';
+        } else if (field.type == 'select') {  // is this a select field? => then get the label from the parentList
             const parentList = props.parentLists[field.values];
             text = parentList.find(listItem => listItem[field.valueKey] == item[field.key])[field.labelKey] // get the foreign label
         } else {

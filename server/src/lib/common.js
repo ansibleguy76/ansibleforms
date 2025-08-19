@@ -1,6 +1,8 @@
 import certinfo from "cert-info";
 import logger from "./logger.js";
 import config from "../../config/app.config.js";
+import { DateTime } from "luxon";
+import logConfig from "../../config/log.config.js";
 
 var Helpers = function(){
 
@@ -250,4 +252,15 @@ Helpers.formatOutput = (records,asText)=>{
   })
   return output.join("\r\n") // return all as one nice merged string
 }
+
+Helpers.dateFromBackupFolder = function(folder, tz = logConfig.tz) {
+  try {
+    return DateTime.fromFormat(folder, 'yyyyLLddHHmmss', { zone: 'UTC' })
+      .setZone(tz)
+      .toISO();
+  } catch {
+    return null;
+  }
+}
+
 export default Helpers

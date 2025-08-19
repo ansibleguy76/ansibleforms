@@ -53,9 +53,9 @@ Middleware.checkLogsMiddleware = (req, res, next) => {
   }
 }
 
-Middleware.checkDatabaseMiddleware = (req, res, next) => {
+Middleware.checkBackupMiddleware = (req, res, next) => {
   try {
-    if (!(req.user.user.options?.allowDatabaseOps ?? req.user.user.roles.includes("admin"))) {
+    if (!(req.user.user.options?.allowBackupOps ?? req.user.user.roles.includes("admin"))) {
       res.status(401).json(new restResult("error", "No access", null, "You do not have access to database operations"));
     } else {
       next();

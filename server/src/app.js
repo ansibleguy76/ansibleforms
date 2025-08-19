@@ -52,7 +52,7 @@ import datasourceRoutes from "./routes/datasource.routes.js";
 import scheduleRoutes from "./routes/schedule.routes.js";
 import appRoutes from "./routes/app.routes.js";
 import awxRoutesv2 from "./routes/awx.routes.v2.js";
-import databaseRoutes from "./routes/database.routes.js";
+import backupRoutes from "./routes/backup.routes.js";
 
 // __dirname and __filename setup for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -173,8 +173,8 @@ const load = async (app) => {
   app.use(`/api/v1/datasource`, cors(), authobj, Middleware.checkSettingsMiddleware, datasourceRoutes);
   app.use(`/api/v1/schedule`, cors(), authobj, Middleware.checkSettingsMiddleware, scheduleRoutes);
 
-  // database backup/restore/list routes
-  app.use(`/api/v2/database`, cors(), authobj, databaseRoutes);
+  // backup/restore/list routes
+  app.use(`/api/v2/backup`, cors(), authobj, backupRoutes);
 
   // routes for form config (extra middleware in the routes itself)
   app.use(`/api/v1/config`, cors(), authobj, configRoutes);

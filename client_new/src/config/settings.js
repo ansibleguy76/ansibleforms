@@ -300,5 +300,21 @@ export default {
             { key: "issuer", icon: "user-tag", line: 1, label: "Issuer Url", required: true, dependency: "enabled" },
             { key: "groupfilter", icon: "filter", line: 1, label: "Group Filter", required: false, dependency: "enabled" },
         ]
-    }
+    },
+    backups: {
+        icon: 'database',
+        type: 'backup',
+        label: 'Backup',
+        labelPlural: 'Backups',
+        idKey: 'folder',
+        actions: [
+            { name: 'trigger', icon: 'undo', title: 'Restore', color: 'warning' },
+            { name: 'delete', icon: 'trash', title: 'Delete', color: 'danger' }
+        ],
+        fields: [
+            { key: 'folder', label: 'Folder', readonly: true },
+            { key: 'date', label: 'Date', type: "datetime" , readonly: true },
+            { key: 'description', label: 'Description', type: 'text' }
+        ]
+    },
 }

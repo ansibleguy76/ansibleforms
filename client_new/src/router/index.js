@@ -30,6 +30,7 @@ import schedules from "@/pages/admin/schedules.vue"
 import settings from "@/pages/admin/settings.vue"
 import ssh from "@/pages/admin/ssh.vue"
 import users from "@/pages/admin/users.vue"
+import backups from "@/pages/admin/backups.vue"
 
 import TokenStorage from '@/lib/TokenStorage.js'
 
@@ -69,6 +70,15 @@ const checkSettings=(to, from, next) => {
     console.log("You don't have access to the settings")
   }
 }
+// allowBackupOps
+const allowBackupOps=(to, from, next) => {
+  var payload = TokenStorage.getPayload()
+  if(payload?.user?.options?.allowBackupOps ?? payload?.user?.roles?.includes("admin")){
+    next()
+  }else{
+    console.log("You don't have access to the backups page")
+  }
+}
 
 
 
@@ -103,6 +113,7 @@ const routes = [
   { path: '/admin/settings', name: "/admin/settings", component: settings, beforeEnter: checkSettings },
   { path: '/admin/ssh', name: "/admin/ssh", component: ssh, beforeEnter: checkSettings },
   { path: '/admin/users', name: "/admin/users", component: users, beforeEnter: checkSettings },
+  { path: '/admin/backups', name: "/admin/backups", component: backups, beforeEnter: allowBackupOps },
 
 ]
 

@@ -8,6 +8,7 @@
 
     const items = [
         { title: "Ansible Forms", icon: "fac,ansibleforms", link: "/admin/settings" },
+        { title: "Backups", icon: "database", link: "/admin/backups" },
         { title: "Mail", icon: "envelope", link: "/admin/mailSettings"},
         { title: "divider" },
         { title: "Groups", icon: "users", link: "/admin/groups" },

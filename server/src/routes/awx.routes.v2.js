@@ -13,6 +13,6 @@ router.put('/:id', awxController.update);
 // Delete an AWX by id
 router.delete('/:id', awxController.delete);
 // Check AWX config (if needed)
-router.get('/check/:id', awxController.check);
+router.post('/:id/check', awxController.check);
 
 export default router

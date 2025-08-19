@@ -9,7 +9,7 @@
   { "name": "authentication", "description": "Authentication and refresh tokens" },
   { "name": "awx", "description": "AWX configuration and management" },
   { "name": "job", "description": "Job management and operations" },
-  { "name": "database", "description": "Database backup and restore" }
+  { "name": "backup", "description": "Backup and restore operations" }
   ],
   "servers": [
     { "url": "/api/v2" }
@@ -137,7 +137,9 @@
       }
     },
     "/awx/check/{id}": {
-      "get": {
+    },
+    "/awx/{id}/check": {
+      "post": {
         "security": [ { "bearerAuth": [] } ],
         "tags": ["awx"],
         "summary": "Check AWX connection by ID",
@@ -239,29 +241,112 @@
         "responses": { "200": { "description": "Job rejected" }, "404": { "description": "Not found" } }
       }
     },
-    "/database": {
+    "/backup": {
       "get": {
         "security": [ { "bearerAuth": [] } ],
-        "tags": ["database"],
-        "summary": "List all database backups",
-        "responses": { "200": { "description": "Backup list" } }
-      }
-    },
-    "/database/backup": {
+        "tags": ["backup"],
+        "summary": "List all backups (sorted by folder desc)",
+        "responses": {
+          "200": {
+            "description": "List of backups",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/BackupMeta" }
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "security": [ { "bearerAuth": [] } ],
-        "tags": ["database"],
-        "summary": "Create a database backup",
-        "responses": { "200": { "description": "Backup created" } }
+        "tags": ["backup"],
+        "summary": "Create a new backup",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "description": { "type": "string", "description": "Optional description for the backup" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Backup created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BackupMeta" }
+              }
+            }
+          }
+        }
       }
     },
-    "/database/restore": {
+    "/backup/{folder}": {
+      "get": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["backup"],
+        "summary": "Get a single backup by folder name",
+        "parameters": [
+          { "name": "folder", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Backup metadata",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BackupMeta" }
+              }
+            }
+          },
+          "404": { "description": "Not found" }
+        }
+      },
+      "delete": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["backup"],
+        "summary": "Delete a backup by folder name",
+        "parameters": [
+          { "name": "folder", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Backup deleted" },
+          "404": { "description": "Not found" }
+        }
+      }
+    },
+    "/backup/restore": {
       "post": {
         "security": [ { "bearerAuth": [] } ],
-        "tags": ["database"],
-        "summary": "Restore database from backup",
-        "requestBody": { "required": false, "content": { "application/json": { "schema": { "type": "object", "properties": { "folder": { "type": "string" } } } } } },
-        "responses": { "200": { "description": "Restore completed" } }
+        "tags": ["backup"],
+        "summary": "Restore from a backup",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "folder": { "type": "string", "description": "Backup folder name to restore from" },
+                  "backupFirst": { "type": "boolean", "description": "If true, create a backup before restoring" },
+                  "backupDescription": { "type": "string", "description": "Optional description for the pre-restore backup" }
+                },
+                "required": ["folder"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Restore completed" },
+          "404": { "description": "Backup not found" }
+        }
       }
     }
   },
@@ -300,6 +385,17 @@
           { "bearerAuth": [] }
         ],
         "required": ["name", "uri"]
+      },
+      "BackupMeta": {
+        "type": "object",
+        "description": "Backup metadata object.",
+        "properties": {
+          "folder": { "type": "string", "description": "Backup folder name", "example": "2024-06-01T12-00-00Z" },
+          "description": { "type": "string", "description": "Description of the backup", "example": "Nightly backup" },
+          "createdAt": { "type": "string", "format": "date-time", "description": "Backup creation datetime (ISO 8601)", "example": "2024-06-01T12:00:00Z" },
+          "size": { "type": "integer", "description": "Backup size in bytes", "example": 1234567 }
+        },
+        "required": ["folder", "createdAt"]
       },
       "JobLaunch": {
         "type": "object",

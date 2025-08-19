@@ -597,7 +597,7 @@
       - extendedTokenExpiration: The user can request a token with a longer expiration time (for coding api purposes for example)  
       - showAllJobLogs: The user can see all job logs (not only his own) (Added in 5.0.9)
       - enableLogin: The user can login.  
-      - allowDatabaseOps: The user can perform database operations, such as backup and restore.
+      - allowBackupOps: The user can perform database operations, such as backup and restore.
         
       When options are not set, the admin role will have all options.  
       When options are set on the public role, they will have the lowest precedence and can be used as default options for all roles.  
@@ -787,7 +787,7 @@
           - extendedTokenExpiration: The user can request a token with a longer expiration time (for coding api purposes for example)  
           - showAllJobLogs: The user can see all job logs (not only his own) (Added in 5.0.9)
           - enableLogin: The user can login.  
-          - allowDatabaseOps: The user can perform database operations, such as backup and restore.
+          - allowBackupOps: The user can perform database operations, such as backup and restore.
 
           When options are not set, the admin role will have all options.  
           When options are set on the public role, they will have the lowest precedence and can be used as default options for all roles.  
