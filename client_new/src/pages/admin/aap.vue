@@ -14,8 +14,9 @@ async function test_connection(item) {
         if (!tests.value[item.id]) {
             try {
                 tests.value[item.id] = "Testing...";
-                const result = await axios.get(
-                    `/api/v2/awx/check/${item.id}`,
+                const result = await axios.post(
+                    `/api/v2/awx/${item.id}/check`,
+                    {},
                     TokenStorage.getAuthentication()
                 );
                 toast.success(result.data.result);
