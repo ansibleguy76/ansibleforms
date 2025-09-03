@@ -34,6 +34,8 @@ var app_config = {
   adminPassword: process.env.ADMIN_PASSWORD || "AnsibleForms!123",
   awxApiPrefix: process.env.AWX_API_PREFIX || "/api/v2",
   backupPath: process.env.BACKUP_PATH || path.resolve(__dirname + "/../persistent/backups"),
+  mysqldumpCommand: process.env.MYSQLDUMP_COMMAND || "mariadb-dump --ssl-verify-server-cert=OFF",
+  mysqlCommand: process.env.MYSQL_COMMAND || "mariadb --ssl-verify-server-cert=OFF"
 };
 
 // process dynamic YTT_LIB_DATA_ environment variables
