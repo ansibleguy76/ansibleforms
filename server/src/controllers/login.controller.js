@@ -51,23 +51,24 @@ function userToJwt(user,expiryDays){
   }
 }
 // get login settings
-const settings = async function(req,res){
-  AzureAd.isEnabled()
-  .then((azure)=> {
-    var settings={}
-    // console.log(inspect(azure))
-    settings.azureAdEnabled=azure.enable
-    settings.azureGroupfilter=azure.groupfilter
-    settings.azureGraphUrl=authConfig.azureGraphUrl
-
-    OIDC.isEnabled().then((oidc) => {
-      settings.oidcEnabled=oidc.enabled
-      settings.oidcIssuer=oidc.issuer
-      settings.oidcGroupfilter=oidc.groupfilter
-      res.json(new RestResult("success","",settings,""))
-    })
-  })
-  .catch((err)=>{res.json(new RestResult("error","failed to get app settings",null,helpers.getError(err)))})
+const settings = async function(req, res) {
+  try {
+    const [azure, oidc] = await Promise.all([
+      AzureAd.isEnabled().catch(() => ({ enable: false, groupfilter: null })),
+      OIDC.isEnabled().catch(() => ({ enabled: false, issuer: null, groupfilter: null }))
+    ]);
+    const settings = {
+      azureAdEnabled: azure.enable,
+      azureGroupfilter: azure.groupfilter,
+      azureGraphUrl: authConfig.azureGraphUrl,
+      oidcEnabled: oidc.enabled,
+      oidcIssuer: oidc.issuer,
+      oidcGroupfilter: oidc.groupfilter
+    };
+    res.json(new RestResult("success", "", settings, ""));
+  } catch (err) {
+    res.json(new RestResult("error", "failed to get app settings", null, helpers.getError(err)));
+  }
 }
 // basic authentication with local users
 const basic = async function(req, res,next) {
