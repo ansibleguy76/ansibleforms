@@ -37,12 +37,11 @@ import jobRoutesv2 from "./routes/job.routes.v2.js";
 import userRoutes from "./routes/user.routes.js";
 import groupRoutes from "./routes/group.routes.js";
 import ldapRoutes from "./routes/ldap.routes.js";
-import azureadRoutes from "./routes/azuread.routes.js";
-import oidcRoutes from "./routes/oidc.routes.js";
+import oauth2Routes from "./routes/oauth2.routes.js";
 import settingsRoutes from "./routes/settings.routes.js";
 import credentialRoutes from "./routes/credential.routes.js";
+import credentialRoutesv2 from "./routes/credential.routes.v2.js";
 import sshRoutes from "./routes/ssh.routes.js";
-import awxRoutes from "./routes/awx.routes.js";
 import logRoutes from "./routes/log.routes.js";
 import repositoryRoutes from "./routes/repository.routes.js";
 import knownhostsRoutes from "./routes/knownhosts.routes.js";
@@ -125,7 +124,7 @@ const load = async (app) => {
   // v2 docs
   swaggerDocumentV2.basePath = `/api/v2`;
   app.use(`/api/v2/docs`, cors(), swaggerUi.serveFiles(swaggerDocumentV2, swaggerOptions), swaggerUi.setup(swaggerDocumentV2, swaggerOptions));
-  app.use(`/api/v1/schema`, schemaRoutes);
+  app.use(`/api/v2/schema`, cors(), schemaRoutes);
 
   // api routes for querying
   app.use(`/api/v1/query`, cors(), authobj, queryRoutes);
@@ -148,7 +147,7 @@ const load = async (app) => {
   app.use(`/api/v1/token`, cors(), tokenRoutes);
   app.use(`/api/v2/token`, cors(), tokenRoutes);
 
-  // api routes for the vue3 app
+  // api routes for the vue3 app, is private
   app.use(`/api/v2/app`, cors(), appRoutes);
 
   // app.use(`/api/v1/multistep`,cors(), authobj, multistepRoutes)
@@ -159,19 +158,18 @@ const load = async (app) => {
   app.use(`/api/v1/user`, cors(), authobj, Middleware.checkSettingsMiddleware, userRoutes);
   app.use(`/api/v1/group`, cors(), authobj, Middleware.checkSettingsMiddleware, groupRoutes);
   app.use(`/api/v1/ldap`, cors(), authobj, Middleware.checkSettingsMiddleware, ldapRoutes);
-  app.use(`/api/v1/azuread`, cors(), authobj, Middleware.checkSettingsMiddleware, azureadRoutes);
-  app.use(`/api/v1/oidc`, cors(), authobj, Middleware.checkSettingsMiddleware, oidcRoutes);
+  app.use(`/api/v2/oauth2`, cors(), authobj, Middleware.checkSettingsMiddleware, oauth2Routes);
   app.use(`/api/v1/settings`, cors(), authobj, Middleware.checkSettingsMiddleware, settingsRoutes);
   app.use(`/api/v1/credential`, cors(), authobj, Middleware.checkSettingsMiddleware, credentialRoutes);
+  app.use(`/api/v2/credential`, cors(), authobj, Middleware.checkSettingsMiddleware, credentialRoutesv2);
   app.use(`/api/v1/sshkey`, cors(), authobj, Middleware.checkSettingsMiddleware, sshRoutes);
-  app.use(`/api/v1/awx`, cors(), authobj, Middleware.checkSettingsMiddleware, awxRoutes);
   app.use(`/api/v2/awx`, cors(), authobj, Middleware.checkSettingsMiddleware, awxRoutesv2);
   app.use(`/api/v1/log`, cors(), authobj, Middleware.checkLogsMiddleware, logRoutes);
   app.use(`/api/v1/repository`, cors(), authobj, Middleware.checkSettingsMiddleware, repositoryRoutes);
   app.use(`/api/v1/knownhosts`, cors(), authobj, Middleware.checkSettingsMiddleware, knownhostsRoutes);
   app.use(`/api/v1/datasource/schema`, cors(), authobj, Middleware.checkSettingsMiddleware, datasourceSchemaRoutes);
   app.use(`/api/v1/datasource`, cors(), authobj, Middleware.checkSettingsMiddleware, datasourceRoutes);
-  app.use(`/api/v1/schedule`, cors(), authobj, Middleware.checkSettingsMiddleware, scheduleRoutes);
+  app.use(`/api/v2/schedule`, cors(), authobj, Middleware.checkSettingsMiddleware, scheduleRoutes);
 
   // backup/restore/list routes
   app.use(`/api/v2/backup`, cors(), authobj, backupRoutes);
