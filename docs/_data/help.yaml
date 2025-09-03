@@ -1974,7 +1974,7 @@
                     - type: html
                       name: alert
                       expression: |
-                        '<div class="notification is-danger">
+                        '<div class="alert alert-danger" role="alert"> 
                           danger mister robinson !
                         </div>'
                     - type: html   
