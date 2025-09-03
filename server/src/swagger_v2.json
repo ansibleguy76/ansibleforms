@@ -6,10 +6,11 @@
     "description": "API documentation for AnsibleForms v2 endpoints: AWX, Job, and Database."
   },
   "tags": [
-  { "name": "authentication", "description": "Authentication and refresh tokens" },
-  { "name": "awx", "description": "AWX configuration and management" },
-  { "name": "job", "description": "Job management and operations" },
-  { "name": "backup", "description": "Backup and restore operations" }
+    { "name": "authentication", "description": "Authentication and refresh tokens" },
+    { "name": "awx", "description": "AWX configuration and management" },
+    { "name": "job", "description": "Job management and operations" },
+    { "name": "backup", "description": "Backup and restore operations" },
+    { "name": "credential", "description": "Credential management and database connection testing" }
   ],
   "servers": [
     { "url": "/api/v2" }
@@ -322,6 +323,55 @@
         }
       }
     },
+    "/credential": {
+      "get": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["credential"],
+        "summary": "List all credentials or filter by name",
+        "parameters": [ { "name": "name", "in": "query", "schema": { "type": "string" }, "required": false } ],
+        "responses": { "200": { "description": "Credential list or single credential" } }
+      },
+      "post": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["credential"],
+        "summary": "Create a new credential",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Credential" } } } },
+        "responses": { "201": { "description": "Credential created" } }
+      }
+    },
+    "/credential/{id}": {
+      "get": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["credential"],
+        "summary": "Get credential by ID",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "Credential object" }, "404": { "description": "Not found" } }
+      },
+      "put": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["credential"],
+        "summary": "Update credential by ID",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Credential" } } } },
+        "responses": { "200": { "description": "Credential updated" }, "404": { "description": "Not found" } }
+      },
+      "delete": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["credential"],
+        "summary": "Delete credential by ID",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "Credential deleted" }, "404": { "description": "Not found" } }
+      }
+    },
+    "/credential/testdb/{id}": {
+      "get": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["credential"],
+        "summary": "Test database connection for credential by ID",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "Database connection ok" }, "404": { "description": "Not found" } }
+      }
+    },
     "/backup/restore": {
       "post": {
         "security": [ { "bearerAuth": [] } ],
@@ -386,6 +436,24 @@
         ],
         "required": ["name", "uri"]
       },
+      "Credential": {
+        "type": "object",
+        "description": "Credential object.",
+        "properties": {
+          "id": { "type": "integer", "description": "Unique identifier for the credential.", "example": 1 },
+          "name": { "type": "string", "description": "Credential name.", "example": "db-main" },
+          "user": { "type": "string", "description": "Database user.", "example": "dbuser" },
+          "password": { "type": "string", "description": "Database password.", "example": "secret" },
+          "host": { "type": "string", "description": "Database host.", "example": "localhost" },
+          "port": { "type": "integer", "description": "Database port.", "example": 3306 },
+          "db_name": { "type": "string", "description": "Database name.", "example": "mydb" },
+          "secure": { "type": "boolean", "description": "Use secure connection.", "example": false },
+          "is_database": { "type": "boolean", "description": "Is this a database credential?", "example": true },
+          "description": { "type": "string", "description": "Description of the credential.", "example": "Main DB credential" },
+          "db_type": { "type": "string", "description": "Type of database (mysql, postgres, etc).", "example": "mysql" }
+        },
+        "required": ["name", "user", "password", "host", "port", "db_type"]
+  },
       "BackupMeta": {
         "type": "object",
         "description": "Backup metadata object.",
