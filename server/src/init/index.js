@@ -88,7 +88,6 @@ const init = async function(){
     adminGroupId = adminGroup.id
   }catch(err){
     logger.error("Failed to check/create admins group : " + err)
-    throw err
   }
 
   // check admin user
@@ -105,15 +104,11 @@ const init = async function(){
     }
   }catch(err){
     logger.error("Failed to check/create admin user : " + err)
-    throw err
   }
 
-  // let's check other database records like settings,ldap,awx,oidc and azuread. if no record exists, create them, this is for fresh install
+  // let's check other database records like settings,ldap. if no record exists, create them, this is for fresh install
   logger.info("Checking database records")
   const records = {
-    azuread:{client_id:'',secret_id:'',enable:0,groupfilter:''},
-    oidc:{issuer:'',client_id:'',secret_id:'',enabled:0,groupfilter:''},
-    awx:{uri:'',token:'',username:'', password:'',ignore_certs:0,use_credentials:0,ca_bundle:''},
     ldap:{server:'',port:389,ignore_certs:1,enable_tls:0,cert:'',ca_bundle:'',bind_user_dn:'',bind_user_pw:'',search_base:'',username_attribute:'sAMAccountName',groups_attribute:'memberOf',enable:0,is_advanced:0,groups_search_base:'',group_class:'',group_member_attribute:'',group_member_user_attribute:''},    
     settings:{mail_server:'',mail_port:25,mail_secure:0,mail_username:'',mail_password:'',mail_from:'',url:'',forms_yaml:''}    
   }
@@ -131,7 +126,6 @@ const init = async function(){
       }
     }catch(err){
       logger.error(`Failed to check/create ${record} : ` + err)
-      throw err
     }
   }
 
