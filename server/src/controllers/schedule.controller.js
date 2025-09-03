@@ -1,87 +1,77 @@
+
 "use strict";
 import Schedule from "../models/schedule.model.js";
-import RestResult from "../models/restResult.model.js";
+import RestResult from "../models/restResult.model.v2.js";
+import Errors from "../lib/errors.js";
 
-const findAllOr1 = async function(req, res) {
-  if(req.query.name){
+const scheduleController = {
+  async find(req, res) {
     try {
-      const schedule = await Schedule.findByName(req.query.name);
-      res.json(new RestResult("success", "schedule found", schedule, ""));
+      if (req.query.name) {
+        const schedule = await Schedule.findByName(req.query.name);
+        return res.json(RestResult.single(schedule));
+      } else {
+        const schedules = await Schedule.findAll();
+        return res.json(RestResult.list(schedules));
+      }
     } catch (err) {
-      res.json(new RestResult("error", "failed to find schedule", null, err.toString()));
+      Errors.ReturnError(res, err);
     }
-  }else{
+  },
+
+  async create(req, res) {
     try {
-      const schedules = await Schedule.findAll();
-      res.json(new RestResult("success", "schedules found", schedules, ""));
+      const created = await Schedule.create(req.body);
+      return res.status(201).json(RestResult.single("schedule added", created));
     } catch (err) {
-      res.json(new RestResult("error", "failed to find schedules", null, err.toString()));
+      Errors.ReturnError(res, err);
+    }
+  },
+
+  async findById(req, res) {
+    try {
+      const schedule = await Schedule.findById(req.params.id);
+      return res.json(RestResult.single(schedule));
+    } catch (err) {
+      Errors.ReturnError(res, err);
+    }
+  },
+
+  async update(req, res) {
+    try {
+      const updated = await Schedule.update(req.body, req.params.id);
+      return res.json(RestResult.single(updated));
+    } catch (err) {
+      Errors.ReturnError(res, err);
+    }
+  },
+
+  async delete(req, res) {
+    try {
+      const deleted = await Schedule.delete(req.params.id);
+      return res.json(RestResult.single(deleted));
+    } catch (err) {
+      Errors.ReturnError(res, err);
+    }
+  },
+
+  async queue(req, res) {
+    try {
+      await Schedule.queue(req.params.id);
+      return res.json(RestResult.single("Schedule queued", req.params.id));
+    } catch (err) {
+      Errors.ReturnError(res, err);
+    }
+  },
+
+  async launch(req, res) {
+    try {
+      await Schedule.launch(req.params.id);
+      return res.json(RestResult.single("Schedule launched", req.params.id));
+    } catch (err) {
+      Errors.ReturnError(res, err);
     }
   }
 };
 
-const create = async function (req, res) {
-  try {
-    const new_schedule = new Schedule(req.body);
-    //handles null error
-
-    if (req.body.constructor === Object && Object.keys(req.body).length === 0) {
-      res.status(400).send({ error: true, message: "Please provide all required fields" });
-    } else {
-      const schedule = await Schedule.create(new_schedule);
-      res.json(new RestResult("success", "schedule added", schedule, ""));
-    }
-  } catch (err) {
-    res.json(new RestResult("error", "failed to create schedule", null, err.toString()));
-  }
-};
-const findById = async function (req, res) {
-  try {
-    const schedule = await Schedule.findById(req.params.id);
-    if (schedule.length > 0) {
-      res.json(new RestResult("success", "found schedule", schedule[0], ""));
-    } else {
-      res.json(new RestResult("error", "failed to find schedule", null, err.toString()));
-    }
-  } catch (err) {
-    res.json(new RestResult("error", "failed to find schedule", null, err.toString()));
-  }
-};
-const update = async function (req, res) {
-  try {
-    delete req.body.schedulename;
-    if (req.body.constructor === Object && Object.keys(req.body).length === 0) {
-      res.status(400).send({ error: true, message: "Please provide all required fields" });
-    } else {
-      await Schedule.update(new Schedule(req.body), req.params.id);
-      res.json(new RestResult("success", "schedule updated", null, ""));
-    }
-  } catch (err) {
-    res.json(new RestResult("error", "failed to update schedule", null, err.toString()));
-  }
-};
-const deleteSchedule = async function (req, res) {
-  try {
-    await Schedule.delete(req.params.id);
-    res.json(new RestResult("success", "schedule deleted", null, ""));
-  } catch (err) {
-    res.json(new RestResult("error", "failed to delete schedule", null, err.toString()));
-  }
-};
-const launch = async function (req, res) {
-  try {
-    await Schedule.queue(req.params.id);
-    res.json(new RestResult("success", "schedule launched", null, ""));
-  } catch (err) {
-    res.json(new RestResult("error", "failed to launch schedule", null, err.toString()));
-  }
-};
-
-export default {
-  findAllOr1,
-  create,
-  findById,
-  update,
-  delete: deleteSchedule,
-  launch
-};
+export default scheduleController;
