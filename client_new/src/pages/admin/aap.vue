@@ -1,9 +1,11 @@
+
 <script setup>
 import { useToast } from "vue-toastification";
 import Profile from "@/lib/Profile";
 import axios from "axios";
 import settings from "@/config/settings";
 import TokenStorage from "@/lib/TokenStorage";
+import Helpers from "@/lib/Helpers";
 
 const toast = useToast();
 const authenticated = ref(false);
@@ -21,7 +23,7 @@ async function test_connection(item) {
                 );
                 toast.success(result.data.result);
             } catch (err) {
-                toast.error(err.message);
+                toast.error(Helpers.parseAxiosResponseError(err, "Connection test failed"));
             } finally {
                 delete tests.value[item.id];
             }

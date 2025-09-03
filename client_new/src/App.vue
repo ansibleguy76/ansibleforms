@@ -5,11 +5,13 @@ import axios from "axios";
 
 import TokenStorage from "@/lib/TokenStorage";
 import Navigate from "@/lib/Navigate";
+import { useAppStore } from "@/stores/app";
 import State from "@/lib/State";
 import Theme from "@/lib/Theme";
 
 const route = useRoute();
 const router = useRouter();
+const isLoaded = ref(false)
 // const theme = useTheme();
 
 function registerAxiosInterceptor() {
@@ -70,41 +72,53 @@ function registerAxiosInterceptor() {
   });
 }
 
-function login() {
-  console.log("login from app");
-
-  if (!TokenStorage.isAuthenticated()) {
-    console.log("Not authenticated, redirecting to login")
-    Navigate.toLogin(router, route);
-  } else {
-    if (route.query.from) {
-      router.push({ path: route.query.from }).catch(err => { });
-    } else {
-      Navigate.toOrigin(router, route)
-    }
-    State.refreshAuthenticated()
-    State.loadProfile()
-    State.loadVersion()
+async function checkDatabase() {
+  console.log("Checking database");
+  var result;
+  try{
+    result = await State.checkDatabase();
+  }catch(err){
+    console.log(err)
+    Navigate.toError(router);
+    return;
   }
-
+  if(result){
+    await login();
+  }else{
+    Navigate.toSchema(router);
+  }  
+  isLoaded.value = true;
 }
 
+async function login() {
+  console.log("login from app");
+  await State.init(router,route)
+}
+ 
 onMounted(async () => {
-  console.log("app is mounted");
+  console.log("App is mounted");
   Theme.load()
+  console.log("Theme is loaded")
   await router.isReady()
+  console.log("Router is ready")
+  await checkDatabase();
+  console.log("Database check complete")
   registerAxiosInterceptor() // setup token refresh, an axios interceptor
-  login()
-
-  State.refreshApprovals()
 });
-
 
 </script>
 
 
 <template>
-  <router-view />
+  <router-view v-if="isLoaded" />
+  <div v-else class="d-flex justify-content-center align-items-center vh-100">
+    <div class="text-center">
+      <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p>Loading...</p>
+    </div>
+  </div>
 </template>
 <style>
 
