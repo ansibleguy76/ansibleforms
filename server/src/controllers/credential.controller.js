@@ -33,6 +33,8 @@ const findById = function(req, res) {
     Credential.findById(req.params.id)
     .then((credential)=>{
       if(credential.length>0){
+        // mask the password, by api we do not want to return the password
+        credential[0].password = "********";
         res.json(new RestResult("success","found credential",credential[0],""));
       }else{
         res.json(new RestResult("error","failed to find credential",null,""))
