@@ -1,9 +1,7 @@
 import passport from 'passport';
-import Settings from '../models/settings.model.js';
 import OIDC from '../models/oidc.model.js';
 import logger from "../lib/logger.js";
 import * as openidClient from 'openid-client';
-import appConfig from "../../config/app.config.js";
 
 let authClient;
 
@@ -20,20 +18,14 @@ const initialize = async () => {
   let oidcConfig;
   let oidc;
   let oidcEnabled = false;
-  let settings = {};
   let url;
   try {
     oidc = await OIDC.isEnabled();
-    oidcEnabled = !!oidc.enabled;
+    oidcEnabled = !!oidc.enable;
     if (!oidcEnabled) {
       logger.info("OIDC is not enabled");
     } else {
       oidcConfig = await OIDC.find();
-      settings = await Settings.findUrl();
-      url = settings.url?.replace(/\/$/g, '');
-      if (!url) {
-        logger.error("AnsibleForms Url is not set");
-      }
     }
   } catch (err) {
     logger.error("Failed to getting OIDC Config or settings. ", err);
@@ -48,33 +40,34 @@ const initialize = async () => {
   } catch (err) {
     logger.error("Failed to remove strategy. ", err);
   }
-  if (!oidcEnabled || !url) {
+  if (!oidcEnabled) {
     logger.error("Could not enable OIDC strategy, no config or url");
     return false;
   }
   try {
     logger.debug("Fetching OIDC Issuer");
-    const oidcIssuer = await openidClient.Issuer.discover(oidcConfig.issuer);
-    authClient = new oidcIssuer.Client({
-      client_id: oidcConfig.client_id,
-      client_secret: oidcConfig.secret_id,
-      redirect_uris: [`${url}/api/v1/auth/oidc/callback`],
-      post_logout_redirect_uris: [`${url}/`],
-      response_types: ['code'],
-    });
+    throw new Error("OIDC is currently broken in version 6, review and help is required")
+    // const oidcIssuer = await openidClient.discovery(oidcConfig.issuer);
+    // authClient = new oidcIssuer.Client({
+    //   client_id: oidcConfig.client_id,
+    //   client_secret: oidcConfig.client_secret,
+    //   redirect_uris: [oidcConfig.redirect_uri],
+    //   post_logout_redirect_uris: [`${url}/`],
+    //   response_types: ['code'],
+    // });
 
-    logger.debug("Adding the strategy OIDC");
-    passport.use(
-      'oidc',
-      new openidClient.Strategy({ client: authClient },
-        async function (tokenSet, userinfo, done) {
-          done(null, tokenSet.claims());
-        }
-      )
-    );
+    // logger.debug("Adding the strategy OIDC");
+    // passport.use(
+    //   'oidc',
+    //   new openidClient.Strategy({ client: authClient },
+    //     async function (tokenSet, userinfo, done) {
+    //       done(null, tokenSet.claims());
+    //     }
+    //   )
+    // );
 
-    logger.info("OIDC strategy initialized");
-    return true;
+    // logger.info("OIDC strategy initialized");
+    // return true;
 
   } catch (err) {
     logger.error("Failed to initialize OIDC strategy. ", err);
