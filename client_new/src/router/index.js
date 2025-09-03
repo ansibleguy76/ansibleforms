@@ -13,10 +13,13 @@ import jobs from "@/pages/jobs.vue"
 import apidocs from "@/pages/api-docs.vue"
 import unknown from "@/pages/unknown.vue"
 import changePassword from "@/pages/change-password.vue"  
+import schema from "@/pages/schema.vue"
+import error from "@/pages/error.vue"
 
 // admin
 import aap from "@/pages/admin/aap.vue"
 import credentials from "@/pages/admin/credentials.vue"
+import oauth2 from "@/pages/admin/oauth2.vue"
 import entraId from "@/pages/admin/entraId.vue"
 import groups from "@/pages/admin/groups.vue"
 import knownHosts from "@/pages/admin/knownHosts.vue"
@@ -94,12 +97,15 @@ const routes = [
   { path: '/jobs', name: "/jobs", component: jobs, beforeEnter: checkJobs },
   { path: "/jobs/:id", name: "/jobs/:id", component: jobs, beforeEnter: checkJobs },
   { path: '/logs', name: "/logs", component: logs, beforeEnter: checkLogs },
+  { path: '/schema', name: "/schema", component: schema },
+  { path: '/error', name: "/error", component: error },
   { path: '/api-docs', name: "/api-docs", component: apidocs },
   { path: '/:pathMatch(.*)*', name: "/unknown", component: unknown },
 
   // admin routes
   { path: '/admin/aap', name: "/admin/aap", component: aap, beforeEnter: checkSettings },
   { path: '/admin/credentials', name: "/admin/credentials", component: credentials, beforeEnter: checkSettings },
+  { path: '/admin/oauth2', name: "/admin/oauth2", component: oauth2, beforeEnter: checkSettings },
   { path: '/admin/entraId', name: "/admin/entraId", component: entraId, beforeEnter: checkSettings },
   { path: '/admin/groups', name: "/admin/groups", component: groups, beforeEnter: checkSettings },
   { path: '/admin/knownHosts', name: "/admin/knownHosts", component: knownHosts, beforeEnter: checkSettings },
