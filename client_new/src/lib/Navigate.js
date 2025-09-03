@@ -13,8 +13,17 @@ var Navigate = {
     console.log("Redirecting to home")
     router.push({ name: "/" }).catch((err) => {});
   },
+  toError(router) {
+      console.log("Redirecting to error")
+      router.push({ name: "/error" }).catch((err) => {});
+  },
 
-  toPath(router,path,query) {
+  toSchema(router) {
+      console.log("Redirecting to schema")
+      router.push({ name: "/schema" }).catch((err) => {});
+  },
+
+  toPath(router,path,query="") {
       console.log("Redirecting to page")
       router.push({ name: path, query: query }).catch((err) => {});
   },
@@ -29,12 +38,11 @@ var Navigate = {
         // is there a route name?
         console.log("No original route")
         if (route.name) {
-           // if authenticated but on login page, redirect to home
-           // console.log("Route name found")
-           if (route.name == "/login" || route.name == "/logout") {
+           // we don't allow origin for login/logout & schema
+           if (route.name == "/login" || route.name == "/logout" || route.name == '/schema') {
               Navigate.toHome(router,route);
            } else {
-              router.push(route.fullPath).catch(err => { });
+              Navigate.toPath(router,route.fullPath)
            }
         } else {
            // default home
