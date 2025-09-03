@@ -22,6 +22,7 @@ const create = function(req, res) {
 const findByName = function(req, res) {
     Repository.findByName(req.params.name)
     .then((repository)=>{
+      repository.password = "********"; // mask the password for api
       res.json(new RestResult("success","found repository",repository,""));
     })
     .catch((err)=>{ res.json(new RestResult("error","failed to find repository",null,err.toString())) })
