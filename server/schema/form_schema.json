@@ -580,6 +580,7 @@
               "minLength": {"not":{}},
               "maxLength": {"not":{}},
               "sticky": {"not":{}},
+              "icon": {"not":{}},
               "horizontal": {"not":{}},
               "tableTitleAdd": {"not":{}},
               "tableTitleEdit": {"not":{}},

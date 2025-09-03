@@ -717,6 +717,7 @@
                     "sticky": {"not":{}},
                     "horizontal": {"not":{}},
                     "tableTitleAdd": {"not":{}},
+                    "icon": {"not":{}},
                     "tableTitleEdit": {"not":{}},
                     "editable": {"not":{}},
                     "pctColumns": {"not":{}},
