@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   placeholder (issue 320)
 -   scrollbar (issue 318)
 -   EntraId groups (issue 316)
+-   Add icon not allowed to radio
 
 ## Added
 
@@ -22,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   multi awx (314)
 -   backup/restore api (/api/v2/database (get, post/backup, post/restore?folder=))
 -   new role option allowDatabaseOps
+-   oauth2 table replaces individual azuread, oidc tables
+-   integrated backup
 
 ### Changed
 
@@ -38,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Since "require" can not be used anymore, the backend code is now ESM only.
     This means that you can not use "require" anymore, but you can use "import" and "export default".  Than means that custom functions must be rewritten to use the new ESM syntax. (/functions/custom.js is an example where this could break)
 -   Maybe not breaking, but the old theme is broken for bulma v1, so it might look a bit different here and there. (but note that v6 will have bootstrap)
--   Since many packages are updated, I might have missed some breaking changes like OIDC, AzureAD.  Ldap has been tested and works.
+-   Since many packages are updated, I might have missed some breaking changes like OIDC, packages have been bumped and I don't have an OIDC to test against... any help is appreciated.
 
 ## [5.0.10] - 2025-06-05
 
