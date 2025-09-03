@@ -9,12 +9,15 @@ export const useAppStore = defineStore('app', () => {
   const isAdmin = ref(false)
   const version = ref('')
   const approvals = ref(0)
+  const errorMessage = ref('')
+  const schemaData = ref(null)
+
 
   // const doubleCount = computed(() => count.value * 2)
   // function increment() {
   //   count.value++
   // }
 
-  return { theme, profile, authenticated, isAdmin, version, approvals }
+  return { theme, profile, authenticated, isAdmin, version, approvals, errorMessage, schemaData }
 })
 
