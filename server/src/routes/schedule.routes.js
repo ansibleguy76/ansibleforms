@@ -2,7 +2,7 @@ import express from 'express';
 const router = express.Router();
 import scheduleController from '../controllers/schedule.controller.js';
 // Retrieve all schedules
-router.get('/', scheduleController.findAllOr1);
+router.get('/', scheduleController.find);
 // Create a new schedule
 router.post('/', scheduleController.create);
 // Retrieve a single schedule with id

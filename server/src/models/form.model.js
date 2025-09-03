@@ -114,6 +114,18 @@ function copyFormsTemplate(to) {
   }
 }
 
+function copyFormsDirectoryTemplate(toDir) {
+  try {
+    const formsDirTemplatePath = path.join(__dirname, "../../templates/forms.template");
+    logger.warning("No forms directory found... creating empty one from template");
+    fse.copySync(formsDirTemplatePath, toDir, { overwrite: false, errorOnExist: false });
+    logger.warning("Directory copied");
+  } catch (e) {
+    logger.error(`Failed to copy forms directory from template '${formsDirTemplatePath}'.`, e);
+    throw new Error(Helpers.getError(e, "There is no forms directory nor could there be one created from template."));
+  }
+}
+
 async function getBaseConfig(formsPath) {
   var rawdata=''
 
@@ -133,10 +145,16 @@ async function getBaseConfig(formsPath) {
 
   if(!rawdata){
     // at this point we have no forms yet... let's see if we have a forms.yaml file
+
     if (!fs.existsSync(formsPath)) {
       copyFormsTemplate(formsPath);
     }
-    // at this point we have a forms.yaml file, even if it is empty from template
+    // Also ensure the forms directory exists (for multi-form setups)
+    const formsDir = path.join(path.dirname(formsPath), "forms");
+    if (!fs.existsSync(formsDir)) {
+      copyFormsDirectoryTemplate(formsDir);
+    }
+    // at this point we have a forms.yaml file and forms directory, even if they are empty from template
 
     if (appConfig.useYtt) {
       // try to process ytt

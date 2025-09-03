@@ -58,23 +58,7 @@ Repository.findAll = function () {
     // logger.info("Finding all repositories")
     return mysql.do("SELECT id,name,branch,user,uri,description,use_for_forms,use_for_playbooks,cron,status,output,head,rebase_on_start FROM AnsibleForms.`repositories`;",undefined,true)
 };
-// Repository.findById = function (id) {
-//     logger.info(`Finding repository ${id}`)
-//     return mysql.do("SELECT * FROM AnsibleForms.`repositories` WHERE id=?;",id)
-//     .then((res)=>{
-//       if(res.length>0){
-//         try{
-//           res[0].password = decrypt(res[0].password)
-//         }catch(e){
-//           logger.error("Failed to decrypt the password.  Did the secretkey change ?")
-//           res[0].password = ""
-//         }
-//         return res
-//       }else{
-//         throw `No repository found with id ${id}`
-//       }
-//     })
-// };
+
 Repository.getPrivateUri = function(repo){
   if(repo.uri){
     if(repo.user && repo.password){
