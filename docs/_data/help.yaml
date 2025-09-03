@@ -543,6 +543,20 @@
     default: home
     description: |
       In the navigation bar, A home link is shown.  You can set the icon of this link with this variable, for example `play` or `house`.  Use in combination with `VUE_APP_NAV_HOME_LABEL`.
+  - name: MYSQLDUMP_COMMAND
+    type: string
+    version: 6.0.0
+    allowed: a valid mysqldump command
+    default: mariadb-dump --ssl-verify-server-cert=OFF
+    description:
+      Mysql dump command change and mysql/mariadb flavours differ, hence the need for a configurable command.
+  - name: MYSQL_COMMAND
+    type: string
+    version: 6.0.0
+    allowed: a valid mysql command
+    default: mariadb --ssl-verify-server-cert=OFF
+    description:
+      Mysql command change and mysql/mariadb flavours differ, hence the need for a configurable command.
 - name: Forms.yaml
   icon: fab,wpforms
   link: forms
