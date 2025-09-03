@@ -1,3 +1,16 @@
+// Generic error response helper
+function ReturnError(res, err) {
+  var errorObj = {}
+  if (err?.result) {
+    errorObj.result = err.result;
+  }
+  errorObj.error = err?.error || err?.message || "Internal Server Error";
+  if (err && err.status) {
+    res.status(err.status).json(errorObj);
+  } else {
+    res.status(500).json(errorObj);
+  }
+}
 class ApiError extends Error {
   constructor(message = "API error", status = 400) {
     super(message);
@@ -17,6 +30,13 @@ class AccessDeniedError extends ApiError {
   constructor(message = "Access denied") {
     super(message, 403);
     this.name = "AccessDeniedError";
+  }
+}
+
+class BadRequestError extends ApiError {
+  constructor(message = "Bad request") {
+    super(message, 400);
+    this.name = "BadRequestError";
   }
 }
 
@@ -45,7 +65,9 @@ export default {
   ApiError,
   NotFoundError,
   AccessDeniedError,
+  BadRequestError,
   ConflictError,
   ValidationError,
   InternalServerError,
-};
+  ReturnError
+}
