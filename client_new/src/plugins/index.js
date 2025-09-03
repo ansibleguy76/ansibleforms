@@ -38,9 +38,9 @@ import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { fas } from '@fortawesome/free-solid-svg-icons'
 import { fab } from '@fortawesome/free-brands-svg-icons';
 import { far } from '@fortawesome/free-regular-svg-icons';
-import { faBrightness,faAzure,faOpenId,faAnsibleForms,faAnsible } from "./icons"
+import { faBrightness,faAzure,faOpenId,faAnsibleForms,faAnsible,faOAuth } from "./icons"
 
-library.add(faBrightness, faAzure, faOpenId, faAnsibleForms, faAnsible)
+library.add(faBrightness, faAzure, faOpenId, faAnsibleForms, faAnsible,faOAuth)
 library.add(fas, far, fab)
 
 export function registerPlugins (app) {
