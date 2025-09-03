@@ -12,11 +12,11 @@ export default {
             { name: 'change_password', title: `Change Password`, icon: 'lock', color: 'change' }
         ],
         fields: [
-            { key: 'id', label: 'ID', sortable: false, required: false, filterable: false, readonly: true, hidden: true, icon: 'key'},
+            { key: 'id', label: 'ID', sortable: false, required: false, filterable: false, noInput: true, hidden: true, icon: 'key'},
             { key: 'username',  label: 'Username', sortable: true, required: true, filterable: true, icon: "user" },
             { key: 'password',  label: 'Password', type: "password", sortable: false, required: true, filterable: false, hidden: true, icon: "lock" },
             { key: 'email', label: 'Email', type: "email", sortable: false, required: false, filterable: false, icon: "lock" },
-            { key: 'group_id', label: 'Group', type: "select", sortable: false, required: true, filterable: false, icon: "users", values: 'group', valueKey: 'id', labelKey: 'name' }
+            { key: 'group_id', label: 'Group', type: "select", sortable: false, required: true, filterable: false, icon: "users", parent: 'group', values: 'group', valueKey: 'id', labelKey: 'name' }
         ]
     },
     groups:{
@@ -35,7 +35,7 @@ export default {
             { name: 'delete', title: `Delete Group`, icon: 'trash', color: 'delete' }
         ],
         fields: [
-            { key: 'id', label: 'ID', sortable: false, required: false, filterable: false, readonly: true, hidden: true, icon: 'key' },
+            { key: 'id', label: 'ID', sortable: false, required: false, filterable: false, noInput: true, hidden: true, icon: 'key' },
             { key: 'name', label: 'Name', sortable: true, required: true, filterable: true, icon: "users" }
         ], 
         childFields: {
@@ -66,8 +66,8 @@ export default {
             { key: "output", hidden: true, noInput: true },
             { key: "name", icon: "heading", label: "Name", placeholder: "my_repo_name", readonly: false, required: true, help: "Alphanumeric with dash and underscore" },
             { key: "branch", icon: "code-branch", label: "Branch", placeholder: "main", readonly: false },
-            { key: "head", label: "Head", readonly: true },
-            { key: "status", label: "Status", readonly: true },
+            { key: "head", label: "Head", noInput: true },
+            { key: "status", label: "Status", noInput: true },
             { key: "user", icon: "user", label: "Username", placeholder: "my-user",  hidden: true },
             { key: "password", icon: "lock", label: "Password", type: "password", required: true, placeholder: "Password or Token", hidden: true },
             { key: "uri", icon: "fab,git", label: "Uri", placeholder: "https://github.com/account/repo.git", required: true, hidden: true, help: "Only ssh or https uri's are allowed" },
@@ -78,6 +78,40 @@ export default {
             { key: "rebase_on_start", type: "checkbox", label: "Clone on app start ?", hidden: true }
         ]
     },
+    oauth2_providers: {
+        type: 'oauth2',
+        route: 'oauth2',
+        label: 'OAuth2 Provider',
+        labelPlural: 'OAuth2 Providers',
+        icon: 'key',
+        actions: [
+            { name: 'edit', title: `Edit Provider`, icon: 'pencil', color: 'edit' },
+            { name: 'delete', title: `Delete Provider`, icon: 'trash', color: 'delete' },
+            { name: 'change_password', title: `Change Password`, icon: 'lock', color: 'change' },
+        ],
+        fields: [
+            { key: 'enable', label: 'Enable', type: 'checkbox', isAction: true },
+            { key: 'provider', label: 'Provider', required: true, icon: 'cloud', type: 'select', parent: 'providers', values: [{ label: 'Entra ID', value: 'azuread'},{label: 'Open ID',value:'oidc'}] , valueKey: 'value', labelKey: 'label'},
+            { key: 'name', label: 'Name', required: true, icon: 'heading' },
+            { key: 'description', label: 'Description', required: false, icon: 'info-circle' },
+            { key: 'client_id', label: 'Client ID', required: true, icon: 'key', dependency: 'provider', dependencyValues: ['azuread', 'oidc'], hidden: true },
+            { key: 'issuer', label: 'Issuer', required: true, icon: 'globe', dependency: 'provider', dependencyValues: ['oidc'], hidden: true },
+            { key: 'redirect_uri', label: 'Redirect URL', readonly: false, dependency: 'provider',dependencyValues: ['azuread', 'oidc'], defaultMap: {
+                  azuread: (config) => `${config.url}/api/v1/auth/azureadoauth2/callback`,
+                  oidc: (config) => `${config.url}/api/v1/auth/oidc/callback`
+                }, hidden: true
+            },
+            { key: 'client_secret', label: 'Client Secret', type: 'password', required: true, icon: 'lock', hidden: true },
+            { key: 'groupfilter', label: 'Group Filter', required: false, icon: 'filter', hidden: true },
+            { key: 'redirect_uri', label: 'Redirect URI', required: false, icon: 'link', dependency: 'provider', dependencyValues: [''], hidden: true },
+            { key: 'scope', label: 'Scope', required: false, icon: 'list', dependency: 'provider', dependencyValues: [''], hidden: true },
+            { key: 'auth_url', label: 'Auth URL', required: false, icon: 'globe', dependency: 'provider', dependencyValues: [''], hidden: true },
+            { key: 'token_url', label: 'Token URL', required: false, icon: 'globe', dependency: 'provider', dependencyValues: [''], hidden: true },
+            { key: 'userinfo_url', label: 'Userinfo URL', required: false, icon: 'globe', dependency: 'provider', dependencyValues: [''], hidden: true },
+            { key: 'extra', label: 'Extra (JSON)', type: 'textarea', required: false, icon: 'code', dependency: 'provider', dependencyValues: [''], hidden: true }
+        ]
+
+    },    
     dataSchemas:{
         type: "datasource/schema",
         label: "Datasource Schema",
@@ -95,7 +129,7 @@ export default {
             { key: "output", hidden: true, noInput: true },
             { key: "force", type: "checkbox", label: "Force ?", hidden: true },
             { key: "name", icon: "heading", label: "Name", placeholder: "schema name", readonly: false, required: true, help: "Alphanumeric with dash and underscore" },
-            { key: "status", label: "Status", readonly: true },
+            { key: "status", label: "Status", noInput: true },
             { key: "description", icon: "info-circle", label: "Description", placeholder: "Description", required: false },
             { key: "table_definitions", type: "editor", label: "Table Definitions", hidden: true, lang:"yaml", style:"width: 100%;height: 40vh;font-size:1rem" }
         ]
@@ -116,12 +150,12 @@ export default {
             { key: "id", hidden: true, noInput: true },
             { key: "output", hidden: true, noInput: true },
             { key: "name", icon: "heading", label: "Name", placeholder: "Datasource name", readonly: false, required: true, help: "Alphanumeric with dash and underscore" },
-            { key: "schema", icon: "database", label: "Schema", type: "select", readonly: false, required: true, values: 'datasource/schema', valueKey: 'name', labelKey: 'name', hidden: true },
+            { key: "schema", icon: "database", label: "Schema", type: "select", readonly: false, required: true, parent: "schemas" , values: 'datasource/schema', valueKey: 'name', labelKey: 'name', hidden: true },
             { key: "cron", icon: "stopwatch", label: "Cron Schedule", help: "Minute Hour DayOfMonth Month DayOfWeek - For example : */5 * L * 1,3L", hidden: true, regex: { expression: "^[0-9-,*/]+ [0-9-,*/]+ [0-9-,*/L]+ [0-9-,*/]+ [0-9-,*/L]+$", description: "Must be a valid cron schedule"} },
             { key: "form", icon: "play", label: "Form", placeholder: "Form name", readonly: false, required: true, hidden: true},
-            { key: "status", label: "Status", readonly: true },
-            { key: "state", label: "State", readonly: true },
-            { key: "last_run", label: "Last Run", readonly: true },
+            { key: "status", label: "Status", noInput: true },
+            { key: "state", label: "State", noInput: true },
+            { key: "last_run", label: "Last Run", noInput: true },
             { key: "extra_vars", type: "editor", label: "Extra vars (YAML)", hidden: true, lang:"yaml", style:"width: 100%;height: 40vh;font-size:1rem", help: "Next to the extra vars, the datasource object itself will also be appended and the credentials that are defined in the form." }
         ]
     },    
@@ -143,9 +177,9 @@ export default {
             { key: "name", icon: "heading", label: "Name", placeholder: "Schedule name", readonly: false, required: true, help: "Alphanumeric with dash and underscore" },
             { key: "cron", icon: "stopwatch", label: "Cron Schedule", help: "Minute Hour DayOfMonth Month DayOfWeek - For example : */5 * L * 1,3L", hidden: true, required: true, regex: { expression: "^[0-9-,*/]+ [0-9-,*/]+ [0-9-,*/L]+ [0-9-,*/]+ [0-9-,*/L]+$", description: "Must be a valid cron schedule"} },
             { key: "form", icon: "play", label: "Form", placeholder: "Form name", readonly: false, required: true, help: "The form that will run to import the data." , hidden: true},
-            { key: "status", label: "Status", readonly: true },
-            { key: "state", label: "State", readonly: true },
-            { key: "last_run", label: "Last Run", readonly: true },
+            { key: "status", label: "Status", noInput: true },
+            { key: "state", label: "State", noInput: true },
+            { key: "last_run", label: "Last Run", type: "datetime", noInput: true },
             { key: "extra_vars", type: "editor", label: "Extra vars (YAML)", hidden: true, lang:"yaml", style:"width: 100%;height: 40vh;font-size:1rem", help: "No form to provide the extra vars, you must add them here." }
         ]
     },            
@@ -160,8 +194,8 @@ export default {
             { name: 'delete', title: `Delete Host Entry`, icon: 'trash', color: 'delete' }
         ],
         fields: [
-            { key: 'id', label: 'Host Entry', filterable: true, hidden:true, readonly: true },
-            { key: 'name', label: 'Host Entry', required: false, filterable: true, readonly: true },
+            { key: 'id', label: 'Host Entry', filterable: true, hidden:true, noInput: true },
+            { key: 'name', label: 'Host Entry', required: false, filterable: true, noInput: true },
             { key: 'host', label: 'Host', required: true, filterable: true, hidden:true }
         ]
     },
@@ -176,7 +210,7 @@ export default {
             { name: 'test', title: `Test Connection`, icon: 'plug', color: 'test', dependency: "is_database" }
         ],
         fields: [
-            { key: 'id', label: 'ID', sortable: false, required: false, filterable: false, readonly: true, hidden: true, icon: 'key', noInput: true },
+            { key: 'id', label: 'ID', sortable: false, required: false, filterable: false, noInput: true, hidden: true, icon: 'key', noInput: true },
             { key: 'is_database', label: 'For Database', type: 'checkbox', hidden: true, placeholder: 'Enable database fields', required: false },
             { key: 'name', label: 'Name', sortable: true, required: true, filterable: true, icon: "lock", isKey: true },
             { key: 'user', label: 'User', sortable: true, required: false, filterable: true, icon: "user" },
@@ -185,14 +219,15 @@ export default {
             { key: 'port', label: 'Port', type:"number", sortable: true, required: false, filterable: false, icon: "arrows-alt-v" },
             { key: 'description', label: 'Description', sortable: false, hidden: true, required: true, filterable: false, icon: "info-circle" },
             {
-                key: 'db_type', label: 'Database Type', type: 'select',valueKey:"id", labelKey:"name" , sortable: false, hidden: true, required: true,
+                key: 'db_type', label: 'Database Type', type: 'select',valueKey:"id", labelKey:"name" , sortable: false, hidden: true, required: true, parent:'databases',
                 values: [
-                    { id: 'mysql', name: 'MySQL'},
-                    { id: 'mssql', name: 'MSSQL' },
-                    { id: 'postgres', name: 'PostgreSQL' },
-                    { id: 'oracle', name: 'Oracle' },
-                    { id: 'mongodb', name: 'MongoDB' },
+                    { value: 'mysql',    label: 'MySQL'},
+                    { value: 'mssql',    label: 'MSSQL' },
+                    { value: 'postgres', label: 'PostgreSQL' },
+                    { value: 'oracle',   label: 'Oracle' },
+                    { value: 'mongodb',  label: 'MongoDB' },
                 ],
+                labelKey: "label", valueKey: "value",
                 filterable: true, icon: "database", dependency: "is_database"
             },
             { key: 'db_name', label: 'Database', sortable: false, hidden: true, required: false, filterable: false, icon: "database", dependency: "is_database" }
@@ -248,7 +283,7 @@ export default {
             { name: 'test', title: `Test Connection`, icon: 'plug', color: 'test' }
         ],
         fields: [
-            { key: 'id', label: 'ID', sortable: false, required: false, filterable: false, readonly: true, hidden: true, icon: 'key', noInput: true },            
+            { key: 'id', label: 'ID', sortable: false, required: false, filterable: false, noInput: true, hidden: true, icon: 'key', noInput: true },            
             { key: "use_credentials", label: "Use credentials", type: "checkbox", isAction: true, hidden: true, password_related: true },
             { key: "ignore_certs", label: "Ignore Certs", type: "checkbox", isAction: true, hidden: true },
             { key: "is_default", label: "Is Default", type: "checkbox", isAction: true },
@@ -260,17 +295,6 @@ export default {
             { key: "token", icon: "lock", line: 1, label: "Token", type: "password", required: true, dependency: "use_credentials", negateDependency: true, hidden: true },
             { key: "ca_bundle", icon: "certificate", type: "textarea", line: 6, label: "Ca Bundle", required: true, dependency: "ignore_certs", negateDependency: true, placeholder: "-----BEGIN CERTIFICATE-----", hidden: true },
         ],
-    },
-    entraId:{
-        type: "azuread",
-        label: "Entra Id",
-        icon: "fac,azure",
-        fields: [
-            { key: "enable", label: "Enable Entra Id", type: "checkbox", isAction: true },
-            { key: "client_id", icon: "id-badge", line: 0, label: "Client Id", required: true, dependency: "enable" },
-            { key: "secret_id", type: "password", icon: "key", line: 0, label: "Secret Id", required: true, dependency: "enable" },
-            { key: "groupfilter", icon: "filter", line: 1, label: "Group Filter", required: false, dependency: "enable" },
-        ]
     },
     mailSettings:{
         icon: "envelope",
@@ -289,18 +313,6 @@ export default {
 
         ]
     },
-    openId:{
-        type: "oidc",
-        label: "Open Id",
-        icon: "fac,openid",
-        fields: [
-            { key: "enabled", label: "Enable Open Id", type: "checkbox", isAction: true },
-            { key: "client_id", icon: "id-badge", line: 0, label: "Client Id", required: true, dependency: "enabled" },
-            { key: "secret_id", type: "password", icon: "key", line: 0, label: "Secret Id", required: true, dependency: "enabled" },
-            { key: "issuer", icon: "user-tag", line: 1, label: "Issuer Url", required: true, dependency: "enabled" },
-            { key: "groupfilter", icon: "filter", line: 1, label: "Group Filter", required: false, dependency: "enabled" },
-        ]
-    },
     backups: {
         icon: 'database',
         type: 'backup',
@@ -308,12 +320,13 @@ export default {
         labelPlural: 'Backups',
         idKey: 'folder',
         actions: [
+            { name: 'preview', title: `Show Backup`, icon: 'info-circle', color: 'change' },
             { name: 'trigger', icon: 'undo', title: 'Restore', color: 'warning' },
             { name: 'delete', icon: 'trash', title: 'Delete', color: 'danger' }
         ],
         fields: [
-            { key: 'folder', label: 'Folder', readonly: true },
-            { key: 'date', label: 'Date', type: "datetime" , readonly: true },
+            { key: 'folder', label: 'Folder', noInput: true },
+            { key: 'date', label: 'Date', type: "datetime" , noInput: true },
             { key: 'description', label: 'Description', type: 'text' }
         ]
     },

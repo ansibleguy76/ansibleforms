@@ -16,6 +16,7 @@
 
     import { ref, onMounted } from "vue";
     import axios from "axios";
+    import Helpers from "@/lib/Helpers";
     import { useToast } from "vue-toastification";
     import TokenStorage from "@/lib/TokenStorage";
     import { useVuelidate } from "@vuelidate/core";
@@ -85,7 +86,7 @@
 
         } catch (err) {
             console.log(objectTitle('Error loading'));
-            toast.error(err.message);
+            toast.error(Helpers.parseAxiosResponseError(err, "Failed to load item"));
         }
     }
 
@@ -111,7 +112,7 @@
                     loadItem();
                 }
             }catch(err){
-                toast.error(err.message);
+                toast.error(Helpers.parseAxiosResponseError(err, "Failed to save item"));
             }
         } else {
             $v.value.item.$touch()

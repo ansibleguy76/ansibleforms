@@ -140,8 +140,12 @@
             const val = item[column];
             text = val ? dayjs(val).format('YYYY-MM-DD HH:mm:ss') : '';
         } else if (field.type == 'select') {  // is this a select field? => then get the label from the parentList
-            const parentList = props.parentLists[field.values];
-            text = parentList.find(listItem => listItem[field.valueKey] == item[field.key])[field.labelKey] // get the foreign label
+            const parentList = props.parentLists[field.parent] || [];
+            try{
+                text = parentList.find(listItem => listItem[field.valueKey] == item[field.key])[field.labelKey] // get the foreign label
+            } catch (e) {
+                text = ''
+            }
         } else {
             text = item[column]; // else get the value from the item
         }
@@ -173,9 +177,9 @@
                 <template v-for="(label, index) in labels">
                     <th v-if="!fields[index].hidden || false">
                         <span class="me-2">{{ label }}</span>
-                        <span v-if="fields[index].sortable" class="me-2">
+                        <!-- <span v-if="fields[index].sortable" class="me-2">
                             <FaIcon role="button" color="secondary" icon="sort" @click="console.log('sort')" />
-                        </span>
+                        </span> -->
                     </th>
                 </template>
 
@@ -185,7 +189,8 @@
             <tr :class="{ 'bg-primary-subtle': pagination.currentId == item[idKey] }" v-for="(item, index) in displayedItems" :key="index">
                 <td :class="{ 'bg-primary-subtle': pagination.currentId == item[idKey] }" class="is-first" v-if="actions.length > 0">
                     <span v-for="(action, actionIndex) in actions" class="me-2" :title="action.title">
-                        <FaIcon v-if="action.dependency && !item[action.dependency]" color="gray-500" size="sm" :icon="action.icon"></FaIcon>
+                        <FaIcon v-if="action.dependency && action.dependencyValues && !action.dependencyValues.includes(item[action.dependency])" color="gray-500" size="sm" :icon="action.icon"></FaIcon>
+                        <FaIcon v-else-if="action.dependency && !item[action.dependency]" color="gray-500" size="sm" :icon="action.icon"></FaIcon>
                         <FaIcon v-else role="button" :color="action.color" size="sm" :icon="action.icon" @click="emit(action.name, item)"></FaIcon>
                     </span>
                     <span v-if="Object.keys(busyItems).includes(item[idKey].toString())" :title="busyItems[item[idKey]]">
@@ -231,7 +236,7 @@
 
     table thead th.is-first,
     table tbody td.is-first {
-        width: 9em !important;
-        max-width: 9em !important;
+        width: 11em !important;
+        max-width: 11em !important;
     }
 </style>

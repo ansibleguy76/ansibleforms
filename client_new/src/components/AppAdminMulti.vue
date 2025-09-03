@@ -18,8 +18,10 @@
     /******************************************************************/
 
     import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
+    import { watch } from 'vue';    
     import { useToast } from 'vue-toastification';
     import axios from 'axios';
+    import Helpers from '@/lib/Helpers';
     import TokenStorage from '@/lib/TokenStorage';
     import { useVuelidate } from "@vuelidate/core";
 
@@ -58,6 +60,7 @@
     const pagination = ref({ currentId: undefined, enabled: true });
     const activeChild = ref(0);
     const interval = ref(null);
+    const config = ref({});
 
     // flatten
     const isFlat = props.settings.flat || false;
@@ -105,7 +108,7 @@
             ruleObj.item[field.key] = rule
             if (field.type == 'password') {
                 rule = {}
-                rule.password_comfirmation = sameAs(computed(() => item.value.password))
+                rule.password_comfirmation = sameAs(computed(() => item.value.password ||item.value.client_secret))
                 ruleObj.item["password2"] = rule
             }
         });
@@ -135,8 +138,11 @@
         resetItems();
         itemList.value = await loadList(objectType,isFlat);
         for (const field of fields) {
-            if (field.values && typeof field.values == 'string') {
-                parentLists.value[field.values] = await loadList(field.values);
+            if (field.parent && field.values && typeof field.values == 'string') {
+                parentLists.value[field.parent] = await loadList(field.values);
+            }
+            if (field.parent && field.values && Array.isArray(field.values)) {
+                parentLists.value[field.parent] = field.values;
             }
         }
     }
@@ -161,7 +167,7 @@
                 throw new Error("Unsupported API version");
             }
         } catch (err) {
-            toast.error(err.message)
+            toast.error(Helpers.parseAxiosResponseError(err, "Failed to load data"))
         }
 
 
@@ -191,6 +197,7 @@
                         // }
                     }
                     delete item.value.password // remove password ; updates don't need password
+                    delete item.value.client_secret // do not return client_secret in the API
                     // TODO : in de future, do not return passwords in the api
 
                     for (const childList of children) {
@@ -198,7 +205,7 @@
                     }
                 }
             } catch (err) {
-                toast.error(err.message)
+                toast.error(Helpers.parseAxiosResponseError(err, "Failed to load item"))
             }
         }
     }
@@ -208,6 +215,13 @@
         await loadItem()
         action.value = 'select';    
         removeUnwantedProperties()
+        // Set defaults for all fields with defaultMap
+        fields.forEach(field => {
+            if (field.defaultMap && field.dependency && item.value[field.dependency] && !item.value[field.key]) {
+                console.log("Setting default")
+                setFieldDefaults(field.dependency);
+            }
+        });
     }
     async function editItem(value) {
         itemId.value = value[idKey];
@@ -215,6 +229,13 @@
         await loadItem()
         action.value = 'edit';    
         removeUnwantedProperties()
+        // Set defaults for all fields with defaultMap
+        fields.forEach(field => {
+            if (field.defaultMap && field.dependency && item.value[field.dependency] && !item.value[field.key]) {
+                console.log("Setting default")
+                setFieldDefaults(field.dependency);
+            }
+        });        
     }
     function setItemProperty(setting) { // to set a property of an item (example status for repos)
         const founditem = itemList.value.find((x) => { 
@@ -230,6 +251,7 @@
         action.value = 'change_password';    
         item.value.password = '';
         item.value.password2 = '';
+        item.value.client_secret = ''; // reset client secret
         pagination.value.currentId = value[idKey];
         removeUnwantedProperties()
     }
@@ -269,7 +291,7 @@
                 }
             }
             catch (err) {
-                toast.error(err.message)
+                toast.error(Helpers.parseAxiosResponseError(err, "Failed to save item"))
             }
         } else {
             $v.value.item.$touch()
@@ -338,23 +360,56 @@
     }
 
     function showField(field) {
-        if (field.readonly) return false
-        if (field.noInput) return false
-        var depShow = true
+        // Only hide if noInput is set, not readonly
+        if (field.noInput) return false;
+        let depShow = true;
         if (field.dependency) {
             const depValue = item.value[field.dependency];
-            if (field.negateDependency) {
+            if (Array.isArray(field.dependencyValues)) {
+                depShow = field.dependencyValues.includes(depValue);
+            } else if (field.negateDependency) {
                 depShow = !depValue;
             } else {
                 depShow = depValue;
             }
-        }        
-        if (field.type == 'password' && ["new","change_password"].includes(action.value)) return (true && depShow)
-        if (field.type != 'password' && action.value == 'change_password') return false
-        if (field.type == 'password' && action.value != 'change_password') return false
-
+        }
+        if (field.type == 'password' && ["new","change_password"].includes(action.value)) return (true && depShow);
+        if (field.type != 'password' && action.value == 'change_password') return false;
+        if (field.type == 'password' && action.value != 'change_password') return false;
         return depShow;
     }
+
+    // Set dynamic defaults for fields with defaultMap when dependency changes
+    function setFieldDefaults(depKey) {
+        fields.forEach(field => {
+            if (field.defaultMap && field.dependency === depKey) {
+                const depValue = item.value[depKey];
+                const def = field.defaultMap[depValue];
+                if (typeof def === 'function') {
+                    item.value[field.key] = def(config.value);
+                } else if (def !== undefined) {
+                    item.value[field.key] = def;
+                }
+            }
+        });
+    }
+
+
+    fields.forEach(field => {
+        if (field.dependency) {
+            watch(() => item.value[field.dependency], () => setFieldDefaults(field.dependency));
+        }
+    });
+
+    // Load config (AnsibleForms URL) on mount
+    onMounted(async () => {
+        try {
+            const result = await axios.get(`/api/v1/settings`, TokenStorage.getAuthentication());
+            config.value = result.data.data.output;
+        } catch (err) {
+            // fallback: leave config empty
+        }
+    });
     function removeUnwantedProperties(){
         for (const field of fields) {
             if (field.type == 'password' && !["new","change_password"].includes(action.value)) {
@@ -388,7 +443,7 @@
     const  isInvalid = computed(() => {
         // check if any field is invalid, but only check the ones that are not disabled
         for (const field of fields) {
-            if (showField(field) && !["password","password2"].includes(field.key) && $v.value.item[field.key].$invalid) {
+            if (showField(field) && !["password","password2","client_secret"].includes(field.key) && $v.value.item[field.key].$invalid) {
                 return true;
             }
         }
@@ -397,7 +452,7 @@
     const  isInvalidPassword = computed(() => {
         // check if any field is invalid, but only check the ones that are not disabled
         for (const field of fields) {
-            if (showField(field) &&(["password","password2"].includes(field.key) || field.key == idKey) && $v.value.item[field.key].$invalid) {
+            if (showField(field) &&(["password","password2","client_secret"].includes(field.key) || field.key == idKey) && $v.value.item[field.key].$invalid) {
                 return true;
             }
         }
@@ -504,7 +559,7 @@
                     :labelKey="field.labelKey" 
                     :style="field.style"
                     :lang="field.lang"
-                    :values="getParentValues(field.values)" />
+                    :values="getParentValues(field.parent)" />
                 <BsInput v-if="showField(field) && field.type == 'password'" 
                     :isHorizontal="true" 
                     type="password" 
