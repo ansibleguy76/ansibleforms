@@ -20,12 +20,10 @@ import error from "@/pages/error.vue"
 import aap from "@/pages/admin/aap.vue"
 import credentials from "@/pages/admin/credentials.vue"
 import oauth2 from "@/pages/admin/oauth2.vue"
-import entraId from "@/pages/admin/entraId.vue"
 import groups from "@/pages/admin/groups.vue"
 import knownHosts from "@/pages/admin/knownHosts.vue"
 import ldap from "@/pages/admin/ldap.vue"
 import mailSettings from "@/pages/admin/mailSettings.vue"
-import openId from "@/pages/admin/openId.vue"
 import repositories from "@/pages/admin/repositories.vue"
 import dataSchemas from "@/pages/admin/dataSchemas.vue"
 import datasources from "@/pages/admin/datasources.vue"
@@ -106,12 +104,10 @@ const routes = [
   { path: '/admin/aap', name: "/admin/aap", component: aap, beforeEnter: checkSettings },
   { path: '/admin/credentials', name: "/admin/credentials", component: credentials, beforeEnter: checkSettings },
   { path: '/admin/oauth2', name: "/admin/oauth2", component: oauth2, beforeEnter: checkSettings },
-  { path: '/admin/entraId', name: "/admin/entraId", component: entraId, beforeEnter: checkSettings },
   { path: '/admin/groups', name: "/admin/groups", component: groups, beforeEnter: checkSettings },
   { path: '/admin/knownHosts', name: "/admin/knownHosts", component: knownHosts, beforeEnter: checkSettings },
   { path: '/admin/ldap', name: "/admin/ldap", component: ldap, beforeEnter: checkSettings },
   { path: '/admin/mailSettings', name: "/admin/mailSettings", component: mailSettings, beforeEnter: checkSettings },
-  { path: '/admin/openId', name: "/admin/openId", component: openId, beforeEnter: checkSettings },
   { path: '/admin/repositories', name: "/admin/repositories", component: repositories, beforeEnter: checkSettings },
   { path: '/admin/dataSchemas', name: "/admin/dataSchemas", component: dataSchemas, beforeEnter: checkSettings },
   { path: '/admin/datasources', name: "/admin/datasources", component: datasources, beforeEnter: checkSettings },
