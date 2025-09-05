@@ -301,8 +301,12 @@ const Helpers = {
         sortBy(...args) {
             return this.sort(dynamicSortMultiple(...args));
         }
-        distinctBy(...args) {
-            return this.filter((a, i) => this.findIndex((s) => compareProps(a,s,args)) === i)
+        distinctBy(...props) {
+          return this.filter((item, index, arr) =>
+            index === arr.findIndex(other =>
+              props.every(prop => item[prop] === other[prop])
+            )
+          );
         }
         filterBy(...args) {
           let props=Object.keys(args[0])

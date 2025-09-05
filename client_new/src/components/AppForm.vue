@@ -1473,7 +1473,7 @@ onUnmounted(() => {
                                         :hasError="v$.form[field.name].$invalid" :click="false"
                                         tableClass="table table-bordered" headClass="bg-primay-subtle"
                                         :isLoading="!['fixed', 'variable'].includes(dynamicFieldStatus[field.name]) && (field.expression != undefined || field.query != undefined)"
-                                        :values="form[field.name] || []" @input="evaluateDynamicFields(field.name)"
+                                        :values="form[field.name] || []" @update:modelValue="evaluateDynamicFields(field.name)"
                                         @warning="addTableWarnings(field.name, ...arguments)" 
                                         :help="field.help"
                                         />
@@ -1497,7 +1497,7 @@ onUnmounted(() => {
                                         :filterColumns="field.filterColumns || []"
                                         :previewColumn="field.previewColumn || ''"
                                         :valueColumn="field.valueColumn || ''"
-                                        @input="evaluateDynamicFields(field.name)" 
+                                        @update:modelValue="evaluateDynamicFields(field.name)" 
                                         :sticky="field.sticky || false"
                                         :horizontal="field.horizontal || false"
                                         :errors="v$.form[field.name].$errors"
