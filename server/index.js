@@ -21,14 +21,22 @@ async function start(){
   // set the start directory to load our vue app (frontend/gui)
   const publicPath = resolve(__dirname, './views');
   const staticConf = { maxAge: '1y', etag: false };
-  // allow browser history
- 
 
+  // Middleware to set no-cache for index.html
+  app.use((req, res, next) => {
+    if (req.path === '/' || req.path.endsWith('index.html')) {
+      res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+    }
+    next();
+  });
+
+  // allow browser history
   app.use(`/`, history()); // this order is important, it must be before the static files middleware  
   app.use("/", express.static(publicPath, staticConf));
 
   // Catchall for unmatched routes (after static and API)
-  app.get('*', (req, res) => {
+  app.get(/(.*)/, (req, res) => {
+    res.setHeader('Cache-Control', 'no-cache, must-revalidate');
     res.sendFile(path.join(publicPath, 'index.html'));
   });
 
