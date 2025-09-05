@@ -351,7 +351,7 @@
           console.log("You can't set a default value for a multiple select that is not an array")
           return
         }
-        if(!props.multiple && Array.isArray(props.defaultValue || [])){
+        if(!props.multiple && Array.isArray(props.defaultValue || '')){
           console.log("You can't set a default value for a non multiple select that is an array")
           // this.$toast.error("You can't set a default value for a non multiple select that is an array")
           return
