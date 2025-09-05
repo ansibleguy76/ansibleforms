@@ -23,10 +23,32 @@ var Navigate = {
       router.push({ name: "/schema" }).catch((err) => {});
   },
 
-  toPath(router,path,query="") {
-      console.log("Redirecting to page")
-      router.push({ name: path, query: query }).catch((err) => {});
-  },
+   toPath(router, path, query = "") {
+      console.log("Redirecting to page");
+      // Use router.resolve for robust route parsing (supports dynamic routes, params, query)
+      let resolved;
+      if (typeof path === 'object') {
+         resolved = router.resolve(path);
+      } else {
+         // If path is a string and contains a query string, parse and merge with explicit query
+         let pathOnly = path;
+         let mergedQuery = {};
+         if (typeof path === 'string' && path.includes('?')) {
+           const [pathname, search] = path.split('?');
+           pathOnly = pathname;
+           const params = new URLSearchParams(search);
+           for (const [key, value] of params.entries()) {
+             mergedQuery[key] = value;
+           }
+         }
+         // Merge with explicit query if provided
+         if (query && typeof query === 'object') {
+           Object.assign(mergedQuery, query);
+         }
+         resolved = router.resolve({ path: pathOnly, query: mergedQuery });
+      }
+      router.push(resolved).catch((err) => {});
+   },
 
   toOrigin(router, route){
   

@@ -22,10 +22,15 @@ async function start(){
   const publicPath = resolve(__dirname, './views');
   const staticConf = { maxAge: '1y', etag: false };
   // allow browser history
+ 
+
   app.use(`/`, history()); // this order is important, it must be before the static files middleware  
   app.use("/", express.static(publicPath, staticConf));
 
-
+  // Catchall for unmatched routes (after static and API)
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(publicPath, 'index.html'));
+  });
 
   // choose whether to start https or http server
   let httpServer;

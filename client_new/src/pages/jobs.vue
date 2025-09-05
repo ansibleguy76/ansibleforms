@@ -108,6 +108,11 @@
         if(id){
             jobId.value=id
             await loadOutput(id)
+            // Expand parent if this is a child job
+            const selectedJob = jobs.value.find(j => j.id == id);
+            if (selectedJob && selectedJob.parent_id) {
+                collapsed.value[selectedJob.parent_id] = true;
+            }
         }
     });
 
@@ -421,6 +426,13 @@
             await loadOutput(jobId.value)
         }
         await loadJobs(true);
+        // After jobs are loaded, expand parent if jobId is a child job
+        if (jobId.value) {
+            const selectedJob = jobs.value.find(j => j.id == jobId.value);
+            if (selectedJob && selectedJob.parent_id) {
+                collapsed.value[selectedJob.parent_id] = true;
+            }
+        }
         runningJobsInterval.value = setInterval(loadRunningJobs, 5000);
     });
     // destroy

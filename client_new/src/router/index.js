@@ -1,7 +1,7 @@
 // Routes
 
 // Composables
-import { createRouter, createWebHistory } from 'vue-router/auto'
+import { createRouter, createWebHistory } from 'vue-router'
 
 import designer from "@/pages/designer.vue"
 import index from "@/pages/index.vue"
@@ -120,7 +120,7 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(),
   routes
 })
 

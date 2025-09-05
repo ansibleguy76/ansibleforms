@@ -205,7 +205,7 @@ onMounted(async () => {
                             <div class="row align-content-stretch g-4">
                                 <TransitionGroup>
                                     <div class="col-md-6 col-lg-4 col-xxl-3" v-for="form in getForms" :key="form.name">
-                                        <router-link :to="'/form/?form=' + encodeURI(form.name)" class="card h-100 p-4 text-reset text-decoration-none" :class="getFormClass(form)">
+                                        <router-link :to="'/form?form=' + encodeURI(form.name)" class="card h-100 p-4 text-reset text-decoration-none" :class="getFormClass(form)">
                                             <div class="row">
                                                 <div v-if="form.image || form.icon" class="col-3 text-center">
                                                     <img v-if="form.image" :src="form.image" alt="Image" class="img-fluid" />
