@@ -100,10 +100,11 @@ onMounted(async () => {
   Theme.load()
   console.log("Theme is loaded")
   await router.isReady()
+  registerAxiosInterceptor() // setup token refresh, an axios interceptor
   console.log("Router is ready")
   await checkDatabase();
   console.log("Database check complete")
-  registerAxiosInterceptor() // setup token refresh, an axios interceptor
+
 });
 
 </script>
