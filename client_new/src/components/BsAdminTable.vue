@@ -83,6 +83,11 @@
                 };
             }
         }
+        ,
+        name: {
+            type: String,
+            default: null
+        }
     });
 
 
@@ -222,7 +227,8 @@
         :dataList="filteredItemsWithoutDoubles"
         :perPage="pagination.pageSize"
         :buttonsShown="7"
-        @change="setDisplayedItems"    
+    :name="name"
+    @change="setDisplayedItems"    
     />
 </template>
 <style scoped>

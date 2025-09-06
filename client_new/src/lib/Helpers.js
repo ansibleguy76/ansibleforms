@@ -27,6 +27,56 @@ const Helpers = {
       return err.message || custom;
     }
   },
+  // Cookie helpers for simple client-side persistence
+  setCookie(name, value, days = 365) {
+    try{
+      const d = new Date();
+      d.setTime(d.getTime() + days * 24 * 60 * 60 * 1000);
+      const expires = "expires=" + d.toUTCString();
+      document.cookie = encodeURIComponent(name) + "=" + encodeURIComponent(value) + ";" + expires + ";path=/";
+    }catch(e){
+      console.error('setCookie failed', e)
+    }
+  },
+  getCookie(name) {
+    try{
+      const cname = encodeURIComponent(name) + "=";
+      const decoded = decodeURIComponent(document.cookie || "");
+      const parts = decoded.split('; ');
+      for (let i = 0; i < parts.length; i++) {
+        if (parts[i].indexOf(cname) === 0) return parts[i].substring(cname.length);
+      }
+      return null;
+    }catch(e){
+      return null
+    }
+  },
+  deleteCookie(name){
+    try{
+      document.cookie = encodeURIComponent(name) + "=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/";
+    }catch(e){
+      console.error('deleteCookie failed', e)
+    }
+  },
+  // Normalize a string to a safe form: remove accents, lowercase, replace non-alphanumerics with
+  // underscores, collapse multiple underscores and trim leading/trailing underscores.
+  cleanupString(v){
+    if (v === undefined || v === null) return '';
+    try{
+      // normalize and remove diacritics
+      let s = String(v).normalize('NFKD').replace(/\p{M}/gu, '');
+      s = s.toLowerCase();
+      // replace any non-alphanumeric characters with underscore
+      s = s.replace(/[^a-z0-9]+/g, '_');
+      // collapse multiple underscores
+      s = s.replace(/_+/g, '_');
+      // trim leading/trailing underscores
+      s = s.replace(/^_+|_+$/g, '');
+      return s;
+    }catch(e){
+      return String(v).toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/_+/g,'_').replace(/^_+|_+$/g,'');
+    }
+  },
   getJobMessageByStatus(status) {
     // get the message by status
     // used in the job list

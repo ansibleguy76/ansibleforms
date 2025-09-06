@@ -116,6 +116,16 @@
         }
     });
 
+    // persist lines when user changes the select; also reload jobs
+    watch(lines, async (val, oldVal) => {
+        try{
+            Helpers.setCookie('jobs_lines', String(val), 365);
+        }catch(e){}
+        if (val !== oldVal) {
+            await loadJobs();
+        }
+    });
+
     // METHODS
 
     // copy string to clipboard
@@ -421,6 +431,15 @@
 
     // mounted
     onMounted(async () => {
+        // restore lines per-page from cookie if present
+        try{
+            const savedLines = Helpers.getCookie('jobs_lines');
+            if (savedLines && !isNaN(parseInt(savedLines))) {
+                lines.value = parseInt(savedLines);
+            }
+        }catch(e){}
+
+
         if(route.params.id){
             jobId.value=parseInt(route.params.id)
             await loadOutput(jobId.value)
@@ -566,6 +585,7 @@
                 :dataList="parentJobs"
                 :buttonsShown="7"
                 :index="displayedJobIndex"
+                name="jobs"
                 @change="setDisplayJobs"            
             />
             <div v-if="job"  class="row">

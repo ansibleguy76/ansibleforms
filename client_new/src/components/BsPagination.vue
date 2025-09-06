@@ -16,6 +16,7 @@
     /****************************************************/
 
     import { watch, ref } from 'vue';
+    import Helpers from '@/lib/Helpers';
 
     // INIT
 
@@ -26,7 +27,8 @@
     const props = defineProps({
         dataList:{type:Array},
         buttonsShown:{type:Number},
-        index:{type:Number}
+        index:{type:Number},
+        name: { type: String, default: null }
     });
 
     // DATA
@@ -105,11 +107,27 @@
    
     watch(displayedItems,()=>{
         change()
+    })
+
+    // persist perPage when changed
+    watch(perPage, (val)=>{
+        if(props.name){
+            try{
+                Helpers.setCookie(`pagination_${props.name}_perPage`, String(val), 365);
+            }catch(e){}
+        }
     })    
 
     // EVENTS
 
     onMounted(()=>{
+        // restore perPage from cookie when a name is provided
+        if(props.name){
+            const saved = Helpers.getCookie(`pagination_${props.name}_perPage`);
+            if(saved && !isNaN(parseInt(saved))){
+                perPage.value = parseInt(saved);
+            }
+        }
         page.value=pageByIndex
         setPage(1)
     })

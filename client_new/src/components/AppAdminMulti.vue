@@ -517,6 +517,7 @@
                 :actions="actions" 
                 :removeDoubles="removeDoubles"
                 :checkboxFields="checkboxFields"
+                :name="Helpers.cleanupString(objectLabelPlural)"
                 @preview="previewItem" 
                 @edit="editItem" 
                 @test="testItem" 

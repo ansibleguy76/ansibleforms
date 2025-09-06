@@ -1,12 +1,16 @@
 <script setup>
 import Profile from "@/lib/Profile";
 import Form from "@/lib/Form";
+import Helpers from "@/lib/Helpers";
 import TokenStorage from "@/lib/TokenStorage";
 import { useRoute, useRouter } from "vue-router";
 
 const authenticated = ref(false);
 const formConfig = ref({});
 const search = ref("");
+const viewMode = ref('tiles') // 'tiles' or 'list'
+
+
 
 const route = useRoute();
 const router = useRouter();
@@ -68,6 +72,12 @@ const filteredFormsBySearch = computed(() => {
         return f;
     }
 });
+
+function setView(m){
+    if(m!=='tiles' && m!=='list') return;
+    viewMode.value = m;
+    Helpers.setCookie('forms_view_mode', m, 365);
+}
 
 function select(path) {
     if (path) {
@@ -134,6 +144,9 @@ onMounted(async () => {
     Form.list().then((config) => {
         formConfig.value = config;
     });
+    // restore view mode from cookie if present
+    const vm = Helpers.getCookie('forms_view_mode');
+    if(vm && (vm === 'tiles' || vm === 'list')) viewMode.value = vm;
 });
 </script>
 <template>
@@ -200,9 +213,14 @@ onMounted(async () => {
                                     </span>
                                     {{ showWarnings ? 'Hide' : 'This config has' }} Warnings or Errors
                                 </button>
+                                <button class="btn btn-outline-secondary btn-sm ms-2" @click="(viewMode==='tiles')?setView('list'):setView('tiles')" title="Toggle view">
+                                    <span class="me-1"><FaIcon :icon="viewMode==='tiles'? 'th-list' : 'th'" /></span>
+                                    <span v-if="viewMode==='tiles'">List</span>
+                                    <span v-else>Tiles</span>
+                                </button>
                             </div>
                             <BsInput v-model="search" placeholder="Search" label="Filter" type="text" icon="search" />
-                            <div class="row align-content-stretch g-4">
+                            <div v-if="viewMode==='tiles'" class="row align-content-stretch g-4">
                                 <TransitionGroup>
                                     <div class="col-md-6 col-lg-4 col-xxl-3" v-for="form in getForms" :key="form.name">
                                         <router-link :to="'/form?form=' + encodeURI(form.name)" class="card h-100 p-4 text-reset text-decoration-none" :class="getFormClass(form)">
@@ -223,6 +241,31 @@ onMounted(async () => {
                                         </router-link>
                                     </div>
                                 </TransitionGroup>
+                            </div>
+                            <div v-else class="table-responsive">
+                                <table class="table table-bordered table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Description</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr
+                                            v-for="form in getForms"
+                                            :key="form.name"
+                                            style="cursor:pointer"
+                                            @click="$router.push({ path: '/form', query: { form: form.name } })"
+                                        >
+                                            <td :class="getFormClass(form)">
+                                                {{ form.name }}
+                                            </td>
+                                            <td :class="getFormClass(form)">
+                                                {{ form.description }}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                             
                         </div>
