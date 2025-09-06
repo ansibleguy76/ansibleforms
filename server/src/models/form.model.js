@@ -211,7 +211,6 @@ function getFormInfo(form,formName='',loadFullConfig=false) {
   }
   // no match
   return null;
-
 }
 
 
@@ -314,30 +313,52 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
     delete f.source // remove source from the base forms, it is not needed
   };
   // read extra form files
-  try{
-    var files = fs.readdirSync(formsdirpath)
+  // read extra form files (recursively include subdirectories)
+  var files = [];
+  try {
+    // walk directory recursively and collect relative paths for .yml/.yaml files
+    const walk = (dir) => {
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          walk(fullPath);
+        } else if (entry.isFile()) {
+          const ext = path.extname(entry.name).toLowerCase();
+          if (ext === '.yml' || ext === '.yaml') {
+            // store path relative to formsdirpath so getFormsFromFile(formsdirpath, relPath) works
+            const rel = path.relative(formsdirpath, fullPath);
+            files.push(rel);
+          }
+        }
+      }
+    };
+    if (fs.existsSync(formsdirpath)) {
+      walk(formsdirpath);
+    } else {
+      warn(`Failed to load forms directory '${formsdirpath}'.`);
+      files = [];
+    }
   } catch (e) {
-    // if the forms directory does not exist, we can just return the base forms
-    warn(`Failed to load forms directory '${formsdirpath}'.`,e);
+    warn(`Failed to load forms directory '${formsdirpath}'.`, e);
+    files = [];
   }
-  if(!files){
-    files = []
-  }
-  if(files){
-    // filter only yaml
-    files=files.filter((item)=>['.yaml','.yml'].includes(path.extname(item)))
+
+  if (files && files.length) {
+    // sort for deterministic order
+    files.sort();
     // read files
     for (const item of files) {
       // read the file and add to the forms array
-      logger.debug(`Loading forms from file ${item}`)
+      logger.debug(`Loading forms from file ${item}`);
       try{
-        unvalidatedForms = unvalidatedForms.concat(getFormsFromFile(formsdirpath,item)); // get the forms from the file, if any and merge them into the unvalidatedForms array
+        unvalidatedForms = unvalidatedForms.concat(getFormsFromFile(formsdirpath,item)); // get the forms from the file, including subpaths
       }
       catch (e) {
         error(e.message);
       }
     };
-    for (const f of unvalidatedForms) {
+  for (const f of unvalidatedForms) {
       var form = null; // initialize form
       if(!f?.name){
         error(`Form found with no name.`)
@@ -632,10 +653,14 @@ Form.save = function(data){
       var formnames=forms.map(x => x.name)
       if(forms.length==1){
         logger.debug(`saving single form '${forms[0].name}' to '${tmpfile}'`)
+        // ensure parent directory exists for nested paths
+        fse.ensureDirSync(path.dirname(tmpfile));
         fs.writeFileSync(tmpfile,yaml.stringify(forms[0]));
       }
       if(forms.length>1){
         logger.debug(`saving forms ${formnames} to '${tmpfile}'`)
+        // ensure parent directory exists for nested paths
+        fse.ensureDirSync(path.dirname(tmpfile));
         fs.writeFileSync(tmpfile,yaml.stringify(forms));
       }
     }
