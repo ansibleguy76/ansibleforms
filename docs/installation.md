@@ -33,6 +33,9 @@ AnsibleForms can be installed in a few ways.
     <p><strong>Recommendation</strong> Out of experience, I recommend the use of the docker-image.  It has all (many) dependencies installed and can be setup very quickly.</p>
 </div>
 
+# Install using K8s
+
+To install AnsibleForms on Kubernetes using Helm, refer to the [ansibleforms-helm GitHub repository](https://github.com/ansibleguy76/ansibleforms-helm).  Just git clone, change the values.yaml or create your own values.yaml and overwrite.
 
 # Install using Docker-Compose 
 
@@ -46,10 +49,6 @@ The [docker-compose](https://github.com/ansibleguy76/ansibleforms-docker), toget
     <p><strong>Note</strong> Using docker and docker-compose for the first time, requires some basic linux skills and some knowledge about containers</p>
     <p><a href="/doks-theme/assets/files/docker and ansibleforms.pdf">Download this document</a> to get you kick-started with containers and Docker</p>
 </div>
-
-# Install using K8s
-
-To install AnsibleForms on Kubernetes using Helm, refer to the [ansibleforms-helm GitHub repository](https://github.com/ansibleguy76/ansibleforms-helm).
 
 ## Prerequisites
 
