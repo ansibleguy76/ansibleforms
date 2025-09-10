@@ -46,7 +46,7 @@
     { title: "Api docs", link: "/api-docs", icon: "code", target: "_blank" }
   ];
   const profileMenu = [
-    { title: "Change Password", link: "/change-password", icon: "key", target: "_self" },
+    { title: "Change Password", link: "/change-password", icon: "key", target: "_self", local_only: true },
     { title: "Logout", link: "/logout", icon: "arrow-right-from-bracket", target: "_self" },
   ];
 
@@ -184,14 +184,16 @@
       <BsNavItem :dropdown="true">
         <BsNavMenu icon="user" :title="store.profile?.username || ''" :showTitle="true">
           <li v-for="m in profileMenu">
-            <a v-if="m.href" type="button" class="dropdown-item d-flex align-items-center" :href="m.href">
-              <span class="icon"><font-awesome-icon :icon="m.icon" /></span>
-              <span class="ms-2">{{ m.title }}</span>
-            </a>
-            <router-link v-else class="dropdown-item d-flex align-items-center" :to="m.link" :target="m.target">
-              <span class="icon"><font-awesome-icon :icon="m.icon" /></span>
-              <span class="ms-2">{{ m.title }}</span>
-            </router-link>
+            <template v-if="(store.profile?.type=='local' && m.local_only) || !m.local_only">
+                <a v-if="m.href" type="button" class="dropdown-item d-flex align-items-center" :href="m.href">
+                  <span class="icon"><font-awesome-icon :icon="m.icon" /></span>
+                  <span class="ms-2">{{ m.title }}</span>
+                </a>
+                <router-link v-else class="dropdown-item d-flex align-items-center" :to="m.link" :target="m.target">
+                  <span class="icon"><font-awesome-icon :icon="m.icon" /></span>
+                  <span class="ms-2">{{ m.title }}</span>
+                </router-link>
+            </template>
           </li>
           <hr>
           <li>
