@@ -69,7 +69,7 @@ export default {
             { key: "head", label: "Head", noInput: true },
             { key: "status", label: "Status", noInput: true },
             { key: "user", icon: "user", label: "Username", placeholder: "my-user",  hidden: true },
-            { key: "password", icon: "lock", label: "Password", type: "password", required: true, placeholder: "Password or Token", hidden: true },
+            { key: "password", icon: "lock", label: "Password", type: "password", placeholder: "Password or Token", hidden: true },
             { key: "uri", icon: "fab,git", label: "Uri", placeholder: "https://github.com/account/repo.git", required: true, hidden: true, help: "Only ssh or https uri's are allowed" },
             { key: "cron", icon: "stopwatch", label: "Cron Schedule", help: "Minute Hour DayOfMonth Month DayOfWeek - For example : */5 * L * 1,3L", hidden: true, regex: { expression: "^[0-9-,*/]+ [0-9-,*/]+ [0-9-,*/L]+ [0-9-,*/]+ [0-9-,*/L]+$", description: "Must be a valid cron schedule"} },
             { key: "description", icon: "info-circle", label: "Description", placeholder: "Description", required: true },
