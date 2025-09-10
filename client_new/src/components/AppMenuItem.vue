@@ -68,18 +68,7 @@
 
   function filterAllowedForms(category){
     var intersect = [];
-    return filterForms(category).filter((item) => {
-      if (item.roles) {
-        intersect = item.roles.filter((role) => props.roles.includes(role));
-      } else {
-        intersect = [];
-      }
-      if (isAdmin() || (intersect && intersect.length > 0)) {
-        return true;
-      } else {
-        return false;
-      }
-    });
+    return filterForms(category)
   };
 
   function filterForms(category){

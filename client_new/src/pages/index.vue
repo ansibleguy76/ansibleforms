@@ -20,20 +20,6 @@ const forms = computed(() => {
     var payload = TokenStorage.getPayload();
     var intersect = [];
     return formConfig.value?.forms
-        ?.filter((item) => {
-            if (item.roles) {
-                intersect = item.roles.filter((role) =>
-                    payload.user.roles.includes(role)
-                );
-            } else {
-                intersect = [];
-            }
-            if (isAdmin(payload) || (intersect && intersect.length > 0)) {
-                return true;
-            } else {
-                return false;
-            }
-        })
         .sort((a, b) => {
             // First, sort by "order" (undefined orders go last)
             const orderA = a.order !== undefined ? a.order : Number.MAX_SAFE_INTEGER;
@@ -141,9 +127,7 @@ onMounted(async () => {
     if (!authenticated.value) {
         return;
     }
-    Form.list().then((config) => {
-        formConfig.value = config;
-    });
+    formConfig.value = await Form.list();
     // restore view mode from cookie if present
     const vm = Helpers.getCookie('forms_view_mode');
     if(vm && (vm === 'tiles' || vm === 'list')) viewMode.value = vm;

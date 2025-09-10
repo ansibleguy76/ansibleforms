@@ -16,8 +16,8 @@ const __dirname = path.dirname(__filename);
 
 const findList = async function(req,res){
   try{
-    logger.info("Getting forms list")
     var userRoles = req?.user?.user?.roles || []
+    logger.info("Getting forms list for roles " + userRoles.join(","))
     var formConfig = await Form.load(userRoles)
     // filter forms based on user roles, only return the forms, only return the properties
     // icon, image, name, description, tileClass
