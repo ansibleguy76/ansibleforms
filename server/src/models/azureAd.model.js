@@ -14,7 +14,7 @@ class AzureAd {
   }
 
   static async find() {
-    const res = await mysql.do("SELECT client_id, client_secret, enable, groupfilter,redirect_uri FROM AnsibleForms.`oauth2_providers` WHERE provider='azuread' LIMIT 1;");
+    const res = await mysql.do("SELECT tenant_id,client_id, client_secret, enable, groupfilter,redirect_uri FROM AnsibleForms.`oauth2_providers` WHERE provider='azuread' LIMIT 1;");
     if (res.length > 0) {
       let record = res[0];
       try {
@@ -24,6 +24,7 @@ class AzureAd {
         record.client_secret = "";
       }
       return {
+        tenant_id: record.tenant_id || null,
         client_id: record.client_id || "",
         client_secret: record.client_secret || "",
         enable: record.enable || 0,

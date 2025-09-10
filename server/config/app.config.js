@@ -1,4 +1,3 @@
-import logger from "../src/lib/logger.js";
 import path from "path";
 import os from "os";
 import { fileURLToPath } from "url";

@@ -94,6 +94,7 @@ export default {
             { key: 'provider', label: 'Provider', required: true, icon: 'cloud', type: 'select', parent: 'providers', values: [{ label: 'Entra ID', value: 'azuread'},{label: 'Open ID',value:'oidc'}] , valueKey: 'value', labelKey: 'label'},
             { key: 'name', label: 'Name', required: true, icon: 'heading' },
             { key: 'description', label: 'Description', required: false, icon: 'info-circle' },
+            { key: 'tenant_id', label: 'Tenant ID', required: false, icon: 'building', dependency: 'provider', dependencyValues: ['azuread'], hidden: true, help: 'Use blank if you want to use the common endpoint' },
             { key: 'client_id', label: 'Client ID', required: true, icon: 'key', dependency: 'provider', dependencyValues: ['azuread', 'oidc'], hidden: true },
             { key: 'issuer', label: 'Issuer', required: true, icon: 'globe', dependency: 'provider', dependencyValues: ['oidc'], hidden: true },
             { key: 'redirect_uri', label: 'Redirect URL', readonly: false, dependency: 'provider',dependencyValues: ['azuread', 'oidc'], defaultMap: {

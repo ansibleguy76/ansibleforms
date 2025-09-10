@@ -26,6 +26,7 @@ const crudConfigs = {
       { name: 'name', isNaturalKey: true, required: true },
       { name: 'description' },
       { name: 'issuer' },
+      { name: 'tenant_id'},
       { name: 'client_id', required: true },
       { name: 'client_secret', isEncrypted: true, required: true },
       { name: 'enable', isBoolean: true },

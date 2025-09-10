@@ -344,7 +344,7 @@ async function patchVersion6(messages, success, failed) {
   buffer = fs.readFileSync(`${__dirname}/../db/create_oauth2_providers_table.sql`);
   sql = buffer.toString();
   await checkPromise(addTable("oauth2_providers", sql), messages, success, failed);
-
+  await checkPromise(addColumn("oauth2_providers", "tenant_id", "TEXT", true, "NULL"), messages, success, failed);
   // --- AzureAD migration to oauth2_providers ---
   // Check if azuread table exists
   try {

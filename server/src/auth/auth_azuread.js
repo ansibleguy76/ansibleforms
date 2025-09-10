@@ -52,6 +52,8 @@ const initialize = async () =>{
           clientID: azureConfig.client_id,
           clientSecret: azureConfig.client_secret,
           callbackURL: azureConfig.redirect_uri,
+          tenant: azureConfig.tenant_id,
+          useCommonEndpoint: !azureConfig?.tenant_id,
           resource: '00000003-0000-0000-c000-000000000000' // required, or it will not work
         },
         // mandatory verify passport method

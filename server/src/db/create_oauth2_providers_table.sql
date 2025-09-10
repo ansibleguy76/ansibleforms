@@ -6,6 +6,7 @@ CREATE TABLE `oauth2_providers` (
   `name` VARCHAR(100) DEFAULT NULL, -- required name for the provider
   `description` VARCHAR(250) DEFAULT NULL, -- optional description for the provider
   `issuer` TEXT DEFAULT NULL,
+  `tenant_id` TEXT DEFAULT NULL,
   `client_id` TEXT DEFAULT NULL,
   `client_secret` TEXT DEFAULT NULL,
   `enable` TINYINT(4) DEFAULT NULL,
