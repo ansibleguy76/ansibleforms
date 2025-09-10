@@ -213,10 +213,10 @@ onMounted(() => {
             :hasError="$v.user.password.$invalid && $v.user.username.$dirty" :errors="$v.user.password.$errors" />
          <button class="btn btn-primary w-100 py-2" @click="login()">Sign in</button>
          <div role="button" class="m-2 azure d-inline-block">
-            <FaIcon icon="fac,azure" size="xl" @click="authAzureAd()" v-if="azureAdEnabled" />
+            <FaIcon icon="fac,azure" size="3x" @click="authAzureAd()" v-if="azureAdEnabled" />
          </div>
          <div role="button" class="m-2 openid d-inline-block">
-            <FaIcon icon="fac,openid" size="xl" @click="authOidc()" v-if="oidcEnabled" />
+            <FaIcon icon="fac,openid" size="3x" @click="authOidc()" v-if="oidcEnabled" />
          </div>
       </div>
    </div>   
