@@ -606,7 +606,7 @@
       - showDesigner: The user can see the designer
       - showSettings: The user can see the settings page
       - showDebugButtons: The user can see the debug buttons on a form
-      - showExtravars: The user can see the extravars on a form
+      - showExtraVars: The user can see the extravars on a form
       - showLogs: The user can see the logs page
       - extendedTokenExpiration: The user can request a token with a longer expiration time (for coding api purposes for example)  
       - showAllJobLogs: The user can see all job logs (not only his own) (Added in 5.0.9)
@@ -648,7 +648,7 @@
           groups: []  
           options:
             showDebugButtons: true  # everyone can see the debug buttons
-            showExtravars: true     # everyone can see the extravars
+            showExtraVars: true     # everyone can see the extravars
   - name: constants
     type: object
     allowed: Free object structure
@@ -796,7 +796,7 @@
           - showDesigner: The user can see the designer
           - showSettings: The user can see the settings page
           - showDebugButtons: The user can see the debug buttons on a form
-          - showExtravars: The user can see the extravars on a form
+          - showExtraVars: The user can see the extravars on a form
           - showLogs: The user can see the logs page
           - extendedTokenExpiration: The user can request a token with a longer expiration time (for coding api purposes for example)  
           - showAllJobLogs: The user can see all job logs (not only his own) (Added in 5.0.9)
@@ -833,7 +833,7 @@
             groups: []  
             options:
               showDebugButtons: true  # everyone can see the debug buttons
-              showExtravars: true     # everyone can see the extravars              
+              showExtraVars: true     # everyone can see the extravars              
     - name: Form
       icon: fas,rectangle-list
       link: forms/form
