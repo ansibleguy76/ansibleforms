@@ -689,7 +689,7 @@ onBeforeUnmount(() => {
               <!-- TOOL BAR BUTTONS -->
               <template #toolbarbuttons>
                 <!-- DEBUG BUTTONS -->
-                <BsButton v-if="store.profile.options?.showExtravars || true" cssClass="btn-sm me-3 fw-normal"
+                <BsButton v-if="store.profile.options?.showExtraVars ?? true" cssClass="btn-sm me-3 fw-normal"
                   cssClassToggle="btn-sm me-3 fw-normal" icon="eye" iconToggle="eye-slash" :toggle="showExtraVars"
                   @click="toggleShowExtraVars()">Show Extravars<template #toggle>Hide Extravars</template>
                 </BsButton>
