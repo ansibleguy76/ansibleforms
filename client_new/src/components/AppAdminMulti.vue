@@ -314,7 +314,7 @@
                     loadItems();
                 }
             } catch (err) {
-                toast.error(err.message)
+                toast.error(Helpers.parseAxiosResponseError(err, "Failed to update item"))
             }
         } else {
             $v.value.item.$touch()
@@ -336,7 +336,7 @@
                 loadItems();
             }
         } catch (err) {
-            toast.error(err.message)
+            toast.error(Helpers.parseAxiosResponseError(err, "Failed to delete item"))
         }
 
     }

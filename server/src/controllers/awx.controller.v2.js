@@ -65,6 +65,7 @@ const update = async (req, res) => {
 const deleteAwx = async (req, res) => {
   try {
     const deleted = await Awx.delete(req.params.id);
+
     if (!deleted) {
       throw new Errors.NotFoundError("AWX not found");
     }

@@ -74,6 +74,7 @@ class CrudModel {
   }
 
   static async checkExist(modelName, id) {
+    
     const config = this.getConfig(modelName);
     const key = config.fields.find(f => f.isKey)?.name || 'id';
     const sql = `SELECT 1 FROM ${config.table} WHERE ${key} = ?`;
@@ -88,6 +89,7 @@ class CrudModel {
     const res = await mysql.do(sql);
     return res.map(r => this.postProcess(modelName, r));
   }
+
 
   static async findById(modelName, id) {
     const config = this.getConfig(modelName);
@@ -185,7 +187,8 @@ class CrudModel {
     // Get the record first to get the name for cache removal
     let record = null;
     if (config.allowCache && cache) {
-      record = await this.findById(modelName, id);
+      // call base implementation directly to avoid subclass overrides with different signatures
+      record = await CrudModel.findById(modelName, id);
     }
     const sql = `DELETE FROM ${config.table} WHERE ${key} = ?`;
     const res = await mysql.do(sql, [id]);
