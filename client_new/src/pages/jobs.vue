@@ -8,6 +8,7 @@
     import State from "@/lib/State";        
     import Helpers from '@/lib/Helpers';
     import dayjs from 'dayjs';
+    import utc from 'dayjs/plugin/utc';
     import YAML from 'yaml';
 
 
@@ -18,6 +19,7 @@
     const router = useRouter();
     const route = useRoute();
     const store = useAppStore();
+    dayjs.extend(utc)
 
     // DATA
 
@@ -279,11 +281,10 @@
     }
     // format time
     function formatTime(t){
-        var result = ''
-        if(t){
-            result = dayjs(t).format('YYYY-MM-DD HH:mm:ss')
-        }
-        return result
+        // preserve zone/offset sent by backend and do not convert to client local time
+        if(!t) return '';
+
+        return dayjs.utc(t).format('YYYY-MM-DD HH:mm:ss');
     }
     // get job index by id
     function getJobIndex(id){

@@ -49,7 +49,13 @@ class BackupModel {
     const formsDir = path.join(path.dirname(formsFile), 'forms');
     const destFile = path.join(backupFolder, path.basename(formsFile));
     const destDir = path.join(backupFolder, 'forms');
-    await fs.copyFile(formsFile, destFile);
+    
+    try {
+      await fs.access(formsFile);
+      await fs.copyFile(formsFile, destFile);
+    } catch {
+      // forms file does not exist, skip copy
+    }
     async function copyDir(src, dest) {
       await fs.mkdir(dest, { recursive: true });
       const entries = await fs.readdir(src, { withFileTypes: true });

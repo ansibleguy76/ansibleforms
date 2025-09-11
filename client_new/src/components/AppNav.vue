@@ -43,6 +43,7 @@
   ];
   const helpMenuOptions = [
     { title: "Documentation", href: "https://ansibleforms.com", icon: "globe", target: "_blank" },
+    { title: "Logs", link: "/logs", icon: "file-lines", target: "_self" },
     { title: "Api docs", link: "/api-docs", icon: "code", target: "_blank" }
   ];
   const profileMenu = [
