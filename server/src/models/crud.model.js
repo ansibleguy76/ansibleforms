@@ -44,6 +44,14 @@ class CrudModel {
           value = value ? 1 : 0;
         }
         result[field.name] = value;
+      }else{
+        // set defaults (but not for key)
+        if(!field.isKey){
+          result[field.name] = ''
+          if(field.isBoolean){
+            result[field.name] = 0
+          }
+        }
       }
     }
     return result;
