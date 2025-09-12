@@ -7,6 +7,7 @@ import appConfig from '../../config/app.config.js';
 import Helpers from '../lib/common.js';
 import yaml from 'yaml';
 import Errors from '../lib/errors.js';
+import logger from '../lib/logger.js';
 
 // --- Helpers for backup details ---
 async function getFileSize(filePath) {
@@ -35,6 +36,45 @@ async function getDirStats(dirPath) {
   return { fileCount, totalSize };
 }
 
+// reusable directory copy helper (used by copyFormsAndFolder and restore)
+async function copyDir(src, dest) {
+  // if source doesn't exist or isn't a directory, do nothing
+  try {
+    const stat = await fs.stat(src);
+    if (!stat.isDirectory()) return;
+  } catch {
+    return;
+  }
+  logger.debug(`Copying dir ${src} -> ${dest}`)
+  await fs.mkdir(dest, { recursive: true });
+  const entries = await fs.readdir(src, { withFileTypes: true });
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      await copyDir(srcPath, destPath);
+    } else {
+      logger.debug(`Copying file ${srcPath} -> ${destPath}`)
+      await fs.copyFile(srcPath, destPath);
+    }
+  }
+}
+
+// copy file only if exists
+async function copyFileIfExists(src,dest){
+    var exists=true
+    try {
+      await fs.access(src);
+    } catch {
+      exists=false
+      logger.warning(`File ${src} not found`)
+    }   
+    if(exists){   
+      logger.debug(`Copying file ${src} -> ${dest}`)
+      await fs.copyFile(src, dest);
+    }
+}
+
 class BackupModel {
   static getBackupPaths() {
     const backupRoot = appConfig.backupPath;
@@ -44,35 +84,32 @@ class BackupModel {
     return { backupRoot, backupFolder, backupFile, timestamp };
   }
 
-  static async copyFormsAndFolder(backupFolder) {
+  static async backupFormsAndFolder(backupFolder) {
+    logger.info(`Copying yaml and forms folder to ${backupFolder}`)
     const formsFile = appConfig.formsPath;
     const formsDir = path.join(path.dirname(formsFile), 'forms');
     const destFile = path.join(backupFolder, path.basename(formsFile));
     const destDir = path.join(backupFolder, 'forms');
-    
-    try {
-      await fs.access(formsFile);
-      await fs.copyFile(formsFile, destFile);
-    } catch {
-      // forms file does not exist, skip copy
-    }
-    async function copyDir(src, dest) {
-      await fs.mkdir(dest, { recursive: true });
-      const entries = await fs.readdir(src, { withFileTypes: true });
-      for (const entry of entries) {
-        const srcPath = path.join(src, entry.name);
-        const destPath = path.join(dest, entry.name);
-        if (entry.isDirectory()) {
-          await copyDir(srcPath, destPath);
-        } else {
-          await fs.copyFile(srcPath, destPath);
-        }
-      }
-    }
+    await copyFileIfExists(formsFile, destFile);
     await copyDir(formsDir, destDir);
   }
 
+
+  static async restoreFormsAndFolder(restoreFolder) {
+    logger.info(`Copying yaml and forms folder from ${this.restoreFolder}`)
+    const formsFile = appConfig.formsPath;
+    const formsYamlBackup = path.join(restoreFolder, path.basename(formsFile));
+    const formsDir = path.join(path.dirname(formsFile), 'forms');
+    const formsDirBackup = path.join(restoreFolder, 'forms');
+    // restore base forms yaml if backup exists
+    await copyFileIfExists(formsYamlBackup, formsFile);
+    // restore forms directory if backup exists (copyDir is a no-op if src missing)
+    await copyDir(formsDirBackup, formsDir);
+  }
+
+
   static async doBackup(description) {
+    logger.info(`Running backup '${description}'`)
     const dbName = 'AnsibleForms';
     const dbHost = dbConfig.host;
     const dbUser = dbConfig.user;
@@ -89,19 +126,20 @@ class BackupModel {
       maskedCommand: `${appConfig.mysqldumpCommand} -h ${dbHost} -u'${dbUser}' -p'*****' -P ${dbPort} ${dbName} > "${backupFile}"`
     };
     await Cmd.executeSilentCommand(cmdObj, true);
-    await this.copyFormsAndFolder(backupFolder);
+    await this.backupFormsAndFolder(backupFolder);
     const meta = { description: description || '' };
     await fs.writeFile(path.join(backupFolder, 'meta.yaml'), yaml.stringify(meta), 'utf8');
     return { backupFolder, backupFile, timestamp, description: meta.description };
   }
 
   static async restore(folder, backupFirst = false) {
+    logger.info(`Running restore from '${folder}'`)
     const dbName = 'AnsibleForms';
     const dbHost = dbConfig.host;
     const dbUser = dbConfig.user;
     const dbPassword = dbConfig.password;
     const dbPort = dbConfig.port;
-  if (!folder || !/^\d{14}$/.test(folder)) throw new Errors.BadRequestError('Invalid or missing backup folder');
+    if (!folder || !/^\d{14}$/.test(folder)) throw new Errors.BadRequestError('Invalid or missing backup folder');
     if (backupFirst) {
       await this.doBackup(`Auto backup before restore of ${folder}`);
     }
@@ -127,21 +165,7 @@ class BackupModel {
       maskedCommand: `${appConfig.mysqlCommand} -h ${dbHost} -u'${dbUser}' -p'*****' -P ${dbPort} ${dbName} < "${backupFile}"`
     };
     await Cmd.executeSilentCommand(cmdObj, true);
-    await fs.copyFile(formsYamlBackup, formsFile);
-    async function copyDir(src, dest) {
-      await fs.mkdir(dest, { recursive: true });
-      const entries = await fs.readdir(src, { withFileTypes: true });
-      for (const entry of entries) {
-        const srcPath = path.join(src, entry.name);
-        const destPath = path.join(dest, entry.name);
-        if (entry.isDirectory()) {
-          await copyDir(srcPath, destPath);
-        } else {
-          await fs.copyFile(srcPath, destPath);
-        }
-      }
-    }
-    await copyDir(formsDirBackup, formsDir);
+    await this.restoreFormsAndFolder(restoreFolder);
     return { message: 'Restore completed', restoreFolder };
   }
 
