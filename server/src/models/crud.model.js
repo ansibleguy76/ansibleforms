@@ -32,7 +32,7 @@ class CrudModel {
       .join(', ');
   }
 
-  static getFieldValues(modelName, data) {
+  static getFieldValues(modelName, data, isUpdate=false) {
     const config = this.getConfig(modelName);
     const result = {};
     for (const field of config.fields) {
@@ -45,8 +45,8 @@ class CrudModel {
         }
         result[field.name] = value;
       }else{
-        // set defaults (but not for key)
-        if(!field.isKey){
+        if(field.setDefault && !isUpdate){ // if not update (create) => set defaults where needed
+          // set defaults
           result[field.name] = ''
           if(field.isBoolean){
             result[field.name] = 0
@@ -168,7 +168,7 @@ class CrudModel {
     const cache = this.getCache(modelName);
     const key = config.fields.find(f => f.isKey)?.name || 'id';
     await this.checkExist(modelName, id);
-    const fieldValues = this.getFieldValues(modelName, data);
+    const fieldValues = this.getFieldValues(modelName, data, true);
     const sql = `UPDATE ${config.table} SET ? WHERE ${key} = ?`;
     const res = await mysql.do(sql, [fieldValues, id]);
     if (config.allowCache && cache) {

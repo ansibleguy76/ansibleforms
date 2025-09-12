@@ -11,8 +11,6 @@
     import utc from 'dayjs/plugin/utc';
     import YAML from 'yaml';
 
-
-
     // INIT
 
     const toast = useToast();
@@ -204,7 +202,6 @@
                 State.refreshApprovals();
             }
         }
-
     }
     // get child jobs by parent id
     function childJobs(id){

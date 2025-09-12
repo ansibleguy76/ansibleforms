@@ -106,11 +106,11 @@
                 );
             }
             ruleObj.item[field.key] = rule
-            if (field.type == 'password') {
-                rule = {}
-                rule.password_comfirmation = sameAs(computed(() => item.value.password ||item.value.client_secret))
-                ruleObj.item["password2"] = rule
-            }
+            // if (field.type == 'password') {
+            //     rule = {}
+            //     rule.password_comfirmation = sameAs(computed(() => item.value.password))
+            //     ruleObj.item["password2"] = rule
+            // }
         });
         return ruleObj
 
@@ -197,6 +197,7 @@
                         // }
                     }
                     delete item.value.password // remove password ; updates don't need password
+                    delete item.value.token // remove token, update don't need token
                     delete item.value.client_secret // do not return client_secret in the API
                     // TODO : in de future, do not return passwords in the api
 
@@ -250,8 +251,8 @@
         await loadItem()
         action.value = 'change_password';    
         item.value.password = '';
-        item.value.password2 = '';
         item.value.client_secret = ''; // reset client secret
+        item.value.token = '';
         pagination.value.currentId = value[idKey];
         removeUnwantedProperties()
     }
@@ -443,7 +444,7 @@
     const  isInvalid = computed(() => {
         // check if any field is invalid, but only check the ones that are not disabled
         for (const field of fields) {
-            if (showField(field) && !["password","password2","client_secret"].includes(field.key) && $v.value.item[field.key].$invalid) {
+            if (showField(field) && !["password","token","client_secret"].includes(field.key) && $v.value.item[field.key].$invalid) {
                 return true;
             }
         }
@@ -452,7 +453,7 @@
     const  isInvalidPassword = computed(() => {
         // check if any field is invalid, but only check the ones that are not disabled
         for (const field of fields) {
-            if (showField(field) &&(["password","password2","client_secret"].includes(field.key) || field.key == idKey) && $v.value.item[field.key].$invalid) {
+            if (showField(field) && (["password","token","client_secret"].includes(field.key) || field.key == idKey) && $v.value.item[field.key].$invalid) {
                 return true;
             }
         }
@@ -561,18 +562,6 @@
                     :style="field.style"
                     :lang="field.lang"
                     :values="getParentValues(field.parent)" />
-                <BsInput v-if="showField(field) && field.type == 'password'" 
-                    :isHorizontal="true" 
-                    type="password" 
-                    icon="lock" 
-                    :help="field.help"
-                    :placeholder="field.placeholder" 
-                    v-model="$v.item['password2'].$model" 
-                    :isFloating="false" 
-                    :required="true" 
-                    label="Confirm" 
-                    :hasError="$v.item['password2'].$invalid && $v.item['password2'].$dirty" 
-                    :errors="$v.item['password2'].$errors" /> <!-- password confirmation -->
             </template>
             <div v-if="action == 'select' && childLists">
                 <ul class="nav nav-tabs">

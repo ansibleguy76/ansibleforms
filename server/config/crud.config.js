@@ -9,9 +9,9 @@ const crudConfigs = {
       { name: 'is_default', isBoolean: true },
       { name: 'uri', required: true },
       { name: 'use_credentials', isBoolean: true },
-      { name: 'username' },
-      { name: 'password', isEncrypted: true },
-      { name: 'token', isEncrypted: true },
+      { name: 'username', setDefault: true },
+      { name: 'password', isEncrypted: true, setDefault: true },
+      { name: 'token', isEncrypted: true, setDefault: true },
       { name: 'ignore_certs', isBoolean: true },
       { name: 'ca_bundle' }
     ],
