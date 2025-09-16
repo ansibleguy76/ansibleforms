@@ -1,4 +1,4 @@
-// i need to return a dictionary of settings
+// These settings define the gui admin pages
 
 export default {
     users: {

@@ -30,6 +30,9 @@ User.create = function (record) {
     .hashPassword(record.password)
     .then((hash) => {
       record.password = hash;
+      if(!record.email){
+        record.email=''
+      }
       logger.info(`Creating user ${record.username}`);
       return mysql.do("INSERT INTO AnsibleForms.`users` set ?", record);
     })

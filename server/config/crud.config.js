@@ -51,9 +51,9 @@ const crudConfigs = {
       { name: 'port', required: true },
       { name: 'db_name' },
       { name: 'secure', isBoolean: true },
-      { name: 'is_database', isBoolean: true },
+      { name: 'is_database', isBoolean: true, setDefault: true },
       { name: 'description' },
-      { name: 'db_type', required: true }
+      { name: 'db_type' }
     ],
     allowCache: true,
     cacheTTL: 3600
