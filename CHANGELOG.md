@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   scrollbar (issue 318)
 -   EntraId groups (issue 316)
 -   Add icon not allowed to radio
+-   Fixed encryption key length check
 
 ## Added
 

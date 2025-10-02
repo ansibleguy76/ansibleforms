@@ -18,7 +18,7 @@ var app_config = {
   yttVarsPrefix: process.env.YTT_VARS_PREFIX || "",
   lockPath: process.env.LOCK_PATH || path.resolve(__dirname + "/../persistent/ansibleForms.lock"),
   helpPath: path.resolve(__dirname + "/../help.yaml"),
-  encryptionSecret: (process.env.ENCRYPTION_SECRET || "undefinedvOVH6sdmpNWjRRIqCc7rdxs" + "vOVH6sdmpNWjRRIqCc7rdxs01lwHzfr3").substring(0, 32),
+  encryptionSecret: ((process.env.ENCRYPTION_SECRET || "undefinedvOVH6sdmpNWjRRIqCc7rdxs") + "vOVH6sdmpNWjRRIqCc7rdxs01lwHzfr3").substring(0, 32),
   homePath: process.env.HOME_PATH || os.homedir(),
   uploadPath: process.env.UPLOAD_PATH || path.resolve(__dirname + "/../persistent/uploads"),
   repoPath: process.env.REPO_PATH || path.resolve(__dirname + "/../persistent/repositories"),
