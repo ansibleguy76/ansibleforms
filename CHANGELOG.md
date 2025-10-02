@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.0.0] - 2025-10-02
+
 ### Fixed
 
 -   multi default in enum field broken
@@ -849,7 +851,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.10...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/6.0.0...HEAD
+
+[6.0.0]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.10...6.0.0
 
 [5.0.10]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.9...5.0.10
 
