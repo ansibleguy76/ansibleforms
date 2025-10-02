@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.0.0] - 2025-10-02
+
+### Fixed
+
+-   multi default in enum field broken
+-   verbose was not working well
+-   textarea field in table field
+-   placeholder (issue 320)
+-   scrollbar (issue 318)
+-   EntraId groups (issue 316)
+-   Add icon not allowed to radio
+-   Fixed encryption key length check
+
+## Added
+
+-   updateMarker to table field
+-   multi awx (314)
+-   backup/restore api (/api/v2/database (get, post/backup, post/restore?folder=))
+-   new role option allowDatabaseOps
+-   oauth2 table replaces individual azuread, oidc tables
+-   integrated backup
+
+### Changed
+
+-   Backend rewritten to ESM (export default / import) -> no more "require" and no more "babel" and no more compiled code
+-   Parsing of forms rewritten with individual form validation, should be more stable and faster
+-   Backend bumped to Node.js 20
+-   Most packages are updated to latest versions
+-   Frontend rewritten to work with Vite (still vue2 for now) -> no more "webpack"
+-   New sass-dart and bumped bulma framework to 1.0.4
+-   Password decryption had a bug in v6beta
+
+### Breaking Changes
+
+-   Since "require" can not be used anymore, the backend code is now ESM only.
+    This means that you can not use "require" anymore, but you can use "import" and "export default".  Than means that custom functions must be rewritten to use the new ESM syntax. (/functions/custom.js is an example where this could break)
+-   Maybe not breaking, but the old theme is broken for bulma v1, so it might look a bit different here and there. (but note that v6 will have bootstrap)
+-   Since many packages are updated, I might have missed some breaking changes like OIDC, packages have been bumped and I don't have an OIDC to test against... any help is appreciated.
+
 ## [5.0.10] - 2025-06-05
 
 ### Added
@@ -812,7 +851,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.10...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/6.0.0...HEAD
+
+[6.0.0]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.10...6.0.0
 
 [5.0.10]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.9...5.0.10
 

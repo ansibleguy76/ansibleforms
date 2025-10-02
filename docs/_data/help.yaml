@@ -84,6 +84,14 @@
       The admin password is the password for first user that can login to the application.  
       This user has full access to the application and is created at first start if not present.
       This user will be added to the `admins` group, which will be created as well if not present.
+  - name: BACKUP_PATH
+    type: string
+    allowed: a valid directory path
+    short: Backup path
+    default: "%PERSISTENT_FOLDER%/backups"
+    description: |
+      Ansible Forms can backup the database and forms.  This is the path where the backups are stored.
+      The backup folder is created at first start if not present and a timestamp folder is created for each backup.
   - name: FORMS_PATH
     type: string
     allowed: a valid file path
@@ -519,22 +527,36 @@
     default: /api/v2
     description: |
       Ansible Forms can connect to an AWX instance.  This is the prefix of the API, which is typically `/api/v2`.
-  - name: VUE_APP_NAV_HOME_LABEL
+  - name: NAV_HOME_LABEL
     type: string
-    version: 5.0.9
+    version: 5.1.0
     allowed: a suiting label
     short: The label of home navigation link
     default: Forms
     description: |
       In the navigation bar, A home link is shown.  You can set the label/name of this link with this variable, for example `Services`.  Use in combination with `VUE_APP_NAV_HOME_ICON`.
-  - name: VUE_APP_NAV_HOME_ICON
+  - name: NAV_HOME_ICON
     type: string
-    version: 5.0.9
+    version: 5.1.0
     allowed: a valid free fontawesome icon
     short: The icon of navigation home link
-    default: rectangle-list
+    default: home
     description: |
       In the navigation bar, A home link is shown.  You can set the icon of this link with this variable, for example `play` or `house`.  Use in combination with `VUE_APP_NAV_HOME_LABEL`.
+  - name: MYSQLDUMP_COMMAND
+    type: string
+    version: 6.0.0
+    allowed: a valid mysqldump command
+    default: mariadb-dump --ssl-verify-server-cert=OFF
+    description:
+      Mysql dump command change and mysql/mariadb flavours differ, hence the need for a configurable command.
+  - name: MYSQL_COMMAND
+    type: string
+    version: 6.0.0
+    allowed: a valid mysql command
+    default: mariadb --ssl-verify-server-cert=OFF
+    description:
+      Mysql command change and mysql/mariadb flavours differ, hence the need for a configurable command.
 - name: Forms.yaml
   icon: fab,wpforms
   link: forms
@@ -584,11 +606,12 @@
       - showDesigner: The user can see the designer
       - showSettings: The user can see the settings page
       - showDebugButtons: The user can see the debug buttons on a form
-      - showExtravars: The user can see the extravars on a form
+      - showExtraVars: The user can see the extravars on a form
       - showLogs: The user can see the logs page
       - extendedTokenExpiration: The user can request a token with a longer expiration time (for coding api purposes for example)  
       - showAllJobLogs: The user can see all job logs (not only his own) (Added in 5.0.9)
       - enableLogin: The user can login.  
+      - allowBackupOps: The user can perform database operations, such as backup and restore.
         
       When options are not set, the admin role will have all options.  
       When options are set on the public role, they will have the lowest precedence and can be used as default options for all roles.  
@@ -625,7 +648,7 @@
           groups: []  
           options:
             showDebugButtons: true  # everyone can see the debug buttons
-            showExtravars: true     # everyone can see the extravars
+            showExtraVars: true     # everyone can see the extravars
   - name: constants
     type: object
     allowed: Free object structure
@@ -773,9 +796,12 @@
           - showDesigner: The user can see the designer
           - showSettings: The user can see the settings page
           - showDebugButtons: The user can see the debug buttons on a form
-          - showExtravars: The user can see the extravars on a form
+          - showExtraVars: The user can see the extravars on a form
           - showLogs: The user can see the logs page
           - extendedTokenExpiration: The user can request a token with a longer expiration time (for coding api purposes for example)  
+          - showAllJobLogs: The user can see all job logs (not only his own) (Added in 5.0.9)
+          - enableLogin: The user can login.  
+          - allowBackupOps: The user can perform database operations, such as backup and restore.
 
           When options are not set, the admin role will have all options.  
           When options are set on the public role, they will have the lowest precedence and can be used as default options for all roles.  
@@ -807,7 +833,7 @@
             groups: []  
             options:
               showDebugButtons: true  # everyone can see the debug buttons
-              showExtravars: true     # everyone can see the extravars              
+              showExtraVars: true     # everyone can see the extravars              
     - name: Form
       icon: fas,rectangle-list
       link: forms/form
@@ -1268,6 +1294,24 @@
             
           **Note** : You can also dynamically set the scmBranch by using a field called `__scmBranch__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static scmBranch.  
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.
+      - name: awx
+        type: string
+        group: workflow
+        version: 6.0.0
+        allowed: name of awx instance
+        short: Add awx instance to your template
+        description: |
+          From now on you can have multiple AWX instances.
+          The database will be updated during upgrade but you will need to set your current AWX instance to default.
+       
+          
+          **Note** : you can also set these dynamically by using a field called `__awx__`.   It must be sent as extravar.  If this extravar is found it will overwrite the static awx.  
+          **Note** : this also works in steps, so each step can have its own set of awx instances.  
+          **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+        examples:
+        - name: Add awx instance to your template
+          code: |
+            awx: my_awx_instance
       - name: awxCredentials
         type: array
         group: workflow
@@ -1357,6 +1401,14 @@
         default: true
         description: |
           By default you can allow the user to abort the job.  Use this attribute to disable this behaviour.
+      - name: order
+        type: integer
+        group: visualization
+        version: 5.1.0
+        short: Order of the form in the list
+        description: |
+          The order of the form in the list of forms.  Forms are sorted by this order, so you can have a specific order in the list.
+          **Note** : If you do not set this property, it will be ordered alphabetically by name.
       - name: tags
         type: string
         allowed: comma separated tag-list
@@ -1922,7 +1974,7 @@
                     - type: html
                       name: alert
                       expression: |
-                        '<div class="notification is-danger">
+                        '<div class="alert alert-danger" role="alert"> 
                           danger mister robinson !
                         </div>'
                     - type: html   
@@ -2084,6 +2136,7 @@
                       allowDelete: true
                       insertMarker: isNewItem
                       deleteMarker: isRemovedItem
+                      updateMarker: isUpdatedItem
                       readonlyColumns:
                       - department
                       - firstname
@@ -3184,6 +3237,27 @@
                       icon: user
                     - name: lastname
                       type: text  
+          - name: updateMarker
+            type: string
+            group: output
+            with_types: table
+            short: Adds an additional updatemarker field
+            version: 5.1.0
+            description: |
+              In addition to the insert and delete markers, you can also add an update marker.
+            examples:
+            - name: Mark updated record
+              code: |
+                - type: table
+                  name: member
+                  expression: "[{firstname:'ansible',lastname:'guy'}]"
+                  updateMarker: updated
+                  tableFields:
+                    - name: firstname
+                      type: text
+                      icon: user
+                    - name: lastname
+                      type: text
           - name: readonlyColumns
             type: array
             group: interaction
@@ -4447,8 +4521,8 @@
         evalDefault: true
           
 
-  - name: Query AWX/Tower
-    short: Query information from AWX or Tower
+  - name: Query AWX/Tower/AAP
+    short: Query information from AWX or Ansible Automation Platform
     description: |
       Sometimes you want to create dropdown boxes, with data from AWX or Tower.  
       You can use `fn.fnRestBasic` or `fn.fnRestJwtSecure` to query to do this.  
@@ -4457,6 +4531,7 @@
     code: |
       name: Query awx
       type: awx
+      awx: myAwxConfigName
       template: my_template # will be overwritten by the field __template__
       description: ""
       awxCredentials:

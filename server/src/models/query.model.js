@@ -1,11 +1,11 @@
 'use strict';
-const logger=require("../lib/logger")
-const Credential=require("./credential.model")
-const mysql=require("../lib/mysql")
-const mssql=require("../lib/mssql")
-const postgres=require("../lib/postgres")
-const mongodb=require("../lib/mongodb")
-const oracle=require("../lib/oracle")
+import logger from "../lib/logger.js";
+import Credential from "./credential.model.js";
+import mysql from "../lib/mysql.js";
+import mssql from "../lib/mssql.js";
+import postgres from "../lib/postgres.js";
+import mongodb from "../lib/mongodb.js";
+import oracle from "../lib/oracle.js";
 
 //reporter object create
 var Query=function(){
@@ -83,4 +83,4 @@ Query.findAll = async function (query,cfg,noLog) {
   }
   return result
 };
-module.exports= Query;
+export default  Query;

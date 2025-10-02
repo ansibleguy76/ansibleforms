@@ -1,24 +1,22 @@
-async function init(){
+import logger from "../lib/logger.js";
+import Ssh from '../models/ssh.model.js';
+import Form from '../models/form.model.js';
+import Job from '../models/job.model.js';
+import Schema from '../models/schema.model.js';
+import mysql from "../models/db.model.js";
+import Repository from '../models/repository.model.js';
+import Datasource from '../models/datasource.model.js';
+import Schedule from '../models/schedule.model.js';
+import { CronExpressionParser } from "cron-parser";
+import dayjs from "dayjs";
+import appConfig from "../../config/app.config.js";
+import User from "../models/user.model.js";
+import Group from "../models/group.model.js";
 
-  const logger=require("../lib/logger");
-  var Ssh = require('../models/ssh.model');
-  var Form = require('../models/form.model');
-  var Job = require('../models/job.model');
-  var Schema = require('../models/schema.model');
-  var adminGroupId = undefined
-  const mysql=require("../models/db.model");
-  const Repository = require('../models/repository.model');
-  const Datasource = require('../models/datasource.model');
-  const Schedule = require('../models/schedule.model');
-  const parser = require("cron-parser")
-  const dayjs = require("dayjs")
-  const appConfig = require("../../config/app.config")
-  const User = require("../models/user.model")
-  const Group = require("../models/group.model")
-  const dbConfig = require("../../config/db.config")
-  const YAML=require("yaml")
-  const path = require('path');
-  const fs = require('fs'); 
+const init = async function(){
+
+
+  let adminGroupId = undefined;
 
   // this is at startup, don't start the app until mysql is ready
   // rewrite with await
@@ -90,7 +88,6 @@ async function init(){
     adminGroupId = adminGroup.id
   }catch(err){
     logger.error("Failed to check/create admins group : " + err)
-    throw err
   }
 
   // check admin user
@@ -107,15 +104,11 @@ async function init(){
     }
   }catch(err){
     logger.error("Failed to check/create admin user : " + err)
-    throw err
   }
 
-  // let's check other database records like settings,ldap,awx,oidc and azuread. if no record exists, create them, this is for fresh install
+  // let's check other database records like settings,ldap. if no record exists, create them, this is for fresh install
   logger.info("Checking database records")
   const records = {
-    azuread:{client_id:'',secret_id:'',enable:0,groupfilter:''},
-    oidc:{issuer:'',client_id:'',secret_id:'',enabled:0,groupfilter:''},
-    awx:{uri:'',token:'',username:'', password:'',ignore_certs:0,use_credentials:0,ca_bundle:''},
     ldap:{server:'',port:389,ignore_certs:1,enable_tls:0,cert:'',ca_bundle:'',bind_user_dn:'',bind_user_pw:'',search_base:'',username_attribute:'sAMAccountName',groups_attribute:'memberOf',enable:0,is_advanced:0,groups_search_base:'',group_class:'',group_member_attribute:'',group_member_user_attribute:''},    
     settings:{mail_server:'',mail_port:25,mail_secure:0,mail_username:'',mail_password:'',mail_from:'',url:'',forms_yaml:''}    
   }
@@ -133,7 +126,6 @@ async function init(){
       }
     }catch(err){
       logger.error(`Failed to check/create ${record} : ` + err)
-      throw err
     }
   }
 
@@ -188,7 +180,7 @@ async function init(){
       const repositories = await mysql.do("SELECT name,cron FROM AnsibleForms.`repositories` WHERE COALESCE(status,'')<>'running' AND cron<>''",undefined,true)
       repositories.map(async (repo)=>{
         try{
-          const interval = parser.parseExpression(repo.cron) 
+          const interval = CronExpressionParser.parse(repo.cron) 
           const next = interval.next().toDate()
           const date = dayjs(next)
           const now = dayjs()
@@ -210,7 +202,7 @@ async function init(){
       const datasources = await mysql.do("SELECT id,name,cron FROM AnsibleForms.`datasource` WHERE COALESCE(status,'')<>'running' AND COALESCE(status,'')<>'queued' AND cron<>''",undefined,true)
       datasources.map(async(ds)=>{
         try{
-          const interval = parser.parseExpression(ds.cron) 
+          const interval = CronExpressionParser.parse(ds.cron) 
           const next = interval.next().toDate()
           const date = dayjs(next)
           const now = dayjs()
@@ -234,7 +226,7 @@ async function init(){
       const schedules = await mysql.do("SELECT id,name,cron FROM AnsibleForms.`schedule` WHERE COALESCE(status,'')<>'running' AND COALESCE(status,'')<>'queued' AND cron<>''",undefined,true)
       schedules.map(async(schedule)=>{
         try{
-          const interval = parser.parseExpression(schedule.cron) 
+          const interval = CronExpressionParser.parse(schedule.cron) 
           const next = interval.next().toDate()
           const date = dayjs(next)
           const now = dayjs()
@@ -254,6 +246,7 @@ async function init(){
 
 
   },56000) // run every 55 second, should hit 0 minutes once
+
 
 
   // now we check if there are any datasources that need to be imported, every 10 seconds
@@ -308,15 +301,15 @@ async function init(){
         return
       }
       // logger.info("No schedule is running, checking for queued schedules")
-      const schedules = await mysql.do("SELECT id FROM AnsibleForms.`schedule` WHERE state='queued' ORDER BY queue_id LIMIT 1",undefined,true)
+      const schedules = await mysql.do("SELECT id, name FROM AnsibleForms.`schedule` WHERE state='queued' ORDER BY queue_id LIMIT 1",undefined,true)
       if(schedules.length>0){
         logger.info("Found queued schedule")
         const schedule = schedules[0]
-        logger.info(`Importing schedule ${schedule.id}`)
+        logger.info(`Importing schedule '${schedule.name}'`)
         try{
           await Schedule.launch(schedule.id)
         }catch(e){
-          logger.error(`Failed to import schedule ${schedule.id} : ` + e)
+          logger.error(`Failed to launch schedule '${schedule.name}' : ` + e)
         }
       }
     }catch(e){
@@ -331,4 +324,4 @@ async function init(){
   setTimeout(checkSchedules,10000)
 }
 
-module.exports = init
+export default init

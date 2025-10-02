@@ -1,13 +1,13 @@
 'use strict';
-const Log = require('../models/log.model');
+import Log from '../models/log.model.js';
 
-exports.get = function(req, res) {
+const get = function(req, res) {
     Log.find(req.query.lines||100)
       .then((log)=>{res.send(log)})
       .catch((err)=>{res.send("...")})
 };
 
-exports.download = function(req,res){
+const download = function(req,res){
     try{
         var file = Log.getFileName()
         res.download(file)
@@ -16,3 +16,8 @@ exports.download = function(req,res){
         res.status(404).send(err.toString())
     }
 }
+
+export default {
+  get,
+  download
+};

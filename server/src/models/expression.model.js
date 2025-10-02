@@ -1,11 +1,12 @@
 'use strict';
 
-const fn=require('./../functions/default.js')
-const fnc=require('./../functions/custom.js')
+// eslint-disable-next-line no-unused-vars
+import fn from './../functions/default.js';
+// eslint-disable-next-line no-unused-vars
+import fnc from './../functions/custom.js';
 // use as fn.xxxxx (where xxxxx is you own function name)
 
-
-const logger=require("../lib/logger");
+import logger from "../lib/logger.js";
 //expression object create - not used, but you could create an instance with it
 var Expression=function(){
 
@@ -50,8 +51,9 @@ function sanitizeExpression(expr){
 }
 async function doAsync (expr) {
     var sanitized = sanitizeExpression(expr)
-    var outcome = await eval(sanitized)
-    return outcome
+    return await (function(fn, fnc) {
+      return eval(sanitized);
+    })(fn, fnc);
 }
 // execute expression (cannot be a promise)
 Expression.execute = function (expr,noLog) {
@@ -64,4 +66,4 @@ Expression.execute = function (expr,noLog) {
 };
 
 
-module.exports= Expression;
+export default Expression;

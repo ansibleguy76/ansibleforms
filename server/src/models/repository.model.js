@@ -1,12 +1,11 @@
 'use strict';
-const logger=require("../lib/logger");
-const mysql=require("./db.model");
-const {encrypt,decrypt}=require("../lib/crypto")
-const NodeCache = require("node-cache")
-const Repo = require("./repo.model")
-const path=require("path")
-const fs=require("fs")
-const appConfig = require("../../config/app.config")
+import logger from "../lib/logger.js";
+import mysql from "./db.model.js";
+import crypto from "../lib/crypto.js";
+import NodeCache from "node-cache";
+import Repo from "./repo.model.js";
+import path from "path";
+import appConfig from "../../config/app.config.js";
 
 const cache = new NodeCache({
     stdTTL: 3600,
@@ -24,7 +23,7 @@ var Repository=function(repository){
     this.use_for_forms = (repository.use_for_forms)?1:0;
     this.rebase_on_start = (repository.rebase_on_start)?1:0;    
     this.use_for_playbooks = (repository.use_for_playbooks)?1:0;
-    this.password = encrypt(repository.password);
+    this.password = crypto.encrypt(repository.password);
     this.description = repository.description || "";
 };
 
@@ -59,23 +58,7 @@ Repository.findAll = function () {
     // logger.info("Finding all repositories")
     return mysql.do("SELECT id,name,branch,user,uri,description,use_for_forms,use_for_playbooks,cron,status,output,head,rebase_on_start FROM AnsibleForms.`repositories`;",undefined,true)
 };
-// Repository.findById = function (id) {
-//     logger.info(`Finding repository ${id}`)
-//     return mysql.do("SELECT * FROM AnsibleForms.`repositories` WHERE id=?;",id)
-//     .then((res)=>{
-//       if(res.length>0){
-//         try{
-//           res[0].password = decrypt(res[0].password)
-//         }catch(e){
-//           logger.error("Failed to decrypt the password.  Did the secretkey change ?")
-//           res[0].password = ""
-//         }
-//         return res
-//       }else{
-//         throw `No repository found with id ${id}`
-//       }
-//     })
-// };
+
 Repository.getPrivateUri = function(repo){
   if(repo.uri){
     if(repo.user && repo.password){
@@ -109,7 +92,7 @@ Repository.findByName = async function (name) {
     result = res[0]
     if(result.password){
       try{
-        result.password = decrypt(result.password)
+        result.password = crypto.decrypt(result.password)
       }catch(e){
         logger.error("Failed to decrypt the password.  Did the secretkey change ?")
         result.password = ""
@@ -130,23 +113,19 @@ Repository.hasFormsRepository = async function(){
     return false
   }
 }
-Repository.getFormsPath = async function(searchYaml=true){
+Repository.getFormsPath = async function(){
   try{
     var repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_forms")
-    if(repositories.length>0){
-
-      var repoPath = path.join(appConfig.repoPath,repositories[0].name)
-      if(searchYaml){
-        // logger.debug("Checking if forms.yaml exists...")
-        fs.accessSync(path.join(repoPath,"forms.yaml"))
-      }
-      return path.join(repoPath,"forms.yaml")
-    }
-    return ""
   }catch(e){
-    logger.error("Failed to get forms path : ",e)
+    logger.error("Failed to get repositories.",e)
     return ""
+  }    
+  if(repositories.length>0){
+    var repoPath = path.join(appConfig.repoPath,repositories[0].name)
+    return path.join(repoPath,"forms.yaml")
   }
+  return ""
+
 }
 Repository.getAnsiblePath = async function(){
   try{
@@ -196,4 +175,4 @@ Repository.pull = async function(name){
   }
 }
 
-module.exports= Repository;
+export default  Repository;

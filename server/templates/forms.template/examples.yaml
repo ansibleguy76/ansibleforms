@@ -1,0 +1,16 @@
+- name: Demo Form
+  showHelp: true
+  help: >
+    This is a demo form
+  roles:
+    - public
+  description: A simple form
+  categories:
+    - Demo
+  icon: heart
+  playbook: dummy.yaml
+  type: ansible
+  fields:
+    - type: text
+      name: username
+      label: Username

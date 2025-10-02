@@ -1,4 +1,5 @@
-const logger = require("../src/lib/logger")
+import logger from "../src/lib/logger.js";
+
 if(!process.env["DB_HOST"]){
   logger.error("DB_HOST is missing")
 }
@@ -22,4 +23,4 @@ var db_config = {
   password: process.env["DB_PASSWORD"],
   port: process.env["DB_PORT"]
 };
-module.exports = db_config;
+export default db_config;

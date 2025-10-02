@@ -1,6 +1,5 @@
-const spawn = require('child_process').spawn;
-const execSync = require('child_process').execSync;
-const logger=require("./logger")
+import { spawn, execSync } from 'child_process';
+import logger from './logger.js';
 var Cmd = function(){
 
 }
@@ -111,4 +110,4 @@ Cmd.executeSilentCommand = async (cmd,silent=false,singleLine=false,timeoutSecon
 
 }
 
-module.exports = Cmd
+export default Cmd

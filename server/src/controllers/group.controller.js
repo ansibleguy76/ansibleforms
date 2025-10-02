@@ -1,8 +1,8 @@
 'use strict';
-const Group = require('../models/group.model');
-var RestResult = require('../models/restResult.model');
+import Group from '../models/group.model.js';
+import RestResult from '../models/restResult.model.js';
 
-exports.find = function(req, res) {
+const find = function(req, res) {
   if(req.query.name){
     Group.findByName(req.query.name)
       .then((groups)=>{
@@ -20,7 +20,7 @@ exports.find = function(req, res) {
   }
 
 };
-exports.create = function(req, res) {
+const create = function(req, res) {
     const new_group = new Group(req.body);
     //handles null error
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
@@ -31,7 +31,7 @@ exports.create = function(req, res) {
           .catch((err)=>{ res.json(new RestResult("error","failed to create group",null,err.toString())) })
     }
 };
-exports.findById = function(req, res) {
+const findById = function(req, res) {
     Group.findById(req.params.id)
       .then((groups)=>{
         if(groups.length>0){
@@ -42,7 +42,7 @@ exports.findById = function(req, res) {
       })
       .catch((err)=>{res.json(new RestResult("error","failed to find group",null,err))})
 };
-exports.update = function(req, res) {
+const update = function(req, res) {
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
         res.status(400).send({ error:true, message: 'Please provide all required fields' });
     }else{
@@ -51,7 +51,7 @@ exports.update = function(req, res) {
           .catch((err)=>{res.json(new RestResult("error","failed to update group",null,err.toString()))})
     }
 };
-exports.delete = async function(req, res) {
+const deleteGroup = async function(req, res) {
   try{
     const deleted = await Group.delete( req.params.id)
     if(deleted.affectedRows==1){
@@ -63,4 +63,12 @@ exports.delete = async function(req, res) {
     res.json(new RestResult("error","failed to delete group",null,err.toString()))
   }
 
+};
+
+export default {
+  find,
+  create,
+  findById,
+  update,
+  delete: deleteGroup
 };

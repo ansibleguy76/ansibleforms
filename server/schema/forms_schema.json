@@ -57,6 +57,7 @@
               "showExtravars": { "type": "boolean" },
               "extendedTokenExpiration": { "type": "boolean" },
               "showAllJobLogs": { "type": "boolean" },
+              "allowDatabaseOps": { "type": "boolean" },
               "enableLogin": { "type": "boolean" }
             },
             "additionalProperties": true
@@ -94,6 +95,8 @@
               "showSettings": { "type": "boolean" },
               "showExtravars": { "type": "boolean" },
               "extendedTokenExpiration": { "type": "boolean" },
+              "showAllJobLogs": { "type": "boolean" },
+              "allowDatabaseOps": { "type": "boolean" },
               "enableLogin": { "type": "boolean" }
             },
             "additionalProperties": true
@@ -138,6 +141,7 @@
                 "enum": ["ansible"]
               },
               "template": {"not":{}},
+              "awx": {"not":{}},
               "steps": {"not":{}},
               "awxCredentials": {"not":{}},
               "executionEnvironment": {"not":{}},
@@ -169,6 +173,7 @@
               "playbook": {"not":{}},
               "ansibleCredentials": {"not":{}},
               "template": {"not":{}},
+              "awx": {"not":{}},
               "steps": {"not":{}},
               "inventory": {"not":{}},
               "awxCredentials": {"not":{}},
@@ -191,6 +196,7 @@
               "playbook": {"not":{}},
               "vaultCredentials": {"not":{}},
               "template": {"not":{}},
+              "awx": {"not":{}},
               "inventory": {"not":{}},
               "awxCredentials": {"not":{}},
               "ansibleCredentials": {"not":{}},
@@ -209,6 +215,7 @@
         ],
         "properties": {
           "name": {"type": "string"},
+          "order": {"type": "number"},
           "roles": {
             "type": "array",
             "items": {
@@ -388,6 +395,7 @@
                         "enum": ["ansible"]
                       },
                       "template": {"not":{}},
+                      "awx": {"not":{}},
                       "steps": {"not":{}},
                       "awxCredentials": {"not":{}},
                       "executionEnvironment": {"not":{}},
@@ -421,6 +429,7 @@
                   "$ref": "/formfield"
                 },
                 "template": {"type": "string"},
+                "awx": {"type": "string"},
                 "abortable": {"type": "boolean"},
                 "awxCredentials": {
                   "type": "array",
@@ -434,8 +443,7 @@
                   "patternProperties": {
                     "^.*$": { "type": "string"}
                   },
-                  "additionalProperties": false,
-                  "uniqueProperties": true            
+                  "additionalProperties": false          
                 },    
                 "ansibleCredentials": {"type": "string"},  
                 "vaultCredentials": {"type": "string"},  
@@ -522,13 +530,13 @@
           "key": {"type": "string"},
           "abortable": {"type": "boolean"},
           "template": {"type": "string"},
+          "awx": {"type": "string"},
           "credentials": {
             "type": "object",
             "patternProperties": {
               "^.*$": { "type": "string"}
             },
-            "additionalProperties": false,
-            "uniqueProperties": true            
+            "additionalProperties": false          
           },    
           "awxCredentials": {
             "type": "array",
@@ -600,6 +608,7 @@
                     "allowInsert": {"not":{}},
                     "deleteMarker": {"not":{}},
                     "insertMarker": {"not":{}},
+                    "updateMarker": {"not":{}},
                     "refresh": {"not":{}},
                     "switch": {"not":{}},
                     "readonlyColumns": {"not":{}},
@@ -636,6 +645,7 @@
                     "allowInsert": {"not":{}},
                     "deleteMarker": {"not":{}},
                     "insertMarker": {"not":{}},
+                    "updateMarker": {"not":{}},
                     "minLength": {"not":{}},
                     "maxLength": {"not":{}},
                     "regex": {"not":{}},
@@ -684,6 +694,7 @@
                     "allowInsert": {"not":{}},
                     "deleteMarker": {"not":{}},
                     "insertMarker": {"not":{}},
+                    "updateMarker": {"not":{}},
                     "readonlyColumns": {"not":{}},
                     "isHtml": {"not":{}},
                     "asCredential": {"not":{}},
@@ -706,6 +717,7 @@
                     "sticky": {"not":{}},
                     "horizontal": {"not":{}},
                     "tableTitleAdd": {"not":{}},
+                    "icon": {"not":{}},
                     "tableTitleEdit": {"not":{}},
                     "editable": {"not":{}},
                     "pctColumns": {"not":{}},
@@ -722,6 +734,7 @@
                     "allowInsert": {"not":{}},
                     "deleteMarker": {"not":{}},
                     "insertMarker": {"not":{}},
+                    "updateMarker": {"not":{}},
                     "readonlyColumns": {"not":{}},
                     "multiple": {"not":{}},
                     "asCredential": {"not":{}},
@@ -763,6 +776,7 @@
                     "allowInsert": {"not":{}},
                     "deleteMarker": {"not":{}},
                     "insertMarker": {"not":{}},
+                    "updateMarker": {"not":{}},
                     "readonlyColumns": {"not":{}},
                     "multiple": {"not":{}},
                     "asCredential": {"not":{}},
@@ -794,6 +808,7 @@
                     "allowInsert": {"not":{}},
                     "deleteMarker": {"not":{}},
                     "insertMarker": {"not":{}},
+                    "updateMarker": {"not":{}},
                     "readonlyColumns": {"not":{}},
                     "isHtml": {"not":{}},
                     "dbConfig": {"not":{}},
@@ -824,6 +839,7 @@
                     "allowInsert": {"not":{}},
                     "deleteMarker": {"not":{}},
                     "insertMarker": {"not":{}},
+                    "updateMarker": {"not":{}},
                     "readonlyColumns": {"not":{}},
                     "isHtml": {"not":{}},
                     "runLocal": {"not":{}},
@@ -855,6 +871,7 @@
                     "allowInsert": {"not":{}},
                     "deleteMarker": {"not":{}},
                     "insertMarker": {"not":{}},
+                    "updateMarker": {"not":{}},
                     "readonlyColumns": {"not":{}},
                     "isHtml": {"not":{}},
                     "dbConfig": {"not":{}},
@@ -886,6 +903,7 @@
                     "allowInsert": {"not":{}},
                     "deleteMarker": {"not":{}},
                     "insertMarker": {"not":{}},
+                    "updateMarker": {"not":{}},
                     "readonlyColumns": {"not":{}},
                     "keydown": {"not":{}},
                     "switch": {"not":{}},
@@ -915,6 +933,7 @@
                     "allowInsert": {"not":{}},
                     "deleteMarker": {"not":{}},
                     "insertMarker": {"not":{}},
+                    "updateMarker": {"not":{}},
                     "readonlyColumns": {"not":{}},
                     "keydown": {"not":{}},
                     "expression": {"not":{}},
@@ -947,6 +966,7 @@
                     "allowInsert": {"not":{}},
                     "deleteMarker": {"not":{}},
                     "insertMarker": {"not":{}},
+                    "updateMarker": {"not":{}},
                     "readonlyColumns": {"not":{}},
                     "keydown": {"not":{}},
                     "switch": {"not":{}},
@@ -992,6 +1012,7 @@
                     "allowInsert":       {"not":{}}, 
                     "deleteMarker":      {"not":{}}, 
                     "insertMarker":      {"not":{}}, 
+                    "updateMarker":      {"not":{}},
                     "readonlyColumns":   {"not":{}}, 
                     "insertColumns":     {"not":{}},  
                     "sticky":            {"not":{}}, 
@@ -1044,6 +1065,7 @@
                     "allowInsert":       {"not":{}}, 
                     "deleteMarker":      {"not":{}}, 
                     "insertMarker":      {"not":{}}, 
+                    "updateMarker":      {"not":{}},
                     "readonlyColumns":   {"not":{}}, 
                     "insertColumns":     {"not":{}},  
                     "sticky":            {"not":{}}, 
@@ -1225,7 +1247,12 @@
                 "ignoreIncomplete": {"type": "boolean"},
                 "noLog": {"type": "boolean"},
                 "keydown": {"type": "boolean"},
-                "refresh": {"type": ["boolean","string"]},
+                "refresh": {
+                  "anyOf": [
+                    { "type": "boolean" },
+                    { "type": "string" }
+                  ]
+                },
                 "isHtml": {"type": "boolean"},
                 "runLocal": {"type": "boolean"},
                 "query": {"type": "string"},
@@ -1249,6 +1276,7 @@
                 "allowInsert": {"type": "boolean"},
                 "deleteMarker": {"type": "string"},
                 "insertMarker": {"type": "string"},
+                "updateMarker": {"type": "string"},
                 "readonlyColumns": {
                   "type": "array",
                   "items": { "type": "string" }
@@ -1354,8 +1382,7 @@
                         }
                       }                      
                     ]
-                  },
-                  "additionalProperties": false
+                  }
                 },
                 "hide": {"type": "boolean"},
                 "icon": {

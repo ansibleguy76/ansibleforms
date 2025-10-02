@@ -15,4 +15,4 @@ var RestResult=function(status,message,output,error,forExpression=false){
       error : error
     }
 };
-module.exports= RestResult;
+export default  RestResult;

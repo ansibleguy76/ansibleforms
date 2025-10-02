@@ -1,8 +1,8 @@
 'use strict';
-const User = require('../models/user.model');
-var RestResult = require('../models/restResult.model');
+import User from '../models/user.model.js';
+import RestResult from '../models/restResult.model.js';
 
-exports.findAllOr1 = function(req, res) {
+const findAllOr1 = function(req, res) {
   if(req.query.username){
     User.findByUsername(req.query.username)
     .then((user)=>{res.json(new RestResult("success","user found",user,""))})
@@ -14,7 +14,7 @@ exports.findAllOr1 = function(req, res) {
   }
 
 };
-exports.create = function(req, res) {
+const create = function(req, res) {
     const new_user = new User(req.body);
     //handles null error
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
@@ -25,7 +25,7 @@ exports.create = function(req, res) {
         .catch((err)=>{res.json(new RestResult("error","failed to create user",null,err.toString()))})
     }
 };
-exports.findById = function(req, res) {
+const findById = function(req, res) {
     User.findById(req.params.id)
     .then((user)=>{
       if(user.length>0){
@@ -36,7 +36,7 @@ exports.findById = function(req, res) {
     })
     .catch((err)=>{res.json(new RestResult("error","failed to find user",null,err.toString()))})
 };
-exports.findByToken = function(req, res) {
+const findByToken = function(req, res) {
     User.findById(req.user.user.username)
     .then((user)=>{
       if(user.length>0){
@@ -47,7 +47,7 @@ exports.findByToken = function(req, res) {
     })
     .catch((err)=>{res.json(new RestResult("error","failed to find user",null,err.toString()))})
 };
-exports.update = function(req, res) {
+const update = function(req, res) {
     // don't tamper with username
     delete req.body.username
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
@@ -58,7 +58,7 @@ exports.update = function(req, res) {
         .catch((err)=>{res.json(new RestResult("error","failed to update user",null,err.toString()))})
     }
 };
-exports.changePassword = function(req, res) {
+const changePassword = function(req, res) {
   if(req.user.user.type=="local" && req.user.user.id){
     // make sure then don't tamper with the group or username
     delete req.body.group_id
@@ -74,11 +74,22 @@ exports.changePassword = function(req, res) {
     res.json(new RestResult("error","you can't change the password for an ldap user",null,err.toString()))
   }
 };
-exports.find = function(req, res) {
+const find = function(req, res) {
     res.json(new RestResult("success","found user",req.user.user,""));
 };
-exports.delete = function(req, res) {
+const deleteUser = function(req, res) {
     User.delete( req.params.id)
     .then(()=>{res.json(new RestResult("success","user deleted",null,""))})
     .catch((err)=>{res.json(new RestResult("error","failed to delete user",null,err.toString()))})
+};
+
+export default {
+  findAllOr1,
+  create,
+  findById,
+  findByToken,
+  update,
+  changePassword,
+  find,
+  delete: deleteUser
 };

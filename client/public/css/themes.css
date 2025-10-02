@@ -1,0 +1,297 @@
+/**************************************************************
+
+    With this file, you can tune the themes.
+    Generally, it's sufficient to change the primary color.
+
+    If you want to change images, this is not here
+    Background images and logo's must be change by mapping 
+    this specific image file in the public folder.
+
+    colors about highlight are used for syntax highlighting
+    you can find the color schemes online.  Here we use
+    atom-one-dark and atom-one-light.
+
+    colors about ace-editor, we always use the dark theme. 
+    We start from the monokai theme, but you can change the background
+    to match "--bg-dark" 
+
+***************************************************************/
+
+
+[data-bs-theme=light] {
+
+    /* primary color */
+    --af-primary : var(--bs-primary);
+    --af-primary-subtle : var(--bs-primary-subtle);
+    --af-primary-bg-subtle: var(--bs-primary-bg-subtle);    
+
+    /* body color */
+    --af-body-color: #495057;
+    --af-body-color-rgb: 73, 80, 87;
+    --af-body-bg: #fff;
+    --af-body-bg-rgb: 255, 255, 255;
+
+      /* table action buttons */
+    --af-gray-muted: #dee2e6;
+    --af-edit      : var(--bs-cyan); /* no color for light theme */
+    --af-delete    : var(--bs-cyan); /* no color for light theme */
+    --af-change    : var(--bs-cyan); /* no color for light theme */
+    --af-test      : var(--bs-cyan); /* no color for light theme */
+    --af-preview   : var(--bs-cyan); /* no color for light theme */
+    --af-refresh   : var(--bs-cyan); /* no color for light theme */
+    --af-trigger   : var(--bs-cyan); /* no color for light theme */ 
+
+      /* Categories */
+    --af-bg-category: var(--bs-light);
+    --af-bg-badge   : var(--bs-cyan);
+    --af-text-badge : var(--bs-white);
+
+      /* active background */
+    --af-bg-active  : var(--af-primary);
+    --af-text-active: var(--bs-light);
+
+      /* background tiles */
+    --af-bg-primary-color         : var(--bs-light); /*¨no color for light theme */
+    --af-bg-primary-subtle-color  : var(--bs-light); /*¨no color for light theme */
+    --af-bg-secondary-color       : var(--bs-light); /*¨no color for light theme */
+    --af-bg-secondary-subtle-color: var(--bs-light); /*¨no color for light theme */
+    --af-bg-success-color         : var(--bs-light); /*¨no color for light theme */
+    --af-bg-success-subtle-color  : var(--bs-light); /*¨no color for light theme */
+    --af-bg-danger-color          : var(--bs-light); /*¨no color for light theme */
+    --af-bg-danger-subtle-color   : var(--bs-light); /*¨no color for light theme */
+    --af-bg-warning-color         : var(--bs-light); /*¨no color for light theme */
+    --af-bg-warning-subtle-color  : var(--bs-light); /*¨no color for light theme */
+    --af-bg-info-color            : var(--bs-light); /*¨no color for light theme */
+    --af-bg-info-subtle-color     : var(--bs-light); /*¨no color for light theme */
+    --af-bg-light-color           : var(--bs-light); /*¨no color for light theme */
+    --af-bg-light-subtle-color    : var(--bs-light); /*¨no color for light theme */
+    --af-bg-dark-color            : var(--bs-light); /*¨no color for light theme */
+    --af-bg-dark-subtle-color     : var(--bs-light); /*¨no color for light theme */
+    --af-bg-body-secondary-color  : var(--bs-light); /*¨no color for light theme */
+    --af-bg-body-tertiary-color   : var(--bs-light); /*¨no color for light theme */
+    --af-bg-body-color            : var(--bs-light); /*¨no color for light theme */
+    --af-bg-black-color           : var(--bs-light); /*¨no color for light theme */
+    --af-bg-white-color           : var(--bs-white); /*¨no color for light theme */
+    --af-bg-transparent-color     : var(--bs-transparent);
+    
+      /* navbar */
+    --af-navbar-link-color       : var(--bs-dark);
+    --af-navbar-link-hover-color : var(--af-primary);
+    --af-navbar-link-active-color: var(--af-primary);
+    --af-bg-navbar               : var(--bs-secondary-bg-subtle);
+    --af-text-navbar             : var(--bs-dark);
+
+    /* defaults */
+    --af-shadow: 0, 0, 0;
+
+    /* highlight */
+    --af-hl-base:    #fafafa;
+    --af-hl-mono-1:  #383a42;
+    --af-hl-mono-2:  #686b77;
+    --af-hl-mono-3:  #a0a1a7;
+    --af-hl-hue-1:   #0184bb;
+    --af-hl-hue-2:   #4078f2;
+    --af-hl-hue-3:   #a626a4;
+    --af-hl-hue-4:   #50a14f;
+    --af-hl-hue-5:   #e45649;
+    --af-hl-hue-5-2: #c91243;
+    --af-hl-hue-6:   #986801;
+    --af-hl-hue-6-2: #c18401;
+
+    /* ansible output */
+    --af-ansible-output-success: var(--bs-success);
+    --af-ansible-output-warning: var(--bs-orange);
+    --af-ansible-output-error: var(--bs-danger);
+    --af-ansible-output-info: var(--bs-info);
+    --af-ansible-output-bg-timestamp: var(--bs-light);
+    --af-ansible-output-timestamp: var(--bs-info);
+
+    /* ace-editor */
+    --af-ace-editor-bg: var(--bs-dark); /* always dark theme */
+
+}
+
+[data-bs-theme=dark] {
+    
+    /* primary color */
+    --af-primary : var(--bs-primary);
+    --af-primary-subtle : var(--bs-primary-bg-subtle);
+    --af-primary-bg-subtle: var(--bs-primary-bg-subtle);    
+
+    /* body color */
+    --af-body-color: #bfc4c9;
+    --af-body-color-rgb: 191, 196, 201;
+    --af-body-bg: #212529;
+    --af-body-bg-rgb: 33, 37, 41;
+
+      /* table action buttons */
+    --af-gray-muted: #343a40;
+    --af-edit      : var(--bs-cyan); /* no color for dark theme */ 
+    --af-delete    : var(--bs-cyan); /* no color for dark theme */
+    --af-change    : var(--bs-cyan); /* no color for dark theme */
+    --af-test      : var(--bs-cyan); /* no color for dark theme */
+    --af-preview   : var(--bs-cyan); /* no color for dark theme */
+    --af-refresh   : var(--bs-cyan); /* no color for dark theme */
+    --af-trigger   : var(--bs-cyan); /* no color for dark theme */
+
+      /* categories */
+    --af-bg-categories: var(--bs-dark);
+    --af-bg-badge     : var(--bs-cyan);
+    --af-text-badge   : var(--bs-white);
+
+      /* active background */
+    --af-bg-active  : var(--af-primary);
+    --af-text-active: var(--bs-light);
+
+      /* background tiles */
+    --af-bg-primary-color         : var(--bs-dark);  /* no color for dark theme */
+    --af-bg-primary-subtle-color  : var(--bs-dark);  /* no color for dark theme */
+    --af-bg-secondary-color       : var(--bs-dark);  /* no color for dark theme */
+    --af-bg-secondary-subtle-color: var(--bs-dark);  /* no color for dark theme */
+    --af-bg-success-color         : var(--bs-dark);  /* no color for dark theme */
+    --af-bg-success-subtle-color  : var(--bs-dark);  /* no color for dark theme */
+    --af-bg-danger-color          : var(--bs-dark);  /* no color for dark theme */
+    --af-bg-danger-subtle-color   : var(--bs-dark);  /* no color for dark theme */
+    --af-bg-warning-color         : var(--bs-dark);  /* no color for dark theme */
+    --af-bg-warning-subtle-color  : var(--bs-dark);  /* no color for dark theme */
+    --af-bg-info-color            : var(--bs-dark);  /* no color for dark theme */
+    --af-bg-info-subtle-color     : var(--bs-dark);  /* no color for dark theme */
+    --af-bg-light-color           : var(--bs-dark);  /* no color for dark theme */
+    --af-bg-light-subtle-color    : var(--bs-dark);  /* no color for dark theme */
+    --af-bg-dark-color            : var(--bs-dark);  /* no color for dark theme */
+    --af-bg-dark-subtle-color     : var(--bs-dark);  /* no color for dark theme */
+    --af-bg-body-secondary-color  : var(--bs-dark);  /* no color for dark theme */
+    --af-bg-body-tertiary-color   : var(--bs-dark);  /* no color for dark theme */
+    --af-bg-body-color            : var(--bs-dark);  /* no color for dark theme */
+    --af-bg-black-color           : var(--bs-dark);  /* no color for dark theme */
+    --af-bg-white-color           : var(--bs-white); /* no color for dark theme */ 
+    --af-bg-transparent-color     : var(--bs-transparent);
+
+      /* navbar */
+    --af-navbar-link-color       : var(--bs-white);
+    --af-navbar-link-hover-color : var(--af-primary);
+    --af-navbar-link-active-color: var(--af-primary);
+    --af-bg-navbar               : var(--bs-dark);
+    --af-text-navbar             : var(--bs-light);
+
+    /* defaults */
+    --af-shadow: 128,128,128;
+
+    /* highlight */
+    --af-hl-base:    #282c34;
+    --af-hl-mono-1:  #abb2bf;
+    --af-hl-mono-2:  #818896;
+    --af-hl-mono-3:  #5c6370;
+    --af-hl-hue-1:   #56b6c2;
+    --af-hl-hue-2:   #61aeee;
+    --af-hl-hue-3:   #c678dd;
+    --af-hl-hue-4:   #98c379;
+    --af-hl-hue-5:   #e06c75;
+    --af-hl-hue-5-2: #be5046;
+    --af-hl-hue-6:   #d19a66;
+    --af-hl-hue-6-2: #e6c07b;
+
+    /* ansible output */
+    --af-ansible-output-success: var(--bs-success);
+    --af-ansible-output-warning: var(--bs-orange);
+    --af-ansible-output-error: var(--bs-danger);
+    --af-ansible-output-info: var(--bs-info);
+    --af-ansible-output-bg-timestamp: var(--bs-dark);
+    --af-ansible-output-timestamp: var(--bs-info);
+
+    /* ace-editor */
+    --af-ace-editor-bg: var(--bs-dark); /* always dark theme */
+}
+
+[data-bs-theme=color] {
+
+    /* primary color */
+    --af-primary : var(--bs-primary);
+    --af-primary-subtle : var(--bs-primary-bg-subtle);
+    --af-primary-bg-subtle: var(--bs-primary-bg-subtle);
+
+    /* body color */
+    --af-body-color: #495057;
+    --af-body-color-rgb: 73, 80, 87;
+    --af-body-bg: #fff;
+    --af-body-bg-rgb: 255, 255, 255;
+
+      /* table action buttons */
+    --af-gray-muted: #dee2e6;
+    --af-edit      : var(--bs-orange); /* for the color theme we allow actions colors */
+    --af-delete    : var(--bs-red);    /* for the color theme we allow actions colors */
+    --af-change    : var(--bs-green);  /* for the color theme we allow actions colors */
+    --af-test      : var(--bs-purple); /* for the color theme we allow actions colors */
+    --af-preview   : var(--bs-teal);   /* for the color theme we allow actions colors */
+    --af-refresh   : var(--bs-pink);   /* for the color theme we allow actions colors */
+    --af-trigger   : var(--bs-indigo); /* for the color theme we allow actions colors */
+
+      /* category */
+    --af-bg-categories: var(--bs-tertiary-bg);
+    --af-bg-badge     : var(--af-primary);
+    --af-text-badge   : var(--bs-white);
+
+      /* active background */
+    --af-bg-active  : var(--af-primary);
+    --af-text-active: var(--bs-light);
+
+      /* background tiles */
+    --af-bg-primary-color         : var(--af-primary);             /* for the color theme we allow tile colors */               
+    --af-bg-primary-subtle-color  : var(--af-primary-bg-subtle);   /* for the color theme we allow tile colors */             
+    --af-bg-secondary-color       : var(--bs-secondary);           /* for the color theme we allow tile colors */     
+    --af-bg-secondary-subtle-color: var(--bs-secondary-bg-subtle); /* for the color theme we allow tile colors */               
+    --af-bg-success-color         : var(--bs-success);             /* for the color theme we allow tile colors */   
+    --af-bg-success-subtle-color  : var(--bs-success-bg-subtle);   /* for the color theme we allow tile colors */             
+    --af-bg-danger-color          : var(--bs-danger);              /* for the color theme we allow tile colors */  
+    --af-bg-danger-subtle-color   : var(--bs-danger-bg-subtle);    /* for the color theme we allow tile colors */            
+    --af-bg-warning-color         : var(--bs-warning);             /* for the color theme we allow tile colors */   
+    --af-bg-warning-subtle-color  : var(--bs-warning-bg-subtle);   /* for the color theme we allow tile colors */             
+    --af-bg-info-color            : var(--bs-info);                /* for the color theme we allow tile colors */
+    --af-bg-info-subtle-color     : var(--bs-info-bg-subtle);      /* for the color theme we allow tile colors */          
+    --af-bg-light-color           : var(--bs-light);               /* for the color theme we allow tile colors */ 
+    --af-bg-light-subtle-color    : var(--bs-light-bg-subtle);     /* for the color theme we allow tile colors */           
+    --af-bg-dark-color            : var(--bs-dark);                /* for the color theme we allow tile colors */
+    --af-bg-dark-subtle-color     : var(--bs-dark-bg-subtle);      /* for the color theme we allow tile colors */          
+    --af-bg-body-secondary-color  : var(--bs-body-secondary);      /* for the color theme we allow tile colors */          
+    --af-bg-body-tertiary-color   : var(--bs-body-tertiary);       /* for the color theme we allow tile colors */         
+    --af-bg-body-color            : var(--bs-body);                /* for the color theme we allow tile colors */
+    --af-bg-black-color           : var(--bs-black);               /* for the color theme we allow tile colors */ 
+    --af-bg-white-color           : var(--bs-white);               /* for the color theme we allow tile colors */ 
+    --af-bg-transparent-color     : var(--bs-transparent);                  
+
+      /* navbar */
+    --af-navbar-link-color       : var(--bs-white);
+    --af-navbar-link-hover-color : var(--af-primary-subtle);
+    --af-navbar-link-active-color: var(--af-primary-subtle);
+    --af-bg-navbar               : var(--af-primary);
+    --af-text-navbar             : var(--bs-light);
+
+    /* defaults */
+    --af-shadow: 0, 0, 0;    
+
+    /* highlight */
+    --af-hl-base:    #fafafa;
+    --af-hl-mono-1:  #383a42;
+    --af-hl-mono-2:  #686b77;
+    --af-hl-mono-3:  #a0a1a7;
+    --af-hl-hue-1:   #0184bb;
+    --af-hl-hue-2:   #4078f2;
+    --af-hl-hue-3:   #a626a4;
+    --af-hl-hue-4:   #50a14f;
+    --af-hl-hue-5:   #e45649;
+    --af-hl-hue-5-2: #c91243;
+    --af-hl-hue-6:   #986801;
+    --af-hl-hue-6-2: #c18401;
+    
+    /* ansible output */
+    --af-ansible-output-success: var(--bs-success);
+    --af-ansible-output-warning: var(--bs-orange);
+    --af-ansible-output-error: var(--bs-danger);
+    --af-ansible-output-info: var(--bs-info);
+    --af-ansible-output-bg-timestamp: var(--bs-info-bg-subtle);
+    --af-ansible-output-timestamp: var(--bs-info);
+
+    /* ace-editor */
+    --af-ace-editor-bg: var(--bs-dark); /* always dark theme */
+
+}

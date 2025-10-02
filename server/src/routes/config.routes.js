@@ -1,21 +1,20 @@
-const express = require('express')
-const router = express.Router()
-const configController =   require('../controllers/config.controller');
-const checkDesignerMiddleware = require('../lib/common.js').checkDesignerMiddleware;
-const checkSettingsMiddleware = require('../lib/common.js').checkSettingsMiddleware;
+import express from 'express';
+const router = express.Router();
+import configController from '../controllers/config.controller.js';
+import middleware from '../lib/middleware.js';
 
 // designer routes only (admin !!)
-router.post('/', checkDesignerMiddleware, configController.save);
-router.post('/check', checkDesignerMiddleware, configController.validate);
-router.post('/restore/:backupName', checkDesignerMiddleware, configController.restore);
-router.get('/backups', checkDesignerMiddleware, configController.backups);
-router.get('/env', checkSettingsMiddleware, configController.env);
+router.post('/', middleware.checkDesignerMiddleware, configController.save);
+router.post('/check', middleware.checkDesignerMiddleware, configController.validate);
+router.post('/restore/:backupName', middleware.checkDesignerMiddleware, configController.restore);
+router.get('/backups', middleware.checkDesignerMiddleware, configController.backups);
+router.get('/env', middleware.checkSettingsMiddleware, configController.env);
 
 // get the config (no admin)
-router.get('/', configController.findAll);
+router.get('/', middleware.checkDesignerMiddleware, configController.findAll);
 // get list, just the icons and names (no admin)
 router.get('/formlist', configController.findList);
 // get one config (no admin)
 router.get('/form', configController.findOne);
 // 
-module.exports = router
+export default router

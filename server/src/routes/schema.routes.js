@@ -1,10 +1,11 @@
-const express = require('express')
-const router = express.Router()
-const schemaController =   require('../controllers/schema.controller');
+import express from 'express';
+import schemaController from '../controllers/schema.controller.js';
+
+const router = express.Router();
 
 // check the database schema
 router.get('/', schemaController.hasSchema);
 // create the database schema
 router.post('/', schemaController.create);
 
-module.exports = router
+export default router

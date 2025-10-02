@@ -1,0 +1,126 @@
+{
+  "type": "object",
+  "required": [
+    "categories",
+    "roles"
+  ],
+  "properties": {
+    "categories": {
+      "type": "array",
+      "contains": {
+        "const": {
+          "name": "Default",
+          "icon": "bars"
+        }
+      },
+      "items": {
+        "$id": "/category",
+        "type": "object",
+        "required": [
+          "name",
+          "icon"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[^/]{3,25}$"
+          },
+          "icon": {
+            "$id": "/icon",
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "/category"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "roles": {
+      "type": "array",
+      "contains": {
+        "type": "object",
+        "properties": {
+          "name": { "const": "public"},
+          "groups": { "const": []},
+          "options": {
+            "type": "object",
+            "properties": {
+              "showDesigner": { "type": "boolean"},
+              "showLogs": { "type": "boolean" },
+              "showDebugButtons": { "type": "boolean" },
+              "showSettings": { "type": "boolean" },
+              "showExtravars": { "type": "boolean" },
+              "extendedTokenExpiration": { "type": "boolean" },
+              "showAllJobLogs": { "type": "boolean" },
+              "allowDatabaseOps": { "type": "boolean" },
+              "enableLogin": { "type": "boolean" }
+            },
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "items": {
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "anyOf": [
+          {
+            "required": [
+              "groups"
+            ]
+          },{
+            "required": [
+              "users"
+            ]
+          }
+        ],        
+        "properties": {
+          "name": {
+            "$id": "/role",
+            "type": "string"
+          },
+          "options": {
+            "type": "object",
+            "properties": {
+              "showDesigner": { "type": "boolean"},
+              "showLogs": { "type": "boolean" },
+              "showDebugButtons": { "type": "boolean" },
+              "showSettings": { "type": "boolean" },
+              "showExtravars": { "type": "boolean" },
+              "extendedTokenExpiration": { "type": "boolean" },
+              "enableLogin": { "type": "boolean" }
+            },
+            "additionalProperties": true
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "default": "",
+              "pattern": "(\\blocal\\b|\\bldap\\b|\\bazuread\\b|\\boidc\\b)\\/.+"
+            }
+          },
+          "users": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "default": "",
+              "pattern": "(\\blocal\\b|\\bldap\\b|\\bazuread\\b|\\boidc\\b)\\/.+"
+            }            
+          }                    
+        },
+        "additionalProperties": false
+      }
+    },
+    "constants":{
+      "type": "object"
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,244 +1,126 @@
-<template>
-  <div id="app">
-    <BulmaModal v-if="showAbout" title="About" href="https://github.com/ansibleguy76/ansibleforms" action="View on Github" :icon="['fab','github']" @close="showAbout=false;showEasterEgg=false" @cancel="showAbout=false;showEasterEgg=false">
-        <div class="field is-grouped is-grouped-multiline">
-          <div class="control">
-            <h1 class="title"><strong>AnsibleForms</strong></h1>
-          </div>
-          <div class="control">
-            <div class="tags has-addons">
-              <span class="tag is-dark">build</span>
-              <span class="tag is-link">v{{version}}</span>
-            </div>
-          </div>
-        </div>
-        <p class="is-size-7 is-unselectable">
-          Copyright © 2021 AnsibleGuy<br>
-          <br>
-          This program is free software: you can redistribute it and/or modify
-          it under the terms of the <strong>GNU General Public License</strong> as published by
-          the Free Software Foundation, either version 3 of the License, or
-          (at your option) any later version.<br>
-          <br>
-          This program is distributed in the hope that it will be useful,
-          but WITHOUT ANY WARRANTY; without even the implied warranty of
-          MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-          GNU General Public License for more details.<br>
+<script setup>
+import { onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import axios from "axios";
 
-          <br>You can find the GNU General Public License at
-          <a target="_blank" href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a><br>
-          <br>
-        </p>
-        <span  v-if="!showEasterEgg" class="icon is-pulled-right has-text-grey-lighter"><font-awesome-icon @dblclick="showEasterEgg=true" icon="egg" /></span>
-        <div v-if="showEasterEgg" class="tags has-addons is-unselectable">
-          <span class="tag is-dark">Special thanks to</span>
-          <span class="tag is-warning">{{ thanks.join(', ')}}</span>
-        </div>
-    </BulmaModal>
-    <BulmaModal v-if="showProfile" title="About me" @close="showProfile=false" @cancel="showProfile=false">
-      <div class="columns">
-        <div class="column m-1 has-background-info-light">
-          <strong>Username : </strong>{{ profile.username }}
-        </div>
-        <div class="column m-1 has-background-info-light">
-          <strong>Type : </strong>{{ profile.type }}
-        </div>
+import TokenStorage from "@/lib/TokenStorage";
+import Navigate from "@/lib/Navigate";
+import { useAppStore } from "@/stores/app";
+import State from "@/lib/State";
+import Theme from "@/lib/Theme";
+
+const route = useRoute();
+const router = useRouter();
+const isLoaded = ref(false)
+// const theme = useTheme();
+
+function registerAxiosInterceptor() {
+  // this is the token refresh control
+  // if we get a 401 error, we should try to refresh the tokens first and and have second attempt
+  axios.interceptors.response.use((response) => {
+    // Return a successful response back to the calling service
+    return response;
+  }, async (error) => {
+    // Return any error which is not due to authentication back to the calling service
+
+    if (error.response?.status !== 401) {
+      throw error;
+    } else {
+      // Logout user if token refresh didn't work or user is disabled
+      console.log("Axios 401 error occurred, we are not authorized")
+      if (error?.config?.url == `/api/v1/token` || error?.response?.message == 'Account is disabled.' || error?.response?.message?.includes('No Access')) {
+        console.log("The error is from token refresh or account is disabled or you have no access, no refresh possible")
+        var message = "Unauthorized.  Access denied."
+        if (error?.response?.data?.message) {
+          message += "\r\n" + error.response.data.message
+        }
+        // clear token storage and redirect to login
+        TokenStorage.clear();
+        Navigate.toLogin(router, route)
+        // throw new error back to axios, stop processing
+        throw new Error(message)
+      }
+
+      // Try request again with new token
+      try {
+        const token = await TokenStorage.getNewToken()
+        if (!token) {
+          // No token was returned, this means the user is not authenticated
+          console.log("No new token received, redirecting to login")
+          return
+        }
+        console.log("Refresh done")
+        console.log("Retrying previous call with new tokens")
+        // New request with new token
+        const config = error.config;
+        config.headers['Authorization'] = `Bearer ${token}`;
+
+        const retryResponse = await axios.request(config);
+        if (retryResponse.error) {
+          // The response itself contains an error, throw it
+          throw retryResponse.error
+        } else {
+          // finally, the refresh worked and the response retried was successful
+          return retryResponse
+        }
+      } catch (e) {
+        // rethrow it.  It will likely be a new 401 error, not authorized to refresh, it will be caught by this interceptor in a second run
+        // in all other cases, something was wrong with the token refresh
+        throw e
+      }
+    }
+  });
+}
+
+async function checkDatabase() {
+  console.log("Checking database");
+  var result;
+  try{
+    result = await State.checkDatabase();
+  }catch(err){
+    console.log(err)
+    Navigate.toError(router);
+    return;
+  }
+  if(result){
+    await login();
+  }else{
+    Navigate.toSchema(router);
+  }  
+  isLoaded.value = true;
+}
+
+async function login() {
+  console.log("login from app");
+  await State.init(router,route)
+}
+ 
+onMounted(async () => {
+  console.log("App is mounted");
+  Theme.load()
+  console.log("Theme is loaded")
+  await router.isReady()
+  registerAxiosInterceptor() // setup token refresh, an axios interceptor
+  console.log("Router is ready")
+  await checkDatabase();
+  console.log("Database check complete")
+
+});
+
+</script>
+
+
+<template>
+  <router-view v-if="isLoaded" />
+  <div v-else class="d-flex justify-content-center align-items-center vh-100">
+    <div class="text-center">
+      <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+        <span class="visually-hidden">Loading...</span>
       </div>
-      <div class="columns">
-        <div class="column m-1 has-background-success-light">
-          <strong>Groups : </strong>
-          <ul>
-            <li v-for="g in profile.groups" :key="g"><font-awesome-icon icon="check" /> {{ g }}</li>
-          </ul>
-        </div>
-        <div class="column m-1 has-background-warning-light">
-          <strong>Roles : </strong>
-          <ul>
-            <li v-for="r in profile.roles" :key="r"><font-awesome-icon icon="check" /> {{ r }}</li>
-          </ul>
-          <strong class="mt-2">Options : </strong>
-          <ul>
-            <li v-for="o in Object.keys(profile.options)" :key="o"><font-awesome-icon icon="check" /> {{ o }} : {{ profile.options[o] }}</li>
-          </ul>          
-        </div>              
-      </div>
-    </BulmaModal>    
-    <BulmaNav v-if="version" :isAdmin="isAdmin" @profile="showProfile=true" @about="showAbout=true" :approvals="approvals" :authenticated="authenticated" :profile="profile" @logout="logout()" :version="version" />
-    <router-view v-if="isLoaded" :isAdmin="isAdmin" :profile="profile" :authenticated="authenticated" :errorMessage="errorMessage" :errorData="errorData" @recheckSchema="checkDatabase()"  @authenticated="login()" @logout="logout()" @refreshApprovals="loadApprovals()" />
+      <p>Loading...</p>
+    </div>
   </div>
 </template>
-<script>
-  import BulmaNav from './components/BulmaNav.vue'
-  import BulmaModal from './components/BulmaModal.vue'
-  import axios from 'axios'
-  import TokenStorage from './lib/TokenStorage'
-  export default{
-    components:{BulmaNav,BulmaModal},
-    name:"AnsibleForms",
-    data(){
-      return{
-        formConfig:undefined,
-        errorMessage:"",
-        errorData:{success:[],failed:[]},
-        profile:{},
-        showProfile:false,
-        authenticated:false,
-        isAdmin:false,
-        version:undefined,
-        approvals:0,
-        isLoaded:false,
-        showAbout:false,
-        showEasterEgg:false,
-        thanks:[
-          "A. Bronder",
-          "H. Marko",
-          "S. Mer",
-          "J. Szkudlarek",
-          "J. Burkle",
-          "A. Mikhaylov",
-          "mdaugs"
-        ]
-      }
-    },
-    computed: {
-    },
-    beforeMount() {
-      this.checkDatabase()
-    },
-    methods: {
-        refreshAuthenticated(){
-          this.authenticated = TokenStorage.isAuthenticated()
-          // console.log("checking if is admin")
-          var payload = TokenStorage.getPayload()
-          if(payload.user && payload.user.roles){
-            this.profile = payload.user            
-            this.isAdmin=payload.user.roles.includes("admin")
-          }
-        },
-        loadVersion(){
-          var ref=this;
+<style>
 
-          axios.get(`${process.env.BASE_URL}api/v1/version`)                               // check database
-            .then((result)=>{
-              if(result.data.status=="success"){
-                ref.version=result.data.message
-              }
-            })
-            .catch(function(err){
-              // silent fail
-            });
-        },
-        loadApprovals(){
-          var ref=this;
-          axios.get(`${process.env.BASE_URL}api/v1/job/approvals`,TokenStorage.getAuthentication())                               // check database
-            .then((result)=>{
-              if(result.data.status=="success"){
-                ref.approvals=result.data.data.output || 0
-              }
-            })
-            .catch(function(err){
-              // silent fail
-            });
-        },
-        checkDatabase(){
-          var ref=this;
-
-          // Check if the current route is '/install' and skip the database check
-          if (this.$route.path === `${process.env.BASE_URL}install`) {
-            this.isLoaded = true;
-            return; // Skip the database check
-          }
-          console.log("Checking database")
-          // create timestamp to add to api call to prevent caching
-          var timestamp = new Date().getTime();
-          axios.get(`${process.env.BASE_URL}api/v1/schema?${timestamp}`)                               // check database
-          .then((result)=>{
-            if(result.data.status=="error"){
-              ref.errorMessage=result.data.message;
-              ref.errorData=result.data.data;
-              if(!ref.errorMessage)ref.errorMessage="Unknown error"
-              if(typeof ref.errorMessage=="object"){ref.errorMessage=ref.errorMessage.message}
-              if(ref.errorMessage.startsWith("ERROR")){ // actual error, send to error page
-                ref.errorMessage="Failed to check AnsibleForms database schema\n\n" + ref.errorMessage;
-                ref.$router.replace({name:"Error"}).catch(err => {});
-              }else{ // not a real error, send to schema page
-                ref.$router.replace({name:"Schema"}).catch(err => {});
-              }
-              ref.isLoaded=true
-            }else{
-              ref.errorMessage=result.data.message;
-              ref.errorData=result.data.data;              
-              this.loadVersion()
-              this.login()
-              ref.isLoaded=true
-            }
-
-          })
-          .catch(function(err){
-            ref.$toast.error("Failed to check AnsibleForms database schema");
-            ref.errorMessage="Failed to check AnsibleForms database schema\n\n" + err.toString()
-            ref.$router.replace({name:"Error"}).catch(err => {});
-            ref.isLoaded=true
-          });            
-        },
-        loadProfile(){
-          var ref=this;
-          var payload = TokenStorage.getPayload()
-          ref.profile = payload.user
-        },
-        resetProfile(){
-          this.profile={}
-        },
-        login(){
-          var ref= this;
-          if(!TokenStorage.isAuthenticated()){
-            //this.$toast.error("You need to authenticate")
-            if(this.$route.name!="Login"){
-              this.$router.replace({ name: "Login", query: {from: this.$route.fullPath} }).catch(err => {});         // no token found, logout
-            }
-          }else{
-            if(this.$route.query.from){
-              this.$router.push({path:this.$route.query.from}).catch(err => {});
-            }else{
-              if(this.$route.name){
-                if(this.$route.name=="Login"){
-                  this.$router.push({name:"Home"}).catch(err => {});
-                }else{
-                  this.$router.push(this.$route.fullPath).catch(err => {});
-                }
-              }else{
-                this.$router.push({name:"Home"}).catch(err => {});
-              }
-            }
-            this.refreshAuthenticated()
-            this.loadProfile()
-            this.loadApprovals()
-          }
-        },
-        logout() {
-          var userType=this.profile?.type || "local"
-          TokenStorage.clear()
-          this.formConfig=undefined
-          this.refreshAuthenticated()
-          this.resetProfile()
-          // added by mirko => redirect to login page if not oidc, no logout required, the token is simply removed
-          if(userType=="local" || userType=="ldap" || userType=="azuread"){
-            this.$router.replace({ name: "Login", query: {from: this.$route.fullPath} }).catch(err => {});  
-          }
-          // to doublecheck (mdaugs) if this really needed, ...
-          if(userType=="oidc"){
-            axios.get(`${process.env.BASE_URL}api/v1/auth/logout`).then((res) => {
-              const logoutUrl = res.data?.data?.output?.logoutUrl
-              if (logoutUrl) {
-                location.replace(logoutUrl)
-              }
-            }).catch((err) => {
-              console.log(err)
-              this.$toast.error("Could not log out")
-            })
-          }
-
-        }
-    }
-  }
-</script>
+</style>

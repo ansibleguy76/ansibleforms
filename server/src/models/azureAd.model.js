@@ -1,57 +1,47 @@
 'use strict';
-const logger=require("../lib/logger");
-const mysql=require("./db.model")
-const helpers=require("../lib/common")
-const YAML=require("yaml")
-const {encrypt,decrypt} = require("../lib/crypto")
+import logger from "../lib/logger.js";
+import mysql from "./db.model.js";
+import crypto from "../lib/crypto.js";
 
-//azuread object create
-var AzureAd=function(azuread){
-    this.client_id = azuread.client_id;
-    this.secret_id = encrypt(azuread.secret_id);
-    this.enable = (azuread.enable)?1:0;
-    this.groupfilter = azuread.groupfilter;
-};
-AzureAd.update = function (record) {
-  logger.info(`Updating azuread`)
-  return mysql.do("UPDATE AnsibleForms.`azuread` set ?", record)
-};
-AzureAd.isEnabled = function(){
-  return mysql.do("SELECT enable,groupfilter FROM AnsibleForms.`azuread` limit 1;")
-    .then((res)=>{
-      if(res.length>0){
-        return res[0]
-      }else{
-        logger.error("No azuread record in the database, something is wrong")
-        throw "No azuread record in the database, something is wrong"
+class AzureAd {
+  static async isEnabled() {
+    const res = await mysql.do("SELECT enable,groupfilter FROM AnsibleForms.`oauth2_providers` where provider='azuread' and enable;");
+    if (res.length > 0) {
+      return res[0];
+    } else {
+      return { enable: 0, groupfilter: '' };
+    }
+  }
+
+  static async find() {
+    const res = await mysql.do("SELECT tenant_id,client_id, client_secret, enable, groupfilter,redirect_uri FROM AnsibleForms.`oauth2_providers` WHERE provider='azuread' LIMIT 1;");
+    if (res.length > 0) {
+      let record = res[0];
+      try {
+        record.client_secret = record.client_secret ? crypto.decrypt(record.client_secret) : "";
+      } catch (e) {
+        logger.error("Couldn't decrypt azuread client_secret, did the secretkey change?");
+        record.client_secret = "";
       }
-    })
+      return {
+        tenant_id: record.tenant_id || null,
+        client_id: record.client_id || "",
+        client_secret: record.client_secret || "",
+        enable: record.enable || 0,
+        groupfilter: record.groupfilter || "",
+        redirect_uri: record.redirect_uri || ""
+      };
+    } else {
+      return {
+        client_id: "",
+        client_secret: "",
+        enable: 0,
+        groupfilter: "",
+        redirect_uri: ""
+      };
+    }
+  }
 }
 
-AzureAd.find = function(){
-  return mysql.do("SELECT * FROM AnsibleForms.`azuread` limit 1;")
-    .then((res)=>{
-      if(res.length>0){
-        try{
-          if(res[0].secret_id!=""){
-            res[0].secret_id=decrypt(res[0].secret_id)
-          }
-        }catch(e){
-          logger.error("Couldn't decrypt azuread secret id, did the secretkey change ?")
-          res[0].secret_id=""
-        }
-        return res[0]
-      }else{
-        logger.error("No azuread record in the database, something is wrong")
-        throw "No azuread record in the database, something is wrong"
-      }
-    })
-}
 
-AzureAd.check = function(azureadConfig){
-  return new Promise(async (resolve,reject)=>{
-    // TODO
-  })
-}
-
-module.exports= AzureAd;
+export default AzureAd;

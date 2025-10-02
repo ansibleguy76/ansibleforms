@@ -8,20 +8,3 @@ roles: # a list of roles
   - name: public
     groups: []
 constants: {} # free objects to re-use over all forms
-forms: # a list of forms
-  - name: Demo Form
-    showHelp: true
-    help: >
-      This is a demo form
-    roles:
-      - public
-    description: A simple form
-    categories:
-      - Demo
-    icon: heart
-    playbook: dummy.yaml
-    type: ansible
-    fields:
-      - type: text
-        name: username
-        label: Username

@@ -26,22 +26,24 @@ AnsibleForms can be installed in a few ways.
 * **Native install** : You install everything manually, install all dependencies, build the code, start the code
 * **Use Docker** : Use the pre-built docker image
   * **Single container** : Install MySql and spin-up the docker image with the correct environment variables
-  * **Docker Compose** : [Download the docker-compose project](https://github.com/ansibleguy76/ansibleforms-docker) and use docker-compose to start both MySql and AnsibleForms
-  * **Kubernetes** : [Download the docker-compose project](https://github.com/ansibleguy76/ansibleforms-docker) and use Kubernetes to start AnsibleForms
+  * **Docker Compose** : [Download the docker-compose project](https://github.com/ansibleguy76/ansibleforms-docker-v6) and use docker-compose to start both MySql and AnsibleForms.  
+  * **Kubernetes** : [Download the helm project](https://github.com/ansibleguy76/ansibleforms-helm) and use Kubernetes to start AnsibleForms
 
 <div class="callout callout--info">
-    <p><strong>Recommendation</strong> Out of experience, I recommend the use of the docker-image.  It has all (many) dependencies installed and can be setup very quickly.</p>
+    <p><strong>Recommendation</strong> Out of experience, I recommend the use of the docker-image.  It has all (many) dependencies installed and can be setup very quickly.</p>  For the old v5, use the old docker-compose project.
 </div>
 
+# Install using K8s
+
+To install AnsibleForms on Kubernetes using Helm, refer to the [ansibleforms-helm GitHub repository](https://github.com/ansibleguy76/ansibleforms-helm).  Just git clone, change the values.yaml or create your own values.yaml and overwrite.
 
 # Install using Docker-Compose 
 
-The recommended way to install AnsibleForms is using `Docker Compose`, which is the fastest way to start AnsibleForms with Docker.  However, if you are skilled with docker, podman and/or Kubernetes, the [docker-compose (with Kubernetes sample)](https://github.com/ansibleguy76/ansibleforms-docker), together with the environment variables should get you started as well.
+The [docker-compose](https://github.com/ansibleguy76/ansibleforms-docker), together with the environment variables should get you started.
 
 <div class="callout callout--danger">
     <p><strong>Note</strong> You can also use Podman and Podman-Compose.  The commands are similar (docker- > podman and docker-compose -> podman-compose)</p>
 </div>
-
 
 <div class="callout callout--danger">
     <p><strong>Note</strong> Using docker and docker-compose for the first time, requires some basic linux skills and some knowledge about containers</p>

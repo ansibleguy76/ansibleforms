@@ -1,6 +1,6 @@
 'use strict';
-const logger=require("../lib/logger");
-const mysql=require("./db.model")
+import logger from "../lib/logger.js";
+import mysql from "./db.model.js";
 
 //group object create
 var Group=function(group){
@@ -38,4 +38,4 @@ Group.findByName = function (name) {
     return mysql.do("SELECT * FROM AnsibleForms.`groups` WHERE name=?;",name)
 };
 
-module.exports= Group;
+export default  Group;

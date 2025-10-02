@@ -1,11 +1,11 @@
 'use strict';
-const RestResult = require('../models/restResult.model')
-const jwt = require("jsonwebtoken")
-var authConfig = require('../../config/auth.config')
-const logger=require("../lib/logger");
-const User=require("../models/user.model")
+import RestResult from '../models/restResult.model.js';
+import jwt from "jsonwebtoken";
+import authConfig from '../../config/auth.config.js';
+import logger from "../lib/logger.js";
+import User from "../models/user.model.js";
 
-exports.refresh = function(req, res) {
+const refresh = function(req, res) {
 
     // get the refresh token
     var refreshtoken = req.body.refreshtoken
@@ -52,3 +52,7 @@ exports.refresh = function(req, res) {
         }
     }
 };
+
+export default {
+  refresh
+}

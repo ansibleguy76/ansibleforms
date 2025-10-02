@@ -1,8 +1,9 @@
-const winston = require('winston');
-require('winston-daily-rotate-file');
-require('winston-syslog').Syslog;
-const loggerConfig = require('../../config/log.config');
-const moment = require('moment-timezone');
+import winston from 'winston';
+import 'winston-daily-rotate-file';
+import { Syslog } from 'winston-syslog';
+import loggerConfig from '../../config/log.config.js';
+import moment from 'moment-timezone';
+
 const color = {
 'info': process.env.LOG_COLOR_INFO || "\x1b[32m",
 'error': process.env.LOG_COLOR_ERROR || "\x1b[31m",
@@ -90,4 +91,4 @@ const Logger = winston.createLogger({
   transports,
 })
 
-module.exports = Logger
+export default Logger;

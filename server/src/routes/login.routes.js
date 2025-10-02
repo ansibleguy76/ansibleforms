@@ -1,6 +1,6 @@
-const express = require('express')
-const router = express.Router()
-const loginController = require("../controllers/login.controller.js")
+import express from 'express';
+const router = express.Router();
+import loginController from "../controllers/login.controller.js";
 
 
 // login with username and password (basic authentication)
@@ -18,4 +18,4 @@ router.get('/oidc',loginController.oidc,loginController.errorHandler);
 router.get('/oidc/callback',loginController.oidcCallback,loginController.errorHandler);
 router.post('/oidc/login',loginController.oidcLogin,loginController.errorHandler);
 
-module.exports = router
+export default router

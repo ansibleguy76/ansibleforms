@@ -1,0 +1,243 @@
+<script setup>
+import { useRouter } from "vue-router";
+import { ref } from "vue";
+import axios from "axios";
+import { useToast } from "vue-toastification";
+import TokenStorage from "@/lib/TokenStorage";
+import { useVuelidate } from "@vuelidate/core";
+import Navigate from "@/lib/Navigate";
+import { required, helpers, sameAs } from "@vuelidate/validators";
+
+const router = useRouter();
+
+const item = ref({
+  password: "",
+  password2: "",
+});
+
+const fields = [
+  {
+    key: "password",
+    label: "Password",
+    type: "password",
+    sortable: false,
+    required: true,
+    filterable: false,
+    icon: "lock",
+    regex: { expression: "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\\$%\\^&\\*])", description: "Must contain at least one uppercase letter, one lowercase letter, one number, and one special character" },     
+  },
+];
+
+async function updateItem() {
+
+    if (!$v.$invalid) {
+        try {
+            const result = await axios.put(`/api/v1/profile`, item.value, TokenStorage.getAuthentication())
+            if (result.data.status == "error") {
+                toast.error(result.data.message + ", " + result.data.data.error);
+            } else {
+                toast.success("Password is changed");
+                Navigate.toHome(router);
+            }
+        } catch (err) {
+            toast.error(err.message)
+        }
+    } else {
+        toast.warning("Invalid form data");
+        $v.value.item.$touch()
+    }
+}
+
+function getRules() {
+  const ruleObj = { item: {} };
+  fields.forEach((field) => {
+    var rule = {};
+    if (field.required) {
+      rule.required = helpers.withMessage(
+        `${field.label} is required`,
+        required
+      );
+    }
+    // regex validation
+    if (field.regex && field.regex.expression) {
+      var regexObj = new RegExp(field.regex.expression);
+      var description = field.regex.description;
+      rule.regex = helpers.withMessage(
+        description,
+        (value) => !helpers.req(value) || regexObj.test(value)
+      );
+    }
+
+    ruleObj.item[field.key] = rule;
+    if (field.type == "password") {
+      rule = {};
+      rule.password_comfirmation = sameAs(computed(() => item.value.password));
+      ruleObj.item["password2"] = rule;
+    }
+  });
+  return ruleObj;
+}
+
+const rules = getRules();
+const toast = useToast();
+const $v = useVuelidate(rules, { item });
+// const toast = useToast();
+</script>
+
+<template>
+  <div class="d-flex align-items-center py-4 bg-body-tertiary login vh-100">
+    <div class="card form-change-password w-100 m-auto">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5 class="card-title mb-0">Please Change Password</h5>
+          <button class="btn-close" aria-label="Close" @click="Navigate.toHome(router)"></button>
+        </div>
+        <template v-for="field in fields">
+          <BsInput
+            :isHorizontal="true"
+            :type="field.type"
+            :placeholder="field.placeholder"
+            :icon="field.icon"
+            :help="field.help"
+            :readonly="field.readonly"
+            v-model="$v.item[field.key].$model"
+            :isFloating="true"
+            :required="field.required"
+            :label="field.label"
+            :hasError="$v.item[field.key].$invalid && $v.item[field.key].$dirty"
+            :errors="$v.item[field.key].$errors"
+            :valueKey="field.valueKey"
+            :labelKey="field.labelKey"
+            :style="field.style"
+            :lang="field.lang"
+
+          />
+          <BsInput
+            v-if="field.type == 'password'"
+            :isHorizontal="true"
+            type="password"
+            icon="lock"
+            :help="field.help"
+            :placeholder="field.placeholder"
+            v-model="$v.item['password2'].$model"
+            :isFloating="true"
+            :required="true"
+            label="Confirm"
+            :hasError="
+              $v.item['password2'].$invalid && $v.item['password2'].$dirty
+            "
+            :errors="$v.item['password2'].$errors"
+          />
+          <!-- password confirmation -->
+        </template>
+        <button class="btn btn-primary w-100 py-2" @click="updateItem()" :disabled="$v.$invalid">
+          Change Password
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.form-change-password {
+  max-width: 500px;
+  padding: 1rem;
+}
+
+[data-bs-theme="light"] {
+  .login {
+    background-image: url(@/assets/img/login_background_light.jpg) !important;
+    background-size: cover;
+  }
+}
+[data-bs-theme="dark"] {
+  .login {
+    background-image: url(@/assets/img/login_background_dark.jpg) !important;
+    background-size: cover;
+  }
+}
+[data-bs-theme="color"] {
+  .login {
+    background-image: url(@/assets/img/login_background_color.jpg) !important;
+    background-size: cover;
+  }
+}
+</style>
+
+<!-- <template>
+  <section class="hero has-background-light is-fullheight">
+    <div class="hero-body">
+      <div class="container">
+        <div class="columns is-centered">
+          <div class="column is-5-tablet is-4-desktop is-3-widescreen">
+            <div class="box">
+              <BulmaInput icon="lock" focus="true" v-model="user.password" @enterClicked="update()" label="Password" type="password" placeholder="***********" :required="true" :hasError="v$.user.password.$invalid" :errors="[{if:v$.user.password.passwordComplexity.$invalid,label:v$.user.password.passwordComplexity.$params.description}]" />
+              <BulmaInput icon="lock" type="password" v-model="user.password2" @enterClicked="update()" label="Password Again" placeholder="Password" :required="true" :hasError="v$.user.password2.$invalid" :errors="[{if:v$.user.password2.sameAsPassword.$invalid,label:'Passwords are not the same'}]" />
+              <div class="field">
+                <button class="button is-light" @click="update()">
+                  <span class="icon has-text-info"><font-awesome-icon icon="key" /></span><span>Change Password</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</template>
+<script>
+  import axios from 'axios'
+  import BulmaInput from './../components/BulmaInput.vue'
+  import TokenStorage from './../lib/TokenStorage'
+  import { useVuelidate } from '@vuelidate/core'
+  import { required, helpers,sameAs } from '@vuelidate/validators'
+
+  export default{
+    name: "AfUsers",
+    props:{
+      authenticated:{type:Boolean},
+      isAdmin:{type:Boolean}
+    },
+    components:{BulmaInput},
+    setup(){
+      return { v$: useVuelidate() }
+    },
+    data(){
+      return  {
+          user:{
+            password:"",
+            password2:""
+          }
+        }
+    },
+    methods:{
+      update(){
+        var ref= this;
+        if (!this.v$.user.password.$invalid && !this.v$.user.password2.$invalid) {
+          axios.put(`/api/v1/profile`,this.user,TokenStorage.getAuthentication())
+            .then((result)=>{
+              if(result.data.status=="error"){
+                ref.$toast.error(result.data.message + ", " + result.data.data.error);
+              }else{
+                  ref.$toast.success("Password is changed");
+                  ref.$router.push({name:"Home"}).catch(err => {});
+              }
+            }),function(err){
+              ref.$toast.error(err.toString());
+            };
+        }else{
+          this.$toast.warning("Invalid form data")
+        }
+      }
+    },
+
+  }
+</script>
+<style scoped>
+  .cursor-progress{
+    cursor:progress;
+  }
+  .select, .select select{
+    width:100%;
+  }
+</style> -->

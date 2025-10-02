@@ -1,44 +1,26 @@
 'use strict';
-const Form=require("../models/form.model")
-const Lock=require("../models/lock.model")
-const Help=require("../models/help.model")
-const path=require("path")
-const logger=require("../lib/logger")
-const helpers=require("../lib/common")
-const YAML=require("yaml")
-var RestResult = require('../models/restResult.model');
-const {inspect} = require("node:util");
-const { user } = require("../../config/db.config");
-exports.findList = async function(req,res){
+import Form from "../models/form.model.js";
+import Lock from "../models/lock.model.js";
+import Help from "../models/help.model.js";
+import path from "path";
+import logger from "../lib/logger.js";
+import helpers from "../lib/common.js";
+import RestResult from "../models/restResult.model.js";
+import os from "os";
+
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+
+const findList = async function(req,res){
   try{
     var userRoles = req?.user?.user?.roles || []
-    var formConfig = await Form.load()
+    logger.info("Getting forms list for roles " + userRoles.join(","))
+    var formConfig = await Form.load(userRoles)
     // filter forms based on user roles, only return the forms, only return the properties
     // icon, image, name, description, tileClass
-    var forms = formConfig.forms.filter(form => {
-        if(userRoles.includes("admin")){
-          return true
-        }
-        if(form.roles){
-          for(var role of form.roles){
-            if(userRoles.includes(role)){
-              return true
-            }
-          }
-        }
-        return false
-      }).map(form => {
-        return {
-          icon: form.icon,
-          image: form.image,
-          name: form.name,
-          categories: form.categories,
-          description: form.description,
-          tileClass: form.tileClass
-        }
-      }
-    )
-    formConfig.forms = forms
     // remove roles and remove constants
     delete formConfig.roles
     delete formConfig.constants
@@ -49,51 +31,33 @@ exports.findList = async function(req,res){
     res.json({error:helpers.getError(err)})
   }
 }
-exports.findOne = async function(req,res){
+const findOne = async function(req,res){
   try{
     var userRoles = req?.user?.user?.roles || []
-    var formConfig = await Form.load()
     var formName = req.query.name
-    if(formName){
-      var forms = formConfig.forms.filter((form) => {
-        if(userRoles.includes("admin")){
-          return true
-        }
-        if(form.roles){
-          for(var role of form.roles){
-            if(userRoles.includes(role)){
-              return true
-            }
-          }
-        }
-        return false
-      }).filter((form) => {
-        return form.name == formName
-      })
-      if(forms.length>0){
-        formConfig.forms = forms
-        delete formConfig.roles
-        delete formConfig.categories
-        res.json(formConfig)
-      }else{
-        res.json({error:"Form not found"})
-      }
-    }else{
+    if(!formName){
       res.json({error:"Form name not provided"})
+      return
     }
+    logger.info("Getting form config for " + formName)
+    var formConfig = await Form.load(userRoles,formName)
+    delete formConfig.roles
+    delete formConfig.categories
+    res.json(formConfig)
+
   }catch(err){
     // console.log(err)
     res.json({error:helpers.getError(err)})
   }
 }
-exports.findAll = async function(req,res){
+const findAll = async function(req,res){
   try{
     var user = req?.user?.user || {}
     if(!user.roles.includes("admin") && !user.options?.showDesigner){
       res.json({error:"Only admins or designers can access the full forms configuration"})
       return
     }
-    var forms = await Form.load()
+    var forms = await Form.load(undefined,undefined,true) // true means load all forms, not just the ones for the user
     res.json(forms)
   }catch(err){
     // console.log(err)
@@ -101,7 +65,7 @@ exports.findAll = async function(req,res){
   }
 }
 
-exports.backups = function(req,res){
+const backups = function(req,res){
   try{
     var backups = Form.backups()
     res.json(backups)
@@ -109,7 +73,7 @@ exports.backups = function(req,res){
     res.json({error:helpers.getError(err)})
   }
 }
-exports.env = async function(req,res){
+const env = async function(req,res){
   try{
     // get help
     var help = await Help.get()
@@ -126,7 +90,7 @@ exports.env = async function(req,res){
         item.set=false
         item.value=x.default
         if(item.name=='HOME_PATH'){
-          item.value=require('os').homedir()
+          item.value=os.homedir()
         }        
         if(item.value && item.value.toString().includes('PERSISTENT')){
           item.value=item.value?.replace("%PERSISTENT_FOLDER%",path.resolve(__dirname + "/../../persistent"))
@@ -143,7 +107,7 @@ exports.env = async function(req,res){
     res.json(new RestResult("error","Failed to get environment variables",null,helpers.getError(err)))
   }
 }
-exports.restore = async function(req,res){
+const restore = async function(req,res){
   var lock=undefined
   var user=req.user.user
   try{
@@ -177,7 +141,7 @@ exports.restore = async function(req,res){
     res.json(new RestResult("error","Failed to restore forms",null,"Designer is locked by "+lock.lock.username))
   }
 }
-exports.save = async function(req,res){
+const save = async function(req,res){
   var lock=undefined
   var user=req.user.user
   try{
@@ -216,7 +180,7 @@ exports.save = async function(req,res){
   }
 
 }
-exports.validate = function(req,res){
+const validate = function(req,res){
   const newConfig = new Form(req.body);
   //handles null error
   if(req.body.constructor === Object && Object.keys(req.body).length === 0){
@@ -237,3 +201,14 @@ exports.validate = function(req,res){
     }
   }
 }
+
+export default {
+  findList,
+  findOne,
+  findAll,
+  backups,
+  env,
+  restore,
+  save,
+  validate
+};

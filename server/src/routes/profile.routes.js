@@ -1,9 +1,9 @@
-const express = require('express')
-const router = express.Router()
-const userController = require('../controllers/user.controller');
+import express from 'express';
+const router = express.Router();
+import userController from '../controllers/user.controller.js';
 // Retrieve profile
 router.get('/', userController.find);
 // Update password
 router.put('/', userController.changePassword);
 
-module.exports = router
+export default router

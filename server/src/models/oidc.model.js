@@ -1,56 +1,49 @@
+
 'use strict';
-const logger=require("../lib/logger");
-const mysql=require("./db.model")
-const {encrypt,decrypt} = require("../lib/crypto")
+import logger from "../lib/logger.js";
+import mysql from "./db.model.js";
+import crypto from "../lib/crypto.js";
 
-//oidc object create
-var OIDC=function(oidc){
-    this.issuer = oidc.issuer;
-    this.client_id = oidc.client_id;
-    this.secret_id = encrypt(oidc.secret_id);
-    this.enabled = (oidc.enabled)?1:0;
-    this.groupfilter = oidc.groupfilter;
-};
-OIDC.update = function (record) {
-  logger.info(`Updating OIDC`)
-  return mysql.do("UPDATE AnsibleForms.`oidc` set ?", record)
-};
-OIDC.isEnabled = function(){
-  return mysql.do("SELECT enabled,groupfilter, issuer FROM AnsibleForms.`oidc` limit 1;")
-    .then((res)=>{
-      if(res.length>0){
-        return res[0]
-      }else{
-        logger.error("No OIDC record in the database, something is wrong")
-        throw "No OIDC record in the database, something is wrong"
+
+class OIDC {
+  static async isEnabled() {
+    const res = await mysql.do("SELECT enable,groupfilter,issuer FROM AnsibleForms.`oauth2_providers` WHERE provider='oidc' AND enable;");
+    if (res.length > 0) {
+      return res[0];
+    } else {
+      return { enable: 0, groupfilter: '', issuer: '' };
+    }
+  }
+
+  static async find() {
+    const res = await mysql.do("SELECT client_id, client_secret, enable, groupfilter, issuer, redirect_uri FROM AnsibleForms.`oauth2_providers` WHERE provider='oidc' LIMIT 1;");
+    if (res.length > 0) {
+      let record = res[0];
+      try {
+        record.client_secret = record.client_secret ? crypto.decrypt(record.client_secret) : "";
+      } catch (e) {
+        logger.error("Couldn't decrypt OIDC client_secret, did the secretkey change?");
+        record.client_secret = "";
       }
-    })
+      return {
+        client_id: record.client_id || "",
+        client_secret: record.client_secret || "",
+        enable: record.enable || 0,
+        groupfilter: record.groupfilter || "",
+        issuer: record.issuer || "",
+        redirect_uri: record.redirect_uri || ""
+      };
+    } else {
+      return {
+        client_id: "",
+        client_secret: "",
+        enable: 0,
+        groupfilter: "",
+        issuer: "",
+        redirect_uri: ""
+      };
+    }
+  }
 }
 
-OIDC.find = function(){
-  return mysql.do("SELECT * FROM AnsibleForms.`oidc` limit 1;")
-    .then((res)=>{
-      if(res.length>0){
-        try{
-          if(res[0].secret_id!=""){
-            res[0].secret_id=decrypt(res[0].secret_id)
-          }
-        }catch(e){
-          logger.error("Couldn't decrypt OIDC secret id, did the secretkey change ?")
-          res[0].secret_id=""
-        }
-        return res[0]
-      }else{
-        logger.error("No OIDC record in the database, something is wrong")
-        throw "No OIDC record in the database, something is wrong"
-      }
-    })
-}
-
-OIDC.check = function(oidcConfig){
-  return new Promise(async (resolve,reject)=>{
-    // TODO
-  })
-}
-
-module.exports= OIDC;
+export default OIDC;

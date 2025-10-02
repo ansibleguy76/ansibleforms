@@ -41,3 +41,6 @@ ontap*.yaml
 
 # git
 .gitignore
+
+# python venv
+.venv

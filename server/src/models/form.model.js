@@ -1,22 +1,33 @@
 'use strict';
-const appConfig = require('./../../config/app.config');
-const logger=require("../lib/logger")
-const fs=require("fs")
-const os=require("os")
-const fse=require("fs-extra")
-const moment=require("moment")
-const execSync = require('child_process').execSync;
-const YAML=require("yaml")
-const Ajv = require('ajv');
-const ajv = new Ajv()
-const path=require("path")
-const AJVErrorParser = require('ajv-error-parser');
-const quote = require('shell-quote/quote');
-const Repository = require('./repository.model')
-const Helpers = require("../lib/common")
-const {inspect} = require("node:util");
-const Repo = require('./repo.model');
-const Settings = require('./settings.model');
+import appConfig from './../../config/app.config.js';
+import logger from "../lib/logger.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import fse from "fs-extra";
+import moment from "moment";
+import Errors from '../lib/errors.js';
+import { execSync } from 'child_process';
+import yaml from "yaml";
+import Ajv from 'ajv';
+import quote from 'shell-quote/quote.js';
+import Repository from './repository.model.js';
+import Helpers from "../lib/common.js";
+import Settings from './settings.model.js';
+import os from 'os';
+import AJVErrorParser from './ajvErrorParser.model.js';
+
+const ajv = new Ajv({allErrors: true});
+
+// Construct __dirname for ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load JSON schemas synchronously
+const baseSchema = JSON.parse(fs.readFileSync(path.join(__dirname, "../../schema/base_schema.json"), "utf8"));
+const formSchema = JSON.parse(fs.readFileSync(path.join(__dirname, "../../schema/form_schema.json"), "utf8"));
+const formsSchema = JSON.parse(fs.readFileSync(path.join(__dirname, "../../schema/forms_schema.json"), "utf8"));
+const jsonSchemaDraft6 = JSON.parse(fs.readFileSync(path.join(__dirname, "../../node_modules/ajv/lib/refs/json-schema-draft-06.json"), "utf8"));
 
 const backupPath = appConfig.formsBackupPath
 
@@ -34,7 +45,7 @@ function getBackupSuffix(t){
   var backuppart=backuppartre.exec(t)[1]
   return backuppart
 }
-ajv.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
+ajv.addMetaSchema(jsonSchemaDraft6);
 var Form=function(data){
   this.forms = data.forms;
 };
@@ -70,186 +81,327 @@ function getYttEnvDataOpts() {
   return yttEnvDataOpts;
 }
 
-// create the backup path and 
-// since version 4.0.3 the backups go under folder => move backups there (should be only once)
-Form.initBackupFolder=function(){
-  logger.info("Moving older form backups to new backup folder")
-  try{
-    fs.mkdirSync(backupPath, { recursive: true })
-    // move old forms.bak.files
-    var files = fs.readdirSync(formFilePath)
-    if(files){
-      // filter only backup-files and folders
-      files=files.filter((item)=>item.match(/\.bak\.[0-9]*$/))
-      // read files
-      files.forEach((item, i) => {
-        try{
-          const from = path.join(formFilePath,item)
-          const to = path.join(backupPath,item)
-          logger.debug(`moving ${from} -> ${to}`)
-          fse.moveSync(from,to)
-        }catch(e){
-          logger.error(`failed to move item '${item}'.\n`,e)
-        }
-      });
-    }
-  }catch(e){
-    logger.error("Failed to init backup folder\n",e)
-  }  
-  Form.removeOld(oldBackupDays)
+
+function execYtt(file,libdir) {
+
+  // database didn't deliver any forms, so let's load from file
+  var libDataOpts = getYttLibDataOpts();
+  var envDataOpts = getYttEnvDataOpts();  
+  logger.info(`interpreting ${file} with ytt.`);
+  logger.debug(`executing 'ytt -f ${quote([file])} -f ${quote([libdir])}${envDataOpts}${libDataOpts}'`);
+  var data = execSync(
+      `ytt -f ${quote([file])} -f ${quote([libdir])}${envDataOpts}${libDataOpts}`,
+      {
+        env: process.env,
+        encoding: 'utf-8'
+      } 
+  );
+  if (!data) {
+    throw new Error(`ytt did not return any data for file ${file}`);
+  }
+  return data;
 }
-// load the forms config
-Form.load = async function() {
 
-  var forms=undefined
-  var rawdata=undefined
-
-  var settings = await Settings.findFormsYaml()
-  var appFormsPath=undefined
-  if(settings.forms_yaml && appConfig.enableFormsYamlInDatabase){
-    logger.info(`Using forms yaml from database`)
-    appFormsPath = (await Repository.getFormsPath(false)) || appConfig.formsPath    
-  }else{
-    appFormsPath = (await Repository.getFormsPath()) || appConfig.formsPath    
-    logger.info(`Loading ${appFormsPath}`)  
-  }
-
-  var formsdirpath=path.join(path.dirname(appFormsPath),"/forms");
-  var formslibdirpath=path.join(path.dirname(appFormsPath),"/lib");
-  var formfilesraw=[]
-  var formfiles=[]
-  var files=undefined
-
-  var yttLibDataOpts = getYttLibDataOpts();
-  var yttEnvDataOpts = getYttEnvDataOpts();
-
+function copyFormsTemplate(to) {
   try{
-    // read base forms.yaml
-    rawdata = '';
-    if(settings.forms_yaml){
+    logger.warning("No forms found in database or forms.yaml... creating empty one from template")
+    var formsTemplatePath = path.join(__dirname,"../../templates/forms.yaml.template")
+    fs.copyFileSync(formsTemplatePath,to)
+    logger.warning("File copied")
+  } catch (e) {
+    logger.error(`Failed to copy forms from template '${formsTemplatePath}'.`,e);
+    throw new Error(Helpers.getError(e,"There is no forms.yaml nor could there be one created from template."))
+  }
+}
+
+function copyFormsDirectoryTemplate(toDir) {
+  try {
+    const formsDirTemplatePath = path.join(__dirname, "../../templates/forms.template");
+    logger.warning("No forms directory found... creating empty one from template");
+    fse.copySync(formsDirTemplatePath, toDir, { overwrite: false, errorOnExist: false });
+    logger.warning("Directory copied");
+  } catch (e) {
+    logger.error(`Failed to copy forms directory from template '${formsDirTemplatePath}'.`, e);
+    throw new Error(Helpers.getError(e, "There is no forms directory nor could there be one created from template."));
+  }
+}
+
+async function getBaseConfig(formsPath) {
+  var rawdata=''
+
+  // if we should find the forms in the database, let's do that
+  if(appConfig.enableFormsYamlInDatabase){
+    const settings = await Settings.findFormsYaml()    
+    // if not empty
+    if(settings.forms_yaml.trim()){
+      logger.info(`Using forms yaml from database`)      
       rawdata = settings.forms_yaml // loading from db
-      // console.log(rawdata)
     }else{
-      try {
-        if (appConfig.useYtt) {
-          logger.info(`interpreting ${appFormsPath} with ytt.`);
-          logger.debug(`executing 'ytt -f ${quote([appFormsPath])} -f ${quote([formslibdirpath])}${yttEnvDataOpts}${yttLibDataOpts}'`);
-          rawdata = execSync(
-              `ytt -f ${quote([appFormsPath])} -f ${quote([formslibdirpath])}${yttEnvDataOpts}${yttLibDataOpts}`,
-              {
-                env: process.env,
-                encoding: 'utf-8'
-              }
-          );
-        } else {
-          rawdata = fs.readFileSync(appFormsPath, 'utf8');
-        }
-      } catch (e) {
-        logger.error(`Failed to load '${appFormsPath}'.`,e);
-
-      }
-      if(!rawdata){
-        try{
-          logger.warning("No forms found in database or forms.yaml... creating empty one from template")
-          var formsTemplatePath = path.join(__dirname,"../../templates/forms.yaml.template")
-          fs.copyFileSync(formsTemplatePath,appFormsPath)
-          logger.warning("File copied")
-          rawdata = fs.readFileSync(appFormsPath, 'utf8');
-        } catch (e) {
-          logger.error(`Failed to copy forms from template and/or to load '${appFormsPath}'.`,e);
-          throw new Error(Helpers.getError(e,"Error reading the forms"))
-        }
-
-      }
+      logger.warning("No forms found in the database, falling back to disk file")
     }
-    // read extra form files
-    try{
-      files = fs.readdirSync(formsdirpath)
-      if(files){
-        // filter only yaml
-        files=files.filter((item)=>['.yaml','.yml'].includes(path.extname(item)))
-        // read files
-        files.forEach((item, i) => {
-          try{
-            var itemFormPath = path.join(formsdirpath, item);
-            var itemRawData = '';
-            if (appConfig.useYtt) {
-              logger.info(`interpreting ${itemFormPath} with ytt.`);
-              logger.debug(`executing 'ytt -f ${quote([itemFormPath])} -f ${quote([formslibdirpath])}${yttEnvDataOpts}'`);
-              itemRawData = execSync(
-                  `ytt -f ${quote([itemFormPath])} -f ${quote([formslibdirpath])}${yttEnvDataOpts}`,
-                  {
-                    env: process.env,
-                    encoding: 'utf-8'
-                  }
-              );
-            } else {
-              itemRawData =fs.readFileSync(itemFormPath,'utf8');
-            }
-            formfilesraw.push({
-              name: item,
-              value: itemRawData
-            })
-          }catch(e){
-            logger.error(`Failed to load file '${item}'`,e);
-          }
-        });
-      }
-    }catch(e){
-      logger.warning("No forms directory... loading only forms.yaml")
-    }
-
-  }catch(err){
-    logger.error("Error : ",err)
-    throw new Error(Helpers.getError(err,"Error reading the forms.yaml file"))
+  }else{
+    logger.info(`Loading ${formsPath}`)  
   }
-  // parse base yaml
+
+  if(!rawdata){
+    // at this point we have no forms yet... let's see if we have a forms.yaml file
+
+    if (!fs.existsSync(formsPath)) {
+      copyFormsTemplate(formsPath);
+    }
+    // Also ensure the forms directory exists (for multi-form setups)
+    const formsDir = path.join(path.dirname(formsPath), "forms");
+    if (!fs.existsSync(formsDir)) {
+      copyFormsDirectoryTemplate(formsDir);
+    }
+    // at this point we have a forms.yaml file and forms directory, even if they are empty from template
+
+    if (appConfig.useYtt) {
+      // try to process ytt
+      try{
+        const yttLibDir=path.join(path.dirname(formsPath),"/lib");
+        rawdata = execYtt(formsPath,yttLibDir);
+      } catch (e) {
+        logger.error(`Failed to load '${formsPath}' with ytt.`,e);
+        throw new Error(Helpers.getError(e,"Error processing the base forms.yaml file with ytt."))
+      }
+    } else {
+      // try to read the file
+      try{
+        logger.info(`Using forms yaml from file`)      
+        rawdata = fs.readFileSync(formsPath, 'utf8');
+      } catch (e) {
+        logger.error(`Failed to load '${formsPath}'.`,e);
+        throw new Error(Helpers.getError(e,"Error reading the base forms.yaml file."))
+      }
+    }
+  }
+
+  // now let's see if it's valid yaml
   try{
-    forms = YAML.parse(rawdata)
+    const forms = yaml.parse(rawdata)
+    logger.debug("Base forms loaded and is valid YAML")
+    return forms;
   }catch(err){
     logger.error("Error",err)
-    throw new Error(Helpers.getError(err,"Error parsing the forms.yaml file"))
+    throw new Error(Helpers.getError(err,"Error parsing the base forms, it's not valid yaml."))
+  }  
+}
+
+function getFormInfo(form,formName='',loadFullConfig=false) {
+  // if we are loading full config, return the full form object
+  if(loadFullConfig){
+     return Form.validateForm(form); // validate the form and return
   }
-  // parse extra files
-  formfilesraw.forEach((item,i)=>{
+  if(!formName){
+    // list, only mimimal info
+    return {
+      icon: form.icon || '',
+      image: form.image || '',
+      name: form.name,
+      categories: form.categories || [],
+      description: form.description || '',
+      tileClass: form.tileClass || '',
+      order: form.order ?? Number.MAX_SAFE_INTEGER,
+    };
+  }
+  else if(form.name == formName) {
+    // validate the form and return
+    return Form.validateForm(form);
+  }
+  // no match
+  return null;
+}
+
+
+function getFormsFromFile(formsPath,filename){
+  var rawData = '';
+  const formPath = path.join(formsPath, filename);
+  if (appConfig.useYtt) {
     try{
-      formfiles.push({name:item.name,value:YAML.parse(item.value)})
-    }catch(e){
-      logger.error(`failed to parse file '${item.name}'.\n${e}`)
+      // process with ytt
+      const yttLibDir=path.join(path.dirname(formsPath),"/lib");
+      rawData = execYtt(formPath, yttLibDir);
+    } catch (e) {
+      throw new Error(`Failed to load '${formPath}' and process with ytt.`,e);
+
     }
-  })
-  if(!forms?.forms){
-    forms.forms=[]
+  } else {
+    try{
+      // read the file
+      rawData =fs.readFileSync(formPath,'utf8');
+    } catch (e) {
+      throw new Error(`Failed to load '${formPath}.`,e);
+    }
   }
-  // merge extra files
-  formfiles.forEach((item, i) => {
-      logger.info(`merging file ${item.name}`)
-      try{
-          var existing = forms.forms.map(x => x.name);
-          [].concat(item.value||[]).forEach((f, i) => {
-            if(!existing.includes(f.name)){
-              logger.debug(`adding form ${f.name}`)
-              f.source=item.name
-              forms.forms.push(f)
-            }else{
-              logger.warning(`skipping existing form ${f.name}`)
-            }
-          });
-      }catch(e){
-        logger.error(`failed to merge file '${item.name}' into forms.yaml.\n${e}`)
-      }
-  });
 
-  // dump forms to disk
-
-  fs.writeFileSync('/tmp/forms.yaml',YAML.stringify(forms))
-
+  logger.info(`merging file ${filename}`)
   try{
-    return Form.validate(forms)
-  }catch(err){
-    logger.error("Validation error : ", err)
-    throw new Error(Helpers.getError(err,"Failed to validate forms"))
+    const data = yaml.parse(rawData);
+    var forms = [].concat(data || [])
+    for(let form of forms){
+      form.source = filename; // add source to the form
+    }
+    return forms;
+  } catch (e) {
+    throw new Error(`Failed to parse '${formPath}' as yaml.`,e);
+  }  
+}
+
+function checkFormRole(form, userRoles) {
+  if(!userRoles) {
+    return true
   }
+  if(userRoles.includes("admin")){
+    return true
+  }
+  if(form.roles){
+    for(var role of form.roles){
+      if(userRoles.includes(role)){
+        return true
+      }
+    }
+  }
+  return false
+}
+
+// load the forms config
+Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=false) {
+  logger.debug(`Loading forms with userRoles=${userRoles}, formName=${formName}, loadFullConfig=${loadFullConfig}, baseOnly=${baseOnly}`)
+  var existingFormNames=[]
+  var errors = []
+  var warnings = []
+  const formsPath = (await Repository.getFormsPath()) || appConfig.formsPath
+  const formsdirpath=path.join(path.dirname(formsPath),"/forms");  
+
+  function warn(message) {
+    logger.warning(message);
+    warnings.push(message);
+  }
+  function error(message) {
+    logger.error(message);
+    errors.push(message);
+  }
+  // let's load the base config
+  var unvalidatedBase = await getBaseConfig(formsPath);
+  // let's grab the base config and validate it, without it the app won't work
+  var baseConfig = {
+    categories: unvalidatedBase.categories || [],
+    roles: unvalidatedBase.roles || [],
+    constants: unvalidatedBase.constants || {}
+  }
+  // validate base config
+  baseConfig = Form.validateConfig(baseConfig); // throws if not valid with the error messages
+  logger.debug("Base config validated against schema")
+
+  // just interested in the base config, no forms needed
+  if(baseOnly){
+    // if we only want the base config, return it now
+    logger.debug("Returning base config only, no forms requested")
+    return baseConfig;
+  }
+
+  baseConfig.forms = []; // initialize forms array  
+
+
+  var unvalidatedForms = unvalidatedBase.forms || []; // get the forms from the base config, will be deprecated in the future
+  if (unvalidatedForms.length > 0){
+    warn("Found forms in base config, this will be deprecated in the future, please use forms directory instead.")
+  }
+  // set source to base (no source)
+  for(let f of unvalidatedForms){
+    delete f.source // remove source from the base forms, it is not needed
+  };
+  // read extra form files
+  // read extra form files (recursively include subdirectories)
+  var files = [];
+  try {
+    // walk directory recursively and collect relative paths for .yml/.yaml files
+    const walk = (dir) => {
+      const entries = fs.readdirSync(dir, { withFileTypes: true });
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          walk(fullPath);
+        } else if (entry.isFile()) {
+          const ext = path.extname(entry.name).toLowerCase();
+          if (ext === '.yml' || ext === '.yaml') {
+            // store path relative to formsdirpath so getFormsFromFile(formsdirpath, relPath) works
+            const rel = path.relative(formsdirpath, fullPath);
+            files.push(rel);
+          }
+        }
+      }
+    };
+    if (fs.existsSync(formsdirpath)) {
+      walk(formsdirpath);
+    } else {
+      warn(`Failed to load forms directory '${formsdirpath}'.`);
+      files = [];
+    }
+  } catch (e) {
+    warn(`Failed to load forms directory '${formsdirpath}'.`, e);
+    files = [];
+  }
+
+  if (files && files.length) {
+    // sort for deterministic order
+    files.sort();
+    // read files
+    for (const item of files) {
+      // read the file and add to the forms array
+      logger.debug(`Loading forms from file ${item}`);
+      try{
+        unvalidatedForms = unvalidatedForms.concat(getFormsFromFile(formsdirpath,item)); // get the forms from the file, including subpaths
+      }
+      catch (e) {
+        error(e.message);
+      }
+    };
+  for (const f of unvalidatedForms) {
+      var form = null; // initialize form
+      if(!f?.name){
+        error(`Form found with no name.`)
+        return // skip this form if no name is given
+      }
+      if(formName && f.name != formName){
+        logger.debug(`Skipping form ${f.name}, not requested.`)
+        continue // skip this form if it is not the one we are looking for
+      }
+      if(existingFormNames.includes(f.name)){
+        warn(`skipping duplicate form ${f.name}`)
+        continue
+      }
+      if(!checkFormRole(f,userRoles)){
+        logger.debug(`User has no access to form ${f.name}.`)
+        if(formName) { // if we are looking for a specific form, and no access, throw an error
+          throw new Errors.AccessDeniedError(`Access denied to form ${f.name}.`); 
+        } 
+        continue // skip this form if user has no access to it
+      }
+      existingFormNames.push(f.name) // collect all form names        
+      logger.debug(`adding form ${f.name}`)
+      try{
+        form = getFormInfo(f,formName,loadFullConfig); // retreive only the necessary form info
+      } catch (e) {
+        // convert e to proper string
+        error(`Failed to validate form '${f.name}'.\r\n${e.message}`);
+      }  
+      if(form){
+        baseConfig.forms.push(form);   // merge the form into the base forms
+        // if we are loading full config, we can return the form right away
+        if(formName){
+          baseConfig.errors = errors; // add errors to the base config
+          baseConfig.warnings = warnings; // add warnings to the base config
+          return baseConfig // exit early if we found the form we are looking for
+        }                
+      }
+    };    
+  }
+
+  baseConfig.errors = errors; // add errors to the base config
+  baseConfig.warnings = warnings; // add warnings to the base config
+  return baseConfig; // return the base config with the forms
 };
 // load the forms config
 Form.backups = function() {
@@ -273,13 +425,87 @@ Form.backups = function() {
   }
   return backups
 };
+Form.validateConfig = function(obj){
+  if(obj){
+    logger.debug("validating base against schema")
+    const validate = ajv.compile(baseSchema)
+    const valid = validate(obj)
+
+    if (!valid){
+      var ajvMessages = AJVErrorParser.parseErrors(validate.errors)
+      ajvMessages=ajvMessages.map(x => {
+        try{
+          var tmp=`${x}`
+          var category
+          var role
+          category = Helpers.friendlyAJVError(tmp,"categories","Category",obj.categories)
+          if(category.changed){
+            return category.value
+          }
+          role = Helpers.friendlyAJVError(tmp,"roles","Role",obj.roles)
+          if(role.changed){
+            return role.value
+          }        
+        }catch(e){
+          logger.error(e)
+          return x
+        }     
+        return tmp
+      })
+      logger.error(ajvMessages)
+      throw new Error(`${ajvMessages.join("\r\n")}`)
+    }else{
+      logger.debug("Valid base")
+      return obj
+    }
+    
+  }
+}
+Form.validateForm = function(obj){
+  if(obj){
+
+    logger.debug("validating form against schema")
+    const validate = ajv.compile(formSchema)
+    const valid = validate(obj)
+    if (!valid){
+      var ajvMessages = AJVErrorParser.parseErrors(validate.errors)
+      ajvMessages=ajvMessages.map(x => {
+        try{
+          var tmp=`${x}`
+          var field
+          var tableField
+          field = Helpers.friendlyAJVError(tmp,"fields","Field",obj.fields)
+          if(field.changed){
+            tmp = field.value
+            if(obj.fields[field.index].tableFields){
+              tableField = Helpers.friendlyAJVError(tmp,"tableFields","TableField",obj.fields[field.index].tableFields)
+              if(tableField.changed){
+                return tableField.value
+              }    
+            }
+          }
+        }catch(e){
+          logger.error(e)
+          return x
+        }     
+        return tmp
+      })
+      logger.error(ajvMessages)
+      throw new Error(`${ajvMessages.join("\r\n")}`)
+    }else{
+      logger.debug("Validated")
+      return obj
+    }
+  }
+}
 Form.validate = function(forms){
   if(forms){
-    var schema = require("../../schema/forms_schema.json")
     logger.debug("validating forms.yaml against schema")
-    const valid = ajv.validate(schema, forms)
+    const validate = ajv.compile(formsSchema)
+    const valid = validate(forms)
+    console.log(validate.errors)
     if (!valid){
-      var ajvMessages = AJVErrorParser.parseErrors(ajv.errors)
+      var ajvMessages = AJVErrorParser.parseErrors(validate.errors)
       ajvMessages=ajvMessages.map(x => {
         try{
           var tmp=`${x}`
@@ -330,7 +556,7 @@ Form.parse = function(data){
   var formsConfig = undefined
   try{
     logger.info("Parsing yaml data")
-    formsConfig = YAML.parse(data.forms,{prettyErrors:true})
+    formsConfig = yaml.parse(data.forms,{prettyErrors:true})
   }catch(err){
     logger.error("Error : ", err)
     throw new Error(Helpers.getError(err,"Failed to parse yaml"))
@@ -427,11 +653,15 @@ Form.save = function(data){
       var formnames=forms.map(x => x.name)
       if(forms.length==1){
         logger.debug(`saving single form '${forms[0].name}' to '${tmpfile}'`)
-        fs.writeFileSync(tmpfile,YAML.stringify(forms[0]));
+        // ensure parent directory exists for nested paths
+        fse.ensureDirSync(path.dirname(tmpfile));
+        fs.writeFileSync(tmpfile,yaml.stringify(forms[0]));
       }
       if(forms.length>1){
         logger.debug(`saving forms ${formnames} to '${tmpfile}'`)
-        fs.writeFileSync(tmpfile,YAML.stringify(forms));
+        // ensure parent directory exists for nested paths
+        fse.ensureDirSync(path.dirname(tmpfile));
+        fs.writeFileSync(tmpfile,yaml.stringify(forms));
       }
     }
     // backup current forms config
@@ -444,7 +674,7 @@ Form.save = function(data){
     fse.copySync(tmpDir,formsPath) // copy from temp
 
     logger.debug(`Writing base file '${appConfig.formsPath}'`)
-    fs.writeFileSync(appConfig.formsPath,YAML.stringify(formsConfig)); // write basefile
+    fs.writeFileSync(appConfig.formsPath,yaml.stringify(formsConfig)); // write basefile
   }
   catch(err) {
     // handle error
@@ -487,25 +717,53 @@ Form.restore = function(backupName,backupBeforeRestore){
     return false
   }
 }
-Form.loadByName = async function(form,user,forApproval=false){
-  var forms = await Form.load()
-  var formObj = forms?.forms.filter(x => x.name==form)
-  if(formObj.length>0){
-    if(forApproval){
-      return formObj[0]
-    }
-    logger.debug(`Form ${form} is found, checking access...`)
-    var access = formObj[0].roles.filter(role => user?.roles?.includes(role))
-    if(access.length>0 || user?.roles?.includes("admin")){
-      return formObj[0]
-      //logger.debug(`Form ${form}, access allowed...`)
-    }else {
-      logger.warning(`Form ${form}, no access...`)
-      return null
-    }
-  }else{
-    return null
-  }
+// Form.loadByName = async function(form,user,forApproval=false){
+//   var forms = await Form.load()
+//   var formObj = forms?.forms.filter(x => x.name==form)
+//   if(formObj.length>0){
+//     if(forApproval){
+//       return formObj[0]
+//     }
+//     logger.debug(`Form ${form} is found, checking access...`)
+//     var access = formObj[0].roles.filter(role => user?.roles?.includes(role))
+//     if(access.length>0 || user?.roles?.includes("admin")){
+//       return formObj[0]
+//       //logger.debug(`Form ${form}, access allowed...`)
+//     }else {
+//       logger.warning(`Form ${form}, no access...`)
+//       return null
+//     }
+//   }else{
+//     return null
+//   }
 
+// }
+// create the backup path and 
+// since version 4.0.3 the backups go under folder => move backups there (should be only once)
+Form.initBackupFolder=function(){
+  logger.info("Moving older form backups to new backup folder")
+  try{
+    fs.mkdirSync(backupPath, { recursive: true })
+    // move old forms.bak.files
+    var files = fs.readdirSync(formFilePath)
+    if(files){
+      // filter only backup-files and folders
+      files=files.filter((item)=>item.match(/\.bak\.[0-9]*$/))
+      // read files
+      for(const item of files){
+        try{
+          const from = path.join(formFilePath,item)
+          const to = path.join(backupPath,item)
+          logger.debug(`moving ${from} -> ${to}`)
+          fse.moveSync(from,to)
+        }catch(e){
+          logger.error(`failed to move item '${item}'.\n`,e)
+        }
+      };
+    }
+  }catch(e){
+    logger.error("Failed to init backup folder\n",e)
+  }  
+  Form.removeOld(oldBackupDays)
 }
-module.exports= Form;
+export default  Form;

@@ -1,8 +1,8 @@
-const express = require('express')
-const logger=require("../lib/logger")
-const router = express.Router()
-const jobController =   require('../controllers/job.controller');
-const uploadController =   require('../controllers/upload.controller');
+import express from 'express';
+import logger from '../lib/logger.js';
+const router = express.Router();
+import jobController from '../controllers/job.controller.js';
+import uploadController from '../controllers/upload.controller.js';
 
 // get approvals count
 router.get('/approvals', jobController.findApprovals);
@@ -28,4 +28,4 @@ router.post('/:id/reject/', jobController.rejectJob);
 router.get('/', jobController.findAllJobs);
 
 
-module.exports = router
+export default router

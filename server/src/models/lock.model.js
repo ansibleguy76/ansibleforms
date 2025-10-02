@@ -1,12 +1,11 @@
 'use strict';
-const logger=require("../lib/logger");
-const fsPromises=require("fs").promises
-const YAML=require("yaml")
-var config=require('../../config/app.config')
-const moment = require("moment")
-const Repository = require("./repository.model");
-const Repo = require("./repo.model");
-const Settings = require("./settings.model");
+import logger from "../lib/logger.js";
+import { promises as fsPromises } from "fs";
+import yaml from "yaml";
+import config from '../../config/app.config.js';
+import moment from "moment";
+import Repository from "./repository.model.js";
+import Settings from "./settings.model.js";
 
 //lock object create
 var Lock=function(){
@@ -23,7 +22,7 @@ Lock.status = async function(user){
   }  
   try{
     const lock = await Lock.get()
-    const lck=YAML.parse(lock)
+    const lck=yaml.parse(lock)
     const match=((user.username===lck.username)&&(user.type===lck.type))
     const result={
       lock:lck,
@@ -43,7 +42,7 @@ Lock.set = function (user) {
   if(config.showDesigner && (user.options?.showDesigner ?? true)){
     logger.notice(`Creating lock for user ${user.username}`)
     user.created = moment(Date.now()).format('YYYY-MM-DD HH:mm:ss')
-    return fsPromises.writeFile(config.lockPath,YAML.stringify(user),{encoding:"utf8",flag:"w"})
+    return fsPromises.writeFile(config.lockPath,yaml.stringify(user),{encoding:"utf8",flag:"w"})
   }else{
     logger.error("Designer is disabled, can't set lock")
     return Promise.reject('Designer is disabled')
@@ -69,4 +68,4 @@ Lock.get = function (user={}) {
     }
 };
 
-module.exports= Lock;
+export default  Lock;

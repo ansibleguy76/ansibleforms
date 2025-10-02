@@ -1,10 +1,10 @@
 'use strict';
-const exec = require('child_process').exec;
-const Cmd = require("../lib/cmd")
-const logger=require("../lib/logger")
-const path=require("path")
-const fs=require("fs")
-var config=require('../../config/app.config')
+import { exec } from 'child_process';
+import Cmd from "../lib/cmd.js";
+import logger from "../lib/logger.js";
+import path from "path";
+import fs from "fs";
+import config from '../../config/app.config.js';
 
 const Repo={
 
@@ -150,4 +150,4 @@ Repo.pull = async function (name) {
       var directory = path.join(config.repoPath,name)
       return await Cmd.executeSilentCommand({directory:directory,command:command,description:"Pulling from git"},true)
 };
-module.exports= Repo;
+export default  Repo;

@@ -1,6 +1,7 @@
-const express = require('express')
-const router = express.Router()
-const settingsController =   require('../controllers/settings.controller');
+import express from 'express';
+import settingsController from '../controllers/settings.controller.js';
+
+const router = express.Router();
 // Retrieve settings
 router.get('/', settingsController.find);
 // Set settings
@@ -10,4 +11,4 @@ router.put('/importFormsFileFromYaml', settingsController.importFormsFileFromYam
 // Test settings
 router.post('/mailcheck/', settingsController.mailcheck);
 
-module.exports = router
+export default router

@@ -1,7 +1,7 @@
-const express = require('express')
-const router = express.Router()
-const expressionController =   require('../controllers/expression.controller');
+import express from 'express';
+const router = express.Router();
+import expressionController from '../controllers/expression.controller.js';
 
 // execute a javascript expression
 router.post('/', expressionController.execute);
-module.exports = router
+export default router

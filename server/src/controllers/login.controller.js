@@ -1,14 +1,14 @@
 'use strict';
-const User = require("../models/user.model")
-const AzureAd = require("../models/azureAd.model")
-const OIDC = require("../models/oidc.model")
-const passport = require('passport');
-const jwt = require('jsonwebtoken');
-var authConfig = require('../../config/auth.config')
-var appConfig = require('../../config/app.config')
-const logger=require("../lib/logger");
-const helpers=require('../lib/common')
-const RestResult = require("../models/restResult.model")
+import User from "../models/user.model.js";
+import AzureAd from "../models/azureAd.model.js";
+import OIDC from "../models/oidc.model.js";
+import passport from 'passport';
+import jwt from 'jsonwebtoken';
+import authConfig from '../../config/auth.config.js';
+import logger from "../lib/logger.js";
+import helpers from '../lib/common.js';
+import RestResult from "../models/restResult.model.js";
+import auth_oidc from "../auth/auth_oidc.js";
 
 function hasValidLoginOption(user) {
   if(user.options.enableLogin === false) {
@@ -51,26 +51,27 @@ function userToJwt(user,expiryDays){
   }
 }
 // get login settings
-exports.settings = async function(req,res){
-  AzureAd.isEnabled()
-  .then((azure)=> {
-    var settings={}
-    // console.log(inspect(azure))
-    settings.azureAdEnabled=azure.enable
-    settings.azureGroupfilter=azure.groupfilter
-    settings.azureGraphUrl=authConfig.azureGraphUrl
-
-    OIDC.isEnabled().then((oidc) => {
-      settings.oidcEnabled=oidc.enabled
-      settings.oidcIssuer=oidc.issuer
-      settings.oidcGroupfilter=oidc.groupfilter
-      res.json(new RestResult("success","",settings,""))
-    })
-  })
-  .catch((err)=>{res.json(new RestResult("error","failed to get app settings",null,helpers.getError(err)))})
+const settings = async function(req, res) {
+  try {
+    const [azure, oidc] = await Promise.all([
+      AzureAd.isEnabled().catch(() => ({ enable: false, groupfilter: null })),
+      OIDC.isEnabled().catch(() => ({ enabled: false, issuer: null, groupfilter: null }))
+    ]);
+    const settings = {
+      azureAdEnabled: azure.enable,
+      azureGroupfilter: azure.groupfilter,
+      azureGraphUrl: authConfig.azureGraphUrl,
+      oidcEnabled: oidc.enabled,
+      oidcIssuer: oidc.issuer,
+      oidcGroupfilter: oidc.groupfilter
+    };
+    res.json(new RestResult("success", "", settings, ""));
+  } catch (err) {
+    res.json(new RestResult("error", "failed to get app settings", null, helpers.getError(err)));
+  }
 }
 // basic authentication with local users
-exports.basic = async function(req, res,next) {
+const basic = async function(req, res,next) {
     
     // as login, we authenticate against our passport basic (username and password are extracted by passport)
     // in auth.js the user is searched locally and eventually returns either an error or the user
@@ -121,7 +122,7 @@ exports.basic = async function(req, res,next) {
 };
 
 // basic authentication with LDAP users
-exports.basic_ldap = async function(req, res,next) {
+const basic_ldap = async function(req, res,next) {
   // as login, we authenticate against our passport basic (username and password are extracted by passport)
   // in auth.js the user is searched in ldap and eventually returns either an error or the user
   passport.authenticate(
@@ -169,20 +170,19 @@ exports.basic_ldap = async function(req, res,next) {
 /**
  * perform logout actions
  */
-exports.logout = async function(req, res, next){
+const logout = async function(req, res, next){
   req.logout((err) => {
     if (err) {
       logger.error(helpers.getError(error))
       return next(err)
     }
-    const auth_oidc = require('../auth/auth_oidc');
     res.json(new RestResult("success","",{logoutUrl: auth_oidc.getLogoutUrl()},""))
   });
 };
 
 // catches middleware error (non implemented strategy for example)
-exports.errorHandler = async function(err,req, res,next) {
-  res.redirect(`/#/login?error=${err}`)
+const errorHandler = async function(err,req, res,next) {
+  res.redirect(`/login?error=${err}`)
 };
 
 /**
@@ -196,7 +196,7 @@ exports.errorHandler = async function(err,req, res,next) {
  * 4. The backend uses passport to authenticate the user with the identity provider and redirects the user away to the identity provider (microsft, google, ...)
  * 5. The identity provider authenticates the user and redirects the user back to the callback url https://ansibleformsurl/auth/azureadoauth2/callback or https://ansibleformsurl/auth/oidc/callback
  * 6. The backend server receives the callback and uses passport to verify the returned payload.  it passes the payload to an authCallback function
- * 7. The authCallback function redirects the user back to the frontend with a token (#/login?token=) azuread already passed a token, oidc has a raw payload and we create a manual token.
+ * 7. The authCallback function redirects the user back to the frontend with a token (/login?token=) azuread already passed a token, oidc has a raw payload and we create a manual token.
  * 8. The frontend uses the oauth2 token to grab more group information and filter the group information with a filter defined in the database with the identity provider
  * 9. The frontend redirects the user to the backend /auth/azureadaoath/login endpoint with the token and the group information
  * 10. The backend grabs more information from payload if needed (username,...) and assembles a user-object, the roles and options are added
@@ -219,7 +219,7 @@ const authCallback = function(req, res, next, type) {
         logger.error(helpers.getError(err))
         return next(err)
       }else{
-        res.redirect(`/#/login?token=${token}`)
+        res.redirect(`/login?token=${token}`)
       }
 
     } catch (err) {
@@ -245,19 +245,21 @@ const extractOidcUser = async function(payload, groups) {
 };
 
 // this redirects to Azure AD login but with the proper application client id & secret
-exports.azureadoauth2 = async function(req, res,next) {
+const azureadoauth2 = async function(req, res,next) {
   logger.debug("Redirect to azure")
   // redirect to azure
   passport.authenticate('azure_ad_oauth2')(req,res,next)
 };
 
 // callback with the Azure AD access token
-exports.azureadoauth2callback = async function(req, res,next) {
+const azureadoauth2callback = async function(req, res,next) {
+  logger.debug("Azure AD callback")
   passport.authenticate('azure_ad_oauth2', authCallback(req, res, next,"azuread"))(req, res, next)
 };
 // callback with the Azure AD user info (including groups)
-exports.azureadoauth2login = async function(req, res,next) {
+const azureadoauth2login = async function(req, res,next) {
   try {
+    logger.debug("Azure AD login")
     var payload = jwt.decode(req.body.token, '', true)
     const user = await extractAzureUser(payload, req.body.groups)
     user.type = "azuread"
@@ -277,18 +279,18 @@ exports.azureadoauth2login = async function(req, res,next) {
 };
 
 // this redirects to OIDC Provider login but with the proper application client id & secret
-exports.oidc = async function(req, res,next) {
+const oidc = async function(req, res,next) {
   logger.debug("Redirect to Open ID Issuer")
   // redirect to Open ID Connect Provider
   passport.authenticate('oidc')(req,res,next)
 };
 
 // callback with the OIDC access token
-exports.oidcCallback = async function(req, res,next) {
+const oidcCallback = async function(req, res,next) {
   passport.authenticate('oidc', authCallback(req, res, next, 'oidc'))(req, res, next)
 };
 // callback with the OIDC user info (including groups)
-exports.oidcLogin = async function(req, res, next) {
+const oidcLogin = async function(req, res, next) {
   try {
     var payload = jwt.verify(req.body.token, 'oidc'); // verify, with secret "oidc"
     const user = await extractOidcUser(payload, req.body.groups)
@@ -307,3 +309,17 @@ exports.oidcLogin = async function(req, res, next) {
     next(err)
   }
 };
+
+export default {
+  basic,
+  basic_ldap,
+  logout,
+  errorHandler,
+  settings,
+  azureadoauth2,
+  azureadoauth2callback,
+  azureadoauth2login,
+  oidc,
+  oidcCallback,
+  oidcLogin
+}

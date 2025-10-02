@@ -1,9 +1,9 @@
 'use strict';
-const Query = require('../models/query.model');
-const RestResult = require('../models/restResult.model');
-const logger=require("../lib/logger")
+import Query from '../models/query.model.js';
+import RestResult from '../models/restResult.model.js';
+import logger from '../lib/logger.js';
 
-exports.findAll = function(req, res) {
+const findAll = function(req, res) {
   //handles null error
   if(req.body.constructor === Object && Object.keys(req.body).length === 0){
       res.status(400).json(new RestResult("error","no data was sent","",""));
@@ -23,4 +23,8 @@ exports.findAll = function(req, res) {
         res.status(400).json(new RestResult("error","missing dbConfig",null,""));
       }
   }
+};
+
+export default {
+  findAll
 };

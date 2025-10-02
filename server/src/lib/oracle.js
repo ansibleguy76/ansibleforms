@@ -1,9 +1,9 @@
 //- MYSQL Module
-const logger = require('./logger');
-const Oracledb = require('oracledb');
-const Credential = require('../models/credential.model')
+import logger from './logger.js';
+import Oracledb from 'oracledb';
+import Credential from '../models/credential.model.js';
 
-Oracle = {}
+const Oracle = {}
 
 // rewritten with await 5.0.3
 Oracle.query = async function (connection_name, query) {
@@ -32,9 +32,9 @@ Oracle.query = async function (connection_name, query) {
       await connection.close()
     }catch(e){
       logger.error(`[${connection_name}] connection error`,e)
-      throw e
+      //throw e
     }
   }
 }
 
-module.exports = Oracle
+export default Oracle

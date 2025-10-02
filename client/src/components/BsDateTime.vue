@@ -1,0 +1,109 @@
+<script setup>
+
+    /******************************************************************/
+    /*                                                                */
+    /*  Bootstrap Date Time component                                 */
+    /*                                                                */
+    /*  @props:                                                       */
+    /*      hasError: Boolean                                         */
+    /*      name: String                                              */
+    /*      dateType: String                                          */
+    /*      icon: String                                              */
+    /*                                                                */
+    /*  @emit:                                                        */
+    /*      change: Event                                              */
+    /*                                                                */
+    /******************************************************************/
+
+    import { computed } from 'vue';
+    import { useAppStore } from "@/stores/app";
+
+    // MODEL
+
+    const model = defineModel();
+
+    // INIT
+
+    const store = useAppStore();
+    const emit = defineEmits(["change"]);
+
+    // PROPS
+    
+    const props = defineProps({
+        hasError: { type: Boolean, default: false },
+        name: { type: String, default: "" },
+        dateType: { type: String, default: "date" },
+        icon: { type: String, default: "calendar" },
+    });
+    
+    // DATA
+
+    const hasFocus = ref(false);
+
+    // COMPUTED
+
+    const theme = computed(() => store.theme);
+    const hasTimePicker = computed(() => {
+        return ["datetime", "time"].includes(props.dateType);
+    });    
+
+    // METHODS
+
+    function focus(event){
+        hasFocus.value = true;
+    }
+    function blur(event){
+        hasFocus.value = false;
+    }
+    function input(value) {
+        emit("change", value);
+    }
+
+    function format(date) {
+        const hour = date.getHours().toString().padStart(2, '0');
+        const minute = date.getMinutes().toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const year = date.getFullYear()
+
+        return `${year}-${month}-${day}`
+    }
+
+</script>
+<template>
+
+    <VueDatePicker v-if="props.dateType=='datetime'" @update:model-value="input" @blur="blur" @focus="focus" text-input v-model="model" :format="format" position="left" :is-24="true" :dark="theme=='dark'">
+        <template #dp-input="{ value }">
+        <!-- ICON FIELD GROUP -->
+        <div class="input-group">
+            <!-- ICON -->
+            <span class="input-group-text" :class="{'text-body':hasFocus,'text-gray-500':!hasFocus}" >
+                <FaIcon :fixedwidth="true" :icon="icon" />
+            </span>       
+            <input :class="{ 'is-invalid': hasError }" class="form-control" @blur="blur" @focus="focus" :name="name" :value="value" type="text" />
+        </div>
+        </template>
+    </VueDatePicker>
+    <VueDatePicker v-else text-input v-model="model" @blur="blur" @focus="focus" :enable-time-picker="hasTimePicker" :month-picker="props.dateType == 'month'" :week-picker="props.dateType == 'week'" :quarter-picker="props.dateType == 'quarter'" :year-picker="props.dateType == 'year'" :time-picker="props.dateType == 'time'" position="left" :is-24="true" :dark="theme=='dark'">
+        <template #dp-input="{ value }">
+        <!-- ICON FIELD GROUP -->
+        <div class="input-group">
+            <!-- ICON -->
+            <span class="input-group-text" :class="{'text-body':hasFocus,'text-gray-500':!hasFocus}" >
+                <FaIcon :fixedwidth="true" :icon="icon" />
+            </span>        
+            <input :class="{ 'is-invalid': hasError }" class="form-control" @blur="blur" @focus="focus" :name="name" :value="value" type="text" />
+        </div>
+        </template>
+    </VueDatePicker>
+
+</template>
+<style scoped lang="scss">
+.invalid-feedback {
+  display: block!important;
+}
+p {
+  margin: 0;
+}
+
+</style>

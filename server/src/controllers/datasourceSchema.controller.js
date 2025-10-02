@@ -1,8 +1,9 @@
 "use strict";
-const DsSchema = require("../models/datasourceSchema.model");
-var RestResult = require("../models/restResult.model");
+import DsSchema from "../models/datasourceSchema.model.js";
+import RestResult from "../models/restResult.model.js";
 
-exports.findAllOr1 = async function(req, res) {
+
+const findAllOr1 = async function(req, res) {
   if(req.query.name){
     try {
       const schema = await DsSchema.findByName(req.query.name);
@@ -20,7 +21,7 @@ exports.findAllOr1 = async function(req, res) {
   }
 };
 
-exports.create = async function (req, res) {
+const create = async function (req, res) {
   try {
     const new_schema = new DsSchema(req.body);
     //handles null error
@@ -35,7 +36,7 @@ exports.create = async function (req, res) {
     res.json(new RestResult("error", "failed to create schema", null, err.toString()));
   }
 };
-exports.findById = async function (req, res) {
+const findById = async function (req, res) {
   try {
     const schema = await DsSchema.findById(req.params.id);
     if (schema.length > 0) {
@@ -47,7 +48,7 @@ exports.findById = async function (req, res) {
     res.json(new RestResult("error", "failed to find schema", null, err.toString()));
   }
 };
-exports.update = async function (req, res) {
+const update = async function (req, res) {
   try {
     delete req.body.schemaname;
     if (req.body.constructor === Object && Object.keys(req.body).length === 0) {
@@ -60,7 +61,7 @@ exports.update = async function (req, res) {
     res.json(new RestResult("error", "failed to update schema", null, err.toString()));
   }
 };
-exports.delete = async function (req, res) {
+const deleteDatasourceSchema = async function (req, res) {
   try {
     await DsSchema.delete(req.params.id);
     res.json(new RestResult("success", "schema deleted", null, ""));
@@ -68,11 +69,20 @@ exports.delete = async function (req, res) {
     res.json(new RestResult("error", "failed to delete schema", null, err.toString()));
   }
 };
-exports.reset = async function (req, res) {
+const reset = async function (req, res) {
   try {
     await DsSchema.reset(req.params.id);
     res.json(new RestResult("success", "schema is reset", null, ""));
   } catch (err) {
     res.json(new RestResult("error", "failed to reset schema", null, err.toString()));
   }
+};
+
+export default {
+  findAllOr1,
+  create,
+  findById,
+  update,
+  "delete": deleteDatasourceSchema,
+  reset
 };

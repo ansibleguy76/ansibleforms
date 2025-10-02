@@ -1,8 +1,7 @@
-const crypto = require('crypto');
-const bcrypt = require('bcrypt');
-const fs = require('fs');
-const appConfig = require('../../config/app.config')
-const inspect = require('util').inspect;
+import crypto from 'crypto';
+import bcrypt from 'bcrypt';
+import fs from 'fs';
+import appConfig from '../../config/app.config.js';
 
 const algorithm = 'aes-256-ctr';
 
@@ -35,7 +34,6 @@ const decrypt = (hash) => {
     }else{
       return ""
     }
-
 };
 // promise wrapper for bcrypthash
 const hashPassword = (pw) => {
@@ -58,7 +56,7 @@ const checkPassword = (pw,hash,user) =>{
 }
 
 
-module.exports = {
+export default {
     encrypt,
     decrypt,
     encrypt_to_file,
