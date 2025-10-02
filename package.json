@@ -1,11 +1,9 @@
 {
   "private": true,
   "scripts": {
-    "dev_old": "npm-run-all --parallel dev:server dev:client",
-    "dev": "npm-run-all --parallel dev:server dev:client_new",
+    "dev": "npm-run-all --parallel dev:server dev:client",
     "dev:server": "cd server && npm run dev",
-    "dev:client": "cd client && npm run dev",
-    "dev:client_new": "cd client_new && npm run dev"
+    "dev:client": "cd client && npm run dev"
   },
   "devDependencies": {
     "npm-run-all": "^4.1.5"

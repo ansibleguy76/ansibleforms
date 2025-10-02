@@ -1,72 +1,62 @@
 {
-  "name": "ansible_forms_vue",
-  "version": "5.1.0",
-  "private": true,
+  "name": "ansibleforms",
+  "version": "6.0.0",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview",
-    "remove": "rm -rdf ./../server/views || exit 0",
-    "copy": "cp -R dist ../server/views && cp ./../docs/_data/help.yaml ../server",
-    "bundle": "npm run build && npm run remove && npm run copy"
+    "lint": "eslint . --fix --ignore-path .gitignore"
   },
   "dependencies": {
-    "@creativebulma/bulma-tooltip": "*",
-    "@femessage/log-viewer": "*",
-    "@fortawesome/fontawesome-svg-core": "~6.7.2",
-    "@fortawesome/free-brands-svg-icons": "~6.7.2",
-    "@fortawesome/free-regular-svg-icons": "~6.7.2",
-    "@fortawesome/free-solid-svg-icons": "~6.7.2",
-    "@fortawesome/vue-fontawesome": "2.0.10",
-    "axios": "~1.11.0",
-    "brace": "~0.11.1",
-    "bulma": "1.0.4",
-    "copy-to-clipboard": "~3.3.3",
-    "core-js": "~3.45.0",
-    "es6-promise": "~4.2.8",
-    "highlight.js": "^10.7.2",
-    "jwt-decode": "4.0.0",
-    "lodash": "~4.17.21",
-    "thenby": "*",
-    "vue": "~2.7.15",
-    "@highlightjs/vue-plugin": "1.0.2",
-    "vue-json-pretty": "1.8.3",
-    "vue-moment": "*",
-    "vue-router": "~3.5.4",
-    "vue-showdown": "2.4.1",
-    "vue-toastification": "1.7.14",
-    "vue2-datepicker": "~3.11.1",
+    "@femessage/log-viewer": "^1.5.0",
+    "@fortawesome/fontawesome-svg-core": "^7.0.0",
+    "@fortawesome/free-brands-svg-icons": "^7.0.0",
+    "@fortawesome/free-regular-svg-icons": "^7.0.0",
+    "@fortawesome/free-solid-svg-icons": "^7.0.0",
+    "@fortawesome/vue-fontawesome": "^3.1.1c",
+    "@mdi/font": "7.4.47",
+    "vue3-popper": "^1.5.0",
     "@vuelidate/core": "^2.0.3",
     "@vuelidate/validators": "^2.0.4",
-    "yaml": "2.8.1"
+    "vue-showdown": "^4.2.0",
+    "vue3-clipboard": "^1.0.0",
+    "@vuepic/vue-datepicker": "^11.0.2", 
+    "ace-builds": "^1.43.2",
+    "axios": "^1.11.0",
+    "bootstrap": "^5.3.7",
+    "highlight.js": "^11.11.1",
+    "vue-json-pretty": "^2.5.0",
+    "bootstrap-icons": "^1.13.1",
+    "copy-to-clipboard": "^3.3.3",
+    "core-js": "^3.45.0",
+    "jsonwebtoken": "^9.0.2",
+    "roboto-fontface": "*",
+    "dayjs": "^1.11.13",
+    "vue": "^3.5.18",
+    "vue-toastification": "^2.0.0-rc.2",
+    "vue-virtual-scroller": "^2.0.0-beta.8",
+    "vue3-ace-editor": "^2.2.4",
+    "yaml": "^2.8.1"
   },
   "devDependencies": {
-    "eslint": "~6.8.0",
-    "eslint-plugin-vue": "~6.2.2",
-    "sass": "~1.89.2",
-    "@vitejs/plugin-vue2": "*",
-    "vite-plugin-node-polyfills": "0.23.0",
-    "@babel/runtime": "7.27.6"
-  },
-  "eslintConfig": {
-    "root": true,
-    "env": {
-      "node": true
-    },
-    "extends": [
-      "plugin:vue/essential",
-      "eslint:recommended"
-    ],
-    "parserOptions": {
-      "parser": "babel-eslint"
-    },
-    "rules": {
-      "no-unused-vars": "off"
-    }
-  },
-  "browserslist": [
-    "> 1%",
-    "last 2 versions",
-    "not dead"
-  ]
+    "@vitejs/plugin-vue": "^6.0.1",
+    "eslint": "^8.57.0",
+    "eslint-config-standard": "^17.1.0",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-n": "^16.6.2",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.1.1",
+    "eslint-plugin-vue": "^9.33.0",
+    "nodemon": "^3.1.9",
+    "pinia": "^3.0.1",
+    "sass": "^1.90.0",
+    "unplugin-auto-import": "^20.0.0",
+    "unplugin-fonts": "^1.4.0",
+    "unplugin-vue-components": "^29.0.0",
+    "unplugin-vue-router": "^0.15.0",
+    "vite": "^7.1.1",
+    "vite-plugin-pages": "^0.33.1",
+    "vite-svg-loader": "^5.1.0",
+    "vue-router": "^4.5.0"
+  }
 }
