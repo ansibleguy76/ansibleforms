@@ -22,7 +22,7 @@
     "vue3-clipboard": "^1.0.0",
     "@vuepic/vue-datepicker": "^11.0.2", 
     "ace-builds": "^1.43.2",
-    "axios": "^1.11.0",
+    "axios": "^1.12.2",
     "bootstrap": "^5.3.7",
     "highlight.js": "^11.11.1",
     "vue-json-pretty": "^2.5.0",
