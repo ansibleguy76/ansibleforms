@@ -1235,6 +1235,14 @@
         short: Pass ansible_user and ansible_password to ansible playbook using stored credentials
         description: |
           Ansible allows to pass default ansible credentials in the form of 2 extravars ansible_user and ansible_password
+      - name: playbookSubPath
+        type: string
+        version: 6.0.1
+        group: basic
+        allowed: a valid folder subpath
+        short: Subfolder structure for playbooks
+        description: |
+          If you have a more complex ansible setup, you might want to organize them in subfolders.  Use this property to define a subfolder (or multiple levels) where you want to launch ansible-playbook from.  
       - name: vaultCredentials
         type: string
         group: basic

@@ -45,6 +45,7 @@ function pushForminfoToExtravars(formObj, extravars, creds = {}) {
     "vaultCredentials",
     "instanceGroups",
     "scmBranch",
+    "playbookSubPath"
   ];
   for (const fieldName of topFields) {
     // Check if the field exists in formObj and if the property is not present in extravars
@@ -1312,6 +1313,7 @@ Ansible.launch = async (
   var diff = extravars?.__diff__ || false;
   var ansibleCredentials = extravars?.__ansibleCredentials__ || "";
   var vaultCredentials = extravars?.__vaultCredentials__ || "";
+  var playbookSubPath = extravars?.__playbookSubPath__ || "";
   if (approval) {
     if (!approved) {
       await Job.sendApprovalNotification(approval, ev, jobid);
@@ -1414,6 +1416,9 @@ Ansible.launch = async (
   command += ` ${playbook}`;
   var directory = await Repository.getAnsiblePath();
   var directory = directory || ansibleConfig.path;
+  if (playbookSubPath) {
+    directory = path.join(directory, playbookSubPath);
+  }
   var cmdObj = {
     directory: directory,
     command: command,
