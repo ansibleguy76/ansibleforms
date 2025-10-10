@@ -80,7 +80,7 @@ cd /srv/apps
 sudo apt-get install -y git
 
 ‌sudo ‌git init
-sudo git clone https://github.com/ansibleguy76/ansibleforms-docker.git
+sudo git clone https://github.com/ansibleguy76/ansibleforms-docker-v6.git
 
 cd ansibleforms-docker
 ```
