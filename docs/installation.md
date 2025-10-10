@@ -90,8 +90,6 @@ cd ansibleforms-docker-v6
 ```bash
 # write access will be needed on the datafolder
 sudo chmod -R 664 ./data
-# the mysql init folder needs execute rights 
-sudo chmod -R +x ./data/mysql/init/
 ```
 
 ## Install Docker and docker-compose
