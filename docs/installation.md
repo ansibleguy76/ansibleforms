@@ -82,7 +82,7 @@ sudo apt-get install -y git
 ‌sudo ‌git init
 sudo git clone https://github.com/ansibleguy76/ansibleforms-docker-v6.git
 
-cd ansibleforms-docker
+cd ansibleforms-docker-v6
 ```
 
 ## Set proper permissions
