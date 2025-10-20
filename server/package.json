@@ -1,13 +1,11 @@
 {
-  "name": "ansible_forms",
-  "version": "6.0.0",
-  
+  "name": "ansible-forms",
   "type": "module",
   "repository": {
     "type": "git",
     "url": "git://github.com/ansibleguy76/ansibleforms.git"
   },
-  "description": "A forms frontend for ansible and awx",
+  "description": "The nodejs backend for the ansible forms web applications",
   "scripts": {
     "start": "npm run prod",
     "build": "npm-run-all clean transpile",

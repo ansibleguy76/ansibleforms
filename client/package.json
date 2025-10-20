@@ -1,6 +1,6 @@
 {
-  "name": "ansibleforms",
-  "version": "6.0.0",
+  "name": "ansible-forms",
+  "description": "The Vue3 front of the ansible forms web application",
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",

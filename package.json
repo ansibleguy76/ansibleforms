@@ -1,5 +1,8 @@
 {
   "private": true,
+  "name": "ansible-forms",
+  "version": "6.0.1",  
+  "description": "A web application with vue3 and nodejs/express to build nice forms to target local ansible or remote ansible automation platform (awx, tower, aap)",
   "scripts": {
     "dev": "npm-run-all --parallel dev:server dev:client",
     "dev:server": "cd server && npm run dev",
