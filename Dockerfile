@@ -14,7 +14,7 @@ RUN wget -O /bin/ytt github.com/vmware-tanzu/carvel-ytt/releases/download/v0.49.
 RUN chmod -R +x /bin/ytt
 
 # isntall apk packages
-RUN apk add py3-pip py3-pyldap libxslt mysql-client curl tzdata mariadb-connector-c openssh sshpass git vim
+RUN apk add py3-pip py3-pyldap libxslt curl tzdata mariadb-client mariadb-connector-c openssh sshpass git vim
 
 # install some dev packages
 # RUN apk add --update --no-cache --virtual .build-deps g++ gcc libxml2-dev libxslt-dev unixodbc-dev python3-dev postgresql-dev && apk del .build-deps
@@ -63,13 +63,13 @@ RUN npm install -g vite
 WORKDIR /app/client
 
 # Copy client package.json and package-lock.json to /app/client
-COPY ./client/package*.json ./
+COPY ./client_new/package*.json ./
 
 # install node modules for client
 RUN npm install
 
 # copy all
-COPY ./client ./
+COPY ./client_new ./
 
 # build client
 RUN npm run build
