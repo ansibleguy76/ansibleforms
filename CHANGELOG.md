@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+-   not, notIn, validIf, validIfNot, all had bugs
+
 ### Added
 
 -   playbooksSubfolder, a subfolder path to launch ansible-playbook from
