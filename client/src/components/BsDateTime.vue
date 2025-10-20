@@ -65,26 +65,36 @@
         const day = date.getDate().toString().padStart(2, '0');
         const month = (date.getMonth() + 1).toString().padStart(2, '0');
         const year = date.getFullYear()
+        const dayNum = date.getUTCDay() || 7;
+        var tempWeekDate = new Date(date)
+        tempWeekDate.setUTCDate(date.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(tempWeekDate.getUTCFullYear(),0,1));
+        const weekNumber = Math.ceil((((tempWeekDate - yearStart) / 86400000) + 1)/7);
 
-        return `${year}-${month}-${day}`
+        if(props.dateType == "date") {
+            return `${year}-${month}-${day}`
+        }
+        if(props.dateType == "datetime"){
+            return `${year}-${month}-${day} ${hour}:${minute}`
+        }
+        if(props.dateType == "time"){
+            return `${hour}:${minute}`
+        }
+        if(props.dateType == "month"){
+            return `${year}-${month}`
+        }
+        if(props.dateType == "year"){
+            return `${year}`
+        }
+        if(props.dateType == "week"){
+            return `${year}-W${weekNumber.toString().padStart(2, '0')}`;
+        }
     }
 
 </script>
 <template>
 
-    <VueDatePicker v-if="props.dateType=='datetime'" @update:model-value="input" @blur="blur" @focus="focus" text-input v-model="model" :format="format" position="left" :is-24="true" :dark="theme=='dark'">
-        <template #dp-input="{ value }">
-        <!-- ICON FIELD GROUP -->
-        <div class="input-group">
-            <!-- ICON -->
-            <span class="input-group-text" :class="{'text-body':hasFocus,'text-gray-500':!hasFocus}" >
-                <FaIcon :fixedwidth="true" :icon="icon" />
-            </span>       
-            <input :class="{ 'is-invalid': hasError }" class="form-control" @blur="blur" @focus="focus" :name="name" :value="value" type="text" />
-        </div>
-        </template>
-    </VueDatePicker>
-    <VueDatePicker v-else text-input v-model="model" @blur="blur" @focus="focus" :enable-time-picker="hasTimePicker" :month-picker="props.dateType == 'month'" :week-picker="props.dateType == 'week'" :quarter-picker="props.dateType == 'quarter'" :year-picker="props.dateType == 'year'" :time-picker="props.dateType == 'time'" position="left" :is-24="true" :dark="theme=='dark'">
+    <VueDatePicker text-input v-model="model" utc @blur="blur" @focus="focus" @input="input" :preview-format="format" :format="format" :enable-time-picker="hasTimePicker" :month-picker="props.dateType == 'month'" :week-picker="props.dateType == 'week'" :quarter-picker="props.dateType == 'quarter'" :year-picker="props.dateType == 'year'" :time-picker="props.dateType == 'time'" position="left" :is-24="true" :dark="theme=='dark'">
         <template #dp-input="{ value }">
         <!-- ICON FIELD GROUP -->
         <div class="input-group">

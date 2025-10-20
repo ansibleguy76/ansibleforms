@@ -265,6 +265,7 @@ function generateJsonOutput(filedata = {}) {
           item.type == "expression" ||
           item.type == "file" ||
           item.type == "table" ||
+          (item.type == "datetime") || 
           false;
         var outputValue = undefined;
 
