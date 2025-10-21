@@ -63,13 +63,13 @@ RUN npm install -g vite
 WORKDIR /app/client
 
 # Copy client package.json and package-lock.json to /app/client
-COPY ./client_new/package*.json ./
+COPY ./client/package*.json ./
 
 # install node modules for client
 RUN npm install
 
 # copy all
-COPY ./client_new ./
+COPY ./client ./
 
 # build client
 RUN npm run build
