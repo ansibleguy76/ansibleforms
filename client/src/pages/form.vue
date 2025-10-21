@@ -275,6 +275,14 @@ function generateJsonOutput(filedata = {}) {
           outputValue = Helpers.deepClone(form.value[item.name]);
         }
 
+        // convert month from 0-11 to 1-12 for month picker
+        if (item.type === "datetime" && item.dateType === "month" && outputValue && typeof outputValue === "object") {
+          outputValue = {
+            ...outputValue,
+            month: typeof outputValue.month === "number" ? outputValue.month + 1 : outputValue.month
+          };
+        }
+
         if (!outputObject) {
           outputValue = Helpers.getFieldValue(
             outputValue,

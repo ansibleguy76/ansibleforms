@@ -133,10 +133,10 @@
       </div>
       <div v-if="hasError && errors.length>0" class="invalid-feedback">
             {{ errors[0].$message || errors[0].$params?.description || errors[0] }}
-        </div>  
-        <div class="form-text" v-if="help">
-          {{ help }}
-        </div>      
+      </div>  
+      <div class="form-text" v-if="help">
+        {{ help }}
+      </div>      
     </div>
 </template>
 <style scoped lang="scss">

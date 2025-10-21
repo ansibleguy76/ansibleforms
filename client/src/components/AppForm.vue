@@ -1518,6 +1518,7 @@ onUnmounted(() => {
                                         v-model="v$.form[field.name].$model" :name="field.name"
                                         :hasError="v$.form[field.name].$invalid" :dateType="field.dateType"
                                         @change="evaluateDynamicFields(field.name)" 
+                                        :errors="v$.form[field.name].$errors" :values="field.values"
                                         :help="field.help"
                                     />
                                 </div>
