@@ -7,7 +7,7 @@ if [ ! -f "package.json" ]; then
 fi
 
 # Get version and confirm
-version=$(jq .version ./package.json -r)
+version=$(jq .version ./server/package.json -r)
 echo "Publishing production version (no-cache): $version"
 printf "Continue? (y/n): "
 read answer

@@ -7,7 +7,7 @@ if [ ! -f "package.json" ]; then
 fi
 
 # Get version from package.json
-version=$(jq .version ./package.json -r)
+version=$(jq .version ./server/package.json -r)
 
 # Confirm RC publication
 echo "Publishing release candidate: $version-rc"
