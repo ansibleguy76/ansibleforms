@@ -34,6 +34,8 @@
         name: { type: String, default: "" },
         dateType: { type: String, default: "date" },
         icon: { type: String, default: "calendar" },
+        errors: { type: Array, default: () => [] },
+        placeholder: { type: String, default: "" },
     });
     
     // DATA
@@ -94,7 +96,7 @@
 </script>
 <template>
 
-    <VueDatePicker text-input v-model="model" utc @blur="blur" @focus="focus" @input="input" :preview-format="format" :format="format" :enable-time-picker="hasTimePicker" :month-picker="props.dateType == 'month'" :week-picker="props.dateType == 'week'" :quarter-picker="props.dateType == 'quarter'" :year-picker="props.dateType == 'year'" :time-picker="props.dateType == 'time'" position="left" :is-24="true" :dark="theme=='dark'">
+    <VueDatePicker text-input v-model="model" utc @blur="blur" :auto-apply="['date','month','week'].includes(dateType)" @focus="focus" @input="input" :preview-format="format" :format="format" :enable-time-picker="hasTimePicker" :month-picker="dateType == 'month'" :week-picker="dateType == 'week'" :quarter-picker="dateType == 'quarter'" :year-picker="dateType == 'year'" :time-picker="dateType == 'time'" position="left" :is-24="true" :dark="theme=='dark'">
         <template #dp-input="{ value }">
         <!-- ICON FIELD GROUP -->
         <div class="input-group">
@@ -102,7 +104,7 @@
             <span class="input-group-text" :class="{'text-body':hasFocus,'text-gray-500':!hasFocus}" >
                 <FaIcon :fixedwidth="true" :icon="icon" />
             </span>        
-            <input :class="{ 'is-invalid': hasError }" class="form-control" @blur="blur" @focus="focus" :name="name" :value="value" type="text" />
+            <input :class="{ 'is-invalid': hasError }" class="form-control" @blur="blur" @focus="focus" :placeholder="placeholder" :name="name" :value="value" type="text" />
         </div>
         </template>
     </VueDatePicker>

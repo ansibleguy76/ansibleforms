@@ -1514,11 +1514,16 @@ onUnmounted(() => {
 
                                 <!-- TYPE = DATEPICKER -->
                                 <div v-if="field.type == 'datetime'">
-                                    <BsInputForForm type="datetime" :icon="field.icon"
-                                        v-model="v$.form[field.name].$model" :name="field.name"
-                                        :hasError="v$.form[field.name].$invalid" :dateType="field.dateType"
+                                    <BsInputForForm type="datetime" 
+                                        :icon="field.icon"
+                                        v-model="v$.form[field.name].$model" 
+                                        :name="field.name"
+                                        :hasError="v$.form[field.name].$invalid" 
+                                        :dateType="field.dateType"
                                         @change="evaluateDynamicFields(field.name)" 
-                                        :errors="v$.form[field.name].$errors" :values="field.values"
+                                        :placeholder="field.placeholder"
+                                        :errors="v$.form[field.name].$errors" 
+                                        :values="field.values"
                                         :help="field.help"
                                     />
                                 </div>

@@ -20,7 +20,7 @@ const forms = computed(() => {
     var payload = TokenStorage.getPayload();
     var intersect = [];
     return formConfig.value?.forms
-        .sort((a, b) => {
+        ?.sort((a, b) => {
             // First, sort by "order" (undefined orders go last)
             const orderA = a.order !== undefined ? a.order : Number.MAX_SAFE_INTEGER;
             const orderB = b.order !== undefined ? b.order : Number.MAX_SAFE_INTEGER;
