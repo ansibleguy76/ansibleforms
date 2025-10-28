@@ -1,20 +1,35 @@
-FROM node:20-alpine AS node
+FROM node:lts-bookworm-slim AS node
 
 ##################################################
 # base stage
-# create an alpine image with nodejs, ansible & python + libs
+# create a debian image with nodejs, ansible & python + libs
 
 FROM node AS nodebase
 
 # Use /app as CWD
 WORKDIR /app
 
-# Install github package
-RUN wget -O /bin/ytt github.com/vmware-tanzu/carvel-ytt/releases/download/v0.49.0/ytt-linux-amd64
-RUN chmod -R +x /bin/ytt
+# Update package lists and install packages
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-venv \
+    python3-ldap \
+    libxslt1.1 \
+    curl \
+    tzdata \
+    mariadb-client \
+    libmariadb3 \
+    openssh-client \
+    sshpass \
+    git \
+    vim \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
 
-# isntall apk packages
-RUN apk add py3-pip py3-pyldap libxslt curl tzdata mariadb-client mariadb-connector-c openssh sshpass git vim
+# Install github package (now that wget is available)
+RUN wget -O /bin/ytt https://github.com/vmware-tanzu/carvel-ytt/releases/download/v0.52.1/ytt-linux-amd64
+RUN chmod -R +x /bin/ytt
 
 # install some dev packages
 # RUN apk add --update --no-cache --virtual .build-deps g++ gcc libxml2-dev libxslt-dev unixodbc-dev python3-dev postgresql-dev && apk del .build-deps
@@ -49,7 +64,7 @@ RUN npm install -g npm@11.4.1
 # intermediate build to compile the client application with vite
 # can run in parallel with base stage
 
-FROM node AS tmp_builder
+FROM node:lts-bookworm-slim AS tmp_builder
 
 # Update npm
 RUN npm install -g npm@11.4.1
