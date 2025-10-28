@@ -123,7 +123,7 @@
         <!-- INPUT FIELDS -->
         <BsInputSelectAdvanced v-if="type === 'select'" :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :id="uid" :hasError="hasError" :placeholder="placeholder" v-model="model" :values="values" :defaultValue="defaultValue" :multiple="multiple" :columns="columns" :previewColumn="previewColumn" :valueColumn="valueColumn" :pctColumns="pctColumns" :filterColumns="filterColumns" :sticky="sticky" :horizontal="horizontal" :icon="icon" :uid="uid" :isLoading="isLoading" :name="name" :isFloating="false"/>
         <BsInputTextAreaRaw v-else-if="type === 'textarea'" :rows="rows" :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :id="uid" :hasError="hasError" :placeholder="placeholder" v-model="model" />
-        <BsDateTime v-else-if="type === 'datetime'" :icon="icon" v-model="model" :name="name" :hasError="hasError" :dateType="dateType" @change="change" />          
+        <BsDateTime v-else-if="type === 'datetime'" :icon="icon" v-model="model" :name="name" :hasError="hasError" :placeholder="placeholder" :dateType="dateType" @change="change" />          
         <p @dblclick="dblclick" v-else-if="type=='expression' && isHtml" class="form-control" :style="style" v-html="model" :class="cssClass"></p>
         <p @dblclick="dblclick" v-else-if="type=='expression' && !isHtml" class="form-control" :style="style" v-text="model" :class="cssClass"></p>        
         <BsInputCheckboxRaw v-else-if="type === 'checkbox'" :isSwitch="isSwitch" :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :hasError="hasError" :label="label" v-model="model" @change="change" />
@@ -133,10 +133,10 @@
       </div>
       <div v-if="hasError && errors.length>0" class="invalid-feedback">
             {{ errors[0].$message || errors[0].$params?.description || errors[0] }}
-        </div>  
-        <div class="form-text" v-if="help">
-          {{ help }}
-        </div>      
+      </div>  
+      <div class="form-text" v-if="help">
+        {{ help }}
+      </div>      
     </div>
 </template>
 <style scoped lang="scss">

@@ -80,9 +80,9 @@ cd /srv/apps
 sudo apt-get install -y git
 
 ‌sudo ‌git init
-sudo git clone https://github.com/ansibleguy76/ansibleforms-docker.git
+sudo git clone https://github.com/ansibleguy76/ansibleforms-docker-v6.git
 
-cd ansibleforms-docker
+cd ansibleforms-docker-v6
 ```
 
 ## Set proper permissions
@@ -90,8 +90,6 @@ cd ansibleforms-docker
 ```bash
 # write access will be needed on the datafolder
 sudo chmod -R 664 ./data
-# the mysql init folder needs execute rights 
-sudo chmod -R +x ./data/mysql/init/
 ```
 
 ## Install Docker and docker-compose

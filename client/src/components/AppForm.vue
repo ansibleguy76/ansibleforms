@@ -236,14 +236,14 @@ const rules = computed(() => {
             var description = ff.validIf.description
             rule.validIf = helpers.withParams(
                 { description: description, type: "validIf" },
-                (value) => !helpers.req(value) || !!form.value[ff.validIf.ff]
+                (value) => !helpers.req(value) || !!form.value[ff.validIf.field]
             )
         }
         if ("validIfNot" in ff) {
             var description = ff.validIfNot.description
             rule.validIfNot = helpers.withParams(
                 { description: description, type: "validIfNot" },
-                (value) => !helpers.req(value) || !form.value[ff.validIfNot.ff]
+                (value) => !helpers.req(value) || !form.value[ff.validIfNot.field]
             )
         }
         // notIn and in
@@ -251,14 +251,14 @@ const rules = computed(() => {
             var description = ff.notIn.description
             rule.notIn = helpers.withParams(
                 { description: description, type: "notIn" },
-                (value) => !helpers.req(value) || (form.value[ff.notIn.ff] != undefined && Array.isArray(form.value[ff.notIn.ff]) && !form.value[ff.notIn.ff].includes(value))
+                (value) => !helpers.req(value) || (form.value[ff.notIn.field] != undefined && Array.isArray(form.value[ff.notIn.field]) && !form.value[ff.notIn.field].includes(value))
             )
         }
         if ("in" in ff) {
             var description = ff.in.description
             rule.in = helpers.withParams(
                 { description: description, type: "in" },
-                (value) => !helpers.req(value) || (form.value[ff.in.ff] != undefined && Array.isArray(form.value[ff.in.ff]) && form.value[ff.in.ff].includes(value))
+                (value) => !helpers.req(value) || (form.value[ff.in.field] != undefined && Array.isArray(form.value[ff.in.field]) && form.value[ff.in.field].includes(value))
             )
         }
         if ("sameAs" in ff) {
@@ -1514,10 +1514,16 @@ onUnmounted(() => {
 
                                 <!-- TYPE = DATEPICKER -->
                                 <div v-if="field.type == 'datetime'">
-                                    <BsInputForForm type="datetime" :icon="field.icon"
-                                        v-model="v$.form[field.name].$model" :name="field.name"
-                                        :hasError="v$.form[field.name].$invalid" :dateType="field.dateType"
+                                    <BsInputForForm type="datetime" 
+                                        :icon="field.icon"
+                                        v-model="v$.form[field.name].$model" 
+                                        :name="field.name"
+                                        :hasError="v$.form[field.name].$invalid" 
+                                        :dateType="field.dateType"
                                         @change="evaluateDynamicFields(field.name)" 
+                                        :placeholder="field.placeholder"
+                                        :errors="v$.form[field.name].$errors" 
+                                        :values="field.values"
                                         :help="field.help"
                                     />
                                 </div>

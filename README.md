@@ -1,7 +1,7 @@
 # Intro
 Ansible forms is a lightweight node.js webapplication to generate userfriendly and pretty forms to kickoff ansible playbooks or awx (ansible tower) templates.
 
-# Breaking changes in v6 and Future improvements
+# Changed recently 
 
 ## Vite vs webpack
 We took the path to Vite (instead of webpack & babel).  This means that the code is now ESM only.  This means that you can not use "require" anymore, but you can use "import" and "export default".  Custom functions must be rewritten to use the new ESM syntax. (/functions/custom.js is an example where this could break).
@@ -41,4 +41,3 @@ More focus to Kubernetes will folow.
 
 ## Multi person development
 Senior node.js developers would be welcome, up till now this is still a one person project that started as POC one day like "How hard can it be to make a webapplication to kickoff ansible playbooks?".  
-

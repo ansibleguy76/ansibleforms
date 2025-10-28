@@ -31,7 +31,8 @@
         "playbook": {"not":{}},
         "ansibleCredentials": {"not":{}},
         "steps": {"not":{}},
-        "expression": {"not":{}}
+        "expression": {"not":{}},
+        "playbookSubPath": {"not":{}}
       },
       "required": ["template"]
     },
@@ -55,7 +56,8 @@
         "diff": {"not":{}},
         "key": {"not":{}},
         "executionEnvironment": {"not":{}},
-        "instanceGroups": {"not":{}}              
+        "instanceGroups": {"not":{}},
+        "playbookSubPath": {"not":{}}              
       },
       "required": ["expression"]
     },          
@@ -79,7 +81,8 @@
         "key": {"not":{}},
         "executionEnvironment": {"not":{}},
         "instanceGroups": {"not":{}},
-        "expression": {"not":{}}
+        "expression": {"not":{}},
+        "playbookSubPath": {"not":{}}
       },
       "required": ["steps"]
     }
@@ -90,6 +93,7 @@
     "roles": {
       "type": "array"
     },
+
     "description": {"type": "string"},
     "image": {"type": "string"},
     "onSubmit": {
@@ -292,6 +296,7 @@
           },
           "name": {"type": "string"},
           "playbook": {"type": "string"},
+          "playbookSubPath": {"type": "string"},
           "key": {"type": "string"},
           "ifExtraVar": {
             "$ref": "/formfield"
@@ -392,6 +397,7 @@
       "$ref": "/approval"
     },
     "playbook": {"type": "string"},
+    "playbookSubPath": {"type": "string"},
     "key": {"type": "string"},
     "abortable": {"type": "boolean"},
     "template": {"type": "string"},

@@ -265,6 +265,7 @@ function generateJsonOutput(filedata = {}) {
           item.type == "expression" ||
           item.type == "file" ||
           item.type == "table" ||
+          (item.type == "datetime") || 
           false;
         var outputValue = undefined;
 
@@ -272,6 +273,14 @@ function generateJsonOutput(filedata = {}) {
           outputValue = filedata[item.name];
         } else {
           outputValue = Helpers.deepClone(form.value[item.name]);
+        }
+
+        // convert month from 0-11 to 1-12 for month picker
+        if (item.type === "datetime" && item.dateType === "month" && outputValue && typeof outputValue === "object") {
+          outputValue = {
+            ...outputValue,
+            month: typeof outputValue.month === "number" ? outputValue.month + 1 : outputValue.month
+          };
         }
 
         if (!outputObject) {
