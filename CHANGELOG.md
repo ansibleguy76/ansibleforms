@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.0.1] - 2025-10-28
+
 ### Fixed
 
 -   not, notIn, validIf, validIfNot, all had bugs
@@ -863,7 +865,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/6.0.0...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/6.0.1...HEAD
+
+[6.0.1]: https://github.com/ansibleguy76/ansibleforms/compare/6.0.0...6.0.1
 
 [6.0.0]: https://github.com/ansibleguy76/ansibleforms/compare/5.0.10...6.0.0
 
