@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   not, notIn, validIf, validIfNot, all had bugs
 
+### Changed
+
+-   Docker image is moving to debian based.  It's bigger, but alpine was giving dns query issues.
+
 ### Added
 
 -   playbooksSubfolder, a subfolder path to launch ansible-playbook from
