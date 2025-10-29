@@ -22,9 +22,10 @@ RUN apt-get update && apt-get install -y \
     sudo \
     && rm -rf /var/lib/apt/lists/*
 
-# Install ytt
-RUN wget -O /bin/ytt https://github.com/vmware-tanzu/carvel-ytt/releases/download/v0.52.1/ytt-linux-amd64 \
-    && chmod +x /bin/ytt
+# Install ytt (try curl as backup if wget fails)
+RUN (wget -O /bin/ytt https://github.com/vmware-tanzu/carvel-ytt/releases/download/v0.52.1/ytt-linux-amd64 || \
+     curl -L -o /bin/ytt https://github.com/vmware-tanzu/carvel-ytt/releases/download/v0.52.1/ytt-linux-amd64) && \
+    chmod +x /bin/ytt
 
 # Create and activate a virtual environment
 RUN python3 -m venv /venv
@@ -45,7 +46,7 @@ RUN ansible-galaxy collection install netapp.ontap -p /usr/share/ansible/collect
     && ansible-galaxy collection install ansibleguy76.ansibleforms -p /usr/share/ansible/collections
 
 # Create root .ssh directory
-RUN mkdir -p ~/.ssh \
+RUN mkdir -p ~/.ssh
 
 # Update npm
 RUN npm install -g npm@11.4.1

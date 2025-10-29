@@ -7,9 +7,6 @@ FROM ansibleguy/ansibleforms-base:latest AS nodebase
 
 FROM ansibleguy/ansibleforms-base:latest AS tmp_builder
 
-# Update npm (already installed in base, but ensure latest)
-RUN npm install -g npm@11.4.1
-
 ########## prep client ###########
 
 # Install vite
