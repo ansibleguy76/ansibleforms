@@ -34,7 +34,8 @@ var app_config = {
   awxApiPrefix: process.env.AWX_API_PREFIX || "/api/v2",
   backupPath: process.env.BACKUP_PATH || path.resolve(__dirname + "/../persistent/backups"),
   mysqldumpCommand: process.env.MYSQLDUMP_COMMAND || "mariadb-dump --ssl-verify-server-cert=OFF",
-  mysqlCommand: process.env.MYSQL_COMMAND || "mariadb --ssl-verify-server-cert=OFF"
+  mysqlCommand: process.env.MYSQL_COMMAND || "mariadb --ssl-verify-server-cert=OFF",
+  maskExtravarsRegex: process.env.MASK_EXTRAVARS_REGEX || "password|secret|token"
 };
 
 // process dynamic YTT_LIB_DATA_ environment variables

@@ -74,7 +74,10 @@ Helpers.logSafe = (v)=>{
   if(!v){
     return ""
   }
-  result = v.replaceAll(/"password":"[^"]+"/g,'"password":"**NOLOG**"')
+  // get the property regex from config and create pattern with group capture
+  const maskRegex = config.maskExtravarsRegex
+  const pattern = new RegExp(`"([^"]*(?:${maskRegex})[^"]*)":"[^"]+"`, 'ig')
+  result = v.replaceAll(pattern, '"$1":"**NOLOG**"')
   result = result.replace(/echo .* base64 --decode/g,"echo **NOLOG**")
   return result
 }

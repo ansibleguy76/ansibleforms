@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-   MASK_EXTRAVARS_REGEX, to allow extravars masking
+
+### Fixed
+
+-   Several tablefield issues
+
+### Changed
+
+-   Schema creation in 1 shot
+
 ## [6.0.1] - 2025-10-28
 
 ### Fixed

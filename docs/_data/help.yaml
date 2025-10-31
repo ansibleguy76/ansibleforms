@@ -511,6 +511,14 @@
     description: |
       Sometime, the job output is flooded with meaningless output, such as 'Gathering Facts', or 'Includes'.  You filter out these by add a piece of string in the taskname, i.e. `[low]` and then used regex `\\[low\\]` to hide this information.  
       The output has a button `Apply filter` for the filtering to take effect.
+  - name: MASK_EXTRAVARS_REGEX
+    type: string
+    allowed: an escaped regular expression
+    short: Regex to mask extravars values
+    default: "password|secret|token"
+    description: |
+      When you have sensitive extravars, such as passwords, tokens, keys, credentials, you do not want these to be shown in clear text in the extravars section of a job.  
+      By setting this regex, any extravar key matching this regex will have its value masked with `********`.   Note the regex will be case insensitive.   
   - name: UPLOAD_PATH
     type: string
     version: 4.0.16
