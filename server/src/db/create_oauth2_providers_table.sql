@@ -1,5 +1,4 @@
 USE `AnsibleForms`;
-DROP TABLE IF EXISTS `oauth2_providers`;
 CREATE TABLE `oauth2_providers` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `provider` VARCHAR(50) NOT NULL, -- e.g., 'azuread', 'oidc', 'google', 'github'
