@@ -73,7 +73,9 @@ const props = defineProps({
     updateMarker: { type: String, default: "" },
     readonlyColumns: { type: Array },
     insertColumns: { type: Array },
-    hasError: { type: Boolean }
+    hasError: { type: Boolean },
+    errors: { type: Array, default: () => [] },
+    help: { type: String, default: "" },
 });
 
 
@@ -193,13 +195,6 @@ const editFields = computed(() => {
     return props.tableFields.filter(x => (action.value != "Add" || props.insertColumns.length == 0 || props.insertColumns.includes(x.name)));
 });
 
-const getTableClass = computed(() => {
-    let tmp = props.tableClass;
-    if (props.hasError) {
-        tmp += " hasError";
-    }
-    return tmp;
-});
 
 // WATCHERS
 
@@ -248,7 +243,7 @@ function stringify(v, field = undefined) {
     var valueLabel;
     if (v) {
         if (Array.isArray(v)) {
-            return "[ Array ]";
+            return v.map(item => stringify(item, field)).join(', ');
         }
         if (typeof v == "object") {
             valueLabel = getValueLabel(field);
@@ -382,7 +377,7 @@ onMounted(() => {
             <template #actions>
                 <BsButton icon="save" @click="saveItem()">Save</BsButton>
             </template>
-            <template #default v-if="!!v$?.editedItem?.$model">
+            <template #default v-if="!!v$?.editedItem?.$model && showEdit">
 
                 <div v-for="field, index in editFields" :key="field.name" class="mt-3">
 
@@ -421,81 +416,88 @@ onMounted(() => {
 
 
         <!-- TABLE -->
-
-        <table :class="getTableClass">
-            <thead>
-                <tr>
-                    <th>Actions</th>
-                    <slot v-for="field in tableFields" :name="'table-header-' + field.name" :field="field">
-                        <th class="bg-primary-subtle" :key="'table-header-' + field.name" :width="field.width || ''">
-                            {{ field.label || field.name }}
-                        </th>
-                    </slot>
-                </tr>
-            </thead>
-            <tbody>
-                <template v-if="!isLoading">
-                    <tr class="is-unselectable" v-for="row, index in rows" :key="'table-row-' + index"
-                        @click="rowClick(row)">
-                        <template v-if="deleteMarker && row[deleteMarker]">
-                            <td>
-                                <span class="me-2 text-secondary"><font-awesome-icon icon="plus-square" /></span>
-                                <span class="me-2 text-secondary"><font-awesome-icon icon="pencil-alt" /></span>
-                                <span class="me-2 text-success" role="button"
-                                    @click="undoRemoveItem(index)"><font-awesome-icon icon="undo" /></span>
-                            </td>
-                            <slot name="table-body" :row="row">
-                                <template v-for="field in tableFields" :key="'table-cell-' + field.name + '-' + index">
-                                    <td class="text-secondary" v-if="field.type != 'checkbox'" :class="field.bodyClass">
-                                        {{ stringify(row[field.name], field) }} </td>
-                                    <td class="text-secondary" v-else :class="field.bodyClass"><font-awesome-icon
-                                            :icon="(row[field.name]) ? ['far', 'check-square'] : ['far', 'square']" /></td>
-                                </template>
-                            </slot>
-                        </template>
-                        <template v-else>
-                            <td>
-                                <span role="button" class="me-2 text-success" v-if="allowInsert"
-                                    @click="addItem(index)"><font-awesome-icon icon="plus-square" /></span>
-                                <span role="button" class="me-2 text-orange" @click="editItem(index)"><font-awesome-icon
-                                        icon="pencil-alt" /></span>
-                                <span role="button" class="me-2 text-danger" v-if="allowDelete || row[insert_marker]"
-                                    @click="removeItem(index)"><font-awesome-icon icon="times" /></span>
-                                <span role="button" class="me-2 text-secondary" v-else><font-awesome-icon
-                                        icon="times" /></span>
-                            </td>
-                            <slot name="table-body" :row="row">
-                                <template v-for="field in tableFields" :key="'table-cell-' + field.name + '-' + index">
-                                    <td v-if="field.type != 'checkbox'" :class="field.bodyClass"> {{
-                                        stringify(row[field.name],field) }} </td>
-                                    <td v-else :class="field.bodyClass"><font-awesome-icon
-                                            :icon="(row[field.name]) ? ['far', 'check-square'] : ['far', 'square']" /></td>
-                                </template>
-                            </slot>
-                        </template>
-                    </tr>
-                    <tr v-if="allowInsert">
-                        <td>
-                            <span role="button" class="me-2 text-success" @click="addItem(-1)"><font-awesome-icon
-                                    icon="plus-square" /></span>
-                        </td>
-
-                        <slot name="table-body">
-                            <td v-for="field in tableFields" :key="'table-cell-' + field.name"
-                                class="bg-secondary-subtle"></td>
-                        </slot>
-                    </tr>
-                </template>
-                <template v-else>
+        <div class="form-control" :class="{ 'is-invalid': hasError }">
+            <table :class="props.tableClass">
+                <thead>
                     <tr>
-                        <td class="bg-secondary-subtle"><font-awesome-icon icon="spinner" spin /></td>
-                        <slot name="table-body">
-                            <td v-for="field in tableFields" :key="'table-cell-' + field.name"
-                                class="bg-secondary-subtle"></td>
+                        <th>Actions</th>
+                        <slot v-for="field in tableFields" :name="'table-header-' + field.name" :field="field">
+                            <th class="bg-primary-subtle" :key="'table-header-' + field.name" :width="field.width || ''">
+                                {{ field.label || field.name }}
+                            </th>
                         </slot>
                     </tr>
-                </template>
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    <template v-if="!isLoading">
+                        <tr class="is-unselectable" v-for="row, index in rows" :key="'table-row-' + index"
+                            @click="rowClick(row)">
+                            <template v-if="deleteMarker && row[deleteMarker]">
+                                <td>
+                                    <span class="me-2 text-secondary"><font-awesome-icon icon="plus-square" /></span>
+                                    <span class="me-2 text-secondary"><font-awesome-icon icon="pencil-alt" /></span>
+                                    <span class="me-2 text-success" role="button"
+                                        @click="undoRemoveItem(index)"><font-awesome-icon icon="undo" /></span>
+                                </td>
+                                <slot name="table-body" :row="row">
+                                    <template v-for="field in tableFields" :key="'table-cell-' + field.name + '-' + index">
+                                        <td class="text-secondary" v-if="field.type != 'checkbox'" :class="field.bodyClass">
+                                            {{ stringify(row[field.name], field) }} </td>
+                                        <td class="text-secondary" v-else :class="field.bodyClass"><font-awesome-icon
+                                                :icon="(row[field.name]) ? ['far', 'check-square'] : ['far', 'square']" /></td>
+                                    </template>
+                                </slot>
+                            </template>
+                            <template v-else>
+                                <td>
+                                    <span role="button" class="me-2 text-success" v-if="allowInsert"
+                                        @click="addItem(index)"><font-awesome-icon icon="plus-square" /></span>
+                                    <span role="button" class="me-2 text-orange" @click="editItem(index)"><font-awesome-icon
+                                            icon="pencil-alt" /></span>
+                                    <span role="button" class="me-2 text-danger" v-if="allowDelete || row[insert_marker]"
+                                        @click="removeItem(index)"><font-awesome-icon icon="times" /></span>
+                                    <span role="button" class="me-2 text-secondary" v-else><font-awesome-icon
+                                            icon="times" /></span>
+                                </td>
+                                <slot name="table-body" :row="row">
+                                    <template v-for="field in tableFields" :key="'table-cell-' + field.name + '-' + index">
+                                        <td v-if="field.type != 'checkbox'" :class="field.bodyClass"> {{
+                                            stringify(row[field.name],field) }} </td>
+                                        <td v-else :class="field.bodyClass"><font-awesome-icon
+                                                :icon="(row[field.name]) ? ['far', 'check-square'] : ['far', 'square']" /></td>
+                                    </template>
+                                </slot>
+                            </template>
+                        </tr>
+                        <tr v-if="allowInsert">
+                            <td>
+                                <span role="button" class="me-2 text-success" @click="addItem(-1)"><font-awesome-icon
+                                        icon="plus-square" /></span>
+                            </td>
+
+                            <slot name="table-body">
+                                <td v-for="field in tableFields" :key="'table-cell-' + field.name"
+                                    class="bg-secondary-subtle"></td>
+                            </slot>
+                        </tr>
+                    </template>
+                    <template v-else>
+                        <tr>
+                            <td class="bg-secondary-subtle"><font-awesome-icon icon="spinner" spin /></td>
+                            <slot name="table-body">
+                                <td v-for="field in tableFields" :key="'table-cell-' + field.name"
+                                    class="bg-secondary-subtle"></td>
+                            </slot>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+        <div v-if="hasError && errors.length>0" class="invalid-feedback">
+                {{ errors[0].$message || errors[0].$params?.description || errors[0] }}
+        </div>  
+        <div class="form-text" v-if="help">
+            {{ help }}
+        </div>          
     </div>
 </template>

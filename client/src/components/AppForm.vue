@@ -1455,13 +1455,13 @@ onUnmounted(() => {
                                 <!-- DEBUG EVALUATION -->
                                 <div class="mb-3" @dblclick="clip(fieldOptions[field.name].expressionEval, true)"
                                     v-if="field.expression && fieldOptions[field.name].debug && dynamicFieldStatus[field.name] != 'fixed'">
-                                    <pre
-                                        v-highlightjs><code language="javascript">{{ fieldOptions[field.name].expressionEval }}</code></pre>
+                                    <pre v-highlightjs><code language="javascript">{{ fieldOptions[field.name].expressionEval }}</code></pre>
                                 </div>
 
                                 <div v-if="field.type == 'table' && field.tableFields">
                                     <AppTableField v-show="!fieldOptions[field.name].viewable"
-                                        v-model="v$.form[field.name].$model" :tableFields="field.tableFields"
+                                        v-model="v$.form[field.name].$model" 
+                                        :tableFields="field.tableFields"
                                         :allowInsert="field.allowInsert && true"
                                         :allowDelete="field.allowDelete && true"
                                         :deleteMarker="field.deleteMarker || ''"
@@ -1471,12 +1471,19 @@ onUnmounted(() => {
                                         :insertColumns="field.insertColumns || []"
                                         :dynamicFieldStatus="dynamicFieldStatus" :form="form"
                                         :hasError="v$.form[field.name].$invalid" :click="false"
-                                        tableClass="table table-bordered" headClass="bg-primay-subtle"
+                                        tableClass="table" headClass="bg-primay-subtle"
                                         :isLoading="!['fixed', 'variable'].includes(dynamicFieldStatus[field.name]) && (field.expression != undefined || field.query != undefined)"
                                         :values="form[field.name] || []" @update:modelValue="evaluateDynamicFields(field.name)"
                                         @warning="addTableWarnings(field.name, ...arguments)" 
+                                        :errors="v$.form[field.name].$errors"
                                         :help="field.help"
-                                        />
+                                    />
+                                    <!-- expression raw data -->
+                                    <div @dblclick="setExpressionFieldViewable(field.name, false)" v-if="fieldOptions[field.name].viewable"
+                                        class="card p-2 limit-height">
+                                        <!-- <pre v-highlightjs><code lang="json">{{ v$.form[field.name].$model }}</code></pre> -->
+                                        <VueJsonPretty :data="v$.form[field.name].$model" />
+                                    </div>                                    
                                 </div>
 
                                 <!-- TYPE = HTML -->
@@ -1506,7 +1513,7 @@ onUnmounted(() => {
                                     <!-- raw query data -->
                                     <div @dblclick="setExpressionFieldViewable(field.name, false)"
                                         v-if="fieldOptions[field.name].viewable"
-                                        class="card p-2 limit-height is-limited">
+                                        class="card p-2 limit-height">
                                         <!-- <pre v-highlightjs><code lang="json">{{ queryresults[field.name] || [] }}</code></pre> -->
                                         <VueJsonPretty :data="queryresults[field.name] || []" />
                                     </div>
@@ -1601,13 +1608,6 @@ onUnmounted(() => {
     overflow-y: scroll;
     overflow-x: clip;
 }
-
-.is-limited {
-    text-overflow: ellipsis;
-    width: 100%;
-    overflow: hidden;
-}
-
 pre {
     margin: 0
 }

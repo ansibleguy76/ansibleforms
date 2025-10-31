@@ -1426,6 +1426,7 @@
                 },
                 "name": {"type": "string"},
                 "label": {"type": "string"},
+                "help": {"type": "string"},
                 "placeholder": {"type": "string"},
                 "from": {"type": "string"},
                 "multiple": {"type": "boolean"},

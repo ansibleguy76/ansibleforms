@@ -422,6 +422,8 @@
     getLabels();
   });
 
+  // ON SHOW
+
 
 </script>
 <template>
