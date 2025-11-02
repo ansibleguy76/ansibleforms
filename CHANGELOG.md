@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 -   Several tablefield issues
+-   Datetime field didn't bubble changes
 
 ### Changed
 
