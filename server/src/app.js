@@ -166,7 +166,7 @@ const load = async (app) => {
   app.use(`/api/v2/awx`, cors(), authobj, Middleware.checkSettingsMiddleware, awxRoutesv2);
   app.use(`/api/v1/log`, cors(), authobj, Middleware.checkLogsMiddleware, logRoutes);
   app.use(`/api/v1/repository`, cors(), authobj, Middleware.checkSettingsMiddleware, repositoryRoutes);
-  app.use(`/api/v1/knownhosts`, cors(), authobj, Middleware.checkSettingsMiddleware, knownhostsRoutes);
+  app.use(`/api/v2/knownhosts`, cors(), authobj, Middleware.checkSettingsMiddleware, knownhostsRoutes);
   app.use(`/api/v1/datasource/schema`, cors(), authobj, Middleware.checkSettingsMiddleware, datasourceSchemaRoutes);
   app.use(`/api/v1/datasource`, cors(), authobj, Middleware.checkSettingsMiddleware, datasourceRoutes);
   app.use(`/api/v2/schedule`, cors(), authobj, Middleware.checkSettingsMiddleware, scheduleRoutes);

@@ -37,7 +37,7 @@ onMounted(async () => {
     <div class="flex-shrink-0">
         <main class="d-flex flex-nowrap container-xxl">
             <AppSidebar />
-            <AppAdminMulti v-if="authenticated" :settings="settings.knownhosts" @preview="preview">
+            <AppAdminMulti v-if="authenticated" apiVersion="2" :settings="settings.knownhosts" @preview="preview">
                 <p class="p-2 border text-break" v-if="currentItem">{{ currentItem.name }}</p>
             </AppAdminMulti>
         </main>
