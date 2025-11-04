@@ -21,7 +21,7 @@ const { firstBy } = thenbypkg;
 // Project-specific modules
 import logger from "../lib/logger.js";
 import ip from "../lib/ip.js";
-import credentialModel from "../models/credential.model.js";
+import credentialModel from "../models/credential.model.v2.js";
 import Helpers from '../lib/common.js';
 
 const __filename = fileURLToPath(import.meta.url);
