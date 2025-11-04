@@ -145,6 +145,13 @@
 }
 p {
   margin: 0;
+  &::after {
+    content: "\200B"; // zero-width space
+    display: inline-block;
+    width: 0;
+    height: 1em;
+    visibility: hidden;
+  }
 }
 .input-group-text{
     &.active{
