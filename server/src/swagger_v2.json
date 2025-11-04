@@ -10,12 +10,79 @@
     { "name": "awx", "description": "AWX configuration and management" },
     { "name": "job", "description": "Job management and operations" },
     { "name": "backup", "description": "Backup and restore operations" },
-    { "name": "credential", "description": "Credential management and database connection testing" }
+    { "name": "credential", "description": "Credential management and database connection testing" },
+    { "name": "knownhosts", "description": "Manage SSH known_hosts entries (flat list)" }
   ],
   "servers": [
     { "url": "/api/v2" }
   ],
   "paths": {
+    "/knownhosts": {
+      "get": {
+        "tags": ["knownhosts"],
+        "summary": "List all known host entries",
+        "description": "Returns a flat array of known_hosts file lines.",
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "List of known host lines",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": { "type": "integer" },
+                    "records": {
+                      "type": "array",
+                      "items": { "type": "string", "description": "Single known_hosts line" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["knownhosts"],
+        "summary": "Add host key(s) for a host",
+        "description": "Runs ssh-keyscan for the provided host and appends keys to known_hosts.",
+        "security": [ { "bearerAuth": [] } ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "host": { "type": "string", "description": "Hostname or IP (optionally with :port)" }
+                },
+                "required": ["host"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Host added" },
+          "400": { "description": "Invalid input" },
+          "500": { "description": "Server error" }
+        }
+      },
+      "delete": {
+        "tags": ["knownhosts"],
+        "summary": "Remove a host entry",
+        "description": "Removes lines whose first token matches the provided host name.",
+        "security": [ { "bearerAuth": [] } ],
+        "parameters": [
+          { "name": "name", "in": "query", "required": true, "schema": { "type": "string" }, "description": "Host to remove" }
+        ],
+        "responses": {
+          "200": { "description": "Host removed or not present" },
+          "400": { "description": "Missing host name" },
+          "500": { "description": "Server error" }
+        }
+      }
+    },
     "/auth/login": {
       "post": {
         "tags": ["authentication"],

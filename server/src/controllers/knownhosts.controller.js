@@ -22,8 +22,8 @@ const knownhostsController = {
       if (!host) {
         return res.status(400).json(RestResult.error('host value required'));
       }
-      const output = await KnownHosts.add(host);
-      return res.status(201).json(RestResult.single({ message: 'Host added', host, output }));
+      const result = await KnownHosts.add(host);
+      return res.status(201).json(RestResult.single(result));
     } catch (err) {
       Errors.ReturnError(res, err);
     }
@@ -32,12 +32,15 @@ const knownhostsController = {
   // Remove a host from known_hosts
   async remove(req, res) {
     try {
-      const name = (req.query?.name || '').trim();
-      if (!name) {
-        return res.status(400).json(RestResult.error('host name (query param "name") required'));
+      // support both ?name= and ?host= and allow passing full known_hosts line
+      const raw = (req.query?.name || req.query?.host || '').trim();
+      if (!raw) {
+        return res.status(400).json(RestResult.error('host name (query param "name" or "host") required'));
       }
-      const output = await KnownHosts.remove(name);
-      return res.json(RestResult.single({ message: 'Host removed', host: name, output }));
+      // if full line provided ("hostname keytype key"), extract first token
+      const hostToken = raw.split(/\s+/)[0];
+      const result = await KnownHosts.remove(hostToken);
+      return res.json(RestResult.single(result));
     } catch (err) {
       Errors.ReturnError(res, err);
     }

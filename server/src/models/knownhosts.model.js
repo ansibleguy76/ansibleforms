@@ -28,19 +28,32 @@ KnownHosts.findAll = async function () {
   }
 };
 KnownHosts.remove = async function (host) {
-  if (!host) throw new Errors.BadRequestError('No host given');
+  if (!host || host === 'undefined' || host === 'null') {
+    throw new Errors.BadRequestError('Invalid or missing host');
+  }
   logger.notice(`Removing host ${host}`);
   const file = hostsFile();
-  if (!fs.existsSync(file)) return 'known_hosts file missing';
+  if (!fs.existsSync(file)) {
+    return { host, removed: false, message: 'known_hosts file missing' };
+  }
   try {
     const content = await fs.promises.readFile(file, 'utf8');
     const lines = content.split(/\r?\n/).filter(Boolean);
-    const filtered = lines.filter(l => l.split(/\s+/)[0] !== host);
-    if (filtered.length === lines.length) {
-      return `Host ${host} not found; no change`;
+    const remaining = [];
+    let removedCount = 0;
+    for (const line of lines) {
+      const first = line.split(/\s+/)[0];
+      if (first === host) {
+        removedCount++;
+        continue;
+      }
+      remaining.push(line);
     }
-    await fs.promises.writeFile(file, filtered.join('\n') + '\n', 'utf8');
-    return `Host ${host} removed`;
+    if (removedCount === 0) {
+      return { host, removed: false, message: 'Host not found', removedCount: 0 };
+    }
+    await fs.promises.writeFile(file, remaining.join('\n') + '\n', 'utf8');
+    return { host, removed: true, message: 'Host removed', removedCount };
   } catch (e) {
     logger.error(inspect(e));
     throw new Errors.InternalServerError('Failed to remove host');
@@ -48,15 +61,18 @@ KnownHosts.remove = async function (host) {
 };
 // add ssh known hosts
 KnownHosts.add = async function (host) {
-  if (!host) throw new Errors.BadRequestError('No host given');
+  if (!host || host === 'undefined' || host === 'null') {
+    throw new Errors.BadRequestError('Invalid or missing host');
+  }
   logger.notice(`Adding keys for host ${host}`);
   try {
     const { stdout, stderr } = await exec(`ssh-keyscan -- ${host}`);
     if (stderr) logger.debug(stderr);
     if (!stdout) throw new Errors.InternalServerError('No keyscan output');
+    const lines = stdout.split(/\r?\n/).filter(Boolean);
     await fs.promises.mkdir(path.dirname(hostsFile()), { recursive: true });
     await fs.promises.appendFile(hostsFile(), stdout.endsWith('\n') ? stdout : stdout + '\n', 'utf8');
-    return `Keys added for ${host}`;
+    return { host, added: true, message: 'Host keys added', keysCount: lines.length };
   } catch (e) {
     if (e instanceof Errors.ApiError) throw e;
     logger.error(inspect(e));

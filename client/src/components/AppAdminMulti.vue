@@ -346,7 +346,7 @@
         try {
             var result
             if(isFlat){
-                result = await axios.delete(`/api/v${props.apiVersion}/${objectType}?name=${encodeURIComponent(item.name)}`, TokenStorage.getAuthentication())
+                result = await axios.delete(`/api/v${props.apiVersion}/${objectType}?name=${encodeURIComponent(item.value.name)}`, TokenStorage.getAuthentication())
             }else{
                 result = await axios.delete(`/api/v${props.apiVersion}/${objectType}/${itemId.value}`, TokenStorage.getAuthentication())
             }
