@@ -4170,6 +4170,17 @@
         // Try to use `fnRestBasic` and `fnRestJwtSecured` if possible, this avoids passwords and tokens going over the network.
 
         // output : a credential object with all properties (username, password, host, port)    
+    - name: convert array of objects to html-table
+      code: |
+        fn.fnToTable($(my_array_field),{
+          tableClass = '',
+          escapeHtml = true,
+          emptyCell = '',
+          includeHeader = true
+        })
+
+        // output : an html-table representation of the array of objects taken from another field called "my_array_field"
+        // tip : add tableClass = 'table table-striped table-bordered' for bootstrap styling
     - name: sort an array
       code: |
         fn.fnSort(['a','b','z','q','c'],{'':{direction:'asc'}})
