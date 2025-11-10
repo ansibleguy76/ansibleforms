@@ -503,7 +503,6 @@ Form.validate = function(forms){
     logger.debug("validating forms.yaml against schema")
     const validate = ajv.compile(formsSchema)
     const valid = validate(forms)
-    console.log(validate.errors)
     if (!valid){
       var ajvMessages = AJVErrorParser.parseErrors(validate.errors)
       ajvMessages=ajvMessages.map(x => {
