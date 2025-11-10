@@ -24,6 +24,7 @@ const currentTab = ref("Forms");
 const showWarnings = ref(false);
 const action = ref(null);
 const lock = ref(false);
+const lockError = ref('');
 const nextAction = ref(false);
 const lockInterval = ref(null);
 const backups = ref([]);
@@ -264,8 +265,13 @@ async function loadForms() {
 async function loadLock() {
   try {
     lock.value = await Lock.get();
+    lockError.value = '';
   } catch (err) {
-    // toast.error(err.message);
+    if (err?.response?.status === 403 && err?.response?.data?.error) {
+      lockError.value = err.response.data.error;
+    } else {
+      toast.error(err.message);
+    }
   }
 }
 
@@ -624,6 +630,7 @@ onMounted(async () => {
           </Transition>
         </template>
         <template #actions>
+          <small v-if="lockError!==''" class="d-inline-flex mb-3 px-2 py-1 fw-semibold text-warning-emphasis bg-warning-subtle border border-warning-subtle rounded-2">{{ lockError }}</small>
           <template v-if="lock && lock.match">
             <BsButton class="ms-2" icon="check" @click="validateForms" :disabled="!isDirty">Validate</BsButton>
             <BsButton class="ms-2" icon="save" @click="saveForms" :disabled="!isValid || !isDirty">Save</BsButton>
