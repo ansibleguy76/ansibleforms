@@ -66,7 +66,13 @@ export default defineConfig({
     ],
   },
   build:{
-    base: './'
+    base: './',
+    minify: 'terser',
+    terserOptions: {
+      mangle: {
+        reserved: ["fnToTable", "fnArray", "fnGetNumberedName", "evalSandbox"]
+      }
+    },
   },
   server: {
     port: 8000,

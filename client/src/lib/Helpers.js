@@ -303,11 +303,11 @@ const Helpers = {
           var tmp = pattern.replace(nrsequence,nr.toString().padStart(nrsequence.length,"0"))
           return tmp
         }else{
-          console.log("fnGetNumberedName, no pattern matches found in the list")
+          // console.log("fnGetNumberedName, no pattern matches found in the list")
           return value
         }
       }else{
-        console.log("fnGetNumberedName, no pattern found, use ### for numbers")
+        // console.log("fnGetNumberedName, no pattern found, use ### for numbers")
         return value
       }
     }    
@@ -409,6 +409,9 @@ const Helpers = {
           })
         }
     }   
+    var dummy = fnArray.from([]) // to make it available
+    var dummy = fnGetNumberedName([], "###", "") // to make it available
+    var dummy = fnToTable([]) // to make it available
     if(expression) 
     return eval(expression)          
   }  

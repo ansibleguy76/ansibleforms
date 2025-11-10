@@ -1492,14 +1492,21 @@ onUnmounted(() => {
                                     <!-- expression raw data -->
                                     <div @dblclick="setExpressionFieldViewable(field.name, false)" v-if="fieldOptions[field.name].viewable"
                                         class="card p-2 limit-height">
-                                        <!-- <pre v-highlightjs><code lang="json">{{ v$.form[field.name].$model }}</code></pre> -->
                                         <VueJsonPretty :data="v$.form[field.name].$model" />
                                     </div>                                    
                                 </div>
 
                                 <!-- TYPE = HTML -->
-                                <div class="mt-3" v-if="field.type == 'html'" v-html="v$.form[field.name].$model || ''">
+                                <div class="mt-3" v-if="field.type == 'html'">
+                                    <div v-show="!fieldOptions[field.name].viewable" v-html="v$.form[field.name].$model || ''"></div>
+                                    <!-- raw data -->
+                                    <div @dblclick="setExpressionFieldViewable(field.name, false)"
+                                        v-if="fieldOptions[field.name].viewable"
+                                        class="card p-2 limit-height">
+                                        <VueJsonPretty :data="v$.form[field.name].$model || ''" />
+                                    </div>                                       
                                 </div>
+                                                        
 
                                 <!-- TYPE = ENUM -->
                                 <div v-if="field.type == 'enum'">
@@ -1525,7 +1532,6 @@ onUnmounted(() => {
                                     <div @dblclick="setExpressionFieldViewable(field.name, false)"
                                         v-if="fieldOptions[field.name].viewable"
                                         class="card p-2 limit-height">
-                                        <!-- <pre v-highlightjs><code lang="json">{{ queryresults[field.name] || [] }}</code></pre> -->
                                         <VueJsonPretty :data="queryresults[field.name] || []" />
                                     </div>
                                 </div>
