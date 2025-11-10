@@ -1,46 +1,38 @@
 import axios from 'axios';
 import TokenStorage from './TokenStorage';
 
+// Helper to extract API v2 error shape { error: message }
+function extractError(err) {
+    // Axios error response
+    const data = err?.response?.data;
+    if (data?.error) return data.error;
+    if (typeof data === 'string') return data;
+    return err.message || 'Unknown error';
+}
+
 const Lock = {
-    async get(){
-        try{
-            const result = await axios.get(`/api/v1/lock`,TokenStorage.getAuthentication())
-            const lock = result.data;
-            if(lock?.status == "error" && lock.data?.error?.startsWith("Designer is disabled")){
-                throw new Error(lock.data.error);
-            }
-            if(lock?.status == "error"){
-                throw new Error(lock.message);
-            }
-            return lock.data.output;
-        }catch(err){
-            throw new Error(`Could not get the lock.\n\n${err.message}`)
+    // GET lock status (API v2 preferred). Returns pure object on success, throws on error.
+    async get() {
+        const res = await axios.get(`/api/v2/lock`, TokenStorage.getAuthentication());
+        // v2 returns the object directly from RestResult.single
+        return res.data; // { lock, match, free } OR { free: true }
+    },
+    async set() {
+        try {
+            const res = await axios.post(`/api/v2/lock`, {}, TokenStorage.getAuthentication());
+            return res.data; // { message: 'Lock added' }
+        } catch (err) {
+            throw new Error(`Lock set failed: ${extractError(err)}`);
         }
     },
-    async set(){
-        try{
-            const result = await axios.post(`/api/v1/lock`,{},TokenStorage.getAuthentication())
-            const lock = result.data;
-            if(lock?.status == "error"){
-                throw new Error("Failed to set lock");
-            }
-            return true;
-        }catch(err){
-            throw new Error(`Could not set the lock.\n\n${err.message}`)
-        }
-    },
-    async release(){
-        try{
-            const result = await axios.delete(`/api/v1/lock`,TokenStorage.getAuthentication())
-            const lock = result.data;
-            if(lock?.status == "error"){
-                throw new Error("Failed to release lock");
-            }
-            return true;
-        }catch(err){
-            throw new Error(`Could not release the lock.\n\n${err.message}`)
+    async release() {
+        try {
+            const res = await axios.delete(`/api/v2/lock`, TokenStorage.getAuthentication());
+            return res.data; // { message: 'Lock deleted' } or { message: 'Lock not present', deleted:false }
+        } catch (err) {
+            throw new Error(`Lock release failed: ${extractError(err)}`);
         }
     }
-}
+};
 
 export default Lock;

@@ -134,7 +134,7 @@ const load = async (app) => {
   app.use(`/api/v1/version`, cors(), versionRoutes);
   app.use(`/api/v1/install`, cors(), installRoutes);
 
-  app.use(`/api/v1/lock`, cors(), authobj, lockRoutes);
+  app.use(`/api/v2/lock`, cors(), authobj, lockRoutes);
   app.use(`/api/v1/help`, cors(), authobj, helpRoutes);
 
   // api route for profile
