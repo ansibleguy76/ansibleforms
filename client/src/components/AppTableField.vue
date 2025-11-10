@@ -100,7 +100,9 @@ const rules = computed(() => {
     const ruleObj = { editedItem: {} } // holdes the rules for each field
     props.tableFields.forEach((ff, i) => {
         var rule = {} // holds the rules for a single field
-
+        if(!ff.label){
+            ff.label = ff.name
+        }
         // required but not for checkboxes, expressions and enums, where we simply expect a value to be present
         if (ff.type != 'checkbox' && ff.type != 'enum' && ff.required) {
             rule.required = helpers.withMessage(`${ff.label} is required`, required)
