@@ -118,34 +118,6 @@ const fnCopy=function(input){
     return input
 }
 
-const fnToTable = (data, {
-      tableClass = '',
-      escapeHtml = true,
-      emptyCell = '',
-      includeHeader = true
-    } = {}) => {
-  if (!Array.isArray(data) || data.length === 0) {
-    return '<table' + (tableClass ? ` class="${tableClass}"` : '') + '></table>';
-  }
-  const escape = escapeHtml
-    ? (s) => String(s)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-    : (s) => String(s);
-  const columns = [...new Set(data.flatMap(obj => Object.keys(obj)))];
-  const thead = includeHeader
-    ? '<thead><tr>' + columns.map(col => `<th>${escape(col)}</th>`).join('') + '</tr></thead>'
-    : '';
-  const tbody = '<tbody>' + data.map(row =>
-    '<tr>' + columns.map(col =>
-      `<td>${row[col] === undefined || row[col] === null ? emptyCell : escape(row[col])}</td>`
-    ).join('') + '</tr>'
-  ).join('') + '</tbody>';
-  return `<table${tableClass ? ` class="${tableClass}"` : ''}>${thead}${tbody}</table>`;
-}
-
 const fnSort=function(input,sort){
   let result=input
   if(!Array.isArray(input)){
@@ -417,6 +389,5 @@ export default {
   fnRestAdvanced,
   fnRestJwt,
   fnRestJwtSecure,
-  fnSsh,
-  fnToTable
+  fnSsh
 };
