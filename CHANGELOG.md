@@ -10,15 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 -   MASK_EXTRAVARS_REGEX, to allow extravars masking
+-   fnToTable local function, converts array to html table for html info field
 
 ### Fixed
 
 -   Several tablefield issues
 -   Datetime field didn't bubble changes
+-   knownhosts errored on non existing file
+-   Recursive checkdependencies
+-   check schema for correct dependencies
+-   dropdown/enum, working alignment
 
 ### Changed
 
 -   Schema creation in 1 shot
+-   lock api to v2
+-   knownhosts api to v2
 
 ## [6.0.1] - 2025-10-28
 
