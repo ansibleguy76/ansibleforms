@@ -136,6 +136,7 @@
         }
     }
 
+
     function dropfocus(event){
         if(isActive.value){
             close()
@@ -223,7 +224,7 @@
             </span>
         </div>
 
-        <div ref="ddRef" class="dropdown-menu border border-body af-shadow py-0 mt-2" :class="{'dropdown-menu-end': isRight,'show': isActive && !isLoading}" :style="'width:' + dropdownMenuWidth" id="dropdown-menu" role="menu">
+    <div ref="ddRef" class="dropdown-menu border border-body af-shadow py-0 mt-2 af-dd-advanced" :class="{'dropdown-menu-end': isRight,'show': isActive && !isLoading}" :style="'width:' + dropdownMenuWidth" role="menu">
             <div ref="contentRef" @keydown.esc="close()" @keydown.tab="close()"> 
                 <BsInputSelectAdvancedTable
                     :defaultValue="defaultValue"
@@ -324,7 +325,7 @@
             </span>
         </div>
 
-        <div ref="ddRef" class="dropdown-menu border af-shadow py-0 mt-2" :class="{'border-danger':hasError,'border-body':!hasError,'dropdown-menu-end': isRight,'show': isActive && !isLoading}" :style="'width:' + dropdownMenuWidth" id="dropdown-menu" role="menu">
+    <div ref="ddRef" class="dropdown-menu border af-shadow py-0 mt-2 af-dd-advanced" :class="{'border-danger':hasError,'border-body':!hasError,'dropdown-menu-end': isRight,'show': isActive && !isLoading}" :style="'width:' + dropdownMenuWidth" role="menu">
             <div ref="contentRef" @keydown.esc="close()" @keydown.tab="close()"> 
                 <BsInputSelectAdvanced2
                     :defaultValue="defaultValue"
@@ -378,6 +379,25 @@
     box-shadow: 0 0 0 0.25rem rgb(13 110 253 / 25%);
     z-index: 3;
     border-radius: .25rem;
+}
+
+/* Ensure Bootstrap end-aligned dropdown actually snaps to the right edge even with custom widths */
+:deep(.dropdown-menu-end) {
+    left: auto !important;
+    right: 0 !important;
+    transform-origin: top right;
+}
+
+/* When in dropup mode and end-aligned, keep bottom positioning consistent */
+.dropdown.dropup :deep(.dropdown-menu-end) {
+    left: auto !important;
+    right: 0 !important;
+}
+
+/* Prevent unintended horizontal scroll due to large dynamic width */
+.af-dd-advanced.dropdown-menu {
+    max-width: 100vw;
+    box-sizing: border-box;
 }
 
 </style>
