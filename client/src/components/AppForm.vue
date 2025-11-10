@@ -416,13 +416,13 @@ function checkDependencies(field) {
             const item = field.dependencies[i]
             var value = undefined
             var column = ""
-            var inversed = item.name.startsWith("!")                         // detect ! => inversion
-            var fieldname = inversed ? item.name.slice(1) : item.name            // drop the !
-            var columnRegex = /(.+)\.(.+)/g;                               // detect a "." in the field
+            var inversed = item.name.startsWith("!")                            // detect ! => inversion
+            var fieldname = inversed ? item.name.slice(1) : item.name           // drop the !
+            var columnRegex = /(.+)\.(.+)/g;                                     // detect a "." in the field
             var tmpArr = columnRegex.exec(fieldname)                             // found aaa.bbb
             var tmp
             if (tmpArr && tmpArr.length > 0) {
-                fieldname = tmpArr[1]                                        // aaa
+                fieldname = tmpArr[1]                                          // aaa
                 column = tmpArr[2]                                             // bbb
             } else {
                 if (fieldname in fieldOptions.value) {
@@ -437,7 +437,11 @@ function checkDependencies(field) {
 
             // dependency on validated
             if (item.isValid != undefined) {
-                tmp = item.isValid != v$.value.form[fieldname].$invalid
+                if(fieldOptions.value[fieldname]['hasDependencies'] || false){
+                    tmp = (item.isValid != (v$.value.form[fieldname]?.$invalid)) && fieldOptions.value[fieldname]['dependencyOk']
+                }else{
+                    tmp = item.isValid != (v$.value.form[fieldname]?.$invalid)
+                }
                 if (isAnd && ((!inversed && !tmp) || ((inversed && tmp)))) {
                     result = false
                     // console.log("and not valid")
@@ -470,6 +474,7 @@ function checkDependencies(field) {
             // console.log("inverting")
         }
         // console.log("final => " + result)
+        fieldOptions.value[field.name]["dependencyOk"] = result
         if (result) {
             setVisibility(field.name, true)
         } else {
@@ -715,7 +720,7 @@ function findVariableDependencies() {
         if (!item?.name) return
         if (item.dependencies) {
             item.dependencies.forEach((dep) => {
-                if (!(fields.includes(dep.name) || (dep.name.startsWith("!") && fields.includes(dep.name.slice(1))))) {
+                if (!(fields.includes(dep.name) || (dep.name?.startsWith("!") && fields.includes(dep.name.slice(1))))) {
                     warnings.value.push(`<span class="text-warning">'${item.name}' has bad dependencies</span><br><span>${dep.name} is not a valid field name</span>`)
                 }
             })
@@ -998,6 +1003,9 @@ function initForm() {
             item.type = "expression";
             item.runLocal = true;
         }
+        if (item.type == "html"){
+            item.runLocal = true;
+        }
     });
 
     // initiate the constants
@@ -1033,6 +1041,8 @@ function initForm() {
         }
         fieldOptions.value[item.name] = {};
         fieldOptions.value[item.name]["evalDefault"] = item.evalDefault ?? false;
+        fieldOptions.value[item.name]["hasDependencies"] = ("dependencies" in item)
+        fieldOptions.value[item.name]["dependencyOk"] = false
         if (["expression", "enum", "table", "html"].includes(item.type)) {
             fieldOptions.value[item.name]["isDynamic"] = !!(item.expression ?? item.query ?? item.value ?? false);
             fieldOptions.value[item.name]["valueColumn"] = item.valueColumn || "";
@@ -1105,7 +1115,7 @@ async function startDynamicFieldsLoop() {
                     fieldOptions.value[item.name].expressionEval = placeholderCheck.value || "undefined";
 
                     if (placeholderCheck.value != undefined) {
-                        if (item.runLocal || item.type == "html") {
+                        if (item.runLocal) {
                             try {
                                 var result;
                                 if (placeholderCheck.value.at(0) == "{" && placeholderCheck.value.at(-1) == "}") {
@@ -1113,8 +1123,8 @@ async function startDynamicFieldsLoop() {
                                 } else {
                                     result = Helpers.evalSandbox(placeholderCheck.value);
                                 }
-
-                                if (item.type == "expression" || item.type == "html") form.value[item.name] = result;
+                                if (item.type == "html") form.value[item.name] = result;
+                                if (item.type == "expression") form.value[item.name] = result;
                                 if (item.type == "enum") queryresults.value[item.name] = [].concat(result);
                                 if (item.type == "table" && !defaults.value[item.name]) form.value[item.name] = [].concat(result);
                                 if (item.type == "table" && defaults.value[item.name]) form.value[item.name] = [].concat(defaults.value[item.name]);
@@ -1146,6 +1156,7 @@ async function startDynamicFieldsLoop() {
                                     delete queryerrors.value[item.name];
                                 }
                                 if (restresult.status == "success") {
+                                    if (item.type == "html") form.value[item.name] = restresult.data.output;
                                     if (item.type == "expression") form.value[item.name] = restresult.data.output;
                                     if (item.type == "enum") queryresults.value[item.name] = [].concat(restresult.data.output ?? []);
                                     if (item.type == "table" && !defaults.value[item.name]) form.value[item.name] = [].concat(restresult.data.output ?? []);
@@ -1330,7 +1341,7 @@ onUnmounted(() => {
 
     <!-- FORM -->
 
-    <div v-if="formIsReady">
+    <div v-if="formIsReady" ref="containerRef">
 
         <!-- WARNINGS -->
         <BsOffCanvas v-if="(warnings || Object.keys(queryerrors).length > 0) && showWarnings" :show="true"
@@ -1588,7 +1599,7 @@ onUnmounted(() => {
                 </div>
             </div>
         </template>
-        <div class="d-grid mt-3" v-if="status == ''">
+        <div class="d-grid my-3" v-if="status == ''">
             <button type="button" class="btn text-white btn-primary" @click="status = 'initializing'">
                 <FaIcon :icon="submitIcon"></FaIcon><span class="ms-3">{{ submitLabel }}</span>
             </button>
