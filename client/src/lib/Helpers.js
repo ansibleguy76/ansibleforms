@@ -203,6 +203,11 @@ const Helpers = {
   diff(arrA, arrB) {
     let diff = [];
     function isEq(a, b) {
+      // Handle null/undefined cases
+      if (a === b) return true;
+      if (a == null || b == null) return false;
+      if (typeof a !== 'object' || typeof b !== 'object') return a === b;
+      
       var aProps = Object.getOwnPropertyNames(a);
       var bProps = Object.getOwnPropertyNames(b);
       if (aProps.length != bProps.length) {
