@@ -71,7 +71,7 @@ const props = defineProps({
     deleteMarker: { type: String, default: "" },
     insertMarker: { type: String, default: "" },
     updateMarker: { type: String, default: "" },
-    readonlyColumns: { type: Array },
+    readonlyColumns: { type: Array, default: () => [] },
     insertColumns: { type: Array },
     hasError: { type: Boolean },
     errors: { type: Array, default: () => [] },
@@ -393,7 +393,7 @@ onMounted(() => {
                         v-if="['text', 'password', 'textarea', 'number', 'checkbox', 'radio'].includes(field.type)"
                         :autofocus="index == 0" :hasError="v$.editedItem[field.name].$invalid"
                         v-model="v$.editedItem[field.name].$model" :name="field.name" v-bind="field.attrs"
-                        :required="field.required" :type="field.type" :icon="field.icon" :readonly="field.hide"
+                        :required="field.required" :type="field.type" :icon="field.icon" :readonly="field.hide || readonlyColumns.includes(field.name)"
                         :placeholder="field.placeholder" 
                         :isSwitch="field.switch"
                         :errors="v$.editedItem[field.name].$errors" 
@@ -410,7 +410,7 @@ onMounted(() => {
                         :pctColumns="field.pctColumns || []" :filterColumns="field.filterColumns || []"
                         :previewColumn="field.previewColumn || ''" :valueColumn="field.valueColumn || ''"
                         :sticky="field.sticky || false" :horizontal="field.horizontal || false"
-                        :disabled="action == 'Edit' && readonlyColumns.includes(field.name)" :help="field.help" />
+                        :readonly="readonlyColumns.includes(field.name)" :help="field.help" />
                 </div>
             </template>
         </BsOffCanvas>

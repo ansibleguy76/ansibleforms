@@ -67,6 +67,7 @@
     pctColumns: { type: Array, default: () => [] },
     filterColumns: { type: Array, default: () => [] },
     focus: { type: String },
+    disabled: { type: Boolean, default: false },
   });
 
   // COMPUTED
@@ -145,6 +146,7 @@
     getLabels();
     emit("reset");
   }, { deep: true });
+
   watch(() => props.focus, (val) => {
     if (val == "content") {
       nextTick(() => {
@@ -447,8 +449,8 @@
         <thead v-if="labels.length > 1">
           <tr :class="sizeClass">
             <th v-if="multiple" class="is-first">
-              <font-awesome-icon v-show="checkAll" @click="multicheck()" :icon="['far', 'check-square']" />
-              <font-awesome-icon v-show="!checkAll" @click="multicheck()" :icon="['far', 'square']" />
+              <font-awesome-icon v-show="checkAll" @click="disabled ? null : multicheck()" :icon="['far', 'check-square']" />
+              <font-awesome-icon v-show="!checkAll" @click="disabled ? null : multicheck()" :icon="['far', 'square']" />
             </th>
             <th :key="l" v-for="l in labels">{{ l }}</th>
           </tr>
@@ -456,8 +458,8 @@
         <thead v-if="labels.length <= 1 && multiple">
           <tr :class="sizeClass">
             <th v-if="multiple" class="is-first">
-              <font-awesome-icon v-show="checkAll" @click="multicheck()" :icon="['far', 'check-square']" />
-              <font-awesome-icon v-show="!checkAll" @click="multicheck()" :icon="['far', 'square']" />
+              <font-awesome-icon v-show="checkAll" @click="disabled ? null : multicheck()" :icon="['far', 'check-square']" />
+              <font-awesome-icon v-show="!checkAll" @click="disabled ? null : multicheck()" :icon="['far', 'square']" />
             </th>
             <th>Name</th>
           </tr>
@@ -466,7 +468,7 @@
           <tr :class="{
             'table-primary': selected[v.index],
             sizeClass: sizeClass,
-          }" :key="v.index" v-for="v,i in filtered" @click="select(v.index)">
+          }" :key="v.index" v-for="v,i in filtered" @click="disabled ? null : select(v.index)">
             <td v-if="multiple" class="is-first">
               <font-awesome-icon v-show="selected[v.index]" :icon="['far', 'check-square']" />
               <font-awesome-icon v-show="!selected[v.index]" :icon="['far', 'square']" />

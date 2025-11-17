@@ -23,6 +23,7 @@
     /******************************************************************/
 
     import Helpers from "@/lib/Helpers";
+    import _ from "lodash";
 
     // INIT
 
@@ -226,10 +227,10 @@
         </div>
         <div class="bg-light col text-center col-2 align-content-center">
             <div class="m-3">
-                <button class="btn btn-arrow btn-outline-success" @click="moveAllRight"><font-awesome-icon icon="angles-right" /></button><br>
-                <button class="btn btn-arrow btn-outline-success" @click="moveRight"><font-awesome-icon icon="angle-right" /></button><br>
-                <button class="btn btn-arrow btn-outline-danger" @click="moveLeft"><font-awesome-icon icon="angle-left" /></button><br>
-                <button class="btn btn-arrow btn-outline-danger" @click="moveAllLeft"><font-awesome-icon icon="angles-left" /></button>                
+                <button class="btn btn-arrow btn-outline-success" :disabled="disabled" @click="moveAllRight"><font-awesome-icon icon="angles-right" /></button><br>
+                <button class="btn btn-arrow btn-outline-success" :disabled="disabled" @click="moveRight"><font-awesome-icon icon="angle-right" /></button><br>
+                <button class="btn btn-arrow btn-outline-danger" :disabled="disabled" @click="moveLeft"><font-awesome-icon icon="angle-left" /></button><br>
+                <button class="btn btn-arrow btn-outline-danger" :disabled="disabled" @click="moveAllLeft"><font-awesome-icon icon="angles-left" /></button>                
             </div>
             
         </div>

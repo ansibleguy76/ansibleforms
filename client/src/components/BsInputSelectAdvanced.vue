@@ -58,6 +58,7 @@
         sticky: { type: Boolean, default: false },
         horizontal: {type: Boolean, default: false},
         disabled: { type: Boolean, default: false },
+        readonly: { type: Boolean, default: false },
         isFloating: { type: Boolean, default: true },
         label: { type: String, default: "" },
         uid: { type: [String, Number], required: true }
@@ -110,7 +111,7 @@
 
     // toggle the dropdown
     function toggle() {
-        if (props.disabled) return
+        if (props.disabled || props.readonly) return
         isUp.value = false
         isActive.value = !isActive.value
         if (isActive.value && !props.isLoading) {
@@ -274,6 +275,7 @@
                     :filterColumns="filterColumns || []"
                     :previewColumn="previewColumn || ''"
                     :valueColumn="valueColumn || ''"
+                    :disabled="readonly || disabled"
                     @isSelected="isSelected"
                     @reset="preview = ''"
                     :focus="focus"
@@ -297,6 +299,7 @@
             :filterColumns="filterColumns || []"
             :previewColumn="previewColumn || ''"
             :valueColumn="valueColumn || ''"
+            :disabled="readonly || disabled"
             @reset="preview = ''"
         /> 
     </div>
@@ -391,6 +394,7 @@
             :filterColumns="filterColumns || []"
             :previewColumn="previewColumn || ''"
             :valueColumn="valueColumn || ''"
+            :disabled="readonly || disabled"
             @reset="preview = ''"
         />
     </div> 
