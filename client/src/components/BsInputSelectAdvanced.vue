@@ -38,6 +38,7 @@
     const emit = defineEmits(["update:modelValue"])
 
     const props = defineProps({
+        modelValue: { type: [String, Array, Object, Number] },
         containerSize: {type: Object, default: () => ({x:0, width:0})},
         values: { type: Array, required: true },
         hasError: { type: Boolean, default: false },
@@ -73,6 +74,28 @@
     const contentRef = useTemplateRef("contentRef")
     const ddRef = useTemplateRef("ddRef")
     const dtRef = useTemplateRef("dtRef")
+
+    // computed property for safe v-model binding to selected.values
+    const selectedValues = computed({
+        get() {
+            return selected.value?.values || []
+        },
+        set(newValue) {
+            if (!selected.value) {
+                selected.value = { values: [], preview: "" }
+            }
+            
+            // Handle case where newValue is an object with values and preview (from BsInputSelectAdvanced2)
+            if (typeof newValue === 'object' && newValue.hasOwnProperty('values') && newValue.hasOwnProperty('preview')) {
+                selected.value.values = newValue.values
+                selected.value.preview = newValue.preview
+                preview.value = newValue.preview  // Also update the local preview ref
+            } else {
+                // Handle case where newValue is just an array
+                selected.value.values = newValue || []
+            }
+        }
+    })
 
     // in the case of this advanced select, we don't use the bootstrap dropdown js functions
     // instead we use the isActive ref to toggle the dropdown
@@ -154,6 +177,18 @@
     // we watch the container size and recalculate the dropdown menu width
     watch(() => props.containerSize, (val) => {
         calcDropdownMenuWidth()
+    })
+
+    // sync modelValue with selected.values
+    watch(() => props.modelValue, (newValue) => {
+        if (selected.value && JSON.stringify(selected.value.values) !== JSON.stringify(newValue)) {
+            selected.value.values = newValue
+            // Also reset preview when modelValue is reset
+            if (!newValue || (Array.isArray(newValue) && newValue.length === 0)) {
+                selected.value.preview = ""
+                preview.value = ""
+            }
+        }
     })
 
     // on mounted we blur the input and the content, no focus !
@@ -332,7 +367,7 @@
                     :required="required || false"
                     :name="name"
                     :values="values || []"
-                    v-model="selected"
+                    v-model="selectedValues"
                     :columns="columns || []"
                     :filterColumns="filterColumns || []"
                     :previewColumn="previewColumn || ''"
@@ -351,7 +386,7 @@
             :name="name"
             :defaultValue="defaultValue"
             :values="values || []"
-            v-model="selected"
+            v-model="selectedValues"
             :columns="columns || []"
             :filterColumns="filterColumns || []"
             :previewColumn="previewColumn || ''"

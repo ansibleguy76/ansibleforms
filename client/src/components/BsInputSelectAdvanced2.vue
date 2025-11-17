@@ -31,6 +31,7 @@
     // PROPS
 
     const props = defineProps({
+        modelValue: { type: [String, Array, Object, Number] },
         values: { type: Array, required: true, default: ()=>[] },
         hasError: { type: Boolean, default: false },
         required: { type: Boolean, default: false },
@@ -63,6 +64,22 @@
     watch(() => selected.value, (val) => {
         emitUpdate()
     }, { deep: true })
+
+      // sync modelValue with selected array
+    // sync modelValue with selected array (extract values if object, prevent loops)
+    watch(() => props.modelValue, (newValue) => {
+        let targetArray = []
+        if (Array.isArray(newValue)) {
+            targetArray = newValue
+        } else if (newValue && typeof newValue === 'object' && Array.isArray(newValue.values)) {
+            targetArray = newValue.values
+        }
+        
+        // Only update if the arrays are actually different
+        if (JSON.stringify(selected.value) !== JSON.stringify(targetArray)) {
+            selected.value = targetArray
+        }
+    })
 
     // COMPUTED
 
@@ -104,7 +121,7 @@
         isLoaded.value=true
 
         if(selected.value.length == 0){
-            emit("update:modelValue", {value: undefined, preview: undefined})
+            emit("update:modelValue", {values: undefined, preview: ""})
         } else {
             emit("update:modelValue", {values: selected.value, preview: preview.value})
         }
