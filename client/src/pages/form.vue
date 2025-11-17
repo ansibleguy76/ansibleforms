@@ -188,6 +188,7 @@ const formStatus = computed(() => {
 /******************************** */
 
 async function reloadForm() {
+  resetResult();
   await loadForm();
   key.value++;
 }
