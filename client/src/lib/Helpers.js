@@ -265,7 +265,7 @@ const Helpers = {
       var re=new RegExp("[^\#]*(\#+)[^\#]*") // eslint-disable-line
       var patternmatch=re.exec(pattern)
       if(!names || !Array.isArray(names)){
-        console.log("fnGetNumberedName, No input or no array")
+        // console.log("fnGetNumberedName, No input or no array")
         return value
       }
       if(patternmatch && patternmatch.length==2){
