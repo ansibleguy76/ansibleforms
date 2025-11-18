@@ -88,9 +88,9 @@ Repo.clone = async function (uri,name,branch=undefined) {
       var cmd
       if(uri){
         if(branch){
-          cmd = `git clone -b ${branch} --verbose ${uri} ${name}`
+          cmd = `${config.gitCloneCommand} -b ${branch} --verbose ${uri} ${name}`
         }else{
-          cmd = `git clone --verbose ${uri} ${name}`
+          cmd = `${config.gitCloneCommand} --verbose ${uri} ${name}`
         }
       }else{
         throw new Error("No uri given")
@@ -146,7 +146,7 @@ Repo.addKnownHosts = async function (hosts) {
 
 // run a playbook
 Repo.pull = async function (name) {
-      var command = "git pull --verbose"
+      var command = `${config.gitPullCommand} --verbose`
       var directory = path.join(config.repoPath,name)
       return await Cmd.executeSilentCommand({directory:directory,command:command,description:"Pulling from git"},true)
 };

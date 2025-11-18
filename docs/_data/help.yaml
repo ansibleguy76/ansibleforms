@@ -187,6 +187,21 @@
       If you use git repositories to store the forms, you can choose to store the master forms.yaml in git as well.  
       Or, you can choose to have the forms.yaml in the database instead.  Having a clean separation : master forms.yaml in database, and the actual forms in git.
     version: 5.0.3
+  - name: GIT_CLONE_COMMAND
+    type: string
+    allowed: a valid git clone command
+    short: Git clone command
+    default: "git clone"
+    description: |
+      The command used to clone git repositories.  Note that branch and repository will be auto added.
+    version: 6.0.2
+  - name: GIT_PULL_COMMAND
+    type: string
+    allowed: a valid git pull command
+    short: Git pull command
+    default: "git pull"
+    description: |
+      The command used to pull git repositories.  Note that branch and repository will be auto added.
   - name: SHOW_DESIGNER
     type: number
     choices:
