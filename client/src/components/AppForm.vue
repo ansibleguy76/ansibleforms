@@ -1098,7 +1098,7 @@ function initForm() {
 async function startDynamicFieldsLoop() {
     var refreshCounter = 0;
     var hasUnevaluatedFields = false;
-
+    changed();
     interval.value = setInterval(async () => {
         hasUnevaluatedFields = false;
         unevaluatedFields.value = [];
