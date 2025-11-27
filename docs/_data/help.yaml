@@ -4071,6 +4071,13 @@
         //  
         // You must use 'known_hosts' and 'public-key' to setup non-interactive password-less authentication.
         // In the settings you can find the public-key and add your target-host to known_hosts
+    - name: list files in a directory
+      code: |
+        fn.fnLs('/tmp',{ resursive: true, regex: '.*\.log$' })
+
+        // fn.fnLs(path,options)
+        // - path : path to directory
+        // - options : recursive:boolean, regex:string
     - name: get DNS info
       code: |
         fn.fnDnsResolve('ansibleguy.com','A')

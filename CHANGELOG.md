@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   MASK_EXTRAVARS_REGEX, to allow extravars masking
 -   fnToTable local function, converts array to html table for html info field
 -   GIT_CLONE_COMMAND and GIT_PULL_COMMAND env vars added
+-   fnLs dir,{recursive,regex}
 
 ### Fixed
 
@@ -26,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   tablefield readonlycolumns (issue 377)
 -   on-event-actions fixed
 -   fixed abondon jobs loop
+-   fix fnSsh
 
 ### Changed
 
