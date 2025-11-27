@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   MASK_EXTRAVARS_REGEX, to allow extravars masking
 -   fnToTable local function, converts array to html table for html info field
+-   GIT_CLONE_COMMAND and GIT_PULL_COMMAND env vars added
 
 ### Fixed
 
@@ -20,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Recursive checkdependencies
 -   check schema for correct dependencies
 -   dropdown/enum, working alignment
+-   dropdown/enum, refresh and preview
+-   readonly and disable props
+-   tablefield readonlycolumns (issue 377)
+-   on-event-actions fixed
+-   fixed abondon jobs loop
 
 ### Changed
 
