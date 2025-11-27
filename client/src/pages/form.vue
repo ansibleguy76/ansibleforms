@@ -187,8 +187,10 @@ const formStatus = computed(() => {
 // methods
 /******************************** */
 
-async function reloadForm() {
-  resetResult();
+async function reloadForm(reset = true) {
+  if (reset) {
+    resetResult();
+  }
   await loadForm();
   key.value++;
 }
@@ -199,20 +201,21 @@ function toggleShowExtraVars() {
 
 // do action after form submit
 function doAction(a, jobid) {
+  
   const action = Object.keys(a)[0];
   const value = a[action];
   var wait = 0;
   var form = "";
   if (typeof value == "string") {
     var tmp = value.split(/,(.*)/s);
-    wait = tmp[0];
+    wait = parseInt(tmp[0]);
     form = tmp[1];
   } else {
     wait = parseInt(value);
   }
   if (action == "clear") {
     setTimeout(() => {
-      initForm();
+      reloadForm(false);
     }, wait * 1000);
   }
   if (action == "home") {
@@ -222,16 +225,12 @@ function doAction(a, jobid) {
   }
   if (action == "load") {
     setTimeout(() => {
-      reloadForm();
-      Navigate.toPath(router, {
-        path: "/form",
-        query: { form: form, __previous_jobid__: jobid },
-      });
+      Navigate.toPath(router, "/form", { form: form, __previous_jobid__: jobid }, true);
     }, wait * 1000);
   }
   if (action == "reload") {
     setTimeout(() => {
-      router.go();
+      reloadForm();
     }, wait * 1000);
   }
   if (action == "hide") {
@@ -668,6 +667,14 @@ onMounted(async () => {
   resetResult();
 });
 
+// Watch for route changes to reload form when navigating with different query params
+watch(() => route.query.form, async (newForm, oldForm) => {
+  if (newForm && newForm !== oldForm) {
+    console.log('Form query parameter changed, reloading form:', newForm);
+    await reloadForm();
+  }
+});
+
 onBeforeUnmount(() => {
   clearTimeout(timeout.value);
 });
@@ -676,7 +683,7 @@ onBeforeUnmount(() => {
 <template>
   <AppNav />
   <div class="flex-shrink-0">
-    <main class="d-flex container-xxl">
+    <main class="d-flex container-xxl" :class="{'d-none':hideForm}">
       <div v-if="authenticated && currentForm" class="container-fluid pt-5">
         <!-- TITLE -->
         <h2 class="d-flex align-items-center">
