@@ -331,7 +331,7 @@ const fnRestJwtSecure = async function(action,url,body,tokenname,jqe=null,sort=n
 }
 const fnSsh = async function(user,host,cmd,jqe=null){
 
-  result= await new Promise((resolve,reject)=>{
+  var result= await new Promise((resolve,reject)=>{
     const u=user.replaceAll('"','\"') // escape quote in user to avoid code injection
     const h=host.replaceAll('"','') // remove quote in host to avoid code injection
     const c=cmd.replace('"','\"') // escape quote in command to avoid code injection
@@ -373,6 +373,34 @@ const fnSsh = async function(user,host,cmd,jqe=null){
   return result
 
 }
+/**
+ * List the contents of a directory (optionally recursively), with optional regex filtering.
+ * @param {string} dirPath - The path to the directory to list.
+ * @param {object} options - Options: { regex, recursive }
+ * @returns {Promise<string[]>} - Array of file/folder names (folders have trailing slash, relative to dirPath)
+ */
+export async function fnLs(dirPath, options = {}) {
+  const results = [];
+  let regex = null;
+  if (options.regex) {
+    regex = options.regex instanceof RegExp ? options.regex : new RegExp(options.regex);
+  }
+  async function walk(currentPath, relPath = "") {
+    const entries = await fsPromises.readdir(currentPath, { withFileTypes: true });
+    for (const entry of entries) {
+      const entryName = entry.name + (entry.isDirectory() ? "/" : "");
+      const fullRelPath = relPath ? path.posix.join(relPath, entryName) : entryName;
+      if (!regex || regex.test(fullRelPath)) {
+        results.push(fullRelPath);
+      }
+      if (options.recursive && entry.isDirectory()) {
+        await walk(path.join(currentPath, entry.name), relPath ? path.posix.join(relPath, entry.name) : entry.name);
+      }
+    }
+  }
+  await walk(dirPath, "");
+  return results;
+}
 // etc
 export default {
   fnGetNumberedName,
@@ -389,5 +417,6 @@ export default {
   fnRestAdvanced,
   fnRestJwt,
   fnRestJwtSecure,
-  fnSsh
+  fnSsh,
+  fnLs
 };
