@@ -280,7 +280,7 @@ Job.abandon = async function (all = false) {
   var sql =
     "UPDATE AnsibleForms.`jobs` set status='abandoned',abort_requested=0 where (status='running' or abort_requested) "; // remove all jobs
   if (!all) {
-    sql = sql + "and (start >= (NOW() - INTERVAL 1 DAY))"; // remove jobs that are 1 day old
+    sql = sql + "and (start < (NOW() - INTERVAL 1 DAY))"; // remove jobs that are 1 day old
   }
   const res = await mysql.do(sql);
   return res.changedRows;
