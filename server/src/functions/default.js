@@ -401,6 +401,66 @@ export async function fnLs(dirPath, options = {}) {
   await walk(dirPath, "");
   return results;
 }
+
+
+/**
+ * Fetches HTML content from a URL and extracts data using regex groups
+ * @param {string} url - The URL to fetch HTML from
+ * @param {string} regexPattern - The regex pattern with capture groups
+ * @param {string} regexFlags - Optional regex flags (e.g., 'gi', 'i', 'g')
+ * @returns {Promise<Array>} - Array of objects containing all group matches
+ */
+const fnParseHtmlWithRegex = async function(url, regexPattern, regexFlags = 'g') {
+  logger.debug(`[fnParseHtmlWithRegex] Fetching HTML from: ${url}`);
+  logger.debug(`[fnParseHtmlWithRegex] Using regex pattern: ${regexPattern}`);
+  
+  try {
+    // Dynamically import axios
+    const { default: axios } = await import('axios');
+    
+    // Fetch HTML content
+    const response = await axios.get(url, {
+      timeout: 30000, // 30 second timeout
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
+    
+    logger.debug(`[fnParseHtmlWithRegex] Successfully fetched ${response.data.length} characters`);
+    
+    // Create regex object
+    const regex = new RegExp(regexPattern, regexFlags);
+    const matches = [];
+    let match;
+    
+    // Extract all matches with groups
+    while ((match = regex.exec(response.data)) !== null) {
+      const matchResult = {
+        fullMatch: match[0],
+        groups: [],
+        namedGroups: match.groups || {}
+      };
+      
+      // Add numbered groups (excluding index 0 which is the full match)
+      for (let i = 1; i < match.length; i++) {
+        matchResult.groups.push(match[i]);
+      }
+      
+      matches.push(matchResult);
+      
+      // Prevent infinite loops on global regex without 'g' flag
+      if (!regexFlags.includes('g')) break;
+    }
+    
+    logger.debug(`[fnParseHtmlWithRegex] Found ${matches.length} matches`);
+    return matches;
+    
+  } catch (error) {
+    logger.error(`[fnParseHtmlWithRegex] Error: ${error.message}`);
+    throw new Error(`Failed to fetch HTML or parse regex: ${error.message}`);
+  }
+};
+
 // etc
 export default {
   fnGetNumberedName,
@@ -418,5 +478,6 @@ export default {
   fnRestJwt,
   fnRestJwtSecure,
   fnSsh,
-  fnLs
+  fnLs,
+  fnParseHtmlWithRegex  
 };

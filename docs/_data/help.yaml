@@ -4078,6 +4078,16 @@
         // fn.fnLs(path,options)
         // - path : path to directory
         // - options : recursive:boolean, regex:string
+    - name: parse html page
+      code: |
+        fn.fnParseHtmlWithRegex('https://ansibleguy.com','<h2.*?>(.*?)</h2>','g')
+
+        // fn.fnParseHtmlWithRegex(url,regex,flags)
+        // - url : url to html page
+        // - regex : a regular expression with at least one group ( )
+        // - flags : regex flags (such as g,i,m)
+        //
+        // it will grab the html source and return an array with all the group matches
     - name: get DNS info
       code: |
         fn.fnDnsResolve('ansibleguy.com','A')
