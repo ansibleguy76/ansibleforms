@@ -96,7 +96,7 @@
 </script>
 <template>
 
-    <VueDatePicker text-input v-model="model" utc @blur="blur" :auto-apply="['date','month','week'].includes(dateType)" @focus="focus" @input="input" :preview-format="format" :format="format" :enable-time-picker="hasTimePicker" :month-picker="dateType == 'month'" :week-picker="dateType == 'week'" :quarter-picker="dateType == 'quarter'" :year-picker="dateType == 'year'" :time-picker="dateType == 'time'" position="left" :is-24="true" :dark="theme=='dark'">
+    <VueDatePicker text-input v-model="model" timezone="utc" @blur="blur" :auto-apply="['date','month','week'].includes(dateType)" @focus="focus" @input="input" :formats="{input:format, preview:format}" enable-time-picker="hasTimePicker" :month-picker="dateType == 'month'" :week-picker="dateType == 'week'" :quarter-picker="dateType == 'quarter'" :year-picker="dateType == 'year'" :time-picker="dateType == 'time'" :is-24="true" :dark="theme=='dark'">
         <template #dp-input="{ value }">
         <!-- ICON FIELD GROUP -->
         <div class="input-group">

@@ -15,7 +15,8 @@ import Popper from "vue3-popper";
 import clickOutside from "@/directives/clickOutside"; 
 import VueHighlightJS from "@/lib/Highlight.js";
 import VueJsonPretty from 'vue-json-pretty'
-import VueDatePicker from '@vuepic/vue-datepicker';
+import { VueDatePicker } from '@vuepic/vue-datepicker';
+
 
 // Import our custom CSS
 import '@/styles/settings.scss'
@@ -31,6 +32,7 @@ import 'vue-json-pretty/lib/styles.css'
 // Import the CSS or use your own!
 import "vue-toastification/dist/index.css";
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
+import '@vuepic/vue-datepicker/dist/main.css'
 
 // font awesome global
 import { library} from "@fortawesome/fontawesome-svg-core";
