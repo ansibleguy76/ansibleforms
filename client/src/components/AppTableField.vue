@@ -226,14 +226,18 @@ function getValueLabel(field) {
         if (field.columns && field.columns.length > 0) {
             return field.columns[0];
         }
-        if (typeof editedItem.value[field.name] == "object") {
-            try {
-                if (Object.keys(editedItem.value[field.name]) && Object.keys(editedItem.value[field.name]).length > 0) {
-                    return Object.keys(editedItem.value[field.name])[0];
+        try{
+            if (typeof editedItem.value[field.name] == "object") {
+                try {
+                    if (Object.keys(editedItem.value[field.name]) && Object.keys(editedItem.value[field.name]).length > 0) {
+                        return Object.keys(editedItem.value[field.name])[0];
+                    }
+                } catch (e) {
+                    return undefined;
                 }
-            } catch (e) {
-                return undefined;
             }
+        } catch(e){
+            return undefined;
         }
         return undefined;
     } else {
@@ -298,18 +302,47 @@ function undoRemoveItem(index) {
     emit('update:model-value', rows.value);
 }
 
+function getEditedItemValues() {
+    // Create a copy of editedItem and flatten enum fields with valueColumn
+    const result = Helpers.deepClone(editedItem.value);
+    
+    props.tableFields.forEach(field => {
+        if (field.type === 'enum' && field.valueColumn) {
+            const fieldValue = result[field.name];
+            
+            if (fieldValue === null || fieldValue === undefined) {
+                // Leave null/undefined as-is
+                return;
+            }
+            
+            if (Array.isArray(fieldValue)) {
+                // Array of objects -> map to array of valueColumn values
+                result[field.name] = fieldValue.map(obj => 
+                    typeof obj === 'object' && obj !== null ? obj[field.valueColumn] : obj
+                );
+            } else if (typeof fieldValue === 'object') {
+                // Single object -> extract valueColumn
+                result[field.name] = fieldValue[field.valueColumn];
+            }
+            // If it's already a primitive, leave as-is
+        }
+    });
+    
+    return result;
+}
+
 function saveItem() {
     v$.value.editedItem.$touch();
-
+    
     if (!v$.value.editedItem.$invalid) {
         if (action.value == "Add") {
             if (insert_marker.value) {
                 editedItem.value[insert_marker.value] = true;
             }
             if (editIndex.value < 0) {
-                rows.value.push(editedItem.value);
+                rows.value.push(getEditedItemValues());
             } else {
-                rows.value.splice(editIndex.value, 0, editedItem.value);
+                rows.value.splice(editIndex.value, 0, getEditedItemValues());
             }
         } else {
             if (props.updateMarker && !editedItem.value[props.updateMarker] && !editedItem.value[insert_marker.value]) {
@@ -320,7 +353,7 @@ function saveItem() {
                     editedItem.value[props.updateMarker] = true; // mark as updated
                 }
             }
-            rows.value[editIndex.value] = editedItem.value;
+            rows.value[editIndex.value] = getEditedItemValues();
         }
         emit('update:model-value', rows.value);
         closeOffCanvas();

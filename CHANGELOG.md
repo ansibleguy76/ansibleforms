@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   tablefield readonlycolumns (issue 377)
 -   on-event-actions fixed
 -   fixed abondon jobs loop
--   fix fnSsh
+-   fnSsh had a bug
 
 ### Changed
 
