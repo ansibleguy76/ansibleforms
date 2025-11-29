@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   on-event-actions fixed
 -   fixed abondon jobs loop
 -   fnSsh had a bug
+-   schedules extravars
 
 ### Changed
 
