@@ -24,7 +24,7 @@
     import Helpers from '@/lib/Helpers';
     import TokenStorage from '@/lib/TokenStorage';
     import { useVuelidate } from "@vuelidate/core";
-
+    import yaml from 'yaml';
     import { required, helpers, email, sameAs } from "@vuelidate/validators";
 
     // INIT
@@ -101,7 +101,13 @@
                 rule.editorType = helpers.withMessage(
                     `${field.label} must be valid YAML`,
                     (value) => {
-                        return !helpers.req(value) || typeof value === 'object' && value !== null && !Array.isArray(value);
+                        if (!helpers.req(value)) return true;
+                        try {
+                            const parsed = yaml.parse(value);
+                            return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed);
+                        } catch (e) {
+                            return false;
+                        }
                     }
                 );
             }

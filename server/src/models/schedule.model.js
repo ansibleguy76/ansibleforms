@@ -58,10 +58,10 @@ class Schedule extends CrudModel {
     // get the form data
     const form = schedule.form;
     let user = {};
-    if (schedule.extra_vars && typeof schedule.extra_vars !== 'object') {
+    let extravars = yaml.parse(schedule.extra_vars || '{}');
+    if (typeof extravars !== 'object') {
       throw new Error("Extra vars is not a valid dictionary.");
     }
-    let extravars = yaml.parse(schedule.extra_vars || '{}');
     user.id = 0;
     user.username = 'Schedule Service';
     user.type = 'schedule';
