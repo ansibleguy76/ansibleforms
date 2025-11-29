@@ -76,7 +76,7 @@ Ds.import = async function(id){
 
   extravars.ansibleforms_user = user
   try{
-    const success = await Job.launch(form,null,user,null,extravars,null,null,true)
+    const success = await Job.launch(form,null,user,null,extravars,null)
     if(success){
       output = `The datasource has been successfully run.\nThis is not a guarantee that the data is correct, only that the process has completed.\nCheck the job log that launched the datasource for more details.\nResult : ${success}`
     }else{

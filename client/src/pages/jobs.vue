@@ -361,7 +361,12 @@
             if(result.status==200){
                 toast.success(result.data.message || `Job ${id} ${action}ed successfully`);
                 await loadJobs()
-                await loadOutput(id);
+                // If relaunch, navigate to the new job
+                if(action === 'relaunch' && result.data.id){
+                    getJob(result.data.id);
+                } else {
+                    await loadOutput(id);
+                }
                 tempJobId.value=undefined
             }else{
                 toast.error(result.data.message || `Failed to ${action} job ${id}`);
@@ -421,7 +426,7 @@
     }
     // job background color
     function jobBackground(job){
-        if(job.id==jobId.value)return 'table-dark'
+        if(job.id==jobId.value)return 'table-selected'
         return Helpers.getColorClassByStatus(job.status,'table')
     }
 
@@ -716,6 +721,15 @@
     .custom-table {
         width: 100%;
         margin-bottom: 1rem;
+    }
+    tr.table-selected {
+        border: 2px solid;
+        border-left: none;
+        border-right: none;
+        td{
+            border-left: none;
+            border-right: none;
+        }
     }
     
 </style>

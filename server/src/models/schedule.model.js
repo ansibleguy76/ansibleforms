@@ -77,7 +77,7 @@ class Schedule extends CrudModel {
     extravars.ansibleforms_user = user;
     const currentDate = new Date()
     try {
-      const success = await Job.launch(form, null, user, null, extravars, null, null, true);
+      const success = await Job.launch(form, null, user, null, extravars, null);
       if (success) {
         output = `The schedule has been successfully run.\nThis is not a guarantee that the data is correct, only that the process has completed.\nCheck the job log that launched the schedule for more details.`;
       } else {

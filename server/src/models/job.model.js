@@ -522,9 +522,7 @@ Job.launch = async function (
   user,
   creds,
   extravars,
-  parentId = null,
-  next,
-  async = false
+  parentId = null
 ) {
   // a formobj can be a full step pushed
   if (!formObj) {
@@ -575,83 +573,91 @@ Job.launch = async function (
 
   logger.debug(`Job id ${jobid} is created`);
   extravars["__jobid__"] = jobid;
-  // job created - return to client
-  if (next && !async) next({ id: jobid });
+  
+  // Define the execution function
+  const executeJob = async () => {
+    // the rest is now happening in the background
+    // if credentials are requested, we now get them.
+    var credentials = {};
 
-  // the rest is now happening in the background
-  // if credentials are requested, we now get them.
-  var credentials = {};
+    // perhaps credentials were passed through extravars, they have precedence over the others !
+    try {
+      const afCreds = extravars.__credentials__ || creds || {};
+      if (afCreds) {
+        for (const [key, value] of Object.entries(afCreds)) {
+          if (value == "__self__") {
+            credentials[key] = {
+              host: dbConfig.host,
+              user: dbConfig.user,
+              port: dbConfig.port,
+              password: dbConfig.password,
+            };
+          } else {
+            logger.notice(`found cred for key ${key}`);
 
-  // perhaps credentials were passed through extravars, they have precedence over the others !
-  try {
-    const afCreds = extravars.__credentials__ || creds || {};
-    if (afCreds) {
-      for (const [key, value] of Object.entries(afCreds)) {
-        if (value == "__self__") {
-          credentials[key] = {
-            host: dbConfig.host,
-            user: dbConfig.user,
-            port: dbConfig.port,
-            password: dbConfig.password,
-          };
-        } else {
-          logger.notice(`found cred for key ${key}`);
-
-          // if it were AF credentials, we get the credential now
-          try {
-            if (value.includes(",")) {
-              // If value contains a comma, split it and call with two parameters
-              const [part1, part2] = value.split(",").map((val) => val.trim());
-              credentials[key] = await Credential.findByNameRegex(part1, part2);
-            } else {
-              // If no comma, call with one parameter
-              credentials[key] = await Credential.findByNameRegex(value);
+            // if it were AF credentials, we get the credential now
+            try {
+              if (value.includes(",")) {
+                // If value contains a comma, split it and call with two parameters
+                const [part1, part2] = value.split(",").map((val) => val.trim());
+                credentials[key] = await Credential.findByNameRegex(part1, part2);
+              } else {
+                // If no comma, call with one parameter
+                credentials[key] = await Credential.findByNameRegex(value);
+              }
+            } catch (err) {
+              logger.error("Cannot get credential." + err);
             }
-          } catch (err) {
-            logger.error("Cannot get credential." + err);
           }
         }
       }
+    } catch (err) {
+      var message = `Failed to process credentials : ${err.message}`;
+      logger.error(message);
     }
-  } catch (err) {
-    var message = `Failed to process credentials : ${err.message}`;
-    logger.error(message);
-  }
 
-  if (jobtype == "ansible") {
-    return await Ansible.launch(
-      extravars,
-      credentials,
-      jobid,
-      null,
-      parentId ? null : formObj.approval // if multistep: no individual approvals checks
-    );
-  }
-  if (jobtype == "awx") {
-    return await Awx.launch(
-      extravars,
-      credentials,
-      jobid,
-      null,
-      parentId ? null : formObj.approval, // if multistep: no individual approvals checks,
-      null,
-      notifications
-    );
-  }
-  if (jobtype == "multistep") {
-    return await Multistep.launch(
-      form,
-      formObj.steps,
-      user,
-      extravars,
-      creds,
-      jobid,
-      null,
-      formObj.approval
-    );
-  }
+    if (jobtype == "ansible") {
+      return await Ansible.launch(
+        extravars,
+        credentials,
+        jobid,
+        null,
+        parentId ? null : formObj.approval // if multistep: no individual approvals checks
+      );
+    }
+    if (jobtype == "awx") {
+      return await Awx.launch(
+        extravars,
+        credentials,
+        jobid,
+        null,
+        parentId ? null : formObj.approval, // if multistep: no individual approvals checks,
+        null,
+        notifications
+      );
+    }
+    if (jobtype == "multistep") {
+      return await Multistep.launch(
+        form,
+        formObj.steps,
+        user,
+        extravars,
+        creds,
+        jobid,
+        null,
+        formObj.approval
+      );
+    }
+  };
+
+  // Always fire and forget - start execution in background and return job ID immediately
+  executeJob().catch(err => {
+    logger.error(`Background job ${jobid} failed:`, err);
+  });
+  
+  return { id: jobid };
 };
-Job.continue = async function (form, user, creds, extravars, jobid, next) {
+Job.continue = async function (form, user, creds, extravars, jobid) {
   var formObj;
   // we load it, it's an actual form
   const check = await Job.checkExists(jobid);
@@ -692,8 +698,6 @@ Job.continue = async function (form, user, creds, extravars, jobid, next) {
     ++counter
   );
   await Job.update({ status: "running" }, jobid);
-
-  next({ id: jobid }); // continue result for feedback
 
   // the rest is now happening in the background
   // if credentials are requested, we now get them.
@@ -759,7 +763,7 @@ Job.continue = async function (form, user, creds, extravars, jobid, next) {
     );
   }
 };
-Job.relaunch = async function (user, id, verbose, next) {
+Job.relaunch = async function (user, id, verbose) {
   const job = await Job.findById(user, id, true);
   var extravars = {};
   var credentials = {};
@@ -774,16 +778,13 @@ Job.relaunch = async function (user, id, verbose, next) {
   }
   if (job.status != "running" && !job.abort_requested) {
     logger.notice(`Relaunching job ${id} with form ${job.form}`);
-    await Job.launch(
+    return await Job.launch(
       job.form,
       null,
       user,
       credentials,
       extravars,
-      null,
-      (out) => {
-        next(out);
-      }
+      null
     );
   } else {
     throw new Errors.ConflictError(
@@ -791,7 +792,7 @@ Job.relaunch = async function (user, id, verbose, next) {
     );
   }
 };
-Job.approve = async function (user, id, next) {
+Job.approve = async function (user, id) {
   const job = await Job.findById(user, id, true);
 
   var approval = JSON.parse(job.approval);
@@ -816,11 +817,12 @@ Job.approve = async function (user, id, next) {
   }
   if (job.status == "approve") {
     logger.notice(`Approving job ${id} with form ${job.form}`);
-    await Job.continue(job.form, user, credentials, extravars, id, (job) => {
-      next(job);
-    }).catch((err) => {
+    try {
+      return await Job.continue(job.form, user, credentials, extravars, id);
+    } catch (err) {
       logger.error("Failed to continue the job : ", err);
-    });
+      throw err;
+    }
   } else {
     throw new Errors.ConflictError(
       `Job ${id} is not in approval status (status=${job.status})`
@@ -1144,16 +1146,16 @@ Multistep.launch = async function (
               user,
               creds,
               ev,
-              jobid,
-              function (job) {
-                Job.printJobOutput(
-                  `ok: [Launched step ${step.name} with jobid '${job.id}']`,
-                  "stdout",
-                  jobid,
-                  ++counter
-                );
-              }
+              jobid
             );
+            if (jobSuccess) {
+              Job.printJobOutput(
+                `ok: [Launched step ${step.name} with jobid '${jobSuccess.id}']`,
+                "stdout",
+                jobid,
+                ++counter
+              );
+            }
             if (!jobSuccess) {
               throw new Errors.ApiError(
                 `Check the step-logs for jobid '${jobid}' for more information`
