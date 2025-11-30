@@ -65,6 +65,7 @@
     progress: { type: Number, default: undefined },
     dateType: { type: String, default: "datetime" },
     autofocus: { type: Boolean, default: false },
+    containerSize: { type: Object, default: () => ({}) },
   });
 
   // METHODS
@@ -121,7 +122,7 @@
       <div v-else>
 
         <!-- INPUT FIELDS -->
-        <BsInputSelectAdvanced v-if="type === 'select'" :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :id="uid" :hasError="hasError" :placeholder="placeholder" v-model="model" :values="values" :defaultValue="defaultValue" :multiple="multiple" :columns="columns" :previewColumn="previewColumn" :valueColumn="valueColumn" :pctColumns="pctColumns" :filterColumns="filterColumns" :sticky="sticky" :horizontal="horizontal" :icon="icon" :uid="uid" :isLoading="isLoading" :name="name" :isFloating="false"/>
+        <BsInputSelectAdvanced v-if="type === 'select'" :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :id="uid" :hasError="hasError" :placeholder="placeholder" v-model="model" :values="values" :defaultValue="defaultValue" :multiple="multiple" :columns="columns" :previewColumn="previewColumn" :valueColumn="valueColumn" :pctColumns="pctColumns" :filterColumns="filterColumns" :sticky="sticky" :horizontal="horizontal" :icon="icon" :uid="uid" :isLoading="isLoading" :name="name" :isFloating="false" :containerSize="containerSize" />
         <BsInputTextAreaRaw v-else-if="type === 'textarea'" :rows="rows" :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :id="uid" :hasError="hasError" :placeholder="placeholder" v-model="model" />
         <BsDateTime v-else-if="type === 'datetime'" :icon="icon" v-model="model" :name="name" :hasError="hasError" :placeholder="placeholder" :dateType="dateType" @change="change" />          
         <p @dblclick="dblclick" v-else-if="type=='expression' && isHtml" class="form-control" :style="style" v-html="model" :class="cssClass"></p>
@@ -145,6 +146,13 @@
 }
 p {
   margin: 0;
+  &::after {
+    content: "\200B"; // zero-width space
+    display: inline-block;
+    width: 0;
+    height: 1em;
+    visibility: hidden;
+  }
 }
 .input-group-text{
     &.active{

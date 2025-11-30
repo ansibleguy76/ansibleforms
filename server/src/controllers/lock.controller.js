@@ -1,31 +1,34 @@
 'use strict';
-import RestResult from '../models/restResult.model.js';
+import RestResult from '../models/restResult.model.v2.js';
 import Lock from '../models/lock.model.js';
-import yaml from 'yaml';
-import Helpers from './../lib/common.js';
-// import { inspect } from "util";
+import Errors from '../lib/errors.js';
 
-const status = function(req, res) {
-    Lock.status(req.user.user)
-      .then((status)=>{ res.json(new RestResult("success","lock status found",status,"")) })
-      .catch((err)=>{ res.json(new RestResult("error","failed to find lock",null,Helpers.getError(err))) })
-};
-const set = function(req, res) {
-    const user = req.user.user
-    // console.log(inspect(user))
-    Lock.set(user)
-      .then((lock)=>{ res.json(new RestResult("success","lock added",null,"")) })
-      .catch((err)=>{ res.json(new RestResult("error","failed to create lock",null,Helpers.getError(err))) })
-};
-const deleteLock = function(req, res) {
-    const user = req.user.user
-    Lock.delete(user)
-      .then(()=>{res.json(new RestResult("success","lock deleted",null,"")) })
-      .catch((err)=>{res.json(new RestResult("error","failed to delete lock",null,Helpers.getError(err)))})
+// Follow knownhosts style: minimal validation, try/catch, RestResult.list/single/error
+const lockController = {
+  async status(req, res) {
+    try {
+      const result = await Lock.status(req.user.user);
+      return res.json(RestResult.single(result));
+    } catch (err) {
+      Errors.ReturnError(res, err);
+    }
+  },
+  async set(req, res) {
+    try {
+      await Lock.set(req.user.user);
+      return res.status(201).json(RestResult.single({ message: 'Lock added' }));
+    } catch (err) {
+      Errors.ReturnError(res, err);
+    }
+  },
+  async delete(req, res) {
+    try {
+      await Lock.delete(req.user.user);
+      return res.json(RestResult.single({ message: 'Lock deleted' }));
+    } catch (err) {
+      Errors.ReturnError(res, err);
+    }
+  }
 };
 
-export default {
-  status,
-  set,
-  "delete": deleteLock
-}
+export default lockController;

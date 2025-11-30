@@ -23,6 +23,7 @@
     /******************************************************************/
 
     import Helpers from "@/lib/Helpers";
+    import _ from "lodash";
 
     // INIT
 
@@ -31,6 +32,7 @@
     // PROPS
 
     const props = defineProps({
+        modelValue: { type: [String, Array, Object, Number] },
         values: { type: Array, required: true, default: ()=>[] },
         hasError: { type: Boolean, default: false },
         required: { type: Boolean, default: false },
@@ -63,6 +65,22 @@
     watch(() => selected.value, (val) => {
         emitUpdate()
     }, { deep: true })
+
+      // sync modelValue with selected array
+    // sync modelValue with selected array (extract values if object, prevent loops)
+    watch(() => props.modelValue, (newValue) => {
+        let targetArray = []
+        if (Array.isArray(newValue)) {
+            targetArray = newValue
+        } else if (newValue && typeof newValue === 'object' && Array.isArray(newValue.values)) {
+            targetArray = newValue.values
+        }
+        
+        // Only update if the arrays are actually different
+        if (JSON.stringify(selected.value) !== JSON.stringify(targetArray)) {
+            selected.value = targetArray
+        }
+    })
 
     // COMPUTED
 
@@ -104,7 +122,7 @@
         isLoaded.value=true
 
         if(selected.value.length == 0){
-            emit("update:modelValue", {value: undefined, preview: undefined})
+            emit("update:modelValue", {values: undefined, preview: ""})
         } else {
             emit("update:modelValue", {values: selected.value, preview: preview.value})
         }
@@ -209,10 +227,10 @@
         </div>
         <div class="bg-light col text-center col-2 align-content-center">
             <div class="m-3">
-                <button class="btn btn-arrow btn-outline-success" @click="moveAllRight"><font-awesome-icon icon="angles-right" /></button><br>
-                <button class="btn btn-arrow btn-outline-success" @click="moveRight"><font-awesome-icon icon="angle-right" /></button><br>
-                <button class="btn btn-arrow btn-outline-danger" @click="moveLeft"><font-awesome-icon icon="angle-left" /></button><br>
-                <button class="btn btn-arrow btn-outline-danger" @click="moveAllLeft"><font-awesome-icon icon="angles-left" /></button>                
+                <button class="btn btn-arrow btn-outline-success" :disabled="disabled" @click="moveAllRight"><font-awesome-icon icon="angles-right" /></button><br>
+                <button class="btn btn-arrow btn-outline-success" :disabled="disabled" @click="moveRight"><font-awesome-icon icon="angle-right" /></button><br>
+                <button class="btn btn-arrow btn-outline-danger" :disabled="disabled" @click="moveLeft"><font-awesome-icon icon="angle-left" /></button><br>
+                <button class="btn btn-arrow btn-outline-danger" :disabled="disabled" @click="moveAllLeft"><font-awesome-icon icon="angles-left" /></button>                
             </div>
             
         </div>

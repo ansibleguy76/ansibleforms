@@ -66,7 +66,13 @@ export default defineConfig({
     ],
   },
   build:{
-    base: './'
+    base: './',
+    minify: 'terser',
+    terserOptions: {
+      mangle: {
+        reserved: ["fnToTable", "fnArray", "fnGetNumberedName", "evalSandbox"]
+      }
+    },
   },
   server: {
     port: 8000,
@@ -81,7 +87,7 @@ export default defineConfig({
   css: {
     preprocessorOptions: {
       scss: {
-        silenceDeprecations: ['mixed-decls', 'color-functions', 'global-builtin', 'import']
+        silenceDeprecations: ['color-functions', 'global-builtin', 'import']
       },
     }
   },  

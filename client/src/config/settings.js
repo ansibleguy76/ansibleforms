@@ -177,7 +177,7 @@ export default {
             { key: "output", hidden: true, noInput: true },
             { key: "name", icon: "heading", label: "Name", placeholder: "Schedule name", readonly: false, required: true, help: "Alphanumeric with dash and underscore" },
             { key: "cron", icon: "stopwatch", label: "Cron Schedule", help: "Minute Hour DayOfMonth Month DayOfWeek - For example : */5 * L * 1,3L", hidden: true, required: true, regex: { expression: "^[0-9-,*/]+ [0-9-,*/]+ [0-9-,*/L]+ [0-9-,*/]+ [0-9-,*/L]+$", description: "Must be a valid cron schedule"} },
-            { key: "form", icon: "play", label: "Form", placeholder: "Form name", readonly: false, required: true, help: "The form that will run to import the data." , hidden: true},
+            { key: "form", icon: "play", label: "Form", placeholder: "Form name", readonly: false, required: true, hidden: true},
             { key: "status", label: "Status", noInput: true },
             { key: "state", label: "State", noInput: true },
             { key: "last_run", label: "Last Run", type: "datetime", noInput: true },

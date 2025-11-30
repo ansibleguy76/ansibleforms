@@ -38,6 +38,7 @@
     const emit = defineEmits(["update:modelValue"])
 
     const props = defineProps({
+        modelValue: { type: [String, Array, Object, Number] },
         containerSize: {type: Object, default: () => ({x:0, width:0})},
         values: { type: Array, required: true },
         hasError: { type: Boolean, default: false },
@@ -57,6 +58,7 @@
         sticky: { type: Boolean, default: false },
         horizontal: {type: Boolean, default: false},
         disabled: { type: Boolean, default: false },
+        readonly: { type: Boolean, default: false },
         isFloating: { type: Boolean, default: true },
         label: { type: String, default: "" },
         uid: { type: [String, Number], required: true }
@@ -74,6 +76,28 @@
     const ddRef = useTemplateRef("ddRef")
     const dtRef = useTemplateRef("dtRef")
 
+    // computed property for safe v-model binding to selected.values
+    const selectedValues = computed({
+        get() {
+            return selected.value?.values || []
+        },
+        set(newValue) {
+            if (!selected.value) {
+                selected.value = { values: [], preview: "" }
+            }
+            
+            // Handle case where newValue is an object with values and preview (from BsInputSelectAdvanced2)
+            if (typeof newValue === 'object' && newValue.hasOwnProperty('values') && newValue.hasOwnProperty('preview')) {
+                selected.value.values = newValue.values
+                selected.value.preview = newValue.preview
+                preview.value = newValue.preview  // Also update the local preview ref
+            } else {
+                // Handle case where newValue is just an array
+                selected.value.values = newValue || []
+            }
+        }
+    })
+
     // in the case of this advanced select, we don't use the bootstrap dropdown js functions
     // instead we use the isActive ref to toggle the dropdown
     // but we also need to cover focus, close on esc, close on outside click, etc
@@ -87,7 +111,7 @@
 
     // toggle the dropdown
     function toggle() {
-        if (props.disabled) return
+        if (props.disabled || props.readonly) return
         isUp.value = false
         isActive.value = !isActive.value
         if (isActive.value && !props.isLoading) {
@@ -136,6 +160,7 @@
         }
     }
 
+
     function dropfocus(event){
         if(isActive.value){
             close()
@@ -153,6 +178,18 @@
     // we watch the container size and recalculate the dropdown menu width
     watch(() => props.containerSize, (val) => {
         calcDropdownMenuWidth()
+    })
+
+    // sync modelValue with selected.values
+    watch(() => props.modelValue, (newValue) => {
+        if (selected.value && JSON.stringify(selected.value.values) !== JSON.stringify(newValue)) {
+            selected.value.values = newValue
+            // Also reset preview when modelValue is reset
+            if (!newValue || (Array.isArray(newValue) && newValue.length === 0)) {
+                selected.value.preview = ""
+                preview.value = ""
+            }
+        }
     })
 
     // on mounted we blur the input and the content, no focus !
@@ -223,7 +260,7 @@
             </span>
         </div>
 
-        <div ref="ddRef" class="dropdown-menu border border-body af-shadow py-0 mt-2" :class="{'dropdown-menu-end': isRight,'show': isActive && !isLoading}" :style="'width:' + dropdownMenuWidth" id="dropdown-menu" role="menu">
+    <div ref="ddRef" class="dropdown-menu border border-body af-shadow py-0 mt-2 af-dd-advanced" :class="{'dropdown-menu-end': isRight,'show': isActive && !isLoading}" :style="'width:' + dropdownMenuWidth" role="menu">
             <div ref="contentRef" @keydown.esc="close()" @keydown.tab="close()"> 
                 <BsInputSelectAdvancedTable
                     :defaultValue="defaultValue"
@@ -238,6 +275,7 @@
                     :filterColumns="filterColumns || []"
                     :previewColumn="previewColumn || ''"
                     :valueColumn="valueColumn || ''"
+                    :disabled="readonly || disabled"
                     @isSelected="isSelected"
                     @reset="preview = ''"
                     :focus="focus"
@@ -261,6 +299,7 @@
             :filterColumns="filterColumns || []"
             :previewColumn="previewColumn || ''"
             :valueColumn="valueColumn || ''"
+            :disabled="readonly || disabled"
             @reset="preview = ''"
         /> 
     </div>
@@ -324,14 +363,14 @@
             </span>
         </div>
 
-        <div ref="ddRef" class="dropdown-menu border af-shadow py-0 mt-2" :class="{'border-danger':hasError,'border-body':!hasError,'dropdown-menu-end': isRight,'show': isActive && !isLoading}" :style="'width:' + dropdownMenuWidth" id="dropdown-menu" role="menu">
+    <div ref="ddRef" class="dropdown-menu border af-shadow py-0 mt-2 af-dd-advanced" :class="{'border-danger':hasError,'border-body':!hasError,'dropdown-menu-end': isRight,'show': isActive && !isLoading}" :style="'width:' + dropdownMenuWidth" role="menu">
             <div ref="contentRef" @keydown.esc="close()" @keydown.tab="close()"> 
                 <BsInputSelectAdvanced2
                     :defaultValue="defaultValue"
                     :required="required || false"
                     :name="name"
                     :values="values || []"
-                    v-model="selected"
+                    v-model="selectedValues"
                     :columns="columns || []"
                     :filterColumns="filterColumns || []"
                     :previewColumn="previewColumn || ''"
@@ -350,11 +389,12 @@
             :name="name"
             :defaultValue="defaultValue"
             :values="values || []"
-            v-model="selected"
+            v-model="selectedValues"
             :columns="columns || []"
             :filterColumns="filterColumns || []"
             :previewColumn="previewColumn || ''"
             :valueColumn="valueColumn || ''"
+            :disabled="readonly || disabled"
             @reset="preview = ''"
         />
     </div> 
@@ -378,6 +418,25 @@
     box-shadow: 0 0 0 0.25rem rgb(13 110 253 / 25%);
     z-index: 3;
     border-radius: .25rem;
+}
+
+/* Ensure Bootstrap end-aligned dropdown actually snaps to the right edge even with custom widths */
+:deep(.dropdown-menu-end) {
+    left: auto !important;
+    right: 0 !important;
+    transform-origin: top right;
+}
+
+/* When in dropup mode and end-aligned, keep bottom positioning consistent */
+.dropdown.dropup :deep(.dropdown-menu-end) {
+    left: auto !important;
+    right: 0 !important;
+}
+
+/* Prevent unintended horizontal scroll due to large dynamic width */
+.af-dd-advanced.dropdown-menu {
+    max-width: 100vw;
+    box-sizing: border-box;
 }
 
 </style>

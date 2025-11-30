@@ -1007,7 +1007,6 @@
                     "keydown":           {"not":{}}, 
                     "refresh":           {"not":{}}, 
                     "isHtml":            {"not":{}}, 
-                    "runLocal":          {"not":{}}, 
                     "query":             {"not":{}}, 
                     "outputObject":      {"not":{}}, 
                     "columns":           {"not":{}}, 
@@ -1374,7 +1373,9 @@
                               ]
                             }
                           }
-                        }
+                        },
+                        "required": ["name", "values"],
+                        "additionalProperties": false
                       },
                       {
                         "type": "object",
@@ -1384,7 +1385,9 @@
                             "pattern": "^!{0,1}[A-Za-z0-9_\\-.]+$"
                           },
                           "isValid": { "type": "boolean"}
-                        }
+                        },
+                        "required": ["name", "isValid"],
+                        "additionalProperties": false
                       }                      
                     ]
                   }
@@ -1560,6 +1563,7 @@
                       },
                       "name": {"type": "string"},
                       "label": {"type": "string"},
+                      "help": {"type": "string"},
                       "placeholder": {"type": "string"},
                       "from": {"type": "string"},
                       "multiple": {"type": "boolean"},

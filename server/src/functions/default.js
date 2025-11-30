@@ -21,7 +21,7 @@ const { firstBy } = thenbypkg;
 // Project-specific modules
 import logger from "../lib/logger.js";
 import ip from "../lib/ip.js";
-import credentialModel from "../models/credential.model.js";
+import credentialModel from "../models/credential.model.v2.js";
 import Helpers from '../lib/common.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -331,7 +331,7 @@ const fnRestJwtSecure = async function(action,url,body,tokenname,jqe=null,sort=n
 }
 const fnSsh = async function(user,host,cmd,jqe=null){
 
-  result= await new Promise((resolve,reject)=>{
+  var result= await new Promise((resolve,reject)=>{
     const u=user.replaceAll('"','\"') // escape quote in user to avoid code injection
     const h=host.replaceAll('"','') // remove quote in host to avoid code injection
     const c=cmd.replace('"','\"') // escape quote in command to avoid code injection
@@ -373,6 +373,94 @@ const fnSsh = async function(user,host,cmd,jqe=null){
   return result
 
 }
+/**
+ * List the contents of a directory (optionally recursively), with optional regex filtering.
+ * @param {string} dirPath - The path to the directory to list.
+ * @param {object} options - Options: { regex, recursive }
+ * @returns {Promise<string[]>} - Array of file/folder names (folders have trailing slash, relative to dirPath)
+ */
+export async function fnLs(dirPath, options = {}) {
+  const results = [];
+  let regex = null;
+  if (options.regex) {
+    regex = options.regex instanceof RegExp ? options.regex : new RegExp(options.regex);
+  }
+  async function walk(currentPath, relPath = "") {
+    const entries = await fsPromises.readdir(currentPath, { withFileTypes: true });
+    for (const entry of entries) {
+      const entryName = entry.name + (entry.isDirectory() ? "/" : "");
+      const fullRelPath = relPath ? path.posix.join(relPath, entryName) : entryName;
+      if (!regex || regex.test(fullRelPath)) {
+        results.push(fullRelPath);
+      }
+      if (options.recursive && entry.isDirectory()) {
+        await walk(path.join(currentPath, entry.name), relPath ? path.posix.join(relPath, entry.name) : entry.name);
+      }
+    }
+  }
+  await walk(dirPath, "");
+  return results;
+}
+
+
+/**
+ * Fetches HTML content from a URL and extracts data using regex groups
+ * @param {string} url - The URL to fetch HTML from
+ * @param {string} regexPattern - The regex pattern with capture groups
+ * @param {string} regexFlags - Optional regex flags (e.g., 'gi', 'i', 'g')
+ * @returns {Promise<Array>} - Array of objects containing all group matches
+ */
+const fnParseHtmlWithRegex = async function(url, regexPattern, regexFlags = 'g') {
+  logger.debug(`[fnParseHtmlWithRegex] Fetching HTML from: ${url}`);
+  logger.debug(`[fnParseHtmlWithRegex] Using regex pattern: ${regexPattern}`);
+  
+  try {
+    // Dynamically import axios
+    const { default: axios } = await import('axios');
+    
+    // Fetch HTML content
+    const response = await axios.get(url, {
+      timeout: 30000, // 30 second timeout
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
+    
+    logger.debug(`[fnParseHtmlWithRegex] Successfully fetched ${response.data.length} characters`);
+    
+    // Create regex object
+    const regex = new RegExp(regexPattern, regexFlags);
+    const matches = [];
+    let match;
+    
+    // Extract all matches with groups
+    while ((match = regex.exec(response.data)) !== null) {
+      const matchResult = {
+        fullMatch: match[0],
+        groups: [],
+        namedGroups: match.groups || {}
+      };
+      
+      // Add numbered groups (excluding index 0 which is the full match)
+      for (let i = 1; i < match.length; i++) {
+        matchResult.groups.push(match[i]);
+      }
+      
+      matches.push(matchResult);
+      
+      // Prevent infinite loops on global regex without 'g' flag
+      if (!regexFlags.includes('g')) break;
+    }
+    
+    logger.debug(`[fnParseHtmlWithRegex] Found ${matches.length} matches`);
+    return matches;
+    
+  } catch (error) {
+    logger.error(`[fnParseHtmlWithRegex] Error: ${error.message}`);
+    throw new Error(`Failed to fetch HTML or parse regex: ${error.message}`);
+  }
+};
+
 // etc
 export default {
   fnGetNumberedName,
@@ -389,5 +477,7 @@ export default {
   fnRestAdvanced,
   fnRestJwt,
   fnRestJwtSecure,
-  fnSsh
+  fnSsh,
+  fnLs,
+  fnParseHtmlWithRegex  
 };

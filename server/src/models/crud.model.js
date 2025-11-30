@@ -172,9 +172,9 @@ class CrudModel {
     const sql = `UPDATE ${config.table} SET ? WHERE ${key} = ?`;
     const res = await mysql.do(sql, [fieldValues, id]);
     if (config.allowCache && cache) {
-      cache.del(`id:${id}`);
+      delete caches[modelName]; // clear entire cache for simplicity
       const naturalKey = config.fields.find(f => f.isNaturalKey)?.name || 'name';
-      if (fieldValues[naturalKey]) cache.del(`name:${fieldValues[naturalKey]}`);
+
     }
     return res.affectedRows > 0;
   }

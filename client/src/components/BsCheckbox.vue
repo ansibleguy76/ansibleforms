@@ -12,6 +12,7 @@
     /*      uid: String - Unique id                      */
     /*      hasError: Boolean - Has error                */
     /*      disabled: Boolean - Disabled checkbox        */
+    /*      readonly: Boolean - Readonly checkbox        */
     /*                                                   */
     /*****************************************************/
 
@@ -54,6 +55,10 @@
         disabled:{
             type: Boolean,
             default: false
+        },
+        readonly:{
+            type: Boolean,
+            default: false
         }
     });
 
@@ -89,7 +94,7 @@
 </script>
 <template>
     <div :class="globalClasses">
-    <input class="form-check-input" :disabled="disabled" :class="classes" type="checkbox" @change="change" :id="uid" v-model="model">
+    <input class="form-check-input" :disabled="disabled || readonly" :class="classes" type="checkbox" @change="change" :id="uid" v-model="model">
     <label class="form-check-label" :for="uid">{{ label }}</label>
     </div>
 </template>

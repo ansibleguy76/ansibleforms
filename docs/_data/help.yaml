@@ -187,6 +187,21 @@
       If you use git repositories to store the forms, you can choose to store the master forms.yaml in git as well.  
       Or, you can choose to have the forms.yaml in the database instead.  Having a clean separation : master forms.yaml in database, and the actual forms in git.
     version: 5.0.3
+  - name: GIT_CLONE_COMMAND
+    type: string
+    allowed: a valid git clone command
+    short: Git clone command
+    default: "git clone"
+    description: |
+      The command used to clone git repositories.  Note that branch and repository will be auto added.
+    version: 6.0.2
+  - name: GIT_PULL_COMMAND
+    type: string
+    allowed: a valid git pull command
+    short: Git pull command
+    default: "git pull"
+    description: |
+      The command used to pull git repositories.  Note that branch and repository will be auto added.
   - name: SHOW_DESIGNER
     type: number
     choices:
@@ -511,6 +526,14 @@
     description: |
       Sometime, the job output is flooded with meaningless output, such as 'Gathering Facts', or 'Includes'.  You filter out these by add a piece of string in the taskname, i.e. `[low]` and then used regex `\\[low\\]` to hide this information.  
       The output has a button `Apply filter` for the filtering to take effect.
+  - name: MASK_EXTRAVARS_REGEX
+    type: string
+    allowed: an escaped regular expression
+    short: Regex to mask extravars values
+    default: "password|secret|token"
+    description: |
+      When you have sensitive extravars, such as passwords, tokens, keys, credentials, you do not want these to be shown in clear text in the extravars section of a job.  
+      By setting this regex, any extravar key matching this regex will have its value masked with `********`.   Note the regex will be case insensitive.   
   - name: UPLOAD_PATH
     type: string
     version: 4.0.16
@@ -3851,6 +3874,17 @@
       description: Convert bytes to gigabytes
       code: | 
         ($(size_bytes)/1024/1024/1024).toFixed(2)  // toFixed is native javascript method
+    - name: convert array of objects to html-table
+      code: |
+        fnToTable($(my_array_field),{
+          tableClass = '',
+          escapeHtml = true,
+          emptyCell = '',
+          includeHeader = true
+        })
+
+        // output : an html-table representation of the array of objects taken from another field called "my_array_field"
+        // tip : add tableClass = 'table table-striped table-bordered' for bootstrap styling        
     - name: Get a name with incremental numbering
       description: |
         When working with auto numbering, you might want to find the next name in an array of stings that some numbering.   
@@ -4037,6 +4071,23 @@
         //  
         // You must use 'known_hosts' and 'public-key' to setup non-interactive password-less authentication.
         // In the settings you can find the public-key and add your target-host to known_hosts
+    - name: list files in a directory
+      code: |
+        fn.fnLs('/tmp',{ resursive: true, regex: '.*\.log$' })
+
+        // fn.fnLs(path,options)
+        // - path : path to directory
+        // - options : recursive:boolean, regex:string
+    - name: parse html page
+      code: |
+        fn.fnParseHtmlWithRegex('https://ansibleguy.com','<h2.*?>(.*?)</h2>','g')
+
+        // fn.fnParseHtmlWithRegex(url,regex,flags)
+        // - url : url to html page
+        // - regex : a regular expression with at least one group ( )
+        // - flags : regex flags (such as g,i,m)
+        //
+        // it will grab the html source and return an array with all the group matches
     - name: get DNS info
       code: |
         fn.fnDnsResolve('ansibleguy.com','A')

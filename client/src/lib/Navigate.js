@@ -23,39 +23,43 @@ var Navigate = {
       router.push({ name: "/schema" }).catch((err) => {});
   },
 
-   toPath(router, path, query = "") {
-      console.log("Redirecting to page");
-      // Use router.resolve for robust route parsing (supports dynamic routes, params, query)
-      let resolved;
+  toPath(router, path, query = "", forceReload = false) {
+      // If path is already an object, just use it directly
       if (typeof path === 'object') {
-         resolved = router.resolve(path);
-      } else {
-         // If path is a string and contains a query string, parse and merge with explicit query
-         let pathOnly = path;
-         let mergedQuery = {};
-         if (typeof path === 'string' && path.includes('?')) {
-           const [pathname, search] = path.split('?');
-           pathOnly = pathname;
-           const params = new URLSearchParams(search);
-           for (const [key, value] of params.entries()) {
-             mergedQuery[key] = value;
-           }
-         }
-         // Merge with explicit query if provided
-         if (query && typeof query === 'object') {
-           Object.assign(mergedQuery, query);
-         }
-         resolved = router.resolve({ path: pathOnly, query: mergedQuery });
+         router.push(path).catch((err) => {});
+         return;
       }
-      router.push(resolved).catch((err) => {});
-   },
+      
+      // For string paths, use URL API to handle existing query params properly
+      const url = new URL(path, window.location.origin);
+      
+      // Add/merge additional query parameters if provided
+      if (query && typeof query === 'object') {
+         for (const [key, value] of Object.entries(query)) {
+            url.searchParams.set(key, value);
+         }
+      }
+      
+      const fullPath = url.pathname + url.search;
+      
+      // If we're navigating to the same path and forceReload is true, 
+      // first navigate away then back to trigger a reload
+      if (forceReload && router.currentRoute.value.fullPath === fullPath) {
+         router.push('/').then(() => {
+            router.push(fullPath).catch((err) => {});
+         }).catch((err) => {});
+      } else {
+         // Use the pathname + search (which will have proper %20 encoding)
+         router.push(fullPath).catch((err) => {});
+      }
+  },
 
   toOrigin(router, route){
-  
+    console.log(route)
     if (route.query.from && route.query.from != "/login" && route.query.from != "/logout") {
         // authentication, redirect to original route
         console.log("Redirecting to original route")
-        router.push({ path: route.query.from }).catch(err => { });
+        Navigate.toPath(router, route.query.from);
      } else {
         // is there a route name?
         console.log("No original route")
@@ -73,5 +77,4 @@ var Navigate = {
      }
   }
 };
-
 export default Navigate;

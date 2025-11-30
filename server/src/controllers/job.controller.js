@@ -123,9 +123,8 @@ const launch = async function(req, res) {
         var user = req?.user?.user || {}
         extravars.ansibleforms_user = user
         try{
-          await Job.launch(form,null,user,creds,extravars,null,function(job){
-            res.json(new RestResult("success","succesfully launched form",job,""))
-          })
+          const job = await Job.launch(form,null,user,creds,extravars,null);
+          res.json(new RestResult("success","succesfully launched form",job,""))
         }catch(err){
           logger.error("Errors in job launch : ", err)
           try{
@@ -145,9 +144,8 @@ const relaunchJob = async function(req, res) {
     }
     var user = req?.user?.user || {}
     try{
-      await Job.relaunch(user,jobid,verbose,(job)=>{
-        res.json(new RestResult("success",`Job has been relaunched with job id ${job.id}`,"",""))
-      })
+      const job = await Job.relaunch(user, jobid, verbose);
+      res.json(new RestResult("success",`Job has been relaunched with job id ${job.id}`,"",""))
     }catch(err){
       logger.error("Error : ", err)
       res.json(new RestResult("error",`Failed to relaunch : ${err.toString()}`,"",""))
@@ -163,9 +161,8 @@ const approveJob = async function(req, res) {
     }
     var user = req?.user?.user || {}
     try{
-      await Job.approve(user,jobid,(job)=>{
-        res.json(new RestResult("success",`Job ${jobid} has been approved`,"",""))
-      })
+      await Job.approve(user,jobid);
+      res.json(new RestResult("success",`job ${jobid} has been approved`,null,""))
     }catch(err){
       logger.error("Error : ", err)
       res.json(new RestResult("error",`Failed to approve : ${err.toString()}`,"",""))

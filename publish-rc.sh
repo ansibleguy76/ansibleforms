@@ -30,3 +30,4 @@ docker push ansibleguy/ansibleforms:latest-rc
 
 # Clean up dangling images
 docker rmi $(docker images -f "dangling=true" -q) 2>/dev/null || true
+

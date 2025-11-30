@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.0.2] - 2025-11-30
+
+### Added
+
+-   MASK_EXTRAVARS_REGEX, to allow extravars masking
+-   fnToTable local function, converts array to html table for html info field
+-   GIT_CLONE_COMMAND and GIT_PULL_COMMAND env vars added
+-   fnLs dir,{recursive,regex}
+-   fnParseHtmlWithRegex url,regex,regexflags
+
+### Fixed
+
+-   Several tablefield issues
+-   Datetime field didn't bubble changes
+-   knownhosts errored on non existing file
+-   Recursive checkdependencies
+-   check schema for correct dependencies
+-   dropdown/enum, working alignment
+-   dropdown/enum, refresh and preview
+-   readonly and disable props
+-   tablefield readonlycolumns (issue 377)
+-   on-event-actions fixed
+-   fixed abondon jobs loop
+-   fnSsh had a bug
+-   schedules extravars
+
+### Changed
+
+-   Schema creation in 1 shot
+-   lock api to v2
+-   knownhosts api to v2
+
 ## [6.0.1] - 2025-10-28
 
 ### Fixed
@@ -865,7 +897,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/6.0.1...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/6.0.2...HEAD
+
+[6.0.2]: https://github.com/ansibleguy76/ansibleforms/compare/6.0.1...6.0.2
 
 [6.0.1]: https://github.com/ansibleguy76/ansibleforms/compare/6.0.0...6.0.1
 

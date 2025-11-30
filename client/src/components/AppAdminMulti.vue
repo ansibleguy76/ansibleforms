@@ -24,7 +24,7 @@
     import Helpers from '@/lib/Helpers';
     import TokenStorage from '@/lib/TokenStorage';
     import { useVuelidate } from "@vuelidate/core";
-
+    import yaml from 'yaml';
     import { required, helpers, email, sameAs } from "@vuelidate/validators";
 
     // INIT
@@ -101,7 +101,13 @@
                 rule.editorType = helpers.withMessage(
                     `${field.label} must be valid YAML`,
                     (value) => {
-                        return !helpers.req(value) || typeof value === 'object' && value !== null && !Array.isArray(value);
+                        if (!helpers.req(value)) return true;
+                        try {
+                            const parsed = yaml.parse(value);
+                            return typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed);
+                        } catch (e) {
+                            return false;
+                        }
                     }
                 );
             }
@@ -151,15 +157,36 @@
             const result = await axios.get(`/api/v${props.apiVersion}/${type}/`, TokenStorage.getAuthentication());
             if(props.apiVersion == 1) {
                 if(isFlat){
-                    return result.data.data.output.map((item,index) => {
-                        return { id: index, name: item }
-                    });
+                    const raw = Array.isArray(result.data.data.output) ? result.data.data.output : [];
+                    const deduped = removeDoubles ? Array.from(new Set(raw)) : raw;
+                    // v1 flat assumed array of primitive values (string/number)
+                    return deduped.map((val, idx) => ({ id: idx, name: String(val) }));
                 }
                 return result.data.data.output;
             } else if (props.apiVersion == 2) {
                 if(isFlat){
-                    return result.data.records.map((item, index) => {
-                        return { id: index, name: item.name }
+                    const records = Array.isArray(result.data.records) ? result.data.records : [];
+                    if (records.length === 0) return [];
+                    // If primitives (strings/numbers)
+                    if (typeof records[0] !== 'object' || records[0] === null) {
+                        const deduped = removeDoubles ? Array.from(new Set(records)) : records;
+                        return deduped.map((val, idx) => ({ id: idx, name: String(val) }));
+                    }
+                    // Objects: ensure id & name exist generically
+                    return records.map((obj, idx) => {
+                        const out = { ...obj };
+                        // establish id
+                        if (out[idKey] === undefined && out.id === undefined) {
+                            out.id = idx;
+                        } else if (out.id === undefined) {
+                            out.id = out[idKey];
+                        }
+                        // establish name fallback (used in selection/delete modals)
+                        if (out.name === undefined) {
+                            const fallback = out[idKey] ?? out.id ?? out.label ?? `item_${idx}`;
+                            out.name = String(fallback);
+                        }
+                        return out;
                     });
                 }
                 return result.data.records;
@@ -325,7 +352,7 @@
         try {
             var result
             if(isFlat){
-                result = await axios.delete(`/api/v${props.apiVersion}/${objectType}?name=${encodeURIComponent(item.name)}`, TokenStorage.getAuthentication())
+                result = await axios.delete(`/api/v${props.apiVersion}/${objectType}?name=${encodeURIComponent(item.value.name)}`, TokenStorage.getAuthentication())
             }else{
                 result = await axios.delete(`/api/v${props.apiVersion}/${objectType}/${itemId.value}`, TokenStorage.getAuthentication())
             }

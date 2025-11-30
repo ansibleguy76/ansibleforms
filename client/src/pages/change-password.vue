@@ -146,19 +146,19 @@ const $v = useVuelidate(rules, { item });
 
 [data-bs-theme="light"] {
   .login {
-    background-image: url(@/assets/img/login_background_light.jpg) !important;
+    background-image: url(/img/login_background_light.jpg) !important;
     background-size: cover;
   }
 }
 [data-bs-theme="dark"] {
   .login {
-    background-image: url(@/assets/img/login_background_dark.jpg) !important;
+    background-image: url(/img/login_background_dark.jpg) !important;
     background-size: cover;
   }
 }
 [data-bs-theme="color"] {
   .login {
-    background-image: url(@/assets/img/login_background_color.jpg) !important;
+    background-image: url(/img/login_background_color.jpg) !important;
     background-size: cover;
   }
 }

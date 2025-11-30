@@ -203,6 +203,11 @@ const Helpers = {
   diff(arrA, arrB) {
     let diff = [];
     function isEq(a, b) {
+      // Handle null/undefined cases
+      if (a === b) return true;
+      if (a == null || b == null) return false;
+      if (typeof a !== 'object' || typeof b !== 'object') return a === b;
+      
       var aProps = Object.getOwnPropertyNames(a);
       var bProps = Object.getOwnPropertyNames(b);
       if (aProps.length != bProps.length) {
@@ -229,6 +234,33 @@ const Helpers = {
     return diff;
   },
   evalSandbox(expression){
+    function fnToTable(data, {
+          tableClass = '',
+          escapeHtml = true,
+          emptyCell = '',
+          includeHeader = true
+        } = {}){
+      if (!Array.isArray(data) || data.length === 0) {
+        return '<table' + (tableClass ? ` class="${tableClass}"` : '') + '></table>';
+      }
+      const escape = escapeHtml
+        ? (s) => String(s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+        : (s) => String(s);
+      const columns = [...new Set(data.flatMap(obj => Object.keys(obj)))];
+      const thead = includeHeader
+        ? '<thead><tr>' + columns.map(col => `<th>${escape(col)}</th>`).join('') + '</tr></thead>'
+        : '';
+      const tbody = '<tbody>' + data.map(row =>
+        '<tr>' + columns.map(col =>
+          `<td>${row[col] === undefined || row[col] === null ? emptyCell : escape(row[col])}</td>`
+        ).join('') + '</tr>'
+      ).join('') + '</tbody>';
+      return `<table${tableClass ? ` class="${tableClass}"` : ''}>${thead}${tbody}</table>`;
+    }    
     // local autonumbering
     function fnGetNumberedName(names,pattern,value,fillgap=false){
       var nr=null
@@ -238,7 +270,7 @@ const Helpers = {
       var re=new RegExp("[^\#]*(\#+)[^\#]*") // eslint-disable-line
       var patternmatch=re.exec(pattern)
       if(!names || !Array.isArray(names)){
-        console.log("fnGetNumberedName, No input or no array")
+        // console.log("fnGetNumberedName, No input or no array")
         return value
       }
       if(patternmatch && patternmatch.length==2){
@@ -276,11 +308,11 @@ const Helpers = {
           var tmp = pattern.replace(nrsequence,nr.toString().padStart(nrsequence.length,"0"))
           return tmp
         }else{
-          console.log("fnGetNumberedName, no pattern matches found in the list")
+          // console.log("fnGetNumberedName, no pattern matches found in the list")
           return value
         }
       }else{
-        console.log("fnGetNumberedName, no pattern found, use ### for numbers")
+        // console.log("fnGetNumberedName, no pattern found, use ### for numbers")
         return value
       }
     }    
@@ -382,6 +414,9 @@ const Helpers = {
           })
         }
     }   
+    var dummy = fnArray.from([]) // to make it available
+    var dummy = fnGetNumberedName([], "###", "") // to make it available
+    var dummy = fnToTable([]) // to make it available
     if(expression) 
     return eval(expression)          
   }  
