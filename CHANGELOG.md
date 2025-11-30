@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.0.2] - 2025-11-30
+
 ### Added
 
 -   MASK_EXTRAVARS_REGEX, to allow extravars masking
@@ -895,7 +897,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/6.0.1...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/6.0.2...HEAD
+
+[6.0.2]: https://github.com/ansibleguy76/ansibleforms/compare/6.0.1...6.0.2
 
 [6.0.1]: https://github.com/ansibleguy76/ansibleforms/compare/6.0.0...6.0.1
 
