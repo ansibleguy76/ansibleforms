@@ -376,8 +376,8 @@ const fnSsh = async function(user,host,cmd,jqe=null){
 /**
  * List the contents of a directory (optionally recursively), with optional regex filtering.
  * @param {string} dirPath - The path to the directory to list.
- * @param {object} options - Options: { regex, recursive }
- * @returns {Promise<string[]>} - Array of file/folder names (folders have trailing slash, relative to dirPath)
+ * @param {object} options - Options: { regex, recursive, metadata }
+ * @returns {Promise<string[]|object[]>} - Array of file/folder names (if metadata=false) or objects with metadata (if metadata=true)
  */
 export async function fnLs(dirPath, options = {}) {
   const results = [];
@@ -385,16 +385,40 @@ export async function fnLs(dirPath, options = {}) {
   if (options.regex) {
     regex = options.regex instanceof RegExp ? options.regex : new RegExp(options.regex);
   }
+  const includeMetadata = options.metadata === true;
+  
   async function walk(currentPath, relPath = "") {
     const entries = await fsPromises.readdir(currentPath, { withFileTypes: true });
     for (const entry of entries) {
-      const entryName = entry.name + (entry.isDirectory() ? "/" : "");
+      const isDirectory = entry.isDirectory();
+      const entryName = entry.name + (isDirectory ? "/" : "");
       const fullRelPath = relPath ? path.posix.join(relPath, entryName) : entryName;
+      const fullAbsPath = path.join(currentPath, entry.name);
+      
       if (!regex || regex.test(fullRelPath)) {
-        results.push(fullRelPath);
+        if (includeMetadata) {
+          // Get file stats for metadata
+          const stats = await fsPromises.stat(fullAbsPath);
+          results.push({
+            path: fullRelPath,
+            name: entry.name,
+            type: isDirectory ? 'directory' : 'file',
+            size: stats.size,
+            created: stats.birthtime,
+            modified: stats.mtime,
+            accessed: stats.atime,
+            mode: stats.mode,
+            isDirectory: isDirectory,
+            isFile: stats.isFile(),
+            isSymbolicLink: stats.isSymbolicLink()
+          });
+        } else {
+          results.push(fullRelPath);
+        }
       }
-      if (options.recursive && entry.isDirectory()) {
-        await walk(path.join(currentPath, entry.name), relPath ? path.posix.join(relPath, entry.name) : entry.name);
+      
+      if (options.recursive && isDirectory) {
+        await walk(fullAbsPath, relPath ? path.posix.join(relPath, entry.name) : entry.name);
       }
     }
   }
