@@ -2268,10 +2268,10 @@
             type: string
             group: basic
             allowed: Free text
-            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, file
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, file, html
             short: Field label
             description: |
-              A friendly name/label for the field
+              A friendly name/label for the field.  Note: if not set, the field name is used as label, but not when type is html.
           - name: placeholder
             type: string
             group: basic
@@ -4073,11 +4073,14 @@
         // In the settings you can find the public-key and add your target-host to known_hosts
     - name: list files in a directory
       code: |
-        fn.fnLs('/tmp',{ resursive: true, regex: '.*\.log$' })
+        fn.fnLs('/tmp',{ resursive: true, regex: '.*\.log$', metadata: true })
 
         // fn.fnLs(path,options)
         // - path : path to directory
-        // - options : recursive:boolean, regex:string
+        // - options : recursive:boolean, regex:string ,metadata:boolean
+        //   - recursive : whether to list files recursively
+        //   - regex : a regular expression to filter files
+        //   - metadata : whether to include file metadata (size,mtime,... directories will be shown too)
     - name: parse html page
       code: |
         fn.fnParseHtmlWithRegex('https://ansibleguy.com','<h2.*?>(.*?)</h2>','g')
