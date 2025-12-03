@@ -15,7 +15,7 @@
     /*                                                                */
     /******************************************************************/
 
-    import { computed } from 'vue';
+    import { computed, ref } from 'vue';
     import { useAppStore } from "@/stores/app";
 
     // MODEL
@@ -25,7 +25,7 @@
     // INIT
 
     const store = useAppStore();
-    const emit = defineEmits(["change"]);
+    const emit = defineEmits(["change", "update:model-value"]);
 
     // PROPS
     
@@ -47,6 +47,33 @@
     const theme = computed(() => store.theme);
     const hasTimePicker = computed(() => {
         return ["datetime", "time"].includes(props.dateType);
+    });
+
+    const internalModel = computed({
+        get() {
+            // Convert string to Date for VueDatePicker
+            if (!model.value) return null;
+            return typeof model.value === 'string' ? new Date(model.value) : model.value;
+        },
+        set(value) {
+            // Convert Date to ISO UTC string
+            if (value instanceof Date) {
+                if (props.dateType === 'date') {
+                    // For date type, set time to 00:00:00.000
+                    const dateOnly = new Date(Date.UTC(
+                        value.getFullYear(),
+                        value.getMonth(),
+                        value.getDate(),
+                        0, 0, 0, 0
+                    ));
+                    model.value = dateOnly.toISOString();
+                } else {
+                    model.value = value.toISOString();
+                }
+            } else {
+                model.value = value;
+            }
+        }
     });    
 
     // METHODS
@@ -96,7 +123,7 @@
 </script>
 <template>
 
-    <VueDatePicker text-input v-model="model" timezone="utc" @blur="blur" :auto-apply="['date','month','week'].includes(dateType)" @focus="focus" @input="input" :formats="{input:format, preview:format}" enable-time-picker="hasTimePicker" :month-picker="dateType == 'month'" :week-picker="dateType == 'week'" :quarter-picker="dateType == 'quarter'" :year-picker="dateType == 'year'" :time-picker="dateType == 'time'" :is-24="true" :dark="theme=='dark'">
+    <VueDatePicker text-input v-model="internalModel" timezone="utc" @blur="blur" :auto-apply="['date','month','week'].includes(dateType)" @focus="focus" @input="input" :formats="{input:format, preview:format}" enable-time-picker="hasTimePicker" :month-picker="dateType == 'month'" :week-picker="dateType == 'week'" :quarter-picker="dateType == 'quarter'" :year-picker="dateType == 'year'" :time-picker="dateType == 'time'" :is-24="true" :dark="theme=='dark'">
         <template #dp-input="{ value }">
         <!-- ICON FIELD GROUP -->
         <div class="input-group">

@@ -1399,8 +1399,26 @@ onUnmounted(() => {
                     <template v-for="field in filterfieldsByGroupAndLine(group, line)">
 
                         <div class="col py-0" v-if="visibility[field.name]" :class="field.width">
-                            <div class="mt-3">
-                                <div v-show="field.type != 'html'" class="d-flex">
+                            
+                            <!-- TYPE = HTML (separate rendering, optional label) -->
+                            <div class="mt-3" v-if="field.type == 'html'">
+                                <!-- FIELD LABEL (only if label is explicitly set and different from field name) -->
+                                <label v-if="field.label && field.label !== field.name" class="flex-grow-1 fw-bold mb-2"
+                                    :class="{ 'text-body': !field.hide, 'text-grey': field.hide }">{{ field.label }}
+                                </label>
+                                
+                                <div v-show="!fieldOptions[field.name].viewable" v-html="v$.form[field.name].$model || ''"></div>
+                                <!-- raw data -->
+                                <div @dblclick="setExpressionFieldViewable(field.name, false)"
+                                    v-if="fieldOptions[field.name].viewable"
+                                    class="card p-2 limit-height">
+                                    <VueJsonPretty :data="v$.form[field.name].$model || ''" />
+                                </div>                                       
+                            </div>
+
+                            <!-- ALL OTHER FIELD TYPES -->
+                            <div v-else class="mt-3">
+                                <div class="d-flex">
 
                                     <!-- FIELD LABEL -->
                                     <label class="flex-grow-1 fw-bold mb-2"
@@ -1497,18 +1515,6 @@ onUnmounted(() => {
                                         <VueJsonPretty :data="v$.form[field.name].$model" />
                                     </div>                                    
                                 </div>
-
-                                <!-- TYPE = HTML -->
-                                <div class="mt-3" v-if="field.type == 'html'">
-                                    <div v-show="!fieldOptions[field.name].viewable" v-html="v$.form[field.name].$model || ''"></div>
-                                    <!-- raw data -->
-                                    <div @dblclick="setExpressionFieldViewable(field.name, false)"
-                                        v-if="fieldOptions[field.name].viewable"
-                                        class="card p-2 limit-height">
-                                        <VueJsonPretty :data="v$.form[field.name].$model || ''" />
-                                    </div>                                       
-                                </div>
-                                                        
 
                                 <!-- TYPE = ENUM -->
                                 <div v-if="field.type == 'enum'">

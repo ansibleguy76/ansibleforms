@@ -850,7 +850,6 @@
               "type": {
                 "enum": ["html"]
               },
-              "label":             {"not":{}}, 
               "placeholder":       {"not":{}}, 
               "dateType":          {"not":{}}, 
               "asCredential":      {"not":{}}, 

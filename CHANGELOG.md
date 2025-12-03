@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-   fnLs, added metadata option to return more file metadata (size, created, etc...)
+
+### Fixed
+
+-   approval message placeholder
+-   small visual job issue
+
+### Changed
+
+-   removed label for html type.  If you want to have some sort of label, excplicitely set a label
+
+
 ## [6.0.2] - 2025-11-30
 
 ### Added

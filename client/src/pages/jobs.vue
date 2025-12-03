@@ -242,12 +242,15 @@
         // using await
         for (const item of runningJobs.value) {
             const result = await axios.get(`/api/v2/job/${item.id}`,TokenStorage.getAuthentication())
-            const idx = getJobIndex(item.id)
             if(result.status==200 && noOfRecords.value!=result.data.no_of_records){
                 await loadJobs() // no of records changed ; reload jobs
                 noOfRecords.value=result.data.no_of_records
+                return; // Exit early - loadJobs() has refreshed everything
             }
-            jobs.value[idx]=result.data
+            const idx = getJobIndex(item.id)
+            if(idx !== -1) {
+                jobs.value[idx]=result.data
+            }
             if(item.id==jobId.value){
                 job.value=result.data
             }
@@ -313,6 +316,9 @@
         if(!msg){
             return ""
         }
+        console.log("Replacing placeholders in message:", msg);
+        console.log("Job extravars:", job.value.extravars);
+
         return msg.replace(
             /\$\(([^\)]+)\)/g, // eslint-disable-line
             (placeholderWithDelimiters, placeholderWithoutDelimiters) =>
@@ -334,6 +340,7 @@
             }
             return master[obj]
         },data);
+        return outputValue;
     }
     async function jobAction(id,action,method="post",uri_suffix=""){
         try{
