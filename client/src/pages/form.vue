@@ -650,8 +650,8 @@ async function loadForm(){
     currentForm.value = formConfig.value.forms[0];
     formLoaded.value = true;
     constants.value = formConfig.value.constants;
-    // Deep merge form vars into constants
-    constants.value = Lodash.merge({}, constants.value, formConfig.value.forms[0].vars || {});
+    // Shallow merge form vars into constants to prevent prototype pollution
+    constants.value = Object.assign({}, constants.value, formConfig.value.forms[0].vars || {});
     
 
     // see if the help should be show initially

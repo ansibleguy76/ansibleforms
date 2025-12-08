@@ -197,8 +197,10 @@ async function loadVarsFiles(varsFiles) {
   let mergedVars = {};
 
   for (const varsFile of varsFiles) {
+    const absPath = path.resolve(varsFile);
+    const ext = path.extname(absPath).toLowerCase();
     // Validate file extension
-    if (!varsFile.endsWith('.yml') && !varsFile.endsWith('.yaml')) {
+    if (ext !== '.yml' && ext !== '.yaml') {
       logger.warning(`Skipping vars_file '${varsFile}': must end with .yml or .yaml`);
       continue;
     }
@@ -430,7 +432,11 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
         // Load vars_files if this is a single form request and vars_files is defined
         if(formName && form.vars_files){
           logger.debug(`Loading vars_files for form ${f.name}`);
-          form.vars = await loadVarsFiles(form.vars_files);
+          try {
+            form.vars = await loadVarsFiles(form.vars_files);
+          } catch (e) {
+            error(`Failed to load vars_files for form '${f.name}'.\r\n${e.message}`);
+          }
         }
         baseConfig.forms.push(form);   // merge the form into the base forms
         // if we are loading full config, we can return the form right away
