@@ -1716,6 +1716,25 @@
                   - name: __playbook__
                     type: text
                     default: helloworld.yaml # this will overwrite the playbook name
+          - name: vars_files
+            type: array
+            group: basic
+            with_types: ansible
+            allowed: list of valid yaml files
+            short: Ansible vars_files
+            description: | 
+              This will load yaml files with contain dictionaries of variables.  
+              These dict variables will be available in the form to use as constants.  
+              Adivise is to make the dict-keys unique and UPPERCASE to avoid conflicts with other variables.
+            examples:
+            - name: Run foobar playbook with vars_files
+              code: |
+                name: Foobar
+                type: ansible
+                playbook: foobar.yaml  
+                vars_files:
+                  - /home/vars/common.yaml
+                  - /home/vars/special.yaml
           - name: inventory
             type: string
             group: workflow

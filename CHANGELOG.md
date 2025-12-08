@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 -   fnLs, added metadata option to return more file metadata (size, created, etc...)
+-   vars_files on a form.  Allowing to load multiple yaml files that can be attached to the form and will be available as contants.  It must be a dictionary and the keys should be unique to avoid conflicts with other fieldnames.
 
 ### Fixed
 

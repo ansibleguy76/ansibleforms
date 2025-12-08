@@ -433,6 +433,12 @@
                   "$ref": "/formfield"
                 },
                 "template": {"type": "string"},
+                "vars_files": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },                
                 "awx": {"type": "string"},
                 "abortable": {"type": "boolean"},
                 "awxCredentials": {
@@ -535,6 +541,12 @@
           "key": {"type": "string"},
           "abortable": {"type": "boolean"},
           "template": {"type": "string"},
+          "vars_files": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "awx": {"type": "string"},
           "credentials": {
             "type": "object",

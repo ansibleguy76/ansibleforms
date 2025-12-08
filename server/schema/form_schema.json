@@ -302,6 +302,12 @@
             "$ref": "/formfield"
           },
           "template": {"type": "string"},
+          "vars_files": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "awx": {"type": "string"},
           "abortable": {"type": "boolean"},
           "awxCredentials": {
