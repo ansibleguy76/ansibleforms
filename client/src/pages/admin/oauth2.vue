@@ -53,7 +53,7 @@ onMounted(async () => {
                         </h2>
                         <div id="collapseOpenId" class="accordion-collapse collapse" aria-labelledby="headingOpenId" data-bs-parent="#providerHelpAccordion">
                             <div class="accordion-body">
-                                <strong>Notice:</strong> Open ID is currently broken in version 6.
+                                <strong>Notice:</strong> Open ID has only been tested with Keycloak so far.
                             </div>
                         </div>
                     </div>

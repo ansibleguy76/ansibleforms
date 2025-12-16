@@ -53,10 +53,23 @@ function userToJwt(user,expiryDays){
 // get login settings
 const settings = async function(req, res) {
   try {
-    const [azure, oidc] = await Promise.all([
-      AzureAd.isEnabled().catch(() => ({ enable: false, groupfilter: null })),
-      OIDC.isEnabled().catch(() => ({ enabled: false, issuer: null, groupfilter: null }))
+    const [azureRaw, oidcRaw] = await Promise.all([
+      AzureAd.isEnabled().catch(() => ({ enable: 0, groupfilter: null })),
+      OIDC.isEnabled().catch(() => ({ enable: 0, issuer: null, groupfilter: null }))
     ]);
+
+    // Normalize shapes regarding enable vs enabled
+    const azure = {
+      enable: !!azureRaw.enable,
+      groupfilter: azureRaw.groupfilter,
+    };
+
+    const oidc = {
+      enabled: !!oidcRaw.enable,
+      issuer: oidcRaw.issuer,
+      groupfilter: oidcRaw.groupfilter,
+    };
+
     const settings = {
       azureAdEnabled: azure.enable,
       azureGroupfilter: azure.groupfilter,
