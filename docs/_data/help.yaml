@@ -2606,6 +2606,8 @@
             short: Field minimum length
             description: |
               Forces a string-field to be at least x long.
+              
+              **Since 6.0.3:** Supports placeholders for dynamic validation (e.g., `minLength: "$(minPasswordLength)"`).
             with_types: text, expression, password
           - name: maxLength
             allowed: Integer > 0
@@ -2614,6 +2616,8 @@
             short: Field maximum length
             description: |
               Forces a string-field to be maximum x long.
+              
+              **Since 6.0.3:** Supports placeholders for dynamic validation (e.g., `maxLength: "$(maxPasswordLength)"`).
             with_types: text, expression, password
           - name: minValue
             allowed: Integer
@@ -2622,6 +2626,8 @@
             short: Field minimum value
             description: |
               Forces a number-field to not be lower than...
+              
+              **Since 6.0.3:** Supports placeholders for dynamic validation (e.g., `minValue: "$(minThreshold)"`).
             with_types: number
           - name: maxValue
             allowed: Integer
@@ -2630,6 +2636,8 @@
             short: Field maximum value
             description: |
               Forces a number-field to not be higher than...
+              
+              **Since 6.0.3:** Supports placeholders for dynamic validation (e.g., `maxValue: "$(maxThreshold)"`).
             with_types: number
           - name: minSize
             allowed: Integer
@@ -2638,6 +2646,8 @@
             short: File minimum size
             description: |
               Forces a file-fields size to not be lower than...
+              
+              **Since 6.0.3:** Supports placeholders for dynamic validation (e.g., `minSize: "$(minFileSize)"`).
             with_types: file
           - name: maxSize
             allowed: Integer
@@ -2646,6 +2656,8 @@
             short: File maximum size
             description: |
               Forces a file-fields size to not be higher than...
+              
+              **Since 6.0.3:** Supports placeholders for dynamic validation (e.g., `maxSize: "$(maxUploadSize)"`).
             with_types: file            
           - name: regex
             type: object

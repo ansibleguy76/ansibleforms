@@ -15,6 +15,30 @@ const toast = useToast();
 const route = useRoute();
 const router = useRouter();
 
+// Decode JWT payload without jwt.decode, install library, e.g. jwt-decode, instead?
+function decodeJwtPayload(token) {
+  if (!token) return null;
+
+  const parts = token.split(".");
+  if (parts.length < 2) return null;
+
+  // Base64url -> Base64
+  const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+
+  try {
+    const json = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    return JSON.parse(json);
+  } catch (e) {
+    console.error("Failed to decode JWT payload", e);
+    return null;
+  }
+}
+
 // vuelidate
 const rules = {
    user: {
@@ -80,9 +104,17 @@ function getGroupsAndLogin(token, url = `${azureGraphUrl.value}/v1.0/me/transiti
          });
    }
    else {
-      const payload = jwt.decode(token, { complete: true }).payload
-      tokenLogin(token, payload.groups || [], 'oidc')
-   }
+    // OIDC branch for now => specify type in the future?
+    // decode JWT with helper instead of using undefined `jwt.decode`
+    const payload = decodeJwtPayload(token);
+
+    if (!payload) {
+      toast.error("Failed to decode login token");
+      return;
+    }
+
+    tokenLogin(token, payload.groups || [], 'oidc')
+  }
 }
 function tokenLogin(token, allGroups, type = 'azuread') {
    var validRegex = true
@@ -261,4 +293,3 @@ onMounted(() => {
     }
   }  
 </style>
-

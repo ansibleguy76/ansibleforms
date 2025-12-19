@@ -128,7 +128,7 @@
         <p @dblclick="dblclick" v-else-if="type=='expression' && isHtml" class="form-control" :style="style" v-html="model" :class="cssClass"></p>
         <p @dblclick="dblclick" v-else-if="type=='expression' && !isHtml" class="form-control" :style="style" v-text="model" :class="cssClass"></p>        
         <BsInputCheckboxRaw v-else-if="type === 'checkbox'" :isSwitch="isSwitch" :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :hasError="hasError" :label="label" v-model="model" @change="change" />
-        <BsInputRadiobuttonRaw v-else-if="type === 'radio'" :disabled="disabled" :style="style" :cssClass="cssClass" :hasError="hasError" :name="name" v-model="model" :values="values" />
+        <BsInputRadiobuttonRaw v-else-if="type === 'radio'" :disabled="disabled" :style="style" :cssClass="cssClass" :hasError="hasError" :name="name" v-model="model" :values="values" @change="change" />
         <BsInputFileRaw v-else-if="type === 'file'" :name="name" :icon="icon" :readonly="readonly" :uid="uid" :hasError="hasError" :placeholder="placeholder" @change="change" :progress="progress" :accept="accept" />
         <BsInputRaw v-else :readonly="readonly" :autofocus="autofocus" :disabled="disabled" :style="style" :cssClass="cssClass" :uid="uid" :type="type" @keyup_enter="keyup_enter" :hasError="hasError" :placeholder="placeholder" v-model="model" @focus="focus" @keydown="keydown" @change="change" @blur="blur" />
       </div>

@@ -13,6 +13,10 @@ const toast = useToast();
 const route = useRoute();
 const router = useRouter();
 
+
+// redirect to login page if not oidc
+var userType = store.profile?.type || "local"
+
 // clear all authentication states
 TokenStorage.clear()
 
@@ -20,24 +24,27 @@ TokenStorage.clear()
 State.refreshAuthenticated()
 State.loadProfile()
 
-// redirect to login page if not oidc
-var userType = store.profile?.type || "local"
 if (userType == "local" || userType == "ldap" || userType == "azuread") {
     Navigate.toLogin(router, route)
 }
 
-// logout from oidc
 if (userType == "oidc") {
-    axios.get(`/api/v1/auth/logout`).then((res) => {
-        const logoutUrl = res.data?.data?.output?.logoutUrl
-        if (logoutUrl) {
-            location.replace(logoutUrl)
-        }
+  axios.get(`/api/v1/auth/logout`).then((res) => {
+      const logoutUrl = res?.data?.data?.output?.logoutUrl;
+      if (logoutUrl) {
+        // Go to Keycloak end-session endpoint
+        location.replace(logoutUrl);
+      } else {
+        // If no IdP logout URL, at least go back to login
+        Navigate.toLogin(router, route);
+      }
     }).catch((err) => {
-        console.log(err)
-        toast.error("Could not log out")
+      console.log(err)
+      toast.error("Could not log out");
+      // fallback: go to login anyway
+      Navigate.toLogin(router, route);
     })
-}  
+}
 </script>
 <template>
     <div class="d-flex align-items-center py-4 bg-body-tertiary login vh-100">

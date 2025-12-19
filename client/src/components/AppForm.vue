@@ -171,51 +171,213 @@ const rules = computed(() => {
         // min and max size for files
         if ("minSize" in ff) {
             if (ff.type == 'file') {
-                var description = `Size (${Helpers.humanFileSize(form.value[ff.name]?.size)}) cannot be lower than ${Helpers.humanFileSize(ff.minSize)}`
-                rule.minSize = helpers.withParams(
-                    { description: description, type: "minSize" },
-                    (file) => !helpers.req(file?.name) || file?.size >= ff.minSize
-                )
+                const hasPlaceholder = typeof ff.minSize === 'string' && /\$\(([^)]+)\)/.test(ff.minSize);
+                
+                if (hasPlaceholder) {
+                    rule.minSize = helpers.withParams(
+                        { 
+                            description: computed(() => {
+                                const result = replacePlaceholderInString(String(ff.minSize), false);
+                                const resolvedValue = result.value !== undefined ? Number(result.value) : ff.minSize;
+                                return `Size (${Helpers.humanFileSize(form.value[ff.name]?.size)}) cannot be lower than ${Helpers.humanFileSize(resolvedValue)}`;
+                            }),
+                            type: "minSize" 
+                        },
+                        (file) => {
+                            if (!helpers.req(file?.name)) return true;
+                            const result = replacePlaceholderInString(String(ff.minSize), false);
+                            if (result.value === undefined) return true;
+                            const minVal = Number(result.value);
+                            if (isNaN(minVal)) {
+                                console.warn(`minSize placeholder resolved to non-numeric value: ${result.value}`);
+                                return true;
+                            }
+                            return file?.size >= minVal;
+                        }
+                    );
+                } else {
+                    const numericMin = Number(ff.minSize);
+                    var description = `Size (${Helpers.humanFileSize(form.value[ff.name]?.size)}) cannot be lower than ${Helpers.humanFileSize(numericMin)}`
+                    rule.minSize = helpers.withParams(
+                        { description: description, type: "minSize" },
+                        (file) => !helpers.req(file?.name) || file?.size >= numericMin
+                    );
+                }
             }
         }
         if ("maxSize" in ff) {
             if (ff.type == 'file') {
-                description = `Size (${Helpers.humanFileSize(form.value[ff.name]?.size)}) cannot be higher than ${Helpers.humanFileSize(ff.maxSize)}`
-                rule.maxSize = helpers.withParams(
-                    { description: description, type: "maxSize" },
-                    (file) => !helpers.req(file?.name) || file?.size <= ff.maxSize
-                )
+                const hasPlaceholder = typeof ff.maxSize === 'string' && /\$\(([^)]+)\)/.test(ff.maxSize);
+                
+                if (hasPlaceholder) {
+                    rule.maxSize = helpers.withParams(
+                        { 
+                            description: computed(() => {
+                                const result = replacePlaceholderInString(String(ff.maxSize), false);
+                                const resolvedValue = result.value !== undefined ? Number(result.value) : ff.maxSize;
+                                return `Size (${Helpers.humanFileSize(form.value[ff.name]?.size)}) cannot be higher than ${Helpers.humanFileSize(resolvedValue)}`;
+                            }),
+                            type: "maxSize" 
+                        },
+                        (file) => {
+                            if (!helpers.req(file?.name)) return true;
+                            const result = replacePlaceholderInString(String(ff.maxSize), false);
+                            if (result.value === undefined) return true;
+                            const maxVal = Number(result.value);
+                            if (isNaN(maxVal)) {
+                                console.warn(`maxSize placeholder resolved to non-numeric value: ${result.value}`);
+                                return true;
+                            }
+                            return file?.size <= maxVal;
+                        }
+                    );
+                } else {
+                    const numericMax = Number(ff.maxSize);
+                    description = `Size (${Helpers.humanFileSize(form.value[ff.name]?.size)}) cannot be higher than ${Helpers.humanFileSize(numericMax)}`
+                    rule.maxSize = helpers.withParams(
+                        { description: description, type: "maxSize" },
+                        (file) => !helpers.req(file?.name) || file?.size <= numericMax
+                    );
+                }
             }
         }
         // min and max value for numbers
         if ("minValue" in ff) {
-            var description = `${ff.label} must be at least ${ff.minValue}`
-            rule.minValue = helpers.withParams(
-                { description: description, type: "minValue" },
-                (value) => !helpers.req(value) || value >= ff.minValue
-            )
+            const hasPlaceholder = typeof ff.minValue === 'string' && /\$\(([^)]+)\)/.test(ff.minValue);
+            
+            if (hasPlaceholder) {
+                rule.minValue = helpers.withParams(
+                    { 
+                        description: computed(() => {
+                            const result = replacePlaceholderInString(String(ff.minValue), false);
+                            const resolvedValue = result.value !== undefined ? result.value : ff.minValue;
+                            return `${ff.label} must be at least ${resolvedValue}`;
+                        }),
+                        type: "minValue" 
+                    },
+                    (value) => {
+                        if (!helpers.req(value)) return true;
+                        const result = replacePlaceholderInString(String(ff.minValue), false);
+                        if (result.value === undefined) return true;
+                        const minVal = Number(result.value);
+                        if (isNaN(minVal)) {
+                            console.warn(`minValue placeholder resolved to non-numeric value: ${result.value}`);
+                            return true;
+                        }
+                        return value >= minVal;
+                    }
+                );
+            } else {
+                const numericMin = Number(ff.minValue);
+                var description = `${ff.label} must be at least ${numericMin}`;
+                rule.minValue = helpers.withParams(
+                    { description: description, type: "minValue" },
+                    (value) => !helpers.req(value) || value >= numericMin
+                );
+            }
         }
         if ("maxValue" in ff) {
-            var description = `${ff.label} must be at most ${ff.maxValue}`
-            rule.maxValue = helpers.withParams(
-                { description: description, type: "maxValue" },
-                (value) => !helpers.req(value) || value <= ff.maxValue
-            )
+            const hasPlaceholder = typeof ff.maxValue === 'string' && /\$\(([^)]+)\)/.test(ff.maxValue);
+            
+            if (hasPlaceholder) {
+                rule.maxValue = helpers.withParams(
+                    { 
+                        description: computed(() => {
+                            const result = replacePlaceholderInString(String(ff.maxValue), false);
+                            const resolvedValue = result.value !== undefined ? result.value : ff.maxValue;
+                            return `${ff.label} must be at most ${resolvedValue}`;
+                        }),
+                        type: "maxValue" 
+                    },
+                    (value) => {
+                        if (!helpers.req(value)) return true;
+                        const result = replacePlaceholderInString(String(ff.maxValue), false);
+                        if (result.value === undefined) return true;
+                        const maxVal = Number(result.value);
+                        if (isNaN(maxVal)) {
+                            console.warn(`maxValue placeholder resolved to non-numeric value: ${result.value}`);
+                            return true;
+                        }
+                        return value <= maxVal;
+                    }
+                );
+            } else {
+                const numericMax = Number(ff.maxValue);
+                var description = `${ff.label} must be at most ${numericMax}`;
+                rule.maxValue = helpers.withParams(
+                    { description: description, type: "maxValue" },
+                    (value) => !helpers.req(value) || value <= numericMax
+                );
+            }
         }
         // min and max length for strings
         if ("minLength" in ff) {
-            var description = `${ff.label} must be at least ${ff.minLength} characters long`
-            rule.minLength = helpers.withParams(
-                { description: description, type: "minLength" },
-                (value) => !helpers.req(value) || value.length >= ff.minLength
-            )
+            const hasPlaceholder = typeof ff.minLength === 'string' && /\$\(([^)]+)\)/.test(ff.minLength);
+            
+            if (hasPlaceholder) {
+                rule.minLength = helpers.withParams(
+                    { 
+                        description: computed(() => {
+                            const result = replacePlaceholderInString(String(ff.minLength), false);
+                            const resolvedValue = result.value !== undefined ? result.value : ff.minLength;
+                            return `${ff.label} must be at least ${resolvedValue} characters long`;
+                        }),
+                        type: "minLength" 
+                    },
+                    (value) => {
+                        if (!helpers.req(value)) return true;
+                        const result = replacePlaceholderInString(String(ff.minLength), false);
+                        if (result.value === undefined) return true;
+                        const minLen = Number(result.value);
+                        if (isNaN(minLen)) {
+                            console.warn(`minLength placeholder resolved to non-numeric value: ${result.value}`);
+                            return true;
+                        }
+                        return value.length >= minLen;
+                    }
+                );
+            } else {
+                const numericMin = Number(ff.minLength);
+                var description = `${ff.label} must be at least ${numericMin} characters long`;
+                rule.minLength = helpers.withParams(
+                    { description: description, type: "minLength" },
+                    (value) => !helpers.req(value) || value.length >= numericMin
+                );
+            }
         }
         if ("maxLength" in ff) {
-            var description = `${ff.label} must be at most ${ff.maxLength} characters long`
-            rule.maxLength = helpers.withParams(
-                { description: description, type: "maxLength" },
-                (value) => !helpers.req(value) || value.length <= ff.maxLength
-            )
+            const hasPlaceholder = typeof ff.maxLength === 'string' && /\$\(([^)]+)\)/.test(ff.maxLength);
+            
+            if (hasPlaceholder) {
+                rule.maxLength = helpers.withParams(
+                    { 
+                        description: computed(() => {
+                            const result = replacePlaceholderInString(String(ff.maxLength), false);
+                            const resolvedValue = result.value !== undefined ? result.value : ff.maxLength;
+                            return `${ff.label} must be at most ${resolvedValue} characters long`;
+                        }),
+                        type: "maxLength" 
+                    },
+                    (value) => {
+                        if (!helpers.req(value)) return true;
+                        const result = replacePlaceholderInString(String(ff.maxLength), false);
+                        if (result.value === undefined) return true;
+                        const maxLen = Number(result.value);
+                        if (isNaN(maxLen)) {
+                            console.warn(`maxLength placeholder resolved to non-numeric value: ${result.value}`);
+                            return true;
+                        }
+                        return value.length <= maxLen;
+                    }
+                );
+            } else {
+                const numericMax = Number(ff.maxLength);
+                var description = `${ff.label} must be at most ${numericMax} characters long`;
+                rule.maxLength = helpers.withParams(
+                    { description: description, type: "maxLength" },
+                    (value) => !helpers.req(value) || value.length <= numericMax
+                );
+            }
         }
         // regex validation
         if ("regex" in ff) {

@@ -1252,12 +1252,12 @@
                     "description": {"type": "string"}
                   }
                 },
-                "minValue": {"type": "integer"},
-                "maxValue": {"type": "integer"},
-                "minSize": {"type": "integer"},
-                "maxSize": {"type": "integer"},                
-                "minLength": {"type": "integer"},
-                "maxLength": {"type": "integer"},
+                "minValue": {"type": ["string","integer"]},
+                "maxValue": {"type": ["string","integer"]},
+                "minSize": {"type": ["string","integer"]},
+                "maxSize": {"type": ["string","integer"]},                
+                "minLength": {"type": ["string","integer"]},
+                "maxLength": {"type": ["string","integer"]},
                 "expression": {"type": "string"},
                 "ignoreIncomplete": {"type": "boolean"},
                 "noLog": {"type": "boolean"},
@@ -1604,7 +1604,7 @@
                           }
                       },
                       "dateType": {"type": "string","enum":["date","datetime","year","month","time","week"]},
-                      "minValue": {"type": "integer"},
+                      "minValue": {"type": ["string","integer"]},
                       "maxValue": {"type": "integer"},
                       "minLength": {"type": "integer"},
                       "maxLength": {"type": "integer"},
