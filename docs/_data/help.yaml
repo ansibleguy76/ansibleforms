@@ -2291,6 +2291,8 @@
             short: Field label
             description: |
               A friendly name/label for the field.  Note: if not set, the field name is used as label, but not when type is html.
+              
+              **Since 6.0.3:** Supports placeholders for dynamic labels (e.g., `Label: $(fieldname)`).
           - name: placeholder
             type: string
             group: basic
@@ -2308,6 +2310,8 @@
             description: |
               Some fields require additional help information.
               This help message will be shown below the field.
+              
+              **Since 6.0.3:** Supports placeholders for dynamic help text (e.g., `This field depends on $(fieldname)`).
           - name: icon
             type: string
             group: visualization
@@ -2667,7 +2671,7 @@
               Enforces a validation where the current field must match a regular expression.
               This field requires an object with 2 attributes:
               * `expression` : The regular expression
-              * `description` : A validation message to show when the regex is not matched.
+              * `description` : A validation message to show when the regex is not matched. (**Since 6.0.3:** Supports placeholders for dynamic messages)
             with_types: text, expression, password, datetime, file
             examples:
             - name: Validate email address
@@ -2695,7 +2699,7 @@
               Enforces a validation where the current field can not be one of the values in a list (referencing another field).
               This field requires an object with 2 attributes:
               * `field` : The name of the field that holds the list
-              * `description` : A validation message to show when the validation is not met. (**new in v5.0.1** : can have placeholder)
+              * `description` : A validation message to show when the validation is not met. (**Since 5.0.1:** Supports placeholders for dynamic messages)
             with_types: text, expression, password, datetime
             examples:
             - name: Check if ip exists
@@ -2712,7 +2716,7 @@
               Enforces a validation where the current field must be one of the values in a list (referencing another field).
               This field requires an object with 2 attributes:
               * `field` : The name of the field that holds the list
-              * `description` : A validation message to show when the validation is not met. (**new in v5.0.1** : can have placeholder)
+              * `description` : A validation message to show when the validation is not met. (**Since 5.0.1:** Supports placeholders for dynamic messages)
             with_types: text, expression, password, datetime
             examples:
             - name: Check if ip is in range
@@ -2729,7 +2733,7 @@
               Enforces a validation where a referencing (expression) field must be true.
               This field requires an object with 2 attributes:
               * `field` : The name of the referencing field
-              * `description` : A validation message to show when the validation is not met.  (**new in v5.0.1** : can have placeholder)
+              * `description` : A validation message to show when the validation is not met. (**Since 5.0.1:** Supports placeholders for dynamic messages)
             examples:
             - name: Ip must be pingable
               code: |
@@ -2745,7 +2749,7 @@
               Enforces a validation where a referencing (expression) field must be false.
               This field requires an object with 2 attributes:
               * `field` : The name of the referencing field
-              * `description` : A validation message to show when the validation is not met. (**new in v5.0.1** : can have placeholder)
+              * `description` : A validation message to show when the validation is not met. (**Since 5.0.1:** Supports placeholders for dynamic messages)
             examples:
             - name: Check if powered off
               code: |

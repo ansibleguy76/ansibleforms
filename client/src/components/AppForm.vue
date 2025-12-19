@@ -382,7 +382,10 @@ const rules = computed(() => {
         // regex validation
         if ("regex" in ff) {
             var regexObj = new RegExp(ff.regex.expression)
-            var description = ff.regex.description
+            var description = computed(() => {
+                const result = replacePlaceholderInString(ff.regex.description, false);
+                return result.value !== undefined ? result.value : ff.regex.description;
+            });
             if (ff.type == 'file') {
                 rule.regex = helpers.withParams(
                     { description: description, type: "regex" },
@@ -397,14 +400,20 @@ const rules = computed(() => {
         }
         // validIf and validIfNot
         if ("validIf" in ff) {
-            var description = ff.validIf.description
+            var description = computed(() => {
+                const result = replacePlaceholderInString(ff.validIf.description, false);
+                return result.value !== undefined ? result.value : ff.validIf.description;
+            });
             rule.validIf = helpers.withParams(
                 { description: description, type: "validIf" },
                 (value) => !helpers.req(value) || !!form.value[ff.validIf.field]
             )
         }
         if ("validIfNot" in ff) {
-            var description = ff.validIfNot.description
+            var description = computed(() => {
+                const result = replacePlaceholderInString(ff.validIfNot.description, false);
+                return result.value !== undefined ? result.value : ff.validIfNot.description;
+            });
             rule.validIfNot = helpers.withParams(
                 { description: description, type: "validIfNot" },
                 (value) => !helpers.req(value) || !form.value[ff.validIfNot.field]
@@ -412,14 +421,20 @@ const rules = computed(() => {
         }
         // notIn and in
         if ("notIn" in ff) {
-            var description = ff.notIn.description
+            var description = computed(() => {
+                const result = replacePlaceholderInString(ff.notIn.description, false);
+                return result.value !== undefined ? result.value : ff.notIn.description;
+            });
             rule.notIn = helpers.withParams(
                 { description: description, type: "notIn" },
                 (value) => !helpers.req(value) || (form.value[ff.notIn.field] != undefined && Array.isArray(form.value[ff.notIn.field]) && !form.value[ff.notIn.field].includes(value))
             )
         }
         if ("in" in ff) {
-            var description = ff.in.description
+            var description = computed(() => {
+                const result = replacePlaceholderInString(ff.in.description, false);
+                return result.value !== undefined ? result.value : ff.in.description;
+            });
             rule.in = helpers.withParams(
                 { description: description, type: "in" },
                 (value) => !helpers.req(value) || (form.value[ff.in.field] != undefined && Array.isArray(form.value[ff.in.field]) && form.value[ff.in.field].includes(value))
@@ -475,6 +490,44 @@ const formLoopIsBusy = computed(() => loopDelay.value != 500)
 
 // the interval to refresh json generation
 const loopDivider = computed(() => 5000 / loopDelay.value);
+
+// computed field labels with placeholder support
+const fieldLabels = computed(() => {
+    const labels = {};
+    props.currentForm.fields?.forEach(field => {
+        if (field.label && typeof field.label === 'string' && /\$\(([^)]+)\)/.test(field.label)) {
+            // Has placeholder - create reactive computed
+            labels[field.name] = computed(() => {
+                form.value; // Track form for reactivity
+                const result = replacePlaceholderInString(field.label, false);
+                return result.value !== undefined ? result.value : field.label;
+            });
+        } else {
+            // No placeholder - use static value
+            labels[field.name] = field.label || field.name;
+        }
+    });
+    return labels;
+});
+
+// computed field help text with placeholder support
+const fieldHelp = computed(() => {
+    const help = {};
+    props.currentForm.fields?.forEach(field => {
+        if (field.help && typeof field.help === 'string' && /\$\(([^)]+)\)/.test(field.help)) {
+            // Has placeholder - create reactive computed
+            help[field.name] = computed(() => {
+                form.value; // Track form for reactivity
+                const result = replacePlaceholderInString(field.help, false);
+                return result.value !== undefined ? result.value : field.help;
+            });
+        } else {
+            // No placeholder - use static value
+            help[field.name] = field.help || '';
+        }
+    });
+    return help;
+});
 
 // METHODS
 //----------------------------------------------------------------
@@ -1550,10 +1603,10 @@ onUnmounted(() => {
 
         <!-- GROUPS -->
         <template :key="group" v-for="group in fieldGroups" v-show="!hideForm">
-            <div class="mt-4 p-3" :class="getGroupClass(group)">
+            <div v-if="checkGroupDependencies(group)" class="mt-4 p-3" :class="getGroupClass(group)">
 
                 <!-- GROUP TITLE -->
-                <h3 v-if="checkGroupDependencies(group)">{{ group }}</h3>
+                <h3>{{ group }}</h3>
 
                 <!-- ROWS -->
                 <div :key="line" v-for="line in fieldLines" class="row">
@@ -1566,7 +1619,7 @@ onUnmounted(() => {
                             <div class="mt-3" v-if="field.type == 'html'">
                                 <!-- FIELD LABEL (only if label is explicitly set and different from field name) -->
                                 <label v-if="field.label && field.label !== field.name" class="flex-grow-1 fw-bold mb-2"
-                                    :class="{ 'text-body': !field.hide, 'text-grey': field.hide }">{{ field.label }}
+                                    :class="{ 'text-body': !field.hide, 'text-grey': field.hide }">{{ typeof fieldLabels[field.name] === 'object' ? fieldLabels[field.name].value : fieldLabels[field.name] }}
                                 </label>
                                 
                                 <div v-show="!fieldOptions[field.name].viewable" v-html="v$.form[field.name].$model || ''"></div>
@@ -1584,8 +1637,7 @@ onUnmounted(() => {
 
                                     <!-- FIELD LABEL -->
                                     <label class="flex-grow-1 fw-bold mb-2"
-                                        :class="{ 'text-body': !field.hide, 'text-grey': field.hide }">{{ field.label ||
-                                        field.name }} <span v-if="field.required" class="text-danger">*</span></label>
+                                        :class="{ 'text-body': !field.hide, 'text-grey': field.hide }">{{ typeof fieldLabels[field.name] === 'object' ? fieldLabels[field.name].value : fieldLabels[field.name] }} <span v-if="field.required" class="text-danger">*</span></label>
 
                                     <!-- FIELD DEBUG BUTTONS -->
                                     <div>
@@ -1669,7 +1721,7 @@ onUnmounted(() => {
                                         :values="form[field.name] || []" @update:modelValue="evaluateDynamicFields(field.name)"
                                         @warning="addTableWarnings(field.name, ...arguments)" 
                                         :errors="v$.form[field.name].$errors"
-                                        :help="field.help"
+                                        :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]"
                                     />
                                     <!-- expression raw data -->
                                     <div @dblclick="setExpressionFieldViewable(field.name, false)" v-if="fieldOptions[field.name].viewable"
@@ -1696,7 +1748,7 @@ onUnmounted(() => {
                                         :sticky="field.sticky || false"
                                         :horizontal="field.horizontal || false"
                                         :errors="v$.form[field.name].$errors"
-                                        :help="field.help" 
+                                        :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]" 
                                     />
                                     <!-- raw query data -->
                                     <div @dblclick="setExpressionFieldViewable(field.name, false)"
@@ -1718,7 +1770,7 @@ onUnmounted(() => {
                                         :placeholder="field.placeholder"
                                         :errors="v$.form[field.name].$errors" 
                                         :values="field.values"
-                                        :help="field.help"
+                                        :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]"
                                     />
                                 </div>
 
@@ -1731,14 +1783,14 @@ onUnmounted(() => {
                                             v-model="v$.form[field.name].$model" :name="field.name"
                                             :required="field.required" @change="evaluateDynamicFields(field.name)"
                                             :errors="v$.form[field.name].$errors"
-                                            :help="field.help"
+                                            :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]"
                                             />
                                         <BsInputForForm v-else @dblclick="setExpressionFieldViewable(field.name, true)"
                                             type="expression" :icon="field.icon"
                                             :hasError="v$.form[field.name].$invalid" cssClass="text-info"
                                             v-model="v$.form[field.name].$model" :name="field.name"
                                             :isHtml="field.isHtml" :errors="v$.form[field.name].$errors"
-                                            :help="field.help"
+                                            :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]"
                                              />
                                     </div>
                                     <!-- expression raw data -->
@@ -1759,14 +1811,14 @@ onUnmounted(() => {
                                     :required="field.required" :type="field.type" :icon="field.icon"
                                     :readonly="field.hide" :placeholder="field.placeholder" :isSwitch="field.switch"
                                     :errors="v$.form[field.name].$errors" :values="field.values"
-                                    :help="field.help" />
+                                    :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]" />
 
                                 <!-- TYPE = FILE -->
                                 <BsInputForForm v-if="field.type == 'file'" :accept="(field.accept || []).join(',')"
                                     :type="field.type" @change="handleFiles" :hasError="v$.form[field.name].$invalid"
                                     :name="field.name" :required="field.required" :icon="field.icon"
                                     :errors="v$.form[field.name].$errors" :progress="fileProgress[field.name]" 
-                                    :help="field.help" 
+                                    :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]" 
                                 />
                             </div>
                         </div>
