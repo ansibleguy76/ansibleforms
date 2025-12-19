@@ -529,6 +529,25 @@ const fieldHelp = computed(() => {
     return help;
 });
 
+// computed field placeholders with placeholder support
+const fieldPlaceholders = computed(() => {
+    const placeholders = {};
+    props.currentForm.fields?.forEach(field => {
+        if (field.placeholder && typeof field.placeholder === 'string' && /\$\(([^)]+)\)/.test(field.placeholder)) {
+            // Has placeholder - create reactive computed
+            placeholders[field.name] = computed(() => {
+                form.value; // Track form for reactivity
+                const result = replacePlaceholderInString(field.placeholder, false);
+                return result.value !== undefined ? result.value : field.placeholder;
+            });
+        } else {
+            // No placeholder - use static value
+            placeholders[field.name] = field.placeholder || '';
+        }
+    });
+    return placeholders;
+});
+
 // METHODS
 //----------------------------------------------------------------
 
@@ -1735,7 +1754,7 @@ onUnmounted(() => {
                                     <BsInputForForm type="select" :containerSize="containerSize"
                                         v-show="!fieldOptions[field.name].viewable" :defaultValue="defaults[field.name]"
                                         :required="field.required || false" :multiple="field.multiple || false"
-                                        :name="field.name" :placeholder="field.placeholder || 'Select...'"
+                                        :name="field.name" :placeholder="(typeof fieldPlaceholders[field.name] === 'object' ? fieldPlaceholders[field.name].value : fieldPlaceholders[field.name]) || 'Select...'"
                                         :values="field.values || queryresults[field.name] || []"
                                         :hasError="v$.form[field.name].$invalid"
                                         :isLoading="!field.values && !['fixed', 'variable'].includes(dynamicFieldStatus[field.name])"
@@ -1767,7 +1786,7 @@ onUnmounted(() => {
                                         :hasError="v$.form[field.name].$invalid" 
                                         :dateType="field.dateType"
                                         @update:modelValue="evaluateDynamicFields(field.name)" 
-                                        :placeholder="field.placeholder"
+                                        :placeholder="typeof fieldPlaceholders[field.name] === 'object' ? fieldPlaceholders[field.name].value : fieldPlaceholders[field.name]"
                                         :errors="v$.form[field.name].$errors" 
                                         :values="field.values"
                                         :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]"
@@ -1809,7 +1828,7 @@ onUnmounted(() => {
                                     @change="evaluateDynamicFields(field.name)" :hasError="v$.form[field.name].$invalid"
                                     v-model="v$.form[field.name].$model" :name="field.name" v-bind="field.attrs"
                                     :required="field.required" :type="field.type" :icon="field.icon"
-                                    :readonly="field.hide" :placeholder="field.placeholder" :isSwitch="field.switch"
+                                    :readonly="field.hide" :placeholder="typeof fieldPlaceholders[field.name] === 'object' ? fieldPlaceholders[field.name].value : fieldPlaceholders[field.name]" :isSwitch="field.switch"
                                     :errors="v$.form[field.name].$errors" :values="field.values"
                                     :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]" />
 

@@ -2301,6 +2301,8 @@
             short: In-field help value
             description: |
               Some form fields allow an in-field hint value.
+              
+              **Since 6.0.3:** Supports placeholders for dynamic hints (e.g., `Enter password (min $(minLength) chars)`).
           - name: help
             type: string
             group: basic
