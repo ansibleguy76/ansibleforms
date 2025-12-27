@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Job relaunch feature: Relaunch jobs with pre-filled form data from previous submissions
     -   New role option `allowJobRelaunch` to control which users can relaunch jobs
     -   New form option `disableRelaunch` to prevent relaunching specific forms
-    -   Raw form data automatically stored (excluding passwords and constants)
+    -   Raw form data automatically stored in database (excluding passwords and constants)
     -   Relaunch via modal with options for verbose mode and edit-before-submit
     -   Form name validation prevents loading data from mismatched forms
     -   Proper permission checks with detailed error messages
@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   minValue, maxValue, minLength, maxLength, minSize and maxSize now support placeholders for dynamic validation.
 -   Validation descriptions (regex, validIf, validIfNot, notIn, in) now support placeholders for dynamic error messages.
 -   Field labels, help text, and placeholders now support placeholders for dynamic content (e.g., `$(fieldname)`).
+
+### Changed
+
+-   Refactored Job.launch, Job.continue, and Multistep.launch to use object parameters for better maintainability and flexibility
 
 ### Breaking
 
