@@ -93,6 +93,23 @@ const download = async function(req,res){
     }
   }
 }
+const getRawFormData = async function(req, res) {
+  try {
+    var user = req.user.user;
+    const rawFormData = await Job.getRawFormData(user, req.params.id);
+    res.status(200).json(RestResultv2.single(rawFormData));
+  } catch (err) {
+    if (err.name === 'NotFoundError') {
+      res.status(404).json(RestResultv2.error(err.message));
+    } else if (err.name === 'AccessDeniedError' || err.name === 'ForbiddenError') {
+      res.status(403).json(RestResultv2.error(err.message));
+    } else if (err.name === 'BadRequestError') {
+      res.status(400).json(RestResultv2.error(err.message));
+    } else {
+      res.status(500).json(RestResultv2.error("Failed to retrieve raw form data", err.toString()));
+    }
+  }
+};
 const deleteJob = async function(req, res) {
   try {
     var user = req?.user?.user || {};
@@ -119,11 +136,12 @@ const launch = async function(req, res) {
         var form = req.body.formName || "";
         var extravars = req.body.extravars || {}
         var creds = req.body.credentials || {}
+        var rawFormData = req.body.rawFormData || {}
         // new in 4.0.16, awxCreds are extracted from form and extravars
         var user = req?.user?.user || {}
         extravars.ansibleforms_user = user
         try{
-          const job = await Job.launch(form,null,user,creds,extravars,null);
+          const job = await Job.launch(form,null,user,creds,extravars,null,rawFormData);
           res.status(200).json(RestResultv2.single(job));
         }catch(err){
           logger.error("Errors in job launch : ", err)
@@ -146,9 +164,17 @@ const relaunchJob = async function(req, res) {
     try{
       const job = await Job.relaunch(user, jobid, verbose);
       res.status(200).json(RestResultv2.single({ message: `Job has been relaunched with job id ${job.id}`, id: job.id }));
-    }catch(err){
-      logger.error("Error : ", err)
-      res.status(500).json(RestResultv2.error("Failed to relaunch job", err.toString()));
+    } catch(err) {
+      if (err.name === 'NotFoundError') {
+        res.status(404).json(RestResultv2.error(err.message));
+      } else if (err.name === 'AccessDeniedError' || err.name === 'ForbiddenError') {
+        res.status(403).json(RestResultv2.error(err.message));
+      } else if (err.name === 'ConflictError') {
+        res.status(409).json(RestResultv2.error(err.message));
+      } else {
+        logger.error("Error relaunching job: ", err);
+        res.status(500).json(RestResultv2.error("Failed to relaunch job", err.toString()));
+      }
     }
 };
 const approveJob = async function(req, res) {
@@ -193,6 +219,7 @@ export default {
   findAllJobs,
   findApprovals,
   download,
+  getRawFormData,
   deleteJob,
   launch,
   relaunchJob,

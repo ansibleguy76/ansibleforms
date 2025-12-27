@@ -516,13 +516,71 @@ Job.findById = async function (user, id, asText, logSafe = false) {
     return [];
   }
 };
+Job.getRawFormData = async function (user, id) {
+  logger.info(`Getting raw form data for job ${id}`);
+  
+  try {
+    // Check if user has access to this job
+    const job = await Job.findById(user, id, false, false);
+    logger.info(`Job found: ${job.form}`);
+    
+    // Get form to check relaunch permissions
+    logger.info(`Loading form: ${job.form}`);
+    const formConfig = await Form.load(user?.roles, job.form);
+    const formObj = formConfig.forms?.[0];
+    if (!formObj) {
+      throw new Errors.NotFoundError(`Form '${job.form}' not found or you don't have access to it`);
+    }
+    logger.info(`Form loaded, checking disableRelaunch: ${formObj.disableRelaunch}`);
+    
+    // Check if form has disableRelaunch set
+    if (formObj.disableRelaunch === true) {
+      throw new Errors.AccessDeniedError(`Form '${job.form}' has job relaunch disabled`);
+    }
+    
+    // Check if user has allowJobRelaunch option (unless admin)
+    const isAdmin = user.roles?.includes("admin") ?? false;
+    logger.info(`Checking relaunch permission: isAdmin=${isAdmin}, user.options=${JSON.stringify(user.options)}, allowJobRelaunch=${user.options?.allowJobRelaunch}`);
+    if (!(user.options?.allowJobRelaunch ?? isAdmin)) {
+      throw new Errors.AccessDeniedError(`You do not have permission to relaunch jobs. Contact your administrator to enable the 'allowJobRelaunch' role option.`);
+    }
+    
+    // Read raw form data from database
+    logger.info(`Loading raw form data from database for job ${id}`);
+    
+    const result = await mysql.do(
+      `SELECT raw_form_data FROM AnsibleForms.jobs WHERE id = ?`,
+      [id]
+    );
+    
+    if (!result || result.length === 0 || !result[0].raw_form_data) {
+      throw new Errors.NotFoundError(`No saved form data found for job ${id}. This job may have been created before the relaunch feature was enabled.`);
+    }
+    
+    const parsedData = JSON.parse(result[0].raw_form_data);
+    
+    // Validate form name matches
+    if (parsedData.__form__ && parsedData.__form__ !== job.form) {
+      throw new Errors.BadRequestError(`Cannot relaunch: saved data is from form '${parsedData.__form__}' but you're trying to load it into form '${job.form}'. Form names must match.`);
+    }
+    
+    // Remove __form__ before returning to client
+    const { __form__, ...cleanData } = parsedData;
+    logger.info(`Successfully loaded raw form data for job ${id} with ${Object.keys(cleanData).length} fields`);
+    return cleanData;
+  } catch (err) {
+    logger.error(`Error in getRawFormData: ${err.message}`, err);
+    throw err;
+  }
+};
 Job.launch = async function (
   form,
   formObj,
   user,
   creds,
   extravars,
-  parentId = null
+  parentId = null,
+  rawFormData = {}
 ) {
   // a formobj can be a full step pushed
   if (!formObj) {
@@ -573,6 +631,46 @@ Job.launch = async function (
 
   logger.debug(`Job id ${jobid} is created`);
   extravars["__jobid__"] = jobid;
+  
+  // Store raw form data in database if provided (exclude sensitive/irrelevant fields)
+  if (rawFormData && Object.keys(rawFormData).length > 0) {
+    try {
+      const filteredRawFormData = {};
+      
+      // Add form name for validation on reload
+      filteredRawFormData.__form__ = form;
+      
+      // Only include actual user input fields (exclude constants, passwords, system fields)
+      formObj.fields.forEach((field) => {
+        const fieldName = field.name;
+        
+        // Skip if field value not in rawFormData
+        if (!(fieldName in rawFormData)) return;
+        
+        // Skip constants (readonly fields that get their value from config)
+        if (field.type === 'constant') return;
+        
+        // Skip password fields for security
+        if (field.type === 'password') return;
+        
+        // Skip system fields
+        if (fieldName === 'server' || fieldName === 'database' || fieldName === 'metadata') return;
+        
+        // Include this field
+        filteredRawFormData[fieldName] = rawFormData[fieldName];
+      });
+      
+      // Store in database
+      const rawFormDataJson = JSON.stringify(filteredRawFormData);
+      await mysql.do(
+        `UPDATE AnsibleForms.jobs SET raw_form_data = ? WHERE id = ?`,
+        [rawFormDataJson, jobid]
+      );
+      logger.debug(`Raw form data stored to database for job ${jobid} (filtered: constants, passwords, system fields excluded)`);
+    } catch (err) {
+      logger.error(`Failed to store raw form data for job ${jobid}:`, err);
+    }
+  }
   
   // Define the execution function
   const executeJob = async () => {
@@ -765,6 +863,25 @@ Job.continue = async function (form, user, creds, extravars, jobid) {
 };
 Job.relaunch = async function (user, id, verbose) {
   const job = await Job.findById(user, id, true);
+  
+  // Check permissions and form settings before allowing relaunch
+  const formConfig = await Form.load(user?.roles, job.form);
+  const formObj = formConfig.forms?.[0];
+  if (!formObj) {
+    throw new Errors.NotFoundError(`Form '${job.form}' not found or you don't have access to it`);
+  }
+  
+  // Check if form has disableRelaunch set
+  if (formObj.disableRelaunch === true) {
+    throw new Errors.AccessDeniedError(`Form '${job.form}' has job relaunch disabled`);
+  }
+  
+  // Check if user has allowJobRelaunch option (unless admin)
+  const isAdmin = user.roles?.includes("admin") ?? false;
+  if (!(user.options?.allowJobRelaunch ?? user.options?.allowRelaunch ?? isAdmin)) {
+    throw new Errors.AccessDeniedError(`You do not have permission to relaunch jobs. Contact your administrator to enable the 'allowJobRelaunch' role option.`);
+  }
+  
   var extravars = {};
   var credentials = {};
   if (job.extravars) {

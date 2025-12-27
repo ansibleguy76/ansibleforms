@@ -345,6 +345,10 @@ async function patchVersion6(messages, success, failed) {
   sql = buffer.toString();
   await checkPromise(addTable("oauth2_providers", sql), messages, success, failed);
   await checkPromise(addColumn("oauth2_providers", "tenant_id", "TEXT", true, "NULL"), messages, success, failed);
+  
+  // Add raw_form_data column to jobs table for job relaunch feature
+  await checkPromise(addColumn("jobs", "raw_form_data", "longtext", true, "NULL"), messages, success, failed);
+  
   // --- AzureAD migration to oauth2_providers ---
   // Check if azuread table exists
   try {

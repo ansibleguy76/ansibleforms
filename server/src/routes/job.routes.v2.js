@@ -9,6 +9,8 @@ router.get('/approvals', jobControllerv2.findApprovals);
 router.post('/upload',uploadController.upload)
 // get a job
 router.get('/:id', jobControllerv2.getJob);
+// get raw form data for a job
+router.get('/:id/rawformdata', jobControllerv2.getRawFormData);
 // download a job
 router.get('/:id/download', jobControllerv2.download);
 // delete a job
