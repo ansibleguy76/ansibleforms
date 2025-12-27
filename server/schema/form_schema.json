@@ -447,6 +447,7 @@
     "help": {"type": "string"},
     "source": {"type": "string"},
     "showHelp": {"type": "boolean"},
+    "disableRelaunch": {"type": "boolean"},
     "fieldGroupClasses": {
       "type" : "object",
       "additionalProperties" : {
