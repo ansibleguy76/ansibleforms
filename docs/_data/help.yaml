@@ -635,6 +635,7 @@
       - showAllJobLogs: The user can see all job logs (not only his own) (Added in 5.0.9)
       - enableLogin: The user can login.  
       - allowBackupOps: The user can perform database operations, such as backup and restore.
+      - allowJobRelaunch: The user can relaunch jobs with pre-filled form data from previous submissions.
         
       When options are not set, the admin role will have all options.  
       When options are set on the public role, they will have the lowest precedence and can be used as default options for all roles.  
@@ -659,8 +660,9 @@
           groups:
           - local/architect
           options:
-            showDesigner: true # architects can see the designer
-            showLogs: true     # architects can see the logs
+            showDesigner: true      # architects can see the designer
+            showLogs: true          # architects can see the logs
+            allowJobRelaunch: true  # architects can relaunch jobs with pre-filled data
         - name: demo
           groups:
           - local/demo
@@ -707,6 +709,7 @@
               This Form creates a virtual machine.  it will connect to `vcenter`.  This help is Markdown
               so you can use **markdown** markup to highlight __certain words__.
             showHelp: true                                 # show help on load
+            disableRelaunch: false                         # disable job relaunch for this form (default: false)
             icon: computer                                 # a font awesome icon
             categories:                                    # reference to categories defined earlier
             - Demo
@@ -4328,6 +4331,40 @@
   description: |
     Frequently Asked Questions.  
   examples:
+  - name: Job Relaunch with Pre-filled Data
+    short: Relaunch jobs with form data
+    version: v6.0.3
+    description: |
+      AnsibleForms supports relaunching jobs with pre-filled form data. When you click the relaunch button in the jobs page, the form will open with all field values from the previous job submission.
+      
+      **Security Features:**
+      - Password fields are automatically excluded from storage and retrieval for security
+      - Raw form data is stored separately from processed extravars (before model transformations)
+      
+      **Permission Control:**
+      Forms can disable relaunch functionality using the `disableRelaunch` option:
+      ```yaml
+      - name: Production Deployment
+        disableRelaunch: true  # Prevents relaunching this form
+      ```
+      
+      Users must have the `allowJobRelaunch` role option enabled (admins have this by default):
+      ```yaml
+      roles:
+        - name: operators
+          options:
+            allowJobRelaunch: true  # Allow this role to relaunch jobs
+      ```
+      
+      **Most Restrictive Logic:** Relaunch is only available if BOTH conditions are met:
+      1. Form does NOT have `disableRelaunch: true`
+      2. User role has `allowJobRelaunch: true` (or user is admin)
+      
+      **How it works:**
+      - Raw form data is saved to disk on job submission (excluding passwords)
+      - Clicking relaunch navigates to the form with `?prefillJobId=<id>` parameter
+      - Form loads with all previous values, respecting field dependencies and async queries
+      - Users can modify values before resubmitting
   - name: Cascaded Dropdowns
     short: Make cascaded dropdowns
     description: |
