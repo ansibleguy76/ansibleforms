@@ -45,6 +45,7 @@ const abortTriggered = ref(false); // flag abort is triggered,
 const pauseJsonOutput = ref(false); // flag to pause jsonoutput interval
 const fileProgress = ref({}); // holds the progress of file uploads
 const status = ref(""); // status of form
+const initialFormData = ref({}); // holds initial data for pre-filling the form
 
 /******************************** */
 // computed
@@ -415,6 +416,27 @@ async function submitForm(formObjectData) {
     postdata.extravars.__verbose__ = true;
   }
   postdata.formName = currentForm.value.name;
+  // Store raw form data for potential re-use (exclude sensitive/irrelevant fields)
+  postdata.rawFormData = {};
+  currentForm.value.fields.forEach((field) => {
+    const fieldName = field.name;
+    
+    // Skip if field value not in form
+    if (!(fieldName in form.value)) return;
+    
+    // Skip constants (loaded from config, not user input)
+    if (field.type === 'constant') return;
+    
+    // Skip password fields for security
+    if (field.type === 'password') return;
+    
+    // Skip system fields
+    if (fieldName === 'server' || fieldName === 'database' || fieldName === 'metadata') return;
+    
+    // Include this field
+    postdata.rawFormData[fieldName] = form.value[fieldName];
+  });
+  console.log('Submitting with rawFormData:', Object.keys(postdata.rawFormData));
   postdata.credentials = {};
   currentForm.value.fields
     .filter((f) => f.asCredential == true)
@@ -647,6 +669,42 @@ async function loadForm(){
     formNotFound.value = true;
     return;
   } else {
+    // Check for pre-fill data from query params BEFORE setting currentForm
+    initialFormData.value = {};
+    if (route.query.prefillJobId) {
+      try {
+        console.log('Loading pre-fill data from job:', route.query.prefillJobId);
+        const result = await axios.get(
+          `/api/v2/job/${route.query.prefillJobId}/rawformdata`,
+          TokenStorage.getAuthentication()
+        );
+        if (result.data) {
+          initialFormData.value = result.data;
+          console.log('Pre-fill data loaded successfully with', Object.keys(initialFormData.value).length, 'fields');
+          toast.info(`Form pre-filled with data from previous job #${route.query.prefillJobId}`);
+        } else {
+          console.log('No data in result:', result.data);
+        }
+      } catch (err) {
+        console.error('Failed to load pre-fill data:', err);
+        
+        let errorMessage = 'Failed to load previous job data';
+        if (err.response?.data?.error) {
+          errorMessage = err.response.data.error;
+        } else if (err.response?.status === 404) {
+          errorMessage = 'Previous job data not found or no longer available';
+        } else if (err.response?.status === 403) {
+          errorMessage = 'You do not have permission to relaunch jobs';
+        } else if (err.response?.status === 400) {
+          errorMessage = err.response.data?.error || 'Cannot load data: form mismatch';
+        }
+        
+        toast.error(errorMessage);
+      }
+    }
+
+    console.log('About to set currentForm, initialFormData keys:', Object.keys(initialFormData.value));
+    // Now set currentForm which will trigger component rendering
     currentForm.value = formConfig.value.forms[0];
     formLoaded.value = true;
     constants.value = formConfig.value.constants;
@@ -666,7 +724,7 @@ onMounted(async () => {
   if (!authenticated.value) {
     return;
   }
-  loadForm();
+  await loadForm();
   resetResult();
 });
 
@@ -705,7 +763,8 @@ onBeforeUnmount(() => {
         <div class="row">
           <div class="col">
             <AppForm :key="key" @change="formChanged" :currentForm="currentForm"
-              :constants="constants" :showExtraVars="showExtraVars" :fileProgress="fileProgress" v-model="form"
+              :constants="constants" :showExtraVars="showExtraVars" :fileProgress="fileProgress" 
+              :initialData="initialFormData" v-model="form"
               v-model:status="status" @submit="submitForm">
               <!-- TOOL BAR BUTTONS -->
               <template #toolbarbuttons>
