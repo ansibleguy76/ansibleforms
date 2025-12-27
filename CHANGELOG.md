@@ -10,12 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 -   Job relaunch feature: Relaunch jobs with pre-filled form data from previous submissions
-    -   New role option `allowJobRelaunch` to control which users can relaunch jobs
-    -   New form option `disableRelaunch` to prevent relaunching specific forms
-    -   Raw form data automatically stored in database (excluding passwords and constants)
-    -   Relaunch via modal with options for verbose mode and edit-before-submit
-    -   Form name validation prevents loading data from mismatched forms
-    -   Proper permission checks with detailed error messages
+-   New role option `allowJobRelaunch` to control which users can relaunch jobs
+-   New form option `disableRelaunch` to prevent relaunching specific forms
+-   Raw form data automatically stored in database (excluding passwords and constants)
+-   Relaunch via modal with options for verbose mode and edit-before-submit
+-   Form name validation prevents loading data from mismatched forms
+-   Proper permission checks with detailed error messages
 -   fnLs, added metadata option to return more file metadata (size, created, etc...)
 -   vars_files on a form.  Allowing to load multiple yaml files that can be attached to the form and will be available as contants.  It must be a dictionary and the keys should be unique to avoid conflicts with other fieldnames.
 -   minValue, maxValue, minLength, maxLength, minSize and maxSize now support placeholders for dynamic validation.
@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
--   to allow user to relaunc, give them the role option `allowJobRelaunch`
+-   to allow user to relaunch, give them the role option `allowJobRelaunch`
 
 ### Fixed
 
