@@ -17,19 +17,14 @@ const router = useRouter();
 // redirect to login page if not oidc
 var userType = store.profile?.type || "local"
 
-// clear all authentication states
-TokenStorage.clear()
-
-// this.formConfig=undefined // TODO clear formConfig
-State.refreshAuthenticated()
-State.loadProfile()
-
-if (userType == "local" || userType == "ldap" || userType == "azuread") {
-    Navigate.toLogin(router, route)
-}
-
+// For OIDC, get logout URL first before clearing tokens
 if (userType == "oidc") {
   axios.get(`/api/v1/auth/logout`).then((res) => {
+      // clear all authentication states AFTER getting logout URL
+      TokenStorage.clear()
+      State.refreshAuthenticated()
+      State.loadProfile()
+      
       const logoutUrl = res?.data?.data?.output?.logoutUrl;
       if (logoutUrl) {
         // Go to Keycloak end-session endpoint
@@ -40,10 +35,20 @@ if (userType == "oidc") {
       }
     }).catch((err) => {
       console.log(err)
+      // Clear tokens even on error
+      TokenStorage.clear()
+      State.refreshAuthenticated()
+      State.loadProfile()
       toast.error("Could not log out");
       // fallback: go to login anyway
       Navigate.toLogin(router, route);
     })
+} else {
+  // For local/ldap/azuread, clear tokens immediately
+  TokenStorage.clear()
+  State.refreshAuthenticated()
+  State.loadProfile()
+  Navigate.toLogin(router, route)
 }
 </script>
 <template>
