@@ -573,15 +573,29 @@ Job.getRawFormData = async function (user, id) {
     throw err;
   }
 };
-Job.launch = async function (
+
+/**
+ * Launch a new job
+ * @param {Object} params - Job launch parameters
+ * @param {string} params.form - Form name
+ * @param {Object} params.formObj - Form object (optional, will be loaded if not provided)
+ * @param {Object} params.user - User object
+ * @param {Object} params.credentials - Credentials object
+ * @param {Object} params.extravars - Extra variables
+ * @param {number} params.parentId - Parent job ID for multistep jobs
+ * @param {Object} params.rawFormData - Raw form data for relaunch feature
+ */
+Job.launch = async function ({
   form,
-  formObj,
+  formObj = null,
   user,
-  creds,
-  extravars,
+  credentials = {},
+  extravars = {},
   parentId = null,
   rawFormData = {}
-) {
+}) {
+  const creds = credentials; // Alias for backward compatibility internally
+  
   // a formobj can be a full step pushed
   if (!formObj) {
     // we load it, it's an actual form
@@ -735,16 +749,16 @@ Job.launch = async function (
       );
     }
     if (jobtype == "multistep") {
-      return await Multistep.launch(
+      return await Multistep.launch({
         form,
-        formObj.steps,
+        steps: formObj.steps,
         user,
         extravars,
-        creds,
+        credentials: creds,
         jobid,
-        null,
-        formObj.approval
-      );
+        counter: null,
+        approval: formObj.approval
+      });
     }
   };
 
@@ -755,7 +769,18 @@ Job.launch = async function (
   
   return { id: jobid };
 };
-Job.continue = async function (form, user, creds, extravars, jobid) {
+
+/**
+ * Continue an existing job (used for approval continuation)
+ * @param {Object} params - Job continue parameters
+ * @param {string} params.form - Form name
+ * @param {Object} params.user - User object
+ * @param {Object} params.credentials - Credentials object
+ * @param {Object} params.extravars - Extra variables
+ * @param {number} params.jobid - Job ID to continue
+ */
+Job.continue = async function ({ form, user, credentials = {}, extravars = {}, jobid }) {
+  const creds = credentials; // Alias for backward compatibility internally
   var formObj;
   // we load it, it's an actual form
   const check = await Job.checkExists(jobid);
@@ -847,18 +872,18 @@ Job.continue = async function (form, user, creds, extravars, jobid) {
     );
   }
   if (jobtype == "multistep") {
-    return await Multistep.launch(
+    return await Multistep.launch({
       form,
-      formObj.steps,
+      steps: formObj.steps,
       user,
       extravars,
-      creds,
+      credentials: creds,
       jobid,
-      ++counter,
-      formObj.approval,
-      step,
-      true
-    );
+      counter: ++counter,
+      approval: formObj.approval,
+      fromStep: step,
+      approved: true
+    });
   }
 };
 Job.relaunch = async function (user, id, verbose) {
@@ -895,14 +920,12 @@ Job.relaunch = async function (user, id, verbose) {
   }
   if (job.status != "running" && !job.abort_requested) {
     logger.notice(`Relaunching job ${id} with form ${job.form}`);
-    return await Job.launch(
-      job.form,
-      null,
+    return await Job.launch({
+      form: job.form,
       user,
       credentials,
-      extravars,
-      null
-    );
+      extravars
+    });
   } else {
     throw new Errors.ConflictError(
       `Job ${id} is not in a status to be relaunched (status=${job.status})`
@@ -935,7 +958,13 @@ Job.approve = async function (user, id) {
   if (job.status == "approve") {
     logger.notice(`Approving job ${id} with form ${job.form}`);
     try {
-      return await Job.continue(job.form, user, credentials, extravars, id);
+      return await Job.continue({
+        form: job.form,
+        user,
+        credentials,
+        extravars,
+        jobid: id
+      });
     } catch (err) {
       logger.error("Failed to continue the job : ", err);
       throw err;
@@ -1091,18 +1120,33 @@ Job.reject = async function (user, id) {
 // Multistep stuff
 var Multistep = function () {};
 
-Multistep.launch = async function (
+/**
+ * Launch a multistep job
+ * @param {Object} params - Multistep launch parameters
+ * @param {string} params.form - Form name
+ * @param {Array} params.steps - Array of step objects
+ * @param {Object} params.user - User object
+ * @param {Object} params.extravars - Extra variables
+ * @param {Object} params.credentials - Credentials object
+ * @param {number} params.jobid - Job ID
+ * @param {number} params.counter - Output counter
+ * @param {Object} params.approval - Approval configuration
+ * @param {string} params.fromStep - Step to resume from
+ * @param {boolean} params.approved - Whether approval was granted
+ */
+Multistep.launch = async function ({
   form,
   steps,
   user,
-  extravars,
-  creds,
+  extravars = {},
+  credentials = {},
   jobid,
-  counter,
-  approval,
-  fromStep,
+  counter = null,
+  approval = null,
+  fromStep = null,
   approved = false
-) {
+}) {
+  const creds = credentials; // Alias for backward compatibility internally
   // create a new job in the database
   if (!counter) {
     counter = 0;
@@ -1257,14 +1301,14 @@ Multistep.launch = async function (
                 ++counter
               );
             }
-            var jobSuccess = await Job.launch(
+            var jobSuccess = await Job.launch({
               form,
-              step,
+              formObj: step,
               user,
-              creds,
-              ev,
-              jobid
-            );
+              credentials: creds,
+              extravars: ev,
+              parentId: jobid
+            });
             if (jobSuccess) {
               Job.printJobOutput(
                 `ok: [Launched step ${step.name} with jobid '${jobSuccess.id}']`,

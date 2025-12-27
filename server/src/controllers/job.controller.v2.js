@@ -141,7 +141,7 @@ const launch = async function(req, res) {
         var user = req?.user?.user || {}
         extravars.ansibleforms_user = user
         try{
-          const job = await Job.launch(form,null,user,creds,extravars,null,rawFormData);
+          const job = await Job.launch({ form, user, credentials: creds, extravars, rawFormData });
           res.status(200).json(RestResultv2.single(job));
         }catch(err){
           logger.error("Errors in job launch : ", err)
