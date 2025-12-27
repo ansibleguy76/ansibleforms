@@ -84,6 +84,10 @@ const props = defineProps(
             type: Object,
             default: () => { return {} }
         },
+        initialData: {
+            type: Object,
+            default: () => { return {} }
+        },
     }
 )
 
@@ -95,6 +99,8 @@ const externalData = ref({});         // object to hold external data
 const hideForm = ref(false);         // flag to hide form
 const watchdog = ref(0);                  // main loop counter
 const loopDelay = ref(100);                // main loop delay
+const isInitializing = ref(false);         // flag set during pre-fill initialization to suppress defaults
+const pendingInitialData = ref({});        // tracks initialData fields not yet applied
 const dynamicFieldDependencies = ref({});                 // which fields need to be re-evaluated if other fields change
 const dynamicFieldDependentOf = ref({});                 // which fields are dependend from others
 const unevaluatedFields = ref([]);                 // list of unevaluatedFields
@@ -807,6 +813,12 @@ function setFieldToDefault(fieldname) {
     // reset to default value
     // console.log(`defaulting ${fieldname}`)
     try {
+        // During initialization, check if field is in pending queue
+        if (isInitializing.value && fieldname in pendingInitialData.value) {
+            console.log(`[INIT] Skipping default for ${fieldname} - waiting for initialData`);
+            return; // Don't apply default, let initialData win
+        }
+        
         // if there is a default, set "default" status
         if (defaults.value[fieldname] != undefined) {
             setFieldStatus(fieldname, "default")
@@ -867,8 +879,12 @@ function hasDefaultDependencies(fieldname) {
 // first time run, load all the default values (can be dynamic)
 function initiateDefaults(fieldname = undefined) {
     props.currentForm.fields.filter(x => !fieldname || fieldname == x.name).forEach((item, i) => {
-        if (item.name in externalData) {
-            defaults.value[item.name] = externalData[item.name]
+        // During initialization, use initialData as the default (overrides everything)
+        if (isInitializing.value && item.name in pendingInitialData.value) {
+            defaults.value[item.name] = pendingInitialData.value[item.name];
+            console.log(`[INIT] Set default from initialData: ${item.name}`);
+        } else if (item.name in externalData.value) {
+            defaults.value[item.name] = externalData.value[item.name]
         } else {
             defaults.value[item.name] = getDefaultValue(item.name, item.default)
         }
@@ -1213,6 +1229,19 @@ function initForm() {
     canSubmit.value = false;
     pretasksFinished.value = false;
     timeout.value = undefined;
+    pendingInitialData.value = {};
+    isInitializing.value = false;
+
+    // Check if we have initialData to apply
+    const hasInitialData = Object.keys(props.initialData).length > 0;
+    if (hasInitialData) {
+        console.log('[INIT] Pre-fill data provided:', Object.keys(props.initialData));
+        // Copy all initialData to pending queue
+        pendingInitialData.value = { ...props.initialData };
+        // Set initializing flag to suppress defaults during load
+        isInitializing.value = true;
+        console.log('[INIT] Initialization mode enabled - defaults will be suppressed');
+    }
 
     // inject user
     form.value["__user__"] = TokenStorage.getPayload().user;
@@ -1314,6 +1343,29 @@ function initForm() {
     findVariableDependencies();
     findVariableDependentOf();
 
+    // Apply top-level fields from initialData (fields with no dependencies)
+    if (Object.keys(pendingInitialData.value).length > 0) {
+        console.log('[INIT] Starting to apply initialData');
+        props.currentForm.fields.forEach((item) => {
+            const fieldname = item.name;
+            if (fieldname in pendingInitialData.value) {
+                const hasNoDeps = !dynamicFieldDependentOf.value[fieldname] || 
+                                 dynamicFieldDependentOf.value[fieldname].length === 0;
+                // Skip enum/query/table fields - they need their options to load first
+                const needsOptionsFirst = ['enum', 'query', 'table'].includes(item.type) && (item.expression || item.query);
+                console.log(`[INIT] Field ${fieldname}: hasNoDeps=${hasNoDeps}, needsOptions=${needsOptionsFirst}, type=${item.type}`);
+                if (hasNoDeps && !needsOptionsFirst) {
+                    console.log(`[INIT] Applying top-level field: ${fieldname} = ${pendingInitialData.value[fieldname]}`);
+                    form.value[fieldname] = pendingInitialData.value[fieldname];
+                    delete pendingInitialData.value[fieldname];
+                }
+            }
+        });
+        if (Object.keys(pendingInitialData.value).length > 0) {
+            console.log('[INIT] Remaining fields will be applied by loop:', Object.keys(pendingInitialData.value));
+        }
+    }
+
     // for future use, run something before the form starts
     pretasksFinished.value = true;
 
@@ -1359,9 +1411,35 @@ async function startDynamicFieldsLoop() {
                                 } else {
                                     result = Helpers.evalSandbox(placeholderCheck.value);
                                 }
-                                if (item.type == "html") form.value[item.name] = result;
-                                if (item.type == "expression") form.value[item.name] = result;
-                                if (item.type == "enum") queryresults.value[item.name] = [].concat(result);
+                                if (item.type == "html") {
+                                    // Check for pending initialData
+                                    if (item.name in pendingInitialData.value) {
+                                        console.log(`[LOOP] Applying html initialData (local): ${item.name}`);
+                                        form.value[item.name] = pendingInitialData.value[item.name];
+                                        delete pendingInitialData.value[item.name];
+                                    } else {
+                                        form.value[item.name] = result;
+                                    }
+                                }
+                                if (item.type == "expression") {
+                                    // Check for pending initialData
+                                    if (item.name in pendingInitialData.value) {
+                                        console.log(`[LOOP] Applying expression initialData (local): ${item.name}`);
+                                        form.value[item.name] = pendingInitialData.value[item.name];
+                                        delete pendingInitialData.value[item.name];
+                                    } else {
+                                        form.value[item.name] = result;
+                                    }
+                                }
+                                if (item.type == "enum") {
+                                    queryresults.value[item.name] = [].concat(result);
+                                    // Check if we have pending initialData for this enum field
+                                    if (item.name in pendingInitialData.value) {
+                                        console.log(`[LOOP] Applying enum initialData after options loaded (local): ${item.name}`);
+                                        form.value[item.name] = pendingInitialData.value[item.name];
+                                        delete pendingInitialData.value[item.name];
+                                    }
+                                }
                                 if (item.type == "table" && !defaults.value[item.name]) form.value[item.name] = [].concat(result);
                                 if (item.type == "table" && defaults.value[item.name]) form.value[item.name] = [].concat(defaults.value[item.name]);
 
@@ -1392,9 +1470,35 @@ async function startDynamicFieldsLoop() {
                                     delete queryerrors.value[item.name];
                                 }
                                 if (restresult.status == "success") {
-                                    if (item.type == "html") form.value[item.name] = restresult.data.output;
-                                    if (item.type == "expression") form.value[item.name] = restresult.data.output;
-                                    if (item.type == "enum") queryresults.value[item.name] = [].concat(restresult.data.output ?? []);
+                                    if (item.type == "html") {
+                                        // Check for pending initialData
+                                        if (item.name in pendingInitialData.value) {
+                                            console.log(`[LOOP] Applying html initialData: ${item.name}`);
+                                            form.value[item.name] = pendingInitialData.value[item.name];
+                                            delete pendingInitialData.value[item.name];
+                                        } else {
+                                            form.value[item.name] = restresult.data.output;
+                                        }
+                                    }
+                                    if (item.type == "expression") {
+                                        // Check for pending initialData
+                                        if (item.name in pendingInitialData.value) {
+                                            console.log(`[LOOP] Applying expression initialData: ${item.name}`);
+                                            form.value[item.name] = pendingInitialData.value[item.name];
+                                            delete pendingInitialData.value[item.name];
+                                        } else {
+                                            form.value[item.name] = restresult.data.output;
+                                        }
+                                    }
+                                    if (item.type == "enum") {
+                                        queryresults.value[item.name] = [].concat(restresult.data.output ?? []);
+                                        // Check if we have pending initialData for this enum field
+                                        if (item.name in pendingInitialData.value) {
+                                            console.log(`[LOOP] Applying enum initialData after options loaded: ${item.name}`);
+                                            form.value[item.name] = pendingInitialData.value[item.name];
+                                            delete pendingInitialData.value[item.name];
+                                        }
+                                    }
                                     if (item.type == "table" && !defaults.value[item.name]) form.value[item.name] = [].concat(restresult.data.output ?? []);
                                     if (item.type == "table" && defaults.value[item.name]) form.value[item.name] = [].concat(defaults.value[item.name] ?? []);
 
@@ -1483,10 +1587,26 @@ async function startDynamicFieldsLoop() {
                     setFieldStatus(item.name, "fixed");
                 }
             } else {
-                if (item.type == "expression") {
-                    setFieldToDefault(item.name);
-                } else if (item.type == "query" || item.type == "enum" || item.type == "table") {
-                    resetField(item.name);
+                // Check if this field has pending initialData before defaulting
+                if (item.name in pendingInitialData.value) {
+                    // Check if all dependencies are satisfied (not undefined)
+                    const deps = dynamicFieldDependentOf.value[item.name] || [];
+                    const allDepsSatisfied = deps.every(dep => form.value[dep] !== undefined);
+                    
+                    if (allDepsSatisfied) {
+                        console.log(`[LOOP] Applying dependent field: ${item.name} (deps: ${deps.join(', ') || 'none'})`);
+                        form.value[item.name] = pendingInitialData.value[item.name];
+                        delete pendingInitialData.value[item.name];
+                    } else {
+                        // Dependencies not ready yet, will try again in next loop iteration
+                        // console.log(`[LOOP] Waiting for deps of ${item.name}: ${deps.filter(d => form.value[d] === undefined).join(', ')}`);
+                    }
+                } else {
+                    if (item.type == "expression") {
+                        setFieldToDefault(item.name);
+                    } else if (item.type == "query" || item.type == "enum" || item.type == "table") {
+                        resetField(item.name);
+                    }
                 }
             }
             if (item.type == "number" && form.value[item.name] === "") {
@@ -1509,6 +1629,11 @@ async function startDynamicFieldsLoop() {
         }
 
         if (!hasUnevaluatedFields) {
+            // Check if initialization is complete (all pendingInitialData applied)
+            if (isInitializing.value && Object.keys(pendingInitialData.value).length == 0) {
+                isInitializing.value = false;
+                console.log('[INIT] All initialData applied - initialization complete, defaults now active');
+            }
             canSubmit.value = true;
             if (watchdog.value > 0) {
                 // All fields are found

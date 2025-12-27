@@ -430,9 +430,6 @@ async function submitForm(formObjectData) {
     // Skip password fields for security
     if (field.type === 'password') return;
     
-    // Skip system fields
-    if (fieldName === 'server' || fieldName === 'database' || fieldName === 'metadata') return;
-    
     // Include this field
     postdata.rawFormData[fieldName] = form.value[fieldName];
   });
