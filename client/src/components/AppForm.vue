@@ -1353,8 +1353,13 @@ function initForm() {
                                  dynamicFieldDependentOf.value[fieldname].length === 0;
                 // Skip enum/query/table fields - they need their options to load first
                 const needsOptionsFirst = ['enum', 'query', 'table'].includes(item.type) && (item.expression || item.query);
-                console.log(`[INIT] Field ${fieldname}: hasNoDeps=${hasNoDeps}, needsOptions=${needsOptionsFirst}, type=${item.type}`);
-                if (hasNoDeps && !needsOptionsFirst) {
+                // Skip expression fields - they should re-evaluate with new context, not use cached values
+                const isExpressionField = item.type === 'expression' && (item.expression || item.query);
+                console.log(`[INIT] Field ${fieldname}: hasNoDeps=${hasNoDeps}, needsOptions=${needsOptionsFirst}, isExpression=${isExpressionField}, type=${item.type}`);
+                if (isExpressionField) {
+                    console.log(`[INIT] Skipping expression field ${fieldname} - will re-evaluate with new context`);
+                    delete pendingInitialData.value[fieldname];
+                } else if (hasNoDeps && !needsOptionsFirst) {
                     console.log(`[INIT] Applying top-level field: ${fieldname} = ${pendingInitialData.value[fieldname]}`);
                     form.value[fieldname] = pendingInitialData.value[fieldname];
                     delete pendingInitialData.value[fieldname];
@@ -1422,14 +1427,12 @@ async function startDynamicFieldsLoop() {
                                     }
                                 }
                                 if (item.type == "expression") {
-                                    // Check for pending initialData
+                                    // Expression fields should re-evaluate, not use cached prefill values
                                     if (item.name in pendingInitialData.value) {
-                                        console.log(`[LOOP] Applying expression initialData (local): ${item.name}`);
-                                        form.value[item.name] = pendingInitialData.value[item.name];
+                                        console.log(`[LOOP] Skipping expression prefill for ${item.name} - re-evaluating instead`);
                                         delete pendingInitialData.value[item.name];
-                                    } else {
-                                        form.value[item.name] = result;
                                     }
+                                    form.value[item.name] = result;
                                 }
                                 if (item.type == "enum") {
                                     queryresults.value[item.name] = [].concat(result);
@@ -1481,14 +1484,12 @@ async function startDynamicFieldsLoop() {
                                         }
                                     }
                                     if (item.type == "expression") {
-                                        // Check for pending initialData
+                                        // Expression fields should re-evaluate, not use cached prefill values
                                         if (item.name in pendingInitialData.value) {
-                                            console.log(`[LOOP] Applying expression initialData: ${item.name}`);
-                                            form.value[item.name] = pendingInitialData.value[item.name];
+                                            console.log(`[LOOP] Skipping expression prefill for ${item.name} - re-evaluating instead`);
                                             delete pendingInitialData.value[item.name];
-                                        } else {
-                                            form.value[item.name] = restresult.data.output;
                                         }
+                                        form.value[item.name] = restresult.data.output;
                                     }
                                     if (item.type == "enum") {
                                         queryresults.value[item.name] = [].concat(restresult.data.output ?? []);
