@@ -101,6 +101,7 @@ const watchdog = ref(0);                  // main loop counter
 const loopDelay = ref(100);                // main loop delay
 const isInitializing = ref(false);         // flag set during pre-fill initialization to suppress defaults
 const pendingInitialData = ref({});        // tracks initialData fields not yet applied
+const protectedFields = ref({});           // tracks fields with prefill/manual values that should not be reset
 const dynamicFieldDependencies = ref({});                 // which fields need to be re-evaluated if other fields change
 const dynamicFieldDependentOf = ref({});                 // which fields are dependend from others
 const unevaluatedFields = ref([]);                 // list of unevaluatedFields
@@ -1185,6 +1186,11 @@ function evaluateDynamicFields(fieldname) {
         dynamicFieldDependencies.value[fieldname].forEach((item, i) => { // loop all dynamic fields and reset them
             // set all variable fields blank and re-evaluate
             if (!fieldOptions.value[item].editable) {
+                // Skip reset for protected fields (prefilled or manually edited)
+                if (protectedFields.value[item]) {
+                    console.log(`[EVAL] Skipping reset of protected field: ${item}`);
+                    return;
+                }
                 // all dependent fields we reset, so they can be re-evaluated
                 resetField(item)
             }
@@ -1231,6 +1237,7 @@ function initForm() {
     timeout.value = undefined;
     pendingInitialData.value = {};
     isInitializing.value = false;
+    protectedFields.value = {};
 
     // Check if we have initialData to apply
     const hasInitialData = Object.keys(props.initialData).length > 0;
@@ -1316,7 +1323,13 @@ function initForm() {
             if (item.refresh && typeof item.refresh == 'string' && /[0-9]+s/.test(item.refresh)) {
                 fieldOptions.value[item.name]["refresh"] = item.refresh;
             }
-            form.value[item.name] = externalData.value[item.name] ?? getDefaultValue(item.name, item.default);
+            // Check if we have initialData for this field - if so, use it instead of evaluating default
+            if (item.name in pendingInitialData.value) {
+                form.value[item.name] = pendingInitialData.value[item.name];
+                protectedFields.value[item.name] = true; // Mark as protected from reset
+            } else {
+                form.value[item.name] = externalData.value[item.name] ?? getDefaultValue(item.name, item.default);
+            }
             if (item.type == "table" && !defaults.value[item.name]) {
                 form.value[item.name] = [];
             }
@@ -1328,7 +1341,13 @@ function initForm() {
             if (item.type == "checkbox") {
                 fallbackvalue = false;
             }
-            form.value[item.name] = externalData.value[item.name] ?? getDefaultValue(item.name, item.default) ?? fallbackvalue;
+            // Check if we have initialData for this field - if so, use it instead of evaluating default
+            if (item.name in pendingInitialData.value) {
+                form.value[item.name] = pendingInitialData.value[item.name];
+                protectedFields.value[item.name] = true; // Mark as protected from reset
+            } else {
+                form.value[item.name] = externalData.value[item.name] ?? getDefaultValue(item.name, item.default) ?? fallbackvalue;
+            }
         }
         visibility.value[item.name] = true;
     });
@@ -1362,6 +1381,7 @@ function initForm() {
                 } else if (hasNoDeps && !needsOptionsFirst) {
                     console.log(`[INIT] Applying top-level field: ${fieldname} = ${pendingInitialData.value[fieldname]}`);
                     form.value[fieldname] = pendingInitialData.value[fieldname];
+                    protectedFields.value[fieldname] = true; // Mark as protected from reset
                     delete pendingInitialData.value[fieldname];
                 }
             }
@@ -1440,6 +1460,7 @@ async function startDynamicFieldsLoop() {
                                     if (item.name in pendingInitialData.value) {
                                         console.log(`[LOOP] Applying enum initialData after options loaded (local): ${item.name}`);
                                         form.value[item.name] = pendingInitialData.value[item.name];
+                                        protectedFields.value[item.name] = true; // Mark as protected from reset
                                         delete pendingInitialData.value[item.name];
                                     }
                                 }
@@ -1497,6 +1518,7 @@ async function startDynamicFieldsLoop() {
                                         if (item.name in pendingInitialData.value) {
                                             console.log(`[LOOP] Applying enum initialData after options loaded: ${item.name}`);
                                             form.value[item.name] = pendingInitialData.value[item.name];
+                                            protectedFields.value[item.name] = true; // Mark as protected from reset
                                             delete pendingInitialData.value[item.name];
                                         }
                                     }
