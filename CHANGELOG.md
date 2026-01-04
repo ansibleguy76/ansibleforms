@@ -9,11 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
--   Job relaunch feature: Relaunch jobs with pre-filled form data from previous submissions
+-   Job relaunch feature: Relaunch jobs with pre-filled form data from previous submissions : [issue 311](https://github.com/ansibleguy76/ansibleforms/issues/311)
 -   New role option `allowJobRelaunch` to control which users can relaunch jobs
 -   New form option `disableRelaunch` to prevent relaunching specific forms
--   Raw form data automatically stored in database (excluding passwords and constants)
--   Relaunch via modal with options for verbose mode and edit-before-submit
 -   Form name validation prevents loading data from mismatched forms
 -   Proper permission checks with detailed error messages
 -   fnLs, added metadata option to return more file metadata (size, created, etc...)
@@ -21,14 +19,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   minValue, maxValue, minLength, maxLength, minSize and maxSize now support placeholders for dynamic validation.
 -   Validation descriptions (regex, validIf, validIfNot, notIn, in) now support placeholders for dynamic error messages.
 -   Field labels, help text, and placeholders now support placeholders for dynamic content (e.g., `$(fieldname)`).
+-   Notification system enhancements: [issue 332](https://github.com/ansibleguy76/ansibleforms/issues/332)
+    -   New `onEvent` property for job lifecycle event notifications (any, launch, relaunch, delete, approve, reject)
+    -   Separate `jobevent.html` email template for event notifications (distinct from status notifications)
 
 ### Changed
 
 -   Refactored Job.launch, Job.continue, and Multistep.launch to use object parameters for better maintainability and flexibility
+-   Notification system refactored:
+    -   Consolidated duplicate email-building logic into `Job._buildAndSendEmail()` helper method
+    -   Replaced individual event properties (onLaunch, onRelaunch, onDelete, onApprove, onReject) with unified `onEvent` array
+    -   Cleaner separation: `onStatus` for job outcomes, `onEvent` for job lifecycle triggers
 
 ### Breaking
 
 -   to allow user to relaunch, give them the role option `allowJobRelaunch`
+-   Deprecated `on` notification property completely removed (use `onStatus` instead)
+-   Notification event properties consolidated: use `onEvent: [launch, relaunch, delete, approve, reject]` instead of separate `onLaunch`, `onRelaunch`, etc. properties
 
 ### Fixed
 

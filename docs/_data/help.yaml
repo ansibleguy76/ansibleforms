@@ -3767,7 +3767,17 @@
           link: forms/form/notifications
           icon: fas,envelope
           description: |
-            When you want to send an email on job-event
+            When you want to send an email on job-event<br>
+            <br>
+            **Email Templates**<br>
+            Notification emails use HTML templates located in `server/src/templates/`:<br>
+            - `approval.html` - Approval request notifications<br>
+            - `jobstatus.html` - Job outcome notifications (success, failed, aborted, warning)<br>
+            - `jobevent.html` - Job lifecycle event notifications (launch, relaunch, delete, approve, reject)<br>
+            <br>
+            These templates can be customized by replacing them with your own versions.<br>
+            In Docker or Kubernetes deployments, mount your custom templates to `/app/dist/src/templates/` to override the defaults.<br>
+            Example Docker mount: `-v /path/to/custom/templates:/app/dist/src/templates/`
           items:
           - name: recipients
             type: array
@@ -3790,7 +3800,28 @@
               description: Sends a notification on job aborted
             short: Jobstatus event
             description: | 
-              A list of jobstatus events you want to send a notification on.  Use `all`, if you always want a notification.      
+              A list of jobstatus events you want to send a notification on.  Use `any`, if you always want a notification.
+          - name: onEvent
+            type: array
+            required: false
+            choices:
+            - name: any
+              description: Always sends a notification for any job event
+            - name: launch
+              description: Job is launched (initially created)
+            - name: relaunch
+              description: Job is relaunched (restarted)
+            - name: delete
+              description: Job is deleted
+            - name: approve
+              description: Job approval is granted
+            - name: reject
+              description: Job approval is rejected
+            short: Job trigger events
+            description: |
+              A list of job lifecycle events (triggers) you want to send a notification on.<br>
+              Unlike `onStatus` which notifies on job outcomes, `onEvent` notifies on user actions and job lifecycle events.<br>
+              Use `any` to be notified of all job events.
           examples: 
           - name: Send a notification on failed
             language: YAML
@@ -3800,6 +3831,32 @@
                   - info@ansibleguy.com
                 onStatus:
                   - failed
+          - name: Send notifications on job events (launch, relaunch, approve, reject)
+            language: YAML
+            code: |
+              notifications:
+                recipients:
+                  - admin@ansibleguy.com
+                  - auditor@ansibleguy.com
+                onEvent:
+                  - launch
+                  - relaunch
+                  - approve
+                  - reject
+          - name: Send notifications on all events
+            language: YAML
+            code: |
+              notifications:
+                recipients:
+                  - admin@ansibleguy.com
+                onStatus:
+                  - any
+                onEvent:
+                  - launch
+                  - relaunch
+                  - delete
+                  - approve
+                  - reject
         - name: Job Status Action
           itemName: attribute
           link: forms/form/job-status-action

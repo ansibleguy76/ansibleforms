@@ -351,18 +351,18 @@
           "notifications":{
             "type": "object",
             "properties": {
-              "on": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "default": ""
-                }
-              },
               "onStatus": {
                 "type": "array",
                 "items": {
                   "type": "string",
-                  "default": ""
+                  "enum": ["any", "success", "failed", "aborted", "warning"]
+                }
+              },
+              "onEvent": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": ["any", "launch", "relaunch", "delete", "approve", "reject"]
                 }
               },
               "recipients": {

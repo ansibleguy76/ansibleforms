@@ -405,10 +405,13 @@ Job.delete = async function (user, id) {
   if (res.length != 1) {
     throw new Errors.AccessDeniedError(`You do not have access to job ${id}`);
   }
-  return await mysql.do(
+  // Send delete notification BEFORE deleting the job
+  await Job.sendEventNotification(id, 'delete', user);
+  const result = await mysql.do(
     "DELETE FROM AnsibleForms.`jobs` WHERE id = ? OR parent_id = ?",
     [id, id]
   );
+  return result;
 };
 Job.checkExists = async function (id) {
   const res = await mysql.do(
@@ -688,6 +691,9 @@ Job.launch = async function ({
   
   // Define the execution function
   const executeJob = async () => {
+    // Send launch notification
+    await Job.sendEventNotification(jobid, 'launch', user);
+    
     // the rest is now happening in the background
     // if credentials are requested, we now get them.
     var credentials = {};
@@ -920,12 +926,15 @@ Job.relaunch = async function (user, id, verbose) {
   }
   if (job.status != "running" && !job.abort_requested) {
     logger.notice(`Relaunching job ${id} with form ${job.form}`);
-    return await Job.launch({
+    const result = await Job.launch({
       form: job.form,
       user,
       credentials,
       extravars
     });
+    // Send relaunch notification
+    await Job.sendEventNotification(id, 'relaunch', user);
+    return result;
   } else {
     throw new Errors.ConflictError(
       `Job ${id} is not in a status to be relaunched (status=${job.status})`
@@ -958,13 +967,16 @@ Job.approve = async function (user, id) {
   if (job.status == "approve") {
     logger.notice(`Approving job ${id} with form ${job.form}`);
     try {
-      return await Job.continue({
+      const result = await Job.continue({
         form: job.form,
         user,
         credentials,
         extravars,
         jobid: id
       });
+      // Send approve notification
+      await Job.sendEventNotification(id, 'approve', user);
+      return result;
     } catch (err) {
       logger.error("Failed to continue the job : ", err);
       throw err;
@@ -975,46 +987,86 @@ Job.approve = async function (user, id) {
     );
   }
 };
-Job.sendApprovalNotification = async function (approval, extravars, jobid) {
-  if (!approval?.notifications?.length > 0) return false;
+/**
+ * Helper method to build and send email notifications
+ * @private
+ */
+Job._buildAndSendEmail = async function ({
+  recipients,
+  subject,
+  templatePath,
+  replacements = {},
+  logContext = 'notification'
+}) {
   try {
     const config = await Settings.findUrl();
-    const url = config.url?.replace(/\/$/g, ""); // remove trailing slash if present
+    const url = config.url?.replace(/\/$/g, "");
 
-    var subject =
-      Helpers.replacePlaceholders(approval.title, extravars) ||
-      "AnsibleForms Approval Request";
-    var buffer = fs.readFileSync(`${__dirname}/../templates/approval.html`);
+    if (!url) {
+      logger.warning(
+        `Host URL is not set, no ${logContext} can be sent. Go to 'settings' to correct this.`
+      );
+      return false;
+    }
+
+    // Read template
+    var buffer = fs.readFileSync(`${__dirname}/../templates/${templatePath}`);
     var message = buffer.toString();
+    
+    // Default replacements
     var color = "#158cba";
     var color2 = "#ffa73b";
     var logo = `${url}/assets/img/logo.png`;
-    var approvalMessage = Helpers.replacePlaceholders(
-      approval.message,
-      extravars
-    );
+    
+    // Apply all replacements
     message = message
-      .replace("${message}", approvalMessage)
+      .replace("${message}", replacements.message || "")
       .replaceAll("${url}", url)
-      .replaceAll("${jobid}", jobid)
+      .replaceAll("${jobid}", replacements.jobid || "")
       .replaceAll("${title}", subject)
       .replaceAll("${logo}", logo)
       .replaceAll("${color}", color)
       .replaceAll("${color2}", color2);
+    
     const messageid = await Settings.mailsend(
-      approval.notifications.join(","),
+      recipients.join(","),
       subject,
       message
     );
-    logger.notice(
-      "Approval mail sent to " +
-        approval.notifications.join(",") +
-        " with id " +
-        messageid
-    );
+    
+    if (!messageid) {
+      logger.notice(`No ${logContext} sent`);
+      return false;
+    } else {
+      logger.notice(`${logContext} sent to ${recipients.join(",")} with id ${messageid}`);
+      return true;
+    }
   } catch (err) {
-    logger.error("Failed : ", err);
+    logger.error(`Failed to send ${logContext}: `, err);
+    return false;
   }
+};
+Job.sendApprovalNotification = async function (approval, extravars, jobid) {
+  if (!approval?.notifications?.length > 0) return false;
+  
+  var subject =
+    Helpers.replacePlaceholders(approval.title, extravars) ||
+    "AnsibleForms Approval Request";
+  var approvalMessage = Helpers.replacePlaceholders(
+    approval.message,
+    extravars
+  );
+  
+  return await Job._buildAndSendEmail({
+    recipients: approval.notifications,
+    subject: subject,
+    templatePath: "approval.html",
+    replacements: {
+      message: approvalMessage,
+      jobid: jobid
+    },
+    logContext: "Approval mail"
+  });
 };
 Job.sendStatusNotification = async function (jobid) {
   try {
@@ -1023,67 +1075,103 @@ Job.sendStatusNotification = async function (jobid) {
       roles: ["admin"],
     };
 
-    const job = await Job.findById(user, jobid, false, true); // first get job
-    var notifications = JSON.parse(job.notifications); // get notifications if any
-    if (notifications && notifications.on) {
-      logger.warning(
-        "Deprecated property 'on'.  Use 'onStatus' instead.  This property will be removed in future versions."
-      );
-    }
-    if (notifications && !notifications.on && !notifications.onStatus) {
+    const job = await Job.findById(user, jobid, false, true);
+    var notifications = JSON.parse(job.notifications);
+    
+    // Default to 'any' if onStatus not specified
+    if (notifications && !notifications.onStatus) {
       notifications.onStatus = ["any"];
     }
-    if (!notifications.recipients) {
+    
+    if (!notifications?.recipients) {
       logger.notice("No notifications set");
       return false;
-    } else if (
-      !notifications.on?.includes(job.status) &&
-      !notifications.on?.includes("any") &&
+    }
+    
+    if (
       !notifications.onStatus?.includes(job.status) &&
       !notifications.onStatus?.includes("any")
     ) {
       logger.notice(`Skipping notification for status ${job.status}`);
       return false;
-    } else {
-      // we have notifications, correct status => let's send the mail
-      const config = await Settings.findUrl();
-      const url = config.url?.replace(/\/$/g, ""); // remove trailing slash if present
-
-      if (!url) {
-        logger.warning(
-          `Host URL is not set, no status mail can be sent. Go to 'settings' to correct this.`
-        );
-        return false;
-      }
-      var subject = `AnsibleForms '${job.form}' [${job.job_type}] (${jobid}) - ${job.status} `;
-      var buffer = fs.readFileSync(`${__dirname}/../templates/jobstatus.html`);
-      var message = buffer.toString();
-      var color = "#158cba";
-      var color2 = "#ffa73b";
-      var logo = `${url}/assets/img/logo.png`;
-      message = message
-        .replace("${message}", job.output.replaceAll("\r\n", "<br>"))
-        .replaceAll("${url}", url)
-
-        .replaceAll("${jobid}", jobid)
-        .replaceAll("${title}", subject)
-        .replaceAll("${logo}", logo)
-        .replaceAll("${color}", color)
-        .replaceAll("${color2}", color2);
-      const messageid = await Settings.mailsend(
-        notifications.recipients.join(","),
-        subject,
-        message
-      );
-
-      if (!messageid) {
-        logger.notice("No status mail sent");
-      } else {
-        logger.notice("Status mail sent with id " + messageid);
-      }
     }
+    
+    // Send the mail
+    var subject = `AnsibleForms '${job.form}' [${job.job_type}] (${jobid}) - ${job.status}`;
+    
+    return await Job._buildAndSendEmail({
+      recipients: notifications.recipients,
+      subject: subject,
+      templatePath: "jobstatus.html",
+      replacements: {
+        message: job.output.replaceAll("\r\n", "<br>"),
+        jobid: jobid
+      },
+      logContext: "Status mail"
+    });
   } catch (err) {
-    logger.error("Failed : ", err);
+    logger.error("Failed to send status notification: ", err);
+    return false;
+  }
+};
+Job.sendEventNotification = async function (jobid, eventType, user = null) {
+  try {
+    logger.notice(`Sending ${eventType} notification for jobid ${jobid}`);
+    var adminUser = {
+      roles: ["admin"],
+    };
+
+    const job = await Job.findById(adminUser, jobid, false, true);
+    var notifications = JSON.parse(job.notifications);
+    
+    // Check if this event type is in the onEvent array
+    if (!notifications || !notifications.onEvent || !Array.isArray(notifications.onEvent)) {
+      logger.notice(`No event notifications configured`);
+      return false;
+    }
+    
+    if (!notifications.onEvent.includes(eventType) && !notifications.onEvent.includes('any')) {
+      logger.notice(`Event '${eventType}' not in notification list`);
+      return false;
+    }
+    
+    if (!notifications.recipients || notifications.recipients.length === 0) {
+      logger.notice("No notification recipients set");
+      return false;
+    }
+
+    // Event-specific subject and message content
+    const eventTitles = {
+      'launch': 'Launched',
+      'relaunch': 'Relaunched',
+      'delete': 'Deleted',
+      'approve': 'Approved',
+      'reject': 'Rejected'
+    };
+    
+    const eventMessages = {
+      'launch': `Job has been launched${user ? ' by ' + user.username : ''}.`,
+      'relaunch': `Job has been relaunched${user ? ' by ' + user.username : ''}.`,
+      'delete': `Job has been deleted${user ? ' by ' + user.username : ''}.`,
+      'approve': `Job has been approved${user ? ' by ' + user.username : ''} and will continue execution.`,
+      'reject': `Job has been rejected${user ? ' by ' + user.username : ''}.`
+    };
+
+    var subject = `AnsibleForms '${job.form}' [${job.job_type}] (${jobid}) - ${eventTitles[eventType]}`;
+    
+    return await Job._buildAndSendEmail({
+      recipients: notifications.recipients,
+      subject: subject,
+      templatePath: "jobevent.html",
+      replacements: {
+        message: eventMessages[eventType],
+        jobid: jobid
+      },
+      logContext: `${eventType} notification`
+    });
+  } catch (err) {
+    logger.error(`Failed to send ${eventType} notification: `, err);
+    return false;
   }
 };
 Job.reject = async function (user, id) {
@@ -1110,7 +1198,10 @@ Job.reject = async function (user, id) {
       id,
       ++counter
     );
-    return await Job.update({ status: "rejected", end: getTimestamp() }, id);
+    const result = await Job.update({ status: "rejected", end: getTimestamp() }, id);
+    // Send reject notification
+    await Job.sendEventNotification(id, 'reject', user);
+    return result;
   } else {
     throw new Errors.ConflictError(
       `Job ${id} is not in rejectable status (status=${job.status})`
