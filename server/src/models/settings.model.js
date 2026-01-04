@@ -25,19 +25,22 @@ Settings.update = function (record) {
     return mysql.do("UPDATE AnsibleForms.`settings` set ?", record)
 };
 Settings.importFormsFileFromYaml = async function(){
-  // Check for config.yaml first (new way)
+  // Repository.getConfigPath() already handles config.yaml → forms.yaml fallback
   var configPath = (await Repository.getConfigPath()) || appConfig.configPath
-  var isLegacy = false
   
   if(!fs.existsSync(configPath)){
-    // Fallback to forms.yaml (legacy)
-    configPath = (await Repository.getFormsPath()) || appConfig.formsPath
-    isLegacy = true
+    // Final fallback to forms.yaml if nothing else exists
+    configPath = appConfig.formsPath
     
     if(!fs.existsSync(configPath)){
       logger.error(`Config path ${configPath} doesn't exist`)
       throw new Error(`Config path ${configPath} doesn't exist`)
     }
+  }
+  
+  const isLegacy = configPath.endsWith('forms.yaml')
+  
+  if(isLegacy){
     logger.warning(`Using forms.yaml is DEPRECATED. Please migrate to config.yaml.`)
   }
   

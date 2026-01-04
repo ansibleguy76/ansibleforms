@@ -115,11 +115,16 @@ function execYtt(file,libdir) {
  * Returns object with: { path, isLegacy, deprecationMessage }
  */
 async function getConfigPath() {
-  // Check for repository override first
+  // Check for repository override first (already handles config.yaml → forms.yaml fallback)
   const repoConfigPath = await Repository.getConfigPath();
   if (repoConfigPath && fs.existsSync(repoConfigPath)) {
+    const isLegacy = repoConfigPath.endsWith('forms.yaml');
+    const deprecationMessage = isLegacy ? "Using forms.yaml is DEPRECATED. Please migrate to config.yaml (categories, roles, constants only). Forms should be in the forms/ folder." : null;
+    if (isLegacy) {
+      logger.warning(deprecationMessage);
+    }
     logger.info(`Using config from repository: ${repoConfigPath}`);
-    return { path: repoConfigPath, isLegacy: false, deprecationMessage: null };
+    return { path: repoConfigPath, isLegacy, deprecationMessage };
   }
   
   // Check for config.yaml (new way)
@@ -129,11 +134,10 @@ async function getConfigPath() {
   }
   
   // Fallback to forms.yaml (legacy)
-  const legacyPath = (await Repository.getFormsPath()) || appConfig.formsPath;
-  if (fs.existsSync(legacyPath)) {
+  if (fs.existsSync(appConfig.formsPath)) {
     const deprecationMessage = "Using forms.yaml is DEPRECATED. Please migrate to config.yaml (categories, roles, constants only). Forms should be in the forms/ folder.";
     logger.warning(deprecationMessage);
-    return { path: legacyPath, isLegacy: true, deprecationMessage };
+    return { path: appConfig.formsPath, isLegacy: true, deprecationMessage };
   }
   
   // Neither exists, will need to create from template

@@ -146,20 +146,6 @@ Repository.getFormsFolderPath = async function(){
   }
   return ""
 }
-Repository.getFormsPath = async function(){
-  try{
-    var repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_forms")
-  }catch(e){
-    logger.error("Failed to get repositories.",e)
-    return ""
-  }    
-  if(repositories.length>0){
-    var repoPath = path.join(appConfig.repoPath,repositories[0].name)
-    return path.join(repoPath,"forms.yaml")
-  }
-  return ""
-
-}
 Repository.getAnsiblePath = async function(){
   try{
     var repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_playbooks")
