@@ -3788,7 +3788,7 @@
               A list of email addresses who need to receive a notification
           - name: onStatus
             type: array
-            required: true
+            required: false
             choices:
             - name: any
               description: Always sends a notification 
@@ -3798,9 +3798,12 @@
               description: Sends a notification on job failure
             - name: aborted
               description: Sends a notification on job aborted
+            - name: warning
+              description: Sends a notification on job warning
             short: Jobstatus event
             description: | 
-              A list of jobstatus events you want to send a notification on.  Use `any`, if you always want a notification.
+              A list of jobstatus events you want to send a notification on.  Use `any`, if you always want a notification.<br>
+              At least one of `onStatus` or `onEvent` must be specified for notifications to be sent.
           - name: onEvent
             type: array
             required: false
