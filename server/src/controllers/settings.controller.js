@@ -26,8 +26,8 @@ const update = function(req, res) {
 };
 const importFormsFileFromYaml = function(req, res) {
     Settings.importFormsFileFromYaml()
-      .then(()=>{res.json(new RestResult("success","Forms imported",null,""))})
-      .catch((err)=>{res.json(new RestResult("error","Failed to import forms.yaml",null,Helpers.getError(err)))})
+      .then((message)=>{res.json(new RestResult("success",message,null,""))})
+      .catch((err)=>{res.json(new RestResult("error","Failed to import config",null,Helpers.getError(err)))})
 }
 
 export default {

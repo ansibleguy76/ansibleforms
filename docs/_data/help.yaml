@@ -92,14 +92,37 @@
     description: |
       Ansible Forms can backup the database and forms.  This is the path where the backups are stored.
       The backup folder is created at first start if not present and a timestamp folder is created for each backup.
+  - name: CONFIG_PATH
+    version: 6.1.0
+    type: string
+    allowed: a valid file path
+    short: Config.yaml path
+    default: "%PERSISTENT_FOLDER%/config.yaml"
+    description: | 
+      The config.yaml file contains application configuration (categories, roles, constants).  
+      This replaces the deprecated forms.yaml file. Forms should now be stored in the forms/ folder.
+  - name: FORMS_FOLDER_PATH
+    version: 6.1.0
+    type: string
+    allowed: a valid directory path
+    short: Forms folder path
+    default: "%PERSISTENT_FOLDER%/forms"
+    description: | 
+      The directory where individual form YAML files are stored.
+      Forms can be organized in subdirectories within this folder.
   - name: FORMS_PATH
     type: string
     allowed: a valid file path
-    short: Forms.yaml path
+    short: Forms.yaml path (DEPRECATED)
     default: "%PERSISTENT_FOLDER%/forms.yaml"
+    deprecated: true
     description: | 
-      The forms.yaml file is the main configuration file needed to run Ansible Forms.  
-      Read here more about the forms.yaml file.
+      **DEPRECATED in v6.0.0** - Use CONFIG_PATH and FORMS_FOLDER_PATH instead.
+      
+      The forms.yaml file was the legacy configuration file that combined both configuration and forms.
+      Please migrate to the new structure:
+      - Configuration (categories, roles, constants) → config.yaml (CONFIG_PATH)
+      - Forms → individual files in forms/ folder (FORMS_FOLDER_PATH)
   - name: LOCK_PATH
     type: string
     allowed: a valid file path
@@ -118,6 +141,23 @@
   - name: OLD_BACKUP_DAYS
     version: 4.0.3
     type: number
+    allowed: a positive integer
+    short: Old backup retention days
+    default: "60"
+    description: | 
+      When backups are made, they are kept for this many days before being removed.
+      This applies to form backups made through the designer (not database backups).
+  - name: NIGHTLY_BACKUP_RETENTION
+    version: 6.1.0
+    type: number
+    allowed: a positive integer
+    short: Nightly backup retention count
+    default: "7"
+    description: | 
+      Number of automated nightly backups to retain.
+      Ansible Forms automatically creates a full backup (database + config + forms) every night at midnight.
+      Older nightly backups beyond this count are automatically deleted.
+      Set to 0 to disable automatic cleanup (not recommended).
     allowed: a valid number in days
     short: Days of backups to keep
     default: 60

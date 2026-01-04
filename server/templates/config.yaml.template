@@ -1,0 +1,15 @@
+# AnsibleForms Configuration File
+# This file contains categories, roles, and constants for your AnsibleForms instance
+# Forms should be placed in the forms/ folder, not in this file
+
+categories:
+  - Default
+
+roles:
+  - name: admin
+    description: Administrator role with full access
+    options:
+      allowRelaunch: true
+      allowJobRelaunch: true
+
+constants: {}

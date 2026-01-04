@@ -10,7 +10,10 @@ var app_config = {
   nodeEnvironment: process.env.NODE_ENV || "production",
   showDesigner: (process.env.SHOW_DESIGNER ?? 1) == 1,
   allowSchemaCreation: (process.env.ALLOW_SCHEMA_CREATION ?? 1) == 1,
-  formsPath: process.env.FORMS_PATH || path.resolve(__dirname + "/../persistent/forms.yaml"),
+  configPath: process.env.CONFIG_PATH || path.resolve(__dirname + "/../persistent/config.yaml"),
+  formsFolderPath: process.env.FORMS_FOLDER_PATH || path.resolve(__dirname + "/../persistent/forms"),
+  formsPath: process.env.FORMS_PATH || path.resolve(__dirname + "/../persistent/forms.yaml"), // DEPRECATED: use configPath + formsFolderPath instead
+  nightlyBackupRetention: parseInt(process.env.NIGHTLY_BACKUP_RETENTION || "7", 10),
   useYtt: (process.env.USE_YTT ?? 0) == 1,
   yttDangerousAllowAllSymlinkDestinations: (process.env.YTT_DANGEROUS_ALLOW_ALL_SYMLINK_DESTINATIONS ?? 0) == 1,
   yttAllowSymlinkDestinations: process.env.YTT_ALLOW_SYMLINK_DESTINATIONS || "",

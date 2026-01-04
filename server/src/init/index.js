@@ -7,6 +7,7 @@ import mysql from "../models/db.model.js";
 import Repository from '../models/repository.model.js';
 import Datasource from '../models/datasource.model.js';
 import Schedule from '../models/schedule.model.js';
+import BackupModel from '../models/backup.model.js';
 import { CronExpressionParser } from "cron-parser";
 import dayjs from "dayjs";
 import appConfig from "../../config/app.config.js";
@@ -170,6 +171,43 @@ const init = async function(){
     })
   })
   .catch((e)=>{})
+
+  logger.info("Initializing nightly backup")
+  // Run nightly backups at midnight and cleanup old backups
+  setInterval(async ()=>{
+    try{
+      const now = dayjs()
+      const hour = now.hour()
+      const minute = now.minute()
+      
+      // Run at midnight (0:00)
+      if(hour === 0 && minute === 0){
+        logger.info("Running automated nightly backup")
+        try{
+          const result = await BackupModel.doBackup("Automated nightly backup")
+          logger.info(`Nightly backup completed: ${result.backupFolder}`)
+          
+          // Cleanup old nightly backups
+          logger.info(`Cleaning up nightly backups, keeping last ${appConfig.nightlyBackupRetention} backups`)
+          const backups = await BackupModel.listBackups()
+          const nightlyBackups = backups.filter(b => b.description === "Automated nightly backup")
+          
+          if(nightlyBackups.length > appConfig.nightlyBackupRetention){
+            const toDelete = nightlyBackups.slice(appConfig.nightlyBackupRetention)
+            for(const backup of toDelete){
+              logger.info(`Deleting old nightly backup: ${backup.folder}`)
+              await BackupModel.deleteBackup(backup.folder)
+            }
+            logger.info(`Cleaned up ${toDelete.length} old nightly backups`)
+          }
+        }catch(e){
+          logger.error(`Failed to create nightly backup: ${e}`)
+        }
+      }
+    }catch(e){
+      logger.error(`Nightly backup interval error: ${e}`)
+    }
+  },60000) // Check every minute
 
   logger.info("Initializing cron schedules")
   // this is hourly, abandon running jobs older than a day.

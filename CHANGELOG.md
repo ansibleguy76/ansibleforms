@@ -22,6 +22,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Notification system enhancements: [issue 332](https://github.com/ansibleguy76/ansibleforms/issues/332)
     -   New `onEvent` property for job lifecycle event notifications (any, launch, relaunch, delete, approve, reject)
     -   Separate `jobevent.html` email template for event notifications (distinct from status notifications)
+-   Configuration file migration from forms.yaml to config.yaml:
+    -   New `config.yaml` for storing categories, roles, and constants (replaces forms.yaml)
+    -   New `CONFIG_PATH` environment variable to specify config.yaml location (defaults to `persistent/config.yaml`)
+    -   New `FORMS_FOLDER_PATH` environment variable to specify forms directory location (defaults to `persistent/forms`)
+    -   Automatic fallback to legacy forms.yaml for backward compatibility
+    -   Clear deprecation warnings when using forms.yaml
+    -   Forms should now be stored in the forms/ folder, not in the config file
+    -   Database storage option renamed from "Forms YAML" to "Config YAML" with migration guidance
+-   Automated nightly backup system:
+    -   Automatic full backups (database + config + forms) at midnight daily
+    -   New `NIGHTLY_BACKUP_RETENTION` environment variable (default: 7) to control retention count
+    -   Automated cleanup of old nightly backups
+    -   Backups clearly labeled as "Automated nightly backup"
 
 ### Changed
 
@@ -30,6 +43,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     -   Consolidated duplicate email-building logic into `Job._buildAndSendEmail()` helper method
     -   Replaced individual event properties (onLaunch, onRelaunch, onDelete, onApprove, onReject) with unified `onEvent` array
     -   Cleaner separation: `onStatus` for job outcomes, `onEvent` for job lifecycle triggers
+-   Configuration architecture modernized:
+    -   `forms.yaml` deprecated in favor of `config.yaml` (categories/roles/constants only)
+    -   Forms folder path now configurable via `FORMS_FOLDER_PATH` environment variable
+    -   All logging updated to refer to "config" instead of "forms" where appropriate
+    -   Full backward compatibility maintained with automatic fallback to legacy paths
+
+### Deprecated
+
+-   `forms.yaml` - use `config.yaml` for configuration (categories, roles, constants)
+-   `FORMS_PATH` environment variable - still supported but will be removed in future versions
+-   Storing forms in the base config file - forms should be in the forms/ folder
 
 ### Breaking
 

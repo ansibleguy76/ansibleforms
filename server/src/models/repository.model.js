@@ -5,6 +5,7 @@ import crypto from "../lib/crypto.js";
 import NodeCache from "node-cache";
 import Repo from "./repo.model.js";
 import path from "path";
+import fs from "fs";
 import appConfig from "../../config/app.config.js";
 
 const cache = new NodeCache({
@@ -112,6 +113,38 @@ Repository.hasFormsRepository = async function(){
     logger.error("Failed to check repositories : ",e)
     return false
   }
+}
+Repository.getConfigPath = async function(){
+  try{
+    var repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_forms")
+  }catch(e){
+    logger.error("Failed to get repositories.",e)
+    return ""
+  }    
+  if(repositories.length>0){
+    var repoPath = path.join(appConfig.repoPath,repositories[0].name)
+    // Check for config.yaml first (new way)
+    const configPath = path.join(repoPath,"config.yaml")
+    if(fs.existsSync(configPath)){
+      return configPath
+    }
+    // Fallback to forms.yaml (legacy)
+    return path.join(repoPath,"forms.yaml")
+  }
+  return ""
+}
+Repository.getFormsFolderPath = async function(){
+  try{
+    var repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_forms")
+  }catch(e){
+    logger.error("Failed to get repositories.",e)
+    return ""
+  }    
+  if(repositories.length>0){
+    var repoPath = path.join(appConfig.repoPath,repositories[0].name)
+    return path.join(repoPath,"forms")
+  }
+  return ""
 }
 Repository.getFormsPath = async function(){
   try{

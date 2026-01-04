@@ -10,11 +10,11 @@ const settings = {
   type: "settings",
   label: "Settings",
   actions: [
-    { name: "import", icon: "file-import", title: "Import Forms from file", dependency: "enableFormsYamlInDatabase" }
+    { name: "import", icon: "file-import", title: "Import Config from file (config.yaml or legacy forms.yaml)", dependency: "enableFormsYamlInDatabase" }
   ],
   fields : [
     { key: "url", icon: "globe", line:0, label: "Public Root Url", required: true, help:"This url is used for public access to Ansible Forms, used in backlinks and emails." },
-    { key: "forms_yaml", type:"editor", line:1, label: "Forms YAML", description:"In case you want the main forms.yaml file in the database instead of loaded from the filesystem. <br><b>Note that the designer will be disabled.</b><br>Use the import button to import from the local forms.yaml file.", lang:"yaml", style:"width: 100%;height: 40vh;font-size:1rem"}
+    { key: "forms_yaml", type:"editor", line:1, label: "Config YAML", description:"Store your config.yaml (categories, roles, constants) in the database instead of the filesystem. <br><b>Note that the designer will be disabled.</b><br>Use the import button to import from your local config.yaml file.<br><br><span style='color: orange;'><b>IMPORTANT:</b> This field was previously named 'Forms YAML' for forms.yaml. Using forms.yaml is now DEPRECATED. Please use config.yaml for configuration and store forms in the forms/ folder.</span>", lang:"yaml", style:"width: 100%;height: 40vh;font-size:1rem"}
   ],
 }
 
