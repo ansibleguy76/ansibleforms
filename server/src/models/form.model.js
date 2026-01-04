@@ -364,7 +364,12 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
   var existingFormNames=[]
   var errors = []
   var warnings = []
-  const formsdirpath = (await Repository.getFormsFolderPath()) || appConfig.formsFolderPath;  
+  
+  // Get forms folder paths - can be multiple from repositories or single default path
+  const repoFormsPaths = (await Repository.getFormsFolderPath()) || []
+  const formsdirpaths = repoFormsPaths.length > 0 ? repoFormsPaths : [appConfig.formsFolderPath]
+  
+  logger.debug(`Loading forms from ${formsdirpaths.length} folder(s): ${formsdirpaths.join(", ")}`)
 
   function warn(message) {
     logger.warning(message);
@@ -410,52 +415,59 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
   for(let f of unvalidatedForms){
     delete f.source // remove source from the base forms, it is not needed
   };
-  // read extra form files
-  // read extra form files (recursively include subdirectories)
-  var files = [];
-  try {
-    // walk directory recursively and collect relative paths for .yml/.yaml files
-    const walk = (dir) => {
-      const entries = fs.readdirSync(dir, { withFileTypes: true });
-      for (const entry of entries) {
-        const fullPath = path.join(dir, entry.name);
-        if (entry.isDirectory()) {
-          walk(fullPath);
-        } else if (entry.isFile()) {
-          const ext = path.extname(entry.name).toLowerCase();
-          if (ext === '.yml' || ext === '.yaml') {
-            // store path relative to formsdirpath so getFormsFromFile(formsdirpath, relPath) works
-            const rel = path.relative(formsdirpath, fullPath);
-            files.push(rel);
+  
+  // read extra form files from all forms directories
+  // Loop through each forms directory path
+  for(const formsdirpath of formsdirpaths){
+    var files = [];
+    try {
+      // walk directory recursively and collect relative paths for .yml/.yaml files
+      const walk = (dir) => {
+        const entries = fs.readdirSync(dir, { withFileTypes: true });
+        for (const entry of entries) {
+          const fullPath = path.join(dir, entry.name);
+          if (entry.isDirectory()) {
+            walk(fullPath);
+          } else if (entry.isFile()) {
+            const ext = path.extname(entry.name).toLowerCase();
+            if (ext === '.yml' || ext === '.yaml') {
+              // store path relative to formsdirpath so getFormsFromFile(formsdirpath, relPath) works
+              const rel = path.relative(formsdirpath, fullPath);
+              files.push(rel);
+            }
           }
         }
+      };
+      if (fs.existsSync(formsdirpath)) {
+        walk(formsdirpath);
+      } else {
+        warn(`Failed to load forms directory '${formsdirpath}'.`);
+        continue; // skip this directory
       }
-    };
-    if (fs.existsSync(formsdirpath)) {
-      walk(formsdirpath);
-    } else {
-      warn(`Failed to load forms directory '${formsdirpath}'.`);
-      files = [];
+    } catch (e) {
+      warn(`Failed to load forms directory '${formsdirpath}'.`, e);
+      continue; // skip this directory
     }
-  } catch (e) {
-    warn(`Failed to load forms directory '${formsdirpath}'.`, e);
-    files = [];
-  }
 
-  if (files && files.length) {
-    // sort for deterministic order
-    files.sort();
-    // read files
-    for (const item of files) {
-      // read the file and add to the forms array
-      logger.debug(`Loading forms from file ${item}`);
-      try{
-        unvalidatedForms = unvalidatedForms.concat(getFormsFromFile(formsdirpath,item)); // get the forms from the file, including subpaths
-      }
-      catch (e) {
-        error(e.message);
-      }
-    };
+    if (files && files.length) {
+      logger.debug(`Found ${files.length} form file(s) in '${formsdirpath}'`)
+      // sort for deterministic order
+      files.sort();
+      // read files
+      for (const item of files) {
+        // read the file and add to the forms array
+        logger.debug(`Loading forms from file ${item} in ${formsdirpath}`);
+        try{
+          unvalidatedForms = unvalidatedForms.concat(getFormsFromFile(formsdirpath,item)); // get the forms from the file, including subpaths
+        }
+        catch (e) {
+          error(e.message);
+        }
+      };
+    }
+  }
+  
+  // Process all collected forms
   for (const f of unvalidatedForms) {
       var form = null; // initialize form
       if(!f?.name){
@@ -503,8 +515,7 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
           return baseConfig // exit early if we found the form we are looking for
         }                
       }
-    };    
-  }
+    }
 
   baseConfig.errors = errors; // add errors to the base config
   baseConfig.warnings = warnings; // add warnings to the base config

@@ -4431,6 +4431,48 @@
   description: |
     Frequently Asked Questions.  
   examples:
+  - name: Multi-Repository Form Management
+    short: Use multiple git repositories for forms
+    version: v6.1.0
+    description: |
+      AnsibleForms supports loading forms from multiple git repositories simultaneously. Forms from all repositories with the "Use for forms" switch enabled are automatically merged together.
+      
+      **How it works:**
+      - Configure multiple repositories in Settings → Repositories
+      - Enable the "Use for forms" switch on each repository you want to load forms from
+      - Each repository can contain a `forms/` directory with form YAML files
+      - All forms from all repositories are merged together automatically
+      - Forms with duplicate names will trigger a warning (first one wins)
+      
+      **Configuration File Discovery:**
+      - AnsibleForms will use the FIRST config.yaml (or forms.yaml) found across all form repositories
+      - If multiple config files are found, a warning is logged
+      - You can have a single central config repository for shared categories/roles/constants
+      - Or use the local `persistent/config.yaml` file (checked if no repository config found)
+      
+      **Best Practices:**
+      - Keep config.yaml in only ONE repository or use the local persistent/config.yaml
+      - Organize forms by team/project using separate repositories
+      - Use unique form names across all repositories to avoid conflicts
+      - Repository order matters: forms are loaded in database order
+      
+      **Example Setup:**
+      ```
+      Repository 1 (Central Config):
+        - config.yaml (categories, roles, constants)
+      
+      Repository 2 (Network Team):
+        - forms/
+          - switch_config.yaml
+          - router_setup.yaml
+      
+      Repository 3 (Server Team):
+        - forms/
+          - server_deploy.yaml
+          - backup_restore.yaml
+      ```
+      
+      All forms appear together in the UI, automatically merged!
   - name: Job Relaunch with Pre-filled Data
     short: Relaunch jobs with form data
     version: v6.0.3

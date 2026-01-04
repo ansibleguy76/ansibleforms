@@ -35,6 +35,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     -   New `NIGHTLY_BACKUP_RETENTION` environment variable (default: 7) to control retention count
     -   Automated cleanup of old nightly backups
     -   Backups clearly labeled as "Automated nightly backup"
+-   Multi-repository support for forms:
+    -   Load forms from multiple git repositories simultaneously
+    -   All repositories with `use_for_forms=1` have their forms automatically merged
+    -   Config file discovery: uses FIRST config.yaml found across all form repositories (warns if multiple)
+    -   Forms folder paths: returns array of all forms directories from all repositories
+    -   Duplicate form names across repositories trigger warnings (first one wins)
+    -   Enables team-based or project-based form organization across repositories
 
 ### Changed
 

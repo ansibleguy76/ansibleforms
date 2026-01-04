@@ -121,30 +121,62 @@ Repository.getConfigPath = async function(){
     logger.error("Failed to get repositories.",e)
     return ""
   }    
-  if(repositories.length>0){
-    var repoPath = path.join(appConfig.repoPath,repositories[0].name)
-    // Check for config.yaml first (new way)
-    const configPath = path.join(repoPath,"config.yaml")
-    if(fs.existsSync(configPath)){
-      return configPath
-    }
-    // Fallback to forms.yaml (legacy)
-    return path.join(repoPath,"forms.yaml")
+  
+  if(repositories.length === 0){
+    return ""
   }
-  return ""
+  
+  var foundConfigs = []
+  
+  // Loop through all form repositories to find config files
+  for(const repo of repositories){
+    var repoPath = path.join(appConfig.repoPath, repo.name)
+    
+    // Check for config.yaml first (new way)
+    const configPath = path.join(repoPath, "config.yaml")
+    if(fs.existsSync(configPath)){
+      foundConfigs.push({ repo: repo.name, path: configPath, isLegacy: false })
+      continue // found config.yaml, no need to check forms.yaml
+    }
+    
+    // Fallback to forms.yaml (legacy)
+    const formsYamlPath = path.join(repoPath, "forms.yaml")
+    if(fs.existsSync(formsYamlPath)){
+      foundConfigs.push({ repo: repo.name, path: formsYamlPath, isLegacy: true })
+    }
+  }
+  
+  if(foundConfigs.length === 0){
+    return ""
+  }
+  
+  if(foundConfigs.length > 1){
+    const configList = foundConfigs.map(c => `${c.repo}/${path.basename(c.path)}`).join(", ")
+    logger.warning(`Multiple config files found in repositories: ${configList}. Using first one: ${foundConfigs[0].repo}/${path.basename(foundConfigs[0].path)}`)
+  }
+  
+  return foundConfigs[0].path
 }
 Repository.getFormsFolderPath = async function(){
   try{
     var repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_forms")
   }catch(e){
     logger.error("Failed to get repositories.",e)
-    return ""
+    return []
   }    
-  if(repositories.length>0){
-    var repoPath = path.join(appConfig.repoPath,repositories[0].name)
-    return path.join(repoPath,"forms")
+  
+  if(repositories.length === 0){
+    return []
   }
-  return ""
+  
+  // Return array of all forms folder paths from all form repositories
+  const formsPaths = repositories.map(repo => {
+    var repoPath = path.join(appConfig.repoPath, repo.name)
+    return path.join(repoPath, "forms")
+  })
+  
+  logger.debug(`Found ${formsPaths.length} forms folder(s) from repositories: ${formsPaths.join(", ")}`)
+  return formsPaths
 }
 Repository.getAnsiblePath = async function(){
   try{
