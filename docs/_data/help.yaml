@@ -158,11 +158,6 @@
       Ansible Forms automatically creates a full backup (database + config + forms) every night at midnight.
       Older nightly backups beyond this count are automatically deleted.
       Set to 0 to disable automatic cleanup (not recommended).
-    allowed: a valid number in days
-    short: Days of backups to keep
-    default: 60
-    description: | 
-      Old backups are cleanup, you can choose the age
   - name: AZURE_GRAPH_URI
     version: 4.0.3
     type: string
