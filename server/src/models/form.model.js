@@ -253,27 +253,27 @@ async function loadVarsFiles(varsFiles) {
     const ext = path.extname(absPath).toLowerCase();
     // Validate file extension
     if (ext !== '.yml' && ext !== '.yaml') {
-      logger.warning(`Skipping vars_file '${varsFile}': must end with .yml or .yaml`);
+      logger.warning(`Skipping varsFile '${varsFile}': must end with .yml or .yaml`);
       continue;
     }
 
     try {
-      logger.debug(`Loading vars_file: ${varsFile}`);
+      logger.debug(`Loading varsFile: ${varsFile}`);
 
       const rawData = fs.readFileSync(varsFile, 'utf8');
       const data = yaml.parse(rawData);
 
       // Validate that the file contains a dict/object
       if (typeof data !== 'object' || Array.isArray(data)) {
-        logger.warning(`Skipping vars_file '${varsFile}': content must be a dictionary, not ${Array.isArray(data) ? 'a list' : typeof data}`);
+        logger.warning(`Skipping varsFile '${varsFile}': content must be a dictionary, not ${Array.isArray(data) ? 'a list' : typeof data}`);
         continue;
       }
 
       // Deep merge with existing vars
       mergedVars = _.merge(mergedVars, data);
-      logger.debug(`Successfully loaded and merged vars_file: ${varsFile}`);
+      logger.debug(`Successfully loaded and merged varsFile: ${varsFile}`);
     } catch (err) {
-      logger.error(`Failed to load vars_file '${varsFile}': ${err.message}`);
+      logger.error(`Failed to load varsFile '${varsFile}': ${err.message}`);
       // Continue with other files even if one fails
     }
   }
@@ -498,13 +498,13 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
         error(`Failed to validate form '${f.name}'.\r\n${e.message}`);
       }  
       if(form){
-        // Load vars_files if this is a single form request and vars_files is defined
-        if(formName && form.vars_files){
-          logger.debug(`Loading vars_files for form ${f.name}`);
+        // Load varsFiles if this is a single form request and varsFiles is defined
+        if(formName && form.varsFiles){
+          logger.debug(`Loading varsFiles for form ${f.name}`);
           try {
-            form.vars = await loadVarsFiles(form.vars_files);
+            form.vars = await loadVarsFiles(form.varsFiles);
           } catch (e) {
-            error(`Failed to load vars_files for form '${f.name}'.\r\n${e.message}`);
+            error(`Failed to load varsFiles for form '${f.name}'.\r\n${e.message}`);
           }
         }
         baseConfig.forms.push(form);   // merge the form into the base forms

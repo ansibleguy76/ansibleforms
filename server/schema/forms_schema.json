@@ -433,7 +433,7 @@
                   "$ref": "/formfield"
                 },
                 "template": {"type": "string"},
-                "vars_files": {
+                "varsFiles": {
                   "type": "array",
                   "items": {
                     "type": "string"
@@ -541,7 +541,7 @@
           "key": {"type": "string"},
           "abortable": {"type": "boolean"},
           "template": {"type": "string"},
-          "vars_files": {
+          "varsFiles": {
             "type": "array",
             "items": {
               "type": "string"

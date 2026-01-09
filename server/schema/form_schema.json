@@ -302,7 +302,7 @@
             "$ref": "/formfield"
           },
           "template": {"type": "string"},
-          "vars_files": {
+          "varsFiles": {
             "type": "array",
             "items": {
               "type": "string"
