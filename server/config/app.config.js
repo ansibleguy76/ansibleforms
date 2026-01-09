@@ -24,6 +24,7 @@ var app_config = {
   encryptionSecret: ((process.env.ENCRYPTION_SECRET || "undefinedvOVH6sdmpNWjRRIqCc7rdxs") + "vOVH6sdmpNWjRRIqCc7rdxs01lwHzfr3").substring(0, 32),
   homePath: process.env.HOME_PATH || os.homedir(),
   uploadPath: process.env.UPLOAD_PATH || path.resolve(__dirname + "/../persistent/uploads"),
+  varsFilesPath: process.env.VARS_FILES_PATH || path.resolve(__dirname + "/../persistent/vars"),
   repoPath: process.env.REPO_PATH || path.resolve(__dirname + "/../persistent/repositories"),
   formsBackupPath: process.env.FORMS_BACKUP_PATH || path.resolve(__dirname + "/../persistent/forms_backups"),
   oldBackupDays: process.env.OLD_BACKUP_DAYS || 60,

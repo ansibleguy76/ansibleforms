@@ -14,8 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   New form option `disableRelaunch` to prevent relaunching specific forms
 -   Form name validation prevents loading data from mismatched forms
 -   Proper permission checks with detailed error messages
+-   fnParseHtmlWithRegex now supports basic authentication via credential parameter with UTF-8 encoding support for special characters
 -   fnLs, added metadata option to return more file metadata (size, created, etc...)
--   vars_files on a form.  Allowing to load multiple yaml files that can be attached to the form and will be available as contants.  It must be a dictionary and the keys should be unique to avoid conflicts with other fieldnames.
+-   varsFiles form property: Load YAML files as constants merged with base config
+    -   Supports both absolute and relative file paths
+    -   New `VARS_FILES_PATH` environment variable to set base directory for relative paths (default: `persistent/vars/`)
+    -   Files must contain dictionaries with unique keys to avoid conflicts
+    -   Enables centralized variable management across multiple forms
 -   minValue, maxValue, minLength, maxLength, minSize and maxSize now support placeholders for dynamic validation.
 -   Validation descriptions (regex, validIf, validIfNot, notIn, in) now support placeholders for dynamic error messages.
 -   Field labels, help text, and placeholders now support placeholders for dynamic content (e.g., `$(fieldname)`).

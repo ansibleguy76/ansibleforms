@@ -249,7 +249,12 @@ async function loadVarsFiles(varsFiles) {
   let mergedVars = {};
 
   for (const varsFile of varsFiles) {
-    const absPath = path.resolve(varsFile);
+    // Support both absolute and relative paths
+    // Relative paths are resolved against VARS_FILES_PATH
+    const absPath = path.isAbsolute(varsFile) 
+      ? path.resolve(varsFile)
+      : path.resolve(appConfig.varsFilesPath, varsFile);
+    
     const ext = path.extname(absPath).toLowerCase();
     // Validate file extension
     if (ext !== '.yml' && ext !== '.yaml') {
@@ -258,9 +263,9 @@ async function loadVarsFiles(varsFiles) {
     }
 
     try {
-      logger.debug(`Loading varsFile: ${varsFile}`);
+      logger.debug(`Loading varsFile: ${varsFile} (resolved to ${absPath})`);
 
-      const rawData = fs.readFileSync(varsFile, 'utf8');
+      const rawData = fs.readFileSync(absPath, 'utf8');
       const data = yaml.parse(rawData);
 
       // Validate that the file contains a dict/object

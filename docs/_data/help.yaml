@@ -537,6 +537,17 @@
     version: 3.0.0
     description: |
       This path is the root path for your local repositories, allowing you to integrate data with git repositories.
+  - name: VARS_FILES_PATH
+    type: string
+    allowed: a valid directory path
+    short: Base path for varsFiles
+    default: "%PERSISTENT_FOLDER%/vars"
+    version: 6.1.0
+    description: |
+      Base directory for resolving relative paths in form varsFiles property.
+      Absolute paths in varsFiles are used as-is.
+      Relative paths are resolved against this directory.
+      Allows centralized management of shared variable files across forms.
   - name: ENCRYPTION_SECRET
     type: string
     allowed: a strong encryption string
@@ -1635,6 +1646,42 @@
               - clear: 0   # clear and show on finish
               - show: 0    
             # more examples on the job-status-event page                                                  
+      - name: varsFiles
+        type: array
+        group: basic
+        allowed: list of file paths (absolute or relative)
+        short: Load YAML files as constants
+        version: 6.1.0
+        description: |
+          Load one or more YAML files as constants that will be merged with the base config constants.
+          Files must contain a dictionary (not a list) and must have .yml or .yaml extension.
+          
+          **Path Resolution:**
+          - Absolute paths: used as-is (e.g., `/opt/shared/vars/database.yaml`)
+          - Relative paths: resolved against VARS_FILES_PATH environment variable (default: `persistent/vars/`)
+          
+          **Use Cases:**
+          - Share common variables across multiple forms
+          - Separate sensitive configuration from form definitions
+          - Centralize environment-specific settings
+          
+          **Note:** Files are merged in order. Later files override earlier ones if keys conflict.
+          Variables from varsFiles are merged with base config constants.
+        examples:
+        - name: Load single vars file
+          code: |
+            varsFiles:
+              - common/database.yaml    # relative to VARS_FILES_PATH
+        - name: Load multiple vars files with absolute paths
+          code: |
+            varsFiles:
+              - /opt/shared/globals.yaml
+              - /etc/ansibleforms/env-prod.yaml
+        - name: Mix relative and absolute paths
+          code: |
+            varsFiles:
+              - common/shared.yaml           # relative
+              - /opt/custom/overrides.yaml   # absolute
       - name: fields
         type: array
         group: basic

@@ -1327,6 +1327,10 @@ function initForm() {
             if (item.name in pendingInitialData.value) {
                 form.value[item.name] = pendingInitialData.value[item.name];
                 protectedFields.value[item.name] = true; // Mark as protected from reset
+                // Set status to 'fixed' for non-dynamic fields so they can be referenced by expressions
+                if (!fieldOptions.value[item.name]?.isDynamic) {
+                    dynamicFieldStatus.value[item.name] = "fixed";
+                }
             } else {
                 form.value[item.name] = externalData.value[item.name] ?? getDefaultValue(item.name, item.default);
             }
@@ -1345,6 +1349,8 @@ function initForm() {
             if (item.name in pendingInitialData.value) {
                 form.value[item.name] = pendingInitialData.value[item.name];
                 protectedFields.value[item.name] = true; // Mark as protected from reset
+                // Set status to 'fixed' so they can be referenced by expressions
+                dynamicFieldStatus.value[item.name] = "fixed";
             } else {
                 form.value[item.name] = externalData.value[item.name] ?? getDefaultValue(item.name, item.default) ?? fallbackvalue;
             }
@@ -1382,6 +1388,11 @@ function initForm() {
                     console.log(`[INIT] Applying top-level field: ${fieldname} = ${pendingInitialData.value[fieldname]}`);
                     form.value[fieldname] = pendingInitialData.value[fieldname];
                     protectedFields.value[fieldname] = true; // Mark as protected from reset
+                    // Set status to 'fixed' for non-dynamic fields so they can be referenced by expressions
+                    if (!fieldOptions.value[fieldname]?.isDynamic) {
+                        dynamicFieldStatus.value[fieldname] = "fixed";
+                        console.log(`[INIT] Set ${fieldname} status to fixed for placeholder resolution`);
+                    }
                     delete pendingInitialData.value[fieldname];
                 }
             }
@@ -1654,8 +1665,11 @@ async function startDynamicFieldsLoop() {
         if (!hasUnevaluatedFields) {
             // Check if initialization is complete (all pendingInitialData applied)
             if (isInitializing.value && Object.keys(pendingInitialData.value).length == 0) {
+                // Clear all initialization-specific state
                 isInitializing.value = false;
-                console.log('[INIT] All initialData applied - initialization complete, defaults now active');
+                pendingInitialData.value = {};  // Ensure clean state
+                protectedFields.value = {};      // Allow normal re-evaluation when user changes fields
+                console.log('[INIT] All initialData applied - initialization complete, protection cleared, defaults now active');
             }
             canSubmit.value = true;
             if (watchdog.value > 0) {

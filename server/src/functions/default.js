@@ -226,7 +226,9 @@ const fnRestBasic = async function(action,url,body,credential=null,jqe=null,sort
   var headers={}
   if(credential){
     const restCreds = await fnCredentials(credential)
-    headers.Authorization="Basic " + Buffer.from(restCreds.user + ':' + restCreds.password).toString('base64')
+    // RFC 7617: username:password must be UTF-8 encoded before base64 encoding
+    // This handles special characters like :, @, and UTF-8 characters (é, ñ, 中文, etc.)
+    headers.Authorization="Basic " + Buffer.from(restCreds.user + ':' + restCreds.password, 'utf8').toString('base64')
   }
   return await fnRestAdvanced(action,url,body,headers,jqe,sort,hasBigInt)
 }
@@ -255,12 +257,13 @@ const fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort=n
       if (typeof headers[key] === "string") {
         // logger.debug(`[fnRestAdvanced] processing header ${key} with value ${headers[key]}`);
         let m;
-        // basic(credential_name)
+        // base64(credential_name) - for Basic auth
         if ((m = headers[key].match(/base64\(([^)]+)\)/i))) {
           // logger.debug(`[fnRestAdvanced] base64 encoding for header ${key} with credential ${m[1]}`);
           const cred = await fnCredentials(m[1]);
           if (cred && cred.user && cred.password) {
-            headers[key] = headers[key].replace(/base64\(([^)]+)\)/i,Buffer.from(cred.user + ":" + cred.password).toString("base64"))
+            // RFC 7617: UTF-8 encode username:password before base64 encoding
+            headers[key] = headers[key].replace(/base64\(([^)]+)\)/i,Buffer.from(cred.user + ":" + cred.password, 'utf8').toString("base64"))
           }
         }
         // password(credential_name)
@@ -434,7 +437,7 @@ export async function fnLs(dirPath, options = {}) {
  * @param {string} regexFlags - Optional regex flags (e.g., 'gi', 'i', 'g')
  * @returns {Promise<Array>} - Array of objects containing all group matches
  */
-const fnParseHtmlWithRegex = async function(url, regexPattern, regexFlags = 'g') {
+const fnParseHtmlWithRegex = async function(url, regexPattern, regexFlags = 'g', credential = null) {
   logger.debug(`[fnParseHtmlWithRegex] Fetching HTML from: ${url}`);
   logger.debug(`[fnParseHtmlWithRegex] Using regex pattern: ${regexPattern}`);
   
@@ -442,12 +445,26 @@ const fnParseHtmlWithRegex = async function(url, regexPattern, regexFlags = 'g')
     // Dynamically import axios
     const { default: axios } = await import('axios');
     
+    // Setup request headers
+    const headers = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    };
+    
+    // Add Basic Authentication if credential provided
+    if (credential) {
+      const creds = await fnCredentials(credential);
+      if (creds && creds.user && creds.password) {
+        // RFC 7617: UTF-8 encode username:password before base64 encoding
+        // Handles special chars (:, @) and UTF-8 characters (é, ñ, 中文, etc.)
+        headers.Authorization = "Basic " + Buffer.from(creds.user + ':' + creds.password, 'utf8').toString('base64');
+        logger.debug(`[fnParseHtmlWithRegex] Using basic authentication with credential: ${credential}`);
+      }
+    }
+    
     // Fetch HTML content
     const response = await axios.get(url, {
       timeout: 30000, // 30 second timeout
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
+      headers: headers
     });
     
     logger.debug(`[fnParseHtmlWithRegex] Successfully fetched ${response.data.length} characters`);
