@@ -1287,6 +1287,7 @@ function initForm() {
                 type: "constant",
             };
             form.value[item] = props.constants[item];
+            dynamicFieldStatus.value[item] = "fixed"; // Mark constants as evaluated/ready
         });
     }
 
