@@ -677,7 +677,6 @@ async function loadForm(){
         );
         if (result.data) {
           initialFormData.value = result.data;
-          console.log('Pre-fill data loaded successfully with', Object.keys(initialFormData.value).length, 'fields');
           toast.info(`Form pre-filled with data from previous job #${route.query.prefillJobId}`);
         } else {
           console.log('No data in result:', result.data);
@@ -700,7 +699,6 @@ async function loadForm(){
       }
     }
 
-    console.log('About to set currentForm, initialFormData keys:', Object.keys(initialFormData.value));
     // Now set currentForm which will trigger component rendering
     currentForm.value = formConfig.value.forms[0];
     formLoaded.value = true;

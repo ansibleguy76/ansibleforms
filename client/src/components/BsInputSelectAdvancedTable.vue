@@ -27,7 +27,7 @@
   /*                                                                */
   /******************************************************************/
 
-  import { useTemplateRef, computed } from "vue";
+  import { useTemplateRef, computed, toRaw } from "vue";
   import Helpers from "@/lib/Helpers";
 
   // INIT
@@ -160,13 +160,13 @@
   // METHODS
 
   function objectEqual(object1, object2) {
-    const keys1 = Object.keys(object1);
-    for (let key of keys1) {
-      if (object1[key] !== object2[key]) {
-        return false;
-      }
-    }
-    return true;
+    // Unwrap Vue proxies to plain objects for comparison
+    const obj1 = toRaw(object1);
+    const obj2 = toRaw(object2);
+    
+    // Deep equality check using JSON comparison
+    // This handles nested objects properly
+    return JSON.stringify(obj1) === JSON.stringify(obj2);
   }
 
   function highlightFilter(v, label = undefined) {
@@ -368,12 +368,8 @@
           if (obj) {
             // loop all values
             for (let i = 0; i < props.values.length; i++) {
-              try {
-                if (objectEqual(obj, props.values[i])) {
-                  select(i);
-                }
-              } catch (err) {
-                console.log("Bad defaultvalue : " + err.toString());
+              if (objectEqual(obj, props.values[i])) {
+                select(i);
               }
             }
           }
@@ -416,6 +412,8 @@
       }
     }
   }
+
+  // WATCHERS
 
   // HOOKS
 
