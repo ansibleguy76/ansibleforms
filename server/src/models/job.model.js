@@ -479,7 +479,7 @@ Job.findById = async function (user, id, asText, logSafe = false) {
       loggerConfig.tz +
       "') AS start,CONVERT_TZ(j.end, 'UTC', '" +
       loggerConfig.tz +
-      "') AS end,j.user,j.user_type,j.job_type,j.extravars,j.credentials,j.notifications,j.approval,j.step,j.parent_id,j.awx_id,j.awx_artifacts,j.abort_requested"
+      "') AS end,j.user,j.user_type,j.job_type,j.extravars,j.credentials,j.notifications,j.approval,j.step,j.parent_id,j.awx_id,j.awx_artifacts,j.abort_requested,j.raw_form_data"
   if (user.roles.includes("admin")) {
     query =
       "SELECT " + job_query + ",sj.subjobs,j2.no_of_records,o.counter FROM AnsibleForms.jobs j LEFT JOIN (SELECT parent_id,GROUP_CONCAT(id separator ',') subjobs FROM AnsibleForms.jobs GROUP BY parent_id) sj ON sj.parent_id=j.id,(SELECT COUNT(id) no_of_records FROM AnsibleForms.jobs)j2,(SELECT max(`order`)+1 counter FROM AnsibleForms.job_output WHERE job_output.job_id=?)o WHERE j.id=?;";
@@ -915,6 +915,7 @@ Job.relaunch = async function (user, id, verbose) {
   
   var extravars = {};
   var credentials = {};
+  var rawFormData = {};
   if (job.extravars) {
     extravars = JSON.parse(job.extravars);
   }
@@ -924,13 +925,22 @@ Job.relaunch = async function (user, id, verbose) {
   if (job.credentials) {
     credentials = JSON.parse(job.credentials);
   }
+  if (job.raw_form_data) {
+    try {
+      rawFormData = JSON.parse(job.raw_form_data);
+      logger.debug(`Retrieved raw form data for relaunch with ${Object.keys(rawFormData).length} fields`);
+    } catch (err) {
+      logger.warning(`Failed to parse raw form data during relaunch: ${err.message}`);
+    }
+  }
   if (job.status != "running" && !job.abort_requested) {
     logger.notice(`Relaunching job ${id} with form ${job.form}`);
     const result = await Job.launch({
       form: job.form,
       user,
       credentials,
-      extravars
+      extravars,
+      rawFormData
     });
     // Send relaunch notification
     await Job.sendEventNotification(id, 'relaunch', user);

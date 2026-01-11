@@ -23,7 +23,7 @@
     "@vuepic/vue-datepicker": "^12.1.0", 
     "ace-builds": "^1.43.5",
     "axios": "^1.13.2",
-    "bootstrap": "^5.3.7",
+    "bootstrap": "^5.3.8",
     "highlight.js": "^11.11.1",
     "vue-json-pretty": "^2.6.0",
     "bootstrap-icons": "^1.13.1",
