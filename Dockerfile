@@ -44,8 +44,7 @@ COPY ./server .
 # Copy the docs help file to /app/server
 COPY ./docs/_data/help.yaml .
 
-# clean persistent subfolder
-RUN rm -rf ./persistent
+# clean files
 RUN rm .env.*
 RUN rm -rf ./views
 RUN mkdir ./views
