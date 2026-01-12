@@ -51,7 +51,7 @@
                     color: var(--af-ansible-output-timestamp)!important;
                 }
                 &.is-warning {
-                    background-color: var(--bs-light)!important;
+                    background-color: var(--af-ansible-output-warning)!important;
                     color: var(--bs-light)!important;
                 }
                 &.is-danger {
