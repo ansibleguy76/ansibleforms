@@ -229,6 +229,7 @@ Helpers.formatOutput = (records,asText)=>{
                       .replace(/(failed=[1-9]+[0-9]*)/g, "<span class='tag is-warning'>$1</span>")
                       .replace(/(unreachable=[1-9]+[0-9]*)/g, "<span class='tag is-warning'>$1</span>")
                       .replace(/(skipped=[1-9]+[0-9]*)/g, "<span class='tag is-info'>$1</span>")
+                      .replace(/(rescued=[1-9]+[0-9]*)/g, "<span class='tag is-warning'>$1</span>")
         }
         if(filterOutput){
           line=line.replace(/class='/g,"class='low ")
