@@ -314,6 +314,9 @@ function generateJsonOutput(filedata = {}) {
                 } else {
                   if (master[obj] === undefined) {
                     master[obj] = outputValue;
+                  } else if (typeof master[obj] !== 'object' || master[obj] === null || typeof outputValue !== 'object' || outputValue === null) {
+                    // If either value is primitive, just overwrite instead of merging
+                    master[obj] = outputValue;
                   } else {
                     master[obj] = Lodash.merge(master[obj], outputValue);
                   }
@@ -330,8 +333,16 @@ function generateJsonOutput(filedata = {}) {
                   }
                   return master[arrsplit[0]][arrsplit[1]];
                 } else {
+                  // Check if master is an object before trying to traverse
+                  if (typeof master !== 'object' || master === null) {
+                    // Can't traverse into a primitive value, skip this path
+                    return master;
+                  }
                   if (master[obj] === undefined) {
                     master[obj] = {};
+                  } else if (typeof master[obj] !== 'object' || master[obj] === null) {
+                    // Path already contains a primitive, can't traverse further
+                    return master;
                   }
                   return master[obj];
                 }
