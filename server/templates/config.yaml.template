@@ -3,13 +3,16 @@
 # Forms should be placed in the forms/ folder, not in this file
 
 categories:
-  - Default
+  - name: Default
+    icon: bars
 
-roles:
+roles: # a list of roles
   - name: admin
-    description: Administrator role with full access
+    groups:
+      - local/admins
+  - name: public
+    groups: []
     options:
-      allowRelaunch: true
-      allowJobRelaunch: true
+      allowJobRelaunch: true      
 
-constants: {}
+constants: {} # free objects to re-use over all forms
