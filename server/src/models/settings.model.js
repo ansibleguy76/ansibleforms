@@ -69,6 +69,8 @@ Settings.find = function () {
           logger.error("Couldn't decrypt mail password, did the secretkey change ?")
           res[0].mail_password=""
         }
+        // Use new property name, keep old one for backwards compatibility
+        res[0].enableConfigInDatabase = appConfig.enableConfigInDatabase
         res[0].enableFormsYamlInDatabase = appConfig.enableFormsYamlInDatabase
         return res[0]
       }else{

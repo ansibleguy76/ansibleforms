@@ -136,7 +136,7 @@ sudo podman-compose up -d
 * Surf to : https://your_ip:8443
 * Login with admin / AnsibleForms!123 (or password you chose in the .env file)
 * Next steps :
-  * Start creating your forms by changing the forms.yaml file or using the built-in designer
+  * Start creating your forms by changing the config.yml file or using the built-in designer
   * Add your own playbooks under the data/playbooks/ folder
   * Add ldap connection
   * Add users and groups
@@ -163,7 +163,7 @@ The docker-compose project comes with the following folder structure :
 │   │   └── init # contains the sql files to initialize the database
 │   ├── playbooks # folder for your ansible playbooks and roles
 │   ├── ssh # folder for the client sshkey
-│   ├── forms.yaml # the master forms file 
+│   ├── config.yml # the master forms file 
 ├── k8s # sample files to deploy on Kubernetes
 ```
 
@@ -196,8 +196,8 @@ sudo mysql_secure_installation
 If you don't want to go through the hassle of a dockerbuild.  Run a docker image directly from docker hub.  
   
 If you want, you can use the latest build from docker hub (https://hub.docker.com/repository/docker/ansibleguy/ansibleforms)
-Note that we have deployed the solution in the `/app` folder inside the docker.  So if you want your `forms.yaml`, logs, certificates and playbooks reachable from within the docker image, you have to use a mount path or persistent volume and make sure it's mounted under `/app/dist/persistent`.  
-Make sure you have your environment variables set.  Most variables fall back to defaults, but the MySQL database connection is mandatory.  The image contains ansible and python3.  The below command is merely an example. An example of a forms.yaml you can find here (https://github.com/ansibleguy76/ansibleforms/tree/main/server/persistent).
+Note that we have deployed the solution in the `/app` folder inside the docker.  So if you want your `config.yml`, logs, certificates and playbooks reachable from within the docker image, you have to use a mount path or persistent volume and make sure it's mounted under `/app/dist/persistent`.  
+Make sure you have your environment variables set.  Most variables fall back to defaults, but the MySQL database connection is mandatory.  The image contains ansible and python3.  The below command is merely an example. An example of a config.yml you can find here (https://github.com/ansibleguy76/ansibleforms/tree/main/server/persistent).
 
 ```bash
 docker run -p 8000:8000 -d -t --mount type=bind,source=/srv/apps/ansibleforms/server/persistent,target=/app/dist/persistent --name ansibleforms -e DB_HOST=192.168.0.1 -e DB_USER=root -e DB_PASSWORD=password ansibleguy/ansibleforms
@@ -216,7 +216,7 @@ d91f7b05b67e   ansibleguy/ansibleforms   "node ./dist/index.js"   7 seconds ago 
 * Surf to : https://your_ip:8000
 * Login with admin / AnsibleForms!123 (or password you chose in the .env file)
 * Next steps :
-  * Start creating your forms by changing the forms.yaml file or using the built-in designer
+  * Start creating your forms by changing the config.yml file or using the built-in designer
   * Add your own playbooks under the data/playbooks/ folder
   * Add ldap connection
   * Add users and groups
@@ -231,7 +231,7 @@ This project has 2 node applications
 * A client app in vue
 * A server app in express
 
-The client app will dynamically build the forms (vue.js v2) for ansible/awx, based on one or more yaml files (forms.yaml).
+The client app will dynamically build the forms (vue.js v2) for ansible/awx, based on one or more yaml files (config.yml).
 The server app (express.js) will cover authentication, background database connections and executing the ansible playbooks or awx templates.
 
 ## Prerequisites
@@ -290,7 +290,7 @@ sudo cp .env.example .env.development
 cd ..
 cd server
 sudo cp .env.example .env.development
-sudo cp ./persistent/forms.yaml.example ./persistent/forms.yaml
+sudo cp ./persistent/config.yml.example ./persistent/config.yml
 ```
 
 ## Modify the .env.development (or .env.production) to your needs
@@ -299,9 +299,9 @@ sudo cp ./persistent/forms.yaml.example ./persistent/forms.yaml
 * update forms path and log path
 * set mysql server connection details
 
-## Modify the forms.yaml to your needs
+## Modify the config.yml to your needs
 
-The `forms.yaml` file describes all your forms in a yaml format.  It must be available in the server application.  By default the webapp will search under `/server/persistent` 
+The `config.yml` file describes all your forms in a yaml format.  It must be available in the server application.  By default the webapp will search under `/server/persistent` 
 
 * add categories
 * add roles

@@ -21,9 +21,11 @@ var Repository=function(repository){
     this.cron = repository.cron;
     this.user = repository.user;
     this.branch = repository.branch; // added in 5.0.8
+    this.use_for_config = (repository.use_for_config)?1:0;
     this.use_for_forms = (repository.use_for_forms)?1:0;
     this.rebase_on_start = (repository.rebase_on_start)?1:0;    
     this.use_for_playbooks = (repository.use_for_playbooks)?1:0;
+    this.use_for_vars_files = (repository.use_for_vars_files)?1:0;
     this.password = crypto.encrypt(repository.password);
     this.description = repository.description || "";
 };
@@ -57,7 +59,7 @@ Repository.delete = function(name){
 };
 Repository.findAll = function () {
     // logger.info("Finding all repositories")
-    return mysql.do("SELECT id,name,branch,user,uri,description,use_for_forms,use_for_playbooks,cron,status,output,head,rebase_on_start FROM AnsibleForms.`repositories`;",undefined,true)
+    return mysql.do("SELECT id,name,branch,user,uri,description,use_for_config,use_for_forms,use_for_playbooks,use_for_vars_files,cron,status,output,head,rebase_on_start FROM AnsibleForms.`repositories`;", undefined, true)
 };
 
 Repository.getPrivateUri = function(repo){
@@ -116,6 +118,38 @@ Repository.hasFormsRepository = async function(){
 }
 Repository.getConfigPath = async function(){
   try{
+    // First check for repositories with use_for_config enabled (new way since 6.1.0)
+    var configRepositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_config")
+    
+    if(configRepositories.length > 0){
+      // Found config repository/repositories
+      if(configRepositories.length > 1){
+        const repoNames = configRepositories.map(r => r.name).join(", ")
+        logger.warning(`Multiple repositories are marked as 'use_for_config': ${repoNames}. Only one should be enabled. Using first one: ${configRepositories[0].name}`)
+      }
+      
+      const repoPath = path.join(appConfig.repoPath, configRepositories[0].name)
+      
+      // Check for config.yaml first (new way)
+      const configPath = path.join(repoPath, "config.yaml")
+      if(fs.existsSync(configPath)){
+        logger.debug(`Found config.yaml in use_for_config repository: ${configRepositories[0].name}`)
+        return configPath
+      }
+      
+      // Fallback to forms.yaml (legacy)
+      const formsYamlPath = path.join(repoPath, "forms.yaml")
+      if(fs.existsSync(formsYamlPath)){
+        logger.debug(`Found forms.yaml (legacy) in use_for_config repository: ${configRepositories[0].name}`)
+        return formsYamlPath
+      }
+      
+      // Config repo exists but no config file found
+      logger.warning(`Repository '${configRepositories[0].name}' is marked as use_for_config but no config.yaml or forms.yaml found`)
+      return ""
+    }
+    
+    // Fall back to old behavior: check use_for_forms repositories (backwards compatibility)
     var repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_forms")
   }catch(e){
     logger.error("Failed to get repositories.",e)
@@ -170,9 +204,19 @@ Repository.getFormsFolderPath = async function(){
   }
   
   // Return array of all forms folder paths from all form repositories
+  // Check if 'forms' subfolder exists, otherwise use repo root
   const formsPaths = repositories.map(repo => {
-    var repoPath = path.join(appConfig.repoPath, repo.name)
-    return path.join(repoPath, "forms")
+    const repoPath = path.join(appConfig.repoPath, repo.name)
+    const formsSubPath = path.join(repoPath, "forms")
+    
+    // Check if forms subfolder exists
+    if(fs.existsSync(formsSubPath)){
+      logger.debug(`Using forms subfolder for repository '${repo.name}': ${formsSubPath}`)
+      return formsSubPath
+    } else {
+      logger.debug(`Forms subfolder not found for repository '${repo.name}', using root path: ${repoPath}`)
+      return repoPath
+    }
   })
   
   logger.debug(`Found ${formsPaths.length} forms folder(s) from repositories: ${formsPaths.join(", ")}`)
@@ -181,13 +225,60 @@ Repository.getFormsFolderPath = async function(){
 Repository.getAnsiblePath = async function(){
   try{
     var repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_playbooks")
-    if(repositories.length>0){
-      return path.join(appConfig.repoPath,repositories[0].name)
+    
+    if(repositories.length === 0){
+      return ""
     }
-    return ""
+    
+    if(repositories.length > 1){
+      const repoNames = repositories.map(r => r.name).join(", ")
+      logger.warning(`Multiple repositories are marked as 'use_for_playbooks': ${repoNames}. Only one should be enabled. Playbooks cannot be merged. Using first one: ${repositories[0].name}`)
+    }
+    
+    const repoPath = path.join(appConfig.repoPath, repositories[0].name)
+    const playbooksSubPath = path.join(repoPath, "playbooks")
+    
+    // Check if playbooks subfolder exists
+    if(fs.existsSync(playbooksSubPath)){
+      logger.debug(`Using playbooks subfolder for repository '${repositories[0].name}': ${playbooksSubPath}`)
+      return playbooksSubPath
+    } else {
+      logger.debug(`Playbooks subfolder not found for repository '${repositories[0].name}', using root path: ${repoPath}`)
+      return repoPath
+    }
   }catch(e){
     logger.error("Failed to get ansible path : ",e)
     return ""
+  }
+}
+Repository.getVarsFilesPath = async function(){
+  try{
+    var repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_vars_files")
+    
+    if(repositories.length === 0){
+      // No repository configured, return default local path
+      return appConfig.varsFilesPath
+    }
+    
+    if(repositories.length > 1){
+      const repoNames = repositories.map(r => r.name).join(", ")
+      logger.warning(`Multiple repositories are marked as 'use_for_vars_files': ${repoNames}. Only one should be enabled. Using first one: ${repositories[0].name}`)
+    }
+    
+    const repoPath = path.join(appConfig.repoPath, repositories[0].name)
+    const varsSubPath = path.join(repoPath, "vars")
+    
+    // Check if vars subfolder exists
+    if(fs.existsSync(varsSubPath)){
+      logger.debug(`Using vars subfolder for repository '${repositories[0].name}': ${varsSubPath}`)
+      return varsSubPath
+    } else {
+      logger.debug(`Vars subfolder not found for repository '${repositories[0].name}', using root path: ${repoPath}`)
+      return repoPath
+    }
+  }catch(e){
+    logger.error("Failed to get vars files path : ",e)
+    return appConfig.varsFilesPath
   }
 }
 Repository.clone = async function(name){
@@ -207,6 +298,9 @@ Repository.clone = async function(name){
     if(status=="success"){
       head = await Repo.info(name)
       await mysql.do("update AnsibleForms.`repositories` set head = ? where name = ?",[head,name])
+      // Clear cache for this repository to force reload of config/forms
+      cache.del(name)
+      logger.debug(`Cache cleared for repository '${name}' after successful clone`)
     }
 }
 Repository.pull = async function(name){
@@ -223,6 +317,9 @@ Repository.pull = async function(name){
   if(status=="success"){
     head = await Repo.info(name)
     await mysql.do("update AnsibleForms.`repositories` set head = ? where name = ?",[head,name])
+    // Clear cache for this repository to force reload of config/forms
+    cache.del(name)
+    logger.debug(`Cache cleared for repository '${name}' after successful pull`)
   }
 }
 

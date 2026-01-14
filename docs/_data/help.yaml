@@ -100,7 +100,7 @@
     default: "%PERSISTENT_FOLDER%/config.yaml"
     description: | 
       The config.yaml file contains application configuration (categories, roles, constants).  
-      This replaces the deprecated forms.yaml file. Forms should now be stored in the forms/ folder.
+      This replaces the deprecated config.yaml file. Forms should now be stored in the forms/ folder.
   - name: FORMS_FOLDER_PATH
     version: 6.1.0
     type: string
@@ -209,18 +209,37 @@
       When you want to see the database queries that are executed, you can enable this option by setting this variable to 1.  
       introduced, due to massive amount of logging of database queries, which can be useful for debugging, but not for production.
     version: 5.0.3    
+  - name: ENABLE_CONFIG_IN_DATABASE
+    type: number
+    choices:
+    - name: 0
+      description: Disables the config.yaml in database
+    - name: 1
+      description: Enables the config.yaml in database
+    default: 0
+    short: Enable the config.yaml in database
+    description: | 
+      If you use git repositories to store the forms, you can choose to store the master config.yaml in git as well.  
+      Or, you can choose to have the config.yaml in the database instead. Having a clean separation: master config.yaml in database, and the actual forms in git.
+      
+      This gives the config.yaml in the database the highest priority in the loading order.
+    version: 6.1.0
   - name: ENABLE_FORMS_YAML_IN_DATABASE
     type: number
     choices:
     - name: 0
-      description: Disables the forms.yaml in database
+      description: Disables the config.yaml in database
     - name: 1
-      description: Enables the forms.yaml in database
+      description: Enables the config.yaml in database
     default: 0
-    short: Enable the forms.yaml in database
+    short: Enable the config.yaml in database (DEPRECATED)
     description: | 
-      If you use git repositories to store the forms, you can choose to store the master forms.yaml in git as well.  
-      Or, you can choose to have the forms.yaml in the database instead.  Having a clean separation : master forms.yaml in database, and the actual forms in git.
+      **DEPRECATED:** Use `ENABLE_CONFIG_IN_DATABASE` instead.
+      
+      If you use git repositories to store the forms, you can choose to store the master config.yaml in git as well.  
+      Or, you can choose to have the config.yaml in the database instead. Having a clean separation: master config.yaml in database, and the actual forms in git.
+      
+      This variable is maintained for backwards compatibility. If `ENABLE_CONFIG_IN_DATABASE` is set, it will take priority over this variable.
     version: 5.0.3
   - name: GIT_CLONE_COMMAND
     type: string
@@ -247,16 +266,16 @@
     default: 1    
     short: Enable the internal designer
     description: | 
-      Although we encourage you to use an editor such as **Visual Studio Code** to edit the forms.yaml file, preferably with some form of source control.  Ansible Forms comes with an internal yaml designer.  
+      Although we encourage you to use an editor such as **Visual Studio Code** to edit the config.yaml file, preferably with some form of source control.  Ansible Forms comes with an internal yaml designer.  
       And although only admins can see the designer, you might want to disable it completely by setting this variable to 0.
     version: 4.0.0
   - name: USE_YTT
     type: number
     choices:
       - name: 0
-        description: Does not execute ytt on the forms.yaml
+        description: Does not execute ytt on the config.yaml
       - name: 1
-        description: Executes ytt on the forms.yaml
+        description: Executes ytt on the config.yaml
     default: 0
     short: Enable the ytt interpreter
     description: |
@@ -626,13 +645,13 @@
     default: mariadb --ssl-verify-server-cert=OFF
     description:
       Mysql command change and mysql/mariadb flavours differ, hence the need for a configurable command.
-- name: Forms.yaml
+- name: config.yml
   icon: fab,wpforms
   link: forms
   itemName: attribute
   description: |
-    Ansible Forms reads the forms configuration from the main `forms.yaml` file.   
-    The forms.yaml file contains the `categories`, `roles`, `constants` and `forms`.  You can choose to put all the forms in the single forms.yaml file, or, to make editing and source control easier, you can split the forms up and put then in separate files in the `forms` subdirectory.  Ansible Forms will merge them together.  Below are the 4 main attributes of the forms.yaml file.
+    Ansible Forms reads the forms configuration from the main `config.yaml` file.   
+    The config.yaml file contains the `categories`, `roles`, `constants` and `forms`.  You can choose to put all the forms in the single config.yaml file, or, to make editing and source control easier, you can split the forms up and put then in separate files in the `forms` subdirectory.  Ansible Forms will merge them together.  Below are the 4 main attributes of the config.yaml file.
   items:
   - name: categories
     type: array
@@ -4487,7 +4506,7 @@
       - Forms with duplicate names will trigger a warning (first one wins)
       
       **Configuration File Discovery:**
-      - AnsibleForms will use the FIRST config.yaml (or forms.yaml) found across all form repositories
+      - AnsibleForms will use the FIRST config.yaml (or config.yaml) found across all form repositories
       - If multiple config files are found, a warning is logged
       - You can have a single central config repository for shared categories/roles/constants
       - Or use the local `persistent/config.yaml` file (checked if no repository config found)
@@ -4908,55 +4927,73 @@
           columns:
             - name
           valueColumn: name           
-  - name: Database upgrade to 8.x
-    short: Database upgrade to 8.x
-    description: |
-      At some point you will want to upgrade the MySql database.  
-      Initially, Ansible Forms came with MySql 5.7, but you can upgrade the database of course.  
-      With docker-compose you can simple change the mysql version number in the docker-compose.yaml file. (the current docker-compose file uses 8.1) 
-      After a docker-compose down/up, the new image will be pulled and installed.  
-      The upgrade is completely transparent, however, after an upgrade from 5.7 to 8.x you will get warnings about `caching_sha2_password`, a newer method of password handling.  
-      To remove the warning you need to do 2 steps:  
-
-      1) Connect to your mysql server and run this :  
-        
-      `ALTER USER 'root'@'%' IDENTIFIED WITH caching_sha2_password BY 'MyPassword';`  
-      `ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY 'MyPassword';`  
-        
-      **NOTE** : Obviously, you need to correct the username and password if you use another connection user and or password.  
-
-      2) In the `my.cnf` file, you need to change this :  
-        
-      ```
-      [mysqld]
-      default_authentication_plugin=caching_sha2_password
-      ```
-        
-      **NOTE** : in the docker-compose solution the location is `${your-docker-compose-path}/data/mysql/my.cnf`
   - name: About repositories
     short: About repositories
     description: |
       Sometimes you want collaboration and versioning and then git repositories are perfect.  
       In version 5.0.0 you can now manage git repositories.  
       Every repository is a subfolder of the repositories-path (`REPO_PATH` environment variable).  
-      Just go to settings / repositories and start managing repositories.  You can either add ssh-based repositories (with public key/known hosts) or https based repositories, public or private with username/password/token.  
-      You can use repositories for synching data-files (yaml files for example to feed formdata).
-      But also the forms.yaml and forms subfolder, as well as all the ansible playbooks and roles are perfect candidates for repositories.  
-      When creating a repository, you can choose if it's for forms or playbooks, which will then automatically override the `FORMS_PATH` and `ANSIBLE_PATH` environment variables.  
-      You can also choose if the repository must be cloned when AnsibleForms starts, and you can add cron-schedule to schedule recurring pull-actions.  
+      Just go to settings / repositories and start managing repositories. You can either add ssh-based repositories (with public key/known hosts) or https based repositories, public or private with username/password/token.
+      
+      **Since version 6.1.0**, you can add multiple repositories and use specific switches to control what they're used for:
+      
+      ## Repository Switches (6.1.0+)
+      
+      - **use for config** - Repository contains config.yaml (categories, roles, constants)
+      - **use for forms** - Repository contains forms (supports multiple repositories, forms are merged)
+      - **use for playbooks** - Repository contains Ansible playbooks and roles
+      - **use for vars files** - Repository contains vars files for forms
+      
+      ## Repository Structure
+      
+      Each repository can contain subfolders or files directly in the root:
+      
+      - **config.yaml** - Placed in repository root (when using "use for config")
+      - **forms/** subfolder or root - Forms YAML files (when using "use for forms")
+      - **playbooks/** subfolder or root - Ansible playbooks (when using "use for playbooks")
+      - **vars/** subfolder or root - Vars files (when using "use for vars files")
+      
+      If a subfolder doesn't exist, AnsibleForms will fall back to the repository root.
+      
+      ## Single Repository vs Multiple Repositories
+      
+      **Single repository approach** (all in one):
+      - Enable all switches on one repository
+      - Structure: `config.yaml` in root, `forms/`, `playbooks/`, and `vars/` subfolders
+      
+      **Multiple repository approach** (separated):
+      - Use separate repositories for config, forms, playbooks, and vars files
+      - Each repository can have files directly in root (no subfolders needed)
+      - Forms can come from multiple repositories (will be merged)
+      
+      **Important notes:**
+      - Only ONE repository should have "use for config" enabled (warning if multiple)
+      - Only ONE repository should have "use for playbooks" enabled (playbooks cannot be merged)
+      - Only ONE repository should have "use for vars files" enabled
+      - MULTIPLE repositories can have "use for forms" enabled (forms will be merged)
+      
+      ## Configuration Priority
+      
+      Config loading (first match wins):
+      1. Database (if imported)
+      2. Repository with "use for config" enabled
+      3. Repository with "use for forms" enabled (backwards compatibility)
+      4. Local CONFIG_PATH file
+      5. Legacy forms.yaml file
+      
+      ## Additional Features
+      
+      You can choose if the repository must be cloned when AnsibleForms starts, and you can add cron-schedule to schedule recurring pull-actions.  
       Additionally, in the swagger interface, you will find a clone and pull rest api for webhooks.  
       In case you want long-lived access tokens for the webhooks, with swagger you can pass an expiryDays parameter (for admin roles only) and create long-lived tokens.
-  # - name: Host Ansibleforms in a subfolder
-  #   short: Host Ansibleforms in a subfolder
-  #   description: |
-  #     In the case you want to host ansibleforms in subfolder, for example `https://af.domain.local/mysubfolder/`.  
-  #     You can use the environment variable `BASE_URL`.  Set it to `/mysubfolder/` (default is `/`).  
   - name: Enable ytt
     short: Enable ytt
     description: |
       In the case you want to use ytt, it can be enabled by setting `USE_YTT=1`.  
       Read more info about ytt (https://carvel.dev/ytt/).  
         
+      **NOTE** : This feature has not been heavily tested and was added as an enhancement with no feedback after it was added.
+      
       **NOTE** : when using ytt, you must disable the designer, the designer will convert the yaml files to intermediate json and will drop the ytt syntax (which is yaml comments).
 
         
@@ -4986,7 +5023,7 @@
         
       Then, the loaded data can be used:
       ```yaml
-      # forms.yaml
+      # config.yaml
       #@ load("@ytt:data", "data")
       #@ load("@ytt:library", "library")
       #@ demo = library.get("demo")
@@ -5001,15 +5038,5 @@
       constants:
         data_values: #@ data.values
         demo: #@ demo.data_values()
-      forms:
-        - name: Demo Form
-          type: ansible
-          inventory: #@ data.values.INVENTORY_PATH
-          playbook: dummy.yml
-      fields:
-        - name: var_message
-          type: text
-          label: Message
-          default: Object($(demo)).message
-          evalDefault: true
+
       ```      

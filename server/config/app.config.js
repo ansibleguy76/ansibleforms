@@ -31,7 +31,21 @@ var app_config = {
   filterJobOutputRegex: process.env.REGEX_FILTER_JOB_OUTPUT || "\\[low\\]",
   enableBypass: (process.env.ENABLE_BYPASS ?? 0) == 1,
   enableDbQueryLogging: (process.env.ENABLE_DB_QUERY_LOGGING ?? 0) == 1,
-  enableFormsYamlInDatabase: (process.env.ENABLE_FORMS_YAML_IN_DATABASE ?? 0) == 1,
+  // ENABLE_CONFIG_IN_DATABASE takes priority, falls back to deprecated ENABLE_FORMS_YAML_IN_DATABASE
+  enableConfigInDatabase: (() => {
+    if (process.env.ENABLE_CONFIG_IN_DATABASE !== undefined) {
+      return (process.env.ENABLE_CONFIG_IN_DATABASE ?? 0) == 1;
+    }
+    // Fall back to deprecated variable
+    return (process.env.ENABLE_FORMS_YAML_IN_DATABASE ?? 0) == 1;
+  })(),
+  // Deprecated: Use enableConfigInDatabase instead
+  enableFormsYamlInDatabase: (() => {
+    if (process.env.ENABLE_CONFIG_IN_DATABASE !== undefined) {
+      return (process.env.ENABLE_CONFIG_IN_DATABASE ?? 0) == 1;
+    }
+    return (process.env.ENABLE_FORMS_YAML_IN_DATABASE ?? 0) == 1;
+  })(),
   processMaxBuffer: process.env.PROCESS_MAX_BUFFER || 1024 * 1024,
   adminUsername: process.env.ADMIN_USERNAME || "admin",
   adminPassword: process.env.ADMIN_PASSWORD || "AnsibleForms!123",

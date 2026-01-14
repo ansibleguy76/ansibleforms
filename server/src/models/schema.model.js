@@ -384,6 +384,14 @@ async function patchVersion6(messages, success, failed) {
   // Drop the azuread table using dropTable and checkPromise
   await checkPromise(dropTable("azuread"), messages, success, failed);
   await checkPromise(dropTable("oidc"), messages, success, failed);
+  
+  // Add use_for_config column to repositories table (6.1.0+)
+  // This allows a repository to be marked for config.yaml specifically
+  await checkPromise(addColumn("repositories", "use_for_config", "tinyint(4)", true, "0"), messages, success, failed);
+  
+  // Add use_for_vars_files column to repositories table (6.1.0+)
+  // This allows a repository to be marked for vars files specifically
+  await checkPromise(addColumn("repositories", "use_for_vars_files", "tinyint(4)", true, "0"), messages, success, failed);
 }
 
 // PATCHING : Patch All

@@ -181,7 +181,12 @@ async function getBaseConfig() {
   var deprecationMessage = null;
 
   // if we should find the config in the database, let's do that
-  if(appConfig.enableFormsYamlInDatabase){
+  if(appConfig.enableConfigInDatabase){
+    // Check if using deprecated variable and log warning
+    if(process.env.ENABLE_FORMS_YAML_IN_DATABASE !== undefined && process.env.ENABLE_CONFIG_IN_DATABASE === undefined){
+      logger.warning("ENABLE_FORMS_YAML_IN_DATABASE is deprecated. Please use ENABLE_CONFIG_IN_DATABASE instead.")
+    }
+    
     const settings = await Settings.findFormsYaml()    
     // if not empty
     if(settings.forms_yaml.trim()){
@@ -247,13 +252,16 @@ async function loadVarsFiles(varsFiles) {
   }
 
   let mergedVars = {};
+  
+  // Get vars files path from repository or default local path
+  const varsFilesPath = await Repository.getVarsFilesPath();
 
   for (const varsFile of varsFiles) {
     // Support both absolute and relative paths
-    // Relative paths are resolved against VARS_FILES_PATH
+    // Relative paths are resolved against vars files path (from repository or local)
     const absPath = path.isAbsolute(varsFile) 
       ? path.resolve(varsFile)
-      : path.resolve(appConfig.varsFilesPath, varsFile);
+      : path.resolve(varsFilesPath, varsFile);
     
     const ext = path.extname(absPath).toLowerCase();
     // Validate file extension
