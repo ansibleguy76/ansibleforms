@@ -9,7 +9,6 @@ const toast = useToast();
 const authenticated = ref(false);
 
 async function test_connection(ldap) {
-    console.log(ldap)
     try{
         const result = await axios.post(`/api/v1/ldap/check`, ldap , TokenStorage.getAuthentication());
     if (result.data.status == "error") {
