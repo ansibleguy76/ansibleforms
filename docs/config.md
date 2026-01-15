@@ -125,7 +125,13 @@ AnsibleForms loads the config.yaml file in the following order (first match wins
             {% for e in var.examples %}
             <div>
               <p class="fw-bold mt-2">{{ forloop.index }}) {{ e.name }}</p>
-              <pre><code class="language-yaml">{{ e.code }}</code></pre>
+
+<div markdown="1">
+```yaml
+{{ e.code }}
+```
+</div>
+
             </div>
             {% endfor %}
           </td>
@@ -242,7 +248,11 @@ AnsibleForms loads the config.yaml file in the following order (first match wins
               {% for e in f.examples %}
               <div>
                 <p id="{{ f.name }}_examples_{{ forloop.index }}" class="scrollspy fw-bold" headinglevel="3"><span>{{ forloop.index }})</span> <span>{{ e.name }}</span></p>
-                <pre><code class="language-yaml">{{ e.code }}</code></pre>
+<div markdown="1">
+```yaml
+{{ e.code }}
+```
+</div>
               </div>
               {% endfor %}            
             </td>
