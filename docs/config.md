@@ -248,3 +248,7 @@ AnsibleForms loads the config.yaml file in the following order (first match wins
             </td>
           </tr>      
 {% endif %}
+      </tbody>
+</table>
+{% endif %}
+{% endfor %}
