@@ -169,8 +169,4 @@ AnsibleForms loads forms from the following locations:
               {% endfor %}            
             </td>
           </tr>      
-          {% endif %}              
-      </tbody>
-</table>
-{% endif %}
-{% endfor %}
+          {% endif %}

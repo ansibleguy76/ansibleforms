@@ -30,30 +30,16 @@ page_nav:
 {% assign formsyaml = help | where: "link", "forms" | first %}
 {% assign category_role_objects = formsyaml.help %}
 
-# config.yml
+# config.yaml
 
-{{ formsyaml.description }}
+The config.yaml file contains the configuration for categories, roles, and constants used by AnsibleForms.
 
 <a href="https://www.youtube.com/watch?v=lIhYZ9Et5Ic" class="btn btn--dark btn--rounded btn--w-icon">
   <span class="icon"><i class="fat fa-video"></i></span> <span class="ml-2">VIDEO : Create you first form</span>
 </a>
 
-The file below is a minimal sample config.yml file to start with.  
+The file below is a minimal sample config.yaml file to start with.  
 It has only the required `default` category and the required `admin` and `public` roles.
-
-```yaml
-categories: # a list of categories to group forms
-  - name: Default
-    icon: bars
-roles: # a list of roles
-  - name: admin
-    groups:
-      - local/admins
-  - name: public
-    groups: []
-    options:
-      allowJobRelaunch: true
-constants: {} # free objects to re-use over all forms
 
 ```yaml
 categories: # a list of categories to group forms
@@ -261,8 +247,4 @@ AnsibleForms loads the config.yaml file in the following order (first match wins
               {% endfor %}            
             </td>
           </tr>      
-{% endif %}              
-      </tbody>
-</table>
 {% endif %}
-{% endfor %}
