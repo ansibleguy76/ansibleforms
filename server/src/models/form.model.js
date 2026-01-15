@@ -842,8 +842,8 @@ Form.save = function(data){
     fse.emptyDirSync(formsPath) // empty formsdir
     fse.copySync(tmpDir,formsPath) // copy from temp
 
-    logger.debug(`Writing base file '${appConfig.formsPath}'`)
-    fs.writeFileSync(appConfig.formsPath,yaml.stringify(formsConfig)); // write basefile
+    logger.debug(`Writing base file '${appConfig.configPath}'`)
+    fs.writeFileSync(appConfig.configPath,yaml.stringify(formsConfig)); // write basefile
   }
   catch(err) {
     // handle error
