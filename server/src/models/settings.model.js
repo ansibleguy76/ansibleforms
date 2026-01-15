@@ -68,7 +68,7 @@ Settings.findMailSettings = function () {
       if(res.length>0){
         try{
           if(res[0].mail_password!=""){
-            res[0].mail_password=decrypt(res[0].mail_password)
+            res[0].mail_password=crypto.decrypt(res[0].mail_password)
           }
         }catch(e){
           logger.error("Couldn't decrypt mail password, did the secretkey change ?")
@@ -113,7 +113,7 @@ Settings.mailcheck = function(config,to){
   var message= "<p>This is a test message from AnsibleForms</p>"
   if(config.mail_password){
     try{
-      config.mail_password=decrypt(config.mail_password)
+      config.mail_password=crypto.decrypt(config.mail_password)
     }catch(e){
       config.mail_password=""
       logger.error("Failed to decrypt mail password")
