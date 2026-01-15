@@ -260,7 +260,7 @@ AnsibleForms loads the config.yaml file in the following order (first match wins
             <td colspan="2">
               {% for e in f.examples %}
               <div>
-                <p id="{{ f.name }}_examples_{{ forloop_index }}" class="scrollspy fw-bold" headinglevel="3"><span>{{ forloop.index }})</span> <span>{{ e.name }}</span></p>
+                <p id="{{ f.name }}_examples_{{ forloop.index }}" class="scrollspy fw-bold" headinglevel="3"><span>{{ forloop.index }})</span> <span>{{ e.name }}</span></p>
 <div markdown="1">
 ```yaml
 {{ e.code }}

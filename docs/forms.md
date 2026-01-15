@@ -50,11 +50,9 @@ AnsibleForms loads forms from the following locations:
 
 **Note:** You can enable "use for forms" on multiple repositories and all forms will be merged together. Make sure form names are unique across repositories to avoid conflicts.
 
-{% assign form_list = formsyaml.help | where: "name", "Form" %}
-{% assign form = form_list[0] %}
-{% assign objects = form.help %}
+{% assign form_objects = formsyaml.help | where: "name", "Form" %}
 
-{% for f in objects %}
+{% for f in form_objects %}
 # {{ f.name }} Object
 
 {{ f.description }}
@@ -170,7 +168,7 @@ AnsibleForms loads forms from the following locations:
             <td colspan="2">
               {% for e in f.examples %}
               <div>
-                <p id="{{ f.name }}_examples_{{ forloop_index }}" class="scrollspy fw-bold" headinglevel="3"><span>{{ forloop.index }})</span> <span>{{ e.name }}</span></p>
+                <p id="{{ f.name }}_examples_{{ forloop.index }}" class="scrollspy fw-bold" headinglevel="3"><span>{{ forloop.index }})</span> <span>{{ e.name }}</span></p>
 <div markdown="1">
 ```yaml
 {{ e.code }}
