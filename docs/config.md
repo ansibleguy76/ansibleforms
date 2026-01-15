@@ -28,7 +28,7 @@ page_nav:
 
 {% assign help = site.data.help %}
 {% assign formsyaml = help | where: "link", "forms" | first %}
-{% assign config_items = formsyaml.items | where_exp: "item", "item.name != 'forms'" %}
+{% assign category_role_objects = formsyaml.help %}
 
 # config.yml
 
@@ -92,7 +92,8 @@ AnsibleForms loads the config.yaml file in the following order (first match wins
       </thead>
       <tbody>
 
-{% for var in config_items %}
+{% for var in formsyaml.items %}
+{% if var.name == 'categories' or var.name == 'roles' or var.name == 'constants' %}
         <tr>
           <td>
             <span id="formsyaml_{{ var.name }}" headinglevel="2" class="scrollspy fw-bold ">{{ var.name }}</span><br>
@@ -143,13 +144,13 @@ AnsibleForms loads the config.yaml file in the following order (first match wins
             {% endfor %}
           </td>
         </tr>
+{% endif %}
 {% endfor %}
       </tbody>
 </table>
 
-{% assign category_role_objects = formsyaml.help | where_exp: "item", "item.name == 'Category' or item.name == 'Role'" %}
-
 {% for f in category_role_objects %}
+{% if f.name == 'Category' or f.name == 'Role' %}
 # {{ f.name }} Object
 
 {{ f.description }}
@@ -263,4 +264,5 @@ AnsibleForms loads the config.yaml file in the following order (first match wins
 {% endif %}              
       </tbody>
 </table>
+{% endif %}
 {% endfor %}

@@ -50,9 +50,10 @@ AnsibleForms loads forms from the following locations:
 
 **Note:** You can enable "use for forms" on multiple repositories and all forms will be merged together. Make sure form names are unique across repositories to avoid conflicts.
 
-{% assign form_objects = formsyaml.help | where: "name", "Form" %}
+{% assign form_objects = formsyaml.help %}
 
 {% for f in form_objects %}
+{% if f.name == 'Form' %}
 # {{ f.name }} Object
 
 {{ f.description }}
@@ -94,7 +95,7 @@ AnsibleForms loads forms from the following locations:
               <span class="has-text-primary">{{ var.allowed }}</span>
               {% endif %}
             </p>
-            <p markdown="1">
+            <p>
               {{ var.description }}
             </p>
             {% if var.choices.size > 0 %}
@@ -132,7 +133,7 @@ AnsibleForms loads forms from the following locations:
                 <span class="tag is-dark">Added</span><span class="tag is-success">{{ c.version }}</span>
               </div>
               {% endif %}
-              <p markdown="1">
+              <p>
                 {{ c.description }}
               </p>
             </div>
@@ -171,4 +172,5 @@ AnsibleForms loads forms from the following locations:
           {% endif %}              
       </tbody>
 </table>
+{% endif %}
 {% endfor %}
