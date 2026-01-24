@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.1.0] - 2026-01-24
+
 ### Added
 
 -   Job relaunch feature: Relaunch jobs with pre-filled form data from previous submissions : [issue 311](https://github.com/ansibleguy76/ansibleforms/issues/311)
@@ -941,7 +943,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/6.0.2...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/6.1.0...HEAD
+
+[6.1.0]: https://github.com/ansibleguy76/ansibleforms/compare/6.0.2...6.1.0
 
 [6.0.2]: https://github.com/ansibleguy76/ansibleforms/compare/6.0.1...6.0.2
 
