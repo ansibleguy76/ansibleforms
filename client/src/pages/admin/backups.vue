@@ -95,9 +95,9 @@ onMounted(async () => {
                   </span>
                 </li>
                 <li class="list-group-item">
-                  <strong>Forms YAML:</strong>
-                  <span v-if="currentBackup.formsYamlExists">
-                    Exists ({{ Helpers.humanFileSize(currentBackup.formsYamlSize) }})
+                  <strong>Config YAML:</strong>
+                  <span v-if="currentBackup.configYamlExists">
+                    Exists ({{ Helpers.humanFileSize(currentBackup.configYamlSize) }})
                   </span>
                   <span v-else>
                     Not found
@@ -160,9 +160,9 @@ onMounted(async () => {
                 </span>
               </li>
               <li class="list-group-item">
-                <strong>Forms YAML:</strong>
-                <span v-if="currentBackup.formsYamlExists">
-            Exists ({{ Helpers.humanFileSize(currentBackup.formsYamlSize) }})
+                <strong>Config YAML:</strong>
+                <span v-if="currentBackup.configYamlExists">
+            Exists ({{ Helpers.humanFileSize(currentBackup.configYamlSize) }})
                 </span>
                 <span v-else>
             Not found

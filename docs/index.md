@@ -40,10 +40,14 @@ grid_navigation:
       excerpt: Customize AnsibleForms with <strong>Environment Variables</strong>
       cta: Read more
       url: '/customization'    
-    - title: First time use / Forms.yaml
-      excerpt: Understand how the <strong>forms.yaml</strong> file works and setup categories and roles
+    - title: Configuration / config.yml
+      excerpt: Understand how the <strong>config.yml</strong> file works and setup categories and roles
       cta: Read more
-      url: '/forms'    
+      url: '/config'    
+    - title: Forms
+      excerpt: Learn about forms structure and organization
+      cta: Read more
+      url: '/forms'       
     - title: Creating forms
       excerpt: Learn to create different types of forms
       cta: Read more

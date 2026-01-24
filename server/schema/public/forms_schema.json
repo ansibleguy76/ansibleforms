@@ -1,12 +1,14 @@
 {
-  "type": "object",
-  "required": [
-    "name",
-    "roles",
-    "type",
-    "fields"
-  ],
-  "oneOf": [{
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "name",
+      "roles",
+      "type",
+      "fields"
+    ],
+    "oneOf": [{
       "properties": {
         "type": {
           "enum": ["ansible"]
@@ -99,7 +101,6 @@
     "onSubmit": {
       "type": "array",
       "items": {
-        "$id": "/action",
         "type": "object",
         "oneOf": [{
             "properties": {
@@ -175,25 +176,301 @@
     "onSuccess": {
       "type": "array",
       "items": {
-        "$ref": "/action"
+        "type": "object",
+        "oneOf": [{
+            "properties": {
+              "clear": {"not":{}},
+              "reload": {"not":{}},
+              "home": {"not":{}},
+              "hide": {"not":{}},
+              "show": {"not":{}}
+            },
+            "required": ["load"]
+          },
+          {
+              "properties": {
+                "load": {"not":{}},
+                "reload": {"not":{}},
+                "home": {"not":{}},
+                "hide": {"not":{}},
+                "show": {"not":{}}
+              },
+              "required": ["clear"]
+          },
+          {
+              "properties": {
+                "load": {"not":{}},
+                "clear": {"not":{}},
+                "home": {"not":{}},
+                "hide": {"not":{}},
+                "show": {"not":{}}
+              },
+              "required": ["reload"]
+          },
+          {
+              "properties": {
+                "load": {"not":{}},
+                "clear": {"not":{}},
+                "reload": {"not":{}},
+                "hide": {"not":{}},
+                "show": {"not":{}}
+              },
+              "required": ["home"]
+          },
+          {
+              "properties": {
+                "load": {"not":{}},
+                "clear": {"not":{}},
+                "home": {"not":{}},
+                "reload": {"not":{}},
+                "show": {"not":{}}
+              },
+              "required": ["hide"]
+          },
+          {
+              "properties": {
+                "load": {"not":{}},
+                "clear": {"not":{}},
+                "home": {"not":{}},
+                "hide": {"not":{}},
+                "reload": {"not":{}}
+              },
+              "required": ["show"]
+          }
+        ],
+        "properties": {
+          "load": {"type": "string"},
+          "clear": {"type": "number"},
+          "home": {"type": "number"},
+          "reload": {"type": "number"},
+          "hide": {"type": "number"},
+          "show": {"type": "number"}
+        }
       }
     },
     "onFailure": {
       "type": "array",
       "items": {
-        "$ref": "/action"
+        "type": "object",
+        "oneOf": [{
+            "properties": {
+              "clear": {"not":{}},
+              "reload": {"not":{}},
+              "home": {"not":{}},
+              "hide": {"not":{}},
+              "show": {"not":{}}
+            },
+            "required": ["load"]
+          },
+          {
+              "properties": {
+                "load": {"not":{}},
+                "reload": {"not":{}},
+                "home": {"not":{}},
+                "hide": {"not":{}},
+                "show": {"not":{}}
+              },
+              "required": ["clear"]
+          },
+          {
+              "properties": {
+                "load": {"not":{}},
+                "clear": {"not":{}},
+                "home": {"not":{}},
+                "hide": {"not":{}},
+                "show": {"not":{}}
+              },
+              "required": ["reload"]
+          },
+          {
+              "properties": {
+                "load": {"not":{}},
+                "clear": {"not":{}},
+                "reload": {"not":{}},
+                "hide": {"not":{}},
+                "show": {"not":{}}
+              },
+              "required": ["home"]
+          },
+          {
+              "properties": {
+                "load": {"not":{}},
+                "clear": {"not":{}},
+                "home": {"not":{}},
+                "reload": {"not":{}},
+                "show": {"not":{}}
+              },
+              "required": ["hide"]
+          },
+          {
+              "properties": {
+                "load": {"not":{}},
+                "clear": {"not":{}},
+                "home": {"not":{}},
+                "hide": {"not":{}},
+                "reload": {"not":{}}
+              },
+              "required": ["show"]
+          }
+        ],
+        "properties": {
+          "load": {"type": "string"},
+          "clear": {"type": "number"},
+          "home": {"type": "number"},
+          "reload": {"type": "number"},
+          "hide": {"type": "number"},
+          "show": {"type": "number"}
+        }
       }
     },
     "onAbort": {
       "type": "array",
       "items": {
-        "$ref": "/action"
+        "type": "object",
+        "oneOf": [{
+            "properties": {
+              "clear": {"not":{}},
+              "reload": {"not":{}},
+              "home": {"not":{}},
+              "hide": {"not":{}},
+              "show": {"not":{}}
+            },
+            "required": ["load"]
+          },
+          {
+              "properties": {
+                "load": {"not":{}},
+                "reload": {"not":{}},
+                "home": {"not":{}},
+                "hide": {"not":{}},
+                "show": {"not":{}}
+              },
+              "required": ["clear"]
+          },
+          {
+              "properties": {
+                "load": {"not":{}},
+                "clear": {"not":{}},
+                "home": {"not":{}},
+                "hide": {"not":{}},
+                "show": {"not":{}}
+              },
+              "required": ["reload"]
+          },
+          {
+              "properties": {
+                "load": {"not":{}},
+                "clear": {"not":{}},
+                "reload": {"not":{}},
+                "hide": {"not":{}},
+                "show": {"not":{}}
+              },
+              "required": ["home"]
+          },
+          {
+              "properties": {
+                "load": {"not":{}},
+                "clear": {"not":{}},
+                "home": {"not":{}},
+                "reload": {"not":{}},
+                "show": {"not":{}}
+              },
+              "required": ["hide"]
+          },
+          {
+              "properties": {
+                "load": {"not":{}},
+                "clear": {"not":{}},
+                "home": {"not":{}},
+                "hide": {"not":{}},
+                "reload": {"not":{}}
+              },
+              "required": ["show"]
+          }
+        ],
+        "properties": {
+          "load": {"type": "string"},
+          "clear": {"type": "number"},
+          "home": {"type": "number"},
+          "reload": {"type": "number"},
+          "hide": {"type": "number"},
+          "show": {"type": "number"}
+        }
       }
     },
     "onFinish": {
       "type": "array",
       "items": {
-        "$ref": "/action"
+        "type": "object",
+        "oneOf": [{
+            "properties": {
+              "clear": {"not":{}},
+              "reload": {"not":{}},
+              "home": {"not":{}},
+              "hide": {"not":{}},
+              "show": {"not":{}}
+            },
+            "required": ["load"]
+          },
+          {
+              "properties": {
+                "load": {"not":{}},
+                "reload": {"not":{}},
+                "home": {"not":{}},
+                "hide": {"not":{}},
+                "show": {"not":{}}
+              },
+              "required": ["clear"]
+          },
+          {
+              "properties": {
+                "load": {"not":{}},
+                "clear": {"not":{}},
+                "home": {"not":{}},
+                "hide": {"not":{}},
+                "show": {"not":{}}
+              },
+              "required": ["reload"]
+          },
+          {
+              "properties": {
+                "load": {"not":{}},
+                "clear": {"not":{}},
+                "reload": {"not":{}},
+                "hide": {"not":{}},
+                "show": {"not":{}}
+              },
+              "required": ["home"]
+          },
+          {
+              "properties": {
+                "load": {"not":{}},
+                "clear": {"not":{}},
+                "home": {"not":{}},
+                "reload": {"not":{}},
+                "show": {"not":{}}
+              },
+              "required": ["hide"]
+          },
+          {
+              "properties": {
+                "load": {"not":{}},
+                "clear": {"not":{}},
+                "home": {"not":{}},
+                "hide": {"not":{}},
+                "reload": {"not":{}}
+              },
+              "required": ["show"]
+          }
+        ],
+        "properties": {
+          "load": {"type": "string"},
+          "clear": {"type": "number"},
+          "home": {"type": "number"},
+          "reload": {"type": "number"},
+          "hide": {"type": "number"},
+          "show": {"type": "number"}
+        }
       }
     },
     "icon": {
@@ -299,7 +576,8 @@
           "playbookSubPath": {"type": "string"},
           "key": {"type": "string"},
           "ifExtraVar": {
-            "$ref": "/formfield"
+            "type": "string",
+            "pattern": "[A-Za-z0-9_\\-]+"
           },
           "template": {"type": "string"},
           "varsFiles": {
@@ -374,7 +652,6 @@
           },
           "hasApproval":{ "type": "boolean"},
           "approval": {
-            "$id": "/approval",
             "type": "object",
             "required":[
               "message",
@@ -389,7 +666,6 @@
               "notifications": {
                 "type": "array",
                 "items": {
-                  "$id": "/email",
                   "type": "string",
                   "pattern": "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
                 }
@@ -407,7 +683,26 @@
     },
     "hasApproval":{ "type": "boolean"},
     "approval":{
-      "$ref": "/approval"
+      "type": "object",
+      "required":[
+        "message",
+        "roles"
+      ],
+      "properties": {
+        "title": {"type": "string"},
+        "message": {"type": "string"},
+        "roles": {
+          "type": "array"
+        },
+        "notifications": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+          }
+        }
+      },
+      "additionalProperties": false
     },
     "playbook": {"type": "string"},
     "playbookSubPath": {"type": "string"},
@@ -1029,7 +1324,6 @@
             "enum": ["text","textarea", "password", "checkbox", "enum", "number", "radio", "expression","local","local_out","credential", "table","datetime","html","file"]
           },
           "name": {
-            "$id": "/formfield",
             "type": "string",
             "pattern": "[A-Za-z0-9_\\-]+"
           },
@@ -1059,7 +1353,8 @@
             "default": false
           },
           "sameAs": {
-            "$ref": "/formfield"
+            "type": "string",
+            "pattern": "[A-Za-z0-9_\\-]+"
           },
           "validIf": {
               "type": "object",
@@ -1102,7 +1397,8 @@
             ],
             "properties": {
               "field": {
-                "$ref": "/formfield"
+                "type": "string",
+                "pattern": "[A-Za-z0-9_\\-]+"
               },
               "description": {"type": "string"}
             }
@@ -1115,7 +1411,8 @@
             ],
             "properties": {
               "field": {
-                "$ref": "/formfield"
+                "type": "string",
+                "pattern": "[A-Za-z0-9_\\-]+"
               },
               "description": {"type": "string"}
             }
@@ -1485,7 +1782,8 @@
                   ],
                   "properties": {
                     "field": {
-                      "$ref": "/formfield"
+                      "type": "string",
+                      "pattern": "[A-Za-z0-9_\\-]+"
                     },
                     "description": {"type": "string"},
                     "when": {
@@ -1503,7 +1801,8 @@
                   ],
                   "properties": {
                     "field": {
-                      "$ref": "/formfield"
+                      "type": "string",
+                      "pattern": "[A-Za-z0-9_\\-]+"
                     },
                     "description": {"type": "string"},
                     "when": {
@@ -1550,5 +1849,6 @@
         "additionalProperties": false
       }
     }
+  }
   }
 }

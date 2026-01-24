@@ -25,19 +25,35 @@ Settings.update = function (record) {
     return mysql.do("UPDATE AnsibleForms.`settings` set ?", record)
 };
 Settings.importFormsFileFromYaml = async function(){
-
-  var appFormsPath = (await Repository.getFormsPath()) || appConfig.formsPath   
-  if(!fs.existsSync(appFormsPath)){
-    logger.error(`Forms path ${appFormsPath} doesn't exist`)
-    throw new Error(`Forms path ${appFormsPath} doesn't exist`)
-  }else{
-    logger.notice(`Loading ${appFormsPath} into the database`)  
-    let formsFile = fs.readFileSync(appFormsPath, 'utf8')
-    var settings = await Settings.findFormsYaml()
-    settings.forms_yaml = formsFile
-    await Settings.update(settings)
-    return "Forms.yaml imported successfully"
+  // Repository.getConfigPath() already handles config.yaml → forms.yaml fallback
+  var configPath = (await Repository.getConfigPath()) || appConfig.configPath
+  
+  if(!fs.existsSync(configPath)){
+    // Final fallback to forms.yaml if nothing else exists
+    configPath = appConfig.formsPath
+    
+    if(!fs.existsSync(configPath)){
+      logger.error(`Config path ${configPath} doesn't exist`)
+      throw new Error(`Config path ${configPath} doesn't exist`)
+    }
   }
+  
+  const isLegacy = configPath.endsWith('forms.yaml')
+  
+  if(isLegacy){
+    logger.warning(`Using forms.yaml is DEPRECATED. Please migrate to config.yaml.`)
+  }
+  
+  logger.notice(`Loading ${configPath} into the database`)  
+  let configFile = fs.readFileSync(configPath, 'utf8')
+  var settings = await Settings.findFormsYaml()
+  settings.forms_yaml = configFile
+  await Settings.update(settings)
+  
+  if(isLegacy){
+    return "forms.yaml imported successfully (DEPRECATED - please migrate to config.yaml)"
+  }
+  return "config.yaml imported successfully"
 
 }
 Settings.find = function () {
@@ -53,6 +69,8 @@ Settings.find = function () {
           logger.error("Couldn't decrypt mail password, did the secretkey change ?")
           res[0].mail_password=""
         }
+        // Use new property name, keep old one for backwards compatibility
+        res[0].enableConfigInDatabase = appConfig.enableConfigInDatabase
         res[0].enableFormsYamlInDatabase = appConfig.enableFormsYamlInDatabase
         return res[0]
       }else{
@@ -68,7 +86,7 @@ Settings.findMailSettings = function () {
       if(res.length>0){
         try{
           if(res[0].mail_password!=""){
-            res[0].mail_password=decrypt(res[0].mail_password)
+            res[0].mail_password=crypto.decrypt(res[0].mail_password)
           }
         }catch(e){
           logger.error("Couldn't decrypt mail password, did the secretkey change ?")
@@ -113,7 +131,7 @@ Settings.mailcheck = function(config,to){
   var message= "<p>This is a test message from AnsibleForms</p>"
   if(config.mail_password){
     try{
-      config.mail_password=decrypt(config.mail_password)
+      config.mail_password=crypto.decrypt(config.mail_password)
     }catch(e){
       config.mail_password=""
       logger.error("Failed to decrypt mail password")

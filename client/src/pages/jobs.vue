@@ -42,10 +42,16 @@
     const runningJobsInterval = ref(null);
     const showReject = ref(false);
     const relaunchVerbose = ref(false);
+    const relaunchWithEdit = ref(false);
     const tempJobId = ref(null);
     const noOfRecords = ref(500);
 
     // COMPUTED
+
+    // Check if user can relaunch jobs
+    const canRelaunchJobs = computed(() => {
+        return store?.profile?.options?.allowJobRelaunch ?? store.isAdmin;
+    });
 
     // job output filtered
     const filteredJobOutput = computed(() => {
@@ -242,12 +248,15 @@
         // using await
         for (const item of runningJobs.value) {
             const result = await axios.get(`/api/v2/job/${item.id}`,TokenStorage.getAuthentication())
-            const idx = getJobIndex(item.id)
             if(result.status==200 && noOfRecords.value!=result.data.no_of_records){
                 await loadJobs() // no of records changed ; reload jobs
                 noOfRecords.value=result.data.no_of_records
+                return; // Exit early - loadJobs() has refreshed everything
             }
-            jobs.value[idx]=result.data
+            const idx = getJobIndex(item.id)
+            if(idx !== -1) {
+                jobs.value[idx]=result.data
+            }
             if(item.id==jobId.value){
                 job.value=result.data
             }
@@ -313,6 +322,9 @@
         if(!msg){
             return ""
         }
+        console.log("Replacing placeholders in message:", msg);
+        console.log("Job extravars:", job.value.extravars);
+
         return msg.replace(
             /\$\(([^\)]+)\)/g, // eslint-disable-line
             (placeholderWithDelimiters, placeholderWithoutDelimiters) =>
@@ -334,6 +346,7 @@
             }
             return master[obj]
         },data);
+        return outputValue;
     }
     async function jobAction(id,action,method="post",uri_suffix=""){
         try{
@@ -385,10 +398,24 @@
     async function abortJob(id){
         await jobAction(id, 'abort', 'post', '/abort');
     }
-    // relaunch a job
+    // relaunch a job (direct relaunch)
     async function relaunchJob(id, verbose=false){
         relaunchVerbose.value=false
         await jobAction(id, 'relaunch', 'post', `/relaunch?verbose=${verbose}`);
+    }
+    // edit and relaunch - navigate to form with pre-filled data
+    async function editAndRelaunchJob(id){
+        relaunchWithEdit.value=false
+        // Get the job to find the form name
+        try {
+            const result = await axios.get(`/api/v2/job/${id}`, TokenStorage.getAuthentication());
+            const formName = result.data.form;
+            // Navigate to form with prefillJobId parameter
+            router.push({ name: '/form', query: { form: formName, prefillJobId: id } });
+            showRelaunch.value = false;
+        } catch(err) {
+            toast.error('Failed to load job data: ' + err.toString());
+        }
     }
     // approve a job
     async function approveJob(id){
@@ -481,10 +508,15 @@
     <!-- Modal - relaunch verify -->
     <BsModal v-if="showRelaunch" @close="showRelaunch=false">
         <template #title> Relaunch job {{ tempJobId }} </template>
-        <template #default><p class="mt-3 fs-6 user-select-none">Are you sure you want to relaunch job <strong>{{ tempJobId }}</strong>?
-            <br><BsCheckbox v-model="relaunchVerbose" label="Verbose mode" class="mt-2" :isSwitch="true" :inline="true" />
-        </p></template>
-        <template #footer><BsButton icon="redo" @click="relaunchJob(tempJobId,relaunchVerbose);showRelaunch=false">Relaunch</BsButton></template>
+        <template #default>
+            <p class="mt-3 fs-6 user-select-none">Choose how to relaunch job <strong>{{ tempJobId }}</strong>:</p>
+            <BsCheckbox v-model="relaunchVerbose" label="Verbose mode" class="mt-2" :isSwitch="true" :inline="true" />
+            <BsCheckbox v-model="relaunchWithEdit" label="Edit values before relaunching" class="mt-2" :isSwitch="true" :inline="true" />
+        </template>
+        <template #footer>
+            <BsButton v-if="!relaunchWithEdit" icon="redo" @click="relaunchJob(tempJobId,relaunchVerbose);showRelaunch=false">Relaunch</BsButton>
+            <BsButton v-else icon="edit" @click="editAndRelaunchJob(tempJobId);showRelaunch=false">Edit & Relaunch</BsButton>
+        </template>
     </BsModal>
     <!-- Modal - approval -->
     <BsModal v-if="showApprove" @close="showApprove=false">
@@ -546,7 +578,7 @@
                 <template v-for="j in displayedJobs" :key="j.id">
                     <tr :class="jobBackground(j)">
                         <td>
-                            <span role="button" v-if="j.status!='running'" class="me-2 text-info" @click="tempJobId=j.id;showRelaunch=true" title="Relaunch job"><font-awesome-icon icon="redo" /></span>
+                            <span role="button" v-if="j.status!='running' && canRelaunchJobs" class="me-2 text-info" @click="tempJobId=j.id;showRelaunch=true" title="Relaunch job"><font-awesome-icon icon="redo" /></span>
                             <span role="button" v-if="j.status=='running' && !j.abort_requested" class="me-2 text-warning" @click="tempJobId=j.id;showAbort=true" title="Abort job"><font-awesome-icon icon="ban" /></span>
                             <span role="button" v-if="j.status!='running' && !j.abort_requested || store.isAdmin" class="me-2 text-danger" @click="tempJobId=j.id;showDelete=true" title="Delete job"><font-awesome-icon icon="trash-alt" /></span>
                             <span role="button" v-if="j.status=='approve' && approvalAllowed(j)" class="me-2 text-success" @click="tempJobId=j.id;showApproval(j.id)" title="Approve job"><font-awesome-icon icon="circle-check" /></span>

@@ -73,8 +73,10 @@ export default {
             { key: "uri", icon: "fab,git", label: "Uri", placeholder: "https://github.com/account/repo.git", required: true, hidden: true, help: "Only ssh or https uri's are allowed" },
             { key: "cron", icon: "stopwatch", label: "Cron Schedule", help: "Minute Hour DayOfMonth Month DayOfWeek - For example : */5 * L * 1,3L", hidden: true, regex: { expression: "^[0-9-,*/]+ [0-9-,*/]+ [0-9-,*/L]+ [0-9-,*/]+ [0-9-,*/L]+$", description: "Must be a valid cron schedule"} },
             { key: "description", icon: "info-circle", label: "Description", placeholder: "Description", required: true },
+            { key: "use_for_config", type: "checkbox", label: "Use for config ?", hidden: true },
             { key: "use_for_forms", type: "checkbox", label: "Use for forms ?", hidden: true },
             { key: "use_for_playbooks", type: "checkbox", label: "Use for playbooks ?", hidden: true },
+            { key: "use_for_vars_files", type: "checkbox", label: "Use for vars files ?", hidden: true },
             { key: "rebase_on_start", type: "checkbox", label: "Clone on app start ?", hidden: true }
         ]
     },

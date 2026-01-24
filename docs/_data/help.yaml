@@ -92,14 +92,37 @@
     description: |
       Ansible Forms can backup the database and forms.  This is the path where the backups are stored.
       The backup folder is created at first start if not present and a timestamp folder is created for each backup.
+  - name: CONFIG_PATH
+    version: 6.1.0
+    type: string
+    allowed: a valid file path
+    short: Config.yaml path
+    default: "%PERSISTENT_FOLDER%/config.yaml"
+    description: | 
+      The config.yaml file contains application configuration (categories, roles, constants).  
+      This replaces the deprecated config.yaml file. Forms should now be stored in the forms/ folder.
+  - name: FORMS_FOLDER_PATH
+    version: 6.1.0
+    type: string
+    allowed: a valid directory path
+    short: Forms folder path
+    default: "%PERSISTENT_FOLDER%/forms"
+    description: | 
+      The directory where individual form YAML files are stored.
+      Forms can be organized in subdirectories within this folder.
   - name: FORMS_PATH
     type: string
     allowed: a valid file path
-    short: Forms.yaml path
+    short: Forms.yaml path (DEPRECATED)
     default: "%PERSISTENT_FOLDER%/forms.yaml"
+    deprecated: true
     description: | 
-      The forms.yaml file is the main configuration file needed to run Ansible Forms.  
-      Read here more about the forms.yaml file.
+      **DEPRECATED in v6.0.0** - Use CONFIG_PATH and FORMS_FOLDER_PATH instead.
+      
+      The forms.yaml file was the legacy configuration file that combined both configuration and forms.
+      Please migrate to the new structure:
+      - Configuration (categories, roles, constants) → config.yaml (CONFIG_PATH)
+      - Forms → individual files in forms/ folder (FORMS_FOLDER_PATH)
   - name: LOCK_PATH
     type: string
     allowed: a valid file path
@@ -118,11 +141,23 @@
   - name: OLD_BACKUP_DAYS
     version: 4.0.3
     type: number
-    allowed: a valid number in days
-    short: Days of backups to keep
-    default: 60
+    allowed: a positive integer
+    short: Old backup retention days
+    default: "60"
     description: | 
-      Old backups are cleanup, you can choose the age
+      When backups are made, they are kept for this many days before being removed.
+      This applies to form backups made through the designer (not database backups).
+  - name: NIGHTLY_BACKUP_RETENTION
+    version: 6.1.0
+    type: number
+    allowed: a positive integer
+    short: Nightly backup retention count
+    default: "7"
+    description: | 
+      Number of automated nightly backups to retain.
+      Ansible Forms automatically creates a full backup (database + config + forms) every night at midnight.
+      Older nightly backups beyond this count are automatically deleted.
+      Set to 0 to disable automatic cleanup (not recommended).
   - name: AZURE_GRAPH_URI
     version: 4.0.3
     type: string
@@ -174,18 +209,37 @@
       When you want to see the database queries that are executed, you can enable this option by setting this variable to 1.  
       introduced, due to massive amount of logging of database queries, which can be useful for debugging, but not for production.
     version: 5.0.3    
+  - name: ENABLE_CONFIG_IN_DATABASE
+    type: number
+    choices:
+    - name: 0
+      description: Disables the config.yaml in database
+    - name: 1
+      description: Enables the config.yaml in database
+    default: 0
+    short: Enable the config.yaml in database
+    description: | 
+      If you use git repositories to store the forms, you can choose to store the master config.yaml in git as well.  
+      Or, you can choose to have the config.yaml in the database instead. Having a clean separation: master config.yaml in database, and the actual forms in git.
+      
+      This gives the config.yaml in the database the highest priority in the loading order.
+    version: 6.1.0
   - name: ENABLE_FORMS_YAML_IN_DATABASE
     type: number
     choices:
     - name: 0
-      description: Disables the forms.yaml in database
+      description: Disables the config.yaml in database
     - name: 1
-      description: Enables the forms.yaml in database
+      description: Enables the config.yaml in database
     default: 0
-    short: Enable the forms.yaml in database
+    short: Enable the config.yaml in database (DEPRECATED)
     description: | 
-      If you use git repositories to store the forms, you can choose to store the master forms.yaml in git as well.  
-      Or, you can choose to have the forms.yaml in the database instead.  Having a clean separation : master forms.yaml in database, and the actual forms in git.
+      **DEPRECATED:** Use `ENABLE_CONFIG_IN_DATABASE` instead.
+      
+      If you use git repositories to store the forms, you can choose to store the master config.yaml in git as well.  
+      Or, you can choose to have the config.yaml in the database instead. Having a clean separation: master config.yaml in database, and the actual forms in git.
+      
+      This variable is maintained for backwards compatibility. If `ENABLE_CONFIG_IN_DATABASE` is set, it will take priority over this variable.
     version: 5.0.3
   - name: GIT_CLONE_COMMAND
     type: string
@@ -212,16 +266,16 @@
     default: 1    
     short: Enable the internal designer
     description: | 
-      Although we encourage you to use an editor such as **Visual Studio Code** to edit the forms.yaml file, preferably with some form of source control.  Ansible Forms comes with an internal yaml designer.  
+      Although we encourage you to use an editor such as **Visual Studio Code** to edit the config.yaml file, preferably with some form of source control.  Ansible Forms comes with an internal yaml designer.  
       And although only admins can see the designer, you might want to disable it completely by setting this variable to 0.
     version: 4.0.0
   - name: USE_YTT
     type: number
     choices:
       - name: 0
-        description: Does not execute ytt on the forms.yaml
+        description: Does not execute ytt on the config.yaml
       - name: 1
-        description: Executes ytt on the forms.yaml
+        description: Executes ytt on the config.yaml
     default: 0
     short: Enable the ytt interpreter
     description: |
@@ -502,6 +556,17 @@
     version: 3.0.0
     description: |
       This path is the root path for your local repositories, allowing you to integrate data with git repositories.
+  - name: VARS_FILES_PATH
+    type: string
+    allowed: a valid directory path
+    short: Base path for varsFiles
+    default: "%PERSISTENT_FOLDER%/vars"
+    version: 6.1.0
+    description: |
+      Base directory for resolving relative paths in form varsFiles property.
+      Absolute paths in varsFiles are used as-is.
+      Relative paths are resolved against this directory.
+      Allows centralized management of shared variable files across forms.
   - name: ENCRYPTION_SECRET
     type: string
     allowed: a strong encryption string
@@ -580,13 +645,13 @@
     default: mariadb --ssl-verify-server-cert=OFF
     description:
       Mysql command change and mysql/mariadb flavours differ, hence the need for a configurable command.
-- name: Forms.yaml
+- name: config.yml
   icon: fab,wpforms
   link: forms
   itemName: attribute
   description: |
-    Ansible Forms reads the forms configuration from the main `forms.yaml` file.   
-    The forms.yaml file contains the `categories`, `roles`, `constants` and `forms`.  You can choose to put all the forms in the single forms.yaml file, or, to make editing and source control easier, you can split the forms up and put then in separate files in the `forms` subdirectory.  Ansible Forms will merge them together.  Below are the 4 main attributes of the forms.yaml file.
+    Ansible Forms reads the forms configuration from the main `config.yaml` file.   
+    The config.yaml file contains the `categories`, `roles`, `constants` and `forms`.  You can choose to put all the forms in the single config.yaml file, or, to make editing and source control easier, you can split the forms up and put then in separate files in the `forms` subdirectory.  Ansible Forms will merge them together.  Below are the 4 main attributes of the config.yaml file.
   items:
   - name: categories
     type: array
@@ -635,6 +700,7 @@
       - showAllJobLogs: The user can see all job logs (not only his own) (Added in 5.0.9)
       - enableLogin: The user can login.  
       - allowBackupOps: The user can perform database operations, such as backup and restore.
+      - allowJobRelaunch: The user can relaunch jobs with pre-filled form data from previous submissions.
         
       When options are not set, the admin role will have all options.  
       When options are set on the public role, they will have the lowest precedence and can be used as default options for all roles.  
@@ -659,8 +725,9 @@
           groups:
           - local/architect
           options:
-            showDesigner: true # architects can see the designer
-            showLogs: true     # architects can see the logs
+            showDesigner: true      # architects can see the designer
+            showLogs: true          # architects can see the logs
+            allowJobRelaunch: true  # architects can relaunch jobs with pre-filled data
         - name: demo
           groups:
           - local/demo
@@ -707,6 +774,7 @@
               This Form creates a virtual machine.  it will connect to `vcenter`.  This help is Markdown
               so you can use **markdown** markup to highlight __certain words__.
             showHelp: true                                 # show help on load
+            disableRelaunch: false                         # disable job relaunch for this form (default: false)
             icon: computer                                 # a font awesome icon
             categories:                                    # reference to categories defined earlier
             - Demo
@@ -1597,6 +1665,42 @@
               - clear: 0   # clear and show on finish
               - show: 0    
             # more examples on the job-status-event page                                                  
+      - name: varsFiles
+        type: array
+        group: basic
+        allowed: list of file paths (absolute or relative)
+        short: Load YAML files as constants
+        version: 6.1.0
+        description: |
+          Load one or more YAML files as constants that will be merged with the base config constants.
+          Files must contain a dictionary (not a list) and must have .yml or .yaml extension.
+          
+          **Path Resolution:**
+          - Absolute paths: used as-is (e.g., `/opt/shared/vars/database.yaml`)
+          - Relative paths: resolved against VARS_FILES_PATH environment variable (default: `persistent/vars/`)
+          
+          **Use Cases:**
+          - Share common variables across multiple forms
+          - Separate sensitive configuration from form definitions
+          - Centralize environment-specific settings
+          
+          **Note:** Files are merged in order. Later files override earlier ones if keys conflict.
+          Variables from varsFiles are merged with base config constants.
+        examples:
+        - name: Load single vars file
+          code: |
+            varsFiles:
+              - common/database.yaml    # relative to VARS_FILES_PATH
+        - name: Load multiple vars files with absolute paths
+          code: |
+            varsFiles:
+              - /opt/shared/globals.yaml
+              - /etc/ansibleforms/env-prod.yaml
+        - name: Mix relative and absolute paths
+          code: |
+            varsFiles:
+              - common/shared.yaml           # relative
+              - /opt/custom/overrides.yaml   # absolute
       - name: fields
         type: array
         group: basic
@@ -1716,6 +1820,25 @@
                   - name: __playbook__
                     type: text
                     default: helloworld.yaml # this will overwrite the playbook name
+          - name: vars_files
+            type: array
+            group: basic
+            with_types: ansible
+            allowed: list of valid yaml files
+            short: Ansible vars_files
+            description: | 
+              This will load yaml files with contain dictionaries of variables.  
+              These dict variables will be available in the form to use as constants.  
+              Adivise is to make the dict-keys unique and UPPERCASE to avoid conflicts with other variables.
+            examples:
+            - name: Run foobar playbook with vars_files
+              code: |
+                name: Foobar
+                type: ansible
+                playbook: foobar.yaml  
+                vars_files:
+                  - /home/vars/common.yaml
+                  - /home/vars/special.yaml
           - name: inventory
             type: string
             group: workflow
@@ -2268,10 +2391,12 @@
             type: string
             group: basic
             allowed: Free text
-            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, file
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, file, html
             short: Field label
             description: |
-              A friendly name/label for the field
+              A friendly name/label for the field.  Note: if not set, the field name is used as label, but not when type is html.
+              
+              **Since 6.0.3:** Supports placeholders for dynamic labels (e.g., `Label: $(fieldname)`).
           - name: placeholder
             type: string
             group: basic
@@ -2280,6 +2405,8 @@
             short: In-field help value
             description: |
               Some form fields allow an in-field hint value.
+              
+              **Since 6.0.3:** Supports placeholders for dynamic hints (e.g., `Enter password (min $(minLength) chars)`).
           - name: help
             type: string
             group: basic
@@ -2289,6 +2416,8 @@
             description: |
               Some fields require additional help information.
               This help message will be shown below the field.
+              
+              **Since 6.0.3:** Supports placeholders for dynamic help text (e.g., `This field depends on $(fieldname)`).
           - name: icon
             type: string
             group: visualization
@@ -2587,6 +2716,8 @@
             short: Field minimum length
             description: |
               Forces a string-field to be at least x long.
+              
+              **Since 6.0.3:** Supports placeholders for dynamic validation (e.g., `minLength: "$(minPasswordLength)"`).
             with_types: text, expression, password
           - name: maxLength
             allowed: Integer > 0
@@ -2595,6 +2726,8 @@
             short: Field maximum length
             description: |
               Forces a string-field to be maximum x long.
+              
+              **Since 6.0.3:** Supports placeholders for dynamic validation (e.g., `maxLength: "$(maxPasswordLength)"`).
             with_types: text, expression, password
           - name: minValue
             allowed: Integer
@@ -2603,6 +2736,8 @@
             short: Field minimum value
             description: |
               Forces a number-field to not be lower than...
+              
+              **Since 6.0.3:** Supports placeholders for dynamic validation (e.g., `minValue: "$(minThreshold)"`).
             with_types: number
           - name: maxValue
             allowed: Integer
@@ -2611,6 +2746,8 @@
             short: Field maximum value
             description: |
               Forces a number-field to not be higher than...
+              
+              **Since 6.0.3:** Supports placeholders for dynamic validation (e.g., `maxValue: "$(maxThreshold)"`).
             with_types: number
           - name: minSize
             allowed: Integer
@@ -2619,6 +2756,8 @@
             short: File minimum size
             description: |
               Forces a file-fields size to not be lower than...
+              
+              **Since 6.0.3:** Supports placeholders for dynamic validation (e.g., `minSize: "$(minFileSize)"`).
             with_types: file
           - name: maxSize
             allowed: Integer
@@ -2627,6 +2766,8 @@
             short: File maximum size
             description: |
               Forces a file-fields size to not be higher than...
+              
+              **Since 6.0.3:** Supports placeholders for dynamic validation (e.g., `maxSize: "$(maxUploadSize)"`).
             with_types: file            
           - name: regex
             type: object
@@ -2636,7 +2777,7 @@
               Enforces a validation where the current field must match a regular expression.
               This field requires an object with 2 attributes:
               * `expression` : The regular expression
-              * `description` : A validation message to show when the regex is not matched.
+              * `description` : A validation message to show when the regex is not matched. (**Since 6.0.3:** Supports placeholders for dynamic messages)
             with_types: text, expression, password, datetime, file
             examples:
             - name: Validate email address
@@ -2664,7 +2805,7 @@
               Enforces a validation where the current field can not be one of the values in a list (referencing another field).
               This field requires an object with 2 attributes:
               * `field` : The name of the field that holds the list
-              * `description` : A validation message to show when the validation is not met. (**new in v5.0.1** : can have placeholder)
+              * `description` : A validation message to show when the validation is not met. (**Since 5.0.1:** Supports placeholders for dynamic messages)
             with_types: text, expression, password, datetime
             examples:
             - name: Check if ip exists
@@ -2681,7 +2822,7 @@
               Enforces a validation where the current field must be one of the values in a list (referencing another field).
               This field requires an object with 2 attributes:
               * `field` : The name of the field that holds the list
-              * `description` : A validation message to show when the validation is not met. (**new in v5.0.1** : can have placeholder)
+              * `description` : A validation message to show when the validation is not met. (**Since 5.0.1:** Supports placeholders for dynamic messages)
             with_types: text, expression, password, datetime
             examples:
             - name: Check if ip is in range
@@ -2698,7 +2839,7 @@
               Enforces a validation where a referencing (expression) field must be true.
               This field requires an object with 2 attributes:
               * `field` : The name of the referencing field
-              * `description` : A validation message to show when the validation is not met.  (**new in v5.0.1** : can have placeholder)
+              * `description` : A validation message to show when the validation is not met. (**Since 5.0.1:** Supports placeholders for dynamic messages)
             examples:
             - name: Ip must be pingable
               code: |
@@ -2714,7 +2855,7 @@
               Enforces a validation where a referencing (expression) field must be false.
               This field requires an object with 2 attributes:
               * `field` : The name of the referencing field
-              * `description` : A validation message to show when the validation is not met. (**new in v5.0.1** : can have placeholder)
+              * `description` : A validation message to show when the validation is not met. (**Since 5.0.1:** Supports placeholders for dynamic messages)
             examples:
             - name: Check if powered off
               code: |
@@ -3727,7 +3868,17 @@
           link: forms/form/notifications
           icon: fas,envelope
           description: |
-            When you want to send an email on job-event
+            When you want to send an email on job-event<br>
+            <br>
+            **Email Templates**<br>
+            Notification emails use HTML templates located in `server/src/templates/`:<br>
+            - `approval.html` - Approval request notifications<br>
+            - `jobstatus.html` - Job outcome notifications (success, failed, aborted, warning)<br>
+            - `jobevent.html` - Job lifecycle event notifications (launch, relaunch, delete, approve, reject)<br>
+            <br>
+            These templates can be customized by replacing them with your own versions.<br>
+            In Docker or Kubernetes deployments, mount your custom templates to `/app/dist/src/templates/` to override the defaults.<br>
+            Example Docker mount: `-v /path/to/custom/templates:/app/dist/src/templates/`
           items:
           - name: recipients
             type: array
@@ -3738,7 +3889,7 @@
               A list of email addresses who need to receive a notification
           - name: onStatus
             type: array
-            required: true
+            required: false
             choices:
             - name: any
               description: Always sends a notification 
@@ -3748,9 +3899,33 @@
               description: Sends a notification on job failure
             - name: aborted
               description: Sends a notification on job aborted
+            - name: warning
+              description: Sends a notification on job warning
             short: Jobstatus event
             description: | 
-              A list of jobstatus events you want to send a notification on.  Use `all`, if you always want a notification.      
+              A list of jobstatus events you want to send a notification on.  Use `any`, if you always want a notification.<br>
+              At least one of `onStatus` or `onEvent` must be specified for notifications to be sent.
+          - name: onEvent
+            type: array
+            required: false
+            choices:
+            - name: any
+              description: Always sends a notification for any job event
+            - name: launch
+              description: Job is launched (initially created)
+            - name: relaunch
+              description: Job is relaunched (restarted)
+            - name: delete
+              description: Job is deleted
+            - name: approve
+              description: Job approval is granted
+            - name: reject
+              description: Job approval is rejected
+            short: Job trigger events
+            description: |
+              A list of job lifecycle events (triggers) you want to send a notification on.<br>
+              Unlike `onStatus` which notifies on job outcomes, `onEvent` notifies on user actions and job lifecycle events.<br>
+              Use `any` to be notified of all job events.
           examples: 
           - name: Send a notification on failed
             language: YAML
@@ -3760,6 +3935,32 @@
                   - info@ansibleguy.com
                 onStatus:
                   - failed
+          - name: Send notifications on job events (launch, relaunch, approve, reject)
+            language: YAML
+            code: |
+              notifications:
+                recipients:
+                  - admin@ansibleguy.com
+                  - auditor@ansibleguy.com
+                onEvent:
+                  - launch
+                  - relaunch
+                  - approve
+                  - reject
+          - name: Send notifications on all events
+            language: YAML
+            code: |
+              notifications:
+                recipients:
+                  - admin@ansibleguy.com
+                onStatus:
+                  - any
+                onEvent:
+                  - launch
+                  - relaunch
+                  - delete
+                  - approve
+                  - reject
         - name: Job Status Action
           itemName: attribute
           link: forms/form/job-status-action
@@ -4073,11 +4274,14 @@
         // In the settings you can find the public-key and add your target-host to known_hosts
     - name: list files in a directory
       code: |
-        fn.fnLs('/tmp',{ resursive: true, regex: '.*\.log$' })
+        fn.fnLs('/tmp',{ resursive: true, regex: '.*\.log$', metadata: true })
 
         // fn.fnLs(path,options)
         // - path : path to directory
-        // - options : recursive:boolean, regex:string
+        // - options : recursive:boolean, regex:string ,metadata:boolean
+        //   - recursive : whether to list files recursively
+        //   - regex : a regular expression to filter files
+        //   - metadata : whether to include file metadata (size,mtime,... directories will be shown too)
     - name: parse html page
       code: |
         fn.fnParseHtmlWithRegex('https://ansibleguy.com','<h2.*?>(.*?)</h2>','g')
@@ -4288,6 +4492,82 @@
   description: |
     Frequently Asked Questions.  
   examples:
+  - name: Multi-Repository Form Management
+    short: Use multiple git repositories for forms
+    version: v6.1.0
+    description: |
+      AnsibleForms supports loading forms from multiple git repositories simultaneously. Forms from all repositories with the "Use for forms" switch enabled are automatically merged together.
+      
+      **How it works:**
+      - Configure multiple repositories in Settings → Repositories
+      - Enable the "Use for forms" switch on each repository you want to load forms from
+      - Each repository can contain a `forms/` directory with form YAML files
+      - All forms from all repositories are merged together automatically
+      - Forms with duplicate names will trigger a warning (first one wins)
+      
+      **Configuration File Discovery:**
+      - AnsibleForms will use the FIRST config.yaml (or config.yaml) found across all form repositories
+      - If multiple config files are found, a warning is logged
+      - You can have a single central config repository for shared categories/roles/constants
+      - Or use the local `persistent/config.yaml` file (checked if no repository config found)
+      
+      **Best Practices:**
+      - Keep config.yaml in only ONE repository or use the local persistent/config.yaml
+      - Organize forms by team/project using separate repositories
+      - Use unique form names across all repositories to avoid conflicts
+      - Repository order matters: forms are loaded in database order
+      
+      **Example Setup:**
+      ```
+      Repository 1 (Central Config):
+        - config.yaml (categories, roles, constants)
+      
+      Repository 2 (Network Team):
+        - forms/
+          - switch_config.yaml
+          - router_setup.yaml
+      
+      Repository 3 (Server Team):
+        - forms/
+          - server_deploy.yaml
+          - backup_restore.yaml
+      ```
+      
+      All forms appear together in the UI, automatically merged!
+  - name: Job Relaunch with Pre-filled Data
+    short: Relaunch jobs with form data
+    version: v6.0.3
+    description: |
+      AnsibleForms supports relaunching jobs with pre-filled form data. When you click the relaunch button in the jobs page, the form will open with all field values from the previous job submission.
+      
+      **Security Features:**
+      - Password fields are automatically excluded from storage and retrieval for security
+      - Raw form data is stored separately from processed extravars (before model transformations)
+      
+      **Permission Control:**
+      Forms can disable relaunch functionality using the `disableRelaunch` option:
+      ```yaml
+      - name: Production Deployment
+        disableRelaunch: true  # Prevents relaunching this form
+      ```
+      
+      Users must have the `allowJobRelaunch` role option enabled (admins have this by default):
+      ```yaml
+      roles:
+        - name: operators
+          options:
+            allowJobRelaunch: true  # Allow this role to relaunch jobs
+      ```
+      
+      **Most Restrictive Logic:** Relaunch is only available if BOTH conditions are met:
+      1. Form does NOT have `disableRelaunch: true`
+      2. User role has `allowJobRelaunch: true` (or user is admin)
+      
+      **How it works:**
+      - Raw form data is saved to disk on job submission (excluding passwords)
+      - Clicking relaunch navigates to the form with `?prefillJobId=<id>` parameter
+      - Form loads with all previous values, respecting field dependencies and async queries
+      - Users can modify values before resubmitting
   - name: Cascaded Dropdowns
     short: Make cascaded dropdowns
     description: |
@@ -4647,55 +4927,73 @@
           columns:
             - name
           valueColumn: name           
-  - name: Database upgrade to 8.x
-    short: Database upgrade to 8.x
-    description: |
-      At some point you will want to upgrade the MySql database.  
-      Initially, Ansible Forms came with MySql 5.7, but you can upgrade the database of course.  
-      With docker-compose you can simple change the mysql version number in the docker-compose.yaml file. (the current docker-compose file uses 8.1) 
-      After a docker-compose down/up, the new image will be pulled and installed.  
-      The upgrade is completely transparent, however, after an upgrade from 5.7 to 8.x you will get warnings about `caching_sha2_password`, a newer method of password handling.  
-      To remove the warning you need to do 2 steps:  
-
-      1) Connect to your mysql server and run this :  
-        
-      `ALTER USER 'root'@'%' IDENTIFIED WITH caching_sha2_password BY 'MyPassword';`  
-      `ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY 'MyPassword';`  
-        
-      **NOTE** : Obviously, you need to correct the username and password if you use another connection user and or password.  
-
-      2) In the `my.cnf` file, you need to change this :  
-        
-      ```
-      [mysqld]
-      default_authentication_plugin=caching_sha2_password
-      ```
-        
-      **NOTE** : in the docker-compose solution the location is `${your-docker-compose-path}/data/mysql/my.cnf`
   - name: About repositories
     short: About repositories
     description: |
       Sometimes you want collaboration and versioning and then git repositories are perfect.  
       In version 5.0.0 you can now manage git repositories.  
       Every repository is a subfolder of the repositories-path (`REPO_PATH` environment variable).  
-      Just go to settings / repositories and start managing repositories.  You can either add ssh-based repositories (with public key/known hosts) or https based repositories, public or private with username/password/token.  
-      You can use repositories for synching data-files (yaml files for example to feed formdata).
-      But also the forms.yaml and forms subfolder, as well as all the ansible playbooks and roles are perfect candidates for repositories.  
-      When creating a repository, you can choose if it's for forms or playbooks, which will then automatically override the `FORMS_PATH` and `ANSIBLE_PATH` environment variables.  
-      You can also choose if the repository must be cloned when AnsibleForms starts, and you can add cron-schedule to schedule recurring pull-actions.  
+      Just go to settings / repositories and start managing repositories. You can either add ssh-based repositories (with public key/known hosts) or https based repositories, public or private with username/password/token.
+      
+      **Since version 6.1.0**, you can add multiple repositories and use specific switches to control what they're used for:
+      
+      ## Repository Switches (6.1.0+)
+      
+      - **use for config** - Repository contains config.yaml (categories, roles, constants)
+      - **use for forms** - Repository contains forms (supports multiple repositories, forms are merged)
+      - **use for playbooks** - Repository contains Ansible playbooks and roles
+      - **use for vars files** - Repository contains vars files for forms
+      
+      ## Repository Structure
+      
+      Each repository can contain subfolders or files directly in the root:
+      
+      - **config.yaml** - Placed in repository root (when using "use for config")
+      - **forms/** subfolder or root - Forms YAML files (when using "use for forms")
+      - **playbooks/** subfolder or root - Ansible playbooks (when using "use for playbooks")
+      - **vars/** subfolder or root - Vars files (when using "use for vars files")
+      
+      If a subfolder doesn't exist, AnsibleForms will fall back to the repository root.
+      
+      ## Single Repository vs Multiple Repositories
+      
+      **Single repository approach** (all in one):
+      - Enable all switches on one repository
+      - Structure: `config.yaml` in root, `forms/`, `playbooks/`, and `vars/` subfolders
+      
+      **Multiple repository approach** (separated):
+      - Use separate repositories for config, forms, playbooks, and vars files
+      - Each repository can have files directly in root (no subfolders needed)
+      - Forms can come from multiple repositories (will be merged)
+      
+      **Important notes:**
+      - Only ONE repository should have "use for config" enabled (warning if multiple)
+      - Only ONE repository should have "use for playbooks" enabled (playbooks cannot be merged)
+      - Only ONE repository should have "use for vars files" enabled
+      - MULTIPLE repositories can have "use for forms" enabled (forms will be merged)
+      
+      ## Configuration Priority
+      
+      Config loading (first match wins):
+      1. Database (if imported)
+      2. Repository with "use for config" enabled
+      3. Repository with "use for forms" enabled (backwards compatibility)
+      4. Local CONFIG_PATH file
+      5. Legacy forms.yaml file
+      
+      ## Additional Features
+      
+      You can choose if the repository must be cloned when AnsibleForms starts, and you can add cron-schedule to schedule recurring pull-actions.  
       Additionally, in the swagger interface, you will find a clone and pull rest api for webhooks.  
       In case you want long-lived access tokens for the webhooks, with swagger you can pass an expiryDays parameter (for admin roles only) and create long-lived tokens.
-  # - name: Host Ansibleforms in a subfolder
-  #   short: Host Ansibleforms in a subfolder
-  #   description: |
-  #     In the case you want to host ansibleforms in subfolder, for example `https://af.domain.local/mysubfolder/`.  
-  #     You can use the environment variable `BASE_URL`.  Set it to `/mysubfolder/` (default is `/`).  
   - name: Enable ytt
     short: Enable ytt
     description: |
       In the case you want to use ytt, it can be enabled by setting `USE_YTT=1`.  
       Read more info about ytt (https://carvel.dev/ytt/).  
         
+      **NOTE** : This feature has not been heavily tested and was added as an enhancement with no feedback after it was added.
+      
       **NOTE** : when using ytt, you must disable the designer, the designer will convert the yaml files to intermediate json and will drop the ytt syntax (which is yaml comments).
 
         
@@ -4725,7 +5023,7 @@
         
       Then, the loaded data can be used:
       ```yaml
-      # forms.yaml
+      # config.yaml
       #@ load("@ytt:data", "data")
       #@ load("@ytt:library", "library")
       #@ demo = library.get("demo")
@@ -4740,15 +5038,5 @@
       constants:
         data_values: #@ data.values
         demo: #@ demo.data_values()
-      forms:
-        - name: Demo Form
-          type: ansible
-          inventory: #@ data.values.INVENTORY_PATH
-          playbook: dummy.yml
-      fields:
-        - name: var_message
-          type: text
-          label: Message
-          default: Object($(demo)).message
-          evalDefault: true
+
       ```      

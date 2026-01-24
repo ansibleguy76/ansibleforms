@@ -19,6 +19,10 @@
 
     const model = defineModel();
 
+    // EMITS
+
+    const emit = defineEmits(['change']);
+
     // PROPS
 
     const props = defineProps({
@@ -52,7 +56,13 @@
         },
     });
 
+    // METHODS
+
+    const handleChange = (event) => {
+        emit('change', event);
+    };
+
 </script>
 <template>
-    <BsRadiobutton :name="name" v-model="model" v-for="radiovalue in values" :inline="true" :value="(typeof radiovalue=='string')?radiovalue:radiovalue.value" :key="(typeof radiovalue=='string')?radiovalue:radiovalue.value" :label="(typeof radiovalue=='string')?radiovalue:radiovalue.label" :disabled="disabled" :style="style" :cssClass="cssClass" :hasError="hasError" />
+    <BsRadiobutton :name="name" v-model="model" v-for="radiovalue in values" :inline="true" :value="(typeof radiovalue=='string')?radiovalue:radiovalue.value" :key="(typeof radiovalue=='string')?radiovalue:radiovalue.value" :label="(typeof radiovalue=='string')?radiovalue:radiovalue.label" :disabled="disabled" :style="style" :cssClass="cssClass" :hasError="hasError" @change="handleChange" />
 </template>

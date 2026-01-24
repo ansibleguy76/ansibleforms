@@ -20,8 +20,8 @@ page_nav:
         content: Installation
         url: '/installation'
     next:
-        content: Forms configuration
-        url: '/forms'
+        content: Configuration (config.yaml)
+        url: '/config'
 ---
 
 # Environment Variables

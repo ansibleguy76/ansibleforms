@@ -7,8 +7,8 @@ comments: false
 # Hero section
 title: Creating forms
 description: | 
-  Once you understand the <code>forms.yaml</code> structure, you can now focus on the forms part.<br>
-  You can choose to either put all the forms in the master forms.yaml file, or you can create several yaml files under the <code>/forms</code> folder.<br>
+  Once you understand the <code>config.yml</code> structure, you can now focus on the forms part.<br>
+  You can choose to either put all the forms in the master config.yml file, or you can create several yaml files under the <code>/forms</code> folder.<br>
   AnsibleForms will read them all and merge them together.
 # Micro navigation
 micro_nav: true
@@ -19,7 +19,7 @@ hide_scrollspy: false
 # Page navigation
 page_nav:
     prev:
-        content: Forms configuration
+        content: Forms Overview
         url: '/forms'
     next:
         content: Formfields

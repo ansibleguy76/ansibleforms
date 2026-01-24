@@ -84,6 +84,10 @@ const props = defineProps(
             type: Object,
             default: () => { return {} }
         },
+        initialData: {
+            type: Object,
+            default: () => { return {} }
+        },
     }
 )
 
@@ -95,6 +99,9 @@ const externalData = ref({});         // object to hold external data
 const hideForm = ref(false);         // flag to hide form
 const watchdog = ref(0);                  // main loop counter
 const loopDelay = ref(100);                // main loop delay
+const isInitializing = ref(false);         // flag set during pre-fill initialization to suppress defaults
+const pendingInitialData = ref({});        // tracks initialData fields not yet applied
+const protectedFields = ref({});           // tracks fields with prefill/manual values that should not be reset
 const dynamicFieldDependencies = ref({});                 // which fields need to be re-evaluated if other fields change
 const dynamicFieldDependentOf = ref({});                 // which fields are dependend from others
 const unevaluatedFields = ref([]);                 // list of unevaluatedFields
@@ -171,56 +178,221 @@ const rules = computed(() => {
         // min and max size for files
         if ("minSize" in ff) {
             if (ff.type == 'file') {
-                var description = `Size (${Helpers.humanFileSize(form.value[ff.name]?.size)}) cannot be lower than ${Helpers.humanFileSize(ff.minSize)}`
-                rule.minSize = helpers.withParams(
-                    { description: description, type: "minSize" },
-                    (file) => !helpers.req(file?.name) || file?.size >= ff.minSize
-                )
+                const hasPlaceholder = typeof ff.minSize === 'string' && /\$\(([^)]+)\)/.test(ff.minSize);
+                
+                if (hasPlaceholder) {
+                    rule.minSize = helpers.withParams(
+                        { 
+                            description: computed(() => {
+                                const result = replacePlaceholderInString(String(ff.minSize), false);
+                                const resolvedValue = result.value !== undefined ? Number(result.value) : ff.minSize;
+                                return `Size (${Helpers.humanFileSize(form.value[ff.name]?.size)}) cannot be lower than ${Helpers.humanFileSize(resolvedValue)}`;
+                            }),
+                            type: "minSize" 
+                        },
+                        (file) => {
+                            if (!helpers.req(file?.name)) return true;
+                            const result = replacePlaceholderInString(String(ff.minSize), false);
+                            if (result.value === undefined) return true;
+                            const minVal = Number(result.value);
+                            if (isNaN(minVal)) {
+                                console.warn(`minSize placeholder resolved to non-numeric value: ${result.value}`);
+                                return true;
+                            }
+                            return file?.size >= minVal;
+                        }
+                    );
+                } else {
+                    const numericMin = Number(ff.minSize);
+                    var description = `Size (${Helpers.humanFileSize(form.value[ff.name]?.size)}) cannot be lower than ${Helpers.humanFileSize(numericMin)}`
+                    rule.minSize = helpers.withParams(
+                        { description: description, type: "minSize" },
+                        (file) => !helpers.req(file?.name) || file?.size >= numericMin
+                    );
+                }
             }
         }
         if ("maxSize" in ff) {
             if (ff.type == 'file') {
-                description = `Size (${Helpers.humanFileSize(form.value[ff.name]?.size)}) cannot be higher than ${Helpers.humanFileSize(ff.maxSize)}`
-                rule.maxSize = helpers.withParams(
-                    { description: description, type: "maxSize" },
-                    (file) => !helpers.req(file?.name) || file?.size <= ff.maxSize
-                )
+                const hasPlaceholder = typeof ff.maxSize === 'string' && /\$\(([^)]+)\)/.test(ff.maxSize);
+                
+                if (hasPlaceholder) {
+                    rule.maxSize = helpers.withParams(
+                        { 
+                            description: computed(() => {
+                                const result = replacePlaceholderInString(String(ff.maxSize), false);
+                                const resolvedValue = result.value !== undefined ? Number(result.value) : ff.maxSize;
+                                return `Size (${Helpers.humanFileSize(form.value[ff.name]?.size)}) cannot be higher than ${Helpers.humanFileSize(resolvedValue)}`;
+                            }),
+                            type: "maxSize" 
+                        },
+                        (file) => {
+                            if (!helpers.req(file?.name)) return true;
+                            const result = replacePlaceholderInString(String(ff.maxSize), false);
+                            if (result.value === undefined) return true;
+                            const maxVal = Number(result.value);
+                            if (isNaN(maxVal)) {
+                                console.warn(`maxSize placeholder resolved to non-numeric value: ${result.value}`);
+                                return true;
+                            }
+                            return file?.size <= maxVal;
+                        }
+                    );
+                } else {
+                    const numericMax = Number(ff.maxSize);
+                    description = `Size (${Helpers.humanFileSize(form.value[ff.name]?.size)}) cannot be higher than ${Helpers.humanFileSize(numericMax)}`
+                    rule.maxSize = helpers.withParams(
+                        { description: description, type: "maxSize" },
+                        (file) => !helpers.req(file?.name) || file?.size <= numericMax
+                    );
+                }
             }
         }
         // min and max value for numbers
         if ("minValue" in ff) {
-            var description = `${ff.label} must be at least ${ff.minValue}`
-            rule.minValue = helpers.withParams(
-                { description: description, type: "minValue" },
-                (value) => !helpers.req(value) || value >= ff.minValue
-            )
+            const hasPlaceholder = typeof ff.minValue === 'string' && /\$\(([^)]+)\)/.test(ff.minValue);
+            
+            if (hasPlaceholder) {
+                rule.minValue = helpers.withParams(
+                    { 
+                        description: computed(() => {
+                            const result = replacePlaceholderInString(String(ff.minValue), false);
+                            const resolvedValue = result.value !== undefined ? result.value : ff.minValue;
+                            return `${ff.label} must be at least ${resolvedValue}`;
+                        }),
+                        type: "minValue" 
+                    },
+                    (value) => {
+                        if (!helpers.req(value)) return true;
+                        const result = replacePlaceholderInString(String(ff.minValue), false);
+                        if (result.value === undefined) return true;
+                        const minVal = Number(result.value);
+                        if (isNaN(minVal)) {
+                            console.warn(`minValue placeholder resolved to non-numeric value: ${result.value}`);
+                            return true;
+                        }
+                        return value >= minVal;
+                    }
+                );
+            } else {
+                const numericMin = Number(ff.minValue);
+                var description = `${ff.label} must be at least ${numericMin}`;
+                rule.minValue = helpers.withParams(
+                    { description: description, type: "minValue" },
+                    (value) => !helpers.req(value) || value >= numericMin
+                );
+            }
         }
         if ("maxValue" in ff) {
-            var description = `${ff.label} must be at most ${ff.maxValue}`
-            rule.maxValue = helpers.withParams(
-                { description: description, type: "maxValue" },
-                (value) => !helpers.req(value) || value <= ff.maxValue
-            )
+            const hasPlaceholder = typeof ff.maxValue === 'string' && /\$\(([^)]+)\)/.test(ff.maxValue);
+            
+            if (hasPlaceholder) {
+                rule.maxValue = helpers.withParams(
+                    { 
+                        description: computed(() => {
+                            const result = replacePlaceholderInString(String(ff.maxValue), false);
+                            const resolvedValue = result.value !== undefined ? result.value : ff.maxValue;
+                            return `${ff.label} must be at most ${resolvedValue}`;
+                        }),
+                        type: "maxValue" 
+                    },
+                    (value) => {
+                        if (!helpers.req(value)) return true;
+                        const result = replacePlaceholderInString(String(ff.maxValue), false);
+                        if (result.value === undefined) return true;
+                        const maxVal = Number(result.value);
+                        if (isNaN(maxVal)) {
+                            console.warn(`maxValue placeholder resolved to non-numeric value: ${result.value}`);
+                            return true;
+                        }
+                        return value <= maxVal;
+                    }
+                );
+            } else {
+                const numericMax = Number(ff.maxValue);
+                var description = `${ff.label} must be at most ${numericMax}`;
+                rule.maxValue = helpers.withParams(
+                    { description: description, type: "maxValue" },
+                    (value) => !helpers.req(value) || value <= numericMax
+                );
+            }
         }
         // min and max length for strings
         if ("minLength" in ff) {
-            var description = `${ff.label} must be at least ${ff.minLength} characters long`
-            rule.minLength = helpers.withParams(
-                { description: description, type: "minLength" },
-                (value) => !helpers.req(value) || value.length >= ff.minLength
-            )
+            const hasPlaceholder = typeof ff.minLength === 'string' && /\$\(([^)]+)\)/.test(ff.minLength);
+            
+            if (hasPlaceholder) {
+                rule.minLength = helpers.withParams(
+                    { 
+                        description: computed(() => {
+                            const result = replacePlaceholderInString(String(ff.minLength), false);
+                            const resolvedValue = result.value !== undefined ? result.value : ff.minLength;
+                            return `${ff.label} must be at least ${resolvedValue} characters long`;
+                        }),
+                        type: "minLength" 
+                    },
+                    (value) => {
+                        if (!helpers.req(value)) return true;
+                        const result = replacePlaceholderInString(String(ff.minLength), false);
+                        if (result.value === undefined) return true;
+                        const minLen = Number(result.value);
+                        if (isNaN(minLen)) {
+                            console.warn(`minLength placeholder resolved to non-numeric value: ${result.value}`);
+                            return true;
+                        }
+                        return value.length >= minLen;
+                    }
+                );
+            } else {
+                const numericMin = Number(ff.minLength);
+                var description = `${ff.label} must be at least ${numericMin} characters long`;
+                rule.minLength = helpers.withParams(
+                    { description: description, type: "minLength" },
+                    (value) => !helpers.req(value) || value.length >= numericMin
+                );
+            }
         }
         if ("maxLength" in ff) {
-            var description = `${ff.label} must be at most ${ff.maxLength} characters long`
-            rule.maxLength = helpers.withParams(
-                { description: description, type: "maxLength" },
-                (value) => !helpers.req(value) || value.length <= ff.maxLength
-            )
+            const hasPlaceholder = typeof ff.maxLength === 'string' && /\$\(([^)]+)\)/.test(ff.maxLength);
+            
+            if (hasPlaceholder) {
+                rule.maxLength = helpers.withParams(
+                    { 
+                        description: computed(() => {
+                            const result = replacePlaceholderInString(String(ff.maxLength), false);
+                            const resolvedValue = result.value !== undefined ? result.value : ff.maxLength;
+                            return `${ff.label} must be at most ${resolvedValue} characters long`;
+                        }),
+                        type: "maxLength" 
+                    },
+                    (value) => {
+                        if (!helpers.req(value)) return true;
+                        const result = replacePlaceholderInString(String(ff.maxLength), false);
+                        if (result.value === undefined) return true;
+                        const maxLen = Number(result.value);
+                        if (isNaN(maxLen)) {
+                            console.warn(`maxLength placeholder resolved to non-numeric value: ${result.value}`);
+                            return true;
+                        }
+                        return value.length <= maxLen;
+                    }
+                );
+            } else {
+                const numericMax = Number(ff.maxLength);
+                var description = `${ff.label} must be at most ${numericMax} characters long`;
+                rule.maxLength = helpers.withParams(
+                    { description: description, type: "maxLength" },
+                    (value) => !helpers.req(value) || value.length <= numericMax
+                );
+            }
         }
         // regex validation
         if ("regex" in ff) {
             var regexObj = new RegExp(ff.regex.expression)
-            var description = ff.regex.description
+            var description = computed(() => {
+                const result = replacePlaceholderInString(ff.regex.description, false);
+                return result.value !== undefined ? result.value : ff.regex.description;
+            });
             if (ff.type == 'file') {
                 rule.regex = helpers.withParams(
                     { description: description, type: "regex" },
@@ -235,14 +407,20 @@ const rules = computed(() => {
         }
         // validIf and validIfNot
         if ("validIf" in ff) {
-            var description = ff.validIf.description
+            var description = computed(() => {
+                const result = replacePlaceholderInString(ff.validIf.description, false);
+                return result.value !== undefined ? result.value : ff.validIf.description;
+            });
             rule.validIf = helpers.withParams(
                 { description: description, type: "validIf" },
                 (value) => !helpers.req(value) || !!form.value[ff.validIf.field]
             )
         }
         if ("validIfNot" in ff) {
-            var description = ff.validIfNot.description
+            var description = computed(() => {
+                const result = replacePlaceholderInString(ff.validIfNot.description, false);
+                return result.value !== undefined ? result.value : ff.validIfNot.description;
+            });
             rule.validIfNot = helpers.withParams(
                 { description: description, type: "validIfNot" },
                 (value) => !helpers.req(value) || !form.value[ff.validIfNot.field]
@@ -250,14 +428,20 @@ const rules = computed(() => {
         }
         // notIn and in
         if ("notIn" in ff) {
-            var description = ff.notIn.description
+            var description = computed(() => {
+                const result = replacePlaceholderInString(ff.notIn.description, false);
+                return result.value !== undefined ? result.value : ff.notIn.description;
+            });
             rule.notIn = helpers.withParams(
                 { description: description, type: "notIn" },
                 (value) => !helpers.req(value) || (form.value[ff.notIn.field] != undefined && Array.isArray(form.value[ff.notIn.field]) && !form.value[ff.notIn.field].includes(value))
             )
         }
         if ("in" in ff) {
-            var description = ff.in.description
+            var description = computed(() => {
+                const result = replacePlaceholderInString(ff.in.description, false);
+                return result.value !== undefined ? result.value : ff.in.description;
+            });
             rule.in = helpers.withParams(
                 { description: description, type: "in" },
                 (value) => !helpers.req(value) || (form.value[ff.in.field] != undefined && Array.isArray(form.value[ff.in.field]) && form.value[ff.in.field].includes(value))
@@ -313,6 +497,63 @@ const formLoopIsBusy = computed(() => loopDelay.value != 500)
 
 // the interval to refresh json generation
 const loopDivider = computed(() => 5000 / loopDelay.value);
+
+// computed field labels with placeholder support
+const fieldLabels = computed(() => {
+    const labels = {};
+    props.currentForm.fields?.forEach(field => {
+        if (field.label && typeof field.label === 'string' && /\$\(([^)]+)\)/.test(field.label)) {
+            // Has placeholder - create reactive computed
+            labels[field.name] = computed(() => {
+                form.value; // Track form for reactivity
+                const result = replacePlaceholderInString(field.label, false);
+                return result.value !== undefined ? result.value : field.label;
+            });
+        } else {
+            // No placeholder - use static value
+            labels[field.name] = field.label || field.name;
+        }
+    });
+    return labels;
+});
+
+// computed field help text with placeholder support
+const fieldHelp = computed(() => {
+    const help = {};
+    props.currentForm.fields?.forEach(field => {
+        if (field.help && typeof field.help === 'string' && /\$\(([^)]+)\)/.test(field.help)) {
+            // Has placeholder - create reactive computed
+            help[field.name] = computed(() => {
+                form.value; // Track form for reactivity
+                const result = replacePlaceholderInString(field.help, false);
+                return result.value !== undefined ? result.value : field.help;
+            });
+        } else {
+            // No placeholder - use static value
+            help[field.name] = field.help || '';
+        }
+    });
+    return help;
+});
+
+// computed field placeholders with placeholder support
+const fieldPlaceholders = computed(() => {
+    const placeholders = {};
+    props.currentForm.fields?.forEach(field => {
+        if (field.placeholder && typeof field.placeholder === 'string' && /\$\(([^)]+)\)/.test(field.placeholder)) {
+            // Has placeholder - create reactive computed
+            placeholders[field.name] = computed(() => {
+                form.value; // Track form for reactivity
+                const result = replacePlaceholderInString(field.placeholder, false);
+                return result.value !== undefined ? result.value : field.placeholder;
+            });
+        } else {
+            // No placeholder - use static value
+            placeholders[field.name] = field.placeholder || '';
+        }
+    });
+    return placeholders;
+});
 
 // METHODS
 //----------------------------------------------------------------
@@ -573,6 +814,11 @@ function setFieldToDefault(fieldname) {
     // reset to default value
     // console.log(`defaulting ${fieldname}`)
     try {
+        // During initialization, check if field is in pending queue
+        if (isInitializing.value && fieldname in pendingInitialData.value) {
+            return; // Don't apply default, let initialData win
+        }
+        
         // if there is a default, set "default" status
         if (defaults.value[fieldname] != undefined) {
             setFieldStatus(fieldname, "default")
@@ -633,8 +879,11 @@ function hasDefaultDependencies(fieldname) {
 // first time run, load all the default values (can be dynamic)
 function initiateDefaults(fieldname = undefined) {
     props.currentForm.fields.filter(x => !fieldname || fieldname == x.name).forEach((item, i) => {
-        if (item.name in externalData) {
-            defaults.value[item.name] = externalData[item.name]
+        // During initialization, use initialData as the default (overrides everything)
+        if (isInitializing.value && item.name in pendingInitialData.value) {
+            defaults.value[item.name] = pendingInitialData.value[item.name];
+        } else if (item.name in externalData.value) {
+            defaults.value[item.name] = externalData.value[item.name]
         } else {
             defaults.value[item.name] = getDefaultValue(item.name, item.default)
         }
@@ -935,6 +1184,10 @@ function evaluateDynamicFields(fieldname) {
         dynamicFieldDependencies.value[fieldname].forEach((item, i) => { // loop all dynamic fields and reset them
             // set all variable fields blank and re-evaluate
             if (!fieldOptions.value[item].editable) {
+                // Skip reset for protected fields (prefilled or manually edited)
+                if (protectedFields.value[item]) {
+                    return;
+                }
                 // all dependent fields we reset, so they can be re-evaluated
                 resetField(item)
             }
@@ -979,6 +1232,18 @@ function initForm() {
     canSubmit.value = false;
     pretasksFinished.value = false;
     timeout.value = undefined;
+    pendingInitialData.value = {};
+    isInitializing.value = false;
+    protectedFields.value = {};
+
+    // Check if we have initialData to apply
+    const hasInitialData = Object.keys(props.initialData).length > 0;
+    if (hasInitialData) {
+        // Copy all initialData to pending queue
+        pendingInitialData.value = { ...props.initialData };
+        // Set initializing flag to suppress defaults during load
+        isInitializing.value = true;
+    }
 
     // inject user
     form.value["__user__"] = TokenStorage.getPayload().user;
@@ -1017,6 +1282,7 @@ function initForm() {
                 type: "constant",
             };
             form.value[item] = props.constants[item];
+            dynamicFieldStatus.value[item] = "fixed"; // Mark constants as evaluated/ready
         });
     }
 
@@ -1053,7 +1319,23 @@ function initForm() {
             if (item.refresh && typeof item.refresh == 'string' && /[0-9]+s/.test(item.refresh)) {
                 fieldOptions.value[item.name]["refresh"] = item.refresh;
             }
-            form.value[item.name] = externalData.value[item.name] ?? getDefaultValue(item.name, item.default);
+            // Check if we have initialData for this field
+            if (item.name in pendingInitialData.value) {
+                // For enum/query/table fields with expressions, keep in pendingInitialData for loop to apply after options load
+                // For expression/html or static enum/query/table, set value and status now
+                const needsOptionsFirst = ['enum', 'query', 'table'].includes(item.type) && (item.expression || item.query);
+                if (!needsOptionsFirst) {
+                    form.value[item.name] = pendingInitialData.value[item.name];
+                    protectedFields.value[item.name] = true;
+                    dynamicFieldStatus.value[item.name] = "fixed";
+                } else {
+                    // For enum/query/table with expressions, set status to undefined so loop will load options first
+                    dynamicFieldStatus.value[item.name] = undefined;
+                }
+                // If needsOptionsFirst, leave in pendingInitialData for loop to handle
+            } else {
+                form.value[item.name] = externalData.value[item.name] ?? getDefaultValue(item.name, item.default);
+            }
             if (item.type == "table" && !defaults.value[item.name]) {
                 form.value[item.name] = [];
             }
@@ -1065,7 +1347,15 @@ function initForm() {
             if (item.type == "checkbox") {
                 fallbackvalue = false;
             }
-            form.value[item.name] = externalData.value[item.name] ?? getDefaultValue(item.name, item.default) ?? fallbackvalue;
+            // Check if we have initialData for this field - if so, use it instead of evaluating default
+            if (item.name in pendingInitialData.value) {
+                form.value[item.name] = pendingInitialData.value[item.name];
+                protectedFields.value[item.name] = true; // Mark as protected from reset
+                // Set status to 'fixed' so they can be referenced by expressions
+                dynamicFieldStatus.value[item.name] = "fixed";
+            } else {
+                form.value[item.name] = externalData.value[item.name] ?? getDefaultValue(item.name, item.default) ?? fallbackvalue;
+            }
         }
         visibility.value[item.name] = true;
     });
@@ -1080,15 +1370,35 @@ function initForm() {
     findVariableDependencies();
     findVariableDependentOf();
 
+    // Apply top-level fields from initialData (fields with no dependencies)
+    if (Object.keys(pendingInitialData.value).length > 0) {
+        props.currentForm.fields.forEach((item) => {
+            const fieldname = item.name;
+            if (fieldname in pendingInitialData.value) {
+                const hasNoDeps = !dynamicFieldDependentOf.value[fieldname] || 
+                                 dynamicFieldDependentOf.value[fieldname].length === 0;
+                // Skip enum/query/table fields - they need their options to load first
+                const needsOptionsFirst = ['enum', 'query', 'table'].includes(item.type) && (item.expression || item.query);
+                // Skip expression fields - they should re-evaluate with new context, not use cached values
+                const isExpressionField = item.type === 'expression' && (item.expression || item.query);
+                if (isExpressionField) {
+                    delete pendingInitialData.value[fieldname];
+                } else if (hasNoDeps && !needsOptionsFirst) {
+                    form.value[fieldname] = pendingInitialData.value[fieldname];
+                    protectedFields.value[fieldname] = true; // Mark as protected from reset
+                    // Set status to 'fixed' for ALL prefilled fields so they can be referenced by expressions
+                    dynamicFieldStatus.value[fieldname] = "fixed";
+                    delete pendingInitialData.value[fieldname];
+                }
+            }
+        });
+    }
+
     // for future use, run something before the form starts
     pretasksFinished.value = true;
 
     // start dynamic field loop (= infinite)
-    startDynamicFieldsLoop().then(() => {
-        console.log("Dynamic fields loop started");
-    }).catch((err) => {
-        console.log("Dynamic fields loop failed to start");
-    });
+    startDynamicFieldsLoop();
 }
 
 
@@ -1125,9 +1435,32 @@ async function startDynamicFieldsLoop() {
                                 } else {
                                     result = Helpers.evalSandbox(placeholderCheck.value);
                                 }
-                                if (item.type == "html") form.value[item.name] = result;
-                                if (item.type == "expression") form.value[item.name] = result;
-                                if (item.type == "enum") queryresults.value[item.name] = [].concat(result);
+                                if (item.type == "html") {
+                                    // Check for pending initialData
+                                    if (item.name in pendingInitialData.value) {
+                                        form.value[item.name] = pendingInitialData.value[item.name];
+                                        delete pendingInitialData.value[item.name];
+                                    } else {
+                                        form.value[item.name] = result;
+                                    }
+                                }
+                                if (item.type == "expression") {
+                                    // Expression fields should re-evaluate, not use cached prefill values
+                                    if (item.name in pendingInitialData.value) {
+                                        delete pendingInitialData.value[item.name];
+                                    }
+                                    form.value[item.name] = result;
+                                }
+                                if (item.type == "enum") {
+                                    queryresults.value[item.name] = [].concat(result);
+                                    // Check if we have pending initialData for this enum field
+                                    if (item.name in pendingInitialData.value) {
+                                        form.value[item.name] = pendingInitialData.value[item.name];
+                                        protectedFields.value[item.name] = true; // Mark as protected from reset
+                                        setFieldStatus(item.name, "fixed"); // Mark as ready for dependent fields
+                                        delete pendingInitialData.value[item.name];
+                                    }
+                                }
                                 if (item.type == "table" && !defaults.value[item.name]) form.value[item.name] = [].concat(result);
                                 if (item.type == "table" && defaults.value[item.name]) form.value[item.name] = [].concat(defaults.value[item.name]);
 
@@ -1158,9 +1491,32 @@ async function startDynamicFieldsLoop() {
                                     delete queryerrors.value[item.name];
                                 }
                                 if (restresult.status == "success") {
-                                    if (item.type == "html") form.value[item.name] = restresult.data.output;
-                                    if (item.type == "expression") form.value[item.name] = restresult.data.output;
-                                    if (item.type == "enum") queryresults.value[item.name] = [].concat(restresult.data.output ?? []);
+                                    if (item.type == "html") {
+                                        // Check for pending initialData
+                                        if (item.name in pendingInitialData.value) {
+                                            form.value[item.name] = pendingInitialData.value[item.name];
+                                            delete pendingInitialData.value[item.name];
+                                        } else {
+                                            form.value[item.name] = restresult.data.output;
+                                        }
+                                    }
+                                    if (item.type == "expression") {
+                                        // Expression fields should re-evaluate, not use cached prefill values
+                                        if (item.name in pendingInitialData.value) {
+                                            delete pendingInitialData.value[item.name];
+                                        }
+                                        form.value[item.name] = restresult.data.output;
+                                    }
+                                    if (item.type == "enum") {
+                                        queryresults.value[item.name] = [].concat(restresult.data.output ?? []);
+                                        // Check if we have pending initialData for this enum field
+                                        if (item.name in pendingInitialData.value) {
+                                            form.value[item.name] = pendingInitialData.value[item.name];
+                                            protectedFields.value[item.name] = true; // Mark as protected from reset
+                                            setFieldStatus(item.name, "fixed"); // Mark as ready for dependent fields
+                                            delete pendingInitialData.value[item.name];
+                                        }
+                                    }
                                     if (item.type == "table" && !defaults.value[item.name]) form.value[item.name] = [].concat(restresult.data.output ?? []);
                                     if (item.type == "table" && defaults.value[item.name]) form.value[item.name] = [].concat(defaults.value[item.name] ?? []);
 
@@ -1249,10 +1605,22 @@ async function startDynamicFieldsLoop() {
                     setFieldStatus(item.name, "fixed");
                 }
             } else {
-                if (item.type == "expression") {
-                    setFieldToDefault(item.name);
-                } else if (item.type == "query" || item.type == "enum" || item.type == "table") {
-                    resetField(item.name);
+                // Check if this field has pending initialData before defaulting
+                if (item.name in pendingInitialData.value) {
+                    // Check if all dependencies are satisfied (not undefined)
+                    const deps = dynamicFieldDependentOf.value[item.name] || [];
+                    const allDepsSatisfied = deps.every(dep => form.value[dep] !== undefined);
+                    
+                    if (allDepsSatisfied) {
+                        form.value[item.name] = pendingInitialData.value[item.name];
+                        delete pendingInitialData.value[item.name];
+                    }
+                } else {
+                    if (item.type == "expression") {
+                        setFieldToDefault(item.name);
+                    } else if (item.type == "query" || item.type == "enum" || item.type == "table") {
+                        resetField(item.name);
+                    }
                 }
             }
             if (item.type == "number" && form.value[item.name] === "") {
@@ -1275,6 +1643,14 @@ async function startDynamicFieldsLoop() {
         }
 
         if (!hasUnevaluatedFields) {
+            // Check if initialization is complete (all pendingInitialData applied)
+            if (isInitializing.value && Object.keys(pendingInitialData.value).length == 0) {
+                // Clear all initialization-specific state
+                isInitializing.value = false;
+                pendingInitialData.value = {};  // Ensure clean state
+                protectedFields.value = {};      // Allow normal re-evaluation when user changes fields
+                console.log('Form initialization complete');
+            }
             canSubmit.value = true;
             if (watchdog.value > 0) {
                 // All fields are found
@@ -1388,10 +1764,10 @@ onUnmounted(() => {
 
         <!-- GROUPS -->
         <template :key="group" v-for="group in fieldGroups" v-show="!hideForm">
-            <div class="mt-4 p-3" :class="getGroupClass(group)">
+            <div v-if="checkGroupDependencies(group)" class="mt-4 p-3" :class="getGroupClass(group)">
 
                 <!-- GROUP TITLE -->
-                <h3 v-if="checkGroupDependencies(group)">{{ group }}</h3>
+                <h3>{{ group }}</h3>
 
                 <!-- ROWS -->
                 <div :key="line" v-for="line in fieldLines" class="row">
@@ -1399,13 +1775,30 @@ onUnmounted(() => {
                     <template v-for="field in filterfieldsByGroupAndLine(group, line)">
 
                         <div class="col py-0" v-if="visibility[field.name]" :class="field.width">
-                            <div class="mt-3">
-                                <div v-show="field.type != 'html'" class="d-flex">
+                            
+                            <!-- TYPE = HTML (separate rendering, optional label) -->
+                            <div class="mt-3" v-if="field.type == 'html'">
+                                <!-- FIELD LABEL (only if label is explicitly set and different from field name) -->
+                                <label v-if="field.label && field.label !== field.name" class="flex-grow-1 fw-bold mb-2"
+                                    :class="{ 'text-body': !field.hide, 'text-grey': field.hide }">{{ typeof fieldLabels[field.name] === 'object' ? fieldLabels[field.name].value : fieldLabels[field.name] }}
+                                </label>
+                                
+                                <div v-show="!fieldOptions[field.name].viewable" v-html="v$.form[field.name].$model || ''"></div>
+                                <!-- raw data -->
+                                <div @dblclick="setExpressionFieldViewable(field.name, false)"
+                                    v-if="fieldOptions[field.name].viewable"
+                                    class="card p-2 limit-height">
+                                    <VueJsonPretty :data="v$.form[field.name].$model || ''" />
+                                </div>                                       
+                            </div>
+
+                            <!-- ALL OTHER FIELD TYPES -->
+                            <div v-else class="mt-3">
+                                <div class="d-flex">
 
                                     <!-- FIELD LABEL -->
                                     <label class="flex-grow-1 fw-bold mb-2"
-                                        :class="{ 'text-body': !field.hide, 'text-grey': field.hide }">{{ field.label ||
-                                        field.name }} <span v-if="field.required" class="text-danger">*</span></label>
+                                        :class="{ 'text-body': !field.hide, 'text-grey': field.hide }">{{ typeof fieldLabels[field.name] === 'object' ? fieldLabels[field.name].value : fieldLabels[field.name] }} <span v-if="field.required" class="text-danger">*</span></label>
 
                                     <!-- FIELD DEBUG BUTTONS -->
                                     <div>
@@ -1489,7 +1882,7 @@ onUnmounted(() => {
                                         :values="form[field.name] || []" @update:modelValue="evaluateDynamicFields(field.name)"
                                         @warning="addTableWarnings(field.name, ...arguments)" 
                                         :errors="v$.form[field.name].$errors"
-                                        :help="field.help"
+                                        :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]"
                                     />
                                     <!-- expression raw data -->
                                     <div @dblclick="setExpressionFieldViewable(field.name, false)" v-if="fieldOptions[field.name].viewable"
@@ -1498,24 +1891,12 @@ onUnmounted(() => {
                                     </div>                                    
                                 </div>
 
-                                <!-- TYPE = HTML -->
-                                <div class="mt-3" v-if="field.type == 'html'">
-                                    <div v-show="!fieldOptions[field.name].viewable" v-html="v$.form[field.name].$model || ''"></div>
-                                    <!-- raw data -->
-                                    <div @dblclick="setExpressionFieldViewable(field.name, false)"
-                                        v-if="fieldOptions[field.name].viewable"
-                                        class="card p-2 limit-height">
-                                        <VueJsonPretty :data="v$.form[field.name].$model || ''" />
-                                    </div>                                       
-                                </div>
-                                                        
-
                                 <!-- TYPE = ENUM -->
                                 <div v-if="field.type == 'enum'">
                                     <BsInputForForm type="select" :containerSize="containerSize"
                                         v-show="!fieldOptions[field.name].viewable" :defaultValue="defaults[field.name]"
                                         :required="field.required || false" :multiple="field.multiple || false"
-                                        :name="field.name" :placeholder="field.placeholder || 'Select...'"
+                                        :name="field.name" :placeholder="(typeof fieldPlaceholders[field.name] === 'object' ? fieldPlaceholders[field.name].value : fieldPlaceholders[field.name]) || 'Select...'"
                                         :values="field.values || queryresults[field.name] || []"
                                         :hasError="v$.form[field.name].$invalid"
                                         :isLoading="!field.values && !['fixed', 'variable'].includes(dynamicFieldStatus[field.name])"
@@ -1528,7 +1909,7 @@ onUnmounted(() => {
                                         :sticky="field.sticky || false"
                                         :horizontal="field.horizontal || false"
                                         :errors="v$.form[field.name].$errors"
-                                        :help="field.help" 
+                                        :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]" 
                                     />
                                     <!-- raw query data -->
                                     <div @dblclick="setExpressionFieldViewable(field.name, false)"
@@ -1547,10 +1928,10 @@ onUnmounted(() => {
                                         :hasError="v$.form[field.name].$invalid" 
                                         :dateType="field.dateType"
                                         @update:modelValue="evaluateDynamicFields(field.name)" 
-                                        :placeholder="field.placeholder"
+                                        :placeholder="typeof fieldPlaceholders[field.name] === 'object' ? fieldPlaceholders[field.name].value : fieldPlaceholders[field.name]"
                                         :errors="v$.form[field.name].$errors" 
                                         :values="field.values"
-                                        :help="field.help"
+                                        :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]"
                                     />
                                 </div>
 
@@ -1563,14 +1944,14 @@ onUnmounted(() => {
                                             v-model="v$.form[field.name].$model" :name="field.name"
                                             :required="field.required" @change="evaluateDynamicFields(field.name)"
                                             :errors="v$.form[field.name].$errors"
-                                            :help="field.help"
+                                            :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]"
                                             />
                                         <BsInputForForm v-else @dblclick="setExpressionFieldViewable(field.name, true)"
                                             type="expression" :icon="field.icon"
                                             :hasError="v$.form[field.name].$invalid" cssClass="text-info"
                                             v-model="v$.form[field.name].$model" :name="field.name"
                                             :isHtml="field.isHtml" :errors="v$.form[field.name].$errors"
-                                            :help="field.help"
+                                            :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]"
                                              />
                                     </div>
                                     <!-- expression raw data -->
@@ -1589,16 +1970,16 @@ onUnmounted(() => {
                                     @change="evaluateDynamicFields(field.name)" :hasError="v$.form[field.name].$invalid"
                                     v-model="v$.form[field.name].$model" :name="field.name" v-bind="field.attrs"
                                     :required="field.required" :type="field.type" :icon="field.icon"
-                                    :readonly="field.hide" :placeholder="field.placeholder" :isSwitch="field.switch"
+                                    :readonly="field.hide" :placeholder="typeof fieldPlaceholders[field.name] === 'object' ? fieldPlaceholders[field.name].value : fieldPlaceholders[field.name]" :isSwitch="field.switch"
                                     :errors="v$.form[field.name].$errors" :values="field.values"
-                                    :help="field.help" />
+                                    :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]" />
 
                                 <!-- TYPE = FILE -->
                                 <BsInputForForm v-if="field.type == 'file'" :accept="(field.accept || []).join(',')"
                                     :type="field.type" @change="handleFiles" :hasError="v$.form[field.name].$invalid"
                                     :name="field.name" :required="field.required" :icon="field.icon"
                                     :errors="v$.form[field.name].$errors" :progress="fileProgress[field.name]" 
-                                    :help="field.help" 
+                                    :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]" 
                                 />
                             </div>
                         </div>

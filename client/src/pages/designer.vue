@@ -612,7 +612,8 @@ onMounted(async () => {
                 <span>Deprecation warning</span>
               </button>
               <template #content>
-                Forms detected in the base forms.yaml file, which is deprecated.<br />
+                Forms detected in the base config file (config.yaml or forms.yaml), which is DEPRECATED.<br />
+                Please move forms to the forms/ folder. The base config should only contain categories, roles, and constants.<br />
                 Please move them under a file in the forms directory.
               </template>
             </popper>            

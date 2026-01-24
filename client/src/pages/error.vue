@@ -33,7 +33,7 @@ const errorMessageHtml = computed(() =>
                                 <a class="btn btn-sm btn-secondary ms-2" href="/logs">Logs</a>
                             </li>
                             <li>
-                                Make sure you have a valid forms.yaml file.<br>
+                                Make sure you have a valid config.yaml file (or legacy forms.yaml).<br>
                                 Or make a repository to host your forms.
                                 <a class="btn btn-sm btn-success ms-2" href="/admin/repositories">Create repository</a>
                             </li>

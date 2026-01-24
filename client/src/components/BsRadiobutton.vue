@@ -25,6 +25,10 @@
 
     const model = defineModel();
 
+    // EMITS
+
+    const emit = defineEmits(['change']);
+
     // PROPS
 
     const props = defineProps({
@@ -79,10 +83,16 @@
         return classList.join(' ');
     });
 
+    // METHODS
+
+    const handleChange = (event) => {
+        emit('change', event);
+    };
+
 </script>
 <template>
     <div :class="globalClasses">
-        <input class="form-check-input" :disabled="disabled" :class="classes" type="radio" :id="uid" :name="name" :value="value" v-model="model">
+        <input class="form-check-input" :disabled="disabled" :class="classes" type="radio" :id="uid" :name="name" :value="value" v-model="model" @change="handleChange">
         <label class="form-check-label" :for="uid">{{ label }}</label>
     </div>
 </template>

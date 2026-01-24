@@ -85,25 +85,41 @@ class BackupModel {
   }
 
   static async backupFormsAndFolder(backupFolder) {
-    logger.info(`Copying yaml and forms folder to ${backupFolder}`)
-    const formsFile = appConfig.formsPath;
-    const formsDir = path.join(path.dirname(formsFile), 'forms');
-    const destFile = path.join(backupFolder, path.basename(formsFile));
+    logger.info(`Copying config/yaml files and forms folder to ${backupFolder}`)
+    
+    // Backup config.yaml (new structure)
+    const configFile = appConfig.configPath;
+    const destConfigFile = path.join(backupFolder, path.basename(configFile));
+    await copyFileIfExists(configFile, destConfigFile);
+    
+    // Backup forms.yaml (legacy - for backward compatibility)
+    const legacyFormsFile = appConfig.formsPath;
+    const destLegacyFormsFile = path.join(backupFolder, path.basename(legacyFormsFile));
+    await copyFileIfExists(legacyFormsFile, destLegacyFormsFile);
+    
+    // Backup forms directory
+    const formsDir = appConfig.formsFolderPath;
     const destDir = path.join(backupFolder, 'forms');
-    await copyFileIfExists(formsFile, destFile);
     await copyDir(formsDir, destDir);
   }
 
 
   static async restoreFormsAndFolder(restoreFolder) {
-    logger.info(`Copying yaml and forms folder from ${this.restoreFolder}`)
-    const formsFile = appConfig.formsPath;
-    const formsYamlBackup = path.join(restoreFolder, path.basename(formsFile));
-    const formsDir = path.join(path.dirname(formsFile), 'forms');
+    logger.info(`Restoring config/yaml files and forms folder from ${restoreFolder}`)
+    
+    // Restore config.yaml (new structure)
+    const configFile = appConfig.configPath;
+    const configYamlBackup = path.join(restoreFolder, path.basename(configFile));
+    await copyFileIfExists(configYamlBackup, configFile);
+    
+    // Restore forms.yaml (legacy - if it exists in backup)
+    const legacyFormsFile = appConfig.formsPath;
+    const formsYamlBackup = path.join(restoreFolder, path.basename(legacyFormsFile));
+    await copyFileIfExists(formsYamlBackup, legacyFormsFile);
+    
+    // Restore forms directory
+    const formsDir = appConfig.formsFolderPath;
     const formsDirBackup = path.join(restoreFolder, 'forms');
-    // restore base forms yaml if backup exists
-    await copyFileIfExists(formsYamlBackup, formsFile);
-    // restore forms directory if backup exists (copyDir is a no-op if src missing)
     await copyDir(formsDirBackup, formsDir);
   }
 
@@ -152,10 +168,6 @@ class BackupModel {
     }
     if (!stat.isDirectory()) throw new Errors.NotFoundError('Backup folder not found');
     const backupFile = path.join(restoreFolder, 'ansibleforms.sql');
-    const formsFile = appConfig.formsPath;
-    const formsYamlBackup = path.join(restoreFolder, path.basename(formsFile));
-    const formsDir = path.join(path.dirname(formsFile), 'forms');
-    const formsDirBackup = path.join(restoreFolder, 'forms');
     const safePassword = dbPassword.replace(/'/g, "'\"'\"'");
     const restoreCmd = `${appConfig.mysqlCommand} -h ${dbHost} -u'${dbUser}' -p'${safePassword}' -P ${dbPort} ${dbName} < "${backupFile}"`;
     const cmdObj = {
@@ -176,6 +188,7 @@ class BackupModel {
     const records = await Promise.all(folders.map(async folder => {
       const backupFolder = path.join(appConfig.backupPath, folder);
       const backupFile = path.join(backupFolder, 'ansibleforms.sql');
+      const configYaml = path.join(backupFolder, path.basename(appConfig.configPath));
       const formsYaml = path.join(backupFolder, path.basename(appConfig.formsPath));
       const formsDir = path.join(backupFolder, 'forms');
       let description = '';
@@ -184,6 +197,7 @@ class BackupModel {
         const meta = yaml.parse(metaRaw);
         description = meta?.description || '';
       } catch {}
+      const configYamlSize = await getFileSize(configYaml);
       const formsYamlSize = await getFileSize(formsYaml);
       const backupFileSize = await getFileSize(backupFile);
       const formsDirStats = await getDirStats(formsDir);
@@ -192,8 +206,10 @@ class BackupModel {
         date: Helpers.dateFromBackupFolder(folder),
         description,
         backupFileExists: await fs.stat(backupFile).then(() => true).catch(() => false),
+        configYamlExists: await fs.stat(configYaml).then(() => true).catch(() => false),
         formsYamlExists: await fs.stat(formsYaml).then(() => true).catch(() => false),
         formsDirExists: await fs.stat(formsDir).then(() => true).catch(() => false),
+        configYamlSize,
         formsYamlSize,
         backupFileSize,
         formsDirFileCount: formsDirStats.fileCount,
@@ -214,6 +230,7 @@ class BackupModel {
   if (!folder || !/^\d{14}$/.test(folder)) throw new Errors.BadRequestError('Invalid or missing backup folder');
     const backupFolder = path.join(appConfig.backupPath, folder);
     const backupFile = path.join(backupFolder, 'ansibleforms.sql');
+    const configYaml = path.join(backupFolder, path.basename(appConfig.configPath));
     const formsYaml = path.join(backupFolder, path.basename(appConfig.formsPath));
     const formsDir = path.join(backupFolder, 'forms');
     let description = '';
@@ -229,6 +246,7 @@ class BackupModel {
       const meta = yaml.parse(metaRaw);
       description = meta?.description || '';
     } catch {}
+    const configYamlSize = await getFileSize(configYaml);
     const formsYamlSize = await getFileSize(formsYaml);
     const backupFileSize = await getFileSize(backupFile);
     const formsDirStats = await getDirStats(formsDir);
@@ -237,8 +255,10 @@ class BackupModel {
       date: Helpers.dateFromBackupFolder(folder),
       description,
       backupFileExists: await fs.stat(backupFile).then(() => true).catch(() => false),
+      configYamlExists: await fs.stat(configYaml).then(() => true).catch(() => false),
       formsYamlExists: await fs.stat(formsYaml).then(() => true).catch(() => false),
       formsDirExists: await fs.stat(formsDir).then(() => true).catch(() => false),
+      configYamlSize,
       formsYamlSize,
       backupFileSize,
       formsDirFileCount: formsDirStats.fileCount,

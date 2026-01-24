@@ -123,7 +123,7 @@ const launch = async function(req, res) {
         var user = req?.user?.user || {}
         extravars.ansibleforms_user = user
         try{
-          const job = await Job.launch(form,null,user,creds,extravars,null);
+          const job = await Job.launch({ form, user, credentials: creds, extravars });
           res.json(new RestResult("success","succesfully launched form",job,""))
         }catch(err){
           logger.error("Errors in job launch : ", err)

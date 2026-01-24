@@ -351,18 +351,18 @@
           "notifications":{
             "type": "object",
             "properties": {
-              "on": {
-                "type": "array",
-                "items": {
-                  "type": "string",
-                  "default": ""
-                }
-              },
               "onStatus": {
                 "type": "array",
                 "items": {
                   "type": "string",
-                  "default": ""
+                  "enum": ["any", "success", "failed", "aborted", "warning"]
+                }
+              },
+              "onEvent": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": ["any", "launch", "relaunch", "delete", "approve", "reject"]
                 }
               },
               "recipients": {
@@ -433,6 +433,12 @@
                   "$ref": "/formfield"
                 },
                 "template": {"type": "string"},
+                "varsFiles": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },                
                 "awx": {"type": "string"},
                 "abortable": {"type": "boolean"},
                 "awxCredentials": {
@@ -535,6 +541,12 @@
           "key": {"type": "string"},
           "abortable": {"type": "boolean"},
           "template": {"type": "string"},
+          "varsFiles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "awx": {"type": "string"},
           "credentials": {
             "type": "object",
@@ -575,6 +587,7 @@
           "help": {"type": "string"},
           "source": {"type": "string"},
           "showHelp": {"type": "boolean"},
+          "disableRelaunch": {"type": "boolean"},
           "fieldGroupClasses": {
             "type" : "object",
             "additionalProperties" : {
@@ -984,7 +997,6 @@
                     "type": {
                       "enum": ["html"]
                     },
-                    "label":             {"not":{}}, 
                     "placeholder":       {"not":{}}, 
                     "dateType":          {"not":{}}, 
                     "asCredential":      {"not":{}}, 
@@ -1241,12 +1253,12 @@
                     "description": {"type": "string"}
                   }
                 },
-                "minValue": {"type": "integer"},
-                "maxValue": {"type": "integer"},
-                "minSize": {"type": "integer"},
-                "maxSize": {"type": "integer"},                
-                "minLength": {"type": "integer"},
-                "maxLength": {"type": "integer"},
+                "minValue": {"type": ["string","integer"]},
+                "maxValue": {"type": ["string","integer"]},
+                "minSize": {"type": ["string","integer"]},
+                "maxSize": {"type": ["string","integer"]},                
+                "minLength": {"type": ["string","integer"]},
+                "maxLength": {"type": ["string","integer"]},
                 "expression": {"type": "string"},
                 "ignoreIncomplete": {"type": "boolean"},
                 "noLog": {"type": "boolean"},
@@ -1593,7 +1605,7 @@
                           }
                       },
                       "dateType": {"type": "string","enum":["date","datetime","year","month","time","week"]},
-                      "minValue": {"type": "integer"},
+                      "minValue": {"type": ["string","integer"]},
                       "maxValue": {"type": "integer"},
                       "minLength": {"type": "integer"},
                       "maxLength": {"type": "integer"},

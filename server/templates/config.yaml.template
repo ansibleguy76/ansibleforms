@@ -1,0 +1,18 @@
+# AnsibleForms Configuration File
+# This file contains categories, roles, and constants for your AnsibleForms instance
+# Forms should be placed in the forms/ folder, not in this file
+
+categories:
+  - name: Default
+    icon: bars
+
+roles: # a list of roles
+  - name: admin
+    groups:
+      - local/admins
+  - name: public
+    groups: []
+    options:
+      allowJobRelaunch: true      
+
+constants: {} # free objects to re-use over all forms

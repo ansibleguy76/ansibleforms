@@ -405,10 +405,13 @@ Job.delete = async function (user, id) {
   if (res.length != 1) {
     throw new Errors.AccessDeniedError(`You do not have access to job ${id}`);
   }
-  return await mysql.do(
+  // Send delete notification BEFORE deleting the job
+  await Job.sendEventNotification(id, 'delete', user);
+  const result = await mysql.do(
     "DELETE FROM AnsibleForms.`jobs` WHERE id = ? OR parent_id = ?",
     [id, id]
   );
+  return result;
 };
 Job.checkExists = async function (id) {
   const res = await mysql.do(
@@ -476,7 +479,7 @@ Job.findById = async function (user, id, asText, logSafe = false) {
       loggerConfig.tz +
       "') AS start,CONVERT_TZ(j.end, 'UTC', '" +
       loggerConfig.tz +
-      "') AS end,j.user,j.user_type,j.job_type,j.extravars,j.credentials,j.notifications,j.approval,j.step,j.parent_id,j.awx_id,j.awx_artifacts,j.abort_requested"
+      "') AS end,j.user,j.user_type,j.job_type,j.extravars,j.credentials,j.notifications,j.approval,j.step,j.parent_id,j.awx_id,j.awx_artifacts,j.abort_requested,j.raw_form_data"
   if (user.roles.includes("admin")) {
     query =
       "SELECT " + job_query + ",sj.subjobs,j2.no_of_records,o.counter FROM AnsibleForms.jobs j LEFT JOIN (SELECT parent_id,GROUP_CONCAT(id separator ',') subjobs FROM AnsibleForms.jobs GROUP BY parent_id) sj ON sj.parent_id=j.id,(SELECT COUNT(id) no_of_records FROM AnsibleForms.jobs)j2,(SELECT max(`order`)+1 counter FROM AnsibleForms.job_output WHERE job_output.job_id=?)o WHERE j.id=?;";
@@ -516,14 +519,86 @@ Job.findById = async function (user, id, asText, logSafe = false) {
     return [];
   }
 };
-Job.launch = async function (
+Job.getRawFormData = async function (user, id) {
+  logger.info(`Getting raw form data for job ${id}`);
+  
+  try {
+    // Check if user has access to this job
+    const job = await Job.findById(user, id, false, false);
+    logger.info(`Job found: ${job.form}`);
+    
+    // Get form to check relaunch permissions
+    logger.info(`Loading form: ${job.form}`);
+    const formConfig = await Form.load(user?.roles, job.form);
+    const formObj = formConfig.forms?.[0];
+    if (!formObj) {
+      throw new Errors.NotFoundError(`Form '${job.form}' not found or you don't have access to it`);
+    }
+    logger.info(`Form loaded, checking disableRelaunch: ${formObj.disableRelaunch}`);
+    
+    // Check if form has disableRelaunch set
+    if (formObj.disableRelaunch === true) {
+      throw new Errors.AccessDeniedError(`Form '${job.form}' has job relaunch disabled`);
+    }
+    
+    // Check if user has allowJobRelaunch option (unless admin)
+    const isAdmin = user.roles?.includes("admin") ?? false;
+    logger.info(`Checking relaunch permission: isAdmin=${isAdmin}, user.options=${JSON.stringify(user.options)}, allowJobRelaunch=${user.options?.allowJobRelaunch}`);
+    if (!(user.options?.allowJobRelaunch ?? isAdmin)) {
+      throw new Errors.AccessDeniedError(`You do not have permission to relaunch jobs. Contact your administrator to enable the 'allowJobRelaunch' role option.`);
+    }
+    
+    // Read raw form data from database
+    logger.info(`Loading raw form data from database for job ${id}`);
+    
+    const result = await mysql.do(
+      `SELECT raw_form_data FROM AnsibleForms.jobs WHERE id = ?`,
+      [id]
+    );
+    
+    if (!result || result.length === 0 || !result[0].raw_form_data) {
+      throw new Errors.NotFoundError(`No saved form data found for job ${id}. This job may have been created before the relaunch feature was enabled.`);
+    }
+    
+    const parsedData = JSON.parse(result[0].raw_form_data);
+    
+    // Validate form name matches
+    if (parsedData.__form__ && parsedData.__form__ !== job.form) {
+      throw new Errors.BadRequestError(`Cannot relaunch: saved data is from form '${parsedData.__form__}' but you're trying to load it into form '${job.form}'. Form names must match.`);
+    }
+    
+    // Remove __form__ before returning to client
+    const { __form__, ...cleanData } = parsedData;
+    logger.info(`Successfully loaded raw form data for job ${id} with ${Object.keys(cleanData).length} fields`);
+    return cleanData;
+  } catch (err) {
+    logger.error(`Error in getRawFormData: ${err.message}`, err);
+    throw err;
+  }
+};
+
+/**
+ * Launch a new job
+ * @param {Object} params - Job launch parameters
+ * @param {string} params.form - Form name
+ * @param {Object} params.formObj - Form object (optional, will be loaded if not provided)
+ * @param {Object} params.user - User object
+ * @param {Object} params.credentials - Credentials object
+ * @param {Object} params.extravars - Extra variables
+ * @param {number} params.parentId - Parent job ID for multistep jobs
+ * @param {Object} params.rawFormData - Raw form data for relaunch feature
+ */
+Job.launch = async function ({
   form,
-  formObj,
+  formObj = null,
   user,
-  creds,
-  extravars,
-  parentId = null
-) {
+  credentials = {},
+  extravars = {},
+  parentId = null,
+  rawFormData = {}
+}) {
+  const creds = credentials; // Alias for backward compatibility internally
+  
   // a formobj can be a full step pushed
   if (!formObj) {
     // we load it, it's an actual form
@@ -574,8 +649,51 @@ Job.launch = async function (
   logger.debug(`Job id ${jobid} is created`);
   extravars["__jobid__"] = jobid;
   
+  // Store raw form data in database if provided (exclude sensitive/irrelevant fields)
+  if (rawFormData && Object.keys(rawFormData).length > 0) {
+    try {
+      const filteredRawFormData = {};
+      
+      // Add form name for validation on reload
+      filteredRawFormData.__form__ = form;
+      
+      // Only include actual user input fields (exclude constants, passwords, system fields)
+      formObj.fields.forEach((field) => {
+        const fieldName = field.name;
+        
+        // Skip if field value not in rawFormData
+        if (!(fieldName in rawFormData)) return;
+        
+        // Skip constants (readonly fields that get their value from config)
+        if (field.type === 'constant') return;
+        
+        // Skip password fields for security
+        if (field.type === 'password') return;
+        
+        // Skip system fields
+        if (fieldName === 'server' || fieldName === 'database' || fieldName === 'metadata') return;
+        
+        // Include this field
+        filteredRawFormData[fieldName] = rawFormData[fieldName];
+      });
+      
+      // Store in database
+      const rawFormDataJson = JSON.stringify(filteredRawFormData);
+      await mysql.do(
+        `UPDATE AnsibleForms.jobs SET raw_form_data = ? WHERE id = ?`,
+        [rawFormDataJson, jobid]
+      );
+      logger.debug(`Raw form data stored to database for job ${jobid} (filtered: constants, passwords, system fields excluded)`);
+    } catch (err) {
+      logger.error(`Failed to store raw form data for job ${jobid}:`, err);
+    }
+  }
+  
   // Define the execution function
   const executeJob = async () => {
+    // Send launch notification
+    await Job.sendEventNotification(jobid, 'launch', user);
+    
     // the rest is now happening in the background
     // if credentials are requested, we now get them.
     var credentials = {};
@@ -637,16 +755,16 @@ Job.launch = async function (
       );
     }
     if (jobtype == "multistep") {
-      return await Multistep.launch(
+      return await Multistep.launch({
         form,
-        formObj.steps,
+        steps: formObj.steps,
         user,
         extravars,
-        creds,
+        credentials: creds,
         jobid,
-        null,
-        formObj.approval
-      );
+        counter: null,
+        approval: formObj.approval
+      });
     }
   };
 
@@ -657,7 +775,18 @@ Job.launch = async function (
   
   return { id: jobid };
 };
-Job.continue = async function (form, user, creds, extravars, jobid) {
+
+/**
+ * Continue an existing job (used for approval continuation)
+ * @param {Object} params - Job continue parameters
+ * @param {string} params.form - Form name
+ * @param {Object} params.user - User object
+ * @param {Object} params.credentials - Credentials object
+ * @param {Object} params.extravars - Extra variables
+ * @param {number} params.jobid - Job ID to continue
+ */
+Job.continue = async function ({ form, user, credentials = {}, extravars = {}, jobid }) {
+  const creds = credentials; // Alias for backward compatibility internally
   var formObj;
   // we load it, it's an actual form
   const check = await Job.checkExists(jobid);
@@ -749,24 +878,44 @@ Job.continue = async function (form, user, creds, extravars, jobid) {
     );
   }
   if (jobtype == "multistep") {
-    return await Multistep.launch(
+    return await Multistep.launch({
       form,
-      formObj.steps,
+      steps: formObj.steps,
       user,
       extravars,
-      creds,
+      credentials: creds,
       jobid,
-      ++counter,
-      formObj.approval,
-      step,
-      true
-    );
+      counter: ++counter,
+      approval: formObj.approval,
+      fromStep: step,
+      approved: true
+    });
   }
 };
 Job.relaunch = async function (user, id, verbose) {
   const job = await Job.findById(user, id, true);
+  
+  // Check permissions and form settings before allowing relaunch
+  const formConfig = await Form.load(user?.roles, job.form);
+  const formObj = formConfig.forms?.[0];
+  if (!formObj) {
+    throw new Errors.NotFoundError(`Form '${job.form}' not found or you don't have access to it`);
+  }
+  
+  // Check if form has disableRelaunch set
+  if (formObj.disableRelaunch === true) {
+    throw new Errors.AccessDeniedError(`Form '${job.form}' has job relaunch disabled`);
+  }
+  
+  // Check if user has allowJobRelaunch option (unless admin)
+  const isAdmin = user.roles?.includes("admin") ?? false;
+  if (!(user.options?.allowJobRelaunch ?? user.options?.allowRelaunch ?? isAdmin)) {
+    throw new Errors.AccessDeniedError(`You do not have permission to relaunch jobs. Contact your administrator to enable the 'allowJobRelaunch' role option.`);
+  }
+  
   var extravars = {};
   var credentials = {};
+  var rawFormData = {};
   if (job.extravars) {
     extravars = JSON.parse(job.extravars);
   }
@@ -776,16 +925,26 @@ Job.relaunch = async function (user, id, verbose) {
   if (job.credentials) {
     credentials = JSON.parse(job.credentials);
   }
+  if (job.raw_form_data) {
+    try {
+      rawFormData = JSON.parse(job.raw_form_data);
+      logger.debug(`Retrieved raw form data for relaunch with ${Object.keys(rawFormData).length} fields`);
+    } catch (err) {
+      logger.warning(`Failed to parse raw form data during relaunch: ${err.message}`);
+    }
+  }
   if (job.status != "running" && !job.abort_requested) {
     logger.notice(`Relaunching job ${id} with form ${job.form}`);
-    return await Job.launch(
-      job.form,
-      null,
+    const result = await Job.launch({
+      form: job.form,
       user,
       credentials,
       extravars,
-      null
-    );
+      rawFormData
+    });
+    // Send relaunch notification
+    await Job.sendEventNotification(id, 'relaunch', user);
+    return result;
   } else {
     throw new Errors.ConflictError(
       `Job ${id} is not in a status to be relaunched (status=${job.status})`
@@ -818,7 +977,16 @@ Job.approve = async function (user, id) {
   if (job.status == "approve") {
     logger.notice(`Approving job ${id} with form ${job.form}`);
     try {
-      return await Job.continue(job.form, user, credentials, extravars, id);
+      const result = await Job.continue({
+        form: job.form,
+        user,
+        credentials,
+        extravars,
+        jobid: id
+      });
+      // Send approve notification
+      await Job.sendEventNotification(id, 'approve', user);
+      return result;
     } catch (err) {
       logger.error("Failed to continue the job : ", err);
       throw err;
@@ -829,46 +997,86 @@ Job.approve = async function (user, id) {
     );
   }
 };
-Job.sendApprovalNotification = async function (approval, extravars, jobid) {
-  if (!approval?.notifications?.length > 0) return false;
+/**
+ * Helper method to build and send email notifications
+ * @private
+ */
+Job._buildAndSendEmail = async function ({
+  recipients,
+  subject,
+  templatePath,
+  replacements = {},
+  logContext = 'notification'
+}) {
   try {
     const config = await Settings.findUrl();
-    const url = config.url?.replace(/\/$/g, ""); // remove trailing slash if present
+    const url = config.url?.replace(/\/$/g, "");
 
-    var subject =
-      Helpers.replacePlaceholders(approval.title, extravars) ||
-      "AnsibleForms Approval Request";
-    var buffer = fs.readFileSync(`${__dirname}/../templates/approval.html`);
+    if (!url) {
+      logger.warning(
+        `Host URL is not set, no ${logContext} can be sent. Go to 'settings' to correct this.`
+      );
+      return false;
+    }
+
+    // Read template
+    var buffer = fs.readFileSync(`${__dirname}/../templates/${templatePath}`);
     var message = buffer.toString();
+    
+    // Default replacements
     var color = "#158cba";
     var color2 = "#ffa73b";
     var logo = `${url}/assets/img/logo.png`;
-    var approvalMessage = Helpers.replacePlaceholders(
-      approval.message,
-      extravars
-    );
+    
+    // Apply all replacements
     message = message
-      .replace("${message}", approvalMessage)
+      .replace("${message}", replacements.message || "")
       .replaceAll("${url}", url)
-      .replaceAll("${jobid}", jobid)
+      .replaceAll("${jobid}", replacements.jobid || "")
       .replaceAll("${title}", subject)
       .replaceAll("${logo}", logo)
       .replaceAll("${color}", color)
       .replaceAll("${color2}", color2);
+    
     const messageid = await Settings.mailsend(
-      approval.notifications.join(","),
+      recipients.join(","),
       subject,
       message
     );
-    logger.notice(
-      "Approval mail sent to " +
-        approval.notifications.join(",") +
-        " with id " +
-        messageid
-    );
+    
+    if (!messageid) {
+      logger.notice(`No ${logContext} sent`);
+      return false;
+    } else {
+      logger.notice(`${logContext} sent to ${recipients.join(",")} with id ${messageid}`);
+      return true;
+    }
   } catch (err) {
-    logger.error("Failed : ", err);
+    logger.error(`Failed to send ${logContext}: `, err);
+    return false;
   }
+};
+Job.sendApprovalNotification = async function (approval, extravars, jobid) {
+  if (!approval?.notifications?.length > 0) return false;
+  
+  var subject =
+    Helpers.replacePlaceholders(approval.title, extravars) ||
+    "AnsibleForms Approval Request";
+  var approvalMessage = Helpers.replacePlaceholders(
+    approval.message,
+    extravars
+  );
+  
+  return await Job._buildAndSendEmail({
+    recipients: approval.notifications,
+    subject: subject,
+    templatePath: "approval.html",
+    replacements: {
+      message: approvalMessage,
+      jobid: jobid
+    },
+    logContext: "Approval mail"
+  });
 };
 Job.sendStatusNotification = async function (jobid) {
   try {
@@ -877,67 +1085,103 @@ Job.sendStatusNotification = async function (jobid) {
       roles: ["admin"],
     };
 
-    const job = await Job.findById(user, jobid, false, true); // first get job
-    var notifications = JSON.parse(job.notifications); // get notifications if any
-    if (notifications && notifications.on) {
-      logger.warning(
-        "Deprecated property 'on'.  Use 'onStatus' instead.  This property will be removed in future versions."
-      );
-    }
-    if (notifications && !notifications.on && !notifications.onStatus) {
+    const job = await Job.findById(user, jobid, false, true);
+    var notifications = JSON.parse(job.notifications);
+    
+    // Default to 'any' if onStatus not specified
+    if (notifications && !notifications.onStatus) {
       notifications.onStatus = ["any"];
     }
-    if (!notifications.recipients) {
+    
+    if (!notifications?.recipients) {
       logger.notice("No notifications set");
       return false;
-    } else if (
-      !notifications.on?.includes(job.status) &&
-      !notifications.on?.includes("any") &&
+    }
+    
+    if (
       !notifications.onStatus?.includes(job.status) &&
       !notifications.onStatus?.includes("any")
     ) {
       logger.notice(`Skipping notification for status ${job.status}`);
       return false;
-    } else {
-      // we have notifications, correct status => let's send the mail
-      const config = await Settings.findUrl();
-      const url = config.url?.replace(/\/$/g, ""); // remove trailing slash if present
-
-      if (!url) {
-        logger.warning(
-          `Host URL is not set, no status mail can be sent. Go to 'settings' to correct this.`
-        );
-        return false;
-      }
-      var subject = `AnsibleForms '${job.form}' [${job.job_type}] (${jobid}) - ${job.status} `;
-      var buffer = fs.readFileSync(`${__dirname}/../templates/jobstatus.html`);
-      var message = buffer.toString();
-      var color = "#158cba";
-      var color2 = "#ffa73b";
-      var logo = `${url}/assets/img/logo.png`;
-      message = message
-        .replace("${message}", job.output.replaceAll("\r\n", "<br>"))
-        .replaceAll("${url}", url)
-
-        .replaceAll("${jobid}", jobid)
-        .replaceAll("${title}", subject)
-        .replaceAll("${logo}", logo)
-        .replaceAll("${color}", color)
-        .replaceAll("${color2}", color2);
-      const messageid = await Settings.mailsend(
-        notifications.recipients.join(","),
-        subject,
-        message
-      );
-
-      if (!messageid) {
-        logger.notice("No status mail sent");
-      } else {
-        logger.notice("Status mail sent with id " + messageid);
-      }
     }
+    
+    // Send the mail
+    var subject = `AnsibleForms '${job.form}' [${job.job_type}] (${jobid}) - ${job.status}`;
+    
+    return await Job._buildAndSendEmail({
+      recipients: notifications.recipients,
+      subject: subject,
+      templatePath: "jobstatus.html",
+      replacements: {
+        message: job.output.replaceAll("\r\n", "<br>"),
+        jobid: jobid
+      },
+      logContext: "Status mail"
+    });
   } catch (err) {
-    logger.error("Failed : ", err);
+    logger.error("Failed to send status notification: ", err);
+    return false;
+  }
+};
+Job.sendEventNotification = async function (jobid, eventType, user = null) {
+  try {
+    logger.notice(`Sending ${eventType} notification for jobid ${jobid}`);
+    var adminUser = {
+      roles: ["admin"],
+    };
+
+    const job = await Job.findById(adminUser, jobid, false, true);
+    var notifications = JSON.parse(job.notifications);
+    
+    // Check if this event type is in the onEvent array
+    if (!notifications || !notifications.onEvent || !Array.isArray(notifications.onEvent)) {
+      logger.notice(`No event notifications configured`);
+      return false;
+    }
+    
+    if (!notifications.onEvent.includes(eventType) && !notifications.onEvent.includes('any')) {
+      logger.notice(`Event '${eventType}' not in notification list`);
+      return false;
+    }
+    
+    if (!notifications.recipients || notifications.recipients.length === 0) {
+      logger.notice("No notification recipients set");
+      return false;
+    }
+
+    // Event-specific subject and message content
+    const eventTitles = {
+      'launch': 'Launched',
+      'relaunch': 'Relaunched',
+      'delete': 'Deleted',
+      'approve': 'Approved',
+      'reject': 'Rejected'
+    };
+    
+    const eventMessages = {
+      'launch': `Job has been launched${user ? ' by ' + user.username : ''}.`,
+      'relaunch': `Job has been relaunched${user ? ' by ' + user.username : ''}.`,
+      'delete': `Job has been deleted${user ? ' by ' + user.username : ''}.`,
+      'approve': `Job has been approved${user ? ' by ' + user.username : ''} and will continue execution.`,
+      'reject': `Job has been rejected${user ? ' by ' + user.username : ''}.`
+    };
+
+    var subject = `AnsibleForms '${job.form}' [${job.job_type}] (${jobid}) - ${eventTitles[eventType]}`;
+    
+    return await Job._buildAndSendEmail({
+      recipients: notifications.recipients,
+      subject: subject,
+      templatePath: "jobevent.html",
+      replacements: {
+        message: eventMessages[eventType],
+        jobid: jobid
+      },
+      logContext: `${eventType} notification`
+    });
+  } catch (err) {
+    logger.error(`Failed to send ${eventType} notification: `, err);
+    return false;
   }
 };
 Job.reject = async function (user, id) {
@@ -964,7 +1208,10 @@ Job.reject = async function (user, id) {
       id,
       ++counter
     );
-    return await Job.update({ status: "rejected", end: getTimestamp() }, id);
+    const result = await Job.update({ status: "rejected", end: getTimestamp() }, id);
+    // Send reject notification
+    await Job.sendEventNotification(id, 'reject', user);
+    return result;
   } else {
     throw new Errors.ConflictError(
       `Job ${id} is not in rejectable status (status=${job.status})`
@@ -974,18 +1221,33 @@ Job.reject = async function (user, id) {
 // Multistep stuff
 var Multistep = function () {};
 
-Multistep.launch = async function (
+/**
+ * Launch a multistep job
+ * @param {Object} params - Multistep launch parameters
+ * @param {string} params.form - Form name
+ * @param {Array} params.steps - Array of step objects
+ * @param {Object} params.user - User object
+ * @param {Object} params.extravars - Extra variables
+ * @param {Object} params.credentials - Credentials object
+ * @param {number} params.jobid - Job ID
+ * @param {number} params.counter - Output counter
+ * @param {Object} params.approval - Approval configuration
+ * @param {string} params.fromStep - Step to resume from
+ * @param {boolean} params.approved - Whether approval was granted
+ */
+Multistep.launch = async function ({
   form,
   steps,
   user,
-  extravars,
-  creds,
+  extravars = {},
+  credentials = {},
   jobid,
-  counter,
-  approval,
-  fromStep,
+  counter = null,
+  approval = null,
+  fromStep = null,
   approved = false
-) {
+}) {
+  const creds = credentials; // Alias for backward compatibility internally
   // create a new job in the database
   if (!counter) {
     counter = 0;
@@ -1140,14 +1402,14 @@ Multistep.launch = async function (
                 ++counter
               );
             }
-            var jobSuccess = await Job.launch(
+            var jobSuccess = await Job.launch({
               form,
-              step,
+              formObj: step,
               user,
-              creds,
-              ev,
-              jobid
-            );
+              credentials: creds,
+              extravars: ev,
+              parentId: jobid
+            });
             if (jobSuccess) {
               Job.printJobOutput(
                 `ok: [Launched step ${step.name} with jobid '${jobSuccess.id}']`,

@@ -46,8 +46,11 @@ function registerAxiosInterceptor() {
         const token = await TokenStorage.getNewToken()
         if (!token) {
           // No token was returned, this means the user is not authenticated
-          console.log("No new token received, redirecting to login")
-          return
+          // Silently redirect to login without spamming errors
+          TokenStorage.clear();
+          Navigate.toLogin(router, route)
+          // Return a rejected promise to stop axios processing, but suppress the error message
+          return Promise.reject({ __silent__: true });
         }
         console.log("Refresh done")
         console.log("Retrying previous call with new tokens")

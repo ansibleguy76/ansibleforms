@@ -13,8 +13,10 @@ doks:
               item_url: '/installation'          
             - item_name: Environment Variables
               item_url: '/customization'   
-            - item_name: Forms.yaml
-              item_url: '/forms'        
+            - item_name: config.yaml
+              item_url: '/config'   
+            - item_name: Forms
+              item_url: '/forms'                   
             - item_name: GUI
               item_url: '/gui'                        
         nav2:

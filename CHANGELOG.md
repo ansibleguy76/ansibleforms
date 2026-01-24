@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.1.0] - 2026-01-24
+
+### Added
+
+-   Job relaunch feature: Relaunch jobs with pre-filled form data from previous submissions : [issue 311](https://github.com/ansibleguy76/ansibleforms/issues/311)
+-   New role option `allowJobRelaunch` to control which users can relaunch jobs
+-   New form option `disableRelaunch` to prevent relaunching specific forms
+-   Form name validation prevents loading data from mismatched forms
+-   Proper permission checks with detailed error messages
+-   fnParseHtmlWithRegex now supports basic authentication via credential parameter with UTF-8 encoding support for special characters
+-   fnLs, added metadata option to return more file metadata (size, created, etc...)
+-   varsFiles form property: Load YAML files as constants merged with base config constants.  Supports both absolute and relative file paths. New `VARS_FILES_PATH` environment variable.
+-   minValue, maxValue, minLength, maxLength, minSize and maxSize now support placeholders for dynamic validation.
+-   Validation descriptions (regex, validIf, validIfNot, notIn, in) now support placeholders for dynamic error messages.
+-   Field labels, help text, and placeholders now support placeholders for dynamic content (e.g., `$(fieldname)`).
+-   Notification system enhancements: [issue 332](https://github.com/ansibleguy76/ansibleforms/issues/332).  New `onEvent` property for job lifecycle event notifications (any, launch, relaunch, delete, approve, reject)  Separate `jobevent.html` email template for event notifications (distinct from status notifications)
+-   Configuration file migration from forms.yaml to config.yaml.  Introduction of new ENV VARS. `CONFIG_PATH`, `FORMS_FOLDER_PATH` 
+-   Automated nightly backup system: New `NIGHTLY_BACKUP_RETENTION` environment variable
+-   Multi-repository support for forms, add repo switches "use for config", 'use for varsfiles', 'use for forms', 'use for playbooks'.
+
+### Changed
+
+-   Refactored Job.launch, Job.continue, and Multistep.launch to use object parameters for better maintainability and flexibility
+-   Notification system refactored.  Replaced individual event properties (onLaunch, onRelaunch, onDelete, onApprove, onReject) with unified `onEvent` array.  Cleaner separation: `onStatus` for job outcomes, `onEvent` for job lifecycle triggers
+-   Configuration architecture modernized.  `forms.yaml` deprecated in favor of `config.yaml` (categories/roles/constants only).  Forms folder path now configurable via `FORMS_FOLDER_PATH` environment variable
+-   removed label for html type.  If you want to have some sort of label, excplicitely set a label
+
+### Deprecated
+
+-   `forms.yaml` - use `config.yaml` for configuration (categories, roles, constants)
+-   `FORMS_PATH` environment variable - still supported but will be removed in future versions
+-   Storing forms in the base config file - forms should be in the forms/ folder
+
+### Breaking
+
+-   to allow user to relaunch, give them the role option `allowJobRelaunch`
+-   Deprecated `on` notification property completely removed (use `onStatus` instead)
+-   Notification event properties consolidated: use `onEvent: [launch, relaunch, delete, approve, reject]` instead of separate `onLaunch`, `onRelaunch`, etc. properties
+
+### Fixed
+
+-   approval message placeholder
+-   small visual job issue
+-   OIDC login (kudos to theymademedothat)
+-   Password decrypt issue with mail settings
+
 ## [6.0.2] - 2025-11-30
 
 ### Added
@@ -897,7 +943,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/6.0.2...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/6.1.0...HEAD
+
+[6.1.0]: https://github.com/ansibleguy76/ansibleforms/compare/6.0.2...6.1.0
 
 [6.0.2]: https://github.com/ansibleguy76/ansibleforms/compare/6.0.1...6.0.2
 

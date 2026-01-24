@@ -78,7 +78,13 @@ const env = async function(req,res){
     // get help
     var help = await Help.get()
     // only get the environment variables
-    help = help.filter(x => x.name=='Environment Variables')[0].items
+    var envSection = help.filter(x => x.name=='Environment Variables')[0]
+    if(!envSection){
+      logger.error("Could not find 'Environment Variables' section in help.yaml")
+      res.json(new RestResult("error","Failed to get environment variables",null,"Environment Variables section not found in help.yaml"))
+      return
+    }
+    help = envSection.items
     // cleanup a bit (hide passwords and secrets and set default values)
     var env = help.map(x => {
       var item={}

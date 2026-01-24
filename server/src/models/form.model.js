@@ -16,6 +16,7 @@ import Helpers from "../lib/common.js";
 import Settings from './settings.model.js';
 import os from 'os';
 import AJVErrorParser from './ajvErrorParser.model.js';
+import _ from 'lodash';
 
 const ajv = new Ajv({allErrors: true});
 
@@ -31,11 +32,18 @@ const jsonSchemaDraft6 = JSON.parse(fs.readFileSync(path.join(__dirname, "../../
 
 const backupPath = appConfig.formsBackupPath
 
-const formFilePath = path.dirname(appConfig.formsPath)
-const formFileName = path.basename(appConfig.formsPath)
-const formsPath = path.join(formFilePath,"forms")
+// New paths using config.yaml
+const configFilePath = path.dirname(appConfig.configPath)
+const configFileName = path.basename(appConfig.configPath)
+const formsPath = appConfig.formsFolderPath
 const formsBackupPath = path.join(backupPath,'forms')
-const formFileBackupPath = path.join(backupPath,formFileName)
+const configFileBackupPath = path.join(backupPath,configFileName)
+
+// Legacy paths for backward compatibility
+const legacyFormFilePath = path.dirname(appConfig.formsPath)
+const legacyFormFileName = path.basename(appConfig.formsPath)
+const legacyFormFileBackupPath = path.join(backupPath,legacyFormFileName)
+
 const oldBackupDays = appConfig.oldBackupDays
 
 const pathDelimiterRegex = new RegExp(`(?<!\\\\)${path.delimiter}`, 'g');
@@ -102,15 +110,57 @@ function execYtt(file,libdir) {
   return data;
 }
 
-function copyFormsTemplate(to) {
+/**
+ * Get the config file path with fallback to legacy forms.yaml
+ * Returns object with: { path, isLegacy, deprecationMessage }
+ */
+async function getConfigPath() {
+  // Check for repository override first (already handles config.yaml → forms.yaml fallback)
+  const repoConfigPath = await Repository.getConfigPath();
+  if (repoConfigPath && fs.existsSync(repoConfigPath)) {
+    const isLegacy = repoConfigPath.endsWith('forms.yaml');
+    const deprecationMessage = isLegacy ? "Using forms.yaml is DEPRECATED. Please migrate to config.yaml (categories, roles, constants only). Forms should be in the forms/ folder." : null;
+    if (isLegacy) {
+      logger.warning(deprecationMessage);
+    }
+    logger.info(`Using config from repository: ${repoConfigPath}`);
+    return { path: repoConfigPath, isLegacy, deprecationMessage };
+  }
+  
+  // Check for config.yaml (new way)
+  if (fs.existsSync(appConfig.configPath)) {
+    logger.info(`Using config file: ${appConfig.configPath}`);
+    return { path: appConfig.configPath, isLegacy: false, deprecationMessage: null };
+  }
+  
+  // Fallback to forms.yaml (legacy)
+  if (fs.existsSync(appConfig.formsPath)) {
+    const deprecationMessage = "Using forms.yaml is DEPRECATED. Please migrate to config.yaml (categories, roles, constants only). Forms should be in the forms/ folder.";
+    logger.warning(deprecationMessage);
+    return { path: appConfig.formsPath, isLegacy: true, deprecationMessage };
+  }
+  
+  // Neither exists, will need to create from template
+  return { path: appConfig.configPath, isLegacy: false, deprecationMessage: null };
+}
+
+function copyConfigTemplate(to) {
   try{
-    logger.warning("No forms found in database or forms.yaml... creating empty one from template")
-    var formsTemplatePath = path.join(__dirname,"../../templates/forms.yaml.template")
-    fs.copyFileSync(formsTemplatePath,to)
-    logger.warning("File copied")
+    logger.warning("No config found in database or config.yaml... creating empty one from template")
+    var configTemplatePath = path.join(__dirname,"../../templates/config.yaml.template")
+    
+    // Try new template first, fallback to legacy forms.yaml.template
+    if (fs.existsSync(configTemplatePath)) {
+      fs.copyFileSync(configTemplatePath, to)
+    } else {
+      logger.warning("config.yaml.template not found, using legacy forms.yaml.template")
+      var formsTemplatePath = path.join(__dirname,"../../templates/forms.yaml.template")
+      fs.copyFileSync(formsTemplatePath, to)
+    }
+    logger.warning("Config file copied from template")
   } catch (e) {
-    logger.error(`Failed to copy forms from template '${formsTemplatePath}'.`,e);
-    throw new Error(Helpers.getError(e,"There is no forms.yaml nor could there be one created from template."))
+    logger.error(`Failed to copy config from template.`,e);
+    throw new Error(Helpers.getError(e,"There is no config.yaml nor could one be created from template."))
   }
 }
 
@@ -126,66 +176,122 @@ function copyFormsDirectoryTemplate(toDir) {
   }
 }
 
-async function getBaseConfig(formsPath) {
+async function getBaseConfig() {
   var rawdata=''
+  var deprecationMessage = null;
 
-  // if we should find the forms in the database, let's do that
-  if(appConfig.enableFormsYamlInDatabase){
+  // if we should find the config in the database, let's do that
+  if(appConfig.enableConfigInDatabase){
+    // Check if using deprecated variable and log warning
+    if(process.env.ENABLE_FORMS_YAML_IN_DATABASE !== undefined && process.env.ENABLE_CONFIG_IN_DATABASE === undefined){
+      logger.warning("ENABLE_FORMS_YAML_IN_DATABASE is deprecated. Please use ENABLE_CONFIG_IN_DATABASE instead.")
+    }
+    
     const settings = await Settings.findFormsYaml()    
     // if not empty
     if(settings.forms_yaml.trim()){
-      logger.info(`Using forms yaml from database`)      
+      logger.info(`Using config from database`)      
       rawdata = settings.forms_yaml // loading from db
     }else{
-      logger.warning("No forms found in the database, falling back to disk file")
+      logger.warning("No config found in the database, falling back to disk file")
     }
-  }else{
-    logger.info(`Loading ${formsPath}`)  
   }
 
   if(!rawdata){
-    // at this point we have no forms yet... let's see if we have a forms.yaml file
-
+    // Get the config path (with legacy fallback)
+    const configInfo = await getConfigPath();
+    const configPath = configInfo.path;
+    deprecationMessage = configInfo.deprecationMessage;
+    
+    // Create config.yaml from template if it doesn't exist
+    if (!fs.existsSync(configPath)) {
+      copyConfigTemplate(configPath);
+    }
+    
+    // Also ensure the forms directory exists
     if (!fs.existsSync(formsPath)) {
-      copyFormsTemplate(formsPath);
+      copyFormsDirectoryTemplate(formsPath);
     }
-    // Also ensure the forms directory exists (for multi-form setups)
-    const formsDir = path.join(path.dirname(formsPath), "forms");
-    if (!fs.existsSync(formsDir)) {
-      copyFormsDirectoryTemplate(formsDir);
-    }
-    // at this point we have a forms.yaml file and forms directory, even if they are empty from template
+    // at this point we have a config file and forms directory
 
     if (appConfig.useYtt) {
       // try to process ytt
       try{
-        const yttLibDir=path.join(path.dirname(formsPath),"/lib");
-        rawdata = execYtt(formsPath,yttLibDir);
+        const yttLibDir=path.join(path.dirname(configPath),"/lib");
+        rawdata = execYtt(configPath,yttLibDir);
       } catch (e) {
-        logger.error(`Failed to load '${formsPath}' with ytt.`,e);
-        throw new Error(Helpers.getError(e,"Error processing the base forms.yaml file with ytt."))
+        logger.error(`Failed to load '${configPath}' with ytt.`,e);
+        throw new Error(Helpers.getError(e,"Error processing the config file with ytt."))
       }
     } else {
       // try to read the file
       try{
-        logger.info(`Using forms yaml from file`)      
-        rawdata = fs.readFileSync(formsPath, 'utf8');
+        logger.info(`Using config from file: ${configPath}`)      
+        rawdata = fs.readFileSync(configPath, 'utf8');
       } catch (e) {
-        logger.error(`Failed to load '${formsPath}'.`,e);
-        throw new Error(Helpers.getError(e,"Error reading the base forms.yaml file."))
+        logger.error(`Failed to load '${configPath}'.`,e);
+        throw new Error(Helpers.getError(e,"Error reading the config file."))
       }
     }
   }
 
   // now let's see if it's valid yaml
   try{
-    const forms = yaml.parse(rawdata)
-    logger.debug("Base forms loaded and is valid YAML")
-    return forms;
+    const config = yaml.parse(rawdata)
+    logger.debug("Base config loaded and is valid YAML")
+    return { config, deprecationMessage };
   }catch(err){
     logger.error("Error",err)
-    throw new Error(Helpers.getError(err,"Error parsing the base forms, it's not valid yaml."))
+    throw new Error(Helpers.getError(err,"Error parsing the base config, it's not valid yaml."))
   }  
+}
+
+async function loadVarsFiles(varsFiles) {
+  if (!varsFiles || !Array.isArray(varsFiles) || varsFiles.length === 0) {
+    return {};
+  }
+
+  let mergedVars = {};
+  
+  // Get vars files path from repository or default local path
+  const varsFilesPath = await Repository.getVarsFilesPath();
+
+  for (const varsFile of varsFiles) {
+    // Support both absolute and relative paths
+    // Relative paths are resolved against vars files path (from repository or local)
+    const absPath = path.isAbsolute(varsFile) 
+      ? path.resolve(varsFile)
+      : path.resolve(varsFilesPath, varsFile);
+    
+    const ext = path.extname(absPath).toLowerCase();
+    // Validate file extension
+    if (ext !== '.yml' && ext !== '.yaml') {
+      logger.warning(`Skipping varsFile '${varsFile}': must end with .yml or .yaml`);
+      continue;
+    }
+
+    try {
+      logger.debug(`Loading varsFile: ${varsFile} (resolved to ${absPath})`);
+
+      const rawData = fs.readFileSync(absPath, 'utf8');
+      const data = yaml.parse(rawData);
+
+      // Validate that the file contains a dict/object
+      if (typeof data !== 'object' || Array.isArray(data)) {
+        logger.warning(`Skipping varsFile '${varsFile}': content must be a dictionary, not ${Array.isArray(data) ? 'a list' : typeof data}`);
+        continue;
+      }
+
+      // Deep merge with existing vars
+      mergedVars = _.merge(mergedVars, data);
+      logger.debug(`Successfully loaded and merged varsFile: ${varsFile}`);
+    } catch (err) {
+      logger.error(`Failed to load varsFile '${varsFile}': ${err.message}`);
+      // Continue with other files even if one fails
+    }
+  }
+
+  return mergedVars;
 }
 
 function getFormInfo(form,formName='',loadFullConfig=false) {
@@ -271,8 +377,12 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
   var existingFormNames=[]
   var errors = []
   var warnings = []
-  const formsPath = (await Repository.getFormsPath()) || appConfig.formsPath
-  const formsdirpath=path.join(path.dirname(formsPath),"/forms");  
+  
+  // Get forms folder paths - can be multiple from repositories or single default path
+  const repoFormsPaths = (await Repository.getFormsFolderPath()) || []
+  const formsdirpaths = repoFormsPaths.length > 0 ? repoFormsPaths : [appConfig.formsFolderPath]
+  
+  logger.debug(`Loading forms from ${formsdirpaths.length} folder(s): ${formsdirpaths.join(", ")}`)
 
   function warn(message) {
     logger.warning(message);
@@ -283,7 +393,13 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
     errors.push(message);
   }
   // let's load the base config
-  var unvalidatedBase = await getBaseConfig(formsPath);
+  const { config: unvalidatedBase, deprecationMessage } = await getBaseConfig();
+  
+  // Add deprecation warning if using legacy forms.yaml
+  if (deprecationMessage) {
+    warn(deprecationMessage);
+  }
+  
   // let's grab the base config and validate it, without it the app won't work
   var baseConfig = {
     categories: unvalidatedBase.categories || [],
@@ -306,58 +422,65 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
 
   var unvalidatedForms = unvalidatedBase.forms || []; // get the forms from the base config, will be deprecated in the future
   if (unvalidatedForms.length > 0){
-    warn("Found forms in base config, this will be deprecated in the future, please use forms directory instead.")
+    warn("Found forms in base config file. This is DEPRECATED. Please move forms to the forms/ folder.")
   }
   // set source to base (no source)
   for(let f of unvalidatedForms){
     delete f.source // remove source from the base forms, it is not needed
   };
-  // read extra form files
-  // read extra form files (recursively include subdirectories)
-  var files = [];
-  try {
-    // walk directory recursively and collect relative paths for .yml/.yaml files
-    const walk = (dir) => {
-      const entries = fs.readdirSync(dir, { withFileTypes: true });
-      for (const entry of entries) {
-        const fullPath = path.join(dir, entry.name);
-        if (entry.isDirectory()) {
-          walk(fullPath);
-        } else if (entry.isFile()) {
-          const ext = path.extname(entry.name).toLowerCase();
-          if (ext === '.yml' || ext === '.yaml') {
-            // store path relative to formsdirpath so getFormsFromFile(formsdirpath, relPath) works
-            const rel = path.relative(formsdirpath, fullPath);
-            files.push(rel);
+  
+  // read extra form files from all forms directories
+  // Loop through each forms directory path
+  for(const formsdirpath of formsdirpaths){
+    var files = [];
+    try {
+      // walk directory recursively and collect relative paths for .yml/.yaml files
+      const walk = (dir) => {
+        const entries = fs.readdirSync(dir, { withFileTypes: true });
+        for (const entry of entries) {
+          const fullPath = path.join(dir, entry.name);
+          if (entry.isDirectory()) {
+            walk(fullPath);
+          } else if (entry.isFile()) {
+            const ext = path.extname(entry.name).toLowerCase();
+            if (ext === '.yml' || ext === '.yaml') {
+              // store path relative to formsdirpath so getFormsFromFile(formsdirpath, relPath) works
+              const rel = path.relative(formsdirpath, fullPath);
+              files.push(rel);
+            }
           }
         }
+      };
+      if (fs.existsSync(formsdirpath)) {
+        walk(formsdirpath);
+      } else {
+        warn(`Failed to load forms directory '${formsdirpath}'.`);
+        continue; // skip this directory
       }
-    };
-    if (fs.existsSync(formsdirpath)) {
-      walk(formsdirpath);
-    } else {
-      warn(`Failed to load forms directory '${formsdirpath}'.`);
-      files = [];
+    } catch (e) {
+      warn(`Failed to load forms directory '${formsdirpath}'.`, e);
+      continue; // skip this directory
     }
-  } catch (e) {
-    warn(`Failed to load forms directory '${formsdirpath}'.`, e);
-    files = [];
-  }
 
-  if (files && files.length) {
-    // sort for deterministic order
-    files.sort();
-    // read files
-    for (const item of files) {
-      // read the file and add to the forms array
-      logger.debug(`Loading forms from file ${item}`);
-      try{
-        unvalidatedForms = unvalidatedForms.concat(getFormsFromFile(formsdirpath,item)); // get the forms from the file, including subpaths
-      }
-      catch (e) {
-        error(e.message);
-      }
-    };
+    if (files && files.length) {
+      logger.debug(`Found ${files.length} form file(s) in '${formsdirpath}'`)
+      // sort for deterministic order
+      files.sort();
+      // read files
+      for (const item of files) {
+        // read the file and add to the forms array
+        logger.debug(`Loading forms from file ${item} in ${formsdirpath}`);
+        try{
+          unvalidatedForms = unvalidatedForms.concat(getFormsFromFile(formsdirpath,item)); // get the forms from the file, including subpaths
+        }
+        catch (e) {
+          error(e.message);
+        }
+      };
+    }
+  }
+  
+  // Process all collected forms
   for (const f of unvalidatedForms) {
       var form = null; // initialize form
       if(!f?.name){
@@ -388,6 +511,15 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
         error(`Failed to validate form '${f.name}'.\r\n${e.message}`);
       }  
       if(form){
+        // Load varsFiles if this is a single form request and varsFiles is defined
+        if(formName && form.varsFiles){
+          logger.debug(`Loading varsFiles for form ${f.name}`);
+          try {
+            form.vars = await loadVarsFiles(form.varsFiles);
+          } catch (e) {
+            error(`Failed to load varsFiles for form '${f.name}'.\r\n${e.message}`);
+          }
+        }
         baseConfig.forms.push(form);   // merge the form into the base forms
         // if we are loading full config, we can return the form right away
         if(formName){
@@ -396,8 +528,7 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
           return baseConfig // exit early if we found the form we are looking for
         }                
       }
-    };    
-  }
+    }
 
   baseConfig.errors = errors; // add errors to the base config
   baseConfig.warnings = warnings; // add warnings to the base config
@@ -582,14 +713,27 @@ Form.removeOld=function(days=60){
   }
 }
 Form.backup = function(){
-  logger.info("Making backup of forms")
+  logger.info("Making backup of config and forms")
   var timestamp=moment().format("YYYYMMDDkkmmssSSS")
   var backupformsdir=formsBackupPath +".bak."+timestamp
-  var backupformsfile=formFileBackupPath +".bak."+timestamp
-  var backupfile=path.parse(backupformsfile).base
+  var backupconfigfile=configFileBackupPath +".bak."+timestamp
+  var backuplegacyformsfile=legacyFormFileBackupPath +".bak."+timestamp
+  var backupfile=path.parse(backupconfigfile).base
   Form.removeOld(oldBackupDays)
-  logger.debug(`Copying forms file '${appConfig.formsPath}'->'${backupformsfile}'`)
-  fse.copySync(appConfig.formsPath,backupformsfile)
+  
+  // Back up config.yaml (new structure)
+  if(fs.existsSync(appConfig.configPath)){
+    logger.debug(`Copying config file '${appConfig.configPath}'->'${backupconfigfile}'`)
+    fse.copySync(appConfig.configPath,backupconfigfile)
+  }
+  
+  // Back up forms.yaml (legacy - for backward compatibility)
+  if(fs.existsSync(appConfig.formsPath)){
+    logger.debug(`Copying legacy forms file '${appConfig.formsPath}'->'${backuplegacyformsfile}'`)
+    fse.copySync(appConfig.formsPath,backuplegacyformsfile)
+  }
+  
+  // Back up forms directory
   if(fs.existsSync(formsPath)){
     logger.debug(`Copying forms directory '${formsPath}'->'${backupformsdir}'`)
     fse.removeSync(backupformsdir) // just in case, remove it (unlikely hit)
@@ -600,11 +744,24 @@ Form.backup = function(){
 }
 // remove unique backupname with forms folder
 Form.remove = function(backupName){
-  logger.debug(`Removing old file '${backupName}'`)
+  logger.debug(`Removing old backup '${backupName}'`)
   var backupformsdir=formsBackupPath+getBackupSuffix(backupName)
-  var backupformsfile=formFileBackupPath+getBackupSuffix(backupName)
-  logger.debug(`Removing forms file '${backupformsfile}'`)
-  fse.removeSync(backupformsfile)
+  var backupconfigfile=configFileBackupPath+getBackupSuffix(backupName)
+  var backuplegacyformsfile=legacyFormFileBackupPath+getBackupSuffix(backupName)
+  
+  // Remove config.yaml backup
+  if(fs.existsSync(backupconfigfile)){
+    logger.debug(`Removing config file '${backupconfigfile}'`)
+    fse.removeSync(backupconfigfile)
+  }
+  
+  // Remove legacy forms.yaml backup
+  if(fs.existsSync(backuplegacyformsfile)){
+    logger.debug(`Removing legacy forms file '${backuplegacyformsfile}'`)
+    fse.removeSync(backuplegacyformsfile)
+  }
+  
+  // Remove forms directory backup
   if(fs.existsSync(backupformsdir)){
     logger.debug(`Removing forms directory '${backupformsdir}'`)
     fse.removeSync(backupformsdir)
@@ -612,9 +769,22 @@ Form.remove = function(backupName){
 }
 Form.restoreBackup = function(backupName){
   var backupformsdir=formsBackupPath+getBackupSuffix(backupName)
-  var backupformsfile=formFileBackupPath+getBackupSuffix(backupName)
-  logger.debug(`Copying forms file '${backupformsfile}'->'${appConfig.formsPath}'`)
-  fse.copySync(backupformsfile,appConfig.formsPath)
+  var backupconfigfile=configFileBackupPath+getBackupSuffix(backupName)
+  var backuplegacyformsfile=legacyFormFileBackupPath+getBackupSuffix(backupName)
+  
+  // Restore config.yaml
+  if(fs.existsSync(backupconfigfile)){
+    logger.debug(`Copying config file '${backupconfigfile}'->'${appConfig.configPath}'`)
+    fse.copySync(backupconfigfile,appConfig.configPath)
+  }
+  
+  // Restore legacy forms.yaml (if it exists in backup)
+  if(fs.existsSync(backuplegacyformsfile)){
+    logger.debug(`Copying legacy forms file '${backuplegacyformsfile}'->'${appConfig.formsPath}'`)
+    fse.copySync(backuplegacyformsfile,appConfig.formsPath)
+  }
+  
+  // Restore forms directory
   if(fs.existsSync(backupformsdir)){
     logger.debug(`Copying forms directory '${backupformsdir}'->'${formsPath}'`)
     fse.removeSync(formsPath) // just in case, remove it (unlikely hit)
@@ -672,8 +842,8 @@ Form.save = function(data){
     fse.emptyDirSync(formsPath) // empty formsdir
     fse.copySync(tmpDir,formsPath) // copy from temp
 
-    logger.debug(`Writing base file '${appConfig.formsPath}'`)
-    fs.writeFileSync(appConfig.formsPath,yaml.stringify(formsConfig)); // write basefile
+    logger.debug(`Writing base file '${appConfig.configPath}'`)
+    fs.writeFileSync(appConfig.configPath,yaml.stringify(formsConfig)); // write basefile
   }
   catch(err) {
     // handle error
@@ -744,14 +914,14 @@ Form.initBackupFolder=function(){
   try{
     fs.mkdirSync(backupPath, { recursive: true })
     // move old forms.bak.files
-    var files = fs.readdirSync(formFilePath)
+    var files = fs.readdirSync(legacyFormFilePath)
     if(files){
       // filter only backup-files and folders
       files=files.filter((item)=>item.match(/\.bak\.[0-9]*$/))
       // read files
       for(const item of files){
         try{
-          const from = path.join(formFilePath,item)
+          const from = path.join(legacyFormFilePath,item)
           const to = path.join(backupPath,item)
           logger.debug(`moving ${from} -> ${to}`)
           fse.moveSync(from,to)

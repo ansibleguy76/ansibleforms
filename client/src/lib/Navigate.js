@@ -55,7 +55,6 @@ var Navigate = {
   },
 
   toOrigin(router, route){
-    console.log(route)
     if (route.query.from && route.query.from != "/login" && route.query.from != "/logout") {
         // authentication, redirect to original route
         console.log("Redirecting to original route")
