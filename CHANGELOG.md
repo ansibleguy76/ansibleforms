@@ -50,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   small visual job issue
 -   OIDC login (kudos to theymademedothat)
 -   Password decrypt issue with mail settings
+-   fixed credential cache issue
 
 ## [6.0.2] - 2025-11-30
 
