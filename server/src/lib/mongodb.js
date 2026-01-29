@@ -1,7 +1,7 @@
 //- MYSQL Module
 import logger from './logger.js';
 import { MongoClient as Client } from 'mongodb';
-import Credential from '../models/credential.model.js';
+import Credential from '../models/credential.model.v2.js';
 
 const Mongo = {}
 
@@ -19,7 +19,7 @@ Mongo.query = async function (connection_name, query) {
   }catch(err){
     throw new Error("["+connection_name+"] query must be valid json. Use double quotes, not single quotes.  " + queryarr[2])
   }
-  var config = await Credential.findByName(connection_name)
+  var creds = await Credential.findByNameRegex(connection_name)
   var uri = `mongodb://${encodeURI(config.user)}:${encodeURI(config.password)}@${config.host}:${config.port}`
   var client
   try{
