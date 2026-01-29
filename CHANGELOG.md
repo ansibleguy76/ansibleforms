@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### fixed
+
+-   Credential caching when testing
+-   Sequential multistep
+
 ## [6.1.0] - 2026-01-24
 
 ### Added
