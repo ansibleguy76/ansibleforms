@@ -36,7 +36,7 @@ import '@vuepic/vue-datepicker/dist/main.css'
 
 // font awesome global
 import { library} from "@fortawesome/fontawesome-svg-core";
-import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+import { FontAwesomeIcon, FontAwesomeLayers, FontAwesomeLayersText } from "@fortawesome/vue-fontawesome";
 import { fas } from '@fortawesome/free-solid-svg-icons'
 import { fab } from '@fortawesome/free-brands-svg-icons';
 import { far } from '@fortawesome/free-regular-svg-icons';
@@ -68,6 +68,8 @@ export function registerPlugins (app) {
     .use(VueShowdownPlugin)
     .use(VueHighlightJS)
     .component("font-awesome-icon", FontAwesomeIcon)
+    .component("font-awesome-layers", FontAwesomeLayers)
+    .component("font-awesome-layers-text", FontAwesomeLayersText)
     .component("popper", Popper)
     .component("VueJsonPretty", VueJsonPretty)
     .component("VueDatePicker", VueDatePicker)

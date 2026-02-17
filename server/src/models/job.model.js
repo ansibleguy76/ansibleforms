@@ -1714,6 +1714,7 @@ Ansible.launch = async (
     keepExtravars: keepExtravars,
   };
 
+  logger.notice("Running from directory : " + cmdObj.directory);
   logger.notice("Running playbook : " + playbook);
   logger.debug("extravars : " + extravars);
   logger.debug("inventory : " + inventory);

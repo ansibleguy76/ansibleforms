@@ -16,7 +16,7 @@ import Helpers from "../lib/common.js";
 import Settings from './settings.model.js';
 import os from 'os';
 import AJVErrorParser from './ajvErrorParser.model.js';
-import _ from 'lodash';
+
 
 const ajv = new Ajv({allErrors: true});
 
@@ -302,7 +302,15 @@ function getFormInfo(form,formName='',loadFullConfig=false) {
   if(!formName){
     // list, only mimimal info
     return {
-      icon: form.icon || '',
+      icon: form.icon || undefined,
+      iconSize: form.iconSize || "3x",
+      iconColor: form.iconColor || undefined,
+      overlayIcon: form.overlayIcon || undefined,
+      overlayIconTransform: form.overlayIconTransform || undefined,
+      overlayIconColor: form.overlayIconColor || undefined,
+      overlayIconText: form.overlayIconText || undefined,
+      overlayIconTextPosition: form.overlayIconTextPosition || undefined,
+      overlayIconTextColor: form.overlayIconTextColor || undefined,
       image: form.image || '',
       name: form.name,
       categories: form.categories || [],

@@ -330,6 +330,30 @@
           "icon": {
             "$ref": "/icon"
           },
+          "iconColor": {
+            "type": "string"
+          },
+          "iconSize": {
+            "type": "string"
+          },
+          "overlayIcon": {
+            "$ref": "/icon"
+          },
+          "overlayIconTransform": {
+            "type": "string"
+          },
+          "overlayIconColor": {
+            "type": "string"
+          },
+          "overlayIconText": {
+            "type": "string"
+          },
+          "overlayIconTextPosition": {
+            "type": "string"
+          },
+          "overlayIconTextColor": {
+            "type": "string"
+          },
           "tileClass": {
             "anyOf":[
               {
@@ -1407,6 +1431,30 @@
                 "hide": {"type": "boolean"},
                 "icon": {
                   "$ref": "/icon"
+                },
+                "iconColor": {
+                  "type": "string"
+                },
+                "iconSize": {
+                  "type": "string"
+                },
+                "overlayIcon": {
+                  "$ref": "/icon"
+                },
+                "overlayIconTransform": {
+                  "type": "string"
+                },
+                "overlayIconColor": {
+                  "type": "string"
+                },
+                "overlayIconText": {
+                  "type": "string"
+                },
+                "overlayIconTextPosition": {
+                  "type": "string"
+                },
+                "overlayIconTextColor": {
+                  "type": "string"
                 },
                 "tableFields": {
                   "type": "array",

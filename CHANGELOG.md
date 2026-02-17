@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Credential caching when testing
 -   Sequential multistep
 
+### Added
+
+-   More Tile icon styling (size, color, overlayicon, overlaytext)
+
 ## [6.1.0] - 2026-01-24
 
 ### Added
