@@ -6,6 +6,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fse from "fs-extra";
 import moment from "moment";
+import _ from "lodash";
 import Errors from '../lib/errors.js';
 import { execSync } from 'child_process';
 import yaml from "yaml";
