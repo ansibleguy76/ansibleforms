@@ -6,6 +6,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fse from "fs-extra";
 import moment from "moment";
+import _ from "lodash";
 import Errors from '../lib/errors.js';
 import { execSync } from 'child_process';
 import yaml from "yaml";
@@ -16,7 +17,7 @@ import Helpers from "../lib/common.js";
 import Settings from './settings.model.js';
 import os from 'os';
 import AJVErrorParser from './ajvErrorParser.model.js';
-import _ from 'lodash';
+
 
 const ajv = new Ajv({allErrors: true});
 
@@ -302,7 +303,16 @@ function getFormInfo(form,formName='',loadFullConfig=false) {
   if(!formName){
     // list, only mimimal info
     return {
-      icon: form.icon || '',
+      icon: form.icon || undefined,
+      iconSize: form.iconSize || "3x",
+      iconColor: form.iconColor || undefined,
+      overlayIcon: form.overlayIcon || undefined,
+      overlayIconCircle: form.overlayIconCircle ?? true,
+      overlayIconTransform: form.overlayIconTransform || undefined,
+      overlayIconColor: form.overlayIconColor || undefined,
+      overlayIconText: form.overlayIconText || undefined,
+      overlayIconTextPosition: form.overlayIconTextPosition || undefined,
+      overlayIconTextColor: form.overlayIconTextColor || undefined,
       image: form.image || '',
       name: form.name,
       categories: form.categories || [],

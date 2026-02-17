@@ -1,7 +1,7 @@
 //- MYSQL Module
 import logger from './logger.js';
 import client from 'mssql';
-import Credential from '../models/credential.model.js';
+import Credential from '../models/credential.model.v2.js';
 
 const Mssql = {}
 
@@ -9,7 +9,7 @@ const Mssql = {}
 
 Mssql.query = async function (connection_name, query) {
 
-  var creds = await Credential.findByName(connection_name)
+  var creds = await Credential.findByNameRegex(connection_name)
   var config = {
     server: creds.host,
     user: creds.user,

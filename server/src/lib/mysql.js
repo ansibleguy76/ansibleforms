@@ -1,7 +1,7 @@
 //- MYSQL Module
 import logger from './logger.js';
 import client from 'mysql2/promise.js';
-import Credential from '../models/credential.model.js';
+import Credential from '../models/credential.model.v2.js';
 
 const MySql = {}
 
@@ -18,7 +18,7 @@ MySql.clean=function(config){
 
 MySql.query = async function (connection_name, query) {
   // get credentials
-  var config = await Credential.findByName(connection_name)
+  var config = await Credential.findByNameRegex(connection_name)
   logger.debug(`[${connection_name}] query : ${query}`)
   var conn
   try{

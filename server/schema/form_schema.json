@@ -199,6 +199,33 @@
     "icon": {
       "type": "string"
     },
+    "iconColor": {
+      "type": "string"
+    },
+    "iconSize": {
+      "type": "string"
+    },
+    "overlayIcon": {
+      "type": "string"
+    },
+    "overlayIconTransform": {
+      "type": "string"
+    },
+    "overlayIconColor": {
+      "type": "string"
+    },
+    "overlayIconCircle": {
+      "type": "boolean"
+    },
+    "overlayIconText": {
+      "type": "string"
+    },
+    "overlayIconTextPosition": {
+      "type": "string"
+    },
+    "overlayIconTextColor": {
+      "type": "string"
+    },
     "tileClass": {
       "anyOf":[
         {
@@ -1274,6 +1301,33 @@
           },
           "hide": {"type": "boolean"},
           "icon": {
+            "type": "string"
+          },
+          "iconColor": {
+            "type": "string"
+          },
+          "iconSize": {
+            "type": "string"
+          },
+          "overlayIcon": {
+            "type": "string"
+          },
+          "overlayIconTransform": {
+            "type": "string"
+          },
+          "overlayIconColor": {
+            "type": "string"
+          },
+          "overlayIconCircle": {
+            "type": "boolean"
+          },
+          "overlayIconText": {
+            "type": "string"
+          },
+          "overlayIconTextPosition": {
+            "type": "string"
+          },
+          "overlayIconTextColor": {
             "type": "string"
           },
           "tableFields": {

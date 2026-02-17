@@ -1016,6 +1016,141 @@
           code: |
             name: Delete virtual machine
             icon: trash
+      - name: iconColor
+        type: string
+        allowed: valid color name
+        group: visualization
+        short: Icon color
+        description: |
+          Specifies the color of the icon. Use any valid CSS color class name (e.g., primary, success, danger, warning, info, dark, white, ...).
+        examples: 
+        - name: Red icon
+          code: |
+            name: My Form
+            icon: server
+            iconColor: danger
+      - name: iconSize
+        type: string
+        allowed: xs, sm, lg, 2x, 3x, 5x, 7x, 10x
+        group: visualization
+        short: Icon size
+        default: 3x
+        description: |
+          Specifies the size of the icon. 
+        examples: 
+        - name: Large icon
+          code: |
+            name: My Form
+            icon: server
+            iconSize: 5x
+      - name: overlayIcon
+        type: string
+        allowed: valid fontawesome icon name
+        group: visualization
+        short: Overlay icon on main icon
+        description: |
+          Adds a icon on top of the main icon for layering effects. Useful for status indicators or badges.
+        examples: 
+        - name: Server with check overlay
+          code: |
+            name: Server Status OK
+            icon: server
+            overlayIcon: check
+            overlayIconColor: success
+            overlayIconTransform: shrink-6 up-7 right-7
+      - name: overlayIconTransform
+        type: string
+        allowed: valid fontawesome transform
+        group: visualization
+        short: Transform for overlay icon
+        default: shrink-6 up-7 right-7
+        description: |
+          Specifies the transform/positioning for the overlay icon. 
+          You can use FontAwesome transform values like shrink, grow, up, down, left, right.
+        examples: 
+        - name: Custom positioned overlay
+          code: |
+            name: My Form
+            icon: circle
+            overlayIcon: check
+            overlayIconTransform: shrink-8 down-2
+      - name: overlayIconColor
+        type: string
+        allowed: valid color name
+        group: visualization
+        short: Color for overlay icon
+        default: success
+        description: |
+          Specifies the color of the overlay icon.
+        examples: 
+        - name: Red overlay icon
+          code: |
+            name: Alert Status
+            icon: circle
+            overlayIcon: exclamation
+            overlayIconColor: danger
+      - name: overlayIconCircle
+        type: boolean
+        group: visualization
+        short: Show circle background behind overlay icon
+        default: true
+        description: |
+          When enabled, shows a colored circle background behind the overlay icon. 
+          The circle uses the overlayIconColor, and the icon inside becomes white in light mode or dark in dark mode.
+          When disabled, the overlay icon appears without a circle background.
+        examples: 
+        - name: Overlay without circle
+          code: |
+            name: My Form
+            icon: server
+            overlayIcon: check
+            overlayIconCircle: false
+            overlayIconColor: success
+      - name: overlayIconText
+        type: string
+        allowed: any text
+        group: visualization
+        short: Text overlay on icon
+        description: |
+          Adds text as an overlay on the icon. Can be used for badges, counters, or labels.
+        examples: 
+        - name: New badge
+          code: |
+            name: New Feature
+            icon: star
+            overlayIconText: "New!"
+            overlayIconTextPosition: top-right
+            overlayIconTextColor: warning
+      - name: overlayIconTextPosition
+        type: string
+        allowed: top-left, top-right, bottom-left, bottom-right
+        group: visualization
+        short: Position for text overlay
+        default: bottom-left
+        description: |
+          Specifies the position of the text overlay.
+        examples: 
+        - name: Top right badge
+          code: |
+            name: Notification
+            icon: bell
+            overlayIconText: "3"
+            overlayIconTextPosition: top-right
+      - name: overlayIconTextColor
+        type: string
+        allowed: valid color name
+        group: visualization
+        short: Color for text overlay
+        default: success
+        description: |
+          Specifies the color of the text overlay.
+        examples: 
+        - name: Warning badge
+          code: |
+            name: Pending Items
+            icon: inbox
+            overlayIconText: "!"
+            overlayIconTextColor: warning
       - name: image
         type: string
         allowed: valid image url
@@ -3183,7 +3318,7 @@
             type: string
             group: visualization
             version: 5.0.9
-            with_type: table
+            with_types: table
             short: Optional title for the table add action
             description: |
               When you add a record in a table, the default title is `Add`.  
@@ -3192,7 +3327,7 @@
             type: string
             group: visualization
             version: 5.0.9
-            with_type: table
+            with_types: table
             short: Optional title for the table edit action
             description: |
               When you edit a record in a table, the default title is `Edit`.  

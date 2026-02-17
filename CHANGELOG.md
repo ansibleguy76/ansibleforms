@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.1.1] - 2026-02-17
+
+### fixed
+
+-   Credential caching when testing
+-   Sequential multistep
+
+### Added
+
+-   More Tile icon styling (size, color, overlayicon, overlaytext)
+-   Paramiko in base image
+
 ## [6.1.0] - 2026-01-24
 
 ### Added
@@ -52,6 +64,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   small visual job issue
 -   OIDC login (kudos to theymademedothat)
 -   Password decrypt issue with mail settings
+-   fixed credential cache issue
 
 ## [6.0.2] - 2025-11-30
 
@@ -943,7 +956,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/6.1.0...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/6.1.1...HEAD
+
+[6.1.1]: https://github.com/ansibleguy76/ansibleforms/compare/6.1.0...6.1.1
 
 [6.1.0]: https://github.com/ansibleguy76/ansibleforms/compare/6.0.2...6.1.0
 

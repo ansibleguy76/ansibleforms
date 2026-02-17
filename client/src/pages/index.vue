@@ -212,7 +212,18 @@ onMounted(async () => {
                                                 <div v-if="form.image || form.icon" class="col-3 text-center">
                                                     <img v-if="form.image" :src="form.image" alt="Image" class="img-fluid" />
                                                     <span v-if="form.icon" class="icon is-large text-body">
-                                                        <FaIcon :icon="form.icon" size="3x" />
+                                                        <FaIcon 
+                                                            :icon="form.icon" 
+                                                            :size="form.iconSize"
+                                                            :color="form.iconColor"
+                                                            :overlayIcon="form.overlayIcon"
+                                                            :overlayIconCircle="form.overlayIconCircle"
+                                                            :overlayIconTransform="form.overlayIconTransform"
+                                                            :overlayIconColor="form.overlayIconColor"
+                                                            :overlayIconText="form.overlayIconText"
+                                                            :overlayIconTextPosition="form.overlayIconTextPosition"
+                                                            :overlayIconTextColor="form.overlayIconTextColor"
+                                                        />
                                                     </span>
                                                 </div>
                                                 <div class="col text-body">

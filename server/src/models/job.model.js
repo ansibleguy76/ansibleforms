@@ -587,6 +587,7 @@ Job.getRawFormData = async function (user, id) {
  * @param {Object} params.extravars - Extra variables
  * @param {number} params.parentId - Parent job ID for multistep jobs
  * @param {Object} params.rawFormData - Raw form data for relaunch feature
+ * @param {boolean} params.waitForCompletion - If true, waits for job completion instead of fire-and-forget
  */
 Job.launch = async function ({
   form,
@@ -595,7 +596,8 @@ Job.launch = async function ({
   credentials = {},
   extravars = {},
   parentId = null,
-  rawFormData = {}
+  rawFormData = {},
+  waitForCompletion = false
 }) {
   const creds = credentials; // Alias for backward compatibility internally
   
@@ -768,12 +770,17 @@ Job.launch = async function ({
     }
   };
 
-  // Always fire and forget - start execution in background and return job ID immediately
-  executeJob().catch(err => {
-    logger.error(`Background job ${jobid} failed:`, err);
-  });
-  
-  return { id: jobid };
+  // If waitForCompletion is true (multistep), return jobid immediately with a promise to await
+  // Otherwise fire and forget - start execution in background and return job ID immediately
+  if (waitForCompletion) {
+    const completionPromise = executeJob();
+    return { id: jobid, completionPromise };
+  } else {
+    executeJob().catch(err => {
+      logger.error(`Background job ${jobid} failed:`, err);
+    });
+    return { id: jobid };
+  }
 };
 
 /**
@@ -1408,15 +1415,27 @@ Multistep.launch = async function ({
               user,
               credentials: creds,
               extravars: ev,
-              parentId: jobid
+              parentId: jobid,
+              waitForCompletion: true
             });
-            if (jobSuccess) {
-              Job.printJobOutput(
+            if (jobSuccess && jobSuccess.id) {
+              await Job.printJobOutput(
                 `ok: [Launched step ${step.name} with jobid '${jobSuccess.id}']`,
                 "stdout",
                 jobid,
                 ++counter
               );
+              
+              // Now wait for the step to complete
+              if (jobSuccess.completionPromise) {
+                await jobSuccess.completionPromise;
+                await Job.printJobOutput(
+                  `ok: [Completed step ${step.name} with jobid '${jobSuccess.id}']`,
+                  "stdout",
+                  jobid,
+                  ++counter
+                );
+              }
             }
             if (!jobSuccess) {
               throw new Errors.ApiError(
@@ -1695,6 +1714,7 @@ Ansible.launch = async (
     keepExtravars: keepExtravars,
   };
 
+  logger.notice("Running from directory : " + cmdObj.directory);
   logger.notice("Running playbook : " + playbook);
   logger.debug("extravars : " + extravars);
   logger.debug("inventory : " + inventory);
