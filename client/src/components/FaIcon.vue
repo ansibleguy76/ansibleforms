@@ -20,6 +20,7 @@
     /******************************************************************/
 
     import { computed } from 'vue';
+    import { useAppStore } from '@/stores/app';
 
     // PROPS
 
@@ -56,6 +57,10 @@
             type: String,
             default: 'success'
         },
+        overlayIconCircle: {
+            type: Boolean,
+            default: true
+        },
         overlayIconText: {
             type: String,
             default: null
@@ -71,6 +76,8 @@
     });
 
     // COMPUTED
+
+    const appStore = useAppStore();
 
     const i = computed(() => {
         if (props.icon?.includes(',')) {
@@ -88,12 +95,46 @@
         }
     });
 
+    const circleColor = computed(() => {
+        return props.overlayIconColor;
+    });
+
+    const iconOverlayColor = computed(() => {
+        if (!props.overlayIconCircle) {
+            return props.overlayIconColor;
+        }
+        return appStore.theme === 'dark' ? 'dark' : 'light';
+    });
+
+    const adjustTransform = (transform) => {
+        // Parse and adjust transform string
+        // shrink-X becomes shrink-(X+3)
+        // Other transforms remain unchanged
+        return transform.replace(/shrink-(\d+)/g, (match, value) => {
+            const num = parseInt(value);
+            return `shrink-${num + 4}`;
+        });
+    };
+
+    const circleTransform = computed(() => {
+        return props.overlayIconCircle ? props.overlayIconTransform : null;
+    });
+
+    const iconTransform = computed(() => {
+        if (props.overlayIconCircle) {
+            return adjustTransform(props.overlayIconTransform);
+        } else {
+            return props.overlayIconTransform;
+        }
+    });
+
 </script>
 <template>
     <!-- Layered icons when overlayIcon or overlayIconText is provided -->
     <font-awesome-layers v-if="overlayIcon || overlayIconText" :class="[size ? `fa-${size}` : '']">
         <font-awesome-icon :class="`text-${color}`" :role="role" :icon="i" :fixed-width="fixedwidth" :spin="icon=='spinner'" />
-        <font-awesome-icon v-if="overlayIcon" :icon="overlayI" inverse :transform="overlayIconTransform" :class="`text-${overlayIconColor}`" />
+        <font-awesome-icon v-if="overlayIconCircle" icon="circle" inverse :transform="circleTransform" :class="`text-${circleColor}`" />        
+        <font-awesome-icon v-if="overlayIcon" :icon="overlayI" inverse :transform="iconTransform" :class="`text-${iconOverlayColor}`" />
         <font-awesome-layers-text v-if="overlayIconText" counter :position="overlayIconTextPosition" :class="`bg-${overlayIconTextColor}`" :value="overlayIconText" />
     </font-awesome-layers>
     

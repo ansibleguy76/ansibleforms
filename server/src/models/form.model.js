@@ -306,6 +306,7 @@ function getFormInfo(form,formName='',loadFullConfig=false) {
       iconSize: form.iconSize || "3x",
       iconColor: form.iconColor || undefined,
       overlayIcon: form.overlayIcon || undefined,
+      overlayIconCircle: form.overlayIconCircle || true,
       overlayIconTransform: form.overlayIconTransform || undefined,
       overlayIconColor: form.overlayIconColor || undefined,
       overlayIconText: form.overlayIconText || undefined,

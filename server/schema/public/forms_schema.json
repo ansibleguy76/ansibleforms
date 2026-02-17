@@ -491,6 +491,9 @@
     "overlayIconColor": {
       "type": "string"
     },
+    "overlayIconCircle": {
+      "type": "boolean"
+    },
     "overlayIconText": {
       "type": "string"
     },
@@ -1611,6 +1614,9 @@
           },
           "overlayIconColor": {
             "type": "string"
+          },
+          "overlayIconCircle": {
+            "type": "boolean"
           },
           "overlayIconText": {
             "type": "string"

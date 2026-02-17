@@ -217,6 +217,7 @@ onMounted(async () => {
                                                             :size="form.iconSize"
                                                             :color="form.iconColor"
                                                             :overlayIcon="form.overlayIcon"
+                                                            :overlayIconCircle="form.overlayIconCircle"
                                                             :overlayIconTransform="form.overlayIconTransform"
                                                             :overlayIconColor="form.overlayIconColor"
                                                             :overlayIconText="form.overlayIconText"

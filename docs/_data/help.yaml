@@ -1089,6 +1089,23 @@
             icon: circle
             overlayIcon: exclamation
             overlayIconColor: danger
+      - name: overlayIconCircle
+        type: boolean
+        group: visualization
+        short: Show circle background behind overlay icon
+        default: true
+        description: |
+          When enabled, shows a colored circle background behind the overlay icon. 
+          The circle uses the overlayIconColor, and the icon inside becomes white in light mode or dark in dark mode.
+          When disabled, the overlay icon appears without a circle background.
+        examples: 
+        - name: Overlay without circle
+          code: |
+            name: My Form
+            icon: server
+            overlayIcon: check
+            overlayIconCircle: false
+            overlayIconColor: success
       - name: overlayIconText
         type: string
         allowed: any text
