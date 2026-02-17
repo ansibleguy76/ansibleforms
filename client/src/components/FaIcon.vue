@@ -134,7 +134,7 @@
     <font-awesome-layers v-if="overlayIcon || overlayIconText" :class="[size ? `fa-${size}` : '']">
         <font-awesome-icon :class="`text-${color}`" :role="role" :icon="i" :fixed-width="fixedwidth" :spin="icon=='spinner'" />
         <font-awesome-icon v-if="overlayIconCircle" icon="circle" inverse :transform="circleTransform" :class="`text-${circleColor}`" />        
-        <font-awesome-icon v-if="overlayIcon" :icon="overlayI" inverse :transform="iconTransform" :class="`text-${iconOverlayColor}`" />
+        <font-awesome-icon v-if="overlayIcon" :icon="overlayI" :inverse="overlayIconCircle" :transform="iconTransform" :class="`text-${iconOverlayColor}`" />
         <font-awesome-layers-text v-if="overlayIconText" counter :position="overlayIconTextPosition" :class="`bg-${overlayIconTextColor}`" :value="overlayIconText" />
     </font-awesome-layers>
     
