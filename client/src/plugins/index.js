@@ -8,7 +8,6 @@
 // import vuetify from './vuetify'
 import pinia from '@/stores'
 import router from '@/router'
-import VueVirtualScroller from 'vue-virtual-scroller'
 import {VueShowdownPlugin} from 'vue-showdown'
 import Popper from "vue3-popper";
 import clickOutside from "@/directives/clickOutside"; 
@@ -31,7 +30,6 @@ import 'vue-json-pretty/lib/styles.css'
 // Import the css for vue-sonner
 import 'vue-sonner/style.css'
 
-import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
 import '@vuepic/vue-datepicker/dist/main.css'
 
 // font awesome global
@@ -50,7 +48,6 @@ export function registerPlugins (app) {
     // .use(vuetify)
     .use(router)
     .use(pinia)
-    .use(VueVirtualScroller)
     .use(VueShowdownPlugin)
     .use(VueHighlightJS)
     .component("font-awesome-icon", FontAwesomeIcon)
