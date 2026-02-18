@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.1.2] - 2026-02-18
+
 ### Added
 
 -   New ldap packages and new ldap tester (ldap uses api/v2 now)
@@ -975,7 +977,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/6.1.1...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/6.1.2...HEAD
+
+[6.1.2]: https://github.com/ansibleguy76/ansibleforms/compare/6.1.1...6.1.2
 
 [6.1.1]: https://github.com/ansibleguy76/ansibleforms/compare/6.1.0...6.1.1
 
