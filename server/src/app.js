@@ -7,6 +7,7 @@ import fs from "fs";
 // Third-party modules
 import session from "cookie-session";
 import cors from "cors";
+import helmet from "helmet";
 import swaggerUi from "swagger-ui-express";
 import bodyParser from "body-parser";
 import passport from "passport";
@@ -69,6 +70,12 @@ const load = async (app) => {
   await init()
   await auth_azuread.initialize(); // we wait for the azuread to be ready
   await auth_oidc.initialize(); // we wait for the oidc to be ready
+
+  // security headers with helmet
+  app.use(helmet({
+    contentSecurityPolicy: false, // disable CSP to avoid conflicts with dynamic content
+    crossOriginEmbedderPolicy: false // allow embedding if needed
+  }));
 
   // passport
   app.use(
