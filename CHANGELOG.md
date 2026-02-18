@@ -10,8 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 -   New ldap packages and new ldap tester (ldap uses api/v2 now)
--   Major vue package bumps, cleanup rc stuff
 
+### Changed
+
+-   Vue sonner in favor of vue toastification
+-   Cleanup and bumps in vue
+-   Drop vuescroller
 
 
 ## [6.1.1] - 2026-02-17

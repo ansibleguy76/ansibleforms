@@ -35,8 +35,6 @@
     "dayjs": "^1.11.19",
     "vue": "^3.5.28",
     "vue-sonner": "^2.0.9",
-    "vue-toastification": "^2.0.0-rc.2",
-    "vue-virtual-scroller": "^2.0.0-beta.8",
     "vue3-ace-editor": "^2.2.4",
     "yaml": "^2.8.2"
   },
