@@ -19,7 +19,7 @@
 
     import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
     import { watch } from 'vue';    
-    import { useToast } from 'vue-toastification';
+    import { toast } from 'vue-sonner';
     import axios from 'axios';
     import Helpers from '@/lib/Helpers';
     import TokenStorage from '@/lib/TokenStorage';
@@ -30,7 +30,6 @@
     // INIT
 
     const emit = defineEmits(['test','preview','trigger','reset']);
-    const toast = useToast();
 
     // PROPS
 

@@ -1,5 +1,5 @@
 <script setup>
-import { useToast } from 'vue-toastification';
+import { toast } from 'vue-sonner';
 import { useVuelidate } from '@vuelidate/core';
 import { required, helpers, email } from "@vuelidate/validators";
 import Profile from '@/lib/Profile';
@@ -22,7 +22,7 @@ const test = ref({
     to: ""
 });
 
-const toast = useToast();
+
 const $v = useVuelidate(rules, { test });
 
 

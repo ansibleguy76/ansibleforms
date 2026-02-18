@@ -2,13 +2,12 @@
 import axios from 'axios'
 import { ref, computed } from 'vue'
 import { useAppStore } from '@/stores/app'
-import { useToast } from 'vue-toastification'
+import { toast } from 'vue-sonner'
 import { useRoute, useRouter } from 'vue-router'
 import State from '@/lib/State'
 import Navigate from '@/lib/Navigate'
 
 const store = useAppStore()
-const toast = useToast()
 const router = useRouter()
 const route = useRoute()
 

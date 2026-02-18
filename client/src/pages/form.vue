@@ -1,6 +1,6 @@
 <script setup>
 import { useRoute, useRouter } from "vue-router";
-import { useToast } from "vue-toastification";
+import { toast } from "vue-sonner";
 import Profile from "@/lib/Profile";
 import Form from "@/lib/Form";
 import { useAppStore } from "@/stores/app";
@@ -15,7 +15,7 @@ import YAML from "yaml";
 // use
 const route = useRoute();
 const router = useRouter();
-const toast = useToast();
+
 const store = useAppStore();
 
 // refs

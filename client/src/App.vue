@@ -2,6 +2,7 @@
 import { onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import axios from "axios";
+import { Toaster } from "vue-sonner";
 
 import TokenStorage from "@/lib/TokenStorage";
 import Navigate from "@/lib/Navigate";
@@ -11,6 +12,7 @@ import Theme from "@/lib/Theme";
 
 const route = useRoute();
 const router = useRouter();
+const appStore = useAppStore();
 const isLoaded = ref(false)
 // const theme = useTheme();
 
@@ -114,6 +116,7 @@ onMounted(async () => {
 
 
 <template>
+  <Toaster position="bottom-right" :duration="5000" :close-button="true" :theme="appStore.theme" />
   <router-view v-if="isLoaded" />
   <div v-else class="d-flex justify-content-center align-items-center vh-100">
     <div class="text-center">

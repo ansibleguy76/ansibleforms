@@ -25,7 +25,7 @@
 /******************************************************************/
 
 import { useRoute } from "vue-router";
-import { useToast } from "vue-toastification";
+import { toast } from "vue-sonner";
 import { useVuelidate } from '@vuelidate/core';
 import { required, helpers, sameAs } from "@vuelidate/validators";
 import { useTemplateRef, nextTick } from "vue";
@@ -43,7 +43,7 @@ var v$ = null;
 
 // use
 const route = useRoute();
-const toast = useToast();
+
 const store = useAppStore();
 
 // define
@@ -730,7 +730,14 @@ function checkDependencies(field) {
 function setVisibility(fieldname, status) {
     if (visibility.value[fieldname] != status) {
         visibility.value[fieldname] = status
-        resetField(fieldname)
+        if (status) {
+            // Field is becoming visible - reset to default value
+            resetField(fieldname)
+        } else {
+            // Field is becoming hidden - clear its value to undefined
+            form.value[fieldname] = undefined
+            setFieldStatus(fieldname, undefined)
+        }
     }
 }
 

@@ -1,5 +1,5 @@
 <script setup>
-import { useToast } from "vue-toastification";
+import { toast } from "vue-sonner";
 import { ref, onMounted } from 'vue';
 import settings from '@/config/settings';
 import Profile from '@/lib/Profile';
@@ -16,7 +16,7 @@ const restores = ref({});
 const backupFirst = ref(true);
 const action = ref('');
 
-const toast = useToast();
+
 
 
 function previewDetails(folder) {

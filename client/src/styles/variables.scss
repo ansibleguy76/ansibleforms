@@ -9,7 +9,7 @@ $orange:  #ff8800;
 $yellow:  #ede7b1;
 $green:   #198754;
 $teal:    #9db5b2;
-$cyan:    #7cafc4;
+$cyan:    #0190ce;
 
 $grid-breakpoints: (
   xs: 0,
@@ -30,4 +30,8 @@ $container-max-widths: (
 
 $offcanvas-horizontal-width: 75vw;
 $primary: $blue;
-$table-active-bg: $primary;    
+$table-active-bg: $primary;
+
+// Override Bootstrap's warning colors for better visibility
+$warning: $orange; // Use our custom orange
+$warning-border-subtle: #ffb84d; // Custom border-subtle for icons

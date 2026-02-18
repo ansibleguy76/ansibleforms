@@ -7,6 +7,7 @@ import fs from "fs";
 // Third-party modules
 import session from "cookie-session";
 import cors from "cors";
+import helmet from "helmet";
 import swaggerUi from "swagger-ui-express";
 import bodyParser from "body-parser";
 import passport from "passport";
@@ -26,7 +27,6 @@ import schemaRoutes from "./routes/schema.routes.js";
 import queryRoutes from "./routes/query.routes.js";
 import expressionRoutes from "./routes/expression.routes.js";
 import versionRoutes from "./routes/version.routes.js";
-import installRoutes from "./routes/install.routes.js";
 import lockRoutes from "./routes/lock.routes.js";
 import helpRoutes from "./routes/help.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
@@ -69,6 +69,12 @@ const load = async (app) => {
   await init()
   await auth_azuread.initialize(); // we wait for the azuread to be ready
   await auth_oidc.initialize(); // we wait for the oidc to be ready
+
+  // security headers with helmet
+  app.use(helmet({
+    contentSecurityPolicy: false, // disable CSP to avoid conflicts with dynamic content
+    crossOriginEmbedderPolicy: false // allow embedding if needed
+  }));
 
   // passport
   app.use(
@@ -132,7 +138,6 @@ const load = async (app) => {
 
   // api route for version
   app.use(`/api/v1/version`, cors(), versionRoutes);
-  app.use(`/api/v1/install`, cors(), installRoutes);
 
   app.use(`/api/v2/lock`, cors(), authobj, lockRoutes);
   app.use(`/api/v1/help`, cors(), authobj, helpRoutes);
@@ -157,7 +162,7 @@ const load = async (app) => {
   app.use(`/api/v2/job`, cors(), authobj, jobRoutesv2);
   app.use(`/api/v1/user`, cors(), authobj, Middleware.checkSettingsMiddleware, userRoutes);
   app.use(`/api/v1/group`, cors(), authobj, Middleware.checkSettingsMiddleware, groupRoutes);
-  app.use(`/api/v1/ldap`, cors(), authobj, Middleware.checkSettingsMiddleware, ldapRoutes);
+  app.use(`/api/v2/ldap`, cors(), authobj, Middleware.checkSettingsMiddleware, ldapRoutes);
   app.use(`/api/v2/oauth2`, cors(), authobj, Middleware.checkSettingsMiddleware, oauth2Routes);
   app.use(`/api/v1/settings`, cors(), authobj, Middleware.checkSettingsMiddleware, settingsRoutes);
   app.use(`/api/v1/credential`, cors(), authobj, Middleware.checkSettingsMiddleware, credentialRoutes);

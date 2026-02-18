@@ -8,8 +8,6 @@
 // import vuetify from './vuetify'
 import pinia from '@/stores'
 import router from '@/router'
-import Toast from "vue-toastification";
-import VueVirtualScroller from 'vue-virtual-scroller'
 import {VueShowdownPlugin} from 'vue-showdown'
 import Popper from "vue3-popper";
 import clickOutside from "@/directives/clickOutside"; 
@@ -29,9 +27,9 @@ import '@vuepic/vue-datepicker/dist/main.css'
 // Import the css for vue json pretty
 import 'vue-json-pretty/lib/styles.css'
 
-// Import the CSS or use your own!
-import "vue-toastification/dist/index.css";
-import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
+// Import the css for vue-sonner
+import 'vue-sonner/style.css'
+
 import '@vuepic/vue-datepicker/dist/main.css'
 
 // font awesome global
@@ -50,21 +48,6 @@ export function registerPlugins (app) {
     // .use(vuetify)
     .use(router)
     .use(pinia)
-    .use(VueVirtualScroller)
-    .use(Toast, {
-      position: "bottom-right",
-      timeout: 5000,
-      closeOnClick: true,
-      pauseOnFocusLoss: false,
-      pauseOnHover: true,
-      draggable: true,
-      draggablePercent: 0.6,
-      showCloseButtonOnHover: false,
-      hideProgressBar: false,
-      closeButton: "button",
-      icon: true,
-      rtl: false,
-    })
     .use(VueShowdownPlugin)
     .use(VueHighlightJS)
     .component("font-awesome-icon", FontAwesomeIcon)

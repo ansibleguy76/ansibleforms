@@ -49,32 +49,42 @@
     --af-bg-badge   : var(--bs-cyan);
     --af-text-badge : var(--bs-white);
 
+      /* overlay icon circles - lighter colors for light theme */
+    --af-overlay-circle-primary  : var(--bs-primary-border-subtle);
+    --af-overlay-circle-secondary: var(--bs-secondary-border-subtle);
+    --af-overlay-circle-success  : var(--bs-success-border-subtle);
+    --af-overlay-circle-danger   : var(--bs-danger-border-subtle);
+    --af-overlay-circle-warning  : var(--bs-warning-border-subtle);
+    --af-overlay-circle-info     : var(--bs-info-border-subtle);
+    --af-overlay-circle-border   : rgba(0, 0, 0, 0.5);
+    --af-overlay-icon-color      : var(--bs-dark);
+
       /* active background */
     --af-bg-active  : var(--af-primary);
     --af-text-active: var(--bs-light);
 
       /* background tiles */
-    --af-bg-primary-color         : var(--bs-light); /*¨no color for light theme */
-    --af-bg-primary-subtle-color  : var(--bs-light); /*¨no color for light theme */
-    --af-bg-secondary-color       : var(--bs-light); /*¨no color for light theme */
-    --af-bg-secondary-subtle-color: var(--bs-light); /*¨no color for light theme */
-    --af-bg-success-color         : var(--bs-light); /*¨no color for light theme */
-    --af-bg-success-subtle-color  : var(--bs-light); /*¨no color for light theme */
-    --af-bg-danger-color          : var(--bs-light); /*¨no color for light theme */
-    --af-bg-danger-subtle-color   : var(--bs-light); /*¨no color for light theme */
-    --af-bg-warning-color         : var(--bs-light); /*¨no color for light theme */
-    --af-bg-warning-subtle-color  : var(--bs-light); /*¨no color for light theme */
-    --af-bg-info-color            : var(--bs-light); /*¨no color for light theme */
-    --af-bg-info-subtle-color     : var(--bs-light); /*¨no color for light theme */
-    --af-bg-light-color           : var(--bs-light); /*¨no color for light theme */
-    --af-bg-light-subtle-color    : var(--bs-light); /*¨no color for light theme */
-    --af-bg-dark-color            : var(--bs-light); /*¨no color for light theme */
-    --af-bg-dark-subtle-color     : var(--bs-light); /*¨no color for light theme */
-    --af-bg-body-secondary-color  : var(--bs-light); /*¨no color for light theme */
-    --af-bg-body-tertiary-color   : var(--bs-light); /*¨no color for light theme */
-    --af-bg-body-color            : var(--bs-light); /*¨no color for light theme */
-    --af-bg-black-color           : var(--bs-light); /*¨no color for light theme */
-    --af-bg-white-color           : var(--bs-white); /*¨no color for light theme */
+    --af-bg-primary-color         : var(--bs-light);               /* very subtle for light theme */
+    --af-bg-primary-subtle-color  : var(--bs-light);               /* very subtle for light theme */
+    --af-bg-secondary-color       : var(--bs-light);               /* very subtle for light theme */
+    --af-bg-secondary-subtle-color: var(--bs-light);               /* very subtle for light theme */
+    --af-bg-success-color         : #f1f8f1;                       /* very light green for light theme */
+    --af-bg-success-subtle-color  : #f1f8f1;                       /* very light green for light theme */
+    --af-bg-danger-color          : #fff5f5;                       /* very light red for light theme */
+    --af-bg-danger-subtle-color   : #fff5f5;                       /* very light red for light theme */
+    --af-bg-warning-color         : #fffaf0;                       /* very light orange for light theme */
+    --af-bg-warning-subtle-color  : #fffaf0;                       /* very light orange for light theme */
+    --af-bg-info-color            : #f0f8ff;                       /* very light blue for light theme */
+    --af-bg-info-subtle-color     : #f0f8ff;                       /* very light blue for light theme */
+    --af-bg-light-color           : var(--bs-light);               /* subtle color for light theme */
+    --af-bg-light-subtle-color    : var(--bs-light-bg-subtle);     /* subtle color for light theme */
+    --af-bg-dark-color            : var(--bs-dark);                /* subtle color for light theme */
+    --af-bg-dark-subtle-color     : var(--bs-dark-bg-subtle);      /* subtle color for light theme */
+    --af-bg-body-secondary-color  : var(--bs-secondary-bg);        /* subtle color for light theme */
+    --af-bg-body-tertiary-color   : var(--bs-tertiary-bg);         /* subtle color for light theme */
+    --af-bg-body-color            : var(--bs-body-bg);             /* subtle color for light theme */
+    --af-bg-black-color           : var(--bs-black);               /* subtle color for light theme */
+    --af-bg-white-color           : var(--bs-white);               /* subtle color for light theme */
     --af-bg-transparent-color     : var(--bs-transparent);
     
       /* navbar */
@@ -142,33 +152,42 @@
     --af-bg-badge     : var(--bs-cyan);
     --af-text-badge   : var(--bs-white);
 
+      /* overlay icon circles - more vibrant colors for dark theme */
+    --af-overlay-circle-primary  : var(--bs-primary-border-subtle);
+    --af-overlay-circle-secondary: var(--bs-secondary-border-subtle);
+    --af-overlay-circle-success  : var(--bs-success-border-subtle);
+    --af-overlay-circle-danger   : var(--bs-danger-border-subtle);
+    --af-overlay-circle-warning  : var(--bs-warning-border-subtle);
+    --af-overlay-circle-info     : var(--bs-info-border-subtle);
+    --af-overlay-circle-border   : rgba(255, 255, 255, 1);
+    --af-overlay-icon-color      : var(--bs-white);
+
       /* active background */
     --af-bg-active  : var(--af-primary);
     --af-text-active: var(--bs-light);
 
       /* background tiles */
-    --af-bg-primary-color         : var(--bs-dark);  /* no color for dark theme */
-    --af-bg-primary-subtle-color  : var(--bs-dark);  /* no color for dark theme */
-    --af-bg-secondary-color       : var(--bs-dark);  /* no color for dark theme */
-    --af-bg-secondary-subtle-color: var(--bs-dark);  /* no color for dark theme */
-    --af-bg-success-color         : var(--bs-dark);  /* no color for dark theme */
-    --af-bg-success-subtle-color  : var(--bs-dark);  /* no color for dark theme */
-    --af-bg-danger-color          : var(--bs-dark);  /* no color for dark theme */
-    --af-bg-danger-subtle-color   : var(--bs-dark);  /* no color for dark theme */
-    --af-bg-warning-color         : var(--bs-dark);  /* no color for dark theme */
-    --af-bg-warning-subtle-color  : var(--bs-dark);  /* no color for dark theme */
-    --af-bg-info-color            : var(--bs-dark);  /* no color for dark theme */
-    --af-bg-info-subtle-color     : var(--bs-dark);  /* no color for dark theme */
-    --af-bg-light-color           : var(--bs-dark);  /* no color for dark theme */
-    --af-bg-light-subtle-color    : var(--bs-dark);  /* no color for dark theme */
-    --af-bg-dark-color            : var(--bs-dark);  /* no color for dark theme */
-    --af-bg-dark-subtle-color     : var(--bs-dark);  /* no color for dark theme */
-    --af-bg-body-secondary-color  : var(--bs-dark);  /* no color for dark theme */
-    --af-bg-body-tertiary-color   : var(--bs-dark);  /* no color for dark theme */
-    --af-bg-body-color            : var(--bs-dark);  /* no color for dark theme */
-    --af-bg-black-color           : var(--bs-dark);  /* no color for dark theme */
-    --af-bg-white-color           : var(--bs-white); /* no color for dark theme */ 
-    --af-bg-transparent-color     : var(--bs-transparent);
+    --af-bg-primary-color         : var(--bs-primary);             /* subtle color for dark theme */
+    --af-bg-primary-subtle-color  : var(--bs-primary-bg-subtle);   /* subtle color for dark theme */
+    --af-bg-secondary-color       : var(--bs-secondary);           /* subtle color for dark theme */
+    --af-bg-secondary-subtle-color: var(--bs-secondary-bg-subtle); /* subtle color for dark theme */
+    --af-bg-success-color         : var(--bs-success);             /* subtle color for dark theme */
+    --af-bg-success-subtle-color  : var(--bs-success-bg-subtle);   /* subtle color for dark theme */
+    --af-bg-danger-color          : var(--bs-danger);              /* subtle color for dark theme */
+    --af-bg-danger-subtle-color   : var(--bs-danger-bg-subtle);    /* subtle color for dark theme */
+    --af-bg-warning-color         : var(--bs-warning);             /* subtle color for dark theme */
+    --af-bg-warning-subtle-color  : var(--bs-warning-bg-subtle);   /* subtle color for dark theme */
+    --af-bg-info-color            : var(--bs-info);                /* subtle color for dark theme */
+    --af-bg-info-subtle-color     : var(--bs-info-bg-subtle);      /* subtle color for dark theme */
+    --af-bg-light-color           : var(--bs-light);               /* subtle color for dark theme */
+    --af-bg-light-subtle-color    : var(--bs-light-bg-subtle);     /* subtle color for dark theme */
+    --af-bg-dark-color            : var(--bs-dark);                /* subtle color for dark theme */
+    --af-bg-dark-subtle-color     : var(--bs-dark-bg-subtle);      /* subtle color for dark theme */
+    --af-bg-body-secondary-color  : var(--bs-secondary-bg);        /* subtle color for dark theme */
+    --af-bg-body-tertiary-color   : var(--bs-tertiary-bg);         /* subtle color for dark theme */
+    --af-bg-body-color            : var(--bs-body-bg);             /* subtle color for dark theme */
+    --af-bg-black-color           : var(--bs-black);               /* subtle color for dark theme */
+    --af-bg-white-color           : var(--bs-white);               /* subtle color for dark theme */
 
       /* navbar */
     --af-navbar-link-color       : var(--bs-white);
@@ -233,6 +252,16 @@
     --af-bg-categories: var(--bs-tertiary-bg);
     --af-bg-badge     : var(--af-primary);
     --af-text-badge   : var(--bs-white);
+
+      /* overlay icon circles - full vibrant colors for color theme */
+    --af-overlay-circle-primary  : var(--bs-primary);
+    --af-overlay-circle-secondary: var(--bs-secondary);
+    --af-overlay-circle-success  : var(--bs-success);
+    --af-overlay-circle-danger   : var(--bs-danger);
+    --af-overlay-circle-warning  : var(--bs-orange);
+    --af-overlay-circle-info     : var(--bs-info);
+    --af-overlay-circle-border   : transparent;
+    --af-overlay-icon-color      : var(--bs-white);
 
       /* active background */
     --af-bg-active  : var(--af-primary);

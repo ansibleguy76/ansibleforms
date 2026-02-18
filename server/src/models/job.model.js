@@ -429,22 +429,12 @@ Job.findAll = async function (user, records) {
   var query;
   if (user.roles.includes("admin") || user.options?.showAllJobLogs) {
     query =
-      "SELECT id,form,target,status,CONVERT_TZ(start, 'UTC', '" +
-      loggerConfig.tz +
-      "') AS start,CONVERT_TZ(end, 'UTC', '" +
-      loggerConfig.tz +
-      "') AS end,user,user_type,job_type,parent_id,approval FROM AnsibleForms.`jobs` ORDER BY id DESC LIMIT " +
-      records +
-      ";";
+      "SELECT id,form,target,status,CONVERT_TZ(start, 'UTC', ?) AS start,CONVERT_TZ(end, 'UTC', ?) AS end,user,user_type,job_type,parent_id,approval FROM AnsibleForms.`jobs` ORDER BY id DESC LIMIT ?";
+    return await mysql.do(query, [loggerConfig.tz, loggerConfig.tz, records], true);
   } else {
     query =
-      "SELECT id,form,target,status,CONVERT_TZ(start, 'UTC', '" +
-      loggerConfig.tz +
-      "') AS start,CONVERT_TZ(end, 'UTC', '" +
-      loggerConfig.tz +
-      "') AS end,user,user_type,job_type,parent_id,approval FROM AnsibleForms.`jobs` WHERE (user=? AND user_type=?) OR (status='approve') ORDER BY id DESC LIMIT " +
-      records +
-      ";";
+      "SELECT id,form,target,status,CONVERT_TZ(start, 'UTC', ?) AS start,CONVERT_TZ(end, 'UTC', ?) AS end,user,user_type,job_type,parent_id,approval FROM AnsibleForms.`jobs` WHERE (user=? AND user_type=?) OR (status='approve') ORDER BY id DESC LIMIT ?";
+    return await mysql.do(query, [loggerConfig.tz, loggerConfig.tz, user.username, user.type, records], true);
   }
   return await mysql.do(query, [user.username, user.type], true);
 };
@@ -475,21 +465,19 @@ Job.findById = async function (user, id, asText, logSafe = false) {
   var query;
   var params;
   const check = await Job.checkExists(id);
-  const job_query = "j.id,j.form,j.target,j.status,CONVERT_TZ(j.start, 'UTC', '" +
-      loggerConfig.tz +
-      "') AS start,CONVERT_TZ(j.end, 'UTC', '" +
-      loggerConfig.tz +
-      "') AS end,j.user,j.user_type,j.job_type,j.extravars,j.credentials,j.notifications,j.approval,j.step,j.parent_id,j.awx_id,j.awx_artifacts,j.abort_requested,j.raw_form_data"
+  // Sanitize timezone to prevent SQL injection - only allow valid timezone format
+  // Sanitize timezone to prevent SQL injection - only allow valid timezone format
+  const safeTimezone = loggerConfig.tz.match(/^[A-Za-z/_+-]+$/) ? loggerConfig.tz : 'UTC';
+  
   if (user.roles.includes("admin")) {
     query =
-      "SELECT " + job_query + ",sj.subjobs,j2.no_of_records,o.counter FROM AnsibleForms.jobs j LEFT JOIN (SELECT parent_id,GROUP_CONCAT(id separator ',') subjobs FROM AnsibleForms.jobs GROUP BY parent_id) sj ON sj.parent_id=j.id,(SELECT COUNT(id) no_of_records FROM AnsibleForms.jobs)j2,(SELECT max(`order`)+1 counter FROM AnsibleForms.job_output WHERE job_output.job_id=?)o WHERE j.id=?;";
-    params = [id, id, user.username, user.type];
+      "SELECT j.id,j.form,j.target,j.status,CONVERT_TZ(j.start, 'UTC', ?) AS start,CONVERT_TZ(j.end, 'UTC', ?) AS end,j.user,j.user_type,j.job_type,j.extravars,j.credentials,j.notifications,j.approval,j.step,j.parent_id,j.awx_id,j.awx_artifacts,j.abort_requested,j.raw_form_data,sj.subjobs,j2.no_of_records,o.counter FROM AnsibleForms.jobs j LEFT JOIN (SELECT parent_id,GROUP_CONCAT(id separator ',') subjobs FROM AnsibleForms.jobs GROUP BY parent_id) sj ON sj.parent_id=j.id,(SELECT COUNT(id) no_of_records FROM AnsibleForms.jobs)j2,(SELECT max(`order`)+1 counter FROM AnsibleForms.job_output WHERE job_output.job_id=?)o WHERE j.id=?;";
+    params = [safeTimezone, safeTimezone, id, id];
   } else {
     query =
-      "SELECT " + job_query + ",sj.subjobs,j2.no_of_records,o.counter FROM AnsibleForms.jobs j LEFT JOIN (SELECT parent_id,GROUP_CONCAT(id separator ',') subjobs FROM AnsibleForms.jobs GROUP BY parent_id) sj ON sj.parent_id=j.id,(SELECT COUNT(id) no_of_records FROM AnsibleForms.jobs WHERE user=? AND user_type=?)j2,(SELECT max(`order`)+1 counter FROM AnsibleForms.job_output WHERE job_output.job_id=?)o WHERE j.id=? AND ((j.user=? AND j.user_type=?) OR (j.status='approve'));";
-    params = [user.username, user.type, id, id, user.username, user.type];
+      "SELECT j.id,j.form,j.target,j.status,CONVERT_TZ(j.start, 'UTC', ?) AS start,CONVERT_TZ(j.end, 'UTC', ?) AS end,j.user,j.user_type,j.job_type,j.extravars,j.credentials,j.notifications,j.approval,j.step,j.parent_id,j.awx_id,j.awx_artifacts,j.abort_requested,j.raw_form_data,sj.subjobs,j2.no_of_records,o.counter FROM AnsibleForms.jobs j LEFT JOIN (SELECT parent_id,GROUP_CONCAT(id separator ',') subjobs FROM AnsibleForms.jobs GROUP BY parent_id) sj ON sj.parent_id=j.id,(SELECT COUNT(id) no_of_records FROM AnsibleForms.jobs WHERE user=? AND user_type=?)j2,(SELECT max(`order`)+1 counter FROM AnsibleForms.job_output WHERE job_output.job_id=?)o WHERE j.id=? AND ((j.user=? AND j.user_type=?) OR (j.status='approve'));";
+    params = [safeTimezone, safeTimezone, user.username, user.type, id, id, user.username, user.type];
   }
-  // get normal data
   try {
     var res = await mysql.do(query, params, true);
 
@@ -504,13 +492,13 @@ Job.findById = async function (user, id, asText, logSafe = false) {
     // get output summary
     res = await mysql.do(
       `SELECT 
-          COALESCE(output,'') output,
-          COALESCE(CONVERT_TZ(\`timestamp\`, 'UTC', '${loggerConfig.tz}'), '') \`timestamp\`,
-          COALESCE(output_type,'stdout') output_type 
-        FROM AnsibleForms.\`job_output\` 
-        WHERE job_id=? 
-        ORDER BY job_output.order;`,
-      id,
+        COALESCE(output,'') output,
+        COALESCE(CONVERT_TZ(\`timestamp\`, 'UTC', ?), '') \`timestamp\`,
+        COALESCE(output_type,'stdout') output_type 
+      FROM AnsibleForms.\`job_output\` 
+      WHERE job_id=? 
+      ORDER BY job_output.order;`,
+      [safeTimezone, id],
       true
     );
     return { ...job, ...{ output: Helpers.formatOutput(res, asText) } };

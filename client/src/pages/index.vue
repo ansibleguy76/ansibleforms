@@ -17,8 +17,6 @@ const router = useRouter();
 const showWarnings = ref(false);
 
 const forms = computed(() => {
-    var payload = TokenStorage.getPayload();
-    var intersect = [];
     return formConfig.value?.forms
         ?.sort((a, b) => {
             // First, sort by "order" (undefined orders go last)
@@ -75,10 +73,6 @@ function select(path) {
     }
 }
 
-function isAdmin(payload) {
-    return payload.user.roles.includes("admin");
-}
-
 const getForms = computed(() => {
     return filterForms(currentCategory.value);
 });
@@ -117,9 +111,7 @@ function inCategory(c, category) {
 }
 
 function getFormClass(form) {
-    return (form.tileClass == undefined ? "bg-primary-subtle" : form.tileClass)
-        .replace("has-background-", "bg-")
-        .replace("light", "subtle");
+    return form.tileClass ?? "bg-primary-subtle";
 }
 
 onMounted(async () => {
@@ -136,16 +128,6 @@ onMounted(async () => {
 <template>
 
     <AppNav />
-    <!-- WARNINGS -->
-    <!-- <BsOffCanvas v-if="(warnings || Object.keys(queryerrors).length > 0) && showWarnings" :show="true" icon="triangle-exclamation" title="Form warnings" @close="showWarnings = false">
-        <template #actions> </template>
-        <template #default>
-            <p v-for="w, i in warnings" :key="'warning' + i" class="mb-3" v-html="w"></p>
-            <p v-for="q, i in Object.keys(queryerrors)" :key="'queryerror' + i" class="mb-3 has-text-danger">
-                '{{ q }}' has query errors<br>{{ queryerrors[q] }}
-            </p>
-        </template>
-    </BsOffCanvas>     -->
     <BsOffCanvas
         :show="showWarnings && (formConfig?.warnings?.length > 0 || formConfig?.errors?.length > 0)"
         icon="triangle-exclamation"

@@ -266,7 +266,7 @@ export default {
             { key: "bind_user_dn", icon:"user", line: 2, label: "Bind User Dn", required: true, dependency: "enable" },
             { key: "bind_user_pw", icon:"lock", line: 2, label: "Bind User Password", type: "password", required: true, dependency: "enable" },
             { key: "username_attribute", icon:"image-portrait", line: 3, label: "Username Attribute", required: true, dependency: "enable" },
-            { key: "groups_attribute", icon:"users", line: 3, label: "Groups Attribute", required: true, dependency: "is_advanced" },
+            { key: "groups_attribute", icon:"users", line: 3, label: "Groups Attribute", required: true, dependency: "enable" },
             { key: "groups_search_base", icon:"users-viewfinder", line: 4, label: "Groups Search Base", required: false, dependency: "is_advanced" },
             { key: "group_class", icon:"users-rectangle", line: 4, label: "Group Class", required: false, dependency: "is_advanced" },
             { key: "group_member_attribute", icon:"users-line", line: 5, label: "Group Member Attribute", required: false, dependency: "is_advanced" },

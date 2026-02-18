@@ -62,7 +62,7 @@ const getJob = async function(req, res) {
 };
 const findAllJobs = function(req, res) {
     var user = req?.user?.user || {}
-    var records = req.query.records || 500
+    var records = parseInt(req.query.records) || 500
     Job.findAll(user,records)
     .then((jobs)=>{res.json(new RestResult("success","jobs found",jobs,""))})
     .catch((err)=>{res.json(new RestResult("error","failed to find jobs",null,err.toString()))})

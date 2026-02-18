@@ -77,8 +77,8 @@ class CrudModel {
     
     const config = this.getConfig(modelName);
     const key = config.fields.find(f => f.isKey)?.name || 'id';
-    const sql = `SELECT 1 FROM ${config.table} WHERE ${key} = ?`;
-    const res = await mysql.do(sql, [id]);
+    const sql = `SELECT 1 FROM ?? WHERE ?? = ?`;
+    const res = await mysql.do(sql, [config.table, key, id]);
     if (!res.length) throw new Errors.NotFoundError(`No record found with ${key} ${id}`);
     return true;
   }

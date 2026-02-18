@@ -2,7 +2,7 @@
 import { useRouter } from "vue-router";
 import { ref } from "vue";
 import axios from "axios";
-import { useToast } from "vue-toastification";
+import { toast } from "vue-sonner";
 import TokenStorage from "@/lib/TokenStorage";
 import { useVuelidate } from "@vuelidate/core";
 import Navigate from "@/lib/Navigate";
@@ -79,9 +79,9 @@ function getRules() {
 }
 
 const rules = getRules();
-const toast = useToast();
+
 const $v = useVuelidate(rules, { item });
-// const toast = useToast();
+// 
 </script>
 
 <template>

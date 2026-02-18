@@ -96,14 +96,13 @@
     });
 
     const circleColor = computed(() => {
-        return props.overlayIconColor;
+        // Use theme-aware CSS variable for circle color
+        return `overlay-circle-${props.overlayIconColor}`;
     });
 
     const iconOverlayColor = computed(() => {
-        if (!props.overlayIconCircle) {
-            return props.overlayIconColor;
-        }
-        return appStore.theme === 'dark' ? 'dark' : 'light';
+        // Use CSS variable when circle is present, otherwise use the prop color
+        return props.overlayIconCircle ? 'overlay-icon' : props.overlayIconColor;
     });
 
     const adjustTransform = (transform) => {
@@ -133,7 +132,7 @@
     <!-- Layered icons when overlayIcon or overlayIconText is provided -->
     <font-awesome-layers v-if="overlayIcon || overlayIconText" :class="[size ? `fa-${size}` : '']">
         <font-awesome-icon :class="`text-${color}`" :role="role" :icon="i" :fixed-width="fixedwidth" :spin="icon=='spinner'" />
-        <font-awesome-icon v-if="overlayIconCircle" icon="circle" inverse :transform="circleTransform" :class="`text-${circleColor}`" />        
+        <font-awesome-icon v-if="overlayIconCircle" icon="circle" inverse :transform="circleTransform" :class="`text-${circleColor} overlay-circle-border`" />        
         <font-awesome-icon v-if="overlayIcon" :icon="overlayI" :inverse="overlayIconCircle" :transform="iconTransform" :class="`text-${iconOverlayColor}`" />
         <font-awesome-layers-text v-if="overlayIconText" counter :position="overlayIconTextPosition" :class="`bg-${overlayIconTextColor}`" :value="overlayIconText" />
     </font-awesome-layers>

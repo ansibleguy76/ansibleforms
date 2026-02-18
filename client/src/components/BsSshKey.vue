@@ -13,11 +13,11 @@
     /*********************************************************************/
 
     import copy from 'copy-to-clipboard';
-    import { useToast } from 'vue-toastification';
+    import { toast } from 'vue-sonner';
 
     // INIT
 
-    const toast = useToast();
+    
 
     // MODEL
 

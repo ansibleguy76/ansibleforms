@@ -1,6 +1,7 @@
 'use strict';
 import Repository from '../models/repository.model.js';
 import RestResult from '../models/restResult.model.js';
+import logger from '../lib/logger.js';
 
 
 const find = function(req, res) {
