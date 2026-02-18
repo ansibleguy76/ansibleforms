@@ -5,7 +5,7 @@ import { required } from "@vuelidate/validators";
 import TokenStorage from "@/lib/TokenStorage"; // work with tokens and local storage
 import State from "@/lib/State"; // work with state
 import Navigate from "@/lib/Navigate"; // navigate to routes
-import { useToast } from 'vue-toastification';
+import { toast } from 'vue-sonner';
 import { useRoute, useRouter } from "vue-router";
 import axios from "axios";
 import Theme from "@/lib/Theme";

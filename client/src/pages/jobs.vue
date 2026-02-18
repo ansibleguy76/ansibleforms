@@ -1,6 +1,6 @@
 <script setup>
     import { ref, onMounted, computed, watch } from 'vue';
-    import { useToast } from 'vue-toastification';
+    import { toast } from 'vue-sonner';
     import { useRoute, useRouter } from 'vue-router';
     import { useAppStore } from "@/stores/app";
     import axios from 'axios';

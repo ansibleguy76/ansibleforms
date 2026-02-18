@@ -4,7 +4,7 @@ import { ref } from 'vue';
 import Profile from '@/lib/Profile';
 import copy from 'copy-to-clipboard';
 import settings from '@/config/settings';
-import { useToast } from 'vue-toastification';
+import { toast } from 'vue-sonner';
 
 const currentItem = ref(null);
 

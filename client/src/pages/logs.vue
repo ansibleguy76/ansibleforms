@@ -3,7 +3,7 @@ import axios from 'axios';
 import TokenStorage from '@/lib/TokenStorage';
 import ansiParse from '@/lib/AnsiParse';
 import { ref, onMounted, computed, watch } from 'vue';
-import { useToast } from 'vue-toastification';
+import { toast } from 'vue-sonner';
 import Helpers from '@/lib/Helpers';
 
 const log = ref('');

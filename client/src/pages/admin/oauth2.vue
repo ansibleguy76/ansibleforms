@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue';
-// import { useToast } from 'vue-toastification';
+// import { toast } from 'vue-sonner';
 import Profile from '@/lib/Profile';
 // import axios from 'axios';
 import settings from '@/config/settings';
