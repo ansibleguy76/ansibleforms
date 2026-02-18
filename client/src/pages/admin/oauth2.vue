@@ -6,7 +6,7 @@ import Profile from '@/lib/Profile';
 import settings from '@/config/settings';
 // import TokenStorage from '@/lib/TokenStorage';
 
-// const toast = useToast();
+// 
 const authenticated = ref(false);
 
 onMounted(async () => {

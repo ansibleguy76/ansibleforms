@@ -6,7 +6,7 @@ import Helpers from '@/lib/Helpers';
 import settings from '@/config/settings';
 import TokenStorage from '@/lib/TokenStorage';
 
-const toast = useToast();
+
 const authenticated = ref(false);
 const tests = ref({});
 

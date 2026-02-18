@@ -22,7 +22,7 @@ const test = ref({
     to: ""
 });
 
-const toast = useToast();
+
 const $v = useVuelidate(rules, { test });
 
 

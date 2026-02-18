@@ -17,7 +17,7 @@
 
     // INIT
 
-    const toast = useToast();
+    
 
     // MODEL
 

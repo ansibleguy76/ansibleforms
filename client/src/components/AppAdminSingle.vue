@@ -17,7 +17,7 @@
     import { ref, onMounted } from "vue";
     import axios from "axios";
     import Helpers from "@/lib/Helpers";
-    import { useToast } from "vue-toastification";
+    import { toast } from "vue-sonner";
     import TokenStorage from "@/lib/TokenStorage";
     import { useVuelidate } from "@vuelidate/core";
     import { required, helpers, email, sameAs } from "@vuelidate/validators";
@@ -26,6 +26,10 @@
 
     const props = defineProps({
         settings: Object,
+        apiVersion: {
+            type: [String, Number],
+            default: 1
+        }
     });
 
     const emit = defineEmits(["test","import"]);
@@ -65,7 +69,7 @@
     const rules = getRules()
 
     const $v = useVuelidate(rules, { item });
-    const toast = useToast();
+    
 
     function objectTitle(prefix = '', suffix = '') {
         return `${prefix} ${objectLabel} ${suffix}`.trim()
@@ -74,10 +78,16 @@
     async function loadItem() {
         try {
             const result = await axios.get(
-                `/api/v1/${objectType}/`,
+                `/api/v${props.apiVersion}/${objectType}/`,
                 TokenStorage.getAuthentication()
             );
-            item.value = result.data.data.output;
+            if (props.apiVersion == 1) {
+                item.value = result.data.data.output;
+            } else if (props.apiVersion == 2) {
+                item.value = result.data;
+            } else {
+                throw new Error("Unsupported API version");
+            }
             for(const field of props.settings.fields){
                 if(field.type == 'checkbox'){
                     item.value[field.key] = !!item.value[field.key]; // convert to boolean
@@ -104,15 +114,17 @@
     async function updateItem() {
         if (!isInvalid.value) {
             try{
-                const result = await axios.put(`/api/v1/${objectType}/`, item.value, TokenStorage.getAuthentication());
-                if (result.data.status == "error") {
-                    toast.error(result.data.message + ", " + result.data.data.error);
-                } else {
-                    toast.success(objectTitle('', 'is updated'));
-                    loadItem();
-                }
+                const result = await axios.put(`/api/v${props.apiVersion}/${objectType}/`, item.value, TokenStorage.getAuthentication());
+                toast.success(objectTitle('', 'is updated'));
+                loadItem();
             }catch(err){
-                toast.error(Helpers.parseAxiosResponseError(err, "Failed to save item"));
+                if (props.apiVersion == 2) {
+                    const errorMessage = err.response?.data?.error || err.message;
+                    const errorDetail = err.response?.data?.details || "";
+                    toast.error(errorDetail ? `${errorMessage}: ${errorDetail}` : errorMessage);
+                } else {
+                    toast.error(Helpers.parseAxiosResponseError(err, "Failed to save item"));
+                }
             }
         } else {
             $v.value.item.$touch()

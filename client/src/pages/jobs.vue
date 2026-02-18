@@ -13,7 +13,7 @@
 
     // INIT
 
-    const toast = useToast();
+    
     const router = useRouter();
     const route = useRoute();
     const store = useAppStore();

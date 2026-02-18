@@ -5,7 +5,7 @@ import Lock from "@/lib/Lock";
 import Backup from "@/lib/Backup";
 import Profile from "@/lib/Profile";
 import YAML from "yaml";
-import { useToast } from "vue-toastification";
+import { toast } from "vue-sonner";
 import { useRoute, useRouter } from "vue-router";
 import Helpers from "@/lib/Helpers";
 import dayjs from "dayjs";
@@ -32,7 +32,7 @@ const backupToRestore = ref(null);
 const backupBeforeRestore = ref(false);
 const authenticated = ref(false);
 
-const toast = useToast();
+
 const route = useRoute();
 const router = useRouter();
 

@@ -3,13 +3,13 @@
 import State from "@/lib/State";
 import axios from "axios";
 import { useAppStore } from "@/stores/app";
-import { useToast } from "vue-toastification";
+import { toast } from "vue-sonner";
 import { useRoute, useRouter } from "vue-router";
 import TokenStorage from "@/lib/TokenStorage";
 import Navigate from "@/lib/Navigate";
 
 const store = useAppStore();
-const toast = useToast();
+
 const route = useRoute();
 const router = useRouter();
 

@@ -25,7 +25,7 @@
 /******************************************************************/
 
 import { useRoute } from "vue-router";
-import { useToast } from "vue-toastification";
+import { toast } from "vue-sonner";
 import { useVuelidate } from '@vuelidate/core';
 import { required, helpers, sameAs } from "@vuelidate/validators";
 import { useTemplateRef, nextTick } from "vue";
@@ -43,7 +43,7 @@ var v$ = null;
 
 // use
 const route = useRoute();
-const toast = useToast();
+
 const store = useAppStore();
 
 // define

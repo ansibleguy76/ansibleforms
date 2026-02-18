@@ -7,7 +7,7 @@ import settings from '@/config/settings';
 import { useToast } from 'vue-toastification';
 
 const currentItem = ref(null);
-const toast = useToast();
+
 const authenticated = ref(false);
 
 

@@ -2,7 +2,7 @@
 import { ref, onMounted } from "vue";
 import Profile from "@/lib/Profile";
 import axios from "axios";
-import { useToast } from "vue-toastification";
+import { toast } from "vue-sonner";
 import TokenStorage from "@/lib/TokenStorage";
 
 const settings = {
@@ -20,7 +20,7 @@ const settings = {
 
 const env = ref({});
 const config = ref({});
-const toast = useToast();
+
 const adminSingle = ref(null);
 const authenticated = ref(false);
 

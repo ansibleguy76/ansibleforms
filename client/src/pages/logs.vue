@@ -21,7 +21,7 @@ const lineOptions = [
   { value: 1000, label: '1000' },
 ];
 
-const toast = useToast();
+
 
 const filtered = computed(() => {
   if (filter.value) {

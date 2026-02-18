@@ -11,7 +11,7 @@ import axios from "axios";
 import Theme from "@/lib/Theme";
 
 // plugins
-const toast = useToast();
+
 const route = useRoute();
 const router = useRouter();
 
