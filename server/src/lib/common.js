@@ -8,6 +8,17 @@ var Helpers = function(){
 
 }
 
+// Remove undefined, null, and empty string values from an object
+// Useful for preventing accidental data wiping during database updates
+Helpers.removeEmptyFields = function(obj) {
+  Object.keys(obj).forEach(key => {
+    if (obj[key] === undefined || obj[key] === null || obj[key] === "") {
+      delete obj[key];
+    }
+  });
+  return obj;
+}
+
 // this is needed because ldap-authentication has missing try catch
 Helpers.checkCertificateBase64=function(cert){
   var b64 = cert.replace(/(\r\n|\n|\r)/gm, "").replace(/\-{5}[^\-]+\-{5}/gm,"").replaceAll(" ","")
