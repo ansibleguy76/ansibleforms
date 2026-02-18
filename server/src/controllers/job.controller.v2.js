@@ -48,7 +48,7 @@ const getJob = async function(req, res) {
 };
 const findAllJobs = async function(req, res) {
     var user = req?.user?.user || {}
-    var records = req.query.records || 500
+    var records = parseInt(req.query.records) || 500
     try{
       const jobs = await Job.findAll(user,records)
       res.status(200).json(RestResultv2.list(jobs));
