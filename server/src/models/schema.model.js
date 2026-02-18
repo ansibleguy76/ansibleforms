@@ -2,14 +2,14 @@
 function dropTable(table) {
   var message;
   var db = "AnsibleForms";
-  var checksql = `SHOW TABLES FROM ${db} WHERE Tables_in_${db}='${table}'`;
-  var sql = `DROP TABLE IF EXISTS ${db}.${table}`;
+  var checksql = "SHOW TABLES FROM ?? WHERE ?? = ?";
+  var sql = "DROP TABLE IF EXISTS ??.??";
   logger.debug(`dropping table '${table}'`);
   return mysql
-    .do(checksql)
+    .do(checksql, [db, `Tables_in_${db}`, table])
     .then((checkres) => {
       if (checkres.length > 0) {
-        return mysql.do(sql);
+        return mysql.do(sql, [db, table]);
       }
       return false;
     })
@@ -68,7 +68,7 @@ async function checkSchema() {
   var message;
   var db = "AnsibleForms";
   logger.debug("checking schema " + db);
-  var res = await mysql.do(`SHOW DATABASES LIKE '${db}'`);
+  var res = await mysql.do("SHOW DATABASES LIKE ?", [db]);
   if (res) {
     if (res.length > 0) {
       message = `Schema '${db}' is present`;
@@ -89,8 +89,8 @@ async function checkTable(table) {
   var message;
   var db = "AnsibleForms";
   logger.debug("checking table " + table);
-  var sql = `SHOW TABLES FROM ${db} WHERE Tables_in_${db}='${table}'`;
-  var res = await mysql.do(sql);
+  var sql = "SHOW TABLES FROM ?? WHERE ?? = ?";
+  var res = await mysql.do(sql, [db, `Tables_in_${db}`, table]);
 
   if (res.length > 0) {
     message = `Table '${table}' is present`;
@@ -105,14 +105,14 @@ async function checkTable(table) {
 function addIdPrimaryKey(table) {
   var message;
   var db = "AnsibleForms";
-  var checksql = `SHOW COLUMNS FROM ${db}.${table} WHERE Field='id'`;
-  var sql = `ALTER TABLE ${db}.${table} ADD COLUMN id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY`;
+  var checksql = "SHOW COLUMNS FROM ??.?? WHERE Field = ?";
+  var sql = "ALTER TABLE ??.?? ADD COLUMN id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY";
   logger.debug(`adding id primary key column on table '${table}'`);
   return mysql
-    .do(checksql)
+    .do(checksql, [db, table, 'id'])
     .then((checkres) => {
       if (checkres.length == 0) {
-        return mysql.do(sql);
+        return mysql.do(sql, [db, table]);
       }
       return false;
     })
@@ -132,14 +132,14 @@ function addUniqueKey(table, column) {
   var message;
   var db = "AnsibleForms";
   var indexName = `unique_${column}`;
-  var checksql = `SHOW INDEX FROM ${db}.${table} WHERE Key_name='${indexName}'`;
-  var sql = `ALTER TABLE ${db}.${table} ADD UNIQUE KEY ${indexName} (${column})`;
+  var checksql = "SHOW INDEX FROM ??.?? WHERE Key_name = ?";
+  var sql = "ALTER TABLE ??.?? ADD UNIQUE KEY ?? (??)";
   logger.debug(`adding unique key '${indexName}' on column '${column}' in table '${table}'`);
   return mysql
-    .do(checksql)
+    .do(checksql, [db, table, indexName])
     .then((checkres) => {
       if (checkres.length == 0) {
-        return mysql.do(sql);
+        return mysql.do(sql, [db, table, indexName, column]);
       }
       return false;
     })
@@ -158,8 +158,8 @@ function addUniqueKey(table, column) {
 function addColumn(table, name, fieldtype, nullable, defaultvalue) {
   var message;
   var db = "AnsibleForms";
-  var checksql = `SHOW COLUMNS FROM ${db}.${table} WHERE Field='${name}'`;
-  var sql = `ALTER TABLE ${db}.${table} ADD COLUMN ${name} ${fieldtype}`;
+  var checksql = "SHOW COLUMNS FROM ??.?? WHERE Field = ?";
+  var sql = `ALTER TABLE ??.?? ADD COLUMN ?? ${fieldtype}`;
   if (!nullable) {
     sql += " NOT NULL";
   }
@@ -168,10 +168,10 @@ function addColumn(table, name, fieldtype, nullable, defaultvalue) {
   }
   logger.debug(`adding column '${name}' on table '${table}'`);
   return mysql
-    .do(checksql)
+    .do(checksql, [db, table, name])
     .then((checkres) => {
       if (checkres.length == 0) {
-        return mysql.do(sql);
+        return mysql.do(sql, [db, table, name]);
       }
       return false;
     })
@@ -192,10 +192,10 @@ function addColumn(table, name, fieldtype, nullable, defaultvalue) {
 function addTable(table, sql) {
   var message;
   var db = "AnsibleForms";
-  var checksql = `SHOW TABLES FROM ${db} WHERE Tables_in_${db}='${table}'`;
+  var checksql = "SHOW TABLES FROM ?? WHERE ?? = ?";
   logger.debug(`adding table '${table}'`);
   return mysql
-    .do(checksql)
+    .do(checksql, [db, `Tables_in_${db}`, table])
     .then((checkres) => {
       if (checkres.length == 0) {
         return mysql.do(sql);
@@ -218,14 +218,14 @@ function addTable(table, sql) {
 function setUtf8mb4CharacterSet(table, name, fieldtype) {
   var message;
   var db = "AnsibleForms";
-  var checksql = `SELECT 1 FROM information_schema.columns WHERE table_schema='${db}' AND table_name = '${table}' AND column_name = '${name}' AND character_set_name='utf8mb4';`;
-  var sql = `ALTER TABLE ${db}.${table} MODIFY \`${name}\` ${fieldtype} character set utf8mb4 collate utf8mb4_unicode_ci;`;
+  var checksql = "SELECT 1 FROM information_schema.columns WHERE table_schema = ? AND table_name = ? AND column_name = ? AND character_set_name = 'utf8mb4'";
+  var sql = `ALTER TABLE ??.?? MODIFY ?? ${fieldtype} character set utf8mb4 collate utf8mb4_unicode_ci`;
   logger.debug(`set charset column '${name}'->'utf8mb4' on table '${table}'`);
   return mysql
-    .do(checksql)
+    .do(checksql, [db, table, name])
     .then((checkres) => {
       if (checkres.length == 0) {
-        return mysql.do(sql);
+        return mysql.do(sql, [db, table, name]);
       }
       return false;
     })
