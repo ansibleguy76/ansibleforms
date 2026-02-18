@@ -16,10 +16,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Vue sonner in favor of vue toastification
 -   Cleanup and bumps in vue
 -   Drop vuescroller
+-   Colors (it's personal maybe)
 
 ### Fixed
 
 -   Double checkbox dependency bug
+
+### Breaking
+
+-   Dropped bulma class backward compability for the tiles (use bg-danger, bg-success-subtle, ... from bootstrap)
 
 ## [6.1.1] - 2026-02-17
 
