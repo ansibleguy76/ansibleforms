@@ -1,5 +1,5 @@
 import passport from 'passport';
-import { BasicStrategy as basicStrategy } from 'modern-passport-http';
+import { BasicStrategy as basicStrategy } from 'passport-http';
 import User from './../models/user.model.js';
 import authConfig from '../../config/auth.config.js';
 import appConfig from '../../config/app.config.js';

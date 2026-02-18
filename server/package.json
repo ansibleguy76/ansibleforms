@@ -36,7 +36,7 @@
     "ldap-authentication": "~4.0.3",
     "ldapts": "~8.1.6",
     "luxon": "3.7.2",
-    "modern-passport-http": "~0.3.0",
+    "passport-http": "~0.3.0",
     "moment": "~2.30.1",
     "lodash": "4.17.23",
     "moment-timezone": "0.6.0",
