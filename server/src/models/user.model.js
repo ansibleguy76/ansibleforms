@@ -6,21 +6,14 @@ import Ldap from "./ldap.model.js";
 import Form from "./form.model.js";
 import yaml from "yaml";
 import mysql from "./db.model.js";
+import helpers from "../lib/common.js";
 
 //user object create
 var User = function (user) {
-  if (user.username != undefined) {
-    this.username = user.username;
-  }
-  if (user.email != undefined) {
-    this.email = user.email;
-  }
-  if (user.password != undefined) {
-    this.password = user.password;
-  }
-  if (user.group_id != undefined) {
-    this.group_id = user.group_id;
-  }
+  this.username = user.username;
+  this.email = user.email;
+  this.password = user.password;
+  this.group_id = user.group_id;
 };
 
 
@@ -41,6 +34,9 @@ User.create = function (record) {
     });
 };
 User.update = function (record, id) {
+  // Remove undefined/null/empty fields to prevent wiping data
+  helpers.removeEmptyFields(record);
+  
   if (record.password) {
     logger.info(`Updating user with password ${record.username ? record.username : id}`);
     return crypto.hashPassword(record.password).then((hash) => {
@@ -207,7 +203,7 @@ User.getGroups = function (user, groupObj, ldapConfig = {}) {
       });
     }
     return groups;
-  } else if ((user.type = "local")) {
+  } else if (user.type == "local") {
     var localgroups = groupObj.split(",");
     localgroups.forEach(function (v, i, a) {
       group = "local/" + v;

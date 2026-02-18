@@ -15,7 +15,10 @@ var Ldap=function(ldap){
     this.cert = ldap.cert;
     this.ca_bundle = ldap.ca_bundle;
     this.bind_user_dn = ldap.bind_user_dn;
-    this.bind_user_pw = crypto.encrypt(ldap.bind_user_pw);
+    // Only encrypt password if it's provided and not empty
+    if (ldap.bind_user_pw) {
+        this.bind_user_pw = crypto.encrypt(ldap.bind_user_pw);
+    }
     this.search_base = ldap.search_base;
     this.username_attribute = ldap.username_attribute;
     this.groups_attribute = ldap.groups_attribute;
@@ -26,9 +29,14 @@ var Ldap=function(ldap){
     this.group_member_attribute = (ldap.is_advanced)?ldap.group_member_attribute:""
     this.group_member_user_attribute = (ldap.is_advanced)?ldap.group_member_user_attribute:""
     this.mail_attribute = ldap.mail_attribute
+    this.testpassword = ldap.testpassword || ""
+    this.testuser = ldap.testuser || ""
 };
 Ldap.update = function (record) {
   logger.info(`Updating ldap ${record.server}`)
+  // Remove test fields that shouldn't be saved to the database
+  delete record.testuser;
+  delete record.testpassword;
   return mysql.do("UPDATE AnsibleForms.`ldap` set ?", record)
 };
 Ldap.find = async function() {
@@ -62,10 +70,10 @@ Ldap.check = async function(ldapConfig){
       },
       adminDn: ldapConfig.bind_user_dn,
       adminPassword: crypto.decrypt(ldapConfig.bind_user_pw),
-      userPassword: "dummypassword_for_check",
+      userPassword: ldapConfig.testpassword,
       userSearchBase: ldapConfig.search_base,
       usernameAttribute: ldapConfig.username_attribute,
-      username: "dummyuser_for_check",
+      username: ldapConfig.testuser,
       // starttls: false
     }
     // new in v4.0.20, add advanced ldap properties
@@ -113,6 +121,7 @@ Ldap.check = async function(ldapConfig){
         return user
       }catch(err){
         var em =""
+        console.log(err)
         if(err.message){
           em = err.message
         }else{

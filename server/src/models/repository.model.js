@@ -2,16 +2,11 @@
 import logger from "../lib/logger.js";
 import mysql from "./db.model.js";
 import crypto from "../lib/crypto.js";
-import NodeCache from "node-cache";
+import helpers from "../lib/common.js";
 import Repo from "./repo.model.js";
 import path from "path";
 import fs from "fs";
 import appConfig from "../../config/app.config.js";
-
-const cache = new NodeCache({
-    stdTTL: 3600,
-    checkperiod: (3600 * 0.5)
-});
 
 
 //repository object create
@@ -20,14 +15,17 @@ var Repository=function(repository){
     this.uri = repository.uri;
     this.cron = repository.cron;
     this.user = repository.user;
-    this.branch = repository.branch; // added in 5.0.8
-    this.use_for_config = (repository.use_for_config)?1:0;
-    this.use_for_forms = (repository.use_for_forms)?1:0;
-    this.rebase_on_start = (repository.rebase_on_start)?1:0;    
-    this.use_for_playbooks = (repository.use_for_playbooks)?1:0;
-    this.use_for_vars_files = (repository.use_for_vars_files)?1:0;
-    this.password = crypto.encrypt(repository.password);
-    this.description = repository.description || "";
+    this.branch = repository.branch;
+    if (repository.use_for_config !== undefined) this.use_for_config = (repository.use_for_config)?1:0;
+    if (repository.use_for_forms !== undefined) this.use_for_forms = (repository.use_for_forms)?1:0;
+    if (repository.rebase_on_start !== undefined) this.rebase_on_start = (repository.rebase_on_start)?1:0;    
+    if (repository.use_for_playbooks !== undefined) this.use_for_playbooks = (repository.use_for_playbooks)?1:0;
+    if (repository.use_for_vars_files !== undefined) this.use_for_vars_files = (repository.use_for_vars_files)?1:0;
+    // Only encrypt password if it's provided and not empty
+    if (repository.password) {
+        this.password = crypto.encrypt(repository.password);
+    }
+    if (repository.description !== undefined) this.description = repository.description;
 };
 
 Repository.create = function (record) {
@@ -40,10 +38,10 @@ Repository.create = function (record) {
 };
 Repository.update = function (record,name) {
     logger.info(`Updating repository ${name}`)
+    // Remove undefined/null/empty fields to prevent wiping data
+    helpers.removeEmptyFields(record);
     return mysql.do("UPDATE AnsibleForms.`repositories` set ? WHERE name=?", [record,name])
     .then((res)=>{
-      cache.del(record.name)
-      Repository.clone(record.name)
       return res
     })
 };
@@ -298,9 +296,6 @@ Repository.clone = async function(name){
     if(status=="success"){
       head = await Repo.info(name)
       await mysql.do("update AnsibleForms.`repositories` set head = ? where name = ?",[head,name])
-      // Clear cache for this repository to force reload of config/forms
-      cache.del(name)
-      logger.debug(`Cache cleared for repository '${name}' after successful clone`)
     }
 }
 Repository.pull = async function(name){
@@ -317,9 +312,6 @@ Repository.pull = async function(name){
   if(status=="success"){
     head = await Repo.info(name)
     await mysql.do("update AnsibleForms.`repositories` set head = ? where name = ?",[head,name])
-    // Clear cache for this repository to force reload of config/forms
-    cache.del(name)
-    logger.debug(`Cache cleared for repository '${name}' after successful pull`)
   }
 }
 
