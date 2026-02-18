@@ -27,7 +27,6 @@ import schemaRoutes from "./routes/schema.routes.js";
 import queryRoutes from "./routes/query.routes.js";
 import expressionRoutes from "./routes/expression.routes.js";
 import versionRoutes from "./routes/version.routes.js";
-import installRoutes from "./routes/install.routes.js";
 import lockRoutes from "./routes/lock.routes.js";
 import helpRoutes from "./routes/help.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
@@ -139,7 +138,6 @@ const load = async (app) => {
 
   // api route for version
   app.use(`/api/v1/version`, cors(), versionRoutes);
-  app.use(`/api/v1/install`, cors(), installRoutes);
 
   app.use(`/api/v2/lock`, cors(), authobj, lockRoutes);
   app.use(`/api/v1/help`, cors(), authobj, helpRoutes);
