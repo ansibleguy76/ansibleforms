@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Cleanup and bumps in vue
 -   Drop vuescroller
 
+### Fixed
+
+-   Double checkbox dependency bug
 
 ## [6.1.1] - 2026-02-17
 
