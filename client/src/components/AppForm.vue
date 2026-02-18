@@ -730,7 +730,14 @@ function checkDependencies(field) {
 function setVisibility(fieldname, status) {
     if (visibility.value[fieldname] != status) {
         visibility.value[fieldname] = status
-        resetField(fieldname)
+        if (status) {
+            // Field is becoming visible - reset to default value
+            resetField(fieldname)
+        } else {
+            // Field is becoming hidden - clear its value to undefined
+            form.value[fieldname] = undefined
+            setFieldStatus(fieldname, undefined)
+        }
     }
 }
 
