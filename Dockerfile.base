@@ -36,14 +36,14 @@ RUN pip install --upgrade pip
 RUN pip install pandas PyYAML openpyxl hvac pyVim pyvmomi jinja2 requests six PyMySQL netapp_lib netapp_ontap solidfire-sdk-python boto3 boto botocore lxml ansible paramiko
 
 # Install Ansible collections
-RUN ansible-galaxy collection install netapp.ontap -p /usr/share/ansible/collections \
-    && ansible-galaxy collection install netapp.elementsw -p /usr/share/ansible/collections \
-    && ansible-galaxy collection install netapp.um_info -p /usr/share/ansible/collections \
-    && ansible-galaxy collection install amazon.aws -p /usr/share/ansible/collections \
-    && ansible-galaxy collection install netapp.storagegrid -p /usr/share/ansible/collections \
-    && ansible-galaxy collection install community.general -p /usr/share/ansible/collections \
-    && ansible-galaxy collection install community.mysql -p /usr/share/ansible/collections \
-    && ansible-galaxy collection install ansibleguy76.ansibleforms -p /usr/share/ansible/collections
+RUN ansible-galaxy collection install netapp.ontap --upgrade --force -p /usr/share/ansible/collections \
+    && ansible-galaxy collection install netapp.elementsw --upgrade --force -p /usr/share/ansible/collections \
+    && ansible-galaxy collection install netapp.um_info --upgrade --force -p /usr/share/ansible/collections \
+    && ansible-galaxy collection install amazon.aws --upgrade --force -p /usr/share/ansible/collections \
+    && ansible-galaxy collection install netapp.storagegrid --upgrade --force -p /usr/share/ansible/collections \
+    && ansible-galaxy collection install community.general --upgrade --force -p /usr/share/ansible/collections \
+    && ansible-galaxy collection install community.mysql --upgrade --force -p /usr/share/ansible/collections \
+    && ansible-galaxy collection install ansibleguy76.ansibleforms --upgrade --force -p /usr/share/ansible/collections
 
 # Create root .ssh directory
 RUN mkdir -p ~/.ssh
