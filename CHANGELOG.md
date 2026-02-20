@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-   Option to track a live logfile during playbook execution.  See docs FAQ.  Perfect for long lasting custom actions (custom module) where you can write to a logfile and track live.
+
 ## [6.1.2] - 2026-02-18
 
 ### Added
