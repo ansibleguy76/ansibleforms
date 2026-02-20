@@ -436,7 +436,6 @@ Job.findAll = async function (user, records) {
       "SELECT id,form,target,status,CONVERT_TZ(start, 'UTC', ?) AS start,CONVERT_TZ(end, 'UTC', ?) AS end,user,user_type,job_type,parent_id,approval FROM AnsibleForms.`jobs` WHERE (user=? AND user_type=?) OR (status='approve') ORDER BY id DESC LIMIT ?";
     return await mysql.do(query, [loggerConfig.tz, loggerConfig.tz, user.username, user.type, records], true);
   }
-  return await mysql.do(query, [user.username, user.type], true);
 };
 Job.findApprovals = async function (user) {
   logger.debug("Finding all approval jobs");
@@ -501,7 +500,30 @@ Job.findById = async function (user, id, asText, logSafe = false) {
       [safeTimezone, id],
       true
     );
-    return { ...job, ...{ output: Helpers.formatOutput(res, asText) } };
+
+    // Try to read job_log_<jobid>.log if it exists
+    // The log is written by the playbook to: <playbook_dir>/.joblogs/job_log_<id>.log
+    // playbook_dir = ansible base path + optional playbookSubPath (from extravars)
+    let jobLogContent = null;
+    try {
+      const ansibleBasePath = (await Repository.getAnsiblePath()) || ansibleConfig.path;
+      let playbookSubPath = "";
+      try {
+        const ev = JSON.parse(job.extravars || "{}");
+        playbookSubPath = ev.__playbookSubPath__ || "";
+      } catch (_) {}
+      const playbookDir = playbookSubPath
+        ? path.join(ansibleBasePath, playbookSubPath)
+        : ansibleBasePath;
+      const logPath = path.join(playbookDir, ".joblogs", `job_log_${id}.log`);
+      if (fs.existsSync(logPath)) {
+        jobLogContent = fs.readFileSync(logPath, "utf-8");
+      }
+    } catch (e) {
+      logger.warn(`Could not read job_log_${id}.log: ${e.message}`);
+    }
+
+    return { ...job, ...{ output: Helpers.formatOutput(res, asText), job_log: jobLogContent } };
   } catch (err) {
     logger.error("Error : ", err);
     return [];
@@ -565,18 +587,7 @@ Job.getRawFormData = async function (user, id) {
   }
 };
 
-/**
- * Launch a new job
- * @param {Object} params - Job launch parameters
- * @param {string} params.form - Form name
- * @param {Object} params.formObj - Form object (optional, will be loaded if not provided)
- * @param {Object} params.user - User object
- * @param {Object} params.credentials - Credentials object
- * @param {Object} params.extravars - Extra variables
- * @param {number} params.parentId - Parent job ID for multistep jobs
- * @param {Object} params.rawFormData - Raw form data for relaunch feature
- * @param {boolean} params.waitForCompletion - If true, waits for job completion instead of fire-and-forget
- */
+
 Job.launch = async function ({
   form,
   formObj = null,
@@ -771,15 +782,7 @@ Job.launch = async function ({
   }
 };
 
-/**
- * Continue an existing job (used for approval continuation)
- * @param {Object} params - Job continue parameters
- * @param {string} params.form - Form name
- * @param {Object} params.user - User object
- * @param {Object} params.credentials - Credentials object
- * @param {Object} params.extravars - Extra variables
- * @param {number} params.jobid - Job ID to continue
- */
+
 Job.continue = async function ({ form, user, credentials = {}, extravars = {}, jobid }) {
   const creds = credentials; // Alias for backward compatibility internally
   var formObj;
@@ -1216,20 +1219,7 @@ Job.reject = async function (user, id) {
 // Multistep stuff
 var Multistep = function () {};
 
-/**
- * Launch a multistep job
- * @param {Object} params - Multistep launch parameters
- * @param {string} params.form - Form name
- * @param {Array} params.steps - Array of step objects
- * @param {Object} params.user - User object
- * @param {Object} params.extravars - Extra variables
- * @param {Object} params.credentials - Credentials object
- * @param {number} params.jobid - Job ID
- * @param {number} params.counter - Output counter
- * @param {Object} params.approval - Approval configuration
- * @param {string} params.fromStep - Step to resume from
- * @param {boolean} params.approved - Whether approval was granted
- */
+
 Multistep.launch = async function ({
   form,
   steps,

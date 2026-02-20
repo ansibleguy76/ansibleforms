@@ -861,7 +861,7 @@ onBeforeUnmount(() => {
         </BsButton>
         <div class="row">
           <div class="col">
-            <AppAnsibleOutput :output="filteredJobOutput">
+            <AppAnsibleOutput :output="filteredJobOutput" :jobLog="job.job_log">
               <template #title>
                 <h3 v-if="job.job_type == 'multistep' && subjob?.output">
                   Main job (jobid {{ job.id }})
@@ -871,7 +871,7 @@ onBeforeUnmount(() => {
             </AppAnsibleOutput>
           </div>
           <div class="col" v-if="subjob.output">
-            <AppAnsibleOutput :output="filteredSubJobOutput">
+            <AppAnsibleOutput :output="filteredSubJobOutput" :jobLog="subjob.job_log">
               <template #title>
                 <h3>
                   Current Step (jobid {{ subjob.id }})

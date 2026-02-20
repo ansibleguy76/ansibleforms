@@ -662,7 +662,7 @@
 
                     <div class="row mt-4">
                         <div class="col">
-                            <AppAnsibleOutput :output="filteredJobOutput">
+                            <AppAnsibleOutput :output="filteredJobOutput" :jobLog="job?.job_log">
                             <template #title>
                                 <h3 v-if="subjob">Main job (jobid {{jobId}}) 
                                 <sup><span class="badge rounded-pill status" :class="Helpers.getColorClassByStatus(job.status,'bg')">{{ job.status }}</span></sup> 
@@ -671,7 +671,7 @@
                             </AppAnsibleOutput>
                         </div>
                         <div class="col" v-if="subjob">
-                            <AppAnsibleOutput :output="filteredSubJobOutput">
+                            <AppAnsibleOutput :output="filteredSubJobOutput" :jobLog="subjob?.job_log">
                             <template #title>
                                 <h3>Current Step (jobid {{subjobId}}) 
                                 <sup><span class="badge rounded-pill status" :class="Helpers.getColorClassByStatus(subjob.status,'bg')">{{ subjob.status }}</span></sup>
