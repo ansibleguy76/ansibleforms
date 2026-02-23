@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Option to track a live logfile during playbook execution.  See docs FAQ.  Perfect for long lasting custom actions (custom module) where you can write to a logfile and track live.
 
+### Fixed
+
+-   AzureAD redirect
+
+
 ## [6.1.2] - 2026-02-18
 
 ### Added
