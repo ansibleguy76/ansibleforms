@@ -40,6 +40,7 @@
     "yaml": "^2.8.2"
   },
   "devDependencies": {
+    "@vitejs/plugin-basic-ssl": "^2.1.4",
     "@vitejs/plugin-vue": "^6.0.4",
     "eslint": "^10.0.0",
     "eslint-plugin-vue": "^10.8.0",

@@ -260,13 +260,23 @@ const extractOidcUser = async function(payload, groups) {
 const azureadoauth2 = async function(req, res,next) {
   logger.debug("Redirect to azure")
   // redirect to azure
-  passport.authenticate('azure_ad_oauth2')(req,res,next)
+  try {
+    passport.authenticate('azure_ad_oauth2')(req,res,next)
+  } catch(err) {
+    logger.error(`Azure AD redirect failed: ${err?.message || err}`)
+    next(err)
+  }
 };
 
 // callback with the Azure AD access token
 const azureadoauth2callback = async function(req, res,next) {
   logger.debug("Azure AD callback")
-  passport.authenticate('azure_ad_oauth2', authCallback(req, res, next,"azuread"))(req, res, next)
+  try {
+    passport.authenticate('azure_ad_oauth2', authCallback(req, res, next,"azuread"))(req, res, next)
+  } catch(err) {
+    logger.error(`Azure AD callback failed: ${err?.message || err}`)
+    next(err)
+  }
 };
 // callback with the Azure AD user info (including groups)
 const azureadoauth2login = async function(req, res,next) {
