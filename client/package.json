@@ -31,6 +31,7 @@
     "copy-to-clipboard": "^3.3.3",
     "core-js": "^3.48.0",
     "jsonwebtoken": "^9.0.3",
+    "jwt-decode": "^4.0.0",
     "roboto-fontface": "*",
     "dayjs": "^1.11.19",
     "vue": "^3.5.28",
@@ -39,6 +40,7 @@
     "yaml": "^2.8.2"
   },
   "devDependencies": {
+    "@vitejs/plugin-basic-ssl": "^2.1.4",
     "@vitejs/plugin-vue": "^6.0.4",
     "eslint": "^10.0.0",
     "eslint-plugin-vue": "^10.8.0",

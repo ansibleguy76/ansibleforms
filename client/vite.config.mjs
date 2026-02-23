@@ -1,4 +1,5 @@
 // Plugins
+import basicSsl from '@vitejs/plugin-basic-ssl'
 import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import Fonts from 'unplugin-fonts/vite'
@@ -14,7 +15,7 @@ import { fileURLToPath, URL } from 'node:url'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
-
+    basicSsl(),
     svgLoader(
       {defaultImport: 'url'}
     ),
@@ -72,7 +73,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 8000,
+    port: 8443,
     proxy: {
       '/api/': {
         target: 'http://172.16.50.4:3001',
