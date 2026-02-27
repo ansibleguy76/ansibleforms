@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+-   Ampersand bug (#412)
+
+## [6.1.3] - 2026-02-23
+
 ### Added
 
 -   Option to track a live logfile during playbook execution.  See docs FAQ.  Perfect for long lasting custom actions (custom module) where you can write to a logfile and track live.
@@ -14,7 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 -   AzureAD redirect
-
 
 ## [6.1.2] - 2026-02-18
 
@@ -986,7 +991,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/6.1.2...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/6.1.3...HEAD
+
+[6.1.3]: https://github.com/ansibleguy76/ansibleforms/compare/6.1.2...6.1.3
 
 [6.1.2]: https://github.com/ansibleguy76/ansibleforms/compare/6.1.1...6.1.2
 

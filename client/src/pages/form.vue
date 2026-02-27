@@ -665,7 +665,7 @@ async function launchForm(postdata) {
 }
 
 async function loadForm(){
-  const formName = route.query.form;
+  const formName = route.query.form ? decodeURIComponent(route.query.form) : undefined;
   if (!formName) {
     console.error("No form name provided in the URL");
     formNotFound.value = true;
