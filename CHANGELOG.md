@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 -   Ampersand bug (#412)
+-   DateTime field input allowed
+-   Approval stuck
 
 ## [6.1.3] - 2026-02-23
 

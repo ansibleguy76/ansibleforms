@@ -505,6 +505,7 @@ async function clip(v, doNotStringify = false, asYaml = false) {
 
 // reset result
 function resetResult() {
+  clearTimeout(timeout.value);
   status.value = "";
   message.value = "";
   error.value = "";

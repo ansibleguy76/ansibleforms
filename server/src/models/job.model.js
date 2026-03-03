@@ -855,40 +855,50 @@ Job.continue = async function ({ form, user, credentials = {}, extravars = {}, j
     }
   }
 
-  if (jobtype == "ansible") {
-    return await Ansible.launch(
-      extravars,
-      credentials,
-      jobid,
-      ++counter,
-      formObj.approval,
-      true
-    );
-  }
-  if (jobtype == "awx") {
-    return await Awx.launch(
-      extravars,
-      credentials,
-      jobid,
-      ++counter,
-      formObj.approval,
-      true
-    );
-  }
-  if (jobtype == "multistep") {
-    return await Multistep.launch({
-      form,
-      steps: formObj.steps,
-      user,
-      extravars,
-      credentials: creds,
-      jobid,
-      counter: ++counter,
-      approval: formObj.approval,
-      fromStep: step,
-      approved: true
-    });
-  }
+  // Launch job in background and return immediately
+  const executeApprovedJob = async () => {
+    if (jobtype == "ansible") {
+      return await Ansible.launch(
+        extravars,
+        credentials,
+        jobid,
+        ++counter,
+        formObj.approval,
+        true
+      );
+    }
+    if (jobtype == "awx") {
+      return await Awx.launch(
+        extravars,
+        credentials,
+        jobid,
+        ++counter,
+        formObj.approval,
+        true
+      );
+    }
+    if (jobtype == "multistep") {
+      return await Multistep.launch({
+        form,
+        steps: formObj.steps,
+        user,
+        extravars,
+        credentials: creds,
+        jobid,
+        counter: ++counter,
+        approval: formObj.approval,
+        fromStep: step,
+        approved: true
+      });
+    }
+  };
+
+  // Fire and forget - execute in background
+  executeApprovedJob().catch(err => {
+    logger.error(`Approved job ${jobid} failed:`, err);
+  });
+
+  return { id: jobid };
 };
 Job.relaunch = async function (user, id, verbose) {
   const job = await Job.findById(user, id, true);
