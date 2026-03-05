@@ -572,6 +572,35 @@ async function handleFiles(e) {
     v$.value.form[name].$touch();
 }
 
+// handle blur event to touch field and show validation errors
+function handleBlur(fieldName) {
+    if (v$.value.form[fieldName]) {
+        v$.value.form[fieldName].$touch();
+    }
+}
+
+// get errors to display - validIf/validIfNot errors show immediately, others only when touched
+function getErrorsToDisplay(fieldName) {
+    const field = v$.value.form[fieldName];
+    if (!field) return [];
+    
+    // Start with normal errors (for touched fields)
+    let errorsToShow = [...field.$errors];
+    
+    // Add validIf/validIfNot errors even if field isn't touched (external validation)
+    const silentErrors = field.$silentErrors || [];
+    silentErrors.forEach(error => {
+        if (error.$params?.type === 'validIf' || error.$params?.type === 'validIfNot') {
+            // Check if not already in errorsToShow
+            if (!errorsToShow.find(e => e.$uid === error.$uid)) {
+                errorsToShow.push(error);
+            }
+        }
+    });
+    
+    return errorsToShow;
+}
+
 // calculate the size of the container
 function calcContainerSize() {
     var rect = containerRef.value?.getBoundingClientRect();
@@ -1888,7 +1917,7 @@ onUnmounted(() => {
                                         :isLoading="!['fixed', 'variable'].includes(dynamicFieldStatus[field.name]) && (field.expression != undefined || field.query != undefined)"
                                         :values="form[field.name] || []" @update:modelValue="evaluateDynamicFields(field.name)"
                                         @warning="addTableWarnings(field.name, ...arguments)" 
-                                        :errors="v$.form[field.name].$errors"
+                                        :errors="getErrorsToDisplay(field.name)"
                                         :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]"
                                     />
                                     <!-- expression raw data -->
@@ -1912,10 +1941,11 @@ onUnmounted(() => {
                                         :filterColumns="field.filterColumns || []"
                                         :previewColumn="field.previewColumn || ''"
                                         :valueColumn="field.valueColumn || ''"
-                                        @update:modelValue="evaluateDynamicFields(field.name)" 
+                                        @update:modelValue="evaluateDynamicFields(field.name)"
+                                        @blur="handleBlur(field.name)"
                                         :sticky="field.sticky || false"
                                         :horizontal="field.horizontal || false"
-                                        :errors="v$.form[field.name].$errors"
+                                        :errors="getErrorsToDisplay(field.name)"
                                         :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]" 
                                     />
                                     <!-- raw query data -->
@@ -1934,9 +1964,10 @@ onUnmounted(() => {
                                         :name="field.name"
                                         :hasError="v$.form[field.name].$invalid" 
                                         :dateType="field.dateType"
-                                        @update:modelValue="evaluateDynamicFields(field.name)" 
+                                        @update:modelValue="evaluateDynamicFields(field.name)"
+                                        @blur="handleBlur(field.name)"
                                         :placeholder="typeof fieldPlaceholders[field.name] === 'object' ? fieldPlaceholders[field.name].value : fieldPlaceholders[field.name]"
-                                        :errors="v$.form[field.name].$errors" 
+                                        :errors="getErrorsToDisplay(field.name)" 
                                         :values="field.values"
                                         :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]"
                                     />
@@ -1947,17 +1978,17 @@ onUnmounted(() => {
                                     :class="{ 'is-loading': (dynamicFieldStatus[field.name] == undefined || dynamicFieldStatus[field.name] == 'running') & !fieldOptions[field.name].editable }">
                                     <div v-if="!fieldOptions[field.name].viewable">
                                         <BsInputForForm v-if="fieldOptions[field.name].editable" :icon="field.icon"
-                                            type="text" @focus="preventFocus" :hasError="v$.form[field.name].$invalid"
+                                            type="text" @focus="preventFocus" @blur="handleBlur(field.name)" :hasError="v$.form[field.name].$invalid"
                                             v-model="v$.form[field.name].$model" :name="field.name"
                                             :required="field.required" @change="evaluateDynamicFields(field.name)"
-                                            :errors="v$.form[field.name].$errors"
+                                            :errors="getErrorsToDisplay(field.name)"
                                             :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]"
                                             />
                                         <BsInputForForm v-else @dblclick="setExpressionFieldViewable(field.name, true)"
                                             type="expression" :icon="field.icon"
                                             :hasError="v$.form[field.name].$invalid" cssClass="text-info"
                                             v-model="v$.form[field.name].$model" :name="field.name"
-                                            :isHtml="field.isHtml" :errors="v$.form[field.name].$errors"
+                                            :isHtml="field.isHtml" :errors="getErrorsToDisplay(field.name)"
                                             :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]"
                                              />
                                     </div>
@@ -1973,19 +2004,20 @@ onUnmounted(() => {
                                 <BsInputForForm
                                     v-if="['text', 'password', 'textarea', 'number', 'checkbox', 'radio'].includes(field.type)"
                                     @focus="preventFocus"
+                                    @blur="handleBlur(field.name)"
                                     @keydown="(field.keydown) ? evaluateDynamicFields(field.name) : null"
                                     @change="evaluateDynamicFields(field.name)" :hasError="v$.form[field.name].$invalid"
                                     v-model="v$.form[field.name].$model" :name="field.name" v-bind="field.attrs"
                                     :required="field.required" :type="field.type" :icon="field.icon"
                                     :readonly="field.hide" :placeholder="typeof fieldPlaceholders[field.name] === 'object' ? fieldPlaceholders[field.name].value : fieldPlaceholders[field.name]" :isSwitch="field.switch"
-                                    :errors="v$.form[field.name].$errors" :values="field.values"
+                                    :errors="getErrorsToDisplay(field.name)" :values="field.values"
                                     :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]" />
 
                                 <!-- TYPE = FILE -->
                                 <BsInputForForm v-if="field.type == 'file'" :accept="(field.accept || []).join(',')"
                                     :type="field.type" @change="handleFiles" :hasError="v$.form[field.name].$invalid"
                                     :name="field.name" :required="field.required" :icon="field.icon"
-                                    :errors="v$.form[field.name].$errors" :progress="fileProgress[field.name]" 
+                                    :errors="getErrorsToDisplay(field.name)" :progress="fileProgress[field.name]" 
                                     :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]" 
                                 />
                             </div>
