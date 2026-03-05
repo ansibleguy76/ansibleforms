@@ -7,11 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-   Host and PID aware aborting, faster, cleaner and would allow multi container setup
+-   Error border on expression fields
+-   Jq expression on expression with query fields so you can manipulate the otherwise always returning array
+
 ### Fixed
 
 -   Ampersand bug (#412)
 -   DateTime field input allowed (#416)
 -   Approval stuck (#413)
+
+### Changed
+
+-   validIf triggers error
 
 ## [6.1.3] - 2026-02-23
 
