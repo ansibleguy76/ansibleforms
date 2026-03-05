@@ -392,6 +392,14 @@ async function patchVersion6(messages, success, failed) {
   // Add use_for_vars_files column to repositories table (6.1.0+)
   // This allows a repository to be marked for vars files specifically
   await checkPromise(addColumn("repositories", "use_for_vars_files", "tinyint(4)", true, "0"), messages, success, failed);
+  
+  // Add pid column to jobs table (6.1.4)
+  // This stores the process ID for running jobs to allow direct process control
+  await checkPromise(addColumn("jobs", "pid", "int(11)", true, "NULL"), messages, success, failed);
+  
+  // Add host column to jobs table (6.1.4)
+  // This stores the hostname/container ID to prevent cross-instance process kills
+  await checkPromise(addColumn("jobs", "host", "varchar(255)", true, "NULL"), messages, success, failed);
 }
 
 // PATCHING : Patch All
