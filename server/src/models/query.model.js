@@ -6,12 +6,13 @@ import mssql from "../lib/mssql.js";
 import postgres from "../lib/postgres.js";
 import mongodb from "../lib/mongodb.js";
 import oracle from "../lib/oracle.js";
+import jq from "node-jq";
 
 //reporter object create
 var Query=function(){
 
 };
-Query.findAll = async function (query,cfg,noLog) {
+Query.findAll = async function (query,jqExpression="",cfg,noLog) {
 
   // legacy config was an object
   // in 5.0.2 we allow string and array
@@ -81,6 +82,16 @@ Query.findAll = async function (query,cfg,noLog) {
       throw new Error("Unsupported database type")
     }
   }
+  
+  // Apply jq expression if provided
+  if(jqExpression && jqExpression.trim() !== ""){
+    logger.debug(`Applying jq expression: ${jqExpression}`)
+    result = await jq.run(jqExpression, result, { input:"json", output:"json" })
+    if(!noLog){
+      logger.debug(`jq result : ${JSON.stringify(result)}`)
+    }
+  }
+  
   return result
 };
 export default  Query;

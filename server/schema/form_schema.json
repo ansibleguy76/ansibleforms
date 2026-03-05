@@ -502,6 +502,7 @@
                 "enum": ["text", "password"]
               },
               "query": {"not":{}},
+              "jq": {"not":{}},
               "minValue": {"not":{}},
               "maxValue": {"not":{}},
               "minSize": {"not":{}},
@@ -537,6 +538,7 @@
                 "enum": ["textarea"]
               },
               "query": {"not":{}},
+              "jq": {"not":{}},
               "minValue": {"not":{}},
               "maxValue": {"not":{}},
               "minSize": {"not":{}},
@@ -582,6 +584,7 @@
                 "enum": ["number"]
               },
               "query": {"not":{}},
+              "jq": {"not":{}},
               "minLength": {"not":{}},
               "maxLength": {"not":{}},
               "minSize": {"not":{}},
@@ -619,6 +622,7 @@
                 "enum": ["radio"]
               },
               "query": {"not":{}},
+              "jq": {"not":{}},
               "regex": {"not":{}},
               "minValue": {"not":{}},
               "maxValue": {"not":{}},
@@ -661,6 +665,7 @@
                 "enum": ["checkbox"]
               },
               "query": {"not":{}},
+              "jq": {"not":{}},
               "regex": {"not":{}},
               "minValue": {"not":{}},
               "maxValue": {"not":{}},
@@ -701,6 +706,7 @@
                 "enum": ["enum"]
               },
               "query": {"not":{}},
+              "jq": {"not":{}},
               "regex": {"not":{}},
               "minValue": {"not":{}},
               "maxValue": {"not":{}},
@@ -777,6 +783,7 @@
               "tableTitleAdd": {"not":{}},
               "tableTitleEdit": {"not":{}},
               "query": {"not":{}},
+              "jq": {"not":{}},
               "keydown": {"not":{}},
               "accept": {"not":{}},
               "allowDelete": {"not":{}},
@@ -839,6 +846,8 @@
               "pctColumns": {"not":{}},
               "filterColumns": {"not":{}},
               "dbConfig": {"not":{}},
+              "query": {"not":{}},
+              "jq": {"not":{}},
               "multiple": {"not":{}},
               "accept": {"not":{}},
               "allowDelete": {"not":{}},
@@ -914,6 +923,7 @@
               "refresh":           {"not":{}}, 
               "isHtml":            {"not":{}}, 
               "query":             {"not":{}}, 
+              "jq":                {"not":{}}, 
               "outputObject":      {"not":{}}, 
               "columns":           {"not":{}}, 
               "pctColumns":        {"not":{}}, 
@@ -967,6 +977,7 @@
               "isHtml":            {"not":{}}, 
               "runLocal":          {"not":{}}, 
               "query":             {"not":{}}, 
+              "jq":                {"not":{}}, 
               "outputObject":      {"not":{}}, 
               "columns":           {"not":{}}, 
               "pctColumns":        {"not":{}}, 
@@ -1166,6 +1177,7 @@
           "isHtml": {"type": "boolean"},
           "runLocal": {"type": "boolean"},
           "query": {"type": "string"},
+          "jq": {"type": "string"},
           "outputObject": {"type": "boolean"},
           "tableTitleAdd": {"type": "string"},
           "tableTitleEdit": {"type": "string"},

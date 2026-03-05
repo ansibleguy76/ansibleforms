@@ -1516,7 +1516,9 @@ async function startDynamicFieldsLoop() {
                             }
                         } else {
                             try {
-                                const result = await axios.post(`/api/v1/expression?noLog=${!!item.noLog}`, { expression: placeholderCheck.value }, TokenStorage.getAuthentication());
+                                const body = { expression: placeholderCheck.value };
+                                if (item.jq) body.jq = item.jq;
+                                const result = await axios.post(`/api/v1/expression?noLog=${!!item.noLog}`, body, TokenStorage.getAuthentication());
                                 var restresult = result.data;
                                 if (restresult.status == "error") {
                                     resetField(item.name);
@@ -1589,7 +1591,9 @@ async function startDynamicFieldsLoop() {
 
                     if (placeholderCheck.value != undefined) {
                         try {
-                            const result = await axios.post(`/api/v1/query?noLog=${!!item.noLog}`, { query: placeholderCheck.value, config: item.dbConfig }, TokenStorage.getAuthentication());
+                            const body = { query: placeholderCheck.value, config: item.dbConfig };
+                            if (item.jq) body.jq = item.jq;
+                            const result = await axios.post(`/api/v1/query?noLog=${!!item.noLog}`, body, TokenStorage.getAuthentication());
                             var restresult = result.data;
                             if (restresult.data.error) {
                                 queryerrors.value[item.name] = restresult.data.error;

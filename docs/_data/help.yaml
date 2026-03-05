@@ -3285,7 +3285,28 @@
                     type: mongodb
                   query: cmdb~users~{"name":"ansibleguy"}
                   # the query in mongodb has 3 parts, separated by ~  
-                  # database, collection and the query in valid json      
+                  # database, collection and the query in valid json    
+          - name: jq
+            type: string
+            group: data
+            version: 6.1.4
+            allowed: A valid jq expression
+            with_types: expression
+            short: Transform database query results with jq
+            description: |
+              Apply a jq expression to transform the returned database result.  
+              This only works for expression type in combination with `query` and `dbConfig` properties.  
+              The jq expression is applied after the database query executes, allowing you to filter, map, or reshape the result data.
+            examples:
+            - name: extract specific fields from query result
+              code: |
+                - name: usernames
+                  type: enum
+                  dbConfig:
+                    name: CMDB_CONN
+                    type: mysql
+                  query: select id, name, email from users
+                  jq: .[0].name   # return the first item's name
           - name: multiple
             type: boolean
             group: data
