@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Ampersand bug (#412)
 -   DateTime field input allowed (#416)
 -   Approval stuck (#413)
+-   multistep status (#413)
 
 ### Changed
 
