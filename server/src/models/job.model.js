@@ -1467,6 +1467,15 @@ Multistep.launch = async function ({
               // Now wait for the step to complete
               if (jobSuccess.completionPromise) {
                 await jobSuccess.completionPromise;
+                
+                // Check the actual status of the child job
+                const childJob = await Job.findById(user, jobSuccess.id, false);
+                if (childJob.status === 'failed' || childJob.status === 'aborted') {
+                  throw new Errors.ApiError(
+                    `Step ${step.name} (jobid ${jobSuccess.id}) ${childJob.status}`
+                  );
+                }
+                
                 await Job.printJobOutput(
                   `ok: [Completed step ${step.name} with jobid '${jobSuccess.id}']`,
                   "stdout",
