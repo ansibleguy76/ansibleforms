@@ -48,19 +48,25 @@ function InitCopyPaste(){
       ghCodeBlocks: true
     });
 
-    // Find all elements with markdown="1" attribute OR class="render-markdown"
-    const selectors = '[markdown="1"], .render-markdown, p[markdown], div[markdown], td[markdown]';
-    const markdownElements = document.querySelectorAll(selectors);
+    // Since Jekyll strips markdown="1" attribute, we need to detect markdown content by pattern
+    // Look in table cells and paragraph elements that might contain unprocessed markdown
+    const candidateSelectors = 'td p, table td, div.content p, div.content div';
+    const candidates = document.querySelectorAll(candidateSelectors);
     
-    console.log(`Found ${markdownElements.length} elements to process`);
+    console.log(`Scanning ${candidates.length} elements for markdown patterns...`);
     
-    markdownElements.forEach((element, index) => {
-      // Get the innerHTML to preserve existing <br> and <code> tags that Jekyll already processed
+    let processed = 0;
+    candidates.forEach((element, index) => {
       let content = element.innerHTML;
       
-      // Check if content contains bullet points (lines starting with -)
-      if (content.includes('- ')) {
-        console.log(`Processing element ${index + 1}:`, content.substring(0, 100));
+      // Detect markdown patterns:
+      // 1. Lines starting with "- " (bullet lists)
+      // 2. Not already processed (no <ul> or <li> tags)
+      const hasBullets = /^- |<br>\n- |<br>- /m.test(content);
+      const notProcessed = !content.includes('<ul') && !content.includes('<li');
+      
+      if (hasBullets && notProcessed) {
+        console.log(`Processing element ${processed + 1}:`, content.substring(0, 80) + '...');
         
         // Convert markdown to HTML
         const html = converter.makeHtml(content);
@@ -68,15 +74,11 @@ function InitCopyPaste(){
         // Replace the element's content with rendered HTML
         element.innerHTML = html;
         
-        console.log(`Processed element ${index + 1}`);
+        processed++;
       }
-      
-      // Remove the markdown attribute and class
-      element.removeAttribute('markdown');
-      element.classList.remove('render-markdown');
     });
     
-    console.log('Markdown processing complete');
+    console.log(`Markdown processing complete: ${processed} elements processed`);
   }
 
   document.addEventListener("DOMContentLoaded", InitMarkdown);
