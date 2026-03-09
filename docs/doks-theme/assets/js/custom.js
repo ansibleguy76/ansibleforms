@@ -30,9 +30,11 @@ function InitCopyPaste(){
   function InitMarkdown() {
     // Check if showdown is loaded
     if (typeof showdown === 'undefined') {
-      console.warn('Showdown library not loaded');
+      console.error('Showdown library not loaded - markdown processing disabled');
       return;
     }
+
+    console.log('Showdown loaded, processing markdown...');
 
     // Configure Showdown converter
     const converter = new showdown.Converter({
@@ -41,25 +43,40 @@ function InitCopyPaste(){
       tasklists: true,
       simplifiedAutoLink: true,
       openLinksInNewWindow: false,
-      backslashEscapesHTMLTags: true
+      backslashEscapesHTMLTags: true,
+      simpleLineBreaks: false,
+      ghCodeBlocks: true
     });
 
-    // Find all elements with markdown="1" attribute
-    const markdownElements = document.querySelectorAll('[markdown="1"]');
+    // Find all elements with markdown="1" attribute OR class="render-markdown"
+    const selectors = '[markdown="1"], .render-markdown, p[markdown], div[markdown], td[markdown]';
+    const markdownElements = document.querySelectorAll(selectors);
     
-    markdownElements.forEach(element => {
-      // Get the text content (without HTML tags)
-      const markdownText = element.textContent || element.innerText;
+    console.log(`Found ${markdownElements.length} elements to process`);
+    
+    markdownElements.forEach((element, index) => {
+      // Get the innerHTML to preserve existing <br> and <code> tags that Jekyll already processed
+      let content = element.innerHTML;
       
-      // Convert markdown to HTML
-      const html = converter.makeHtml(markdownText);
+      // Check if content contains bullet points (lines starting with -)
+      if (content.includes('- ')) {
+        console.log(`Processing element ${index + 1}:`, content.substring(0, 100));
+        
+        // Convert markdown to HTML
+        const html = converter.makeHtml(content);
+        
+        // Replace the element's content with rendered HTML
+        element.innerHTML = html;
+        
+        console.log(`Processed element ${index + 1}`);
+      }
       
-      // Replace the element's content with rendered HTML
-      element.innerHTML = html;
-      
-      // Remove the markdown attribute
+      // Remove the markdown attribute and class
       element.removeAttribute('markdown');
+      element.classList.remove('render-markdown');
     });
+    
+    console.log('Markdown processing complete');
   }
 
   document.addEventListener("DOMContentLoaded", InitMarkdown);
