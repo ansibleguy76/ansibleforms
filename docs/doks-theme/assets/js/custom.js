@@ -26,63 +26,6 @@ function InitCopyPaste(){
 
   document.addEventListener("DOMContentLoaded", InitCopyPaste);
 
-  // Initialize Showdown markdown processor
-  function InitMarkdown() {
-    // Check if showdown is loaded
-    if (typeof showdown === 'undefined') {
-      console.error('Showdown library not loaded - markdown processing disabled');
-      return;
-    }
-
-    console.log('Showdown loaded, processing markdown...');
-
-    // Configure Showdown converter
-    const converter = new showdown.Converter({
-      tables: true,
-      strikethrough: true,
-      tasklists: true,
-      simplifiedAutoLink: true,
-      openLinksInNewWindow: false,
-      backslashEscapesHTMLTags: true,
-      simpleLineBreaks: false,
-      ghCodeBlocks: true
-    });
-
-    // Since Jekyll strips markdown="1" attribute, we need to detect markdown content by pattern
-    // Look in table cells and paragraph elements that might contain unprocessed markdown
-    const candidateSelectors = 'td p, table td, div.content p, div.content div';
-    const candidates = document.querySelectorAll(candidateSelectors);
-    
-    console.log(`Scanning ${candidates.length} elements for markdown patterns...`);
-    
-    let processed = 0;
-    candidates.forEach((element, index) => {
-      let content = element.innerHTML;
-      
-      // Detect markdown patterns:
-      // 1. Lines starting with "- " (bullet lists)
-      // 2. Not already processed (no <ul> or <li> tags)
-      const hasBullets = /^- |<br>\n- |<br>- /m.test(content);
-      const notProcessed = !content.includes('<ul') && !content.includes('<li');
-      
-      if (hasBullets && notProcessed) {
-        console.log(`Processing element ${processed + 1}:`, content.substring(0, 80) + '...');
-        
-        // Convert markdown to HTML
-        const html = converter.makeHtml(content);
-        
-        // Replace the element's content with rendered HTML
-        element.innerHTML = html;
-        
-        processed++;
-      }
-    });
-    
-    console.log(`Markdown processing complete: ${processed} elements processed`);
-  }
-
-  document.addEventListener("DOMContentLoaded", InitMarkdown);
-
   // Get the button:
 let toTop = document.getElementById("toTop");
 
