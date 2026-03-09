@@ -1,36 +1,34 @@
 ---
 layout: default
-title: Environment Variables
+title: Notifications
+parent: Forms
 nav_order: 3
 ---
 
-# Environment Variables
+# Email Notifications
 {: .no_toc }
 
 {% assign help = site.data.help %}
-{% assign env_vars = help | where: "link", "environment-variable" | first %}
+{% assign formsyaml = help | where: "link", "forms" | first %}
+{% assign form_object = formsyaml.help | where: "name", "Form" | first %}
+{% assign notifications_object = form_object.help | where: "name", "Notifications" | first %}
 
-{{ env_vars.description | markdownify }}
+{{ notifications_object.description | markdownify }}
 
----
-
-
-
-## Variables
+## Attributes
 
 <table>
   <thead>
     <tr>
-      <th>Variable</th>
-      <th>Choices/Defaults</th>
+      <th>Attribute</th>
       <th>Comments</th>
     </tr>
   </thead>
   <tbody>
-{% for var in env_vars.items %}
+    {% for var in notifications_object.items %}
     <tr>
       <td>
-        <span id="env_{{ var.name }}"><strong>{{ var.name }}</strong></span><br>
+        <span id="{{notifications_object.name}}_{{ var.name }}"><strong>{{ var.name }}</strong></span><br>
         <span class="af-type">{{ var.type}}</span>
         {% if var.required==true %}<span class="af-required"> / required</span>{% endif %}
         {% if var.unique==true %}<span class="af-unique"> / unique</span>{% endif %}
@@ -38,6 +36,15 @@ nav_order: 3
         {% if var.version %}<span class="af-version">added in version {{var.version}}</span>{% endif %}
       </td>
       <td>
+        <p>
+          <strong>{{var.short}}</strong><br>
+          {% if var.allowed != nil %}
+          <span class="af-type">{{ var.allowed }}</span>
+          {% endif %}
+        </p>
+        <p>
+          {{ var.description | markdownify }}
+        </p>
         {% if var.choices.size > 0 %}
         <div>
           <strong>Choices:</strong><br>
@@ -58,40 +65,19 @@ nav_order: 3
           <strong>Default:</strong><br>
           <span>{{ var.default }}</span>
         </div>   
-        {% endif %}       
-      </td>
-      <td>
-        <p>
-          <strong>{{var.short}}</strong><br>
-          {% if var.allowed != nil %}
-          <span class="af-type">{{ var.allowed }}</span>
-          {% endif %}
-        </p>
-        <p>
-          {{ var.description | markdownify | markdownify }}
-        </p>
-        {% for c in var.changelog %}
-        <div class="af-changelog">
-          {% if c.type == "added" %}
-          <div class="af-changelog-header">
-            <span class="af-badge af-badge-added">Added</span>
-            <span class="af-badge af-badge-version">{{ c.version }}</span>
-          </div>
-          {% endif %}
-          <p>
-            {{ c.description | markdownify }}
-          </p>
-        </div>
-        {% endfor %}
-        {% if var.example != nil %}
-        <p>
-          <strong>Examples:</strong><br>
-          <code>{{ var.example }}</code>
-        </p>
         {% endif %}
       </td>
     </tr>
-{% endfor %}
+    {% endfor %}
   </tbody>
 </table>
 
+## Examples
+
+{% for example in notifications_object.examples %}
+### {{ forloop.index }}) {{ example.name }}
+
+```yaml
+{{ example.code }}
+```
+{% endfor %}

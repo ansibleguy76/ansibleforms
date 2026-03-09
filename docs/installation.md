@@ -1,24 +1,15 @@
 ---
-# Page settings
 layout: default
-keywords:
-comments: false
-
-# Hero section
 title: Installation
-description: How to install AnsibleForms
+nav_order: 2
+---
 
-# Micro navigation
-micro_nav: true
+# Installation
+{: .no_toc }
 
-# Page navigation
-page_nav:
-    prev:
-        content: Introduction
-        url: '/introduction'
-    next:
-        content: Customization and Environment Variables
-        url: '/customization'
+How to install AnsibleForms
+{: .fs-6 .fw-300 }
+
 ---
 
 AnsibleForms can be installed in a few ways.  
@@ -29,53 +20,46 @@ AnsibleForms can be installed in a few ways.
   * **Docker Compose** : [Download the docker-compose project](https://github.com/ansibleguy76/ansibleforms-docker-v6) and use docker-compose to start both MySql and AnsibleForms.  
   * **Kubernetes** : [Download the helm project](https://github.com/ansibleguy76/ansibleforms-helm) and use Kubernetes to start AnsibleForms
 
-<div class="callout callout--info">
-    <p><strong>Recommendation</strong> Out of experience, I recommend the use of the docker-image.  It has all (many) dependencies installed and can be setup very quickly.</p>  For the old v5, use the old docker-compose project.
-</div>
+{: .note }
+> **Recommendation** Out of experience, I recommend the use of the docker-image. It has all (many) dependencies installed and can be setup very quickly. For the old v5, use the old docker-compose project.
 
-# Install using K8s
+## Install using K8s
 
 To install AnsibleForms on Kubernetes using Helm, refer to the [ansibleforms-helm GitHub repository](https://github.com/ansibleguy76/ansibleforms-helm).  Just git clone, change the values.yaml or create your own values.yaml and overwrite.
 
-# Install using Docker-Compose 
+## Install using Docker-Compose 
 
 The [docker-compose](https://github.com/ansibleguy76/ansibleforms-docker), together with the environment variables should get you started.
 
-<div class="callout callout--danger">
-    <p><strong>Note</strong> You can also use Podman and Podman-Compose.  The commands are similar (docker- > podman and docker-compose -> podman-compose)</p>
-</div>
+{: .warning }
+> **Note** You can also use Podman and Podman-Compose. The commands are similar (docker-> podman and docker-compose -> podman-compose)
 
-<div class="callout callout--danger">
-    <p><strong>Note</strong> Using docker and docker-compose for the first time, requires some basic linux skills and some knowledge about containers</p>
-    <p><a href="/doks-theme/assets/files/docker and ansibleforms.pdf">Download this document</a> to get you kick-started with containers and Docker</p>
-</div>
+{: .warning }
+> **Note** Using docker and docker-compose for the first time, requires some basic linux skills and some knowledge about containers  
+> [Download this document](/assets/files/docker and ansibleforms.pdf) to get you kick-started with containers and Docker
 
-## Prerequisites
+### Prerequisites
 
 * **Linux machine** : Any flavour should do, The need of CPU and memory is not very high, but, of course can grow if you start a lot of playbooks simultaniously. When using Podman, I recommand Debian (ubuntu has some issues with Podman)
 * **Github access** : The easiest way is to download or clone the docker-compose project on Github
 * **Install Docker** : You need to have a container environment, and in this example we use Docker
 * **Install Docker Compose** : To spin-up AnsibleForms and MySql with docker, using a few simple configuration-files, we need Docker Compose
 
-<div class="callout callout--warning">
-      <p><strong>Linux Flavour</strong> The examples below are for Redhat/CentOs and Ubuntu/Debian, use apt-get or other package managers for your flavour of linux.</p>
-</div>
+{: .warning }
+> **Linux Flavour** The examples below are for Redhat/CentOs and Ubuntu/Debian, use apt-get or other package managers for your flavour of linux.
 
-<a href="https://www.youtube.com/watch?v=IHGIggmtTuA" class="btn btn--dark btn--rounded btn--w-icon">
-  <span class="icon"><i class="fat fa-video"></i></span> <span class="ml-2"> VIDEO How to install AnsibleForms</span>
-</a>
+**VIDEO**: [How to install AnsibleForms](https://www.youtube.com/watch?v=IHGIggmtTuA)
 
-## Choose a location to install
+### Choose a location to install
 
 ```bash
 sudo mkdir /srv/apps
 cd /srv/apps
 ```
 
-## Clone the docker-compose project
+### Clone the docker-compose project
 
 ```bash
-
 # ubuntu or debian
 sudo apt-get install -y git
 
@@ -85,14 +69,14 @@ sudo git clone https://github.com/ansibleguy76/ansibleforms-docker-v6.git
 cd ansibleforms-docker-v6
 ```
 
-## Set proper permissions
+### Set proper permissions
 
 ```bash
 # write access will be needed on the datafolder
 sudo chmod -R 664 ./data
 ```
 
-## Install Docker and docker-compose
+### Install Docker and docker-compose
 
 [Docker installation manuals](https://docs.docker.com/engine/install)
 
@@ -109,19 +93,19 @@ sudo systemctl start docker
 sudo systemctl enable docker
 ```
 
-## Install Podman and podman-compose
+### Install Podman and podman-compose
 
 ```bash
 # ubuntu / debian
 sudo apt-get install -y podman podman-compose
 ```
 
-## Customize
+### Customize
 
 Feel free to look at the variables in the `.env` file and `docker-compose.yaml` file.  
-[Learn more about the environment variables](/customization)
+[Learn more about the environment variables](customization)
 
-## Start docker-compose project
+### Start docker-compose project
 
 ```bash
 sudo docker-compose up -d
@@ -131,7 +115,7 @@ sudo podman-compose up -d
 # note that podman is service-less.  You can run it as any user.  Your choice to use sudo or not.
 ```
 
-## Test the application
+### Test the application
 
 * Surf to : https://your_ip:8443
 * Login with admin / AnsibleForms!123 (or password you chose in the .env file)
@@ -144,39 +128,39 @@ sudo podman-compose up -d
   * Add credentials for custom external connections such as other mysql servers or credentials for rest api's or tho pass to ansible playbooks
   * Connect to git repositories and choose whether you want you forms and/or playbooks to sync with a repository
 
-## File structure
+### File structure
 
 The docker-compose project comes with the following folder structure :
 
 ```bash
 .
 ├── data
-│   ├── certificates # folder that contains sample self-signed certificates - replace with your own
-│   ├── forms # folder that contains 1 or more yaml files with forms
-│   ├── forms_backups # folder to hold form backups
-│   ├── functions # folder for custom javascript functions
-│   ├── git # folder for git repos
-│   ├── images # folder for custom images
-│   ├── logs # folder that holds the logfiles
-│   ├── mysql
-│   │   ├── db # folder that holds the database files
-│   │   └── init # contains the sql files to initialize the database
-│   ├── playbooks # folder for your ansible playbooks and roles
-│   ├── ssh # folder for the client sshkey
-│   ├── config.yml # the master forms file 
+│   ├── certificates # folder that contains sample self-signed certificates - replace with your own
+│   ├── forms # folder that contains 1 or more yaml files with forms
+│   ├── forms_backups # folder to hold form backups
+│   ├── functions # folder for custom javascript functions
+│   ├── git # folder for git repos
+│   ├── images # folder for custom images
+│   ├── logs # folder that holds the logfiles
+│   ├── mysql
+│   │   ├── db # folder that holds the database files
+│   │   └── init # contains the sql files to initialize the database
+│   ├── playbooks # folder for your ansible playbooks and roles
+│   ├── ssh # folder for the client sshkey
+│   ├── config.yml # the master forms file 
 ├── k8s # sample files to deploy on Kubernetes
 ```
 
-# Install docker-image without Docker-Compose
+## Install docker-image without Docker-Compose
 
 Installing AnsibleForms natively will need good Linux skills and knowledge about Nodejs
 
-## Prerequisites
+### Prerequisites
 
 * **Docker** : Install docker and have it running
 * **MySql** : Install Mysql and have it running
 
-## Install MySql
+### Install MySql
 
 Below is just an example of how you could install MySql
 
@@ -192,7 +176,7 @@ sudo mysql_secure_installation
 # set new password of choice
 ```
 
-## Get image from docker hub
+### Get image from docker hub
 If you don't want to go through the hassle of a dockerbuild.  Run a docker image directly from docker hub.  
   
 If you want, you can use the latest build from docker hub (https://hub.docker.com/repository/docker/ansibleguy/ansibleforms)
@@ -211,7 +195,7 @@ CONTAINER ID   IMAGE                     COMMAND                  CREATED       
 d91f7b05b67e   ansibleguy/ansibleforms   "node ./dist/index.js"   7 seconds ago   Up 6 seconds   0.0.0.0:8000->8000/tcp, :::8000->8000/tcp   ansibleforms
 ```
 
-## Test the application
+### Test the application
 
 * Surf to : https://your_ip:8000
 * Login with admin / AnsibleForms!123 (or password you chose in the .env file)
@@ -223,7 +207,7 @@ d91f7b05b67e   ansibleguy/ansibleforms   "node ./dist/index.js"   7 seconds ago 
   * Add AWX connection
   * Add credentials for custom external connections such as other mysql servers or credentials for rest api's or tho pass to ansible playbooks
 
-# How to run a custom build
+## How to run a custom build
 
 If you are familiar with Node js, you can download the code and build and run this locally, using PM2 for example.
 This project has 2 node applications
@@ -234,11 +218,11 @@ This project has 2 node applications
 The client app will dynamically build the forms (vue.js v2) for ansible/awx, based on one or more yaml files (config.yml).
 The server app (express.js) will cover authentication, background database connections and executing the ansible playbooks or awx templates.
 
-## Prerequisites
+### Prerequisites
 
 * **Ansible or AWX** : Native installation does not cover Ansible, you must have this installed manually
 
-## Project download
+### Project download
 
 ```bash
 # remove nodejs if needed
@@ -265,7 +249,7 @@ cd ansibleforms
 # verify that you have 2 subfolder
 ```
 
-## Project init
+### Project init
 
 First we install all nodejs dependencies for both client & server
 
@@ -293,13 +277,13 @@ sudo cp .env.example .env.development
 sudo cp ./persistent/config.yml.example ./persistent/config.yml
 ```
 
-## Modify the .env.development (or .env.production) to your needs
+### Modify the .env.development (or .env.production) to your needs
 
 * enable https if needed and set the certificates (the code comes with self signed certficates)
 * update forms path and log path
 * set mysql server connection details
 
-## Modify the config.yml to your needs
+### Modify the config.yml to your needs
 
 The `config.yml` file describes all your forms in a yaml format.  It must be available in the server application.  By default the webapp will search under `/server/persistent` 
 
@@ -308,9 +292,9 @@ The `config.yml` file describes all your forms in a yaml format.  It must be ava
 * add constants
 * add forms
 
-## How to run
+### How to run
 
-### In development
+#### In development
 
 First of all one must understand that this application has both a client and server side.
 The client side is build with vue2 and compiles in a single html, css & js script file.
@@ -318,7 +302,7 @@ The server side is build with express (must also be compiled) and runs the api's
 
 All behavior and how things are started using the `npm run command` is in the `package.json` file (one for client and one for server).  There are several methods like 'build, bundle, start, ...' depending on what you want to do.
 
-#### Run both server and client for development
+##### Run both server and client for development
 
 When you test a vue2 application (client application), it typically spins up a temporary Express webserver, which is useless if you also have a server application, which would not be running in this case.  Therefor we have added a `vue.config.js` file which also starts our server code in that temp express server.  Now we start our client app in development, along with the server code.  We also use nodemon to auto rebuild if the code changes.
 
@@ -327,7 +311,7 @@ cd client
 sudo npm run start
 ```
 
-#### Run compiled in development
+##### Run compiled in development
 
 If you are done testing, you can compile the client code and have it embedded into the server code.  And then spin up the server application.  the command `npm run bundle` will compile the client code and copy it under `/views` in the server application.  You can then start the server application with `npm run dev`, and as you will see in the `package.json`, it will build, copy the environment file and start the server application in dev mode.
 
@@ -346,7 +330,7 @@ cd server
 sudo npm run dev
 ```
 
-### Run in production with PM2
+#### Run in production with PM2
 
 Running the application in the commandline, makes it fragile when something goes wrong.  We need an environment where the nodejs application can run when logged of, where it can be monitored and even restarted in case of a crash.  That's were PM2 comes in. (https://pm2.keymetrics.io/)
 
@@ -393,7 +377,7 @@ Once started
 └─────┴─────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
 ```
 
-## First time run
+### First time run
 
 The first time you surf to the webapplication, it will ask you if it should create the AnsibleForms schema.  
 The default admin user is :
@@ -412,6 +396,4 @@ sudo docker pull ansibleguy/ansibleforms:latest
 sudo docker-compose up -d
 ```
 
-<a href="https://www.youtube.com/watch?v=5ZDJ8CcUx5c" class="btn btn--dark btn--rounded btn--w-icon">
-  <span class="icon"><i class="fat fa-video"></i></span> <span class="ml-2"> VIDEO How to upgrade AnsibleForms</span>
-</a>
+**VIDEO**: [How to upgrade AnsibleForms](https://www.youtube.com/watch?v=5ZDJ8CcUx5c)

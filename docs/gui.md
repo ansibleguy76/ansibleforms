@@ -1,78 +1,195 @@
 ---
-# Page settings
 layout: default
-keywords:
-comments: false
-
-# Hero section
-title: Graphical User Interface
-description: | 
-  Screenshots and how to work with the GUI
-# Micro navigation
-micro_nav: true
-
-# Hide scrollspy
-hide_scrollspy: false
-
-# Page navigation
-page_nav:
-    prev:
-        content: FAQ
-        url: '/faq'
+title: GUI
+nav_order: 11
+description: Screenshots and tour of the graphical user interface
 ---
 
-# The dashboard
+# Graphical User Interface
 
-![]({% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}/doks-theme/assets/images/screenshots/screenshot_forms.jpg)
+Visual tour of AnsibleForms' web interface, from the dashboard to advanced administration features.
+{: .fs-6 .fw-300 }
 
-# A form
+---
 
-![]({% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}/doks-theme/assets/images/screenshots/screenshot_form_external_data.jpg)
+## Login
 
-# Preview extravars
+User authentication page with support for local, LDAP, EntraID and OIDC authentication.
 
-![]({% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}/doks-theme/assets/images/screenshots/screenshot_extravars.jpg)
+![Login](assets/screenshots/login.jpg)
 
-# Running job
+---
 
-![]({% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}/doks-theme/assets/images/screenshots/screenshot_job.jpg)
+## The Dashboard
 
-# Multi step
+The main dashboard displays all available forms organized by category.
 
-![]({% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}/doks-theme/assets/images/screenshots/screenshot_multistep.jpg)
+![Dashboard](assets/screenshots/dashboard.jpg)
 
-# Approvals
+---
 
-![]({% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}/doks-theme/assets/images/screenshots/screenshot_approvals.jpg)
+## A Form
 
-# Job history
+Example of a form with external data sources and dynamic fields.
 
-![]({% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}/doks-theme/assets/images/screenshots/screenshot_jobhistory.jpg)
+![Form Example](assets/screenshots/form.jpg)
 
-# Builtin Designer
+---
 
-![]({% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}/doks-theme/assets/images/screenshots/screenshot_designer.jpg)
+## Form JSON Preview
 
-# Manage settings
+Preview the JSON payload and extra variables that will be passed to Ansible before running the job.
 
-![]({% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}/doks-theme/assets/images/screenshots/screenshot_ldap.jpg)
+![Form JSON Preview](assets/screenshots/form-json.jpg)
 
-# Manage git repositories
+---
 
-![]({% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}/doks-theme/assets/images/screenshots/screenshot_gitrepositories.jpg)
+## Running Job
 
-# Log viewer
+Real-time execution of an Ansible playbook with live output.
 
-![]({% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}/doks-theme/assets/images/screenshots/screenshot_logviewer.jpg)
+![Running Job](assets/screenshots/run.jpg)
 
-# User management
+---
 
-![]({% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}/doks-theme/assets/images/screenshots/screenshot_users.jpg)
+## Job Output
 
-# Credential manager
+Complete output from an executed Ansible playbook.
 
-![]({% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}/doks-theme/assets/images/screenshots/screenshot_credentials.jpg)
+![Job Output](assets/screenshots/job-output.jpg)
 
-# Swagger interface
+---
 
-![]({% if jekyll.environment == 'production' %}{{ site.doks.baseurl }}{% endif %}/doks-theme/assets/images/screenshots/screenshot_swagger.jpg)
+## Job Logs
+
+Detailed job execution logs with timestamps and status information.
+
+![Job Logs](assets/screenshots/job-log.jpg)
+
+---
+
+## Multi Step
+
+Forms can be split into multiple steps for complex workflows.
+
+![Multi Step Form](assets/screenshots/multistep.jpg)
+
+---
+
+## Builtin Designer
+
+Visual form designer for creating and editing forms without coding.
+
+![Builtin Designer](assets/screenshots/designer.jpg)
+
+---
+
+## Schedules
+
+Schedule forms to run at specific times or intervals.
+
+![Schedules](assets/screenshots/schedules.jpg)
+
+---
+
+## Backups
+
+Automated backup and restore functionality for forms and configurations.
+
+![Backups](assets/screenshots/backups.jpg)
+
+---
+
+## Restore
+
+Restore forms and configurations from previous backups.
+
+![Restore](assets/screenshots/restore.jpg)
+
+---
+
+## Settings
+
+Application settings and general configuration options.
+
+![Settings](assets/screenshots/settings.jpg)
+
+---
+
+## LDAP Configuration
+
+Configure LDAP/Active Directory authentication and authorization.
+
+![LDAP Configuration](assets/screenshots/ldap.jpg)
+
+---
+
+## LDAP Test
+
+Test LDAP connection and query results.
+
+![LDAP Test](assets/screenshots/ldap-test.jpg)
+
+---
+
+## LDAP Test Output
+
+Detailed output from LDAP connection tests.
+
+![LDAP Test Output](assets/screenshots/ldap-test-output.jpg)
+
+---
+
+## Git Repositories
+
+Integrate with Git repositories to version control your forms and playbooks.
+
+![Git Repositories](assets/screenshots/git.jpg)
+
+---
+
+## Git Repository Editor
+
+Edit and configure Git repository integration settings.
+
+![Git Repository Editor](assets/screenshots/git-edit.jpg)
+
+---
+
+## Log Viewer
+
+Built-in log viewer for troubleshooting and monitoring.
+
+![Log Viewer](assets/screenshots/logs.jpg)
+
+---
+
+## Credential Manager
+
+Securely store and manage credentials used by playbooks.
+
+![Credential Manager](assets/screenshots/credentials.jpg)
+
+---
+
+## User Profile
+
+View and edit your user profile and preferences.
+
+![User Profile](assets/screenshots/about-me.jpg)
+
+---
+
+## Dark Mode
+
+AnsibleForms supports dark mode for reduced eye strain.
+
+![Dark Mode](assets/screenshots/darkmode.jpg)
+
+---
+
+## Swagger Interface
+
+Interactive API documentation and testing via Swagger UI.
+
+![Swagger Interface](assets/screenshots/swagger.jpg)

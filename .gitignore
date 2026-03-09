@@ -28,6 +28,9 @@ forms.yaml
 # ontap stuff
 ontap*.yaml
 
+# publish scripts
+publish*.sh
+
 # Editor directories and files
 .idea
 .vscode

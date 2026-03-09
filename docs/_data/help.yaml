@@ -779,7 +779,7 @@
             categories:                                    # reference to categories defined earlier
             - Demo
             - Vmware/Linux                                 # Add to a subcategory using the `/` separator
-            tileClass: has-background-success-light        # a bulma background color style (https://bulma.io)
+            tileClass: bg-success-subtle                   # a bootstrap background color style (https://getbootstrap.com/)
             playbook: playbook_vm.yml                      # playbook to launch (only if type = ansible)
             inventory: inventory.yml                       # optional ansible inventory file
             check: false                                   # run in checkmode or not
@@ -794,8 +794,8 @@
             onFinish:                                      # event handler on job finished
               - show: 2                                    # show the form after 2 seconds
             fieldGroupClasses:                             # give fieldgroups a custom background
-              groupname1: has-background-info-light
-              groupname2: has-background-success-light    
+              groupname1: bg-info-subtle
+              groupname2: bg-success-subtle    
             fields:                                        # list of field objects 
   help:
     - name: Category
@@ -1182,41 +1182,41 @@
             image: /assets/images/netapp.svg # the docker compose has a few brand images, feel free to add your own
       - name: tileClass
         type: string
-        allowed: valid bulma background class
+        allowed: valid bootstrap background class
         group: visualization
         short: Form tile background colour
         description: |
-          Ansible Forms uses the Bulma css framework to style the webapplication.  
-          Bulma has a few color helper classes you can use to give your formtile a background color.  
-          You can find them here [background color](https://bulma.io/documentation/helpers/color-helpers/#background-color) and [foreground color](https://bulma.io/documentation/helpers/color-helpers/#text-color).  
+          Ansible Forms uses the Bootstrap css framework to style the webapplication.  
+          Bootstrap has a few color helper classes you can use to give your formtile a background color.  
+          You can find them here [background color](https://getbootstrap.com/docs/5.0/utilities/colors/#background-color) and [foreground color](https://getbootstrap.com/docs/5.0/utilities/colors/#text-color).  
           **Hint**: Try to add a matching foreground color.
-        default: has-background-light
+        default: bg-info-subtle
         examples:
         - name: warning color
           code: |
             name: Cleanup jobs
             icon: trash
-            tileClass: has-background-warning has-text-white-ter
+            tileClass: bg-warning text-light
         - name: success light color
           code: |
             name: New job
             icon: plus
-            tileClass: has-background-success-light has-text-black-ter  
+            tileClass: bg-success-subtle text-dark  
       - name: fieldGroupClasses
         type: object
         allowed: key-value pairs
         group: visualization
         short: Fieldgroup background color
         description:
-          Ansible Forms uses the Bulma css framework to style the webapplication.  
-          Bulma has a few color helper classes you can use to give your fieldgroups a background color.  
-          You can find them here [background color](https://bulma.io/documentation/helpers/color-helpers/#background-color) and [foreground color](https://bulma.io/documentation/helpers/color-helpers/#text-color).         
+          Ansible Forms uses the Bootstrap css framework to style the webapplication.  
+          Bootstrap has a few color helper classes you can use to give your fieldgroups a background color.  
+          You can find them here [background color](https://getbootstrap.com/docs/5.0/utilities/colors/#background-color) and [foreground color](https://getbootstrap.com/docs/5.0/utilities/colors/#text-color).         
         examples:
         - name: Color fieldgroup
           code: |
             fieldGroupClasses:                             # give fieldgroups a custom background
-              groupname1: has-background-info-light
-              groupname2: has-background-success-light                 
+              groupname1: bg-info-subtle
+              groupname2: bg-success-subtle                 
       - name: type
         type: string
         group: basic
@@ -1240,7 +1240,7 @@
                   categories:                                    # reference to categories defined earlier
                   - Demo
                   - Vmware/Linux                                 # Add to a subcategory using the `/` separator
-                  tileClass: has-background-success-light        # a bulma background color style (https://bulma.io)
+                  tileClass: bg-success-subtle                   # a bootstrap background color style (https://getbootstrap.com/)
                   playbook: playbook_vm.yml                      # playbook to launch (only if type = ansible)
                   inventory: inventory.yml                       # optional ansible inventory file
                   check: false                                   # run in checkmode or not
@@ -1255,8 +1255,8 @@
                   onFinish:                                      # event handler on job finished
                     - show: 2                                    # show the form after 2 seconds
                   fieldGroupClasses:                             # give fieldgroups a custom background
-                    groupname1: has-background-info-light
-                    groupname2: has-background-success-light    
+                    groupname1: bg-info-subtle
+                    groupname2: bg-success-subtle    
                   fields:                                        # list of field objects 
         - name: awx
           description: |
@@ -1276,7 +1276,7 @@
                 - Demo
                 - Vmware
                 - Decommissioning/Linux                        # Add to a subcategory using the `/` separator
-                tileClass: has-background-danger               # a bulma background color style (https://bulma.io)
+                tileClass: bg-danger                           # a bootstrap background color style (https://getbootstrap.com/)
                 template: remove_vm                            # template to launch (only if type = awx)
                 inventory: inventory                           # optional awx inventory
                 check: false                                   # run in checkmode or not
@@ -1293,8 +1293,8 @@
                 onAbort:                                       # event handler on job failure
                   - reload: 3                                  # reload the form after 3 seconds
                 fieldGroupClasses:                             # give fieldgroups a custom background
-                  groupname1: has-background-info-light
-                  groupname2: has-background-success-light    
+                  groupname1: bg-info-subtle
+                  groupname2: bg-success-subtle    
                 fields:                                        # list of field objects      
         - name: multistep
           description: |
@@ -1311,7 +1311,7 @@
                 categories:                                    # reference to categories defined earlier
                 - Demo
                 - Vmware
-                tileClass: has-background-danger               # a bulma background color style (https://bulma.io)
+                tileClass: bg-danger                           # a bootstrap background color style (https://getbootstrap.com/)
                 type: multistep                                # type is awx, ansible or multistep
                 steps:
                 - type: awx
@@ -1327,8 +1327,8 @@
                   playbook: email.yaml
                   always: true                                 # always run this task, even if others failed
                 fieldGroupClasses:                             # give fieldgroups a custom background
-                  groupname1: has-background-info-light
-                  groupname2: has-background-success-light    
+                  groupname1: bg-info-subtle
+                  groupname2: bg-success-subtle    
                 fields:                                        # list of field objects      
         short: Form type
         description: | 
@@ -1483,7 +1483,7 @@
         group: basic
         allowed: a step object
         objectLink: forms/form/step
-        docsObjectLink: "#step-object"
+        docsObjectLink: "multistep"
         short: Multistep steps
         description: |
           A multistep form is basically an array of multiple form type destinations, defined here as steps.
@@ -1658,7 +1658,7 @@
         allowed: valid approval object
         group: interaction
         objectLink: forms/form/approval
-        docsObjectLink: "#approval-point-object"
+        docsObjectLink: "approval"
         short: Add approval point
         description: |
           Ansible Forms allows to add an approval point before a job is ran.  
@@ -1668,7 +1668,7 @@
         group: interaction
         allowed: valid notification object
         objectLink: forms/form/notifications
-        docsObjectLink: "#notifications-object"
+        docsObjectLink: "notifications"
         short: Add Notification
         description: |
           Add email notifications on job status events.
@@ -1687,7 +1687,7 @@
         allowed: valid job status action objects
         short: Events on submit
         objectLink: forms/form/job-status-action
-        docsObjectLink: "#job-status-action-object"
+        docsObjectLink: "job-status-action"
         version: 3.1.0
         description: |
           Once a job is launched, Ansible Forms has a few status events you can act on.  
@@ -1711,7 +1711,7 @@
         allowed: valid job status action objects
         short: Events on success
         objectLink: forms/form/job-status-action
-        docsObjectLink: "#job-status-action-object"
+        docsObjectLink: "job-status-action"
         version: 3.1.0
         description: |
           Once a job is launched, Ansible Forms has a few status events you can act on.  
@@ -1734,7 +1734,7 @@
         allowed: valid job status action objects
         short: Events on failure
         objectLink: forms/form/job-status-action
-        docsObjectLink: "#job-status-action-object"
+        docsObjectLink: "job-status-action"
         version: 3.1.0
         description: |
           Once a job is launched, Ansible Forms has a few status events you can act on.  
@@ -1757,7 +1757,7 @@
         allowed: valid job status action objects
         short: Events on abort
         objectLink: forms/form/job-status-action
-        docsObjectLink: "#job-status-action-object"
+        docsObjectLink: "job-status-action"
         version: 3.1.0
         description: |
           Once a job is launched, Ansible Forms has a few status events you can act on.  
@@ -1780,7 +1780,7 @@
         allowed: valid job status action objects
         short: Events on finished
         objectLink: forms/form/job-status-action
-        docsObjectLink: "#job-status-action-object"
+        docsObjectLink: "job-status-action"
         version: 3.1.0
         description: |
           Once a job is launched, Ansible Forms has a few status events you can act on.  
@@ -1842,7 +1842,7 @@
         allowed: valid field object
         short: fields
         objectLink: forms/form/formfield
-        docsObjectLink: "#formfield-object"
+        docsObjectLink: "/formfields/"
         description: |
           It makes sense that a form has 1 or more formfields.  Read more about them in the separate formfield section.
         examples:
@@ -2583,34 +2583,24 @@
             type: string
             version: 4.0.3
             group: visualization
-            allowed: A valid Bulma Column width
+            allowed: A valid Bootstrap Column width
             short: The field width
             description: | 
               With this attribute you can set the width of a field.  
-              Use together wit the `line` parameter to put fields on 1 line.  see [www.bulma.io](https://bulma.io)
+              Use together wit the `line` parameter to put fields on 1 line.  see [https://getbootstrap.com/](https://getbootstrap.com/)
             choices:
-              - name: is-three-quarters
-              - name: is-two-thirds
-              - name: is-half
-              - name: is-one-third
-              - name: is-one-quarter
-              - name: is-full      
-              - name: is-four-fifths
-              - name: is-three-fifths
-              - name: is-two-fifths
-              - name: is-one-fifth
-              - name: is-1
-              - name: is-2
-              - name: is-3
-              - name: is-4
-              - name: is-5
-              - name: is-6
-              - name: is-7
-              - name: is-8
-              - name: is-9
-              - name: is-10
-              - name: is-11
-              - name: is-12     
+              - name: col-1
+              - name: col-2
+              - name: col-3
+              - name: col-4
+              - name: col-5
+              - name: col-6
+              - name: col-7
+              - name: col-8
+              - name: col-9
+              - name: col-10
+              - name: col-11
+              - name: col-12
             examples:
             - name: Name and lastname
               code: |
@@ -3609,11 +3599,11 @@
             with_types: table
             allowed: Tablefield object
             objectLink: forms/form/formfield/tablefield
-            docsObjectLink: "#tablefield-object"
+            docsObjectLink: "/tablefields/"
             short: The list of fields in a table
             description: |
               Every table field has its own separated table fields.  The explanation of a tablefield requires a separate help.  
-              You can read of them here. [TODO]
+              You can read about [tablefields here](/tablefields/). 
           help:
           - name: Tablefield
             itemName: attribute
@@ -5070,7 +5060,7 @@
         - public
       categories: []
       inventory: my_inventory # will be overwritten by the field __inventory__
-      tileClass: has-background-info-light
+      tileClass: bg-info-subtle
       icon: bullseye
       fields:
         # make sure you add credentials called "awx_rest" where the password holds the token
