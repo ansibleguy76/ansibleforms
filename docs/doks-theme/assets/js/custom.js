@@ -26,6 +26,44 @@ function InitCopyPaste(){
 
   document.addEventListener("DOMContentLoaded", InitCopyPaste);
 
+  // Initialize Showdown markdown processor
+  function InitMarkdown() {
+    // Check if showdown is loaded
+    if (typeof showdown === 'undefined') {
+      console.warn('Showdown library not loaded');
+      return;
+    }
+
+    // Configure Showdown converter
+    const converter = new showdown.Converter({
+      tables: true,
+      strikethrough: true,
+      tasklists: true,
+      simplifiedAutoLink: true,
+      openLinksInNewWindow: false,
+      backslashEscapesHTMLTags: true
+    });
+
+    // Find all elements with markdown="1" attribute
+    const markdownElements = document.querySelectorAll('[markdown="1"]');
+    
+    markdownElements.forEach(element => {
+      // Get the text content (without HTML tags)
+      const markdownText = element.textContent || element.innerText;
+      
+      // Convert markdown to HTML
+      const html = converter.makeHtml(markdownText);
+      
+      // Replace the element's content with rendered HTML
+      element.innerHTML = html;
+      
+      // Remove the markdown attribute
+      element.removeAttribute('markdown');
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", InitMarkdown);
+
   // Get the button:
 let toTop = document.getElementById("toTop");
 
