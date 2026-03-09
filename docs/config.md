@@ -79,7 +79,7 @@ AnsibleForms loads the config.yaml file in the following order (first match wins
         <p>
           <strong>{{ var.short }}</strong><br>
           {% if var.docsObjectLink %}
-          <a href="{{ var.docsObjectLink}}">🔗 
+          <a href="{{ var.docsObjectLink | relative_url }}">🔗 
           {% endif %}
           {% if var.allowed != nil %}
           <span class="af-type">{{ var.allowed }}</span>
@@ -161,7 +161,7 @@ AnsibleForms loads the config.yaml file in the following order (first match wins
         <p>
           <strong>{{var.short}}</strong><br>
           {% if var.docsObjectLink %}
-          <a href="{{ var.docsObjectLink}}">🔗 
+          <a href="{{ var.docsObjectLink | relative_url }}">🔗 
           {% endif %}
           {% if var.allowed != nil %}
           <span class="af-type">{{ var.allowed }}</span>

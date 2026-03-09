@@ -94,7 +94,7 @@ AnsibleForms loads forms from the following locations:
         <p>
           <strong>{{var.short}}</strong><br>
           {% if var.docsObjectLink %}
-          <a href="{{ var.docsObjectLink }}">🔗 
+          <a href="{{ var.docsObjectLink | relative_url }}">🔗 
           {% endif %}
           {% if var.allowed != nil %}
           <span class="af-type">{{ var.allowed }}</span>
