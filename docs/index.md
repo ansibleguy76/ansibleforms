@@ -13,7 +13,6 @@ Ansible is a great automation tool, but in the end, it's still a command-line ap
 While AWX/Tower is a great GUI, it is lacking fancy forms that can grab data from several sources.
 
 That's where AnsibleForms comes in. It allows you to build awesome forms, build extravars and send it to Ansible or AWX/Tower.
-{: .fs-6 .fw-300 }
 
 ---
 

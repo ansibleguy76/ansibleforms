@@ -9,7 +9,6 @@ has_children: false
 {: .no_toc }
 
 AnsibleForms uses a config.yaml file for categories and roles configuration. If none is provided, one will be generated with minimum configuration. The config can also be imported into the database, eliminating the need for a config.yaml file.
-{: .fs-6 .fw-300 }
 
 ---
 
