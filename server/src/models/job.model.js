@@ -518,7 +518,7 @@ Job.findById = async function (user, id, asText, logSafe = false) {
   // Sanitize timezone to prevent SQL injection - only allow valid timezone format
   const safeTimezone = loggerConfig.tz.match(/^[A-Za-z/_+-]+$/) ? loggerConfig.tz : 'UTC';
   
-  if (user.roles.includes("admin")) {
+  if (user.roles.includes("admin") || user.options?.showAllJobLogs) {
     query =
       "SELECT j.id,j.form,j.target,j.status,CONVERT_TZ(j.start, 'UTC', ?) AS start,CONVERT_TZ(j.end, 'UTC', ?) AS end,j.user,j.user_type,j.job_type,j.extravars,j.credentials,j.notifications,j.approval,j.step,j.parent_id,j.awx_id,j.awx_artifacts,j.abort_requested,j.raw_form_data,sj.subjobs,j2.no_of_records,o.counter FROM AnsibleForms.jobs j LEFT JOIN (SELECT parent_id,GROUP_CONCAT(id separator ',') subjobs FROM AnsibleForms.jobs GROUP BY parent_id) sj ON sj.parent_id=j.id,(SELECT COUNT(id) no_of_records FROM AnsibleForms.jobs)j2,(SELECT max(`order`)+1 counter FROM AnsibleForms.job_output WHERE job_output.job_id=?)o WHERE j.id=?;";
     params = [safeTimezone, safeTimezone, id, id];
