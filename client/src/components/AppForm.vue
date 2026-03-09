@@ -1968,6 +1968,7 @@ onUnmounted(() => {
                                         :name="field.name"
                                         :hasError="v$.form[field.name].$invalid" 
                                         :dateType="field.dateType"
+                                        :convertToUtc="field.convertToUtc"
                                         @update:modelValue="evaluateDynamicFields(field.name)"
                                         @blur="handleBlur(field.name)"
                                         :placeholder="typeof fieldPlaceholders[field.name] === 'object' ? fieldPlaceholders[field.name].value : fieldPlaceholders[field.name]"

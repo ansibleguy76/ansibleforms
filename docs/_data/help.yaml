@@ -2522,6 +2522,21 @@
             short: DateType of the datetime picker
             description: The datetime picker can pick several types
             with_types: datetime
+          - name: convertToUtc
+            type: boolean
+            version: 6.1.4
+            group: basic
+            required: false
+            default: false
+            short: Convert datetime to UTC
+            description: |
+              When enabled, the selected date/time will be converted to UTC timezone before being sent to Ansible.
+              When disabled, the date/time will be used as entered without timezone conversion (local time as ISO string without timezone info).
+              
+              **Important:** Only works when `dateType` is set to `datetime`. Has no effect for other dateTypes (date, year, month, week, time).
+              
+              **Use case:** If a user in GMT+2 timezone picks 14:00 with convertToUtc enabled, the field will show 14:00 but the output will be 12:00 UTC (timezone-aware conversion). Without conversion, the output would be 14:00 (server's local time).
+            with_types: datetime
           - name: label
             type: string
             group: basic
@@ -3675,6 +3690,21 @@
                   description: A year
               short: DateType of the datetime picker
               description: The datetime picker can pick several types
+              with_types: datetime
+            - name: convertToUtc
+              type: boolean
+              version: 6.1.4
+              group: datetime
+              required: false
+              default: false
+              short: Convert datetime to UTC
+              description: |
+                When enabled, the selected date/time will be converted to UTC timezone before being sent to Ansible.
+                When disabled, the date/time will be used as entered without timezone conversion (local time as ISO string without timezone info).
+                
+                **Important:** Only works when `dateType` is set to `datetime`. Has no effect for other dateTypes (date, year, month, week, time).
+                
+                **Use case:** If a user in GMT+2 timezone picks 14:00 with convertToUtc enabled, the field will show 14:00 but the output will be 12:00 UTC (timezone-aware conversion). Without conversion, the output would be 14:00 (server's local time).
               with_types: datetime
             - name: label
               type: string

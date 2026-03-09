@@ -794,6 +794,8 @@
               "type": {
                 "enum": ["text", "password"]
               },
+              "dateType": {"not":{}},
+              "convertToUtc": {"not":{}},
               "query": {"not":{}},
               "minValue": {"not":{}},
               "maxValue": {"not":{}},
@@ -829,6 +831,8 @@
               "type": {
                 "enum": ["textarea"]
               },
+              "dateType": {"not":{}},
+              "convertToUtc": {"not":{}},
               "query": {"not":{}},
               "minValue": {"not":{}},
               "maxValue": {"not":{}},
@@ -874,6 +878,8 @@
               "type": {
                 "enum": ["number"]
               },
+              "dateType": {"not":{}},
+              "convertToUtc": {"not":{}},
               "query": {"not":{}},
               "minLength": {"not":{}},
               "maxLength": {"not":{}},
@@ -911,6 +917,8 @@
               "type": {
                 "enum": ["radio"]
               },
+              "dateType": {"not":{}},
+              "convertToUtc": {"not":{}},
               "query": {"not":{}},
               "regex": {"not":{}},
               "minValue": {"not":{}},
@@ -953,6 +961,8 @@
               "type": {
                 "enum": ["checkbox"]
               },
+              "dateType": {"not":{}},
+              "convertToUtc": {"not":{}},
               "query": {"not":{}},
               "regex": {"not":{}},
               "minValue": {"not":{}},
@@ -993,6 +1003,8 @@
               "type": {
                 "enum": ["enum"]
               },
+              "dateType": {"not":{}},
+              "convertToUtc": {"not":{}},
               "query": {"not":{}},
               "regex": {"not":{}},
               "minValue": {"not":{}},
@@ -1027,6 +1039,8 @@
               "type": {
                 "enum": ["enum"]
               },
+              "dateType": {"not":{}},
+              "convertToUtc": {"not":{}},
               "values": {"not":{}},
               "regex": {"not":{}},
               "minValue": {"not":{}},
@@ -1058,6 +1072,8 @@
               "type": {
                 "enum": ["enum"]
               },
+              "dateType": {"not":{}},
+              "convertToUtc": {"not":{}},
               "values": {"not":{}},
               "regex": {"not":{}},
               "editable": {"not":{}},
@@ -1090,6 +1106,8 @@
               "type": {
                 "enum": ["expression","local","local_out","credential"]
               },
+              "dateType": {"not":{}},
+              "convertToUtc": {"not":{}},
               "values": {"not":{}},
               "minValue": {"not":{}},
               "maxValue": {"not":{}},
@@ -1121,6 +1139,8 @@
               "type": {
                 "enum": ["expression","local","local_out"]
               },
+              "dateType": {"not":{}},
+              "convertToUtc": {"not":{}},
               "minValue": {"not":{}},
               "maxValue": {"not":{}},
               "minSize": {"not":{}},
@@ -1152,6 +1172,8 @@
               "type": {
                 "enum": ["expression"]
               },
+              "dateType": {"not":{}},
+              "convertToUtc": {"not":{}},
               "values": {"not":{}},
               "minValue": {"not":{}},
               "maxValue": {"not":{}},
@@ -1185,7 +1207,8 @@
                 "enum": ["html"]
               },
               "placeholder":       {"not":{}}, 
-              "dateType":          {"not":{}}, 
+              "dateType":          {"not":{}},
+              "convertToUtc":      {"not":{}}, 
               "asCredential":      {"not":{}}, 
               "required":          {"not":{}}, 
               "sameAs":            {"not":{}}, 
@@ -1242,7 +1265,8 @@
               "type": {
                 "enum": ["file"]
               },
-              "dateType":          {"not":{}}, 
+              "dateType":          {"not":{}},
+              "convertToUtc":      {"not":{}}, 
               "asCredential":      {"not":{}}, 
               "sameAs":            {"not":{}}, 
               "validIf":           {"not":{}}, 
@@ -1317,6 +1341,8 @@
               "type": {
                 "enum": ["table"]
               },
+              "dateType": {"not":{}},
+              "convertToUtc": {"not":{}},
               "values": {"not":{}},
               "regex": {"not":{}},
               "minValue": {"not":{}},
@@ -1369,6 +1395,7 @@
           },
           "evalDefault": {"type": "boolean"},
           "dateType": {"type": "string","enum":["date","datetime","year","month","time","week"]},
+          "convertToUtc": {"type": "boolean", "default": false},
           "noOutput": {"type": "boolean"},
           "asCredential": {"type": "boolean"},
           "line": {"type": "string"},
@@ -1638,6 +1665,8 @@
                     "type": {
                       "enum": ["text","password"]
                     },
+                    "dateType": {"not":{}},
+                    "convertToUtc": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
                     "values": {"not":{}},
@@ -1659,6 +1688,8 @@
                     "type": {
                       "enum": ["textarea"]
                     },
+                    "dateType": {"not":{}},
+                    "convertToUtc": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
                     "minLength": {"not":{}},
@@ -1710,6 +1741,8 @@
                     "type": {
                       "enum": ["number"]
                     },
+                    "dateType": {"not":{}},
+                    "convertToUtc": {"not":{}},
                     "minLength": {"not":{}},
                     "maxLength": {"not":{}},
                     "values": {"not":{}},
@@ -1731,6 +1764,8 @@
                     "type": {
                       "enum": ["checkbox"]
                     },
+                    "dateType": {"not":{}},
+                    "convertToUtc": {"not":{}},
                     "regex": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
@@ -1754,6 +1789,8 @@
                     "type": {
                       "enum": ["enum"]
                     },
+                    "dateType": {"not":{}},
+                    "convertToUtc": {"not":{}},
                     "regex": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
@@ -1775,6 +1812,8 @@
                     "type": {
                       "enum": ["enum"]
                     },
+                    "dateType": {"not":{}},
+                    "convertToUtc": {"not":{}},
                     "regex": {"not":{}},
                     "minValue": {"not":{}},
                     "maxValue": {"not":{}},
@@ -1822,6 +1861,7 @@
                     }
                 },
                 "dateType": {"type": "string","enum":["date","datetime","year","month","time","week"]},
+                "convertToUtc": {"type": "boolean", "default": false},
                 "minValue": {"type": ["string","integer"]},
                 "maxValue": {"type": "integer"},
                 "minLength": {"type": "integer"},

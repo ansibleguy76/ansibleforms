@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Host and PID aware aborting, faster, cleaner and would allow multi container setup
 -   Error border on expression fields
 -   Jq expression on expression with query fields so you can manipulate the otherwise always returning array
+-   Added a convertToUtc property for datetime field
 
 ### Fixed
 
@@ -23,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 -   validIf triggers error
+-   new docs using just the docs theme
 
 ## [6.1.3] - 2026-02-23
 

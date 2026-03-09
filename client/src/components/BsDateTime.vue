@@ -35,6 +35,7 @@
         dateType: { type: String, default: "date" },
         icon: { type: String, default: "calendar" },
         placeholder: { type: String, default: "" },
+        convertToUtc: { type: Boolean, default: false },
     });
     
     // DATA
@@ -79,7 +80,7 @@
     }
 
     function syncToOutput() {
-        // Convert pickerModel (local time) to model (UTC output)
+        // Convert pickerModel (local time) to model output
         if (!pickerModel.value) {
             model.value = null;
             return;
@@ -97,22 +98,34 @@
         } else if (localDate instanceof Date) {
             // Convert Date objects to appropriate format
             if (props.dateType === 'date') {
-                model.value = new Date(Date.UTC(
-                    localDate.getFullYear(),
-                    localDate.getMonth(),
-                    localDate.getDate(),
-                    0, 0, 0, 0
-                )).toISOString();
+                // Always use local date (no UTC conversion - would cause wrong dates near timezone boundaries)
+                const year = localDate.getFullYear();
+                const month = String(localDate.getMonth() + 1).padStart(2, '0');
+                const day = String(localDate.getDate()).padStart(2, '0');
+                model.value = `${year}-${month}-${day}`;
             } else if (props.dateType === 'datetime') {
-                model.value = localDate.toISOString();
+                if (props.convertToUtc) {
+                    // Convert local time to UTC ISO string
+                    model.value = localDate.toISOString();
+                } else {
+                    // Use local datetime without timezone conversion
+                    const year = localDate.getFullYear();
+                    const month = String(localDate.getMonth() + 1).padStart(2, '0');
+                    const day = String(localDate.getDate()).padStart(2, '0');
+                    const hour = String(localDate.getHours()).padStart(2, '0');
+                    const minute = String(localDate.getMinutes()).padStart(2, '0');
+                    const second = String(localDate.getSeconds()).padStart(2, '0');
+                    model.value = `${year}-${month}-${day}T${hour}:${minute}:${second}`;
+                }
             } else if (props.dateType === 'year') {
-                model.value = new Date(Date.UTC(localDate.getFullYear(), 0, 1, 0, 0, 0, 0)).toISOString();
+                // Always use local year (no UTC conversion - would cause wrong year near New Year)
+                model.value = String(localDate.getFullYear());
             }
         }
     }
 
     function loadFromOutput() {
-        // Convert model (UTC output) to pickerModel (local time)
+        // Convert model output to pickerModel (local time)
         if (!model.value) {
             pickerModel.value = null;
             tempValue.value = '';
@@ -127,17 +140,32 @@
         } else if (props.dateType === 'week' && Array.isArray(model.value)) {
             pickerModel.value = model.value;
         } else if (typeof model.value === 'string') {
-            // ISO string - convert UTC to local Date
-            const utcDate = new Date(model.value);
-            pickerModel.value = new Date(
-                utcDate.getUTCFullYear(),
-                utcDate.getUTCMonth(),
-                utcDate.getUTCDate(),
-                utcDate.getUTCHours(),
-                utcDate.getUTCMinutes(),
-                utcDate.getUTCSeconds(),
-                0
-            );
+            // Parse based on dateType and convertToUtc setting
+            if (props.dateType === 'date') {
+                // Always parse as local date (YYYY-MM-DD format)
+                const [year, month, day] = model.value.split('-').map(Number);
+                pickerModel.value = new Date(year, month - 1, day);
+            } else if (props.dateType === 'year') {
+                // Always parse as local year (YYYY format)
+                const year = parseInt(model.value);
+                pickerModel.value = new Date(year, 0, 1);
+            } else if (props.dateType === 'datetime') {
+                if (props.convertToUtc) {
+                    // Parse UTC ISO string - browser automatically converts to local timezone
+                    // So if value is "2026-03-09T12:00:00.000Z" and user is GMT+2,
+                    // the Date object will represent 14:00 local time
+                    pickerModel.value = new Date(model.value);
+                } else {
+                    // Local datetime string (YYYY-MM-DDTHH:mm:ss format)
+                    const [datePart, timePart] = model.value.split('T');
+                    const [year, month, day] = datePart.split('-').map(Number);
+                    const [hour, minute, second] = timePart.split(':').map(Number);
+                    pickerModel.value = new Date(year, month - 1, day, hour, minute, second || 0);
+                }
+            } else {
+                // Fallback to standard parsing for other types
+                pickerModel.value = new Date(model.value);
+            }
         }
         
         updateTempValue();
