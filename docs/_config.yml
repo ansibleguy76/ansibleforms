@@ -1,8 +1,8 @@
 # Just the Docs Configuration
 # https://just-the-docs.com/
 
-# Theme
-theme: just-the-docs
+# Theme (use remote_theme for GitHub Actions)
+remote_theme: just-the-docs/just-the-docs@v0.8.2
 
 # Site settings
 title: AnsibleForms Documentation
@@ -78,3 +78,4 @@ exclude:
 # Plugins
 plugins:
   - jekyll-seo-tag
+  - jekyll-remote-theme
