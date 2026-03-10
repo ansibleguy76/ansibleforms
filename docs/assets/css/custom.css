@@ -1,5 +1,60 @@
 ---
 ---
+/* Dark mode link visibility improvements - use same color as nav */
+[data-theme="dark"] a {
+  color: #c9d1d9 !important;
+}
+
+[data-theme="dark"] a:hover {
+  color: #ffffff !important;
+}
+
+/* Navigation links */
+[data-theme="dark"] .nav-list .nav-list-link {
+  color: #c9d1d9 !important;
+}
+
+[data-theme="dark"] .nav-list .nav-list-link:hover,
+[data-theme="dark"] .nav-list .nav-list-link.active {
+  color: #ffffff !important;
+}
+
+/* Main content links - more specific selectors */
+[data-theme="dark"] .main-content a,
+[data-theme="dark"] .main-content-wrap a,
+[data-theme="dark"] .main a,
+[data-theme="dark"] article a,
+[data-theme="dark"] p a {
+  color: #c9d1d9 !important;
+}
+
+[data-theme="dark"] .main-content a:hover,
+[data-theme="dark"] .main-content-wrap a:hover,
+[data-theme="dark"] .main a:hover,
+[data-theme="dark"] article a:hover,
+[data-theme="dark"] p a:hover {
+  color: #ffffff !important;
+}
+
+/* Table of contents (TOC) links - comprehensive selectors */
+[data-theme="dark"] .table-of-contents a,
+[data-theme="dark"] #markdown-toc a,
+[data-theme="dark"] .toc a,
+[data-theme="dark"] nav.toc a,
+[data-theme="dark"] .side-bar nav a,
+[data-theme="dark"] ul.list-style-none a {
+  color: #c9d1d9 !important;
+}
+
+[data-theme="dark"] .table-of-contents a:hover,
+[data-theme="dark"] #markdown-toc a:hover,
+[data-theme="dark"] .toc a:hover,
+[data-theme="dark"] nav.toc a:hover,
+[data-theme="dark"] .side-bar nav a:hover,
+[data-theme="dark"] ul.list-style-none a:hover {
+  color: #ffffff !important;
+}
+
 /* Custom width adjustments for larger screens */
 
 /* Make content fill the available width */
@@ -75,7 +130,6 @@ pre.highlight .language-treeview {
 .site-title {
   padding-top: 0.25rem !important;
   padding-bottom: 0.25rem !important;
-  background: transparent !important;
 }
 
 @media (min-width: 50rem) {
@@ -85,9 +139,11 @@ pre.highlight .language-treeview {
   }
 }
 
-/* Ensure logo image has no background */
-.site-title img {
+/* Fix white background in dark mode only */
+[data-theme="dark"] .site-title,
+[data-theme="dark"] .site-title a {
   background: transparent !important;
+  background-color: transparent !important;
 }
 
 /* Match aux-nav size to sidebar navigation */
@@ -128,8 +184,14 @@ pre.highlight .language-treeview {
   position: sticky !important;
   top: 0 !important;
   z-index: 100 !important;
-  background: var(--body-background-color, #fff) !important;
-  border-bottom: 1px solid var(--border-color, #eeebee) !important;
+  background: var(--body-background-color) !important;
+  border-bottom: 1px solid #eeebee !important;
+}
+
+/* Fix header background and border in dark mode */
+[data-theme="dark"] .site-header {
+  background: var(--body-background-color) !important;
+  border-bottom: 1px solid #484f58 !important;
 }
 
 /* Quick navigation cards with bottom-aligned buttons */
