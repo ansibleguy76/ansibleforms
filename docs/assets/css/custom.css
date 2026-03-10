@@ -75,6 +75,7 @@ pre.highlight .language-treeview {
 .site-title {
   padding-top: 0.25rem !important;
   padding-bottom: 0.25rem !important;
+  background: transparent !important;
 }
 
 @media (min-width: 50rem) {
@@ -82,6 +83,11 @@ pre.highlight .language-treeview {
     padding-top: 0.25rem !important;
     padding-bottom: 0.25rem !important;
   }
+}
+
+/* Ensure logo image has no background */
+.site-title img {
+  background: transparent !important;
 }
 
 /* Match aux-nav size to sidebar navigation */
