@@ -9,9 +9,6 @@ FROM ansibleguy/ansibleforms-base:latest AS tmp_builder
 
 ########## prep client ###########
 
-# Install vite
-RUN npm install -g vite
-
 # Use /app/client
 WORKDIR /app/client
 

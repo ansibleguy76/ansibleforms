@@ -47,6 +47,3 @@ RUN ansible-galaxy collection install netapp.ontap --upgrade --force -p /usr/sha
 
 # Create root .ssh directory
 RUN mkdir -p ~/.ssh
-
-# Update npm
-RUN npm install -g npm@11.4.1
