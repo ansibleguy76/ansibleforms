@@ -67,7 +67,12 @@ A numeric input column with validation for collecting integer or decimal values 
         <p>
           {{ var.description | markdownify }}
         </p>
-        {% if var.choices.size > 0 %}
+        {% if var.name == "type" %}
+        <div>
+          <strong>Value:</strong><br>
+          <span>{{ page.title | downcase }}</span>
+        </div>
+        {% elsif var.choices.size > 0 %}
         <div>
           <strong>Choices:</strong><br>
           <ul class="af-choices-list">

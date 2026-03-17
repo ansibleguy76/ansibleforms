@@ -13,6 +13,14 @@ Tablefields are field types used within table formfields. They define the column
 
 When you use a `table` formfield, each column is defined by a tablefield. Table fields are similar to regular formfields but with some restrictions since they operate within a row context.
 
+## Common Properties
+
+All tablefields share two fundamental properties:
+- **name** (string, required): The unique identifier for the column
+- **type** (string, required): The field type - determines which page below describes the available properties
+
+Each tablefield type has additional properties specific to its functionality. Click on a tablefield type below to see its complete property reference.
+
 Browse the tablefield types using the navigation sidebar, or refer to the table below:
 
 {% assign help = site.data.help %}

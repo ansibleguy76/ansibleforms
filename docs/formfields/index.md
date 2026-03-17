@@ -13,6 +13,14 @@ Formfields define the input controls in your forms. Each field type has its own 
 
 AnsibleForms supports a wide variety of formfield types, from simple text inputs to complex tables and expressions. Choose the right field type based on the data you need to collect.
 
+## Common Properties
+
+All formfields share two fundamental properties:
+- **name** (string, required): The unique identifier for the field
+- **type** (string, required): The field type - determines which page below describes the available properties
+
+Each field type has additional properties specific to its functionality. Click on a field type below to see its complete property reference.
+
 Browse the formfield types using the navigation sidebar, or refer to the table below:
 
 {% assign help = site.data.help %}

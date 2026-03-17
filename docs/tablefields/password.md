@@ -67,7 +67,12 @@ A masked text input column for securely collecting passwords, secrets, or tokens
         <p>
           {{ var.description | markdownify }}
         </p>
-        {% if var.choices.size > 0 %}
+        {% if var.name == "type" %}
+        <div>
+          <strong>Value:</strong><br>
+          <span>{{ page.title | downcase }}</span>
+        </div>
+        {% elsif var.choices.size > 0 %}
         <div>
           <strong>Choices:</strong><br>
           <ul class="af-choices-list">

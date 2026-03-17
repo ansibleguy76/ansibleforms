@@ -66,7 +66,12 @@ A field for displaying rich HTML content, useful for instructions, formatted inf
         <p>
           {{ var.description | markdownify }}
         </p>
-        {% if var.choices.size > 0 %}
+        {% if var.name == "type" %}
+        <div>
+          <strong>Value:</strong><br>
+          <span>{{ page.title | downcase }}</span>
+        </div>
+        {% elsif var.choices.size > 0 %}
         <div>
           <strong>Choices:</strong><br>
           <ul class="af-choices-list">
