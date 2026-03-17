@@ -140,15 +140,73 @@
         } else if (props.dateType === 'week' && Array.isArray(model.value)) {
             pickerModel.value = model.value;
         } else if (typeof model.value === 'string') {
-            // Parse based on dateType and convertToUtc setting
-            if (props.dateType === 'date') {
+            // Parse string based on dateType
+            if (props.dateType === 'time') {
+                // Parse time string (HH:mm or HH:mm:ss format)
+                const timeParts = model.value.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+                if (timeParts) {
+                    const hours = parseInt(timeParts[1]);
+                    const minutes = parseInt(timeParts[2]);
+                    const seconds = timeParts[3] ? parseInt(timeParts[3]) : 0;
+                    pickerModel.value = { hours, minutes, seconds };
+                } else {
+                    pickerModel.value = null;
+                }
+            } else if (props.dateType === 'month') {
+                // Parse month string (YYYY-MM format)
+                const monthParts = model.value.match(/^(\d{4})-(\d{2})$/);
+                if (monthParts) {
+                    const year = parseInt(monthParts[1]);
+                    const month = parseInt(monthParts[2]) - 1;
+                    pickerModel.value = { month, year };
+                } else {
+                    pickerModel.value = null;
+                }
+            } else if (props.dateType === 'week') {
+                // Parse week string (YYYY-W## format)
+                const weekParts = model.value.match(/^(\d{4})-W(\d{2})$/);
+                if (weekParts) {
+                    const year = parseInt(weekParts[1]);
+                    const week = parseInt(weekParts[2]);
+                    
+                    const jan4 = new Date(year, 0, 4);
+                    const jan4Day = jan4.getDay() || 7;
+                    const week1Start = new Date(jan4);
+                    week1Start.setDate(jan4.getDate() - jan4Day + 1);
+                    
+                    const monday = new Date(week1Start);
+                    monday.setDate(week1Start.getDate() + (week - 1) * 7);
+                    monday.setHours(0, 0, 0, 0);
+                    
+                    const sunday = new Date(monday);
+                    sunday.setDate(monday.getDate() + 6);
+                    sunday.setHours(23, 59, 59, 999);
+                    
+                    pickerModel.value = [
+                        new Date(Date.UTC(monday.getFullYear(), monday.getMonth(), monday.getDate())).toISOString(),
+                        new Date(Date.UTC(sunday.getFullYear(), sunday.getMonth(), sunday.getDate(), 23, 59, 59, 999)).toISOString()
+                    ];
+                } else {
+                    pickerModel.value = null;
+                }
+            } else if (props.dateType === 'date') {
                 // Always parse as local date (YYYY-MM-DD format)
-                const [year, month, day] = model.value.split('-').map(Number);
-                pickerModel.value = new Date(year, month - 1, day);
+                const dateParts = model.value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                if (dateParts) {
+                    const [, year, month, day] = dateParts.map(Number);
+                    pickerModel.value = new Date(year, month - 1, day);
+                } else {
+                    pickerModel.value = null;
+                }
             } else if (props.dateType === 'year') {
                 // Always parse as local year (YYYY format)
-                const year = parseInt(model.value);
-                pickerModel.value = new Date(year, 0, 1);
+                const yearMatch = model.value.match(/^(\d{4})$/);
+                if (yearMatch) {
+                    const year = parseInt(yearMatch[1]);
+                    pickerModel.value = new Date(year, 0, 1);
+                } else {
+                    pickerModel.value = null;
+                }
             } else if (props.dateType === 'datetime') {
                 if (props.convertToUtc) {
                     // Parse UTC ISO string - browser automatically converts to local timezone
@@ -156,16 +214,27 @@
                     // the Date object will represent 14:00 local time
                     pickerModel.value = new Date(model.value);
                 } else {
-                    // Local datetime string (YYYY-MM-DDTHH:mm:ss format)
-                    const [datePart, timePart] = model.value.split('T');
-                    const [year, month, day] = datePart.split('-').map(Number);
-                    const [hour, minute, second] = timePart.split(':').map(Number);
-                    pickerModel.value = new Date(year, month - 1, day, hour, minute, second || 0);
+                    // Local datetime string (YYYY-MM-DDTHH:mm:ss or YYYY-MM-DD HH:mm:ss format)
+                    const separator = model.value.includes('T') ? 'T' : ' ';
+                    const [datePart, timePart] = model.value.split(separator);
+                    if (datePart && timePart) {
+                        const [year, month, day] = datePart.split('-').map(Number);
+                        const timeComponents = timePart.split(':').map(Number);
+                        const hour = timeComponents[0] || 0;
+                        const minute = timeComponents[1] || 0;
+                        const second = timeComponents[2] || 0;
+                        pickerModel.value = new Date(year, month - 1, day, hour, minute, second);
+                    } else {
+                        pickerModel.value = null;
+                    }
                 }
             } else {
-                // Fallback to standard parsing for other types
+                // Fallback to standard parsing for unknown types
                 pickerModel.value = new Date(model.value);
             }
+        } else {
+            // If it's not a recognized format, set to null
+            pickerModel.value = null;
         }
         
         updateTempValue();
@@ -321,6 +390,8 @@
 
     // Initialize picker model from output
     loadFromOutput();
+    // Sync to ensure output format is consistent
+    syncToOutput();
 
     // Watch for model changes from outside to reload
     watch(model, () => {
