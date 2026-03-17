@@ -32,7 +32,7 @@ Browse the tablefield types using the navigation sidebar, or refer to the table 
   <tbody>
 {%- for type in tablefile.choices %}
     <tr>
-      <td><strong><a href="{{ type.name | relative_url }}">{{ type.name }}</a></strong></td>
+      <td><strong><a href="/tablefields/{{ type.name }}.html">{{ type.name }}</a></strong></td>
       <td>{{ type.description }}</td>
     </tr>
 {%- endfor %}
