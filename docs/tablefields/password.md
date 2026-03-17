@@ -27,16 +27,14 @@ A masked text input column for securely collecting passwords, secrets, or tokens
     </tr>
   </thead>
   <tbody>
-    {% assign groups = tablefield_object.items | map: "group" | uniq | sort_natural %}
+    {% assign groups = tablefield_object.items | map: "group" | compact | uniq | sort_natural %}
     {% for group in groups %}
     {% assign group_properties = tablefield_object.items | where: "group", group %}
-    {% if group %}
     <tr>
       <th id="tablefield_{{ group }}_group" colspan="2" class="af-group-header">
         {{ group }}
       </th>
     </tr>
-    {% endif %}
     {% for var in group_properties %}
       {%- assign item_types = var.with_types | split: ", " %}
       {%- assign type_match = false %}

@@ -26,16 +26,14 @@ A JavaScript expression field for dynamic values and calculations, supporting bo
     </tr>
   </thead>
   <tbody>
-    {% assign groups = formfield_object.items | map: "group" | uniq | sort_natural %}
+    {% assign groups = formfield_object.items | map: "group" | compact | uniq | sort_natural %}
     {% for group in groups %}
     {% assign group_properties = formfield_object.items | where: "group", group %}
-    {% if group %}
     <tr>
       <th id="formfield_{{ group }}_group" colspan="2" class="af-group-header">
         {{ group }}
       </th>
     </tr>
-    {% endif %}
     {% for var in group_properties %}
       {%- assign item_types = var.with_types | split: ", " %}
       {%- assign type_match = false %}
