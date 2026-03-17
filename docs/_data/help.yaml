@@ -2253,7 +2253,23 @@
                       label: Time
                       default: "13:01:00"
                       required: true
-                      help: A help message     
+                      help: A help message    
+                    - type: datetime
+                      dateType: week
+                      name: myweek
+                      label: Week
+                      help: yyyy-W## format
+                      icon: calendar-week
+                      required: true
+                      default: "2026-W01"
+                    - type: datetime
+                      dateType: month
+                      name: mymonth
+                      label: Month
+                      help: yyyy-mm
+                      icon: calendar
+                      required: true
+                      default: "2026-01"                       
               - name: html
                 description: An HTML field
                 version: 4.0.9
