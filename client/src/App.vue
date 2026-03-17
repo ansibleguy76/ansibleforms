@@ -128,5 +128,5 @@ onMounted(async () => {
   </div>
 </template>
 <style>
-
+@import 'roboto-fontface/css/roboto/roboto-fontface.css';
 </style>
