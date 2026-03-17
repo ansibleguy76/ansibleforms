@@ -32,7 +32,7 @@
     "core-js": "^3.49.0",
     "jsonwebtoken": "^9.0.3",
     "jwt-decode": "^4.0.0",
-    "roboto-fontface": "^1.0.0",
+    "roboto-fontface": "^0.10.0",
     "dayjs": "^1.11.20",
     "vue": "^3.5.28",
     "vue-sonner": "^2.0.9",
