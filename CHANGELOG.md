@@ -9,7 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
--   Host and PID aware aborting, faster, cleaner and would allow multi container setup
 -   Error border on expression fields
 -   Jq expression on expression with query fields so you can manipulate the otherwise always returning array
 -   Added a convertToUtc property for datetime field
@@ -20,11 +19,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   DateTime field input allowed (#416)
 -   Approval stuck (#413)
 -   multistep status (#413)
+-   job relaunch response (#422)
 
 ### Changed
 
 -   validIf triggers error
 -   new docs using just the docs theme
+-   vite 8
+-   Host and PID aware aborting, faster, cleaner and would allow multi container setup
 
 ## [6.1.3] - 2026-02-23
 
