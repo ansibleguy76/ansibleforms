@@ -40,6 +40,7 @@ export default defineConfig({
   ],
   define: { 'process.env': {} },
   resolve: {
+    dedupe: ['vue'],
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
       '~@': fileURLToPath(new URL('./src', import.meta.url))
@@ -62,6 +63,9 @@ export default defineConfig({
         reserved: ["fnToTable", "fnArray", "fnGetNumberedName", "evalSandbox"]
       }
     },
+  },
+  optimizeDeps: {
+    include: ['vue3-ace-editor', 'ace-builds']
   },
   server: {
     port: 8443,

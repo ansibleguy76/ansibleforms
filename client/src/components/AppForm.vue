@@ -1360,10 +1360,15 @@ function initForm() {
                 // For enum/query/table fields with expressions, keep in pendingInitialData for loop to apply after options load
                 // For expression/html or static enum/query/table, set value and status now
                 const needsOptionsFirst = ['enum', 'query', 'table'].includes(item.type) && (item.expression || item.query);
-                if (!needsOptionsFirst) {
+                const isReactiveField = ((item.type === 'html' || item.type === 'expression') && (item.expression || item.query));
+                
+                if (!needsOptionsFirst && !isReactiveField) {
                     form.value[item.name] = pendingInitialData.value[item.name];
                     protectedFields.value[item.name] = true;
                     dynamicFieldStatus.value[item.name] = "fixed";
+                } else if (isReactiveField) {
+                    delete pendingInitialData.value[item.name];
+                    dynamicFieldStatus.value[item.name] = undefined;
                 } else {
                     // For enum/query/table with expressions, set status to undefined so loop will load options first
                     dynamicFieldStatus.value[item.name] = undefined;
@@ -1472,13 +1477,11 @@ async function startDynamicFieldsLoop() {
                                     result = Helpers.evalSandbox(placeholderCheck.value);
                                 }
                                 if (item.type == "html") {
-                                    // Check for pending initialData
+                                    // HTML fields with expressions should re-evaluate, not use cached prefill values
                                     if (item.name in pendingInitialData.value) {
-                                        form.value[item.name] = pendingInitialData.value[item.name];
                                         delete pendingInitialData.value[item.name];
-                                    } else {
-                                        form.value[item.name] = result;
                                     }
+                                    form.value[item.name] = result;
                                 }
                                 if (item.type == "expression") {
                                     // Expression fields should re-evaluate, not use cached prefill values
@@ -1500,11 +1503,8 @@ async function startDynamicFieldsLoop() {
                                 if (item.type == "table" && !defaults.value[item.name]) form.value[item.name] = [].concat(result);
                                 if (item.type == "table" && defaults.value[item.name]) form.value[item.name] = [].concat(defaults.value[item.name]);
 
-                                if (placeholderCheck.hasPlaceholders) {
-                                    setFieldStatus(item.name, "variable");
-                                } else {
-                                    setFieldStatus(item.name, "fixed");
-                                }
+                                // Mark as fixed after successful evaluation - will re-evaluate when dependencies change via resetField
+                                setFieldStatus(item.name, "fixed");
                                 delete queryerrors.value[item.name];
                             } catch (err) {
                                 queryerrors.value[item.name] = err.toString();
@@ -1530,13 +1530,11 @@ async function startDynamicFieldsLoop() {
                                 }
                                 if (restresult.status == "success") {
                                     if (item.type == "html") {
-                                        // Check for pending initialData
+                                        // HTML fields with expressions should re-evaluate, not use cached prefill values
                                         if (item.name in pendingInitialData.value) {
-                                            form.value[item.name] = pendingInitialData.value[item.name];
                                             delete pendingInitialData.value[item.name];
-                                        } else {
-                                            form.value[item.name] = restresult.data.output;
                                         }
+                                        form.value[item.name] = restresult.data.output;
                                     }
                                     if (item.type == "expression") {
                                         // Expression fields should re-evaluate, not use cached prefill values
@@ -1565,11 +1563,8 @@ async function startDynamicFieldsLoop() {
                                             resetField(item.name);
                                         }
                                     } else {
-                                        if (placeholderCheck.hasPlaceholders) {
-                                            setFieldStatus(item.name, "variable");
-                                        } else {
-                                            setFieldStatus(item.name, "fixed");
-                                        }
+                                        // Mark as fixed after successful evaluation - will re-evaluate when dependencies change via resetField
+                                        setFieldStatus(item.name, "fixed");
                                     }
                                 }
                             } catch (error) {
@@ -1583,7 +1578,7 @@ async function startDynamicFieldsLoop() {
                     } else {
                         setFieldToDefault(item.name);
                     }
-                } else if (item.query && flag == undefined) {
+                } else if (item.query && (flag == undefined)) {
                     hasUnevaluatedFields = true;
                     unevaluatedFields.value.push(item.name);
                     setFieldStatus(item.name, "running", false);
@@ -1611,11 +1606,8 @@ async function startDynamicFieldsLoop() {
                                 if (item.type == "query" || item.type == "enum") queryresults.value[item.name] = restresult.data.output;
                                 else form.value[item.name] = restresult.data.output;
 
-                                if (placeholderCheck.hasPlaceholders) {
-                                    setFieldStatus(item.name, "variable");
-                                } else {
-                                    setFieldStatus(item.name, "fixed");
-                                }
+                                // Mark as fixed after successful evaluation - will re-evaluate when dependencies change via resetField
+                                setFieldStatus(item.name, "fixed");
                             }
                         } catch (err) {
                             try {
