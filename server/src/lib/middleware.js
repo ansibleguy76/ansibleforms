@@ -19,7 +19,7 @@ Middleware.checkAdminMiddleware = (req, res, next) =>  {
 }
 Middleware.checkSettingsMiddleware = (req, res, next) => {
   try {
-    if (!(req.user.user.options?.showSettings ?? req.user.user.roles.includes("admin"))) {
+    if (!req.user.user.options.showSettings) {
       res.status(401).json(new restResult("error", "No access",null,"You do not have access to settings"));
     } else {
       next();
@@ -31,7 +31,7 @@ Middleware.checkSettingsMiddleware = (req, res, next) => {
 
 Middleware.checkDesignerMiddleware = (req, res, next) => {
   try {
-    if (!(req.user.user.options?.showDesigner ?? req.user.user.roles.includes("admin"))) {
+    if (!req.user.user.options.showDesigner) {
       res.status(401).json(new restResult("error", "No access",null,"You do not have access to designer"));
     } else {
       next();
@@ -43,7 +43,7 @@ Middleware.checkDesignerMiddleware = (req, res, next) => {
 
 Middleware.checkLogsMiddleware = (req, res, next) => {
   try {
-    if (!(req.user.user.options?.showLogs ?? req.user.user.roles.includes("admin"))) {
+    if (!req.user.user.options.showLogs) {
       res.status(401).json(new restResult("error", "No access",null,"You do not have access to logs"));
     } else {
       next();
@@ -55,7 +55,7 @@ Middleware.checkLogsMiddleware = (req, res, next) => {
 
 Middleware.checkBackupMiddleware = (req, res, next) => {
   try {
-    if (!(req.user.user.options?.allowBackupOps ?? req.user.user.roles.includes("admin"))) {
+    if (!req.user.user.options.allowBackupOps) {
       res.status(401).json(new restResult("error", "No access", null, "You do not have access to database operations"));
     } else {
       next();

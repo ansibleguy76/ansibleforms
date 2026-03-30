@@ -140,6 +140,11 @@ const launch = async function(req, res) {
         // new in 4.0.16, awxCreds are extracted from form and extravars
         var user = req?.user?.user || {}
         extravars.ansibleforms_user = user
+        // check permission for verbose mode
+        if (extravars.__verbose__ && !user.options.allowVerboseMode) {
+          res.status(403).json(RestResultv2.error("You do not have permission to use verbose mode"));
+          return false;
+        }
         try{
           const job = await Job.launch({ form, user, credentials: creds, extravars, rawFormData });
           res.status(200).json(RestResultv2.single(job));
@@ -161,6 +166,11 @@ const relaunchJob = async function(req, res) {
       return false
     }
     var user = req?.user?.user || {}
+    // check permission for verbose mode
+    if (verbose && !user.options.allowVerboseMode) {
+      res.status(403).json(RestResultv2.error("You do not have permission to use verbose mode"));
+      return false;
+    }
     try{
       const job = await Job.relaunch(user, jobid, verbose);
       res.status(200).json(RestResultv2.single({ message: `Job has been relaunched with job id ${job.id}`, id: job.id }));

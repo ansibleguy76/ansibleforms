@@ -139,7 +139,7 @@ const status = computed({
 })
 
 const showDebugButtons = computed(() => {
-    return store.profile.options?.showDebugButtons ?? true
+    return store.profile.options?.showDebugButtons
 })
 
 // calculated fields that are not yet evaluated

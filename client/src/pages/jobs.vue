@@ -50,7 +50,7 @@
 
     // Check if user can relaunch jobs
     const canRelaunchJobs = computed(() => {
-        return store?.profile?.options?.allowJobRelaunch ?? store.isAdmin;
+        return store?.profile?.options?.allowJobRelaunch;
     });
 
     // job output filtered
@@ -510,7 +510,7 @@
         <template #title> Relaunch job {{ tempJobId }} </template>
         <template #default>
             <p class="mt-3 fs-6 user-select-none">Choose how to relaunch job <strong>{{ tempJobId }}</strong>:</p>
-            <BsCheckbox v-model="relaunchVerbose" label="Verbose mode" class="mt-2" :isSwitch="true" :inline="true" />
+            <BsCheckbox v-if="store.profile.options?.allowVerboseMode" v-model="relaunchVerbose" label="Verbose mode" class="mt-2" :isSwitch="true" :inline="true" />
             <BsCheckbox v-model="relaunchWithEdit" label="Edit values before relaunching" class="mt-2" :isSwitch="true" :inline="true" />
         </template>
         <template #footer>
@@ -630,7 +630,7 @@
                         <sup><span class="badge rounded-pill" :class="Helpers.getColorClassByStatus(job.status,'text-bg')">{{ job.status}}</span></sup>
                     </h3>
                     <BsButton
-                        v-if="store.profile.options?.showExtravars ?? true"
+                        v-if="store.profile.options?.showExtravars"
                         cssClass="btn-sm me-2 fw-normal"
                         cssClassToggle="btn-sm me-2 fw-normal"
                         icon="eye"
@@ -640,7 +640,7 @@
                         >Show Extravars<template #toggle>Hide Extravars</template>
                     </BsButton>
                     <BsButton
-                        v-if="(store.profile.options?.showArtifacts ?? true) && job.job_type=='awx'"
+                        v-if="store.profile.options?.showArtifacts && job.job_type=='awx'"
                         cssClass="btn-sm me-2 fw-normal"
                         cssClassToggle="btn-sm me-2 fw-normal"
                         icon="square-poll-vertical"

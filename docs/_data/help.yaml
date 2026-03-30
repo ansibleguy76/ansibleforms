@@ -700,6 +700,7 @@
       - showAllJobLogs: The user can see all job logs (not only his own) (Added in 5.0.9)
       - enableLogin: The user can login.  
       - allowBackupOps: The user can perform database operations, such as backup and restore.
+      - allowVerboseMode: The user can enable verbose mode on ansible forms.
       - allowJobRelaunch: The user can relaunch jobs with pre-filled form data from previous submissions.
         
       When options are not set, the admin role will have all options.  

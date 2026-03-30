@@ -604,7 +604,7 @@ Job.getRawFormData = async function (user, id) {
     // Check if user has allowJobRelaunch option (unless admin)
     const isAdmin = user.roles?.includes("admin") ?? false;
     logger.info(`Checking relaunch permission: isAdmin=${isAdmin}, user.options=${JSON.stringify(user.options)}, allowJobRelaunch=${user.options?.allowJobRelaunch}`);
-    if (!(user.options?.allowJobRelaunch ?? isAdmin)) {
+    if (!user.options.allowJobRelaunch) {
       throw new Errors.AccessDeniedError(`You do not have permission to relaunch jobs. Contact your administrator to enable the 'allowJobRelaunch' role option.`);
     }
     
@@ -967,7 +967,7 @@ Job.relaunch = async function (user, id, verbose) {
   
   // Check if user has allowJobRelaunch option (unless admin)
   const isAdmin = user.roles?.includes("admin") ?? false;
-  if (!(user.options?.allowJobRelaunch ?? user.options?.allowRelaunch ?? isAdmin)) {
+  if (!user.options.allowJobRelaunch) {
     throw new Errors.AccessDeniedError(`You do not have permission to relaunch jobs. Contact your administrator to enable the 'allowJobRelaunch' role option.`);
   }
   

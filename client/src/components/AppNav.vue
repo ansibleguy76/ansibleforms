@@ -72,10 +72,10 @@
     });
 
 
-    if (!(store?.profile?.options?.showSettings ?? store.isAdmin)) {
+    if (!store?.profile?.options?.showSettings) {
       m = m.filter(m => m.link != "/admin/settings");
     }
-    if (!(store?.profile?.options?.showDesigner ?? store.isAdmin)) {
+    if (!store?.profile?.options?.showDesigner) {
       m = m.filter(m => m.link != "/designer");
     }
     return m;
@@ -83,7 +83,7 @@
 
   const helpMenu = computed(() => {
     var m = helpMenuOptions;
-    if(!(store?.profile?.options?.showLogs ?? store.isAdmin)){
+    if(!store?.profile?.options?.showLogs){
       m = m.filter(m => m.link != "/logs");
     }
     return m;

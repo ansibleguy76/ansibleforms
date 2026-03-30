@@ -57,7 +57,8 @@
               "showExtravars": { "type": "boolean" },
               "extendedTokenExpiration": { "type": "boolean" },
               "showAllJobLogs": { "type": "boolean" },
-              "allowDatabaseOps": { "type": "boolean" },
+              "allowBackupOps": { "type": "boolean" },
+              "allowVerboseMode": { "type": "boolean" },
               "enableLogin": { "type": "boolean" }
             },
             "additionalProperties": true
@@ -96,7 +97,8 @@
               "showExtravars": { "type": "boolean" },
               "extendedTokenExpiration": { "type": "boolean" },
               "showAllJobLogs": { "type": "boolean" },
-              "allowDatabaseOps": { "type": "boolean" },
+              "allowBackupOps": { "type": "boolean" },
+              "allowVerboseMode": { "type": "boolean" },
               "enableLogin": { "type": "boolean" }
             },
             "additionalProperties": true

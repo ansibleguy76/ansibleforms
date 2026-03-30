@@ -776,7 +776,7 @@ onBeforeUnmount(() => {
               <!-- TOOL BAR BUTTONS -->
               <template #toolbarbuttons>
                 <!-- DEBUG BUTTONS -->
-                <BsButton v-if="store.profile.options?.showExtraVars ?? true" cssClass="btn-sm me-3 fw-normal"
+                <BsButton v-if="store.profile.options?.showExtraVars" cssClass="btn-sm me-3 fw-normal"
                   cssClassToggle="btn-sm me-3 fw-normal" icon="eye" iconToggle="eye-slash" :toggle="showExtraVars"
                   @click="toggleShowExtraVars()">Show Extravars<template #toggle>Hide Extravars</template>
                 </BsButton>
@@ -785,7 +785,7 @@ onBeforeUnmount(() => {
                 </BsButton>
 
                 <!-- enable verbose logging -->
-                <BsInputCheckboxRaw v-model="enableVerbose" :label="'verbose'" v-show="!hideForm"
+                <BsInputCheckboxRaw v-if="store.profile.options?.allowVerboseMode" v-model="enableVerbose" :label="'verbose'" v-show="!hideForm"
                   cssClass="ms-2 d-inline-block" />
 
               </template>

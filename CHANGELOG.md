@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-   added role-option allowVerboseMode (#430)
+
+### Changed
+
+-   role options are all defaulted now explicitly
+
 ## [6.1.4] - 2026-03-30
 
 ### Added

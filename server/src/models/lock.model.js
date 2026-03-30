@@ -34,7 +34,7 @@ Lock.status = async function(user){
   }
 };
 Lock.set = async function (user) {
-  if (config.showDesigner && (user.options?.showDesigner ?? true)) {
+  if (config.showDesigner && user.options.showDesigner) {
     logger.notice(`Creating lock for user ${user.username}`);
     const copy = { ...user, created: moment(Date.now()).format('YYYY-MM-DD HH:mm:ss') };
     await fsPromises.writeFile(config.lockPath, yaml.stringify(copy), { encoding: "utf8", flag: "w" });
@@ -44,7 +44,7 @@ Lock.set = async function (user) {
   throw new Errors.AccessDeniedError('Designer is disabled');
 };
 Lock.delete = async function(user={}){
-  if (config.showDesigner && (user.options?.showDesigner ?? true)) {
+  if (config.showDesigner && user.options.showDesigner) {
     logger.notice(`Deleting lock`);
     try {
       await fsPromises.unlink(config.lockPath);
@@ -61,7 +61,7 @@ Lock.delete = async function(user={}){
   throw new Errors.AccessDeniedError('Designer is disabled');
 };
 Lock.get = async function (user={}) {
-  if (config.showDesigner && (user.options?.showDesigner ?? true)) {
+  if (config.showDesigner && user.options.showDesigner) {
     return fsPromises.readFile(config.lockPath, { encoding:"utf8" });
   }
   logger.error("Designer is disabled, can't get lock");

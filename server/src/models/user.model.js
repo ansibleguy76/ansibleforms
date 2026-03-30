@@ -168,6 +168,21 @@ User.getRolesAndOptions = async function (groups, user) {
     result.roles = roles;
     result.options = options;
 
+    // Apply defaults for undefined options
+    const isAdmin = roles.includes("admin");
+    if (options.allowVerboseMode === undefined) options.allowVerboseMode = true;
+    if (options.showSettings === undefined) options.showSettings = isAdmin;
+    if (options.showDesigner === undefined) options.showDesigner = isAdmin;
+    if (options.showLogs === undefined) options.showLogs = isAdmin;
+    if (options.allowBackupOps === undefined) options.allowBackupOps = isAdmin;
+    if (options.showJobs === undefined) options.showJobs = true;
+    if (options.showDebugButtons === undefined) options.showDebugButtons = true;
+    if (options.showExtravars === undefined) options.showExtravars = true;
+    if (options.showExtraVars === undefined) options.showExtraVars = true;
+    if (options.showArtifacts === undefined) options.showArtifacts = true;
+    if (options.allowJobRelaunch === undefined) options.allowJobRelaunch = isAdmin;
+    if (options.showAllJobLogs === undefined) options.showAllJobLogs = isAdmin;
+
     return result;
   } catch (e) {
     logger.error(e);
