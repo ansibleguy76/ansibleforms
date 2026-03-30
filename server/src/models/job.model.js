@@ -3,11 +3,13 @@ import axios from "axios";
 import fs from "fs";
 import yaml from "yaml";
 import moment from "moment";
+import os from "os";
 import { exec } from "child_process";
 import Helpers from "../lib/common.js";
 import Errors from "../lib/errors.js";
 import Settings from "./settings.model.js";
 import logger from "../lib/logger.js";
+import Cmd from "../lib/cmd.js";
 import ansibleConfig from "../../config/ansible.config.js";
 import loggerConfig from "../../config/log.config.js";
 import dbConfig from "../../config/db.config.js";
@@ -110,6 +112,19 @@ Exec.executeCommand = (cmd, jobid, counter) => {
         encoding: "UTF-8",
       });
 
+      // Store the process ID and host identifier in the database for job control
+      if (child.pid) {
+        const hostname = os.hostname();
+        logger.info(`[Job ${jobid}] Process started with PID: ${child.pid} on host: ${hostname}`);
+        mysql.do("UPDATE AnsibleForms.`jobs` SET pid=?, host=? WHERE id=?", [child.pid, hostname, jobid])
+          .then(() => {
+            logger.debug(`[Job ${jobid}] PID ${child.pid} and host ${hostname} stored in database`);
+          })
+          .catch((err) => {
+            logger.error(`[Job ${jobid}] Failed to store PID and host in database: ${err.message}`);
+          });
+      }
+
       // capture the abort event, logging only
       ac.signal.addEventListener(
         "abort",
@@ -121,39 +136,27 @@ Exec.executeCommand = (cmd, jobid, counter) => {
 
       // add output eventlistener to the process to save output
       child.stdout.on("data", function (data) {
-        // save the output ; but whilst saving, we quickly check the status to detect abort
+        // save the output to database
         Job.createOutput({
           output: data,
           output_type: "stdout",
           job_id: jobid,
           order: ++counter,
         })
-          .then((abort_requested) => {
-            // if abort request found ; kill the process
-            if (abort_requested) {
-              logger.warning("Abort is requested, aborting child");
-              ac.abort("Aborted by operator");
-            }
-          })
           .catch((error) => {
             logger.error("Failed to create output : ", error);
           });
       });
       // add error eventlistener to the process to save output
       child.stderr.on("data", async function (data) {
-        // save the output ; but whilst saving, we quickly check the status to detect abort
+        // save the output to database
         try {
-          const abort_requested = await Job.createOutput({
+          await Job.createOutput({
             output: data,
             output_type: "stderr",
             job_id: jobid,
             order: ++counter,
           });
-          // if abort request found ; kill the process
-          if (abort_requested) {
-            logger.warning("Abort is requested, aborting child");
-            ac.abort("Aborted by operator");
-          }
         } catch (error) {
           logger.error("Failed to create output: ", error);
         }
@@ -161,6 +164,13 @@ Exec.executeCommand = (cmd, jobid, counter) => {
 
       // add exit eventlistener to the process to handle status update
       child.on("exit", async function (data) {
+        // Clear the PID and host from the database as the process has ended
+        logger.debug(`[Job ${jobid}] Process with PID ${child.pid} has exited`);
+        await mysql.do("UPDATE AnsibleForms.`jobs` SET pid=NULL, host=NULL WHERE id=?", [jobid])
+          .catch((err) => {
+            logger.error(`[Job ${jobid}] Failed to clear PID and host from database: ${err.message}`);
+          });
+        
         // if the exit was an actual request ; set aborted
         if (child.signalCode == "SIGTERM") {
           const abort_requested = await Job.isAbortRequested(jobid);
@@ -218,6 +228,13 @@ Exec.executeCommand = (cmd, jobid, counter) => {
       });
       // add error eventlistener to the process; set failed
       child.on("error", async function (data) {
+        // Clear the PID and host from the database as the process has errored
+        logger.debug(`[Job ${jobid}] Process with PID ${child.pid} encountered an error`);
+        await mysql.do("UPDATE AnsibleForms.`jobs` SET pid=NULL, host=NULL WHERE id=?", [jobid])
+          .catch((err) => {
+            logger.error(`[Job ${jobid}] Failed to clear PID and host from database: ${err.message}`);
+          });
+        
         await Job.endJobStatus(
           jobid,
           ++counter,
@@ -356,11 +373,44 @@ Job.abort = async function (id) {
   if (abort_requested) {
     throw new Errors.ConflictError("Abort already requested for this job");
   }
+  
+  // Set the abort_requested flag first (database as source of truth)
   const res = await mysql.do(
     "UPDATE AnsibleForms.`jobs` set abort_requested=1 WHERE id=? AND status='running'",
     [id]
   );
+  
   if (res.changedRows == 1) {
+    // Get the PID and host from the database
+    const pidResult = await mysql.do(
+      "SELECT pid, host FROM AnsibleForms.`jobs` WHERE id=?",
+      [id]
+    );
+    
+    const pid = pidResult[0]?.pid;
+    const jobHost = pidResult[0]?.host;
+    const currentHost = os.hostname();
+    
+    if (pid && jobHost) {
+      // Only attempt to kill if this is the correct host
+      if (jobHost === currentHost) {
+        logger.info(`[Job ${id}] Killing process with PID ${pid} on host ${currentHost}`);
+        try {
+          await Cmd.killChildren(pid);
+          logger.info(`[Job ${id}] Successfully sent kill signal to PID ${pid}`);
+        } catch (err) {
+          logger.error(`[Job ${id}] Failed to kill PID ${pid}: ${err.message}`);
+          // Don't throw - the abort flag is set, so the process will still abort on next output
+        }
+      } else {
+        logger.warning(`[Job ${id}] Process is running on different host (job on '${jobHost}', current '${currentHost}'). Abort flag set, waiting for that instance to handle termination.`);
+      }
+    } else if (!pid && !jobHost) {
+      logger.warning(`[Job ${id}] No PID/host found for job, abort flag set but cannot kill process directly`);
+    } else {
+      logger.warning(`[Job ${id}] Incomplete PID info (pid: ${pid}, host: ${jobHost}), abort flag set`);
+    }
+    
     return res;
   } else {
     throw new Errors.ConflictError("This job was not running");
@@ -468,7 +518,7 @@ Job.findById = async function (user, id, asText, logSafe = false) {
   // Sanitize timezone to prevent SQL injection - only allow valid timezone format
   const safeTimezone = loggerConfig.tz.match(/^[A-Za-z/_+-]+$/) ? loggerConfig.tz : 'UTC';
   
-  if (user.roles.includes("admin")) {
+  if (user.roles.includes("admin") || user.options?.showAllJobLogs) {
     query =
       "SELECT j.id,j.form,j.target,j.status,CONVERT_TZ(j.start, 'UTC', ?) AS start,CONVERT_TZ(j.end, 'UTC', ?) AS end,j.user,j.user_type,j.job_type,j.extravars,j.credentials,j.notifications,j.approval,j.step,j.parent_id,j.awx_id,j.awx_artifacts,j.abort_requested,j.raw_form_data,sj.subjobs,j2.no_of_records,o.counter FROM AnsibleForms.jobs j LEFT JOIN (SELECT parent_id,GROUP_CONCAT(id separator ',') subjobs FROM AnsibleForms.jobs GROUP BY parent_id) sj ON sj.parent_id=j.id,(SELECT COUNT(id) no_of_records FROM AnsibleForms.jobs)j2,(SELECT max(`order`)+1 counter FROM AnsibleForms.job_output WHERE job_output.job_id=?)o WHERE j.id=?;";
     params = [safeTimezone, safeTimezone, id, id];
@@ -855,40 +905,50 @@ Job.continue = async function ({ form, user, credentials = {}, extravars = {}, j
     }
   }
 
-  if (jobtype == "ansible") {
-    return await Ansible.launch(
-      extravars,
-      credentials,
-      jobid,
-      ++counter,
-      formObj.approval,
-      true
-    );
-  }
-  if (jobtype == "awx") {
-    return await Awx.launch(
-      extravars,
-      credentials,
-      jobid,
-      ++counter,
-      formObj.approval,
-      true
-    );
-  }
-  if (jobtype == "multistep") {
-    return await Multistep.launch({
-      form,
-      steps: formObj.steps,
-      user,
-      extravars,
-      credentials: creds,
-      jobid,
-      counter: ++counter,
-      approval: formObj.approval,
-      fromStep: step,
-      approved: true
-    });
-  }
+  // Launch job in background and return immediately
+  const executeApprovedJob = async () => {
+    if (jobtype == "ansible") {
+      return await Ansible.launch(
+        extravars,
+        credentials,
+        jobid,
+        ++counter,
+        formObj.approval,
+        true
+      );
+    }
+    if (jobtype == "awx") {
+      return await Awx.launch(
+        extravars,
+        credentials,
+        jobid,
+        ++counter,
+        formObj.approval,
+        true
+      );
+    }
+    if (jobtype == "multistep") {
+      return await Multistep.launch({
+        form,
+        steps: formObj.steps,
+        user,
+        extravars,
+        credentials: creds,
+        jobid,
+        counter: ++counter,
+        approval: formObj.approval,
+        fromStep: step,
+        approved: true
+      });
+    }
+  };
+
+  // Fire and forget - execute in background
+  executeApprovedJob().catch(err => {
+    logger.error(`Approved job ${jobid} failed:`, err);
+  });
+
+  return { id: jobid };
 };
 Job.relaunch = async function (user, id, verbose) {
   const job = await Job.findById(user, id, true);
@@ -1407,6 +1467,15 @@ Multistep.launch = async function ({
               // Now wait for the step to complete
               if (jobSuccess.completionPromise) {
                 await jobSuccess.completionPromise;
+                
+                // Check the actual status of the child job
+                const childJob = await Job.findById(user, jobSuccess.id, false);
+                if (childJob.status === 'failed' || childJob.status === 'aborted') {
+                  throw new Errors.ApiError(
+                    `Step ${step.name} (jobid ${jobSuccess.id}) ${childJob.status}`
+                  );
+                }
+                
                 await Job.printJobOutput(
                   `ok: [Completed step ${step.name} with jobid '${jobSuccess.id}']`,
                   "stdout",

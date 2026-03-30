@@ -64,6 +64,7 @@
     name: { type: String, default: "" },
     progress: { type: Number, default: undefined },
     dateType: { type: String, default: "datetime" },
+    convertToUtc: { type: Boolean, default: false },
     autofocus: { type: Boolean, default: false },
     containerSize: { type: Object, default: () => ({}) },
   });
@@ -124,9 +125,9 @@
         <!-- INPUT FIELDS -->
         <BsInputSelectAdvanced v-if="type === 'select'" :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :id="uid" :hasError="hasError" :placeholder="placeholder" v-model="model" :values="values" :defaultValue="defaultValue" :multiple="multiple" :columns="columns" :previewColumn="previewColumn" :valueColumn="valueColumn" :pctColumns="pctColumns" :filterColumns="filterColumns" :sticky="sticky" :horizontal="horizontal" :icon="icon" :uid="uid" :isLoading="isLoading" :name="name" :isFloating="false" :containerSize="containerSize" />
         <BsInputTextAreaRaw v-else-if="type === 'textarea'" :rows="rows" :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :id="uid" :hasError="hasError" :placeholder="placeholder" v-model="model" />
-        <BsDateTime v-else-if="type === 'datetime'" :icon="icon" v-model="model" :name="name" :hasError="hasError" :placeholder="placeholder" :dateType="dateType" @change="change" />          
-        <p @dblclick="dblclick" v-else-if="type=='expression' && isHtml" class="form-control" :style="style" v-html="model" :class="cssClass"></p>
-        <p @dblclick="dblclick" v-else-if="type=='expression' && !isHtml" class="form-control" :style="style" v-text="model" :class="cssClass"></p>        
+        <BsDateTime v-else-if="type === 'datetime'" :icon="icon" v-model="model" :name="name" :hasError="hasError" :placeholder="placeholder" :dateType="dateType" :convertToUtc="convertToUtc" @change="change" />          
+        <p @dblclick="dblclick" v-else-if="type=='expression' && isHtml" class="form-control" :style="style" v-html="model" :class="[cssClass, {'is-invalid': hasError}]"></p>
+        <p @dblclick="dblclick" v-else-if="type=='expression' && !isHtml" class="form-control" :style="style" v-text="model" :class="[cssClass, {'is-invalid': hasError}]"></p>        
         <BsInputCheckboxRaw v-else-if="type === 'checkbox'" :isSwitch="isSwitch" :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :hasError="hasError" :label="label" v-model="model" @change="change" />
         <BsInputRadiobuttonRaw v-else-if="type === 'radio'" :disabled="disabled" :style="style" :cssClass="cssClass" :hasError="hasError" :name="name" v-model="model" :values="values" @change="change" />
         <BsInputFileRaw v-else-if="type === 'file'" :name="name" :icon="icon" :readonly="readonly" :uid="uid" :hasError="hasError" :placeholder="placeholder" @change="change" :progress="progress" :accept="accept" />

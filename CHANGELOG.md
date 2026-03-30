@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.1.4] - 2026-03-30
+
+### Added
+
+-   Error border on expression fields
+-   Jq expression on expression with query fields so you can manipulate the otherwise always returning array
+-   Added a convertToUtc property for datetime field
+
+### Fixed
+
+-   Ampersand bug (#412)
+-   DateTime field input allowed (#416)
+-   Approval stuck (#413)
+-   multistep status (#413)
+-   job relaunch response (#422)
+
+### Changed
+
+-   validIf triggers error
+-   new docs using just the docs theme
+-   vite 8
+-   Host and PID aware aborting, faster, cleaner and would allow multi container setup
+
 ## [6.1.3] - 2026-02-23
 
 ### Added
@@ -987,7 +1010,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/6.1.3...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/6.1.4...HEAD
+
+[6.1.4]: https://github.com/ansibleguy76/ansibleforms/compare/6.1.3...6.1.4
 
 [6.1.3]: https://github.com/ansibleguy76/ansibleforms/compare/6.1.2...6.1.3
 

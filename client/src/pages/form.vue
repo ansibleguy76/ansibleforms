@@ -505,6 +505,7 @@ async function clip(v, doNotStringify = false, asYaml = false) {
 
 // reset result
 function resetResult() {
+  clearTimeout(timeout.value);
   status.value = "";
   message.value = "";
   error.value = "";
@@ -665,7 +666,7 @@ async function launchForm(postdata) {
 }
 
 async function loadForm(){
-  const formName = route.query.form;
+  const formName = route.query.form ? decodeURIComponent(route.query.form) : undefined;
   if (!formName) {
     console.error("No form name provided in the URL");
     formNotFound.value = true;

@@ -1,85 +1,82 @@
-# Theme settings
-doks:
-    baseurl:  
-    color_theme: # Available themes: blue (default), green, purple, red and yellow
-    header:
-        logo:
-            text: 
-            image: true
-        nav:
-            - item_name: Introduction
-              item_url: '/introduction'        
-            - item_name: How to install
-              item_url: '/installation'          
-            - item_name: Environment Variables
-              item_url: '/customization'   
-            - item_name: config.yaml
-              item_url: '/config'   
-            - item_name: Forms
-              item_url: '/forms'                   
-            - item_name: GUI
-              item_url: '/gui'                        
-        nav2:
-            - item_name: Create Forms
-              item_url: '/form'        
-              item_icon: table-list
-            - item_name: Formfields
-              item_url: '/formfield'  
-              item_icon: input-text        
-            - item_name: Tablefields
-              item_url: '/tablefield'  
-              item_icon: table-tree                
-            - item_name: Expressions
-              item_url: '/expressions'   
-              item_icon: brackets-curly
-            - item_name: FAQ
-              item_url: '/faq' 
-              item_icon: square-question       
-        social:
-            - item_icon: github
-              item_name: Ansible Forms on Github
-              item_url: https://github.com/ansibleguy76
-            - item_icon: docker
-              item_name: Ansible Forms on Docker Hub
-              item_url: https://hub.docker.com/r/ansibleguy/ansibleforms 
-            - item_icon: youtube
-              item_name: Video's about ansible and Ansible Forms
-              item_url: https://www.youtube.com/@ansibleguy76/videos        
-    footer:
-        content:
-            logo:
-                text: 
-                image: true
-            copyright: Copyright &copy; 2023. - AnsibleForms <br>All rights reserved.
-        social:
-            - item_icon: github
-              item_name: Ansible Forms on Github
-              item_url: https://github.com/ansibleguy76
-            - item_icon: docker
-              item_name: Ansible Forms on Docker Hub
-              item_url: https://hub.docker.com/r/ansibleguy/ansibleforms 
-            - item_icon: youtube
-              item_name: Video's about ansible and Ansible Forms
-              item_url: https://www.youtube.com/@ansibleguy76/videos       
-    google_analytics:
-        tracking_code: G-P2KE4SYQ47
-    comments:
-        disqus_forum_shortname: # Add your disqus forum shortname to activate comments
+# Just the Docs Configuration
+# https://just-the-docs.com/
 
-# SASS settings
-sass:
-    sass_dir: ./doks-theme/_sass
-    style: :compressed
+# Theme (use remote_theme for GitHub Actions)
+remote_theme: just-the-docs/just-the-docs@v0.8.2
 
-# Jekyll settings
-layouts_dir: ./doks-theme/_layouts
-includes_dir: ./doks-theme/_includes
-exclude: [ 'README.md', 'CHANGELOG.md' ]
-permalink: /:title/
+# Site settings
+title: AnsibleForms Documentation
+description: Technical documentation for AnsibleForms
+baseurl: "" # Empty for custom domain
+url: "https://ansibleforms.com" # Custom domain
 
-# Tipue search settings
-tipue_search:
-  include:
-    pages: true
-  exclude:
-    files: [search.html]
+# Color scheme (light or dark)
+color_scheme: light
+
+# Enable color scheme toggle button
+# Users can switch between light and dark mode
+callouts_level: quiet
+callouts:
+  note:
+    color: blue
+  warning:
+    color: yellow
+
+# Logo and Favicon
+logo: "/assets/images/logo.png"
+favicon_ico: "/favicon.svg"
+
+# Search
+search_enabled: true
+search:
+  heading_level: 2
+  previews: 3
+  preview_words_before: 5
+  preview_words_after: 10
+  tokenizer_separator: /[\s/]+/
+  rel_url: true
+  button: false
+
+# Navigation
+nav_sort: case_insensitive
+
+# Aux links (top right)
+aux_links:
+  "GitHub":
+    - "https://github.com/ansibleguy76/ansibleforms"
+  "Docker Hub":
+    - "https://hub.docker.com/r/ansibleguy/ansibleforms"
+
+# Footer
+footer_content: "Copyright &copy; 2023-2026 AnsibleForms. All rights reserved."
+
+# Code highlighting
+kramdown:
+  syntax_highlighter: rouge
+  syntax_highlighter_opts:
+    default_lang: yaml
+    block:
+      line_numbers: false
+    span:
+      line_numbers: false
+
+# Configure Rouge highlighter
+highlighter: rouge
+
+# Collections
+collections:
+  docs:
+    permalink: "/:collection/:path/"
+    output: true
+
+# Exclude from build
+exclude:
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+
+# Plugins
+plugins:
+  - jekyll-seo-tag
+  - jekyll-remote-theme
+  - jekyll-include-cache

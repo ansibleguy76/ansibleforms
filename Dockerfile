@@ -9,9 +9,6 @@ FROM ansibleguy/ansibleforms-base:latest AS tmp_builder
 
 ########## prep client ###########
 
-# Install vite
-RUN npm install -g vite
-
 # Use /app/client
 WORKDIR /app/client
 
@@ -19,7 +16,7 @@ WORKDIR /app/client
 COPY ./client/package*.json ./
 
 # install node modules for client
-RUN npm install
+RUN npm ci
 
 # copy all
 COPY ./client ./
@@ -36,7 +33,7 @@ WORKDIR /app/server
 COPY ./server/package*.json ./
 
 # install node modules
-RUN npm install --omit=dev
+RUN npm ci --only=production
 
 # Copy the rest of the code
 COPY ./server .

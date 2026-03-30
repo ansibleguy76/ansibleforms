@@ -1,118 +1,97 @@
 ---
-# Page settings
 layout: default
-keywords:
-comments: false
-
-# Hero section
-title: Customization
-description: Use the environment variables to customize AnsibleForms
-
-# Micro navigation
-micro_nav: true
-
-# Hide scrollspy
-hide_scrollspy: true
-
-# Page navigation
-page_nav:
-    prev:
-        content: Installation
-        url: '/installation'
-    next:
-        content: Configuration (config.yaml)
-        url: '/config'
+title: Environment Variables
+nav_order: 3
 ---
 
 # Environment Variables
+{: .no_toc }
 
 {% assign help = site.data.help %}
-{% assign env_vars = help | where: "name", "Environment Variables" | first %}
+{% assign env_vars = help | where: "link", "environment-variable" | first %}
 
-{{ env_vars.description }}
+{{ env_vars.description | markdownify }}
 
-<table class="table-responsive">
-      <thead>
-        <tr>
-          <th>Variable</th>
-          <th>Choices/Defaults</th>
-          <th>Comments</th>
-        </tr>
-      </thead>
-      <tbody>
+---
+
+
+
+## Variables
+
+<table>
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>Choices/Defaults</th>
+      <th>Comments</th>
+    </tr>
+  </thead>
+  <tbody>
 {% for var in env_vars.items %}
-        <tr>
-          <td>
-            <span class="fw-bold">{{ var.name }}</span><br>
-            <span class="has-text-primary">{{ var.type}}</span>
-            {% if var.required==true %}<span class="has-text-danger"> / required</span>{% endif %}
-            {% if var.unique==true %}<span v-if="f.unique" class="has-text-warning"> / unique</span>{% endif %}
-            <br>
-            {% if var.version %}<span v-if="f.version" class="is-italic has-text-success">added in version {{var.version}}</span>{% endif %}
-          </td>
-          <td>
-            {% if var.choices.size > 0 %}
-            <div class="">
-              <span class="fw-bold">Choices:</span><br>
-              <ul>
-                {% for c in var.choices %}
-                <li>
-                  {% if c.name == var.default %}
-                  <span title="{{ c.description }}" class="has-text-info">{{ c.name }} (default)</span>
-                  {% else %}
-                  <span title="{{ c.description }}">{{ c.name }}</span>
-                  {% endif %}
-                </li>
-                {% endfor %}
-              </ul>
-            </div>
-            {% elsif var.default != nil %}               
-            <div>
-              <span class="fw-bold">Default:</span><br>
-              <span class="">{{ var.default }}</span>
-            </div>   
-            {% endif %}       
-          </td>
-          <td>
-            <p>
-              <strong>{{var.short}}</strong><br>
-              {% if var.allowed != nil %}
-              <span class="has-text-primary">{{ var.allowed }}</span>
+    <tr>
+      <td>
+        <span id="env_{{ var.name }}"><strong>{{ var.name }}</strong></span><br>
+        <span class="af-type">{{ var.type}}</span>
+        {% if var.required==true %}<span class="af-required"> / required</span>{% endif %}
+        {% if var.unique==true %}<span class="af-unique"> / unique</span>{% endif %}
+        <br>
+        {% if var.version %}<span class="af-version">added in version {{var.version}}</span>{% endif %}
+      </td>
+      <td>
+        {% if var.choices.size > 0 %}
+        <div>
+          <strong>Choices:</strong><br>
+          <ul class="af-choices-list">
+            {% for c in var.choices %}
+            <li>
+              {% if c.name == var.default %}
+              <span title="{{ c.description }}" class="af-default-choice">{{ c.name }} (default)</span>
+              {% else %}
+              <span title="{{ c.description }}">{{ c.name }}</span>
               {% endif %}
-            </p>
-            <p markdown="1">
-              {{ var.description }}
-            </p>
-            {% for c in var.changelog %}
-            <div class="callout callout--info">
-              {% if c.type == "added" %}
-              <div class="tags has-addons mb-1">
-                <span class="tag is-dark">Added</span><span class="tag is-success">{{ c.version }}</span>
-              </div>
-              {% endif %}
-              <p markdown="1">
-                {{ c.description }}
-              </p>
-            </div>
+            </li>
             {% endfor %}
-            {% if var.example != nil %}
-            <p class="fw-bold">
-              Examples:
-            </p>
-            {% endif %}
-            {% for e in var.examples %}
-            <div>
-              <p class="fw-bold mt-2">{{ forloop.index }}) {{ e.name }}</p>
-
-<div markdown="1">
-```yaml
-{{ e.code }}
-```
-</div>
-            </div>
-            {% endfor %}
-          </td>
-        </tr>
+          </ul>
+        </div>
+        {% elsif var.default != nil %}               
+        <div>
+          <strong>Default:</strong><br>
+          <span>{{ var.default }}</span>
+        </div>   
+        {% endif %}       
+      </td>
+      <td>
+        <p>
+          <strong>{{var.short}}</strong><br>
+          {% if var.allowed != nil %}
+          <span class="af-type">{{ var.allowed }}</span>
+          {% endif %}
+        </p>
+        <p>
+          {{ var.description | markdownify | markdownify }}
+        </p>
+        {% for c in var.changelog %}
+        <div class="af-changelog">
+          {% if c.type == "added" %}
+          <div class="af-changelog-header">
+            <span class="af-badge af-badge-added">Added</span>
+            <span class="af-badge af-badge-version">{{ c.version }}</span>
+          </div>
+          {% endif %}
+          <p>
+            {{ c.description | markdownify }}
+          </p>
+        </div>
+        {% endfor %}
+        {% if var.example != nil %}
+        <p>
+          <strong>Examples:</strong><br>
+          <code>{{ var.example }}</code>
+        </p>
+        {% endif %}
+      </td>
+    </tr>
 {% endfor %}
-      </tbody>
+  </tbody>
 </table>
+

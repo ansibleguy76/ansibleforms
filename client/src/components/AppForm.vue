@@ -572,6 +572,35 @@ async function handleFiles(e) {
     v$.value.form[name].$touch();
 }
 
+// handle blur event to touch field and show validation errors
+function handleBlur(fieldName) {
+    if (v$.value.form[fieldName]) {
+        v$.value.form[fieldName].$touch();
+    }
+}
+
+// get errors to display - validIf/validIfNot errors show immediately, others only when touched
+function getErrorsToDisplay(fieldName) {
+    const field = v$.value.form[fieldName];
+    if (!field) return [];
+    
+    // Start with normal errors (for touched fields)
+    let errorsToShow = [...field.$errors];
+    
+    // Add validIf/validIfNot errors even if field isn't touched (external validation)
+    const silentErrors = field.$silentErrors || [];
+    silentErrors.forEach(error => {
+        if (error.$params?.type === 'validIf' || error.$params?.type === 'validIfNot') {
+            // Check if not already in errorsToShow
+            if (!errorsToShow.find(e => e.$uid === error.$uid)) {
+                errorsToShow.push(error);
+            }
+        }
+    });
+    
+    return errorsToShow;
+}
+
 // calculate the size of the container
 function calcContainerSize() {
     var rect = containerRef.value?.getBoundingClientRect();
@@ -1331,10 +1360,15 @@ function initForm() {
                 // For enum/query/table fields with expressions, keep in pendingInitialData for loop to apply after options load
                 // For expression/html or static enum/query/table, set value and status now
                 const needsOptionsFirst = ['enum', 'query', 'table'].includes(item.type) && (item.expression || item.query);
-                if (!needsOptionsFirst) {
+                const isReactiveField = ((item.type === 'html' || item.type === 'expression') && (item.expression || item.query));
+                
+                if (!needsOptionsFirst && !isReactiveField) {
                     form.value[item.name] = pendingInitialData.value[item.name];
                     protectedFields.value[item.name] = true;
                     dynamicFieldStatus.value[item.name] = "fixed";
+                } else if (isReactiveField) {
+                    delete pendingInitialData.value[item.name];
+                    dynamicFieldStatus.value[item.name] = undefined;
                 } else {
                     // For enum/query/table with expressions, set status to undefined so loop will load options first
                     dynamicFieldStatus.value[item.name] = undefined;
@@ -1443,13 +1477,11 @@ async function startDynamicFieldsLoop() {
                                     result = Helpers.evalSandbox(placeholderCheck.value);
                                 }
                                 if (item.type == "html") {
-                                    // Check for pending initialData
+                                    // HTML fields with expressions should re-evaluate, not use cached prefill values
                                     if (item.name in pendingInitialData.value) {
-                                        form.value[item.name] = pendingInitialData.value[item.name];
                                         delete pendingInitialData.value[item.name];
-                                    } else {
-                                        form.value[item.name] = result;
                                     }
+                                    form.value[item.name] = result;
                                 }
                                 if (item.type == "expression") {
                                     // Expression fields should re-evaluate, not use cached prefill values
@@ -1471,11 +1503,8 @@ async function startDynamicFieldsLoop() {
                                 if (item.type == "table" && !defaults.value[item.name]) form.value[item.name] = [].concat(result);
                                 if (item.type == "table" && defaults.value[item.name]) form.value[item.name] = [].concat(defaults.value[item.name]);
 
-                                if (placeholderCheck.hasPlaceholders) {
-                                    setFieldStatus(item.name, "variable");
-                                } else {
-                                    setFieldStatus(item.name, "fixed");
-                                }
+                                // Mark as fixed after successful evaluation - will re-evaluate when dependencies change via resetField
+                                setFieldStatus(item.name, "fixed");
                                 delete queryerrors.value[item.name];
                             } catch (err) {
                                 queryerrors.value[item.name] = err.toString();
@@ -1487,7 +1516,9 @@ async function startDynamicFieldsLoop() {
                             }
                         } else {
                             try {
-                                const result = await axios.post(`/api/v1/expression?noLog=${!!item.noLog}`, { expression: placeholderCheck.value }, TokenStorage.getAuthentication());
+                                const body = { expression: placeholderCheck.value };
+                                if (item.jq) body.jq = item.jq;
+                                const result = await axios.post(`/api/v1/expression?noLog=${!!item.noLog}`, body, TokenStorage.getAuthentication());
                                 var restresult = result.data;
                                 if (restresult.status == "error") {
                                     resetField(item.name);
@@ -1499,13 +1530,11 @@ async function startDynamicFieldsLoop() {
                                 }
                                 if (restresult.status == "success") {
                                     if (item.type == "html") {
-                                        // Check for pending initialData
+                                        // HTML fields with expressions should re-evaluate, not use cached prefill values
                                         if (item.name in pendingInitialData.value) {
-                                            form.value[item.name] = pendingInitialData.value[item.name];
                                             delete pendingInitialData.value[item.name];
-                                        } else {
-                                            form.value[item.name] = restresult.data.output;
                                         }
+                                        form.value[item.name] = restresult.data.output;
                                     }
                                     if (item.type == "expression") {
                                         // Expression fields should re-evaluate, not use cached prefill values
@@ -1534,11 +1563,8 @@ async function startDynamicFieldsLoop() {
                                             resetField(item.name);
                                         }
                                     } else {
-                                        if (placeholderCheck.hasPlaceholders) {
-                                            setFieldStatus(item.name, "variable");
-                                        } else {
-                                            setFieldStatus(item.name, "fixed");
-                                        }
+                                        // Mark as fixed after successful evaluation - will re-evaluate when dependencies change via resetField
+                                        setFieldStatus(item.name, "fixed");
                                     }
                                 }
                             } catch (error) {
@@ -1552,7 +1578,7 @@ async function startDynamicFieldsLoop() {
                     } else {
                         setFieldToDefault(item.name);
                     }
-                } else if (item.query && flag == undefined) {
+                } else if (item.query && (flag == undefined)) {
                     hasUnevaluatedFields = true;
                     unevaluatedFields.value.push(item.name);
                     setFieldStatus(item.name, "running", false);
@@ -1560,7 +1586,9 @@ async function startDynamicFieldsLoop() {
 
                     if (placeholderCheck.value != undefined) {
                         try {
-                            const result = await axios.post(`/api/v1/query?noLog=${!!item.noLog}`, { query: placeholderCheck.value, config: item.dbConfig }, TokenStorage.getAuthentication());
+                            const body = { query: placeholderCheck.value, config: item.dbConfig };
+                            if (item.jq) body.jq = item.jq;
+                            const result = await axios.post(`/api/v1/query?noLog=${!!item.noLog}`, body, TokenStorage.getAuthentication());
                             var restresult = result.data;
                             if (restresult.data.error) {
                                 queryerrors.value[item.name] = restresult.data.error;
@@ -1578,11 +1606,8 @@ async function startDynamicFieldsLoop() {
                                 if (item.type == "query" || item.type == "enum") queryresults.value[item.name] = restresult.data.output;
                                 else form.value[item.name] = restresult.data.output;
 
-                                if (placeholderCheck.hasPlaceholders) {
-                                    setFieldStatus(item.name, "variable");
-                                } else {
-                                    setFieldStatus(item.name, "fixed");
-                                }
+                                // Mark as fixed after successful evaluation - will re-evaluate when dependencies change via resetField
+                                setFieldStatus(item.name, "fixed");
                             }
                         } catch (err) {
                             try {
@@ -1888,7 +1913,7 @@ onUnmounted(() => {
                                         :isLoading="!['fixed', 'variable'].includes(dynamicFieldStatus[field.name]) && (field.expression != undefined || field.query != undefined)"
                                         :values="form[field.name] || []" @update:modelValue="evaluateDynamicFields(field.name)"
                                         @warning="addTableWarnings(field.name, ...arguments)" 
-                                        :errors="v$.form[field.name].$errors"
+                                        :errors="getErrorsToDisplay(field.name)"
                                         :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]"
                                     />
                                     <!-- expression raw data -->
@@ -1912,10 +1937,11 @@ onUnmounted(() => {
                                         :filterColumns="field.filterColumns || []"
                                         :previewColumn="field.previewColumn || ''"
                                         :valueColumn="field.valueColumn || ''"
-                                        @update:modelValue="evaluateDynamicFields(field.name)" 
+                                        @update:modelValue="evaluateDynamicFields(field.name)"
+                                        @blur="handleBlur(field.name)"
                                         :sticky="field.sticky || false"
                                         :horizontal="field.horizontal || false"
-                                        :errors="v$.form[field.name].$errors"
+                                        :errors="getErrorsToDisplay(field.name)"
                                         :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]" 
                                     />
                                     <!-- raw query data -->
@@ -1934,9 +1960,11 @@ onUnmounted(() => {
                                         :name="field.name"
                                         :hasError="v$.form[field.name].$invalid" 
                                         :dateType="field.dateType"
-                                        @update:modelValue="evaluateDynamicFields(field.name)" 
+                                        :convertToUtc="field.convertToUtc"
+                                        @update:modelValue="evaluateDynamicFields(field.name)"
+                                        @blur="handleBlur(field.name)"
                                         :placeholder="typeof fieldPlaceholders[field.name] === 'object' ? fieldPlaceholders[field.name].value : fieldPlaceholders[field.name]"
-                                        :errors="v$.form[field.name].$errors" 
+                                        :errors="getErrorsToDisplay(field.name)" 
                                         :values="field.values"
                                         :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]"
                                     />
@@ -1947,17 +1975,17 @@ onUnmounted(() => {
                                     :class="{ 'is-loading': (dynamicFieldStatus[field.name] == undefined || dynamicFieldStatus[field.name] == 'running') & !fieldOptions[field.name].editable }">
                                     <div v-if="!fieldOptions[field.name].viewable">
                                         <BsInputForForm v-if="fieldOptions[field.name].editable" :icon="field.icon"
-                                            type="text" @focus="preventFocus" :hasError="v$.form[field.name].$invalid"
+                                            type="text" @focus="preventFocus" @blur="handleBlur(field.name)" :hasError="v$.form[field.name].$invalid"
                                             v-model="v$.form[field.name].$model" :name="field.name"
                                             :required="field.required" @change="evaluateDynamicFields(field.name)"
-                                            :errors="v$.form[field.name].$errors"
+                                            :errors="getErrorsToDisplay(field.name)"
                                             :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]"
                                             />
                                         <BsInputForForm v-else @dblclick="setExpressionFieldViewable(field.name, true)"
                                             type="expression" :icon="field.icon"
                                             :hasError="v$.form[field.name].$invalid" cssClass="text-info"
                                             v-model="v$.form[field.name].$model" :name="field.name"
-                                            :isHtml="field.isHtml" :errors="v$.form[field.name].$errors"
+                                            :isHtml="field.isHtml" :errors="getErrorsToDisplay(field.name)"
                                             :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]"
                                              />
                                     </div>
@@ -1973,19 +2001,20 @@ onUnmounted(() => {
                                 <BsInputForForm
                                     v-if="['text', 'password', 'textarea', 'number', 'checkbox', 'radio'].includes(field.type)"
                                     @focus="preventFocus"
+                                    @blur="handleBlur(field.name)"
                                     @keydown="(field.keydown) ? evaluateDynamicFields(field.name) : null"
                                     @change="evaluateDynamicFields(field.name)" :hasError="v$.form[field.name].$invalid"
                                     v-model="v$.form[field.name].$model" :name="field.name" v-bind="field.attrs"
                                     :required="field.required" :type="field.type" :icon="field.icon"
                                     :readonly="field.hide" :placeholder="typeof fieldPlaceholders[field.name] === 'object' ? fieldPlaceholders[field.name].value : fieldPlaceholders[field.name]" :isSwitch="field.switch"
-                                    :errors="v$.form[field.name].$errors" :values="field.values"
+                                    :errors="getErrorsToDisplay(field.name)" :values="field.values"
                                     :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]" />
 
                                 <!-- TYPE = FILE -->
                                 <BsInputForForm v-if="field.type == 'file'" :accept="(field.accept || []).join(',')"
                                     :type="field.type" @change="handleFiles" :hasError="v$.form[field.name].$invalid"
                                     :name="field.name" :required="field.required" :icon="field.icon"
-                                    :errors="v$.form[field.name].$errors" :progress="fileProgress[field.name]" 
+                                    :errors="getErrorsToDisplay(field.name)" :progress="fileProgress[field.name]" 
                                     :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]" 
                                 />
                             </div>
