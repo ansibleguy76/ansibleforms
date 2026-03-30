@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.1.4] - 2026-03-30
+
 ### Added
 
 -   Error border on expression fields
@@ -1009,7 +1011,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/6.1.3...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/6.1.4...HEAD
+
+[6.1.4]: https://github.com/ansibleguy76/ansibleforms/compare/6.1.3...6.1.4
 
 [6.1.3]: https://github.com/ansibleguy76/ansibleforms/compare/6.1.2...6.1.3
 
