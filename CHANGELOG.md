@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Approval stuck (#413)
 -   multistep status (#413)
 -   job relaunch response (#422)
+-   see full job info with showAllJobLogs option (#426)
 
 ### Changed
 

@@ -1221,8 +1221,18 @@ function evaluateDynamicFields(fieldname) {
             // set all variable fields blank and re-evaluate
             if (!fieldOptions.value[item].editable) {
                 // Skip reset for protected fields (prefilled or manually edited)
+                // UNLESS the field has a default with placeholders that needs re-evaluation
                 if (protectedFields.value[item]) {
-                    return;
+                    // Check if this field has a default value with placeholders
+                    const fieldDef = props.currentForm.fields.find(f => f.name === item);
+                    const hasPlaceholderInDefault = fieldDef?.default && 
+                                                   typeof fieldDef.default === 'string' && 
+                                                   /\$\(([^)]+)\)/.test(fieldDef.default);
+                    
+                    // If the default has placeholders, allow reset to re-evaluate the default
+                    if (!hasPlaceholderInDefault) {
+                        return;
+                    }
                 }
                 // all dependent fields we reset, so they can be re-evaluated
                 resetField(item)
