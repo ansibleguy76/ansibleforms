@@ -290,7 +290,7 @@ User.checkLdap = function (username, password) {
           options.ldapOpts.tlsOptions.cert = ldapConfig.cert;
         }
         if (ldapConfig.ca_bundle != "") {
-          options.ldapOpts.tlsOptions.ca = ldapConfig.ldapTlsCa;
+          options.ldapOpts.tlsOptions.ca = ldapConfig.ca_bundle;
         }
         options.ldapOpts.tlsOptions.rejectUnauthorized = !(ldapConfig.ignore_certs == 1);
         logger.info("use tls : " + (ldapConfig.enable_tls == 1));
