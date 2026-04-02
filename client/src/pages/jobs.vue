@@ -630,7 +630,7 @@
                         <sup><span class="badge rounded-pill" :class="Helpers.getColorClassByStatus(job.status,'text-bg')">{{ job.status}}</span></sup>
                     </h3>
                     <BsButton
-                        v-if="store.profile.options?.showExtravars"
+                        v-if="store.profile.options?.showExtraVars"
                         cssClass="btn-sm me-2 fw-normal"
                         cssClassToggle="btn-sm me-2 fw-normal"
                         icon="eye"
