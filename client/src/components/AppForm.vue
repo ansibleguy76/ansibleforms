@@ -47,7 +47,7 @@ const route = useRoute();
 const store = useAppStore();
 
 // define
-const emit = defineEmits(["update:status", "change", "submit", "abort"]);
+const emit = defineEmits(["update:status", "change", "submit-action", "abort"]);
 
 const form = defineModel()
 
@@ -125,6 +125,35 @@ const containerSize = ref({
 });          // width of container
 
 const containerRef = useTemplateRef("containerRef");
+
+// Define submit dropdown actions
+const submitActions = [
+    {
+        key: 'schedule',
+        label: 'Schedule (Recurring)',
+        icon: 'calendar-plus',
+        roleOption: 'allowScheduledJobs'
+    },
+    {
+        key: 'run-later',
+        label: 'Run Later (One-time)',
+        icon: 'clock',
+        roleOption: 'allowPlannedJobs',
+        divider: true
+    },
+    {
+        key: 'store',
+        label: 'Store',
+        icon: 'file-export',
+        roleOption: 'allowStoredJobs'
+    },
+    {
+        key: 'load',
+        label: 'Load Stored',
+        icon: 'file-import',
+        roleOption: 'allowStoredJobs'
+    }
+];
 
 // COMPUTED
 //----------------------------------------------------------------
@@ -1261,6 +1290,16 @@ function validateForm() {
     }
 }
 
+// handle submit dropdown actions - just emit to parent
+function handleSubmitAction(actionKey) {
+    // Validate form before allowing actions
+    if (!validateForm()) {
+        return;
+    }
+    
+    emit('submit-action', { action: actionKey, visibility: visibility.value });
+}
+
 // initiate the defaults
 function initForm() {
     pretasksFinished.value = false;
@@ -2035,9 +2074,14 @@ onUnmounted(() => {
             </div>
         </template>
         <div class="d-grid my-3" v-if="status == ''">
-            <button type="button" class="btn text-white btn-primary" @click="status = 'initializing'">
-                <FaIcon :icon="submitIcon"></FaIcon><span class="ms-3">{{ submitLabel }}</span>
-            </button>
+            <BsDropdownButton 
+                :icon="submitIcon"
+                :label="submitLabel"
+                colorClass="primary"
+                :actions="submitActions"
+                @click="handleSubmitAction('submit')"
+                @action="handleSubmitAction"
+            />
         </div>
     </div>
 
@@ -2047,6 +2091,7 @@ onUnmounted(() => {
         <h2>Loading...</h2>
         <div class="alert alert-info">The form is not ready...</div>
     </div>
+
 </template>
 <style scoped lang="scss">
 .limit-height {

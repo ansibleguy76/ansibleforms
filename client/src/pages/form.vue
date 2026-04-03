@@ -47,6 +47,17 @@ const fileProgress = ref({}); // holds the progress of file uploads
 const status = ref(""); // status of form
 const initialFormData = ref({}); // holds initial data for pre-filling the form
 
+// Schedule off-canvas state
+const showScheduleOffcanvas = ref(false);
+const scheduleAction = ref('schedule'); // 'schedule' or 'run-later'
+const scheduleForm = ref({
+    name: '',
+    one_time_run: false,
+    cron: '',
+    run_at: null
+});
+const scheduleSubmitting = ref(false);
+
 /******************************** */
 // computed
 /******************************** */
@@ -198,6 +209,10 @@ async function reloadForm(reset = true) {
 
 function toggleShowExtraVars() {
   showExtraVars.value = !showExtraVars.value;
+  // Generate JSON immediately when opening extravars panel to avoid delay
+  if (showExtraVars.value) {
+    generateJsonOutput();
+  }
 }
 
 // do action after form submit
@@ -513,6 +528,117 @@ function resetResult() {
   job.value = {};
 }
 
+// Handle submit action from AppForm component
+function handleSubmitAction({ action, visibility: formVisibility }) {
+  visibility.value = formVisibility;
+  
+  switch(action) {
+    case 'submit':
+      // Main submit action - trigger form submission
+      status.value = 'initializing';
+      submitForm({ visibility: formVisibility });
+      break;
+    case 'schedule':
+      openScheduleOffcanvas('schedule');
+      break;
+    case 'run-later':
+      openScheduleOffcanvas('run-later');
+      break;
+    case 'store':
+      toast.info('Store functionality coming soon');
+      break;
+    case 'load':
+      toast.info('Load functionality coming soon');
+      break;
+  }
+}
+
+// Open schedule off-canvas
+function openScheduleOffcanvas(action = 'schedule') {
+  scheduleAction.value = action;
+  
+  // Reset schedule form with appropriate defaults
+  if (action === 'schedule') {
+    scheduleForm.value = {
+      name: '',
+      one_time_run: false,
+      cron: '0 0 * * *', // Default: daily at midnight
+      run_at: null
+    };
+  } else { // run-later
+    scheduleForm.value = {
+      name: '',
+      one_time_run: true,
+      cron: '',
+      run_at: null
+    };
+  }
+  
+  showScheduleOffcanvas.value = true;
+}
+
+// Close schedule off-canvas
+function closeScheduleOffcanvas() {
+  showScheduleOffcanvas.value = false;
+  scheduleSubmitting.value = false;
+}
+
+// Create schedule via API
+async function createSchedule() {
+  // Simple validation
+  if (!scheduleForm.value.name) {
+    toast.warning('Name is required');
+    return;
+  }
+  
+  // Ensure type is set based on action
+  scheduleForm.value.one_time_run = scheduleAction.value === 'run-later';
+  
+  if (!scheduleForm.value.one_time_run && !scheduleForm.value.cron) {
+    toast.warning('Cron expression is required');
+    return;
+  }
+  
+  if (scheduleForm.value.one_time_run && !scheduleForm.value.run_at) {
+    toast.warning('Run at date/time is required');
+    return;
+  }
+  
+  scheduleSubmitting.value = true;
+  
+  try {
+    // Use the existing formdata which is already modelled by generateJsonOutput
+    generateJsonOutput();
+    
+    const scheduleData = {
+      name: scheduleForm.value.name,
+      one_time_run: scheduleForm.value.one_time_run,
+      form: currentForm.value.name,
+      extra_vars: YAML.stringify(formdata.value)
+    };
+    
+    // Add type-specific fields
+    if (!scheduleForm.value.one_time_run) {
+      scheduleData.cron = scheduleForm.value.cron;
+    } else {
+      scheduleData.run_at = scheduleForm.value.run_at;
+    }
+    
+    await axios.post('/api/v2/schedule', scheduleData, TokenStorage.getAuthentication());
+    
+    const successMessage = scheduleAction.value === 'schedule' 
+      ? `Schedule "${scheduleForm.value.name}" created successfully`
+      : `Job "${scheduleForm.value.name}" scheduled successfully`;
+    toast.success(successMessage);
+    closeScheduleOffcanvas();
+  } catch (error) {
+    console.error('Error creating schedule:', error);
+    toast.error(error.response?.data?.message || 'Failed to create schedule');
+  } finally {
+    scheduleSubmitting.value = false;
+  }
+}
+
 // trigger a job abort
 async function abortJob(id) {
   toast.warning("Aborting job " + id);
@@ -772,7 +898,7 @@ onBeforeUnmount(() => {
             <AppForm :key="key" @change="formChanged" :currentForm="currentForm"
               :constants="constants" :showExtraVars="showExtraVars" :fileProgress="fileProgress" 
               :initialData="initialFormData" v-model="form"
-              v-model:status="status" @submit="submitForm">
+              v-model:status="status" @submit-action="handleSubmitAction">
               <!-- TOOL BAR BUTTONS -->
               <template #toolbarbuttons>
                 <!-- DEBUG BUTTONS -->
@@ -890,6 +1016,62 @@ onBeforeUnmount(() => {
       </div>
     </main>
   </div>
+  
+  <!-- SCHEDULE OFF-CANVAS -->
+  <BsOffCanvas 
+    :show="showScheduleOffcanvas" 
+    :title="scheduleAction === 'schedule' ? 'Create Schedule' : 'Run Later'"
+    :icon="scheduleAction === 'schedule' ? 'calendar-plus' : 'clock'"
+    @close="closeScheduleOffcanvas">
+    <template #default>
+      <div class="mb-3">
+        <label class="form-label">Name <span class="text-danger">*</span></label>
+        <input 
+          type="text" 
+          class="form-control" 
+          v-model="scheduleForm.name"
+          :placeholder="scheduleAction === 'schedule' ? 'e.g., Daily Backup' : 'e.g., Maintenance Window'"
+          :disabled="scheduleSubmitting"
+        />
+        <small class="form-text text-muted">A descriptive name for this {{ scheduleAction === 'schedule' ? 'schedule' : 'job' }}</small>
+      </div>
+      
+      <div class="mb-3" v-if="scheduleAction === 'schedule'">
+        <label class="form-label">Cron Expression <span class="text-danger">*</span></label>
+        <input 
+          type="text" 
+          class="form-control font-monospace" 
+          v-model="scheduleForm.cron"
+          placeholder="0 0 * * *"
+          :disabled="scheduleSubmitting"
+        />
+        <small class="form-text text-muted">
+          Examples:<br>
+          <code>0 0 * * *</code> - Daily at midnight<br>
+          <code>0 */6 * * *</code> - Every 6 hours<br>
+          <code>0 9 * * 1-5</code> - Weekdays at 9am
+        </small>
+      </div>
+      
+      <div class="mb-3" v-if="scheduleAction === 'run-later'">
+        <label class="form-label">Run At <span class="text-danger">*</span></label>
+        <VueDatePicker 
+          v-model="scheduleForm.run_at"
+          :disabled="scheduleSubmitting"
+        />
+        <small class="form-text text-muted">Select the date and time to run this job once</small>
+      </div>
+    </template>
+    <template #actions>
+      <button 
+        class="btn btn-primary" 
+        @click="createSchedule"
+        :disabled="scheduleSubmitting">
+        <FaIcon :icon="scheduleSubmitting ? 'spinner' : 'save'" :spin="scheduleSubmitting" />
+        <span class="ms-2">{{ scheduleSubmitting ? 'Creating...' : (scheduleAction === 'schedule' ? 'Create Schedule' : 'Schedule Job') }}</span>
+      </button>
+    </template>
+  </BsOffCanvas>
 </template>
 <style scoped lang="scss">
 *:has(.loader) {
