@@ -49,6 +49,7 @@ import configRoutes from "./routes/config.routes.js";
 import datasourceSchemaRoutes from "./routes/datasourceSchema.routes.js";
 import datasourceRoutes from "./routes/datasource.routes.js";
 import scheduleRoutes from "./routes/schedule.routes.js";
+import storedJobsRoutes from "./routes/stored-jobs.routes.js";
 import appRoutes from "./routes/app.routes.js";
 import awxRoutesv2 from "./routes/awx.routes.v2.js";
 import backupRoutes from "./routes/backup.routes.js";
@@ -175,6 +176,7 @@ const load = async (app) => {
   app.use(`/api/v1/datasource/schema`, cors(), authobj, Middleware.checkSettingsMiddleware, datasourceSchemaRoutes);
   app.use(`/api/v1/datasource`, cors(), authobj, Middleware.checkSettingsMiddleware, datasourceRoutes);
   app.use(`/api/v2/schedule`, cors(), authobj, Middleware.checkScheduledJobsMiddleware, scheduleRoutes);
+  app.use(`/api/v2/stored-jobs`, cors(), authobj, Middleware.checkStoredJobsMiddleware, storedJobsRoutes);
 
   // backup/restore/list routes
   app.use(`/api/v2/backup`, cors(), authobj, backupRoutes);

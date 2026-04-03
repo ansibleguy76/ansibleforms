@@ -58,6 +58,20 @@ const scheduleForm = ref({
 });
 const scheduleSubmitting = ref(false);
 
+// Store off-canvas state
+const showStoreOffcanvas = ref(false);
+const storeForm = ref({
+    name: '',
+    description: '',
+    expires_at: null
+});
+const storeSubmitting = ref(false);
+
+// Load off-canvas state
+const showLoadOffcanvas = ref(false);
+const storedJobs = ref([]);
+const loadSubmitting = ref(false);
+
 /******************************** */
 // computed
 /******************************** */
@@ -270,6 +284,30 @@ function formChanged(formObjectData) {
   generateJsonOutput();
 }
 
+// Get filtered raw form data (excludes constants, passwords, system fields)
+function getFilteredRawFormData() {
+  const rawFormData = {};
+  currentForm.value.fields.forEach((field) => {
+    const fieldName = field.name;
+    
+    // Skip if field value not in form
+    if (!(fieldName in form.value)) return;
+    
+    // Skip constants (loaded from config, not user input)
+    if (field.type === 'constant') return;
+    
+    // Skip password fields for security
+    if (field.type === 'password') return;
+    
+    // Skip system fields
+    if (fieldName === 'server' || fieldName === 'database' || fieldName === 'metadata') return;
+    
+    // Include this field
+    rawFormData[fieldName] = form.value[fieldName];
+  });
+  return rawFormData;
+}
+
 // generate the form json output
 function generateJsonOutput(filedata = {}) {
   var fd = {};
@@ -443,22 +481,7 @@ async function submitForm(formObjectData) {
   }
   postdata.formName = currentForm.value.name;
   // Store raw form data for potential re-use (exclude sensitive/irrelevant fields)
-  postdata.rawFormData = {};
-  currentForm.value.fields.forEach((field) => {
-    const fieldName = field.name;
-    
-    // Skip if field value not in form
-    if (!(fieldName in form.value)) return;
-    
-    // Skip constants (loaded from config, not user input)
-    if (field.type === 'constant') return;
-    
-    // Skip password fields for security
-    if (field.type === 'password') return;
-    
-    // Include this field
-    postdata.rawFormData[fieldName] = form.value[fieldName];
-  });
+  postdata.rawFormData = getFilteredRawFormData();
   console.log('Submitting with rawFormData:', Object.keys(postdata.rawFormData));
   postdata.credentials = {};
   currentForm.value.fields
@@ -545,10 +568,7 @@ function handleSubmitAction({ action, visibility: formVisibility }) {
       openScheduleOffcanvas('run-later');
       break;
     case 'store':
-      toast.info('Store functionality coming soon');
-      break;
-    case 'load':
-      toast.info('Load functionality coming soon');
+      openStoreOffcanvas();
       break;
   }
 }
@@ -636,6 +656,105 @@ async function createSchedule() {
     toast.error(error.response?.data?.message || 'Failed to create schedule');
   } finally {
     scheduleSubmitting.value = false;
+  }
+}
+
+// Store off-canvas functions
+function openStoreOffcanvas() {
+  // Reset store form
+  storeForm.value = {
+    name: '',
+    description: '',
+    expires_at: null
+  };
+  
+  showStoreOffcanvas.value = true;
+}
+
+function closeStoreOffcanvas() {
+  showStoreOffcanvas.value = false;
+  storeSubmitting.value = false;
+}
+
+async function createStoredJob() {
+  // Simple validation
+  if (!storeForm.value.name) {
+    toast.warning('Name is required');
+    return;
+  }
+  
+  storeSubmitting.value = true;
+  
+  try {
+    const storedJobData = {
+      name: storeForm.value.name,
+      description: storeForm.value.description || '',
+      form_name: currentForm.value.name,
+      form_data: JSON.stringify(getFilteredRawFormData()), // Store filtered raw form data
+      expires_at: storeForm.value.expires_at || null
+    };
+    
+    await axios.post('/api/v2/stored-jobs', storedJobData, TokenStorage.getAuthentication());
+    
+    toast.success(`Form data saved as "${storeForm.value.name}"`);
+    closeStoreOffcanvas();
+  } catch (error) {
+    console.error('Error storing job:', error);
+    if (error.response?.status === 409) {
+      toast.error('A saved form with this name already exists');
+    } else {
+      toast.error(error.response?.data?.message || 'Failed to save form data');
+    }
+  } finally {
+    storeSubmitting.value = false;
+  }
+}
+
+// Load off-canvas functions
+async function openLoadOffcanvas() {
+  showLoadOffcanvas.value = true;
+  loadSubmitting.value = true;
+  
+  try {
+    const response = await axios.get(
+      `/api/v2/stored-jobs?form_name=${currentForm.value.name}`, 
+      TokenStorage.getAuthentication()
+    );
+    storedJobs.value = response.data.records || [];
+    console.log('Loaded stored jobs:', storedJobs.value);
+  } catch (error) {
+    console.error('Error fetching stored jobs:', error);
+    toast.error('Failed to load saved forms');
+    storedJobs.value = [];
+  } finally {
+    loadSubmitting.value = false;
+  }
+}
+
+function closeLoadOffcanvas() {
+  showLoadOffcanvas.value = false;
+}
+
+async function loadStoredJob(storedJob) {
+  try {
+    loadSubmitting.value = true;
+    
+    // Parse the stored form data and set it as initialFormData
+    const parsedData = JSON.parse(storedJob.form_data);
+    initialFormData.value = parsedData;
+    
+    // Close offcanvas
+    closeLoadOffcanvas();
+    
+    // Force form re-render with new initialData by incrementing key
+    key.value++;
+    
+    toast.success(`Loaded "${storedJob.name}"`);
+  } catch (error) {
+    console.error('Error loading stored job:', error);
+    toast.error('Failed to load form data');
+  } finally {
+    loadSubmitting.value = false;
   }
 }
 
@@ -909,6 +1028,9 @@ onBeforeUnmount(() => {
                 <BsButton cssClass="btn-sm me-3 fw-normal" icon="redo" @click="reloadForm">
                   Reload this form
                 </BsButton>
+                <BsButton v-if="store.profile.options?.allowStoredJobs" cssClass="btn-sm me-3 fw-normal" icon="file-import" @click="openLoadOffcanvas">
+                  Load from Store
+                </BsButton>
 
                 <!-- enable verbose logging -->
                 <BsInputCheckboxRaw v-if="store.profile.options?.allowVerboseMode" v-model="enableVerbose" :label="'verbose'" v-show="!hideForm"
@@ -1070,6 +1192,95 @@ onBeforeUnmount(() => {
         <FaIcon :icon="scheduleSubmitting ? 'spinner' : 'save'" :spin="scheduleSubmitting" />
         <span class="ms-2">{{ scheduleSubmitting ? 'Creating...' : (scheduleAction === 'schedule' ? 'Create Schedule' : 'Schedule Job') }}</span>
       </button>
+    </template>
+  </BsOffCanvas>
+
+  <!-- STORE OFF-CANVAS -->
+  <BsOffCanvas 
+    :show="showStoreOffcanvas" 
+    title="Save Form Data"
+    icon="file-export"
+    @close="closeStoreOffcanvas">
+    <template #default>
+      <div class="mb-3">
+        <label class="form-label">Name <span class="text-danger">*</span></label>
+        <input 
+          type="text" 
+          class="form-control" 
+          v-model="storeForm.name"
+          placeholder="e.g., Production Config"
+          :disabled="storeSubmitting"
+        />
+        <small class="form-text text-muted">A unique name for this saved form</small>
+      </div>
+      
+      <div class="mb-3">
+        <label class="form-label">Description</label>
+        <textarea 
+          class="form-control" 
+          rows="3"
+          v-model="storeForm.description"
+          placeholder="Optional description"
+          :disabled="storeSubmitting"
+        />
+      </div>
+      
+      <div class="mb-3">
+        <label class="form-label">Expires At (Optional)</label>
+        <VueDatePicker 
+          v-model="storeForm.expires_at"
+          :disabled="storeSubmitting"
+        />
+        <small class="form-text text-muted">Leave blank to never expire</small>
+      </div>
+    </template>
+    <template #actions>
+      <button 
+        class="btn btn-primary" 
+        @click="createStoredJob"
+        :disabled="storeSubmitting">
+        <FaIcon :icon="storeSubmitting ? 'spinner' : 'save'" :spin="storeSubmitting" />
+        <span class="ms-2">{{ storeSubmitting ? 'Saving...' : 'Save' }}</span>
+      </button>
+    </template>
+  </BsOffCanvas>
+
+  <!-- LOAD OFF-CANVAS -->
+  <BsOffCanvas 
+    :show="showLoadOffcanvas" 
+    title="Load Saved Form"
+    icon="file-import"
+    @close="closeLoadOffcanvas">
+    <template #default>
+      <div v-if="loadSubmitting" class="text-center py-4">
+        <FaIcon icon="spinner" spin size="2x" />
+        <p class="mt-2">Loading saved forms...</p>
+      </div>
+      
+      <div v-else-if="storedJobs.length === 0" class="text-center py-4 text-muted">
+        <FaIcon icon="inbox" size="3x" class="mb-3" />
+        <p>No saved forms found</p>
+      </div>
+      
+      <div v-else class="list-group">
+        <a 
+          v-for="job in storedJobs" 
+          :key="job.id"
+          href="#"
+          class="list-group-item list-group-item-action"
+          @click.prevent="loadStoredJob(job)">
+          <div class="d-flex w-100 justify-content-between align-items-start">
+            <div>
+              <h6 class="mb-1">{{ job.name }}</h6>
+              <p v-if="job.description" class="mb-1 small text-muted">{{ job.description }}</p>
+              <small class="text-muted">
+                Created: {{ new Date(job.created_at).toLocaleString() }}
+                <span v-if="job.expires_at"> • Expires: {{ new Date(job.expires_at).toLocaleString() }}</span>
+              </small>
+            </div>
+          </div>
+        </a>
+      </div>
     </template>
   </BsOffCanvas>
 </template>

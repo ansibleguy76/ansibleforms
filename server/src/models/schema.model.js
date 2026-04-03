@@ -408,6 +408,12 @@ async function patchVersion6(messages, success, failed) {
   // Add run_at column to schedule table (6.2.0)
   // This stores the datetime for one-time scheduled jobs
   await checkPromise(addColumn("schedule", "run_at", "datetime", true, "NULL"), messages, success, failed);
+  
+  // Create stored_jobs table (6.2.0)
+  // This allows users to save and load form data
+  buffer = fs.readFileSync(`${__dirname}/../db/create_stored_jobs_table.sql`);
+  sql = buffer.toString();
+  await checkPromise(addTable("stored_jobs", sql), messages, success, failed);
 }
 
 // PATCHING : Patch All

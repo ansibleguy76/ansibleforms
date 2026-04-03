@@ -142,6 +142,20 @@ const crudConfigs = {
     ],
     allowCache: true,
     cacheTTL: 3600
+  },
+  stored_jobs: {
+    table: 'AnsibleForms.stored_jobs',
+    fields: [
+      { name: 'id', isKey: true },
+      { name: 'name', required: true },
+      { name: 'description' },
+      { name: 'form_name', required: true },
+      { name: 'username', required: true },
+      { name: 'form_data', required: true },
+      { name: 'created_at', isDatetime: true },
+      { name: 'expires_at', isDatetime: true }
+    ],
+    allowCache: false
   }
 };
 

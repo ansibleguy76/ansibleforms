@@ -371,6 +371,29 @@ const init = async function(){
 
   // Initial call to start the process
   setTimeout(checkSchedules,10000)
+
+  // Cleanup expired stored jobs daily at 3 AM
+  logger.info("Initializing stored jobs cleanup");
+  async function cleanupExpiredStoredJobs() {
+    try {
+      const result = await mysql.do(
+        "DELETE FROM AnsibleForms.stored_jobs WHERE expires_at IS NOT NULL AND expires_at < NOW()",
+        undefined,
+        true
+      );
+      if (result.affectedRows > 0) {
+        logger.info(`Cleaned up ${result.affectedRows} expired stored job(s)`);
+      }
+    } catch (e) {
+      logger.error("Failed to cleanup expired stored jobs:", e);
+    } finally {
+      // Run cleanup daily (24 hours)
+      setTimeout(cleanupExpiredStoredJobs, 24 * 60 * 60 * 1000);
+    }
+  }
+
+  // Initial call to start the cleanup process (run after 1 minute)
+  setTimeout(cleanupExpiredStoredJobs, 60000);
 }
 
 export default init

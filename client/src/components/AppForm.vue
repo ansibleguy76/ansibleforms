@@ -146,12 +146,6 @@ const submitActions = [
         label: 'Store',
         icon: 'file-export',
         roleOption: 'allowStoredJobs'
-    },
-    {
-        key: 'load',
-        label: 'Load Stored',
-        icon: 'file-import',
-        roleOption: 'allowStoredJobs'
     }
 ];
 

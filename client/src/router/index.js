@@ -28,6 +28,7 @@ import repositories from "@/pages/admin/repositories.vue"
 import dataSchemas from "@/pages/admin/dataSchemas.vue"
 import datasources from "@/pages/admin/datasources.vue"
 import schedules from "@/pages/admin/schedules.vue"
+import storedJobs from "@/pages/admin/stored-jobs.vue"
 import settings from "@/pages/admin/settings.vue"
 import ssh from "@/pages/admin/ssh.vue"
 import users from "@/pages/admin/users.vue"
@@ -112,6 +113,7 @@ const routes = [
   { path: '/admin/dataSchemas', name: "/admin/dataSchemas", component: dataSchemas, beforeEnter: checkSettings },
   { path: '/admin/datasources', name: "/admin/datasources", component: datasources, beforeEnter: checkSettings },
   { path: '/admin/schedules', name: "/admin/schedules", component: schedules, beforeEnter: checkSettings },
+  { path: '/admin/stored-jobs', name: "/admin/stored-jobs", component: storedJobs, beforeEnter: checkSettings },
   { path: '/admin/settings', name: "/admin/settings", component: settings, beforeEnter: checkSettings },
   { path: '/admin/ssh', name: "/admin/ssh", component: ssh, beforeEnter: checkSettings },
   { path: '/admin/users', name: "/admin/users", component: users, beforeEnter: checkSettings },

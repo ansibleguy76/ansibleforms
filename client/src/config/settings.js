@@ -187,6 +187,27 @@ export default {
             { key: "last_run", label: "Last Run", type: "datetime", noInput: true },
             { key: "extra_vars", type: "editor", label: "Extra vars (YAML)", hidden: true, lang:"yaml", style:"width: 100%;height: 40vh;font-size:1rem", help: "No form to provide the extra vars, you must add them here." }
         ]
+    },
+    stored_jobs:{
+        type: "stored-jobs",
+        label: "Stored Job",
+        labelPlural: "Stored Jobs",
+        icon: "floppy-disk",
+        reloadSeconds: false, // Disable auto-reload
+        actions: [
+            { name: "preview", icon: "eye", title: "View Stored Job Details", color: "preview" },
+            { name: "delete", icon: "trash", title: "Delete Stored Job", color: "delete" }
+        ],
+        fields: [
+            { key: "id", hidden: true, noInput: true },
+            { key: "name", icon: "heading", label: "Name" },
+            { key: "description", icon: "info-circle", label: "Description" },
+            { key: "form_name", icon: "play", label: "Form" },
+            { key: "username", icon: "user", label: "User (type/name)" },
+            { key: "form_data", hidden: true },
+            { key: "created_at", icon: "calendar", label: "Created At", type: "datetime" },
+            { key: "expires_at", icon: "calendar", label: "Expires At", type: "datetime" }
+        ]
     },            
     knownhosts:{
         type: 'knownhosts',

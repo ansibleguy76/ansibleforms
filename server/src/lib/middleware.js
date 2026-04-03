@@ -77,4 +77,16 @@ Middleware.checkScheduledJobsMiddleware = (req, res, next) => {
   }
 }
 
+Middleware.checkStoredJobsMiddleware = (req, res, next) => {
+  try {
+    if (!req.user.user.options.allowStoredJobs) {
+      res.status(401).json(new restResult("error", "No access", null, "You do not have permission to manage stored jobs"));
+    } else {
+      next();
+    }
+  } catch (e) {
+    res.status(401).json(new restResult("error", "No access", null, "You do not have permission to manage stored jobs"));
+  }
+}
+
 export default Middleware
