@@ -174,7 +174,7 @@ const load = async (app) => {
   app.use(`/api/v2/knownhosts`, cors(), authobj, Middleware.checkSettingsMiddleware, knownhostsRoutes);
   app.use(`/api/v1/datasource/schema`, cors(), authobj, Middleware.checkSettingsMiddleware, datasourceSchemaRoutes);
   app.use(`/api/v1/datasource`, cors(), authobj, Middleware.checkSettingsMiddleware, datasourceRoutes);
-  app.use(`/api/v2/schedule`, cors(), authobj, Middleware.checkSettingsMiddleware, scheduleRoutes);
+  app.use(`/api/v2/schedule`, cors(), authobj, Middleware.checkScheduledJobsMiddleware, scheduleRoutes);
 
   // backup/restore/list routes
   app.use(`/api/v2/backup`, cors(), authobj, backupRoutes);

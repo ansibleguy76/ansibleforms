@@ -171,14 +171,16 @@ export default {
         actions: [
             { name: "edit", icon: "pencil", title: "Edit Schedule", color: "edit" },
             { name: "delete", icon: "trash", title: "Delete Schedule", color: "delete" },
-            { name: "trigger", icon: "play", title: "Import Schedule", color: "refresh" },
+            { name: "trigger", icon: "play", title: "Run Schedule", color: "refresh" },
             { name: "preview", icon: "info-circle", title: "Show output", color: "preview" }
         ],
         fields: [
             { key: "id", hidden: true, noInput: true },
             { key: "output", hidden: true, noInput: true },
             { key: "name", icon: "heading", label: "Name", placeholder: "Schedule name", readonly: false, required: true, help: "Alphanumeric with dash and underscore" },
-            { key: "cron", icon: "stopwatch", label: "Cron Schedule", help: "Minute Hour DayOfMonth Month DayOfWeek - For example : */5 * L * 1,3L", hidden: true, required: true, regex: { expression: "^[0-9-,*/]+ [0-9-,*/]+ [0-9-,*/L]+ [0-9-,*/]+ [0-9-,*/L]+$", description: "Must be a valid cron schedule"} },
+            { key: "one_time_run", label: "One Time Run", type: "checkbox", placeholder: "Run once instead of recurring", required: false, hidden: true },
+            { key: "cron", icon: "stopwatch", label: "Cron Schedule", help: "Minute Hour DayOfMonth Month DayOfWeek - For example : */5 * L * 1,3L", required: false, regex: { expression: "^[0-9-,*/]+ [0-9-,*/]+ [0-9-,*/L]+ [0-9-,*/]+ [0-9-,*/L]+$", description: "Must be a valid cron schedule"}, negateDependency: true, dependency: "one_time_run" },
+            { key: "run_at", icon: "calendar", label: "Run At", type: "datetime", convertToUtc: true, help: "The date and time to run this job once", required: false, dependency: "one_time_run" },
             { key: "form", icon: "play", label: "Form", placeholder: "Form name", readonly: false, required: true, hidden: true},
             { key: "status", label: "Status", noInput: true },
             { key: "state", label: "State", noInput: true },
@@ -222,7 +224,7 @@ export default {
             { key: 'port', label: 'Port', type:"number", sortable: true, required: false, filterable: false, icon: "arrows-alt-v" },
             { key: 'description', label: 'Description', sortable: false, hidden: true, required: true, filterable: false, icon: "info-circle" },
             {
-                key: 'db_type', label: 'Database Type', type: 'select',valueKey:"id", labelKey:"name" , sortable: false, hidden: true, required: true, parent:'databases',
+                key: 'db_type', label: 'Database Type', type: 'select', sortable: false, hidden: true, required: true, parent:'databases',
                 values: [
                     { value: 'mysql',    label: 'MySQL'},
                     { value: 'mssql',    label: 'MSSQL' },
