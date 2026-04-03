@@ -702,6 +702,9 @@
       - allowBackupOps: The user can perform database operations, such as backup and restore.
       - allowVerboseMode: The user can enable verbose mode on ansible forms.
       - allowJobRelaunch: The user can relaunch jobs with pre-filled form data from previous submissions.
+      - allowScheduledJobs: The user can create and manage scheduled jobs (recurring cron or one-time). (Added in 6.2.0)
+      - allowStoredJobs: The user can store and load job data for later use. (Added in 6.2.0)
+      - allowPlannedJobs: The user can schedule jobs to run at a specific time. (Added in 6.2.0)
         
       When options are not set, the admin role will have all options.  
       When options are set on the public role, they will have the lowest precedence and can be used as default options for all roles.  
@@ -894,6 +897,11 @@
           - showAllJobLogs: The user can see all job logs (not only his own) (Added in 5.0.9)
           - enableLogin: The user can login.  
           - allowBackupOps: The user can perform database operations, such as backup and restore.
+          - allowVerboseMode: The user can enable verbose mode on ansible forms.
+          - allowJobRelaunch: The user can relaunch jobs with pre-filled form data from previous submissions.
+          - allowScheduledJobs: The user can create and manage scheduled jobs (recurring cron or one-time). (Added in 6.2.0)
+          - allowStoredJobs: The user can store and load job data for later use. (Added in 6.2.0)
+          - allowPlannedJobs: The user can schedule jobs to run at a specific time. (Added in 6.2.0)
 
           When options are not set, the admin role will have all options.  
           When options are set on the public role, they will have the lowest precedence and can be used as default options for all roles.  

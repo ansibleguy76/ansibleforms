@@ -182,6 +182,9 @@ User.getRolesAndOptions = async function (groups, user) {
     if (options.showArtifacts === undefined) options.showArtifacts = true;
     if (options.allowJobRelaunch === undefined) options.allowJobRelaunch = isAdmin;
     if (options.showAllJobLogs === undefined) options.showAllJobLogs = isAdmin;
+    if (options.allowScheduledJobs === undefined) options.allowScheduledJobs = isAdmin;
+    if (options.allowStoredJobs === undefined) options.allowStoredJobs = true;
+    if (options.allowPlannedJobs === undefined) options.allowPlannedJobs = true;
 
     return result;
   } catch (e) {

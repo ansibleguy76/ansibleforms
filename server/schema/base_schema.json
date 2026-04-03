@@ -58,6 +58,9 @@
               "showAllJobLogs": { "type": "boolean" },
               "allowBackupOps": { "type": "boolean" },
               "allowVerboseMode": { "type": "boolean" },
+              "allowScheduledJobs": { "type": "boolean" },
+              "allowStoredJobs": { "type": "boolean" },
+              "allowPlannedJobs": { "type": "boolean" },
               "enableLogin": { "type": "boolean" }
             },
             "additionalProperties": true
@@ -98,6 +101,9 @@
               "showAllJobLogs": { "type": "boolean" },
               "allowBackupOps": { "type": "boolean" },
               "allowVerboseMode": { "type": "boolean" },
+              "allowScheduledJobs": { "type": "boolean" },
+              "allowStoredJobs": { "type": "boolean" },
+              "allowPlannedJobs": { "type": "boolean" },
               "enableLogin": { "type": "boolean" }
             },
             "additionalProperties": true
