@@ -2,7 +2,9 @@ USE `AnsibleForms`;
 CREATE TABLE `schedule` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `name` VARCHAR(255) NOT NULL,
+  `one_time_run` TINYINT(4) DEFAULT 0,
   `cron` VARCHAR(50) DEFAULT NULL,
+  `run_at` DATETIME DEFAULT NULL,
   `form` VARCHAR(255) DEFAULT NULL,
   `status` VARCHAR(50) DEFAULT NULL,
   `last_run` DATETIME DEFAULT NULL,

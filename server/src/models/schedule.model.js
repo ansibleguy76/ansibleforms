@@ -90,6 +90,12 @@ class Schedule extends CrudModel {
       status = "failed";
     }
     await super.update(this.modelName, { output, status, state: 'idle', last_run: currentDate }, id);
+    
+    // Auto-delete one-time schedules after execution
+    if(schedule.one_time_run === 1){
+      logger.info(`Deleting one-time schedule '${schedule.name}' after execution`);
+      await super.delete(this.modelName, id);
+    }
   }
 }
 

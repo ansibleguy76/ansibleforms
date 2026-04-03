@@ -42,6 +42,9 @@ class CrudModel {
           value = crypto.encrypt(value);
         } else if (field.isBoolean) {
           value = value ? 1 : 0;
+        } else if (field.isDatetime && value && typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/)) {
+          // Convert ISO datetime to MySQL format (YYYY-MM-DD HH:MM:SS)
+          value = value.replace('T', ' ').replace(/\.\d{3}Z$/, '');
         }
         result[field.name] = value;
       }else{

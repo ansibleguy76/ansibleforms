@@ -400,6 +400,14 @@ async function patchVersion6(messages, success, failed) {
   // Add host column to jobs table (6.1.4)
   // This stores the hostname/container ID to prevent cross-instance process kills
   await checkPromise(addColumn("jobs", "host", "varchar(255)", true, "NULL"), messages, success, failed);
+  
+  // Add one_time_run column to schedule table (6.2.0)
+  // This allows schedules to be either recurring (false) or one-time (true)
+  await checkPromise(addColumn("schedule", "one_time_run", "tinyint(4)", true, "0"), messages, success, failed);
+  
+  // Add run_at column to schedule table (6.2.0)
+  // This stores the datetime for one-time scheduled jobs
+  await checkPromise(addColumn("schedule", "run_at", "datetime", true, "NULL"), messages, success, failed);
 }
 
 // PATCHING : Patch All

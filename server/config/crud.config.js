@@ -129,13 +129,15 @@ const crudConfigs = {
     fields: [
       { name: 'id', isKey: true },
       { name: 'name', isNaturalKey: true, required: true },
+      { name: 'one_time_run', isBoolean: true },
+      { name: 'cron' },
+      { name: 'run_at', isDatetime: true },
       { name: 'extra_vars' },
       { name: 'form' },
-      { name: 'cron' },
       { name: 'output' },
       { name: 'status' },
       { name: 'state' },
-      { name: 'last_run' },
+      { name: 'last_run', isDatetime: true },
       { name: 'queue_id' }
     ],
     allowCache: true,
