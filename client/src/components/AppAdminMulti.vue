@@ -63,7 +63,7 @@
 
     // flatten
     const isFlat = props.settings.flat || false;
-    const reloadSeconds = (props.settings.reloadSeconds || 60)*1000;
+    const reloadSeconds = props.settings.reloadSeconds === false ? false : (props.settings.reloadSeconds || 60)*1000;
     const removeDoubles = props.settings.removeDoubles || false;
     const idKey = props.settings.idKey || 'id';
     const objectType = props.settings.type;
@@ -504,10 +504,12 @@
         loading.value = true
         await loadItems();
         loading.value = false;
-        // set interval await
-        interval.value = setInterval(async () => {
-            await loadItems(false);
-        }, reloadSeconds);
+        // set interval await (only if reloadSeconds is not explicitly disabled)
+        if (reloadSeconds !== false) {
+            interval.value = setInterval(async () => {
+                await loadItems(false);
+            }, reloadSeconds);
+        }
     });
 
 
