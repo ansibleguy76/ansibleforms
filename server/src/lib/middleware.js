@@ -65,4 +65,16 @@ Middleware.checkBackupMiddleware = (req, res, next) => {
   }
 }
 
+Middleware.checkScheduledJobsMiddleware = (req, res, next) => {
+  try {
+    if (!req.user.user.options.allowScheduledJobs) {
+      res.status(401).json(new restResult("error", "No access", null, "You do not have permission to manage scheduled jobs"));
+    } else {
+      next();
+    }
+  } catch (e) {
+    res.status(401).json(new restResult("error", "No access", null, "You do not have permission to manage scheduled jobs"));
+  }
+}
+
 export default Middleware
