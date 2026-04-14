@@ -6,8 +6,8 @@ const router = express.Router();
 router.get('/', settingsController.find);
 // Set settings
 router.put('/', settingsController.update);
-// Load forms from yaml
-router.put('/importFormsFileFromYaml', settingsController.importFormsFileFromYaml);
+// Import config (from config.yaml or forms.yaml)
+router.put('/importConfig', settingsController.importConfig);
 // Test settings
 router.post('/mailcheck/', settingsController.mailcheck);
 

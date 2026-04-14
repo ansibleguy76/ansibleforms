@@ -37,7 +37,7 @@ async function loadEnvironmentVariables() {
     toast.error(err.message);  }
 }
 function importYamlFile() {
-  axios.put(`/api/v1/settings/importFormsFileFromYaml`,{},TokenStorage.getAuthentication())
+  axios.put(`/api/v1/settings/importConfig`,{},TokenStorage.getAuthentication())
     .then((result)=>{
       if(result.data.status=="error"){
           toast.error(result.data.message + ", " + result.data.data.error);
