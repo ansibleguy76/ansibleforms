@@ -21,10 +21,8 @@ var State = {
   async loadVersion() {
     const store = useAppStore();
     try {
-      const result = await axios.get(`/api/v1/version`);
-      if (result.data.status == "success") {
-        store.version = result.data.message;
-      }
+      const result = await axios.get(`/api/v2/version`);
+      store.version = result.data;
     } catch (err) {
       // silent fail
     }

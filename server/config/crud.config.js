@@ -99,6 +99,29 @@ const crudConfigs = {
     allowCache: true,
     cacheTTL: 3600
   },
+  repositories: {
+    table: 'AnsibleForms.repositories',
+    fields: [
+      { name: 'id', isKey: true },
+      { name: 'name', isNaturalKey: true, required: true },
+      { name: 'uri', required: true },
+      { name: 'branch' },
+      { name: 'user' },
+      { name: 'password', isEncrypted: true, setDefault: true },
+      { name: 'description' },
+      { name: 'use_for_config', isBoolean: true },
+      { name: 'use_for_forms', isBoolean: true },
+      { name: 'use_for_playbooks', isBoolean: true },
+      { name: 'use_for_vars_files', isBoolean: true },
+      { name: 'rebase_on_start', isBoolean: true },
+      { name: 'cron' },
+      { name: 'status' },
+      { name: 'output' },
+      { name: 'head' }
+    ],
+    allowCache: true,
+    cacheTTL: 3600
+  },
   ldap: {
     table: 'AnsibleForms.ldap',
     fields: [

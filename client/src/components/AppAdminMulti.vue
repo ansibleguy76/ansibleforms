@@ -342,9 +342,14 @@
         if (!invalid) {
             try {
                 const result = await axios.put(`/api/v${props.apiVersion}/${objectType}/${itemId.value}`, item.value, TokenStorage.getAuthentication())
-                if (result.data.status == "error") {
-                    toast.error(result.data.message + ", " + result.data.data.error);
-                } else {
+                if (props.apiVersion == 1) {
+                    if (result.data.status == "error") {
+                        toast.error(result.data.message + ", " + result.data.data.error);
+                    } else {
+                        toast.success(objectTitle('', 'is updated'));
+                        loadItems();
+                    }
+                } else if (props.apiVersion == 2) {
                     toast.success(objectTitle('', 'is updated'));
                     loadItems();
                 }
@@ -363,9 +368,15 @@
             }else{
                 result = await axios.delete(`/api/v${props.apiVersion}/${objectType}/${itemId.value}`, TokenStorage.getAuthentication())
             }
-            if (result.data.status == "error") {
-                toast.error(result.data.message + ", " + result.data.data.error);
-            } else {
+            if (props.apiVersion == 1) {
+                if (result.data.status == "error") {
+                    toast.error(result.data.message + ", " + result.data.data.error);
+                } else {
+                    toast.success(objectTitle('', 'is deleted'));
+                    unselectItem();
+                    loadItems();
+                }
+            } else if (props.apiVersion == 2) {
                 toast.success(objectTitle('', 'is deleted'));
                 unselectItem();
                 loadItems();
@@ -439,7 +450,7 @@
     // Load config (AnsibleForms URL) on mount
     onMounted(async () => {
         try {
-            const result = await axios.get(`/api/v1/settings`, TokenStorage.getAuthentication());
+            const result = await axios.get(`/api/v2/settings`, TokenStorage.getAuthentication());
             config.value = result.data.data.output;
         } catch (err) {
             // fallback: leave config empty

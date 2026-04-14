@@ -27,27 +27,30 @@ const authenticated = ref(false);
 async function loadEnvironmentVariables() {
   try {
     var result = await axios.get(
-      `/api/v1/config/env`,
+      `/api/v2/config/env`,
       TokenStorage.getAuthentication()
     );
-    env.value = result.data.data.output;
+    env.value = result.data;
 
   } catch (err) {
     console.log("Error loading environment variables");
-    toast.error(err.message);  }
+    const error = err.response?.data?.error || err.message;
+    const details = err.response?.data?.details;
+    const errorMessage = details ? `${error}: ${details}` : error;
+    toast.error(errorMessage);
+  }
 }
-function importYamlFile() {
-  axios.put(`/api/v1/settings/importConfig`,{},TokenStorage.getAuthentication())
-    .then((result)=>{
-      if(result.data.status=="error"){
-          toast.error(result.data.message + ", " + result.data.data.error);
-        }else{
-          toast.success(result.data.message);
-          adminSingle.value.loadItem();
-        }
-    }),function(err){
-      toast.error(err.message);
-    };
+async function importYamlFile() {
+  try {
+    const result = await axios.put(`/api/v2/settings/importConfig`,{},TokenStorage.getAuthentication());
+    toast.success(result.data.message);
+    adminSingle.value.loadItem();
+  } catch(err) {
+    const error = err.response?.data?.error || err.message;
+    const details = err.response?.data?.details;
+    const errorMessage = details ? `${error}: ${details}` : error;
+    toast.error(errorMessage);
+  }
 }
 
 onMounted(async () => {
@@ -66,6 +69,7 @@ onMounted(async () => {
       <AppAdminSingle
         v-if="authenticated"
         ref="adminSingle"
+        :apiVersion="2"
         :settings="settings"
         @import="importYamlFile()"
       >

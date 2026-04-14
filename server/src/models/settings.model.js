@@ -13,8 +13,13 @@ var Settings=function(settings){
     this.mail_port = settings.mail_port;
     this.mail_secure = (settings.mail_secure)?1:0;
     this.mail_username = settings.mail_username;
-    if(settings.mail_password){
-      this.mail_password = crypto.encrypt(settings.mail_password);
+    // Handle mail_password: undefined = don't update, "" = clear password, "value" = encrypt
+    if(settings.mail_password !== undefined){
+      if(settings.mail_password === ""){
+        this.mail_password = "";
+      } else {
+        this.mail_password = crypto.encrypt(settings.mail_password);
+      }
     }
     this.mail_from = settings.mail_from;
     this.url = settings.url;
@@ -24,7 +29,7 @@ Settings.update = function (record) {
     logger.info(`Updating settings`)
     return mysql.do("UPDATE AnsibleForms.`settings` set ?", record)
 };
-Settings.importFormsFileFromYaml = async function(){
+Settings.importConfig = async function(){
   // Repository.getConfigPath() already handles config.yaml → forms.yaml fallback
   var configPath = (await Repository.getConfigPath()) || appConfig.configPath
   

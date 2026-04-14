@@ -1,66 +1,82 @@
 'use strict';
 import logger from "../lib/logger.js";
 import mysql from "./db.model.js";
-import crypto from "../lib/crypto.js";
 import helpers from "../lib/common.js";
 import Repo from "./repo.model.js";
 import path from "path";
 import fs from "fs";
 import appConfig from "../../config/app.config.js";
+import CrudModel from './crud.model.js';
 
+class Repository extends CrudModel {
+  static modelName = 'repositories';
 
-//repository object create
-var Repository=function(repository){
-    this.name = repository.name;
-    this.uri = repository.uri;
-    this.cron = repository.cron;
-    this.user = repository.user;
-    this.branch = repository.branch;
-    if (repository.use_for_config !== undefined) this.use_for_config = (repository.use_for_config)?1:0;
-    if (repository.use_for_forms !== undefined) this.use_for_forms = (repository.use_for_forms)?1:0;
-    if (repository.rebase_on_start !== undefined) this.rebase_on_start = (repository.rebase_on_start)?1:0;    
-    if (repository.use_for_playbooks !== undefined) this.use_for_playbooks = (repository.use_for_playbooks)?1:0;
-    if (repository.use_for_vars_files !== undefined) this.use_for_vars_files = (repository.use_for_vars_files)?1:0;
-    // Only encrypt password if it's provided and not empty
-    if (repository.password) {
-        this.password = crypto.encrypt(repository.password);
-    }
-    if (repository.description !== undefined) this.description = repository.description;
-};
+  // Override create to trigger clone after creation
+  static async create(data) {
+    logger.info(`Creating repository ${data.name}`);
+    const insertId = await super.create(this.modelName, data);
+    Repository.clone(data.name); // Don't await - clone happens in background
+    return insertId;
+  }
 
-Repository.create = function (record) {
-    logger.info(`Creating repository ${record.name}`)
-    return mysql.do("INSERT INTO AnsibleForms.`repositories` set ?", record)
-    .then((res)=>{ 
-      Repository.clone(record.name)
-      return res.insertId 
-    })
-};
-Repository.update = function (record,name) {
-    logger.info(`Updating repository ${name}`)
-    // Remove undefined/null/empty fields to prevent wiping data
-    helpers.removeEmptyFields(record);
-    return mysql.do("UPDATE AnsibleForms.`repositories` set ? WHERE name=?", [record,name])
-    .then((res)=>{
-      return res
-    })
-};
-Repository.reset = async function(name){
-  logger.info(`Resetting repository ${name}`)
-  await Repo.delete(name) // delete the repo on disk
-  await Repository.clone(name) // recreate the repo
-}
-Repository.delete = function(name){
-    logger.info(`Deleting repository ${name}`)
-    Repo.delete(name)
-    return mysql.do("DELETE FROM AnsibleForms.`repositories` WHERE name = ?", [name])
-};
-Repository.findAll = function () {
-    // logger.info("Finding all repositories")
-    return mysql.do("SELECT id,name,branch,user,uri,description,use_for_config,use_for_forms,use_for_playbooks,use_for_vars_files,cron,status,output,head,rebase_on_start FROM AnsibleForms.`repositories`;", undefined, true)
-};
+  // Override update to handle password properly
+  static async update(data, name) {
+    logger.info(`Updating repository ${name}`);
+    // Get current record to find id
+    const repo = await this.findByName(name);
+    if (!repo) throw new Error(`No repository found with name ${name}`);
+    
+    // Remove empty fields
+    helpers.removeEmptyFields(data);
+    
+    return super.update(this.modelName, data, repo.id);
+  }
 
-Repository.getPrivateUri = function(repo){
+  // Override delete to cleanup disk
+  static async delete(name) {
+    logger.info(`Deleting repository ${name}`);
+    const repo = await this.findByName(name);
+    if (!repo) throw new Error(`No repository found with name ${name}`);
+    
+    Repo.delete(name);
+    const res = await mysql.do("DELETE FROM AnsibleForms.`repositories` WHERE name = ?", [name]);
+    return res;
+  }
+
+  static async findById(id) {
+    const repo = await super.findById(this.modelName, id);
+    // Mask password for API
+    if (repo && repo.password) repo.password = '**********';
+    return repo;
+  }
+
+  static async findAll() {
+    const repos = await super.findAll(this.modelName);
+    // Mask passwords before returning to API
+    repos.forEach(r => {
+      if (r.password) r.password = '**********';
+    });
+    return repos;
+  }
+
+  static async findByName(name) {
+    logger.debug(`Finding repository ${name}`);
+    const repo = await super.findByName(this.modelName, name);
+    if (!repo) throw new Error("No repository found with name " + name);
+    // Don't mask password here - internal use needs real password
+    return repo;
+  }
+
+  // Override reset to use CRUD pattern
+  static async reset(name) {
+    logger.info(`Resetting repository ${name}`);
+    await Repo.delete(name); // delete the repo on disk
+    await Repository.clone(name); // recreate the repo
+  }
+
+  // Helper methods (not CRUD operations)
+
+  static getPrivateUri(repo) {
   if(repo.uri){
     if(repo.user && repo.password){
       var httpRegex = new RegExp("^http[s]{0,1}:\/\/[^@]+$", "g");
@@ -74,47 +90,27 @@ Repository.getPrivateUri = function(repo){
         return repo.uri
       }
   
-    }else{
+    } else {
       return repo.uri
     }
 
-  }else{
+  } else {
     logger.warning("No uri defined")
     return ""
   }
 }
-Repository.findByName = async function (name) {
-  logger.debug(`Finding repository ${name}`)
 
-  var result
-  var sql = "SELECT * FROM AnsibleForms.`repositories` WHERE name = ?"
-  var res = await mysql.do(sql,name)
-  if(res.length>0){
-    result = res[0]
-    if(result.password){
-      try{
-        result.password = crypto.decrypt(result.password)
-      }catch(e){
-        logger.error("Failed to decrypt the password.  Did the secretkey change ?")
-        result.password = ""
-      }
+  static async hasFormsRepository() {
+    try {
+      var repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_forms")
+      return (repositories.length > 0)
+    } catch (e) {
+      logger.error("Failed to check repositories : ", e)
+      return false
     }
-    return JSON.parse(JSON.stringify(result))      
-  }else{
-    throw new Error("No repository found with name " + name)
   }
 
-};
-Repository.hasFormsRepository = async function(){
-  try{
-    var repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_forms")
-    return (repositories.length>0)
-  }catch(e){
-    logger.error("Failed to check repositories : ",e)
-    return false
-  }
-}
-Repository.getConfigPath = async function(){
+  static async getConfigPath() {
   try{
     // First check for repositories with use_for_config enabled (new way since 6.1.0)
     var configRepositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_config")
@@ -187,9 +183,10 @@ Repository.getConfigPath = async function(){
     logger.warning(`Multiple config files found in repositories: ${configList}. Using first one: ${foundConfigs[0].repo}/${path.basename(foundConfigs[0].path)}`)
   }
   
-  return foundConfigs[0].path
-}
-Repository.getFormsFolderPath = async function(){
+    return foundConfigs[0].path
+  }
+
+  static async getFormsFolderPath() {
   try{
     var repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_forms")
   }catch(e){
@@ -217,10 +214,11 @@ Repository.getFormsFolderPath = async function(){
     }
   })
   
-  logger.debug(`Found ${formsPaths.length} forms folder(s) from repositories: ${formsPaths.join(", ")}`)
-  return formsPaths
-}
-Repository.getAnsiblePath = async function(){
+    logger.debug(`Found ${formsPaths.length} forms folder(s) from repositories: ${formsPaths.join(", ")}`)
+    return formsPaths
+  }
+
+  static async getAnsiblePath() {
   try{
     var repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_playbooks")
     
@@ -245,11 +243,12 @@ Repository.getAnsiblePath = async function(){
       return repoPath
     }
   }catch(e){
-    logger.error("Failed to get ansible path : ",e)
-    return ""
+      logger.error("Failed to get ansible path : ", e)
+      return ""
+    }
   }
-}
-Repository.getVarsFilesPath = async function(){
+
+  static async getVarsFilesPath() {
   try{
     var repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_vars_files")
     
@@ -278,41 +277,44 @@ Repository.getVarsFilesPath = async function(){
     logger.error("Failed to get vars files path : ",e)
     return appConfig.varsFilesPath
   }
-}
-Repository.clone = async function(name){
-    var output,status,head
-    try{
-      await mysql.do("update AnsibleForms.`repositories` set status = ? where name = ?",["running",name])
+  }
+
+  static async clone(name) {
+    var output, status, head
+    try {
+      await mysql.do("update AnsibleForms.`repositories` set status = ? where name = ?", ["running", name])
       var repo = await Repository.findByName(name)
       var uri = Repository.getPrivateUri(repo)
       var branch = repo.branch || undefined
-      output = await Repo.clone(uri,name,branch)
-      status="success"
-    }catch(e){
+      output = await Repo.clone(uri, name, branch)
+      status = "success"
+    } catch (e) {
       output = e.message
-      status="failed"
+      status = "failed"
     }
-    await mysql.do("update AnsibleForms.`repositories` set output = ?,status = ? where name = ?",[output,status,name])
-    if(status=="success"){
+    await mysql.do("update AnsibleForms.`repositories` set output = ?,status = ? where name = ?", [output, status, name])
+    if (status == "success") {
       head = await Repo.info(name)
-      await mysql.do("update AnsibleForms.`repositories` set head = ? where name = ?",[head,name])
+      await mysql.do("update AnsibleForms.`repositories` set head = ? where name = ?", [head, name])
     }
-}
-Repository.pull = async function(name){
-  var output,status,head
-  try{
-    await mysql.do("update AnsibleForms.`repositories` set status = ? where name = ?",["running",name])
-    output = await Repo.pull(name)
-    status="success"
-  }catch(e){
-    output = e.message
-    status="failed"
   }
-  await mysql.do("update AnsibleForms.`repositories` set output = ?,status = ? where name = ?",[output,status,name])
-  if(status=="success"){
-    head = await Repo.info(name)
-    await mysql.do("update AnsibleForms.`repositories` set head = ? where name = ?",[head,name])
+
+  static async pull(name) {
+    var output, status, head
+    try {
+      await mysql.do("update AnsibleForms.`repositories` set status = ? where name = ?", ["running", name])
+      output = await Repo.pull(name)
+      status = "success"
+    } catch (e) {
+      output = e.message
+      status = "failed"
+    }
+    await mysql.do("update AnsibleForms.`repositories` set output = ?,status = ? where name = ?", [output, status, name])
+    if (status == "success") {
+      head = await Repo.info(name)
+      await mysql.do("update AnsibleForms.`repositories` set head = ? where name = ?", [head, name])
+    }
   }
 }
 
-export default  Repository;
+export default Repository;

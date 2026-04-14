@@ -1561,56 +1561,48 @@ async function startDynamicFieldsLoop() {
                             try {
                                 const body = { expression: placeholderCheck.value };
                                 if (item.jq) body.jq = item.jq;
-                                const result = await axios.post(`/api/v1/expression?noLog=${!!item.noLog}`, body, TokenStorage.getAuthentication());
+                                const result = await axios.post(`/api/v2/expression?noLog=${!!item.noLog}`, body, TokenStorage.getAuthentication());
                                 var restresult = result.data;
-                                if (restresult.status == "error") {
-                                    resetField(item.name);
+                                delete queryerrors.value[item.name];
+                                if (item.type == "html") {
+                                    // HTML fields with expressions should re-evaluate, not use cached prefill values
+                                    if (item.name in pendingInitialData.value) {
+                                        delete pendingInitialData.value[item.name];
+                                    }
+                                    form.value[item.name] = restresult;
                                 }
-                                if (restresult.data.error) {
-                                    queryerrors.value[item.name] = restresult.data.error;
-                                } else {
-                                    delete queryerrors.value[item.name];
+                                if (item.type == "expression") {
+                                    // Expression fields should re-evaluate, not use cached prefill values
+                                    if (item.name in pendingInitialData.value) {
+                                        delete pendingInitialData.value[item.name];
+                                    }
+                                    form.value[item.name] = restresult;
                                 }
-                                if (restresult.status == "success") {
-                                    if (item.type == "html") {
-                                        // HTML fields with expressions should re-evaluate, not use cached prefill values
-                                        if (item.name in pendingInitialData.value) {
-                                            delete pendingInitialData.value[item.name];
-                                        }
-                                        form.value[item.name] = restresult.data.output;
+                                if (item.type == "enum") {
+                                    queryresults.value[item.name] = [].concat(restresult ?? []);
+                                    // Check if we have pending initialData for this enum field
+                                    if (item.name in pendingInitialData.value) {
+                                        form.value[item.name] = pendingInitialData.value[item.name];
+                                        protectedFields.value[item.name] = true; // Mark as protected from reset
+                                        setFieldStatus(item.name, "fixed"); // Mark as ready for dependent fields
+                                        delete pendingInitialData.value[item.name];
                                     }
-                                    if (item.type == "expression") {
-                                        // Expression fields should re-evaluate, not use cached prefill values
-                                        if (item.name in pendingInitialData.value) {
-                                            delete pendingInitialData.value[item.name];
-                                        }
-                                        form.value[item.name] = restresult.data.output;
-                                    }
-                                    if (item.type == "enum") {
-                                        queryresults.value[item.name] = [].concat(restresult.data.output ?? []);
-                                        // Check if we have pending initialData for this enum field
-                                        if (item.name in pendingInitialData.value) {
-                                            form.value[item.name] = pendingInitialData.value[item.name];
-                                            protectedFields.value[item.name] = true; // Mark as protected from reset
-                                            setFieldStatus(item.name, "fixed"); // Mark as ready for dependent fields
-                                            delete pendingInitialData.value[item.name];
-                                        }
-                                    }
-                                    if (item.type == "table" && !defaults.value[item.name]) form.value[item.name] = [].concat(restresult.data.output ?? []);
-                                    if (item.type == "table" && defaults.value[item.name]) form.value[item.name] = [].concat(defaults.value[item.name] ?? []);
+                                }
+                                if (item.type == "table" && !defaults.value[item.name]) form.value[item.name] = [].concat(restresult ?? []);
+                                if (item.type == "table" && defaults.value[item.name]) form.value[item.name] = [].concat(defaults.value[item.name] ?? []);
 
-                                    if (restresult.data.output == undefined && (defaults.value[item.name] != undefined)) {
-                                        if (item.type == "expression") {
-                                            setFieldToDefault(item.name);
-                                        } else {
-                                            resetField(item.name);
-                                        }
+                                if (restresult == undefined && (defaults.value[item.name] != undefined)) {
+                                    if (item.type == "expression") {
+                                        setFieldToDefault(item.name);
                                     } else {
-                                        // Mark as fixed after successful evaluation - will re-evaluate when dependencies change via resetField
-                                        setFieldStatus(item.name, "fixed");
+                                        resetField(item.name);
                                     }
+                                } else {
+                                    // Mark as fixed after successful evaluation - will re-evaluate when dependencies change via resetField
+                                    setFieldStatus(item.name, "fixed");
                                 }
                             } catch (error) {
+                                queryerrors.value[item.name] = error.toString();
                                 try {
                                     setFieldToDefault(item.name);
                                 } catch (err) {
@@ -1631,28 +1623,16 @@ async function startDynamicFieldsLoop() {
                         try {
                             const body = { query: placeholderCheck.value, config: item.dbConfig };
                             if (item.jq) body.jq = item.jq;
-                            const result = await axios.post(`/api/v1/query?noLog=${!!item.noLog}`, body, TokenStorage.getAuthentication());
+                            const result = await axios.post(`/api/v2/query?noLog=${!!item.noLog}`, body, TokenStorage.getAuthentication());
                             var restresult = result.data;
-                            if (restresult.data.error) {
-                                queryerrors.value[item.name] = restresult.data.error;
-                            } else {
-                                delete queryerrors.value[item.name];
-                            }
-                            if (restresult.status == "error") {
-                                if (item.type == "expression") {
-                                    setFieldToDefault(item.name);
-                                } else {
-                                    resetField(item.name);
-                                }
-                            }
-                            if (restresult.status == "success") {
-                                if (item.type == "query" || item.type == "enum") queryresults.value[item.name] = restresult.data.output;
-                                else form.value[item.name] = restresult.data.output;
+                            delete queryerrors.value[item.name];
+                            if (item.type == "query" || item.type == "enum") queryresults.value[item.name] = restresult;
+                            else form.value[item.name] = restresult;
 
-                                // Mark as fixed after successful evaluation - will re-evaluate when dependencies change via resetField
-                                setFieldStatus(item.name, "fixed");
-                            }
+                            // Mark as fixed after successful evaluation - will re-evaluate when dependencies change via resetField
+                            setFieldStatus(item.name, "fixed");
                         } catch (err) {
+                            queryerrors.value[item.name] = err.toString();
                             try {
                                 if (item.type == "expression") {
                                     setFieldToDefault(item.name);

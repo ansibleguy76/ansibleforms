@@ -32,14 +32,13 @@ async function test_connection(mail) {
         return;
     }
     try {
-        const result = await axios.post(`/api/v1/settings/mailcheck`, {...mail,...test.value}, TokenStorage.getAuthentication());
-        if (result.data.status == "error") {
-            toast.error(result.data.message + ", " + result.data.data.error);
-        } else {
-            toast.success(result.data.message);
-        }
+        const result = await axios.post(`/api/v2/settings/mailcheck`, {...mail,...test.value}, TokenStorage.getAuthentication());
+        toast.success(result.data.message);
     } catch (err) {
-        toast.error(err.message);
+        const error = err.response?.data?.error || err.message;
+        const details = err.response?.data?.details;
+        const errorMessage = details ? `${error}: ${details}` : error;
+        toast.error(errorMessage);
     }
 
 }
@@ -57,7 +56,7 @@ onMounted(async () => {
     <div class="flex-shrink-0">
         <main class="d-flex flex-nowrap container-xxl">
             <AppSidebar />
-            <AppAdminSingle v-if="authenticated" :settings="settings.mailSettings" @test="test_connection">
+            <AppAdminSingle v-if="authenticated" :apiVersion="2" :settings="settings.mailSettings" @test="test_connection">
                 <BsInput :isFloating="false" v-model="test.to" icon="envelope" type="email" label="Mail To" help="For testing only" :required="true" :hasError="$v.test.to.$invalid && $v.test.to.$dirty" :errors="$v.test.to.$errors" />
             </AppAdminSingle>   
         </main>

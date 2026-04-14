@@ -79,14 +79,13 @@ const init = async function(){
   try{
     var adminGroupName = "admins"
     var adminGroup = await Group.findByName(adminGroupName)
-    if(adminGroup.length==0){
+    if(!adminGroup){
       logger.warning(`Group ${adminGroupName} not found, creating it`)
-      adminGroup = {}
-      adminGroup.id = await Group.create(new Group({name:adminGroupName}))
+      const adminGroupId_new = await Group.create({name:adminGroupName})
+      adminGroupId = adminGroupId_new
     }else{
-      adminGroup = adminGroup[0]
+      adminGroupId = adminGroup.id
     }
-    adminGroupId = adminGroup.id
   }catch(err){
     logger.error("Failed to check/create admins group : " + err)
   }

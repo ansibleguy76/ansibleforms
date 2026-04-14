@@ -72,3 +72,34 @@
 .text-overlay-icon {
     color: var(--af-overlay-icon-color) !important;
 }
+
+// Placeholder styling for input fields
+[data-bs-theme=light] {
+  input::placeholder,
+  textarea::placeholder,
+  select::placeholder {
+    color: #adb5bd !important;
+    opacity: 0.5 !important;
+    font-style: italic;
+  }
+}
+
+[data-bs-theme=dark] {
+  input::placeholder,
+  textarea::placeholder,
+  select::placeholder {
+    color: #6c757d !important;
+    opacity: 0.5 !important;
+    font-style: italic;
+  }
+}
+
+[data-bs-theme=color] {
+  input::placeholder,
+  textarea::placeholder,
+  select::placeholder {
+    color: #adb5bd !important;
+    opacity: 0.5 !important;
+    font-style: italic;
+  }
+}

@@ -17,7 +17,7 @@ onMounted(async () => {
     <div class="flex-shrink-0">
         <main class="d-flex flex-nowrap container-xxl">
             <AppSidebar />
-            <AppAdminSingle v-if="authenticated" :settings="settings.ssh">
+            <AppAdminSingle v-if="authenticated" :apiVersion="2" :settings="settings.ssh">
             </AppAdminSingle>
         </main>
     </div>
