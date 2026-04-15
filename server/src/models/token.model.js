@@ -15,8 +15,12 @@ Token.store = function (username, username_type, refresh_token) {
 
 Token.delete = function (username, username_type, refresh_token) {
   logger.info(`Deleting token for user ${username} (${username_type}) - ${refresh_token}`);
-  Token.cleanup();
   return mysql.do("DELETE FROM AnsibleForms.`tokens` WHERE username=? AND username_type=? AND refresh_token=?", [username, username_type, refresh_token]);
+};
+
+Token.deleteAllForUser = function (username) {
+  logger.info(`Deleting all tokens for user ${username}`);
+  return mysql.do("DELETE FROM AnsibleForms.`tokens` WHERE username=?", [username]);
 };
 
 Token.cleanup = function () {

@@ -7,109 +7,75 @@ import Form from "./form.model.js";
 import yaml from "yaml";
 import mysql from "./db.model.js";
 import helpers from "../lib/common.js";
+import Token from "./token.model.js";
+import CrudModel from './crud.model.js';
 
-//user object create
-var User = function (user) {
-  this.username = user.username;
-  this.email = user.email;
-  this.password = user.password;
-  this.group_id = user.group_id;
-};
+class User extends CrudModel {
+  static modelName = 'users';
 
-
-
-User.create = function (record) {
-  return crypto
-    .hashPassword(record.password)
-    .then((hash) => {
-      record.password = hash;
-      if(!record.email){
-        record.email=''
-      }
-      logger.info(`Creating user ${record.username}`);
-      return mysql.do("INSERT INTO AnsibleForms.`users` set ?", record);
-    })
-    .then((res) => {
-      return res.insertId;
-    });
-};
-User.update = function (record, id) {
-  // Remove undefined/null/empty fields to prevent wiping data
-  helpers.removeEmptyFields(record);
-  
-  if (record.password) {
-    logger.info(`Updating user with password ${record.username ? record.username : id}`);
-    return crypto.hashPassword(record.password).then((hash) => {
-      record.password = hash;
-      return mysql.do("UPDATE AnsibleForms.`users` set ? WHERE id=?", [record, id]);
-    });
-  } else {
-    logger.info(`Updating user ${record.username ? record.username : id}`);
-    return mysql.do("UPDATE AnsibleForms.`users` set ? WHERE id=?", [record, id]);
+  // Override create to hash password
+  static async create(data) {
+    logger.info(`Creating user ${data.username}`);
+    // Hash password before storing
+    const hash = await crypto.hashPassword(data.password);
+    data.password = hash;
+    return super.create(this.modelName, data);
   }
-};
-User.delete = function (id) {
-  logger.info(`Deleting user ${id}`);
-  return mysql.do("DELETE FROM AnsibleForms.`users` WHERE id = ?", [id]);
-};
-User.findAll = function () {
-  logger.info("Finding all users");
-  return mysql.do("SELECT * FROM AnsibleForms.`users`;");
-};
-User.findById = function (id) {
-  logger.info(`Finding user ${id}`);
-  return mysql.do("SELECT * FROM AnsibleForms.`users` WHERE id=?;", id);
-};
-User.findByUsername = function (username) {
-  logger.info(`Finding user ${username}`);
-  return mysql.do("SELECT * FROM AnsibleForms.`users` WHERE username=?;", username);
-};
-User.authenticate = function (username, password) {
-  logger.info(`Checking password for user ${username}`);
-  var query = "SELECT users.*,GROUP_CONCAT(groups.name) `groups` FROM AnsibleForms.`users`,AnsibleForms.`groups` WHERE `users`.group_id=`groups`.id AND username=?;";
-  return mysql.do(query, username).then((res) => {
-    if (res.length > 0 && res[0].password) {
-      return crypto.checkPassword(password, res[0].password, res[0]);
-    } else {
-      throw `User ${username} not found`;
+
+  // Override update to conditionally hash password
+  static async update(data, id) {
+    logger.info(`Updating user ${data.username ? data.username : id}`);
+    // Remove empty fields
+    helpers.removeEmptyFields(data);
+    
+    // Hash password if provided
+    if (data.password) {
+      logger.info(`Updating user with password ${data.username ? data.username : id}`);
+      const hash = await crypto.hashPassword(data.password);
+      data.password = hash;
     }
-  });
-};
-User.storeToken = function (username, username_type, refresh_token) {
-  var record = {};
-  record.username = username;
-  record.username_type = username_type;
-  record.refresh_token = refresh_token;
-  logger.info(`Adding token for ${record.username} (${record.username_type})`);
-  return mysql.do("INSERT INTO AnsibleForms.`tokens` set ?", record);
-};
-User.deleteToken = function (username, username_type, refresh_token) {
-  logger.info(`Deleting token for user ${username} (${username_type}) - ${refresh_token}`);
-  User.cleanupTokens();
-  return mysql.do("DELETE FROM AnsibleForms.`tokens` WHERE username=? AND username_type=? AND refresh_token=?", [username, username_type, refresh_token]);
-};
-User.cleanupTokens = function () {
-  logger.info(`Deleting tokens older than a month`);
-  mysql
-    .do("DELETE FROM AnsibleForms.`tokens` WHERE timestamp < NOW() - INTERVAL 30 DAY")
-    .then(() => {
-      logger.notice("Cleanup tokens finished");
-    })
-    .catch((err) => {
-      logger.error("Cleanup tokens failed. " + err);
+    
+    return super.update(this.modelName, data, id);
+  }
+
+  // Override delete to cleanup tokens
+  static async delete(id) {
+    logger.info(`Deleting user ${id}`);
+    // Get user to find username (will throw NotFoundError if not exists)
+    const user = await super.findById(this.modelName, id);
+    // Delete all tokens for this user
+    await Token.deleteAllForUser(user.username);
+    return super.delete(this.modelName, id);
+  }
+
+  static async findAll() {
+    return super.findAll(this.modelName);
+  }
+
+  static async findById(id) {
+    return super.findById(this.modelName, id);
+  }
+
+  static async findByUsername(username) {
+    // username is the natural key
+    return super.findByName(this.modelName, username);
+  }
+
+  // Additional methods (not CRUD operations)
+
+  static authenticate(username, password) {
+    logger.info(`Checking password for user ${username}`);
+    var query = "SELECT users.*,GROUP_CONCAT(groups.name) `groups` FROM AnsibleForms.`users`,AnsibleForms.`groups` WHERE `users`.group_id=`groups`.id AND username=?;";
+    return mysql.do(query, username).then((res) => {
+      if (res.length > 0 && res[0].password) {
+        return crypto.checkPassword(password, res[0].password, res[0]);
+      } else {
+        throw `User ${username} not found`;
+      }
     });
-};
-User.checkToken = function (username, username_type, refresh_token) {
-  logger.info(`Checking token for user ${username} (${username_type})`);
-  return mysql.do("SELECT refresh_token FROM AnsibleForms.`tokens` WHERE username=? AND username_type=? AND refresh_token=? LIMIT 1", [username, username_type, refresh_token]).then((res) => {
-    if (res.length > 0) {
-      return "Refresh token is OK";
-    } else {
-      throw `User ${username} (${username_type}) not found`;
-    }
-  });
-};
-User.getRolesAndOptions = async function (groups, user) {
+  }
+
+  static async getRolesAndOptions(groups, user) {
   var result = {};
   var roles = [];
   var options = {};
@@ -195,8 +161,9 @@ User.getRolesAndOptions = async function (groups, user) {
     }
     return roles;
   }
-};
-User.getGroups = function (user, groupObj, ldapConfig = {}) {
+}
+
+static getGroups(user, groupObj, ldapConfig = {}) {
   var group = "";
   var groups = [];
 
@@ -232,8 +199,9 @@ User.getGroups = function (user, groupObj, ldapConfig = {}) {
   } else {
     return groups;
   }
-};
-User.checkLdap = function (username, password) {
+}
+
+static checkLdap(username, password) {
   return Ldap.find()
     .then((ldapConfig) => {
       if (ldapConfig.enable == 1) {
@@ -334,6 +302,7 @@ User.checkLdap = function (username, password) {
       logger.error("Error connecting to ldap : " + em);
       throw "Ldap : " + em;
     });
-};
+  }
+}
 
 export default User;

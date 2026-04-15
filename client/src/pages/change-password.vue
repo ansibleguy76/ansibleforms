@@ -24,7 +24,6 @@ const fields = [
     required: true,
     filterable: false,
     icon: "lock",
-    regex: { expression: "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\\$%\\^&\\*])", description: "Must contain at least one uppercase letter, one lowercase letter, one number, and one special character" },     
   },
 ];
 

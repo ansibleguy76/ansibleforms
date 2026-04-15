@@ -1,16 +1,17 @@
 'use strict';
 import User from '../../models/user.model.js';
 import RestResult from '../../models/restResult.model.v2.js';
+import Errors from '../../lib/errors.js';
 
 const findAllOr1 = async function(req, res) {
   try {
     if(req.query.username){
       const user = await User.findByUsername(req.query.username);
       // Mask password before returning to API
-      if (user && user.length > 0 && user[0].password) {
-        user[0].password = '**********';
+      if (user && user.password) {
+        user.password = '**********';
       }
-      res.json(RestResult.list(user));
+      res.json(RestResult.single(user));
     }else{
       const users = await User.findAll();
       // Mask passwords before returning to API
@@ -25,13 +26,12 @@ const findAllOr1 = async function(req, res) {
 };
 
 const create = async function(req, res) {
-    const new_user = new User(req.body);
     //handles null error
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
         res.status(400).json(RestResult.error('Please provide all required fields'));
     }else{
         try {
-          const user = await User.create(new_user);
+          const user = await User.create(req.body);
           res.json(RestResult.single(user));
         } catch(err) {
           res.status(500).json(RestResult.error(err.toString()));
@@ -42,25 +42,25 @@ const create = async function(req, res) {
 const findById = async function(req, res) {
     try {
       const user = await User.findById(req.params.id);
-      if(user.length>0){
-        // Mask password before returning to API
-        if (user[0].password) {
-          user[0].password = '**********';
-        }
-        res.json(RestResult.single(user[0]));
-      }else{
-        res.status(404).json(RestResult.error('User not found'));
+      // Mask password before returning to API
+      if (user && user.password) {
+        user.password = '**********';
       }
+      res.json(RestResult.single(user));
     } catch(err) {
-      res.status(500).json(RestResult.error(err.toString()));
+      if (err instanceof Errors.NotFoundError) {
+        res.status(404).json(RestResult.error('User not found'));
+      } else {
+        res.status(500).json(RestResult.error(err.toString()));
+      }
     }
 };
 
 const findByToken = async function(req, res) {
     try {
-      const user = await User.findById(req.user.user.username);
-      if(user.length>0){
-        res.json(RestResult.single(user[0].id));
+      const user = await User.findByUsername(req.user.user.username);
+      if(user){
+        res.json(RestResult.single(user.id));
       }else{
         res.status(404).json(RestResult.error('User not found'));
       }
@@ -76,7 +76,7 @@ const update = async function(req, res) {
         res.status(400).json(RestResult.error('Please provide all required fields'));
     }else{
         try {
-          await User.update(new User(req.body),req.params.id);
+          await User.update(req.body,req.params.id);
           res.json(RestResult.single(null));
         } catch(err) {
           res.status(500).json(RestResult.error(err.toString()));
@@ -93,7 +93,7 @@ const changePassword = async function(req, res) {
         res.status(400).json(RestResult.error('Please provide all required fields'));
     }else{
         try {
-          await User.update(new User(req.body),req.user.user.id);
+          await User.update(req.body,req.user.user.id);
           res.json(RestResult.single(null));
         } catch(err) {
           res.status(500).json(RestResult.error(err.toString()));

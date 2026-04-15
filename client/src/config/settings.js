@@ -100,8 +100,8 @@ export default {
             { key: 'client_id', label: 'Client ID', required: true, icon: 'key', dependency: 'provider', dependencyValues: ['azuread', 'oidc'], hidden: true },
             { key: 'issuer', label: 'Issuer', required: true, icon: 'globe', dependency: 'provider', dependencyValues: ['oidc'], hidden: true },
             { key: 'redirect_uri', label: 'Redirect URL', readonly: false, dependency: 'provider',dependencyValues: ['azuread', 'oidc'], defaultMap: {
-                  azuread: (config) => `${config.url}/api/v1/auth/azureadoauth2/callback`,
-                  oidc: (config) => `${config.url}/api/v1/auth/oidc/callback`
+                  azuread: (config) => `${config.url}/api/v2/auth/azureadoauth2/callback`,
+                  oidc: (config) => `${config.url}/api/v2/auth/oidc/callback`
                 }, hidden: true
             },
             { key: 'client_secret', label: 'Client Secret', type: 'password', required: true, icon: 'lock', hidden: true },

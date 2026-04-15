@@ -23,6 +23,19 @@ onMounted(async () => {
             <AppSidebar />
             <div class="d-flex flex-column w-100">
                 <AppAdminMulti v-if="authenticated" :apiVersion="2" :settings="settings.oauth2_providers" />
+                <div class="alert alert-warning m-3" role="alert">
+                    <h5 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> Important: Callback URL Change (v6.1.5+)</h5>
+                    <p class="mb-0">
+                        <strong>When editing existing OAuth2 providers</strong>, the callback URLs will be automatically updated to use the <strong>/v2</strong> API endpoints:
+                    </p>
+                    <ul class="mb-0 mt-2">
+                        <li><strong>Entra ID:</strong> <code>/api/v2/auth/azureadoauth2/callback</code></li>
+                        <li><strong>Open ID:</strong> <code>/api/v2/auth/oidc/callback</code></li>
+                    </ul>
+                    <p class="mb-0 mt-2">
+                        <strong>Action Required:</strong> After updating a provider entry, please update the allowed redirect URIs in your OAuth2 provider configuration to include these new callback URLs.
+                    </p>
+                </div>
                 <div class="accordion m-3" id="providerHelpAccordion">
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="headingEntraId">

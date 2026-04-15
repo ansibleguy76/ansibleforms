@@ -43,7 +43,7 @@ const refresh = async function(req, res) {
         await Token.store(username, username_type, newRefreshtoken);
         logger.info("Token is renewed and stored");
         
-        res.json(RestResult.success('Token refreshed', { token, refreshtoken: newRefreshtoken }));
+        res.json(RestResult.single({ token, refreshtoken: newRefreshtoken }));
         
     } catch(err) {
         logger.error("Error : ", err);

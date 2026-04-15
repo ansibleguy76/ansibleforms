@@ -99,6 +99,17 @@ const crudConfigs = {
     allowCache: true,
     cacheTTL: 3600
   },
+  users: {
+    table: 'AnsibleForms.users',
+    fields: [
+      { name: 'id', isKey: true },
+      { name: 'username', isNaturalKey: true, required: true },
+      { name: 'password', required: true }, // Special handling needed - async hashing
+      { name: 'email', setDefault: true }, // Default to empty string
+      { name: 'group_id', required: true }
+    ],
+    allowCache: false
+  },
   repositories: {
     table: 'AnsibleForms.repositories',
     fields: [

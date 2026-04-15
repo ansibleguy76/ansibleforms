@@ -19,13 +19,13 @@ var userType = store.profile?.type || "local"
 
 // For OIDC, get logout URL first before clearing tokens
 if (userType == "oidc") {
-  axios.get(`/api/v1/auth/logout`).then((res) => {
+  axios.get(`/api/v2/auth/logout`).then((res) => {
       // clear all authentication states AFTER getting logout URL
       TokenStorage.clear()
       State.refreshAuthenticated()
       State.loadProfile()
       
-      const logoutUrl = res?.data?.data?.output?.logoutUrl;
+      const logoutUrl = res?.data?.logoutUrl;
       if (logoutUrl) {
         // Go to Keycloak end-session endpoint
         location.replace(logoutUrl);

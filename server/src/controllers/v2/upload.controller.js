@@ -23,7 +23,7 @@ const upload = function(req, res, next) {
           return res.status(400).json(RestResult.error("file upload failed", err.toString()))
       } 
       logger.info(`Uploaded file ${req.file.originalname} as ${req.file.path}`)
-      return res.json(RestResult.success("file uploaded", req.file))
+      return res.json(RestResult.single(req.file))
   })    
 };
 

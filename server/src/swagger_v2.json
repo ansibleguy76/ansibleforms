@@ -532,6 +532,269 @@
         }
       }
     },
+    "/repository": {
+      "get": {
+        "tags": ["repository"],
+        "summary": "List all repositories",
+        "description": "Returns a list of all configured git repositories with masked passwords.",
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "Repositories retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": { "type": "integer" },
+                    "records": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer" },
+                          "name": { "type": "string" },
+                          "uri": { "type": "string" },
+                          "branch": { "type": "string" },
+                          "user": { "type": "string" },
+                          "password": { "type": "string", "example": "**********" },
+                          "description": { "type": "string" },
+                          "use_for_config": { "type": "boolean" },
+                          "use_for_forms": { "type": "boolean" },
+                          "use_for_playbooks": { "type": "boolean" },
+                          "use_for_vars_files": { "type": "boolean" },
+                          "rebase_on_start": { "type": "boolean" },
+                          "cron": { "type": "string" },
+                          "status": { "type": "string" },
+                          "output": { "type": "string" },
+                          "head": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": { "description": "Failed to find repositories" }
+        }
+      },
+      "post": {
+        "tags": ["repository"],
+        "summary": "Create new repository",
+        "description": "Creates a new git repository configuration and triggers clone in background.",
+        "security": [ { "bearerAuth": [] } ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "uri"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "uri": { "type": "string" },
+                  "branch": { "type": "string" },
+                  "user": { "type": "string" },
+                  "password": { "type": "string" },
+                  "description": { "type": "string" },
+                  "use_for_config": { "type": "boolean" },
+                  "use_for_forms": { "type": "boolean" },
+                  "use_for_playbooks": { "type": "boolean" },
+                  "use_for_vars_files": { "type": "boolean" },
+                  "rebase_on_start": { "type": "boolean" },
+                  "cron": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Repository created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Missing required fields" },
+          "500": { "description": "Failed to create repository" }
+        }
+      }
+    },
+    "/repository/{name}": {
+      "get": {
+        "tags": ["repository"],
+        "summary": "Get repository by name",
+        "description": "Returns a single repository configuration with masked password.",
+        "security": [ { "bearerAuth": [] } ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Repository found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "integer" },
+                    "name": { "type": "string" },
+                    "uri": { "type": "string" },
+                    "branch": { "type": "string" },
+                    "user": { "type": "string" },
+                    "password": { "type": "string", "example": "**********" },
+                    "description": { "type": "string" },
+                    "use_for_config": { "type": "boolean" },
+                    "use_for_forms": { "type": "boolean" },
+                    "use_for_playbooks": { "type": "boolean" },
+                    "use_for_vars_files": { "type": "boolean" },
+                    "rebase_on_start": { "type": "boolean" },
+                    "cron": { "type": "string" },
+                    "status": { "type": "string" },
+                    "output": { "type": "string" },
+                    "head": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "500": { "description": "Failed to find repository" }
+        }
+      },
+      "put": {
+        "tags": ["repository"],
+        "summary": "Update repository",
+        "description": "Updates an existing repository configuration.",
+        "security": [ { "bearerAuth": [] } ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "uri": { "type": "string" },
+                  "branch": { "type": "string" },
+                  "user": { "type": "string" },
+                  "password": { "type": "string" },
+                  "description": { "type": "string" },
+                  "use_for_config": { "type": "boolean" },
+                  "use_for_forms": { "type": "boolean" },
+                  "use_for_playbooks": { "type": "boolean" },
+                  "use_for_vars_files": { "type": "boolean" },
+                  "rebase_on_start": { "type": "boolean" },
+                  "cron": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Repository updated" },
+          "400": { "description": "Missing required fields" },
+          "500": { "description": "Failed to update repository" }
+        }
+      },
+      "delete": {
+        "tags": ["repository"],
+        "summary": "Delete repository",
+        "description": "Deletes a repository configuration and removes it from disk.",
+        "security": [ { "bearerAuth": [] } ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Repository deleted" },
+          "500": { "description": "Failed to delete repository" }
+        }
+      }
+    },
+    "/repository/{name}/clone": {
+      "post": {
+        "tags": ["repository"],
+        "summary": "Clone repository",
+        "description": "Clones or re-clones the git repository from its configured URI.",
+        "security": [ { "bearerAuth": [] } ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Repository clone started" },
+          "500": { "description": "Failed to clone repository" }
+        }
+      }
+    },
+    "/repository/{name}/reset": {
+      "post": {
+        "tags": ["repository"],
+        "summary": "Reset repository",
+        "description": "Deletes the local copy and re-clones the repository from scratch.",
+        "security": [ { "bearerAuth": [] } ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Repository reset started" },
+          "500": { "description": "Failed to reset repository" }
+        }
+      }
+    },
+    "/repository/{name}/pull": {
+      "post": {
+        "tags": ["repository"],
+        "summary": "Pull repository",
+        "description": "Pulls the latest changes from the remote repository.",
+        "security": [ { "bearerAuth": [] } ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Repository pull started" },
+          "500": { "description": "Failed to pull repository" }
+        }
+      }
+    },
     "/knownhosts": {
       "get": {
         "tags": ["knownhosts"],

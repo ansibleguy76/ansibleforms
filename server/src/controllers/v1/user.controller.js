@@ -1,14 +1,15 @@
 'use strict';
 import User from '../../models/user.model.js';
 import RestResult from '../../models/restResult.model.js';
+import Errors from '../../lib/errors.js';
 
 const findAllOr1 = function(req, res) {
   if(req.query.username){
     User.findByUsername(req.query.username)
     .then((user)=>{
       // Mask password before returning to API
-      if (user && user.length > 0 && user[0].password) {
-        user[0].password = '**********';
+      if (user && user.password) {
+        user.password = '**********';
       }
       res.json(new RestResult("success","user found",user,""))
     })
@@ -27,12 +28,11 @@ const findAllOr1 = function(req, res) {
 
 };
 const create = function(req, res) {
-    const new_user = new User(req.body);
     //handles null error
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
         res.status(400).send({ error:true, message: 'Please provide all required fields' });
     }else{
-        User.create(new_user)
+        User.create(req.body)
         .then((user)=>{res.json(new RestResult("success","user added",user,""))})
         .catch((err)=>{res.json(new RestResult("error","failed to create user",null,err.toString()))})
     }
@@ -40,25 +40,27 @@ const create = function(req, res) {
 const findById = function(req, res) {
     User.findById(req.params.id)
     .then((user)=>{
-      if(user.length>0){
-        // Mask password before returning to API
-        if (user[0].password) {
-          user[0].password = '**********';
-        }
-        res.json(new RestResult("success","found user",user[0],""));
-      }else{
-        res.json(new RestResult("error","failed to find user",null,err.toString()))
+      // Mask password before returning to API
+      if (user && user.password) {
+        user.password = '**********';
+      }
+      res.json(new RestResult("success","found user",user,""));
+    })
+    .catch((err)=>{
+      if (err instanceof Errors.NotFoundError) {
+        res.json(new RestResult("error","failed to find user",null,"User not found"));
+      } else {
+        res.json(new RestResult("error","failed to find user",null,err.toString()));
       }
     })
-    .catch((err)=>{res.json(new RestResult("error","failed to find user",null,err.toString()))})
 };
 const findByToken = function(req, res) {
-    User.findById(req.user.user.username)
+    User.findByUsername(req.user.user.username)
     .then((user)=>{
-      if(user.length>0){
-        res.json(new RestResult("success","found user",user[0].id,""));
+      if(user){
+        res.json(new RestResult("success","found user",user.id,""));
       }else{
-        res.json(new RestResult("error","failed to find user",null,err.toString()))
+        res.json(new RestResult("error","failed to find user",null,"User not found"))
       }
     })
     .catch((err)=>{res.json(new RestResult("error","failed to find user",null,err.toString()))})
@@ -69,7 +71,7 @@ const update = function(req, res) {
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
         res.status(400).send({ error:true, message: 'Please provide all required fields' });
     }else{
-        User.update(new User(req.body),req.params.id)
+        User.update(req.body,req.params.id)
         .then(()=>{res.json(new RestResult("success","user updated",null,""))})
         .catch((err)=>{res.json(new RestResult("error","failed to update user",null,err.toString()))})
     }
@@ -82,12 +84,12 @@ const changePassword = function(req, res) {
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
         res.status(400).send({ error:true, message: 'Please provide all required fields' });
     }else{
-        User.update(new User(req.body),req.user.user.id)
+        User.update(req.body,req.user.user.id)
         .then((user)=>{res.json(new RestResult("success","password changed",null,""))})
         .catch((err)=>{res.json(new RestResult("error","failed to change password",null,err.toString()))})
     }
   }else{
-    res.json(new RestResult("error","you can't change the password for an ldap user",null,err.toString()))
+    res.json(new RestResult("error","you can't change the password for an ldap user",null,""))
   }
 };
 const find = function(req, res) {

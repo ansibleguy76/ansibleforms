@@ -13,6 +13,7 @@ import dayjs from "dayjs";
 import appConfig from "../../config/app.config.js";
 import User from "../models/user.model.js";
 import Group from "../models/group.model.js";
+import Token from "../models/token.model.js";
 
 const init = async function(){
 
@@ -95,12 +96,10 @@ const init = async function(){
   try{
     var adminUsername = appConfig.adminUsername
     var adminUser = await User.findByUsername(adminUsername)
-    if(adminUser.length==0){
+    if(!adminUser){
       logger.warning(`Admin user ${adminUsername} not found, creating it`)
       var adminPassword = appConfig.adminPassword
-      await User.create(new User({username:adminUsername,email:'',password:adminPassword,group_id:adminGroupId}))
-    }else{
-      adminUser = adminUser[0]
+      await User.create({username:adminUsername,email:'',password:adminPassword,group_id:adminGroupId})
     }
   }catch(err){
     logger.error("Failed to check/create admin user : " + err)
@@ -160,6 +159,12 @@ const init = async function(){
         logger.error("Failed to abandon jobs : " + err)
       })
   },3600000)
+
+  logger.info("Initializing daily token cleanup timer")
+  // Cleanup old tokens daily
+  setInterval(()=>{
+    Token.cleanup()
+  },86400000) // 24 hours
 
   logger.info("Pulling repositories")
   mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE rebase_on_start=1")

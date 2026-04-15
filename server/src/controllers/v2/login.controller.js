@@ -8,7 +8,7 @@ import jwt from 'jsonwebtoken';
 import authConfig from '../../../config/auth.config.js';
 import logger from "../../lib/logger.js";
 import helpers from '../../lib/common.js';
-import RestResult from "../../models/restResult.model.js";
+import RestResult from "../../models/restResult.model.v2.js";
 import auth_oidc from "../../auth/auth_oidc.js";
 
 function hasValidLoginOption(user) {
@@ -78,9 +78,9 @@ const settings = async function(req, res) {
       oidcIssuer: oidc.issuer,
       oidcGroupfilter: oidc.groupfilter
     };
-    res.json(new RestResult("success", "", settings, ""));
+    res.json(RestResult.single(settings));
   } catch (err) {
-    res.json(new RestResult("error", "failed to get app settings", null, helpers.getError(err)));
+    res.status(500).json(RestResult.error(helpers.getError(err)));
   }
 }
 // basic authentication with local users
@@ -101,13 +101,11 @@ const basic = async function(req, res,next) {
               res.locals.basic_authentication_error=e
               return next()
             }
-            var error={token:""}
             if(err){
               logger.error(e)
-              error.message=e
             }
             
-            return res.json(error);
+            return res.status(401).json(RestResult.error("Authentication failed", e || "Invalid credentials"));
           }
           // we found a user (local or ldap) with correct password; we start the login process (a function attached by passport !)
           // http://www.passportjs.org/docs/login/
@@ -145,14 +143,11 @@ const basic_ldap = async function(req, res,next) {
         // if we have an error; we return it
         var e=helpers.getError(err)
         if (e || !user) {
-          var error={token:""}
-          if(e){
-            error.message=e
-            if(e.includes("No ldap configured")){
-              error.message = res.locals.basic_authentication_error
-            }            
+          let errorMessage = e;
+          if(e && e.includes("No ldap configured")){
+            errorMessage = res.locals.basic_authentication_error || "Authentication failed";
           }
-          return res.json(error);
+          return res.status(401).json(RestResult.error("Authentication failed", errorMessage || "Invalid credentials"));
         }
         // we found a user (local or ldap) with correct password; we start the login process (a function attached by passport !)
         // http://www.passportjs.org/docs/login/
@@ -186,10 +181,10 @@ const basic_ldap = async function(req, res,next) {
 const logout = async function(req, res, next){
   req.logout((err) => {
     if (err) {
-      logger.error(helpers.getError(error))
-      return next(err)
+      logger.error(helpers.getError(err))
+      return res.status(500).json(RestResult.error(helpers.getError(err)));
     }
-    res.json(new RestResult("success","",{logoutUrl: auth_oidc.getLogoutUrl()},""))
+    res.json(RestResult.single({logoutUrl: auth_oidc.getLogoutUrl()}))
   });
 };
 
@@ -297,7 +292,7 @@ const azureadoauth2login = async function(req, res,next) {
 
   } catch(err){
     logger.error(helpers.getError(err))
-    next(err)
+    return res.status(401).json(RestResult.error("Azure AD authentication failed", helpers.getError(err)));
   }
 };
 
@@ -329,7 +324,7 @@ const oidcLogin = async function(req, res, next) {
 
   } catch(err){
     logger.error(helpers.getError(err))
-    next(err)
+    return res.status(401).json(RestResult.error("OIDC authentication failed", helpers.getError(err)));
   }
 };
 

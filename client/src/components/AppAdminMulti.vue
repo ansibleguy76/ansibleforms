@@ -451,7 +451,7 @@
     onMounted(async () => {
         try {
             const result = await axios.get(`/api/v2/settings`, TokenStorage.getAuthentication());
-            config.value = result.data.data.output;
+            config.value = result.data;
         } catch (err) {
             // fallback: leave config empty
         }
