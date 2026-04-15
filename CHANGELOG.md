@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   role options are all defaulted now explicitly
 -   api v1 and v2 split up for v1 deprecation
+-   fixed a few security issues (block password retrieval over api)
 
 
 ### Deprecated
