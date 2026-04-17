@@ -46,7 +46,7 @@ const refresh = async function(req, res) {
         res.json(RestResult.single({ token, refreshtoken: newRefreshtoken }));
         
     } catch(err) {
-        logger.error("Error : ", err);
+        logger.error(`Error : ${err.toString()}`);
         res.status(401).json(RestResult.error('Refresh token is unknown'));
     }
 };

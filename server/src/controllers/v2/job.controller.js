@@ -182,7 +182,7 @@ const relaunchJob = async function(req, res) {
       } else if (err.name === 'ConflictError') {
         res.status(409).json(RestResultv2.error(err.message));
       } else {
-        logger.error("Error relaunching job: ", err);
+        logger.error(`Error relaunching job: ${err.toString()}`);
         res.status(500).json(RestResultv2.error("Failed to relaunch job", err.toString()));
       }
     }
@@ -200,7 +200,7 @@ const approveJob = async function(req, res) {
       await Job.approve(user,jobid);
       res.status(200).json(RestResultv2.single({ message: `Job ${jobid} has been approved` }));
     }catch(err){
-      logger.error("Error : ", err)
+      logger.error(`Error : ${err.toString()}`)
       res.status(500).json(RestResultv2.error("Failed to approve job", err.toString()));
     }    
 };
@@ -217,7 +217,7 @@ const rejectJob = async function(req, res) {
       await Job.reject(user,jobid)
       res.status(200).json(RestResultv2.single({ message: `Job ${jobid} has been rejected` }));
     }catch(err){
-      logger.error("Error : ", err)
+      logger.error(`Error : ${err.toString()}`)
       res.status(500).json(RestResultv2.error("Failed to reject job", err.toString()));
     }    
 

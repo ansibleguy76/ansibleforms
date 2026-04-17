@@ -43,7 +43,7 @@ const refresh = function(req, res) {
               }
             })
             .catch((err)=>{
-              logger.error("Error : ", err)
+              logger.error(`Error : ${err.toString()}`)
               res.status(401).send({ error:true, message: 'Refresh token is unknown' });
             })
         }else{
