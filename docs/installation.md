@@ -29,7 +29,7 @@ To install AnsibleForms on Kubernetes using Helm, refer to the [ansibleforms-hel
 
 ## Install using Docker-Compose 
 
-The [docker-compose](https://github.com/ansibleguy76/ansibleforms-docker), together with the environment variables should get you started.
+The [docker-compose](https://github.com/ansibleguy76/ansibleforms-docker-v6), together with the environment variables should get you started.
 
 {: .warning }
 > **Note** You can also use Podman and Podman-Compose. The commands are similar (docker-> podman and docker-compose -> podman-compose)

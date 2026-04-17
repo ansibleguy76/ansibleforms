@@ -32,6 +32,8 @@
 import { useVuelidate } from '@vuelidate/core';
 import { required, helpers, sameAs } from "@vuelidate/validators";
 import Helpers from '@/lib/Helpers';
+import YAML from 'yaml';
+import { toast } from 'vue-sonner';
 
 // INIT
 
@@ -76,6 +78,9 @@ const props = defineProps({
     hasError: { type: Boolean },
     errors: { type: Array, default: () => [] },
     help: { type: String, default: "" },
+    showLoadButton: { type: Boolean, default: false },
+    showDownloadButton: { type: Boolean, default: false },
+    name: { type: String, default: 'table-field' },
 });
 
 
@@ -92,6 +97,7 @@ const showEdit = ref(false);
 const action = ref("");
 const editIndex = ref(-1);
 const insert_marker = ref(undefined);
+const fileInputRef = ref(null);
 
 // COMPUTED
 
@@ -396,6 +402,78 @@ function init() {
 
 }
 
+// Trigger file input click
+function triggerFileInput() {
+    fileInputRef.value?.click();
+}
+
+// Handle file load with strict validation
+async function handleFileLoad(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    // Check file extension
+    const fileName = file.name.toLowerCase();
+    if (!fileName.endsWith('.yml') && !fileName.endsWith('.yaml')) {
+        toast.error('Please select a .yml or .yaml file');
+        return;
+    }
+    
+    try {
+        const text = await file.text();
+        const parsed = YAML.parse(text);
+        
+        // Must be valid YAML
+        if (parsed === null || parsed === undefined) {
+            toast.error('Invalid YAML file - no data found');
+            return;
+        }
+        
+        // Force to array if not already
+        let arrayData;
+        if (Array.isArray(parsed)) {
+            arrayData = parsed;
+        } else {
+            // Wrap single object in array
+            arrayData = [parsed];
+            toast.info('Single object converted to array');
+        }
+        
+        rows.value = arrayData;
+        emit('update:model-value', arrayData);
+        toast.success(`Loaded ${arrayData.length} row(s) from ${file.name}`);
+    } catch (e) {
+        toast.error(`Failed to parse ${file.name}: ${e.message}`);
+    }
+    
+    // Reset input so same file can be loaded again
+    event.target.value = '';
+}
+
+// Handle download as YAML
+function handleDownload() {
+    try {
+        if (!rows.value || rows.value.length === 0) {
+            toast.error('No data to download');
+            return;
+        }
+        
+        const yamlContent = YAML.stringify(rows.value);
+        const blob = new Blob([yamlContent], { type: 'text/yaml' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${props.name || 'table'}.yml`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        toast.success('Table data downloaded as YAML');
+    } catch (e) {
+        toast.error(`Failed to download: ${e.message}`);
+    }
+}
+
 // HOOKS
 
 onMounted(() => {
@@ -406,6 +484,36 @@ onMounted(() => {
 </script>
 <template>
     <div>
+
+        <!-- Load/Download buttons -->
+        <div v-if="showLoadButton || showDownloadButton" class="mb-2 d-flex gap-2">
+            <BsButton 
+                v-if="showLoadButton" 
+                cssClass="btn-sm"
+                icon="file-import"
+                @click="triggerFileInput">
+                Load YAML
+            </BsButton>
+            
+            <BsButton 
+                v-if="showDownloadButton" 
+                cssClass="btn-sm"
+                icon="download"
+                @click="handleDownload"
+                :disabled="!rows || rows.length === 0">
+                Download
+            </BsButton>
+            
+            <!-- Hidden file input -->
+            <input 
+                v-if="showLoadButton"
+                ref="fileInputRef"
+                type="file" 
+                accept=".yml,.yaml"
+                @change="handleFileLoad"
+                style="display: none"
+            />
+        </div>
 
         <!-- EDIT FORM -->
         <BsOffCanvas :show="showEdit" :title="action" @close="closeOffCanvas()">

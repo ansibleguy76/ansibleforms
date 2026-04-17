@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   added new role-options for jobscheduling and jobstoring (#431)
 -   added new actions (schedule job, run later, store, load from store) (#431)
 -   all api's have v2 implementations now
+-   New YAML field type: A dedicated YAML editor field with syntax highlighting, validation, and file operations
+-   Table field enhancements: Added file import/export capabilities
 
 ### Changed
 
@@ -25,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Data Sources and Data Schemas features - These features are currently only disabled in the GUI and will be completely removed in a future version. If you are actively using these features, please contact the maintainer as soon as possible.  The reason is the implementation of an ORM to switch to postgress in the future.
 -   api v1 was not using the best rest implementation (let's say I was a rookie back then).
+
+### Fixed
+
+-   Error logging concatenation in token and job controllers (6 locations)
+
 
 ## [6.1.4] - 2026-03-30
 
