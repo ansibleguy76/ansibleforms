@@ -41,6 +41,7 @@ const init = async function(){
   logger.info("Mysql is ready")
 
   // check Schema
+  var schemaIsReady = false
   try{
     var schemaresult = await Schema.hasSchema()
     if(schemaresult.data.failed.length>0){
@@ -51,11 +52,11 @@ const init = async function(){
       for(let i=0;i<schemaresult.data.failed.length;i++){
         logger.error(schemaresult.data.failed[i])
       }
+      // Schema exists but has issues - continue with caution
+      schemaIsReady = false
     }else{
       logger.info("Schema is up to date")
-      // for(let i=0;i<schemaresult.data.success.length;i++){
-      //   logger.info(schemaresult.data.success[i])
-      // }      
+      schemaIsReady = true
     }
 
   }catch(err){
@@ -73,36 +74,49 @@ const init = async function(){
       logger.error("Fatal error : " + err)
       throw err
     }
-
+    // Schema is missing - stop initialization here
+    schemaIsReady = false
   }
 
-  // check admins groups
-  try{
-    var adminGroupName = "admins"
-    var adminGroup = await Group.findByName(adminGroupName)
-    if(!adminGroup){
-      logger.warning(`Group ${adminGroupName} not found, creating it`)
-      const adminGroupId_new = await Group.create({name:adminGroupName})
-      adminGroupId = adminGroupId_new
-    }else{
-      adminGroupId = adminGroup.id
+  // Only continue with group/user creation if schema is ready
+  if(!schemaIsReady){
+    logger.warning("Schema is not ready, skipping group and user initialization")
+    logger.warning("Please create the schema via the /schema endpoint")
+    // Continue to start the app so the /schema endpoint is available
+  }else{
+    // check admins groups
+    logger.info("Checking admins group exists")
+    try{
+      var adminGroupName = "admins"
+      var adminGroup = await Group.findByName(adminGroupName)
+      if(!adminGroup){
+        logger.info(`Group ${adminGroupName} not found, creating it`)
+        adminGroupId = await Group.create({name:adminGroupName})
+        logger.info(`Created admins group with id ${adminGroupId}`)
+      }else{
+        adminGroupId = adminGroup.id
+        logger.info(`Found admins group with id ${adminGroupId}`)
+      }
+    }catch(err){
+      logger.error("Failed to check/create admins group : " + err)
     }
-  }catch(err){
-    logger.error("Failed to check/create admins group : " + err)
-  }
 
-  // check admin user
-  logger.info("Checking admin user exists")
-  try{
-    var adminUsername = appConfig.adminUsername
-    var adminUser = await User.findByUsername(adminUsername)
-    if(!adminUser){
-      logger.warning(`Admin user ${adminUsername} not found, creating it`)
-      var adminPassword = appConfig.adminPassword
-      await User.create({username:adminUsername,email:'',password:adminPassword,group_id:adminGroupId})
+    // check admin user
+    logger.info("Checking admin user exists")
+    try{
+      var adminUsername = appConfig.adminUsername
+      var adminUser = await User.findByUsername(adminUsername)
+      if(!adminUser){
+        logger.info(`Admin user ${adminUsername} not found, creating it`)
+        var adminPassword = appConfig.adminPassword
+        await User.create({username:adminUsername,email:'',password:adminPassword,group_id:adminGroupId})
+        logger.info(`Created admin user ${adminUsername}`)
+      }else{
+        logger.info(`Admin user ${adminUsername} already exists`)
+      }
+    }catch(err){
+      logger.error("Failed to check/create admin user : " + err)
     }
-  }catch(err){
-    logger.error("Failed to check/create admin user : " + err)
   }
 
   // let's check other database records like settings,ldap. if no record exists, create them, this is for fresh install

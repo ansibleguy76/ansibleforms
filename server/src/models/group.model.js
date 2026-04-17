@@ -8,15 +8,17 @@ class Group extends CrudModel {
         return super.create(this.modelName, data);
     }
     static async update(data, id) {
-        // Prevent deletion of admins group
-        if (id === 1 || id === '1') {
+        // Prevent modification of admins group - check by name, not ID
+        const group = await super.findById(this.modelName, id);
+        if (group && group.name === 'admins') {
             throw new Error("You cannot modify group 'admins'");
         }
         return super.update(this.modelName, data, id);
     }
     static async delete(id) {
-        // Prevent deletion of admins group
-        if (id === 1 || id === '1') {
+        // Prevent deletion of admins group - check by name, not ID
+        const group = await super.findById(this.modelName, id);
+        if (group && group.name === 'admins') {
             throw new Error("You cannot delete group 'admins'");
         }
         return super.delete(this.modelName, id);

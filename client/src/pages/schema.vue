@@ -1,6 +1,6 @@
 <script setup>
 import axios from 'axios'
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAppStore } from '@/stores/app'
 import { toast } from 'vue-sonner'
 import { useRoute, useRouter } from 'vue-router'
@@ -15,6 +15,8 @@ const emit = defineEmits(['recheckSchema'])
 
 const error = store.errorMessage
 const loading = ref(false)
+const countdown = ref(3)
+let countdownInterval = null
 
 const success = computed(() => {
   return store.schemaData?.success?.join('<br>') || ''
@@ -24,28 +26,44 @@ const failed = computed(() => {
   return store.schemaData?.failed?.join('<br>') || ''
 })
 
+const isSchemaReady = computed(() => {
+  return success.value && !failed.value && !error.value
+})
+
 async function create() {
   loading.value = true
   toast.info("Creating schema and tables...")
   try {
     const createResult = await axios.post(`/api/v2/schema`, {})
-    const result = await State.checkDatabase();
-    if (result) {
-      toast.success(createResult.data.message)
-      await State.init(router, route)
-    }
+    toast.success(createResult.data.message)
+    // Full page reload to reinitialize app with new database
+    window.location.href = '/'
   } catch (error) {
     toast.error(error.message)
-  } finally {
     loading.value = false
   }
 }
 
+function startCountdown() {
+  countdown.value = 3
+  countdownInterval = setInterval(() => {
+    countdown.value--
+    if (countdown.value <= 0) {
+      clearInterval(countdownInterval)
+      window.location.href = '/'
+    }
+  }, 1000)
+}
 
 onMounted(async () => {
-  const result = await State.checkDatabase();
-  if (result) {
-    Navigate.toHome(router, route);
+  try {
+    const result = await State.checkDatabase();
+    if (result) {
+      startCountdown()
+    }
+  } catch (err) {
+    // Database check failed, stay on schema page
+    console.error("Database check failed:", err);
   }
 });
 
@@ -56,6 +74,10 @@ onMounted(async () => {
     <div class="container">
       <div v-if="!loading" class="row justify-content-center">
         <div class="col-12 col-md-8 col-lg-6">
+          <div v-if="isSchemaReady" class="alert alert-success">
+            <h5>Database is ready!</h5>
+            <p class="mb-0">Redirecting to home in {{ countdown }} seconds...</p>
+          </div>
           <div class="alert alert-danger" v-if="error != ''" v-text="error"></div>
           <div class="alert alert-success" v-if="success" v-html="success"></div>
           <div class="alert alert-warning" v-if="failed" v-html="failed"></div>
