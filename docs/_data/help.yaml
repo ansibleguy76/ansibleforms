@@ -2440,7 +2440,33 @@
                   * **database query** : you can use the query and dbConfig property to query a mysql, mssql server, postgres, oracle or mongodb.
                   * **expression** : you can use the expression property to create or retrieve data. in this case the output of the expression can be any type.    
                 examples:
-                - name: Table
+                - name: Table with default values
+                  code: |
+                    - type: table
+                      name: users
+                      label: Users
+                      default:
+                        - username: john_doe
+                          email: john@example.com
+                          active: true
+                        - username: jane_smith
+                          email: jane@example.com
+                          active: false
+                      showLoadButton: true
+                      showDownloadButton: true
+                      tableFields:
+                        - name: username
+                          type: text
+                          label: Username
+                          required: true
+                        - name: email
+                          type: text
+                          label: Email
+                          required: true
+                        - name: active
+                          type: checkbox
+                          label: Active
+                - name: Table from expression
                   code: |
                     - type: table
                       name: member
@@ -2629,7 +2655,7 @@
             type: string
             group: basic
             allowed: Free text
-            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, file, html
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, file, html, yaml
             short: Field label
             description: |
               A friendly name/label for the field.  Note: if not set, the field name is used as label, but not when type is html.
@@ -2649,7 +2675,7 @@
             type: string
             group: basic
             allowed: Free text
-            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, file
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, file, yaml
             short: Field help message
             description: |
               Some fields require additional help information.
@@ -2909,11 +2935,17 @@
               * `__auto__` : select the first
               * `__none__` : select none
               * `__all__` : select all (if multiple is true)
+              
+              For `table` fields, the default must be an array of objects matching the tableFields structure.
+              For `yaml` fields, the default can be any valid YAML structure (object or array).
             changelog:
+              - version: 6.1.5
+                type: changed
+                description: Table and YAML fields now support default values for pre-populating initial data.
               - version: 4.0.5
                 type: added
                 description: A default can now hold placeholders like `$(other_field)`, and together with `evalDefault` be evaluated as javascript.           
-            with_types: text, textarea, number, expression, password, enum, radio, checkbox, datetime
+            with_types: text, textarea, number, expression, password, enum, radio, checkbox, datetime, table, yaml
           - name: evalDefault
             type: boolean
             group: data

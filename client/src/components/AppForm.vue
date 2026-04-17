@@ -1464,11 +1464,9 @@ function initForm() {
             } else {
                 form.value[item.name] = externalData.value[item.name] ?? getDefaultValue(item.name, item.default);
             }
-            if (item.type == "table" && !defaults.value[item.name]) {
+            // Initialize table fields to empty array if no default
+            if (item.type == "table" && form.value[item.name] === undefined) {
                 form.value[item.name] = [];
-            }
-            if (item.type == "table" && defaults.value[item.name]) {
-                form.value[item.name] = externalData.value[item.name];
             }
         } else {
             var fallbackvalue = undefined;

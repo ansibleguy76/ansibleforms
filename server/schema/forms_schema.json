@@ -1250,8 +1250,7 @@
                     "keydown": {"not":{}},
                     "isHtml": {"not":{}},
                     "icon": {"not":{}},
-                    "switch": {"not":{}},
-                    "default": {"not":{}}
+                    "switch": {"not":{}}
                   },
                   "required": ["tableFields"]
                 },
