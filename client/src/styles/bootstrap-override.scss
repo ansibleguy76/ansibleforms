@@ -103,3 +103,11 @@
     font-style: italic;
   }
 }
+
+// Hide placeholders in floating labels until focused
+// (the floating label acts as the placeholder)
+.form-floating > input:not(:focus)::placeholder,
+.form-floating > textarea:not(:focus)::placeholder,
+.form-floating > select:not(:focus)::placeholder {
+  opacity: 0 !important;
+}
