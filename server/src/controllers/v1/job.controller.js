@@ -157,7 +157,7 @@ const relaunchJob = async function(req, res) {
       const job = await Job.relaunch(user, jobid, verbose);
       res.json(new RestResult("success",`Job has been relaunched with job id ${job.id}`,"",""))
     }catch(err){
-      logger.error("Error : ", err)
+      logger.error(`Error : ${err.toString()}`)
       res.json(new RestResult("error",`Failed to relaunch : ${err.toString()}`,"",""))
     }
 };
@@ -174,7 +174,7 @@ const approveJob = async function(req, res) {
       await Job.approve(user,jobid);
       res.json(new RestResult("success",`job ${jobid} has been approved`,null,""))
     }catch(err){
-      logger.error("Error : ", err)
+      logger.error(`Error : ${err.toString()}`)
       res.json(new RestResult("error",`Failed to approve : ${err.toString()}`,"",""))
     }    
 };
@@ -191,7 +191,7 @@ const rejectJob = async function(req, res) {
       await Job.reject(user,jobid)
       res.json(new RestResult("success",`Job ${jobid} has been rejected`,"",""))
     }catch(err){
-      logger.error("Error : ", err)
+      logger.error(`Error : ${err.toString()}`)
       res.json(new RestResult("error",`Failed to reject : ${err.toString()}`,"",""))
     }    
 
