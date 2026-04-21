@@ -238,6 +238,22 @@ const fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort=n
     logger.warning(e)
     throw(new Error(e))
   }
+  
+  // Fix URL encoding for special characters like '+' 
+  // Parse and reconstruct URL to properly encode query parameters
+  try {
+    const urlObj = new URL(url);
+    // Re-encode query parameters to handle '+' and other special chars
+    if (urlObj.search) {
+      const params = new URLSearchParams(urlObj.search);
+      urlObj.search = params.toString();
+    }
+    url = urlObj.toString();
+  } catch (e) {
+    // If URL parsing fails, use the original URL
+    logger.debug(`[fnRestAdvanced] URL parsing failed, using original URL: ${e.message}`);
+  }
+  
   const httpsAgent = new https.Agent({
     rejectUnauthorized: false,
   })
