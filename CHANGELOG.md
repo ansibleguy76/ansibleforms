@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.1.5] - 2026-04-23
+
 ### Added
 
 -   added role-option allowVerboseMode (#430)
@@ -22,7 +24,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   api v1 and v2 split up for v1 deprecation
 -   fixed a few security issues (block password retrieval over api)
 
-
 ### Deprecated
 
 -   Data Sources and Data Schemas features - These features are currently only disabled in the GUI and will be completely removed in a future version. If you are actively using these features, please contact the maintainer as soon as possible.  The reason is the implementation of an ORM to switch to postgress in the future.
@@ -33,7 +34,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Error logging concatenation in token and job controllers (6 locations)
 -   encoding in the expression functions
 -   Cronschedules now handled with Croner, which should be better (#436)
-
 
 ## [6.1.4] - 2026-03-30
 
@@ -1039,7 +1039,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Allow change password for current local user
 -   Start tracking versions
 
-[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/6.1.4...HEAD
+[Unreleased]: https://github.com/ansibleguy76/ansibleforms/compare/6.1.5...HEAD
+
+[6.1.5]: https://github.com/ansibleguy76/ansibleforms/compare/6.1.4...6.1.5
 
 [6.1.4]: https://github.com/ansibleguy76/ansibleforms/compare/6.1.3...6.1.4
 
