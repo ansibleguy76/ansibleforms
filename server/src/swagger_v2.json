@@ -3,10 +3,19 @@
   "info": {
     "title": "AnsibleForms API v2",
     "version": "2.0.0",
-    "description": "API documentation for AnsibleForms v2 endpoints: AWX, Job, and Database."
+    "description": "API documentation for AnsibleForms v2 endpoints: Authentication, Query, Expression, AWX, Job, Backup, Credential, and Known Hosts management."
   },
   "tags": [
     { "name": "authentication", "description": "Authentication and refresh tokens" },
+    { "name": "system", "description": "System information and status" },
+    { "name": "user", "description": "User management and profile" },
+    { "name": "group", "description": "Group management" },
+    { "name": "settings", "description": "Application settings and configuration" },
+    { "name": "ssh", "description": "SSH key management" },
+    { "name": "log", "description": "Application log access and download" },
+    { "name": "repository", "description": "Git repository management" },
+    { "name": "query", "description": "Database query execution" },
+    { "name": "expression", "description": "JavaScript expression evaluation" },
     { "name": "awx", "description": "AWX configuration and management" },
     { "name": "job", "description": "Job management and operations" },
     { "name": "backup", "description": "Backup and restore operations" },
@@ -17,6 +26,775 @@
     { "url": "/api/v2" }
   ],
   "paths": {
+    "/version": {
+      "get": {
+        "tags": ["system"],
+        "summary": "Get application version",
+        "description": "Returns the current version of the AnsibleForms application. No authentication required.",
+        "responses": {
+          "200": {
+            "description": "Version retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "example": "6.1.5"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/help": {
+      "get": {
+        "tags": ["system"],
+        "summary": "Get help data",
+        "description": "Returns help content from help.yaml configuration file.",
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "Help data retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Help data parsed from YAML file"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Failed to load help data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string", "description": "Error message" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/profile": {
+      "get": {
+        "tags": ["user"],
+        "summary": "Get current user profile",
+        "description": "Returns the authenticated user's profile information.",
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "Profile retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "integer", "description": "User ID" },
+                    "username": { "type": "string", "description": "Username" },
+                    "type": { "type": "string", "description": "User type (local, ldap, azure, oidc)", "example": "local" },
+                    "group_id": { "type": "integer", "description": "Group ID" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized - invalid or missing token" }
+        }
+      },
+      "put": {
+        "tags": ["user"],
+        "summary": "Change user password",
+        "description": "Updates the password for the authenticated user. Only works for local users (not LDAP/Azure/OIDC).",
+        "security": [ { "bearerAuth": [] } ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["password"],
+                "properties": {
+                  "password": { 
+                    "type": "string", 
+                    "description": "New password",
+                    "example": "newSecurePassword123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password changed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "null"
+                }
+              }
+            }
+          },
+          "400": { 
+            "description": "Bad request - missing password or LDAP user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string", "description": "Error message" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized - invalid or missing token" },
+          "500": { 
+            "description": "Password update failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string", "description": "Error message" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/group": {
+      "get": {
+        "tags": ["group"],
+        "summary": "List all groups",
+        "description": "Returns all groups or find a specific group by name (query parameter).",
+        "security": [ { "bearerAuth": [] } ],
+        "parameters": [
+          { "name": "name", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Group name to search" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Groups retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "count": { "type": "integer" },
+                        "records": { 
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": { "type": "integer" },
+                              "name": { "type": "string" }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "integer" },
+                        "name": { "type": "string" }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": { "description": "Group not found" },
+          "500": { "description": "Failed to find group" }
+        }
+      },
+      "post": {
+        "tags": ["group"],
+        "summary": "Create a new group",
+        "security": [ { "bearerAuth": [] } ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Group created" },
+          "400": { "description": "Missing required fields" },
+          "500": { "description": "Failed to create group" }
+        }
+      }
+    },
+    "/group/{id}": {
+      "get": {
+        "tags": ["group"],
+        "summary": "Get group by ID",
+        "security": [ { "bearerAuth": [] } ],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Group found" },
+          "404": { "description": "Group not found" },
+          "500": { "description": "Failed to find group" }
+        }
+      },
+      "put": {
+        "tags": ["group"],
+        "summary": "Update group",
+        "security": [ { "bearerAuth": [] } ],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Group updated" },
+          "400": { "description": "Missing required fields" },
+          "500": { "description": "Failed to update group" }
+        }
+      },
+      "delete": {
+        "tags": ["group"],
+        "summary": "Delete group",
+        "security": [ { "bearerAuth": [] } ],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Group deleted" },
+          "400": { "description": "Group has users or unknown group" },
+          "500": { "description": "Failed to delete group" }
+        }
+      }
+    },
+    "/settings": {
+      "get": {
+        "tags": ["settings"],
+        "summary": "Get application settings",
+        "description": "Returns application settings (mail server, URL, etc.). Mail password is masked.",
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "Settings retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "mail_server": { "type": "string" },
+                    "mail_port": { "type": "integer" },
+                    "mail_secure": { "type": "integer", "description": "1 for TLS, 0 for plain" },
+                    "mail_username": { "type": "string" },
+                    "mail_password": { "type": "string", "example": "**********", "description": "Always masked" },
+                    "mail_from": { "type": "string" },
+                    "url": { "type": "string", "description": "Application base URL" },
+                    "forms_yaml": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "500": { "description": "Failed to find settings" }
+        }
+      },
+      "put": {
+        "tags": ["settings"],
+        "summary": "Update application settings",
+        "security": [ { "bearerAuth": [] } ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "mail_server": { "type": "string" },
+                  "mail_port": { "type": "integer" },
+                  "mail_secure": { "type": "integer" },
+                  "mail_username": { "type": "string" },
+                  "mail_password": { "type": "string", "description": "Use '**********' to preserve existing password, empty string to clear, or new password" },
+                  "mail_from": { "type": "string" },
+                  "url": { "type": "string" },
+                  "forms_yaml": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Settings updated" },
+          "400": { "description": "Missing required fields" },
+          "500": { "description": "Failed to update settings" }
+        }
+      }
+    },
+    "/settings/importConfig": {
+      "put": {
+        "tags": ["settings"],
+        "summary": "Import configuration from config.yaml",
+        "description": "Imports settings from config.yaml or forms.yaml file.",
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "Config imported successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "500": { "description": "Failed to import config" }
+        }
+      }
+    },
+    "/settings/mailcheck": {
+      "post": {
+        "tags": ["settings"],
+        "summary": "Test mail settings",
+        "description": "Sends a test email to verify mail configuration.",
+        "security": [ { "bearerAuth": [] } ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["to"],
+                "properties": {
+                  "to": { "type": "string", "description": "Email address to send test to" },
+                  "mail_server": { "type": "string" },
+                  "mail_port": { "type": "integer" },
+                  "mail_secure": { "type": "integer" },
+                  "mail_username": { "type": "string" },
+                  "mail_password": { "type": "string" },
+                  "mail_from": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Mail sent successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string", "example": "Mail sent with id <message-id>" }
+                  }
+                }
+              }
+            }
+          },
+          "500": { "description": "Mail check failed" }
+        }
+      }
+    },
+    "/sshkey": {
+      "get": {
+        "tags": ["ssh"],
+        "summary": "Get SSH key",
+        "description": "Returns the SSH private key information and public key fingerprint.",
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "SSH key retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "key": { "type": "string", "description": "Private SSH key" },
+                    "publicKey": { "type": "string", "description": "Public key" },
+                    "art": { "type": "string", "description": "ASCII art representation of key" }
+                  }
+                }
+              }
+            }
+          },
+          "500": { "description": "Failed to find ssh key" }
+        }
+      },
+      "put": {
+        "tags": ["ssh"],
+        "summary": "Update SSH key",
+        "description": "Updates the SSH private key. Use with caution.",
+        "security": [ { "bearerAuth": [] } ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["key"],
+                "properties": {
+                  "key": { "type": "string", "description": "New private SSH key" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "SSH key updated" },
+          "400": { "description": "Missing required fields" },
+          "500": { "description": "Failed to update ssh key" }
+        }
+      }
+    },
+    "/log": {
+      "get": {
+        "tags": ["log"],
+        "summary": "Get application log",
+        "description": "Returns the last N lines of the current application log file.",
+        "security": [ { "bearerAuth": [] } ],
+        "parameters": [
+          {
+            "name": "lines",
+            "in": "query",
+            "description": "Number of lines to return (default: 100)",
+            "schema": {
+              "type": "integer",
+              "default": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Log content retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "description": "Last N lines of log file"
+                }
+              }
+            }
+          },
+          "500": { "description": "Failed to get log" }
+        }
+      }
+    },
+    "/log/download": {
+      "get": {
+        "tags": ["log"],
+        "summary": "Download current log file",
+        "description": "Downloads the current day's log file.",
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "Log file download",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "404": { "description": "Log file not found" }
+        }
+      }
+    },
+    "/repository": {
+      "get": {
+        "tags": ["repository"],
+        "summary": "List all repositories",
+        "description": "Returns a list of all configured git repositories with masked passwords.",
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "Repositories retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": { "type": "integer" },
+                    "records": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": { "type": "integer" },
+                          "name": { "type": "string" },
+                          "uri": { "type": "string" },
+                          "branch": { "type": "string" },
+                          "user": { "type": "string" },
+                          "password": { "type": "string", "example": "**********" },
+                          "description": { "type": "string" },
+                          "use_for_config": { "type": "boolean" },
+                          "use_for_forms": { "type": "boolean" },
+                          "use_for_playbooks": { "type": "boolean" },
+                          "use_for_vars_files": { "type": "boolean" },
+                          "rebase_on_start": { "type": "boolean" },
+                          "cron": { "type": "string" },
+                          "status": { "type": "string" },
+                          "output": { "type": "string" },
+                          "head": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": { "description": "Failed to find repositories" }
+        }
+      },
+      "post": {
+        "tags": ["repository"],
+        "summary": "Create new repository",
+        "description": "Creates a new git repository configuration and triggers clone in background.",
+        "security": [ { "bearerAuth": [] } ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "uri"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "uri": { "type": "string" },
+                  "branch": { "type": "string" },
+                  "user": { "type": "string" },
+                  "password": { "type": "string" },
+                  "description": { "type": "string" },
+                  "use_for_config": { "type": "boolean" },
+                  "use_for_forms": { "type": "boolean" },
+                  "use_for_playbooks": { "type": "boolean" },
+                  "use_for_vars_files": { "type": "boolean" },
+                  "rebase_on_start": { "type": "boolean" },
+                  "cron": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Repository created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "Missing required fields" },
+          "500": { "description": "Failed to create repository" }
+        }
+      }
+    },
+    "/repository/{name}": {
+      "get": {
+        "tags": ["repository"],
+        "summary": "Get repository by name",
+        "description": "Returns a single repository configuration with masked password.",
+        "security": [ { "bearerAuth": [] } ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Repository found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": { "type": "integer" },
+                    "name": { "type": "string" },
+                    "uri": { "type": "string" },
+                    "branch": { "type": "string" },
+                    "user": { "type": "string" },
+                    "password": { "type": "string", "example": "**********" },
+                    "description": { "type": "string" },
+                    "use_for_config": { "type": "boolean" },
+                    "use_for_forms": { "type": "boolean" },
+                    "use_for_playbooks": { "type": "boolean" },
+                    "use_for_vars_files": { "type": "boolean" },
+                    "rebase_on_start": { "type": "boolean" },
+                    "cron": { "type": "string" },
+                    "status": { "type": "string" },
+                    "output": { "type": "string" },
+                    "head": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "500": { "description": "Failed to find repository" }
+        }
+      },
+      "put": {
+        "tags": ["repository"],
+        "summary": "Update repository",
+        "description": "Updates an existing repository configuration.",
+        "security": [ { "bearerAuth": [] } ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "uri": { "type": "string" },
+                  "branch": { "type": "string" },
+                  "user": { "type": "string" },
+                  "password": { "type": "string" },
+                  "description": { "type": "string" },
+                  "use_for_config": { "type": "boolean" },
+                  "use_for_forms": { "type": "boolean" },
+                  "use_for_playbooks": { "type": "boolean" },
+                  "use_for_vars_files": { "type": "boolean" },
+                  "rebase_on_start": { "type": "boolean" },
+                  "cron": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Repository updated" },
+          "400": { "description": "Missing required fields" },
+          "500": { "description": "Failed to update repository" }
+        }
+      },
+      "delete": {
+        "tags": ["repository"],
+        "summary": "Delete repository",
+        "description": "Deletes a repository configuration and removes it from disk.",
+        "security": [ { "bearerAuth": [] } ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Repository deleted" },
+          "500": { "description": "Failed to delete repository" }
+        }
+      }
+    },
+    "/repository/{name}/clone": {
+      "post": {
+        "tags": ["repository"],
+        "summary": "Clone repository",
+        "description": "Clones or re-clones the git repository from its configured URI.",
+        "security": [ { "bearerAuth": [] } ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Repository clone started" },
+          "500": { "description": "Failed to clone repository" }
+        }
+      }
+    },
+    "/repository/{name}/reset": {
+      "post": {
+        "tags": ["repository"],
+        "summary": "Reset repository",
+        "description": "Deletes the local copy and re-clones the repository from scratch.",
+        "security": [ { "bearerAuth": [] } ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Repository reset started" },
+          "500": { "description": "Failed to reset repository" }
+        }
+      }
+    },
+    "/repository/{name}/pull": {
+      "post": {
+        "tags": ["repository"],
+        "summary": "Pull repository",
+        "description": "Pulls the latest changes from the remote repository.",
+        "security": [ { "bearerAuth": [] } ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Repository pull started" },
+          "500": { "description": "Failed to pull repository" }
+        }
+      }
+    },
     "/knownhosts": {
       "get": {
         "tags": ["knownhosts"],
@@ -80,6 +858,123 @@
           "200": { "description": "Host removed or not present" },
           "400": { "description": "Missing host name" },
           "500": { "description": "Server error" }
+        }
+      }
+    },
+    "/query": {
+      "post": {
+        "tags": ["query"],
+        "summary": "Execute a database query",
+        "description": "Executes a SQL query against one or more configured database credentials. Supports multiple database types (MySQL, PostgreSQL, MSSQL, Oracle, MongoDB) and optional jq filtering.",
+        "security": [ { "bearerAuth": [] } ],
+        "parameters": [
+          { "name": "noLog", "in": "query", "required": false, "schema": { "type": "boolean" }, "description": "Suppress query logging" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["query", "config"],
+                "properties": {
+                  "query": { "type": "string", "description": "SQL query to execute", "example": "SELECT * FROM users WHERE active = 1" },
+                  "config": { 
+                    "oneOf": [
+                      { "type": "string", "description": "Name of a single credential", "example": "mydb" },
+                      { "type": "array", "items": { "type": "string" }, "description": "Array of credential names to query (results merged)", "example": ["db1", "db2"] },
+                      { "type": "object", "properties": { "name": { "type": "string" }, "type": { "type": "string" } }, "description": "Credential object with name and optional type" }
+                    ],
+                    "description": "Database credential configuration (name, array of names, or object)"
+                  },
+                  "jq": { "type": "string", "description": "Optional jq expression to filter/transform results", "example": ".[] | select(.age > 18)" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Query executed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "type": "object" },
+                  "description": "Query results as array of objects"
+                }
+              }
+            }
+          },
+          "400": { "description": "Bad request - missing required parameters" },
+          "500": { 
+            "description": "Query execution error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string", "description": "Error message" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/expression": {
+      "post": {
+        "tags": ["expression"],
+        "summary": "Execute a JavaScript expression",
+        "description": "Evaluates a JavaScript expression in a sandboxed environment. Supports custom functions and transformations.",
+        "security": [ { "bearerAuth": [] } ],
+        "parameters": [
+          { "name": "noLog", "in": "query", "required": false, "schema": { "type": "boolean" }, "description": "Suppress expression logging" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["expression"],
+                "properties": {
+                  "expression": { 
+                    "type": "string", 
+                    "description": "JavaScript expression to evaluate. Can include jq filtering as part of the expression.", 
+                    "example": "fn.fnReadYamlFile('/path/to/file.yml')" 
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Expression evaluated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "description": "Expression result (type varies: string, number, boolean, array, object)"
+                }
+              }
+            }
+          },
+          "400": { "description": "Bad request - no expression provided" },
+          "500": { 
+            "description": "Expression evaluation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string", "description": "Error message" }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },

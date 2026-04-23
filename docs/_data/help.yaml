@@ -700,7 +700,11 @@
       - showAllJobLogs: The user can see all job logs (not only his own) (Added in 5.0.9)
       - enableLogin: The user can login.  
       - allowBackupOps: The user can perform database operations, such as backup and restore.
+      - allowVerboseMode: The user can enable verbose mode on ansible forms.
       - allowJobRelaunch: The user can relaunch jobs with pre-filled form data from previous submissions.
+      - allowScheduledJobs: The user can create and manage scheduled jobs (recurring cron or one-time). (Added in 6.1.5)
+      - allowStoredJobs: The user can store and load job data for later use. (Added in 6.1.5)
+      - allowPlannedJobs: The user can schedule jobs to run at a specific time. (Added in 6.1.5)
         
       When options are not set, the admin role will have all options.  
       When options are set on the public role, they will have the lowest precedence and can be used as default options for all roles.  
@@ -893,6 +897,11 @@
           - showAllJobLogs: The user can see all job logs (not only his own) (Added in 5.0.9)
           - enableLogin: The user can login.  
           - allowBackupOps: The user can perform database operations, such as backup and restore.
+          - allowVerboseMode: The user can enable verbose mode on ansible forms.
+          - allowJobRelaunch: The user can relaunch jobs with pre-filled form data from previous submissions.
+          - allowScheduledJobs: The user can create and manage scheduled jobs (recurring cron or one-time). (Added in 6.1.5)
+          - allowStoredJobs: The user can store and load job data for later use. (Added in 6.1.5)
+          - allowPlannedJobs: The user can schedule jobs to run at a specific time. (Added in 6.1.5)
 
           When options are not set, the admin role will have all options.  
           When options are set on the public role, they will have the lowest precedence and can be used as default options for all roles.  
@@ -2431,7 +2440,33 @@
                   * **database query** : you can use the query and dbConfig property to query a mysql, mssql server, postgres, oracle or mongodb.
                   * **expression** : you can use the expression property to create or retrieve data. in this case the output of the expression can be any type.    
                 examples:
-                - name: Table
+                - name: Table with default values
+                  code: |
+                    - type: table
+                      name: users
+                      label: Users
+                      default:
+                        - username: john_doe
+                          email: john@example.com
+                          active: true
+                        - username: jane_smith
+                          email: jane@example.com
+                          active: false
+                      showLoadButton: true
+                      showDownloadButton: true
+                      tableFields:
+                        - name: username
+                          type: text
+                          label: Username
+                          required: true
+                        - name: email
+                          type: text
+                          label: Email
+                          required: true
+                        - name: active
+                          type: checkbox
+                          label: Active
+                - name: Table from expression
                   code: |
                     - type: table
                       name: member
@@ -2499,6 +2534,69 @@
                           switch: true
                           required: true
                           default: true                                
+              - name: yaml
+                description: A YAML editor field with syntax highlighting and validation
+                extra: |
+                  A yaml field allows you to work with structured YAML configuration data.  
+                  It provides a dedicated editor with syntax highlighting and always-on validation.  
+                  You can load data from multiple sources:  
+
+                  * **database query** : you can use the query and dbConfig property to query a mysql, mssql server, postgres, oracle or mongodb.
+                  * **expression** : you can use the expression property to create or retrieve data (local or remote). The output must be an object or array.
+                  * **manual editing** : users can directly edit YAML in an AceEditor (monokai theme) or view read-only syntax-highlighted display
+                  * **file import** : load YAML from .yml or .yaml files using the optional showLoadButton
+                  * **file export** : download field content as YAML using the optional showDownloadButton
+
+                  The field performs continuous YAML syntax validation and supports custom error messages via the yamlError property.
+                  In readonly mode, the field displays prettified syntax-highlighted YAML without editing capabilities.
+                examples:
+                - name: Manual YAML editing
+                  code: |
+                    - type: yaml
+                      name: config
+                      label: Application Configuration
+                      default:
+                        database:
+                          host: localhost
+                          port: 5432
+                        features:
+                          - authentication
+                          - logging
+                      showLoadButton: true
+                      showDownloadButton: true
+                      yamlError:
+                        description: "Please enter valid YAML configuration"
+                      required: true
+                - name: YAML from expression
+                  code: |
+                    - type: yaml
+                      name: users
+                      label: User List
+                      expression: fn.fnRestBasic('get','https://api.example.com/users','','','')
+                      showDownloadButton: true
+                      readonly: true
+                - name: YAML from local expression
+                  code: |
+                    - type: yaml
+                      name: computed_config
+                      label: Computed Config
+                      runLocal: true
+                      expression: |
+                        (()=>{
+                          return {
+                            env: 'production',
+                            settings: $(environment_field)
+                          };
+                        })()
+                      showDownloadButton: true
+                - name: YAML from query
+                  code: |
+                    - type: yaml
+                      name: database_data
+                      label: Database Records
+                      query: "SELECT * FROM servers"
+                      dbConfig: mydb
+                      showDownloadButton: true
             short: Field type
             description: Other attributes might only be available for some field types.
             examples:
@@ -2557,7 +2655,7 @@
             type: string
             group: basic
             allowed: Free text
-            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, file, html
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, file, html, yaml
             short: Field label
             description: |
               A friendly name/label for the field.  Note: if not set, the field name is used as label, but not when type is html.
@@ -2577,7 +2675,7 @@
             type: string
             group: basic
             allowed: Free text
-            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, file
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, file, yaml
             short: Field help message
             description: |
               Some fields require additional help information.
@@ -2837,11 +2935,17 @@
               * `__auto__` : select the first
               * `__none__` : select none
               * `__all__` : select all (if multiple is true)
+              
+              For `table` fields, the default must be an array of objects matching the tableFields structure.
+              For `yaml` fields, the default can be any valid YAML structure (object or array).
             changelog:
+              - version: 6.1.5
+                type: changed
+                description: Table and YAML fields now support default values for pre-populating initial data.
               - version: 4.0.5
                 type: added
                 description: A default can now hold placeholders like `$(other_field)`, and together with `evalDefault` be evaluated as javascript.           
-            with_types: text, textarea, number, expression, password, enum, radio, checkbox, datetime
+            with_types: text, textarea, number, expression, password, enum, radio, checkbox, datetime, table, yaml
           - name: evalDefault
             type: boolean
             group: data
@@ -3623,7 +3727,89 @@
             version: 4.0.5
             description: |
               With a tablefield, you can choose which fields are visible during insert.  This way you can choose to hide certain fields.
-              Use this property to set the insert fields.              
+              Use this property to set the insert fields.
+          - name: showLoadButton
+            type: boolean
+            group: interaction
+            with_types: table, yaml
+            default: false
+            version: 6.1.5
+            short: Show load button for file import
+            description: |
+              Enables a "Load YAML" button that allows users to import data from .yml or .yaml files.
+              For table fields, the YAML file must contain a valid array of objects.
+              For yaml fields, the file can contain any valid YAML structure.
+              Single objects are automatically wrapped in arrays for table fields.
+            examples:
+            - name: Table with YAML import
+              code: |
+                - type: table
+                  name: users
+                  label: Users
+                  showLoadButton: true
+                  showDownloadButton: true
+                  tableFields:
+                    - name: username
+                      type: text
+                    - name: email
+                      type: text
+            - name: YAML field with file import
+              code: |
+                - type: yaml
+                  name: config
+                  label: Configuration
+                  showLoadButton: true
+                  showDownloadButton: true
+                  default:
+                    key: value
+          - name: showDownloadButton
+            type: boolean
+            group: interaction
+            with_types: table, yaml
+            default: false
+            version: 6.1.5
+            short: Show download button for file export
+            description: |
+              Enables a "Download" button that exports the field content as a .yml file.
+              The filename is automatically generated from the field name.
+          - name: yamlError
+            type: object
+            group: validation
+            with_types: yaml
+            version: 6.1.5
+            short: Custom YAML validation error message
+            description: |
+              Allows you to customize the error message displayed when YAML syntax validation fails.
+              The yamlError object requires a `description` property containing the custom message.
+              Supports placeholders for dynamic error messages.
+            examples:
+            - name: Custom YAML error
+              code: |
+                - type: yaml
+                  name: config
+                  label: Configuration
+                  yamlError:
+                    description: "Please enter valid YAML configuration (key-value pairs required)"
+          - name: readonly
+            type: boolean
+            group: interaction
+            with_types: yaml
+            default: false
+            version: 6.1.5
+            short: Display YAML in readonly mode
+            description: |
+              When set to true, displays the YAML content with syntax highlighting in a non-editable card.
+              Useful for showing computed or retrieved YAML data without allowing modifications.
+              The field uses v-highlightjs for pretty syntax-highlighted display.
+            examples:
+            - name: Readonly YAML from expression
+              code: |
+                - type: yaml
+                  name: server_config
+                  label: Server Configuration
+                  readonly: true
+                  expression: fn.getServerConfig()
+                  showDownloadButton: true              
           - name: tableFields
             type: array
             group: basic

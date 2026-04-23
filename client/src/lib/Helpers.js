@@ -22,7 +22,9 @@ const Helpers = {
     // Parse Axios error
     if (err.response) {
       // The request was made and the server responded with a status
-      return err.response.data?.message || err.response.data?.error || custom;
+      const message = err.response.data?.message || err.response.data?.error || custom;
+      const details = err.response.data?.details;
+      return details ? `${message}: ${details}` : message;
     } else{
       return err.message || custom;
     }

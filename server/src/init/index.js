@@ -8,11 +8,12 @@ import Repository from '../models/repository.model.js';
 import Datasource from '../models/datasource.model.js';
 import Schedule from '../models/schedule.model.js';
 import BackupModel from '../models/backup.model.js';
-import { CronExpressionParser } from "cron-parser";
+import cronService from '../services/cron.service.js';
 import dayjs from "dayjs";
 import appConfig from "../../config/app.config.js";
 import User from "../models/user.model.js";
 import Group from "../models/group.model.js";
+import Token from "../models/token.model.js";
 
 const init = async function(){
 
@@ -40,6 +41,7 @@ const init = async function(){
   logger.info("Mysql is ready")
 
   // check Schema
+  var schemaIsReady = false
   try{
     var schemaresult = await Schema.hasSchema()
     if(schemaresult.data.failed.length>0){
@@ -50,11 +52,11 @@ const init = async function(){
       for(let i=0;i<schemaresult.data.failed.length;i++){
         logger.error(schemaresult.data.failed[i])
       }
+      // Schema exists but has issues - continue with caution
+      schemaIsReady = false
     }else{
       logger.info("Schema is up to date")
-      // for(let i=0;i<schemaresult.data.success.length;i++){
-      //   logger.info(schemaresult.data.success[i])
-      // }      
+      schemaIsReady = true
     }
 
   }catch(err){
@@ -72,39 +74,49 @@ const init = async function(){
       logger.error("Fatal error : " + err)
       throw err
     }
-
+    // Schema is missing - stop initialization here
+    schemaIsReady = false
   }
 
-  // check admins groups
-  try{
-    var adminGroupName = "admins"
-    var adminGroup = await Group.findByName(adminGroupName)
-    if(adminGroup.length==0){
-      logger.warning(`Group ${adminGroupName} not found, creating it`)
-      adminGroup = {}
-      adminGroup.id = await Group.create(new Group({name:adminGroupName}))
-    }else{
-      adminGroup = adminGroup[0]
+  // Only continue with group/user creation if schema is ready
+  if(!schemaIsReady){
+    logger.warning("Schema is not ready, skipping group and user initialization")
+    logger.warning("Please create the schema via the /schema endpoint")
+    // Continue to start the app so the /schema endpoint is available
+  }else{
+    // check admins groups
+    logger.info("Checking admins group exists")
+    try{
+      var adminGroupName = "admins"
+      var adminGroup = await Group.findByName(adminGroupName)
+      if(!adminGroup){
+        logger.info(`Group ${adminGroupName} not found, creating it`)
+        adminGroupId = await Group.create({name:adminGroupName})
+        logger.info(`Created admins group with id ${adminGroupId}`)
+      }else{
+        adminGroupId = adminGroup.id
+        logger.info(`Found admins group with id ${adminGroupId}`)
+      }
+    }catch(err){
+      logger.error("Failed to check/create admins group : " + err)
     }
-    adminGroupId = adminGroup.id
-  }catch(err){
-    logger.error("Failed to check/create admins group : " + err)
-  }
 
-  // check admin user
-  logger.info("Checking admin user exists")
-  try{
-    var adminUsername = appConfig.adminUsername
-    var adminUser = await User.findByUsername(adminUsername)
-    if(adminUser.length==0){
-      logger.warning(`Admin user ${adminUsername} not found, creating it`)
-      var adminPassword = appConfig.adminPassword
-      await User.create(new User({username:adminUsername,email:'',password:adminPassword,group_id:adminGroupId}))
-    }else{
-      adminUser = adminUser[0]
+    // check admin user
+    logger.info("Checking admin user exists")
+    try{
+      var adminUsername = appConfig.adminUsername
+      var adminUser = await User.findByUsername(adminUsername)
+      if(!adminUser){
+        logger.info(`Admin user ${adminUsername} not found, creating it`)
+        var adminPassword = appConfig.adminPassword
+        await User.create({username:adminUsername,email:'',password:adminPassword,group_id:adminGroupId})
+        logger.info(`Created admin user ${adminUsername}`)
+      }else{
+        logger.info(`Admin user ${adminUsername} already exists`)
+      }
+    }catch(err){
+      logger.error("Failed to check/create admin user : " + err)
     }
-  }catch(err){
-    logger.error("Failed to check/create admin user : " + err)
   }
 
   // let's check other database records like settings,ldap. if no record exists, create them, this is for fresh install
@@ -150,17 +162,13 @@ const init = async function(){
     logger.error("Failed to abandon jobs : " + err)
   })
 
-  logger.info("Initializing hourly abandoned jobs timer")
-  // this is hourly, abandon running jobs older than a day.
-  setInterval(()=>{
-    Job.abandon()
-      .then((changed)=>{
-        logger.warning(`Abandoned ${changed} jobs`)
-      })
-      .catch((err)=>{
-        logger.error("Failed to abandon jobs : " + err)
-      })
-  },3600000)
+  logger.info("Initializing cron service for scheduled tasks")
+  // Initialize all cron jobs from database (repositories, datasources, schedules)
+  await cronService.initializeAll();
+
+  logger.info("Initializing system maintenance tasks")
+  // Initialize system maintenance cron jobs (abandoned jobs, token cleanup, backups, etc.)
+  await cronService.initializeSystemTasks(Job, Token, BackupModel, appConfig);
 
   logger.info("Pulling repositories")
   mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE rebase_on_start=1")
@@ -171,121 +179,6 @@ const init = async function(){
     })
   })
   .catch((e)=>{})
-
-  logger.info("Initializing nightly backup")
-  // Run nightly backups at midnight and cleanup old backups
-  setInterval(async ()=>{
-    try{
-      const now = dayjs()
-      const hour = now.hour()
-      const minute = now.minute()
-      
-      // Run at midnight (0:00)
-      if(hour === 0 && minute === 0){
-        logger.info("Running automated nightly backup")
-        try{
-          const result = await BackupModel.doBackup("Automated nightly backup")
-          logger.info(`Nightly backup completed: ${result.backupFolder}`)
-          
-          // Cleanup old nightly backups
-          logger.info(`Cleaning up nightly backups, keeping last ${appConfig.nightlyBackupRetention} backups`)
-          const backups = await BackupModel.listBackups()
-          const nightlyBackups = backups.filter(b => b.description === "Automated nightly backup")
-          
-          if(nightlyBackups.length > appConfig.nightlyBackupRetention){
-            const toDelete = nightlyBackups.slice(appConfig.nightlyBackupRetention)
-            for(const backup of toDelete){
-              logger.info(`Deleting old nightly backup: ${backup.folder}`)
-              await BackupModel.deleteBackup(backup.folder)
-            }
-            logger.info(`Cleaned up ${toDelete.length} old nightly backups`)
-          }
-        }catch(e){
-          logger.error(`Failed to create nightly backup: ${e}`)
-        }
-      }
-    }catch(e){
-      logger.error(`Nightly backup interval error: ${e}`)
-    }
-  },60000) // Check every minute
-
-  logger.info("Initializing cron schedules")
-  // this is hourly, abandon running jobs older than a day.
-  setInterval(async ()=>{
-
-    // find any repositories with cron schedules that need to run
-    try{
-      const repositories = await mysql.do("SELECT name,cron FROM AnsibleForms.`repositories` WHERE COALESCE(status,'')<>'running' AND cron<>''",undefined,true)
-      repositories.map(async (repo)=>{
-        try{
-          const interval = CronExpressionParser.parse(repo.cron) 
-          const next = interval.next().toDate()
-          const date = dayjs(next)
-          const now = dayjs()
-          const minutes = date.diff(now,'m')
-          if(minutes==0){
-            Repository.pull(repo.name).catch((e)=>{}) // we don't wait for the pull to finish to continue
-          }else{
-            // logger.debug(`Not time yet, ${minutes} minutes to go`)
-          }
-        }catch(e){
-          logger.error(`Failed to parse cron schedule ${repo.cron}`)
-        }       
-      })
-    }catch(e){} 
-
-    // find any datasources with cron schedules that need to run
-    try{
-      // datasource cron schedules
-      const datasources = await mysql.do("SELECT id,name,cron FROM AnsibleForms.`datasource` WHERE COALESCE(status,'')<>'running' AND COALESCE(status,'')<>'queued' AND cron<>''",undefined,true)
-      datasources.map(async(ds)=>{
-        try{
-          const interval = CronExpressionParser.parse(ds.cron) 
-          const next = interval.next().toDate()
-          const date = dayjs(next)
-          const now = dayjs()
-          const minutes = date.diff(now,'m')
-          if(minutes==0){
-            // time to run
-            await Datasource.queue(ds.id)
-
-          }else{
-            // logger.debug(`Not time yet, ${minutes} minutes to go`)
-          }
-        }catch(e){
-          logger.error(`Failed to queue datasource`,e)
-        }       
-      })
-    }catch(e){}
-
-    // find any schedules with cron schedules that need to run
-    try{
-      // schedule cron schedules
-      const schedules = await mysql.do("SELECT id,name,cron FROM AnsibleForms.`schedule` WHERE COALESCE(status,'')<>'running' AND COALESCE(status,'')<>'queued' AND cron<>''",undefined,true)
-      schedules.map(async(schedule)=>{
-        try{
-          const interval = CronExpressionParser.parse(schedule.cron) 
-          const next = interval.next().toDate()
-          const date = dayjs(next)
-          const now = dayjs()
-          const minutes = date.diff(now,'m')
-          if(minutes==0){
-            // time to run
-            await Schedule.queue(schedule.id)
-
-          }else{
-            // logger.debug(`Not time yet, ${minutes} minutes to go`)
-          }
-        }catch(e){
-          logger.error(`Failed to queue schedule`,e)
-        }       
-      })
-    }catch(e){}
-
-
-  },56000) // run every 55 second, should hit 0 minutes once
-
-
 
   // now we check if there are any datasources that need to be imported, every 10 seconds
   // we only import 1 datasource that is with the lowest queue_id while there are no datasources with status running
@@ -360,6 +253,29 @@ const init = async function(){
 
   // Initial call to start the process
   setTimeout(checkSchedules,10000)
+
+  // Cleanup expired stored jobs daily at 3 AM
+  logger.info("Initializing stored jobs cleanup");
+  async function cleanupExpiredStoredJobs() {
+    try {
+      const result = await mysql.do(
+        "DELETE FROM AnsibleForms.stored_jobs WHERE expires_at IS NOT NULL AND expires_at < NOW()",
+        undefined,
+        true
+      );
+      if (result.affectedRows > 0) {
+        logger.info(`Cleaned up ${result.affectedRows} expired stored job(s)`);
+      }
+    } catch (e) {
+      logger.error("Failed to cleanup expired stored jobs:", e);
+    } finally {
+      // Run cleanup daily (24 hours)
+      setTimeout(cleanupExpiredStoredJobs, 24 * 60 * 60 * 1000);
+    }
+  }
+
+  // Initial call to start the cleanup process (run after 1 minute)
+  setTimeout(cleanupExpiredStoredJobs, 60000);
 }
 
 export default init

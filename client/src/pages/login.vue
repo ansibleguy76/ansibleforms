@@ -5,6 +5,7 @@ import { required } from "@vuelidate/validators";
 import TokenStorage from "@/lib/TokenStorage"; // work with tokens and local storage
 import State from "@/lib/State"; // work with state
 import Navigate from "@/lib/Navigate"; // navigate to routes
+import Helpers from "@/lib/Helpers"; // helper functions
 import { toast } from 'vue-sonner';
 import { useRoute, useRouter } from "vue-router";
 import axios from "axios";
@@ -49,11 +50,11 @@ const $v = useVuelidate(rules, { user });
 // methods
 function authAzureAd() {
    localStorage.setItem("authIssuer", "azuread");  // set cookie to azuread
-   window.location.replace(`/api/v1/auth/azureadoauth2`) // redirect to azuread
+   window.location.replace(`/api/v2/auth/azureadoauth2`) // redirect to azuread
 }
 function authOidc() {
    localStorage.setItem("authIssuer", "oidc");   // set cookie to oidc
-   window.location.replace(`/api/v1/auth/oidc`) // redirect to oidc
+   window.location.replace(`/api/v2/auth/oidc`) // redirect to oidc
 }
 function getGroupsAndLogin(token, url = `${azureGraphUrl.value}/v1.0/me/transitiveMemberOf`, type = 'azuread', allGroups = []) {
    if (type === 'azuread') {
@@ -93,7 +94,7 @@ function getGroupsAndLogin(token, url = `${azureGraphUrl.value}/v1.0/me/transiti
     tokenLogin(token, payload.groups || [], 'oidc')
   }
 }
-function tokenLogin(token, allGroups, type = 'azuread') {
+async function tokenLogin(token, allGroups, type = 'azuread') {
    var validRegex = true
    var regex
    const groupfilter = type === 'azuread' ? azureGroupfilter.value : oidcGroupfilter.value
@@ -108,46 +109,36 @@ function tokenLogin(token, allGroups, type = 'azuread') {
    }
    const loginProvider = type === 'azuread' ? 'azureadoauth2' : 'oidc'
 
-   axios.post(`/api/v1/auth/${loginProvider}/login`, { token: token, groups: allGroups })
-      .then((result) => {
-         if (result.data.token) {
-            processLogin(result.data)
-         } else {
-            toast.error("Identity Provider Login failed, no token found");
-         }
-      })
-      .catch((err) => {
-         console.log(err);
-         toast.error("Identity Provider Login failed");
-      });
+   try {
+      const result = await axios.post(`/api/v2/auth/${loginProvider}/login`, { token: token, groups: allGroups })
+      processLogin(result.data)
+   } catch(err) {
+      toast.error(Helpers.parseAxiosResponseError(err, "Identity Provider Login failed"));
+   }
 }
-function getSettings(token) {
-   axios.get(`/api/v1/auth/settings`)
-      .then((result) => {
-         if (result.data?.status == 'success') {
-            azureAdEnabled.value = !!result.data.data.output.azureAdEnabled
-            azureGroupfilter.value = result.data.data.output.azureGroupfilter
-            azureGraphUrl.value = result.data.data.output.azureGraphUrl
+async function getSettings(token) {
+   try {
+      const result = await axios.get(`/api/v2/auth/settings`)
+      
+      azureAdEnabled.value = !!result.data.azureAdEnabled
+      azureGroupfilter.value = result.data.azureGroupfilter
+      azureGraphUrl.value = result.data.azureGraphUrl
 
-            oidcEnabled.value = !!result.data.data.output.oidcEnabled
-            oidcGroupfilter.value = result.data.data.output.oidcGroupfilter
-            oidcIssuer.value = result.data.data.output.oidcIssuer
+      oidcEnabled.value = !!result.data.oidcEnabled
+      oidcGroupfilter.value = result.data.oidcGroupfilter
+      oidcIssuer.value = result.data.oidcIssuer
 
-            if (token && azureAdEnabled.value) {
-               if (localStorage.getItem("authIssuer") == "azuread") // get cookie and see if we issued azuread
-                  getGroupsAndLogin(token)
-            }
-            if (token && oidcEnabled.value) { // get cookie ans see if we issued oidc
-               if (localStorage.getItem("authIssuer") == "oidc")
-                  getGroupsAndLogin(token, `${oidcIssuer.value}/protocol/openid-connect/userinfo`, 'oidc')
-            }
-         } else {
-            toast.error(result.data.data.error)
-         }
-      })
-      .catch((err) => {
-         toast.error(`Failed to get settings: ${err}`)
-      })
+      if (token && azureAdEnabled.value) {
+         if (localStorage.getItem("authIssuer") == "azuread") // get cookie and see if we issued azuread
+            getGroupsAndLogin(token)
+      }
+      if (token && oidcEnabled.value) { // get cookie ans see if we issued oidc
+         if (localStorage.getItem("authIssuer") == "oidc")
+            getGroupsAndLogin(token, `${oidcIssuer.value}/protocol/openid-connect/userinfo`, 'oidc')
+      }
+   } catch(err) {
+      toast.error(Helpers.parseAxiosResponseError(err, "Failed to get settings"))
+   }
 }
 function processLogin(data) {
    TokenStorage.storeToken(data.token)
@@ -167,23 +158,18 @@ function processLogin(data) {
 async function login() {
    localStorage.removeItem("authIssuer") // remove cookie, regular login
    if (!$v.value.user.$invalid) {
-      console.log("Logging in")
-      var basicAuth = 'Basic ' + btoa(`${user.value.username}:${user.value.password}`)
-      var postconfig = {
-         headers: { 'Authorization': basicAuth }
+      try {
+         console.log("Logging in")
+         var basicAuth = 'Basic ' + btoa(`${user.value.username}:${user.value.password}`)
+         var postconfig = {
+            headers: { 'Authorization': basicAuth }
+         }
+         const result = await axios.post(`/api/v2/auth/login`, {}, postconfig)
+         processLogin(result.data)
+      } catch(err) {
+         TokenStorage.clear()
+         toast.error(Helpers.parseAxiosResponseError(err, "Login failed"))
       }
-      axios.post(`/api/v1/auth/login`, {}, postconfig)
-         .then((result) => {
-            if (result.data.token) {
-               processLogin(result.data)
-            } else {
-               TokenStorage.clear()
-               toast.error(result.data.message)
-            }
-
-         }).catch(function (error) {
-            TokenStorage.clear()
-         })
    } else {
       toast.error("Form is not valid")
       $v.value.user.$touch()

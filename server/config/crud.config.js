@@ -99,6 +99,40 @@ const crudConfigs = {
     allowCache: true,
     cacheTTL: 3600
   },
+  users: {
+    table: 'AnsibleForms.users',
+    fields: [
+      { name: 'id', isKey: true },
+      { name: 'username', isNaturalKey: true, required: true },
+      { name: 'password', required: true }, // Special handling needed - async hashing
+      { name: 'email', setDefault: true }, // Default to empty string
+      { name: 'group_id', required: true }
+    ],
+    allowCache: false
+  },
+  repositories: {
+    table: 'AnsibleForms.repositories',
+    fields: [
+      { name: 'id', isKey: true },
+      { name: 'name', isNaturalKey: true, required: true },
+      { name: 'uri', required: true },
+      { name: 'branch' },
+      { name: 'user' },
+      { name: 'password', isEncrypted: true, setDefault: true },
+      { name: 'description' },
+      { name: 'use_for_config', isBoolean: true },
+      { name: 'use_for_forms', isBoolean: true },
+      { name: 'use_for_playbooks', isBoolean: true },
+      { name: 'use_for_vars_files', isBoolean: true },
+      { name: 'rebase_on_start', isBoolean: true },
+      { name: 'cron' },
+      { name: 'status' },
+      { name: 'output' },
+      { name: 'head' }
+    ],
+    allowCache: true,
+    cacheTTL: 3600
+  },
   ldap: {
     table: 'AnsibleForms.ldap',
     fields: [
@@ -129,17 +163,33 @@ const crudConfigs = {
     fields: [
       { name: 'id', isKey: true },
       { name: 'name', isNaturalKey: true, required: true },
+      { name: 'one_time_run', isBoolean: true },
+      { name: 'cron' },
+      { name: 'run_at', isDatetime: true },
       { name: 'extra_vars' },
       { name: 'form' },
-      { name: 'cron' },
       { name: 'output' },
       { name: 'status' },
       { name: 'state' },
-      { name: 'last_run' },
+      { name: 'last_run', isDatetime: true },
       { name: 'queue_id' }
     ],
     allowCache: true,
     cacheTTL: 3600
+  },
+  stored_jobs: {
+    table: 'AnsibleForms.stored_jobs',
+    fields: [
+      { name: 'id', isKey: true },
+      { name: 'name', required: true },
+      { name: 'description' },
+      { name: 'form_name', required: true },
+      { name: 'username', required: true },
+      { name: 'form_data', required: true },
+      { name: 'created_at', isDatetime: true },
+      { name: 'expires_at', isDatetime: true }
+    ],
+    allowCache: false
   }
 };
 

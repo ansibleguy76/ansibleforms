@@ -3,7 +3,7 @@
 class RestResult {
   // For a single item
   static single(data) {
-    return data ;
+    return data;
   }
 
   // For a list

@@ -43,24 +43,24 @@ var TokenStorage = {
     var ref = this;
     console.log("Getting new token from server...");
     
-    let tokenResponse;
     const refreshToken= this.getRefreshToken();
 
     if (!refreshToken) {
       console.log("No refresh token found, cannot get new token");
       return null;
     }
-    tokenResponse = await axios.post(`/api/v1/token`, {
-      refreshtoken: refreshToken,
-    });
 
-    if (tokenResponse.error) {
-      console.log("Getting token failed");
-      throw new Error(tokenResponse.message);
-    } else {
+    try {
+      const tokenResponse = await axios.post(`/api/v2/token`, {
+        refreshtoken: refreshToken,
+      });
+
       this.storeToken(tokenResponse.data.token);
       this.storeRefreshToken(tokenResponse.data.refreshtoken);
       return tokenResponse.data.token;
+    } catch (err) {
+      console.log("Getting token failed:", err.response?.data?.error || err.message);
+      return null;
     }
   },
 

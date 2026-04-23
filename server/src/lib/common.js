@@ -50,7 +50,7 @@ Helpers.escapeStringForCommandLine=function(value) {
 }
 
 Helpers.checkCertificate=function(cert){
-  certs=cert.replace(/-----(\r\n|\n|\r)-----/gm,"-----|-----").split("|")
+  var certs=cert.replace(/-----(\r\n|\n|\r)-----/gm,"-----|-----").split("|")
   if(certs.length>1){
     logger.debug("Certificate is a bundle...")
   }else{

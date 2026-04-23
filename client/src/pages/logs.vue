@@ -48,7 +48,7 @@ watch(refresh, async () => {
 async function load(force = false) {
   if (!isLoading.value && (refresh.value || force)) {
     isLoading.value = true;
-    const result = await axios.get(`/api/v1/log?lines=${lines.value || 100}`, TokenStorage.getAuthentication())
+    const result = await axios.get(`/api/v2/log?lines=${lines.value || 100}`, TokenStorage.getAuthentication())
     if (result.data != "...") {
       log.value = result.data
       isLoading.value = false
@@ -72,7 +72,7 @@ async function downloadWithAxios(url, authHeaders) {
 
 async function download() {
   try {
-    await downloadWithAxios(`/api/v1/log/download`, TokenStorage.getAuthentication())
+    await downloadWithAxios(`/api/v2/log/download`, TokenStorage.getAuthentication())
   } catch (err) {
     toast.error(err.message)
   }

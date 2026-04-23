@@ -24,7 +24,6 @@ const fields = [
     required: true,
     filterable: false,
     icon: "lock",
-    regex: { expression: "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\\$%\\^&\\*])", description: "Must contain at least one uppercase letter, one lowercase letter, one number, and one special character" },     
   },
 ];
 
@@ -32,15 +31,11 @@ async function updateItem() {
 
     if (!$v.$invalid) {
         try {
-            const result = await axios.put(`/api/v1/profile`, item.value, TokenStorage.getAuthentication())
-            if (result.data.status == "error") {
-                toast.error(result.data.message + ", " + result.data.data.error);
-            } else {
-                toast.success("Password is changed");
-                Navigate.toHome(router);
-            }
+            const result = await axios.put(`/api/v2/profile`, item.value, TokenStorage.getAuthentication())
+            toast.success("Password is changed");
+            Navigate.toHome(router);
         } catch (err) {
-            toast.error(err.message)
+            toast.error(err.toString())
         }
     } else {
         toast.warning("Invalid form data");
@@ -214,17 +209,13 @@ const $v = useVuelidate(rules, { item });
       update(){
         var ref= this;
         if (!this.v$.user.password.$invalid && !this.v$.user.password2.$invalid) {
-          axios.put(`/api/v1/profile`,this.user,TokenStorage.getAuthentication())
+          axios.put(`/api/v2/profile`,this.user,TokenStorage.getAuthentication())
             .then((result)=>{
-              if(result.data.status=="error"){
-                ref.$toast.error(result.data.message + ", " + result.data.data.error);
-              }else{
-                  ref.$toast.success("Password is changed");
-                  ref.$router.push({name:"Home"}).catch(err => {});
-              }
-            }),function(err){
+              ref.$toast.success("Password is changed");
+              ref.$router.push({name:"Home"}).catch(err => {});
+            }).catch((err)=>{
               ref.$toast.error(err.toString());
-            };
+            });
         }else{
           this.$toast.warning("Invalid form data")
         }

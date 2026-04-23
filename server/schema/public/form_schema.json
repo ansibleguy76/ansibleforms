@@ -823,7 +823,9 @@
               "isHtml": {"not":{}},
               "accept": {"not":{}},
               "multiple": {"not":{}},
-              "outputObject": {"not":{}}
+              "outputObject": {"not":{}},
+              "showLoadButton": {"not":{}},
+              "showDownloadButton": {"not":{}}
             }
           },
           {
@@ -870,7 +872,9 @@
               "values": {"not":{}},
               "isHtml": {"not":{}},
               "multiple": {"not":{}},
-              "outputObject": {"not":{}}
+              "outputObject": {"not":{}},
+              "showLoadButton": {"not":{}},
+              "showDownloadButton": {"not":{}}
             }
           },                
           {
@@ -909,7 +913,9 @@
               "readonlyColumns": {"not":{}},
               "isHtml": {"not":{}},
               "asCredential": {"not":{}},
-              "outputObject": {"not":{}}
+              "outputObject": {"not":{}},
+              "showLoadButton": {"not":{}},
+              "showDownloadButton": {"not":{}}
             }
           },
           {
@@ -952,7 +958,9 @@
               "multiple": {"not":{}},
               "asCredential": {"not":{}},
               "switch": {"not":{}},
-              "outputObject": {"not":{}}
+              "outputObject": {"not":{}},
+              "showLoadButton": {"not":{}},
+              "showDownloadButton": {"not":{}}
             },
             "required": ["values"]
           },
@@ -995,7 +1003,9 @@
               "readonlyColumns": {"not":{}},
               "multiple": {"not":{}},
               "asCredential": {"not":{}},
-              "outputObject": {"not":{}}
+              "outputObject": {"not":{}},
+              "showLoadButton": {"not":{}},
+              "showDownloadButton": {"not":{}}
             }
           },
           {
@@ -1030,7 +1040,9 @@
               "isHtml": {"not":{}},
               "dbConfig": {"not":{}},
               "switch": {"not":{}},
-              "hide": {"not":{}}
+              "hide": {"not":{}},
+              "showLoadButton": {"not":{}},
+              "showDownloadButton": {"not":{}}
             },
             "required": ["values"]
           },
@@ -1063,7 +1075,9 @@
               "isHtml": {"not":{}},
               "runLocal": {"not":{}},
               "switch": {"not":{}},
-              "hide": {"not":{}}
+              "hide": {"not":{}},
+              "showLoadButton": {"not":{}},
+              "showDownloadButton": {"not":{}}
             },
             "required": ["query", "dbConfig"]
           },                
@@ -1097,7 +1111,9 @@
               "isHtml": {"not":{}},
               "dbConfig": {"not":{}},
               "switch": {"not":{}},
-              "hide": {"not":{}}
+              "hide": {"not":{}},
+              "showLoadButton": {"not":{}},
+              "showDownloadButton": {"not":{}}
             },
             "required": ["expression"]
           },                
@@ -1130,7 +1146,9 @@
               "readonlyColumns": {"not":{}},
               "keydown": {"not":{}},
               "switch": {"not":{}},
-              "outputObject": {"not":{}}
+              "outputObject": {"not":{}},
+              "showLoadButton": {"not":{}},
+              "showDownloadButton": {"not":{}}
             },
             "required": ["expression"]
           },
@@ -1163,7 +1181,9 @@
               "keydown": {"not":{}},
               "expression": {"not":{}},
               "switch": {"not":{}},
-              "outputObject": {"not":{}}
+              "outputObject": {"not":{}},
+              "showLoadButton": {"not":{}},
+              "showDownloadButton": {"not":{}}
             },
             "required": ["value"]
           },                
@@ -1197,7 +1217,9 @@
               "readonlyColumns": {"not":{}},
               "keydown": {"not":{}},
               "switch": {"not":{}},
-              "outputObject": {"not":{}}
+              "outputObject": {"not":{}},
+              "showLoadButton": {"not":{}},
+              "showDownloadButton": {"not":{}}
             },
             "required": ["query", "dbConfig"]
           },
@@ -1256,7 +1278,9 @@
               "hide":              {"not":{}}, 
               "icon":              {"not":{}}, 
               "switch": {"not":{}},
-              "tableFields":       {"not":{}}
+              "tableFields":       {"not":{}},
+              "showLoadButton": {"not":{}},
+              "showDownloadButton": {"not":{}}
             },
             "required": ["expression"]
           },   
@@ -1307,7 +1331,9 @@
               "size":              {"not":{}}, 
               "hide":              {"not":{}}, 
               "switch": {"not":{}},
-              "tableFields":       {"not":{}}
+              "tableFields":       {"not":{}},
+              "showLoadButton": {"not":{}},
+              "showDownloadButton": {"not":{}}
             }
           },                                
           {
@@ -1332,7 +1358,9 @@
               "filterColumns": {"not":{}},
               "previewColumn": {"not":{}},
               "switch": {"not":{}},
-              "valueColumn": {"not":{}}
+              "valueColumn": {"not":{}},
+              "showLoadButton": {"not":{}},
+              "showDownloadButton": {"not":{}}
             },
             "required": ["dateType"]
           },                   
@@ -1363,16 +1391,148 @@
               "keydown": {"not":{}},
               "isHtml": {"not":{}},
               "icon": {"not":{}},
-              "switch": {"not":{}},
-              "default": {"not":{}}
+              "switch": {"not":{}}
             },
             "required": ["tableFields"]
+          },
+          {
+            "properties": {
+              "type": {
+                "enum": ["yaml"]
+              },
+              "dateType": {"not":{}},
+              "convertToUtc": {"not":{}},
+              "values": {"not":{}},
+              "regex": {"not":{}},
+              "minValue": {"not":{}},
+              "maxValue": {"not":{}},
+              "minLength": {"not":{}},
+              "maxLength": {"not":{}},
+              "minSize": {"not":{}},
+              "maxSize": {"not":{}},
+              "sticky": {"not":{}},
+              "horizontal": {"not":{}},
+              "tableTitleAdd": {"not":{}},
+              "tableTitleEdit": {"not":{}},
+              "pctColumns": {"not":{}},
+              "filterColumns": {"not":{}},
+              "allowDelete": {"not":{}},
+              "allowInsert": {"not":{}},
+              "deleteMarker": {"not":{}},
+              "insertMarker": {"not":{}},
+              "updateMarker": {"not":{}},
+              "readonlyColumns": {"not":{}},
+              "isHtml": {"not":{}},
+              "keydown": {"not":{}},
+              "accept": {"not":{}},
+              "multiple": {"not":{}},
+              "switch": {"not":{}},
+              "tableFields": {"not":{}},
+              "sameAs": {"not":{}},
+              "in": {"not":{}},
+              "notIn": {"not":{}},
+              "asCredential": {"not":{}},
+              "outputObject": {"not":{}},
+              "query": {"not":{}},
+              "dbConfig": {"not":{}},
+              "editable": {"not":{}}
+            },
+            "required": ["expression"]
+          },
+          {
+            "properties": {
+              "type": {
+                "enum": ["yaml"]
+              },
+              "dateType": {"not":{}},
+              "convertToUtc": {"not":{}},
+              "values": {"not":{}},
+              "regex": {"not":{}},
+              "minValue": {"not":{}},
+              "maxValue": {"not":{}},
+              "minLength": {"not":{}},
+              "maxLength": {"not":{}},
+              "minSize": {"not":{}},
+              "maxSize": {"not":{}},
+              "sticky": {"not":{}},
+              "horizontal": {"not":{}},
+              "tableTitleAdd": {"not":{}},
+              "tableTitleEdit": {"not":{}},
+              "pctColumns": {"not":{}},
+              "filterColumns": {"not":{}},
+              "allowDelete": {"not":{}},
+              "allowInsert": {"not":{}},
+              "deleteMarker": {"not":{}},
+              "insertMarker": {"not":{}},
+              "updateMarker": {"not":{}},
+              "readonlyColumns": {"not":{}},
+              "isHtml": {"not":{}},
+              "keydown": {"not":{}},
+              "accept": {"not":{}},
+              "multiple": {"not":{}},
+              "switch": {"not":{}},
+              "tableFields": {"not":{}},
+              "sameAs": {"not":{}},
+              "in": {"not":{}},
+              "notIn": {"not":{}},
+              "asCredential": {"not":{}},
+              "outputObject": {"not":{}},
+              "expression": {"not":{}},
+              "runLocal": {"not":{}},
+              "editable": {"not":{}}
+            },
+            "required": ["query", "dbConfig"]
+          },
+          {
+            "properties": {
+              "type": {
+                "enum": ["yaml"]
+              },
+              "dateType": {"not":{}},
+              "convertToUtc": {"not":{}},
+              "values": {"not":{}},
+              "regex": {"not":{}},
+              "minValue": {"not":{}},
+              "maxValue": {"not":{}},
+              "minLength": {"not":{}},
+              "maxLength": {"not":{}},
+              "minSize": {"not":{}},
+              "maxSize": {"not":{}},
+              "sticky": {"not":{}},
+              "horizontal": {"not":{}},
+              "tableTitleAdd": {"not":{}},
+              "tableTitleEdit": {"not":{}},
+              "pctColumns": {"not":{}},
+              "filterColumns": {"not":{}},
+              "allowDelete": {"not":{}},
+              "allowInsert": {"not":{}},
+              "deleteMarker": {"not":{}},
+              "insertMarker": {"not":{}},
+              "updateMarker": {"not":{}},
+              "readonlyColumns": {"not":{}},
+              "isHtml": {"not":{}},
+              "keydown": {"not":{}},
+              "accept": {"not":{}},
+              "multiple": {"not":{}},
+              "switch": {"not":{}},
+              "tableFields": {"not":{}},
+              "sameAs": {"not":{}},
+              "in": {"not":{}},
+              "notIn": {"not":{}},
+              "asCredential": {"not":{}},
+              "outputObject": {"not":{}},
+              "expression": {"not":{}},
+              "query": {"not":{}},
+              "runLocal": {"not":{}},
+              "dbConfig": {"not":{}},
+              "editable": {"not":{}}
+            }
           }
         ],
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["text","textarea", "password", "checkbox", "enum", "number", "radio", "expression","local","local_out","credential", "table","datetime","html","file"]
+            "enum": ["text","textarea", "password", "checkbox", "enum", "number", "radio", "expression","local","local_out","credential", "table","datetime","html","file","yaml"]
           },
           "name": {
             "type": "string",
@@ -1492,6 +1652,15 @@
           "tableTitleAdd": {"type": "string"},
           "tableTitleEdit": {"type": "string"},
           "switch": {"type": "boolean"},
+          "showLoadButton": {"type": "boolean"},
+          "showDownloadButton": {"type": "boolean"},
+          "yamlError": {
+            "type": "object",
+            "required": ["description"],
+            "properties": {
+              "description": {"type": "string"}
+            }
+          },
           "columns": {
             "type": "array",
             "items": {"type": "string"}
@@ -1520,6 +1689,7 @@
           "sticky": {"type": "boolean"},
           "horizontal": {"type": "boolean"},
           "editable": {"type": "boolean"},
+          "readonly": {"type": "boolean"},
           "valueColumn": {"type": "string"},
           "previewColumn": {"type": "string"},
           "placeholderColumn": {"type": "string"},
@@ -1709,7 +1879,9 @@
                     "filterColumns": {"not":{}},
                     "previewColumn": {"not":{}},
                     "switch": {"not":{}},
-                    "valueColumn": {"not":{}}
+                    "valueColumn": {"not":{}},
+                    "showLoadButton": {"not":{}},
+                    "showDownloadButton": {"not":{}}
                   }
                 },      
                 {
@@ -1732,7 +1904,9 @@
                     "filterColumns": {"not":{}},
                     "previewColumn": {"not":{}},
                     "switch": {"not":{}},
-                    "valueColumn": {"not":{}}
+                    "valueColumn": {"not":{}},
+                    "showLoadButton": {"not":{}},
+                    "showDownloadButton": {"not":{}}
                   },
                   "required": ["dateType"]
                 },                                         
@@ -1756,7 +1930,9 @@
                     "filterColumns": {"not":{}},
                     "previewColumn": {"not":{}},
                     "switch": {"not":{}},
-                    "valueColumn": {"not":{}}
+                    "valueColumn": {"not":{}},
+                    "showLoadButton": {"not":{}},
+                    "showDownloadButton": {"not":{}}
                   }
                 },
                 {
@@ -1781,7 +1957,9 @@
                     "pctColumns": {"not":{}},
                     "filterColumns": {"not":{}},
                     "previewColumn": {"not":{}},
-                    "valueColumn": {"not":{}}
+                    "valueColumn": {"not":{}},
+                    "showLoadButton": {"not":{}},
+                    "showDownloadButton": {"not":{}}
                   }
                 },
                 {
@@ -1803,7 +1981,9 @@
                     "filterColumns": {"not":{}},
                     "previewColumn": {"not":{}},
                     "switch": {"not":{}},
-                    "valueColumn": {"not":{}}
+                    "valueColumn": {"not":{}},
+                    "showLoadButton": {"not":{}},
+                    "showDownloadButton": {"not":{}}
                   },
                   "required": ["values"]
                 },
@@ -1819,7 +1999,9 @@
                     "maxValue": {"not":{}},
                     "minLength": {"not":{}},
                     "maxLength": {"not":{}},
-                    "values": {"not":{}}
+                    "values": {"not":{}},
+                    "showLoadButton": {"not":{}},
+                    "showDownloadButton": {"not":{}}
                   },
                   "required": ["from"]
                 }

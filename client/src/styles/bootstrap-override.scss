@@ -72,3 +72,42 @@
 .text-overlay-icon {
     color: var(--af-overlay-icon-color) !important;
 }
+
+// Placeholder styling for input fields
+[data-bs-theme=light] {
+  input::placeholder,
+  textarea::placeholder,
+  select::placeholder {
+    color: #adb5bd !important;
+    opacity: 0.5 !important;
+    font-style: italic;
+  }
+}
+
+[data-bs-theme=dark] {
+  input::placeholder,
+  textarea::placeholder,
+  select::placeholder {
+    color: #6c757d !important;
+    opacity: 0.5 !important;
+    font-style: italic;
+  }
+}
+
+[data-bs-theme=color] {
+  input::placeholder,
+  textarea::placeholder,
+  select::placeholder {
+    color: #adb5bd !important;
+    opacity: 0.5 !important;
+    font-style: italic;
+  }
+}
+
+// Hide placeholders in floating labels until focused
+// (the floating label acts as the placeholder)
+.form-floating > input:not(:focus)::placeholder,
+.form-floating > textarea:not(:focus)::placeholder,
+.form-floating > select:not(:focus)::placeholder {
+  opacity: 0 !important;
+}

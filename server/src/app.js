@@ -23,35 +23,51 @@ import "./auth/auth_basic.js";
 import "./auth/auth_jwt.js";
 
 // API route handlers
-import schemaRoutes from "./routes/schema.routes.js";
-import queryRoutes from "./routes/query.routes.js";
-import expressionRoutes from "./routes/expression.routes.js";
-import versionRoutes from "./routes/version.routes.js";
-import lockRoutes from "./routes/lock.routes.js";
-import helpRoutes from "./routes/help.routes.js";
-import profileRoutes from "./routes/profile.routes.js";
-import loginRoutes from "./routes/login.routes.js";
-import tokenRoutes from "./routes/token.routes.js";
-import jobRoutes from "./routes/job.routes.js";
-import jobRoutesv2 from "./routes/job.routes.v2.js";
-import userRoutes from "./routes/user.routes.js";
-import groupRoutes from "./routes/group.routes.js";
-import ldapRoutes from "./routes/ldap.routes.js";
-import oauth2Routes from "./routes/oauth2.routes.js";
-import settingsRoutes from "./routes/settings.routes.js";
-import credentialRoutes from "./routes/credential.routes.js";
-import credentialRoutesv2 from "./routes/credential.routes.v2.js";
-import sshRoutes from "./routes/ssh.routes.js";
-import logRoutes from "./routes/log.routes.js";
-import repositoryRoutes from "./routes/repository.routes.js";
-import knownhostsRoutes from "./routes/knownhosts.routes.js";
-import configRoutes from "./routes/config.routes.js";
-import datasourceSchemaRoutes from "./routes/datasourceSchema.routes.js";
-import datasourceRoutes from "./routes/datasource.routes.js";
-import scheduleRoutes from "./routes/schedule.routes.js";
-import appRoutes from "./routes/app.routes.js";
-import awxRoutesv2 from "./routes/awx.routes.v2.js";
-import backupRoutes from "./routes/backup.routes.js";
+// V1 routes (DEPRECATED - not following REST standards)
+import queryRoutes from "./routes/v1/query.routes.js";
+import expressionRoutes from "./routes/v1/expression.routes.js";
+import helpRoutes from "./routes/v1/help.routes.js";
+import profileRoutes from "./routes/v1/profile.routes.js";
+import loginRoutes from "./routes/v1/login.routes.js";
+import tokenRoutes from "./routes/v1/token.routes.js";
+import jobRoutes from "./routes/v1/job.routes.js";
+import userRoutes from "./routes/v1/user.routes.js";
+import groupRoutes from "./routes/v1/group.routes.js";
+import settingsRoutes from "./routes/v1/settings.routes.js";
+import credentialRoutes from "./routes/v1/credential.routes.js";
+import sshRoutes from "./routes/v1/ssh.routes.js";
+import logRoutes from "./routes/v1/log.routes.js";
+import repositoryRoutes from "./routes/v1/repository.routes.js";
+import configRoutes from "./routes/v1/config.routes.js";
+import datasourceSchemaRoutes from "./routes/v1/datasourceSchema.routes.js";
+import datasourceRoutes from "./routes/v1/datasource.routes.js";
+
+// V2 routes (CURRENT - REST standards compliant)
+import queryRoutesv2 from "./routes/v2/query.routes.js";
+import expressionRoutesv2 from "./routes/v2/expression.routes.js";
+import versionRoutes from "./routes/v2/version.routes.js";
+import profileRoutesv2 from "./routes/v2/profile.routes.js";
+import userRoutesv2 from "./routes/v2/user.routes.js";
+import schemaRoutes from "./routes/v2/schema.routes.js";
+import lockRoutes from "./routes/v2/lock.routes.js";
+import loginRoutesv2 from "./routes/v2/login.routes.js";
+import tokenRoutesv2 from "./routes/v2/token.routes.js";
+import jobRoutesv2 from "./routes/v2/job.routes.js";
+import ldapRoutes from "./routes/v2/ldap.routes.js";
+import oauth2Routes from "./routes/v2/oauth2.routes.js";
+import credentialRoutesv2 from "./routes/v2/credential.routes.js";
+import knownhostsRoutes from "./routes/v2/knownhosts.routes.js";
+import scheduleRoutes from "./routes/v2/schedule.routes.js";
+import storedJobsRoutes from "./routes/v2/stored-jobs.routes.js";
+import appRoutes from "./routes/v2/app.routes.js";
+import awxRoutesv2 from "./routes/v2/awx.routes.js";
+import backupRoutes from "./routes/v2/backup.routes.js";
+import groupRoutesv2 from "./routes/v2/group.routes.js";
+import settingsRoutesv2 from "./routes/v2/settings.routes.js";
+import sshRoutesv2 from "./routes/v2/ssh.routes.js";
+import logRoutesv2 from "./routes/v2/log.routes.js";
+import repositoryRoutesv2 from "./routes/v2/repository.routes.js";
+import configRoutesv2 from "./routes/v2/config.routes.js";
 
 // __dirname and __filename setup for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -127,19 +143,18 @@ const load = async (app) => {
   // v1 docs
   swaggerDocumentV1.basePath = `/api/v1`;
   app.use(`/api/v1/docs`, cors(), swaggerUi.serveFiles(swaggerDocumentV1, swaggerOptions), swaggerUi.setup(swaggerDocumentV1, swaggerOptions));
+  
   // v2 docs
   swaggerDocumentV2.basePath = `/api/v2`;
   app.use(`/api/v2/docs`, cors(), swaggerUi.serveFiles(swaggerDocumentV2, swaggerOptions), swaggerUi.setup(swaggerDocumentV2, swaggerOptions));
-  app.use(`/api/v2/schema`, cors(), schemaRoutes);
 
+  // ========== V1 API Routes (DEPRECATED) ==========
+  
   // api routes for querying
   app.use(`/api/v1/query`, cors(), authobj, queryRoutes);
   app.use(`/api/v1/expression`, cors(), authobj, expressionRoutes);
 
-  // api route for version
-  app.use(`/api/v1/version`, cors(), versionRoutes);
-
-  app.use(`/api/v2/lock`, cors(), authobj, lockRoutes);
+  // api route for help
   app.use(`/api/v1/help`, cors(), authobj, helpRoutes);
 
   // api route for profile
@@ -147,40 +162,67 @@ const load = async (app) => {
 
   // api routes for authorization
   app.use(`/api/v1/auth`, cors(), loginRoutes);
-  app.use(`/api/v2/auth`, cors(), loginRoutes);
-
   app.use(`/api/v1/token`, cors(), tokenRoutes);
-  app.use(`/api/v2/token`, cors(), tokenRoutes);
-
-  // api routes for the vue3 app, is private
-  app.use(`/api/v2/app`, cors(), appRoutes);
-
-  // app.use(`/api/v1/multistep`,cors(), authobj, multistepRoutes)
 
   // api routes for admin management
   app.use(`/api/v1/job`, cors(), authobj, jobRoutes);
-  app.use(`/api/v2/job`, cors(), authobj, jobRoutesv2);
   app.use(`/api/v1/user`, cors(), authobj, Middleware.checkSettingsMiddleware, userRoutes);
   app.use(`/api/v1/group`, cors(), authobj, Middleware.checkSettingsMiddleware, groupRoutes);
-  app.use(`/api/v2/ldap`, cors(), authobj, Middleware.checkSettingsMiddleware, ldapRoutes);
-  app.use(`/api/v2/oauth2`, cors(), authobj, Middleware.checkSettingsMiddleware, oauth2Routes);
   app.use(`/api/v1/settings`, cors(), authobj, Middleware.checkSettingsMiddleware, settingsRoutes);
   app.use(`/api/v1/credential`, cors(), authobj, Middleware.checkSettingsMiddleware, credentialRoutes);
-  app.use(`/api/v2/credential`, cors(), authobj, Middleware.checkSettingsMiddleware, credentialRoutesv2);
   app.use(`/api/v1/sshkey`, cors(), authobj, Middleware.checkSettingsMiddleware, sshRoutes);
-  app.use(`/api/v2/awx`, cors(), authobj, Middleware.checkSettingsMiddleware, awxRoutesv2);
   app.use(`/api/v1/log`, cors(), authobj, Middleware.checkLogsMiddleware, logRoutes);
   app.use(`/api/v1/repository`, cors(), authobj, Middleware.checkSettingsMiddleware, repositoryRoutes);
-  app.use(`/api/v2/knownhosts`, cors(), authobj, Middleware.checkSettingsMiddleware, knownhostsRoutes);
   app.use(`/api/v1/datasource/schema`, cors(), authobj, Middleware.checkSettingsMiddleware, datasourceSchemaRoutes);
   app.use(`/api/v1/datasource`, cors(), authobj, Middleware.checkSettingsMiddleware, datasourceRoutes);
-  app.use(`/api/v2/schedule`, cors(), authobj, Middleware.checkSettingsMiddleware, scheduleRoutes);
-
-  // backup/restore/list routes
-  app.use(`/api/v2/backup`, cors(), authobj, backupRoutes);
 
   // routes for form config (extra middleware in the routes itself)
   app.use(`/api/v1/config`, cors(), authobj, configRoutes);
+
+  // ========== V2 API Routes (CURRENT) ==========
+  
+  // api routes for querying
+  app.use(`/api/v2/query`, cors(), authobj, queryRoutesv2);
+  app.use(`/api/v2/expression`, cors(), authobj, expressionRoutesv2);
+
+  // api route for version (no auth)
+  app.use(`/api/v2/version`, cors(), versionRoutes);
+
+  // api route for profile
+  app.use(`/api/v2/profile`, cors(), authobj, profileRoutesv2);
+
+  // schema route (non-authenticated)
+  app.use(`/api/v2/schema`, cors(), schemaRoutes);
+
+  // lock route
+  app.use(`/api/v2/lock`, cors(), authobj, lockRoutes);
+
+  // api routes for authorization
+  app.use(`/api/v2/auth`, cors(), loginRoutesv2);
+  app.use(`/api/v2/token`, cors(), tokenRoutesv2);
+
+  // api routes for the vue3 app
+  app.use(`/api/v2/app`, cors(), appRoutes);
+
+  // api routes for admin management
+  app.use(`/api/v2/job`, cors(), authobj, jobRoutesv2);
+  app.use(`/api/v2/user`, cors(), authobj, Middleware.checkSettingsMiddleware, userRoutesv2);
+  app.use(`/api/v2/group`, cors(), authobj, Middleware.checkSettingsMiddleware, groupRoutesv2);
+  app.use(`/api/v2/settings`, cors(), authobj, Middleware.checkSettingsMiddleware, settingsRoutesv2);
+  app.use(`/api/v2/sshkey`, cors(), authobj, Middleware.checkSettingsMiddleware, sshRoutesv2);
+  app.use(`/api/v2/ldap`, cors(), authobj, Middleware.checkSettingsMiddleware, ldapRoutes);
+  app.use(`/api/v2/oauth2`, cors(), authobj, Middleware.checkSettingsMiddleware, oauth2Routes);
+  app.use(`/api/v2/credential`, cors(), authobj, Middleware.checkSettingsMiddleware, credentialRoutesv2);
+  app.use(`/api/v2/awx`, cors(), authobj, Middleware.checkSettingsMiddleware, awxRoutesv2);
+  app.use(`/api/v2/knownhosts`, cors(), authobj, Middleware.checkSettingsMiddleware, knownhostsRoutes);
+  app.use(`/api/v2/schedule`, cors(), authobj, Middleware.checkScheduledJobsMiddleware, scheduleRoutes);
+  app.use(`/api/v2/stored-jobs`, cors(), authobj, Middleware.checkStoredJobsMiddleware, storedJobsRoutes);
+
+  // backup/restore/list routes
+  app.use(`/api/v2/backup`, cors(), authobj, backupRoutes);
+  app.use(`/api/v2/log`, cors(), authobj, logRoutesv2);
+  app.use(`/api/v2/repository`, cors(), authobj, Middleware.checkSettingsMiddleware, repositoryRoutesv2);
+  app.use(`/api/v2/config`, cors(), authobj, configRoutesv2);
 }
 
 

@@ -100,8 +100,8 @@ export default {
             { key: 'client_id', label: 'Client ID', required: true, icon: 'key', dependency: 'provider', dependencyValues: ['azuread', 'oidc'], hidden: true },
             { key: 'issuer', label: 'Issuer', required: true, icon: 'globe', dependency: 'provider', dependencyValues: ['oidc'], hidden: true },
             { key: 'redirect_uri', label: 'Redirect URL', readonly: false, dependency: 'provider',dependencyValues: ['azuread', 'oidc'], defaultMap: {
-                  azuread: (config) => `${config.url}/api/v1/auth/azureadoauth2/callback`,
-                  oidc: (config) => `${config.url}/api/v1/auth/oidc/callback`
+                  azuread: (config) => `${config.url}/api/v2/auth/azureadoauth2/callback`,
+                  oidc: (config) => `${config.url}/api/v2/auth/oidc/callback`
                 }, hidden: true
             },
             { key: 'client_secret', label: 'Client Secret', type: 'password', required: true, icon: 'lock', hidden: true },
@@ -171,19 +171,42 @@ export default {
         actions: [
             { name: "edit", icon: "pencil", title: "Edit Schedule", color: "edit" },
             { name: "delete", icon: "trash", title: "Delete Schedule", color: "delete" },
-            { name: "trigger", icon: "play", title: "Import Schedule", color: "refresh" },
+            { name: "trigger", icon: "play", title: "Run Schedule", color: "refresh" },
             { name: "preview", icon: "info-circle", title: "Show output", color: "preview" }
         ],
         fields: [
             { key: "id", hidden: true, noInput: true },
             { key: "output", hidden: true, noInput: true },
             { key: "name", icon: "heading", label: "Name", placeholder: "Schedule name", readonly: false, required: true, help: "Alphanumeric with dash and underscore" },
-            { key: "cron", icon: "stopwatch", label: "Cron Schedule", help: "Minute Hour DayOfMonth Month DayOfWeek - For example : */5 * L * 1,3L", hidden: true, required: true, regex: { expression: "^[0-9-,*/]+ [0-9-,*/]+ [0-9-,*/L]+ [0-9-,*/]+ [0-9-,*/L]+$", description: "Must be a valid cron schedule"} },
+            { key: "one_time_run", label: "One Time Run", type: "checkbox", placeholder: "Run once instead of recurring", required: false, hidden: true },
+            { key: "cron", icon: "stopwatch", label: "Cron Schedule", help: "Minute Hour DayOfMonth Month DayOfWeek - For example : */5 * L * 1,3L", required: false, regex: { expression: "^[0-9-,*/]+ [0-9-,*/]+ [0-9-,*/L]+ [0-9-,*/]+ [0-9-,*/L]+$", description: "Must be a valid cron schedule"}, negateDependency: true, dependency: "one_time_run" },
+            { key: "run_at", icon: "calendar", label: "Run At", type: "datetime", convertToUtc: true, help: "The date and time to run this job once", required: false, dependency: "one_time_run" },
             { key: "form", icon: "play", label: "Form", placeholder: "Form name", readonly: false, required: true, hidden: true},
             { key: "status", label: "Status", noInput: true },
             { key: "state", label: "State", noInput: true },
             { key: "last_run", label: "Last Run", type: "datetime", noInput: true },
             { key: "extra_vars", type: "editor", label: "Extra vars (YAML)", hidden: true, lang:"yaml", style:"width: 100%;height: 40vh;font-size:1rem", help: "No form to provide the extra vars, you must add them here." }
+        ]
+    },
+    stored_jobs:{
+        type: "stored-jobs",
+        label: "Stored Job",
+        labelPlural: "Stored Jobs",
+        icon: "floppy-disk",
+        reloadSeconds: false, // Disable auto-reload
+        actions: [
+            { name: "preview", icon: "eye", title: "View Stored Job Details", color: "preview" },
+            { name: "delete", icon: "trash", title: "Delete Stored Job", color: "delete" }
+        ],
+        fields: [
+            { key: "id", hidden: true, noInput: true },
+            { key: "name", icon: "heading", label: "Name" },
+            { key: "description", icon: "info-circle", label: "Description" },
+            { key: "form_name", icon: "play", label: "Form" },
+            { key: "username", icon: "user", label: "User (type/name)" },
+            { key: "form_data", hidden: true },
+            { key: "created_at", icon: "calendar", label: "Created At", type: "datetime" },
+            { key: "expires_at", icon: "calendar", label: "Expires At", type: "datetime" }
         ]
     },            
     knownhosts:{
@@ -222,7 +245,7 @@ export default {
             { key: 'port', label: 'Port', type:"number", sortable: true, required: false, filterable: false, icon: "arrows-alt-v" },
             { key: 'description', label: 'Description', sortable: false, hidden: true, required: true, filterable: false, icon: "info-circle" },
             {
-                key: 'db_type', label: 'Database Type', type: 'select',valueKey:"id", labelKey:"name" , sortable: false, hidden: true, required: true, parent:'databases',
+                key: 'db_type', label: 'Database Type', type: 'select', sortable: false, hidden: true, required: true, parent:'databases',
                 values: [
                     { value: 'mysql',    label: 'MySQL'},
                     { value: 'mssql',    label: 'MSSQL' },

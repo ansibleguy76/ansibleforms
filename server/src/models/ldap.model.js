@@ -15,9 +15,13 @@ var Ldap=function(ldap){
     this.cert = ldap.cert;
     this.ca_bundle = ldap.ca_bundle;
     this.bind_user_dn = ldap.bind_user_dn;
-    // Only encrypt password if it's provided and not empty
-    if (ldap.bind_user_pw) {
-        this.bind_user_pw = crypto.encrypt(ldap.bind_user_pw);
+    // Handle bind_user_pw: undefined = don't update, "" = clear password, "value" = encrypt
+    if (ldap.bind_user_pw !== undefined) {
+        if (ldap.bind_user_pw === "") {
+            this.bind_user_pw = "";
+        } else {
+            this.bind_user_pw = crypto.encrypt(ldap.bind_user_pw);
+        }
     }
     this.search_base = ldap.search_base;
     this.username_attribute = ldap.username_attribute;
@@ -103,7 +107,7 @@ Ldap.check = async function(ldapConfig){
         options.ldapOpts.tlsOptions.cert = ldapConfig.cert
       }
       if(ldapConfig.ca_bundle!=""){
-        options.ldapOpts.tlsOptions.ca = ldapConfig.ldapTlsCa
+        options.ldapOpts.tlsOptions.ca = ldapConfig.ca_bundle
       }
       options.ldapOpts.tlsOptions.rejectUnauthorized = !(ldapConfig.ignore_certs==1)
       logger.info("use tls : " + (ldapConfig.enable_tls==1))

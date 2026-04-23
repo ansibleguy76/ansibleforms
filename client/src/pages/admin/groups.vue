@@ -17,7 +17,7 @@
     <div class="flex-shrink-0">
         <main class="d-flex flex-nowrap container-xxl">
             <AppSidebar />
-            <AppAdminMulti v-if="authenticated" :settings="settings.groups" />
+            <AppAdminMulti v-if="authenticated" :apiVersion="2" :settings="settings.groups" />
         </main>
     </div>    
     

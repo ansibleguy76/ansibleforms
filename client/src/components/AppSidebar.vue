@@ -22,10 +22,11 @@
         { title: "A.A.P.", icon: "fac,ansible", link: "/admin/aap" },
         { title: "Repositories", icon: "fab,git", link: "/admin/repositories"},
         { title: "divider" },
-        { title: "Data Schemas", icon: "database", link: "/admin/dataSchemas" },
-        { title: "Data Sources", icon: "file-import", link: "/admin/dataSources" },
-        { title: "divider" },
-        { title: "Schedules", icon: "clock", link: "/admin/schedules" }
+        // { title: "Data Schemas", icon: "database", link: "/admin/dataSchemas" },
+        // { title: "Data Sources", icon: "file-import", link: "/admin/dataSources" },
+        // { title: "divider" },
+        { title: "Schedules", icon: "clock", link: "/admin/schedules" },
+        { title: "Stored Jobs", icon: "floppy-disk", link: "/admin/stored-jobs" }
     ];
 </script>
 <template>

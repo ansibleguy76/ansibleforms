@@ -14,6 +14,7 @@ const route = useRoute();
 const router = useRouter();
 const appStore = useAppStore();
 const isLoaded = ref(false)
+const initComplete = ref(false)
 // const theme = useTheme();
 
 function registerAxiosInterceptor() {
@@ -24,17 +25,30 @@ function registerAxiosInterceptor() {
     return response;
   }, async (error) => {
     // Return any error which is not due to authentication back to the calling service
-
     if (error.response?.status !== 401) {
       throw error;
     } else {
+      // Don't handle auth errors until init completes (database check done)
+      if (!initComplete.value) {
+        throw error;
+      }
       // Logout user if token refresh didn't work or user is disabled
       console.log("Axios 401 error occurred, we are not authorized")
-      if (error?.config?.url == `/api/v1/token` || error?.response?.message == 'Account is disabled.' || error?.response?.message?.includes('No Access')) {
+      
+      // Don't intercept login endpoints - let them handle their own errors
+      const url = error?.config?.url || '';
+      if (url.includes('/api/v2/auth/login') || url.includes('/auth/azureadoauth2/login') || url.includes('/auth/oidc/login')) {
+        throw error;
+      }
+      
+      if (error?.config?.url == `/api/v2/token` || error?.response?.data?.error == 'Account is disabled.' || error?.response?.data?.error?.includes('No access')) {
         console.log("The error is from token refresh or account is disabled or you have no access, no refresh possible")
         var message = "Unauthorized.  Access denied."
-        if (error?.response?.data?.message) {
-          message += "\r\n" + error.response.data.message
+        if (error?.response?.data?.error) {
+          message += "\r\n" + error.response.data.error
+        }
+        if (error?.response?.data?.details) {
+          message += "\r\n" + error.response.data.details
         }
         // clear token storage and redirect to login
         TokenStorage.clear();
@@ -85,14 +99,19 @@ async function checkDatabase() {
   }catch(err){
     console.log(err)
     Navigate.toError(router);
+    initComplete.value = true;
+    // Don't set isLoaded - error page should show without it
     return;
   }
   if(result){
+    initComplete.value = true;
+    isLoaded.value = true;
     await login();
   }else{
     Navigate.toSchema(router);
-  }  
-  isLoaded.value = true;
+    initComplete.value = true;
+    // Don't set isLoaded - schema page should show without it
+  }
 }
 
 async function login() {
@@ -116,8 +135,8 @@ onMounted(async () => {
 
 
 <template>
-  <Toaster position="bottom-right" :duration="5000" :close-button="true" :theme="appStore.theme" />
-  <router-view v-if="isLoaded" />
+  <Toaster position="bottom-right" :duration="5000" :close-button="true" :theme="appStore.theme" :expand="true" />
+  <router-view v-if="isLoaded || route.name === '/schema' || route.name === '/login' || route.name === '/error'" />
   <div v-else class="d-flex justify-content-center align-items-center vh-100">
     <div class="text-center">
       <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">

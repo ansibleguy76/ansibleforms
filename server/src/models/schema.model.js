@@ -311,11 +311,6 @@ async function patchVersion5(messages, success, failed) {
   // In 5.0.8, the repositories table was extended with a new column, branch, to store the branch of the repository
   await checkPromise(addColumn("repositories", "branch", "varchar(250)", true, "NULL"), messages, success, failed); // add branch column
 
-  // In 5.0.9, A new feature was added, the datasource_schemas table, to store the datasource schemas
-  buffer = fs.readFileSync(`${__dirname}/../db/create_datasource_tables.sql`);
-  sql = buffer.toString();
-  await checkPromise(addTable("datasource", sql), messages, success, failed); // add datasource_schemas table
-
   // In 5.0.9, We add a scheduler
   buffer = fs.readFileSync(`${__dirname}/../db/create_schedule_table.sql`);
   sql = buffer.toString();
@@ -340,6 +335,18 @@ async function patchVersion5(messages, success, failed) {
 async function patchVersion6(messages, success, failed) {
   var buffer;
   var sql;
+
+  // temp install the datasource tables
+  buffer = fs.readFileSync(`${__dirname}/../db/create_datasource_schemas_table.sql`);
+  sql = buffer.toString();
+  await checkPromise(addTable("datasource_schemas", sql), messages, success, failed); // add datasource_schemas table
+  buffer = fs.readFileSync(`${__dirname}/../db/create_datasource_table.sql`);
+  sql = buffer.toString();
+  await checkPromise(addTable("datasource", sql), messages, success, failed); // add datasource table
+  buffer = fs.readFileSync(`${__dirname}/../db/create_staging_table.sql`);
+  sql = buffer.toString();
+  await checkPromise(addTable("staging", sql), messages, success, failed); // add staging table
+
   // In 6.0.0, we add oauth2 providers table
   buffer = fs.readFileSync(`${__dirname}/../db/create_oauth2_providers_table.sql`);
   sql = buffer.toString();
@@ -400,6 +407,20 @@ async function patchVersion6(messages, success, failed) {
   // Add host column to jobs table (6.1.4)
   // This stores the hostname/container ID to prevent cross-instance process kills
   await checkPromise(addColumn("jobs", "host", "varchar(255)", true, "NULL"), messages, success, failed);
+  
+  // Add one_time_run column to schedule table (6.2.0)
+  // This allows schedules to be either recurring (false) or one-time (true)
+  await checkPromise(addColumn("schedule", "one_time_run", "tinyint(4)", true, "0"), messages, success, failed);
+  
+  // Add run_at column to schedule table (6.2.0)
+  // This stores the datetime for one-time scheduled jobs
+  await checkPromise(addColumn("schedule", "run_at", "datetime", true, "NULL"), messages, success, failed);
+  
+  // Create stored_jobs table (6.2.0)
+  // This allows users to save and load form data
+  buffer = fs.readFileSync(`${__dirname}/../db/create_stored_jobs_table.sql`);
+  sql = buffer.toString();
+  await checkPromise(addTable("stored_jobs", sql), messages, success, failed);
 }
 
 // PATCHING : Patch All

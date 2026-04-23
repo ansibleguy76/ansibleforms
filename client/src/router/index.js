@@ -28,6 +28,7 @@ import repositories from "@/pages/admin/repositories.vue"
 import dataSchemas from "@/pages/admin/dataSchemas.vue"
 import datasources from "@/pages/admin/datasources.vue"
 import schedules from "@/pages/admin/schedules.vue"
+import storedJobs from "@/pages/admin/stored-jobs.vue"
 import settings from "@/pages/admin/settings.vue"
 import ssh from "@/pages/admin/ssh.vue"
 import users from "@/pages/admin/users.vue"
@@ -38,7 +39,7 @@ import TokenStorage from '@/lib/TokenStorage.js'
 // checkDesigner
 const checkDesigner=(to, from, next) => {
   var payload = TokenStorage.getPayload()
-  if(payload?.user?.options?.showDesigner ?? payload?.user?.roles?.includes("admin")){
+  if(payload?.user?.options?.showDesigner){
     next()
   }else{
     console.log("You don't have access to the designer")
@@ -47,7 +48,7 @@ const checkDesigner=(to, from, next) => {
 // checkLogs
 const checkLogs=(to, from, next) => {
   var payload = TokenStorage.getPayload()
-  if(payload?.user?.options?.showLogs ?? payload?.user?.roles?.includes("admin")){
+  if(payload?.user?.options?.showLogs){
     next()
   }else{
     console.log("You don't have access to the logs")
@@ -56,7 +57,7 @@ const checkLogs=(to, from, next) => {
 // checkJobs
 const checkJobs=(to, from, next) => {
   var payload = TokenStorage.getPayload()
-  if(payload?.user?.options?.showJobs ?? true){
+  if(payload?.user?.options?.showJobs){
     next()
   }else{
     console.log("You don't have access to the jobs")
@@ -65,7 +66,7 @@ const checkJobs=(to, from, next) => {
 // checkSettings
 const checkSettings=(to, from, next) => {
   var payload = TokenStorage.getPayload()
-  if(payload?.user?.options?.showSettings ?? payload?.user?.roles?.includes("admin")){
+  if(payload?.user?.options?.showSettings){
     next()
   }else{
     console.log("You don't have access to the settings")
@@ -74,7 +75,7 @@ const checkSettings=(to, from, next) => {
 // allowBackupOps
 const allowBackupOps=(to, from, next) => {
   var payload = TokenStorage.getPayload()
-  if(payload?.user?.options?.allowBackupOps ?? payload?.user?.roles?.includes("admin")){
+  if(payload?.user?.options?.allowBackupOps){
     next()
   }else{
     console.log("You don't have access to the backups page")
@@ -112,6 +113,7 @@ const routes = [
   { path: '/admin/dataSchemas', name: "/admin/dataSchemas", component: dataSchemas, beforeEnter: checkSettings },
   { path: '/admin/datasources', name: "/admin/datasources", component: datasources, beforeEnter: checkSettings },
   { path: '/admin/schedules', name: "/admin/schedules", component: schedules, beforeEnter: checkSettings },
+  { path: '/admin/stored-jobs', name: "/admin/stored-jobs", component: storedJobs, beforeEnter: checkSettings },
   { path: '/admin/settings', name: "/admin/settings", component: settings, beforeEnter: checkSettings },
   { path: '/admin/ssh', name: "/admin/ssh", component: ssh, beforeEnter: checkSettings },
   { path: '/admin/users', name: "/admin/users", component: users, beforeEnter: checkSettings },

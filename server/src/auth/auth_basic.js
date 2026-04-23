@@ -71,12 +71,12 @@ passport.use(
         if(match){
           try{
             var errMessage=authConfig.ldapErrors[match[1]]
-            done(new Error(errMessage))
+            return done(new Error(errMessage))
           }catch(e){
-            done(new Error("Error " + match[1]))
+            return done(new Error("Error " + match[1]))
           }
         }
-        done(err)
+        return done(err)
       }
     }
   )

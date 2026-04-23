@@ -17,7 +17,7 @@ onMounted(async () => {
   <div class="flex-shrink-0">
     <main class="d-flex flex-nowrap container-xxl">
       <AppSidebar />
-      <AppAdminMulti v-if="authenticated" :settings="settings.users" />
+      <AppAdminMulti v-if="authenticated" :settings="settings.users" :apiVersion="2" />
     </main>
   </div>
 </template>

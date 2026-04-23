@@ -34,6 +34,7 @@ import { useAppStore } from "@/stores/app";
 import Helpers from '@/lib/Helpers';
 import TokenStorage from "@/lib/TokenStorage";
 import axios from "axios";
+import YAML from "yaml";
 
 // INIT
 //----------------------------------------------------------------
@@ -47,7 +48,7 @@ const route = useRoute();
 const store = useAppStore();
 
 // define
-const emit = defineEmits(["update:status", "change", "submit", "abort"]);
+const emit = defineEmits(["update:status", "change", "submit-action", "abort"]);
 
 const form = defineModel()
 
@@ -126,6 +127,29 @@ const containerSize = ref({
 
 const containerRef = useTemplateRef("containerRef");
 
+// Define submit dropdown actions
+const submitActions = [
+    {
+        key: 'schedule',
+        label: 'Schedule (Recurring)',
+        icon: 'calendar-plus',
+        roleOption: 'allowScheduledJobs'
+    },
+    {
+        key: 'run-later',
+        label: 'Run Later (One-time)',
+        icon: 'clock',
+        roleOption: 'allowPlannedJobs',
+        divider: true
+    },
+    {
+        key: 'store',
+        label: 'Store',
+        icon: 'file-export',
+        roleOption: 'allowStoredJobs'
+    }
+];
+
 // COMPUTED
 //----------------------------------------------------------------
 
@@ -139,7 +163,7 @@ const status = computed({
 })
 
 const showDebugButtons = computed(() => {
-    return store.profile.options?.showDebugButtons ?? true
+    return store.profile.options?.showDebugButtons
 })
 
 // calculated fields that are not yet evaluated
@@ -173,6 +197,42 @@ const rules = computed(() => {
             rule.required = helpers.withParams(
                 { description: description, type: "required" },
                 (value) => (value != undefined && value != null && value != '__auto__' && value != '__none__' && value != '__all__')
+            )
+        }
+        // required for yaml fields
+        if (ff.type == 'yaml' && ff.required) {
+            var description = `${ff.label} is required`
+            rule.required = helpers.withParams(
+                { description: description, type: "required" },
+                (value) => value != undefined && value != null
+            )
+        }
+        // YAML validation - always present for yaml type
+        if (ff.type == 'yaml') {
+            const errorDescription = ff.yamlError?.description || `${ff.label} must be valid YAML`;
+            
+            rule.validYaml = helpers.withParams(
+                { 
+                    description: computed(() => {
+                        // Support placeholders in error message
+                        const result = replacePlaceholderInString(errorDescription, false);
+                        return result.value !== undefined ? result.value : errorDescription;
+                    }), 
+                    type: "validYaml" 
+                },
+                (value) => {
+                    if (!value) return true;
+                    try {
+                        // If it's already an object, it's valid
+                        if (typeof value === 'object') return true;
+                        // Try to parse as YAML string
+                        YAML.parse(String(value));
+                        return true;
+                    } catch (e) {
+                        console.warn('YAML validation error:', e.message);
+                        return false;
+                    }
+                }
             )
         }
         // min and max size for files
@@ -1261,6 +1321,16 @@ function validateForm() {
     }
 }
 
+// handle submit dropdown actions - just emit to parent
+function handleSubmitAction(actionKey) {
+    // Validate form before allowing actions
+    if (!validateForm()) {
+        return;
+    }
+    
+    emit('submit-action', { action: actionKey, visibility: visibility.value });
+}
+
 // initiate the defaults
 function initForm() {
     pretasksFinished.value = false;
@@ -1357,20 +1427,27 @@ function initForm() {
         fieldOptions.value[item.name]["evalDefault"] = item.evalDefault ?? false;
         fieldOptions.value[item.name]["hasDependencies"] = ("dependencies" in item)
         fieldOptions.value[item.name]["dependencyOk"] = false
-        if (["expression", "enum", "table", "html"].includes(item.type)) {
+        if (["expression", "enum", "table", "html", "yaml"].includes(item.type)) {
             fieldOptions.value[item.name]["isDynamic"] = !!(item.expression ?? item.query ?? item.value ?? false);
             fieldOptions.value[item.name]["valueColumn"] = item.valueColumn || "";
             fieldOptions.value[item.name]["placeholderColumn"] = item.placeholderColumn || "";
             fieldOptions.value[item.name]["type"] = item.type;
+            // Only expression fields use the editable toggle feature
+            if (item.type !== 'yaml') {
+                fieldOptions.value[item.name]["editable"] = item.editable || false;
+            }
+            fieldOptions.value[item.name]["viewable"] = false;
+            fieldOptions.value[item.name]["debug"] = false;
+            fieldOptions.value[item.name]["ignoreIncomplete"] = item.ignoreIncomplete || false;
             if (item.refresh && typeof item.refresh == 'string' && /[0-9]+s/.test(item.refresh)) {
                 fieldOptions.value[item.name]["refresh"] = item.refresh;
             }
             // Check if we have initialData for this field
             if (item.name in pendingInitialData.value) {
                 // For enum/query/table fields with expressions, keep in pendingInitialData for loop to apply after options load
-                // For expression/html or static enum/query/table, set value and status now
+                // For expression/html/yaml or static enum/query/table, set value and status now
                 const needsOptionsFirst = ['enum', 'query', 'table'].includes(item.type) && (item.expression || item.query);
-                const isReactiveField = ((item.type === 'html' || item.type === 'expression') && (item.expression || item.query));
+                const isReactiveField = ((item.type === 'html' || item.type === 'expression' || item.type === 'yaml') && (item.expression || item.query));
                 
                 if (!needsOptionsFirst && !isReactiveField) {
                     form.value[item.name] = pendingInitialData.value[item.name];
@@ -1387,11 +1464,9 @@ function initForm() {
             } else {
                 form.value[item.name] = externalData.value[item.name] ?? getDefaultValue(item.name, item.default);
             }
-            if (item.type == "table" && !defaults.value[item.name]) {
+            // Initialize table fields to empty array if no default
+            if (item.type == "table" && form.value[item.name] === undefined) {
                 form.value[item.name] = [];
-            }
-            if (item.type == "table" && defaults.value[item.name]) {
-                form.value[item.name] = externalData.value[item.name];
             }
         } else {
             var fallbackvalue = undefined;
@@ -1500,6 +1575,13 @@ async function startDynamicFieldsLoop() {
                                     }
                                     form.value[item.name] = result;
                                 }
+                                if (item.type == "yaml") {
+                                    // YAML fields should re-evaluate, not use cached prefill values
+                                    if (item.name in pendingInitialData.value) {
+                                        delete pendingInitialData.value[item.name];
+                                    }
+                                    form.value[item.name] = result;
+                                }
                                 if (item.type == "enum") {
                                     queryresults.value[item.name] = [].concat(result);
                                     // Check if we have pending initialData for this enum field
@@ -1528,56 +1610,55 @@ async function startDynamicFieldsLoop() {
                             try {
                                 const body = { expression: placeholderCheck.value };
                                 if (item.jq) body.jq = item.jq;
-                                const result = await axios.post(`/api/v1/expression?noLog=${!!item.noLog}`, body, TokenStorage.getAuthentication());
+                                const result = await axios.post(`/api/v2/expression?noLog=${!!item.noLog}`, body, TokenStorage.getAuthentication());
                                 var restresult = result.data;
-                                if (restresult.status == "error") {
-                                    resetField(item.name);
+                                delete queryerrors.value[item.name];
+                                if (item.type == "html") {
+                                    // HTML fields with expressions should re-evaluate, not use cached prefill values
+                                    if (item.name in pendingInitialData.value) {
+                                        delete pendingInitialData.value[item.name];
+                                    }
+                                    form.value[item.name] = restresult;
                                 }
-                                if (restresult.data.error) {
-                                    queryerrors.value[item.name] = restresult.data.error;
-                                } else {
-                                    delete queryerrors.value[item.name];
+                                if (item.type == "expression") {
+                                    // Expression fields should re-evaluate, not use cached prefill values
+                                    if (item.name in pendingInitialData.value) {
+                                        delete pendingInitialData.value[item.name];
+                                    }
+                                    form.value[item.name] = restresult;
                                 }
-                                if (restresult.status == "success") {
-                                    if (item.type == "html") {
-                                        // HTML fields with expressions should re-evaluate, not use cached prefill values
-                                        if (item.name in pendingInitialData.value) {
-                                            delete pendingInitialData.value[item.name];
-                                        }
-                                        form.value[item.name] = restresult.data.output;
+                                if (item.type == "yaml") {
+                                    // YAML fields should re-evaluate, not use cached prefill values
+                                    if (item.name in pendingInitialData.value) {
+                                        delete pendingInitialData.value[item.name];
                                     }
-                                    if (item.type == "expression") {
-                                        // Expression fields should re-evaluate, not use cached prefill values
-                                        if (item.name in pendingInitialData.value) {
-                                            delete pendingInitialData.value[item.name];
-                                        }
-                                        form.value[item.name] = restresult.data.output;
+                                    form.value[item.name] = restresult;
+                                }
+                                if (item.type == "enum") {
+                                    queryresults.value[item.name] = [].concat(restresult ?? []);
+                                    // Check if we have pending initialData for this enum field
+                                    if (item.name in pendingInitialData.value) {
+                                        form.value[item.name] = pendingInitialData.value[item.name];
+                                        protectedFields.value[item.name] = true; // Mark as protected from reset
+                                        setFieldStatus(item.name, "fixed"); // Mark as ready for dependent fields
+                                        delete pendingInitialData.value[item.name];
                                     }
-                                    if (item.type == "enum") {
-                                        queryresults.value[item.name] = [].concat(restresult.data.output ?? []);
-                                        // Check if we have pending initialData for this enum field
-                                        if (item.name in pendingInitialData.value) {
-                                            form.value[item.name] = pendingInitialData.value[item.name];
-                                            protectedFields.value[item.name] = true; // Mark as protected from reset
-                                            setFieldStatus(item.name, "fixed"); // Mark as ready for dependent fields
-                                            delete pendingInitialData.value[item.name];
-                                        }
-                                    }
-                                    if (item.type == "table" && !defaults.value[item.name]) form.value[item.name] = [].concat(restresult.data.output ?? []);
-                                    if (item.type == "table" && defaults.value[item.name]) form.value[item.name] = [].concat(defaults.value[item.name] ?? []);
+                                }
+                                if (item.type == "table" && !defaults.value[item.name]) form.value[item.name] = [].concat(restresult ?? []);
+                                if (item.type == "table" && defaults.value[item.name]) form.value[item.name] = [].concat(defaults.value[item.name] ?? []);
 
-                                    if (restresult.data.output == undefined && (defaults.value[item.name] != undefined)) {
-                                        if (item.type == "expression") {
-                                            setFieldToDefault(item.name);
-                                        } else {
-                                            resetField(item.name);
-                                        }
+                                if (restresult == undefined && (defaults.value[item.name] != undefined)) {
+                                    if (item.type == "expression") {
+                                        setFieldToDefault(item.name);
                                     } else {
-                                        // Mark as fixed after successful evaluation - will re-evaluate when dependencies change via resetField
-                                        setFieldStatus(item.name, "fixed");
+                                        resetField(item.name);
                                     }
+                                } else {
+                                    // Mark as fixed after successful evaluation - will re-evaluate when dependencies change via resetField
+                                    setFieldStatus(item.name, "fixed");
                                 }
                             } catch (error) {
+                                queryerrors.value[item.name] = error.toString();
                                 try {
                                     setFieldToDefault(item.name);
                                 } catch (err) {
@@ -1598,28 +1679,17 @@ async function startDynamicFieldsLoop() {
                         try {
                             const body = { query: placeholderCheck.value, config: item.dbConfig };
                             if (item.jq) body.jq = item.jq;
-                            const result = await axios.post(`/api/v1/query?noLog=${!!item.noLog}`, body, TokenStorage.getAuthentication());
+                            const result = await axios.post(`/api/v2/query?noLog=${!!item.noLog}`, body, TokenStorage.getAuthentication());
                             var restresult = result.data;
-                            if (restresult.data.error) {
-                                queryerrors.value[item.name] = restresult.data.error;
-                            } else {
-                                delete queryerrors.value[item.name];
-                            }
-                            if (restresult.status == "error") {
-                                if (item.type == "expression") {
-                                    setFieldToDefault(item.name);
-                                } else {
-                                    resetField(item.name);
-                                }
-                            }
-                            if (restresult.status == "success") {
-                                if (item.type == "query" || item.type == "enum") queryresults.value[item.name] = restresult.data.output;
-                                else form.value[item.name] = restresult.data.output;
+                            delete queryerrors.value[item.name];
+                            if (item.type == "query" || item.type == "enum") queryresults.value[item.name] = restresult;
+                            else if (item.type == "yaml") form.value[item.name] = restresult;
+                            else form.value[item.name] = restresult;
 
-                                // Mark as fixed after successful evaluation - will re-evaluate when dependencies change via resetField
-                                setFieldStatus(item.name, "fixed");
-                            }
+                            // Mark as fixed after successful evaluation - will re-evaluate when dependencies change via resetField
+                            setFieldStatus(item.name, "fixed");
                         } catch (err) {
+                            queryerrors.value[item.name] = err.toString();
                             try {
                                 if (item.type == "expression") {
                                     setFieldToDefault(item.name);
@@ -1643,7 +1713,7 @@ async function startDynamicFieldsLoop() {
                     }
                 } else if (item.value && flag == undefined) {
                     setFieldStatus(item.name, "running", false);
-                    if (item.type == "expression") form.value[item.name] = item.value;
+                    if (item.type == "expression" || item.type == "yaml") form.value[item.name] = item.value;
                     setFieldStatus(item.name, "fixed");
                 }
             } else {
@@ -1917,6 +1987,9 @@ onUnmounted(() => {
                                         :updateMarker="field.updateMarker || ''"
                                         :readonlyColumns="field.readonlyColumns || []"
                                         :insertColumns="field.insertColumns || []"
+                                        :showLoadButton="field.showLoadButton === true"
+                                        :showDownloadButton="field.showDownloadButton === true"
+                                        :name="field.name"
                                         :dynamicFieldStatus="dynamicFieldStatus" :form="form"
                                         :hasError="v$.form[field.name].$invalid" :click="false"
                                         tableClass="table" headClass="bg-primay-subtle"
@@ -2007,6 +2080,33 @@ onUnmounted(() => {
                                     </div>
                                 </div>
 
+                                <!-- TYPE = YAML -->
+                                <div v-if="field.type == 'yaml'"
+                                    :class="{ 'is-loading': !['fixed', 'variable'].includes(dynamicFieldStatus[field.name]) && (field.expression || field.query) }">
+                                    <div v-if="!fieldOptions[field.name].viewable">
+                                        <!-- YAML field: shows data from expression/query or allows manual editing -->
+                                        <BsYamlEditor 
+                                            v-model="v$.form[field.name].$model"
+                                            :hasError="v$.form[field.name].$invalid"
+                                            :icon="field.icon"
+                                            :readonly="field.readonly === true"
+                                            :showLoadButton="field.showLoadButton === true"
+                                            :showDownloadButton="field.showDownloadButton === true"
+                                            :name="field.name"
+                                            :errors="getErrorsToDisplay(field.name)"
+                                            :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]"
+                                            @update:modelValue="evaluateDynamicFields(field.name)"
+                                            @blur="handleBlur(field.name)"
+                                        />
+                                    </div>
+                                    <!-- Debug/view raw YAML data -->
+                                    <div @dblclick="setExpressionFieldViewable(field.name, false)" 
+                                         v-if="fieldOptions[field.name].viewable"
+                                         class="card p-2 limit-height">
+                                        <VueJsonPretty :data="v$.form[field.name].$model" />
+                                    </div>
+                                </div>
+
                                 <!-- TYPE = TEXT, PASSWORD, TEXTAREA, NUMBER, CHECKBOX -->
                                 <BsInputForForm
                                     v-if="['text', 'password', 'textarea', 'number', 'checkbox', 'radio'].includes(field.type)"
@@ -2035,9 +2135,14 @@ onUnmounted(() => {
             </div>
         </template>
         <div class="d-grid my-3" v-if="status == ''">
-            <button type="button" class="btn text-white btn-primary" @click="status = 'initializing'">
-                <FaIcon :icon="submitIcon"></FaIcon><span class="ms-3">{{ submitLabel }}</span>
-            </button>
+            <BsDropdownButton 
+                :icon="submitIcon"
+                :label="submitLabel"
+                colorClass="primary"
+                :actions="submitActions"
+                @click="handleSubmitAction('submit')"
+                @action="handleSubmitAction"
+            />
         </div>
     </div>
 
@@ -2047,6 +2152,7 @@ onUnmounted(() => {
         <h2>Loading...</h2>
         <div class="alert alert-info">The form is not ready...</div>
     </div>
+
 </template>
 <style scoped lang="scss">
 .limit-height {

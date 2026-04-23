@@ -63,7 +63,7 @@
 
     // flatten
     const isFlat = props.settings.flat || false;
-    const reloadSeconds = (props.settings.reloadSeconds || 60)*1000;
+    const reloadSeconds = props.settings.reloadSeconds === false ? false : (props.settings.reloadSeconds || 60)*1000;
     const removeDoubles = props.settings.removeDoubles || false;
     const idKey = props.settings.idKey || 'id';
     const objectType = props.settings.type;
@@ -218,6 +218,9 @@
                         if (field.type == 'checkbox') {
                             item.value[field.key] = !!item.value[field.key]
                         }
+                        if (field.type == 'editor' && item.value[field.key] === null) {
+                            item.value[field.key] = ''
+                        }
                         // if (field.isKey) {
                         //     itemPassword.value[field.key] = item.value[field.key]
                         // }
@@ -294,8 +297,13 @@
         action.value = '';
     }
     function newItem() {
-        item.value = {
-        };
+        item.value = {};
+        // Initialize fields with defaults to prevent undefined warnings
+        fields.forEach(field => {
+            if (field.type === 'editor' && item.value[field.key] === undefined) {
+                item.value[field.key] = '';
+            }
+        });
         action.value = 'new';
     }
     async function createItem() {
@@ -334,9 +342,14 @@
         if (!invalid) {
             try {
                 const result = await axios.put(`/api/v${props.apiVersion}/${objectType}/${itemId.value}`, item.value, TokenStorage.getAuthentication())
-                if (result.data.status == "error") {
-                    toast.error(result.data.message + ", " + result.data.data.error);
-                } else {
+                if (props.apiVersion == 1) {
+                    if (result.data.status == "error") {
+                        toast.error(result.data.message + ", " + result.data.data.error);
+                    } else {
+                        toast.success(objectTitle('', 'is updated'));
+                        loadItems();
+                    }
+                } else if (props.apiVersion == 2) {
                     toast.success(objectTitle('', 'is updated'));
                     loadItems();
                 }
@@ -355,9 +368,15 @@
             }else{
                 result = await axios.delete(`/api/v${props.apiVersion}/${objectType}/${itemId.value}`, TokenStorage.getAuthentication())
             }
-            if (result.data.status == "error") {
-                toast.error(result.data.message + ", " + result.data.data.error);
-            } else {
+            if (props.apiVersion == 1) {
+                if (result.data.status == "error") {
+                    toast.error(result.data.message + ", " + result.data.data.error);
+                } else {
+                    toast.success(objectTitle('', 'is deleted'));
+                    unselectItem();
+                    loadItems();
+                }
+            } else if (props.apiVersion == 2) {
                 toast.success(objectTitle('', 'is deleted'));
                 unselectItem();
                 loadItems();
@@ -431,8 +450,8 @@
     // Load config (AnsibleForms URL) on mount
     onMounted(async () => {
         try {
-            const result = await axios.get(`/api/v1/settings`, TokenStorage.getAuthentication());
-            config.value = result.data.data.output;
+            const result = await axios.get(`/api/v2/settings`, TokenStorage.getAuthentication());
+            config.value = result.data;
         } catch (err) {
             // fallback: leave config empty
         }
@@ -496,10 +515,12 @@
         loading.value = true
         await loadItems();
         loading.value = false;
-        // set interval await
-        interval.value = setInterval(async () => {
-            await loadItems(false);
-        }, reloadSeconds);
+        // set interval await (only if reloadSeconds is not explicitly disabled)
+        if (reloadSeconds !== false) {
+            interval.value = setInterval(async () => {
+                await loadItems(false);
+            }, reloadSeconds);
+        }
     });
 
 
@@ -570,7 +591,32 @@
         </template>
         <template #default>
             <template v-for="field in fields">
-                <BsInput v-if="showField(field)" 
+                <!-- DATETIME FIELD -->
+                <div v-if="showField(field) && field.type === 'datetime'" class="row mb-3">
+                    <label class="col-sm-2 col-form-label fw-bold">
+                        {{ field.label }}
+                        <span v-if="field.required" class="text-danger">*</span>
+                    </label>
+                    <div class="col-sm-10">
+                        <BsDateTime 
+                            v-model="$v.item[field.key].$model"
+                            :icon="field.icon || 'calendar'"
+                            :placeholder="field.placeholder"
+                            :hasError="$v.item[field.key].$invalid && $v.item[field.key].$dirty"
+                            :convertToUtc="field.convertToUtc !== undefined ? field.convertToUtc : true"
+                            dateType="datetime"
+                        />
+                        <small v-if="field.help" class="form-text text-muted d-block mt-1">{{ field.help }}</small>
+                        <div v-if="$v.item[field.key].$invalid && $v.item[field.key].$dirty" class="invalid-feedback d-block">
+                            <div v-for="error in $v.item[field.key].$errors" :key="error.$uid">
+                                {{ error.$message }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- ALL OTHER FIELD TYPES -->
+                <BsInput v-if="showField(field) && field.type !== 'datetime'" 
                     :isHorizontal="true" 
                     :type="field.type" 
                     :placeholder="field.placeholder" 
