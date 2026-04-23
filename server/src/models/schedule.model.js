@@ -4,6 +4,7 @@ import logger from "../lib/logger.js";
 import Job from "./job.model.js";
 import yaml from 'yaml';
 import CrudModel from './crud.model.js';
+import cronService from '../services/cron.service.js';
 
 class Schedule extends CrudModel {
   static modelName = 'schedule';
@@ -95,6 +96,8 @@ class Schedule extends CrudModel {
     if(schedule.one_time_run === 1){
       logger.info(`Deleting one-time schedule '${schedule.name}' after execution`);
       await super.delete(this.modelName, id);
+      // Remove from cron service to stop checking
+      cronService.removeSchedule(id);
     }
   }
 }

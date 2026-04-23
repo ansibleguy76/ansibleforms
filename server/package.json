@@ -27,7 +27,7 @@
     "cookie-session": "~2.1.1",
     "core-js": "~3.49.0",
     "cors": "~2.8.6",
-    "cron-parser": "~5.5.0",
+    "croner": "~10.0.1",
     "dayjs": "~1.11.20",
     "dotenv": "~17.4.2",
     "express": "~5.2.1",

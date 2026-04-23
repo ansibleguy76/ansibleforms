@@ -31,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 -   Error logging concatenation in token and job controllers (6 locations)
+-   encoding in the expression functions
+-   Cronschedules now handled with Croner, which should be better (#436)
 
 
 ## [6.1.4] - 2026-03-30

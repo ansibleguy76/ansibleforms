@@ -3,6 +3,8 @@
 import Schedule from "../../models/schedule.model.js";
 import RestResult from "../../models/restResult.model.v2.js";
 import Errors from "../../lib/errors.js";
+import cronService from "../../services/cron.service.js";
+import logger from "../../lib/logger.js";
 
 const scheduleController = {
   async find(req, res) {
@@ -21,7 +23,12 @@ const scheduleController = {
 
   async create(req, res) {
     try {
-      const created = await Schedule.create(req.body);
+      const insertId = await Schedule.create(req.body);
+      // Fetch the created record to get all fields for cron service
+      const created = await Schedule.findById(insertId);
+      // Add to cron service
+      logger.info(`Adding schedule '${created.name}' (ID: ${created.id}) to cron service`);
+      cronService.addSchedule(created.id, created.name, created.cron, created.one_time_run, created.run_at);
       return res.status(201).json(RestResult.single("schedule added", created));
     } catch (err) {
       Errors.ReturnError(res, err);
@@ -39,7 +46,12 @@ const scheduleController = {
 
   async update(req, res) {
     try {
-      const updated = await Schedule.update(req.body, req.params.id);
+      await Schedule.update(req.body, req.params.id);
+      // Fetch the updated record to get all fields for cron service
+      const updated = await Schedule.findById(req.params.id);
+      // Update cron service with complete record
+      logger.info(`Updating schedule '${updated.name}' (ID: ${updated.id}) in cron service`);
+      cronService.addSchedule(updated.id, updated.name, updated.cron, updated.one_time_run, updated.run_at);
       return res.json(RestResult.single(updated));
     } catch (err) {
       Errors.ReturnError(res, err);
@@ -49,6 +61,9 @@ const scheduleController = {
   async delete(req, res) {
     try {
       const deleted = await Schedule.delete(req.params.id);
+      // Remove from cron service
+      logger.info(`Removing schedule ID ${req.params.id} from cron service`);
+      cronService.removeSchedule(req.params.id);
       return res.json(RestResult.single(deleted));
     } catch (err) {
       Errors.ReturnError(res, err);

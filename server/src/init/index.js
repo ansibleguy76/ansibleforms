@@ -8,7 +8,7 @@ import Repository from '../models/repository.model.js';
 import Datasource from '../models/datasource.model.js';
 import Schedule from '../models/schedule.model.js';
 import BackupModel from '../models/backup.model.js';
-import { CronExpressionParser } from "cron-parser";
+import cronService from '../services/cron.service.js';
 import dayjs from "dayjs";
 import appConfig from "../../config/app.config.js";
 import User from "../models/user.model.js";
@@ -162,23 +162,13 @@ const init = async function(){
     logger.error("Failed to abandon jobs : " + err)
   })
 
-  logger.info("Initializing hourly abandoned jobs timer")
-  // this is hourly, abandon running jobs older than a day.
-  setInterval(()=>{
-    Job.abandon()
-      .then((changed)=>{
-        logger.warning(`Abandoned ${changed} jobs`)
-      })
-      .catch((err)=>{
-        logger.error("Failed to abandon jobs : " + err)
-      })
-  },3600000)
+  logger.info("Initializing cron service for scheduled tasks")
+  // Initialize all cron jobs from database (repositories, datasources, schedules)
+  await cronService.initializeAll();
 
-  logger.info("Initializing daily token cleanup timer")
-  // Cleanup old tokens daily
-  setInterval(()=>{
-    Token.cleanup()
-  },86400000) // 24 hours
+  logger.info("Initializing system maintenance tasks")
+  // Initialize system maintenance cron jobs (abandoned jobs, token cleanup, backups, etc.)
+  await cronService.initializeSystemTasks(Job, Token, BackupModel, appConfig);
 
   logger.info("Pulling repositories")
   mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE rebase_on_start=1")
@@ -189,132 +179,6 @@ const init = async function(){
     })
   })
   .catch((e)=>{})
-
-  logger.info("Initializing nightly backup")
-  // Run nightly backups at midnight and cleanup old backups
-  setInterval(async ()=>{
-    try{
-      const now = dayjs()
-      const hour = now.hour()
-      const minute = now.minute()
-      
-      // Run at midnight (0:00)
-      if(hour === 0 && minute === 0){
-        logger.info("Running automated nightly backup")
-        try{
-          const result = await BackupModel.doBackup("Automated nightly backup")
-          logger.info(`Nightly backup completed: ${result.backupFolder}`)
-          
-          // Cleanup old nightly backups
-          logger.info(`Cleaning up nightly backups, keeping last ${appConfig.nightlyBackupRetention} backups`)
-          const backups = await BackupModel.listBackups()
-          const nightlyBackups = backups.filter(b => b.description === "Automated nightly backup")
-          
-          if(nightlyBackups.length > appConfig.nightlyBackupRetention){
-            const toDelete = nightlyBackups.slice(appConfig.nightlyBackupRetention)
-            for(const backup of toDelete){
-              logger.info(`Deleting old nightly backup: ${backup.folder}`)
-              await BackupModel.deleteBackup(backup.folder)
-            }
-            logger.info(`Cleaned up ${toDelete.length} old nightly backups`)
-          }
-        }catch(e){
-          logger.error(`Failed to create nightly backup: ${e}`)
-        }
-      }
-    }catch(e){
-      logger.error(`Nightly backup interval error: ${e}`)
-    }
-  },60000) // Check every minute
-
-  logger.info("Initializing cron schedules")
-  // this is hourly, abandon running jobs older than a day.
-  setInterval(async ()=>{
-
-    // find any repositories with cron schedules that need to run
-    try{
-      const repositories = await mysql.do("SELECT name,cron FROM AnsibleForms.`repositories` WHERE COALESCE(status,'')<>'running' AND cron<>''",undefined,true)
-      repositories.map(async (repo)=>{
-        try{
-          const interval = CronExpressionParser.parse(repo.cron) 
-          const next = interval.next().toDate()
-          const date = dayjs(next)
-          const now = dayjs()
-          const minutes = date.diff(now,'m')
-          if(minutes==0){
-            Repository.pull(repo.name).catch((e)=>{}) // we don't wait for the pull to finish to continue
-          }else{
-            // logger.debug(`Not time yet, ${minutes} minutes to go`)
-          }
-        }catch(e){
-          logger.error(`Failed to parse cron schedule ${repo.cron}`)
-        }       
-      })
-    }catch(e){} 
-
-    // find any datasources with cron schedules that need to run
-    try{
-      // datasource cron schedules
-      const datasources = await mysql.do("SELECT id,name,cron FROM AnsibleForms.`datasource` WHERE COALESCE(status,'')<>'running' AND COALESCE(status,'')<>'queued' AND cron<>''",undefined,true)
-      datasources.map(async(ds)=>{
-        try{
-          const interval = CronExpressionParser.parse(ds.cron) 
-          const next = interval.next().toDate()
-          const date = dayjs(next)
-          const now = dayjs()
-          const minutes = date.diff(now,'m')
-          if(minutes==0){
-            // time to run
-            await Datasource.queue(ds.id)
-
-          }else{
-            // logger.debug(`Not time yet, ${minutes} minutes to go`)
-          }
-        }catch(e){
-          logger.error(`Failed to queue datasource`,e)
-        }       
-      })
-    }catch(e){}
-
-    // find any schedules with cron schedules that need to run
-    try{
-      // schedule cron schedules
-      const schedules = await mysql.do("SELECT id,name,one_time_run,cron,run_at FROM AnsibleForms.`schedule` WHERE COALESCE(state,'')<>'running' AND COALESCE(state,'')<>'queued' AND ((one_time_run=0 AND cron<>'') OR (one_time_run=1 AND run_at IS NOT NULL))",undefined,true)
-      schedules.map(async(schedule)=>{
-        try{
-          let shouldRun = false;
-          
-          if(schedule.one_time_run === 0){
-            // Recurring cron logic
-            const interval = CronExpressionParser.parse(schedule.cron) 
-            const next = interval.next().toDate()
-            const date = dayjs(next)
-            const now = dayjs()
-            const minutes = date.diff(now,'m')
-            shouldRun = (minutes === 0)
-          } else if(schedule.one_time_run === 1){
-            // One-time datetime check
-            const runAt = dayjs(schedule.run_at)
-            const now = dayjs()
-            shouldRun = runAt.isBefore(now) || runAt.isSame(now, 'minute')
-          }
-          
-          if(shouldRun){
-            // time to run
-            await Schedule.queue(schedule.id)
-          }else{
-            // logger.debug(`Not time yet, ${minutes} minutes to go`)
-          }
-        }catch(e){
-          logger.error(`Failed to queue schedule`,e)
-        }       
-      })
-    }catch(e){}
-
-
-  },56000) // run every 55 second, should hit 0 minutes once
-
-
 
   // now we check if there are any datasources that need to be imported, every 10 seconds
   // we only import 1 datasource that is with the lowest queue_id while there are no datasources with status running
