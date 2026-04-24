@@ -28,7 +28,7 @@ import { useRoute } from "vue-router";
 import { toast } from "vue-sonner";
 import { useVuelidate } from '@vuelidate/core';
 import { required, helpers, sameAs } from "@vuelidate/validators";
-import { useTemplateRef, nextTick } from "vue";
+import { useTemplateRef, nextTick, inject } from "vue";
 import { copyText } from 'vue3-clipboard'
 import { useAppStore } from "@/stores/app";
 import Helpers from '@/lib/Helpers';
@@ -108,6 +108,10 @@ const props = defineProps(
         },
     }
 )
+
+// Edit stack injected from the parent form page (provided by form.vue).
+// Used to open subform editors for yaml+subform fields.
+const editStack = inject('formEditStack', null);
 
 // DATA
 //----------------------------------------------------------------
@@ -1390,6 +1394,93 @@ function handleSubformAction(actionKey) {
     emit('submit-action', { action: actionKey, value: stripSubformInternals(form.value) });
 }
 
+// Open the subform editor for a yaml+subform field.
+// The current field value (or an empty object built from subform defaults)
+// becomes the draft. On save the value is written back to the field.
+function openYamlSubformEditor(field) {
+    if (!editStack) return;
+    const resolvedSubform = props.subforms.find(s => s.name === field.subform);
+    if (!resolvedSubform) return;
+    const title = field.label || field.name;
+    // Build a starting draft from the current value or subform defaults.
+    let row = form.value[field.name];
+    if (!row || typeof row !== 'object' || Array.isArray(row)) {
+        row = {};
+        for (const f of (resolvedSubform.fields || [])) {
+            if (f.default !== undefined) row[f.name] = f.default;
+            else if (f.type === 'list') row[f.name] = [];
+        }
+    } else {
+        row = JSON.parse(JSON.stringify(row));
+    }
+    editStack.push({
+        title,
+        subtitle: field.titleEdit || `Edit ${title}`,
+        subform: resolvedSubform,
+        row,
+        onSave: (value) => {
+            form.value[field.name] = value;
+            evaluateDynamicFields(field.name);
+        },
+    });
+}
+
+// Hidden file input refs for yaml+subform load buttons (keyed by field name).
+const yamlSubformFileRefs = ref({});
+
+function triggerYamlSubformLoad(fieldName) {
+    yamlSubformFileRefs.value[fieldName]?.click();
+}
+
+async function handleYamlSubformLoad(event, fieldName) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const fileName = file.name.toLowerCase();
+    if (!fileName.endsWith('.yml') && !fileName.endsWith('.yaml')) {
+        toast.error('Please select a .yml or .yaml file');
+        return;
+    }
+    try {
+        const text = await file.text();
+        const parsed = YAML.parse(text);
+        if (parsed === null || parsed === undefined) {
+            toast.error('Invalid YAML file - no data found');
+            return;
+        }
+        const value = Array.isArray(parsed) ? parsed[0] : parsed;
+        if (Array.isArray(parsed)) toast.info('First array item loaded');
+        form.value[fieldName] = value;
+        evaluateDynamicFields(fieldName);
+        toast.success(`Loaded from ${file.name}`);
+    } catch (e) {
+        toast.error(`Failed to parse ${file.name}: ${e.message}`);
+    }
+    event.target.value = '';
+}
+
+function handleYamlSubformDownload(fieldName, label) {
+    try {
+        const value = form.value[fieldName];
+        if (!value) {
+            toast.error('No data to download');
+            return;
+        }
+        const yamlContent = YAML.stringify(value);
+        const blob = new Blob([yamlContent], { type: 'text/yaml' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${fieldName || 'field'}.yml`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        toast.success('Downloaded as YAML');
+    } catch (e) {
+        toast.error(`Failed to download: ${e.message}`);
+    }
+}
+
 // initiate the defaults
 function initForm() {
     pretasksFinished.value = false;
@@ -2091,6 +2182,9 @@ onUnmounted(() => {
                                         :subform="subforms.find(s => s.name === field.subform)"
                                         :subforms="subforms"
                                         :constants="constants"
+                                        :name="field.name"
+                                        :showLoadButton="field.showLoadButton === true"
+                                        :showDownloadButton="field.showDownloadButton === true"
                                         :hasError="v$.form[field.name].$invalid"
                                         :errors="getErrorsToDisplay(field.name)"
                                         :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]"
@@ -2175,7 +2269,63 @@ onUnmounted(() => {
                                 <!-- TYPE = YAML -->
                                 <div v-if="field.type == 'yaml'"
                                     :class="{ 'is-loading': !['fixed', 'variable'].includes(dynamicFieldStatus[field.name]) && (field.expression || field.query) }">
-                                    <div v-if="!fieldOptions[field.name].viewable">
+                                    <!-- YAML + subform: button bar + readonly preview -->
+                                    <div v-if="field.subform">
+                                        <div class="mb-2 d-flex gap-2">
+                                            <BsButton
+                                                cssClass="btn-sm"
+                                                icon="pencil-alt"
+                                                :title="`Edit ${field.label || field.name}`"
+                                                @click="openYamlSubformEditor(field)">
+                                                Edit
+                                            </BsButton>
+                                            <BsButton
+                                                v-if="field.showLoadButton"
+                                                cssClass="btn-sm"
+                                                icon="file-import"
+                                                @click="triggerYamlSubformLoad(field.name)">
+                                                Load YAML
+                                            </BsButton>
+                                            <BsButton
+                                                v-if="field.showDownloadButton"
+                                                cssClass="btn-sm"
+                                                icon="download"
+                                                :disabled="!v$.form[field.name].$model"
+                                                @click="handleYamlSubformDownload(field.name)">
+                                                Download
+                                            </BsButton>
+                                            <BsButton
+                                                v-if="v$.form[field.name].$model"
+                                                cssClass="btn-sm"
+                                                icon="copy"
+                                                :isIconButton="true"
+                                                @click="clip(v$.form[field.name].$model)" />
+                                            <!-- hidden file input for load -->
+                                            <input
+                                                v-if="field.showLoadButton"
+                                                :ref="el => { if (el) yamlSubformFileRefs[field.name] = el; }"
+                                                type="file"
+                                                accept=".yml,.yaml"
+                                                @change="handleYamlSubformLoad($event, field.name)"
+                                                style="display: none"
+                                            />
+                                        </div>
+                                        <div class="card p-3 yaml-readonly limit-height"
+                                            :class="{ 'border-danger': v$.form[field.name].$invalid }">
+                                            <pre v-if="v$.form[field.name].$model && typeof v$.form[field.name].$model === 'object'"
+                                                v-highlightjs><code language="yaml" style="border:none;padding:0">{{ YAML.stringify(v$.form[field.name].$model) }}</code></pre>
+                                            <span v-else class="text-muted fst-italic">{{ field.placeholder || '(empty)' }}</span>
+                                        </div>
+                                        <div v-if="v$.form[field.name].$invalid && getErrorsToDisplay(field.name).length > 0"
+                                            class="invalid-feedback d-block">
+                                            {{ getErrorsToDisplay(field.name)[0].$message || getErrorsToDisplay(field.name)[0].$params?.description }}
+                                        </div>
+                                        <div class="form-text" v-if="fieldHelp[field.name]">
+                                            {{ typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name] }}
+                                        </div>
+                                    </div>
+                                    <!-- YAML without subform: normal editor -->
+                                    <div v-else-if="!fieldOptions[field.name].viewable">
                                         <!-- YAML field: shows data from expression/query or allows manual editing -->
                                         <BsYamlEditor 
                                             v-model="v$.form[field.name].$model"
@@ -2193,7 +2343,7 @@ onUnmounted(() => {
                                     </div>
                                     <!-- Debug/view raw YAML data -->
                                     <div @dblclick="setExpressionFieldViewable(field.name, false)" 
-                                         v-if="fieldOptions[field.name].viewable"
+                                         v-else
                                          class="card p-2 limit-height">
                                         <VueJsonPretty :data="v$.form[field.name].$model" />
                                     </div>

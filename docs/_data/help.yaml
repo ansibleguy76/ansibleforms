@@ -1339,9 +1339,43 @@
                   groupname1: bg-info-subtle
                   groupname2: bg-success-subtle    
                 fields:                                        # list of field objects      
+        - name: subform
+          description: |
+            A reusable form fragment used as the per-row editor of a `list` field, or as the single-object editor of a `yaml` field with the `subform` property.  
+            Subforms are not shown in the tile view and cannot be submitted directly.  
+            They share the same field types and validation rules as regular forms.
+          examples:
+          - name: Address subform
+            code: |
+              forms:
+                - name: Address
+                  type: subform
+                  fields:
+                    - name: street
+                      type: text
+                      label: Street
+                      required: true
+                    - name: city
+                      type: text
+                      label: City
+                      required: true
+                    - name: country
+                      type: text
+                      label: Country
+                      required: true
+                - name: My Main Form
+                  type: ansible
+                  playbook: site.yml
+                  roles:
+                    - Public
+                  fields:
+                    - name: addresses
+                      type: list
+                      label: Addresses
+                      subform: Address
         short: Form type
-        description: | 
-          Our form eventually sends extravars to a target.  That target can be an ansible-playbook, an awx-template, a multistep (a sequence of playbooks/templates), or a `subform` (a reusable form fragment used as the per-row editor of a `list` field).
+        description: |
+          Our form eventually sends extravars to a target.  That target can be an ansible-playbook, an awx-template, a multistep (a sequence of playbooks/templates), or a `subform` (a reusable form fragment used as the per-row editor of a `list` field or the single-object editor of a `yaml` field).
         examples:
         - name: Run AWX Template Create VM
           code: |
@@ -2434,7 +2468,7 @@
               - name: table
                 description: (deprecated) A table input field - use `list` + `subform` instead
                 extra: |
-                  **Deprecated.** The `table` field is superseded by the [list](../list) field combined with a `subform`.  
+                  **Deprecated since 6.2.0.** The `table` field is superseded by the [list](../list) field combined with a `subform`.  
                   Existing `table` fields keep working but trigger a deprecation warning.  
                   
                   A table field allows you to manually add multi object arrays.  
@@ -3556,12 +3590,13 @@
             type: string
             required: true
             group: basic
-            with_types: list
+            with_types: list, yaml
             short: Name of the subform that defines one row
             description: |
-              A `list` field delegates the per-row editor to a **subform**.  
+              For a `list` field: delegates the per-row editor to a **subform**.  
+              For a `yaml` field: the value is a single object edited via a **subform** drilldown instead of a raw YAML editor.  
               Set this property to the `name` of a top-level form of type `subform` declared in the same forms file (or in any loaded forms file).  
-              The same subform can be referenced by multiple list fields, enabling row reuse (e.g. a single `Address` subform shared across several forms).
+              The same subform can be referenced by multiple fields, enabling reuse (e.g. a single `Address` subform shared across several forms).
           - name: columns
             type: array
             group: visualization

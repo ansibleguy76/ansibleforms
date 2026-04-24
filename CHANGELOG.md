@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-   New `list` field type: a multi-row collection field where each row is edited via a subform drilldown. Supports nested lists, shared subforms, marker tracking (`insertMarker`, `deleteMarker`, `updateMarker`), column selection, soft-delete with undo, and full output modelling (`noOutput`, `outputObject`, `model`). Replaces the deprecated `table` field. (#379)
+-   New `subform` property on `yaml` fields: when set, the field value is edited via a subform drilldown instead of a raw YAML editor, enabling structured single-object editing with full validation.
+-   New `subform` form type: define reusable subforms (referenced by `list` and `yaml` fields) in the same forms file.
+
+### Deprecated
+
+-   `table` field type is deprecated since 6.2.0. Existing `table` fields continue to work but show a deprecation warning. Migrate to the `list` field type combined with a `subform`.
+-   `tableFields` / `Tablefield` property is deprecated since 6.2.0. Use the `subform` form type with regular `formfields` instead.
+
 ## [6.1.5] - 2026-04-23
 
 ### Added

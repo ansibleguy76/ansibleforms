@@ -23,6 +23,8 @@
 /******************************************************************/
 
 import { ref, computed, watch, inject } from 'vue';
+import YAML from 'yaml';
+import { toast } from 'vue-sonner';
 
 const props = defineProps({
     field: { type: Object, required: true },
@@ -33,9 +35,66 @@ const props = defineProps({
     errors: { type: Array, default: () => [] },
     help: { type: String, default: '' },
     modelValue: { type: Array, default: () => [] },
+    showLoadButton: { type: Boolean, default: false },
+    showDownloadButton: { type: Boolean, default: false },
+    name: { type: String, default: 'list-field' },
 });
 
 const emit = defineEmits(['update:modelValue']);
+
+const fileInputRef = ref(null);
+
+function triggerFileInput() {
+    fileInputRef.value?.click();
+}
+
+async function handleFileLoad(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const fileName = file.name.toLowerCase();
+    if (!fileName.endsWith('.yml') && !fileName.endsWith('.yaml')) {
+        toast.error('Please select a .yml or .yaml file');
+        return;
+    }
+    try {
+        const text = await file.text();
+        const parsed = YAML.parse(text);
+        if (parsed === null || parsed === undefined) {
+            toast.error('Invalid YAML file - no data found');
+            return;
+        }
+        const arrayData = Array.isArray(parsed) ? parsed : [parsed];
+        if (!Array.isArray(parsed)) toast.info('Single object converted to array');
+        rows.value = arrayData;
+        commit();
+        toast.success(`Loaded ${arrayData.length} row(s) from ${file.name}`);
+    } catch (e) {
+        toast.error(`Failed to parse ${file.name}: ${e.message}`);
+    }
+    event.target.value = '';
+}
+
+function handleDownload() {
+    try {
+        if (!rows.value || rows.value.length === 0) {
+            toast.error('No data to download');
+            return;
+        }
+        const yamlContent = YAML.stringify(rows.value);
+        const blob = new Blob([yamlContent], { type: 'text/yaml' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${props.name || 'list'}.yml`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        toast.success('List data downloaded as YAML');
+    } catch (e) {
+        toast.error(`Failed to download: ${e.message}`);
+    }
+}
 
 // Local rows state synchronised with v-model.
 const rows = ref(Array.isArray(props.modelValue) ? [...props.modelValue] : []);
@@ -212,6 +271,32 @@ function canDelete(row) {
         </div>
 
         <template v-else>
+            <!-- Load/Download buttons -->
+            <div v-if="showLoadButton || showDownloadButton" class="mb-2 d-flex gap-2">
+                <BsButton
+                    v-if="showLoadButton"
+                    cssClass="btn-sm"
+                    icon="file-import"
+                    @click="triggerFileInput">
+                    Load YAML
+                </BsButton>
+                <BsButton
+                    v-if="showDownloadButton"
+                    cssClass="btn-sm"
+                    icon="download"
+                    @click="handleDownload"
+                    :disabled="!rows || rows.length === 0">
+                    Download
+                </BsButton>
+                <input
+                    v-if="showLoadButton"
+                    ref="fileInputRef"
+                    type="file"
+                    accept=".yml,.yaml"
+                    @change="handleFileLoad"
+                    style="display: none"
+                />
+            </div>
             <div class="form-control" :class="{ 'is-invalid': hasError }">
                 <table class="table table-bordered mb-0">
                     <thead>
