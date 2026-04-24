@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Tablefields
+title: Tablefields (deprecated)
 nav_order: 7
 has_children: true
 has_toc: false
@@ -8,6 +8,9 @@ has_toc: false
 
 # Tablefields
 {: .no_toc }
+
+> **Deprecated.** Tablefields are used with the `table` formfield type, which is deprecated. Use the [`list`](/formfields/list.html) field type instead — it provides the same functionality with a drilldown subform UX and full output modelling support.
+{: .warning }
 
 Tablefields are field types used within table formfields. They define the columns and data entry controls for tabular data collection.
 

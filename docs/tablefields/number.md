@@ -1,11 +1,14 @@
 ---
 layout: default
 title: Number
-parent: Tablefields
+parent: Tablefields (deprecated)
 nav_order: 3
 ---
 
 # Number Tablefield
+
+> **Deprecated.** This tablefield is used with the deprecated `table` field type. Use the [`list`](/formfields/list.html) field type instead.
+{: .warning }
 
 A numeric input column with validation for collecting integer or decimal values like IDs, ports, or quantities within a table row.
 

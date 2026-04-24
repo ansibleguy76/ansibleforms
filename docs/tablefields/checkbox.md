@@ -1,11 +1,14 @@
 ---
 layout: default
 title: Checkbox
-parent: Tablefields
+parent: Tablefields (deprecated)
 nav_order: 5
 ---
 
 # Checkbox Tablefield
+
+> **Deprecated.** This tablefield is used with the deprecated `table` field type. Use the [`list`](/formfields/list.html) field type instead.
+{: .warning }
 
 A boolean toggle column for collecting true/false values, commonly used for flags or enable/disable options within a table row.
 

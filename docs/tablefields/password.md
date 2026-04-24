@@ -1,11 +1,14 @@
 ---
 layout: default
 title: Password
-parent: Tablefields
+parent: Tablefields (deprecated)
 nav_order: 4
 ---
 
 # Password Tablefield
+
+> **Deprecated.** This tablefield is used with the deprecated `table` field type. Use the [`list`](/formfields/list.html) field type instead.
+{: .warning }
 
 A masked text input column for securely collecting passwords, secrets, or tokens within a table row.
 

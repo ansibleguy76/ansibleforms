@@ -1,11 +1,14 @@
 ---
 layout: default
 title: Text
-parent: Tablefields
+parent: Tablefields (deprecated)
 nav_order: 1
 ---
 
 # Text Tablefield
+
+> **Deprecated.** This tablefield is used with the deprecated `table` field type. Use the [`list`](/formfields/list.html) field type instead.
+{: .warning }
 
 A single-line text input column for collecting short string values like names, identifiers, or other text-based data within a table row.
 

@@ -1,13 +1,14 @@
 ---
 layout: default
 title: Textarea
-parent: Tablefields
+parent: Tablefields (deprecated)
 nav_order: 2
 ---
 
 # Textarea Tablefield
 
-A multi-line text input column for collecting longer text content like descriptions or notes within a table row.
+> **Deprecated.** This tablefield is used with the deprecated `table` field type. Use the [`list`](/formfields/list.html) field type instead.
+{: .warning }
 
 ## Properties
 
