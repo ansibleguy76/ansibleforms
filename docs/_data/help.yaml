@@ -1341,7 +1341,7 @@
                 fields:                                        # list of field objects      
         short: Form type
         description: | 
-          Our form eventually sends extravars to a target.  That target can be an ansible-playbook, an awx-template or a multistep (which is a list or combination of multiple playbooks/templates, executed sequentially).
+          Our form eventually sends extravars to a target.  That target can be an ansible-playbook, an awx-template, a multistep (a sequence of playbooks/templates), or a `subform` (a reusable form fragment used as the per-row editor of a `list` field).
         examples:
         - name: Run AWX Template Create VM
           code: |
@@ -2432,8 +2432,11 @@
                   code: |
                     since expressions are so diverse, there is a separate section on expressions with examples.
               - name: table
-                description: A table input field (insert, modify, delete)
+                description: (deprecated) A table input field - use `list` + `subform` instead
                 extra: |
+                  **Deprecated.** The `table` field is superseded by the [list](../list) field combined with a `subform`.  
+                  Existing `table` fields keep working but trigger a deprecation warning.  
+                  
                   A table field allows you to manually add multi object arrays.  
                   You can start from an empty list, but you can also retrieve existing data first using :  
 
@@ -2534,6 +2537,61 @@
                           switch: true
                           required: true
                           default: true                                
+              - name: list
+                description: A list of structured rows edited through a reusable subform (supersedes `table`)
+                extra: |
+                  A `list` field shows a table of rows where each row is edited through a separate **subform** pane.  
+                  The subform itself is a top-level form of type `subform`, referenced by name via the `subform` property.  
+                  Subforms can be nested (a list field inside a subform) and can be reused across multiple forms (e.g. a single `Address` subform shared by customers, suppliers, ...).  
+                  Use the `columns` property to pick which subform fields appear in the table. Other properties (`allowInsert`, `allowDelete`, `insertMarker`, `deleteMarker`, `updateMarker`) behave the same as in the deprecated `table` field.
+                examples:
+                - name: List with a shared Address subform
+                  code: |
+                    # Top-level forms in the same file
+                    - name: Address
+                      type: subform
+                      fields:
+                        - name: street
+                          type: text
+                          label: Street
+                        - name: city
+                          type: text
+                          label: City
+                        - name: country
+                          type: text
+                          label: Country
+
+                    - name: Create customer
+                      type: ansible
+                      playbook: customer.yaml
+                      fields:
+                        - name: name
+                          type: text
+                          label: Customer name
+                        - name: addresses
+                          type: list
+                          label: Addresses
+                          subform: Address
+                          columns:
+                            - city
+                            - country
+                          titleAdd: Add address
+                          titleEdit: Edit address
+                          allowInsert: true
+                          allowDelete: true
+                - name: List with marker tracking
+                  code: |
+                    - name: people
+                      type: list
+                      label: People
+                      subform: Person
+                      allowDelete: false          # preloaded rows are locked
+                      insertMarker: added         # session-added rows stay removable
+                      updateMarker: updated
+                      deleteMarker: removed
+                      columns:
+                        - name
+                        - email
               - name: yaml
                 description: A YAML editor field with syntax highlighting and validation
                 extra: |
@@ -2655,7 +2713,7 @@
             type: string
             group: basic
             allowed: Free text
-            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, file, html, yaml
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, list, file, html, yaml
             short: Field label
             description: |
               A friendly name/label for the field.  Note: if not set, the field name is used as label, but not when type is html.
@@ -2665,7 +2723,7 @@
             type: string
             group: basic
             allowed: Free text
-            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, file
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, file
             short: In-field help value
             description: |
               Some form fields allow an in-field hint value.
@@ -2675,7 +2733,7 @@
             type: string
             group: basic
             allowed: Free text
-            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, file, yaml
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, list, file, yaml
             short: Field help message
             description: |
               Some fields require additional help information.
@@ -3478,13 +3536,40 @@
             description: |
               When you edit a record in a table, the default title is `Edit`.  
               You can change this to something more meaningful by setting this property.
+          - name: titleAdd
+            type: string
+            group: visualization
+            with_types: list
+            short: Title shown in the subform pane when adding a new row
+            description: |
+              When you add a row through a `list` field, the subform pane shows `Add <label>` as subtitle.  
+              Use this property to override the subtitle (e.g. `Add address`).
+          - name: titleEdit
+            type: string
+            group: visualization
+            with_types: list
+            short: Title shown in the subform pane when editing an existing row
+            description: |
+              When you edit a row through a `list` field, the subform pane shows `Edit <label>` as subtitle.  
+              Use this property to override the subtitle (e.g. `Edit address`).
+          - name: subform
+            type: string
+            required: true
+            group: basic
+            with_types: list
+            short: Name of the subform that defines one row
+            description: |
+              A `list` field delegates the per-row editor to a **subform**.  
+              Set this property to the `name` of a top-level form of type `subform` declared in the same forms file (or in any loaded forms file).  
+              The same subform can be referenced by multiple list fields, enabling row reuse (e.g. a single `Address` subform shared across several forms).
           - name: columns
             type: array
             group: visualization
-            with_types: enum
-            short: The list of columns visible in the dropdown box
+            with_types: enum, list
+            short: The list of columns visible in the dropdown/table
             description: |
-              By default all properties are show in an `enum` field.  With this property you can choose which are visible.
+              For an `enum` field: all properties are shown by default. Use this property to choose which columns are visible in the dropdown.  
+              For a `list` field: all scalar subform fields are shown by default. Use this property to pick which subform fields render as columns in the list table (missing names soft-fail and render as empty columns).
             examples:
             - name: Show only wanted columns
               code: |
@@ -3630,23 +3715,23 @@
           - name: allowInsert
             type: boolean
             group: interaction
-            with_types: table
+            with_types: table, list
             default: true
-            short: Allow table insert
+            short: Allow table/list insert
             description: |
-              A table can be used to modify existing data.  If new data is allowed, set this property to false.  
+              A table or list can be used to modify existing data.  If new data is not allowed, set this property to false.  
           - name: allowDelete
             type: boolean
             group: interaction
             default: true
-            with_types: table
-            short: Allow table delete
+            with_types: table, list
+            short: Allow table/list delete
             description: |
               A table can be used to modify existing data.  If you don't was recoreds to be deleted, set this property to false.
           - name: deleteMarker
             type: string
             group: output
-            with_types: table
+            with_types: table, list
             short: Adds an additional deletemarker field
             description: |
               When you remove a record in a table, it gets removed.  
@@ -3670,7 +3755,7 @@
           - name: insertMarker
             type: string
             group: output
-            with_types: table
+            with_types: table, list
             short: Adds an additional insertmarker field
             description: |
               When you add a record in a table, it simply gets added.  
@@ -3693,7 +3778,7 @@
           - name: updateMarker
             type: string
             group: output
-            with_types: table
+            with_types: table, list
             short: Adds an additional updatemarker field
             version: 5.1.0
             description: |

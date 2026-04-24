@@ -501,6 +501,13 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
         logger.debug(`Skipping form ${f.name}, not requested.`)
         continue // skip this form if it is not the one we are looking for
       }
+      // subform type forms are not standalone forms; they are only consumed
+      // by "list" fields through the dedicated subform endpoint. Hide them
+      // from the form list and from regular form lookups.
+      if(!formName && f.type === "subform"){
+        logger.debug(`Skipping subform ${f.name} from form list.`)
+        continue
+      }
       if(existingFormNames.includes(f.name)){
         warn(`skipping duplicate form ${f.name}`)
         continue
@@ -530,6 +537,14 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
             error(`Failed to load varsFiles for form '${f.name}'.\r\n${e.message}`);
           }
         }
+        // When loading a single form, inline every subform referenced by a
+        // "list" field (recursively) so the client has a self-contained
+        // definition and no extra API calls are required. Authorization is
+        // implicit: we already validated the caller has access to this form,
+        // and subforms can only be reached through that form's field tree.
+        if(formName){
+          form.subforms = collectSubformsForForm(form, unvalidatedForms, errors)
+        }
         baseConfig.forms.push(form);   // merge the form into the base forms
         // if we are loading full config, we can return the form right away
         if(formName){
@@ -544,6 +559,54 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
   baseConfig.warnings = warnings; // add warnings to the base config
   return baseConfig; // return the base config with the forms
 };
+
+// Walk a field tree and collect every subform name referenced by a "list"
+// field. Recurses into subform definitions as well so we pick up nested
+// lists. `visited` guards against cycles (A -> B -> A).
+function collectSubformNames(fields, unvalidated, collected, visited){
+  if(!Array.isArray(fields)) return
+  for(const field of fields){
+    if(field?.type === "list" && field?.subform){
+      const name = field.subform
+      if(!visited.has(name)){
+        visited.add(name)
+        collected.add(name)
+        const sub = unvalidated.find(f => f.name === name && f.type === "subform")
+        if(sub){
+          collectSubformNames(sub.fields, unvalidated, collected, visited)
+        }
+      }
+    }
+    // multistep forms nest fields under step objects
+    if(Array.isArray(field?.fields)){
+      collectSubformNames(field.fields, unvalidated, collected, visited)
+    }
+  }
+}
+
+// Given a validated parent form, return the array of validated subform
+// definitions referenced by its list fields (recursively). Missing subforms
+// produce an error entry but do not throw, so the form itself can still be
+// rendered (the client will show a placeholder).
+function collectSubformsForForm(parentForm, unvalidated, errors){
+  const names = new Set()
+  collectSubformNames(parentForm.fields, unvalidated, names, new Set())
+  const result = []
+  for(const name of names){
+    const raw = unvalidated.find(f => f.name === name && f.type === "subform")
+    if(!raw){
+      errors.push(`Subform '${name}' referenced by form '${parentForm.name}' was not found.`)
+      continue
+    }
+    try{
+      result.push(Form.validateForm(raw))
+    } catch (e) {
+      errors.push(`Failed to validate subform '${name}'.\r\n${e.message}`)
+    }
+  }
+  return result
+}
+
 // load the forms config
 Form.backups = function() {
   logger.info(`Loading backups`)

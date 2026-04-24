@@ -48,7 +48,7 @@ const route = useRoute();
 const store = useAppStore();
 
 // define
-const emit = defineEmits(["update:status", "change", "submit-action", "abort"]);
+const emit = defineEmits(["update:status", "change", "submit-action", "abort", "save", "cancel"]);
 
 const form = defineModel()
 
@@ -67,7 +67,7 @@ const props = defineProps(
         },
         status: {
             type: String,
-            required: true
+            default: ""
         },
         submitLabel: {
             type: String,
@@ -88,6 +88,23 @@ const props = defineProps(
         initialData: {
             type: Object,
             default: () => { return {} }
+        },
+        // 'form' (default) renders the full form including submit buttons,
+        // status bar and job-launching UI handled by the parent page.
+        // 'subform' renders only the fields and validation, with Save/Cancel
+        // buttons. Used by AppListField to edit a single row of a list.
+        mode: {
+            type: String,
+            default: "form",
+            validator: (v) => ["form", "subform"].includes(v)
+        },
+        // Optional array of subform definitions (validated forms of type
+        // "subform") provided by the server alongside a form. Propagated
+        // down so nested <AppListField> fields can resolve their target
+        // subform without extra API calls.
+        subforms: {
+            type: Array,
+            default: () => []
         },
     }
 )
@@ -1087,6 +1104,12 @@ function findVariableDependencies() {
             warnings.value.push(`<span class="text-warning">'${item.name}' has the deprecated query type</span><br><span>Use enum type instead.</span>`)
         }
 
+        // table type is now deprecated in favour of list + subform
+        if (item.type == 'table') {
+            warnings.value.push(`<span class="text-warning">'${item.name}' has the deprecated table type</span><br><span>Use the list type with a subform instead.</span>`)
+            toast.warning(`'${item.name}' uses the deprecated table field. Please migrate to a list + subform.`)
+        }
+
         getPlaceholderMatches(fields, item.name, item.expression ?? item.query)
         getPlaceholderMatches(fields, item.name, item.default)
     })
@@ -1331,6 +1354,77 @@ function handleSubmitAction(actionKey) {
     emit('submit-action', { action: actionKey, visibility: visibility.value });
 }
 
+// Save handler for subform mode (used by AppListField). Validates the form
+// and, if valid, emits `save` with the current form value so the parent list
+// can add/update the row.
+function handleSubformSave() {
+    if (!validateForm()) {
+        return;
+    }
+    emit('save', stripSubformInternals(form.value));
+}
+
+// Build the output object for a subform row emitted to the parent list.
+// Mirrors the subset of main-form output logic that makes sense here:
+//   * drops internal fields (`__user__`)
+//   * honours `noOutput` (field omitted from the row)
+//   * honours `outputObject` / `valueColumn` (default false for scalars,
+//     true for expression/file/list/table/yaml/datetime)
+// The `model` property is intentionally ignored: subform rows are flat by
+// design. Visibility/dependencies inside the subform are not enforced here
+// because rows are expected to be fully materialised when saved.
+function stripSubformInternals(src) {
+    const raw = src || {};
+    const out = {};
+    const fields = props.currentForm?.fields || [];
+    for (const item of fields) {
+        if (!item.name || item.name === '__user__') continue;
+        if (item.noOutput) continue;
+        if (!(item.name in raw)) continue;
+
+        const outputObject =
+            item.outputObject ||
+            item.type === 'expression' ||
+            item.type === 'file' ||
+            item.type === 'table' ||
+            item.type === 'list' ||
+            item.type === 'yaml' ||
+            item.type === 'datetime' ||
+            false;
+
+        let value = Helpers.deepClone(raw[item.name]);
+
+        if (item.type === 'datetime' && item.dateType === 'month' && value && typeof value === 'object') {
+            value = { ...value, month: typeof value.month === 'number' ? value.month + 1 : value.month };
+        }
+
+        if (!outputObject) {
+            value = Helpers.getFieldValue(value, item.valueColumn || '', true);
+        }
+
+        out[item.name] = value;
+    }
+    return out;
+}
+
+// Subform dropdown actions attached to the Save button (Store only). "Load"
+// is exposed as a separate top-toolbar button by the page (alongside Back),
+// because loading replaces the current draft and feels more like an entry
+// action than a commit action. Store keeps partial drafts without validation.
+const subformActions = [
+    {
+        key: 'store',
+        label: 'Store',
+        icon: 'file-export',
+        roleOption: 'allowStoredJobs',
+    },
+];
+
+function handleSubformAction(actionKey) {
+    // No validation for store/load - authors may want to save partial work.
+    emit('submit-action', { action: actionKey, value: stripSubformInternals(form.value) });
+}
+
 // initiate the defaults
 function initForm() {
     pretasksFinished.value = false;
@@ -1468,6 +1562,10 @@ function initForm() {
             if (item.type == "table" && form.value[item.name] === undefined) {
                 form.value[item.name] = [];
             }
+            // Same default for list fields.
+            if (item.type == "list" && form.value[item.name] === undefined) {
+                form.value[item.name] = [];
+            }
         } else {
             var fallbackvalue = undefined;
             if (item.type == "checkbox") {
@@ -1481,6 +1579,10 @@ function initForm() {
                 dynamicFieldStatus.value[item.name] = "fixed";
             } else {
                 form.value[item.name] = externalData.value[item.name] ?? getDefaultValue(item.name, item.default) ?? fallbackvalue;
+            }
+            // List fields are arrays - initialize to [] if still undefined.
+            if (item.type == "list" && form.value[item.name] === undefined) {
+                form.value[item.name] = [];
             }
         }
         visibility.value[item.name] = true;
@@ -1834,10 +1936,11 @@ onUnmounted(() => {
     <div v-if="formIsReady" ref="containerRef">
 
         <!-- WARNINGS -->
-        <BsOffCanvas v-if="(warnings || Object.keys(queryerrors).length > 0) && showWarnings" :show="true"
+        <BsOffCanvas v-if="showWarnings" :show="true"
             icon="triangle-exclamation" title="Form warnings" @close="showWarnings = false">
             <template #actions> </template>
             <template #default>
+                <p v-if="!canSubmit && !formLoopIsBusy" class="mb-3" v-html="unevaluatedFieldsWarning"></p>
                 <p v-for="w, i in warnings" :key="'warning' + i" class="mb-3" v-html="w"></p>
                 <p v-for="q, i in Object.keys(queryerrors)" :key="'queryerror' + i" class="mb-3 has-text-danger">
                     '{{ q }}' has query errors<br>{{ queryerrors[q] }}
@@ -1851,11 +1954,20 @@ onUnmounted(() => {
             </div>
             <div>
 
-                <!-- warnings -->
-                <span role="button" v-show="!canSubmit && !formLoopIsBusy" :data-tooltip="unevaluatedFieldsWarning">
-                    <popper :content="unevaluatedFieldsWarning">
+                <!-- Unified warnings indicator: combines field-not-evaluated
+                     notices with authoring warnings (deprecations, bad refs,
+                     query errors). Clicking opens the warnings off-canvas. -->
+                <span class="position-relative" role="button"
+                    v-if="(!canSubmit && !formLoopIsBusy) || warnings.length > 0 || Object.keys(queryerrors).length > 0"
+                    @click="showWarnings = true">
+                    <popper :content="unevaluatedFieldsWarning || 'This form has warnings - click to review'">
                         <font-awesome-icon icon="exclamation-triangle" size="lg" class="text-warning" />
                     </popper>
+                    <span v-if="warnings.length + Object.keys(queryerrors).length > 0"
+                        class="badge rounded-pill bg-warning text-dark position-absolute top-0 start-100 translate-middle"
+                        style="font-size: 0.6rem;">
+                        {{ warnings.length + Object.keys(queryerrors).length }}
+                    </span>
                 </span>
 
                 <!-- loop busy -->
@@ -2006,6 +2118,21 @@ onUnmounted(() => {
                                     </div>                                    
                                 </div>
 
+                                <!-- TYPE = LIST (nested subform rows) -->
+                                <div v-if="field.type == 'list' && field.subform">
+                                    <AppListField
+                                        v-model="v$.form[field.name].$model"
+                                        :field="field"
+                                        :subform="subforms.find(s => s.name === field.subform)"
+                                        :subforms="subforms"
+                                        :constants="constants"
+                                        :hasError="v$.form[field.name].$invalid"
+                                        :errors="getErrorsToDisplay(field.name)"
+                                        :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]"
+                                        @update:modelValue="evaluateDynamicFields(field.name)"
+                                    />
+                                </div>
+
                                 <!-- TYPE = ENUM -->
                                 <div v-if="field.type == 'enum'">
                                     <BsInputForForm type="select" :containerSize="containerSize"
@@ -2134,7 +2261,7 @@ onUnmounted(() => {
                 </div>
             </div>
         </template>
-        <div class="d-grid my-3" v-if="status == ''">
+        <div class="d-grid my-3" v-if="mode === 'form' && status == ''">
             <BsDropdownButton 
                 :icon="submitIcon"
                 :label="submitLabel"
@@ -2143,6 +2270,29 @@ onUnmounted(() => {
                 @click="handleSubmitAction('submit')"
                 @action="handleSubmitAction"
             />
+        </div>
+        <!-- Subform Save/Cancel buttons (used when embedded in AppListField) -->
+        <div class="d-flex justify-content-end gap-2 my-3" v-if="mode === 'subform'">
+            <BsButton icon="xmark" colorClass="secondary" @click="emit('cancel')">Cancel</BsButton>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-primary" @click="handleSubformSave">
+                    <FaIcon icon="check" class="me-1" />Save
+                </button>
+                <button v-if="subformActions.some(a => !a.roleOption || store.profile.options?.[a.roleOption])"
+                    type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="visually-hidden">Toggle Dropdown</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <template v-for="a in subformActions" :key="a.key">
+                        <li v-if="!a.roleOption || store.profile.options?.[a.roleOption]">
+                            <a class="dropdown-item" href="#" @click.prevent="handleSubformAction(a.key)">
+                                <FaIcon v-if="a.icon" :icon="a.icon" class="me-2" />{{ a.label }}
+                            </a>
+                        </li>
+                    </template>
+                </ul>
+            </div>
         </div>
     </div>
 

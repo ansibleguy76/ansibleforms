@@ -2,7 +2,6 @@
   "type": "object",
   "required": [
     "name",
-    "roles",
     "type",
     "fields"
   ],
@@ -20,7 +19,7 @@
         "instanceGroups": {"not":{}},
         "expression": {"not":{}}
       },
-      "required": ["playbook"]
+      "required": ["playbook", "roles"]
     },
     {
       "properties": {
@@ -34,7 +33,7 @@
         "expression": {"not":{}},
         "playbookSubPath": {"not":{}}
       },
-      "required": ["template"]
+      "required": ["template", "roles"]
     },
     {
       "properties": {
@@ -59,7 +58,7 @@
         "instanceGroups": {"not":{}},
         "playbookSubPath": {"not":{}}              
       },
-      "required": ["expression"]
+      "required": ["expression", "roles"]
     },          
     {
       "properties": {
@@ -84,7 +83,59 @@
         "expression": {"not":{}},
         "playbookSubPath": {"not":{}}
       },
-      "required": ["steps"]
+      "required": ["steps", "roles"]
+    },
+    {
+      "properties": {
+        "type": {
+          "enum": ["subform"]
+        },
+        "playbook": {"not":{}},
+        "playbookSubPath": {"not":{}},
+        "template": {"not":{}},
+        "awx": {"not":{}},
+        "steps": {"not":{}},
+        "expression": {"not":{}},
+        "roles": {"not":{}},
+        "categories": {"not":{}},
+        "notifications": {"not":{}},
+        "approval": {"not":{}},
+        "hasApproval": {"not":{}},
+        "onSubmit": {"not":{}},
+        "onSuccess": {"not":{}},
+        "onFailure": {"not":{}},
+        "onAbort": {"not":{}},
+        "onFinish": {"not":{}},
+        "inventory": {"not":{}},
+        "ansibleCredentials": {"not":{}},
+        "vaultCredentials": {"not":{}},
+        "awxCredentials": {"not":{}},
+        "credentials": {"not":{}},
+        "executionEnvironment": {"not":{}},
+        "instanceGroups": {"not":{}},
+        "tags": {"not":{}},
+        "check": {"not":{}},
+        "limit": {"not":{}},
+        "scm_branch": {"not":{}},
+        "diff": {"not":{}},
+        "abortable": {"not":{}},
+        "disableRelaunch": {"not":{}},
+        "verbose": {"not":{}},
+        "keepExtravars": {"not":{}},
+        "image": {"not":{}},
+        "icon": {"not":{}},
+        "iconColor": {"not":{}},
+        "iconSize": {"not":{}},
+        "overlayIcon": {"not":{}},
+        "overlayIconTransform": {"not":{}},
+        "overlayIconColor": {"not":{}},
+        "overlayIconCircle": {"not":{}},
+        "overlayIconText": {"not":{}},
+        "overlayIconTextPosition": {"not":{}},
+        "overlayIconTextColor": {"not":{}},
+        "tileClass": {"not":{}},
+        "order": {"not":{}}
+      }
     }
   ],
   "properties": {
@@ -430,7 +481,7 @@
     },
     "type": {
       "type": "string",
-      "enum": ["ansible", "awx", "multistep"]
+      "enum": ["ansible", "awx", "multistep", "expression", "subform"]
     },
     "hasApproval":{ "type": "boolean"},
     "approval":{
@@ -516,6 +567,8 @@
               "horizontal": {"not":{}},
               "tableTitleAdd": {"not":{}},
               "tableTitleEdit": {"not":{}},
+              "titleAdd": {"not":{}},
+              "titleEdit": {"not":{}},
               "editable": {"not":{}},
               "pctColumns": {"not":{}},
               "filterColumns": {"not":{}},
@@ -556,6 +609,8 @@
               "horizontal": {"not":{}},
               "tableTitleAdd": {"not":{}},
               "tableTitleEdit": {"not":{}},
+              "titleAdd": {"not":{}},
+              "titleEdit": {"not":{}},
               "editable": {"not":{}},
               "pctColumns": {"not":{}},
               "filterColumns": {"not":{}},
@@ -604,6 +659,8 @@
               "horizontal": {"not":{}},
               "tableTitleAdd": {"not":{}},
               "tableTitleEdit": {"not":{}},
+              "titleAdd": {"not":{}},
+              "titleEdit": {"not":{}},
               "editable": {"not":{}},
               "pctColumns": {"not":{}},
               "filterColumns": {"not":{}},
@@ -649,6 +706,8 @@
               "horizontal": {"not":{}},
               "tableTitleAdd": {"not":{}},
               "tableTitleEdit": {"not":{}},
+              "titleAdd": {"not":{}},
+              "titleEdit": {"not":{}},
               "editable": {"not":{}},
               "pctColumns": {"not":{}},
               "filterColumns": {"not":{}},
@@ -696,6 +755,8 @@
               "horizontal": {"not":{}},
               "tableTitleAdd": {"not":{}},
               "tableTitleEdit": {"not":{}},
+              "titleAdd": {"not":{}},
+              "titleEdit": {"not":{}},
               "editable": {"not":{}},
               "pctColumns": {"not":{}},
               "filterColumns": {"not":{}},
@@ -740,6 +801,8 @@
               "expression": {"not":{}},
               "tableTitleAdd": {"not":{}},
               "tableTitleEdit": {"not":{}},
+              "titleAdd": {"not":{}},
+              "titleEdit": {"not":{}},
               "runLocal": {"not":{}},
               "keydown": {"not":{}},
               "refresh": {"not":{}},
@@ -777,6 +840,8 @@
               "editable": {"not":{}},
               "tableTitleAdd": {"not":{}},
               "tableTitleEdit": {"not":{}},
+              "titleAdd": {"not":{}},
+              "titleEdit": {"not":{}},
               "expression": {"not":{}},
               "keydown": {"not":{}},
               "allowDelete": {"not":{}},
@@ -812,6 +877,8 @@
               "maxLength": {"not":{}},
               "tableTitleAdd": {"not":{}},
               "tableTitleEdit": {"not":{}},
+              "titleAdd": {"not":{}},
+              "titleEdit": {"not":{}},
               "query": {"not":{}},
               "jq": {"not":{}},
               "keydown": {"not":{}},
@@ -845,6 +912,8 @@
               "horizontal": {"not":{}},
               "tableTitleAdd": {"not":{}},
               "tableTitleEdit": {"not":{}},
+              "titleAdd": {"not":{}},
+              "titleEdit": {"not":{}},
               "pctColumns": {"not":{}},
               "filterColumns": {"not":{}},
               "dbConfig": {"not":{}},
@@ -879,6 +948,8 @@
               "horizontal": {"not":{}},
               "tableTitleAdd": {"not":{}},
               "tableTitleEdit": {"not":{}},
+              "titleAdd": {"not":{}},
+              "titleEdit": {"not":{}},
               "pctColumns": {"not":{}},
               "filterColumns": {"not":{}},
               "dbConfig": {"not":{}},
@@ -918,6 +989,8 @@
               "horizontal": {"not":{}},
               "tableTitleAdd": {"not":{}},
               "tableTitleEdit": {"not":{}},
+              "titleAdd": {"not":{}},
+              "titleEdit": {"not":{}},
               "pctColumns": {"not":{}},
               "filterColumns": {"not":{}},
               "multiple": {"not":{}},
@@ -1065,6 +1138,8 @@
               "maxLength": {"not":{}},        
               "tableTitleAdd": {"not":{}},
               "tableTitleEdit": {"not":{}},
+              "titleAdd": {"not":{}},
+              "titleEdit": {"not":{}},
               "values": {"not":{}},
               "from": {"not":{}},
               "accept": {"not":{}},
@@ -1114,6 +1189,45 @@
           {
             "properties": {
               "type": {
+                "enum": ["list"]
+              },
+              "dateType": {"not":{}},
+              "convertToUtc": {"not":{}},
+              "values": {"not":{}},
+              "regex": {"not":{}},
+              "minValue": {"not":{}},
+              "maxValue": {"not":{}},
+              "minSize": {"not":{}},
+              "maxSize": {"not":{}},
+              "minLength": {"not":{}},
+              "maxLength": {"not":{}},
+              "sticky": {"not":{}},
+              "horizontal": {"not":{}},
+              "editable": {"not":{}},
+              "multiple": {"not":{}},
+              "accept": {"not":{}},
+              "refresh": {"not":{}},
+              "outputObject": {"not":{}},
+              "keydown": {"not":{}},
+              "isHtml": {"not":{}},
+              "icon": {"not":{}},
+              "switch": {"not":{}},
+              "tableFields": {"not":{}},
+              "expression": {"not":{}},
+              "query": {"not":{}},
+              "dbConfig": {"not":{}},
+              "jq": {"not":{}},
+              "runLocal": {"not":{}},
+              "asCredential": {"not":{}},
+              "sameAs": {"not":{}},
+              "in": {"not":{}},
+              "notIn": {"not":{}}
+            },
+            "required": ["subform"]
+          },
+          {
+            "properties": {
+              "type": {
                 "enum": ["yaml"]
               },
               "dateType": {"not":{}},
@@ -1130,6 +1244,8 @@
               "horizontal": {"not":{}},
               "tableTitleAdd": {"not":{}},
               "tableTitleEdit": {"not":{}},
+              "titleAdd": {"not":{}},
+              "titleEdit": {"not":{}},
               "pctColumns": {"not":{}},
               "filterColumns": {"not":{}},
               "allowDelete": {"not":{}},
@@ -1174,6 +1290,8 @@
               "horizontal": {"not":{}},
               "tableTitleAdd": {"not":{}},
               "tableTitleEdit": {"not":{}},
+              "titleAdd": {"not":{}},
+              "titleEdit": {"not":{}},
               "pctColumns": {"not":{}},
               "filterColumns": {"not":{}},
               "allowDelete": {"not":{}},
@@ -1218,6 +1336,8 @@
               "horizontal": {"not":{}},
               "tableTitleAdd": {"not":{}},
               "tableTitleEdit": {"not":{}},
+              "titleAdd": {"not":{}},
+              "titleEdit": {"not":{}},
               "pctColumns": {"not":{}},
               "filterColumns": {"not":{}},
               "allowDelete": {"not":{}},
@@ -1248,7 +1368,7 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["text","textarea", "password", "checkbox", "enum", "number", "radio", "expression","local","local_out","credential", "table","datetime","html","file","yaml"]
+            "enum": ["text","textarea", "password", "checkbox", "enum", "number", "radio", "expression","local","local_out","credential", "table","list","datetime","html","file","yaml"]
           },
           "name": {
             "$id": "/formfield",
@@ -1366,6 +1486,8 @@
           "outputObject": {"type": "boolean"},
           "tableTitleAdd": {"type": "string"},
           "tableTitleEdit": {"type": "string"},
+          "titleAdd": {"type": "string"},
+          "titleEdit": {"type": "string"},
           "switch": {"type": "boolean"},
           "columns": {
             "type": "array",
@@ -1535,6 +1657,9 @@
             "type": "string"
           },
           "overlayIconTextColor": {
+            "type": "string"
+          },
+          "subform": {
             "type": "string"
           },
           "tableFields": {
