@@ -2,7 +2,7 @@
 layout: default
 title: Approval Points
 parent: Forms
-nav_order: 2
+nav_order: 5
 ---
 
 # Approval Points
