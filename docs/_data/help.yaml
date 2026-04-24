@@ -1919,7 +1919,10 @@
           icon: fas,list-ol
           description: |
             Each step is a new form destination.  And steps are executed sequentially.  
-            Use specific properties like `continue`, `always` and `ifExtraVar` to control the flow of a multistep form.
+            Use specific properties like `continue`, `always` and `ifExtraVar` to control the flow of a multistep form.  
+            
+            When a step has `type: ansible`, all [ansible-specific form properties](/forms/ansible.html) apply to that step (e.g. `playbook`, `playbookSubPath`, `ansibleCredentials`, `vaultCredentials`, `inventory`, `check`, `diff`, `tags`, `varsFiles`, ...).  
+            When a step has `type: awx`, all [awx-specific form properties](/forms/awx.html) apply to that step (e.g. `template`, `awx`, `awxCredentials`, `executionEnvironment`, `instanceGroups`, `scmBranch`, `inventory`, `check`, `diff`, `tags`, ...).
           items:
           - name: name
             type: string
@@ -2006,63 +2009,25 @@
                   - name: __playbook__
                     type: text
                     default: helloworld.yaml # this will overwrite the playbook name
-          - name: vars_files
+          - name: varsFiles
             type: array
             group: basic
             with_types: ansible
             allowed: list of valid yaml files
-            short: Ansible vars_files
+            short: Ansible varsFiles
             description: | 
               This will load yaml files with contain dictionaries of variables.  
               These dict variables will be available in the form to use as constants.  
-              Adivise is to make the dict-keys unique and UPPERCASE to avoid conflicts with other variables.
+              Advise is to make the dict-keys unique and UPPERCASE to avoid conflicts with other variables.
             examples:
-            - name: Run foobar playbook with vars_files
+            - name: Run foobar playbook with varsFiles
               code: |
                 name: Foobar
                 type: ansible
                 playbook: foobar.yaml  
-                vars_files:
+                varsFiles:
                   - /home/vars/common.yaml
                   - /home/vars/special.yaml
-          - name: inventory
-            type: string
-            group: workflow
-            short: Inventory
-            description: |
-              In both awx and ansible core you can pass an inventory.  In the case of ansible core, it will be a yaml file.  In case of awx it will be the inventory name.  
-                
-              **Note** : You can also dynamically set the inventory by using a field called `__inventory__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static inventory.  
-              **Note** : Ansible core allows multiple inventories (so you can use an array), however awx does not support multiple inventories.
-              **Note** : If you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
-          - name: check
-            type: boolean
-            group: workflow
-            short: Run in check mode
-            description: |
-              In both awx and ansible core you run a playbook in check mode.  Enable this attribute to do so.  
-
-              **Note** : You can also dynamically set the check mode by using a field called `__check__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static check field.  The field must result in a boolean (expression or checkbox)
-              **Note** : If you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
-          - name: diff
-            type: boolean
-            group: workflow
-            short: Run in diff mode
-            description: |
-              In both awx and ansible core you run a playbook in diff mode.  Enable this attribute to do so.
-
-              **Note** : You can also dynamically set the check mode by using a field called `__diff__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static diff field.  The field must result in a boolean (expression or checkbox)          
-              **Note** : If you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
-          - name: tags
-            type: string
-            group: workflow
-            allowed: comma separated tag-list
-            short: Set tags
-            description: |
-              In both awx and ansible core you can pass tags.  Use this attribute to pass a comma separted list of tags.
-                
-              **Note** : You can also dynamically set the tags by using a field called `__tags__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static tags.  
-              **Note** : If you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.            
           - name: approval
             type: object
             group: interaction
