@@ -1365,45 +1365,15 @@ function handleSubformSave() {
 }
 
 // Build the output object for a subform row emitted to the parent list.
-// Mirrors the subset of main-form output logic that makes sense here:
-//   * drops internal fields (`__user__`)
-//   * honours `noOutput` (field omitted from the row)
-//   * honours `outputObject` / `valueColumn` (default false for scalars,
-//     true for expression/file/list/table/yaml/datetime)
-// The `model` property is intentionally ignored: subform rows are flat by
-// design. Visibility/dependencies inside the subform are not enforced here
-// because rows are expected to be fully materialised when saved.
+// We intentionally keep the RAW per-field values here (drop only the
+// internal `__user__` helper). Modelling - `model`, `noOutput`,
+// `outputObject`, `valueColumn` - is applied once at extravars generation
+// time by `Helpers.buildFormOutput`, which walks the whole form tree
+// recursively. Keeping rows raw means they can round-trip through Save
+// -> Edit -> Save without losing data (e.g. enum preview columns).
 function stripSubformInternals(src) {
-    const raw = src || {};
-    const out = {};
-    const fields = props.currentForm?.fields || [];
-    for (const item of fields) {
-        if (!item.name || item.name === '__user__') continue;
-        if (item.noOutput) continue;
-        if (!(item.name in raw)) continue;
-
-        const outputObject =
-            item.outputObject ||
-            item.type === 'expression' ||
-            item.type === 'file' ||
-            item.type === 'table' ||
-            item.type === 'list' ||
-            item.type === 'yaml' ||
-            item.type === 'datetime' ||
-            false;
-
-        let value = Helpers.deepClone(raw[item.name]);
-
-        if (item.type === 'datetime' && item.dateType === 'month' && value && typeof value === 'object') {
-            value = { ...value, month: typeof value.month === 'number' ? value.month + 1 : value.month };
-        }
-
-        if (!outputObject) {
-            value = Helpers.getFieldValue(value, item.valueColumn || '', true);
-        }
-
-        out[item.name] = value;
-    }
+    const out = { ...(src || {}) };
+    delete out.__user__;
     return out;
 }
 

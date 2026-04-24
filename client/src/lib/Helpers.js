@@ -139,6 +139,115 @@ const Helpers = {
       return undefined
     }
     
+  },
+  // Build a field-driven output object (the same shape used for main-form
+  // extravars). Honours `noOutput`, `outputObject`, `valueColumn`, dotted
+  // `model` paths (including array indexes like `a.b[0].c`) and the datetime
+  // month fix (0-11 -> 1-12). Pure function - returns a new object.
+  //
+  //   fields      : array of formfield definitions
+  //   raw         : a flat { fieldName: value } source (e.g. form.value or a
+  //                 subform draft)
+  //   opts.isVisible : optional (item) => boolean; fields that are not
+  //                 visible are skipped (used by the main form)
+  //   opts.overrides : optional { fieldName: value } map - when a name is
+  //                 present here it is used instead of `raw[name]` (used by
+  //                 the main form to inject uploaded file metadata)
+  //   opts.subforms : optional array of subform definitions; used to resolve
+  //                 `field.subform` (string name) to the subform object so
+  //                 list rows are rebuilt recursively through the subform's
+  //                 fields (honours model/noOutput/outputObject per row)
+  buildFormOutput(fields, raw, opts = {}){
+    const isVisible = opts.isVisible || (() => true);
+    const overrides = opts.overrides || {};
+    const subforms = opts.subforms || [];
+    const subformByName = Object.fromEntries((subforms || []).map((s) => [s.name, s]));
+    const fd = {};
+    (fields || []).forEach((item) => {
+      if (!item || !item.name) return;
+      if (item.name === '__user__') return;
+      if (item.noOutput) return;
+      if (!isVisible(item)) return;
+
+      const outputObject =
+        item.outputObject ||
+        item.type === 'expression' ||
+        item.type === 'file' ||
+        item.type === 'table' ||
+        item.type === 'list' ||
+        item.type === 'yaml' ||
+        item.type === 'datetime' ||
+        false;
+
+      let outputValue = (item.name in overrides) ? overrides[item.name] : this.deepClone(raw?.[item.name]);
+
+      if (item.type === 'datetime' && item.dateType === 'month' && outputValue && typeof outputValue === 'object') {
+        outputValue = {
+          ...outputValue,
+          month: typeof outputValue.month === 'number' ? outputValue.month + 1 : outputValue.month,
+        };
+      }
+
+      if (!outputObject) {
+        outputValue = this.getFieldValue(outputValue, item.valueColumn || '', true);
+      }
+
+      // Recursively re-shape list rows through the subform's field defs so
+      // that `model`, `noOutput`, `outputObject`, `valueColumn` declared on
+      // subform fields are honoured in the extravars. `item.subform` may
+      // already be an object (subform inlined by the server) or a name
+      // looked up against opts.subforms. Missing subform or non-array value
+      // -> pass through unchanged.
+      if (item.type === 'list' && Array.isArray(outputValue)) {
+        const sub = (typeof item.subform === 'string')
+          ? subformByName[item.subform]
+          : item.subform;
+        if (sub && Array.isArray(sub.fields)) {
+          outputValue = outputValue.map((row) =>
+            this.buildFormOutput(sub.fields, row || {}, { subforms })
+          );
+        }
+      }
+
+      const fieldmodel = [].concat(item.model || []);
+      if (fieldmodel.length === 0) {
+        fd[item.name] = this.deepClone(outputValue);
+        return;
+      }
+
+      fieldmodel.forEach((f) => {
+        f.split(/\s*\.\s*/).reduce((master, obj, level, arr) => {
+          let arrsplit;
+          if (level === arr.length - 1) {
+            if (obj.match(/.*\[[0-9]+\]$/)) {
+              arrsplit = obj.split(/\[([0-9]+)\]$/);
+              if (master[arrsplit[0]] === undefined) master[arrsplit[0]] = [];
+              if (master[arrsplit[0]][arrsplit[1]] === undefined) master[arrsplit[0]][arrsplit[1]] = {};
+              master[arrsplit[0]][arrsplit[1]] = outputValue;
+              return master[arrsplit[0]][arrsplit[1]];
+            }
+            if (master[obj] === undefined) {
+              master[obj] = outputValue;
+            } else if (typeof master[obj] !== 'object' || master[obj] === null || typeof outputValue !== 'object' || outputValue === null) {
+              master[obj] = outputValue;
+            } else {
+              master[obj] = { ...master[obj], ...outputValue };
+            }
+            return master[obj];
+          }
+          if (obj.match(/.*\[[0-9]+\]$/)) {
+            arrsplit = obj.split(/\[([0-9]+)\]$/);
+            if (master[arrsplit[0]] === undefined) master[arrsplit[0]] = [];
+            if (master[arrsplit[0]][arrsplit[1]] === undefined) master[arrsplit[0]][arrsplit[1]] = {};
+            return master[arrsplit[0]][arrsplit[1]];
+          }
+          if (typeof master !== 'object' || master === null) return {};
+          if (master[obj] === undefined) master[obj] = {};
+          return master[obj];
+        }, fd);
+      });
+    });
+    return fd;
   },  
   getFieldValue(field, column, keepArray) {
 

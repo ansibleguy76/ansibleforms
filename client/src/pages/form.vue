@@ -171,40 +171,15 @@ function buildMainStoreCtx() {
 // calculated formdata as yaml
 const formdataYaml = computed(() => YAML.stringify(formdata.value));
 
-// Build the output object for a subform draft, applying the same rules as
-// `stripSubformInternals` in AppForm.vue: drop __user__, honour `noOutput`
-// and `outputObject` (implicit for expression/file/list/table/yaml/datetime),
-// apply `valueColumn` for scalars, and adjust datetime month (0-11 -> 1-12).
-// `model` is intentionally ignored - subform rows are flat by design.
+// Build the output object for a subform draft, using the shared helper.
+// `model`, `noOutput`, `outputObject`, `valueColumn` on the subform's
+// fields are all honoured, and nested list fields recurse through their
+// own subform definitions.
 function buildSubformOutput(entry) {
   if (!entry?.subform?.fields) return {};
-  const raw = entry.draft || {};
-  const out = {};
-  for (const item of entry.subform.fields) {
-    if (!item?.name || item.name === '__user__') continue;
-    if (item.noOutput) continue;
-    if (!(item.name in raw)) continue;
-
-    const outputObject =
-      item.outputObject ||
-      item.type === 'expression' ||
-      item.type === 'file' ||
-      item.type === 'table' ||
-      item.type === 'list' ||
-      item.type === 'yaml' ||
-      item.type === 'datetime' ||
-      false;
-
-    let value = Helpers.deepClone(raw[item.name]);
-    if (item.type === 'datetime' && item.dateType === 'month' && value && typeof value === 'object') {
-      value = { ...value, month: typeof value.month === 'number' ? value.month + 1 : value.month };
-    }
-    if (!outputObject) {
-      value = Helpers.getFieldValue(value, item.valueColumn || '', true);
-    }
-    out[item.name] = value;
-  }
-  return out;
+  return Helpers.buildFormOutput(entry.subform.fields, entry.draft || {}, {
+    subforms: currentForm.value.subforms || [],
+  });
 }
 
 // When editing a subform, the right-hand "Extravars" panel switches to show
@@ -449,110 +424,22 @@ function getFilteredRawFormData() {
 
 // generate the form json output
 function generateJsonOutput(filedata = {}) {
-  var fd = {};
   try {
-    currentForm.value.fields.forEach((item) => {
-      if (visibility.value[item.name] && !item.noOutput) {
-        var fieldmodel = [].concat(item.model || []);
-        var outputObject =
-          item.outputObject ||
-          item.type == "expression" ||
-          item.type == "file" ||
-          item.type == "table" ||
-          item.type == "list" ||
-          item.type == "yaml" ||
-          (item.type == "datetime") || 
-          false;
-        var outputValue = undefined;
-
-        if (item.name in filedata) {
-          outputValue = filedata[item.name];
-        } else {
-          outputValue = Helpers.deepClone(form.value[item.name]);
-        }
-
-        // convert month from 0-11 to 1-12 for month picker
-        if (item.type === "datetime" && item.dateType === "month" && outputValue && typeof outputValue === "object") {
-          outputValue = {
-            ...outputValue,
-            month: typeof outputValue.month === "number" ? outputValue.month + 1 : outputValue.month
-          };
-        }
-
-        if (!outputObject) {
-          outputValue = Helpers.getFieldValue(
-            outputValue,
-            item.valueColumn || "",
-            true
-          );
-        }
-
-        if (fieldmodel.length == 0) {
-          fd[item.name] = Helpers.deepClone(outputValue);
-        } else {
-          fieldmodel.forEach((f) => {
-            f.split(/\s*\.\s*/).reduce((master, obj, level, arr) => {
-              var arrsplit = undefined;
-
-              if (level === arr.length - 1) {
-                if (obj.match(/.*\[[0-9]+\]$/)) {
-                  arrsplit = obj.split(/\[([0-9]+)\]$/);
-                  if (master[arrsplit[0]] === undefined) {
-                    master[arrsplit[0]] = [];
-                  }
-                  if (master[arrsplit[0]][arrsplit[1]] === undefined) {
-                    master[arrsplit[0]][arrsplit[1]] = {};
-                  }
-                  master[arrsplit[0]][arrsplit[1]] = outputValue;
-                  return master[arrsplit[0]][arrsplit[1]];
-                } else {
-                  if (master[obj] === undefined) {
-                    master[obj] = outputValue;
-                  } else if (typeof master[obj] !== 'object' || master[obj] === null || typeof outputValue !== 'object' || outputValue === null) {
-                    // If either value is primitive, just overwrite instead of merging
-                    master[obj] = outputValue;
-                  } else {
-                    master[obj] = Lodash.merge(master[obj], outputValue);
-                  }
-                  return master[obj];
-                }
-              } else {
-                if (obj.match(/.*\[[0-9]+\]$/)) {
-                  arrsplit = obj.split(/\[([0-9]+)\]$/);
-                  if (master[arrsplit[0]] === undefined) {
-                    master[arrsplit[0]] = [];
-                  }
-                  if (master[arrsplit[0]][arrsplit[1]] === undefined) {
-                    master[arrsplit[0]][arrsplit[1]] = {};
-                  }
-                  return master[arrsplit[0]][arrsplit[1]];
-                } else {
-                  // Check if master is an object before trying to traverse
-                  if (typeof master !== 'object' || master === null) {
-                    // Can't traverse into a primitive value, skip this path
-                    return master;
-                  }
-                  if (master[obj] === undefined) {
-                    master[obj] = {};
-                  } else if (typeof master[obj] !== 'object' || master[obj] === null) {
-                    // Path already contains a primitive, can't traverse further
-                    return master;
-                  }
-                  return master[obj];
-                }
-              }
-            }, fd);
-          });
-        }
+    formdata.value = Helpers.buildFormOutput(
+      currentForm.value.fields || [],
+      form.value,
+      {
+        isVisible: (item) => !!visibility.value[item.name],
+        overrides: filedata,
+        subforms: currentForm.value.subforms || [],
       }
-    });
+    );
   } catch (err) {
     toast.error(
       "Failed to generate json output.\r\nContact the developer.\r\n" +
       (err.message || err.toString())
     );
   }
-  formdata.value = fd;
 }
 
 // upload a file
