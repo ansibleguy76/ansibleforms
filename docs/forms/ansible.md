@@ -29,7 +29,14 @@ Ansible forms execute a local Ansible Core playbook when submitted.
 
 ## Properties
 
-The table below lists properties specific to `type: ansible`, in addition to the [common form properties](common.html).
+Properties specific to `type: ansible`, in addition to the [common form properties](common.html).
+
+{% assign ansible_props = form_object.items | where_exp: "p", "p.with_types contains 'ansible'" %}
+{% assign ansible_groups = ansible_props | map: "group" | uniq | sort_natural %}
+{% for group in ansible_groups %}
+{% assign group_props = ansible_props | where: "group", group %}
+
+## {{ group | capitalize }}
 
 <table>
   <thead>
@@ -39,8 +46,7 @@ The table below lists properties specific to `type: ansible`, in addition to the
     </tr>
   </thead>
   <tbody>
-    {% assign ansible_props = form_object.items | where_exp: "p", "p.with_types contains 'ansible'" %}
-    {% for var in ansible_props %}
+    {% for var in group_props %}
     <tr>
       <td>
         <span id="ansible_{{ var.name }}"><strong>{{ var.name }}</strong></span><br>
@@ -93,3 +99,4 @@ The table below lists properties specific to `type: ansible`, in addition to the
     {% endfor %}
   </tbody>
 </table>
+{% endfor %}

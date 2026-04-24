@@ -6,7 +6,6 @@ nav_order: 1
 ---
 
 # Common Form Properties
-{: .no_toc }
 
 These properties apply to **all form types** — `ansible`, `awx`, `multistep`, and `subform`.
 
@@ -18,6 +17,8 @@ Every other property is type-specific and documented on the respective form type
 {% assign common_props = form_object.items | where_exp: "p", "p.with_types == nil" %}
 
 {{ form_object.description | markdownify }}
+
+## Properties
 
 <table>
   <thead>

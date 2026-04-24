@@ -29,7 +29,14 @@ AWX forms execute an AWX / Ansible Tower job template when submitted.
 
 ## Properties
 
-The table below lists properties specific to `type: awx`, in addition to the [common form properties](common.html).
+Properties specific to `type: awx`, in addition to the [common form properties](common.html).
+
+{% assign awx_props = form_object.items | where_exp: "p", "p.with_types contains 'awx'" %}
+{% assign awx_groups = awx_props | map: "group" | uniq | sort_natural %}
+{% for group in awx_groups %}
+{% assign group_props = awx_props | where: "group", group %}
+
+## {{ group | capitalize }}
 
 <table>
   <thead>
@@ -39,8 +46,7 @@ The table below lists properties specific to `type: awx`, in addition to the [co
     </tr>
   </thead>
   <tbody>
-    {% assign awx_props = form_object.items | where_exp: "p", "p.with_types contains 'awx'" %}
-    {% for var in awx_props %}
+    {% for var in group_props %}
     <tr>
       <td>
         <span id="awx_{{ var.name }}"><strong>{{ var.name }}</strong></span><br>
@@ -93,3 +99,4 @@ The table below lists properties specific to `type: awx`, in addition to the [co
     {% endfor %}
   </tbody>
 </table>
+{% endfor %}
