@@ -1498,6 +1498,7 @@
                 asCredential: true
       - name: ansibleCredentials
         type: string
+        with_types: ansible
         group: basic
         version: 4.0.17
         allowed: a local credentialname
@@ -1506,6 +1507,7 @@
           Ansible allows to pass default ansible credentials in the form of 2 extravars ansible_user and ansible_password
       - name: playbookSubPath
         type: string
+        with_types: ansible
         version: 6.0.1
         group: basic
         allowed: a valid folder subpath
@@ -1514,6 +1516,7 @@
           If you have a more complex ansible setup, you might want to organize them in subfolders.  Use this property to define a subfolder (or multiple levels) where you want to launch ansible-playbook from.  
       - name: vaultCredentials
         type: string
+        with_types: ansible
         group: basic
         version: 5.0.2
         allowed: a local credentialname
@@ -1542,6 +1545,7 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
       - name: executionEnvironment
         type: string
+        with_types: awx
         short: Execution Environment
         version: 5.0.0
         group: workflow
@@ -1552,6 +1556,7 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.   
       - name: instanceGroups
         type: array or string
+        with_types: awx
         short: Instance Groups
         version: 5.0.0
         group: workflow
@@ -1563,6 +1568,7 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.                       
       - name: scmBranch
         type: string
+        with_types: awx
         short: SCM Branch
         version: 5.0.0
         group: workflow
@@ -1573,6 +1579,7 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.
       - name: awx
         type: string
+        with_types: awx
         group: workflow
         version: 6.0.0
         allowed: name of awx instance
@@ -1591,6 +1598,7 @@
             awx: my_awx_instance
       - name: awxCredentials
         type: array
+        with_types: awx
         group: workflow
         version: 4.0.16
         allowed: name of credential in AWX

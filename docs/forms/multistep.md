@@ -13,7 +13,29 @@ Create sequential workflows with multistep forms.
 {% assign help = site.data.help %}
 {% assign formsyaml = help | where: "link", "forms" | first %}
 {% assign form_object = formsyaml.help | where: "name", "Form" | first %}
+{% assign type_prop = form_object.items | where: "name", "type" | first %}
+{% assign multistep_choice = type_prop.choices | where: "name", "multistep" | first %}
 {% assign step_object = form_object.help | where: "name", "Step" | first %}
+{% assign steps_prop = form_object.items | where: "name", "steps" | first %}
+
+{{ multistep_choice.description | markdownify }}
+
+{% if multistep_choice.examples.size > 0 %}
+{% for e in multistep_choice.examples %}
+**{{ e.name }}**
+{% highlight yaml %}
+{{ e.code }}
+{% endhighlight %}
+{% endfor %}
+{% endif %}
+
+## Form-level property
+
+| Attribute | Comments |
+|-----------|----------|
+| **{{ steps_prop.name }}**<br><span class="af-type">{{ steps_prop.type }}</span> | **{{ steps_prop.short }}**<br>{{ steps_prop.description | markdownify }} |
+
+## Step properties
 
 {{ step_object.description | markdownify }}
 
