@@ -954,6 +954,7 @@
       - name: roles
         type: array
         required: true
+        with_types: ansible, awx, multistep
         group: basic
         allowed: valid role names
         short: Who has access
@@ -971,6 +972,7 @@
       - name: categories
         type: array
         allowed: valid category name
+        with_types: ansible, awx, multistep
         group: basic
         short: Categories
         description: | 
@@ -1007,12 +1009,14 @@
             >  *Everything* is going according to **plan**.     
       - name: showHelp
         type: boolean
+        with_types: ansible, awx, multistep
         short: Show Help
         group: visualization
         default: true
         description: Show the help by default or collapse the help.  
       - name: icon
         type: string
+        with_types: ansible, awx, multistep
         group: visualization
         allowed: Free fontawesome 6 icon
         short: Form icon
@@ -1027,6 +1031,7 @@
             icon: trash
       - name: iconColor
         type: string
+        with_types: ansible, awx, multistep
         allowed: valid color name
         group: visualization
         short: Icon color
@@ -1040,6 +1045,7 @@
             iconColor: danger
       - name: iconSize
         type: string
+        with_types: ansible, awx, multistep
         allowed: xs, sm, lg, 2x, 3x, 5x, 7x, 10x
         group: visualization
         short: Icon size
@@ -1054,6 +1060,7 @@
             iconSize: 5x
       - name: overlayIcon
         type: string
+        with_types: ansible, awx, multistep
         allowed: valid fontawesome icon name
         group: visualization
         short: Overlay icon on main icon
@@ -1069,6 +1076,7 @@
             overlayIconTransform: shrink-6 up-7 right-7
       - name: overlayIconTransform
         type: string
+        with_types: ansible, awx, multistep
         allowed: valid fontawesome transform
         group: visualization
         short: Transform for overlay icon
@@ -1085,6 +1093,7 @@
             overlayIconTransform: shrink-8 down-2
       - name: overlayIconColor
         type: string
+        with_types: ansible, awx, multistep
         allowed: valid color name
         group: visualization
         short: Color for overlay icon
@@ -1100,6 +1109,7 @@
             overlayIconColor: danger
       - name: overlayIconCircle
         type: boolean
+        with_types: ansible, awx, multistep
         group: visualization
         short: Show circle background behind overlay icon
         default: true
@@ -1117,6 +1127,7 @@
             overlayIconColor: success
       - name: overlayIconText
         type: string
+        with_types: ansible, awx, multistep
         allowed: any text
         group: visualization
         short: Text overlay on icon
@@ -1132,6 +1143,7 @@
             overlayIconTextColor: warning
       - name: overlayIconTextPosition
         type: string
+        with_types: ansible, awx, multistep
         allowed: top-left, top-right, bottom-left, bottom-right
         group: visualization
         short: Position for text overlay
@@ -1147,6 +1159,7 @@
             overlayIconTextPosition: top-right
       - name: overlayIconTextColor
         type: string
+        with_types: ansible, awx, multistep
         allowed: valid color name
         group: visualization
         short: Color for text overlay
@@ -1162,6 +1175,7 @@
             overlayIconTextColor: warning
       - name: image
         type: string
+        with_types: ansible, awx, multistep
         allowed: valid image url
         group: visualization
         short: Form image
@@ -1191,6 +1205,7 @@
             image: /assets/images/netapp.svg # the docker compose has a few brand images, feel free to add your own
       - name: tileClass
         type: string
+        with_types: ansible, awx, multistep
         allowed: valid bootstrap background class
         group: visualization
         short: Form tile background colour
@@ -1213,6 +1228,7 @@
             tileClass: bg-success-subtle text-dark  
       - name: fieldGroupClasses
         type: object
+        with_types: ansible, awx, multistep
         allowed: key-value pairs
         group: visualization
         short: Fieldgroup background color
@@ -1452,6 +1468,7 @@
                 default: helloworld.yaml # this will overwrite the playbook name
       - name: credentials
         type: object
+        with_types: ansible, awx
         group: basic
         version: 4.0.16
         allowed: key-value pairs
@@ -1535,6 +1552,7 @@
           A multistep form is basically an array of multiple form type destinations, defined here as steps.
       - name: inventory
         type: string
+        with_types: ansible, awx
         short: Inventory
         group: workflow
         description: |
@@ -1632,6 +1650,7 @@
                 expression: "['vmware_prod','$(my_ad_creds)']"
       - name: check
         type: boolean
+        with_types: ansible, awx
         group: workflow
         short: Run in check mode
         description: |
@@ -1641,6 +1660,7 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
       - name: limit
         type: text
+        with_types: ansible, awx
         allowed: a valid host pattern
         group: workflow
         short: Run against a limited number of hosts
@@ -1651,6 +1671,7 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
       - name: diff
         type: boolean
+        with_types: ansible, awx
         short: Run in diff mode
         group: workflow
         description: |
@@ -1660,6 +1681,7 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
       - name: verbose
         type: boolean
+        with_types: ansible
         version: 4.0.0
         group: workflow
         short: Run in verbose mode
@@ -1670,6 +1692,7 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
       - name: keepExtravars
         type: boolean
+        with_types: ansible
         short: Do not remove the extarvars json file
         group: workflow
         version: 4.0.0
@@ -1680,6 +1703,7 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
       - name: abortable
         type: boolean
+        with_types: ansible, awx, multistep
         short: Allow aborting the job
         group: workflow
         version: 5.0.8
@@ -1688,6 +1712,7 @@
           By default you can allow the user to abort the job.  Use this attribute to disable this behaviour.
       - name: order
         type: integer
+        with_types: ansible, awx, multistep
         group: visualization
         version: 5.1.0
         short: Order of the form in the list
@@ -1696,6 +1721,7 @@
           **Note** : If you do not set this property, it will be ordered alphabetically by name.
       - name: tags
         type: string
+        with_types: ansible, awx
         allowed: comma separated tag-list
         group: workflow
         short: Set tags
@@ -1706,6 +1732,7 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.            
       - name: approval
         type: object
+        with_types: ansible, awx, multistep
         allowed: valid approval object
         group: interaction
         objectLink: forms/form/approval
@@ -1716,6 +1743,7 @@
           An approval link is sent by email to a specific approver who can then approve or reject the job.
       - name: notifications
         type: object
+        with_types: ansible, awx, multistep
         group: interaction
         allowed: valid notification object
         objectLink: forms/form/notifications
@@ -1734,6 +1762,7 @@
             
       - name: onSubmit
         type: array
+        with_types: ansible, awx, multistep
         group: interaction
         allowed: valid job status action objects
         short: Events on submit
@@ -1758,6 +1787,7 @@
             # more examples on the job-status-event page
       - name: onSuccess
         type: array
+        with_types: ansible, awx, multistep
         group: interaction
         allowed: valid job status action objects
         short: Events on success
@@ -1781,6 +1811,7 @@
             # more examples on the job-status-event page  
       - name: onFailure
         type: array
+        with_types: ansible, awx, multistep
         group: interaction
         allowed: valid job status action objects
         short: Events on failure
@@ -1804,6 +1835,7 @@
             # more examples on the job-status-event page  
       - name: onAbort
         type: array
+        with_types: ansible, awx, multistep
         group: interaction
         allowed: valid job status action objects
         short: Events on abort
@@ -1827,6 +1859,7 @@
             # more examples on the job-status-event page   
       - name: onFinish
         type: array
+        with_types: ansible, awx, multistep
         group: interaction
         allowed: valid job status action objects
         short: Events on finished
@@ -1853,6 +1886,7 @@
             # more examples on the job-status-event page                                                  
       - name: varsFiles
         type: array
+        with_types: ansible, awx
         group: basic
         allowed: list of file paths (absolute or relative)
         short: Load YAML files as constants
@@ -1921,8 +1955,8 @@
             Each step is a new form destination.  And steps are executed sequentially.  
             Use specific properties like `continue`, `always` and `ifExtraVar` to control the flow of a multistep form.  
             
-            When a step has `type: ansible`, all [ansible-specific form properties](/forms/ansible.html) apply to that step (e.g. `playbook`, `playbookSubPath`, `ansibleCredentials`, `vaultCredentials`, `inventory`, `check`, `diff`, `tags`, `varsFiles`, ...).  
-            When a step has `type: awx`, all [awx-specific form properties](/forms/awx.html) apply to that step (e.g. `template`, `awx`, `awxCredentials`, `executionEnvironment`, `instanceGroups`, `scmBranch`, `inventory`, `check`, `diff`, `tags`, ...).
+            When a step has `type: ansible`, all [ansible-specific form properties](/forms/ansible.html) apply to that step (e.g. `playbook`, `playbookSubPath`, `ansibleCredentials`, `vaultCredentials`, `inventory`, `check`, `diff`, `tags`, `varsFiles`, `approval`, `notifications`, ...).  
+            When a step has `type: awx`, all [awx-specific form properties](/forms/awx.html) apply to that step (e.g. `template`, `awx`, `awxCredentials`, `executionEnvironment`, `instanceGroups`, `scmBranch`, `inventory`, `check`, `diff`, `tags`, `approval`, `notifications`, ...).
           items:
           - name: name
             type: string
@@ -1957,116 +1991,6 @@
                 name: Delete vm
                 type: ansible
                 template: delete_vm.yaml
-          - name: template
-            type: string
-            group: basic
-            with_types: awx
-            allowed: a valid awx template name
-            short: Awx template
-            description: |
-              This attribute is only used when the form type is `awx`.  When using native Ansible, use the property `playbook`.
-                
-              **Note** : You can also dynamically set the template by using a field called `__template__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static template name.  
-              **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.                    
-            examples:
-            - name: Run AWX Template Helloworld
-              code: |
-                name: Helloworld
-                type: awx
-                template: Helloworld
-            - name: Use dynamic template name
-              code: |
-                name: Foobar
-                type: awx
-                template: HelloWorld
-                fields:
-                  - name: __template__
-                    type: text
-                    default: Foobar # this will overwrite the template name            
-          - name: playbook
-            type: string
-            group: basic
-            with_types: ansible
-            allowed: a valid yaml file
-            short: Ansible playbook
-            description: | 
-              This attribute is only used when the form type is `ansible`.  When using awx, use the property `template`.  
-                
-              **Note** : You can also dynamically set the playbook by using a field called `__playbook__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static playbook name.  
-              **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.        
-            examples:
-            - name: Run foobar playbook
-              code: |
-                name: Foobar
-                type: ansible
-                playbook: foobar.yaml  
-            - name: Use dynamic playbook name
-              code: |
-                name: HelloWorld
-                type: ansible
-                playbook: foobar.yaml
-                fields:
-                  - name: __playbook__
-                    type: text
-                    default: helloworld.yaml # this will overwrite the playbook name
-          - name: varsFiles
-            type: array
-            group: basic
-            with_types: ansible
-            allowed: list of valid yaml files
-            short: Ansible varsFiles
-            description: | 
-              This will load yaml files with contain dictionaries of variables.  
-              These dict variables will be available in the form to use as constants.  
-              Advise is to make the dict-keys unique and UPPERCASE to avoid conflicts with other variables.
-            examples:
-            - name: Run foobar playbook with varsFiles
-              code: |
-                name: Foobar
-                type: ansible
-                playbook: foobar.yaml  
-                varsFiles:
-                  - /home/vars/common.yaml
-                  - /home/vars/special.yaml
-          - name: approval
-            type: object
-            group: interaction
-            allowed: valid approval object
-            objectLink: forms/form/approval
-            short: Add approval point
-            description: |
-              Ansible Forms allows to add an approval point before a job is ran.  
-              An approval link is sent by email to a specific approver who can then approve or reject the job.  
-              Every step can have a differnt approval point.
-            examples:
-            - name: Approve removal
-              code: |
-                approval:
-                  title: Please approve removal
-                  message: |
-                    You need to approve the removal of $(field1).  
-                    Double check please.
-                  roles:
-                    - public
-                  notifications:
-                    - info@ansibleforms.com    
-          - name: notifications
-            type: object
-            group: interaction
-            allowed: valid notification object
-            objectLink: forms/form/notifications
-            short: Add Notification
-            description: |
-              Add email notifications on job status events.  
-              Every step can have its own notifications
-            examples:
-            - name: Send on success
-              code: |
-                notifications:
-                  recipients:
-                    - info@ansibleguy.com
-                  onStatus:
-                    - success
           - name: key
             type: string
             allowed: valid extravar reference

@@ -1,35 +1,23 @@
 ---
 layout: default
-title: Ansible forms
+title: Common properties
 parent: Forms
-nav_order: 2
+nav_order: 1
 ---
 
-# Ansible Forms
+# Common Form Properties
 {: .no_toc }
 
-Ansible forms execute a local Ansible Core playbook when submitted.
+These properties apply to **all form types** — `ansible`, `awx`, `multistep`, and `subform`.
+
+Every other property is type-specific and documented on the respective form type page.
 
 {% assign help = site.data.help %}
 {% assign formsyaml = help | where: "link", "forms" | first %}
 {% assign form_object = formsyaml.help | where: "name", "Form" | first %}
-{% assign type_prop = form_object.items | where: "name", "type" | first %}
-{% assign ansible_choice = type_prop.choices | where: "name", "ansible" | first %}
+{% assign common_props = form_object.items | where_exp: "p", "p.with_types == nil" %}
 
-{{ ansible_choice.description | markdownify }}
-
-{% if ansible_choice.examples.size > 0 %}
-{% for e in ansible_choice.examples %}
-**{{ e.name }}**
-{% highlight yaml %}
-{{ e.code }}
-{% endhighlight %}
-{% endfor %}
-{% endif %}
-
-## Properties
-
-The table below lists properties specific to `type: ansible`, in addition to the [common form properties](common.html).
+{{ form_object.description | markdownify }}
 
 <table>
   <thead>
@@ -39,21 +27,27 @@ The table below lists properties specific to `type: ansible`, in addition to the
     </tr>
   </thead>
   <tbody>
-    {% assign ansible_props = form_object.items | where_exp: "p", "p.with_types contains 'ansible'" %}
-    {% for var in ansible_props %}
+    {% for var in common_props %}
     <tr>
       <td>
-        <span id="ansible_{{ var.name }}"><strong>{{ var.name }}</strong></span><br>
+        <span id="common_{{ var.name }}"><strong>{{ var.name }}</strong></span><br>
         <span class="af-type">{{ var.type }}</span>
         {% if var.required == true %}<span class="af-required"> / required</span>{% endif %}
+        {% if var.unique == true %}<span class="af-unique"> / unique</span>{% endif %}
         <br>
         {% if var.version %}<span class="af-version">added in version {{ var.version }}</span>{% endif %}
       </td>
       <td>
         <p>
           <strong>{{ var.short }}</strong><br>
+          {% if var.docsObjectLink %}
+          <a href="{{ var.docsObjectLink | relative_url }}">🔗 
+          {% endif %}
           {% if var.allowed != nil %}
           <span class="af-type">{{ var.allowed }}</span>
+          {% endif %}
+          {% if var.docsObjectLink %}
+          </a>
           {% endif %}
         </p>
         <p>{{ var.description | markdownify }}</p>
@@ -74,11 +68,13 @@ The table below lists properties specific to `type: ansible`, in addition to the
         </div>
         {% elsif var.default != nil %}
         <div>
-          <strong>Default:</strong> {{ var.default }}
+          <strong>Default:</strong><br>
+          <span>{{ var.default }}</span>
         </div>
         {% endif %}
         {% if var.examples %}
         <p><strong>Examples:</strong></p>
+        {% endif %}
         {% for e in var.examples %}
         <div>
           <p><strong>{{ forloop.index }}) {{ e.name }}</strong></p>
@@ -87,7 +83,6 @@ The table below lists properties specific to `type: ansible`, in addition to the
 {% endhighlight %}
         </div>
         {% endfor %}
-        {% endif %}
       </td>
     </tr>
     {% endfor %}
