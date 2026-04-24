@@ -2,10 +2,10 @@
 
 /******************************************************************/
 /*                                                                */
-/*  AppListField - list of rows, each row edited via an embedded  */
-/*  AppForm opened as a tab at the page level. Supports           */
-/*  arbitrarily deep nesting by delegating tab-stack management   */
-/*  to the root page via `provide('formEditStack')`.              */
+/*  AppListField - list of rows, each row edited via a subform    */
+/*  pane that replaces the main form (drilldown pattern).         */
+/*  Arbitrarily deep nesting is supported by delegating the edit  */
+/*  stack to the root page via `provide('formEditStack')`.        */
 /*                                                                */
 /*  @props:                                                       */
 /*      field: Object         (the parent list field definition)  */

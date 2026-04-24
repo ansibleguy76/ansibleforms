@@ -3902,8 +3902,9 @@
             allowed: Tablefield object
             objectLink: forms/form/formfield/tablefield
             docsObjectLink: "/tablefields/"
-            short: The list of fields in a table
+            short: (deprecated) The list of fields in a table
             description: |
+              **Deprecated.** The `table` field and its `tableFields` are superseded by the [list](../formfields/list) field combined with a `subform`.  
               Every table field has its own separated table fields.  The explanation of a tablefield requires a separate help.  
               You can read about [tablefields here](/tablefields/). 
           help:
@@ -3912,6 +3913,7 @@
             link: forms/form/formfield/tablefield
             icon: fas,table
             description: |
+              **Deprecated.** Tablefields are part of the deprecated `table` field. Use a `subform` of type `subform` with `list` fields instead.  
               Each tablefield is a miniature form on it's own.  As you will see, many of the form fields are also usable here.
             items: 
             - name: name

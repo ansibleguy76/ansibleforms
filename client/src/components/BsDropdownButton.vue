@@ -57,6 +57,14 @@ const props = defineProps({
     disabled: {
         type: Boolean,
         default: false
+    },
+    menuEnd: {
+        type: Boolean,
+        default: false
+    },
+    fullWidth: {
+        type: Boolean,
+        default: true
     }
 });
 
@@ -90,7 +98,7 @@ function handleActionClick(actionKey) {
 
 </script>
 <template>
-    <div class="btn-group w-100" role="group">
+    <div class="btn-group" :class="{ 'w-100': fullWidth }" role="group">
         <!-- Main button -->
         <button 
             type="button" 
@@ -116,7 +124,7 @@ function handleActionClick(actionKey) {
         </button>
 
         <!-- Dropdown menu -->
-        <ul v-if="hasVisibleActions" class="dropdown-menu">
+        <ul v-if="hasVisibleActions" class="dropdown-menu" :class="{ 'dropdown-menu-end': menuEnd }">
             <template v-for="(action, index) in visibleActions" :key="action.key">
                 <li>
                     <a class="dropdown-item" href="#" @click.prevent="handleActionClick(action.key)">

@@ -1099,11 +1099,6 @@ function findVariableDependencies() {
             warnings.value.push(`<span class="text-warning">'${item.name}' has bad 'sameAs' validation</span><br><span>${item.sameAs} is not a valid field name</span>`)
         }
 
-        // query type is now deprecated
-        if (item.type == 'query') {
-            warnings.value.push(`<span class="text-warning">'${item.name}' has the deprecated query type</span><br><span>Use enum type instead.</span>`)
-        }
-
         // table type is now deprecated in favour of list + subform
         if (item.type == 'table') {
             warnings.value.push(`<span class="text-warning">'${item.name}' has the deprecated table type</span><br><span>Use the list type with a subform instead.</span>`)
@@ -1366,11 +1361,11 @@ function handleSubformSave() {
 
 // Build the output object for a subform row emitted to the parent list.
 // We intentionally keep the RAW per-field values here (drop only the
-// internal `__user__` helper). Modelling - `model`, `noOutput`,
-// `outputObject`, `valueColumn` - is applied once at extravars generation
-// time by `Helpers.buildFormOutput`, which walks the whole form tree
-// recursively. Keeping rows raw means they can round-trip through Save
-// -> Edit -> Save without losing data (e.g. enum preview columns).
+// internal `__user__` helper). `model`, `noOutput`, `outputObject` and
+// `valueColumn` are applied at extravars generation time by
+// `Helpers.buildFormOutput`, which walks the whole form tree recursively.
+// Keeping rows raw means they can round-trip through Save -> Edit -> Save
+// without losing data (e.g. full enum objects are preserved for re-editing).
 function stripSubformInternals(src) {
     const out = { ...(src || {}) };
     delete out.__user__;
@@ -2244,25 +2239,16 @@ onUnmounted(() => {
         <!-- Subform Save/Cancel buttons (used when embedded in AppListField) -->
         <div class="d-flex justify-content-end gap-2 my-3" v-if="mode === 'subform'">
             <BsButton icon="xmark" colorClass="secondary" @click="emit('cancel')">Cancel</BsButton>
-            <div class="btn-group" role="group">
-                <button type="button" class="btn btn-primary" @click="handleSubformSave">
-                    <FaIcon icon="check" class="me-1" />Save
-                </button>
-                <button v-if="subformActions.some(a => !a.roleOption || store.profile.options?.[a.roleOption])"
-                    type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split"
-                    data-bs-toggle="dropdown" aria-expanded="false">
-                    <span class="visually-hidden">Toggle Dropdown</span>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <template v-for="a in subformActions" :key="a.key">
-                        <li v-if="!a.roleOption || store.profile.options?.[a.roleOption]">
-                            <a class="dropdown-item" href="#" @click.prevent="handleSubformAction(a.key)">
-                                <FaIcon v-if="a.icon" :icon="a.icon" class="me-2" />{{ a.label }}
-                            </a>
-                        </li>
-                    </template>
-                </ul>
-            </div>
+            <BsDropdownButton
+                icon="check"
+                label="Save"
+                colorClass="primary"
+                :fullWidth="false"
+                :menuEnd="true"
+                :actions="subformActions"
+                @click="handleSubformSave"
+                @action="handleSubformAction"
+            />
         </div>
     </div>
 
