@@ -22,7 +22,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SRC_DIR="$SCRIPT_DIR"
 DST_DIR="$SCRIPT_DIR/public"
-FILES=("form_schema.json" "forms_schema.json")
+FILES=("form_schema.json")
 
 if ! command -v jq >/dev/null 2>&1; then
   echo "[public-schema] ERROR: jq is required but not installed." >&2
@@ -82,4 +82,17 @@ for file in "${FILES[@]}"; do
   jq "$JQ_PROGRAM" "$src" > "$dst"
   count=$(jq '[.. | objects | select(has("$id"))] | length' "$src")
   echo "[public-schema] $file: $count definition(s) inlined -> ${dst#$PWD/}"
+
+  # For form_schema: wrap in oneOf[single, array] so a form file can contain
+  # either one form (dict) or multiple forms (list) without duplicating the schema.
+  if [[ "$file" == "form_schema.json" ]]; then
+    jq '{
+      "definitions": { "form": . },
+      "oneOf": [
+        { "$ref": "#/definitions/form" },
+        { "type": "array", "items": { "$ref": "#/definitions/form" } }
+      ]
+    }' "$dst" > "$dst.tmp" && mv "$dst.tmp" "$dst"
+    echo "[public-schema] $file: wrapped in oneOf[single, array]"
+  fi
 done

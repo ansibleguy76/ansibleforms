@@ -113,6 +113,32 @@ You can choose if the repository must be cloned when AnsibleForms starts, and yo
 Additionally, in the swagger interface, you will find a clone and pull rest api for webhooks.  
 In case you want long-lived access tokens for the webhooks, with swagger you can pass an expiryDays parameter (for admin roles only) and create long-lived tokens.
 
+### VS Code Validation for Form Files
+
+Add a schema header to your form YAML files to get live validation and autocomplete in VS Code.
+
+Install the [YAML extension](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml) and add this comment as the **first line** of any form file:
+
+```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/ansibleguy76/ansibleforms/develop/server/schema/public/form_schema.json
+```
+
+This works for both single-form files (a YAML dict) and multi-form files (a YAML list):
+
+```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/ansibleguy76/ansibleforms/develop/server/schema/public/form_schema.json
+- name: My Form
+  type: ansible
+  playbook: site.yml
+  roles: [public]
+  fields:
+    - name: env
+      type: enum
+      values: [dev, staging, prod]
+```
+
+VS Code will highlight unknown properties, missing required fields, and wrong types as you type.
+
 ## Job Management
 
 ### Job Relaunch with Pre-filled Data
@@ -127,11 +153,11 @@ AnsibleForms supports relaunching jobs with pre-filled form data. When you click
 
 **Permission Control:**
 
-Forms can disable relaunch functionality using the `disableRelaunch` option:
+Forms can prevent relaunch using `allowRelaunch: false` (or the deprecated `disableRelaunch: true`):
 
 ```yaml
 - name: Production Deployment
-  disableRelaunch: true  # Prevents relaunching this form
+  allowRelaunch: false  # Prevents relaunching this form
 ```
 
 Users must have the `allowJobRelaunch` role option enabled (admins have this by default):
@@ -144,7 +170,7 @@ roles:
 ```
 
 **Most Restrictive Logic:** Relaunch is only available if BOTH conditions are met:
-1. Form does NOT have `disableRelaunch: true`
+1. Form does NOT have `allowRelaunch: false` (or deprecated `disableRelaunch: true`)
 2. User role has `allowJobRelaunch: true` (or user is admin)
 
 **How it works:**
@@ -681,7 +707,7 @@ roles:
 ```
 
 {: .note }
-> Most role options have a default (many default to `true`). Set an option explicitly only when you want to **override** the default — either to force-enable something that is off by default, or to force-disable something that is normally on. Admins always have full access regardless.
+> Most role options have a default (many default to `true`). If an option is explicitly set on a role it is always used. If it is not set, admins are allowed; non-admins fall back to the option's default value.
 
 ### How do I implement custom RBAC logic in my playbooks or forms?
 
@@ -751,7 +777,7 @@ AnsibleForms supports two scheduling modes via the job scheduling feature:
 
 **Requirements:**
 - The user's role must have `allowJobScheduling: true`
-- The form must not have `disableRelaunch: true` (scheduling uses the same pre-fill mechanism)
+- The form must not have `allowRelaunch: false` (scheduling uses the same pre-fill mechanism)
 
 **How it works:**
 1. Open a form and fill in the values

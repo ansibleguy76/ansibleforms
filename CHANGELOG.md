@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   `table` field type is deprecated since 6.2.0. Existing `table` fields continue to work but show a deprecation warning. Migrate to the `list` field type combined with a `subform`.
 -   `tableFields` / `Tablefield` property is deprecated since 6.2.0. Use the `subform` form type with regular `formfields` instead.
+-   `disableRelaunch: true` (form property) is deprecated. Use `allowRelaunch: false` instead — positive naming, same effect.
+-   `noOutput: true` (field property) is deprecated. Use `output: false` instead — positive naming, same effect.
+-   `enableLogin` (role option) is deprecated. Use `allowLogin` instead — consistent with all other `allow*` role options.
 
 ## [6.1.5] - 2026-04-23
 

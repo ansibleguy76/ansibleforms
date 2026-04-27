@@ -28,7 +28,21 @@ const __dirname = path.dirname(__filename);
 // Load JSON schemas synchronously
 const baseSchema = JSON.parse(fs.readFileSync(path.join(__dirname, "../../schema/base_schema.json"), "utf8"));
 const formSchema = JSON.parse(fs.readFileSync(path.join(__dirname, "../../schema/form_schema.json"), "utf8"));
-const formsSchema = JSON.parse(fs.readFileSync(path.join(__dirname, "../../schema/forms_schema.json"), "utf8"));
+
+// Generate formsSchema in-memory: base config wrapper + formSchema as array items.
+// forms_schema.json (deprecated, removed in v7) is kept on disk only for the
+// public-schema bash script. At runtime we build it from the two sources of truth.
+const formsSchema = (() => {
+  const schema = JSON.parse(JSON.stringify(baseSchema)); // deep clone
+  schema.required = [...schema.required, "forms"];
+  // Legacy bundled format always required 'roles' at form level
+  const formItems = JSON.parse(JSON.stringify(formSchema));
+  if (!formItems.required.includes("roles")) {
+    formItems.required = [...formItems.required, "roles"];
+  }
+  schema.properties.forms = { type: "array", default: [], items: formItems };
+  return schema;
+})();
 const jsonSchemaDraft6 = JSON.parse(fs.readFileSync(path.join(__dirname, "../../node_modules/ajv/lib/refs/json-schema-draft-06.json"), "utf8"));
 
 const backupPath = appConfig.formsBackupPath

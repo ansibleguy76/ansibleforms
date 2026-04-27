@@ -92,6 +92,61 @@ When v7 removes support, delete:
 
 ---
 
+## API Naming Conventions (Deprecated in v6.3.0)
+
+### 4. `disableRelaunch` Form Property
+**Status:** DEPRECATED  
+**Replacement:** `allowRelaunch: false`  
+**Timeline:** Remove in v7.0.0
+
+#### What's Changing
+- **OLD:** `disableRelaunch: true` — negative naming, opt-in to disable
+- **NEW:** `allowRelaunch: false` — positive naming, consistent with `allowJobRelaunch` role option
+
+Both values are accepted in v6.3.x. A server-side deprecation warning is logged when `disableRelaunch` is found.
+
+#### Developer Impact (v7 Cleanup)
+- `job.model.js`: Remove the `disableRelaunch` branch from both `getRawFormData` and `relaunch` functions — keep only `allowRelaunch === false` check.
+- `help.yaml`: Remove the `noOutput` entry; remove deprecated mentions.
+
+---
+
+### 5. `noOutput` Field Property
+**Status:** DEPRECATED  
+**Replacement:** `output: false`  
+**Timeline:** Remove in v7.0.0
+
+#### What's Changing
+- **OLD:** `noOutput: true` — negative naming, opt-in to suppress output
+- **NEW:** `output: false` — positive naming, consistent with other boolean field flags
+
+Both values are honoured in v6.3.x (`noOutput || output === false`).
+
+#### Developer Impact (v7 Cleanup)
+- `client/src/lib/Helpers.js`: Change `if (item.noOutput || item.output === false) return;` → `if (item.output === false) return;`
+- `client/src/components/AppForm.vue` (`local` alias expansion): Change `item.noOutput = item.noOutput ?? true;` → `item.output = item.output ?? false;`
+- `help.yaml`: Remove the `noOutput` entry; remove deprecated mentions.
+
+---
+
+### 6. `enableLogin` Role Option
+**Status:** DEPRECATED  
+**Replacement:** `allowLogin`  
+**Timeline:** Remove in v7.0.0
+
+#### What's Changing
+- **OLD:** `enableLogin: false` — `enable*` prefix inconsistent with all other role options
+- **NEW:** `allowLogin: false` — consistent with `allowVerboseMode`, `allowJobRelaunch`, `allowScheduledJobs`, etc.
+
+Both values are accepted in v6.3.x. A server-side deprecation warning is logged when `enableLogin` is found.
+
+#### Developer Impact (v7 Cleanup)
+- `server/src/controllers/v1/login.controller.js` and `v2/login.controller.js`: Remove `enableLogin` branch — keep only `allowLogin === false` check.
+- JSON schemas (`base_schema.json`, `forms_schema.json`, `public/forms_schema.json`): Remove `enableLogin` property definition.
+- `help.yaml`: Remove deprecated `enableLogin` entries.
+
+---
+
 ## Summary of v7.0.0 Breaking Changes
 
 ### Files/Code to Remove:
