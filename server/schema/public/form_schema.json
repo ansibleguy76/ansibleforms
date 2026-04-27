@@ -4960,7 +4960,8 @@
             "additionalProperties": false
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     {
       "type": "array",
@@ -9924,7 +9925,8 @@
               "additionalProperties": false
             }
           }
-        }
+        },
+        "additionalProperties": false
       }
     }
   ]

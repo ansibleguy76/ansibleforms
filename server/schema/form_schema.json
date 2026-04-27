@@ -1922,5 +1922,6 @@
         "additionalProperties": false
       }
     }
-  }
+  },
+  "additionalProperties": false
 }
