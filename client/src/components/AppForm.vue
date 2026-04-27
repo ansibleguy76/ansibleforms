@@ -1112,8 +1112,11 @@ function findVariableDependencies() {
 
         // table type is now deprecated in favour of list + subform
         if (item.type == 'table') {
-            warnings.value.push(`<span class="text-warning">'${item.name}' has the deprecated table type</span><br><span>Use the list type with a subform instead.</span>`)
-            toast.warning(`'${item.name}' uses the deprecated table field. Please migrate to a list + subform.`)
+            warnings.value.push(`<span class="text-warning">'${item.name}' uses the deprecated <b>table</b> field type</span><br><span>Migrate to a <b>list</b> field with a subform.</span>`)
+        }
+        // noOutput is deprecated in favour of output: false
+        if (item.noOutput !== undefined) {
+            warnings.value.push(`<span class="text-warning">'${item.name}' uses the deprecated <b>noOutput</b> property</span><br><span>Replace with <b>output: false</b>.</span>`)
         }
 
         getPlaceholderMatches(fields, item.name, item.expression ?? item.query)
@@ -1524,6 +1527,14 @@ function initForm() {
     fieldOptions.value["__user__"] = {
         type: "expression"
     };
+
+    // form-level deprecation warnings
+    if (props.currentForm.disableRelaunch !== undefined) {
+        warnings.value.push(`<span class="text-warning">Form uses the deprecated <b>disableRelaunch</b> property</span><br><span>Replace with <b>allowRelaunch: false</b>.</span>`)
+    }
+    if (props.currentForm.tableFields !== undefined) {
+        warnings.value.push(`<span class="text-warning">Form uses the deprecated <b>tableFields</b> property</span><br><span>Migrate to a <b>subform</b> with a <b>list</b> field.</span>`)
+    }
 
     // process aliases
     props.currentForm.fields.forEach((item) => {
