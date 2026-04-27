@@ -1095,7 +1095,9 @@ function findVariableDependencies() {
         if (!item?.name) return
         if (item.dependencies) {
             item.dependencies.forEach((dep) => {
-                if (!(fields.includes(dep.name) || (dep.name?.startsWith("!") && fields.includes(dep.name.slice(1))))) {
+                const depBase = dep.name?.startsWith("!") ? dep.name.slice(1) : dep.name;
+                const depRoot = depBase?.split(".")[0];   // handle dot-notation like CREDENTIALS.prompt_ontap
+                if (!(fields.includes(depBase) || depRoot in form.value)) {
                     warnings.value.push(`<span class="text-warning">'${item.name}' has bad dependencies</span><br><span>${dep.name} is not a valid field name</span>`)
                 }
             })

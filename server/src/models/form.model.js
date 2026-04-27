@@ -580,7 +580,7 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
 function collectSubformNames(fields, unvalidated, collected, visited){
   if(!Array.isArray(fields)) return
   for(const field of fields){
-    if(field?.type === "list" && field?.subform){
+    if((field?.type === "list" || field?.type === "yaml") && field?.subform){
       const name = field.subform
       if(!visited.has(name)){
         visited.add(name)

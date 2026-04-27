@@ -1375,6 +1375,7 @@
           "dateType": {"type": "string","enum":["date","datetime","year","month","time","week"]},
           "convertToUtc": {"type": "boolean", "default": false},
           "noOutput": {"type": "boolean"},
+          "output": {"type": "boolean"},
           "asCredential": {"type": "boolean"},
           "line": {"type": "string"},
           "width": {"type": "string"},
