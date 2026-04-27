@@ -86,11 +86,10 @@ for file in "${FILES[@]}"; do
   # For form_schema: wrap in oneOf[single, array] so a form file can contain
   # either one form (dict) or multiple forms (list) without duplicating the schema.
   if [[ "$file" == "form_schema.json" ]]; then
-    jq '{
-      "definitions": { "form": . },
+    jq '. as $form | {
       "oneOf": [
-        { "$ref": "#/definitions/form" },
-        { "type": "array", "items": { "$ref": "#/definitions/form" } }
+        $form,
+        { "type": "array", "items": $form }
       ]
     }' "$dst" > "$dst.tmp" && mv "$dst.tmp" "$dst"
     echo "[public-schema] $file: wrapped in oneOf[single, array]"

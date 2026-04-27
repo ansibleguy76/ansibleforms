@@ -38,31 +38,6 @@
     {
       "properties": {
         "type": {
-          "enum": ["expression"]
-        },
-        "vaultCredentials": {"not":{}},
-        "playbook": {"not":{}},
-        "ansibleCredentials": {"not":{}},
-        "template": {"not":{}},
-        "awx": {"not":{}},
-        "steps": {"not":{}},
-        "inventory": {"not":{}},
-        "awxCredentials": {"not":{}},
-        "tags": {"not":{}},
-        "check": {"not":{}},
-        "limit": {"not":{}},
-        "scm_branch": {"not":{}},
-        "diff": {"not":{}},
-        "key": {"not":{}},
-        "executionEnvironment": {"not":{}},
-        "instanceGroups": {"not":{}},
-        "playbookSubPath": {"not":{}}              
-      },
-      "required": ["expression", "roles"]
-    },          
-    {
-      "properties": {
-        "type": {
           "enum": ["multistep"]
         },
         "playbook": {"not":{}},
@@ -481,7 +456,7 @@
     },
     "type": {
       "type": "string",
-      "enum": ["ansible", "awx", "multistep", "expression", "subform"]
+      "enum": ["ansible", "awx", "multistep", "subform"]
     },
     "hasApproval":{ "type": "boolean"},
     "approval":{
