@@ -681,7 +681,7 @@ roles:
 ```
 
 {: .note }
-> Role options must be explicitly set — there are no defaults except for the admin role, which has everything enabled.
+> Most role options have a default (many default to `true`). Set an option explicitly only when you want to **override** the default — either to force-enable something that is off by default, or to force-disable something that is normally on. Admins always have full access regardless.
 
 ### How do I implement custom RBAC logic in my playbooks or forms?
 
