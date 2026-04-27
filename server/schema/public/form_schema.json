@@ -234,7 +234,7 @@
             "abortable": {
               "not": {}
             },
-            "disableRelaunch": {
+            "allowRelaunch": {
               "not": {}
             },
             "verbose": {
@@ -1559,8 +1559,14 @@
         "showHelp": {
           "type": "boolean"
         },
-        "disableRelaunch": {
+        "allowRelaunch": {
           "type": "boolean"
+        },
+        "varsFiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "fieldGroupClasses": {
           "type": "object",
@@ -5199,7 +5205,7 @@
               "abortable": {
                 "not": {}
               },
-              "disableRelaunch": {
+              "allowRelaunch": {
                 "not": {}
               },
               "verbose": {
@@ -6524,8 +6530,14 @@
           "showHelp": {
             "type": "boolean"
           },
-          "disableRelaunch": {
+          "allowRelaunch": {
             "type": "boolean"
+          },
+          "varsFiles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "fieldGroupClasses": {
             "type": "object",

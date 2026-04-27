@@ -94,7 +94,7 @@
         "scm_branch": {"not":{}},
         "diff": {"not":{}},
         "abortable": {"not":{}},
-        "disableRelaunch": {"not":{}},
+        "allowRelaunch": {"not":{}},
         "verbose": {"not":{}},
         "keepExtravars": {"not":{}},
         "image": {"not":{}},
@@ -507,7 +507,13 @@
     "help": {"type": "string"},
     "source": {"type": "string"},
     "showHelp": {"type": "boolean"},
-    "disableRelaunch": {"type": "boolean"},
+    "allowRelaunch": {"type": "boolean"},
+    "varsFiles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "fieldGroupClasses": {
       "type" : "object",
       "additionalProperties" : {
