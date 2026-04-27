@@ -148,7 +148,7 @@ forms:
         type: number
         label: MTU
         # default to 9000 in production, 1500 elsewhere
-        expression: "$(__parent__.environment) === 'production' ? 9000 : 1500"
+        expression: "'$(__parent__.environment)' === 'production' ? 9000 : 1500"
         runLocal: true
 
   - name: Configure server

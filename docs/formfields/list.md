@@ -273,7 +273,7 @@ forms:
           - gpu
         # only offer gpu in production environments (parent field)
         expression: |
-          $(__parent__.environment) === 'production'
+          '$(__parent__.environment)' === 'production'
             ? ['standard', 'high-memory', 'gpu']
             : ['standard', 'high-memory']
         runLocal: true

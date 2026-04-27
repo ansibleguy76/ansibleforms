@@ -942,7 +942,7 @@ forms:
         type: expression
         hide: true
         runLocal: true
-        expression: "$(__parent__.environment) === 'production'"
+        expression: "'$(__parent__.environment)' === 'production'"
 
       - name: node_type
         type: enum
@@ -952,7 +952,7 @@ forms:
           - gpu
         # only offer gpu nodes in production
         expression: |
-          $(__parent__.environment) === 'production'
+          '$(__parent__.environment)' === 'production'
             ? ['standard', 'high-memory', 'gpu']
             : ['standard', 'high-memory']
         runLocal: true
