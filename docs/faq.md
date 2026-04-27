@@ -650,3 +650,242 @@ constants:
   data_values: #@ data.values
   demo: #@ demo.data_values()
 ```
+
+## Access Control
+
+### How do I restrict what users can do (role options)?
+
+Control per-role UI permissions with role options.
+
+Beyond restricting which forms a role can see, AnsibleForms has a set of **role options** that give finer control over what users of a role can do in the UI. Options are additive — admins always have full access.
+
+See the full option reference in [config.yaml → Role options](config.html#role-options).
+
+Common examples:
+
+```yaml
+roles:
+  - name: operators
+    options:
+      showLogs: true          # can view job history and output
+      allowJobRelaunch: true  # can relaunch previous jobs
+      allowVerboseMode: true  # can enable verbose output on a run
+  - name: designers
+    options:
+      showDesigner: true      # can open the YAML designer
+      showSettings: false     # cannot access settings
+  - name: schedulers
+    options:
+      allowJobScheduling: true  # can schedule forms
+      allowJobStoring: true     # can save and load form data
+```
+
+{: .note }
+> Role options must be explicitly set — there are no defaults except for the admin role, which has everything enabled.
+
+### How do I implement custom RBAC logic in my playbooks or forms?
+
+User identity is available in both the frontend and backend at every execution.
+
+At every form submission AnsibleForms automatically injects the current user's full identity into the extravars sent to Ansible:
+
+```yaml
+ansibleforms_user:
+  username: jane.doe
+  groups:
+    - local/admins
+    - ldap/network-team
+  roles:
+    - admin
+    - operators
+  options:
+    showLogs: true
+    allowJobRelaunch: true
+    # ...all resolved role options
+```
+
+This means your playbook or any custom Ansible module can use `ansibleforms_user` directly to make fine-grained decisions — for example, only allowing certain groups to modify production inventory, or writing an audit trail with the submitter's username.
+
+In the **frontend**, the same object is available via the special `__user__` field:
+
+```yaml
+fields:
+  - name: is_admin
+    type: expression
+    runLocal: true
+    hide: true
+    expression: "$(__user__.roles).includes('admin')"
+
+  - name: target_env
+    type: enum
+    values:
+      - dev
+      - staging
+      - production
+    # hide the production option for non-admins by cross-referencing __user__
+    expression: |
+      $(__user__.roles).includes('admin')
+        ? ['dev','staging','production']
+        : ['dev','staging']
+    runLocal: true
+    default: __auto__
+```
+
+**Typical patterns:**
+
+- **Cross-reference an RBAC config file or database** — load a YAML/JSON file (via `fn.fnFile` or an expression) that maps groups to allowed resources, then filter based on `$(__user__.groups)`
+- **Audit trail** — pass `ansibleforms_user.username` as an extra variable to write who triggered the job
+- **Dynamic field values** — show a different set of enum choices, pre-fill fields, or hide sections based on the user's groups or roles
+- **Playbook-side authorization** — assert that `ansibleforms_user.groups` contains a required group before the playbook proceeds, as a defence-in-depth check independent of the form's `roles` list
+
+
+
+Control login access per role.
+
+Set `enableLogin: false` on the `public` role to prevent any unauthenticated access and force everyone to log in. Conversely, you can create a kiosk-style setup where one role does not require login.
+
+```yaml
+roles:
+  - name: public
+    options:
+      enableLogin: false   # no unauthenticated access at all
+  - name: kiosk
+    options:
+      enableLogin: true    # this role can log in
+```
+
+## Job Scheduling
+
+### How do I schedule a form to run automatically?
+
+Run forms on a schedule or at a future time (v6.1.5).
+
+AnsibleForms supports two scheduling modes via the job scheduling feature:
+
+- **Cron schedule** — submit the form and it will run repeatedly on a cron expression (e.g. every night at 2 AM)
+- **One-off / run later** — submit the form to run once at a specific future date and time
+
+**Requirements:**
+- The user's role must have `allowJobScheduling: true`
+- The form must not have `disableRelaunch: true` (scheduling uses the same pre-fill mechanism)
+
+**How it works:**
+1. Open a form and fill in the values
+2. Instead of clicking **Submit**, click **Schedule**
+3. Choose a cron expression or a specific date/time
+4. The job appears in the job list with a scheduled status and runs automatically at the configured time
+
+Scheduled jobs can be viewed, edited, and cancelled from the job history page.
+
+## Save & Load Form Data
+
+### How do I save and reload form data without running a job?
+
+Store form submissions for later use (v6.1.5).
+
+The **Store** and **Load from store** actions let you save a snapshot of form field values to disk and reload them later — without triggering a job run. This is useful for saving complex configurations you want to reuse across multiple submissions.
+
+**Requirements:**
+- The user's role must have `allowJobStoring: true`
+
+**How it works:**
+1. Fill in the form
+2. Click **Store** — the current field values are saved under a name you choose
+3. Later, open the same form and click **Load from store** to restore the saved values
+4. Review / adjust and submit as usual
+
+{: .note }
+> Password fields are never stored. Stored data is tied to the form name — loading from a different form will not work.
+
+## Nested Forms & Structured Fields
+
+### How do I collect structured or repeated data in a form?
+
+Use `list` and `yaml` fields with subforms (6.2.0+).
+
+For collecting complex structured data — like a list of servers, a set of network interfaces, or a single nested object — use the `list` or `yaml` field types together with a `subform`.
+
+A **subform** is a reusable form fragment (defined with `type: subform`) that is never shown as a standalone tile. It exists solely to be referenced by fields in other forms. See the [Subform docs](forms/subform.html) for full reference.
+
+**Collecting a list of structured rows — `list` field:**
+
+```yaml
+forms:
+  - name: Server
+    type: subform
+    fields:
+      - name: hostname
+        type: text
+        required: true
+      - name: ip
+        type: text
+        regex: ^\d+\.\d+\.\d+\.\d+$
+
+  - name: Deploy to servers
+    type: ansible
+    playbook: deploy.yml
+    fields:
+      - name: servers
+        type: list
+        subform: Server   # opens Server subform in a drilldown editor per row
+```
+
+The `servers` extravar sent to Ansible will be an array of objects: `[{hostname: "web1", ip: "10.0.0.1"}, ...]`
+
+**Editing a single structured object — `yaml` field with subform:**
+
+```yaml
+fields:
+  - name: network_config
+    type: yaml
+    subform: NetworkConfig   # opens NetworkConfig subform as a drilldown editor
+```
+
+{: .note }
+> The `list` field replaces the deprecated `table` field. The `subform` form type replaces the deprecated `tableFields`.
+
+### How do I migrate from `table` / `tableFields` to `list` / `subform`?
+
+Migrate deprecated table fields (6.2.0+).
+
+The old `table` field and `tableFields` property still work but show deprecation warnings. To migrate:
+
+1. Extract the columns from `tableFields` into a new `type: subform` form with regular `formfields`
+2. Replace the `table` field with a `list` field that references the subform via `subform: MySubformName`
+
+**Before:**
+```yaml
+forms:
+  - name: Manage users
+    type: ansible
+    playbook: users.yml
+    tableFields:
+      - name: username
+        type: text
+      - name: email
+        type: text
+    fields:
+      - name: users
+        type: table
+```
+
+**After:**
+```yaml
+forms:
+  - name: User
+    type: subform
+    fields:
+      - name: username
+        type: text
+      - name: email
+        type: text
+
+  - name: Manage users
+    type: ansible
+    playbook: users.yml
+    fields:
+      - name: users
+        type: list
+        subform: User
+```
+

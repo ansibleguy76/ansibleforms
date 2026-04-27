@@ -93,6 +93,22 @@ Get up and running quickly with AnsibleForms:
       <td>Has a rest-api and Swagger documentation</td>
     </tr>
     <tr>
+      <td><strong>Job scheduling</strong></td>
+      <td>Schedule forms to run at a specific time (one-off) or on a recurring cron schedule</td>
+    </tr>
+    <tr>
+      <td><strong>Save &amp; load form data</strong></td>
+      <td>Store form submissions and reload them later to pre-fill a form without relaunching a job</td>
+    </tr>
+    <tr>
+      <td><strong>Role-based permissions</strong></td>
+      <td>Fine-grained role options control who can view logs, use the designer, schedule jobs, relaunch, and more</td>
+    </tr>
+    <tr>
+      <td><strong>Automated backups</strong></td>
+      <td>Built-in nightly backup with configurable retention</td>
+    </tr>
+    <tr>
       <td><strong>Designer</strong></td>
       <td>Although the forms are NOT built using a graphical designer, a YAML based editor/designer with validation is present</td>
     </tr>
@@ -152,6 +168,14 @@ Get up and running quickly with AnsibleForms:
     <tr>
       <td><strong>Multistep forms</strong></td>
       <td>Execute multiple playbooks in steps from a single form</td>
+    </tr>
+    <tr>
+      <td><strong>Nested / structured fields</strong></td>
+      <td>Build structured data with <code>list</code> and <code>yaml</code> fields backed by reusable subforms</td>
+    </tr>
+    <tr>
+      <td><strong>Scheduled forms</strong></td>
+      <td>Run a form on a cron schedule or at a one-off future time without manual submission</td>
     </tr>
     <tr>
       <td><strong>Email notifications</strong></td>

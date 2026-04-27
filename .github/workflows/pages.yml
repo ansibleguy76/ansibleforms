@@ -21,6 +21,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
+      - name: Copy changelog into docs
+        run: |
+          printf -- '---\nlayout: default\ntitle: Changelog\nnav_order: 10\n---\n\n' > docs/changelog.md
+          cat CHANGELOG.md >> docs/changelog.md
+
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
