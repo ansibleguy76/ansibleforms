@@ -733,26 +733,10 @@ fields:
 
 **Typical patterns:**
 
-- **Cross-reference an RBAC config file or database** — load a YAML/JSON file (via `fn.fnFile` or an expression) that maps groups to allowed resources, then filter based on `$(__user__.groups)`
+- **Cross-reference an RBAC config file or database** — load a YAML/JSON file (via `fn.fnReadYamlFile` or an expression) that maps groups to allowed resources, then filter based on `$(__user__.groups)`
 - **Audit trail** — pass `ansibleforms_user.username` as an extra variable to write who triggered the job
 - **Dynamic field values** — show a different set of enum choices, pre-fill fields, or hide sections based on the user's groups or roles
 - **Playbook-side authorization** — assert that `ansibleforms_user.groups` contains a required group before the playbook proceeds, as a defence-in-depth check independent of the form's `roles` list
-
-
-
-Control login access per role.
-
-Set `enableLogin: false` on the `public` role to prevent any unauthenticated access and force everyone to log in. Conversely, you can create a kiosk-style setup where one role does not require login.
-
-```yaml
-roles:
-  - name: public
-    options:
-      enableLogin: false   # no unauthenticated access at all
-  - name: kiosk
-    options:
-      enableLogin: true    # this role can log in
-```
 
 ## Job Scheduling
 

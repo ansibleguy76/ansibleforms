@@ -23,11 +23,7 @@ jobs:
       
       - name: Copy changelog into docs
         run: |
-          python3 - <<'EOF'
-          frontmatter = "---\nlayout: default\ntitle: Changelog\nnav_order: 10\n---\n\n"
-          with open("CHANGELOG.md") as src, open("docs/changelog.md", "w") as dst:
-              dst.write(frontmatter + src.read())
-          EOF
+          { echo '---'; echo 'layout: default'; echo 'title: Changelog'; echo 'nav_order: 10'; echo '---'; echo ''; cat CHANGELOG.md; } > docs/changelog.md
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
