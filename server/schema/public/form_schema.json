@@ -3898,6 +3898,9 @@
               "noOutput": {
                 "type": "boolean"
               },
+              "output": {
+                "type": "boolean"
+              },
               "asCredential": {
                 "type": "boolean"
               },
@@ -8867,6 +8870,9 @@
                   "default": false
                 },
                 "noOutput": {
+                  "type": "boolean"
+                },
+                "output": {
                   "type": "boolean"
                 },
                 "asCredential": {
