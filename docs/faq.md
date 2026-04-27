@@ -890,6 +890,96 @@ fields:
 {: .note }
 > The `list` field replaces the deprecated `table` field. The `subform` form type replaces the deprecated `tableFields`.
 
+### How do I access parent form data inside a subform?
+
+Reference parent field values from within a subform via `__parent__` (v6.3.0+).
+
+When a subform opens — whether triggered by a **`list`** field (each row editor) or a **`yaml`** field in subform mode — AnsibleForms automatically injects a special read-only field called `__parent__` into the subform. It contains a snapshot of **every field value in the parent form at the time the subform was opened**, including constants and vars.
+
+This lets subform fields use expressions that reference parent data without any extra configuration.
+
+#### What is in `__parent__`?
+
+`__parent__` is a plain object whose keys are the field names of the parent form:
+
+```yaml
+__parent__:
+  environment: production          # a regular field
+  region: eu-west-1
+  max_nodes: 10
+  owner: jane.doe                  # a constant
+  default_image: ubuntu-22.04      # from varsFiles
+  __user__:                        # system fields are also included
+    username: jane.doe
+    roles: [admin]
+```
+
+{: .note }
+> `__parent__` is **not sent to Ansible** — it is stripped from extravars just like `__user__`. It is purely a frontend helper for expressions inside subforms.
+
+#### Accessing parent values in subform expressions
+
+Use the standard `$(...)` expression syntax:
+
+```yaml
+forms:
+  - name: NodeConfig
+    type: subform
+    fields:
+      - name: node_name
+        type: text
+        label: Node name
+        required: true
+
+      - name: image
+        type: enum
+        label: Image
+        # default to the parent form's chosen image
+        expression: "'$(__parent__.default_image)'"
+        runLocal: true
+
+      - name: is_production
+        type: expression
+        hide: true
+        runLocal: true
+        expression: "$(__parent__.environment) === 'production'"
+
+      - name: node_type
+        type: enum
+        values:
+          - standard
+          - high-memory
+          - gpu
+        # only offer gpu nodes in production
+        expression: |
+          $(__parent__.environment) === 'production'
+            ? ['standard', 'high-memory', 'gpu']
+            : ['standard', 'high-memory']
+        runLocal: true
+        default: __auto__
+
+  - name: Deploy cluster
+    type: ansible
+    playbook: deploy_cluster.yml
+    fields:
+      - name: environment
+        type: enum
+        values: [dev, staging, production]
+
+      - name: default_image
+        type: text
+        default: ubuntu-22.04
+
+      - name: nodes
+        type: list
+        subform: NodeConfig
+        columns: [node_name, node_type]
+```
+
+#### Nested subforms
+
+`__parent__` always refers to the **immediate parent** form. If you nest a `list` inside a subform that is itself opened from a parent form, the inner subform's `__parent__` will be the middle subform's data. Chain multiple levels by referencing `$(__parent__.__parent__.someField)` if the middle subform also propagates its own `__parent__`.
+
 ### How do I migrate from `table` / `tableFields` to `list` / `subform`?
 
 Migrate deprecated table fields (6.2.0+).
@@ -934,4 +1024,66 @@ forms:
         type: list
         subform: User
 ```
+
+#### Migrating `from` in `tableFields` to `__parent__` expressions
+
+The `from` property available in `tableFields` enum columns let you populate dropdown choices from another field in the parent form. In a `subform`, this is replaced by an `expression` that reads the same value via `__parent__`.
+
+**Before — `tableFields` with `from`:**
+
+```yaml
+forms:
+  - name: Manage members
+    type: ansible
+    playbook: members.yml
+    fields:
+      - name: available_departments
+        type: expression
+        expression: "['HR','Engineering','Finance']"
+        runLocal: true
+        hide: true
+
+      - name: members
+        type: table
+    tableFields:
+      - name: department
+        type: enum
+        from: available_departments   # pulls choices from the parent field above
+      - name: firstname
+        type: text
+```
+
+**After — subform with `__parent__` expression:**
+
+```yaml
+forms:
+  - name: Member
+    type: subform
+    fields:
+      - name: department
+        type: enum
+        # replaces "from: available_departments"
+        expression: "$(__parent__.available_departments)"
+        runLocal: true
+
+      - name: firstname
+        type: text
+
+  - name: Manage members
+    type: ansible
+    playbook: members.yml
+    fields:
+      - name: available_departments
+        type: expression
+        expression: "['HR','Engineering','Finance']"
+        runLocal: true
+        hide: true
+
+      - name: members
+        type: list
+        subform: Member
+```
+
+{: .note }
+> `$(__parent__.available_departments)` returns the **current value** of that field — so if it is a dynamic expression field itself, the subform will always see the latest evaluated result from the parent.
 

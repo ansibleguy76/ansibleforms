@@ -106,6 +106,12 @@ const props = defineProps(
             type: Array,
             default: () => []
         },
+        // Parent form data injected into subforms as __parent__ so fields
+        // can cross-reference the parent form's values via $(____parent__.field).
+        parentData: {
+            type: Object,
+            default: () => null
+        },
     }
 )
 
@@ -132,6 +138,7 @@ const dynamicFieldStatus = ref({});                 // holds the status of dynam
 const queryresults = ref({});                 // holds the results of dynamic dropdown boxes
 const queryerrors = ref({});                 // holds errors of dynamic dropdown boxes
 const fieldOptions = ref({});                 // holds a couple of fieldoptions for fast access (valueColumn,ignoreIncomplete, ...), only for expression,query and table
+
 const warnings = ref([]);                 // holds form warnings.
 const showWarnings = ref(false);              // flag to show/hide warnings
 const visibility = ref({});                 // holds which fields are visiable or not
@@ -1418,6 +1425,7 @@ function openYamlSubformEditor(field) {
         subtitle: field.titleEdit || `Edit ${title}`,
         subform: resolvedSubform,
         row,
+        parentData: form.value,
         onSave: (value) => {
             form.value[field.name] = value;
             evaluateDynamicFields(field.name);
@@ -1521,7 +1529,7 @@ function initForm() {
     props.currentForm.fields.forEach((item) => {
         if (item.type == "local") {
             item.hide = item.hide ?? true;
-            item.noOutput = item.noOutput ?? true;
+            item.output = item.output ?? (item.noOutput !== undefined ? !item.noOutput : false);
             item.type = "expression";
             item.runLocal = true;
         }
@@ -1548,8 +1556,25 @@ function initForm() {
                 type: "constant",
             };
             form.value[item] = props.constants[item];
-            dynamicFieldStatus.value[item] = "fixed"; // Mark constants as evaluated/ready
+            dynamicFieldStatus.value[item] = "fixed";
         });
+    }
+
+    // inject form-specific vars (varsFiles data) — loaded server-side into currentForm.vars
+    if (props.currentForm.vars) {
+        Object.keys(props.currentForm.vars).forEach((item) => {
+            fieldOptions.value[item] = { type: "constant" };
+            form.value[item] = props.currentForm.vars[item];
+            dynamicFieldStatus.value[item] = "fixed";
+        });
+    }
+
+    // inject parent form data as __parent__ so subform fields can reference
+    // parent values via $(__parent__.fieldname)
+    if (props.parentData && Object.keys(props.parentData).length > 0) {
+        fieldOptions.value["__parent__"] = { type: "constant" };
+        form.value["__parent__"] = props.parentData;
+        dynamicFieldStatus.value["__parent__"] = "fixed";
     }
 
     // initialize defaults
@@ -2182,6 +2207,7 @@ onUnmounted(() => {
                                         :subform="subforms.find(s => s.name === field.subform)"
                                         :subforms="subforms"
                                         :constants="constants"
+                                        :parentFormData="form"
                                         :name="field.name"
                                         :showLoadButton="field.showLoadButton === true"
                                         :showDownloadButton="field.showDownloadButton === true"

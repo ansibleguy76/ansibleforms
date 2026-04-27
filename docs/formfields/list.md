@@ -248,3 +248,52 @@ forms:
           - name
           - addresses
 ```
+
+### Accessing parent form data via `__parent__`
+
+When a subform row editor opens, AnsibleForms automatically injects a `__parent__` variable into the subform containing a snapshot of **all parent form field values** (including constants and vars).
+
+Use it with the standard `$(...)` expression syntax in the subform's field definitions:
+
+```yaml
+forms:
+  - name: NodeConfig
+    type: subform
+    fields:
+      - name: node_name
+        type: text
+        label: Node name
+        required: true
+
+      - name: node_type
+        type: enum
+        values:
+          - standard
+          - high-memory
+          - gpu
+        # only offer gpu in production environments (parent field)
+        expression: |
+          $(__parent__.environment) === 'production'
+            ? ['standard', 'high-memory', 'gpu']
+            : ['standard', 'high-memory']
+        runLocal: true
+        default: __auto__
+
+  - name: Deploy cluster
+    type: ansible
+    playbook: deploy.yml
+    fields:
+      - name: environment
+        type: enum
+        values: [dev, staging, production]
+        required: true
+
+      - name: nodes
+        type: list
+        subform: NodeConfig
+        columns: [node_name, node_type]
+```
+
+{: .note }
+> `__parent__` is stripped from Ansible extravars — it is a **frontend-only** helper. It is never sent to your playbook.
+

@@ -31,6 +31,7 @@ const props = defineProps({
     subform: { type: Object, default: null },
     subforms: { type: Array, default: () => [] },
     constants: { type: Object, default: () => ({}) },
+    parentFormData: { type: Object, default: () => ({}) },
     hasError: { type: Boolean, default: false },
     errors: { type: Array, default: () => [] },
     help: { type: String, default: '' },
@@ -197,6 +198,7 @@ function openEditor({ row, index }) {
         subtitle,
         subform: props.subform,
         row: row || defaultRow(),
+        parentData: props.parentFormData,
         onSave: (value) => applySave(value, index),
     });
 }

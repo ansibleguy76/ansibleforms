@@ -166,6 +166,7 @@ const Helpers = {
     (fields || []).forEach((item) => {
       if (!item || !item.name) return;
       if (item.name === '__user__') return;
+      if (item.name === '__parent__') return;
       if (item.noOutput || item.output === false) return;
       if (!isVisible(item)) return;
 

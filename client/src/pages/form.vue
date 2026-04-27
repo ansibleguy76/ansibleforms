@@ -62,11 +62,12 @@ let nextEditId = 1;
 // form is shown. Drives the title, breadcrumbs and help block in the template.
 const activeEntry = computed(() => editStack[editStack.length - 1]);
 
-function pushEdit({ title, subtitle, subform, row, onSave }) {
+function pushEdit({ title, subtitle, subform, row, parentData, onSave }) {
     const id = `edit-${nextEditId++}`;
     const snapshot = row ? JSON.parse(JSON.stringify(row)) : {};
     const entry = reactive({
         id, title, subtitle, subform, snapshot,
+        parentData: parentData ? JSON.parse(JSON.stringify(parentData)) : null,
         draft: {},
         showHelp: subform?.showHelp === true,
         onSave,
@@ -1002,12 +1003,11 @@ async function loadForm(){
       }
     }
 
+    constants.value = formConfig.value.constants;
+
     // Now set currentForm which will trigger component rendering
     currentForm.value = formConfig.value.forms[0];
     formLoaded.value = true;
-    constants.value = formConfig.value.constants;
-    // Shallow merge form vars into constants to prevent prototype pollution
-    constants.value = Object.assign({}, constants.value, formConfig.value.forms[0].vars || {});
     
 
     // see if the help should be show initially
@@ -1122,6 +1122,7 @@ onBeforeUnmount(() => {
                 :constants="constants"
                 :subforms="currentForm?.subforms || []"
                 :initialData="entry.snapshot"
+                :parentData="entry.parentData"
                 v-model="entry.draft"
                 @save="(val) => saveEdit(entry.id, val)"
                 @cancel="popEdit(entry.id)"

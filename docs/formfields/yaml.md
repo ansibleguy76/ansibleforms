@@ -116,3 +116,58 @@ A dedicated YAML editor field with syntax highlighting, validation, and file imp
 {%- endif %}
 
 {%- endif %}
+
+## Accessing parent form data via `__parent__`
+
+When a `yaml` field uses `subform` mode, AnsibleForms automatically injects a `__parent__` variable into the subform containing a snapshot of **all parent form field values** at the time the editor opens (including constants and vars).
+
+Use it with the standard `$(...)` expression syntax in the subform's field definitions:
+
+```yaml
+forms:
+  - name: NetworkConfig
+    type: subform
+    fields:
+      - name: interface
+        type: text
+        label: Interface
+        required: true
+
+      - name: vlan
+        type: enum
+        label: VLAN
+        # filter available VLANs based on the parent's selected region
+        query: "select id,name from vlans where region='$(__parent__.region)'"
+        dbConfig:
+          name: MYDB
+          type: mysql
+        valueColumn: id
+        placeholderColumn: name
+
+      - name: mtu
+        type: number
+        label: MTU
+        # default to 9000 in production, 1500 elsewhere
+        expression: "$(__parent__.environment) === 'production' ? 9000 : 1500"
+        runLocal: true
+
+  - name: Configure server
+    type: ansible
+    playbook: configure.yml
+    fields:
+      - name: environment
+        type: enum
+        values: [dev, staging, production]
+
+      - name: region
+        type: enum
+        values: [eu-west-1, us-east-1, ap-southeast-1]
+
+      - name: nic
+        type: yaml
+        label: Network interface
+        subform: NetworkConfig
+```
+
+{: .note }
+> `__parent__` is stripped from Ansible extravars — it is a **frontend-only** helper. It is never sent to your playbook.
