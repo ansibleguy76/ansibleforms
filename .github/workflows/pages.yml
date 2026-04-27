@@ -22,9 +22,7 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Copy changelog into docs
-        run: |
-          printf -- '---\nlayout: default\ntitle: Changelog\nnav_order: 10\n---\n\n' > docs/changelog.md
-          cat CHANGELOG.md >> docs/changelog.md
+        run: python3 -c "open('docs/changelog.md','w').write('---\nlayout: default\ntitle: Changelog\nnav_order: 10\n---\n\n' + open('CHANGELOG.md').read())"
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1

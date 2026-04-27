@@ -8,4 +8,4 @@ nav_order: 10
 
 {: .note }
 > This page is generated automatically from `CHANGELOG.md` at build time.  
-> When running locally, see [CHANGELOG.md](https://github.com/ansibleguy76/ansibleforms/blob/development/CHANGELOG.md) on GitHub.
+> When running locally, see [CHANGELOG.md](https://github.com/ansibleguy76/ansibleforms/blob/develop/CHANGELOG.md) on GitHub.
