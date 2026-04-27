@@ -832,13 +832,49 @@ forms:
 
 The `servers` extravar sent to Ansible will be an array of objects: `[{hostname: "web1", ip: "10.0.0.1"}, ...]`
 
-**Editing a single structured object — `yaml` field with subform:**
+**Editing a single structured object — `yaml` field:**
+
+The `yaml` field has three modes:
+
+| Mode | How | Behaviour |
+|---|---|---|
+| **Editor** | default | Shows a full YAML syntax-highlighted editor the user can type in directly |
+| **Readonly** | `readonly: true` | Renders the YAML value as formatted read-only text — no editing |
+| **Subform** | `subform: MySubform` | Hides the raw editor; opens the subform as a drilldown editor on click |
 
 ```yaml
 fields:
+  # editor mode (default)
+  - name: raw_config
+    type: yaml
+
+  # readonly mode
+  - name: generated_config
+    type: yaml
+    readonly: true
+
+  # subform mode
   - name: network_config
     type: yaml
     subform: NetworkConfig   # opens NetworkConfig subform as a drilldown editor
+```
+
+**Upload and download — `list` and `yaml` fields:**
+
+Both field types support client-side file transfer via two optional properties:
+
+```yaml
+fields:
+  - name: servers
+    type: list
+    subform: Server
+    showLoadButton: true      # shows an Upload button — imports content from a local file
+    showDownloadButton: true  # shows a Download button — exports current content to a file
+
+  - name: config
+    type: yaml
+    showLoadButton: true
+    showDownloadButton: true
 ```
 
 {: .note }
