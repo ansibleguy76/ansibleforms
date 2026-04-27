@@ -30,8 +30,8 @@ const baseSchema = JSON.parse(fs.readFileSync(path.join(__dirname, "../../schema
 const formSchema = JSON.parse(fs.readFileSync(path.join(__dirname, "../../schema/form_schema.json"), "utf8"));
 
 // Generate formsSchema in-memory: base config wrapper + formSchema as array items.
-// forms_schema.json (deprecated, removed in v7) is kept on disk only for the
-// public-schema bash script. At runtime we build it from the two sources of truth.
+// This validates the legacy bundled format (categories + roles + constants + forms[]).
+// DEPRECATED — will be removed in v7 along with legacy forms.yaml support.
 const formsSchema = (() => {
   const schema = JSON.parse(JSON.stringify(baseSchema)); // deep clone
   schema.required = [...schema.required, "forms"];
