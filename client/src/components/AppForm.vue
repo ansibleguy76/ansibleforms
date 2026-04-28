@@ -1473,11 +1473,18 @@ async function handleYamlSubformLoad(event, fieldName) {
 
 function handleYamlSubformDownload(fieldName, label) {
     try {
-        const value = form.value[fieldName];
-        if (!value) {
+        const raw = form.value[fieldName];
+        if (!raw) {
             toast.error('No data to download');
             return;
         }
+        // Strip constants, vars and internals — keep only declared subform fields.
+        const fieldDef = props.currentForm.fields?.find(f => f.name === fieldName);
+        const resolvedSubform = fieldDef?.subform ? props.subforms.find(s => s.name === fieldDef.subform) : null;
+        const subformFieldNames = resolvedSubform?.fields?.map(f => f.name) || null;
+        const value = subformFieldNames && typeof raw === 'object' && !Array.isArray(raw)
+            ? Object.fromEntries(subformFieldNames.filter(k => k in raw).map(k => [k, raw[k]]))
+            : raw;
         const yamlContent = YAML.stringify(value);
         const blob = new Blob([yamlContent], { type: 'text/yaml' });
         const url = URL.createObjectURL(blob);

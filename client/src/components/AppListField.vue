@@ -25,6 +25,7 @@
 import { ref, computed, watch, inject } from 'vue';
 import YAML from 'yaml';
 import { toast } from 'vue-sonner';
+import Helpers from '@/lib/Helpers';
 
 const props = defineProps({
     field: { type: Object, required: true },
@@ -81,7 +82,15 @@ function handleDownload() {
             toast.error('No data to download');
             return;
         }
-        const yamlContent = YAML.stringify(rows.value);
+        // Only keep keys that are declared subform fields — strip constants,
+        // vars, __user__ and any other internals injected by AppForm.
+        const subformFieldNames = (props.subform?.fields || []).map(f => f.name);
+        const cleanRows = subformFieldNames.length > 0
+            ? rows.value.map(row => Object.fromEntries(
+                subformFieldNames.filter(k => k in row).map(k => [k, row[k]])
+              ))
+            : rows.value;
+        const yamlContent = YAML.stringify(cleanRows);
         const blob = new Blob([yamlContent], { type: 'text/yaml' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -190,9 +199,14 @@ function openEditor({ row, index }) {
     // shown as a subtitle inside the subform pane. Authors can override
     // via the field's `titleAdd` / `titleEdit` properties.
     const title = props.field.label || props.field.name || props.subform.description || props.subform.name;
+    const resolveTitlePlaceholders = (str) =>
+        str.replace(/\$\(([^)]+)\)/g, (_, match) => {
+            const val = Helpers.replacePlaceholders(match, props.parentFormData);
+            return val !== undefined ? val : `$(${match})`;
+        });
     const subtitle = isAdd
-        ? (props.field.titleAdd || `Add ${title}`)
-        : (props.field.titleEdit || `Edit ${title}`);
+        ? resolveTitlePlaceholders(props.field.titleAdd || `Add ${title}`)
+        : resolveTitlePlaceholders(props.field.titleEdit || `Edit ${title}`);
     editStack.push({
         title,
         subtitle,
