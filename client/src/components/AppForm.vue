@@ -1615,7 +1615,7 @@ function initForm() {
         fieldOptions.value[item.name]["evalDefault"] = item.evalDefault ?? false;
         fieldOptions.value[item.name]["hasDependencies"] = ("dependencies" in item)
         fieldOptions.value[item.name]["dependencyOk"] = false
-        if (["expression", "enum", "table", "html", "yaml"].includes(item.type)) {
+        if (["expression", "enum", "table", "html", "yaml", "list"].includes(item.type)) {
             fieldOptions.value[item.name]["isDynamic"] = !!(item.expression ?? item.query ?? item.value ?? false);
             fieldOptions.value[item.name]["valueColumn"] = item.valueColumn || "";
             fieldOptions.value[item.name]["placeholderColumn"] = item.placeholderColumn || "";
@@ -1790,6 +1790,8 @@ async function startDynamicFieldsLoop() {
                                 }
                                 if (item.type == "table" && !defaults.value[item.name]) form.value[item.name] = [].concat(result);
                                 if (item.type == "table" && defaults.value[item.name]) form.value[item.name] = [].concat(defaults.value[item.name]);
+                                if (item.type == "list" && !defaults.value[item.name]) form.value[item.name] = [].concat(result);
+                                if (item.type == "list" && defaults.value[item.name]) form.value[item.name] = [].concat(defaults.value[item.name]);
 
                                 // Mark as fixed after successful evaluation - will re-evaluate when dependencies change via resetField
                                 setFieldStatus(item.name, "fixed");
@@ -1842,6 +1844,8 @@ async function startDynamicFieldsLoop() {
                                 }
                                 if (item.type == "table" && !defaults.value[item.name]) form.value[item.name] = [].concat(restresult ?? []);
                                 if (item.type == "table" && defaults.value[item.name]) form.value[item.name] = [].concat(defaults.value[item.name] ?? []);
+                                if (item.type == "list" && !defaults.value[item.name]) form.value[item.name] = [].concat(restresult ?? []);
+                                if (item.type == "list" && defaults.value[item.name]) form.value[item.name] = [].concat(defaults.value[item.name] ?? []);
 
                                 if (restresult == undefined && (defaults.value[item.name] != undefined)) {
                                     if (item.type == "expression") {
@@ -1880,6 +1884,7 @@ async function startDynamicFieldsLoop() {
                             delete queryerrors.value[item.name];
                             if (item.type == "query" || item.type == "enum") queryresults.value[item.name] = restresult;
                             else if (item.type == "yaml") form.value[item.name] = restresult;
+                            else if (item.type == "list") form.value[item.name] = [].concat(restresult ?? []);
                             else form.value[item.name] = restresult;
 
                             // Mark as fixed after successful evaluation - will re-evaluate when dependencies change via resetField
