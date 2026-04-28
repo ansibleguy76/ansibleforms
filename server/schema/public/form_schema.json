@@ -3401,21 +3401,6 @@
                   "tableFields": {
                     "not": {}
                   },
-                  "expression": {
-                    "not": {}
-                  },
-                  "query": {
-                    "not": {}
-                  },
-                  "dbConfig": {
-                    "not": {}
-                  },
-                  "jq": {
-                    "not": {}
-                  },
-                  "runLocal": {
-                    "not": {}
-                  },
                   "asCredential": {
                     "not": {}
                   },
@@ -8373,21 +8358,6 @@
                       "not": {}
                     },
                     "tableFields": {
-                      "not": {}
-                    },
-                    "expression": {
-                      "not": {}
-                    },
-                    "query": {
-                      "not": {}
-                    },
-                    "dbConfig": {
-                      "not": {}
-                    },
-                    "jq": {
-                      "not": {}
-                    },
-                    "runLocal": {
                       "not": {}
                     },
                     "asCredential": {
