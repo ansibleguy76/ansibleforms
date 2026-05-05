@@ -854,6 +854,8 @@ function setVisibility(fieldname, status) {
             // Field is becoming hidden - clear its value to undefined
             form.value[fieldname] = undefined
             setFieldStatus(fieldname, undefined)
+            // Notify dependent fields that this field's value has changed to undefined
+            evaluateDynamicFields(fieldname)
         }
     }
 }
