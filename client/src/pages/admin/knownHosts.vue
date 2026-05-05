@@ -2,7 +2,7 @@
 
 import { ref } from 'vue';
 import Profile from '@/lib/Profile';
-import copy from 'copy-to-clipboard';
+import { copyText } from 'vue3-clipboard';
 import settings from '@/config/settings';
 import { toast } from 'vue-sonner';
 
@@ -15,7 +15,7 @@ function preview(item) {
     try {
         currentItem.value = item;
         // clipboard.writeSync(currentItem.value)
-        copy(currentItem.value);
+        copyText(currentItem.value);
         toast.success('Copied to clipboard');
     } catch {
         toast.error('Could not copy to clipboard, https required');
@@ -37,9 +37,7 @@ onMounted(async () => {
     <div class="flex-shrink-0">
         <main class="d-flex flex-nowrap container-xxl">
             <AppSidebar />
-            <AppAdminMulti v-if="authenticated" apiVersion="2" :settings="settings.knownhosts" @preview="preview">
-                <p class="p-2 border text-break" v-if="currentItem">{{ currentItem.name }}</p>
-            </AppAdminMulti>
+            <AppAdminMulti v-if="authenticated" apiVersion="2" :settings="settings.knownhosts" @preview="preview" />
         </main>
     </div>
 
