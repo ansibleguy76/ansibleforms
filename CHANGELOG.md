@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   New `subform` property on `yaml` fields: when set, the field value is edited via a subform drilldown instead of a raw YAML editor, enabling structured single-object editing with full validation.
 -   New `subform` form type: define reusable subforms (referenced by `list` and `yaml` fields) in the same forms file.
 
+### Fixed
+
+-   Dependency bug, field reset not populated to dependent placeholders
+
 ### Deprecated
 
 -   `table` field type is deprecated since 6.2.0. Existing `table` fields continue to work but show a deprecation warning. Migrate to the `list` field type combined with a `subform`.
