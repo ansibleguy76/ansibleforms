@@ -1229,7 +1229,7 @@ function replacePlaceholderInString(value, ignoreIncomplete = false) {
         targetflag = undefined
 
         if (foundfield in form.value) {      // does field xxx exist in our form ?
-            if (fieldOptions.value[foundfield] && (["expression", "table", "constant"].includes(fieldOptions.value[foundfield].type) || column.includes(".")) && ((typeof form.value[foundfield] == "object") || (Array.isArray(form.value[foundfield])))) {
+            if (fieldOptions.value[foundfield] && (["expression", "table", "list", "constant"].includes(fieldOptions.value[foundfield].type) || column.includes(".")) && ((typeof form.value[foundfield] == "object") || (Array.isArray(form.value[foundfield])))) {
                 fieldvalue = JSON.stringify(Helpers.replacePlaceholders(match[1], form.value)) // allow full object reference
                 if (typeof fieldvalue == "string") { // drop quotes if string
                     fieldvalue = fieldvalue?.replace(/^\"+/, '').replace(/\"+$/, ''); // eslint-disable-line
@@ -1378,15 +1378,26 @@ function handleSubformSave() {
 }
 
 // Build the output object for a subform row emitted to the parent list.
-// We intentionally keep the RAW per-field values here (drop only the
-// internal `__user__` helper). `model`, `noOutput`, `outputObject` and
-// `valueColumn` are applied at extravars generation time by
-// `Helpers.buildFormOutput`, which walks the whole form tree recursively.
-// Keeping rows raw means they can round-trip through Save -> Edit -> Save
-// without losing data (e.g. full enum objects are preserved for re-editing).
+// We intentionally keep the RAW per-field values here (only fields declared
+// in the subform). Internal fields (__user__, __parent__, constants, vars)
+// are filtered out. `model`, `noOutput`, `outputObject` and `valueColumn` are
+// applied at extravars generation time by `Helpers.buildFormOutput`, which
+// walks the whole form tree recursively. Keeping rows raw means they can
+// round-trip through Save -> Edit -> Save without losing data (e.g. full
+// enum objects are preserved for re-editing).
 function stripSubformInternals(src) {
-    const out = { ...(src || {}) };
-    delete out.__user__;
+    if (!src || typeof src !== 'object') return src;
+    
+    const out = {};
+    const declaredFields = new Set((props.currentForm?.fields || []).map(f => f.name));
+    
+    // Filter to only declared fields, excluding internals
+    Object.keys(src).forEach(key => {
+        if (declaredFields.has(key)) {
+            out[key] = src[key];
+        }
+    });
+    
     return out;
 }
 
