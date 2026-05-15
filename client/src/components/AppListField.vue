@@ -211,7 +211,7 @@ function openEditor({ row, index }) {
         title,
         subtitle,
         subform: props.subform,
-        row: row || defaultRow(),
+        row: row ? (({ __output__: _, ...rest }) => rest)(row) : defaultRow(),
         parentData: props.parentFormData,
         onSave: (value) => applySave(value, index),
     });

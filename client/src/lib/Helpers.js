@@ -193,6 +193,15 @@ const Helpers = {
         outputValue = this.getFieldValue(outputValue, item.valueColumn || '', true);
       }
 
+      // If the value was saved by a subform editor it carries __output__ alongside
+      // the raw fields (for re-editing). Use __output__ as the extravars value so
+      // subform-field model/valueColumn transformations are honoured without a
+      // second recursive pass. List rows are handled below via buildFormOutput on
+      // the subform fields, so only apply this for non-array objects.
+      if (outputValue && typeof outputValue === 'object' && !Array.isArray(outputValue) && '__output__' in outputValue) {
+        outputValue = outputValue.__output__;
+      }
+
       // Recursively re-shape list rows through the subform's field defs so
       // that `model`, `noOutput`, `outputObject`, `valueColumn` declared on
       // subform fields are honoured in the extravars. `item.subform` may

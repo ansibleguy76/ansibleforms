@@ -1230,7 +1230,15 @@ function replacePlaceholderInString(value, ignoreIncomplete = false) {
 
         if (foundfield in form.value) {      // does field xxx exist in our form ?
             if (fieldOptions.value[foundfield] && (["expression", "table", "list", "constant"].includes(fieldOptions.value[foundfield].type) || column.includes(".")) && ((typeof form.value[foundfield] == "object") || (Array.isArray(form.value[foundfield])))) {
-                fieldvalue = JSON.stringify(Helpers.replacePlaceholders(match[1], form.value)) // allow full object reference
+                // For list fields, each row carries __output__ (buildFormOutput result with
+                // model/valueColumn applied). Use that for serialisation so parent expressions
+                // see the shaped output, not the raw storage fields.
+                if (fieldOptions.value[foundfield].type === 'list' && Array.isArray(form.value[foundfield])) {
+                    const _shaped = form.value[foundfield].map(row => row.__output__ ?? row);
+                    fieldvalue = JSON.stringify(_shaped);
+                } else {
+                    fieldvalue = JSON.stringify(Helpers.replacePlaceholders(match[1], form.value)) // allow full object reference
+                }
                 if (typeof fieldvalue == "string") { // drop quotes if string
                     fieldvalue = fieldvalue?.replace(/^\"+/, '').replace(/\"+$/, ''); // eslint-disable-line
                 }
@@ -1370,11 +1378,16 @@ function handleSubmitAction(actionKey) {
 // Save handler for subform mode (used by AppListField). Validates the form
 // and, if valid, emits `save` with the current form value so the parent list
 // can add/update the row.
+// Each row carries both raw field values (for re-editing) and `__output__`
+// (the buildFormOutput result with model/valueColumn applied) so that parent
+// expressions like $(acls_base) serialise the shaped output, not the raw data.
 function handleSubformSave() {
     if (!validateForm()) {
         return;
     }
-    emit('save', stripSubformInternals(form.value));
+    const raw = stripSubformInternals(form.value);
+    const built = Helpers.buildFormOutput(props.currentForm.fields, raw, { subforms: props.subforms || [] });
+    emit('save', { ...raw, __output__: built });
 }
 
 // Build the output object for a subform row emitted to the parent list.
@@ -2377,7 +2390,7 @@ onUnmounted(() => {
                                         <div class="card p-3 yaml-readonly limit-height"
                                             :class="{ 'border-danger': v$.form[field.name].$invalid }">
                                             <pre v-if="v$.form[field.name].$model && typeof v$.form[field.name].$model === 'object'"
-                                                v-highlightjs><code language="yaml" style="border:none;padding:0">{{ YAML.stringify(v$.form[field.name].$model) }}</code></pre>
+                                                v-highlightjs><code language="yaml" style="border:none;padding:0">{{ YAML.stringify(v$.form[field.name].$model.__output__ ?? v$.form[field.name].$model) }}</code></pre>
                                             <span v-else class="text-muted fst-italic">{{ field.placeholder || '(empty)' }}</span>
                                         </div>
                                         <div v-if="v$.form[field.name].$invalid && getErrorsToDisplay(field.name).length > 0"
