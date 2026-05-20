@@ -19,7 +19,7 @@ import os from 'os';
 import AJVErrorParser from './ajvErrorParser.model.js';
 
 
-const ajv = new Ajv({allErrors: true});
+const ajv = new Ajv({allErrors: true, allowUnionTypes: true});
 
 // Construct __dirname for ESM
 const __filename = fileURLToPath(import.meta.url);

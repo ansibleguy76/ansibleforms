@@ -23,7 +23,7 @@
         "properties": {
           "name": {
             "type": "string",
-            "pattern": "^[^/]{3,25}$"
+            "pattern": "^[^/]{2,50}$"
           },
           "icon": {
             "$id": "/icon",
