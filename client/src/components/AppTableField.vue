@@ -458,7 +458,15 @@ function handleDownload() {
             return;
         }
         
-        const yamlContent = YAML.stringify(rows.value);
+        // Build list of additional fields to strip (marker fields)
+        const additionalFields = [
+            props.insertMarker,
+            props.updateMarker,
+            props.deleteMarker
+        ].filter(Boolean); // Remove any undefined/null markers
+        
+        const cleanRows = Helpers.stripInternalFields(rows.value, additionalFields);
+        const yamlContent = YAML.stringify(cleanRows);
         const blob = new Blob([yamlContent], { type: 'text/yaml' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');

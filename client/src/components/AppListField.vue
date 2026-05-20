@@ -67,7 +67,11 @@ async function handleFileLoad(event) {
         }
         const arrayData = Array.isArray(parsed) ? parsed : [parsed];
         if (!Array.isArray(parsed)) toast.info('Single object converted to array');
-        rows.value = arrayData;
+        
+        // Apply modeling transformation: build __output__ for each row from raw fields
+        // so the modeled structure is immediately visible without manual edit
+        rows.value = Helpers.applySubformModeling(arrayData, props.subform?.fields, props.subforms || []);
+        
         commit();
         toast.success(`Loaded ${arrayData.length} row(s) from ${file.name}`);
     } catch (e) {
@@ -82,14 +86,19 @@ function handleDownload() {
             toast.error('No data to download');
             return;
         }
+        
         // Only keep keys that are declared subform fields — strip constants,
         // vars, __user__ and any other internals injected by AppForm.
         const subformFieldNames = (props.subform?.fields || []).map(f => f.name);
         const cleanRows = subformFieldNames.length > 0
-            ? rows.value.map(row => Object.fromEntries(
-                subformFieldNames.filter(k => k in row).map(k => [k, row[k]])
-              ))
-            : rows.value;
+            ? rows.value.map(row => {
+                const filtered = Object.fromEntries(
+                    subformFieldNames.filter(k => k in row).map(k => [k, row[k]])
+                );
+                return Helpers.stripInternalFields(filtered);
+              })
+            : Helpers.stripInternalFields(rows.value);
+        
         const yamlContent = YAML.stringify(cleanRows);
         const blob = new Blob([yamlContent], { type: 'text/yaml' });
         const url = URL.createObjectURL(blob);
@@ -199,14 +208,9 @@ function openEditor({ row, index }) {
     // shown as a subtitle inside the subform pane. Authors can override
     // via the field's `titleAdd` / `titleEdit` properties.
     const title = props.field.label || props.field.name || props.subform.description || props.subform.name;
-    const resolveTitlePlaceholders = (str) =>
-        str.replace(/\$\(([^)]+)\)/g, (_, match) => {
-            const val = Helpers.replacePlaceholders(match, props.parentFormData);
-            return val !== undefined ? val : `$(${match})`;
-        });
     const subtitle = isAdd
-        ? resolveTitlePlaceholders(props.field.titleAdd || `Add ${title}`)
-        : resolveTitlePlaceholders(props.field.titleEdit || `Edit ${title}`);
+        ? Helpers.resolveTitlePlaceholders(props.field.titleAdd || `Add ${title}`, props.parentFormData)
+        : Helpers.resolveTitlePlaceholders(props.field.titleEdit || `Edit ${title}`, props.parentFormData);
     editStack.push({
         title,
         subtitle,

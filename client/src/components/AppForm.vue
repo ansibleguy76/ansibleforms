@@ -737,6 +737,25 @@ function clip(v, doNotStringify = false) {
     }
 }
 
+// copy YAML field to clipboard as YAML (modeled output, matching what user sees)
+function clipYaml(fieldName) {
+    try {
+        const raw = form.value[fieldName];
+        if (!raw) {
+            toast.warning('No data to copy');
+            return;
+        }
+        // Use __output__ (modeled) if available, otherwise fall back to raw
+        // This matches what the user sees on screen
+        const value = raw.__output__ ?? raw;
+        const yamlContent = YAML.stringify(value);
+        copyText(yamlContent);
+        toast.success("Copied modeled YAML to clipboard");
+    } catch (err) {
+        toast.error("Error copying to clipboard : \n" + err.toString());
+    }
+}
+
 // Create a list of fields per group
 function filterfieldsByGroup(group) {
     return props.currentForm.fields.filter((el) => {
@@ -1091,6 +1110,30 @@ function findVariableDependencies() {
         warnings.value.push(`<span class="text-warning">'${item}' has duplicates</span><br><span>Each field must have a unique name</span>`)
         toast.error("You have duplicates for field '" + item + "'")
     })
+    
+    // check for reserved/internal field names that would cause conflicts
+    const reservedNames = ['__user__', '__parent__', '__output__', '__jobid__'];
+    // topFields from job.model.js - these are safe to use as they're wrapped and passed to playbooks
+    const safeDoubleUnderscoreNames = [
+        '__template__', '__awx__', '__playbook__', '__tags__', '__limit__',
+        '__executionEnvironment__', '__check__', '__diff__', '__verbose__',
+        '__keepExtravars__', '__credentials__', '__inventory__',
+        '__awxCredentials__', '__ansibleCredentials__', '__vaultCredentials__',
+        '__instanceGroups__', '__scmBranch__', '__playbookSubPath__'
+    ];
+    
+    props.currentForm.fields.forEach((item) => {
+        if (!item?.name) return;
+        if (reservedNames.includes(item.name)) {
+            warnings.value.push(`<span class="text-warning">'${item.name}' is a reserved field name</span><br><span>This will conflict with internal fields. Please choose a different name.</span>`);
+            toast.error(`Field name '${item.name}' is reserved for internal use`);
+        }
+        if (item.name.startsWith('__') && !safeDoubleUnderscoreNames.includes(item.name) && !reservedNames.includes(item.name)) {
+            warnings.value.push(`<span class="text-warning">'${item.name}' starts with '__' (double underscore)</span><br><span>This prefix is reserved for internal fields. Please choose a different name or use one of the documented field names.</span>`);
+            toast.error(`Field name '${item.name}' uses reserved prefix '__'`);
+        }
+    })
+    
     // do the analysis
     props.currentForm.fields.forEach((item, i) => {
         // while we are looping, we also check if there are issues
@@ -1451,9 +1494,13 @@ function openYamlSubformEditor(field) {
     } else {
         row = JSON.parse(JSON.stringify(row));
     }
+    
+    // Resolve placeholders in titleEdit so $(__parent__.fieldname) works
+    const subtitle = Helpers.resolveTitlePlaceholders(field.titleEdit || `Edit ${title}`, form.value);
+    
     editStack.push({
         title,
-        subtitle: field.titleEdit || `Edit ${title}`,
+        subtitle,
         subform: resolvedSubform,
         row,
         parentData: form.value,
@@ -1488,9 +1535,15 @@ async function handleYamlSubformLoad(event, fieldName) {
         }
         const value = Array.isArray(parsed) ? parsed[0] : parsed;
         if (Array.isArray(parsed)) toast.info('First array item loaded');
-        form.value[fieldName] = value;
-        evaluateDynamicFields(fieldName);
+        
+        // Apply modeling transformation: build __output__ from raw fields
+        // so the modeled structure is immediately visible without manual edit
+        const fieldDef = props.currentForm.fields?.find(f => f.name === fieldName);
+        const resolvedSubform = fieldDef?.subform ? props.subforms.find(s => s.name === fieldDef.subform) : null;
+        form.value[fieldName] = Helpers.applySubformModeling(value, resolvedSubform?.fields, props.subforms || []);
+        
         toast.success(`Loaded from ${file.name}`);
+        evaluateDynamicFields(fieldName);
     } catch (e) {
         toast.error(`Failed to parse ${file.name}: ${e.message}`);
     }
@@ -1504,13 +1557,16 @@ function handleYamlSubformDownload(fieldName, label) {
             toast.error('No data to download');
             return;
         }
+        
         // Strip constants, vars and internals — keep only declared subform fields.
         const fieldDef = props.currentForm.fields?.find(f => f.name === fieldName);
         const resolvedSubform = fieldDef?.subform ? props.subforms.find(s => s.name === fieldDef.subform) : null;
         const subformFieldNames = resolvedSubform?.fields?.map(f => f.name) || null;
-        const value = subformFieldNames && typeof raw === 'object' && !Array.isArray(raw)
+        const filtered = subformFieldNames && typeof raw === 'object' && !Array.isArray(raw)
             ? Object.fromEntries(subformFieldNames.filter(k => k in raw).map(k => [k, raw[k]]))
             : raw;
+        const value = Helpers.stripInternalFields(filtered);
+        
         const yamlContent = YAML.stringify(value);
         const blob = new Blob([yamlContent], { type: 'text/yaml' });
         const url = URL.createObjectURL(blob);
@@ -2376,7 +2432,7 @@ onUnmounted(() => {
                                                 cssClass="btn-sm"
                                                 icon="copy"
                                                 :isIconButton="true"
-                                                @click="clip(v$.form[field.name].$model)" />
+                                                @click="clipYaml(field.name)" />
                                             <!-- hidden file input for load -->
                                             <input
                                                 v-if="field.showLoadButton"

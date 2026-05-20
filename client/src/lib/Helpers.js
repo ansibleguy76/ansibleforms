@@ -258,7 +258,75 @@ const Helpers = {
       });
     });
     return fd;
-  },  
+  },
+  
+  // Recursively strip internal fields from objects/arrays (for YAML downloads).
+  // Removes __output__, __user__, __parent__ and any additional fields specified.
+  stripInternalFields(obj, additionalFieldsToStrip = []) {
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.stripInternalFields(item, additionalFieldsToStrip));
+    } else if (obj && typeof obj === 'object') {
+      const cleaned = {};
+      const internalFields = ['__output__', '__user__', '__parent__', ...additionalFieldsToStrip];
+      for (const [key, value] of Object.entries(obj)) {
+        // Skip internal fields and any additional fields to strip
+        if (internalFields.includes(key) || key.startsWith('__')) {
+          continue;
+        }
+        cleaned[key] = this.stripInternalFields(value, additionalFieldsToStrip);
+      }
+      return cleaned;
+    }
+    return obj;
+  },
+  
+  // Resolve placeholders in title strings (titleAdd, titleEdit) with __parent__ context.
+  // Used by subform editors to show dynamic titles based on parent form data.
+  resolveTitlePlaceholders(str, contextData) {
+    if (!str || typeof str !== 'string') return str;
+    
+    return str.replace(/\$\(([^)]+)\)/g, (_, match) => {
+      try {
+        // Build context with __parent__ so titles can use $(__parent__.fieldname)
+        const context = {
+          ...(contextData || {}),
+          __parent__: contextData || {}
+        };
+        const val = this.replacePlaceholders(match, context);
+        return val !== undefined ? val : `$(${match})`;
+      } catch (e) {
+        // If placeholder resolution fails, keep the original
+        return `$(${match})`;
+      }
+    });
+  },
+  
+  // Apply subform modeling transformation to raw data after loading from YAML.
+  // Builds __output__ property so modeled structure is immediately visible.
+  // Handles both single objects (yaml+subform) and arrays (list fields).
+  applySubformModeling(rawData, subformFields, subforms = []) {
+    if (!subformFields || !rawData) return rawData;
+    
+    // Handle array of rows (list fields)
+    if (Array.isArray(rawData)) {
+      return rawData.map(rawRow => {
+        if (typeof rawRow === 'object' && !Array.isArray(rawRow)) {
+          const built = this.buildFormOutput(subformFields, rawRow, { subforms });
+          return { ...rawRow, __output__: built };
+        }
+        return rawRow;
+      });
+    }
+    
+    // Handle single object (yaml+subform fields)
+    if (typeof rawData === 'object' && !Array.isArray(rawData)) {
+      const built = this.buildFormOutput(subformFields, rawData, { subforms });
+      return { ...rawData, __output__: built };
+    }
+    
+    return rawData;
+  },
+  
   getFieldValue(field, column, keepArray) {
 
   // get the value of a field

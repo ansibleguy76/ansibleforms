@@ -87,7 +87,8 @@ async function handleFileLoad(event) {
 // Handle download
 function handleDownload() {
   try {
-    const yamlContent = yamlString.value;
+    const cleanValue = Helpers.stripInternalFields(model.value);
+    const yamlContent = YAML.stringify(cleanValue);
     const blob = new Blob([yamlContent], { type: 'text/yaml' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
