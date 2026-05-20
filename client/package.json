@@ -21,8 +21,8 @@
     "vue-showdown": "^4.2.0",
     "vue3-clipboard": "^1.0.0",
     "@vuepic/vue-datepicker": "^12.1.0", 
-    "ace-builds": "^1.43.6",
-    "axios": "^1.16.0",
+    "ace-builds": "^1.44.0",
+    "axios": "^1.16.1",
     "lodash": "^4.18.1",
     "bootstrap": "^5.3.8",
     "highlight.js": "^11.11.1",
@@ -33,25 +33,25 @@
     "jwt-decode": "^4.0.0",
     "roboto-fontface": "^0.10.0",
     "dayjs": "^1.11.20",
-    "vue": "^3.5.33",
+    "vue": "^3.5.34",
     "vue-sonner": "^2.0.9",
     "vue3-ace-editor": "^2.2.4",
-    "yaml": "^2.8.4"
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@vitejs/plugin-basic-ssl": "^2.3.0",
-    "@vitejs/plugin-vue": "^6.0.6",
-    "eslint": "^10.3.0",
-    "eslint-plugin-vue": "^10.9.0",
-    "terser": "^5.46.2",
+    "@vitejs/plugin-vue": "^6.0.7",
+    "eslint": "^10.4.0",
+    "eslint-plugin-vue": "^10.9.1",
+    "terser": "^5.47.1",
     "nodemon": "^3.1.14",
     "pinia": "^3.0.4",
     "sass": "^1.99.0",
     "unplugin-auto-import": "^21.0.0",
-    "unplugin-vue-components": "^32.0.0",
-    "vite": "^8.0.10",
+    "unplugin-vue-components": "^32.1.0",
+    "vite": "^8.0.13",
     "vite-plugin-pages": "^0.33.3",
     "vite-svg-loader": "^5.1.1",
-    "vue-router": "^5.0.6"
+    "vue-router": "^5.0.7"
   }
 }
