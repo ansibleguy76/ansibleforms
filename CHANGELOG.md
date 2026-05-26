@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.2.0] - 2026-05-26
+
 ### Added
 
 -   New `list` field type: a multi-row collection field where each row is edited via a subform drilldown. Supports nested lists, shared subforms, marker tracking (`insertMarker`, `deleteMarker`, `updateMarker`), column selection, soft-delete with undo, and full output modelling (`noOutput`, `outputObject`, `model`). Replaces the deprecated `table` field. (#379)
