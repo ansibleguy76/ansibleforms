@@ -1,6 +1,9 @@
 import { createI18n } from 'vue-i18n'
 import en from '@/locales/en.js'
 import nl from '@/locales/nl.js'
+import fr from '@/locales/fr.js'
+import it from '@/locales/it.js'
+import de from '@/locales/de.js'
 import Helpers from '@/lib/Helpers'
 
 // Get language from cookie (set later from server default if no cookie exists)
@@ -12,7 +15,10 @@ const i18n = createI18n({
   fallbackLocale: 'en',
   messages: {
     en,
-    nl
+    nl,
+    fr,
+    it,
+    de
   }
 })
 
@@ -21,7 +27,7 @@ const i18n = createI18n({
  * Only applies if the user has not explicitly chosen a language (no cookie).
  */
 export function applyDefaultLanguage(defaultLang) {
-  if (!Helpers.getCookie('af_language') && defaultLang && ['en', 'nl'].includes(defaultLang)) {
+  if (!Helpers.getCookie('af_language') && defaultLang && ['en', 'nl', 'fr', 'it', 'de'].includes(defaultLang)) {
     i18n.global.locale.value = defaultLang
   }
 }

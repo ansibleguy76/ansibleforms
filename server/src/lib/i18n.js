@@ -10,8 +10,11 @@
 
 import en from '../locales/en.js';
 import nl from '../locales/nl.js';
+import fr from '../locales/fr.js';
+import it from '../locales/it.js';
+import de from '../locales/de.js';
 
-const messages = { en, nl };
+const messages = { en, nl, fr, it, de };
 const supportedLocales = Object.keys(messages);
 const defaultLocale = process.env.DEFAULT_LANGUAGE || 'en';
 

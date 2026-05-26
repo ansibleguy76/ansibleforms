@@ -44,7 +44,7 @@
     default: 8000
   - name: DEFAULT_LANGUAGE
     type: string
-    allowed: en, nl
+    allowed: en, nl, fr, it, de
     short: Application language
     required: false
     description: |

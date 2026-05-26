@@ -54,3 +54,6 @@ build-info.json
 
 # dist folder
 dist
+
+# tar file
+ansibleforms.tar
