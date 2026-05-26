@@ -1,0 +1,21 @@
+#!/bin/bash
+#
+# Example post-script for publish-rc.sh
+# Copy this to publish-rc.post.sh and customize with your credentials
+#
+# cp publish-rc.post.sh.example publish-rc.post.sh
+# chmod +x publish-rc.post.sh
+# edit publish-rc.post.sh with your actual values
+
+set -euo pipefail
+
+echo "📦 Exporting Docker image to tar..."
+docker save -o ansibleforms.tar ansibleguy/ansibleforms:latest-rc
+
+echo "📤 Copying to remote server..."
+sshpass -p 'YOUR_PASSWORD_HERE' scp ansibleforms.tar mirko@YOUR_SERVER_IP:/path/to/destination
+
+echo "🧹 Cleaning up tar file..."
+rm ansibleforms.tar
+
+echo "✅ Post-deployment complete!"

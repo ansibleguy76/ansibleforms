@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   New `subform` property on `yaml` fields: when set, the field value is edited via a subform drilldown instead of a raw YAML editor, enabling structured single-object editing with full validation.
 -   New `subform` form type: define reusable subforms (referenced by `list` and `yaml` fields) in the same forms file.
 -   oauth2 swagger
+-   build codes as part of the version
 
 ### Fixed
 

@@ -27,8 +27,11 @@ forms.yaml
 # ontap stuff
 ontap*.yaml
 
-# build scripts
-build-scripts/
+# build artifacts (generated during build)
+build-info.json
+
+# local post-build scripts (may contain credentials)
+*.post.sh
 
 # Editor directories and files
 .idea

@@ -7,6 +7,10 @@ FROM ansibleguy/ansibleforms-base:latest AS nodebase
 
 FROM ansibleguy/ansibleforms-base:latest AS tmp_builder
 
+# Build arguments for git SHA and build time
+ARG GIT_SHA=unknown
+ARG BUILD_TIME=unknown
+
 ########## prep client ###########
 
 # Use /app/client
@@ -21,8 +25,15 @@ RUN npm ci
 # copy all
 COPY ./client ./
 
+# Copy build info generator script
+COPY ./generate-build-info.sh /tmp/generate-build-info.sh
+RUN chmod +x /tmp/generate-build-info.sh
+
 # build client
 RUN npm run build
+
+# Generate client build-info.json in dist folder
+RUN /tmp/generate-build-info.sh ./dist "$GIT_SHA" "$BUILD_TIME"
 
 ######### prep server ##########
 
@@ -37,6 +48,9 @@ RUN npm ci --only=production
 
 # Copy the rest of the code
 COPY ./server .
+
+# Generate server build-info.json
+RUN /tmp/generate-build-info.sh . "$GIT_SHA" "$BUILD_TIME"
 
 # Copy the docs help file to /app/server
 COPY ./docs/_data/help.yaml .
