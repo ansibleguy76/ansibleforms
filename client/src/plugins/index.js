@@ -14,6 +14,7 @@ import clickOutside from "@/directives/clickOutside";
 import VueHighlightJS from "@/lib/Highlight.js";
 import VueJsonPretty from 'vue-json-pretty'
 import { VueDatePicker } from '@vuepic/vue-datepicker';
+import i18n from '@/plugins/i18n'
 
 
 // Import our custom CSS
@@ -46,6 +47,7 @@ library.add(fas, far, fab)
 export function registerPlugins (app) {
   app
     // .use(vuetify)
+    .use(i18n)
     .use(router)
     .use(pinia)
     .use(VueShowdownPlugin)

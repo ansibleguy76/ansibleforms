@@ -9,10 +9,24 @@
 
   import { ref, computed, onMounted } from "vue";
   import { useAppStore } from "@/stores/app";
+  import { useI18n } from "vue-i18n";
   import Theme from "@/lib/Theme";
+  import Helpers from "@/lib/Helpers";
+  import { applyDefaultLanguage } from "@/plugins/i18n";
 
   // INIT
   const store = useAppStore();
+  const { t, locale } = useI18n();
+
+  const languages = [
+    { code: 'en', label: 'English', flag: '🇬🇧' },
+    { code: 'nl', label: 'Nederlands', flag: '🇳🇱' }
+  ];
+
+  function setLanguage(code) {
+    locale.value = code;
+    Helpers.setCookie('af_language', code);
+  }
   
   // ENV-BASED HOME MENU LABEL/ICON
   const navHomeLabel = ref("Forms");
@@ -25,6 +39,10 @@
       const res = await axios.get("/api/v2/app/config");
       navHomeLabel.value = res.data?.navHomeLabel || navHomeLabel.value;
       navHomeIcon.value = res.data?.navHomeIcon || navHomeIcon.value;
+      // Apply server default language if user hasn't chosen one
+      if (res.data?.defaultLanguage) {
+        applyDefaultLanguage(res.data.defaultLanguage);
+      }
     } catch (e) {
       // fallback to defaults if API fails
       console.error("Failed to fetch app config:", e);
@@ -36,26 +54,26 @@
   const showVersion = ref(false);
   const showProfile = ref(false);
   const currentTheme = ref(Theme.load());
-  const menuOptions = [
-    { title: "Jobs", link: "/jobs", icon: "history" },
-    { title: "Settings", link: "/admin/settings", icon: "gear" },
-    { title: "Designer", link: "/designer", icon: "pen-to-square" }
-  ];
-  const helpMenuOptions = [
-    { title: "Documentation", href: "https://ansibleforms.com", icon: "globe", target: "_blank" },
-    { title: "Logs", link: "/logs", icon: "file-lines", target: "_self" },
-    { title: "Api docs", link: "/api-docs", icon: "code", target: "_blank" }
-  ];
-  const profileMenu = [
-    { title: "Change Password", link: "/change-password", icon: "key", target: "_self", local_only: true },
-    { title: "Logout", link: "/logout", icon: "arrow-right-from-bracket", target: "_self" },
-  ];
+  const menuOptions = computed(() => [
+    { title: t('nav.jobs'), link: "/jobs", icon: "history" },
+    { title: t('nav.settings'), link: "/admin/settings", icon: "gear" },
+    { title: t('nav.designer'), link: "/designer", icon: "pen-to-square" }
+  ]);
+  const helpMenuOptions = computed(() => [
+    { title: t('nav.documentation'), href: "https://ansibleforms.com", icon: "globe", target: "_blank" },
+    { title: t('nav.logs'), link: "/logs", icon: "file-lines", target: "_self" },
+    { title: t('nav.apiDocs'), link: "/api-docs", icon: "code", target: "_blank" }
+  ]);
+  const profileMenu = computed(() => [
+    { title: t('nav.changePassword'), link: "/change-password", icon: "key", target: "_self", local_only: true },
+    { title: t('nav.logout'), link: "/logout", icon: "arrow-right-from-bracket", target: "_self" },
+  ]);
 
   // COMPUTED
 
   const menu = computed(() => {
     // Clone menuOptions to avoid mutating the original array
-    let m = menuOptions.map(item => ({ ...item }));
+    let m = menuOptions.value.map(item => ({ ...item }));
 
     // Add badge to Jobs menu
     const jobsMenu = m.find(item => item.link === "/jobs");
@@ -82,7 +100,7 @@
   });
 
   const helpMenu = computed(() => {
-    var m = helpMenuOptions;
+    var m = helpMenuOptions.value;
     if(!store?.profile?.options?.showLogs){
       m = m.filter(m => m.link != "/logs");
     }
@@ -104,15 +122,15 @@
 <template>
   <BsModal v-if="showVersion" @close="showVersion = false" >
     <template v-slot:title>
-      Ansible Forms <badge class="badge rounded-pill text-bg-info">v{{ store.version }}</badge>
+      {{ t('version.title') }} <badge class="badge rounded-pill text-bg-info">v{{ store.version }}</badge>
     </template>
     <template v-slot>
       <!-- Cache Mismatch Warning -->
       <div v-if="buildMismatch" class="alert alert-warning d-flex align-items-center" role="alert">
         <font-awesome-icon icon="triangle-exclamation" class="me-2" />
         <div>
-          <strong>Cache Mismatch Detected!</strong><br>
-          <small>Client and server builds don't match. Please hard refresh (Ctrl+Shift+R or Cmd+Shift+R).</small>
+          <strong>{{ t('version.cacheMismatchTitle') }}</strong><br>
+          <small>{{ t('version.cacheMismatchMsg') }}</small>
         </div>
       </div>
 
@@ -121,14 +139,14 @@
           <div class="col-md-6">
             <div class="card">
               <div class="card-body">
-                <h6 class="card-title">Server Build</h6>
+                <h6 class="card-title">{{ t('version.serverBuild') }}</h6>
                 <p class="card-text mb-1">
-                  <small class="text-muted">SHA:</small> 
+                  <small class="text-muted">{{ t('version.sha') }}:</small> 
                   <code class="ms-1 fs-6 fw-bold">{{ store.serverBuild?.gitSha || 'unknown' }}</code>
-                  <span v-if="store.serverBuild?.dirty" class="badge bg-warning ms-2">dirty</span>
+                  <span v-if="store.serverBuild?.dirty" class="badge bg-warning ms-2">{{ t('version.dirty') }}</span>
                 </p>
                 <p class="card-text mb-0" v-if="store.serverBuild?.buildTime">
-                  <small class="text-muted">Built:</small> 
+                  <small class="text-muted">{{ t('version.built') }}:</small> 
                   <small class="ms-1">{{ new Date(store.serverBuild.buildTime).toLocaleString() }}</small>
                 </p>
               </div>
@@ -137,14 +155,14 @@
           <div class="col-md-6">
             <div class="card">
               <div class="card-body">
-                <h6 class="card-title">Client Build</h6>
+                <h6 class="card-title">{{ t('version.clientBuild') }}</h6>
                 <p class="card-text mb-1">
-                  <small class="text-muted">SHA:</small> 
+                  <small class="text-muted">{{ t('version.sha') }}:</small> 
                   <code class="ms-1 fs-6 fw-bold">{{ store.clientBuild?.gitSha || 'unknown' }}</code>
-                  <span v-if="store.clientBuild?.dirty" class="badge bg-warning ms-2">dirty</span>
+                  <span v-if="store.clientBuild?.dirty" class="badge bg-warning ms-2">{{ t('version.dirty') }}</span>
                 </p>
                 <p class="card-text mb-0" v-if="store.clientBuild?.buildTime">
-                  <small class="text-muted">Built:</small> 
+                  <small class="text-muted">{{ t('version.built') }}:</small> 
                   <small class="ms-1">{{ new Date(store.clientBuild.buildTime).toLocaleString() }}</small>
                 </p>
               </div>
@@ -153,42 +171,36 @@
         </div>
       </div>
       <p class="mt-3 fs-6 user-select-none">
-        This program is free software: you can redistribute it and/or modify
-        it under the terms of the <strong>GNU General Public License</strong> as published by
-        the Free Software Foundation, either version 3 of the License, or
-        (at your option) any later version.<br>
+        {{ t('version.license') }}<br>
         <br>
-        This program is distributed in the hope that it will be useful,
-        but WITHOUT ANY WARRANTY; without even the implied warranty of
-        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-        GNU General Public License for more details.<br>
+        {{ t('version.warranty') }}<br>
 
-        <br>You can find the GNU General Public License at
+        <br>{{ t('version.findLicense') }}
         <a target="_blank" href="http://www.gnu.org/licenses/">http://www.gnu.org/licenses/</a><br>
       </p>
     </template>
   </BsModal>
   <BsModal v-if="showProfile" @close="showProfile = false" >
     <template v-slot:title>
-      About me
+      {{ t('nav.aboutMe') }}
     </template>
 
     <div class="row gy-2 m-2">
       <div class="col m-2 bg-info-subtle">
         <div class="p-2">
-          <strong>Username : </strong>{{ store?.profile?.username }}
+          <strong>{{ t('nav.username') }} : </strong>{{ store?.profile?.username }}
         </div>
       </div>
       <div class="col m-2 bg-info-subtle">
         <div class="p-2">
-          <strong>Type : </strong>{{ store?.profile?.type }}
+          <strong>{{ t('nav.type') }} : </strong>{{ store?.profile?.type }}
         </div>
       </div>
     </div>
     <div class="row gy-2 m-2">
       <div class="col m-2 bg-success-subtle">
         <div class="p-2">
-          <strong>Groups : </strong>
+          <strong>{{ t('nav.groups') }} : </strong>
           <ul class="list-unstyled">
             <li v-for="g in store?.profile?.groups || []" :key="g"><font-awesome-icon icon="check" /> {{ g }}</li>
           </ul>
@@ -196,11 +208,11 @@
       </div>
       <div class="col m-2 bg-warning-subtle">
         <div class="p-2">
-          <strong>Roles : </strong>
+          <strong>{{ t('nav.roles') }} : </strong>
           <ul class="list-unstyled">
             <li v-for="r in store?.profile?.roles || []" :key="r"><font-awesome-icon icon="check" /> {{ r }}</li>
           </ul>
-          <strong>Options : </strong>
+          <strong>{{ t('nav.options') }} : </strong>
           <ul class="list-unstyled">
             <li v-for="r in Object.keys(store?.profile?.options || [])" :key="r"><font-awesome-icon icon="check" /> {{ r }} : {{ store?.profile?.options[r] }}</li>
           </ul>          
@@ -229,7 +241,7 @@
           <li>
             <button type="button" class="dropdown-item d-flex align-items-center" @click="showVersion = true">
               <span class="icon"><font-awesome-icon icon="code-branch" /></span>
-              <span class="ms-2">About v{{ store.version }}</span>
+              <span class="ms-2">{{ t('nav.about') }} v{{ store.version }}</span>
             </button>
           </li>
         </BsNavMenu>
@@ -255,12 +267,25 @@
           <li>
             <button type="button" class="dropdown-item d-flex align-items-center" @click="showProfile = true">
               <span class="icon"><font-awesome-icon icon="address-card" /></span>
-              <span class="ms-2">About me</span>
+              <span class="ms-2">{{ t('nav.aboutMe') }}</span>
             </button>
           </li>
         </BsNavMenu>
       </BsNavItem>
 
+
+      <!-- language switcher -->
+      <BsNavDivider />
+      <BsNavItem :dropdown="true">
+        <BsNavMenu icon="globe" :title="languages.find(l => l.code === locale)?.flag || '🌐'">
+          <li v-for="lang in languages" :key="lang.code">
+            <button type="button" class="dropdown-item d-flex align-items-center" :class="{ active: locale === lang.code }" @click="setLanguage(lang.code)">
+              <span class="me-2">{{ lang.flag }}</span>
+              <span>{{ lang.label }}</span>
+            </button>
+          </li>
+        </BsNavMenu>
+      </BsNavItem>
 
       <!-- theme switcher -->
       <BsNavDivider />

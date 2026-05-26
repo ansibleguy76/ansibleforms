@@ -42,6 +42,15 @@
     short: Http port
     description: The listening port of the web application
     default: 8000
+  - name: DEFAULT_LANGUAGE
+    type: string
+    allowed: en, nl
+    short: Default language
+    required: false
+    description: |
+      Sets the default language for the application.  Users can override this in the UI via the language switcher.
+      The chosen language is persisted in a cookie.  Both frontend UI and backend error messages are translated.
+    default: en
   - name: HTTPS
     type: number
     short: Enables HTTPS
