@@ -8,9 +8,15 @@ on:
       versionCode:
         description: 'Version number (50500)'
         required: true
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   createrelease:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
     - name: Check out code

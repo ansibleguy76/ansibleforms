@@ -2,9 +2,14 @@ name: Tag Release
 on:
     push:
         branches: [ main ]
+permissions:
+  contents: write
+
 jobs:
     tag_release:
         runs-on: ubuntu-latest
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
         steps:
             - name: Check out code
