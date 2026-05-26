@@ -30,9 +30,11 @@
 
 
     import dayjs from 'dayjs';
+    import { useI18n } from 'vue-i18n';
 
     // INIT
 
+    const { t } = useI18n();
     const emit = defineEmits(["select", "edit", "delete", "sort", "change_password", "test", "preview","trigger","reset"]);
 
     // PROPS
@@ -171,14 +173,14 @@
 
 </script>
 <template>
-    <BsInput v-model="filter" v-if="hasFilters" :isFloating="false" placeholder="Search..." icon="search" label="Filter" />
+    <BsInput v-model="filter" v-if="hasFilters" :isFloating="false" :placeholder="t('common.search') + '...'" icon="search" :label="t('common.search')" />
     <div class="alert alert-info mt-3" v-if="countRemovedDoubleItems > 0">
         <strong>{{ countRemovedDoubleItems }}</strong> double items removed for your convenience.
     </div>    
     <table class="table table-bordered table-hover">
         <thead>
             <tr>
-                <th class="is-first" v-if="actions.length > 0">Actions</th>
+                <th class="is-first" v-if="actions.length > 0">{{ t('common.actions') }}</th>
                 <template v-for="(label, index) in labels">
                     <th v-if="!fields[index].hidden || false">
                         <span class="me-2">{{ label }}</span>

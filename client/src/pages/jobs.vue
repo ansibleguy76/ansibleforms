@@ -13,6 +13,8 @@
 
     // INIT
 
+    const { t } = useI18n();
+
     
     const router = useRouter();
     const route = useRoute();
@@ -201,7 +203,7 @@
                 if (err.response && err.response.data && err.response.data.error) {
                     toast.error(err.response.data.error);
                 } else {
-                    toast.error("Failed to load jobs");
+                    toast.error(t('jobs.failedToLoad'));
                 }
             } finally {
                 isLoading.value = false;
@@ -495,59 +497,59 @@
   <div class="flex-shrink-0">
     <!-- Modal - delete verify -->
     <BsModal v-if="showDelete" @close="showDelete=false">
-        <template #title> Delete job {{ tempJobId }} </template>
-        <template #default><p class="mt-3 fs-6 user-select-none">Are you sure you want to delete job <strong>{{ tempJobId }}</strong>?</p></template>
-        <template #footer><BsButton icon="trash" @click="deleteJob(tempJobId);showDelete=false">Delete</BsButton></template>
+        <template #title> {{ t('jobs.deleteJob') }} {{ tempJobId }} </template>
+        <template #default><p class="mt-3 fs-6 user-select-none">{{ t('jobs.deleteConfirm') }} <strong>{{ tempJobId }}</strong>?</p></template>
+        <template #footer><BsButton icon="trash" @click="deleteJob(tempJobId);showDelete=false">{{ t('common.delete') }}</BsButton></template>
     </BsModal>    
     <!-- Modal - abort verify -->
     <BsModal v-if="showAbort" @close="showAbort=false">
-        <template #title> Abort job {{ tempJobId }} </template>
-        <template #default><p class="mt-3 fs-6 user-select-none">Are you sure you want to abort job <strong>{{ tempJobId }}</strong>?</p></template>
-        <template #footer><BsButton icon="ban" @click="abortJob(tempJobId);showAbort=false">Abort</BsButton></template>
+        <template #title> {{ t('jobs.abortJob') }} {{ tempJobId }} </template>
+        <template #default><p class="mt-3 fs-6 user-select-none">{{ t('jobs.abortConfirm') }} <strong>{{ tempJobId }}</strong>?</p></template>
+        <template #footer><BsButton icon="ban" @click="abortJob(tempJobId);showAbort=false">{{ t('jobs.abortJob') }}</BsButton></template>
     </BsModal>
     <!-- Modal - relaunch verify -->
     <BsModal v-if="showRelaunch" @close="showRelaunch=false">
-        <template #title> Relaunch job {{ tempJobId }} </template>
+        <template #title> {{ t('jobs.relaunchJob') }} {{ tempJobId }} </template>
         <template #default>
-            <p class="mt-3 fs-6 user-select-none">Choose how to relaunch job <strong>{{ tempJobId }}</strong>:</p>
-            <BsCheckbox v-if="store.profile.options?.allowVerboseMode" v-model="relaunchVerbose" label="Verbose mode" class="mt-2" :isSwitch="true" :inline="true" />
-            <BsCheckbox v-model="relaunchWithEdit" label="Edit values before relaunching" class="mt-2" :isSwitch="true" :inline="true" />
+            <p class="mt-3 fs-6 user-select-none">{{ t('jobs.relaunchChoose') }} <strong>{{ tempJobId }}</strong>:</p>
+            <BsCheckbox v-if="store.profile.options?.allowVerboseMode" v-model="relaunchVerbose" :label="t('jobs.relaunchVerbose')" class="mt-2" :isSwitch="true" :inline="true" />
+            <BsCheckbox v-model="relaunchWithEdit" :label="t('jobs.relaunchEdit')" class="mt-2" :isSwitch="true" :inline="true" />
         </template>
         <template #footer>
-            <BsButton v-if="!relaunchWithEdit" icon="redo" @click="relaunchJob(tempJobId,relaunchVerbose);showRelaunch=false">Relaunch</BsButton>
-            <BsButton v-else icon="edit" @click="editAndRelaunchJob(tempJobId);showRelaunch=false">Edit & Relaunch</BsButton>
+            <BsButton v-if="!relaunchWithEdit" icon="redo" @click="relaunchJob(tempJobId,relaunchVerbose);showRelaunch=false">{{ t('jobs.relaunch') }}</BsButton>
+            <BsButton v-else icon="edit" @click="editAndRelaunchJob(tempJobId);showRelaunch=false">{{ t('jobs.editRelaunch') }}</BsButton>
         </template>
     </BsModal>
     <!-- Modal - approval -->
     <BsModal v-if="showApprove" @close="showApprove=false">
-        <template #title> Approve job {{ tempJobId }} </template>
+        <template #title> {{ t('jobs.approveJob') }} {{ tempJobId }} </template>
         <template #default>
-            <p class="mt-3 fs-6 user-select-none">Are you sure you want to approve job <strong>{{ tempJobId }}</strong>?</p>
-            <BsDivider type="text" text="Approval info" />
+            <p class="mt-3 fs-6 user-select-none">{{ t('jobs.approveConfirm') }} <strong>{{ tempJobId }}</strong>?</p>
+            <BsDivider type="text" :text="t('jobs.approvalInfo')" />
             <p v-html="approvalMessage"></p>            
         </template>
-        <template #footer><BsButton icon="circle-check" @click="approveJob(tempJobId);showApprove=false">Approve</BsButton></template>
+        <template #footer><BsButton icon="circle-check" @click="approveJob(tempJobId);showApprove=false">{{ t('jobs.approve') }}</BsButton></template>
     </BsModal>
     <!-- Modal - reject -->
     <BsModal v-if="showReject" @close="showReject=false">
-        <template #title> Reject job {{ tempJobId }} </template>
-        <template #default><p class="mt-3 fs-6 user-select-none">Are you sure you want to reject job <strong>{{ tempJobId }}</strong>?</p></template>
-        <template #footer><BsButton icon="circle-xmark" @click="rejectJob(tempJobId);showReject=false">Reject</BsButton></template>
+        <template #title> {{ t('jobs.rejectJob') }} {{ tempJobId }} </template>
+        <template #default><p class="mt-3 fs-6 user-select-none">{{ t('jobs.rejectConfirm') }} <strong>{{ tempJobId }}</strong>?</p></template>
+        <template #footer><BsButton icon="circle-xmark" @click="rejectJob(tempJobId);showReject=false">{{ t('jobs.reject') }}</BsButton></template>
     </BsModal>
     <main class="d-flex container-xxl">
         
-        <AppSettings title="Jobs" icon="history">
+        <AppSettings :title="t('jobs.title')" icon="history">
             <template #feedback>
                 <div class="input-group ms-5" style="width: 400px;">
                     <span class="input-group-text">
                         <FaIcon icon="search" />
                     </span>
-                    <input v-model="filter" type="text" class="form-control text-start" placeholder="regex (on anything)" />
+                    <input v-model="filter" type="text" class="form-control text-start" :placeholder="t('jobs.filterPlaceholder')" />
                 </div>
             </template>
             <template #actions>
                 <div class="d-flex justify-content-end align-items-center">
-                    <BsButton icon="refresh" @click="loadJobs" cssClass="me-2">Refresh</BsButton>
+                    <BsButton icon="refresh" @click="loadJobs" cssClass="me-2">{{ t('jobs.refresh') }}</BsButton>
                     <div class="input-group me-2" style="width:300px">
                         <span class="input-group-text">
                             <FaIcon icon="list-ol" />
@@ -565,13 +567,13 @@
                 <thead>
                     <tr class="text-start">
                         <th class="action"></th>
-                        <th class="id">id</th>
-                        <th>form</th>
-                        <th class="jobtype">job type</th>
-                        <th class="status">status</th>
-                        <th>start time</th>
-                        <th>end time</th>
-                        <th>user</th>
+                        <th class="id">{{ t('jobs.id') }}</th>
+                        <th>{{ t('jobs.form') }}</th>
+                        <th class="jobtype">{{ t('jobs.jobType') }}</th>
+                        <th class="status">{{ t('jobs.status') }}</th>
+                        <th>{{ t('jobs.startTime') }}</th>
+                        <th>{{ t('jobs.endTime') }}</th>
+                        <th>{{ t('jobs.user') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -625,7 +627,7 @@
             />
             <div v-if="job"  class="row">
                 <div class="col">
-                    <h3>Job output for job {{jobId}}
+                    <h3>{{ t('jobs.jobOutput') }} {{jobId}}
                         <sup><span class="badge rounded-pill me-2 text-bg-info">{{ job.job_type || 'ansible'}}</span></sup>
                         <sup><span class="badge rounded-pill" :class="Helpers.getColorClassByStatus(job.status,'text-bg')">{{ job.status}}</span></sup>
                     </h3>
@@ -637,7 +639,7 @@
                         iconToggle="eye-slash"
                         :toggle="showExtraVars"
                         @click="showExtraVars=!showExtraVars;showArtifacts=false"
-                        >Show Extravars<template #toggle>Hide Extravars</template>
+                        >{{ t('jobs.showExtravars') }}<template #toggle>{{ t('jobs.hideExtravars') }}</template>
                     </BsButton>
                     <BsButton
                         v-if="store.profile.options?.showArtifacts && job.job_type=='awx'"
@@ -647,9 +649,9 @@
                         iconToggle="square-poll-horizontal"
                         :toggle="showArtifacts"
                         @click="showArtifacts=!showArtifacts;showExtraVars=false"
-                        >Show Artifacts<template #toggle>Hide Artifacts</template>
+                        >{{ t('jobs.showArtifacts') }}<template #toggle>{{ t('jobs.hideArtifacts') }}</template>
                     </BsButton>                    
-                    <BsButton @click="loadOutput(jobId)" icon="sync-alt" cssClass="btn-sm me-2 fw-normal">Refresh</BsButton>
+                    <BsButton @click="loadOutput(jobId)" icon="sync-alt" cssClass="btn-sm me-2 fw-normal">{{ t('jobs.refreshOutput') }}</BsButton>
                     <BsButton 
                         cssClass="btn-sm me-2 fw-normal"
                         cssClassToggle="btn-sm me-2 fw-normal"
@@ -657,14 +659,14 @@
                         iconToggle="filter-circle-xmark"
                         :toggle="hide"
                         @click="hide=!hide"
-                        >Apply filter<template #toggle>Remove filter</template></BsButton>
-                    <BsButton @click="download(jobId)" icon="download" cssClass="btn-sm me-2 fw-normal">Download Job</BsButton>
+                        >{{ t('jobs.applyFilter') }}<template #toggle>{{ t('jobs.removeFilter') }}</template></BsButton>
+                    <BsButton @click="download(jobId)" icon="download" cssClass="btn-sm me-2 fw-normal">{{ t('jobs.downloadJob') }}</BsButton>
 
                     <div class="row mt-4">
                         <div class="col">
                             <AppAnsibleOutput :output="filteredJobOutput" :jobLog="job?.job_log">
                             <template #title>
-                                <h3 v-if="subjob">Main job (jobid {{jobId}}) 
+                                <h3 v-if="subjob">{{ t('jobs.mainJob') }} (jobid {{jobId}}) 
                                 <sup><span class="badge rounded-pill status" :class="Helpers.getColorClassByStatus(job.status,'bg')">{{ job.status }}</span></sup> 
                                 </h3>
                             </template>
@@ -673,7 +675,7 @@
                         <div class="col" v-if="subjob">
                             <AppAnsibleOutput :output="filteredSubJobOutput" :jobLog="subjob?.job_log">
                             <template #title>
-                                <h3>Current Step (jobid {{subjobId}}) 
+                                <h3>{{ t('jobs.currentStep') }} (jobid {{subjobId}}) 
                                 <sup><span class="badge rounded-pill status" :class="Helpers.getColorClassByStatus(subjob.status,'bg')">{{ subjob.status }}</span></sup>
                                 </h3>               
                             </template>
@@ -684,7 +686,7 @@
 
                 <!-- extra vars column -->
                 <div v-if="showExtraVars" class="col is-clipped-horizontal">
-                    <h3>Extravars</h3>
+                    <h3>{{ t('jobs.extravars') }}</h3>
                     <div class="d-flex justify-content-between">
                         <div>
                             <BsButton
@@ -693,8 +695,8 @@
                             :toggle="viewAsYaml"
                             @click="viewAsYaml = !viewAsYaml"
                             >
-                                <template #default>View as YAML</template>
-                                <template #toggle>View as JSON</template>
+                                <template #default>{{ t('jobs.viewAsYaml') }}</template>
+                                <template #toggle>{{ t('jobs.viewAsJson') }}</template>
                             </BsButton>
                         </div>
                         <!-- TOOLBAR ICONS-->
@@ -713,7 +715,7 @@
                 </div>
                 <!-- extra vars column -->
                 <div v-if="showArtifacts && job.job_type=='awx'" class="col is-clipped-horizontal">
-                    <h3>Artifacts</h3>
+                    <h3>{{ t('jobs.artifacts') }}</h3>
                     <div class="d-flex justify-content-between">
                         <div>
                             <BsButton
@@ -722,8 +724,8 @@
                             :toggle="viewAsYaml"
                             @click="viewAsYaml = !viewAsYaml"
                             >
-                                <template #default>View as YAML</template>
-                                <template #toggle>View as JSON</template>
+                                <template #default>{{ t('jobs.viewAsYaml') }}</template>
+                                <template #toggle>{{ t('jobs.viewAsJson') }}</template>
                             </BsButton>
                         </div>
                         <!-- TOOLBAR ICONS-->

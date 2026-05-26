@@ -3,7 +3,11 @@ import { ref, onMounted } from 'vue';
 // import { toast } from 'vue-sonner';
 import Profile from '@/lib/Profile';
 // import axios from 'axios';
-import settings from '@/config/settings';
+import getSettings from '@/config/settings';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
+const settings = computed(() => getSettings(t));
 // import TokenStorage from '@/lib/TokenStorage';
 
 // 
@@ -24,36 +28,36 @@ onMounted(async () => {
             <div class="d-flex flex-column w-100">
                 <AppAdminMulti v-if="authenticated" :apiVersion="2" :settings="settings.oauth2_providers" />
                 <div class="alert alert-warning m-3" role="alert">
-                    <h5 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> Important: Callback URL Change (v6.1.5+)</h5>
+                    <h5 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> {{ t('admin.oauth2.callbackWarningTitle') }}</h5>
                     <p class="mb-0">
-                        <strong>When editing existing OAuth2 providers</strong>, the callback URLs will be automatically updated to use the <strong>/v2</strong> API endpoints:
+                        <strong>{{ t('admin.oauth2.callbackWarningEditNote') }}</strong>, {{ t('admin.oauth2.callbackWarningUpdated') }}
                     </p>
                     <ul class="mb-0 mt-2">
-                        <li><strong>Entra ID:</strong> <code>/api/v2/auth/azureadoauth2/callback</code></li>
-                        <li><strong>Open ID:</strong> <code>/api/v2/auth/oidc/callback</code></li>
+                        <li><strong>{{ t('admin.oauth2.entraId') }}</strong> <code>/api/v2/auth/azureadoauth2/callback</code></li>
+                        <li><strong>{{ t('admin.oauth2.openId') }}</strong> <code>/api/v2/auth/oidc/callback</code></li>
                     </ul>
                     <p class="mb-0 mt-2">
-                        <strong>Action Required:</strong> After updating a provider entry, please update the allowed redirect URIs in your OAuth2 provider configuration to include these new callback URLs.
+                        <strong>{{ t('admin.oauth2.actionRequired') }}</strong> {{ t('admin.oauth2.actionRequiredMsg') }}
                     </p>
                 </div>
                 <div class="accordion m-3" id="providerHelpAccordion">
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="headingEntraId">
                             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEntraId" aria-expanded="false" aria-controls="collapseEntraId">
-                                Entra ID Help
+                                {{ t('admin.oauth2.entraIdHelp') }}
                             </button>
                         </h2>
                         <div id="collapseEntraId" class="accordion-collapse collapse" aria-labelledby="headingEntraId" data-bs-parent="#providerHelpAccordion">
                             <div class="accordion-body">
-                                <strong>Required API Permissions</strong><br>
+                                <strong>{{ t('admin.oauth2.requiredPermissions') }}</strong><br>
                                 <ul>
-                                    <li>Delegated User.Read</li>
-                                    <li>Delegated GroupMember.Read.All</li>
+                                    <li>{{ t('admin.oauth2.delegatedUserRead') }}</li>
+                                    <li>{{ t('admin.oauth2.delegatedGroupRead') }}</li>
                                 </ul>
-                                <strong>Required Group Claims</strong>
+                                <strong>{{ t('admin.oauth2.requiredGroupClaims') }}</strong>
                                 <ul>
-                                    <li>Security Groups</li>
-                                    <li>Access &gt; samAccountName</li>
+                                    <li>{{ t('admin.oauth2.securityGroups') }}</li>
+                                    <li>{{ t('admin.oauth2.accessSamAccount') }}</li>
                                 </ul>
                             </div>
                         </div>
@@ -61,12 +65,12 @@ onMounted(async () => {
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="headingOpenId">
                             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOpenId" aria-expanded="false" aria-controls="collapseOpenId">
-                                Open ID Help
+                                {{ t('admin.oauth2.openIdHelp') }}
                             </button>
                         </h2>
                         <div id="collapseOpenId" class="accordion-collapse collapse" aria-labelledby="headingOpenId" data-bs-parent="#providerHelpAccordion">
                             <div class="accordion-body">
-                                <strong>Notice:</strong> Open ID has only been tested with Keycloak so far.
+                                <strong>{{ t('admin.oauth2.openIdNotice') }}</strong> {{ t('admin.oauth2.openIdTestedWith') }}
                             </div>
                         </div>
                     </div>

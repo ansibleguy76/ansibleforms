@@ -44,6 +44,7 @@ var v$ = null;
 
 // use
 const route = useRoute();
+const { t } = useI18n();
 
 const store = useAppStore();
 
@@ -71,7 +72,7 @@ const props = defineProps(
         },
         submitLabel: {
             type: String,
-            default: "Submit"
+            default: ""
         },
         submitIcon: {
             type: String,
@@ -156,27 +157,27 @@ const containerSize = ref({
 const containerRef = useTemplateRef("containerRef");
 
 // Define submit dropdown actions
-const submitActions = [
+const submitActions = computed(() => [
     {
         key: 'schedule',
-        label: 'Schedule (Recurring)',
+        label: t('form.scheduleRecurring'),
         icon: 'calendar-plus',
         roleOption: 'allowScheduledJobs'
     },
     {
         key: 'run-later',
-        label: 'Run Later (One-time)',
+        label: t('form.runLaterOneTime'),
         icon: 'clock',
         roleOption: 'allowPlannedJobs',
         divider: true
     },
     {
         key: 'store',
-        label: 'Store',
+        label: t('form.store'),
         icon: 'file-export',
         roleOption: 'allowStoredJobs'
     }
-];
+]);
 
 // COMPUTED
 //----------------------------------------------------------------
@@ -199,7 +200,7 @@ const unevaluatedFieldsWarning = computed(() => {
     if (canSubmit.value) {
         return undefined;
     } else {
-        return unevaluatedFields.value.join(",") + " " + ((unevaluatedFields.value.length == 1) ? "is" : "are") + " unevaluated...";
+        return unevaluatedFields.value.join(",") + " " + ((unevaluatedFields.value.length == 1) ? t('form.unevaluatedIs') : t('form.unevaluatedAre'));
     }
 });
 
@@ -731,9 +732,9 @@ function clip(v, doNotStringify = false) {
         } else {
             copyText(JSON.stringify(v))
         }
-        toast.success("Copied to clipboard")
+        toast.success(t('form.copiedToClipboard'))
     } catch (err) {
-        toast.error("Error copying to clipboard : \n" + err.toString())
+        toast.error(err.toString())
     }
 }
 
@@ -750,9 +751,9 @@ function clipYaml(fieldName) {
         const value = raw.__output__ ?? raw;
         const yamlContent = YAML.stringify(value);
         copyText(yamlContent);
-        toast.success("Copied modeled YAML to clipboard");
+        toast.success(t('form.copiedYamlToClipboard'));
     } catch (err) {
-        toast.error("Error copying to clipboard : \n" + err.toString());
+        toast.error(err.toString());
     }
 }
 
@@ -1401,7 +1402,7 @@ function validateForm() {
         }
     });
     if (!isValid) {
-        toast.warning("Form contains invalid data");
+        toast.warning(t('form.invalidData'));
         return false; // do not start if form is invalid
     } else {
         return true;
@@ -1461,14 +1462,14 @@ function stripSubformInternals(src) {
 // is exposed as a separate top-toolbar button by the page (alongside Back),
 // because loading replaces the current draft and feels more like an entry
 // action than a commit action. Store keeps partial drafts without validation.
-const subformActions = [
+const subformActions = computed(() => [
     {
         key: 'store',
-        label: 'Store',
+        label: t('form.store'),
         icon: 'file-export',
         roleOption: 'allowStoredJobs',
     },
-];
+]);
 
 function handleSubformAction(actionKey) {
     // No validation for store/load - authors may want to save partial work.
@@ -2079,7 +2080,7 @@ async function startDynamicFieldsLoop() {
             } else {
                 if (watchdog.value > 50) {
                     status.value = "";
-                    toast.warning("It took too long to evaluate all fields before run.\r\nLet the form stabilize and try again.");
+                    toast.warning(t('form.tooLongToEvaluate'));
                     toast.warning(unevaluatedFieldsWarning.value);
                 }
             }
@@ -2125,7 +2126,7 @@ onUnmounted(() => {
 
         <!-- WARNINGS -->
         <BsOffCanvas v-if="showWarnings" :show="true"
-            icon="triangle-exclamation" title="Form warnings" @close="showWarnings = false">
+            icon="triangle-exclamation" :title="t('form.formWarnings')" @close="showWarnings = false">
             <template #actions> </template>
             <template #default>
                 <p v-if="!canSubmit && !formLoopIsBusy" class="mb-3" v-html="unevaluatedFieldsWarning"></p>
@@ -2512,7 +2513,7 @@ onUnmounted(() => {
         <div class="d-grid my-3" v-if="mode === 'form' && status == ''">
             <BsDropdownButton 
                 :icon="submitIcon"
-                :label="submitLabel"
+                :label="submitLabel || t('form.submit')"
                 colorClass="primary"
                 :actions="submitActions"
                 @click="handleSubmitAction('submit')"
@@ -2521,10 +2522,10 @@ onUnmounted(() => {
         </div>
         <!-- Subform Save/Cancel buttons (used when embedded in AppListField) -->
         <div class="d-flex justify-content-end gap-2 my-3" v-if="mode === 'subform'">
-            <BsButton icon="xmark" colorClass="secondary" @click="emit('cancel')">Cancel</BsButton>
+            <BsButton icon="xmark" colorClass="secondary" @click="emit('cancel')">{{ t('form.cancel') }}</BsButton>
             <BsDropdownButton
                 icon="check"
-                label="Save"
+                :label="t('form.save')"
                 colorClass="primary"
                 :fullWidth="false"
                 :menuEnd="true"
@@ -2538,8 +2539,8 @@ onUnmounted(() => {
     <!-- LOADER & FORM NOT FOUND -->
 
     <div v-else>
-        <h2>Loading...</h2>
-        <div class="alert alert-info">The form is not ready...</div>
+        <h2>{{ t('form.loading') }}</h2>
+        <div class="alert alert-info">{{ t('form.formNotReady') }}</div>
     </div>
 
 </template>

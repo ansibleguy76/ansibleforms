@@ -16,6 +16,7 @@ import { provide, reactive, computed } from "vue";
 // use
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 
 const store = useAppStore();
 
@@ -191,7 +192,7 @@ const displayedOutput = computed(() =>
 );
 const displayedOutputYaml = computed(() => YAML.stringify(displayedOutput.value));
 const displayedOutputTitle = computed(() =>
-  activeEntry.value ? `Subform output - ${activeEntry.value.title}` : 'Extra vars'
+  activeEntry.value ? `${t('form.subformOutput')} - ${activeEntry.value.title}` : t('form.extraVars')
 );
 
 // filter job output
@@ -215,7 +216,7 @@ const filteredSubJobOutput = computed(() => {
 const formStatus = computed(() => {
   if (status.value == "running") {
     return {
-      label: "Running",
+      label: t('form.running'),
       color: "primary",
       icon: "spinner",
       disabled: true,
@@ -224,7 +225,7 @@ const formStatus = computed(() => {
     };
   } else if (status.value == "success") {
     return {
-      label: "Finished",
+      label: t('form.finished'),
       color: "success",
       icon: "check",
       disabled: false,
@@ -233,7 +234,7 @@ const formStatus = computed(() => {
     };
   } else if (status.value == "failed") {
     return {
-      label: "Failed",
+      label: t('form.failed'),
       color: "danger",
       icon: "exclamation-triangle",
       disabled: false,
@@ -242,7 +243,7 @@ const formStatus = computed(() => {
     };
   } else if (status.value == "warning") {
     return {
-      label: "Finished with warning",
+      label: t('form.finishedWithWarning'),
       color: "warning",
       icon: "exclamation-triangle",
       disabled: false,
@@ -251,7 +252,7 @@ const formStatus = computed(() => {
     };
   }else if (status.value == "approve") {
     return {
-      label: "Waiting for approval",
+      label: t('form.waitingForApproval'),
       color: "warning",
       icon: "spinner",
       disabled: false,
@@ -260,7 +261,7 @@ const formStatus = computed(() => {
     };
   } else if (status.value == "abandoned") {
     return {
-      label: "Abandoned",
+      label: t('form.abandoned'),
       color: "warning",
       icon: "exclamation-triangle",
       disabled: false,
@@ -269,7 +270,7 @@ const formStatus = computed(() => {
     };
   } else if (status.value == "rejected") {
     return {
-      label: "Rejected",
+      label: t('form.rejected'),
       color: "warning",
       icon: "exclamation-triangle",
       disabled: false,
@@ -278,7 +279,7 @@ const formStatus = computed(() => {
     };
   } else if (status.value == "aborted") {
     return {
-      label: "Aborted",
+      label: t('form.aborted'),
       color: "warning",
       icon: "exclamation-triangle",
       disabled: false,
@@ -287,7 +288,7 @@ const formStatus = computed(() => {
     };
   } else if (status.value == "initializing") {
     return {
-      label: "Initializing",
+      label: t('form.initializing'),
       color: "primary",
       icon: "spinner",
       disabled: true,
@@ -296,7 +297,7 @@ const formStatus = computed(() => {
     };
   } else if (status.value == "stabilizing") {
     return {
-      label: "Stabilizing form",
+      label: t('form.stabilizingForm'),
       color: "primary",
       icon: "spinner",
       disabled: true,
@@ -305,7 +306,7 @@ const formStatus = computed(() => {
     };
   } else if (status.value == "submitting") {
     return {
-      label: "Submitting form",
+      label: t('form.submittingForm'),
       color: "primary",
       icon: "spinner",
       disabled: true,
@@ -314,7 +315,7 @@ const formStatus = computed(() => {
     };
   } else {
     return {
-      label: "Pending",
+      label: t('form.pending'),
       color: "secondary",
       icon: "spinner",
       disabled: false,
@@ -637,7 +638,7 @@ function closeScheduleOffcanvas() {
 async function createSchedule() {
   // Simple validation
   if (!scheduleForm.value.name) {
-    toast.warning('Name is required');
+    toast.warning(t('form.nameRequired'));
     return;
   }
   
@@ -645,12 +646,12 @@ async function createSchedule() {
   scheduleForm.value.one_time_run = scheduleAction.value === 'run-later';
   
   if (!scheduleForm.value.one_time_run && !scheduleForm.value.cron) {
-    toast.warning('Cron expression is required');
+    toast.warning(t('form.cronRequired'));
     return;
   }
   
   if (scheduleForm.value.one_time_run && !scheduleForm.value.run_at) {
-    toast.warning('Run at date/time is required');
+    toast.warning(t('form.runAtRequired'));
     return;
   }
   
@@ -709,7 +710,7 @@ function closeStoreOffcanvas() {
 async function createStoredJob() {
   // Simple validation
   if (!storeForm.value.name) {
-    toast.warning('Name is required');
+    toast.warning(t('form.nameRequired'));
     return;
   }
 
@@ -1062,16 +1063,16 @@ onBeforeUnmount(() => {
               cssClassToggle="btn-sm ms-3 fw-normal"
               icon="question-circle" iconToggle="question-circle"
               :toggle="activeEntry.showHelp" @click="activeEntry.showHelp = !activeEntry.showHelp">
-              Show help
-              <template #toggle>Hide help</template>
+              {{ t('form.showHelp') }}
+              <template #toggle>{{ t('form.hideHelp') }}</template>
             </BsButton>
           </template>
           <template v-else>
             {{ currentForm.name }}
             <BsButton v-if="currentForm.help" cssClass="btn-sm ms-3 fw-normal" cssClassToggle="btn-sm ms-3 fw-normal"
               icon="question-circle" iconToggle="question-circle" :toggle="showHelp" @click="showHelp = !showHelp">
-              Show help
-              <template #toggle>Hide help</template>
+              {{ t('form.showHelp') }}
+              <template #toggle>{{ t('form.hideHelp') }}</template>
             </BsButton>
           </template>
         </h2>
@@ -1097,14 +1098,14 @@ onBeforeUnmount(() => {
                 <!-- DEBUG BUTTONS -->
                 <BsButton v-if="store.profile.options?.showExtraVars" cssClass="btn-sm me-3 fw-normal"
                   cssClassToggle="btn-sm me-3 fw-normal" icon="eye" iconToggle="eye-slash" :toggle="showExtraVars"
-                  @click="toggleShowExtraVars()">Show Extravars<template #toggle>Hide Extravars</template>
+                  @click="toggleShowExtraVars()">{{ t('form.showExtravars') }}<template #toggle>{{ t('form.hideExtravars') }}</template>
                 </BsButton>
                 <BsButton cssClass="btn-sm me-3 fw-normal" icon="redo" @click="reloadForm">
-                  Reload this form
+                  {{ t('form.reloadForm') }}
                 </BsButton>
                 <BsButton v-if="store.profile.options?.allowStoredJobs" cssClass="btn-sm me-3 fw-normal"
                   icon="file-import" @click="storeCtx = buildMainStoreCtx(); openLoadOffcanvas()">
-                  Load from Store
+                  {{ t('form.loadFromStore') }}
                 </BsButton>
 
                 <!-- enable verbose logging -->
@@ -1129,18 +1130,18 @@ onBeforeUnmount(() => {
                 @submit-action="(e) => handleSubformAction(entry, e)">
                 <template #toolbarbuttons>
                   <BsButton cssClass="btn-sm me-3 fw-normal" icon="arrow-left" @click="popEdit(entry.id)">
-                    Back
+                    {{ t('form.back') }}
                   </BsButton>
                   <BsButton v-if="store.profile.options?.allowStoredJobs"
                     cssClass="btn-sm me-3 fw-normal" icon="file-import"
                     @click="handleSubformAction(entry, { action: 'load', value: entry.draft })">
-                    Load from Store
+                    {{ t('form.loadFromStore') }}
                   </BsButton>
                   <BsButton v-if="store.profile.options?.showExtraVars"
                     cssClass="btn-sm me-3 fw-normal" cssClassToggle="btn-sm me-3 fw-normal"
                     icon="eye" iconToggle="eye-slash" :toggle="showExtraVars"
                     @click="toggleShowExtraVars()">
-                    Show Output<template #toggle>Hide Output</template>
+                    {{ t('form.showOutput') }}<template #toggle>{{ t('form.hideOutput') }}</template>
                   </BsButton>
                 </template>
               </AppForm>
@@ -1154,13 +1155,13 @@ onBeforeUnmount(() => {
                 </small>
                 <BsButton cssClass="btn-sm" cssClassToggle="btn-sm" :toggle="viewAsYaml"
                   @click="viewAsYaml = !viewAsYaml">
-                  <template #default>View as YAML</template>
-                  <template #toggle>View as JSON</template>
+                  <template #default>{{ t('form.viewAsYaml') }}</template>
+                  <template #toggle>{{ t('form.viewAsJson') }}</template>
                 </BsButton>
               </div>
               <!-- TOOLBAR ICONS-->
               <div>
-                <span class="ms-2" role="button" title="Copy ExtraVars" @click="clip(displayedOutput, false, viewAsYaml)">
+                <span class="ms-2" role="button" :title="t('form.copyExtravars')" @click="clip(displayedOutput, false, viewAsYaml)">
                   <font-awesome-icon icon="copy" class="text-primary" />
                 </span>
               </div>
@@ -1176,14 +1177,13 @@ onBeforeUnmount(() => {
       </div>
       <div v-else-if="!formNotFound" class="loader mx-auto">
         <div class="spinner-border" role="status">
-          <span class="visually-hidden">Loading...</span>
+          <span class="visually-hidden">{{ t('form.loading') }}</span>
         </div>
       </div>
       <div v-else class="alert alert-danger mt-5" role="alert">
-        <h4 class="alert-heading">Form not found</h4>
+        <h4 class="alert-heading">{{ t('form.formNotFound') }}</h4>
         <p>
-          The requested form could not be found. Please check the form name in
-          the URL or contact your administrator.
+          {{ t('form.formNotFoundMsg') }}
         </p>
       </div>
     </main>
@@ -1208,22 +1208,22 @@ onBeforeUnmount(() => {
           ">
             <div class="d-grid">
               <button type="button" class="btn btn-danger text-white" @click="abortJob(jobId)">
-                <FaIcon icon="stop"></FaIcon><span class="ms-3">Abort</span>
+                <FaIcon icon="stop"></FaIcon><span class="ms-3">{{ t('form.abort') }}</span>
               </button>
             </div>
           </div>
         </div>
         <BsButton v-if="status != ''" icon="filter" cssClass="btn-sm mb-3" cssClassToggle="btn-sm mb-3"
           iconToggle="filter-circle-xmark" :toggle="filterOutput" @click="filterOutput = !filterOutput">
-          <template #default>Apply filter</template>
-          <template #toggle>Remove filter</template>
+          <template #default>{{ t('form.applyFilter') }}</template>
+          <template #toggle>{{ t('form.removeFilter') }}</template>
         </BsButton>
         <div class="row">
           <div class="col">
             <AppAnsibleOutput :output="filteredJobOutput" :jobLog="job.job_log">
               <template #title>
                 <h3 v-if="job.job_type == 'multistep' && subjob?.output">
-                  Main job (jobid {{ job.id }})
+                  {{ t('form.mainJob') }} (jobid {{ job.id }})
                   <sup><span class="badge rounded-pill status" :class="Helpers.getColorClassByStatus(job.status,'bg')">{{ job.status }}</span></sup>
                 </h3>
               </template>
@@ -1233,7 +1233,7 @@ onBeforeUnmount(() => {
             <AppAnsibleOutput :output="filteredSubJobOutput" :jobLog="subjob.job_log">
               <template #title>
                 <h3>
-                  Current Step (jobid {{ subjob.id }})
+                  {{ t('form.currentStep') }} (jobid {{ subjob.id }})
                   <sup><span class="badge rounded-pill status" :class="Helpers.getColorClassByStatus(subjob.status,'bg')">{{ subjob.status
                       }}</span></sup>
                 </h3>
@@ -1242,8 +1242,8 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <BsButton v-if="status != 'executing'" icon="rotate-right" @click="resetResult()">Close output</BsButton>
-        <BsButton v-if="status != 'executing'" cssClass="ms-3" icon="download" @click="download(jobId)">Download output
+        <BsButton v-if="status != 'executing'" icon="rotate-right" @click="resetResult()">{{ t('form.closeOutput') }}</BsButton>
+        <BsButton v-if="status != 'executing'" cssClass="ms-3" icon="download" @click="download(jobId)">{{ t('form.downloadOutput') }}
         </BsButton>
       </div>
     </main>
@@ -1252,12 +1252,12 @@ onBeforeUnmount(() => {
   <!-- SCHEDULE OFF-CANVAS -->
   <BsOffCanvas 
     :show="showScheduleOffcanvas" 
-    :title="scheduleAction === 'schedule' ? 'Create Schedule' : 'Run Later'"
+    :title="scheduleAction === 'schedule' ? t('form.createSchedule') : t('form.runLater')"
     :icon="scheduleAction === 'schedule' ? 'calendar-plus' : 'clock'"
     @close="closeScheduleOffcanvas">
     <template #default>
       <div class="mb-3">
-        <label class="form-label">Name <span class="text-danger">*</span></label>
+        <label class="form-label">{{ t('form.scheduleName') }} <span class="text-danger">*</span></label>
         <input 
           type="text" 
           class="form-control" 
@@ -1269,7 +1269,7 @@ onBeforeUnmount(() => {
       </div>
       
       <div class="mb-3" v-if="scheduleAction === 'schedule'">
-        <label class="form-label">Cron Expression <span class="text-danger">*</span></label>
+        <label class="form-label">{{ t('form.cronExpression') }} <span class="text-danger">*</span></label>
         <input 
           type="text" 
           class="form-control font-monospace" 
@@ -1286,7 +1286,7 @@ onBeforeUnmount(() => {
       </div>
       
       <div class="mb-3" v-if="scheduleAction === 'run-later'">
-        <label class="form-label">Run At <span class="text-danger">*</span></label>
+        <label class="form-label">{{ t('form.runAt') }} <span class="text-danger">*</span></label>
         <VueDatePicker 
           v-model="scheduleForm.run_at"
           :disabled="scheduleSubmitting"
@@ -1300,7 +1300,7 @@ onBeforeUnmount(() => {
         @click="createSchedule"
         :disabled="scheduleSubmitting">
         <FaIcon :icon="scheduleSubmitting ? 'spinner' : 'save'" :spin="scheduleSubmitting" />
-        <span class="ms-2">{{ scheduleSubmitting ? 'Creating...' : (scheduleAction === 'schedule' ? 'Create Schedule' : 'Schedule Job') }}</span>
+        <span class="ms-2">{{ scheduleSubmitting ? t('form.creating') : (scheduleAction === 'schedule' ? t('form.createSchedule') : t('form.scheduleJob')) }}</span>
       </button>
     </template>
   </BsOffCanvas>
@@ -1308,12 +1308,12 @@ onBeforeUnmount(() => {
   <!-- STORE OFF-CANVAS -->
   <BsOffCanvas 
     :show="showStoreOffcanvas" 
-    :title="storeCtx ? `Save ${storeCtx.title}` : 'Save Form Data'"
+    :title="storeCtx ? `${t('form.save')} ${storeCtx.title}` : t('form.saveFormData')"
     icon="file-export"
     @close="closeStoreOffcanvas">
     <template #default>
       <div class="mb-3">
-        <label class="form-label">Name <span class="text-danger">*</span></label>
+        <label class="form-label">{{ t('form.scheduleName') }} <span class="text-danger">*</span></label>
         <input 
           type="text" 
           class="form-control" 
@@ -1321,27 +1321,25 @@ onBeforeUnmount(() => {
           placeholder="e.g., Production Config"
           :disabled="storeSubmitting"
         />
-        <small class="form-text text-muted">A unique name for this saved form</small>
       </div>
       
       <div class="mb-3">
-        <label class="form-label">Description</label>
+        <label class="form-label">{{ t('form.description') }}</label>
         <textarea 
           class="form-control" 
           rows="3"
           v-model="storeForm.description"
-          placeholder="Optional description"
+          placeholder=""
           :disabled="storeSubmitting"
         />
       </div>
       
       <div class="mb-3">
-        <label class="form-label">Expires At (Optional)</label>
+        <label class="form-label">{{ t('form.expiresAt') }}</label>
         <VueDatePicker 
           v-model="storeForm.expires_at"
           :disabled="storeSubmitting"
         />
-        <small class="form-text text-muted">Leave blank to never expire</small>
       </div>
     </template>
     <template #actions>
@@ -1350,7 +1348,7 @@ onBeforeUnmount(() => {
         @click="createStoredJob"
         :disabled="storeSubmitting">
         <FaIcon :icon="storeSubmitting ? 'spinner' : 'save'" :spin="storeSubmitting" />
-        <span class="ms-2">{{ storeSubmitting ? 'Saving...' : 'Save' }}</span>
+        <span class="ms-2">{{ storeSubmitting ? t('form.saving') : t('form.save') }}</span>
       </button>
     </template>
   </BsOffCanvas>
@@ -1358,18 +1356,18 @@ onBeforeUnmount(() => {
   <!-- LOAD OFF-CANVAS -->
   <BsOffCanvas 
     :show="showLoadOffcanvas" 
-    :title="storeCtx ? `Load ${storeCtx.title}` : 'Load Saved Form'"
+    :title="storeCtx ? `${t('form.loadFromStore')} - ${storeCtx.title}` : t('form.loadSavedForm')"
     icon="file-import"
     @close="closeLoadOffcanvas">
     <template #default>
       <div v-if="loadSubmitting" class="text-center py-4">
         <FaIcon icon="spinner" spin size="2x" />
-        <p class="mt-2">Loading saved forms...</p>
+        <p class="mt-2">{{ t('form.loadingSavedForms') }}</p>
       </div>
       
       <div v-else-if="storedJobs.length === 0" class="text-center py-4 text-muted">
         <FaIcon icon="inbox" size="3x" class="mb-3" />
-        <p>No saved forms found</p>
+        <p>{{ t('form.noSavedForms') }}</p>
       </div>
       
       <div v-else class="list-group">
@@ -1384,8 +1382,8 @@ onBeforeUnmount(() => {
               <h6 class="mb-1">{{ job.name }}</h6>
               <p v-if="job.description" class="mb-1 small text-muted">{{ job.description }}</p>
               <small class="text-muted">
-                Created: {{ new Date(job.created_at).toLocaleString() }}
-                <span v-if="job.expires_at"> • Expires: {{ new Date(job.expires_at).toLocaleString() }}</span>
+                {{ t('form.created') }}: {{ new Date(job.created_at).toLocaleString() }}
+                <span v-if="job.expires_at"> • {{ t('form.expires') }}: {{ new Date(job.expires_at).toLocaleString() }}</span>
               </small>
             </div>
           </div>

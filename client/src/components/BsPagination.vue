@@ -17,9 +17,11 @@
 
     import { watch, ref } from 'vue';
     import Helpers from '@/lib/Helpers';
+    import { useI18n } from 'vue-i18n';
 
     // INIT
 
+    const { t } = useI18n();
     const emit = defineEmits(['change']);
 
     // PROPS
@@ -145,7 +147,7 @@
                 </select>        
             </li>
             <li role="button" class="page-item" :class="{'disabled':page <= 1}">
-                <a class="page-link" @click="setPage(page-1)">Previous</a>
+                <a class="page-link" @click="setPage(page-1)">{{ t('common.previous') }}</a>
             </li>
             <li role="button" class="page-item" :class="{'active':1==page}">
             <a class="page-link" v-if="showFirstPage"  @click="setPage(1)" aria-label="Goto page 1">1</a>
@@ -163,7 +165,7 @@
             <a class="page-link" v-if="showLastPage" @click="setPage(pages.length)" :aria-label="'Goto page '+pages.length">{{pages.length}}</a>
             </li>
             <li role="button" class="page-item" :class="{'disabled':page >= pages.length}">
-                <a class="page-link" @click="setPage(page+1)">Next</a>
+                <a class="page-link" @click="setPage(page+1)">{{ t('common.next') }}</a>
             </li>
         </ul>
     </nav>    

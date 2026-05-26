@@ -6,28 +6,30 @@
     /*                                                                */
     /******************************************************************/
 
-    const items = [
-        { title: "Ansible Forms", icon: "fac,ansibleforms", link: "/admin/settings" },
-        { title: "Backups", icon: "database", link: "/admin/backups" },
-        { title: "Mail", icon: "envelope", link: "/admin/mailSettings"},
+    import { useI18n } from 'vue-i18n';
+    import { computed } from 'vue';
+
+    const { t } = useI18n();
+
+    const items = computed(() => [
+        { title: t('sidebar.ansibleForms'), icon: "fac,ansibleforms", link: "/admin/settings" },
+        { title: t('sidebar.backups'), icon: "database", link: "/admin/backups" },
+        { title: t('sidebar.mail'), icon: "envelope", link: "/admin/mailSettings"},
         { title: "divider" },
-        { title: "Groups", icon: "users", link: "/admin/groups" },
-        { title: "Users", icon: "user", link: "/admin/users" },
-        { title: "Ldap", icon: "globe", link: "/admin/ldap" },
-        { title: "OAuth2", icon: "fac,oauth", link: "/admin/oauth2" },
+        { title: t('sidebar.groups'), icon: "users", link: "/admin/groups" },
+        { title: t('sidebar.users'), icon: "user", link: "/admin/users" },
+        { title: t('sidebar.ldap'), icon: "globe", link: "/admin/ldap" },
+        { title: t('sidebar.oauth2'), icon: "fac,oauth", link: "/admin/oauth2" },
         { title: "divider" },
-        { title: "Credentials", icon: "lock", link: "/admin/credentials" },
-        { title: "Ssh", icon: "key", link: "/admin/ssh" },
-        { title: "Known Hosts", icon: "server", link: "/admin/knownHosts" },
-        { title: "A.A.P.", icon: "fac,ansible", link: "/admin/aap" },
-        { title: "Repositories", icon: "fab,git", link: "/admin/repositories"},
+        { title: t('sidebar.credentials'), icon: "lock", link: "/admin/credentials" },
+        { title: t('sidebar.ssh'), icon: "key", link: "/admin/ssh" },
+        { title: t('sidebar.knownHosts'), icon: "server", link: "/admin/knownHosts" },
+        { title: t('sidebar.aap'), icon: "fac,ansible", link: "/admin/aap" },
+        { title: t('sidebar.repositories'), icon: "fab,git", link: "/admin/repositories"},
         { title: "divider" },
-        // { title: "Data Schemas", icon: "database", link: "/admin/dataSchemas" },
-        // { title: "Data Sources", icon: "file-import", link: "/admin/dataSources" },
-        // { title: "divider" },
-        { title: "Schedules", icon: "clock", link: "/admin/schedules" },
-        { title: "Stored Jobs", icon: "floppy-disk", link: "/admin/stored-jobs" }
-    ];
+        { title: t('sidebar.schedules'), icon: "clock", link: "/admin/schedules" },
+        { title: t('sidebar.storedJobs'), icon: "floppy-disk", link: "/admin/stored-jobs" }
+    ]);
 </script>
 <template>
     <BsSidebar title="" icon="" :items="items" />

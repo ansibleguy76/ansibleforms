@@ -2,7 +2,11 @@
 import { toast } from 'vue-sonner';
 import Profile from '@/lib/Profile';
 import axios from 'axios';
-import settings from '@/config/settings'
+import getSettings from '@/config/settings'
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
+const settings = computed(() => getSettings(t));
 import TokenStorage from '@/lib/TokenStorage';
 import yaml from 'yaml';
 
@@ -31,7 +35,7 @@ function closeTestModal() {
 
 async function performTest() {
     if (!testUser.value || !testPassword.value) {
-        toast.error("Please provide both username and password");
+        toast.error(t('admin.ldap.provideBoth'));
         return;
     }
     
@@ -43,7 +47,7 @@ async function performTest() {
         };
         const result = await axios.post(`/api/v2/ldap/check`, testData, TokenStorage.getAuthentication());
         testResult.value = result.data;
-        toast.success("LDAP connection successful");
+        toast.success(t('admin.ldap.connectionSuccessful'));
     } catch(err) {
         testResult.value = null;
         const errorMessage = err.response?.data?.error || err.message;
@@ -69,30 +73,30 @@ onMounted(async () => {
 <template>
     <BsModal v-if="showTestModal" @close="closeTestModal">
         <template #title>
-            Test LDAP Connection
+            {{ t('admin.ldap.testTitle') }}
         </template>
         <template #default>
             <p class="mt-3 fs-6">
-                Enter test credentials to verify the LDAP connection:
+                {{ t('admin.ldap.testDescription') }}
             </p>
             <BsInput
                 v-model="testUser"
-                label="Test Username"
+                :label="t('admin.ldap.testUsername')"
                 type="text"
-                placeholder="Enter username"
+                :placeholder="t('admin.ldap.testUsernamePlaceholder')"
                 class="mb-3"
             />
             <BsInput
                 v-model="testPassword"
-                label="Test Password"
+                :label="t('admin.ldap.testPassword')"
                 type="password"
-                placeholder="Enter password"
+                :placeholder="t('admin.ldap.testPasswordPlaceholder')"
                 class="mb-3"
             />
             <div v-if="testResult" class="alert alert-success mt-3">
-                <h6><faIcon icon="circle-check" class="me-2" />Connection Successful</h6>
+                <h6><faIcon icon="circle-check" class="me-2" />{{ t('admin.ldap.successTitle') }}</h6>
                 <div class="mt-3">
-                    <strong>User Information:</strong>
+                    <strong>{{ t('admin.ldap.userInfo') }}</strong>
                     <pre class="bg-light p-3 mt-2 rounded" style="max-height: 300px; overflow-y: auto;"><code>{{ testResultYaml }}</code></pre>
                 </div>
             </div>

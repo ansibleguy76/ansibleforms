@@ -21,6 +21,9 @@
     import TokenStorage from "@/lib/TokenStorage";
     import { useVuelidate } from "@vuelidate/core";
     import { required, helpers, email, sameAs } from "@vuelidate/validators";
+    import { useI18n } from 'vue-i18n';
+
+    const { t } = useI18n();
 
 
 
@@ -115,7 +118,7 @@
         if (!isInvalid.value) {
             try{
                 const result = await axios.put(`/api/v${props.apiVersion}/${objectType}/`, item.value, TokenStorage.getAuthentication());
-                toast.success(objectTitle('', 'is updated'));
+                toast.success(objectTitle('', t('settings.common.isUpdated')));
                 loadItem();
             }catch(err){
                 if (props.apiVersion == 2) {
@@ -192,7 +195,7 @@
         <template #actions>
             <BsInput v-for="field in actionsCheckboxes" type="checkbox" :disabled="disabledFields[field.key]" :isSwitch="true" cssClass="ms-3" v-model="item[field.key]" :label="field.label" />
             <BsButton v-for="action in actions" :icon="action.icon" cssClass="ms-3" :disabled="action.dependency && !item[action.dependency]" @click="doEmit(action.name)">{{ action.title }}</BsButton>
-            <BsButton cssClass="ms-3" icon="save" @click="updateItem()">Update</BsButton> 
+            <BsButton cssClass="ms-3" icon="save" @click="updateItem()">{{ t('settings.common.update') }}</BsButton> 
         </template>
         <template #default>
             <div v-for="cols in rows" class="row">

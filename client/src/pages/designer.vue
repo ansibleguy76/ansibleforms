@@ -13,6 +13,8 @@ import relativeTime from "dayjs/plugin/relativeTime";
 
 dayjs.extend(relativeTime);
 
+const { t } = useI18n();
+
 const categories = ref("");
 const roles = ref("");
 const constants = ref("");
@@ -327,7 +329,7 @@ function addForm(file) {
   // check if the form "New Form" already exists
 
   if (idmapping.value.find((x) => x.name == "New Form")) {
-    toast.error("Form 'New Form' already exists");
+    toast.error(t('designer.newFormExists'));
     return;
   }
 
@@ -387,7 +389,7 @@ async function setLock(proceed = true) {
 async function restoreBackup() {
   try {
     await Backup.restore(backupToRestore.value.file, backupBeforeRestore.value);
-    toast.success("Backup restored");
+    toast.success(t('designer.backupRestored'));
     await loadAll();
     action.value = null;
   } catch (err) {
@@ -441,7 +443,7 @@ async function validateForms() {
   try {
     const formConfig = assembleForms();
     await Form.validate(formConfig);
-    toast.success("Forms are valid");
+    toast.success(t('designer.formsValid'));
   } catch (err) {
     toast.error(err.message);
   }
@@ -449,17 +451,17 @@ async function validateForms() {
 
 async function saveForms(close = false) {
   if (!lock.value.match) {
-    toast.error("The editor is currently read-only");
+    toast.error(t('designer.readOnly'));
     return;
   }
   // if there are warnings, show them and do not save
   if (warnings.value.length > 0) {
     showWarnings.value = true;
-    toast.warning("Fix the warnings before saving");
+    toast.warning(t('designer.fixWarnings'));
     return;
   }
   if (!isDirty.value) {
-    toast.info("No changes to save");
+    toast.info(t('designer.noChanges'));
     return;
   }
   try {
@@ -469,7 +471,7 @@ async function saveForms(close = false) {
     await Form.save(formConfig);
 
     isDirty.value = false;
-    toast.success("Forms saved successfully");
+    toast.success(t('designer.formsSaved'));
     if (close) {
       try {
         nextAction.value(true);
@@ -520,66 +522,64 @@ onMounted(async () => {
     <main class="d-flex container-xxl">
       <!-- Modal - delete verify -->
       <BsModal v-if="action == 'delete'" @close="resetAction()">
-        <template #title> Delete {{ currentFormName }} </template>
+        <template #title> {{ t('designer.deleteForm') }} {{ currentFormName }} </template>
         <template #default>
           <p class="mt-3 fs-6 user-select-none">
-            Are you sure you want to delete <strong>{{ currentFormName }}</strong>?
+            {{ t('designer.deleteConfirm') }} <strong>{{ currentFormName }}</strong>?
           </p>
         </template>
         <template #footer>
-          <BsButton icon="trash" @click="doDeleteForm()">Delete</BsButton>
+          <BsButton icon="trash" @click="doDeleteForm()">{{ t('common.delete') }}</BsButton>
         </template>
       </BsModal>
 
       <!-- Modal - force unlock-->
       <BsModal v-if="action == 'forceUnlock'" @close="resetAction()">
-        <template #title> Force Unlock </template>
+        <template #title> {{ t('designer.forceUnlock') }} </template>
         <template #default>
           <p class="mt-3 fs-6 user-select-none">
-            Are you sure you want to force the unlock ?<br />
-            Whomever has the lock now, will loose all changes<br />
-            and will not be able to save them.<br /><br />
-            Proceed with care and respect.
+            {{ t('designer.forceUnlockConfirm') }}<br />
+            {{ t('designer.forceUnlockWarning') }}<br /><br />
+            {{ t('designer.forceUnlockCare') }}
           </p>
         </template>
         <template #footer>
-          <BsButton icon="unlock" @click="nextAction(true)">Force Unlock</BsButton>
+          <BsButton icon="unlock" @click="nextAction(true)">{{ t('designer.forceUnlock') }}</BsButton>
         </template>
       </BsModal>
 
       <!-- modal - dirty -->
       <BsModal v-if="action == 'dirty'" @close="resetAction()">
-        <template #title> Unsaved Changes </template>
+        <template #title> {{ t('designer.unsavedChanges') }} </template>
         <template #default>
           <p class="mt-3 fs-6 user-select-none">
-            Are you sure you want to leave the designer ?<br />You have unsaved
-            changes.
+            {{ t('designer.unsavedConfirm') }}<br />{{ t('designer.unsavedNote') }}
           </p>
         </template>
         <template #footer>
-          <BsButton icon="times" @click="nextAction(false)">Close without saving</BsButton>
-          <BsButton icon="save" @click="saveForms(true);resetAction();">Save and Close</BsButton>
+          <BsButton icon="times" @click="nextAction(false)">{{ t('designer.closeWithoutSaving') }}</BsButton>
+          <BsButton icon="save" @click="saveForms(true);resetAction();">{{ t('designer.saveAndClose') }}</BsButton>
         </template>
       </BsModal>
 
       <BsModal v-if="action == 'restore'" @close="resetAction()">
-        <template #title> Restore backup </template>
+        <template #title> {{ t('designer.restoreBackup') }} </template>
         <template #default>
-          <BsInput type="select_advanced" v-model="backupToRestore" :values="backups" :required="true" name="backup" label="Backup" :sticky="true" :hasError="!backupToRestore" :isLoading="!backups" />
-          <BsInput type="checkbox" v-model="backupBeforeRestore" label="Make a backup before restore ?" />
+          <BsInput type="select_advanced" v-model="backupToRestore" :values="backups" :required="true" name="backup" :label="t('designer.backup')" :sticky="true" :hasError="!backupToRestore" :isLoading="!backups" />
+          <BsInput type="checkbox" v-model="backupBeforeRestore" :label="t('designer.backupBeforeRestore')" />
         </template>
         <template #footer>
-          <BsButton icon="undo" @click="restoreBackup(); resetAction()">Restore</BsButton>
+          <BsButton icon="undo" @click="restoreBackup(); resetAction()">{{ t('designer.restore') }}</BsButton>
         </template>
       </BsModal>
 
-      <BsOffCanvas v-if="showWarnings" :show="true" icon="triangle-exclamation" title="Warnings" @close="showWarnings = false">
+      <BsOffCanvas v-if="showWarnings" :show="true" icon="triangle-exclamation" :title="t('designer.warnings')" @close="showWarnings = false">
         <template #actions> </template>
         <template #default>
           <p v-for="(w, i) in warnings" :key="'warning' + i" class="mb-3" v-html="w"></p>
         </template>
       </BsOffCanvas>
-      <AppSettings v-if="authenticated" title="Designer" icon="pencil">
+      <AppSettings v-if="authenticated" :title="t('designer.title')" icon="pencil">
         <template #feedback>
           <template v-if="lock">
             <popper v-if="lock.lock">
@@ -591,30 +591,30 @@ onMounted(async () => {
                   <font-awesome-icon icon="lock" size="sm" />
                 </span>
                 <span v-if="lock.lock && !lock.match" class="mr-1">
-                  Locked by {{ lock.lock.username }}</span>
+                  {{ t('designer.lockedBy') }} {{ lock.lock.username }}</span>
                 <span v-if="lock.lock && lock.match" class="mr-1">
-                  Locked by me</span>
+                  {{ t('designer.lockedByMe') }}</span>
               </button>
               <template #content>
-                User: {{ lock.lock.username }}<br />
-                Type: {{ lock.lock.type }}<br />
+                {{ t('designer.user') }}: {{ lock.lock.username }}<br />
+                {{ t('designer.type') }}: {{ lock.lock.type }}<br />
                 Created: {{ lockAge }}
               </template>
             </popper>
-            <BsButton v-if="lock.free" cssClass="ms-2" icon="unlock" @click="setLock()">Start Designer</BsButton>
-            <BsButton v-if="!lock.match && !lock.free" cssClass="ms-2" icon="unlock" @click="unLock()">Force unlock</BsButton>
-            <BsButton v-if="lock.match" cssClass="ms-2" icon="unlock" @click="releaseLock()">Release lock</BsButton>
+            <BsButton v-if="lock.free" cssClass="ms-2" icon="unlock" @click="setLock()">{{ t('designer.startDesigner') }}</BsButton>
+            <BsButton v-if="!lock.match && !lock.free" cssClass="ms-2" icon="unlock" @click="unLock()">{{ t('designer.forceUnlock') }}</BsButton>
+            <BsButton v-if="lock.match" cssClass="ms-2" icon="unlock" @click="releaseLock()">{{ t('designer.releaseLock') }}</BsButton>
             <popper v-if="hasBaseForms">
               <button class="btn ms-2 btn-warning" type="button">
                 <span class="icon">
                     <font-awesome-icon icon="exclamation-triangle" size="sm" />
                 </span>
-                <span>Deprecation warning</span>
+                <span>{{ t('designer.deprecationWarning') }}</span>
               </button>
               <template #content>
-                Forms detected in the base config file (config.yaml or forms.yaml), which is DEPRECATED.<br />
-                Please move forms to the forms/ folder. The base config should only contain categories, roles, and constants.<br />
-                Please move them under a file in the forms directory.
+                {{ t('designer.deprecationMsg') }}<br />
+                {{ t('designer.deprecationAction') }}<br />
+                {{ t('designer.deprecationMove') }}
               </template>
             </popper>            
           </template>
@@ -624,7 +624,7 @@ onMounted(async () => {
                 <span class="me-2">
                   <font-awesome-icon icon="exclamation-triangle" />
                 </span>
-                <span class="mr-1">{{ showWarnings ? "Hide" : "This design has" }} Warnings
+                <span class="mr-1">{{ showWarnings ? t('designer.hideWarnings') : t('designer.hasWarnings') }} {{ t('designer.warnings') }}
                 </span>
               </button>
             </div>
@@ -633,11 +633,11 @@ onMounted(async () => {
         <template #actions>
           <small v-if="lockError!==''" class="d-inline-flex mb-3 px-2 py-1 fw-semibold text-warning-emphasis bg-warning-subtle border border-warning-subtle rounded-2">{{ lockError }}</small>
           <template v-if="lock && lock.match">
-            <BsButton class="ms-2" icon="check" @click="validateForms" :disabled="!isDirty">Validate</BsButton>
-            <BsButton class="ms-2" icon="save" @click="saveForms" :disabled="!isValid || !isDirty">Save</BsButton>
-            <BsButton class="ms-2" icon="undo" @click="restore">Restore</BsButton>
+            <BsButton class="ms-2" icon="check" @click="validateForms" :disabled="!isDirty">{{ t('designer.validate') }}</BsButton>
+            <BsButton class="ms-2" icon="save" @click="saveForms" :disabled="!isValid || !isDirty">{{ t('designer.save') }}</BsButton>
+            <BsButton class="ms-2" icon="undo" @click="restore">{{ t('designer.restore') }}</BsButton>
           </template>
-          <small v-if="lock && !lock.match && !lock.free" class="d-inline-flex mb-3 px-2 py-1 fw-semibold text-warning-emphasis bg-warning-subtle border border-warning-subtle rounded-2">The editor is read-only</small>
+          <small v-if="lock && !lock.match && !lock.free" class="d-inline-flex mb-3 px-2 py-1 fw-semibold text-warning-emphasis bg-warning-subtle border border-warning-subtle rounded-2">{{ t('designer.readOnly') }}</small>
         </template>
         <template #default v-if="lock && !lock.free">
           <div class="row">
@@ -675,7 +675,7 @@ onMounted(async () => {
                   <li class="list-group-item">
                     <div class="ms-2 me-auto">
                       <div class="d-flex justify-content-between align-items-start">
-                        <span class="fw-bold">{{ f || "Base file" }}</span>
+                        <span class="fw-bold">{{ f || t('designer.baseFile') }}</span>
                       
                         <span role="button" class="text-success" @click="addForm(f)"><font-awesome-icon icon="plus" /></span>
                       </div>

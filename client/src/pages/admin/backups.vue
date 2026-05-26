@@ -1,7 +1,11 @@
 <script setup>
 import { toast } from "vue-sonner";
 import { ref, onMounted } from 'vue';
-import settings from '@/config/settings';
+import getSettings from '@/config/settings';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
+const settings = computed(() => getSettings(t));
 import Profile from '@/lib/Profile';
 import axios from 'axios';
 import TokenStorage from '@/lib/TokenStorage';
@@ -43,7 +47,7 @@ async function triggerRestore(item) {
     if (item) {
         if (!restores.value[item.folder]) {
             try {
-                restores.value[item.folder] = "Restoring...";
+                restores.value[item.folder] = t('admin.backups.restoring');
                 const result = await axios.post(
                     `/api/v2/backup/${item.folder}/restore?backupFirst=${backupFirst.value}`,
                     {},
@@ -58,7 +62,7 @@ async function triggerRestore(item) {
                 delete restores.value[item.id];
             }
         } else {
-            toast.warning("Restore already in progress");
+            toast.warning(t('admin.backups.restoreInProgress'));
         }
     }
 }
@@ -71,58 +75,58 @@ onMounted(async () => {
 <template>
   <BsModal v-if="action == 'restore'" @close="restoreClose">
       <template #title>
-          Restore {{ currentBackup.folder }}
+          {{ t('admin.backups.restoreTitle') }} {{ currentBackup.folder }}
       </template>
       <template #default>
 
               <ul class="list-group list-group-flush mt-3">
                 <li class="list-group-item">
-                  <strong>Folder:</strong> {{ currentBackup.folder }}
+                  <strong>{{ t('admin.backups.folder') }}:</strong> {{ currentBackup.folder }}
                 </li>
                 <li class="list-group-item">
-                  <strong>Date:</strong> {{ dayjs(currentBackup.date).format('YYYY-MM-DD HH:mm:ss') }}
+                  <strong>{{ t('admin.backups.date') }}:</strong> {{ dayjs(currentBackup.date).format('YYYY-MM-DD HH:mm:ss') }}
                 </li>
                 <li class="list-group-item" v-if="currentBackup.description">
-                  <strong>Description:</strong> {{ currentBackup.description }}
+                  <strong>{{ t('admin.backups.description') }}:</strong> {{ currentBackup.description }}
                 </li>
                 <li class="list-group-item">
-                  <strong>Backup File:</strong>
+                  <strong>{{ t('admin.backups.backupFile') }}:</strong>
                   <span v-if="currentBackup.backupFileExists">
-                    Exists ({{ Helpers.humanFileSize(currentBackup.backupFileSize) }})
+                    {{ t('admin.backups.exists') }} ({{ Helpers.humanFileSize(currentBackup.backupFileSize) }})
                   </span>
                   <span v-else>
-                    Not found
+                    {{ t('admin.backups.notFound') }}
                   </span>
                 </li>
                 <li class="list-group-item">
-                  <strong>Config YAML:</strong>
+                  <strong>{{ t('admin.backups.configYaml') }}:</strong>
                   <span v-if="currentBackup.configYamlExists">
-                    Exists ({{ Helpers.humanFileSize(currentBackup.configYamlSize) }})
+                    {{ t('admin.backups.exists') }} ({{ Helpers.humanFileSize(currentBackup.configYamlSize) }})
                   </span>
                   <span v-else>
-                    Not found
+                    {{ t('admin.backups.notFound') }}
                   </span>
                 </li>
                 <li class="list-group-item">
-                  <strong>Forms Directory:</strong>
+                  <strong>{{ t('admin.backups.formsDirectory') }}:</strong>
                   <span v-if="currentBackup.formsDirExists">
-                    Exists ({{ currentBackup.formsDirFileCount }} files, {{ Helpers.humanFileSize(currentBackup.formsDirTotalSize) }})
+                    {{ t('admin.backups.exists') }} ({{ currentBackup.formsDirFileCount }} {{ t('admin.backups.files') }}, {{ Helpers.humanFileSize(currentBackup.formsDirTotalSize) }})
                   </span>
                   <span v-else>
-                    Not found
+                    {{ t('admin.backups.notFound') }}
                   </span>
                 </li>
               </ul>
               <br />
               <BsCheckbox
                 v-model="backupFirst"
-                label="Create a new backup before restoring (recommended)"
+                :label="t('admin.backups.backupBeforeRestore')"
                 class="mb-3"
               />
           
       </template>
       <template #footer>
-          <BsButton icon="undo" @click="triggerRestore(currentBackup)">Restore</BsButton>
+          <BsButton icon="undo" @click="triggerRestore(currentBackup)">{{ t('admin.backups.restoreTitle') }}</BsButton>
       </template>
   </BsModal>  
   <AppNav />
@@ -138,49 +142,49 @@ onMounted(async () => {
         @preview="previewDetails"
         @reset="null"
       />
-      <BsOffCanvas title="Backup details" :show="showBackupDetails" @close="offcanvasClose">
+      <BsOffCanvas :title="t('admin.backups.backupDetails')" :show="showBackupDetails" @close="offcanvasClose">
           <div v-if="currentBackup">
             <ul class="list-group list-group-flush">
               <li class="list-group-item">
-                <strong>Folder:</strong> {{ currentBackup.folder }}
+                <strong>{{ t('admin.backups.folder') }}:</strong> {{ currentBackup.folder }}
               </li>
               <li class="list-group-item">
-                <strong>Date:</strong> {{ dayjs(currentBackup.date).format('YYYY-MM-DD HH:mm:ss') }}
+                <strong>{{ t('admin.backups.date') }}:</strong> {{ dayjs(currentBackup.date).format('YYYY-MM-DD HH:mm:ss') }}
               </li>
               <li class="list-group-item" v-if="currentBackup.description">
-                <strong>Description:</strong> {{ currentBackup.description }}
+                <strong>{{ t('admin.backups.description') }}:</strong> {{ currentBackup.description }}
               </li>
               <li class="list-group-item">
-                <strong>Backup File:</strong>
+                <strong>{{ t('admin.backups.backupFile') }}:</strong>
                 <span v-if="currentBackup.backupFileExists">
-            Exists ({{ Helpers.humanFileSize(currentBackup.backupFileSize) }})
+            {{ t('admin.backups.exists') }} ({{ Helpers.humanFileSize(currentBackup.backupFileSize) }})
                 </span>
                 <span v-else>
-            Not found
+            {{ t('admin.backups.notFound') }}
                 </span>
               </li>
               <li class="list-group-item">
-                <strong>Config YAML:</strong>
+                <strong>{{ t('admin.backups.configYaml') }}:</strong>
                 <span v-if="currentBackup.configYamlExists">
-            Exists ({{ Helpers.humanFileSize(currentBackup.configYamlSize) }})
+            {{ t('admin.backups.exists') }} ({{ Helpers.humanFileSize(currentBackup.configYamlSize) }})
                 </span>
                 <span v-else>
-            Not found
+            {{ t('admin.backups.notFound') }}
                 </span>
               </li>
               <li class="list-group-item">
-                <strong>Forms Directory:</strong>
+                <strong>{{ t('admin.backups.formsDirectory') }}:</strong>
                 <span v-if="currentBackup.formsDirExists">
-            Exists ({{ currentBackup.formsDirFileCount }} files, {{ Helpers.humanFileSize(currentBackup.formsDirTotalSize) }})
+            {{ t('admin.backups.exists') }} ({{ currentBackup.formsDirFileCount }} {{ t('admin.backups.files') }}, {{ Helpers.humanFileSize(currentBackup.formsDirTotalSize) }})
                 </span>
                 <span v-else>
-            Not found
+            {{ t('admin.backups.notFound') }}
                 </span>
               </li>
             </ul>
           </div>
           <div v-else>
-            Loading...
+            {{ t('admin.loading') }}
           </div>
 
 

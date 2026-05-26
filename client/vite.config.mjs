@@ -31,6 +31,7 @@ export default defineConfig({
       imports: [
         'vue',
         'vue-router',
+        { 'vue-i18n': ['useI18n'] },
       ],
       eslintrc: {
         enabled: true,

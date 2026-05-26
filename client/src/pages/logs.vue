@@ -6,6 +6,8 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import Helpers from '@/lib/Helpers';
 
+const { t } = useI18n();
+
 const log = ref('');
 const isLoading = ref(false);
 const filter = ref('');
@@ -87,19 +89,19 @@ onMounted(async () => {
   <AppNav />
   <div class="flex-shrink-0">
     <main class="d-flex container-xxl">
-      <AppSettings title="Logs" icon="file-lines">
+      <AppSettings :title="t('logs.title')" icon="file-lines">
         <template #actions>
           <div class="ms-2">
-            <BsInput :isFloating="false" type="checkbox" v-model="refresh" label="Auto refresh" :isInline="true"></BsInput>
+            <BsInput :isFloating="false" type="checkbox" v-model="refresh" :label="t('logs.autoRefresh')" :isInline="true"></BsInput>
           </div>
           <div class="ms-2">
             <BsInput :isFloating="false" type="select" icon="arrows-up-down" v-model="lines" :values="lineOptions" label="" :isInline="true"></BsInput>
           </div>
           <div class="ms-2">
-            <BsInput cssClass="ms-2" label="" :isInline="true" :isFloating="false" icon="filter" v-model="filter" placeholder="regex"></BsInput>
+            <BsInput cssClass="ms-2" label="" :isInline="true" :isFloating="false" icon="filter" v-model="filter" :placeholder="t('logs.filterPlaceholder')"></BsInput>
           </div>
           <BsButton class="ms-2" icon="refresh" :isIconButton="true" @click="load(true)"></BsButton>
-          <BsButton class="ms-2" icon="download" @click="download()">Download</BsButton>
+          <BsButton class="ms-2" icon="download" @click="download()">{{ t('logs.download') }}</BsButton>
         </template>
         <template #default>
           <div ref="scroller" id="scroller" class="font-monospace fs-6">

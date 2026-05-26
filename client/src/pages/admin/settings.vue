@@ -1,22 +1,25 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import Profile from "@/lib/Profile";
 import axios from "axios";
 import { toast } from "vue-sonner";
 import TokenStorage from "@/lib/TokenStorage";
+import { useI18n } from 'vue-i18n';
 
-const settings = {
+const { t } = useI18n();
+
+const settings = computed(() => ({
   icon: "fac,ansibleforms",
   type: "settings",
-  label: "Settings",
+  label: t('settings.settingsPage.label'),
   actions: [
-    { name: "import", icon: "file-import", title: "Import Config from file (config.yaml or legacy forms.yaml)", dependency: "enableFormsYamlInDatabase" }
+    { name: "import", icon: "file-import", title: t('settings.settingsPage.importConfig'), dependency: "enableFormsYamlInDatabase" }
   ],
   fields : [
-    { key: "url", icon: "globe", line:0, label: "Public Root Url", required: true, help:"This url is used for public access to Ansible Forms, used in backlinks and emails." },
-    { key: "forms_yaml", type:"editor", line:1, label: "Config YAML", description:"Store your config.yaml (categories, roles, constants) in the database instead of the filesystem. <br><b>Note that the designer will be disabled.</b><br>Use the import button to import from your local config.yaml file.<br><br><span style='color: orange;'><b>IMPORTANT:</b> This field was previously named 'Forms YAML' for forms.yaml. Using forms.yaml is now DEPRECATED. Please use config.yaml for configuration and store forms in the forms/ folder.</span>", lang:"yaml", style:"width: 100%;height: 40vh;font-size:1rem"}
+    { key: "url", icon: "globe", line:0, label: t('settings.settingsPage.publicRootUrl'), required: true, help: t('settings.settingsPage.publicRootUrlHelp') },
+    { key: "forms_yaml", type:"editor", line:1, label: t('settings.settingsPage.configYaml'), description: t('settings.settingsPage.configYamlDescription'), lang:"yaml", style:"width: 100%;height: 40vh;font-size:1rem"}
   ],
-}
+}))
 
 const env = ref({});
 const config = ref({});
@@ -76,9 +79,9 @@ onMounted(async () => {
         <table class="table table-striped table-bordered table-sm w-100">
           <thead>
             <tr>
-              <th>Environment Variable</th>
-              <th class="text-center">Set</th>
-              <th>Value</th>
+              <th>{{ t('settings.settingsPage.envVariable') }}</th>
+              <th class="text-center">{{ t('settings.settingsPage.envSet') }}</th>
+              <th>{{ t('settings.settingsPage.envValue') }}</th>
             </tr>
           </thead>
           <tbody>
