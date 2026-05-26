@@ -51,3 +51,6 @@ build-info.json
 
 # python venv
 .venv
+
+# dist folder
+dist
