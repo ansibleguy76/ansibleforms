@@ -59,7 +59,7 @@ function parseCookies(cookieHeader) {
  * Example with interpolation: t(req, 'config.lockedBy', { username: 'admin' })
  */
 function t(req, key, params) {
-  const locale = getLocaleFromRequest(req);
+  const locale = req ? getLocaleFromRequest(req) : defaultLocale;
   const keys = key.split('.');
   let value = messages[locale];
   for (const k of keys) {

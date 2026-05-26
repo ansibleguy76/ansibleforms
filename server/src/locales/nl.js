@@ -116,4 +116,28 @@ export default {
     relaunched: "Job is herstart met job id {id}",
     failedRetrieveRawData: "Kan ruwe formuliergegevens niet ophalen",
   },
+  email: {
+    approval: {
+      heading: "Goedkeuringsverzoek",
+      subtitle: "Er is een goedkeuringsverzoek dat op uw actie wacht",
+      button: "Goedkeuringsverzoek bekijken",
+      regards: "Met vriendelijke groet,<br>AnsibleForms",
+    },
+    jobstatus: {
+      heading: "Job Status Update",
+      subtitle: "Onderstaand ter informatie",
+      button: "Job status",
+      runDetails: "Uitvoeringsdetails :",
+      regards: "Met vriendelijke groet,<br>AnsibleForms",
+    },
+    jobevent: {
+      button: "Job bekijken",
+      regards: "Met vriendelijke groet,<br>AnsibleForms",
+      launch: "Job is gestart{by}.",
+      relaunch: "Job is herstart{by}.",
+      delete: "Job is verwijderd{by}.",
+      approve: "Job is goedgekeurd{by} en wordt verder uitgevoerd.",
+      reject: "Job is afgewezen{by}.",
+    },
+  },
 }

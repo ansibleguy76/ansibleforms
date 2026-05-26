@@ -116,4 +116,28 @@ export default {
     relaunched: "Job has been relaunched with job id {id}",
     failedRetrieveRawData: "Failed to retrieve raw form data",
   },
+  email: {
+    approval: {
+      heading: "Approval Request",
+      subtitle: "There is an approval request awaiting your action",
+      button: "Review Approval Request",
+      regards: "Regards,<br>AnsibleForms",
+    },
+    jobstatus: {
+      heading: "Job Status Update",
+      subtitle: "The below is for your information",
+      button: "Job status",
+      runDetails: "Run details :",
+      regards: "Regards,<br>AnsibleForms",
+    },
+    jobevent: {
+      button: "View Job",
+      regards: "Regards,<br>AnsibleForms",
+      launch: "Job has been launched{by}.",
+      relaunch: "Job has been relaunched{by}.",
+      delete: "Job has been deleted{by}.",
+      approve: "Job has been approved{by} and will continue execution.",
+      reject: "Job has been rejected{by}.",
+    },
+  },
 }

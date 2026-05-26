@@ -21,6 +21,7 @@ import Credential from "./credential.model.v2.js";
 import AwxModel from "./awx.model.js";
 import path from "path";
 import { fileURLToPath } from "url";
+import i18n from "../lib/i18n.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1100,7 +1101,12 @@ Job._buildAndSendEmail = async function ({
       .replaceAll("${title}", subject)
       .replaceAll("${logo}", logo)
       .replaceAll("${color}", color)
-      .replaceAll("${color2}", color2);
+      .replaceAll("${color2}", color2)
+      .replaceAll("${heading}", replacements.heading || "")
+      .replaceAll("${subtitle}", replacements.subtitle || "")
+      .replaceAll("${buttonLabel}", replacements.buttonLabel || "")
+      .replaceAll("${regards}", replacements.regards || "")
+      .replaceAll("${runDetails}", replacements.runDetails || "");
     
     const messageid = await Settings.mailsend(
       recipients.join(","),
@@ -1137,7 +1143,11 @@ Job.sendApprovalNotification = async function (approval, extravars, jobid) {
     templatePath: "approval.html",
     replacements: {
       message: approvalMessage,
-      jobid: jobid
+      jobid: jobid,
+      heading: i18n.t(null, 'email.approval.heading'),
+      subtitle: i18n.t(null, 'email.approval.subtitle'),
+      buttonLabel: i18n.t(null, 'email.approval.button'),
+      regards: i18n.t(null, 'email.approval.regards'),
     },
     logContext: "Approval mail"
   });
@@ -1179,7 +1189,12 @@ Job.sendStatusNotification = async function (jobid) {
       templatePath: "jobstatus.html",
       replacements: {
         message: job.output.replaceAll("\r\n", "<br>"),
-        jobid: jobid
+        jobid: jobid,
+        heading: i18n.t(null, 'email.jobstatus.heading'),
+        subtitle: i18n.t(null, 'email.jobstatus.subtitle'),
+        buttonLabel: i18n.t(null, 'email.jobstatus.button'),
+        runDetails: i18n.t(null, 'email.jobstatus.runDetails'),
+        regards: i18n.t(null, 'email.jobstatus.regards'),
       },
       logContext: "Status mail"
     });
@@ -1223,13 +1238,8 @@ Job.sendEventNotification = async function (jobid, eventType, user = null) {
       'reject': 'Rejected'
     };
     
-    const eventMessages = {
-      'launch': `Job has been launched${user ? ' by ' + user.username : ''}.`,
-      'relaunch': `Job has been relaunched${user ? ' by ' + user.username : ''}.`,
-      'delete': `Job has been deleted${user ? ' by ' + user.username : ''}.`,
-      'approve': `Job has been approved${user ? ' by ' + user.username : ''} and will continue execution.`,
-      'reject': `Job has been rejected${user ? ' by ' + user.username : ''}.`
-    };
+    const byStr = user ? ' by ' + user.username : '';
+    const eventMessage = i18n.t(null, `email.jobevent.${eventType}`, { by: byStr });
 
     var subject = `AnsibleForms '${job.form}' [${job.job_type}] (${jobid}) - ${eventTitles[eventType]}`;
     
@@ -1238,8 +1248,10 @@ Job.sendEventNotification = async function (jobid, eventType, user = null) {
       subject: subject,
       templatePath: "jobevent.html",
       replacements: {
-        message: eventMessages[eventType],
-        jobid: jobid
+        message: eventMessage,
+        jobid: jobid,
+        buttonLabel: i18n.t(null, 'email.jobevent.button'),
+        regards: i18n.t(null, 'email.jobevent.regards'),
       },
       logContext: `${eventType} notification`
     });
