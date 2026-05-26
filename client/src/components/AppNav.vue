@@ -89,6 +89,16 @@
     return m;
   });
 
+  // Check if client/server builds match (cache detection)
+  const buildMismatch = computed(() => {
+    const serverSha = store.serverBuild?.gitSha;
+    const clientSha = store.clientBuild?.gitSha;
+    if (!serverSha || !clientSha || serverSha === 'dev' || clientSha === 'dev') {
+      return false; // dev mode, ignore
+    }
+    return serverSha !== clientSha;
+  });
+
 </script>
 
 <template>
@@ -97,6 +107,51 @@
       Ansible Forms <badge class="badge rounded-pill text-bg-info">v{{ store.version }}</badge>
     </template>
     <template v-slot>
+      <!-- Cache Mismatch Warning -->
+      <div v-if="buildMismatch" class="alert alert-warning d-flex align-items-center" role="alert">
+        <font-awesome-icon icon="triangle-exclamation" class="me-2" />
+        <div>
+          <strong>Cache Mismatch Detected!</strong><br>
+          <small>Client and server builds don't match. Please hard refresh (Ctrl+Shift+R or Cmd+Shift+R).</small>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <div class="row g-2">
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-body">
+                <h6 class="card-title">Server Build</h6>
+                <p class="card-text mb-1">
+                  <small class="text-muted">SHA:</small> 
+                  <code class="ms-1 fs-6 fw-bold">{{ store.serverBuild?.gitSha || 'unknown' }}</code>
+                  <span v-if="store.serverBuild?.dirty" class="badge bg-warning ms-2">dirty</span>
+                </p>
+                <p class="card-text mb-0" v-if="store.serverBuild?.buildTime">
+                  <small class="text-muted">Built:</small> 
+                  <small class="ms-1">{{ new Date(store.serverBuild.buildTime).toLocaleString() }}</small>
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card">
+              <div class="card-body">
+                <h6 class="card-title">Client Build</h6>
+                <p class="card-text mb-1">
+                  <small class="text-muted">SHA:</small> 
+                  <code class="ms-1 fs-6 fw-bold">{{ store.clientBuild?.gitSha || 'unknown' }}</code>
+                  <span v-if="store.clientBuild?.dirty" class="badge bg-warning ms-2">dirty</span>
+                </p>
+                <p class="card-text mb-0" v-if="store.clientBuild?.buildTime">
+                  <small class="text-muted">Built:</small> 
+                  <small class="ms-1">{{ new Date(store.clientBuild.buildTime).toLocaleString() }}</small>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
       <p class="mt-3 fs-6 user-select-none">
         This program is free software: you can redistribute it and/or modify
         it under the terms of the <strong>GNU General Public License</strong> as published by

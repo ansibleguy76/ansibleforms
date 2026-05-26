@@ -698,7 +698,8 @@
       - showLogs: The user can see the logs page
       - extendedTokenExpiration: The user can request a token with a longer expiration time (for coding api purposes for example)  
       - showAllJobLogs: The user can see all job logs (not only his own) (Added in 5.0.9)
-      - enableLogin: The user can login.  
+      - enableLogin: The user can login (deprecated, use allowLogin).  
+      - allowLogin: The user can login (replaces enableLogin).
       - allowBackupOps: The user can perform database operations, such as backup and restore.
       - allowVerboseMode: The user can enable verbose mode on ansible forms.
       - allowJobRelaunch: The user can relaunch jobs with pre-filled form data from previous submissions.
@@ -710,7 +711,7 @@
       When options are set on the public role, they will have the lowest precedence and can be used as default options for all roles.  
       You can add options on role level, which will override the public role options.  
 
-      The enableLogin option is different, that is for the backend.  By default everyone can login.  
+      The `allowLogin` option (formerly `enableLogin`) is different, that is for the backend.  By default everyone can login.  
       You can set it to false on public and then enable on the roles you want to give access.  Watch out you don't lock yourself out.  
 
     examples:
@@ -778,7 +779,7 @@
               This Form creates a virtual machine.  it will connect to `vcenter`.  This help is Markdown
               so you can use **markdown** markup to highlight __certain words__.
             showHelp: true                                 # show help on load
-            disableRelaunch: false                         # disable job relaunch for this form (default: false)
+            allowRelaunch: true                            # allow job relaunch for this form (default: true)
             icon: computer                                 # a font awesome icon
             categories:                                    # reference to categories defined earlier
             - Demo
@@ -895,7 +896,8 @@
           - showLogs: The user can see the logs page
           - extendedTokenExpiration: The user can request a token with a longer expiration time (for coding api purposes for example)  
           - showAllJobLogs: The user can see all job logs (not only his own) (Added in 5.0.9)
-          - enableLogin: The user can login.  
+          - enableLogin: The user can login (deprecated, use allowLogin).  
+          - allowLogin: The user can login (replaces enableLogin).
           - allowBackupOps: The user can perform database operations, such as backup and restore.
           - allowVerboseMode: The user can enable verbose mode on ansible forms.
           - allowJobRelaunch: The user can relaunch jobs with pre-filled form data from previous submissions.
@@ -954,6 +956,7 @@
       - name: roles
         type: array
         required: true
+        with_types: ansible, awx, multistep
         group: basic
         allowed: valid role names
         short: Who has access
@@ -971,6 +974,7 @@
       - name: categories
         type: array
         allowed: valid category name
+        with_types: ansible, awx, multistep
         group: basic
         short: Categories
         description: | 
@@ -1007,12 +1011,14 @@
             >  *Everything* is going according to **plan**.     
       - name: showHelp
         type: boolean
+        with_types: ansible, awx, multistep
         short: Show Help
         group: visualization
         default: true
         description: Show the help by default or collapse the help.  
       - name: icon
         type: string
+        with_types: ansible, awx, multistep
         group: visualization
         allowed: Free fontawesome 6 icon
         short: Form icon
@@ -1027,6 +1033,7 @@
             icon: trash
       - name: iconColor
         type: string
+        with_types: ansible, awx, multistep
         allowed: valid color name
         group: visualization
         short: Icon color
@@ -1040,6 +1047,7 @@
             iconColor: danger
       - name: iconSize
         type: string
+        with_types: ansible, awx, multistep
         allowed: xs, sm, lg, 2x, 3x, 5x, 7x, 10x
         group: visualization
         short: Icon size
@@ -1054,6 +1062,7 @@
             iconSize: 5x
       - name: overlayIcon
         type: string
+        with_types: ansible, awx, multistep
         allowed: valid fontawesome icon name
         group: visualization
         short: Overlay icon on main icon
@@ -1069,6 +1078,7 @@
             overlayIconTransform: shrink-6 up-7 right-7
       - name: overlayIconTransform
         type: string
+        with_types: ansible, awx, multistep
         allowed: valid fontawesome transform
         group: visualization
         short: Transform for overlay icon
@@ -1085,6 +1095,7 @@
             overlayIconTransform: shrink-8 down-2
       - name: overlayIconColor
         type: string
+        with_types: ansible, awx, multistep
         allowed: valid color name
         group: visualization
         short: Color for overlay icon
@@ -1100,6 +1111,7 @@
             overlayIconColor: danger
       - name: overlayIconCircle
         type: boolean
+        with_types: ansible, awx, multistep
         group: visualization
         short: Show circle background behind overlay icon
         default: true
@@ -1117,6 +1129,7 @@
             overlayIconColor: success
       - name: overlayIconText
         type: string
+        with_types: ansible, awx, multistep
         allowed: any text
         group: visualization
         short: Text overlay on icon
@@ -1132,6 +1145,7 @@
             overlayIconTextColor: warning
       - name: overlayIconTextPosition
         type: string
+        with_types: ansible, awx, multistep
         allowed: top-left, top-right, bottom-left, bottom-right
         group: visualization
         short: Position for text overlay
@@ -1147,6 +1161,7 @@
             overlayIconTextPosition: top-right
       - name: overlayIconTextColor
         type: string
+        with_types: ansible, awx, multistep
         allowed: valid color name
         group: visualization
         short: Color for text overlay
@@ -1162,6 +1177,7 @@
             overlayIconTextColor: warning
       - name: image
         type: string
+        with_types: ansible, awx, multistep
         allowed: valid image url
         group: visualization
         short: Form image
@@ -1191,6 +1207,7 @@
             image: /assets/images/netapp.svg # the docker compose has a few brand images, feel free to add your own
       - name: tileClass
         type: string
+        with_types: ansible, awx, multistep
         allowed: valid bootstrap background class
         group: visualization
         short: Form tile background colour
@@ -1213,6 +1230,7 @@
             tileClass: bg-success-subtle text-dark  
       - name: fieldGroupClasses
         type: object
+        with_types: ansible, awx, multistep
         allowed: key-value pairs
         group: visualization
         short: Fieldgroup background color
@@ -1339,9 +1357,43 @@
                   groupname1: bg-info-subtle
                   groupname2: bg-success-subtle    
                 fields:                                        # list of field objects      
+        - name: subform
+          description: |
+            A reusable form fragment used as the per-row editor of a `list` field, or as the single-object editor of a `yaml` field with the `subform` property.  
+            Subforms are not shown in the tile view and cannot be submitted directly.  
+            They share the same field types and validation rules as regular forms.
+          examples:
+          - name: Address subform
+            code: |
+              forms:
+                - name: Address
+                  type: subform
+                  fields:
+                    - name: street
+                      type: text
+                      label: Street
+                      required: true
+                    - name: city
+                      type: text
+                      label: City
+                      required: true
+                    - name: country
+                      type: text
+                      label: Country
+                      required: true
+                - name: My Main Form
+                  type: ansible
+                  playbook: site.yml
+                  roles:
+                    - Public
+                  fields:
+                    - name: addresses
+                      type: list
+                      label: Addresses
+                      subform: Address
         short: Form type
-        description: | 
-          Our form eventually sends extravars to a target.  That target can be an ansible-playbook, an awx-template or a multistep (which is a list or combination of multiple playbooks/templates, executed sequentially).
+        description: |
+          Our form eventually sends extravars to a target.  That target can be an ansible-playbook, an awx-template, a multistep (a sequence of playbooks/templates), or a `subform` (a reusable form fragment used as the per-row editor of a `list` field or the single-object editor of a `yaml` field).
         examples:
         - name: Run AWX Template Create VM
           code: |
@@ -1418,6 +1470,7 @@
                 default: helloworld.yaml # this will overwrite the playbook name
       - name: credentials
         type: object
+        with_types: ansible, awx
         group: basic
         version: 4.0.16
         allowed: key-value pairs
@@ -1464,6 +1517,7 @@
                 asCredential: true
       - name: ansibleCredentials
         type: string
+        with_types: ansible
         group: basic
         version: 4.0.17
         allowed: a local credentialname
@@ -1472,6 +1526,7 @@
           Ansible allows to pass default ansible credentials in the form of 2 extravars ansible_user and ansible_password
       - name: playbookSubPath
         type: string
+        with_types: ansible
         version: 6.0.1
         group: basic
         allowed: a valid folder subpath
@@ -1480,6 +1535,7 @@
           If you have a more complex ansible setup, you might want to organize them in subfolders.  Use this property to define a subfolder (or multiple levels) where you want to launch ansible-playbook from.  
       - name: vaultCredentials
         type: string
+        with_types: ansible
         group: basic
         version: 5.0.2
         allowed: a local credentialname
@@ -1498,6 +1554,7 @@
           A multistep form is basically an array of multiple form type destinations, defined here as steps.
       - name: inventory
         type: string
+        with_types: ansible, awx
         short: Inventory
         group: workflow
         description: |
@@ -1508,6 +1565,7 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
       - name: executionEnvironment
         type: string
+        with_types: awx
         short: Execution Environment
         version: 5.0.0
         group: workflow
@@ -1518,6 +1576,7 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.   
       - name: instanceGroups
         type: array or string
+        with_types: awx
         short: Instance Groups
         version: 5.0.0
         group: workflow
@@ -1529,6 +1588,7 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.                       
       - name: scmBranch
         type: string
+        with_types: awx
         short: SCM Branch
         version: 5.0.0
         group: workflow
@@ -1539,6 +1599,7 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.
       - name: awx
         type: string
+        with_types: awx
         group: workflow
         version: 6.0.0
         allowed: name of awx instance
@@ -1557,6 +1618,7 @@
             awx: my_awx_instance
       - name: awxCredentials
         type: array
+        with_types: awx
         group: workflow
         version: 4.0.16
         allowed: name of credential in AWX
@@ -1590,6 +1652,7 @@
                 expression: "['vmware_prod','$(my_ad_creds)']"
       - name: check
         type: boolean
+        with_types: ansible, awx
         group: workflow
         short: Run in check mode
         description: |
@@ -1599,6 +1662,7 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
       - name: limit
         type: text
+        with_types: ansible, awx
         allowed: a valid host pattern
         group: workflow
         short: Run against a limited number of hosts
@@ -1609,6 +1673,7 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
       - name: diff
         type: boolean
+        with_types: ansible, awx
         short: Run in diff mode
         group: workflow
         description: |
@@ -1618,6 +1683,7 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
       - name: verbose
         type: boolean
+        with_types: ansible
         version: 4.0.0
         group: workflow
         short: Run in verbose mode
@@ -1628,6 +1694,7 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
       - name: keepExtravars
         type: boolean
+        with_types: ansible
         short: Do not remove the extarvars json file
         group: workflow
         version: 4.0.0
@@ -1638,14 +1705,33 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
       - name: abortable
         type: boolean
+        with_types: ansible, awx, multistep
         short: Allow aborting the job
         group: workflow
         version: 5.0.8
         default: true
         description: |
           By default you can allow the user to abort the job.  Use this attribute to disable this behaviour.
+      - name: allowRelaunch
+        type: boolean
+        with_types: ansible, awx, multistep
+        short: Allow relaunching the job
+        group: workflow
+        version: 6.2.0
+        default: true
+        description: |
+          By default, users with the `allowJobRelaunch` role option can relaunch any job.  
+          Set this to `false` to prevent relaunching this specific form, regardless of user permissions.
+
+          **Note:** `disableRelaunch: true` is the deprecated equivalent — please migrate to `allowRelaunch: false`.
+        examples:
+          - name: Prevent relaunching a form
+            code: |
+              - name: Production Deployment
+                allowRelaunch: false
       - name: order
         type: integer
+        with_types: ansible, awx, multistep
         group: visualization
         version: 5.1.0
         short: Order of the form in the list
@@ -1654,6 +1740,7 @@
           **Note** : If you do not set this property, it will be ordered alphabetically by name.
       - name: tags
         type: string
+        with_types: ansible, awx
         allowed: comma separated tag-list
         group: workflow
         short: Set tags
@@ -1664,6 +1751,7 @@
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.            
       - name: approval
         type: object
+        with_types: ansible, awx, multistep
         allowed: valid approval object
         group: interaction
         objectLink: forms/form/approval
@@ -1674,6 +1762,7 @@
           An approval link is sent by email to a specific approver who can then approve or reject the job.
       - name: notifications
         type: object
+        with_types: ansible, awx, multistep
         group: interaction
         allowed: valid notification object
         objectLink: forms/form/notifications
@@ -1692,6 +1781,7 @@
             
       - name: onSubmit
         type: array
+        with_types: ansible, awx, multistep
         group: interaction
         allowed: valid job status action objects
         short: Events on submit
@@ -1716,6 +1806,7 @@
             # more examples on the job-status-event page
       - name: onSuccess
         type: array
+        with_types: ansible, awx, multistep
         group: interaction
         allowed: valid job status action objects
         short: Events on success
@@ -1739,6 +1830,7 @@
             # more examples on the job-status-event page  
       - name: onFailure
         type: array
+        with_types: ansible, awx, multistep
         group: interaction
         allowed: valid job status action objects
         short: Events on failure
@@ -1762,6 +1854,7 @@
             # more examples on the job-status-event page  
       - name: onAbort
         type: array
+        with_types: ansible, awx, multistep
         group: interaction
         allowed: valid job status action objects
         short: Events on abort
@@ -1785,6 +1878,7 @@
             # more examples on the job-status-event page   
       - name: onFinish
         type: array
+        with_types: ansible, awx, multistep
         group: interaction
         allowed: valid job status action objects
         short: Events on finished
@@ -1811,6 +1905,7 @@
             # more examples on the job-status-event page                                                  
       - name: varsFiles
         type: array
+        with_types: ansible, awx
         group: basic
         allowed: list of file paths (absolute or relative)
         short: Load YAML files as constants
@@ -1877,7 +1972,10 @@
           icon: fas,list-ol
           description: |
             Each step is a new form destination.  And steps are executed sequentially.  
-            Use specific properties like `continue`, `always` and `ifExtraVar` to control the flow of a multistep form.
+            Use specific properties like `continue`, `always` and `ifExtraVar` to control the flow of a multistep form.  
+            
+            When a step has `type: ansible`, all [ansible-specific form properties](/forms/ansible.html) apply to that step (e.g. `playbook`, `playbookSubPath`, `ansibleCredentials`, `vaultCredentials`, `inventory`, `check`, `diff`, `tags`, `varsFiles`, `approval`, `notifications`, ...).  
+            When a step has `type: awx`, all [awx-specific form properties](/forms/awx.html) apply to that step (e.g. `template`, `awx`, `awxCredentials`, `executionEnvironment`, `instanceGroups`, `scmBranch`, `inventory`, `check`, `diff`, `tags`, `approval`, `notifications`, ...).
           items:
           - name: name
             type: string
@@ -1912,154 +2010,6 @@
                 name: Delete vm
                 type: ansible
                 template: delete_vm.yaml
-          - name: template
-            type: string
-            group: basic
-            with_types: awx
-            allowed: a valid awx template name
-            short: Awx template
-            description: |
-              This attribute is only used when the form type is `awx`.  When using native Ansible, use the property `playbook`.
-                
-              **Note** : You can also dynamically set the template by using a field called `__template__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static template name.  
-              **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.                    
-            examples:
-            - name: Run AWX Template Helloworld
-              code: |
-                name: Helloworld
-                type: awx
-                template: Helloworld
-            - name: Use dynamic template name
-              code: |
-                name: Foobar
-                type: awx
-                template: HelloWorld
-                fields:
-                  - name: __template__
-                    type: text
-                    default: Foobar # this will overwrite the template name            
-          - name: playbook
-            type: string
-            group: basic
-            with_types: ansible
-            allowed: a valid yaml file
-            short: Ansible playbook
-            description: | 
-              This attribute is only used when the form type is `ansible`.  When using awx, use the property `template`.  
-                
-              **Note** : You can also dynamically set the playbook by using a field called `__playbook__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static playbook name.  
-              **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.        
-            examples:
-            - name: Run foobar playbook
-              code: |
-                name: Foobar
-                type: ansible
-                playbook: foobar.yaml  
-            - name: Use dynamic playbook name
-              code: |
-                name: HelloWorld
-                type: ansible
-                playbook: foobar.yaml
-                fields:
-                  - name: __playbook__
-                    type: text
-                    default: helloworld.yaml # this will overwrite the playbook name
-          - name: vars_files
-            type: array
-            group: basic
-            with_types: ansible
-            allowed: list of valid yaml files
-            short: Ansible vars_files
-            description: | 
-              This will load yaml files with contain dictionaries of variables.  
-              These dict variables will be available in the form to use as constants.  
-              Adivise is to make the dict-keys unique and UPPERCASE to avoid conflicts with other variables.
-            examples:
-            - name: Run foobar playbook with vars_files
-              code: |
-                name: Foobar
-                type: ansible
-                playbook: foobar.yaml  
-                vars_files:
-                  - /home/vars/common.yaml
-                  - /home/vars/special.yaml
-          - name: inventory
-            type: string
-            group: workflow
-            short: Inventory
-            description: |
-              In both awx and ansible core you can pass an inventory.  In the case of ansible core, it will be a yaml file.  In case of awx it will be the inventory name.  
-                
-              **Note** : You can also dynamically set the inventory by using a field called `__inventory__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static inventory.  
-              **Note** : Ansible core allows multiple inventories (so you can use an array), however awx does not support multiple inventories.
-              **Note** : If you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
-          - name: check
-            type: boolean
-            group: workflow
-            short: Run in check mode
-            description: |
-              In both awx and ansible core you run a playbook in check mode.  Enable this attribute to do so.  
-
-              **Note** : You can also dynamically set the check mode by using a field called `__check__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static check field.  The field must result in a boolean (expression or checkbox)
-              **Note** : If you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
-          - name: diff
-            type: boolean
-            group: workflow
-            short: Run in diff mode
-            description: |
-              In both awx and ansible core you run a playbook in diff mode.  Enable this attribute to do so.
-
-              **Note** : You can also dynamically set the check mode by using a field called `__diff__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static diff field.  The field must result in a boolean (expression or checkbox)          
-              **Note** : If you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
-          - name: tags
-            type: string
-            group: workflow
-            allowed: comma separated tag-list
-            short: Set tags
-            description: |
-              In both awx and ansible core you can pass tags.  Use this attribute to pass a comma separted list of tags.
-                
-              **Note** : You can also dynamically set the tags by using a field called `__tags__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static tags.  
-              **Note** : If you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.            
-          - name: approval
-            type: object
-            group: interaction
-            allowed: valid approval object
-            objectLink: forms/form/approval
-            short: Add approval point
-            description: |
-              Ansible Forms allows to add an approval point before a job is ran.  
-              An approval link is sent by email to a specific approver who can then approve or reject the job.  
-              Every step can have a differnt approval point.
-            examples:
-            - name: Approve removal
-              code: |
-                approval:
-                  title: Please approve removal
-                  message: |
-                    You need to approve the removal of $(field1).  
-                    Double check please.
-                  roles:
-                    - public
-                  notifications:
-                    - info@ansibleforms.com    
-          - name: notifications
-            type: object
-            group: interaction
-            allowed: valid notification object
-            objectLink: forms/form/notifications
-            short: Add Notification
-            description: |
-              Add email notifications on job status events.  
-              Every step can have its own notifications
-            examples:
-            - name: Send on success
-              code: |
-                notifications:
-                  recipients:
-                    - info@ansibleguy.com
-                  onStatus:
-                    - success
           - name: key
             type: string
             allowed: valid extravar reference
@@ -2417,14 +2367,14 @@
                   * **database query** : you can use the query and dbConfig property to query a mysql, mssql server, postgres, oracle or mongodb.
                   * **expression** : you can use the expression property to create or retrieve data. in this case the output of the expression can be any type.  
                   The expression itself is pure javascript. You can do inline javascript or you can use a function. Read more on security concerns about expressions You can extend the functions with your own in the custom.js file. You can have synchronous and asynchronous functions. This allows you to retrieve any kind of data, whether it's reading a file or accessing a rest-api, or querying a foreign database. You can run the expression locally (`runLocal`) in the browser for simple expressions. This is faster and there is no limitation on the expression.  
-                  Use the alias type `local` to quickly make an expression type with runLocal, hide and noOutput.  
+                  Use the alias type `local` to quickly make an expression type with runLocal, hide and output false.  
                   Use the alias type `local_out` to quickly make an expression type with runLocal, hide.  
                   Use the alias type `credential` to quickly make an expression type with runLocal, hide, asCredential.  
                     
                   Advanced helper functions (local and remote) are available, to query from rest for example.  
                   Explore the separate section on Expressions for multiple demo's.  
                     
-                  Alias : `local` (type='expression', runLocal=true, hide=true, noOutput=true) // since version 4.0.10
+                  Alias : `local` (type='expression', runLocal=true, hide=true, output=false) // since version 4.0.10
                   Alias : `local_out` (type='expression', runLocal=true, hide=true) // since version 4.0.12
                   Alias : `credential` (type='expression', runLocal=true, hide=true, asCredential=true) // since version 4.0.10
                 examples:    
@@ -2432,8 +2382,11 @@
                   code: |
                     since expressions are so diverse, there is a separate section on expressions with examples.
               - name: table
-                description: A table input field (insert, modify, delete)
+                description: (deprecated) A table input field - use `list` + `subform` instead
                 extra: |
+                  **Deprecated since 6.2.0.** The `table` field is superseded by the [list](../list) field combined with a `subform`.  
+                  Existing `table` fields keep working but trigger a deprecation warning.  
+                  
                   A table field allows you to manually add multi object arrays.  
                   You can start from an empty list, but you can also retrieve existing data first using :  
 
@@ -2534,6 +2487,61 @@
                           switch: true
                           required: true
                           default: true                                
+              - name: list
+                description: A list of structured rows edited through a reusable subform (supersedes `table`)
+                extra: |
+                  A `list` field shows a table of rows where each row is edited through a separate **subform** pane.  
+                  The subform itself is a top-level form of type `subform`, referenced by name via the `subform` property.  
+                  Subforms can be nested (a list field inside a subform) and can be reused across multiple forms (e.g. a single `Address` subform shared by customers, suppliers, ...).  
+                  Use the `columns` property to pick which subform fields appear in the table. Other properties (`allowInsert`, `allowDelete`, `insertMarker`, `deleteMarker`, `updateMarker`) behave the same as in the deprecated `table` field.
+                examples:
+                - name: List with a shared Address subform
+                  code: |
+                    # Top-level forms in the same file
+                    - name: Address
+                      type: subform
+                      fields:
+                        - name: street
+                          type: text
+                          label: Street
+                        - name: city
+                          type: text
+                          label: City
+                        - name: country
+                          type: text
+                          label: Country
+
+                    - name: Create customer
+                      type: ansible
+                      playbook: customer.yaml
+                      fields:
+                        - name: name
+                          type: text
+                          label: Customer name
+                        - name: addresses
+                          type: list
+                          label: Addresses
+                          subform: Address
+                          columns:
+                            - city
+                            - country
+                          titleAdd: Add address
+                          titleEdit: Edit address
+                          allowInsert: true
+                          allowDelete: true
+                - name: List with marker tracking
+                  code: |
+                    - name: people
+                      type: list
+                      label: People
+                      subform: Person
+                      allowDelete: false          # preloaded rows are locked
+                      insertMarker: added         # session-added rows stay removable
+                      updateMarker: updated
+                      deleteMarker: removed
+                      columns:
+                        - name
+                        - email
               - name: yaml
                 description: A YAML editor field with syntax highlighting and validation
                 extra: |
@@ -2655,7 +2663,7 @@
             type: string
             group: basic
             allowed: Free text
-            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, file, html, yaml
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, list, file, html, yaml
             short: Field label
             description: |
               A friendly name/label for the field.  Note: if not set, the field name is used as label, but not when type is html.
@@ -2665,7 +2673,7 @@
             type: string
             group: basic
             allowed: Free text
-            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, file
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, file
             short: In-field help value
             description: |
               Some form fields allow an in-field hint value.
@@ -2675,7 +2683,7 @@
             type: string
             group: basic
             allowed: Free text
-            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, file, yaml
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, list, file, yaml
             short: Field help message
             description: |
               Some fields require additional help information.
@@ -3141,7 +3149,7 @@
                   type: password
                   label: Enter password again
                   sameAs: password
-                  noOutput: true
+                  output: false
           - name: ignoreIncomplete
             type: boolean
             default: false
@@ -3152,13 +3160,26 @@
               the default form behaviour is not to allow form submit until all placeholders are resolved.
               When this attribute is true, the form does not wait for placeholder completion for this field.
             with_type: expression, enum
+          - name: output
+            type: boolean
+            default: true
+            group: output
+            version: 6.2.0
+            short: Include field value as extravar
+            description: |
+              Form fields are by default sent as extravars.  
+              Set to `false` to exclude a field from the extravar output.
+
+              **Note:** `noOutput: true` is the deprecated equivalent — please migrate to `output: false`.
           - name: noOutput
             type: boolean
             default: false
             group: output
-            short: Do not output as extravar
+            short: Do not output as extravar (deprecated)
+            deprecated: true
             description: |
-              Form fields are by default send as extravars.  
+              **Deprecated since 6.2.0.** Use `output: false` instead.  
+              Form fields are by default sent as extravars.  
               If you do not want a field to be sent as extravar, set this attribute to true.
           - name: model
             type: string or array
@@ -3245,7 +3266,7 @@
                 An expression supports placeholders.  Read more about placeholders here. [TODO]
                 Click here to find out more about the predefined functions. [TODO]  
                   
-                **tip** : use the alias `local` (type='expression',runLocal=true,hide=true,noOutput=true)  
+                **tip** : use the alias `local` (type='expression',runLocal=true,hide=true,output=false)  
                 **tip** : use the alias `local_out` (type='expression',runLocal=true,hide=true)  
                 **tip** : use the alias `credential` (type='expression',runLocal=true,hide=true,asCredential=true)  
             with_types: enum, expression, table, html
@@ -3278,7 +3299,7 @@
                     expression: "'test'.toUpperCase()"
                     runLocal: true // this is default with type=local                  
                     hide: true     // this is default with type=local
-                    noOutput: true // this is default with type=local
+                    output: false // this is default with type=local
               - name: Use the alias `local_out`
                 code: |
                   - name: uppercase
@@ -3352,13 +3373,19 @@
               Additionally you can set an array of credential names, to use multiple databases with a single query.  The result will be a join of the results.  
               Doubles will not be removed automatically.  
             examples:
-            - name: get information from a mysql database (legacy example)
+            - name: get information from a mysql database (legacy example - deprecated)
               code: |
+                # Old style (deprecated) - type was required separately:
                 - name: cities
                   type: enum
-                  dbConfig: 
+                  dbConfig:
                     name: CMDB_CONN
                     type: mysql
+                  query: select name, country from cities
+                # New style - just use the credential name:
+                - name: cities
+                  type: enum
+                  dbConfig: CMDB_CONN
                   query: select name, country from cities
             - name: get information from a mysql database (new example)
               code: |
@@ -3370,7 +3397,7 @@
               code: |
                 - name: cities
                   type: enum
-                  dbConfig: # the query will be a join of the results of the 2 databases
+                  dbConfig: # the query will be a union of the results of the 2 databases
                   - CMDB_CONN1
                   - CMDB_CONN2
                   query: select name, country from cities                                  
@@ -3397,17 +3424,13 @@
               code: |
                 - name: cities
                   type: enum
-                  dbConfig:
-                    name: CMDB_CONN
-                    type: mysql
+                  dbConfig: CMDB_CONN
                   query: select name, country from cities
             - name: get information from a mongodb
               code: |
                 - name: user
                   type: expression
-                  dbConfig:
-                    name: USER_DB_CONN
-                    type: mongodb
+                  dbConfig: USER_DB_CONN
                   query: cmdb~users~{"name":"ansibleguy"}
                   # the query in mongodb has 3 parts, separated by ~  
                   # database, collection and the query in valid json    
@@ -3427,9 +3450,7 @@
               code: |
                 - name: usernames
                   type: enum
-                  dbConfig:
-                    name: CMDB_CONN
-                    type: mysql
+                  dbConfig: CMDB_CONN
                   query: select id, name, email from users
                   jq: .[0].name   # return the first item's name
           - name: multiple
@@ -3478,21 +3499,47 @@
             description: |
               When you edit a record in a table, the default title is `Edit`.  
               You can change this to something more meaningful by setting this property.
+          - name: titleAdd
+            type: string
+            group: visualization
+            with_types: list
+            short: Title shown in the subform pane when adding a new row
+            description: |
+              When you add a row through a `list` field, the subform pane shows `Add <label>` as subtitle.  
+              Use this property to override the subtitle (e.g. `Add address`).
+          - name: titleEdit
+            type: string
+            group: visualization
+            with_types: list
+            short: Title shown in the subform pane when editing an existing row
+            description: |
+              When you edit a row through a `list` field, the subform pane shows `Edit <label>` as subtitle.  
+              Use this property to override the subtitle (e.g. `Edit address`).
+          - name: subform
+            type: string
+            required: true
+            group: basic
+            with_types: list, yaml
+            short: Name of the subform that defines one row
+            description: |
+              For a `list` field: delegates the per-row editor to a **subform**.  
+              For a `yaml` field: the value is a single object edited via a **subform** drilldown instead of a raw YAML editor.  
+              Set this property to the `name` of a top-level form of type `subform` declared in the same forms file (or in any loaded forms file).  
+              The same subform can be referenced by multiple fields, enabling reuse (e.g. a single `Address` subform shared across several forms).
           - name: columns
             type: array
             group: visualization
-            with_types: enum
-            short: The list of columns visible in the dropdown box
+            with_types: enum, list
+            short: The list of columns visible in the dropdown/table
             description: |
-              By default all properties are show in an `enum` field.  With this property you can choose which are visible.
+              For an `enum` field: all properties are shown by default. Use this property to choose which columns are visible in the dropdown.  
+              For a `list` field: all scalar subform fields are shown by default. Use this property to pick which subform fields render as columns in the list table (missing names soft-fail and render as empty columns).
             examples:
             - name: Show only wanted columns
               code: |
                 - name: users
                   type: enum
-                  dbConfig:
-                    name: CMDB
-                    type: mysql
+                  dbConfig: CMDB
                   query: SELECT id, name, username, zip, city FROM users
                   columns:
                   - name
@@ -3511,9 +3558,7 @@
               code: |
                 - name: volumes
                   type: enum
-                  dbConfig:
-                    name: CMDB
-                    type: mysql
+                  dbConfig: CMDB
                   query: SELECT id, name, used, total, (used/total*100) as used_pct FROM volumes
                   columns:
                   - name
@@ -3533,9 +3578,7 @@
               code: |
                 - name: volumes
                   type: enum
-                  dbConfig:
-                    name: CMDB
-                    type: mysql
+                  dbConfig: CMDB
                   query: SELECT id, name, title FROM volumes
                   columns:
                   - name
@@ -3560,9 +3603,7 @@
               code: |
                 - name: users
                   type: enum
-                  dbConfig:
-                    name: CMDB
-                    type: mysql
+                  dbConfig: CMDB
                   query: SELECT name, username FROM users
                   columns:
                   - name
@@ -3586,9 +3627,7 @@
               code: |
                 - name: user
                   type: enum
-                  dbConfig:
-                    name: CMDB
-                    type: mysql
+                  dbConfig: CMDB
                   query: SELECT name, id FROM users
                   columns:
                   - name
@@ -3596,15 +3635,11 @@
                   - id
                 - name: computername
                   type: expression
-                  dbConfig:
-                    name: CMDB
-                    type: mysql
+                  dbConfig: CMDB
                   query: SELECT name FROM computers where user_id=$(user)
                 - name: computername_2nd_example
                   type: expression
-                  dbConfig:
-                    name: CMDB
-                    type: mysql
+                  dbConfig: CMDB
                   query: SELECT name FROM computers where user_id=$(user.id)      
                   # this example is better readable 
                   # and removes the need of the placeholderColumn property
@@ -3622,31 +3657,29 @@
               code: |
                 - name: user
                   type: enum
-                  dbConfig:
-                    name: CMDB
-                    type: mysql
+                  dbConfig: CMDB
                   query: SELECT id,name FROM users
                   previewColumn: name
           - name: allowInsert
             type: boolean
             group: interaction
-            with_types: table
+            with_types: table, list
             default: true
-            short: Allow table insert
+            short: Allow table/list insert
             description: |
-              A table can be used to modify existing data.  If new data is allowed, set this property to false.  
+              A table or list can be used to modify existing data.  If new data is not allowed, set this property to false.  
           - name: allowDelete
             type: boolean
             group: interaction
             default: true
-            with_types: table
-            short: Allow table delete
+            with_types: table, list
+            short: Allow table/list delete
             description: |
               A table can be used to modify existing data.  If you don't was recoreds to be deleted, set this property to false.
           - name: deleteMarker
             type: string
             group: output
-            with_types: table
+            with_types: table, list
             short: Adds an additional deletemarker field
             description: |
               When you remove a record in a table, it gets removed.  
@@ -3670,7 +3703,7 @@
           - name: insertMarker
             type: string
             group: output
-            with_types: table
+            with_types: table, list
             short: Adds an additional insertmarker field
             description: |
               When you add a record in a table, it simply gets added.  
@@ -3693,7 +3726,7 @@
           - name: updateMarker
             type: string
             group: output
-            with_types: table
+            with_types: table, list
             short: Adds an additional updatemarker field
             version: 5.1.0
             description: |
@@ -3817,8 +3850,9 @@
             allowed: Tablefield object
             objectLink: forms/form/formfield/tablefield
             docsObjectLink: "/tablefields/"
-            short: The list of fields in a table
+            short: (deprecated) The list of fields in a table
             description: |
+              **Deprecated.** The `table` field and its `tableFields` are superseded by the [list](../formfields/list) field combined with a `subform`.  
               Every table field has its own separated table fields.  The explanation of a tablefield requires a separate help.  
               You can read about [tablefields here](/tablefields/). 
           help:
@@ -3827,6 +3861,7 @@
             link: forms/form/formfield/tablefield
             icon: fas,table
             description: |
+              **Deprecated.** Tablefields are part of the deprecated `table` field. Use a `subform` of type `subform` with `list` fields instead.  
               Each tablefield is a miniature form on it's own.  As you will see, many of the form fields are also usable here.
             items: 
             - name: name
@@ -4091,9 +4126,7 @@
                 code: |
                   - name: users
                     type: enum
-                    dbConfig:
-                      name: CMDB
-                      type: mysql
+                    dbConfig: CMDB
                     query: SELECT id, name, username, zip, city FROM users
                     columns:
                     - name
@@ -4112,9 +4145,7 @@
                 code: |
                   - name: volumes
                     type: enum
-                    dbConfig:
-                      name: CMDB
-                      type: mysql
+                    dbConfig: CMDB
                     query: SELECT id, name, used, total, (used/total*100) as used_pct FROM volumes
                     columns:
                     - name
@@ -4134,9 +4165,7 @@
                 code: |
                   - name: volumes
                     type: enum
-                    dbConfig:
-                      name: CMDB
-                      type: mysql
+                    dbConfig: CMDB
                     query: SELECT id, name, title FROM volumes
                     columns:
                     - name
@@ -4161,9 +4190,7 @@
                 code: |
                   - name: users
                     type: enum
-                    dbConfig:
-                      name: CMDB
-                      type: mysql
+                    dbConfig: CMDB
                     query: SELECT name, username FROM users
                     columns:
                     - name
@@ -4182,9 +4209,7 @@
                 code: |
                   - name: user
                     type: enum
-                    dbConfig:
-                      name: CMDB
-                      type: mysql
+                    dbConfig: CMDB
                     query: SELECT id,name FROM users
                     previewColumn: name
         - name: Approval point
@@ -4437,7 +4462,7 @@
       The following example are assumed to run with the field property `runLocal` true.  
       They are ran in the sandbox of the browser and can leverage the full javascript engine.  
         
-      **Tip** : use the type `local` as an alias for 'type=expression, runLocal=true, hide=true, noOutput=true'  
+      **Tip** : use the type `local` as an alias for 'type=expression, runLocal=true, hide=true, output=false'  
       **Tip** : use the type `local_out` as an alias for 'type=expression, runLocal=true, hide=true'  
       **Tip** : use the type `credential` as an alias for 'type=expression, runLocal=true, hide=true, asCredential: true'  
     examples:
@@ -4923,10 +4948,10 @@
       - Raw form data is stored separately from processed extravars (before model transformations)
       
       **Permission Control:**
-      Forms can disable relaunch functionality using the `disableRelaunch` option:
+      Forms can prevent relaunch using `allowRelaunch: false` (or the deprecated `disableRelaunch: true`):
       ```yaml
       - name: Production Deployment
-        disableRelaunch: true  # Prevents relaunching this form
+        allowRelaunch: false  # Prevents relaunching this form
       ```
       
       Users must have the `allowJobRelaunch` role option enabled (admins have this by default):
@@ -4938,7 +4963,7 @@
       ```
       
       **Most Restrictive Logic:** Relaunch is only available if BOTH conditions are met:
-      1. Form does NOT have `disableRelaunch: true`
+      1. Form does NOT have `allowRelaunch: false` (or deprecated `disableRelaunch: true`)
       2. User role has `allowJobRelaunch: true` (or user is admin)
       
       **How it works:**

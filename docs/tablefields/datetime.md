@@ -1,11 +1,14 @@
 ---
 layout: default
 title: Datetime
-parent: Tablefields
+parent: Tablefields (deprecated)
 nav_order: 6
 ---
 
 # Datetime Tablefield
+
+> **Deprecated.** This tablefield is used with the deprecated `table` field type. Use the [`list`](/formfields/list.html) field type instead.
+{: .warning }
 
 A date and time picker column for collecting temporal values with various precision levels (date, datetime, time, month, year) within a table row.
 

@@ -2,7 +2,7 @@ name: Deploy Jekyll site to Pages
 
 on:
   push:
-    branches: ["development"]
+    branches: ["develop"]
   workflow_dispatch:
 
 permissions:
@@ -21,10 +21,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
+      - name: Copy changelog into docs
+        run: |
+          { echo '---'; echo 'layout: default'; echo 'title: Changelog'; echo 'nav_order: 10'; echo '---'; echo ''; cat CHANGELOG.md; } > docs/changelog.md
+
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.1'
+          ruby-version: '3.2'
           bundler-cache: true
           cache-version: 0
           working-directory: docs

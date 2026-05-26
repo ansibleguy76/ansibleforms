@@ -28,7 +28,7 @@ import { useRoute } from "vue-router";
 import { toast } from "vue-sonner";
 import { useVuelidate } from '@vuelidate/core';
 import { required, helpers, sameAs } from "@vuelidate/validators";
-import { useTemplateRef, nextTick } from "vue";
+import { useTemplateRef, nextTick, inject } from "vue";
 import { copyText } from 'vue3-clipboard'
 import { useAppStore } from "@/stores/app";
 import Helpers from '@/lib/Helpers';
@@ -48,7 +48,7 @@ const route = useRoute();
 const store = useAppStore();
 
 // define
-const emit = defineEmits(["update:status", "change", "submit-action", "abort"]);
+const emit = defineEmits(["update:status", "change", "submit-action", "abort", "save", "cancel"]);
 
 const form = defineModel()
 
@@ -67,7 +67,7 @@ const props = defineProps(
         },
         status: {
             type: String,
-            required: true
+            default: ""
         },
         submitLabel: {
             type: String,
@@ -89,8 +89,35 @@ const props = defineProps(
             type: Object,
             default: () => { return {} }
         },
+        // 'form' (default) renders the full form including submit buttons,
+        // status bar and job-launching UI handled by the parent page.
+        // 'subform' renders only the fields and validation, with Save/Cancel
+        // buttons. Used by AppListField to edit a single row of a list.
+        mode: {
+            type: String,
+            default: "form",
+            validator: (v) => ["form", "subform"].includes(v)
+        },
+        // Optional array of subform definitions (validated forms of type
+        // "subform") provided by the server alongside a form. Propagated
+        // down so nested <AppListField> fields can resolve their target
+        // subform without extra API calls.
+        subforms: {
+            type: Array,
+            default: () => []
+        },
+        // Parent form data injected into subforms as __parent__ so fields
+        // can cross-reference the parent form's values via $(____parent__.field).
+        parentData: {
+            type: Object,
+            default: () => null
+        },
     }
 )
+
+// Edit stack injected from the parent form page (provided by form.vue).
+// Used to open subform editors for yaml+subform fields.
+const editStack = inject('formEditStack', null);
 
 // DATA
 //----------------------------------------------------------------
@@ -111,6 +138,7 @@ const dynamicFieldStatus = ref({});                 // holds the status of dynam
 const queryresults = ref({});                 // holds the results of dynamic dropdown boxes
 const queryerrors = ref({});                 // holds errors of dynamic dropdown boxes
 const fieldOptions = ref({});                 // holds a couple of fieldoptions for fast access (valueColumn,ignoreIncomplete, ...), only for expression,query and table
+
 const warnings = ref([]);                 // holds form warnings.
 const showWarnings = ref(false);              // flag to show/hide warnings
 const visibility = ref({});                 // holds which fields are visiable or not
@@ -709,6 +737,25 @@ function clip(v, doNotStringify = false) {
     }
 }
 
+// copy YAML field to clipboard as YAML (modeled output, matching what user sees)
+function clipYaml(fieldName) {
+    try {
+        const raw = form.value[fieldName];
+        if (!raw) {
+            toast.warning('No data to copy');
+            return;
+        }
+        // Use __output__ (modeled) if available, otherwise fall back to raw
+        // This matches what the user sees on screen
+        const value = raw.__output__ ?? raw;
+        const yamlContent = YAML.stringify(value);
+        copyText(yamlContent);
+        toast.success("Copied modeled YAML to clipboard");
+    } catch (err) {
+        toast.error("Error copying to clipboard : \n" + err.toString());
+    }
+}
+
 // Create a list of fields per group
 function filterfieldsByGroup(group) {
     return props.currentForm.fields.filter((el) => {
@@ -826,6 +873,8 @@ function setVisibility(fieldname, status) {
             // Field is becoming hidden - clear its value to undefined
             form.value[fieldname] = undefined
             setFieldStatus(fieldname, undefined)
+            // Notify dependent fields that this field's value has changed to undefined
+            evaluateDynamicFields(fieldname)
         }
     }
 }
@@ -1061,13 +1110,39 @@ function findVariableDependencies() {
         warnings.value.push(`<span class="text-warning">'${item}' has duplicates</span><br><span>Each field must have a unique name</span>`)
         toast.error("You have duplicates for field '" + item + "'")
     })
+    
+    // check for reserved/internal field names that would cause conflicts
+    const reservedNames = ['__user__', '__parent__', '__output__', '__jobid__'];
+    // topFields from job.model.js - these are safe to use as they're wrapped and passed to playbooks
+    const safeDoubleUnderscoreNames = [
+        '__template__', '__awx__', '__playbook__', '__tags__', '__limit__',
+        '__executionEnvironment__', '__check__', '__diff__', '__verbose__',
+        '__keepExtravars__', '__credentials__', '__inventory__',
+        '__awxCredentials__', '__ansibleCredentials__', '__vaultCredentials__',
+        '__instanceGroups__', '__scmBranch__', '__playbookSubPath__'
+    ];
+    
+    props.currentForm.fields.forEach((item) => {
+        if (!item?.name) return;
+        if (reservedNames.includes(item.name)) {
+            warnings.value.push(`<span class="text-warning">'${item.name}' is a reserved field name</span><br><span>This will conflict with internal fields. Please choose a different name.</span>`);
+            toast.error(`Field name '${item.name}' is reserved for internal use`);
+        }
+        if (item.name.startsWith('__') && !safeDoubleUnderscoreNames.includes(item.name) && !reservedNames.includes(item.name)) {
+            warnings.value.push(`<span class="text-warning">'${item.name}' starts with '__' (double underscore)</span><br><span>This prefix is reserved for internal fields. Please choose a different name or use one of the documented field names.</span>`);
+            toast.error(`Field name '${item.name}' uses reserved prefix '__'`);
+        }
+    })
+    
     // do the analysis
     props.currentForm.fields.forEach((item, i) => {
         // while we are looping, we also check if there are issues
         if (!item?.name) return
         if (item.dependencies) {
             item.dependencies.forEach((dep) => {
-                if (!(fields.includes(dep.name) || (dep.name?.startsWith("!") && fields.includes(dep.name.slice(1))))) {
+                const depBase = dep.name?.startsWith("!") ? dep.name.slice(1) : dep.name;
+                const depRoot = depBase?.split(".")[0];   // handle dot-notation like CREDENTIALS.prompt_ontap
+                if (!(fields.includes(depBase) || depRoot in form.value)) {
                     warnings.value.push(`<span class="text-warning">'${item.name}' has bad dependencies</span><br><span>${dep.name} is not a valid field name</span>`)
                 }
             })
@@ -1082,9 +1157,13 @@ function findVariableDependencies() {
             warnings.value.push(`<span class="text-warning">'${item.name}' has bad 'sameAs' validation</span><br><span>${item.sameAs} is not a valid field name</span>`)
         }
 
-        // query type is now deprecated
-        if (item.type == 'query') {
-            warnings.value.push(`<span class="text-warning">'${item.name}' has the deprecated query type</span><br><span>Use enum type instead.</span>`)
+        // table type is now deprecated in favour of list + subform
+        if (item.type == 'table') {
+            warnings.value.push(`<span class="text-warning">'${item.name}' uses the deprecated <b>table</b> field type</span><br><span>Migrate to a <b>list</b> field with a subform.</span>`)
+        }
+        // noOutput is deprecated in favour of output: false
+        if (item.noOutput !== undefined) {
+            warnings.value.push(`<span class="text-warning">'${item.name}' uses the deprecated <b>noOutput</b> property</span><br><span>Replace with <b>output: false</b>.</span>`)
         }
 
         getPlaceholderMatches(fields, item.name, item.expression ?? item.query)
@@ -1193,8 +1272,16 @@ function replacePlaceholderInString(value, ignoreIncomplete = false) {
         targetflag = undefined
 
         if (foundfield in form.value) {      // does field xxx exist in our form ?
-            if (fieldOptions.value[foundfield] && (["expression", "table", "constant"].includes(fieldOptions.value[foundfield].type) || column.includes(".")) && ((typeof form.value[foundfield] == "object") || (Array.isArray(form.value[foundfield])))) {
-                fieldvalue = JSON.stringify(Helpers.replacePlaceholders(match[1], form.value)) // allow full object reference
+            if (fieldOptions.value[foundfield] && (["expression", "table", "list", "constant"].includes(fieldOptions.value[foundfield].type) || column.includes(".")) && ((typeof form.value[foundfield] == "object") || (Array.isArray(form.value[foundfield])))) {
+                // For list fields, each row carries __output__ (buildFormOutput result with
+                // model/valueColumn applied). Use that for serialisation so parent expressions
+                // see the shaped output, not the raw storage fields.
+                if (fieldOptions.value[foundfield].type === 'list' && Array.isArray(form.value[foundfield])) {
+                    const _shaped = form.value[foundfield].map(row => row.__output__ ?? row);
+                    fieldvalue = JSON.stringify(_shaped);
+                } else {
+                    fieldvalue = JSON.stringify(Helpers.replacePlaceholders(match[1], form.value)) // allow full object reference
+                }
                 if (typeof fieldvalue == "string") { // drop quotes if string
                     fieldvalue = fieldvalue?.replace(/^\"+/, '').replace(/\"+$/, ''); // eslint-disable-line
                 }
@@ -1331,6 +1418,171 @@ function handleSubmitAction(actionKey) {
     emit('submit-action', { action: actionKey, visibility: visibility.value });
 }
 
+// Save handler for subform mode (used by AppListField). Validates the form
+// and, if valid, emits `save` with the current form value so the parent list
+// can add/update the row.
+// Each row carries both raw field values (for re-editing) and `__output__`
+// (the buildFormOutput result with model/valueColumn applied) so that parent
+// expressions like $(acls_base) serialise the shaped output, not the raw data.
+function handleSubformSave() {
+    if (!validateForm()) {
+        return;
+    }
+    const raw = stripSubformInternals(form.value);
+    const built = Helpers.buildFormOutput(props.currentForm.fields, raw, { subforms: props.subforms || [] });
+    emit('save', { ...raw, __output__: built });
+}
+
+// Build the output object for a subform row emitted to the parent list.
+// We intentionally keep the RAW per-field values here (only fields declared
+// in the subform). Internal fields (__user__, __parent__, constants, vars)
+// are filtered out. `model`, `noOutput`, `outputObject` and `valueColumn` are
+// applied at extravars generation time by `Helpers.buildFormOutput`, which
+// walks the whole form tree recursively. Keeping rows raw means they can
+// round-trip through Save -> Edit -> Save without losing data (e.g. full
+// enum objects are preserved for re-editing).
+function stripSubformInternals(src) {
+    if (!src || typeof src !== 'object') return src;
+    
+    const out = {};
+    const declaredFields = new Set((props.currentForm?.fields || []).map(f => f.name));
+    
+    // Filter to only declared fields, excluding internals
+    Object.keys(src).forEach(key => {
+        if (declaredFields.has(key)) {
+            out[key] = src[key];
+        }
+    });
+    
+    return out;
+}
+
+// Subform dropdown actions attached to the Save button (Store only). "Load"
+// is exposed as a separate top-toolbar button by the page (alongside Back),
+// because loading replaces the current draft and feels more like an entry
+// action than a commit action. Store keeps partial drafts without validation.
+const subformActions = [
+    {
+        key: 'store',
+        label: 'Store',
+        icon: 'file-export',
+        roleOption: 'allowStoredJobs',
+    },
+];
+
+function handleSubformAction(actionKey) {
+    // No validation for store/load - authors may want to save partial work.
+    emit('submit-action', { action: actionKey, value: stripSubformInternals(form.value) });
+}
+
+// Open the subform editor for a yaml+subform field.
+// The current field value (or an empty object built from subform defaults)
+// becomes the draft. On save the value is written back to the field.
+function openYamlSubformEditor(field) {
+    if (!editStack) return;
+    const resolvedSubform = props.subforms.find(s => s.name === field.subform);
+    if (!resolvedSubform) return;
+    const title = field.label || field.name;
+    // Build a starting draft from the current value or subform defaults.
+    let row = form.value[field.name];
+    if (!row || typeof row !== 'object' || Array.isArray(row)) {
+        row = {};
+        for (const f of (resolvedSubform.fields || [])) {
+            if (f.default !== undefined) row[f.name] = f.default;
+            else if (f.type === 'list') row[f.name] = [];
+        }
+    } else {
+        row = JSON.parse(JSON.stringify(row));
+    }
+    
+    // Resolve placeholders in titleEdit so $(__parent__.fieldname) works
+    const subtitle = Helpers.resolveTitlePlaceholders(field.titleEdit || `Edit ${title}`, form.value);
+    
+    editStack.push({
+        title,
+        subtitle,
+        subform: resolvedSubform,
+        row,
+        parentData: form.value,
+        onSave: (value) => {
+            form.value[field.name] = value;
+            evaluateDynamicFields(field.name);
+        },
+    });
+}
+
+// Hidden file input refs for yaml+subform load buttons (keyed by field name).
+const yamlSubformFileRefs = ref({});
+
+function triggerYamlSubformLoad(fieldName) {
+    yamlSubformFileRefs.value[fieldName]?.click();
+}
+
+async function handleYamlSubformLoad(event, fieldName) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const fileName = file.name.toLowerCase();
+    if (!fileName.endsWith('.yml') && !fileName.endsWith('.yaml')) {
+        toast.error('Please select a .yml or .yaml file');
+        return;
+    }
+    try {
+        const text = await file.text();
+        const parsed = YAML.parse(text);
+        if (parsed === null || parsed === undefined) {
+            toast.error('Invalid YAML file - no data found');
+            return;
+        }
+        const value = Array.isArray(parsed) ? parsed[0] : parsed;
+        if (Array.isArray(parsed)) toast.info('First array item loaded');
+        
+        // Apply modeling transformation: build __output__ from raw fields
+        // so the modeled structure is immediately visible without manual edit
+        const fieldDef = props.currentForm.fields?.find(f => f.name === fieldName);
+        const resolvedSubform = fieldDef?.subform ? props.subforms.find(s => s.name === fieldDef.subform) : null;
+        form.value[fieldName] = Helpers.applySubformModeling(value, resolvedSubform?.fields, props.subforms || []);
+        
+        toast.success(`Loaded from ${file.name}`);
+        evaluateDynamicFields(fieldName);
+    } catch (e) {
+        toast.error(`Failed to parse ${file.name}: ${e.message}`);
+    }
+    event.target.value = '';
+}
+
+function handleYamlSubformDownload(fieldName, label) {
+    try {
+        const raw = form.value[fieldName];
+        if (!raw) {
+            toast.error('No data to download');
+            return;
+        }
+        
+        // Strip constants, vars and internals — keep only declared subform fields.
+        const fieldDef = props.currentForm.fields?.find(f => f.name === fieldName);
+        const resolvedSubform = fieldDef?.subform ? props.subforms.find(s => s.name === fieldDef.subform) : null;
+        const subformFieldNames = resolvedSubform?.fields?.map(f => f.name) || null;
+        const filtered = subformFieldNames && typeof raw === 'object' && !Array.isArray(raw)
+            ? Object.fromEntries(subformFieldNames.filter(k => k in raw).map(k => [k, raw[k]]))
+            : raw;
+        const value = Helpers.stripInternalFields(filtered);
+        
+        const yamlContent = YAML.stringify(value);
+        const blob = new Blob([yamlContent], { type: 'text/yaml' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${fieldName || 'field'}.yml`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        toast.success('Downloaded as YAML');
+    } catch (e) {
+        toast.error(`Failed to download: ${e.message}`);
+    }
+}
+
 // initiate the defaults
 function initForm() {
     pretasksFinished.value = false;
@@ -1367,11 +1619,19 @@ function initForm() {
         type: "expression"
     };
 
+    // form-level deprecation warnings
+    if (props.currentForm.disableRelaunch !== undefined) {
+        warnings.value.push(`<span class="text-warning">Form uses the deprecated <b>disableRelaunch</b> property</span><br><span>Replace with <b>allowRelaunch: false</b>.</span>`)
+    }
+    if (props.currentForm.tableFields !== undefined) {
+        warnings.value.push(`<span class="text-warning">Form uses the deprecated <b>tableFields</b> property</span><br><span>Migrate to a <b>subform</b> with a <b>list</b> field.</span>`)
+    }
+
     // process aliases
     props.currentForm.fields.forEach((item) => {
         if (item.type == "local") {
             item.hide = item.hide ?? true;
-            item.noOutput = item.noOutput ?? true;
+            item.output = item.output ?? (item.noOutput !== undefined ? !item.noOutput : false);
             item.type = "expression";
             item.runLocal = true;
         }
@@ -1398,8 +1658,25 @@ function initForm() {
                 type: "constant",
             };
             form.value[item] = props.constants[item];
-            dynamicFieldStatus.value[item] = "fixed"; // Mark constants as evaluated/ready
+            dynamicFieldStatus.value[item] = "fixed";
         });
+    }
+
+    // inject form-specific vars (varsFiles data) — loaded server-side into currentForm.vars
+    if (props.currentForm.vars) {
+        Object.keys(props.currentForm.vars).forEach((item) => {
+            fieldOptions.value[item] = { type: "constant" };
+            form.value[item] = props.currentForm.vars[item];
+            dynamicFieldStatus.value[item] = "fixed";
+        });
+    }
+
+    // inject parent form data as __parent__ so subform fields can reference
+    // parent values via $(__parent__.fieldname)
+    if (props.parentData && Object.keys(props.parentData).length > 0) {
+        fieldOptions.value["__parent__"] = { type: "constant" };
+        form.value["__parent__"] = props.parentData;
+        dynamicFieldStatus.value["__parent__"] = "fixed";
     }
 
     // initialize defaults
@@ -1427,7 +1704,7 @@ function initForm() {
         fieldOptions.value[item.name]["evalDefault"] = item.evalDefault ?? false;
         fieldOptions.value[item.name]["hasDependencies"] = ("dependencies" in item)
         fieldOptions.value[item.name]["dependencyOk"] = false
-        if (["expression", "enum", "table", "html", "yaml"].includes(item.type)) {
+        if (["expression", "enum", "table", "html", "yaml", "list"].includes(item.type)) {
             fieldOptions.value[item.name]["isDynamic"] = !!(item.expression ?? item.query ?? item.value ?? false);
             fieldOptions.value[item.name]["valueColumn"] = item.valueColumn || "";
             fieldOptions.value[item.name]["placeholderColumn"] = item.placeholderColumn || "";
@@ -1468,6 +1745,10 @@ function initForm() {
             if (item.type == "table" && form.value[item.name] === undefined) {
                 form.value[item.name] = [];
             }
+            // Same default for list fields.
+            if (item.type == "list" && form.value[item.name] === undefined) {
+                form.value[item.name] = [];
+            }
         } else {
             var fallbackvalue = undefined;
             if (item.type == "checkbox") {
@@ -1481,6 +1762,10 @@ function initForm() {
                 dynamicFieldStatus.value[item.name] = "fixed";
             } else {
                 form.value[item.name] = externalData.value[item.name] ?? getDefaultValue(item.name, item.default) ?? fallbackvalue;
+            }
+            // List fields are arrays - initialize to [] if still undefined.
+            if (item.type == "list" && form.value[item.name] === undefined) {
+                form.value[item.name] = [];
             }
         }
         visibility.value[item.name] = true;
@@ -1594,6 +1879,8 @@ async function startDynamicFieldsLoop() {
                                 }
                                 if (item.type == "table" && !defaults.value[item.name]) form.value[item.name] = [].concat(result);
                                 if (item.type == "table" && defaults.value[item.name]) form.value[item.name] = [].concat(defaults.value[item.name]);
+                                if (item.type == "list" && !defaults.value[item.name]) form.value[item.name] = [].concat(result);
+                                if (item.type == "list" && defaults.value[item.name]) form.value[item.name] = [].concat(defaults.value[item.name]);
 
                                 // Mark as fixed after successful evaluation - will re-evaluate when dependencies change via resetField
                                 setFieldStatus(item.name, "fixed");
@@ -1646,6 +1933,8 @@ async function startDynamicFieldsLoop() {
                                 }
                                 if (item.type == "table" && !defaults.value[item.name]) form.value[item.name] = [].concat(restresult ?? []);
                                 if (item.type == "table" && defaults.value[item.name]) form.value[item.name] = [].concat(defaults.value[item.name] ?? []);
+                                if (item.type == "list" && !defaults.value[item.name]) form.value[item.name] = [].concat(restresult ?? []);
+                                if (item.type == "list" && defaults.value[item.name]) form.value[item.name] = [].concat(defaults.value[item.name] ?? []);
 
                                 if (restresult == undefined && (defaults.value[item.name] != undefined)) {
                                     if (item.type == "expression") {
@@ -1684,6 +1973,7 @@ async function startDynamicFieldsLoop() {
                             delete queryerrors.value[item.name];
                             if (item.type == "query" || item.type == "enum") queryresults.value[item.name] = restresult;
                             else if (item.type == "yaml") form.value[item.name] = restresult;
+                            else if (item.type == "list") form.value[item.name] = [].concat(restresult ?? []);
                             else form.value[item.name] = restresult;
 
                             // Mark as fixed after successful evaluation - will re-evaluate when dependencies change via resetField
@@ -1834,10 +2124,11 @@ onUnmounted(() => {
     <div v-if="formIsReady" ref="containerRef">
 
         <!-- WARNINGS -->
-        <BsOffCanvas v-if="(warnings || Object.keys(queryerrors).length > 0) && showWarnings" :show="true"
+        <BsOffCanvas v-if="showWarnings" :show="true"
             icon="triangle-exclamation" title="Form warnings" @close="showWarnings = false">
             <template #actions> </template>
             <template #default>
+                <p v-if="!canSubmit && !formLoopIsBusy" class="mb-3" v-html="unevaluatedFieldsWarning"></p>
                 <p v-for="w, i in warnings" :key="'warning' + i" class="mb-3" v-html="w"></p>
                 <p v-for="q, i in Object.keys(queryerrors)" :key="'queryerror' + i" class="mb-3 has-text-danger">
                     '{{ q }}' has query errors<br>{{ queryerrors[q] }}
@@ -1851,11 +2142,20 @@ onUnmounted(() => {
             </div>
             <div>
 
-                <!-- warnings -->
-                <span role="button" v-show="!canSubmit && !formLoopIsBusy" :data-tooltip="unevaluatedFieldsWarning">
-                    <popper :content="unevaluatedFieldsWarning">
+                <!-- Unified warnings indicator: combines field-not-evaluated
+                     notices with authoring warnings (deprecations, bad refs,
+                     query errors). Clicking opens the warnings off-canvas. -->
+                <span class="position-relative" role="button"
+                    v-if="(!canSubmit && !formLoopIsBusy) || warnings.length > 0 || Object.keys(queryerrors).length > 0"
+                    @click="showWarnings = true">
+                    <popper :content="unevaluatedFieldsWarning || 'This form has warnings - click to review'">
                         <font-awesome-icon icon="exclamation-triangle" size="lg" class="text-warning" />
                     </popper>
+                    <span v-if="warnings.length + Object.keys(queryerrors).length > 0"
+                        class="badge rounded-pill bg-warning text-dark position-absolute top-0 start-100 translate-middle"
+                        style="font-size: 0.6rem;">
+                        {{ warnings.length + Object.keys(queryerrors).length }}
+                    </span>
                 </span>
 
                 <!-- loop busy -->
@@ -2006,6 +2306,25 @@ onUnmounted(() => {
                                     </div>                                    
                                 </div>
 
+                                <!-- TYPE = LIST (nested subform rows) -->
+                                <div v-if="field.type == 'list' && field.subform">
+                                    <AppListField
+                                        v-model="v$.form[field.name].$model"
+                                        :field="field"
+                                        :subform="subforms.find(s => s.name === field.subform)"
+                                        :subforms="subforms"
+                                        :constants="constants"
+                                        :parentFormData="form"
+                                        :name="field.name"
+                                        :showLoadButton="field.showLoadButton === true"
+                                        :showDownloadButton="field.showDownloadButton === true"
+                                        :hasError="v$.form[field.name].$invalid"
+                                        :errors="getErrorsToDisplay(field.name)"
+                                        :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]"
+                                        @update:modelValue="evaluateDynamicFields(field.name)"
+                                    />
+                                </div>
+
                                 <!-- TYPE = ENUM -->
                                 <div v-if="field.type == 'enum'">
                                     <BsInputForForm type="select" :containerSize="containerSize"
@@ -2083,7 +2402,63 @@ onUnmounted(() => {
                                 <!-- TYPE = YAML -->
                                 <div v-if="field.type == 'yaml'"
                                     :class="{ 'is-loading': !['fixed', 'variable'].includes(dynamicFieldStatus[field.name]) && (field.expression || field.query) }">
-                                    <div v-if="!fieldOptions[field.name].viewable">
+                                    <!-- YAML + subform: button bar + readonly preview -->
+                                    <div v-if="field.subform">
+                                        <div class="mb-2 d-flex gap-2">
+                                            <BsButton
+                                                cssClass="btn-sm"
+                                                icon="pencil-alt"
+                                                :title="`Edit ${field.label || field.name}`"
+                                                @click="openYamlSubformEditor(field)">
+                                                Edit
+                                            </BsButton>
+                                            <BsButton
+                                                v-if="field.showLoadButton"
+                                                cssClass="btn-sm"
+                                                icon="file-import"
+                                                @click="triggerYamlSubformLoad(field.name)">
+                                                Load YAML
+                                            </BsButton>
+                                            <BsButton
+                                                v-if="field.showDownloadButton"
+                                                cssClass="btn-sm"
+                                                icon="download"
+                                                :disabled="!v$.form[field.name].$model"
+                                                @click="handleYamlSubformDownload(field.name)">
+                                                Download
+                                            </BsButton>
+                                            <BsButton
+                                                v-if="v$.form[field.name].$model"
+                                                cssClass="btn-sm"
+                                                icon="copy"
+                                                :isIconButton="true"
+                                                @click="clipYaml(field.name)" />
+                                            <!-- hidden file input for load -->
+                                            <input
+                                                v-if="field.showLoadButton"
+                                                :ref="el => { if (el) yamlSubformFileRefs[field.name] = el; }"
+                                                type="file"
+                                                accept=".yml,.yaml"
+                                                @change="handleYamlSubformLoad($event, field.name)"
+                                                style="display: none"
+                                            />
+                                        </div>
+                                        <div class="card p-3 yaml-readonly limit-height"
+                                            :class="{ 'border-danger': v$.form[field.name].$invalid }">
+                                            <pre v-if="v$.form[field.name].$model && typeof v$.form[field.name].$model === 'object'"
+                                                v-highlightjs><code language="yaml" style="border:none;padding:0">{{ YAML.stringify(v$.form[field.name].$model.__output__ ?? v$.form[field.name].$model) }}</code></pre>
+                                            <span v-else class="text-muted fst-italic">{{ field.placeholder || '(empty)' }}</span>
+                                        </div>
+                                        <div v-if="v$.form[field.name].$invalid && getErrorsToDisplay(field.name).length > 0"
+                                            class="invalid-feedback d-block">
+                                            {{ getErrorsToDisplay(field.name)[0].$message || getErrorsToDisplay(field.name)[0].$params?.description }}
+                                        </div>
+                                        <div class="form-text" v-if="fieldHelp[field.name]">
+                                            {{ typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name] }}
+                                        </div>
+                                    </div>
+                                    <!-- YAML without subform: normal editor -->
+                                    <div v-else-if="!fieldOptions[field.name].viewable">
                                         <!-- YAML field: shows data from expression/query or allows manual editing -->
                                         <BsYamlEditor 
                                             v-model="v$.form[field.name].$model"
@@ -2101,7 +2476,7 @@ onUnmounted(() => {
                                     </div>
                                     <!-- Debug/view raw YAML data -->
                                     <div @dblclick="setExpressionFieldViewable(field.name, false)" 
-                                         v-if="fieldOptions[field.name].viewable"
+                                         v-else
                                          class="card p-2 limit-height">
                                         <VueJsonPretty :data="v$.form[field.name].$model" />
                                     </div>
@@ -2134,7 +2509,7 @@ onUnmounted(() => {
                 </div>
             </div>
         </template>
-        <div class="d-grid my-3" v-if="status == ''">
+        <div class="d-grid my-3" v-if="mode === 'form' && status == ''">
             <BsDropdownButton 
                 :icon="submitIcon"
                 :label="submitLabel"
@@ -2142,6 +2517,20 @@ onUnmounted(() => {
                 :actions="submitActions"
                 @click="handleSubmitAction('submit')"
                 @action="handleSubmitAction"
+            />
+        </div>
+        <!-- Subform Save/Cancel buttons (used when embedded in AppListField) -->
+        <div class="d-flex justify-content-end gap-2 my-3" v-if="mode === 'subform'">
+            <BsButton icon="xmark" colorClass="secondary" @click="emit('cancel')">Cancel</BsButton>
+            <BsDropdownButton
+                icon="check"
+                label="Save"
+                colorClass="primary"
+                :fullWidth="false"
+                :menuEnd="true"
+                :actions="subformActions"
+                @click="handleSubformSave"
+                @action="handleSubformAction"
             />
         </div>
     </div>

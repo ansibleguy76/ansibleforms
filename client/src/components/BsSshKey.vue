@@ -12,7 +12,7 @@
     /*                                                                   */
     /*********************************************************************/
 
-    import copy from 'copy-to-clipboard';
+    import { copyText } from 'vue3-clipboard';
     import { toast } from 'vue-sonner';
 
     // INIT
@@ -43,7 +43,7 @@
     // METHODS
 
     function copyToClipboard() {
-        copy(model.value);
+        copyText(model.value);
         toast.success('Copied to clipboard');
     }
 

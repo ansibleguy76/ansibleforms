@@ -21,8 +21,23 @@ var State = {
   async loadVersion() {
     const store = useAppStore();
     try {
+      // Get server version and build info
       const result = await axios.get(`/api/v2/version`);
-      store.version = result.data;
+      store.version = result.data.version || result.data; // handle both old and new formats
+      store.serverBuild = result.data.server || null;
+      
+      // Get client build info
+      try {
+        const clientBuildResult = await axios.get(`/build-info.json`);
+        if (clientBuildResult.data?.gitSha) {
+          store.clientBuild = clientBuildResult.data;
+        } else {
+          store.clientBuild = { gitSha: 'dev', dirty: false, buildTime: null };
+        }
+      } catch (clientErr) {
+        // build-info.json not found (dev environment)
+        store.clientBuild = { gitSha: 'dev', dirty: false, buildTime: null };
+      }
     } catch (err) {
       // silent fail
     }

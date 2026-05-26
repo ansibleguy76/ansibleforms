@@ -10,10 +10,6 @@ has_toc: false
 {: .no_toc }
 
 
-{% assign help = site.data.help %}
-{% assign formsyaml = help | where: "link", "forms" | first %}
-{% assign form_object = formsyaml.help | where: "name", "Form" | first %}
-
 Forms are added as YAML files in the forms folder. Each YAML file can contain a single form or a list of forms. Subfolders are supported if you want to organize your forms.
 Forms are the core of AnsibleForms. Each form represents a web interface that collects user input and executes an Ansible playbook or AWX/Tower template with that data.
 
@@ -21,26 +17,7 @@ Forms are the core of AnsibleForms. Each form represents a web interface that co
 
 ## Understanding Form Structure
 
-Every form in AnsibleForms is a **[Form Object](#form-object-reference)**. This object contains all the configuration for a single form, including its name, type, roles, categories, and fields.
-
-A basic form looks like this:
-
-```yaml
-forms:
-  - name: Create VM
-    type: ansible
-    playbook: playbooks/create_vm.yml
-    roles:
-      - admin
-    categories:
-      - Provisioning
-    fields:
-      - name: vm_name
-        type: text
-        label: VM Name
-```
-
-See the **[Form Object Reference](#form-object-reference)** section below for all available attributes and configuration options.
+Every form in AnsibleForms is configured with a set of properties. See **[Common properties](common.html)** for the properties that apply to all form types, and the type-specific pages for additional properties.
 
 
 
@@ -58,128 +35,12 @@ AnsibleForms loads forms from the following locations:
 {: .warning }
 > **Note:** You can enable "use for forms" on multiple repositories and all forms will be merged together. Make sure form names are unique across repositories to avoid conflicts.
 
-## Form Object Reference
+## Form properties
 
-{{ form_object.description | markdownify }}
+Every form is configured via a set of properties. See the sub-pages for details:
 
-<table>
-  <thead>
-    <tr>
-      <th>Attribute</th>
-      <th>Comments</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% assign groups = form_object.items | map: "group" | uniq | sort_natural %}
-    {% for group in groups %}
-    {% assign group_properties = form_object.items  | where: "group",group %}
-    {% if group %}
-    <tr>
-      <th id="{{ form_object.name }}_{{ group }}_group" colspan="2" class="af-group-header">
-        {{ group }}
-      </th>
-    </tr>
-    {% endif %}
-    {% for var in group_properties %}
-    <tr>
-      <td>
-        <span id="{{form_object.name}}_{{ var.name }}"><strong>{{ var.name }}</strong></span><br>
-        <span class="af-type">{{ var.type}}</span>
-        {% if var.required==true %}<span class="af-required"> / required</span>{% endif %}
-        {% if var.unique==true %}<span class="af-unique"> / unique</span>{% endif %}
-        <br>
-        {% if var.version %}<span class="af-version">added in version {{var.version}}</span>{% endif %}
-      </td>
-      <td>
-        <p>
-          <strong>{{var.short}}</strong><br>
-          {% if var.docsObjectLink %}
-          <a href="{{ var.docsObjectLink | relative_url }}">🔗 
-          {% endif %}
-          {% if var.allowed != nil %}
-          <span class="af-type">{{ var.allowed }}</span>
-          {% endif %}
-          {% if var.docsObjectLink %}
-          </a>
-          {% endif %}
-        </p>
-        <p>
-          {{ var.description | markdownify }}
-        </p>
-        {% if var.choices.size > 0 %}
-        <div>
-          <strong>Choices:</strong><br>
-          <ul class="af-choices-list">
-            {% for c in var.choices %}
-            <li>
-              {% if c.name == var.default %}
-              <span title="{{ c.description }}" class="af-default-choice">{{ c.name }} (default)</span>
-              {% else %}
-              <span title="{{ c.description }}">{{ c.name }}</span>
-              {% endif %}
-            </li>
-            {% endfor %}
-          </ul>
-        </div>
-        {% elsif var.default != nil %}               
-        <div>
-          <strong>Default:</strong><br>
-          <span>{{ var.default }}</span>
-        </div>   
-        {% endif %}   
-        {% if var.with_types!=nil %}
-        <div>
-          <strong class="af-with-types">Only available with types:</strong><br>
-          <span>{{ var.with_types }}</span>
-          <br><br>
-        </div>
-        {% endif %}                          
-        {% for c in var.changelog %}
-        <div class="af-changelog">
-          {% if c.type == "added" %}
-          <div class="af-changelog-header">
-            <span class="af-badge af-badge-added">Added</span>
-            <span class="af-badge af-badge-version">{{ c.version }}</span>
-          </div>
-          {% endif %}
-          <p>
-            {{ c.description | markdownify }}
-          </p>
-        </div>
-        {% endfor %}
-        {% if var.examples %}
-        <p><strong>Examples:</strong></p>
-        {% endif %}
-        {% for e in var.examples %}
-        <div>
-          <p><strong>{{ forloop.index }}) {{ e.name }}</strong></p>
-{% highlight yaml %}
-{{ e.code }}
-{% endhighlight %}
-        </div>
-        {% endfor %}
-      </td>
-    </tr>
-    {% endfor %}
-    {% endfor %}
-    {% if form_object.examples %}          
-    <tr>
-      <th id="{{ form_object.name }}_examples" colspan="2">
-        Examples
-      </th>
-    </tr>
-    <tr>
-      <td colspan="2">
-        {% for e in form_object.examples %}
-        <div>
-          <p id="{{ form_object.name }}_examples_{{ forloop.index }}"><strong>{{ forloop.index }}) {{ e.name }}</strong></p>
-{% highlight yaml %}
-{{ e.code }}
-{% endhighlight %}
-        </div>
-        {% endfor %}            
-      </td>
-    </tr>      
-    {% endif %}
-  </tbody>
-</table>
+- **[Common properties](common.html)** — apply to all form types (`name`, `description`, `help`, `type`, `fields`)
+- **[Ansible forms](ansible.html)** — properties specific to `type: ansible`
+- **[AWX forms](awx.html)** — properties specific to `type: awx`
+- **[Multistep forms](multistep.html)** — properties specific to `type: multistep`
+- **[Subform](subform.html)** — subforms only use the common properties

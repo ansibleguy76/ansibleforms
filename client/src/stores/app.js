@@ -8,6 +8,8 @@ export const useAppStore = defineStore('app', () => {
   const authenticated = ref(false)
   const isAdmin = ref(false)
   const version = ref('')
+  const serverBuild = ref(null)
+  const clientBuild = ref(null)
   const approvals = ref(0)
   const errorMessage = ref('')
   const schemaData = ref(null)
@@ -18,6 +20,6 @@ export const useAppStore = defineStore('app', () => {
   //   count.value++
   // }
 
-  return { theme, profile, authenticated, isAdmin, version, approvals, errorMessage, schemaData }
+  return { theme, profile, authenticated, isAdmin, version, serverBuild, clientBuild, approvals, errorMessage, schemaData }
 })
 

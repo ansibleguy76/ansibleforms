@@ -12,8 +12,12 @@ import RestResult from "../../models/restResult.model.js";
 import auth_oidc from "../../auth/auth_oidc.js";
 
 function hasValidLoginOption(user) {
-  if(user.options.enableLogin === false) {
-    logger.warning(`Login is disabled for user '${user.username}' in the configuration (enableLogin option is set to false), please check your settings`)
+  // Support deprecated 'enableLogin' — use 'allowLogin' instead
+  if (user.options.enableLogin !== undefined) {
+    logger.warning(`Role option 'enableLogin' is deprecated. Please use 'allowLogin' instead.`);
+  }
+  if(user.options.allowLogin === false || user.options.enableLogin === false) {
+    logger.warning(`Login is disabled for user '${user.username}' in the configuration (allowLogin option is set to false), please check your settings`)
     return false;
   } 
   return true;

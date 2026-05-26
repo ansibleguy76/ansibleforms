@@ -11,6 +11,7 @@ import State from "@/lib/State";
 import Navigate from "@/lib/Navigate";
 import TokenStorage from "@/lib/TokenStorage";
 import YAML from "yaml";
+import { provide, reactive, computed } from "vue";
 
 // use
 const route = useRoute();
@@ -28,13 +29,81 @@ const formLoaded = ref(false); // flag to know if form is loaded
 const showHelp = ref(false); // flag to show/hide help
 const formNotFound = ref(false); // flag to know if form is not found
 const filterOutput = ref(true); // flag to show/hide filter output
+
+// ---------------------------------------------------------------------------
+// Nested subform editor stack
+//
+// Each entry represents a subform currently being edited as a tab:
+//   { id, title, subform, snapshot, onSave }
+// - `snapshot` is a deep clone of the row at the time the tab was opened
+//   and is passed to <AppForm :initialData>. The edited value comes back via
+//   the `@save` event and is forwarded to the list field's `onSave` callback.
+// - Parent tabs are rendered disabled so the user cannot skip over an
+//   in-progress edit; use Save or × to come back to them.
+// ---------------------------------------------------------------------------
+// Edit stack for nested subform editing.
+//
+// Each entry represents a subform currently being edited:
+//   { id, title, subtitle, subform, snapshot, draft, showHelp, onSave }
+// - `snapshot` is a deep clone of the row at the time editing began and is
+//   passed to <AppForm :initialData>. The edited value comes back via the
+//   `@save` event and is forwarded to the list field's `onSave` callback.
+// - While the stack is non-empty, the main form is hidden and the deepest
+//   subform in the stack takes its place (title / help / breadcrumbs all
+//   switch to the active entry). Earlier entries remain mounted (v-show)
+//   so their drafts are preserved when the user goes deeper and back.
+// - AppListField components call `pushEdit(...)` (injected) to open a new
+//   level at any nesting depth; closing a level also removes its descendants.
+// ---------------------------------------------------------------------------
+const editStack = reactive([]);
+let nextEditId = 1;
+
+// The deepest (currently visible) subform entry, or undefined when the main
+// form is shown. Drives the title, breadcrumbs and help block in the template.
+const activeEntry = computed(() => editStack[editStack.length - 1]);
+
+function pushEdit({ title, subtitle, subform, row, parentData, onSave }) {
+    const id = `edit-${nextEditId++}`;
+    const snapshot = row ? JSON.parse(JSON.stringify(row)) : {};
+    const entry = reactive({
+        id, title, subtitle, subform, snapshot,
+        parentData: parentData ? JSON.parse(JSON.stringify(parentData)) : null,
+        draft: {},
+        showHelp: subform?.showHelp === true,
+        onSave,
+    });
+    editStack.push(entry);
+    return id;
+}
+
+function popEdit(id) {
+    const idx = editStack.findIndex(e => e.id === id);
+    if (idx < 0) return;
+    // Remove the target entry and anything pushed on top of it.
+    editStack.splice(idx, editStack.length - idx);
+}
+
+function saveEdit(id, value) {
+    const entry = editStack.find(e => e.id === id);
+    if (!entry) return;
+    try {
+        entry.onSave?.(value);
+    } finally {
+        popEdit(id);
+    }
+}
+
+provide('formEditStack', {
+    push: pushEdit,
+    pop: popEdit,
+});
 const hideForm = ref(false); // possible action to hide form onsubmit for example
 const formdata = ref({}); // the eventual object sent to the api in the correct hierarchy
 const showExtraVars = ref(false); // flag to show/hide extravars
 const job = ref({}); // holds the job data
 const message = ref(""); // holds the message of the job
 const error = ref(""); // holds the error of the job
-const viewAsYaml = ref(false); // flag to show extravars as yaml
+const viewAsYaml = ref(true); // flag to show extravars as yaml
 const subjob = ref({}); // output of last subjob
 const form = ref({}); // the form data mapped to the form -> hold the real data
 const visibility = ref({}); // holds which fields are visiable or not
@@ -72,12 +141,58 @@ const showLoadOffcanvas = ref(false);
 const storedJobs = ref([]);
 const loadSubmitting = ref(false);
 
+// Context describing what to store / what to load into. Set just before
+// opening the store or load off-canvas so a single dialog is reused by both
+// the main form and any active subform tab. Shape:
+//   { scope: 'form' | 'subform',
+//     formName: string,       // used as stored_jobs.form_name
+//     title: string,          // displayed in the off-canvas header
+//     getData: () => object,  // payload to serialise on Save
+//     onLoad: (parsed) => void // applies a loaded record
+//   }
+const storeCtx = ref(null);
+
+function buildMainStoreCtx() {
+    return {
+        scope: 'form',
+        formName: currentForm.value.name,
+        title: currentForm.value.name,
+        getData: () => getFilteredRawFormData(),
+        onLoad: (parsed) => {
+            initialFormData.value = parsed;
+            key.value++;
+        },
+    };
+}
+
 /******************************** */
 // computed
 /******************************** */
 
 // calculated formdata as yaml
 const formdataYaml = computed(() => YAML.stringify(formdata.value));
+
+// Build the output object for a subform draft, using the shared helper.
+// `model`, `noOutput`, `outputObject`, `valueColumn` on the subform's
+// fields are all honoured, and nested list fields recurse through their
+// own subform definitions.
+function buildSubformOutput(entry) {
+  if (!entry?.subform?.fields) return {};
+  return Helpers.buildFormOutput(entry.subform.fields, entry.draft || {}, {
+    subforms: currentForm.value.subforms || [],
+  });
+}
+
+// When editing a subform, the right-hand "Extravars" panel switches to show
+// the draft of the active subform instead of the main-form output. Outside
+// subform editing this is just `formdata`.
+const displayedOutput = computed(() =>
+  activeEntry.value ? buildSubformOutput(activeEntry.value) : formdata.value
+);
+const displayedOutputYaml = computed(() => YAML.stringify(displayedOutput.value));
+const displayedOutputTitle = computed(() =>
+  activeEntry.value ? `Subform output - ${activeEntry.value.title}` : 'Extra vars'
+);
 
 // filter job output
 const filteredJobOutput = computed(() => {
@@ -281,7 +396,7 @@ function doAction(a, jobid) {
 // so we the child passes the visibility information
 function formChanged(formObjectData) {
   visibility.value = formObjectData.visibility;
-  generateJsonOutput();
+  generateJsonOutput(); 
 }
 
 // Get filtered raw form data (excludes constants, passwords, system fields)
@@ -310,109 +425,22 @@ function getFilteredRawFormData() {
 
 // generate the form json output
 function generateJsonOutput(filedata = {}) {
-  var fd = {};
   try {
-    currentForm.value.fields.forEach((item) => {
-      if (visibility.value[item.name] && !item.noOutput) {
-        var fieldmodel = [].concat(item.model || []);
-        var outputObject =
-          item.outputObject ||
-          item.type == "expression" ||
-          item.type == "file" ||
-          item.type == "table" ||
-          item.type == "yaml" ||
-          (item.type == "datetime") || 
-          false;
-        var outputValue = undefined;
-
-        if (item.name in filedata) {
-          outputValue = filedata[item.name];
-        } else {
-          outputValue = Helpers.deepClone(form.value[item.name]);
-        }
-
-        // convert month from 0-11 to 1-12 for month picker
-        if (item.type === "datetime" && item.dateType === "month" && outputValue && typeof outputValue === "object") {
-          outputValue = {
-            ...outputValue,
-            month: typeof outputValue.month === "number" ? outputValue.month + 1 : outputValue.month
-          };
-        }
-
-        if (!outputObject) {
-          outputValue = Helpers.getFieldValue(
-            outputValue,
-            item.valueColumn || "",
-            true
-          );
-        }
-
-        if (fieldmodel.length == 0) {
-          fd[item.name] = Helpers.deepClone(outputValue);
-        } else {
-          fieldmodel.forEach((f) => {
-            f.split(/\s*\.\s*/).reduce((master, obj, level, arr) => {
-              var arrsplit = undefined;
-
-              if (level === arr.length - 1) {
-                if (obj.match(/.*\[[0-9]+\]$/)) {
-                  arrsplit = obj.split(/\[([0-9]+)\]$/);
-                  if (master[arrsplit[0]] === undefined) {
-                    master[arrsplit[0]] = [];
-                  }
-                  if (master[arrsplit[0]][arrsplit[1]] === undefined) {
-                    master[arrsplit[0]][arrsplit[1]] = {};
-                  }
-                  master[arrsplit[0]][arrsplit[1]] = outputValue;
-                  return master[arrsplit[0]][arrsplit[1]];
-                } else {
-                  if (master[obj] === undefined) {
-                    master[obj] = outputValue;
-                  } else if (typeof master[obj] !== 'object' || master[obj] === null || typeof outputValue !== 'object' || outputValue === null) {
-                    // If either value is primitive, just overwrite instead of merging
-                    master[obj] = outputValue;
-                  } else {
-                    master[obj] = Lodash.merge(master[obj], outputValue);
-                  }
-                  return master[obj];
-                }
-              } else {
-                if (obj.match(/.*\[[0-9]+\]$/)) {
-                  arrsplit = obj.split(/\[([0-9]+)\]$/);
-                  if (master[arrsplit[0]] === undefined) {
-                    master[arrsplit[0]] = [];
-                  }
-                  if (master[arrsplit[0]][arrsplit[1]] === undefined) {
-                    master[arrsplit[0]][arrsplit[1]] = {};
-                  }
-                  return master[arrsplit[0]][arrsplit[1]];
-                } else {
-                  // Check if master is an object before trying to traverse
-                  if (typeof master !== 'object' || master === null) {
-                    // Can't traverse into a primitive value, skip this path
-                    return master;
-                  }
-                  if (master[obj] === undefined) {
-                    master[obj] = {};
-                  } else if (typeof master[obj] !== 'object' || master[obj] === null) {
-                    // Path already contains a primitive, can't traverse further
-                    return master;
-                  }
-                  return master[obj];
-                }
-              }
-            }, fd);
-          });
-        }
+    formdata.value = Helpers.buildFormOutput(
+      currentForm.value.fields || [],
+      form.value,
+      {
+        isVisible: (item) => !!visibility.value[item.name],
+        overrides: filedata,
+        subforms: currentForm.value.subforms || [],
       }
-    });
+    );
   } catch (err) {
     toast.error(
       "Failed to generate json output.\r\nContact the developer.\r\n" +
       (err.message || err.toString())
     );
   }
-  formdata.value = fd;
 }
 
 // upload a file
@@ -569,6 +597,7 @@ function handleSubmitAction({ action, visibility: formVisibility }) {
       openScheduleOffcanvas('run-later');
       break;
     case 'store':
+      storeCtx.value = buildMainStoreCtx();
       openStoreOffcanvas();
       break;
   }
@@ -683,20 +712,21 @@ async function createStoredJob() {
     toast.warning('Name is required');
     return;
   }
-  
+
+  const ctx = storeCtx.value || buildMainStoreCtx();
   storeSubmitting.value = true;
-  
+
   try {
     const storedJobData = {
       name: storeForm.value.name,
       description: storeForm.value.description || '',
-      form_name: currentForm.value.name,
-      form_data: JSON.stringify(getFilteredRawFormData()), // Store filtered raw form data
+      form_name: ctx.formName,
+      form_data: JSON.stringify(ctx.getData()),
       expires_at: storeForm.value.expires_at || null
     };
-    
+
     await axios.post('/api/v2/stored-jobs', storedJobData, TokenStorage.getAuthentication());
-    
+
     toast.success(`Form data saved as "${storeForm.value.name}"`);
     closeStoreOffcanvas();
   } catch (error) {
@@ -713,16 +743,19 @@ async function createStoredJob() {
 
 // Load off-canvas functions
 async function openLoadOffcanvas() {
+  // If called from the main-form toolbar button there's no active context yet;
+  // assume main-form scope.
+  if (!storeCtx.value) storeCtx.value = buildMainStoreCtx();
+  const ctx = storeCtx.value;
   showLoadOffcanvas.value = true;
   loadSubmitting.value = true;
-  
+
   try {
     const response = await axios.get(
-      `/api/v2/stored-jobs?form_name=${currentForm.value.name}`, 
+      `/api/v2/stored-jobs?form_name=${encodeURIComponent(ctx.formName)}`,
       TokenStorage.getAuthentication()
     );
     storedJobs.value = response.data.records || [];
-    console.log('Loaded stored jobs:', storedJobs.value);
   } catch (error) {
     console.error('Error fetching stored jobs:', error);
     toast.error('Failed to load saved forms');
@@ -739,17 +772,12 @@ function closeLoadOffcanvas() {
 async function loadStoredJob(storedJob) {
   try {
     loadSubmitting.value = true;
-    
-    // Parse the stored form data and set it as initialFormData
+
     const parsedData = JSON.parse(storedJob.form_data);
-    initialFormData.value = parsedData;
-    
-    // Close offcanvas
+    const ctx = storeCtx.value || buildMainStoreCtx();
+    ctx.onLoad(parsedData);
+
     closeLoadOffcanvas();
-    
-    // Force form re-render with new initialData by incrementing key
-    key.value++;
-    
     toast.success(`Loaded "${storedJob.name}"`);
   } catch (error) {
     console.error('Error loading stored job:', error);
@@ -757,6 +785,24 @@ async function loadStoredJob(storedJob) {
   } finally {
     loadSubmitting.value = false;
   }
+}
+
+// Triggered by store / load actions inside a subform's Save dropdown.
+// `value` is the current in-progress draft emitted by AppForm so we can
+// snapshot partial edits without forcing validation.
+function handleSubformAction(entry, { action, value }) {
+    storeCtx.value = {
+        scope: 'subform',
+        formName: entry.subform.name,
+        title: entry.subform.description || entry.subform.name,
+        getData: () => value,
+        onLoad: (parsed) => {
+            entry.snapshot = parsed;
+            entry.reloadKey = (entry.reloadKey || 0) + 1;
+        },
+    };
+    if (action === 'store') openStoreOffcanvas();
+    else if (action === 'load') openLoadOffcanvas();
 }
 
 // trigger a job abort
@@ -957,12 +1003,11 @@ async function loadForm(){
       }
     }
 
+    constants.value = formConfig.value.constants;
+
     // Now set currentForm which will trigger component rendering
     currentForm.value = formConfig.value.forms[0];
     formLoaded.value = true;
-    constants.value = formConfig.value.constants;
-    // Shallow merge form vars into constants to prevent prototype pollution
-    constants.value = Object.assign({}, constants.value, formConfig.value.forms[0].vars || {});
     
 
     // see if the help should be show initially
@@ -999,25 +1044,53 @@ onBeforeUnmount(() => {
   <div class="flex-shrink-0">
     <main class="d-flex container-xxl" :class="{'d-none':hideForm}">
       <div v-if="authenticated && currentForm" class="container-fluid pt-5">
-        <!-- TITLE -->
+        <!-- BREADCRUMBS (only when editing a subform) -->
+        <nav v-if="activeEntry" aria-label="breadcrumb">
+          <ol class="breadcrumb mb-2">
+            <li class="breadcrumb-item">{{ currentForm.name }}</li>
+            <li v-for="e in editStack.slice(0, -1)" :key="'crumb-' + e.id"
+                class="breadcrumb-item">{{ e.title }}</li>
+            <li class="breadcrumb-item active fw-bold" aria-current="page">{{ activeEntry.title }}</li>
+          </ol>
+        </nav>
+
+        <!-- TITLE: main form title, replaced by subform title while editing -->
         <h2 class="d-flex align-items-center">
-          {{ currentForm.name }}
-          <BsButton v-if="currentForm.help" cssClass="btn-sm ms-3 fw-normal" cssClassToggle="btn-sm ms-3 fw-normal"
-            icon="question-circle" iconToggle="question-circle" :toggle="showHelp" @click="showHelp = !showHelp">
-            Show help
-            <template #toggle>Hide help</template>
-          </BsButton>
+          <template v-if="activeEntry">
+            {{ activeEntry.subtitle || activeEntry.title }}
+            <BsButton v-if="activeEntry.subform?.help" cssClass="btn-sm ms-3 fw-normal"
+              cssClassToggle="btn-sm ms-3 fw-normal"
+              icon="question-circle" iconToggle="question-circle"
+              :toggle="activeEntry.showHelp" @click="activeEntry.showHelp = !activeEntry.showHelp">
+              Show help
+              <template #toggle>Hide help</template>
+            </BsButton>
+          </template>
+          <template v-else>
+            {{ currentForm.name }}
+            <BsButton v-if="currentForm.help" cssClass="btn-sm ms-3 fw-normal" cssClassToggle="btn-sm ms-3 fw-normal"
+              icon="question-circle" iconToggle="question-circle" :toggle="showHelp" @click="showHelp = !showHelp">
+              Show help
+              <template #toggle>Hide help</template>
+            </BsButton>
+          </template>
         </h2>
 
         <!-- HELP -->
-        <div v-if="currentForm.help && showHelp" class="alert alert-light" role="alert">
+        <div v-if="activeEntry && activeEntry.subform?.help && activeEntry.showHelp"
+             class="alert alert-light" role="alert">
+          <vue-showdown :markdown="activeEntry.subform.help" flavor="github" :options="{ ghCodeBlocks: true }" />
+        </div>
+        <div v-else-if="!activeEntry && currentForm.help && showHelp" class="alert alert-light" role="alert">
           <vue-showdown :markdown="currentForm.help" flavor="github" :options="{ ghCodeBlocks: true }" />
         </div>
         <div class="row">
           <div class="col">
-            <AppForm :key="key" @change="formChanged" :currentForm="currentForm"
-              :constants="constants" :showExtraVars="showExtraVars" :fileProgress="fileProgress" 
+            <!-- MAIN FORM: mounted always, hidden while editing a subform -->
+            <AppForm v-show="!activeEntry" :key="key" @change="formChanged" :currentForm="currentForm"
+              :constants="constants" :showExtraVars="showExtraVars" :fileProgress="fileProgress"
               :initialData="initialFormData" v-model="form"
+              :subforms="currentForm?.subforms || []"
               v-model:status="status" @submit-action="handleSubmitAction">
               <!-- TOOL BAR BUTTONS -->
               <template #toolbarbuttons>
@@ -1029,20 +1102,56 @@ onBeforeUnmount(() => {
                 <BsButton cssClass="btn-sm me-3 fw-normal" icon="redo" @click="reloadForm">
                   Reload this form
                 </BsButton>
-                <BsButton v-if="store.profile.options?.allowStoredJobs" cssClass="btn-sm me-3 fw-normal" icon="file-import" @click="openLoadOffcanvas">
+                <BsButton v-if="store.profile.options?.allowStoredJobs" cssClass="btn-sm me-3 fw-normal"
+                  icon="file-import" @click="storeCtx = buildMainStoreCtx(); openLoadOffcanvas()">
                   Load from Store
                 </BsButton>
 
                 <!-- enable verbose logging -->
-                <BsInputCheckboxRaw v-if="store.profile.options?.allowVerboseMode" v-model="enableVerbose" :label="'verbose'" v-show="!hideForm"
-                  cssClass="ms-2 d-inline-block" />
-
+                <BsInputCheckboxRaw v-if="store.profile.options?.allowVerboseMode" v-model="enableVerbose"
+                  :label="'verbose'" v-show="!hideForm" cssClass="ms-2 d-inline-block" />
               </template>
             </AppForm>
+
+            <!-- SUBFORMS: one AppForm per stacked edit, only the deepest is visible. -->
+            <!-- Kept mounted (v-show) so draft state survives when going deeper and back. -->
+            <template v-for="(entry, i) in editStack" :key="entry.id + ':' + (entry.reloadKey || 0)">
+              <AppForm v-show="i === editStack.length - 1"
+                mode="subform"
+                :currentForm="entry.subform"
+                :constants="constants"
+                :subforms="currentForm?.subforms || []"
+                :initialData="entry.snapshot"
+                :parentData="entry.parentData"
+                v-model="entry.draft"
+                @save="(val) => saveEdit(entry.id, val)"
+                @cancel="popEdit(entry.id)"
+                @submit-action="(e) => handleSubformAction(entry, e)">
+                <template #toolbarbuttons>
+                  <BsButton cssClass="btn-sm me-3 fw-normal" icon="arrow-left" @click="popEdit(entry.id)">
+                    Back
+                  </BsButton>
+                  <BsButton v-if="store.profile.options?.allowStoredJobs"
+                    cssClass="btn-sm me-3 fw-normal" icon="file-import"
+                    @click="handleSubformAction(entry, { action: 'load', value: entry.draft })">
+                    Load from Store
+                  </BsButton>
+                  <BsButton v-if="store.profile.options?.showExtraVars"
+                    cssClass="btn-sm me-3 fw-normal" cssClassToggle="btn-sm me-3 fw-normal"
+                    icon="eye" iconToggle="eye-slash" :toggle="showExtraVars"
+                    @click="toggleShowExtraVars()">
+                    Show Output<template #toggle>Hide Output</template>
+                  </BsButton>
+                </template>
+              </AppForm>
+            </template>
           </div>
           <div class="col-4" v-if="showExtraVars">
             <div class="d-flex justify-content-between">
               <div>
+                <small v-if="activeEntry" class="text-muted fst-italic me-2">
+                  {{ displayedOutputTitle }}
+                </small>
                 <BsButton cssClass="btn-sm" cssClassToggle="btn-sm" :toggle="viewAsYaml"
                   @click="viewAsYaml = !viewAsYaml">
                   <template #default>View as YAML</template>
@@ -1051,16 +1160,16 @@ onBeforeUnmount(() => {
               </div>
               <!-- TOOLBAR ICONS-->
               <div>
-                <span class="ms-2" role="button" title="Copy ExtraVars" @click="clip(formdata, false, viewAsYaml)">
+                <span class="ms-2" role="button" title="Copy ExtraVars" @click="clip(displayedOutput, false, viewAsYaml)">
                   <font-awesome-icon icon="copy" class="text-primary" />
                 </span>
               </div>
             </div>
             <div class="mt-4 p-3 card" v-if="!viewAsYaml">
-              <VueJsonPretty :data="formdata" />
+              <VueJsonPretty :data="displayedOutput" />
             </div>
             <div class="mt-4 p-3 card" v-else>
-              <pre v-highlightjs><code language="yaml" style="border:none;padding:0">{{ formdataYaml }}</code></pre>
+              <pre v-highlightjs><code language="yaml" style="border:none;padding:0">{{ displayedOutputYaml }}</code></pre>
             </div>
           </div>
         </div>
@@ -1199,7 +1308,7 @@ onBeforeUnmount(() => {
   <!-- STORE OFF-CANVAS -->
   <BsOffCanvas 
     :show="showStoreOffcanvas" 
-    title="Save Form Data"
+    :title="storeCtx ? `Save ${storeCtx.title}` : 'Save Form Data'"
     icon="file-export"
     @close="closeStoreOffcanvas">
     <template #default>
@@ -1249,7 +1358,7 @@ onBeforeUnmount(() => {
   <!-- LOAD OFF-CANVAS -->
   <BsOffCanvas 
     :show="showLoadOffcanvas" 
-    title="Load Saved Form"
+    :title="storeCtx ? `Load ${storeCtx.title}` : 'Load Saved Form'"
     icon="file-import"
     @close="closeLoadOffcanvas">
     <template #default>

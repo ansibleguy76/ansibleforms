@@ -113,6 +113,32 @@ You can choose if the repository must be cloned when AnsibleForms starts, and yo
 Additionally, in the swagger interface, you will find a clone and pull rest api for webhooks.  
 In case you want long-lived access tokens for the webhooks, with swagger you can pass an expiryDays parameter (for admin roles only) and create long-lived tokens.
 
+### VS Code Validation for Form Files
+
+Add a schema header to your form YAML files to get live validation and autocomplete in VS Code.
+
+Install the [YAML extension](https://marketplace.visualstudio.com/items?itemName=redhat.vscode-yaml) and add this comment as the **first line** of any form file:
+
+```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/ansibleguy76/ansibleforms/develop/server/schema/public/form_schema.json
+```
+
+This works for both single-form files (a YAML dict) and multi-form files (a YAML list):
+
+```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/ansibleguy76/ansibleforms/develop/server/schema/public/form_schema.json
+- name: My Form
+  type: ansible
+  playbook: site.yml
+  roles: [public]
+  fields:
+    - name: env
+      type: enum
+      values: [dev, staging, prod]
+```
+
+VS Code will highlight unknown properties, missing required fields, and wrong types as you type.
+
 ## Job Management
 
 ### Job Relaunch with Pre-filled Data
@@ -127,11 +153,11 @@ AnsibleForms supports relaunching jobs with pre-filled form data. When you click
 
 **Permission Control:**
 
-Forms can disable relaunch functionality using the `disableRelaunch` option:
+Forms can prevent relaunch using `allowRelaunch: false` (or the deprecated `disableRelaunch: true`):
 
 ```yaml
 - name: Production Deployment
-  disableRelaunch: true  # Prevents relaunching this form
+  allowRelaunch: false  # Prevents relaunching this form
 ```
 
 Users must have the `allowJobRelaunch` role option enabled (admins have this by default):
@@ -144,7 +170,7 @@ roles:
 ```
 
 **Most Restrictive Logic:** Relaunch is only available if BOTH conditions are met:
-1. Form does NOT have `disableRelaunch: true`
+1. Form does NOT have `allowRelaunch: false` (or deprecated `disableRelaunch: true`)
 2. User role has `allowJobRelaunch: true` (or user is admin)
 
 **How it works:**
@@ -650,3 +676,414 @@ constants:
   data_values: #@ data.values
   demo: #@ demo.data_values()
 ```
+
+## Access Control
+
+### How do I restrict what users can do (role options)?
+
+Control per-role UI permissions with role options.
+
+Beyond restricting which forms a role can see, AnsibleForms has a set of **role options** that give finer control over what users of a role can do in the UI. Options are additive — admins always have full access.
+
+See the full option reference in [config.yaml → Role options](config.html#role-options).
+
+Common examples:
+
+```yaml
+roles:
+  - name: operators
+    options:
+      showLogs: true          # can view job history and output
+      allowJobRelaunch: true  # can relaunch previous jobs
+      allowVerboseMode: true  # can enable verbose output on a run
+  - name: designers
+    options:
+      showDesigner: true      # can open the YAML designer
+      showSettings: false     # cannot access settings
+  - name: schedulers
+    options:
+      allowJobScheduling: true  # can schedule forms
+      allowJobStoring: true     # can save and load form data
+```
+
+{: .note }
+> Most role options have a default (many default to `true`). If an option is explicitly set on a role it is always used. If it is not set, admins are allowed; non-admins fall back to the option's default value.
+
+### How do I implement custom RBAC logic in my playbooks or forms?
+
+User identity is available in both the frontend and backend at every execution.
+
+At every form submission AnsibleForms automatically injects the current user's full identity into the extravars sent to Ansible:
+
+```yaml
+ansibleforms_user:
+  username: jane.doe
+  groups:
+    - local/admins
+    - ldap/network-team
+  roles:
+    - admin
+    - operators
+  options:
+    showLogs: true
+    allowJobRelaunch: true
+    # ...all resolved role options
+```
+
+This means your playbook or any custom Ansible module can use `ansibleforms_user` directly to make fine-grained decisions — for example, only allowing certain groups to modify production inventory, or writing an audit trail with the submitter's username.
+
+In the **frontend**, the same object is available via the special `__user__` field:
+
+```yaml
+fields:
+  - name: is_admin
+    type: expression
+    runLocal: true
+    hide: true
+    expression: "$(__user__.roles).includes('admin')"
+
+  - name: target_env
+    type: enum
+    values:
+      - dev
+      - staging
+      - production
+    # hide the production option for non-admins by cross-referencing __user__
+    expression: |
+      $(__user__.roles).includes('admin')
+        ? ['dev','staging','production']
+        : ['dev','staging']
+    runLocal: true
+    default: __auto__
+```
+
+**Typical patterns:**
+
+- **Cross-reference an RBAC config file or database** — load a YAML/JSON file (via `fn.fnReadYamlFile` or an expression) that maps groups to allowed resources, then filter based on `$(__user__.groups)`
+- **Audit trail** — pass `ansibleforms_user.username` as an extra variable to write who triggered the job
+- **Dynamic field values** — show a different set of enum choices, pre-fill fields, or hide sections based on the user's groups or roles
+- **Playbook-side authorization** — assert that `ansibleforms_user.groups` contains a required group before the playbook proceeds, as a defence-in-depth check independent of the form's `roles` list
+
+## Job Scheduling
+
+### How do I schedule a form to run automatically?
+
+Run forms on a schedule or at a future time (v6.1.5).
+
+AnsibleForms supports two scheduling modes via the job scheduling feature:
+
+- **Cron schedule** — submit the form and it will run repeatedly on a cron expression (e.g. every night at 2 AM)
+- **One-off / run later** — submit the form to run once at a specific future date and time
+
+**Requirements:**
+- The user's role must have `allowJobScheduling: true`
+- The form must not have `allowRelaunch: false` (scheduling uses the same pre-fill mechanism)
+
+**How it works:**
+1. Open a form and fill in the values
+2. Instead of clicking **Submit**, click **Schedule**
+3. Choose a cron expression or a specific date/time
+4. The job appears in the job list with a scheduled status and runs automatically at the configured time
+
+Scheduled jobs can be viewed, edited, and cancelled from the job history page.
+
+## Save & Load Form Data
+
+### How do I save and reload form data without running a job?
+
+Store form submissions for later use (v6.1.5).
+
+The **Store** and **Load from store** actions let you save a snapshot of form field values to disk and reload them later — without triggering a job run. This is useful for saving complex configurations you want to reuse across multiple submissions.
+
+**Requirements:**
+- The user's role must have `allowJobStoring: true`
+
+**How it works:**
+1. Fill in the form
+2. Click **Store** — the current field values are saved under a name you choose
+3. Later, open the same form and click **Load from store** to restore the saved values
+4. Review / adjust and submit as usual
+
+{: .note }
+> Password fields are never stored. Stored data is tied to the form name — loading from a different form will not work.
+
+## Nested Forms & Structured Fields
+
+### How do I collect structured or repeated data in a form?
+
+Use `list` and `yaml` fields with subforms (6.2.0+).
+
+For collecting complex structured data — like a list of servers, a set of network interfaces, or a single nested object — use the `list` or `yaml` field types together with a `subform`.
+
+A **subform** is a reusable form fragment (defined with `type: subform`) that is never shown as a standalone tile. It exists solely to be referenced by fields in other forms. See the [Subform docs](forms/subform.html) for full reference.
+
+**Collecting a list of structured rows — `list` field:**
+
+```yaml
+forms:
+  - name: Server
+    type: subform
+    fields:
+      - name: hostname
+        type: text
+        required: true
+      - name: ip
+        type: text
+        regex: ^\d+\.\d+\.\d+\.\d+$
+
+  - name: Deploy to servers
+    type: ansible
+    playbook: deploy.yml
+    fields:
+      - name: servers
+        type: list
+        subform: Server   # opens Server subform in a drilldown editor per row
+```
+
+The `servers` extravar sent to Ansible will be an array of objects: `[{hostname: "web1", ip: "10.0.0.1"}, ...]`
+
+**Editing a single structured object — `yaml` field:**
+
+The `yaml` field has three modes:
+
+| Mode | How | Behaviour |
+|---|---|---|
+| **Editor** | default | Shows a full YAML syntax-highlighted editor the user can type in directly |
+| **Readonly** | `readonly: true` | Renders the YAML value as formatted read-only text — no editing |
+| **Subform** | `subform: MySubform` | Hides the raw editor; opens the subform as a drilldown editor on click |
+
+```yaml
+fields:
+  # editor mode (default)
+  - name: raw_config
+    type: yaml
+
+  # readonly mode
+  - name: generated_config
+    type: yaml
+    readonly: true
+
+  # subform mode
+  - name: network_config
+    type: yaml
+    subform: NetworkConfig   # opens NetworkConfig subform as a drilldown editor
+```
+
+**Upload and download — `list` and `yaml` fields:**
+
+Both field types support client-side file transfer via two optional properties:
+
+```yaml
+fields:
+  - name: servers
+    type: list
+    subform: Server
+    showLoadButton: true      # shows an Upload button — imports content from a local file
+    showDownloadButton: true  # shows a Download button — exports current content to a file
+
+  - name: config
+    type: yaml
+    showLoadButton: true
+    showDownloadButton: true
+```
+
+{: .note }
+> The `list` field replaces the deprecated `table` field. The `subform` form type replaces the deprecated `tableFields`.
+
+### How do I access parent form data inside a subform?
+
+Reference parent field values from within a subform via `__parent__` (v6.3.0+).
+
+When a subform opens — whether triggered by a **`list`** field (each row editor) or a **`yaml`** field in subform mode — AnsibleForms automatically injects a special read-only field called `__parent__` into the subform. It contains a snapshot of **every field value in the parent form at the time the subform was opened**, including constants and vars.
+
+This lets subform fields use expressions that reference parent data without any extra configuration.
+
+#### What is in `__parent__`?
+
+`__parent__` is a plain object whose keys are the field names of the parent form:
+
+```yaml
+__parent__:
+  environment: production          # a regular field
+  region: eu-west-1
+  max_nodes: 10
+  owner: jane.doe                  # a constant
+  default_image: ubuntu-22.04      # from varsFiles
+  __user__:                        # system fields are also included
+    username: jane.doe
+    roles: [admin]
+```
+
+{: .note }
+> `__parent__` is **not sent to Ansible** — it is stripped from extravars just like `__user__`. It is purely a frontend helper for expressions inside subforms.
+
+#### Accessing parent values in subform expressions
+
+Use the standard `$(...)` expression syntax:
+
+```yaml
+forms:
+  - name: NodeConfig
+    type: subform
+    fields:
+      - name: node_name
+        type: text
+        label: Node name
+        required: true
+
+      - name: image
+        type: enum
+        label: Image
+        # default to the parent form's chosen image
+        expression: "'$(__parent__.default_image)'"
+        runLocal: true
+
+      - name: is_production
+        type: expression
+        hide: true
+        runLocal: true
+        expression: "'$(__parent__.environment)' === 'production'"
+
+      - name: node_type
+        type: enum
+        values:
+          - standard
+          - high-memory
+          - gpu
+        # only offer gpu nodes in production
+        expression: |
+          '$(__parent__.environment)' === 'production'
+            ? ['standard', 'high-memory', 'gpu']
+            : ['standard', 'high-memory']
+        runLocal: true
+        default: __auto__
+
+  - name: Deploy cluster
+    type: ansible
+    playbook: deploy_cluster.yml
+    fields:
+      - name: environment
+        type: enum
+        values: [dev, staging, production]
+
+      - name: default_image
+        type: text
+        default: ubuntu-22.04
+
+      - name: nodes
+        type: list
+        subform: NodeConfig
+        columns: [node_name, node_type]
+```
+
+#### Nested subforms
+
+`__parent__` always refers to the **immediate parent** form. If you nest a `list` inside a subform that is itself opened from a parent form, the inner subform's `__parent__` will be the middle subform's data. Chain multiple levels by referencing `$(__parent__.__parent__.someField)` if the middle subform also propagates its own `__parent__`.
+
+### How do I migrate from `table` / `tableFields` to `list` / `subform`?
+
+Migrate deprecated table fields (6.2.0+).
+
+The old `table` field and `tableFields` property still work but show deprecation warnings. To migrate:
+
+1. Extract the columns from `tableFields` into a new `type: subform` form with regular `formfields`
+2. Replace the `table` field with a `list` field that references the subform via `subform: MySubformName`
+
+**Before:**
+```yaml
+forms:
+  - name: Manage users
+    type: ansible
+    playbook: users.yml
+    tableFields:
+      - name: username
+        type: text
+      - name: email
+        type: text
+    fields:
+      - name: users
+        type: table
+```
+
+**After:**
+```yaml
+forms:
+  - name: User
+    type: subform
+    fields:
+      - name: username
+        type: text
+      - name: email
+        type: text
+
+  - name: Manage users
+    type: ansible
+    playbook: users.yml
+    fields:
+      - name: users
+        type: list
+        subform: User
+```
+
+#### Migrating `from` in `tableFields` to `__parent__` expressions
+
+The `from` property available in `tableFields` enum columns let you populate dropdown choices from another field in the parent form. In a `subform`, this is replaced by an `expression` that reads the same value via `__parent__`.
+
+**Before — `tableFields` with `from`:**
+
+```yaml
+forms:
+  - name: Manage members
+    type: ansible
+    playbook: members.yml
+    fields:
+      - name: available_departments
+        type: expression
+        expression: "['HR','Engineering','Finance']"
+        runLocal: true
+        hide: true
+
+      - name: members
+        type: table
+    tableFields:
+      - name: department
+        type: enum
+        from: available_departments   # pulls choices from the parent field above
+      - name: firstname
+        type: text
+```
+
+**After — subform with `__parent__` expression:**
+
+```yaml
+forms:
+  - name: Member
+    type: subform
+    fields:
+      - name: department
+        type: enum
+        # replaces "from: available_departments"
+        expression: "$(__parent__.available_departments)"
+        runLocal: true
+
+      - name: firstname
+        type: text
+
+  - name: Manage members
+    type: ansible
+    playbook: members.yml
+    fields:
+      - name: available_departments
+        type: expression
+        expression: "['HR','Engineering','Finance']"
+        runLocal: true
+        hide: true
+
+      - name: members
+        type: list
+        subform: Member
+```
+
+{: .note }
+> `$(__parent__.available_departments)` returns the **current value** of that field — so if it is a dynamic expression field itself, the subform will always see the latest evaluated result from the parent.
+

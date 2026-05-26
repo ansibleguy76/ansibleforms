@@ -1,11 +1,14 @@
 ---
 layout: default
 title: Enum
-parent: Tablefields
+parent: Tablefields (deprecated)
 nav_order: 7
 ---
 
 # Enum Tablefield
+
+> **Deprecated.** This tablefield is used with the deprecated `table` field type. Use the [`list`](/formfields/list.html) field type instead.
+{: .warning }
 
 A dropdown selection column with filtering capabilities, ideal for status values, categories, or any predefined set of options within a table row.
 

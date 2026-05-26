@@ -139,7 +139,194 @@ const Helpers = {
       return undefined
     }
     
-  },  
+  },
+  // Build a field-driven output object (the same shape used for main-form
+  // extravars). Honours `noOutput`, `outputObject`, `valueColumn`, dotted
+  // `model` paths (including array indexes like `a.b[0].c`) and the datetime
+  // month fix (0-11 -> 1-12). Pure function - returns a new object.
+  //
+  //   fields      : array of formfield definitions
+  //   raw         : a flat { fieldName: value } source (e.g. form.value or a
+  //                 subform draft)
+  //   opts.isVisible : optional (item) => boolean; fields that are not
+  //                 visible are skipped (used by the main form)
+  //   opts.overrides : optional { fieldName: value } map - when a name is
+  //                 present here it is used instead of `raw[name]` (used by
+  //                 the main form to inject uploaded file metadata)
+  //   opts.subforms : optional array of subform definitions; used to resolve
+  //                 `field.subform` (string name) to the subform object so
+  //                 list rows are rebuilt recursively through the subform's
+  //                 fields (honours model/noOutput/outputObject per row)
+  buildFormOutput(fields, raw, opts = {}){
+    const isVisible = opts.isVisible || (() => true);
+    const overrides = opts.overrides || {};
+    const subforms = opts.subforms || [];
+    const subformByName = Object.fromEntries((subforms || []).map((s) => [s.name, s]));
+    const fd = {};
+    (fields || []).forEach((item) => {
+      if (!item || !item.name) return;
+      if (item.name === '__user__') return;
+      if (item.name === '__parent__') return;
+      if (item.noOutput || item.output === false) return;
+      if (!isVisible(item)) return;
+
+      const outputObject =
+        item.outputObject ||
+        item.type === 'expression' ||
+        item.type === 'file' ||
+        item.type === 'table' ||
+        item.type === 'list' ||
+        item.type === 'yaml' ||
+        item.type === 'datetime' ||
+        false;
+
+      let outputValue = (item.name in overrides) ? overrides[item.name] : this.deepClone(raw?.[item.name]);
+
+      if (item.type === 'datetime' && item.dateType === 'month' && outputValue && typeof outputValue === 'object') {
+        outputValue = {
+          ...outputValue,
+          month: typeof outputValue.month === 'number' ? outputValue.month + 1 : outputValue.month,
+        };
+      }
+
+      if (!outputObject) {
+        outputValue = this.getFieldValue(outputValue, item.valueColumn || '', true);
+      }
+
+      // If the value was saved by a subform editor it carries __output__ alongside
+      // the raw fields (for re-editing). Use __output__ as the extravars value so
+      // subform-field model/valueColumn transformations are honoured without a
+      // second recursive pass. List rows are handled below via buildFormOutput on
+      // the subform fields, so only apply this for non-array objects.
+      if (outputValue && typeof outputValue === 'object' && !Array.isArray(outputValue) && '__output__' in outputValue) {
+        outputValue = outputValue.__output__;
+      }
+
+      // Recursively re-shape list rows through the subform's field defs so
+      // that `model`, `noOutput`, `outputObject`, `valueColumn` declared on
+      // subform fields are honoured in the extravars. `item.subform` may
+      // already be an object (subform inlined by the server) or a name
+      // looked up against opts.subforms. Missing subform or non-array value
+      // -> pass through unchanged.
+      if (item.type === 'list' && Array.isArray(outputValue)) {
+        const sub = (typeof item.subform === 'string')
+          ? subformByName[item.subform]
+          : item.subform;
+        if (sub && Array.isArray(sub.fields)) {
+          outputValue = outputValue.map((row) =>
+            this.buildFormOutput(sub.fields, row || {}, { subforms })
+          );
+        }
+      }
+
+      const fieldmodel = [].concat(item.model || []);
+      if (fieldmodel.length === 0) {
+        fd[item.name] = this.deepClone(outputValue);
+        return;
+      }
+
+      fieldmodel.forEach((f) => {
+        f.split(/\s*\.\s*/).reduce((master, obj, level, arr) => {
+          let arrsplit;
+          if (level === arr.length - 1) {
+            if (obj.match(/.*\[[0-9]+\]$/)) {
+              arrsplit = obj.split(/\[([0-9]+)\]$/);
+              if (master[arrsplit[0]] === undefined) master[arrsplit[0]] = [];
+              if (master[arrsplit[0]][arrsplit[1]] === undefined) master[arrsplit[0]][arrsplit[1]] = {};
+              master[arrsplit[0]][arrsplit[1]] = outputValue;
+              return master[arrsplit[0]][arrsplit[1]];
+            }
+            if (master[obj] === undefined) {
+              master[obj] = outputValue;
+            } else if (typeof master[obj] !== 'object' || master[obj] === null || typeof outputValue !== 'object' || outputValue === null) {
+              master[obj] = outputValue;
+            } else {
+              master[obj] = { ...master[obj], ...outputValue };
+            }
+            return master[obj];
+          }
+          if (obj.match(/.*\[[0-9]+\]$/)) {
+            arrsplit = obj.split(/\[([0-9]+)\]$/);
+            if (master[arrsplit[0]] === undefined) master[arrsplit[0]] = [];
+            if (master[arrsplit[0]][arrsplit[1]] === undefined) master[arrsplit[0]][arrsplit[1]] = {};
+            return master[arrsplit[0]][arrsplit[1]];
+          }
+          if (typeof master !== 'object' || master === null) return {};
+          if (master[obj] === undefined) master[obj] = {};
+          return master[obj];
+        }, fd);
+      });
+    });
+    return fd;
+  },
+  
+  // Recursively strip internal fields from objects/arrays (for YAML downloads).
+  // Removes __output__, __user__, __parent__ and any additional fields specified.
+  stripInternalFields(obj, additionalFieldsToStrip = []) {
+    if (Array.isArray(obj)) {
+      return obj.map(item => this.stripInternalFields(item, additionalFieldsToStrip));
+    } else if (obj && typeof obj === 'object') {
+      const cleaned = {};
+      const internalFields = ['__output__', '__user__', '__parent__', ...additionalFieldsToStrip];
+      for (const [key, value] of Object.entries(obj)) {
+        // Skip internal fields and any additional fields to strip
+        if (internalFields.includes(key) || key.startsWith('__')) {
+          continue;
+        }
+        cleaned[key] = this.stripInternalFields(value, additionalFieldsToStrip);
+      }
+      return cleaned;
+    }
+    return obj;
+  },
+  
+  // Resolve placeholders in title strings (titleAdd, titleEdit) with __parent__ context.
+  // Used by subform editors to show dynamic titles based on parent form data.
+  resolveTitlePlaceholders(str, contextData) {
+    if (!str || typeof str !== 'string') return str;
+    
+    return str.replace(/\$\(([^)]+)\)/g, (_, match) => {
+      try {
+        // Build context with __parent__ so titles can use $(__parent__.fieldname)
+        const context = {
+          ...(contextData || {}),
+          __parent__: contextData || {}
+        };
+        const val = this.replacePlaceholders(match, context);
+        return val !== undefined ? val : `$(${match})`;
+      } catch (e) {
+        // If placeholder resolution fails, keep the original
+        return `$(${match})`;
+      }
+    });
+  },
+  
+  // Apply subform modeling transformation to raw data after loading from YAML.
+  // Builds __output__ property so modeled structure is immediately visible.
+  // Handles both single objects (yaml+subform) and arrays (list fields).
+  applySubformModeling(rawData, subformFields, subforms = []) {
+    if (!subformFields || !rawData) return rawData;
+    
+    // Handle array of rows (list fields)
+    if (Array.isArray(rawData)) {
+      return rawData.map(rawRow => {
+        if (typeof rawRow === 'object' && !Array.isArray(rawRow)) {
+          const built = this.buildFormOutput(subformFields, rawRow, { subforms });
+          return { ...rawRow, __output__: built };
+        }
+        return rawRow;
+      });
+    }
+    
+    // Handle single object (yaml+subform fields)
+    if (typeof rawData === 'object' && !Array.isArray(rawData)) {
+      const built = this.buildFormOutput(subformFields, rawData, { subforms });
+      return { ...rawData, __output__: built };
+    }
+    
+    return rawData;
+  },
+  
   getFieldValue(field, column, keepArray) {
 
   // get the value of a field

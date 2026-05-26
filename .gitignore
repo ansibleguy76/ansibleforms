@@ -27,8 +27,11 @@ forms.yaml
 # ontap stuff
 ontap*.yaml
 
-# publish scripts
-publish*.sh
+# build artifacts (generated during build)
+build-info.json
+
+# local post-build scripts (may contain credentials)
+*.post.sh
 
 # Editor directories and files
 .idea
@@ -42,8 +45,9 @@ publish*.sh
 # workspace
 *.code-workspace
 
-# git
-.gitignore
+# temporary files
+.tmp-*
+*.tmp
 
 # python venv
 .venv

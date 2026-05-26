@@ -1,11 +1,16 @@
 ---
 layout: default
-title: Table
+title: Table (deprecated)
 parent: Formfields
 nav_order: 12
 ---
 
-# Table Formfield
+# Table Formfield (deprecated)
+
+{: .warning }
+> **Deprecated.** The `table` field is replaced by the new [list](list.html) field combined with a `subform`.
+> The `list` field supports nested rows, reusable subforms shared across forms, and full-screen editing of each row.
+> Existing `table` fields keep working but will trigger a deprecation warning in the form.
 
 A tabular data entry field for collecting multiple records with structured data, where each row contains nested tablefields.
 

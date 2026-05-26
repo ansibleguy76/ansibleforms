@@ -594,10 +594,13 @@ Job.getRawFormData = async function (user, id) {
     if (!formObj) {
       throw new Errors.NotFoundError(`Form '${job.form}' not found or you don't have access to it`);
     }
-    logger.info(`Form loaded, checking disableRelaunch: ${formObj.disableRelaunch}`);
+    logger.info(`Form loaded, checking disableRelaunch: ${formObj.disableRelaunch}, allowRelaunch: ${formObj.allowRelaunch}`);
     
-    // Check if form has disableRelaunch set
-    if (formObj.disableRelaunch === true) {
+    // Support deprecated 'disableRelaunch: true' — use 'allowRelaunch: false' instead
+    if (formObj.disableRelaunch !== undefined) {
+      logger.warning(`Form '${job.form}' uses deprecated 'disableRelaunch' property. Please use 'allowRelaunch: false' instead.`);
+    }
+    if (formObj.disableRelaunch === true || formObj.allowRelaunch === false) {
       throw new Errors.AccessDeniedError(`Form '${job.form}' has job relaunch disabled`);
     }
     
@@ -960,8 +963,11 @@ Job.relaunch = async function (user, id, verbose) {
     throw new Errors.NotFoundError(`Form '${job.form}' not found or you don't have access to it`);
   }
   
-  // Check if form has disableRelaunch set
-  if (formObj.disableRelaunch === true) {
+  // Support deprecated 'disableRelaunch: true' — use 'allowRelaunch: false' instead
+  if (formObj.disableRelaunch !== undefined) {
+    logger.warning(`Form '${job.form}' uses deprecated 'disableRelaunch' property. Please use 'allowRelaunch: false' instead.`);
+  }
+  if (formObj.disableRelaunch === true || formObj.allowRelaunch === false) {
     throw new Errors.AccessDeniedError(`Form '${job.form}' has job relaunch disabled`);
   }
   
