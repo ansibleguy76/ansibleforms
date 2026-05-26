@@ -15,6 +15,8 @@ jobs:
     steps:
     - name: Check out code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     - name: Create release branch
       run: git checkout -b release/v${{ github.event.inputs.versionName }}
     - name: Initialize mandatory git config
@@ -24,39 +26,34 @@ jobs:
     - name: Change version number and name
       run: printf 'ext.version_code = ${{ github.event.inputs.versionCode }}\next.version_name = "${{ github.event.inputs.versionName }}"\n' > app_versions.gradle
     - name: Update Changelog
-      uses: thomaseizinger/keep-a-changelog-new-release@v1
-      with:
-        version: ${{ github.event.inputs.versionName }}
+      run: |
+        VERSION="${{ github.event.inputs.versionName }}"
+        DATE=$(date +%Y-%m-%d)
+        sed -i "s/## \[Unreleased\]/## [Unreleased]\n\n## [$VERSION] - $DATE/" CHANGELOG.md
     - name: Commit changelog and manifest files
       id: make-commit
       run: |
         git add app_versions.gradle
         git add CHANGELOG.md
         git commit --message "Prepare release ${{ github.event.inputs.versionName }}"
-        echo "::set-output name=commit::$(git rev-parse HEAD)"
+        echo "commit=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
     - name: Push new branch
       run: git push origin release/v${{ github.event.inputs.versionName }}
     - name: Create pull request into main
-      uses: thomaseizinger/create-pull-request@1.0.0
-      with:
-       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-       head: release/v${{ github.event.inputs.versionName }}
-       base: main
-       title: v${{ github.event.inputs.versionName }} into main
-       reviewers: ${{ github.event.issue.user.login }}
-       body: |
-           Hi!
-           This PR was created in response workflow running.
-           I've updated the version name and code commit: ${{ steps.make-commit.outputs.commit }}.
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh pr create \
+          --base main \
+          --head release/v${{ github.event.inputs.versionName }} \
+          --title "v${{ github.event.inputs.versionName }} into main" \
+          --body "This PR was created by the release workflow. Version commit: ${{ steps.make-commit.outputs.commit }}"
     - name: Create pull request to develop
-      uses: thomaseizinger/create-pull-request@1.0.0
-      with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          head: release/v${{ github.event.inputs.versionName }}
-          base: develop
-          title: v${{ github.event.inputs.versionName }} into develop
-          reviewers: ${{ github.event.issue.user.login }}
-          body: |
-              Hi!
-              This PR was created in response workflow running.
-              I've updated the version name and code commit: ${{ steps.make-commit.outputs.commit }}.
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh pr create \
+          --base develop \
+          --head release/v${{ github.event.inputs.versionName }} \
+          --title "v${{ github.event.inputs.versionName }} into develop" \
+          --body "This PR was created by the release workflow. Version commit: ${{ steps.make-commit.outputs.commit }}"
