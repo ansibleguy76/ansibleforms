@@ -32,7 +32,7 @@ jobs:
                 echo "EOF" >> $GITHUB_OUTPUT
             - name: Create Release
               env:
-                GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                GH_TOKEN: ${{ secrets.PAT_TOKEN }}
               run: |
                 gh release create "${{ env.VERSION_NAME }}" \
                   --title "v${{ env.VERSION_NAME }}" \

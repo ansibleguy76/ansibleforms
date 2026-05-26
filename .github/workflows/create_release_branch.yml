@@ -23,6 +23,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
+        token: ${{ secrets.PAT_TOKEN }}
     - name: Create release branch
       run: git checkout -b release/v${{ github.event.inputs.versionName }}
     - name: Initialize mandatory git config
@@ -47,7 +48,7 @@ jobs:
       run: git push origin release/v${{ github.event.inputs.versionName }}
     - name: Create pull request into main
       env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ secrets.PAT_TOKEN }}
       run: |
         gh pr create \
           --base main \
@@ -56,7 +57,7 @@ jobs:
           --body "This PR was created by the release workflow. Version commit: ${{ steps.make-commit.outputs.commit }}"
     - name: Create pull request to develop
       env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ secrets.PAT_TOKEN }}
       run: |
         gh pr create \
           --base develop \
