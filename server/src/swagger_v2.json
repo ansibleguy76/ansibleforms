@@ -20,6 +20,7 @@
     { "name": "job", "description": "Job management and operations" },
     { "name": "backup", "description": "Backup and restore operations" },
     { "name": "credential", "description": "Credential management and database connection testing" },
+    { "name": "oauth2", "description": "OAuth2 provider management (Azure AD, OIDC, etc.)" },
     { "name": "knownhosts", "description": "Manage SSH known_hosts entries (flat list)" }
   ],
   "servers": [
@@ -1334,6 +1335,49 @@
         "responses": { "200": { "description": "Database connection ok" }, "404": { "description": "Not found" } }
       }
     },
+    "/oauth2": {
+      "get": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["oauth2"],
+        "summary": "List all OAuth2 providers or filter by name",
+        "parameters": [ { "name": "name", "in": "query", "schema": { "type": "string" }, "required": false, "description": "Provider name to search" } ],
+        "responses": { "200": { "description": "OAuth2 provider list or single provider" }, "500": { "description": "Failed to find OAuth2 providers" } }
+      },
+      "post": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["oauth2"],
+        "summary": "Create a new OAuth2 provider",
+        "description": "Creates a new OAuth2 provider (Azure AD, OIDC, etc.) and initializes authentication strategies.",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OAuth2Provider" } } } },
+        "responses": { "201": { "description": "OAuth2 provider created" }, "400": { "description": "Missing required fields" }, "500": { "description": "Failed to create OAuth2 provider" } }
+      }
+    },
+    "/oauth2/{id}": {
+      "get": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["oauth2"],
+        "summary": "Get OAuth2 provider by ID",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "OAuth2 provider object" }, "404": { "description": "Not found" }, "500": { "description": "Failed to find OAuth2 provider" } }
+      },
+      "put": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["oauth2"],
+        "summary": "Update OAuth2 provider by ID",
+        "description": "Updates an OAuth2 provider and re-initializes authentication strategies.",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OAuth2Provider" } } } },
+        "responses": { "200": { "description": "OAuth2 provider updated" }, "404": { "description": "Not found" }, "500": { "description": "Failed to update OAuth2 provider" } }
+      },
+      "delete": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["oauth2"],
+        "summary": "Delete OAuth2 provider by ID",
+        "description": "Deletes an OAuth2 provider and removes authentication strategies from passport.",
+        "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "description": "OAuth2 provider deleted" }, "404": { "description": "Not found" }, "500": { "description": "Failed to delete OAuth2 provider" } }
+      }
+    },
     "/backup/restore": {
       "post": {
         "security": [ { "bearerAuth": [] } ],
@@ -1439,6 +1483,29 @@
           "target": { "type": "string", "description": "Target resource for the job.", "example": "vm1" }
         },
         "required": ["formName"]
+      },
+      "OAuth2Provider": {
+        "type": "object",
+        "description": "OAuth2 provider configuration object (Azure AD, OIDC, etc.).",
+        "properties": {
+          "id": { "type": "integer", "description": "Unique identifier for the OAuth2 provider.", "example": 1 },
+          "provider": { "type": "string", "description": "Provider type (e.g., 'azuread', 'oidc', 'google', 'github').", "example": "oidc" },
+          "name": { "type": "string", "description": "Unique name for the provider.", "example": "my-oidc-provider" },
+          "description": { "type": "string", "description": "Optional description for the provider.", "example": "Production OIDC authentication" },
+          "issuer": { "type": "string", "description": "OIDC issuer URL (for OIDC providers).", "example": "https://accounts.google.com" },
+          "tenant_id": { "type": "string", "description": "Azure AD tenant ID (for Azure AD providers).", "example": "12345678-1234-1234-1234-123456789abc" },
+          "client_id": { "type": "string", "description": "OAuth2 client ID.", "example": "my-client-id" },
+          "client_secret": { "type": "string", "description": "OAuth2 client secret. Use '**********' to preserve existing secret when updating.", "example": "my-client-secret" },
+          "enable": { "type": "integer", "description": "Enable this provider (1 = enabled, 0 = disabled). Only one provider of each type can be enabled.", "example": 1 },
+          "groupfilter": { "type": "string", "description": "Optional group filter.", "example": "" },
+          "redirect_uri": { "type": "string", "description": "OAuth2 redirect URI.", "example": "https://ansibleforms.example.com/api/v2/auth/oidc/callback" },
+          "scope": { "type": "string", "description": "OAuth2 scopes (space-separated).", "example": "openid profile email" },
+          "auth_url": { "type": "string", "description": "Authorization URL (optional, auto-discovered for OIDC).", "example": "https://accounts.google.com/o/oauth2/v2/auth" },
+          "token_url": { "type": "string", "description": "Token URL (optional, auto-discovered for OIDC).", "example": "https://oauth2.googleapis.com/token" },
+          "userinfo_url": { "type": "string", "description": "User info URL (optional, auto-discovered for OIDC).", "example": "https://openidconnect.googleapis.com/v1/userinfo" },
+          "extra": { "type": "object", "description": "Additional provider-specific configuration (JSON).", "example": {} }
+        },
+        "required": ["provider", "name", "client_id"]
       }
     }
   }

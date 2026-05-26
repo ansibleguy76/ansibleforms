@@ -35,6 +35,8 @@ const oauth2Controller = {
   async create(req, res) {
     try {
       const created = await OAuth2.create(req.body);
+      await auth_azuread.initialize(); // we wait for the azuread to be ready
+      await auth_oidc.initialize(); // we wait for the oidc to be ready
       return res.status(201).json(RestResult.single("oauth2 provider added", created));
     } catch (err) {
       Errors.ReturnError(res, err);
@@ -68,6 +70,8 @@ const oauth2Controller = {
   async delete(req, res) {
     try {
       const deleted = await OAuth2.delete(req.params.id);
+      await auth_azuread.initialize(); // we wait for the azuread to be ready
+      await auth_oidc.initialize(); // we wait for the oidc to be ready
       return res.json(RestResult.single(deleted));
     } catch (err) {
       Errors.ReturnError(res, err);
