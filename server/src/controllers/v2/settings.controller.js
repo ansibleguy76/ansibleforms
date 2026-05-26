@@ -3,6 +3,7 @@ import Settings from '../../models/settings.model.js';
 import RestResult from '../../models/restResult.model.v2.js';
 import logger from '../../lib/logger.js';
 import Helpers from '../../lib/common.js';
+import i18n from '../../lib/i18n.js';
 
 
 const find = async function(req, res) {
@@ -14,7 +15,7 @@ const find = async function(req, res) {
       }
       res.json(RestResult.single(settings));
     } catch(err) {
-      res.status(500).json(RestResult.error("Failed to find settings", Helpers.getError(err)));
+      res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedFindSettings'), Helpers.getError(err)));
     }
 };
 
@@ -27,15 +28,15 @@ const mailcheck = async function(req, res) {
       settingsConfig.mail_password = existingSettings.mail_password;
     }
     const messageid = await Settings.mailcheck(new Settings(settingsConfig), req.body.to);
-    res.json(RestResult.single({ message: `Mail sent with id ${messageid}` }));
+    res.json(RestResult.single({ message: i18n.t(req, 'resources.mailSent', { id: messageid }) }));
   } catch(err) {
-    res.status(500).json(RestResult.error("Mail check failed", Helpers.getError(err)));
+    res.status(500).json(RestResult.error(i18n.t(req, 'resources.mailCheckFailed'), Helpers.getError(err)));
   }
 };
 
 const update = async function(req, res) {
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
-        res.status(400).json(RestResult.error('Please provide all required fields'));
+        res.status(400).json(RestResult.error(i18n.t(req, 'errors.requiredFields')));
     }else{
         try {
           // If password is masked, preserve the existing password
@@ -46,7 +47,7 @@ const update = async function(req, res) {
           await Settings.update(new Settings(req.body));
           res.json(RestResult.single(null));
         } catch(err) {
-          res.status(500).json(RestResult.error("Failed to update settings", Helpers.getError(err)));
+          res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedUpdateSettings'), Helpers.getError(err)));
         }
     }
 };
@@ -56,7 +57,7 @@ const importConfig = async function(req, res) {
       const message = await Settings.importConfig();
       res.json(RestResult.single({ message }));
     } catch(err) {
-      res.status(500).json(RestResult.error("Failed to import config", Helpers.getError(err)));
+      res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedImportConfig'), Helpers.getError(err)));
     }
 };
 

@@ -2,11 +2,12 @@
 import Query from '../../models/query.model.js';
 import RestResult from '../../models/restResult.model.v2.js';
 import logger from '../../lib/logger.js';
+import i18n from '../../lib/i18n.js';
 
 const findAll = async function(req, res) {
   //handles null error
   if(req.body.constructor === Object && Object.keys(req.body).length === 0){
-      res.status(400).json(RestResult.error("no data was sent"));
+      res.status(400).json(RestResult.error(i18n.t(req, 'errors.noDataSent')));
   }else{
       if(req.body.config){
         var config = req.body.config
@@ -21,7 +22,7 @@ const findAll = async function(req, res) {
         }
       }else{
         logger.error("database config is missing, provide 'dbConfig' parameter with type query")
-        res.status(400).json(RestResult.error("missing dbConfig"));
+        res.status(400).json(RestResult.error(i18n.t(req, 'errors.missingDbConfig')));
       }
   }
 };

@@ -5,6 +5,7 @@ import RestResult from "../../models/restResult.model.v2.js";
 import Errors from "../../lib/errors.js";
 import cronService from "../../services/cron.service.js";
 import logger from "../../lib/logger.js";
+import i18n from "../../lib/i18n.js";
 
 const scheduleController = {
   async find(req, res) {
@@ -29,7 +30,7 @@ const scheduleController = {
       // Add to cron service
       logger.info(`Adding schedule '${created.name}' (ID: ${created.id}) to cron service`);
       cronService.addSchedule(created.id, created.name, created.cron, created.one_time_run, created.run_at);
-      return res.status(201).json(RestResult.single("schedule added", created));
+      return res.status(201).json(RestResult.single(i18n.t(req, 'resources.scheduleAdded'), created));
     } catch (err) {
       Errors.ReturnError(res, err);
     }
@@ -73,7 +74,7 @@ const scheduleController = {
   async queue(req, res) {
     try {
       await Schedule.queue(req.params.id);
-      return res.json(RestResult.single("Schedule queued", req.params.id));
+      return res.json(RestResult.single(i18n.t(req, 'resources.scheduleQueued'), req.params.id));
     } catch (err) {
       Errors.ReturnError(res, err);
     }
@@ -82,7 +83,7 @@ const scheduleController = {
   async launch(req, res) {
     try {
       await Schedule.launch(req.params.id);
-      return res.json(RestResult.single("Schedule launched", req.params.id));
+      return res.json(RestResult.single(i18n.t(req, 'resources.scheduleLaunched'), req.params.id));
     } catch (err) {
       Errors.ReturnError(res, err);
     }

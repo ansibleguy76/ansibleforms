@@ -1,6 +1,7 @@
 import CredentialModel from '../../models/credential.model.v2.js';
 import RestResult from '../../models/restResult.model.v2.js';
 import Errors from '../../lib/errors.js';
+import i18n from '../../lib/i18n.js';
 import mysql from '../../lib/mysql.js';
 import postgres from '../../lib/postgres.js';
 import mssql from '../../lib/mssql.js';
@@ -33,7 +34,7 @@ const credentialController = {
   async create(req, res) {
     try {
       const credential = await CredentialModel.create(req.body);
-      res.json(RestResult.single({ message: 'Credential created', id: credential }));
+      res.json(RestResult.single({ message: i18n.t(req, 'success.created', { resource: 'Credential' }), id: credential }));
     } catch (err) {
       Errors.ReturnError(res, err);
     }
@@ -53,7 +54,7 @@ const credentialController = {
   async update(req, res) {
     try {
       await CredentialModel.update(req.body, req.params.id);
-      res.json(RestResult.single({ message: 'Credential updated' }));
+      res.json(RestResult.single({ message: i18n.t(req, 'success.updated', { resource: 'Credential' }) }));
     } catch (err) {
       Errors.ReturnError(res, err);
     }
@@ -62,7 +63,7 @@ const credentialController = {
   async delete(req, res) {
     try {
       await CredentialModel.delete(req.params.id);
-      res.json(RestResult.single({ message: 'Credential deleted' }));
+      res.json(RestResult.single({ message: i18n.t(req, 'success.deleted', { resource: 'Credential' }) }));
     } catch (err) {
       Errors.ReturnError(res, err);
     }
@@ -84,9 +85,9 @@ const credentialController = {
       } else if (db_type === 'mongodb') {
         result = await mongodb.query(credential.name, 'admin~system.version~{}');
       } else {
-        throw new Errors.BadRequestError('Database type not set');
+        throw new Errors.BadRequestError(i18n.t(req, 'resources.dbTypeNotSet'));
       }
-      res.json(RestResult.single({ message: 'Database connection ok' }));
+      res.json(RestResult.single({ message: i18n.t(req, 'success.connectionOk', { resource: 'Database' }) }));
     } catch (err) {
       Errors.ReturnError(res, err);
     }

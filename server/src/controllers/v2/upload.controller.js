@@ -3,6 +3,7 @@ import appConfig from '../../../config/app.config.js';
 import multer from 'multer';
 import logger from '../../lib/logger.js';
 import RestResult from '../../models/restResult.model.v2.js';
+import i18n from '../../lib/i18n.js';
 import fs from 'fs';
 
 
@@ -20,7 +21,7 @@ const upload = function(req, res, next) {
   result(req, res, function (err) {
       if(err) {
           logger.error(`Upload error : ${err.toString()}`)
-          return res.status(400).json(RestResult.error("file upload failed", err.toString()))
+          return res.status(400).json(RestResult.error(i18n.t(req, 'resources.fileUploadFailed'), err.toString()))
       } 
       logger.info(`Uploaded file ${req.file.originalname} as ${req.file.path}`)
       return res.json(RestResult.single(req.file))

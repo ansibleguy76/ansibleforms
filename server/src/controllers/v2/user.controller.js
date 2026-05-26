@@ -2,6 +2,7 @@
 import User from '../../models/user.model.js';
 import RestResult from '../../models/restResult.model.v2.js';
 import Errors from '../../lib/errors.js';
+import i18n from '../../lib/i18n.js';
 
 const findAllOr1 = async function(req, res) {
   try {
@@ -28,7 +29,7 @@ const findAllOr1 = async function(req, res) {
 const create = async function(req, res) {
     //handles null error
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
-        res.status(400).json(RestResult.error('Please provide all required fields'));
+        res.status(400).json(RestResult.error(i18n.t(req, 'errors.requiredFields')));
     }else{
         try {
           const user = await User.create(req.body);
@@ -49,7 +50,7 @@ const findById = async function(req, res) {
       res.json(RestResult.single(user));
     } catch(err) {
       if (err instanceof Errors.NotFoundError) {
-        res.status(404).json(RestResult.error('User not found'));
+        res.status(404).json(RestResult.error(i18n.t(req, 'resources.userNotFound')));
       } else {
         res.status(500).json(RestResult.error(err.toString()));
       }
@@ -62,7 +63,7 @@ const findByToken = async function(req, res) {
       if(user){
         res.json(RestResult.single(user.id));
       }else{
-        res.status(404).json(RestResult.error('User not found'));
+        res.status(404).json(RestResult.error(i18n.t(req, 'resources.userNotFound')));
       }
     } catch(err) {
       res.status(500).json(RestResult.error(err.toString()));
@@ -73,7 +74,7 @@ const update = async function(req, res) {
     // don't tamper with username
     delete req.body.username
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
-        res.status(400).json(RestResult.error('Please provide all required fields'));
+        res.status(400).json(RestResult.error(i18n.t(req, 'errors.requiredFields')));
     }else{
         try {
           await User.update(req.body,req.params.id);
@@ -90,7 +91,7 @@ const changePassword = async function(req, res) {
     delete req.body.group_id
     delete req.body.username
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
-        res.status(400).json(RestResult.error('Please provide all required fields'));
+        res.status(400).json(RestResult.error(i18n.t(req, 'errors.requiredFields')));
     }else{
         try {
           await User.update(req.body,req.user.user.id);
@@ -100,7 +101,7 @@ const changePassword = async function(req, res) {
         }
     }
   }else{
-    res.status(400).json(RestResult.error("you can't change the password for an ldap user"));
+    res.status(400).json(RestResult.error(i18n.t(req, 'resources.cantChangePasswordLdap')));
   }
 };
 

@@ -1,5 +1,6 @@
 'use strict';
 import CrudModel from './crud.model.js';
+import mysql from './db.model.js';
 
 class Group extends CrudModel {
     static modelName = 'groups';
@@ -20,6 +21,11 @@ class Group extends CrudModel {
         const group = await super.findById(this.modelName, id);
         if (group && group.name === 'admins') {
             throw new Error("You cannot delete group 'admins'");
+        }
+        // Prevent deletion of groups that still have users (FK is CASCADE, so we must check manually)
+        const [row] = await mysql.do("SELECT COUNT(*) as cnt FROM AnsibleForms.`users` WHERE group_id = ?", [id]);
+        if (row && row.cnt > 0) {
+            throw new Error("Group still has users");
         }
         return super.delete(this.modelName, id);
     }

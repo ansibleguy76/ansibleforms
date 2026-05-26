@@ -5,6 +5,7 @@ import authConfig from '../../../config/auth.config.js';
 import logger from "../../lib/logger.js";
 import Token from "../../models/token.model.js";
 import Errors from '../../lib/errors.js';
+import i18n from '../../lib/i18n.js';
 
 const refresh = async function(req, res) {
     try {
@@ -14,14 +15,14 @@ const refresh = async function(req, res) {
         
         if(!refreshtoken){
             logger.error("no refresh token is provided");
-            return res.status(400).json(RestResult.error('Please provide a refresh token'));
+            return res.status(400).json(RestResult.error(i18n.t(req, 'errors.provideRefreshToken')));
         }
         
         const jwtPayload = jwt.decode(refreshtoken);
         
         if(!jwtPayload || !jwtPayload.user || !jwtPayload.refresh){
             logger.error("Invalid refresh token");
-            return res.status(401).json(RestResult.error('Invalid refresh token'));
+            return res.status(401).json(RestResult.error(i18n.t(req, 'errors.invalidRefreshToken')));
         }
         
         const username = jwtPayload.user.username;
@@ -33,7 +34,7 @@ const refresh = async function(req, res) {
             logger.error("Refresh token is expired");
             await Token.delete(username, username_type, refreshtoken);
             logger.info("Removed token for " + username);
-            return res.status(401).json(RestResult.error('Refresh token is expired'));
+            return res.status(401).json(RestResult.error(i18n.t(req, 'errors.refreshTokenExpired')));
         }
         
         const body = jwtPayload.user;
@@ -47,7 +48,7 @@ const refresh = async function(req, res) {
         
     } catch(err) {
         logger.error(`Error : ${err.toString()}`);
-        res.status(401).json(RestResult.error('Refresh token is unknown'));
+        res.status(401).json(RestResult.error(i18n.t(req, 'errors.refreshTokenUnknown')));
     }
 };
 

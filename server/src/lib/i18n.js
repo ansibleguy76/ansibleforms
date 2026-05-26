@@ -56,8 +56,9 @@ function parseCookies(cookieHeader) {
 /**
  * Get a nested translation value by dot-path.
  * Example: t(req, 'errors.noAccess')
+ * Example with interpolation: t(req, 'config.lockedBy', { username: 'admin' })
  */
-function t(req, key) {
+function t(req, key, params) {
   const locale = getLocaleFromRequest(req);
   const keys = key.split('.');
   let value = messages[locale];
@@ -71,7 +72,11 @@ function t(req, key) {
       value = value?.[k];
     }
   }
-  return value || key;
+  const result = value || key;
+  if (params && typeof result === 'string') {
+    return result.replace(/\{(\w+)\}/g, (_, k) => params[k] !== undefined ? params[k] : `{${k}}`);
+  }
+  return result;
 }
 
 export default { t, getLocaleFromRequest, supportedLocales, defaultLocale };

@@ -3,19 +3,20 @@ import Repository from '../../models/repository.model.js';
 import RestResult from '../../models/restResult.model.v2.js';
 import cronService from '../../services/cron.service.js';
 import logger from '../../lib/logger.js';
+import i18n from '../../lib/i18n.js';
 
 const find = async function(req, res) {
   try {
     const repositories = await Repository.findAll();
     res.json(RestResult.list(repositories));
   } catch(err) {
-    res.status(500).json(RestResult.error("Failed to find repositories", err.toString()));
+    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedFindRepositories'), err.toString()));
   }
 };
 
 const create = async function(req, res) {
   if(req.body.constructor === Object && Object.keys(req.body).length === 0) {
-    return res.status(400).json(RestResult.error("Please provide all required fields"));
+    return res.status(400).json(RestResult.error(i18n.t(req, 'errors.requiredFields')));
   }
   try {
     const insertId = await Repository.create(req.body);
@@ -28,7 +29,7 @@ const create = async function(req, res) {
     }
     res.json(RestResult.single({ id: insertId }));
   } catch(err) {
-    res.status(500).json(RestResult.error("Failed to create repository", err.toString()));
+    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedCreateRepository'), err.toString()));
   }
 };
 
@@ -38,13 +39,13 @@ const findByName = async function(req, res) {
     repository.password = "**********"; // mask the password for api
     res.json(RestResult.single(repository));
   } catch(err) {
-    res.status(500).json(RestResult.error("Failed to find repository", err.toString()));
+    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedFindRepository'), err.toString()));
   }
 };
 
 const update = async function(req, res) {
   if(req.body.constructor === Object && Object.keys(req.body).length === 0) {
-    return res.status(400).json(RestResult.error("Please provide all required fields"));
+    return res.status(400).json(RestResult.error(i18n.t(req, 'errors.requiredFields')));
   }
   try {
     await Repository.update(req.body, req.params.name);
@@ -60,7 +61,7 @@ const update = async function(req, res) {
     }
     res.json(RestResult.single(null));
   } catch(err) {
-    res.status(500).json(RestResult.error("Failed to update repository", err.toString()));
+    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedUpdateRepository'), err.toString()));
   }
 };
 
@@ -72,7 +73,7 @@ const deleteRepository = async function(req, res) {
     cronService.removeRepository(req.params.name);
     res.json(RestResult.single(null));
   } catch(err) {
-    res.status(500).json(RestResult.error("Failed to delete repository", err.toString()));
+    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedDeleteRepository'), err.toString()));
   }
 };
 
@@ -81,7 +82,7 @@ const clone = async function(req, res) {
     await Repository.clone(req.params.name);
     res.json(RestResult.single(null));
   } catch(err) {
-    res.status(500).json(RestResult.error("Failed to clone repository", err.toString()));
+    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedCloneRepository'), err.toString()));
   }
 };
 
@@ -90,7 +91,7 @@ const reset = async function(req, res) {
     await Repository.reset(req.params.name);
     res.json(RestResult.single(null));
   } catch(err) {
-    res.status(500).json(RestResult.error("Failed to reset repository", err.toString()));
+    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedResetRepository'), err.toString()));
   }
 };
 
@@ -99,7 +100,7 @@ const pull = async function(req, res) {
     await Repository.pull(req.params.name);
     res.json(RestResult.single(null));
   } catch(err) {
-    res.status(500).json(RestResult.error("Failed to pull repository", err.toString()));
+    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedPullRepository'), err.toString()));
   }
 };
 
