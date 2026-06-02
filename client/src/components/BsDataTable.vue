@@ -1,0 +1,596 @@
+<script setup>
+/**
+ * BsDataTable — selectable, filterable, paginated data table
+ *
+ * Props
+ * ─────
+ *  items          Array   Full dataset
+ *  columns        Array   [{ key, label, filterable?, sortable?, render?(val,row)→string }]
+ *  pageSize       Number  Default page size (default 25)
+ *  name           String  Cookie key for pagination persistence
+ *  selectedIds    Set     Parent-owned Set of selected item ids (v-model:selectedIds)
+ *  idKey          String  Field used as row id (default 'id')
+ *
+ * Emits
+ * ─────
+ *  update:selectedIds   Set   When selection changes
+ *  row-click            item  When a row is single-clicked (after selection logic)
+ */
+
+import { ref, computed, watch, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
+import Helpers from '@/lib/Helpers';
+import BsPagination from './BsPagination.vue';
+
+const { t } = useI18n();
+
+const props = defineProps({
+  items:       { type: Array,  required: true },
+  columns:     { type: Array,  required: true },
+  pageSize:    { type: Number, default: 25 },
+  name:        { type: String, default: null },
+  selectedIds: { type: Object, default: () => new Set() }, // Set
+  idKey:       { type: String, default: 'id' },
+  selectable:  { type: Boolean, default: true },
+  activeId:    { type: [String, Number], default: null },
+});
+
+const emit = defineEmits(['update:selectedIds', 'row-click']);
+
+// ─── Column visibility ───────────────────────────────────────────────────────
+const hiddenColumns = ref(new Set());
+
+const visibleColumns = computed(() => props.columns.filter(c => !hiddenColumns.value.has(c.key)));
+
+function toggleColumn(key) {
+  const s = new Set(hiddenColumns.value);
+  if (s.has(key)) s.delete(key); else s.add(key);
+  hiddenColumns.value = s;
+  // Persist to cookie
+  if (props.name) {
+    Helpers.setCookie(`dt_cols_${props.name}`, JSON.stringify([...s]), 365);
+  }
+}
+
+// Restore column visibility from cookie
+onMounted(() => {
+  if (props.name) {
+    const saved = Helpers.getCookie(`dt_cols_${props.name}`);
+    if (saved) {
+      try { hiddenColumns.value = new Set(JSON.parse(saved)); return; } catch (e) { /* ignore */ }
+    }
+  }
+  // First-visit defaults:
+  //  - columns marked `defaultHidden` are hidden out of the box but remain
+  //    available in the column picker so the user can opt them in.
+  //  - on narrow viewports, additionally hide `mobileHidden` columns.
+  const initial = new Set(
+    props.columns.filter(c => c.defaultHidden).map(c => c.key)
+  );
+  if (typeof window !== 'undefined' && window.matchMedia('(max-width: 767.98px)').matches) {
+    props.columns.filter(c => c.mobileHidden).forEach(c => initial.add(c.key));
+  }
+  if (initial.size) hiddenColumns.value = initial;
+});
+
+// ─── Filter state (one per column + optional global) ─────────────────────────
+const globalFilter = ref('');
+const columnFilters = ref({});
+
+const filterableColumns = computed(() => visibleColumns.value.filter(c => c.filterable));
+
+// ─── Sort state ───────────────────────────────────────────────────────────────
+const sortKey = ref(null);
+const sortDir = ref(1); // 1 asc, -1 desc
+
+function toggleSort(key) {
+  if (sortKey.value === key) {
+    sortDir.value = -sortDir.value;
+  } else {
+    sortKey.value = key;
+    sortDir.value = 1;
+  }
+}
+
+// ─── Filtered + sorted full list ─────────────────────────────────────────────
+const filteredItems = computed(() => {
+  let list = props.items;
+
+  if (globalFilter.value.trim()) {
+    const q = globalFilter.value.trim().toLowerCase();
+    list = list.filter(item =>
+      props.columns.some(col => {
+        const v = cellText(item, col);
+        return v.toLowerCase().includes(q);
+      })
+    );
+  }
+
+  for (const [key, val] of Object.entries(columnFilters.value)) {
+    if (!val?.trim()) continue;
+    const q = val.trim().toLowerCase();
+    const col = props.columns.find(c => c.key === key);
+    list = list.filter(item => cellText(item, col).toLowerCase().includes(q));
+  }
+
+  if (sortKey.value) {
+    const key = sortKey.value;
+    const col = props.columns.find(c => c.key === key);
+    const dir = sortDir.value;
+    list = [...list].sort((a, b) => {
+      const ta = cellText(a, col).toLowerCase();
+      const tb = cellText(b, col).toLowerCase();
+      return ta < tb ? -dir : ta > tb ? dir : 0;
+    });
+  }
+
+  return list;
+});
+
+// ─── Pagination ───────────────────────────────────────────────────────────────
+const pageItems = ref([]);
+
+function onPageChange(slice) {
+  pageItems.value = slice;
+}
+
+// When filter changes, reset to first page by re-keying paginator
+const filterVersion = ref(0);
+watch(filteredItems, () => { filterVersion.value++; anchorIndex = null; });
+
+// ─── Cell rendering ───────────────────────────────────────────────────────────
+// `cellText` returns RAW plain text — used for filtering, sorting, and export.
+// `cellHtml` returns HTML for v-html — escapes raw values; render() output is
+// trusted (it's developer-supplied JS in the column config, e.g. statusBadge).
+function cellText(item, col) {
+  if (!col) return '';
+  const raw = item[col.key];
+  if (col.render) {
+    // render() may return HTML; for filtering/sorting strip tags to plain text.
+    const rendered = String(col.render(raw, item) ?? '');
+    return rendered.replace(/<[^>]*>/g, '');
+  }
+  if (raw == null) return '';
+  return String(raw);
+}
+
+function cellHtml(item, col) {
+  if (!col) return '';
+  const raw = item[col.key];
+  if (col.render) return String(col.render(raw, item) ?? '');
+  if (raw == null) return '';
+  return String(raw).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#x27;'}[c]));
+}
+
+// Plain (unescaped, no HTML) cell value — used for tooltip on truncated cells.
+function cellPlain(item, col) {
+  if (!col) return '';
+  const raw = item[col.key];
+  if (col.render) {
+    const rendered = String(col.render(raw, item) ?? '');
+    // Strip any HTML tags the renderer produced.
+    return rendered.replace(/<[^>]*>/g, '');
+  }
+  if (raw == null) return '';
+  return String(raw);
+}
+
+
+// ─── Selection ────────────────────────────────────────────────────────────────
+// filteredItems.indexOf(item) fails with Vue 3 Proxy wrapping — two proxies of
+// the same object are not === equal. Use id-based lookup instead.
+function filteredIndexOf(item) {
+  const id = item[props.idKey];
+  return filteredItems.value.findIndex(r => r[props.idKey] === id);
+}
+
+let anchorIndex = null;
+
+function onRowClick(event, item) {
+  if (dragJustDone) { dragJustDone = false; return; }
+
+  // Clicks inside the row-actions cell (3-dot menu) must not toggle row
+  // selection. We do not use @click.stop on the cell because that would also
+  // prevent the document-level click handler used by Bootstrap dropdowns from
+  // firing — which lets two dropdowns stay open at once.
+  if (event.target.closest && event.target.closest('.bs-dt-row-actions')) return;
+
+  if (!props.selectable) {
+    emit('row-click', item);
+    return;
+  }
+
+  const index  = filteredIndexOf(item);
+  if (index === -1) return;
+
+  const id     = item[props.idKey];
+  const newSet = new Set(props.selectedIds);
+
+  if (event.shiftKey && anchorIndex !== null) {
+    const from = Math.min(anchorIndex, index);
+    const to   = Math.max(anchorIndex, index);
+    if (event.ctrlKey || event.metaKey) {
+      // Ctrl+Shift → toggle the range: add if clicked row is not selected, remove if it is
+      const addRange = !props.selectedIds.has(id);
+      for (let i = from; i <= to; i++) {
+        const row = filteredItems.value[i];
+        if (!row) continue;
+        if (addRange) newSet.add(row[props.idKey]);
+        else newSet.delete(row[props.idKey]);
+      }
+    } else {
+      // Shift → replace entire selection with the range
+      newSet.clear();
+      for (let i = from; i <= to; i++) {
+        const row = filteredItems.value[i];
+        if (row) newSet.add(row[props.idKey]);
+      }
+    }
+    // anchor does NOT move on shift-click
+  } else if (event.ctrlKey || event.metaKey) {
+    // Ctrl → toggle single row; anchor moves
+    if (newSet.has(id)) newSet.delete(id);
+    else newSet.add(id);
+    anchorIndex = index;
+  } else {
+    // Plain → single select (click same row again = deselect)
+    if (newSet.size === 1 && newSet.has(id)) newSet.clear();
+    else { newSet.clear(); newSet.add(id); }
+    anchorIndex = index;
+  }
+
+  emit('update:selectedIds', newSet);
+  emit('row-click', item);
+}
+
+// ─── Drag-select ──────────────────────────────────────────────────────────────
+// Drag becomes active only once the mouse enters a DIFFERENT row, so plain
+// clicks and shift/ctrl-clicks are never intercepted.
+const isDragging = ref(false);
+let dragStart    = null;  // filteredItems index where mousedown fired
+let dragAddMode  = true;
+let dragJustDone = false; // suppress the click event that follows drag-mouseup
+
+function onRowMousedown(event, item) {
+  if (event.button !== 0) return;
+  const index = filteredIndexOf(item);
+  if (index === -1) return;
+  dragStart   = index;
+  dragAddMode = !props.selectedIds.has(item[props.idKey]);
+}
+
+function onRowMouseenter(item) {
+  if (dragStart === null) return;
+  const index = filteredIndexOf(item);
+  if (index === -1 || index === dragStart) return;
+  isDragging.value = true;
+  applyDragSelection(index);
+}
+
+function onTableMouseup() {
+  if (isDragging.value) {
+    isDragging.value = false;
+    dragJustDone     = true;
+  }
+  dragStart = null;
+}
+
+function applyDragSelection(endIndex) {
+  if (dragStart === null) return;
+  const from = Math.min(dragStart, endIndex);
+  const to   = Math.max(dragStart, endIndex);
+  const newSet = new Set(props.selectedIds);
+  for (let i = from; i <= to; i++) {
+    const id = filteredItems.value[i]?.[props.idKey];
+    if (id == null) continue;
+    if (dragAddMode) newSet.add(id);
+    else newSet.delete(id);
+  }
+  emit('update:selectedIds', newSet);
+}
+
+const allOnPageSelected = computed(() => {
+  if (!pageItems.value.length) return false;
+  return pageItems.value.every(item => props.selectedIds.has(item[props.idKey]));
+});
+
+function toggleSelectAll() {
+  const newSet = new Set(props.selectedIds);
+  if (allOnPageSelected.value) {
+    pageItems.value.forEach(item => newSet.delete(item[props.idKey]));
+  } else {
+    pageItems.value.forEach(item => newSet.add(item[props.idKey]));
+  }
+  emit('update:selectedIds', newSet);
+}
+
+function selectAll() {
+  emit('update:selectedIds', new Set(filteredItems.value.map(i => i[props.idKey])));
+}
+
+function clearSelection() {
+  emit('update:selectedIds', new Set());
+}
+
+</script>
+
+<template>
+  <div class="bs-data-table">
+
+    <!-- Toolbar -->
+    <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+      <!-- Global search -->
+      <input
+        v-model="globalFilter"
+        type="search"
+        class="form-control form-control-sm"
+        style="max-width:220px"
+        :placeholder="t('common.search')"
+      />
+
+      <!-- Selection info + bulk helpers -->
+      <span v-if="selectable && selectedIds.size" class="text-muted small">
+        {{ selectedIds.size }} {{ t('dataTable.selected') }}
+      </span>
+      <button v-if="selectable && selectedIds.size" class="btn btn-sm btn-outline-secondary" @click="clearSelection">
+        <font-awesome-icon icon="xmark" class="me-1" />{{ t('dataTable.clearSelection') }}
+      </button>
+      <button
+        v-if="selectable && selectedIds.size < filteredItems.length"
+        class="btn btn-sm btn-outline-secondary"
+        @click="selectAll"
+      >
+        {{ t('dataTable.selectAll', { count: filteredItems.length }) }}
+      </button>
+
+      <!-- Bulk actions slot -->
+      <slot v-if="selectable" name="bulk-actions" :selectedIds="selectedIds" :count="selectedIds.size" />
+
+      <div class="ms-auto d-flex gap-2">
+        <!-- Column picker -->
+        <div class="dropdown">
+          <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
+            <font-awesome-icon icon="table-columns" class="me-1" />{{ t('dataTable.columns') }}
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end" style="min-width:200px">
+            <li v-for="col in columns" :key="'cp-' + col.key" class="dropdown-item">
+              <label class="form-check mb-0 d-flex align-items-center gap-2" style="cursor:pointer">
+                <input type="checkbox" class="form-check-input" :checked="!hiddenColumns.has(col.key)" @change="toggleColumn(col.key)" />
+                {{ col.label }}
+              </label>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-responsive" style="overflow: visible;">
+      <table
+        class="table table-sm table-hover mb-0 bs-dt-table"
+        @mouseleave="onTableMouseup"
+        @mouseup="onTableMouseup"
+      >
+        <thead>
+          <!-- Column headers -->
+          <tr>
+            <!-- Select-all checkbox -->
+            <th v-if="selectable" style="width:2rem" class="text-center">
+              <input
+                type="checkbox"
+                class="form-check-input"
+                :checked="allOnPageSelected"
+                :indeterminate="selectedIds.size > 0 && !allOnPageSelected"
+                @change="toggleSelectAll"
+              />
+            </th>
+            <th
+              v-for="col in visibleColumns"
+              :key="col.key"
+              :class="{ 'bs-dt-sortable': col.sortable }"
+              @click="col.sortable ? toggleSort(col.key) : undefined"
+              style="user-select:none; white-space:nowrap"
+            >
+              {{ col.label }}
+              <span v-if="col.sortable" class="text-muted ms-1" style="font-size:.7em">
+                <template v-if="sortKey === col.key">
+                  <font-awesome-icon :icon="sortDir === 1 ? 'sort-up' : 'sort-down'" />
+                </template>
+                <template v-else>
+                  <font-awesome-icon icon="sort" class="opacity-25" />
+                </template>
+              </span>
+            </th>
+            <!-- Row actions header -->
+            <th v-if="$slots['row-actions']" style="width:2.5rem"></th>
+          </tr>
+          <!-- Per-column filter row -->
+          <tr v-if="filterableColumns.length" class="bs-dt-filter-row">
+            <th v-if="selectable"></th>
+            <th v-for="col in visibleColumns" :key="'f-' + col.key">
+              <input
+                v-if="col.filterable"
+                v-model="columnFilters[col.key]"
+                type="search"
+                class="form-control form-control-sm"
+                :placeholder="col.label"
+                @click.stop
+              />
+            </th>
+            <th v-if="$slots['row-actions']"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="(item, index) in pageItems"
+            :key="item[idKey]"
+            :class="{ 'bs-dt-selected': selectedIds.has(item[idKey]) || item[idKey] === activeId }"
+            class="bs-dt-row"
+            @click="onRowClick($event, item)"
+            @mousedown="onRowMousedown($event, item)"
+            @mouseenter="onRowMouseenter(item)"
+          >
+            <td v-if="selectable" class="text-center" @click.stop>
+              <input
+                type="checkbox"
+                class="form-check-input"
+                :checked="selectedIds.has(item[idKey])"
+                @change.stop="() => {
+                  const s = new Set(selectedIds);
+                  if (s.has(item[idKey])) s.delete(item[idKey]); else s.add(item[idKey]);
+                  emit('update:selectedIds', s);
+                }"
+              />
+            </td>
+            <td
+              v-for="col in visibleColumns"
+              :key="col.key"
+              :title="col.type !== 'checkbox' ? cellPlain(item, col) : null"
+            >
+              <template v-if="col.type === 'checkbox'">
+                <font-awesome-icon v-if="item[col.key]" icon="check" class="text-success" />
+              </template>
+              <span v-else v-html="cellHtml(item, col)" />
+            </td>
+            <td v-if="$slots['row-actions']" class="bs-dt-row-actions">
+              <slot name="row-actions" :item="item" />
+            </td>
+          </tr>
+          <tr v-if="!pageItems.length">
+            <td :colspan="visibleColumns.length + (selectable ? 1 : 0) + ($slots['row-actions'] ? 1 : 0)" class="text-center text-muted py-3">
+              {{ t('common.noData') }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="mt-2">
+      <BsPagination
+        :key="filterVersion"
+        :dataList="filteredItems"
+        :perPage="pageSize"
+        :buttonsShown="7"
+        :name="name"
+        @change="onPageChange"
+      />
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.bs-dt-sortable {
+  cursor: pointer;
+}
+.bs-dt-sortable:hover {
+  background: var(--bs-tertiary-bg);
+}
+.bs-dt-table {
+  /* Slightly more breathing room than table-sm provides. */
+  --bs-table-cell-padding-y: .45rem;
+  --bs-table-cell-padding-x: .65rem;
+  /* Fixed layout so columns share the container width and never push the
+     table beyond the viewport. Combined with the ellipsis rules below this
+     truncates any over-long content. */
+  table-layout: fixed;
+  width: 100%;
+}
+.bs-dt-table td, .bs-dt-table th {
+  vertical-align: middle;
+  border-color: var(--bs-border-color-translucent);
+}
+/* Truncate any over-long cell/header content with ellipsis. The full value is
+   shown in the cell's `title` tooltip. Skip the row-actions column so the
+   3-dot dropdown trigger isn't clipped. */
+.bs-dt-table tbody td:not(.bs-dt-row-actions),
+.bs-dt-table thead th {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bs-dt-table tbody td:not(.bs-dt-row-actions) > span {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+/* Header row: bottom border only, no vertical separators between columns. */
+.bs-dt-table thead th {
+  border-top: 0;
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 1px solid var(--bs-border-color);
+  background: transparent;
+  font-weight: 600;
+  text-transform: none;
+}
+/* Filter row: tighter, subtle background, no borders — the inputs themselves
+   provide the visual structure. */
+.bs-dt-table thead tr.bs-dt-filter-row th {
+  border-bottom: 1px solid var(--bs-border-color-translucent);
+  background: var(--bs-tertiary-bg);
+  padding: .25rem .35rem;
+}
+.bs-dt-table thead tr.bs-dt-filter-row .form-control-sm {
+  font-size: .8rem;
+  padding: .15rem .4rem;
+  background: var(--bs-body-bg);
+  border-color: var(--bs-border-color-translucent);
+}
+/* Body rows: horizontal separators only, no vertical column lines. */
+.bs-dt-table tbody td {
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  border-bottom: 1px solid var(--bs-border-color-translucent);
+}
+.bs-dt-row {
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Selected / active row — dark bg + light fg in both light and dark modes.
+   Uses Bootstrap CSS vars so it follows the theme but stays high-contrast. */
+.bs-dt-table tbody tr.bs-dt-selected > td {
+  --bs-table-bg: var(--bs-secondary-bg);
+  --bs-table-color: var(--bs-body-color);
+  background-color: var(--bs-secondary-bg);
+  color: var(--bs-body-color);
+}
+[data-bs-theme="dark"] .bs-dt-table tbody tr.bs-dt-selected > td {
+  --bs-table-bg: #2b3035;
+  --bs-table-color: #f8f9fa;
+  background-color: #2b3035;
+  color: #f8f9fa;
+}
+.bs-dt-table tbody tr.bs-dt-selected > td a,
+.bs-dt-table tbody tr.bs-dt-selected > td .text-muted {
+  color: inherit !important;
+}
+.bs-dt-table tbody tr.bs-dt-selected > td :deep(a),
+.bs-dt-table tbody tr.bs-dt-selected > td :deep(.text-muted) {
+  color: inherit !important;
+}
+
+/* Dropdown menus rendered from row-actions slot: scoped styles must use :deep
+   to reach slotted content authored in the parent component. */
+:deep(.dropdown-menu .dropdown-item:hover),
+:deep(.dropdown-menu .dropdown-item:focus) {
+  background-color: var(--bs-tertiary-bg);
+  color: var(--bs-body-color);
+}
+[data-bs-theme="dark"] :deep(.dropdown-menu .dropdown-item:hover),
+[data-bs-theme="dark"] :deep(.dropdown-menu .dropdown-item:focus) {
+  background-color: #495057;
+  color: #f8f9fa;
+}
+:deep(.dropdown-menu .dropdown-item.disabled),
+:deep(.dropdown-menu .dropdown-item:disabled) {
+  opacity: 0.5;
+  pointer-events: none;
+  background-color: transparent !important;
+}
+</style>

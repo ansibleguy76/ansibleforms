@@ -27,6 +27,7 @@
     import yaml from 'yaml';
     import { required, helpers, email, sameAs } from "@vuelidate/validators";
     import { useI18n } from 'vue-i18n';
+    import BsDataTable from './BsDataTable.vue';
 
     // INIT
 
@@ -76,6 +77,7 @@
     const actions = computed(() => props.settings.actions || []);
     const fields = computed(() => props.settings.fields || []);
     const childFields = computed(() => props.settings.childFields || {});
+    const noCreate = computed(() => props.settings.noCreate === true);
 
     // VUELIDATE
 
@@ -510,6 +512,111 @@
         return fields.value.filter(field => field.type === 'checkbox').map(field => field.key);
     });
 
+    // BsDataTable mode
+    const useDataTable = computed(() => props.settings.dataTable === true);
+    const dataTableSelectable = computed(() => props.settings.selectable !== false);
+    const selectedIds = ref(new Set());
+    const activeRowId = ref(null);
+
+    const hasEditAction = computed(() => actions.value.some(a => a.name === 'edit'));
+    const dataTableShowRowMenu = computed(() => actions.value.length > 0);
+
+    const dataTableColumns = computed(() => {
+        if (!useDataTable.value) return [];
+        // Include every field as a possible column (so the user can opt any of
+        // them in via the column picker). Skip explicit `noTable` opt-outs and
+        // password-like fields whose values are never returned by the API.
+        const SECRET_KEYS = new Set(['password', 'token', 'client_secret']);
+        return fields.value
+            .filter(f => !f.noTable && !SECRET_KEYS.has(f.key) && f.type !== 'password')
+            .map(f => {
+                const col = {
+                    key: f.key,
+                    label: f.label,
+                    sortable: f.sortable !== false,
+                    filterable: f.filterable || false,
+                    mobileHidden: f.mobileHidden || false,
+                    // Fields previously flagged `hidden: true` keep that as the
+                    // default visibility but remain available in the column
+                    // picker so users can show them when wanted.
+                    defaultHidden: !!f.hidden,
+                };
+                if (f.type === 'select' && f.parent) {
+                    col.render = (val) => {
+                        const list = parentLists.value[f.parent] || [];
+                        const found = list.find(itm => itm[f.valueKey] == val);
+                        return found ? found[f.labelKey] : (val || '');
+                    };
+                }
+                if (f.type === 'checkbox') {
+                    col.type = 'checkbox';
+                }
+                return col;
+            });
+    });
+
+    // Whether a per-row action should be enabled. Honours `dependency`,
+    // `dependencyValues`, and `negateDependency` from the action definition.
+    function isActionEnabled(action, item) {
+        if (!action.dependency) return true;
+        const v = item[action.dependency];
+        if (Array.isArray(action.dependencyValues)) {
+            return action.dependencyValues.includes(v);
+        }
+        if (action.negateDependency) return !v;
+        return !!v;
+    }
+
+    function dispatchAction(action, item) {
+        if (!isActionEnabled(action, item)) return;
+        switch (action.name) {
+            case 'edit': return editItem(item);
+            case 'delete': return deleteItem(item);
+            case 'change_password': return changePasswordItem(item);
+            case 'select': return selectItem(item);
+            case 'preview': return previewItem(item);
+            case 'test': return testItem(item);
+            case 'trigger': return triggerItem(item);
+            case 'reset': return resetItem(item);
+            default: return emit(action.name, item);
+        }
+    }
+
+    function onDataTableRowClick(item) {
+        if (!dataTableSelectable.value) {
+            activeRowId.value = item[idKey];
+            if (hasEditAction.value) {
+                editItem(item);
+            } else {
+                // No edit action defined → open the read-only "show" offcanvas
+                // (used by pages like groups that have children to display).
+                selectItem(item);
+                emit('row-select', item);
+            }
+        }
+    }
+
+    async function bulkDelete() {
+        const ids = [...selectedIds.value];
+        if (!ids.length) return;
+        if (!confirm(`Delete ${ids.length} item(s)?`)) return;
+        try {
+            await Promise.all(ids.map(id => {
+                if (isFlat) {
+                    const row = itemList.value.find(r => r[idKey] === id);
+                    const name = row?.name ?? id;
+                    return axios.delete(`/api/v${props.apiVersion}/${objectType}?name=${encodeURIComponent(name)}`, TokenStorage.getAuthentication());
+                }
+                return axios.delete(`/api/v${props.apiVersion}/${objectType}/${id}`, TokenStorage.getAuthentication());
+            }));
+            toast.success(t('settings.common.isDeleted'));
+            selectedIds.value = new Set();
+            await loadItems();
+        } catch (err) {
+            toast.error(Helpers.parseAxiosResponseError(err, "Failed to delete items"));
+        }
+    }
+
 
     // HOOKS
 
@@ -555,10 +662,48 @@
     </BsModal>
     <AppSettings :icon="objectIcon" :title="objectLabelPlural">
         <template #actions>
-            <BsButton cssClass="ms-3" icon="plus" @click="newItem()">{{ t('settings.common.newItem', { item: objectLabel }) }}</BsButton>
+            <BsButton v-if="!noCreate" cssClass="ms-3" icon="plus" @click="newItem()">{{ t('settings.common.newItem', { item: objectLabel }) }}</BsButton>
         </template>
         <template #default>
-            <BsAdminTable v-if="!loading && itemList!=undefined" 
+            <!-- DataTable view (advanced, sort/filter/columns/multiselect) -->
+            <BsDataTable v-if="!loading && itemList!=undefined && useDataTable"
+                :items="itemList"
+                :columns="dataTableColumns"
+                :idKey="idKey"
+                :selectedIds="selectedIds"
+                :selectable="dataTableSelectable"
+                :activeId="!dataTableSelectable ? activeRowId : null"
+                :name="Helpers.cleanupString(objectLabelPlural)"
+                @update:selectedIds="selectedIds = $event"
+                @row-click="onDataTableRowClick"
+            >
+                <template v-if="dataTableSelectable" #bulk-actions="{ count }">
+                    <BsButton v-if="count" cssClass="ms-2 btn-sm btn-outline-danger" icon="trash" @click="bulkDelete">
+                        {{ t('common.delete') }} ({{ count }})
+                    </BsButton>
+                </template>
+                <template v-if="dataTableShowRowMenu" #row-actions="{ item }">
+                    <div class="dropdown">
+                        <a role="button" class="bs-dt-row-menu px-2" data-bs-toggle="dropdown" data-bs-strategy="fixed">
+                            <font-awesome-icon icon="ellipsis-vertical" />
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <template v-for="(action, idx) in actions" :key="action.name + idx">
+                                <li v-if="action.name === 'delete'"><hr class="dropdown-divider" /></li>
+                                <li>
+                                    <a class="dropdown-item"
+                                       :class="{ 'disabled text-muted': !isActionEnabled(action, item), 'text-danger': action.name === 'delete' && isActionEnabled(action, item) }"
+                                       href="#"
+                                       @click.prevent="dispatchAction(action, item)">
+                                        <font-awesome-icon :icon="action.icon || 'circle'" class="me-2" />{{ action.title }}
+                                    </a>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </template>
+            </BsDataTable>
+            <BsAdminTable v-if="!loading && itemList!=undefined && !useDataTable" 
                 :items="itemList" 
                 :busyItems="busyItems"
                 :parentLists="parentLists" 
@@ -655,3 +800,18 @@
     </BsOffCanvas>
     
 </template>
+<style scoped>
+/* 3-dot row action trigger: muted by default, inherits color when the row is
+   selected/active (dark bg → light icon). */
+.bs-dt-row-menu {
+  color: var(--bs-secondary-color);
+  text-decoration: none;
+}
+.bs-dt-row-menu:hover {
+  color: var(--bs-body-color);
+}
+:deep(.bs-dt-selected) .bs-dt-row-menu,
+:deep(.bs-dt-selected) .bs-dt-row-menu:hover {
+  color: inherit;
+}
+</style>

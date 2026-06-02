@@ -8,6 +8,8 @@ export default function getSettings(t) {
         route: 'users',
         label: t('settings.users.label'),
         icon: 'user',
+        dataTable: true,
+        selectable: false,
         actions: [
             { name: 'edit', title: t('settings.users.editUser'), icon: 'pencil', color: 'edit' },
             { name: 'delete', title: t('settings.users.deleteUser'), icon: 'trash', color: 'delete' },
@@ -25,6 +27,8 @@ export default function getSettings(t) {
         type: 'group',
         label: t('settings.groups.label'),
         icon: 'users',
+        dataTable: true,
+        selectable: false,
         children: [{
             type: 'user',
             label: t('settings.users.label'),
@@ -33,7 +37,6 @@ export default function getSettings(t) {
             key: 'group_id'
         }],
         actions: [
-            { name: 'select', title: t('settings.groups.showGroup'), icon: 'info-circle', color: 'change' },
             { name: 'delete', title: t('settings.groups.deleteGroup'), icon: 'trash', color: 'delete' }
         ],
         fields: [
@@ -55,6 +58,8 @@ export default function getSettings(t) {
         // reloadSeconds: 7,
         icon: "fab,git",
         idKey: "name",
+        dataTable: true,
+        selectable: false,
         actions: [
             { name: "edit", icon: "pencil", title: t('settings.repositories.editRepository'), color: "edit" },
             { name: "delete", icon: "trash", title: t('settings.repositories.deleteRepository'), color: "delete" },
@@ -88,6 +93,8 @@ export default function getSettings(t) {
         label: t('settings.oauth2.label'),
         labelPlural: t('settings.oauth2.labelPlural'),
         icon: 'key',
+        dataTable: true,
+        selectable: false,
         actions: [
             { name: 'edit', title: t('settings.oauth2.editProvider'), icon: 'pencil', color: 'edit' },
             { name: 'delete', title: t('settings.oauth2.deleteProvider'), icon: 'trash', color: 'delete' },
@@ -170,6 +177,9 @@ export default function getSettings(t) {
         labelPlural: t('settings.schedules.labelPlural'),
         // reloadSeconds: 7,
         icon: "clock",
+        dataTable: true,
+        selectable: false,
+        noCreate: true,
         actions: [
             { name: "edit", icon: "pencil", title: t('settings.schedules.editSchedule'), color: "edit" },
             { name: "delete", icon: "trash", title: t('settings.schedules.deleteSchedule'), color: "delete" },
@@ -196,6 +206,8 @@ export default function getSettings(t) {
         labelPlural: t('settings.storedJobs.labelPlural'),
         icon: "floppy-disk",
         reloadSeconds: false, // Disable auto-reload
+        dataTable: true,
+        noCreate: true,
         actions: [
             { name: "preview", icon: "eye", title: t('settings.storedJobs.viewDetails'), color: "preview" },
             { name: "delete", icon: "trash", title: t('settings.storedJobs.deleteJob'), color: "delete" }
@@ -217,6 +229,7 @@ export default function getSettings(t) {
         removeDoubles: true, // remove double entries
         flat: true, // flat data structure,
         icon: 'fab,git',
+        dataTable: true,
         actions: [
             { name: 'preview', title: t('settings.knownhosts.showEntry'), icon: 'info-circle', color: 'change' },
             { name: 'delete', title: t('settings.knownhosts.deleteEntry'), icon: 'trash', color: 'delete' }
@@ -231,6 +244,8 @@ export default function getSettings(t) {
         type: 'credential',
         label: t('settings.credentials.label'),
         icon: 'lock',
+        dataTable: true,
+        selectable: false,
         actions: [
             { name: 'edit', title: t('settings.credentials.editCredential'), icon: 'pencil', color: 'edit' },
             { name: 'delete', title: t('settings.credentials.deleteCredential'), icon: 'trash', color: 'delete' },
@@ -304,6 +319,8 @@ export default function getSettings(t) {
         type: "awx",
         label: t('settings.aap.label'),
         icon: "fac,ansible",
+        dataTable: true,
+        selectable: false,
         actions: [
             { name: 'edit', title: t('settings.aap.editCredential'), icon: 'pencil', color: 'edit' },
             { name: 'delete', title: t('settings.aap.deleteCredential'), icon: 'trash', color: 'delete' },
