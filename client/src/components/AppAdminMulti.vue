@@ -512,8 +512,7 @@
         return fields.value.filter(field => field.type === 'checkbox').map(field => field.key);
     });
 
-    // BsDataTable mode
-    const useDataTable = computed(() => props.settings.dataTable === true);
+    // BsDataTable mode (always on — BsDataTable is the only table renderer)
     const dataTableSelectable = computed(() => props.settings.selectable !== false);
     const selectedIds = ref(new Set());
     const activeRowId = ref(null);
@@ -522,7 +521,6 @@
     const dataTableShowRowMenu = computed(() => actions.value.length > 0);
 
     const dataTableColumns = computed(() => {
-        if (!useDataTable.value) return [];
         // Include every field as a possible column (so the user can opt any of
         // them in via the column picker). Skip explicit `noTable` opt-outs and
         // password-like fields whose values are never returned by the API.
@@ -565,6 +563,21 @@
         }
         if (action.negateDependency) return !v;
         return !!v;
+    }
+
+    // Map child-list `fields` (settings.js → childFields) to BsDataTable
+    // column defs so the read-only child tables get the same sort / filter /
+    // column-picker behaviour as the main table.
+    function childTableColumns(fieldList) {
+        if (!Array.isArray(fieldList)) return [];
+        return fieldList.map(f => ({
+            key: f.key,
+            label: f.label,
+            sortable: f.sortable !== false,
+            filterable: f.filterable !== false,
+            defaultHidden: !!f.hidden,
+            type: f.type === 'checkbox' ? 'checkbox' : undefined,
+        }));
     }
 
     function dispatchAction(action, item) {
@@ -665,8 +678,7 @@
             <BsButton v-if="!noCreate" cssClass="ms-3" icon="plus" @click="newItem()">{{ t('settings.common.newItem', { item: objectLabel }) }}</BsButton>
         </template>
         <template #default>
-            <!-- DataTable view (advanced, sort/filter/columns/multiselect) -->
-            <BsDataTable v-if="!loading && itemList!=undefined && useDataTable"
+            <BsDataTable v-if="!loading && itemList!=undefined"
                 :items="itemList"
                 :columns="dataTableColumns"
                 :idKey="idKey"
@@ -703,25 +715,6 @@
                     </div>
                 </template>
             </BsDataTable>
-            <BsAdminTable v-if="!loading && itemList!=undefined && !useDataTable" 
-                :items="itemList" 
-                :busyItems="busyItems"
-                :parentLists="parentLists" 
-                :fields="fields" 
-                :idKey="idKey"
-                :actions="actions" 
-                :removeDoubles="removeDoubles"
-                :checkboxFields="checkboxFields"
-                :name="Helpers.cleanupString(objectLabelPlural)"
-                @preview="previewItem" 
-                @edit="editItem" 
-                @test="testItem" 
-                @select="selectItem" 
-                @delete="deleteItem" 
-                @trigger="triggerItem"
-                @change_password="changePasswordItem" 
-                @reset="resetItem"
-                :pagination="pagination" />
             <div class="spinner-border" role="status" v-if="loading">
                 <span class="visually-hidden">{{ t('settings.common.loading') }}</span>
             </div>
@@ -792,7 +785,11 @@
                 </ul>
                 <div v-for="(childList, index) in children">
                     <div class="p-2 border border-top-0" v-if="index == activeChild">
-                        <BsAdminTable :items="childLists[childList.type]" :fields="childFields[childList.type]" />
+                        <BsDataTable
+                            :items="childLists[childList.type] || []"
+                            :columns="childTableColumns(childFields[childList.type])"
+                            :selectable="false"
+                            :name="`child_${objectType}_${childList.type}`" />
                     </div>
                 </div>
             </div>

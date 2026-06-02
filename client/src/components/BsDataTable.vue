@@ -531,7 +531,9 @@ function clearSelection() {
 .bs-dt-table thead tr.bs-dt-filter-row th {
   border-bottom: 1px solid var(--bs-border-color-translucent);
   background: var(--bs-tertiary-bg);
-  padding: .25rem .35rem;
+  /* Align input visually with body-cell text: shave ~2px off the left/right
+     so the input border sits flush with the column's text gutter. */
+  padding: .25rem .2rem;
 }
 .bs-dt-table thead tr.bs-dt-filter-row .form-control-sm {
   font-size: .8rem;

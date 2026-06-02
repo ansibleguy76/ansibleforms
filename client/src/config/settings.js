@@ -8,7 +8,6 @@ export default function getSettings(t) {
         route: 'users',
         label: t('settings.users.label'),
         icon: 'user',
-        dataTable: true,
         selectable: false,
         actions: [
             { name: 'edit', title: t('settings.users.editUser'), icon: 'pencil', color: 'edit' },
@@ -27,7 +26,6 @@ export default function getSettings(t) {
         type: 'group',
         label: t('settings.groups.label'),
         icon: 'users',
-        dataTable: true,
         selectable: false,
         children: [{
             type: 'user',
@@ -58,7 +56,6 @@ export default function getSettings(t) {
         // reloadSeconds: 7,
         icon: "fab,git",
         idKey: "name",
-        dataTable: true,
         selectable: false,
         actions: [
             { name: "edit", icon: "pencil", title: t('settings.repositories.editRepository'), color: "edit" },
@@ -93,7 +90,6 @@ export default function getSettings(t) {
         label: t('settings.oauth2.label'),
         labelPlural: t('settings.oauth2.labelPlural'),
         icon: 'key',
-        dataTable: true,
         selectable: false,
         actions: [
             { name: 'edit', title: t('settings.oauth2.editProvider'), icon: 'pencil', color: 'edit' },
@@ -177,7 +173,6 @@ export default function getSettings(t) {
         labelPlural: t('settings.schedules.labelPlural'),
         // reloadSeconds: 7,
         icon: "clock",
-        dataTable: true,
         selectable: false,
         noCreate: true,
         actions: [
@@ -206,7 +201,6 @@ export default function getSettings(t) {
         labelPlural: t('settings.storedJobs.labelPlural'),
         icon: "floppy-disk",
         reloadSeconds: false, // Disable auto-reload
-        dataTable: true,
         noCreate: true,
         actions: [
             { name: "preview", icon: "eye", title: t('settings.storedJobs.viewDetails'), color: "preview" },
@@ -229,7 +223,6 @@ export default function getSettings(t) {
         removeDoubles: true, // remove double entries
         flat: true, // flat data structure,
         icon: 'fab,git',
-        dataTable: true,
         actions: [
             { name: 'preview', title: t('settings.knownhosts.showEntry'), icon: 'info-circle', color: 'change' },
             { name: 'delete', title: t('settings.knownhosts.deleteEntry'), icon: 'trash', color: 'delete' }
@@ -244,7 +237,6 @@ export default function getSettings(t) {
         type: 'credential',
         label: t('settings.credentials.label'),
         icon: 'lock',
-        dataTable: true,
         selectable: false,
         actions: [
             { name: 'edit', title: t('settings.credentials.editCredential'), icon: 'pencil', color: 'edit' },
@@ -319,7 +311,6 @@ export default function getSettings(t) {
         type: "awx",
         label: t('settings.aap.label'),
         icon: "fac,ansible",
-        dataTable: true,
         selectable: false,
         actions: [
             { name: 'edit', title: t('settings.aap.editCredential'), icon: 'pencil', color: 'edit' },

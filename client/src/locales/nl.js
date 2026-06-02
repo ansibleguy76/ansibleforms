@@ -66,6 +66,12 @@ export default {
     previous: "Vorige",
     next: "Volgende",
   },
+  dataTable: {
+    selected: "geselecteerd",
+    clearSelection: "Selectie wissen",
+    selectAll: "Alle {count} selecteren",
+    columns: "Kolommen",
+  },
   errors: {
     noAccess: "Geen toegang",
     notAdmin: "U bent geen beheerder",

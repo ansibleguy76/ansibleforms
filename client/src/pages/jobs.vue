@@ -48,6 +48,51 @@
     const tempJobId = ref(null);
     const noOfRecords = ref(500);
 
+    // ─── DataTable-style state (sort / per-column filter / column visibility) ──
+    const columnDefs = computed(() => [
+        { key: 'id',       label: t('jobs.id'),        filterable: true, sortable: true, type: 'number' },
+        { key: 'form',     label: t('jobs.form'),      filterable: true, sortable: true },
+        { key: 'job_type', label: t('jobs.jobType'),   filterable: true, sortable: true,
+          render: j => j.job_type || 'ansible' },
+        { key: 'status',   label: t('jobs.status'),    filterable: true, sortable: true },
+        { key: 'start',    label: t('jobs.startTime'), filterable: true, sortable: true,
+          render: j => formatTime(j.start) },
+        { key: 'end',      label: t('jobs.endTime'),   filterable: true, sortable: true,
+          render: j => formatTime(j.end) },
+        { key: 'user',     label: t('jobs.user'),      filterable: true, sortable: true,
+          render: j => `${j.user || ''}${j.user_type ? ' (' + j.user_type + ')' : ''}` },
+    ]);
+    const hiddenColumns = ref(new Set());
+    const columnFilters = ref({});
+    const sortKey = ref(null);
+    const sortDir = ref(1); // 1 asc, -1 desc
+
+    const visibleColumns = computed(() => columnDefs.value.filter(c => !hiddenColumns.value.has(c.key)));
+    const filterableColumns = computed(() => visibleColumns.value.filter(c => c.filterable));
+
+    function cellText(item, col) {
+        if (!item) return '';
+        if (col.render) return String(col.render(item) ?? '');
+        const v = item[col.key];
+        return v == null ? '' : String(v);
+    }
+
+    function toggleSort(key) {
+        if (sortKey.value === key) {
+            sortDir.value = -sortDir.value;
+        } else {
+            sortKey.value = key;
+            sortDir.value = 1;
+        }
+    }
+
+    function toggleColumn(key) {
+        const s = new Set(hiddenColumns.value);
+        if (s.has(key)) s.delete(key); else s.add(key);
+        hiddenColumns.value = s;
+        try { Helpers.setCookie('dt_cols_jobs', JSON.stringify([...s]), 365); } catch (e) { /* ignore */ }
+    }
+
     // COMPUTED
 
     // Check if user can relaunch jobs
@@ -75,22 +120,69 @@
     })
     // main jobs
     const parentJobs = computed(() => {
-        if(filter.value){
-            return jobs.value?.filter(x => !x.parent_id
-                &&
-                (
-                    x.id?.toString().match(filter.value) ||
-                    x.status?.match(filter.value) ||
-                    x.form?.match(filter.value)  ||
-                    x.job_type?.match(filter.value) ||
-                    x.start?.match(filter.value) ||
-                    x.end?.match(filter.value) ||
-                    x.user?.match(filter.value)
-                )
-            )
-        }else{
-            return jobs.value?.filter(x => !x.parent_id)
+        let list = jobs.value?.filter(x => !x.parent_id) || [];
+
+        // Global (legacy) filter — keeps its regex-style match semantics.
+        if (filter.value) {
+            const f = filter.value;
+            list = list.filter(x =>
+                x.id?.toString().match(f) ||
+                x.status?.match(f) ||
+                x.form?.match(f) ||
+                x.job_type?.match(f) ||
+                x.start?.match(f) ||
+                x.end?.match(f) ||
+                x.user?.match(f)
+            );
         }
+
+        // Per-column filters (case-insensitive substring on the rendered text).
+        // For the `id` and `form` columns we also match against any of the
+        // parent's children (child rows display `c.id` and `c.target`), so a
+        // user can find a multistep parent by typing a subjob's id/target.
+        const active = Object.entries(columnFilters.value).filter(([, v]) => v != null && String(v).trim() !== '');
+        if (active.length) {
+            const allJobs = jobs.value || [];
+            list = list.filter(item => active.every(([key, val]) => {
+                const col = columnDefs.value.find(c => c.key === key);
+                if (!col) return true;
+                const needle = String(val).toLowerCase();
+                if (cellText(item, col).toLowerCase().includes(needle)) return true;
+                if (key === 'id' || key === 'form') {
+                    const kids = allJobs.filter(x => x.parent_id === item.id);
+                    return kids.some(c => {
+                        if (key === 'id') return String(c.id ?? '').toLowerCase().includes(needle);
+                        return String(c.target ?? '').toLowerCase().includes(needle);
+                    });
+                }
+                return false;
+            }));
+        }
+
+        // Sorting.
+        if (sortKey.value) {
+            const col = columnDefs.value.find(c => c.key === sortKey.value);
+            if (col) {
+                const dir = sortDir.value;
+                list = [...list].sort((a, b) => {
+                    let av = col.render ? col.render(a) : a[col.key];
+                    let bv = col.render ? col.render(b) : b[col.key];
+                    if (col.type === 'number') {
+                        av = Number(av); bv = Number(bv);
+                        if (isNaN(av)) av = 0;
+                        if (isNaN(bv)) bv = 0;
+                    } else {
+                        av = av == null ? '' : String(av);
+                        bv = bv == null ? '' : String(bv);
+                    }
+                    if (av < bv) return -1 * dir;
+                    if (av > bv) return  1 * dir;
+                    return 0;
+                });
+            }
+        }
+
+        return list;
     })
     // subjobs
     const subjobs = computed(() => {
@@ -213,12 +305,29 @@
     }
     // get child jobs by parent id
     function childJobs(id){
-        if(!isLoading.value){
-            return jobs.value.filter(x=> (x.parent_id===id && (collapsed.value[id] ?? false))).sort((a, b) => a.id > b.id && 1 || -1)
+        if (isLoading.value) return [];
+        const all = jobs.value.filter(x => x.parent_id === id);
+
+        // If the user is filtering by id or form, auto-show the children that
+        // match (so a multistep parent doesn't have to be manually expanded
+        // to see the matching subjob).
+        const idF   = (columnFilters.value.id   || '').toString().trim().toLowerCase();
+        const formF = (columnFilters.value.form || '').toString().trim().toLowerCase();
+        const filterActive = idF !== '' || formF !== '';
+
+        let visible;
+        if (collapsed.value[id]) {
+            visible = all;
+        } else if (filterActive) {
+            visible = all.filter(c =>
+                (idF   && String(c.id     ?? '').toLowerCase().includes(idF)) ||
+                (formF && String(c.target ?? '').toLowerCase().includes(formF))
+            );
         } else {
-            return []
+            visible = [];
         }
-    }    
+        return visible.sort((a, b) => (a.id > b.id ? 1 : -1));
+    }
 
     // load job output
     async function loadOutput(id, sub=false){
@@ -471,6 +580,14 @@
             }
         }catch(e){}
 
+        // restore column visibility from cookie
+        try {
+            const savedCols = Helpers.getCookie('dt_cols_jobs');
+            if (savedCols) {
+                hiddenColumns.value = new Set(JSON.parse(savedCols));
+            }
+        } catch (e) { /* ignore */ }
+
 
         if(route.params.id){
             jobId.value=parseInt(route.params.id)
@@ -561,19 +678,56 @@
                             <option value="1000">1000</option>
                         </select>
                     </div>
+                    <!-- Column picker -->
+                    <div class="dropdown me-2">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
+                            <font-awesome-icon icon="table-columns" class="me-1" />{{ t('dataTable.columns') }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" style="min-width:200px">
+                            <li v-for="col in columnDefs" :key="'cp-' + col.key" class="dropdown-item">
+                                <label class="form-check mb-0 d-flex align-items-center gap-2" style="cursor:pointer">
+                                    <input type="checkbox" class="form-check-input" :checked="!hiddenColumns.has(col.key)" @change="toggleColumn(col.key)" />
+                                    {{ col.label }}
+                                </label>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
-            </template>            
-            <table class="custom-table table-bordered table-sm">
+            </template>
+            <table class="custom-table table-sm">
                 <thead>
                     <tr class="text-start">
                         <th class="action"></th>
-                        <th class="id">{{ t('jobs.id') }}</th>
-                        <th>{{ t('jobs.form') }}</th>
-                        <th class="jobtype">{{ t('jobs.jobType') }}</th>
-                        <th class="status">{{ t('jobs.status') }}</th>
-                        <th>{{ t('jobs.startTime') }}</th>
-                        <th>{{ t('jobs.endTime') }}</th>
-                        <th>{{ t('jobs.user') }}</th>
+                        <th
+                            v-for="col in visibleColumns"
+                            :key="col.key"
+                            :class="{ 'is-clickable': col.sortable, [col.key]: true }"
+                            style="user-select:none; white-space:nowrap"
+                            @click="col.sortable ? toggleSort(col.key) : undefined"
+                        >
+                            {{ col.label }}
+                            <span v-if="col.sortable" class="text-muted ms-1" style="font-size:.7em">
+                                <template v-if="sortKey === col.key">
+                                    <font-awesome-icon :icon="sortDir === 1 ? 'sort-up' : 'sort-down'" />
+                                </template>
+                                <template v-else>
+                                    <font-awesome-icon icon="sort" class="opacity-25" />
+                                </template>
+                            </span>
+                        </th>
+                    </tr>
+                    <tr v-if="filterableColumns.length" class="bs-dt-filter-row">
+                        <th></th>
+                        <th v-for="col in visibleColumns" :key="'f-' + col.key">
+                            <input
+                                v-if="col.filterable"
+                                v-model="columnFilters[col.key]"
+                                type="search"
+                                class="form-control form-control-sm"
+                                :placeholder="col.label"
+                                @click.stop
+                            />
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -586,32 +740,25 @@
                             <span role="button" v-if="j.status=='approve' && approvalAllowed(j)" class="me-2 text-success" @click="tempJobId=j.id;showApproval(j.id)" title="Approve job"><font-awesome-icon icon="circle-check" /></span>
                             <span role="button" v-if="j.status=='approve' && approvalAllowed(j)" class="me-2 text-danger" @click="tempJobId=j.id;showApproval(j.id,true)" title="Reject job"><font-awesome-icon icon="circle-xmark" /></span>
                         </td>
-                        <td class="is-clickable text-left" @click="(j.job_type=='multistep')?toggleCollapse(j.id):loadOutput(j.id)">
-                            <span>{{j.id}}</span>
-                            <template v-if="j.job_type=='multistep'">
-                            <span class="mx-2 float-end" v-if="!collapsed[j.id]"><font-awesome-icon icon="angle-right" /></span>
-                            <span class="mx-2 float-end" v-else><font-awesome-icon icon="angle-down" /></span>
-                            </template>
-                        </td>
-                        <td role="button" class="text-start" @click="getJob(j.id)" :title="j.form">{{j.form}}</td>
-                        <td role="button" class="text-start" @click="getJob(j.id)" :title="j.job_type">{{j.job_type || "ansible" }}</td>
-                        <td role="button" class="text-start" @click="getJob(j.id)" :title="j.status">{{j.status}}</td>
-                        <td role="button" class="text-start" @click="getJob(j.id)" :title="j.start">{{ formatTime(j.start) }}</td>
-                        <td role="button" class="text-start" @click="getJob(j.id)" :title="j.end">{{ formatTime(j.end) }}</td>
-                        <td role="button" class="text-start" @click="getJob(j.id)" :title="j.user">{{j.user}} ({{j.user_type}})</td>
+                        <template v-for="col in visibleColumns" :key="col.key">
+                            <td v-if="col.key === 'id'" class="is-clickable text-left" @click="(j.job_type=='multistep')?toggleCollapse(j.id):loadOutput(j.id)">
+                                <span>{{ j.id }}</span>
+                                <template v-if="j.job_type=='multistep'">
+                                    <span class="mx-2 float-end" v-if="!collapsed[j.id]"><font-awesome-icon icon="angle-right" /></span>
+                                    <span class="mx-2 float-end" v-else><font-awesome-icon icon="angle-down" /></span>
+                                </template>
+                            </td>
+                            <td v-else role="button" class="text-start" @click="getJob(j.id)" :title="cellText(j, col)">{{ cellText(j, col) }}</td>
+                        </template>
                     </tr>
                     <template v-for="c in childJobs(j.id)" :key="c.id">
                     <tr :class="jobBackground(c)">
-                        <td class="table-info">
-                        <!-- <span v-if="isAdmin" class="icon text-danger is-clickable" @click="tempJobId=c.id;showDelete=true" title="Delete job"><font-awesome-icon icon="trash-alt" /></span> -->
-                        </td>
-                        <td role="button" class="text-end" @click="getJob(c.id)">{{c.id}}</td>
-                        <td role="button" class="text-start" @click="getJob(c.id)" :title="c.target">{{c.target}}</td>
-                        <td role="button" class="text-start" @click="getJob(c.id)" :title="c.job_type">{{c.job_type || "ansible" }}</td>
-                        <td role="button" class="text-start" @click="getJob(c.id)" :title="c.status">{{c.status}}</td>
-                        <td role="button" class="text-start" @click="getJob(c.id)" :title="c.start">{{ formatTime(c.start) }}</td>
-                        <td role="button" class="text-start" @click="getJob(c.id)" :title="c.end">{{ formatTime(c.start) }}</td>
-                        <td role="button" class="text-start" @click="getJob(c.id)" :title="c.user">{{c.user}} ({{c.user_type}})</td>
+                        <td class="table-info"></td>
+                        <template v-for="col in visibleColumns" :key="col.key">
+                            <td v-if="col.key === 'id'" role="button" class="text-end" @click="getJob(c.id)">{{ c.id }}</td>
+                            <td v-else-if="col.key === 'form'" role="button" class="text-start" @click="getJob(c.id)" :title="c.target">{{ c.target }}</td>
+                            <td v-else role="button" class="text-start" @click="getJob(c.id)" :title="cellText(c, col)">{{ cellText(c, col) }}</td>
+                        </template>
                     </tr>
                     </template>
                 </template>
@@ -755,6 +902,37 @@
     .custom-table {
         width: 100%;
         margin-bottom: 1rem;
+    }
+    /* Slim, dense rows for the jobs table — overrides Bootstrap's table-sm
+       defaults so a long jobs list takes much less vertical space. */
+    .custom-table th,
+    .custom-table td {
+        padding: .35rem .55rem;
+        line-height: 1.2;
+        vertical-align: middle;
+        border-left: 0;
+        border-right: 0;
+        border-color: var(--bs-border-color-translucent);
+    }
+    /* Header: bottom border only. */
+    .custom-table thead th {
+        font-weight: 600;
+        border-top: 0;
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+    /* Body rows: horizontal separators only. */
+    .custom-table tbody td {
+        border-top: 0;
+        border-bottom: 1px solid var(--bs-border-color-translucent);
+    }
+    /* Filter row: even tighter, with smaller inputs. */
+    .custom-table thead tr.bs-dt-filter-row th {
+        padding: .15rem .3rem;
+        background: var(--bs-tertiary-bg);
+    }
+    .custom-table thead tr.bs-dt-filter-row .form-control-sm {
+        font-size: .8rem;
+        padding: .1rem .35rem;
     }
     tr.table-selected {
         border: 2px solid;

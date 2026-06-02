@@ -4,6 +4,7 @@ import nl from '@/locales/nl.js'
 import fr from '@/locales/fr.js'
 import it from '@/locales/it.js'
 import de from '@/locales/de.js'
+import es from '@/locales/es.js'
 import Helpers from '@/lib/Helpers'
 
 // Get language from cookie (set later from server default if no cookie exists)
@@ -18,7 +19,8 @@ const i18n = createI18n({
     nl,
     fr,
     it,
-    de
+    de,
+    es
   }
 })
 
@@ -27,7 +29,7 @@ const i18n = createI18n({
  * Only applies if the user has not explicitly chosen a language (no cookie).
  */
 export function applyDefaultLanguage(defaultLang) {
-  if (!Helpers.getCookie('af_language') && defaultLang && ['en', 'nl', 'fr', 'it', 'de'].includes(defaultLang)) {
+  if (!Helpers.getCookie('af_language') && defaultLang && ['en', 'nl', 'fr', 'it', 'de', 'es'].includes(defaultLang)) {
     i18n.global.locale.value = defaultLang
   }
 }

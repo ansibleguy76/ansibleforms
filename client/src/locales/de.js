@@ -66,6 +66,12 @@ export default {
     previous: "Zurueck",
     next: "Weiter",
   },
+  dataTable: {
+    selected: "ausgewählt",
+    clearSelection: "Auswahl aufheben",
+    selectAll: "Alle {count} auswählen",
+    columns: "Spalten",
+  },
   errors: {
     noAccess: "Kein Zugriff",
     notAdmin: "Sie sind kein Administrator",

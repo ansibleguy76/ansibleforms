@@ -66,6 +66,12 @@ export default {
     previous: "Precedente",
     next: "Successivo",
   },
+  dataTable: {
+    selected: "selezionati",
+    clearSelection: "Annulla selezione",
+    selectAll: "Seleziona tutti ({count})",
+    columns: "Colonne",
+  },
   errors: {
     noAccess: "Accesso negato",
     notAdmin: "Non sei un amministratore",

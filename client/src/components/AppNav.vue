@@ -23,7 +23,8 @@
     { code: 'nl', label: 'Nederlands', flag: '🇳🇱' },
     { code: 'fr', label: 'Francais', flag: '🇫🇷' },
     { code: 'it', label: 'Italiano', flag: '🇮🇹' },
-    { code: 'de', label: 'Deutsch', flag: '🇩🇪' }
+    { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
+    { code: 'es', label: 'Español', flag: '🇪🇸' }
   ];
 
   function setLanguage(code) {
