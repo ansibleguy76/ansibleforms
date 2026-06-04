@@ -3533,7 +3533,7 @@
           - name: dbConfig
             type: string, array or object
             group: data
-            with_types: enum, expression, table, yaml
+            with_types: enum, expression, table, yaml, list
             short: A database connection 
             description: |
               When you want to query data from a database, you will need the proper connection information.  
@@ -3583,7 +3583,7 @@
             type: string
             group: data
             allowed: A valid sql query
-            with_types: expression, enum, table, yaml
+            with_types: expression, enum, table, yaml, list
             short: The query to select data from a database
             description: |
               This is typically a classic SELECT statement.  
