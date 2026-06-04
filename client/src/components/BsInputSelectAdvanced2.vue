@@ -225,7 +225,7 @@
             </div>
 
         </div>
-        <div class="bg-light col text-center col-2 align-content-center">
+        <div class="picker-divider col text-center col-2 align-content-center">
             <div class="m-3">
                 <button class="btn btn-arrow btn-outline-success" :disabled="disabled" @click="moveAllRight"><font-awesome-icon icon="angles-right" /></button><br>
                 <button class="btn btn-arrow btn-outline-success" :disabled="disabled" @click="moveRight"><font-awesome-icon icon="angle-right" /></button><br>
@@ -264,5 +264,8 @@
     }
     .is-fullwidth{
         width:100%
+    }
+    .picker-divider{
+        background-color: var(--bs-tertiary-bg);
     }
 </style>
