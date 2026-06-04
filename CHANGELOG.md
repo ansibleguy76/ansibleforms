@@ -15,8 +15,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
--   Translations (dutch and english for now)
+-   Translations (en, de, fr, es, it, nl)
 -   new environment var DEFAULT_LANGUAGE (if no client cookie preference is passed)
+
+### Fixed
+
+-   Subforms in the designer (#449)
 
 ## [6.2.0] - 2026-05-26
 
