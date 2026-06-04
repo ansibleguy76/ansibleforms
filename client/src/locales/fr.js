@@ -249,6 +249,9 @@ export default {
       enableDbFields: "Activer les champs base de donnees",
       databaseType: "Type de base de donnees",
       database: "Base de donnees",
+      vaultPath: "Chemin Vault",
+      vaultPathPlaceholder: "ex. secret/data/myapp/prod",
+      vaultPathHelp: "Si defini, l'utilisateur et le mot de passe sont lus depuis HashiCorp Vault a ce chemin. Laissez les champs utilisateur et mot de passe vides.",
     },
     ssh: {
       label: "Cle SSH",

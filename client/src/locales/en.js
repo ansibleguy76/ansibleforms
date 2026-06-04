@@ -249,6 +249,9 @@ export default {
       enableDbFields: "Enable database fields",
       databaseType: "Database Type",
       database: "Database",
+      vaultPath: "Vault Path",
+      vaultPathPlaceholder: "e.g. secret/data/myapp/prod",
+      vaultPathHelp: "When set, user and password are read from HashiCorp Vault at this path. Leave the user/password fields empty.",
     },
     ssh: {
       label: "SSH Key",

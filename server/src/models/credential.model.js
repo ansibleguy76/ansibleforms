@@ -3,6 +3,7 @@ import logger from "../lib/logger.js";
 import mysql from "./db.model.js";
 import crypto from "../lib/crypto.js";
 import NodeCache from "node-cache";
+import { vaultRead, mapVaultPayloadToCredential } from "../lib/vault.js";
 
 const cache = new NodeCache({
     stdTTL: 3600,
@@ -23,6 +24,7 @@ class Credential {
     if (credential.password != undefined) { this.password = crypto.encrypt(credential.password); }
     if (credential.description != undefined) { this.description = credential.description; }
     if (credential.db_type != undefined) { this.db_type = credential.db_type; }
+    if (credential.vault_path != undefined) { this.vault_path = credential.vault_path || null; }
   }
   static async create(record) {
     if (!record.name) {
@@ -90,7 +92,7 @@ class Credential {
 
     if (cred === undefined) {
       var result;
-      var sql = "SELECT host,port,db_name,name,user,password,secure,db_type,is_database FROM AnsibleForms.`credentials` WHERE name REGEXP ?";
+      var sql = "SELECT host,port,db_name,name,user,password,secure,db_type,is_database,vault_path FROM AnsibleForms.`credentials` WHERE name REGEXP ?";
       var res = await mysql.do(sql, name);
       if (res.length > 0) {
         result = res[0];
@@ -110,13 +112,30 @@ class Credential {
           delete result.db_type;
           delete result.is_database;
         }
-        try {
-          result.password = crypto.decrypt(result.password);
-        } catch (e) {
-          logger.error("Failed to decrypt the password.  Did the secretkey change ?");
-          result.password = "";
+        // If vault_path is configured, resolve user/password from HashiCorp Vault.
+        if (result.vault_path) {
+          try {
+            const payload = await vaultRead(result.vault_path);
+            const mapped = mapVaultPayloadToCredential(payload);
+            result.user = mapped.user || result.user || "";
+            result.password = mapped.password || "";
+          } catch (e) {
+            logger.error(`Failed to read credential '${result.name}' from Vault: ${e.message}`);
+            throw e;
+          }
+        } else {
+          try {
+            result.password = crypto.decrypt(result.password);
+          } catch (e) {
+            logger.error("Failed to decrypt the password.  Did the secretkey change ?");
+            result.password = "";
+          }
         }
-        cache.set(name, result);
+        const wasVaultBacked = !!result.vault_path;
+        delete result.vault_path;
+        // Skip the long-lived NodeCache for vault-backed creds; the vault lib
+        // has its own shorter cache to pick up rotations.
+        if (!wasVaultBacked) cache.set(name, result);
         logger.debug("Caching credentials " + name + " from database");
         return JSON.parse(JSON.stringify(result));
       } else {

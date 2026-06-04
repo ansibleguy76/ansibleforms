@@ -249,6 +249,9 @@ export default {
       enableDbFields: "Database velden inschakelen",
       databaseType: "Database type",
       database: "Database",
+      vaultPath: "Vault pad",
+      vaultPathPlaceholder: "bv. secret/data/myapp/prod",
+      vaultPathHelp: "Indien ingesteld worden gebruiker en wachtwoord uit HashiCorp Vault gelezen op dit pad. Laat de gebruiker- en wachtwoordvelden leeg.",
     },
     ssh: {
       label: "SSH Sleutel",

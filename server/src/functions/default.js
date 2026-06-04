@@ -23,6 +23,7 @@ import logger from "../lib/logger.js";
 import ip from "../lib/ip.js";
 import credentialModel from "../models/credential.model.v2.js";
 import Helpers from '../lib/common.js';
+import { vaultRead, mapVaultPayloadToCredential } from "../lib/vault.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -209,12 +210,27 @@ const fnDnsResolve = async function(hostname,type) {
     })
   })
 }
-const fnCredentials = async function(name,fallbackname=""){
+const fnCredentials = async function(name,fallbackname="",credJqe=null){
   var result=undefined
   if(name){
     try{
-      result = await credentialModel.findByName(name,fallbackname)
-      // console.log(result)
+      // Inline HashiCorp Vault lookup: "vault:secret/data/foo" or "vault:foo"
+      // (the latter uses VAULT_DEFAULT_MOUNT). No DB credential row required.
+      if (typeof name === "string" && name.toLowerCase().startsWith("vault:")) {
+        const path = name.slice(6).trim()
+        const payload = await vaultRead(path)
+        let projected = payload
+        if (credJqe) {
+          projected = await jq.run(combinedJqDef + credJqe, payload, { input: "json", output: "json" })
+        }
+        result = mapVaultPayloadToCredential(projected)
+      } else {
+        result = await credentialModel.findByName(name,fallbackname)
+        if (result && credJqe) {
+          // Allow callers to reshape a stored credential too (rare, but symmetric).
+          result = await jq.run(combinedJqDef + credJqe, result, { input: "json", output: "json" })
+        }
+      }
     }catch(e){
       logger.error("Error getting credentials",e)
       throw(e)

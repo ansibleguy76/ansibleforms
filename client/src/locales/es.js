@@ -249,6 +249,9 @@ export default {
       enableDbFields: "Habilitar campos de base de datos",
       databaseType: "Tipo de Base de Datos",
       database: "Base de Datos",
+      vaultPath: "Ruta de Vault",
+      vaultPathPlaceholder: "ej. secret/data/myapp/prod",
+      vaultPathHelp: "Si esta definido, el usuario y la contrasena se leen desde HashiCorp Vault en esta ruta. Deje vacios los campos de usuario y contrasena.",
     },
     ssh: {
       label: "Clave SSH",

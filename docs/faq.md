@@ -521,6 +521,82 @@ fields:
   # note : in the expression you can use placeholders to make them dynamic
 ```
 
+### HashiCorp Vault Integration
+
+Resolve credentials from HashiCorp Vault instead of (or in addition to) the local encrypted database.
+
+**Why use it:**
+- Centralised secret management across multiple AnsibleForms instances and other tools.
+- No need to copy-paste passwords into AnsibleForms when rotating them in Vault.
+- Audit trail: every secret read is logged by Vault.
+- Short-lived TTLs and key rotation handled by Vault, picked up by AnsibleForms within 60 seconds (configurable via `VAULT_CACHE_TTL_MS`).
+
+**Setup:**
+
+1. Set the following environment variables on the AnsibleForms server:
+
+   | Variable | Required | Description |
+   |---|---|---|
+   | `VAULT_ADDR` | yes | Base URL of your Vault server, e.g. `https://vault.example.com:8200` |
+   | `VAULT_TOKEN` | yes | Token with read-only access to the relevant paths |
+   | `VAULT_NAMESPACE` | no | Vault Enterprise namespace |
+   | `VAULT_KV_VERSION` | no | `1` or `2` (default: `2`) |
+   | `VAULT_DEFAULT_MOUNT` | no | Default mount for short-form paths (default: `secret`) |
+   | `VAULT_CACHE_TTL_MS` | no | Cache TTL in ms (default: `60000`) |
+   | `VAULT_SKIP_VERIFY` | no | `true` to disable TLS verification — **dev only** |
+
+2. Restart the server. The `credentials` table is automatically migrated to add a `vault_path` column.
+
+**Two ways to use it:**
+
+**A. Stored credential pointing at Vault** — go to Settings → Credentials, create or edit a credential, fill in **Vault Path** (e.g. `secret/data/ontap`), and leave the user/password fields empty. All existing forms that reference this credential by name keep working unchanged. Connection metadata (host, port, db_name, db_type, secure) stays in the local DB row, only the secret is fetched from Vault.
+
+**B. Inline `vault:` prefix** — no DB row required. Use the prefix anywhere a credential name is accepted:
+
+```yaml
+fields:
+- name: ontap_cred
+  type: expression
+  runLocal: true
+  expression: "'vault:secret/data/ontap'"
+
+credentials:
+  api_cred: vault:secret/data/myapi
+```
+
+Or in expressions / functions:
+
+```javascript
+fn.fnRestBasic('get','https://api.example.com','','vault:secret/data/myapi')
+fn.fnCredentials('vault:secret/data/ontap')
+```
+
+**Recognised key aliases:**
+
+| Credential field | Accepted Vault keys |
+|---|---|
+| `user` | `user`, `username`, `login` |
+| `password` | `password`, `token`, `api_key`, `apikey`, `secret` |
+
+**Reshape unconventional secrets:**
+
+If your Vault secret doesn't match the conventions above, pass a `jq` expression as the third argument to `fnCredentials`:
+
+```javascript
+// Vault secret: { "creds": { "u": "admin", "p": "Netapp12" } }
+fn.fnCredentials('vault:secret/data/weird','','.creds | { user: .u, password: .p }')
+```
+
+**Caching behaviour:**
+
+- Vault reads are cached in memory for 60 seconds by default.
+- Stored credentials with a `vault_path` skip the long-lived credential cache and rely solely on the Vault cache, so secret rotations are picked up within the TTL.
+- Database-backed credentials still use the existing 1-hour cache (no change in behaviour for them).
+
+**Alternative: Ansible LOOKUP plugin**
+
+For maximum flexibility (e.g. secrets with complex shapes used only in one playbook), you can also use the official Ansible Vault lookup plugin from `community.hashi_vault`. This bypasses AnsibleForms entirely and reads directly from inside the playbook — useful when you need fine-grained control per task. The two approaches are complementary: AnsibleForms-side resolution is transparent and centralised; LOOKUP is per-playbook and flexible.
+
 ## Integration
 
 ### Query AWX/Tower/AAP
