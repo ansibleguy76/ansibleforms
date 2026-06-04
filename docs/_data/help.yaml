@@ -36,6 +36,16 @@
     required: true
     description: |
       Ansible Forms requires a mysql database connection to store the configuration of the application.    
+  - name: DB_POOL_SIZE
+    type: number
+    allowed: a positive integer
+    short: MySQL connection pool size
+    required: false
+    default: 20
+    description: |
+      Maximum number of concurrent MySQL connections kept in the pool.
+      All database queries share this pool instead of opening a new connection per query, which dramatically reduces connection overhead and improves throughput under load.
+      Increase this if you have many concurrent users or long-running cron-driven jobs; decrease it if your MySQL server has a low `max_connections` limit.
   - name: PORT
     type: number
     allowed: a valid TCP port
@@ -44,7 +54,7 @@
     default: 8000
   - name: DEFAULT_LANGUAGE
     type: string
-    allowed: en, nl, fr, it, de
+    allowed: en, nl, fr, it, de, es
     short: Application language
     required: false
     description: |

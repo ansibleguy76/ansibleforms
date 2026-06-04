@@ -39,8 +39,23 @@ const __dirname = path.dirname(__filename);
 //user object create
 class Schema {
   constructor() { }
+
+  /**
+   * Cached result of the first successful schema check.
+   * Schema/table existence is essentially static at runtime — once the
+   * server has confirmed everything is present at boot, every subsequent
+   * call (e.g. the public schema endpoint that the SPA hits on every page
+   * load / hard refresh) should NOT re-run a flood of SHOW DATABASES /
+   * SHOW TABLES queries (with debug logging) for no reason. We cache the
+   * first OK result and return it directly. Failures are never cached.
+   */
+  static _cachedOk = null;
+
   static async hasSchema() {
-    return await checkAll();
+    if (Schema._cachedOk) return Schema._cachedOk;
+    const result = await checkAll();
+    Schema._cachedOk = result;
+    return result;
   }
   static async create() {
     logger.notice(`Trying to create database schema 'AnsibleForms' and tables`);
@@ -52,6 +67,8 @@ class Schema {
       if (res.length > 0) {
         logger.notice(`Created schema 'AnsibleForms' and tables`);
         await init()
+        // Invalidate so the next hasSchema() call re-runs the full check.
+        Schema._cachedOk = null;
         return { message: `Created schema 'AnsibleForms' and tables` };
       } else {
         throw new Error(`Failed to create schema 'AnsibleForms' and/or tables`);

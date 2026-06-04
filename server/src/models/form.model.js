@@ -35,11 +35,11 @@ const formSchema = JSON.parse(fs.readFileSync(path.join(__dirname, "../../schema
 const formsSchema = (() => {
   const schema = JSON.parse(JSON.stringify(baseSchema)); // deep clone
   schema.required = [...schema.required, "forms"];
-  // Legacy bundled format always required 'roles' at form level
+  // Use the per-form schema as-is. The per-type `oneOf` branches already
+  // enforce `roles` where appropriate (ansible/awx/multistep) and forbid it
+  // where it must not appear (subform). Forcing `roles` into the top-level
+  // required list here would make subforms unsaveable.
   const formItems = JSON.parse(JSON.stringify(formSchema));
-  if (!formItems.required.includes("roles")) {
-    formItems.required = [...formItems.required, "roles"];
-  }
   schema.properties.forms = { type: "array", default: [], items: formItems };
   return schema;
 })();
@@ -516,9 +516,11 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
         continue // skip this form if it is not the one we are looking for
       }
       // subform type forms are not standalone forms; they are only consumed
-      // by "list" fields through the dedicated subform endpoint. Hide them
-      // from the form list and from regular form lookups.
-      if(!formName && f.type === "subform"){
+      // by "list" / "yaml" fields through the dedicated subform endpoint.
+      // Hide them from the runtime form list (tiles) and from regular form
+      // lookups, but keep them visible to the designer (loadFullConfig=true)
+      // so they can be edited natively alongside their parent forms.
+      if(!formName && !loadFullConfig && f.type === "subform"){
         logger.debug(`Skipping subform ${f.name} from form list.`)
         continue
       }

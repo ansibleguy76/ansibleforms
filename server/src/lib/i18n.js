@@ -13,8 +13,9 @@ import nl from '../locales/nl.js';
 import fr from '../locales/fr.js';
 import it from '../locales/it.js';
 import de from '../locales/de.js';
+import es from '../locales/es.js';
 
-const messages = { en, nl, fr, it, de };
+const messages = { en, nl, fr, it, de, es };
 const supportedLocales = Object.keys(messages);
 const defaultLocale = process.env.DEFAULT_LANGUAGE || 'en';
 
