@@ -22,6 +22,7 @@ const { firstBy } = thenbypkg;
 import logger from "../lib/logger.js";
 import ip from "../lib/ip.js";
 import { shellQuote } from "../lib/shell.js";
+import { assertUrlAllowed } from "../lib/hostfilter.js";
 import credentialModel from "../models/credential.model.v2.js";
 import Helpers from '../lib/common.js';
 import { vaultRead, mapVaultPayloadToCredential } from "../lib/vault.js";
@@ -270,7 +271,11 @@ const fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort=n
     // If URL parsing fails, use the original URL
     logger.debug(`[fnRestAdvanced] URL parsing failed, using original URL: ${e.message}`);
   }
-  
+
+  // Outbound host allow/deny check (REST_ALLOWED_HOSTS / REST_DENIED_HOSTS).
+  // No-op when neither env var is set.
+  await assertUrlAllowed(url);
+
   const httpsAgent = new https.Agent({
     rejectUnauthorized: false,
   })

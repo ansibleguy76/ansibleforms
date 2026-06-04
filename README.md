@@ -28,6 +28,10 @@ More pagination and filtering will be added to the v2 api.  This is a long term 
 
 A new helm chart repo is added
 
+# Deployment topology
+
+AnsibleForms is designed to run as a **single instance**. There is no support today for running multiple replicas behind a load balancer: schema migrations, the scheduler/cron loop, the job runner and datasource refresh all assume they are the only writer. Running more than one instance against the same database can cause migration races, duplicated scheduled jobs and corrupted job state. If you need HA, run a single active instance with restart-on-failure and back up the database + persistent volume.
+
 # Configuration / documentation
 [Go to the documentation website](https://ansibleforms.com)
 

@@ -295,6 +295,44 @@
       Default is 10 GB to accommodate large artifacts (e.g. firmware images, upgrade bundles).
       Set to `0` to disable the cap entirely (not recommended on shared instances).
     version: 6.0.0
+  - name: REST_ALLOWED_HOSTS
+    type: string
+    default: ""
+    short: Whitelist of hosts/CIDRs reachable from REST expressions
+    description: |
+      Comma-separated list of hostnames and/or CIDR ranges that REST helper functions
+      (`fn.fnRestBasic`, `fn.fnRestAdvanced`, `fn.fnRestJwt`, `fn.fnRestNtlm`) are allowed to call.
+
+      When set, **only** these destinations are allowed; everything else is blocked.
+      When unset, no allow-list is applied (default behaviour, all hosts allowed).
+
+      Hostnames are matched case-insensitively against the URL host; CIDRs are matched
+      against the IPs that the host resolves to (so an entry like `10.0.0.0/8` blocks all
+      private targets in that range regardless of which DNS name was used).
+
+      Example: `REST_ALLOWED_HOSTS=api.example.com,partner.api.com,10.20.0.0/16`
+
+      **Caveat:** this only protects the AnsibleForms Node.js process. Ansible playbooks run
+      on the host directly and bypass this guard.
+    version: 6.0.0
+  - name: REST_DENIED_HOSTS
+    type: string
+    default: ""
+    short: Blacklist of hosts/CIDRs unreachable from REST expressions
+    description: |
+      Comma-separated list of hostnames and/or CIDR ranges that REST helper functions
+      (`fn.fnRestBasic`, `fn.fnRestAdvanced`, `fn.fnRestJwt`, `fn.fnRestNtlm`) must never call.
+
+      Wins over `REST_ALLOWED_HOSTS`. Useful to lock down dangerous targets like cloud
+      metadata services or your internal admin UIs:
+      `REST_DENIED_HOSTS=169.254.169.254,127.0.0.0/8,internal-secret.example`
+
+      Hostnames are matched case-insensitively against the URL host; CIDRs are matched
+      against the IPs that the host resolves to.
+
+      **Caveat:** this only protects the AnsibleForms Node.js process. Ansible playbooks run
+      on the host directly and bypass this guard.
+    version: 6.0.0
   - name: ENABLE_DB_QUERY_LOGGING
     type: number
     choices:

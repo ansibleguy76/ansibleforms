@@ -10,6 +10,18 @@ Common questions and answers about AnsibleForms features and usage.
 
 ## Getting Started
 
+### Deployment topology: single instance only
+
+AnsibleForms is designed to run as a **single instance**. Running multiple replicas behind a load balancer is **not supported** today.
+
+**Why:**
+- Schema migrations run at startup and assume they are the only writer.
+- The scheduler / cron loop is in-process; two instances would fire each scheduled job twice.
+- The job runner tracks state in memory and in the DB; concurrent runners can corrupt job state.
+- Datasource refresh is in-process and would duplicate work.
+
+**Recommendation:** run a single active instance with restart-on-failure (e.g. `restart: unless-stopped` in Docker / a Kubernetes Deployment with `replicas: 1`), and back up the database plus the persistent volume. If you need true HA, that would require a separate worker service to own migrations, scheduling and job execution — which does not exist yet.
+
 ### Multi-Repository Form Management
 
 Use multiple git repositories for forms.
@@ -557,6 +569,32 @@ When `REINIT_ADMIN=1` is set at startup, AnsibleForms will:
 - If you were locked out because LDAP was the only configured login method and broke, the recovered local `admin` account always falls back to local DB auth — that's enough to get back in and fix LDAP.
 - The previous `ENABLE_BYPASS` env var is gone. It allowed login as admin with any password and was unsafe to leave enabled. `REINIT_ADMIN` only resets the password and stops there; normal auth runs after that.
 - Existing sessions and tokens are not invalidated by `REINIT_ADMIN` — only the password hash and group membership are changed.
+
+### Restricting REST helper destinations (allow/deny lists)
+
+The `fn.fnRestBasic`, `fn.fnRestAdvanced`, `fn.fnRestJwt` and `fn.fnRestNtlm` helpers can be called from form `expression` properties to fetch data over HTTP. By default, expression authors can target **any** URL the AnsibleForms host can reach. On a sensitive network you may want to limit this.
+
+Two environment variables provide allow- and deny-lists:
+
+| Variable | Behaviour |
+|---|---|
+| `REST_ALLOWED_HOSTS` | Comma-separated hostnames or CIDRs. When set, **only** these targets are allowed. |
+| `REST_DENIED_HOSTS` | Comma-separated hostnames or CIDRs. Always blocked. Wins over the allow-list. |
+
+Hostnames are matched case-insensitively against the URL host. CIDRs are matched against every IP the host resolves to, so `10.0.0.0/8` blocks any DNS name that resolves into the private range.
+
+**Examples:**
+
+```bash
+# Whitelist: only your two API partners are reachable
+REST_ALLOWED_HOSTS=api.example.com,partner.api.com
+
+# Blacklist: block cloud metadata + internal admin UIs
+REST_DENIED_HOSTS=169.254.169.254,127.0.0.0/8,internal-admin.example
+```
+
+{: .warning }
+> **This guard only protects the AnsibleForms Node.js process.** Once a playbook runs, Ansible itself can reach anything from the host — outside AF's control. Use these lists to stop form authors from turning expressions into a metadata-service / internal-UI proxy; do not rely on them as a network firewall.
 
 ### HashiCorp Vault Integration
 

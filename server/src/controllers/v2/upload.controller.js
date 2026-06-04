@@ -29,7 +29,7 @@ const upload = function(req, res, next) {
           logger.error(`Upload error : ${err.toString()}`)
           return res.status(400).json(RestResult.error(i18n.t(req, 'resources.fileUploadFailed'), err.toString()))
       } 
-      logger.info(`Uploaded file ${req.file.originalname} as ${req.file.path}`)
+      logger.info(`Uploaded file ${String(req.file.originalname).replace(/[\r\n]+/g,' ')} as ${req.file.path}`)
       return res.json(RestResult.single(req.file))
   })    
 };
