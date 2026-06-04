@@ -32,7 +32,16 @@ var app_config = {
   formsBackupPath: process.env.FORMS_BACKUP_PATH || path.resolve(__dirname + "/../persistent/forms_backups"),
   oldBackupDays: process.env.OLD_BACKUP_DAYS || 60,
   filterJobOutputRegex: process.env.REGEX_FILTER_JOB_OUTPUT || "\\[low\\]",
-  enableBypass: (process.env.ENABLE_BYPASS ?? 0) == 1,
+  // REINIT_ADMIN=1 forces a one-time recreation of the local `admin` user
+  // (and its admins group) at startup, using ADMIN_USERNAME / ADMIN_PASSWORD.
+  // Intended as a recovery hatch only — unset after use. NOT a runtime auth bypass.
+  reinitAdmin: (process.env.REINIT_ADMIN ?? 0) == 1,
+  // Cap on JSON / urlencoded request bodies (form designer, extravars, etc.).
+  // Defaults to 50 MB; override via API_BODY_LIMIT_MB.
+  apiBodyLimitMb: parseInt(process.env.API_BODY_LIMIT_MB ?? "50", 10) || 50,
+  // Cap on a single uploaded file (in GB). Default 10 GB to allow upgrade
+  // artifacts; override via UPLOAD_MAX_GB. Set to 0 to disable the cap.
+  uploadMaxGb: parseInt(process.env.UPLOAD_MAX_GB ?? "10", 10),
   enableDbQueryLogging: (process.env.ENABLE_DB_QUERY_LOGGING ?? 0) == 1,
   // ENABLE_CONFIG_IN_DATABASE takes priority, falls back to deprecated ENABLE_FORMS_YAML_IN_DATABASE
   enableConfigInDatabase: (() => {

@@ -521,6 +521,43 @@ fields:
   # note : in the expression you can use placeholders to make them dynamic
 ```
 
+### Recovering a lost admin password
+
+If you've lost the password for the local `admin` account (and you don't have any other admin user available), you can use the `REINIT_ADMIN` recovery hatch. **This is not a runtime auth bypass** — it only forces a one-time reset of the local admin account at startup, then lets normal authentication proceed.
+
+**How it works**
+
+When `REINIT_ADMIN=1` is set at startup, AnsibleForms will:
+
+1. Ensure the `admins` group exists (creating it if missing).
+2. Look up the local admin user (default username `admin`, override via `ADMIN_USERNAME`).
+3. If it exists, reset its password to the value of `ADMIN_PASSWORD` and re-attach it to the `admins` group.
+4. If it doesn't exist, create it (same as a fresh install).
+5. Log the action loudly so it shows up in your logs.
+
+**Steps**
+
+1. Stop AnsibleForms.
+2. Set the env vars (use a strong password):
+   ```bash
+   ADMIN_USERNAME=admin
+   ADMIN_PASSWORD=YourNewStrongPasswordHere
+   REINIT_ADMIN=1
+   ```
+   In Docker Compose, add them to the `environment:` block of the AnsibleForms service.
+3. Start AnsibleForms. Watch the logs for a line like:
+   ```
+   REINIT_ADMIN: admin user 'admin' has been recreated. UNSET REINIT_ADMIN now.
+   ```
+4. Log in with `admin` / `YourNewStrongPasswordHere`.
+5. **Unset `REINIT_ADMIN` (or set it back to `0`)** and restart so accidental future restarts don't keep resetting the admin password.
+
+**Notes**
+
+- If you were locked out because LDAP was the only configured login method and broke, the recovered local `admin` account always falls back to local DB auth — that's enough to get back in and fix LDAP.
+- The previous `ENABLE_BYPASS` env var is gone. It allowed login as admin with any password and was unsafe to leave enabled. `REINIT_ADMIN` only resets the password and stops there; normal auth runs after that.
+- Existing sessions and tokens are not invalidated by `REINIT_ADMIN` — only the password hash and group membership are changed.
+
 ### HashiCorp Vault Integration
 
 Resolve credentials from HashiCorp Vault instead of (or in addition to) the local encrypted database.

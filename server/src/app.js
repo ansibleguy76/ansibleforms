@@ -15,6 +15,7 @@ import passport from "passport";
 // App configuration and utilities
 import Middleware from "./lib/middleware.js";
 import init from "./init/index.js";
+import appConfig from "../config/app.config.js";
 
 // Authentication strategies
 import auth_azuread from "./auth/auth_azuread.js";
@@ -118,8 +119,12 @@ const load = async (app) => {
     next();
   });
 
-  app.use(bodyParser.json({ limit: "50mb" }));
-  app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
+  // Body size caps. Generous defaults to accommodate large form designs and
+  // job extravars; configurable via API_BODY_LIMIT_MB. File uploads have their
+  // own limit (UPLOAD_MAX_GB) enforced by multer in upload.controller.js.
+  const apiBodyLimit = `${appConfig.apiBodyLimitMb}mb`;
+  app.use(bodyParser.json({ limit: apiBodyLimit }));
+  app.use(bodyParser.urlencoded({ limit: apiBodyLimit, extended: true }));
 
   // mysql2 has a bug that can throw an uncaught exception if the mysql server crashes (not enough mem for example)
   // also git commands can chain child processes and cause issues

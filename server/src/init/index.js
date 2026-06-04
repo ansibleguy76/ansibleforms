@@ -111,6 +111,17 @@ const init = async function(){
         var adminPassword = appConfig.adminPassword
         await User.create({username:adminUsername,email:'',password:adminPassword,group_id:adminGroupId})
         logger.info(`Created admin user ${adminUsername}`)
+      }else if(appConfig.reinitAdmin){
+        // Recovery hatch: REINIT_ADMIN=1 was set. Force-reset the admin
+        // password and re-attach to the admins group. Logged loudly so the
+        // operator notices if it stays enabled across restarts.
+        logger.warning(`REINIT_ADMIN=1 detected: resetting password and group for admin user '${adminUsername}'`)
+        try{
+          await User.update({password:appConfig.adminPassword,group_id:adminGroupId}, adminUser.id)
+          logger.warning(`REINIT_ADMIN: admin user '${adminUsername}' has been recreated. UNSET REINIT_ADMIN now.`)
+        }catch(e){
+          logger.error(`REINIT_ADMIN: failed to reset admin user '${adminUsername}': ${e.message || e}`)
+        }
       }else{
         logger.info(`Admin user ${adminUsername} already exists`)
       }
@@ -175,10 +186,14 @@ const init = async function(){
   .then((repositories)=>{
     repositories.map((repo)=>{
       logger.info("Pulling " + repo.name)
-      Repository.clone(repo.name).catch((e)=>{})
+      Repository.clone(repo.name).catch((e)=>{
+        logger.warning(`Failed to pull repository ${repo.name}: ${e.message || e}`)
+      })
     })
   })
-  .catch((e)=>{})
+  .catch((e)=>{
+    logger.warning(`Failed to query repositories for rebase_on_start: ${e.message || e}`)
+  })
 
   // now we check if there are any datasources that need to be imported, every 10 seconds
   // we only import 1 datasource that is with the lowest queue_id while there are no datasources with status running

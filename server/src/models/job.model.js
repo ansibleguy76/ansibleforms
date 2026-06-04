@@ -11,6 +11,7 @@ import Settings from "./settings.model.js";
 import logger from "../lib/logger.js";
 import Cmd from "../lib/cmd.js";
 import { shellQuote } from "../lib/shell.js";
+import { safeParse } from "../lib/safejson.js";
 import ansibleConfig from "../../config/ansible.config.js";
 import loggerConfig from "../../config/log.config.js";
 import dbConfig from "../../config/db.config.js";
@@ -537,7 +538,7 @@ Job.findById = async function (user, id, asText, logSafe = false) {
     }
     var job = res[0];
     // convert artifacts
-    job.awx_artifacts = JSON.parse(job.awx_artifacts || "{}");
+    job.awx_artifacts = safeParse(job.awx_artifacts, {}, `job.awx_artifacts id=${id}`);
     // mask passwords
     if (logSafe) job.extravars = Helpers.logSafe(job.extravars);
     // get output summary
@@ -560,10 +561,8 @@ Job.findById = async function (user, id, asText, logSafe = false) {
     try {
       const ansibleBasePath = (await Repository.getAnsiblePath()) || ansibleConfig.path;
       let playbookSubPath = "";
-      try {
-        const ev = JSON.parse(job.extravars || "{}");
-        playbookSubPath = ev.__playbookSubPath__ || "";
-      } catch (_) {}
+      const ev = safeParse(job.extravars, {}, `job.extravars id=${id}`);
+      playbookSubPath = ev.__playbookSubPath__ || "";
       const playbookDir = playbookSubPath
         ? path.join(ansibleBasePath, playbookSubPath)
         : ansibleBasePath;
@@ -625,7 +624,10 @@ Job.getRawFormData = async function (user, id) {
       throw new Errors.NotFoundError(`No saved form data found for job ${id}. This job may have been created before the relaunch feature was enabled.`);
     }
     
-    const parsedData = JSON.parse(result[0].raw_form_data);
+    const parsedData = safeParse(result[0].raw_form_data, null, `raw_form_data id=${id}`);
+    if (!parsedData) {
+      throw new Errors.BadRequestError(`Saved form data for job ${id} is corrupted and cannot be parsed.`);
+    }
     
     // Validate form name matches
     if (parsedData.__form__ && parsedData.__form__ !== job.form) {
@@ -983,21 +985,17 @@ Job.relaunch = async function (user, id, verbose) {
   var credentials = {};
   var rawFormData = {};
   if (job.extravars) {
-    extravars = JSON.parse(job.extravars);
+    extravars = safeParse(job.extravars, {}, `job.extravars id=${id}`);
   }
   if (verbose) {
     extravars["__verbose__"] = true;
   }
   if (job.credentials) {
-    credentials = JSON.parse(job.credentials);
+    credentials = safeParse(job.credentials, {}, `job.credentials id=${id}`);
   }
   if (job.raw_form_data) {
-    try {
-      rawFormData = JSON.parse(job.raw_form_data);
-      logger.debug(`Retrieved raw form data for relaunch with ${Object.keys(rawFormData).length} fields`);
-    } catch (err) {
-      logger.warning(`Failed to parse raw form data during relaunch: ${err.message}`);
-    }
+    rawFormData = safeParse(job.raw_form_data, {}, `job.raw_form_data id=${id}`);
+    logger.debug(`Retrieved raw form data for relaunch with ${Object.keys(rawFormData).length} fields`);
   }
   if (job.status != "running" && !job.abort_requested) {
     logger.notice(`Relaunching job ${id} with form ${job.form}`);
@@ -1020,7 +1018,7 @@ Job.relaunch = async function (user, id, verbose) {
 Job.approve = async function (user, id) {
   const job = await Job.findById(user, id, true);
 
-  var approval = JSON.parse(job.approval);
+  var approval = safeParse(job.approval, null, `job.approval id=${id}`);
   if (approval) {
     var access = approval?.roles.filter((role) => user?.roles?.includes(role));
     if (access?.length > 0 || user?.roles?.includes("admin")) {
@@ -1035,10 +1033,10 @@ Job.approve = async function (user, id) {
   var extravars = {};
   var credentials = {};
   if (job.extravars) {
-    extravars = JSON.parse(job.extravars);
+    extravars = safeParse(job.extravars, {}, `job.extravars id=${id}`);
   }
   if (job.credentials) {
-    credentials = JSON.parse(job.credentials);
+    credentials = safeParse(job.credentials, {}, `job.credentials id=${id}`);
   }
   if (job.status == "approve") {
     logger.notice(`Approving job ${id} with form ${job.form}`);
@@ -1161,7 +1159,7 @@ Job.sendStatusNotification = async function (jobid) {
     };
 
     const job = await Job.findById(user, jobid, false, true);
-    var notifications = JSON.parse(job.notifications);
+    var notifications = safeParse(job.notifications, null, `job.notifications id=${jobid}`);
     
     // Default to 'any' if onStatus not specified
     if (notifications && !notifications.onStatus) {
@@ -1212,7 +1210,7 @@ Job.sendEventNotification = async function (jobid, eventType, user = null) {
     };
 
     const job = await Job.findById(adminUser, jobid, false, true);
-    var notifications = JSON.parse(job.notifications);
+    var notifications = safeParse(job.notifications, null, `job.notifications id=${jobid}`);
     
     // Check if this event type is in the onEvent array
     if (!notifications || !notifications.onEvent || !Array.isArray(notifications.onEvent)) {
@@ -1264,7 +1262,7 @@ Job.sendEventNotification = async function (jobid, eventType, user = null) {
 Job.reject = async function (user, id) {
   const job = await Job.findById(user, id, true);
 
-  var approval = JSON.parse(job.approval);
+  var approval = safeParse(job.approval, null, `job.approval id=${id}`);
   if (approval) {
     var access = approval?.roles.filter((role) => user?.roles?.includes(role));
     if (access?.length > 0 || user?.roles?.includes("admin")) {

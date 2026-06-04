@@ -258,20 +258,43 @@
       If you use a different database, you might want to enable this option, to at the very least create the schema the very first time.  
       If you want to disable this option, set this variable to 0.
     version: 5.0.3      
-  - name: ENABLE_BYPASS
+  - name: REINIT_ADMIN
     type: number
     choices:
     - name: 0
-      description: Disables the bypass admin authentication
+      description: Normal startup
     - name: 1
-      description: Enables the bypass admin authentication
+      description: Force reset of the local admin user at startup
     default: 0
-    short: Enable the bypass admin authentication
-    description: | 
-      When you have locked yourself out, you can enable the bypass admin authentication, by setting this variable to 1.  
-      This will allow you to login as temp admin with any combination of username and password.  You can then fix the issue and disable this option again.  
-      **Note** : This option will allow ANYONE to login as admin, so use with caution and disable as soon as possible.  
-    version: 5.0.3
+    short: Reset the local admin user/password at startup
+    description: |
+      Recovery hatch when you've lost access to the local `admin` account.
+      When set to `1`, AnsibleForms will at startup:
+      - ensure the `admins` group exists,
+      - if the local admin user already exists, reset its password to the value of `ADMIN_PASSWORD` and re-attach it to the `admins` group,
+      - if it doesn't exist, create it (same as a fresh install).
+
+      The action is logged loudly. **This is NOT a runtime auth bypass** — once the admin is back in shape, unset `REINIT_ADMIN` and restart.
+    version: 6.0.0
+  - name: API_BODY_LIMIT_MB
+    type: number
+    default: 50
+    short: Maximum JSON / urlencoded request body size (MB)
+    description: |
+      Cap on the size of JSON and urlencoded request bodies accepted by the AnsibleForms API.
+      Default is 50 MB, generous enough for large form designs and heavy job extravars.
+      Increase if you have unusually large forms or expression payloads.
+      Note: this does NOT apply to file uploads (those are governed by `UPLOAD_MAX_GB`).
+    version: 6.0.0
+  - name: UPLOAD_MAX_GB
+    type: number
+    default: 10
+    short: Maximum size of a single uploaded file (GB)
+    description: |
+      Cap on the size of a single file uploaded through the form upload field, in gigabytes.
+      Default is 10 GB to accommodate large artifacts (e.g. firmware images, upgrade bundles).
+      Set to `0` to disable the cap entirely (not recommended on shared instances).
+    version: 6.0.0
   - name: ENABLE_DB_QUERY_LOGGING
     type: number
     choices:
@@ -2570,6 +2593,14 @@
                   The subform itself is a top-level form of type `subform`, referenced by name via the `subform` property.  
                   Subforms can be nested (a list field inside a subform) and can be reused across multiple forms (e.g. a single `Address` subform shared by customers, suppliers, ...).  
                   Use the `columns` property to pick which subform fields appear in the table. Other properties (`allowInsert`, `allowDelete`, `insertMarker`, `deleteMarker`, `updateMarker`) behave the same as in the deprecated `table` field.
+
+                  **Pre-population.** A list can be seeded with rows in three ways:
+
+                  * `default` — a static array of objects (keys must match subform field names). Useful for fixed seeds, possibly combined with placeholders + `evalDefault`.
+                  * `expression` (+ optional `runLocal`) — server- or browser-evaluated javascript that must return an array of objects.
+                  * `query` + `dbConfig` — pull rows from MySQL / MSSQL / Postgres / Oracle / MongoDB.
+
+                  See the examples below for each mode.
                 examples:
                 - name: List with a shared Address subform
                   code: |
@@ -2618,6 +2649,65 @@
                       columns:
                         - name
                         - email
+                - name: Pre-populate a list with a static default
+                  code: |
+                    # Each row must match the referenced subform's fields.
+                    - name: addresses
+                      type: list
+                      label: Addresses
+                      subform: Address
+                      columns:
+                        - city
+                        - country
+                      default:
+                        - street: Main 1
+                          city: Brussels
+                          country: BE
+                        - street: Side 22
+                          city: Paris
+                          country: FR
+                - name: Pre-populate a list from a REST API (expression)
+                  code: |
+                    # The expression must return an array of objects whose keys
+                    # line up with the subform's field names.
+                    - name: users
+                      type: list
+                      label: Users
+                      subform: User
+                      columns:
+                        - username
+                        - email
+                      expression: fn.fnRestBasic('get','https://api.example.com/users','','my_api_cred','')
+                      # add a refresh button (or auto-refresh, e.g. '30s')
+                      refresh: true
+                - name: Pre-populate a list from a database query
+                  code: |
+                    - name: servers
+                      type: list
+                      label: Servers
+                      subform: Server
+                      columns:
+                        - hostname
+                        - role
+                      dbConfig: CMDB_CONN
+                      query: SELECT hostname, role FROM servers WHERE active = 1
+                - name: Pre-populate a list from a local expression
+                  code: |
+                    # runLocal evaluates in the browser sandbox and gives full JS power.
+                    - name: ports
+                      type: list
+                      label: Open ports
+                      subform: Port
+                      columns:
+                        - port
+                        - protocol
+                      runLocal: true
+                      expression: |
+                        [
+                          { port: 22,  protocol: 'tcp' },
+                          { port: 80,  protocol: 'tcp' },
+                          { port: 443, protocol: 'tcp' }
+                        ]
               - name: yaml
                 description: A YAML editor field with syntax highlighting and validation
                 extra: |
@@ -3022,14 +3112,18 @@
               
               For `table` fields, the default must be an array of objects matching the tableFields structure.
               For `yaml` fields, the default can be any valid YAML structure (object or array).
+              For `list` fields, the default must be an array of objects matching the referenced subform's fields. Use it to pre-populate the list with existing rows on form load.
             changelog:
+              - version: 6.2.0
+                type: added
+                description: "`list` fields now support `default` for pre-populating rows from a static array."
               - version: 6.1.5
                 type: changed
                 description: Table and YAML fields now support default values for pre-populating initial data.
               - version: 4.0.5
                 type: added
                 description: A default can now hold placeholders like `$(other_field)`, and together with `evalDefault` be evaluated as javascript.           
-            with_types: text, textarea, number, expression, password, enum, radio, checkbox, datetime, table, yaml
+            with_types: text, textarea, number, expression, password, enum, radio, checkbox, datetime, table, yaml, list
           - name: evalDefault
             type: boolean
             group: data
@@ -3345,7 +3439,7 @@
                 **tip** : use the alias `local` (type='expression',runLocal=true,hide=true,output=false)  
                 **tip** : use the alias `local_out` (type='expression',runLocal=true,hide=true)  
                 **tip** : use the alias `credential` (type='expression',runLocal=true,hide=true,asCredential=true)  
-            with_types: enum, expression, table, html
+            with_types: enum, expression, table, html, yaml, list
             examples:
               - name: Get a list of users from a rest api
                 code: |
@@ -3387,7 +3481,7 @@
             type: boolean
             group: data
             default: false
-            with_types: enum, expression, table
+            with_types: enum, expression, table, yaml, list
             short: Run an expression locally
             description: |
               When running expressions, by default they are run remotely on the server.  
@@ -3439,7 +3533,7 @@
           - name: dbConfig
             type: string, array or object
             group: data
-            with_types: enum, expression, table
+            with_types: enum, expression, table, yaml
             short: A database connection 
             description: |
               When you want to query data from a database, you will need the proper connection information.  
@@ -3489,7 +3583,7 @@
             type: string
             group: data
             allowed: A valid sql query
-            with_types: expression, enum, table
+            with_types: expression, enum, table, yaml
             short: The query to select data from a database
             description: |
               This is typically a classic SELECT statement.  
