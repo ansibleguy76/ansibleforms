@@ -10,6 +10,7 @@ import Errors from "../lib/errors.js";
 import Settings from "./settings.model.js";
 import logger from "../lib/logger.js";
 import Cmd from "../lib/cmd.js";
+import { shellQuote } from "../lib/shell.js";
 import ansibleConfig from "../../config/ansible.config.js";
 import loggerConfig from "../../config/log.config.js";
 import dbConfig from "../../config/db.config.js";
@@ -1742,11 +1743,14 @@ Ansible.launch = async (
     )} | base64 -d | ansible-playbook -e '@${extravarsFileName}' -e '@${hiddenExtravarsFileName}' --vault-password-file=/bin/cat`;
   }
 
+  // All form-controlled segments below MUST be wrapped in shellQuote().
+  // The command runs through `exec` (i.e. /bin/sh -c), so any unquoted value
+  // ending up in the string is a shell injection vector.
   inventory.forEach((item, i) => {
-    command += ` -i '${item}'`;
+    command += ` -i ${shellQuote(item)}`;
   });
   if (tags) {
-    command += ` -t '${tags}'`;
+    command += ` -t ${shellQuote(tags)}`;
   }
   if (check) {
     command += ` --check`;
@@ -1758,10 +1762,10 @@ Ansible.launch = async (
     command += ` -vvv`;
   }
   if (limit) {
-    command += ` --limit '${limit}'`;
+    command += ` --limit ${shellQuote(limit)}`;
   }
 
-  command += ` ${playbook}`;
+  command += ` ${shellQuote(playbook)}`;
   var directory = await Repository.getAnsiblePath();
   var directory = directory || ansibleConfig.path;
   if (playbookSubPath) {

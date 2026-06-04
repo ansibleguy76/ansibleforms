@@ -21,6 +21,7 @@ const { firstBy } = thenbypkg;
 // Project-specific modules
 import logger from "../lib/logger.js";
 import ip from "../lib/ip.js";
+import { shellQuote } from "../lib/shell.js";
 import credentialModel from "../models/credential.model.v2.js";
 import Helpers from '../lib/common.js';
 import { vaultRead, mapVaultPayloadToCredential } from "../lib/vault.js";
@@ -367,10 +368,11 @@ const fnRestJwtSecure = async function(action,url,body,tokenname,jqe=null,sort=n
 const fnSsh = async function(user,host,cmd,jqe=null){
 
   var result= await new Promise((resolve,reject)=>{
-    const u=user.replaceAll('"','\"') // escape quote in user to avoid code injection
-    const h=host.replaceAll('"','') // remove quote in host to avoid code injection
-    const c=cmd.replace('"','\"') // escape quote in command to avoid code injection
-    const command=`ssh "${u}"@${h} "${c}"`
+    // Form-controlled values — must be properly shell-escaped before going
+    // through `exec` (which uses /bin/sh -c). The previous .replace/.replaceAll
+    // calls were not real escaping (single replace, not all occurrences, and
+    // no protection against $(), backticks, ;, &&, ||).
+    const command=`ssh ${shellQuote(`${user}@${host}`)} ${shellQuote(cmd)}`
     logger.debug(`invoking ssh : ${command}`)
     var child = exec(command,{encoding: "UTF-8"});
     var output=[]

@@ -81,7 +81,16 @@ const download = async function(req,res){
   
     res.set('Content-disposition', 'attachment; filename="' + fileName + '"');
     res.set('Content-Type', 'text/plain');
-  
+
+    readStream.on('error', (err) => {
+      logger.error(`Job download stream error: ${err.message}`)
+      if (!res.headersSent) {
+        res.status(500).json(RestResultv2.error('stream error'))
+      } else {
+        res.destroy(err)
+      }
+    });
+
     readStream.pipe(res);
 
   }catch (err) {
