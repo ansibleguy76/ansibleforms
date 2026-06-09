@@ -29,9 +29,27 @@ When the user submits, the **collected values from all steps are merged into a s
 
 ## Form-level property
 
-| Attribute | Comments |
-|-----------|----------|
-| **{{ wizard_prop.name }}**<br><span class="af-type">{{ wizard_prop.type }}</span>{% if wizard_prop.version %}<br><span class="af-version">added in version {{wizard_prop.version}}</span>{% endif %} | **{{ wizard_prop.short }}**<br>{{ wizard_prop.description | markdownify }} |
+<table>
+  <thead>
+    <tr>
+      <th>Attribute</th>
+      <th>Comments</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <strong>{{ wizard_prop.name }}</strong><br>
+        <span class="af-type">{{ wizard_prop.type }}</span>
+        {% if wizard_prop.version %}<br><span class="af-version">added in version {{ wizard_prop.version }}</span>{% endif %}
+      </td>
+      <td>
+        <p><strong>{{ wizard_prop.short }}</strong></p>
+        {{ wizard_prop.description | markdownify }}
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 {% if wizard_prop.examples %}
 **Examples:**
