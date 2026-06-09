@@ -24,20 +24,8 @@ A read-only **review page** is appended automatically at the end of every wizard
 
 When the user submits, the **collected values from all steps are merged into a single extravars payload** and sent to the underlying playbook / template / multistep — exactly as if the user had filled in one big form.
 
-## Wizard vs Multistep — what's the difference?
-
-These two features sound similar but operate on different layers:
-
-| | [`steps`](multistep.html) (Multistep) | `wizard` |
-|---|---|---|
-| **Layer** | Execution | Form / UI |
-| **Splits** | The job into multiple runs | The input into multiple pages |
-| **Result** | N jobs run sequentially (each its own playbook/template) | 1 job runs at the end |
-| **Form `type`** | Must be `multistep` | Works with `ansible`, `awx` and `multistep` |
-| **Defined by** | An array of execution targets | An array of subform references |
-| **Why use it** | "Do A, then B, then C as separate jobs" | "My form has too many fields for one page" |
-
-They are **not exclusive** — a `type: multistep` form can also have a `wizard:` block. The user fills the wizard page-by-page, presses Submit, and **then** the multistep execution kicks off all its steps with the merged extravars.
+{: .note }
+> Wondering how `wizard` differs from a `multistep` form, or how the two combine? See the FAQ entry [What is the difference between a wizard and a multistep form?](../faq.html#what-is-the-difference-between-a-wizard-and-a-multistep-form).
 
 ## Form-level property
 
@@ -173,57 +161,9 @@ They are **not exclusive** — a `type: multistep` form can also have a `wizard:
 
 ## Combining a wizard with multistep
 
-Wizard and multistep operate on different layers, so they compose. A common pattern is to **map one wizard page to one multistep step** by pairing the wizard step's `defaultModel` with the multistep step's `key` — both use the same name, so the multistep step receives only the values collected on its matching wizard page:
+A wizard can be layered on top of a [`multistep`](multistep.html) form. Pair each wizard step's `defaultModel` with the matching multistep step's [`key`](multistep.html#step_key) and each playbook/template will receive only the values from its own wizard page.
 
-```yaml
-- name: Provision and verify host
-  type: multistep
-  wizard:
-    - subform: basics
-      title: Basics
-      defaultModel: basics            # wraps basics fields under `basics`
-    - subform: network
-      title: Network
-      defaultModel: network           # wraps network fields under `network`
-  steps:
-    - name: Create host
-      type: ansible
-      playbook: create_host.yml
-      key: basics                     # receives only the `basics` page payload
-    - name: Configure network
-      type: ansible
-      playbook: configure_network.yml
-      key: network                    # receives only the `network` page payload
-
-- name: basics
-  type: subform
-  fields:
-    - name: hostname
-      type: text
-      required: true
-
-- name: network
-  type: subform
-  fields:
-    - name: ipv4
-      type: text
-```
-
-The user fills the wizard pages (`basics`, `network`, then the auto-generated review). On submit, the merged extravars look like this:
-
-```yaml
-basics:
-  hostname: web01
-network:
-  ipv4: 10.0.0.1
-```
-
-The multistep then runs `create_host.yml` (which sees `{hostname: web01}` because of `key: basics`), followed by `configure_network.yml` (which sees `{ipv4: 10.0.0.1}` because of `key: network`).
-
-{: .note }
-> `key` is a single-level lookup (`extravars[key]`), not a dotted path. Use a flat name in `defaultModel` (e.g. `defaultModel: basics`, not `defaultModel: input.basics`) when you want it to match a multistep `key`.
-
-You can of course also leave `defaultModel` and `key` off — every step then receives the full merged extravars, just like a regular form.
+See the FAQ for a worked example and the merged-extravars layout: [What is the difference between a wizard and a multistep form?](../faq.html#what-is-the-difference-between-a-wizard-and-a-multistep-form) (section *Combined — wizard on top of multistep*).
 
 ## See also
 
