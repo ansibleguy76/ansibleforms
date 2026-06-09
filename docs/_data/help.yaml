@@ -1689,6 +1689,36 @@
         short: Multistep steps
         description: |
           A multistep form is basically an array of multiple form type destinations, defined here as steps.
+      - name: wizard
+        type: array
+        with_types: ansible, awx, multistep
+        group: basic
+        version: 6.4.0
+        allowed: a wizard step object
+        objectLink: forms/form/wizard
+        docsObjectLink: "wizard"
+        short: Wizard steps (form-layer)
+        description: |
+          Turn a form into a multi-page wizard.  
+          Where [`steps`](multistep.html) splits the **execution** into multiple jobs, `wizard` splits the **input** of a single form into multiple pages.  
+          Each wizard step references a [`subform`](subform.html) and is rendered as its own page with Back / Next navigation. A read-only review page is appended automatically as the last step — you do not declare it in YAML.  
+          See the [Wizard page](wizard.html) for all step properties and examples.
+        examples:
+        - name: Three-step wizard
+          code: |
+            name: Provision host
+            type: ansible
+            playbook: provision.yml
+            wizard:
+              - subform: basics
+                title: Basics
+              - subform: network
+                title: Network
+                defaultModel: net
+              - subform: advanced
+                title: Advanced
+                optional: true
+                when: $(__parent__.basics.kind) === 'vm'
       - name: inventory
         type: string
         with_types: ansible, awx
@@ -2264,6 +2294,163 @@
                   type: awx
                   template: email
                   always: true       # whether step 1 or 2 fails, this step always runs          
+        - name: Wizard step
+          itemName: attribute
+          link: forms/form/wizard
+          icon: fas,wand-magic-sparkles
+          description: |
+            Each wizard step references a [`subform`](/forms/subform.html) and is rendered as its own page with **Back** and **Next** navigation. The user must validate one step before moving to the next; data from earlier steps is available in later steps via [`__parent__`](/faq.html#how-do-i-access-parent-form-data-inside-a-subform).  
+            <br>
+            **Review step is automatic.** A read-only summary page that lists every step's input is appended as the last page of the wizard. You do **not** declare it in YAML — its title is taken from the active locale ("Summary" / "Samenvatting" / "Zusammenfassung" / ...).  
+            <br>
+            **Wizard vs Multistep.** [`steps`](/forms/multistep.html) splits the **execution** into multiple sequential jobs (each step is its own playbook/template). `wizard` splits the **input** of a single form into multiple pages — only one job runs at the end. The two can be combined: a `type: multistep` form can also have a `wizard:` block to gather its extravars across pages.
+          items:
+          - name: subform
+            type: string
+            required: true
+            group: basic
+            allowed: a valid subform name
+            short: Subform reference
+            description: |
+              The name of a [`type: subform`](/forms/subform.html) form to render on this wizard page. The subform's fields become this step's inputs.
+            examples:
+            - name: Reference a subform
+              code: |
+                wizard:
+                  - subform: basics
+                  - subform: network
+          - name: name
+            type: string
+            group: basic
+            allowed: alphanumeric + dash + underscore
+            short: Step namespace key
+            description: |
+              The key under which this step's values are exposed to later steps via `$(__parent__.<name>.<field>)`.  
+              Defaults to the value of `subform` when omitted.  
+              Set this explicitly when you reuse the same subform multiple times in the same wizard, or when you want a stable key independent of the subform name.
+            examples:
+            - name: Override the namespace
+              code: |
+                wizard:
+                  - subform: address
+                    name: shipping
+                  - subform: address
+                    name: billing
+          - name: title
+            type: string
+            group: basic
+            allowed: free text
+            short: Page title in the stepper
+            description: |
+              Title shown in the wizard stepper and at the top of the page.  
+              Defaults to the subform's `description`, or to the step's `name` if no description is set.
+            examples:
+            - name: Custom title
+              code: |
+                wizard:
+                  - subform: basics
+                    title: Tell us about your host
+          - name: help
+            type: string
+            group: basic
+            allowed: free text (markdown supported)
+            short: Help text shown on this page
+            description: |
+              Help text rendered on the wizard page. Defaults to the subform's own `help` when omitted.
+          - name: showHelp
+            type: boolean
+            group: basic
+            allowed: "true, false"
+            default: false
+            short: Show help on load
+            description: |
+              When `true`, the help block is expanded by default when the user lands on this page. Falls back to the subform's `showHelp` when omitted.
+          - name: defaultModel
+            type: string
+            group: basic
+            allowed: a model path (dot notation allowed)
+            short: Wrap this step's output under a prefix
+            description: |
+              Wraps every field of this step under the given object key in the final extravars payload. Useful when you reuse a generic subform and want its values namespaced.  
+              Without `defaultModel`, fields are merged into the top level of the extravars (still grouped per step under `__parent__` for cross-step references).
+            examples:
+            - name: Wrap network fields under `net`
+              code: |
+                wizard:
+                  - subform: network
+                    defaultModel: net
+
+                # The subform has fields `hostname` and `ipv4`.
+                # Final extravars contain:
+                #   net:
+                #     hostname: ...
+                #     ipv4: ...
+          - name: when
+            type: expression
+            group: workflow
+            allowed: a JavaScript expression returning truthy/falsy
+            short: Conditionally show this step
+            description: |
+              When the expression evaluates falsy, the step is **hidden entirely** — the user never sees it and its values are not collected.  
+              The expression has access to all earlier steps via `__parent__.<stepname>.<field>`. Steps after a hidden one are renumbered automatically.  
+              Note: `when` is purely about **visibility**; it is unrelated to [`optional`](#wizard_optional), which is about whether the user is allowed to skip a visible step.
+            examples:
+            - name: Only show when kind is "vm"
+              code: |
+                wizard:
+                  - subform: basics       # has a `kind` enum field
+                  - subform: advanced
+                    when: $(__parent__.basics.kind) === 'vm'
+          - name: optional
+            type: boolean
+            group: workflow
+            allowed: "true, false"
+            default: false
+            short: Allow skipping this step
+            description: |
+              When `true`, the user can press **Next** even if the step's fields are not (yet) valid, and **Submit** is allowed without ever visiting this step.  
+              The step is still shown in the stepper — use [`when`](#wizard_when) if you want to hide it altogether.
+            examples:
+            - name: Optional advanced page
+              code: |
+                wizard:
+                  - subform: basics
+                  - subform: advanced
+                    optional: true
+          examples:
+          - name: Minimal wizard (review page is auto-added)
+            code: |
+              - name: Provision host
+                type: ansible
+                playbook: provision.yml
+                wizard:
+                  - subform: basics
+                  - subform: network
+
+              - name: basics
+                type: subform
+                fields:
+                  - name: hostname
+                    type: text
+                    required: true
+
+              - name: network
+                type: subform
+                fields:
+                  - name: ipv4
+                    type: text
+          - name: Cross-step reference and namespace prefix
+            code: |
+              wizard:
+                - subform: basics
+                  title: Basics
+                - subform: network
+                  title: Network
+                  defaultModel: net          # wraps network fields under `net`
+
+              # In the `network` subform you can reference fields
+              # from the `basics` step like this:
+              #   default: $(__parent__.basics.hostname).local
         - name: Formfield
           itemName: attribute
           link: forms/form/formfield

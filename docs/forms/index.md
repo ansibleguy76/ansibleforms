@@ -43,4 +43,5 @@ Every form is configured via a set of properties. See the sub-pages for details:
 - **[Ansible forms](ansible.html)** — properties specific to `type: ansible`
 - **[AWX forms](awx.html)** — properties specific to `type: awx`
 - **[Multistep forms](multistep.html)** — properties specific to `type: multistep`
+- **[Wizard](wizard.html)** — split a form's input across multiple pages (works on top of any executable form type)
 - **[Subform](subform.html)** — subforms only use the common properties

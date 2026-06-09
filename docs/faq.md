@@ -485,6 +485,168 @@ You can do this in 2 ways:
   evalDefault: true
 ```
 
+## Wizard & Multistep
+
+### What is the difference between a wizard and a multistep form?
+
+A **wizard** and a **multistep** form sound similar but operate on different layers — and they can be combined.
+
+| | [`steps`](forms/multistep.html) (Multistep) | [`wizard`](forms/wizard.html) |
+|---|---|---|
+| **Layer** | Execution | Form / UI |
+| **What it splits** | The job into multiple sequential runs | The input of one form into multiple pages |
+| **Result** | N jobs run, one after the other (each with its own playbook/template) | 1 job runs at the end |
+| **Form `type`** | Must be `multistep` | Works with `ansible`, `awx` and `multistep` |
+| **Defined by** | A list of execution targets (`steps:`) | A list of [subform](forms/subform.html) references (`wizard:`) |
+| **Use it when** | "Do A, then B, then C as separate jobs" | "My form has too many fields for one page" |
+
+**Key takeaway:** `steps` is about *what runs and in which order*; `wizard` is about *how the user fills in the form*.
+
+#### Multistep only
+
+A `type: multistep` form runs one playbook/template per step. The user fills a single page of fields, presses Submit, and the executor runs each step sequentially:
+
+```yaml
+- name: Provision host
+  type: multistep
+  steps:
+    - name: Create host
+      type: ansible
+      playbook: create_host.yml
+    - name: Verify host
+      type: ansible
+      playbook: verify_host.yml
+  fields:
+    - name: hostname
+      type: text
+```
+
+#### Wizard only
+
+A `wizard:` block on an `ansible` (or `awx`) form turns input collection into a multi-page experience. Only **one** job runs at the end — the merged extravars from all pages are sent to a single playbook/template:
+
+```yaml
+- name: Provision host
+  type: ansible
+  playbook: provision.yml
+  wizard:
+    - subform: basics
+      title: Basics
+    - subform: network
+      title: Network
+      defaultModel: net
+
+- name: basics
+  type: subform
+  fields:
+    - name: hostname
+      type: text
+      required: true
+
+- name: network
+  type: subform
+  fields:
+    - name: ipv4
+      type: text
+```
+
+A read-only review page is appended automatically as the last wizard page — you do not declare it in YAML.
+
+#### Combined (wizard on top of multistep)
+
+A wizard can be layered on top of a multistep form. The user fills the wizard pages, presses Submit, and **then** the multistep execution kicks off:
+
+```yaml
+- name: Provision and verify host
+  type: multistep
+  wizard:
+    - subform: basics
+      title: Basics
+    - subform: network
+      title: Network
+      defaultModel: net
+  steps:
+    - name: Create host
+      type: ansible
+      playbook: create_host.yml
+    - name: Verify host
+      type: ansible
+      playbook: verify_host.yml
+```
+
+See the [Wizard page](forms/wizard.html) for the full property reference.
+
+### How do I conditionally show or skip wizard steps?
+
+Use `when:` to **hide** a step entirely, or `optional: true` to allow the user to **skip** a visible step. They are independent and should generally not be combined.
+
+#### `when:` — conditional visibility
+
+The step is hidden when the expression evaluates falsy. The user never sees it and its values are not collected. The expression can read earlier steps via `__parent__.<stepname>.<field>`:
+
+```yaml
+wizard:
+  - subform: basics             # has a `kind` enum field with values vm/bare-metal/container
+    title: Basics
+  - subform: virtualization
+    title: Virtualization
+    when: $(__parent__.basics.kind) === 'vm'
+  - subform: hardware
+    title: Hardware
+    when: $(__parent__.basics.kind) === 'bare-metal'
+```
+
+Only the page matching the chosen `kind` is shown. Steps after a hidden one are renumbered automatically.
+
+#### `optional: true` — allow skipping a visible step
+
+The step is **always shown** in the stepper, but the user can press **Next** without filling it in, and **Submit** is allowed even if the page was never visited or completed:
+
+```yaml
+wizard:
+  - subform: basics
+    title: Basics
+  - subform: advanced
+    title: Advanced (optional)
+    optional: true
+```
+
+The user can land on the Advanced page, fill nothing, hit Next, and proceed straight to the review page.
+
+{: .note }
+> `when:` is about *visibility*; `optional:` is about *whether the page is required to complete*. Don't combine them — if you want a page to disappear, use `when:`; if you want it visible-but-skippable, use `optional:`.
+
+### How do I reference values from an earlier wizard step?
+
+Use `$(__parent__.<stepname>.<field>)` inside any field of a later step.
+
+The `name` of a wizard step (defaults to its `subform` name) is the namespace under which its values are exposed to later steps:
+
+```yaml
+wizard:
+  - subform: basics            # step name defaults to "basics"
+    title: Basics
+  - subform: network
+    title: Network
+
+- name: basics
+  type: subform
+  fields:
+    - name: hostname
+      type: text
+      required: true
+
+- name: network
+  type: subform
+  fields:
+    - name: fqdn
+      type: text
+      # Re-evaluated when basics.hostname changes
+      default: $(__parent__.basics.hostname).local
+```
+
+This is the same `__parent__` mechanism used by `list` and `yaml` subforms — see [How do I access parent form data inside a subform?](#how-do-i-access-parent-form-data-inside-a-subform).
+
 ## Security & Credentials
 
 ### Credentials
