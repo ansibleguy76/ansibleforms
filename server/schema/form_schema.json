@@ -1952,24 +1952,9 @@
     "wizard": {
       "type": "array",
       "items": {
+        "$comment": "Each wizard step references a subform. The summary step is appended automatically by the UI and must not be declared in YAML.",
         "type": "object",
-        "oneOf": [
-          {
-            "$comment": "summary step",
-            "required": ["summary"],
-            "properties": {
-              "subform": { "not": {} },
-              "defaultModel": { "not": {} }
-            }
-          },
-          {
-            "$comment": "regular step",
-            "required": ["subform"],
-            "properties": {
-              "summary": { "not": {} }
-            }
-          }
-        ],
+        "required": ["subform"],
         "properties": {
           "subform": { "type": "string" },
           "name": { "type": "string" },
@@ -1979,8 +1964,7 @@
           "showHelp": { "type": "boolean" },
           "defaultModel": { "type": "string" },
           "when": { "type": "string" },
-          "optional": { "type": "boolean" },
-          "summary": { "type": "boolean" }
+          "optional": { "type": "boolean" }
         },
         "additionalProperties": false
       }
