@@ -111,3 +111,20 @@
 .form-floating > select:not(:focus)::placeholder {
   opacity: 0 !important;
 }
+// Vue Datepicker: align the input + popup background with Bootstrap's
+// form-control colors so it visually matches the surrounding text/select
+// inputs in both light, dark and color themes.
+:root .dp__theme_light,
+:root .dp__theme_dark {
+  --dp-background-color: var(--bs-body-bg);
+  --dp-text-color: var(--bs-body-color);
+  --dp-hover-color: var(--bs-secondary-bg);
+  --dp-hover-text-color: var(--bs-body-color);
+  --dp-primary-color: var(--bs-primary);
+  --dp-primary-text-color: #fff;
+  --dp-border-color: var(--bs-border-color);
+  --dp-border-color-hover: var(--bs-border-color);
+  --dp-menu-border-color: var(--bs-border-color);
+  --dp-icon-color: var(--bs-body-color);
+  --dp-disabled-color: var(--bs-secondary-bg);
+}

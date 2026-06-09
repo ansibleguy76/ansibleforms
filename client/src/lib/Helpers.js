@@ -259,6 +259,62 @@ const Helpers = {
     });
     return fd;
   },
+
+  // Build the output for a single wizard step. Same rules as buildFormOutput,
+  // but with `defaultModel` (a dotted prefix declared on the wizard step)
+  // applied as a wrapper around each field's `model` (or `name` when no
+  // explicit model is set).
+  //
+  //   - fields without a `model` -> wrapped under `<defaultModel>.<name>`
+  //   - fields with a relative `model` -> wrapped under `<defaultModel>.<model>`
+  //   - fields with an absolute `model` (leading "/") -> escape the prefix
+  //     and write at the wizard root (the leading slash is stripped)
+  //
+  // The original field definitions are not mutated; we shallow-clone each
+  // field to override `model` before delegating to buildFormOutput.
+  buildWizardStepOutput(fields, raw, defaultModel, opts = {}) {
+    const prefix = (typeof defaultModel === 'string' && defaultModel.trim())
+      ? defaultModel.trim().replace(/^\.+|\.+$/g, '')
+      : '';
+    const wrapped = (fields || []).map((item) => {
+      if (!item || !item.name) return item;
+      // honour absolute models with leading "/" -> root, strip the slash
+      const rawModel = item.model;
+      const apply = (m) => {
+        if (typeof m !== 'string') return m;
+        if (m.startsWith('/')) return m.slice(1);            // escape prefix
+        return prefix ? `${prefix}.${m}` : m;
+      };
+      let nextModel;
+      if (Array.isArray(rawModel)) {
+        nextModel = rawModel.map(apply);
+      } else if (typeof rawModel === 'string') {
+        nextModel = apply(rawModel);
+      } else {
+        // no model declared -> synthesise from field name
+        nextModel = prefix ? `${prefix}.${item.name}` : item.name;
+      }
+      return { ...item, model: nextModel };
+    });
+    return this.buildFormOutput(wrapped, raw, opts);
+  },
+
+  // Deep-merge `src` into `dst` (mutates dst, returns it). Plain objects
+  // recurse; arrays / scalars overwrite. Used by the wizard to combine
+  // per-step outputs into a single extravars object.
+  deepMerge(dst, src) {
+    if (src == null || typeof src !== 'object' || Array.isArray(src)) return src;
+    if (dst == null || typeof dst !== 'object' || Array.isArray(dst)) dst = {};
+    for (const [k, v] of Object.entries(src)) {
+      if (v && typeof v === 'object' && !Array.isArray(v)
+          && dst[k] && typeof dst[k] === 'object' && !Array.isArray(dst[k])) {
+        dst[k] = this.deepMerge(dst[k], v);
+      } else {
+        dst[k] = this.deepClone(v);
+      }
+    }
+    return dst;
+  },
   
   // Recursively strip internal fields from objects/arrays (for YAML downloads).
   // Removes __output__, __user__, __parent__ and any additional fields specified.

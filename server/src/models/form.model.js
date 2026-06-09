@@ -606,7 +606,21 @@ function collectSubformNames(fields, unvalidated, collected, visited){
 // rendered (the client will show a placeholder).
 function collectSubformsForForm(parentForm, unvalidated, errors){
   const names = new Set()
-  collectSubformNames(parentForm.fields, unvalidated, names, new Set())
+  const visited = new Set()
+  collectSubformNames(parentForm.fields, unvalidated, names, visited)
+  // wizard steps reference subforms by name too
+  if(Array.isArray(parentForm.wizard)){
+    for(const step of parentForm.wizard){
+      if(step?.subform && !visited.has(step.subform)){
+        visited.add(step.subform)
+        names.add(step.subform)
+        const sub = unvalidated.find(f => f.name === step.subform && f.type === "subform")
+        if(sub){
+          collectSubformNames(sub.fields, unvalidated, names, visited)
+        }
+      }
+    }
+  }
   const result = []
   for(const name of names){
     const raw = unvalidated.find(f => f.name === name && f.type === "subform")

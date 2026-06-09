@@ -2,8 +2,33 @@
   "type": "object",
   "required": [
     "name",
-    "type",
-    "fields"
+    "type"
+  ],
+  "allOf": [
+    {
+      "$comment": "non-subform forms must declare either 'fields' or 'wizard' (or both)",
+      "if": {
+        "properties": { "type": { "not": { "const": "subform" } } }
+      },
+      "then": {
+        "anyOf": [
+          { "required": ["fields"] },
+          { "required": ["wizard"] }
+        ]
+      }
+    },
+    {
+      "$comment": "subform forms must declare 'fields' and never 'wizard'",
+      "if": {
+        "properties": { "type": { "const": "subform" } }
+      },
+      "then": {
+        "required": ["fields"],
+        "properties": {
+          "wizard": { "not": {} }
+        }
+      }
+    }
   ],
   "oneOf": [{
       "properties": {
@@ -1920,6 +1945,42 @@
               "additionalProperties": false
             }
           }
+        },
+        "additionalProperties": false
+      }
+    },
+    "wizard": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "oneOf": [
+          {
+            "$comment": "summary step",
+            "required": ["summary"],
+            "properties": {
+              "subform": { "not": {} },
+              "defaultModel": { "not": {} }
+            }
+          },
+          {
+            "$comment": "regular step",
+            "required": ["subform"],
+            "properties": {
+              "summary": { "not": {} }
+            }
+          }
+        ],
+        "properties": {
+          "subform": { "type": "string" },
+          "name": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "help": { "type": "string" },
+          "showHelp": { "type": "boolean" },
+          "defaultModel": { "type": "string" },
+          "when": { "type": "string" },
+          "optional": { "type": "boolean" },
+          "summary": { "type": "boolean" }
         },
         "additionalProperties": false
       }

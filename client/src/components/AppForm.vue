@@ -94,10 +94,13 @@ const props = defineProps(
         // status bar and job-launching UI handled by the parent page.
         // 'subform' renders only the fields and validation, with Save/Cancel
         // buttons. Used by AppListField to edit a single row of a list.
+        // 'wizard' renders only the fields and validation, with no footer
+        // buttons (the wizard parent owns Back/Next/Skip/Submit). Use the
+        // exposed `validateForm()` method to gate navigation.
         mode: {
             type: String,
             default: "form",
-            validator: (v) => ["form", "subform"].includes(v)
+            validator: (v) => ["form", "subform", "wizard"].includes(v)
         },
         // Optional array of subform definitions (validated forms of type
         // "subform") provided by the server alongside a form. Propagated
@@ -2138,6 +2141,13 @@ onUnmounted(() => {
     window.removeEventListener('resize', calcContainerSize);
     clearInterval(interval.value);
 })
+
+// Exposed for the wizard parent: lets it gate Next/Submit on validation.
+// Returns true when the form is valid, false otherwise (and toasts a warning).
+defineExpose({
+    validateForm,
+    visibility,
+});
 </script>
 <template>
 
@@ -2555,6 +2565,8 @@ onUnmounted(() => {
                 @action="handleSubformAction"
             />
         </div>
+        <!-- Wizard mode renders no footer buttons; the wizard parent owns
+             Back/Next/Skip/Submit (gated by the exposed validateForm()). -->
     </div>
 
     <!-- LOADER & FORM NOT FOUND -->
