@@ -222,12 +222,15 @@ function openEditor({ row, index }) {
 }
 
 function defaultRow() {
-    const fresh = {};
-    for (const f of (props.subform?.fields || [])) {
-        if (f.default !== undefined) fresh[f.name] = f.default;
-        else if (f.type === 'list') fresh[f.name] = [];
-    }
-    return fresh;
+    // Return an empty row. AppForm applies field defaults itself via
+    // initiateDefaults() -> getDefaultValue(), which honours placeholder
+    // resolution and `evalDefault` (yielding an empty field when the
+    // expression's dependencies aren't ready, exactly like a top-level
+    // form). Pre-filling raw `f.default` here would make AppForm treat
+    // the value as user-supplied initialData and bypass that pipeline,
+    // causing literal expressions like `$(otherfield) + 1` to appear
+    // verbatim in the field instead of being evaluated (or left empty).
+    return {};
 }
 
 function applySave(value, index) {

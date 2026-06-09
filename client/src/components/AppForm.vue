@@ -757,6 +757,24 @@ function clipYaml(fieldName) {
     }
 }
 
+// Build the YAML preview for a `yaml`-typed field with a subform. The
+// raw value carries the real password values so they can be saved /
+// downloaded / copied verbatim, but the on-screen YAML masks any
+// password-typed subform fields. Returns "" when there is no value to
+// display (the template falls back to the placeholder).
+function yamlSubformPreview(field) {
+    const raw = form.value[field.name];
+    if (!raw || typeof raw !== 'object') return '';
+    const value = raw.__output__ ?? raw;
+    const resolvedSubform = field.subform
+        ? props.subforms.find(s => s.name === field.subform)
+        : null;
+    const masked = resolvedSubform?.fields
+        ? Helpers.maskPasswordsForDisplay(value, resolvedSubform.fields, props.subforms || [])
+        : value;
+    return YAML.stringify(masked);
+}
+
 // Create a list of fields per group
 function filterfieldsByGroup(group) {
     return props.currentForm.fields.filter((el) => {
@@ -1484,16 +1502,19 @@ function openYamlSubformEditor(field) {
     const resolvedSubform = props.subforms.find(s => s.name === field.subform);
     if (!resolvedSubform) return;
     const title = field.label || field.name;
-    // Build a starting draft from the current value or subform defaults.
+    // Build a starting draft from the current value, or an empty object so
+    // the embedded AppForm runs its own default-evaluation pipeline
+    // (initiateDefaults -> getDefaultValue), which honours placeholder
+    // resolution and `evalDefault`. Pre-filling raw `f.default` here would
+    // make the embedded form treat the value as user-supplied initialData
+    // and skip that pipeline, leaving expression strings like
+    // `$(otherfield) + 1` literally in the field.
     let row = form.value[field.name];
     if (!row || typeof row !== 'object' || Array.isArray(row)) {
         row = {};
-        for (const f of (resolvedSubform.fields || [])) {
-            if (f.default !== undefined) row[f.name] = f.default;
-            else if (f.type === 'list') row[f.name] = [];
-        }
     } else {
-        row = JSON.parse(JSON.stringify(row));
+        const { __output__: _omit, ...rest } = row;
+        row = JSON.parse(JSON.stringify(rest));
     }
     
     // Resolve placeholders in titleEdit so $(__parent__.fieldname) works
@@ -2447,7 +2468,7 @@ onUnmounted(() => {
                                         <div class="card p-3 yaml-readonly limit-height"
                                             :class="{ 'border-danger': v$.form[field.name].$invalid }">
                                             <pre v-if="v$.form[field.name].$model && typeof v$.form[field.name].$model === 'object'"
-                                                v-highlightjs><code language="yaml" style="border:none;padding:0">{{ YAML.stringify(v$.form[field.name].$model.__output__ ?? v$.form[field.name].$model) }}</code></pre>
+                                                v-highlightjs><code language="yaml" style="border:none;padding:0">{{ yamlSubformPreview(field) }}</code></pre>
                                             <span v-else class="text-muted fst-italic">{{ field.placeholder || '(empty)' }}</span>
                                         </div>
                                         <div v-if="v$.form[field.name].$invalid && getErrorsToDisplay(field.name).length > 0"

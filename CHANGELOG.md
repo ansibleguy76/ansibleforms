@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   Subforms in the designer (#449)
 -   a bunch of minor security fixes (injection, try/catch, etc...)
+-   evalDefault in subform (#451)
+-   mask pw in yaml field (#450)
 
 ## [6.2.0] - 2026-05-26
 

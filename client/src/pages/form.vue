@@ -190,7 +190,18 @@ function buildSubformOutput(entry) {
 const displayedOutput = computed(() =>
   activeEntry.value ? buildSubformOutput(activeEntry.value) : formdata.value
 );
-const displayedOutputYaml = computed(() => YAML.stringify(displayedOutput.value));
+const displayedOutputYaml = computed(() => {
+  // Mask password-typed fields for display only - the underlying formdata
+  // still carries the real values for submission / store / download.
+  const fields = activeEntry.value
+    ? activeEntry.value.subform?.fields
+    : currentForm.value?.fields;
+  const subforms = currentForm.value?.subforms || [];
+  const masked = Array.isArray(fields)
+    ? Helpers.maskPasswordsForDisplay(displayedOutput.value, fields, subforms)
+    : displayedOutput.value;
+  return YAML.stringify(masked);
+});
 const displayedOutputTitle = computed(() =>
   activeEntry.value ? `${t('form.subformOutput')} - ${activeEntry.value.title}` : t('form.extraVars')
 );

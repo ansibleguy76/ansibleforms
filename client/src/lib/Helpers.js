@@ -279,6 +279,88 @@ const Helpers = {
     }
     return obj;
   },
+
+  // Return a deep clone of `data` with values for password-typed fields
+  // replaced by a fixed bullet mask. Intended ONLY for display (read-only
+  // YAML previews, the extravars panel). The original object is never
+  // mutated, so anything sent on submit / copied / downloaded keeps the
+  // real value.
+  //
+  //   data     : an output-shaped object/array (typically the result of
+  //              buildFormOutput, or a saved __output__ blob)
+  //   fields   : field definitions whose `model` (or `name`) describes
+  //              where each value lives in `data`
+  //   subforms : optional subform list, used to recurse through `list`
+  //              rows and `yaml`-with-subform fields
+  maskPasswordsForDisplay(data, fields, subforms = []) {
+    if (data == null || !Array.isArray(fields)) return data;
+    const cloned = this.deepClone(data);
+    if (cloned == null) return data;
+    const subformByName = Object.fromEntries((subforms || []).map(s => [s.name, s]));
+    const MASK = '••••••••';
+
+    const setAtPath = (target, path, value) => {
+      if (!target || typeof target !== 'object') return;
+      const parts = String(path).split('.');
+      let cur = target;
+      for (let i = 0; i < parts.length - 1; i++) {
+        if (cur == null || typeof cur !== 'object') return;
+        cur = cur[parts[i]];
+      }
+      if (cur && typeof cur === 'object') {
+        const last = parts[parts.length - 1];
+        if (last in cur && cur[last] != null && cur[last] !== '') {
+          cur[last] = value;
+        }
+      }
+    };
+
+    const getAtPath = (target, path) => {
+      if (!target || typeof target !== 'object') return undefined;
+      const parts = String(path).split('.');
+      let cur = target;
+      for (const p of parts) {
+        if (cur == null || typeof cur !== 'object') return undefined;
+        cur = cur[p];
+      }
+      return cur;
+    };
+
+    const walk = (target, fieldDefs) => {
+      if (!target || typeof target !== 'object' || !Array.isArray(fieldDefs)) return;
+      for (const f of fieldDefs) {
+        if (!f || !f.name) continue;
+        if (f.noOutput || f.output === false) continue;
+        const paths = [].concat(f.model || f.name);
+        if (f.type === 'password') {
+          for (const p of paths) setAtPath(target, p, MASK);
+        } else if (f.type === 'list') {
+          const sub = (typeof f.subform === 'string') ? subformByName[f.subform] : f.subform;
+          if (sub && Array.isArray(sub.fields)) {
+            for (const p of paths) {
+              const arr = getAtPath(target, p);
+              if (Array.isArray(arr)) {
+                for (const row of arr) {
+                  if (row && typeof row === 'object') walk(row, sub.fields);
+                }
+              }
+            }
+          }
+        } else if (f.type === 'yaml' && f.subform) {
+          const sub = (typeof f.subform === 'string') ? subformByName[f.subform] : f.subform;
+          if (sub && Array.isArray(sub.fields)) {
+            for (const p of paths) {
+              const obj = getAtPath(target, p);
+              if (obj && typeof obj === 'object' && !Array.isArray(obj)) walk(obj, sub.fields);
+            }
+          }
+        }
+      }
+    };
+
+    walk(cloned, fields);
+    return cloned;
+  },
   
   // Resolve placeholders in title strings (titleAdd, titleEdit) with __parent__ context.
   // Used by subform editors to show dynamic titles based on parent form data.
