@@ -43,7 +43,18 @@ They are **not exclusive** — a `type: multistep` form can also have a `wizard:
 
 | Attribute | Comments |
 |-----------|----------|
-| **{{ wizard_prop.name }}**<br><span class="af-type">{{ wizard_prop.type }}</span><br>{% if wizard_prop.version %}<span class="af-version">added in version {{wizard_prop.version}}</span>{% endif %} | **{{ wizard_prop.short }}**<br>{{ wizard_prop.description | markdownify }}{% if wizard_prop.examples %}<p><strong>Examples:</strong></p>{% for e in wizard_prop.examples %}<p><strong>{{ forloop.index }}) {{ e.name }}</strong></p>{% highlight yaml %}{{ e.code }}{% endhighlight %}{% endfor %}{% endif %} |
+| **{{ wizard_prop.name }}**<br><span class="af-type">{{ wizard_prop.type }}</span>{% if wizard_prop.version %}<br><span class="af-version">added in version {{wizard_prop.version}}</span>{% endif %} | **{{ wizard_prop.short }}**<br>{{ wizard_prop.description | markdownify }} |
+
+{% if wizard_prop.examples %}
+**Examples:**
+{% for e in wizard_prop.examples %}
+
+*{{ forloop.index }}) {{ e.name }}*
+{% highlight yaml %}
+{{ e.code }}
+{% endhighlight %}
+{% endfor %}
+{% endif %}
 
 ## Wizard step properties
 
@@ -162,7 +173,7 @@ They are **not exclusive** — a `type: multistep` form can also have a `wizard:
 
 ## Combining a wizard with multistep
 
-Wizard and multistep operate on different layers, so they compose:
+Wizard and multistep operate on different layers, so they compose. A common pattern is to **map one wizard page to one multistep step** by pairing the wizard step's `defaultModel` with the multistep step's `key` — both use the same name, so the multistep step receives only the values collected on its matching wizard page:
 
 ```yaml
 - name: Provision and verify host
@@ -170,16 +181,19 @@ Wizard and multistep operate on different layers, so they compose:
   wizard:
     - subform: basics
       title: Basics
+      defaultModel: basics            # wraps basics fields under `basics`
     - subform: network
       title: Network
-      defaultModel: net
+      defaultModel: network           # wraps network fields under `network`
   steps:
     - name: Create host
       type: ansible
       playbook: create_host.yml
-    - name: Verify host
+      key: basics                     # receives only the `basics` page payload
+    - name: Configure network
       type: ansible
-      playbook: verify_host.yml
+      playbook: configure_network.yml
+      key: network                    # receives only the `network` page payload
 
 - name: basics
   type: subform
@@ -195,7 +209,21 @@ Wizard and multistep operate on different layers, so they compose:
       type: text
 ```
 
-The user fills the wizard pages (`basics`, `network`, then the auto-generated review). On submit, the merged extravars are passed to the multistep execution which then runs `create_host.yml` followed by `verify_host.yml`.
+The user fills the wizard pages (`basics`, `network`, then the auto-generated review). On submit, the merged extravars look like this:
+
+```yaml
+basics:
+  hostname: web01
+network:
+  ipv4: 10.0.0.1
+```
+
+The multistep then runs `create_host.yml` (which sees `{hostname: web01}` because of `key: basics`), followed by `configure_network.yml` (which sees `{ipv4: 10.0.0.1}` because of `key: network`).
+
+{: .note }
+> `key` is a single-level lookup (`extravars[key]`), not a dotted path. Use a flat name in `defaultModel` (e.g. `defaultModel: basics`, not `defaultModel: input.basics`) when you want it to match a multistep `key`.
+
+You can of course also leave `defaultModel` and `key` off — every step then receives the full merged extravars, just like a regular form.
 
 ## See also
 

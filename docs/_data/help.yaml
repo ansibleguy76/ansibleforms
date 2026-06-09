@@ -1719,6 +1719,26 @@
                 title: Advanced
                 optional: true
                 when: $(__parent__.basics.kind) === 'vm'
+        - name: Wizard mapped one-to-one onto multistep (defaultModel + key)
+          code: |
+            name: Provision and verify host
+            type: multistep
+            wizard:
+              - subform: basics
+                title: Basics
+                defaultModel: basics      # wraps fields under `basics`
+              - subform: network
+                title: Network
+                defaultModel: network     # wraps fields under `network`
+            steps:
+              - name: Create host
+                type: ansible
+                playbook: create_host.yml
+                key: basics                # receives only the basics payload
+              - name: Configure network
+                type: ansible
+                playbook: configure_network.yml
+                key: network                # receives only the network payload
       - name: inventory
         type: string
         with_types: ansible, awx

@@ -554,7 +554,7 @@ A read-only review page is appended automatically as the last wizard page — yo
 
 #### Combined (wizard on top of multistep)
 
-A wizard can be layered on top of a multistep form. The user fills the wizard pages, presses Submit, and **then** the multistep execution kicks off:
+A wizard can be layered on top of a multistep form. The user fills the wizard pages, presses Submit, and **then** the multistep execution kicks off. By matching a wizard step's `defaultModel` with a multistep step's [`key`](forms/multistep.html#step_key), you can route **one wizard page to one multistep step**:
 
 ```yaml
 - name: Provision and verify host
@@ -562,17 +562,22 @@ A wizard can be layered on top of a multistep form. The user fills the wizard pa
   wizard:
     - subform: basics
       title: Basics
+      defaultModel: basics            # wraps basics fields under `basics`
     - subform: network
       title: Network
-      defaultModel: net
+      defaultModel: network           # wraps network fields under `network`
   steps:
     - name: Create host
       type: ansible
       playbook: create_host.yml
-    - name: Verify host
+      key: basics                     # only sees the basics page payload
+    - name: Configure network
       type: ansible
-      playbook: verify_host.yml
+      playbook: configure_network.yml
+      key: network                    # only sees the network page payload
 ```
+
+`key` is a single-level lookup, so use a flat name in `defaultModel` (e.g. `defaultModel: basics`, not `defaultModel: input.basics`) when you want them to match.
 
 See the [Wizard page](forms/wizard.html) for the full property reference.
 
