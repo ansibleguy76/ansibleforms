@@ -1,4 +1,9 @@
 export default {
+  workflow: {
+    onSuccess: "bij succes",
+    onFailure: "bij fout",
+    always: "altijd",
+  },
   nav: {
     forms: "Formulieren",
     jobs: "Taken",

@@ -523,11 +523,11 @@ Job.findById = async function (user, id, asText, logSafe = false) {
   
   if (user.roles.includes("admin") || user.options?.showAllJobLogs) {
     query =
-      "SELECT j.id,j.form,j.target,j.status,CONVERT_TZ(j.start, 'UTC', ?) AS start,CONVERT_TZ(j.end, 'UTC', ?) AS end,j.user,j.user_type,j.job_type,j.extravars,j.credentials,j.notifications,j.approval,j.step,j.parent_id,j.awx_id,j.awx_artifacts,j.abort_requested,j.raw_form_data,sj.subjobs,j2.no_of_records,o.counter FROM AnsibleForms.jobs j LEFT JOIN (SELECT parent_id,GROUP_CONCAT(id separator ',') subjobs FROM AnsibleForms.jobs GROUP BY parent_id) sj ON sj.parent_id=j.id,(SELECT COUNT(id) no_of_records FROM AnsibleForms.jobs)j2,(SELECT max(`order`)+1 counter FROM AnsibleForms.job_output WHERE job_output.job_id=?)o WHERE j.id=?;";
+      "SELECT j.id,j.form,j.target,j.status,CONVERT_TZ(j.start, 'UTC', ?) AS start,CONVERT_TZ(j.end, 'UTC', ?) AS end,j.user,j.user_type,j.job_type,j.extravars,j.credentials,j.notifications,j.approval,j.step,j.parent_id,j.awx_id,j.awx_artifacts,j.awx_workflow,j.abort_requested,j.raw_form_data,sj.subjobs,j2.no_of_records,o.counter FROM AnsibleForms.jobs j LEFT JOIN (SELECT parent_id,GROUP_CONCAT(id separator ',') subjobs FROM AnsibleForms.jobs GROUP BY parent_id) sj ON sj.parent_id=j.id,(SELECT COUNT(id) no_of_records FROM AnsibleForms.jobs)j2,(SELECT max(`order`)+1 counter FROM AnsibleForms.job_output WHERE job_output.job_id=?)o WHERE j.id=?;";
     params = [safeTimezone, safeTimezone, id, id];
   } else {
     query =
-      "SELECT j.id,j.form,j.target,j.status,CONVERT_TZ(j.start, 'UTC', ?) AS start,CONVERT_TZ(j.end, 'UTC', ?) AS end,j.user,j.user_type,j.job_type,j.extravars,j.credentials,j.notifications,j.approval,j.step,j.parent_id,j.awx_id,j.awx_artifacts,j.abort_requested,j.raw_form_data,sj.subjobs,j2.no_of_records,o.counter FROM AnsibleForms.jobs j LEFT JOIN (SELECT parent_id,GROUP_CONCAT(id separator ',') subjobs FROM AnsibleForms.jobs GROUP BY parent_id) sj ON sj.parent_id=j.id,(SELECT COUNT(id) no_of_records FROM AnsibleForms.jobs WHERE user=? AND user_type=?)j2,(SELECT max(`order`)+1 counter FROM AnsibleForms.job_output WHERE job_output.job_id=?)o WHERE j.id=? AND ((j.user=? AND j.user_type=?) OR (j.status='approve'));";
+      "SELECT j.id,j.form,j.target,j.status,CONVERT_TZ(j.start, 'UTC', ?) AS start,CONVERT_TZ(j.end, 'UTC', ?) AS end,j.user,j.user_type,j.job_type,j.extravars,j.credentials,j.notifications,j.approval,j.step,j.parent_id,j.awx_id,j.awx_artifacts,j.awx_workflow,j.abort_requested,j.raw_form_data,sj.subjobs,j2.no_of_records,o.counter FROM AnsibleForms.jobs j LEFT JOIN (SELECT parent_id,GROUP_CONCAT(id separator ',') subjobs FROM AnsibleForms.jobs GROUP BY parent_id) sj ON sj.parent_id=j.id,(SELECT COUNT(id) no_of_records FROM AnsibleForms.jobs WHERE user=? AND user_type=?)j2,(SELECT max(`order`)+1 counter FROM AnsibleForms.job_output WHERE job_output.job_id=?)o WHERE j.id=? AND ((j.user=? AND j.user_type=?) OR (j.status='approve'));";
     params = [safeTimezone, safeTimezone, user.username, user.type, id, id, user.username, user.type];
   }
   try {
@@ -539,6 +539,8 @@ Job.findById = async function (user, id, asText, logSafe = false) {
     var job = res[0];
     // convert artifacts
     job.awx_artifacts = safeParse(job.awx_artifacts, {}, `job.awx_artifacts id=${id}`);
+    // convert awx workflow info (null when not a workflow job)
+    job.awx_workflow = safeParse(job.awx_workflow, null, `job.awx_workflow id=${id}`);
     // mask passwords
     if (logSafe) job.extravars = Helpers.logSafe(job.extravars);
     // get output summary
@@ -1801,16 +1803,18 @@ Ansible.launch = async (
 
 // awx stuff, interaction with awx
 var Awx = function () {};
-Awx.abortJob = async function (awxName, id) {
+Awx.abortJob = async function (awxName, id, isWorkflow = false) {
   const awxConfig = awxName
     ? await AwxModel.findByName(awxName)
     : await AwxModel.findByProperty("is_default", 1);
   if (!awxConfig) throw new Errors.ApiError("Failed to get AWX configuration");
-  logger.info(`aborting awx job ${id}`);
+  logger.info(`aborting awx ${isWorkflow ? "workflow " : ""}job ${id}`);
   const axiosConfig = AwxModel.getAuthorization(awxConfig);
+  // workflow jobs have their own cancel endpoint
+  const jobsPath = isWorkflow ? "/workflow_jobs/" : "/jobs/";
   try {
     const axiosResult = await axios.post(
-      awxConfig.uri + appConfig.awxApiPrefix + "/jobs/" + id + "/cancel/",
+      awxConfig.uri + appConfig.awxApiPrefix + jobsPath + id + "/cancel/",
       {},
       axiosConfig
     );
@@ -2116,6 +2120,10 @@ Awx.trackJob = async function (
   lastrun = false,
   retryCount = 0
 ) {
+  // workflow jobs have no stdout of their own, we track them node by node
+  if (job.type === "workflow_job" || job.related?.workflow_nodes) {
+    return Awx.trackWorkflowJob(awxName, job, jobid, counter);
+  }
   const awxConfig = awxName
     ? await AwxModel.findByName(awxName)
     : await AwxModel.findByProperty("is_default", 1);
@@ -2306,6 +2314,207 @@ Awx.trackJob = async function (
   } catch (e) {
     logger.error("Failed to track job : ", e);
     return e.message;
+  }
+};
+// format a workflow (node) status line ; Helpers.formatOutput() colors these by status
+function workflowStatusLine(prefix, name, status, banner = false) {
+  var line = `${prefix} [${name}] (${status})`;
+  if (banner) line += " " + "*".repeat(Math.max(5, 79 - line.length));
+  return line;
+}
+// get the nodes of an awx workflow job, simplified to what we need for output and visualization
+Awx.getWorkflowNodes = async function (awxName, job) {
+  const awxConfig = awxName
+    ? await AwxModel.findByName(awxName)
+    : await AwxModel.findByProperty("is_default", 1);
+  if (!awxConfig) throw new Errors.ApiError("Failed to get AWX configuration");
+  if (!job.related?.workflow_nodes) return [];
+  const axiosConfig = AwxModel.getAuthorization(awxConfig);
+  var results = [];
+  var url = job.related.workflow_nodes;
+  // the node list is paginated, follow the next links
+  while (url) {
+    const axiosResult = await axios.get(awxConfig.uri + url, axiosConfig);
+    results = results.concat(axiosResult.data?.results || []);
+    url = axiosResult.data?.next;
+  }
+  return results.map((n) => ({
+    id: n.id,
+    name:
+      n.summary_fields?.job?.name ||
+      n.summary_fields?.unified_job_template?.name ||
+      `node ${n.id}`,
+    type:
+      n.summary_fields?.job?.type ||
+      n.summary_fields?.unified_job_template?.unified_job_type ||
+      "job",
+    status:
+      n.summary_fields?.job?.status || (n.do_not_run ? "skipped" : "pending"),
+    elapsed: n.summary_fields?.job?.elapsed || 0,
+    job: n.job,
+    job_url: n.related?.job,
+    success_nodes: n.success_nodes || [],
+    failure_nodes: n.failure_nodes || [],
+    always_nodes: n.always_nodes || [],
+    do_not_run: n.do_not_run || false,
+  }));
+};
+// track an awx workflow job ; poll the workflow nodes, dump the output of every
+// finished node and store the workflow graph as json for visualization
+Awx.trackWorkflowJob = async function (
+  awxName,
+  job,
+  jobid,
+  counter,
+  printedNodeIds = [],
+  previousWorkflowJson = "",
+  retryCount = 0
+) {
+  const awxConfig = awxName
+    ? await AwxModel.findByName(awxName)
+    : await AwxModel.findByProperty("is_default", 1);
+  if (!awxConfig) throw new Error("Failed to get AWX configuration");
+  const axiosConfig = AwxModel.getAuthorization(awxConfig);
+  try {
+    // get workflow job info
+    const axiosResult = await axios.get(awxConfig.uri + job.url, axiosConfig);
+    var j = axiosResult.data;
+    if (!j) throw new Error(`could not find workflow job with id ${job.id}`);
+    logger.debug(`awx workflow job status : ` + j.status);
+    // get the workflow nodes
+    const nodes = await Awx.getWorkflowNodes(awxName, j);
+    // store the workflow graph json, the client uses this to visualize the workflow
+    const workflowJson = JSON.stringify({
+      id: j.id,
+      name: j.name,
+      status: j.status,
+      nodes,
+    });
+    if (workflowJson != previousWorkflowJson) {
+      await Job.update({ awx_workflow: workflowJson }, jobid);
+    }
+    // dump the output of the nodes that just finished (in completion order)
+    const finishedStatuses = ["successful", "failed", "error", "canceled"];
+    const finishedNodes = nodes.filter(
+      (n) =>
+        n.job &&
+        finishedStatuses.includes(n.status) &&
+        !printedNodeIds.includes(n.id)
+    );
+    for (const node of finishedNodes) {
+      var nodeOutput = "";
+      try {
+        // get the child job (job, project_update, workflow_approval, ...) and grab its output
+        const childResult = await axios.get(
+          awxConfig.uri + node.job_url,
+          axiosConfig
+        );
+        nodeOutput =
+          (await Awx.getJobTextOutput(awxName, childResult.data)) || "";
+      } catch (e) {
+        logger.warning(
+          `Failed to get output of workflow node ${node.name} : ${e.message}`
+        );
+      }
+      const banner = workflowStatusLine(
+        "WORKFLOW NODE",
+        node.name,
+        node.status,
+        true
+      );
+      await Job.printJobOutput(
+        `${banner}\n${nodeOutput}`.trim(),
+        "stdout",
+        jobid,
+        ++counter
+      );
+      printedNodeIds.push(node.id);
+    }
+    // check for abort request
+    const abort_requested = await Job.isAbortRequested(jobid);
+    if (abort_requested) {
+      await Job.printJobOutput("Abort requested", "stderr", jobid, ++counter);
+      try {
+        // we try to abort the workflow job
+        await Awx.abortJob(awxName, j.id, true);
+        await Job.resetAbortRequested(jobid);
+        await Job.endJobStatus(
+          jobid,
+          ++counter,
+          "stderr",
+          "aborted",
+          "Aborted workflow job"
+        );
+        return "Aborted workflow job";
+      } catch (error) {
+        // abort failed... , revert abort request
+        await Job.printJobOutput(
+          "Abort request denied, reverting abort request",
+          "stderr",
+          jobid,
+          ++counter
+        );
+        await Job.resetAbortRequested(jobid);
+      }
+    }
+    if (j.finished) {
+      // print a summary of all the nodes with their status
+      var summary = [workflowStatusLine("WORKFLOW", j.name, j.status, true)];
+      nodes.forEach((node) => {
+        summary.push(workflowStatusLine("WORKFLOW NODE", node.name, node.status));
+      });
+      await Job.printJobOutput(summary.join("\n"), "stdout", jobid, ++counter);
+      if (j.status === "successful") {
+        await Job.endJobStatus(
+          jobid,
+          ++counter,
+          "stdout",
+          "success",
+          `Successfully completed workflow ${j.name}`
+        );
+        return true;
+      } else {
+        // if error, end with status (aborted or failed)
+        var status = "failed";
+        var message = `Workflow ${j.name} completed with status ${j.status}`;
+        if (j.status == "canceled") {
+          status = "aborted";
+          message = `Workflow ${j.name} was aborted`;
+          await Job.resetAbortRequested(jobid);
+        }
+        await Job.endJobStatus(jobid, ++counter, "stderr", status, message);
+        return message;
+      }
+    }
+    // not finished, try again
+    await delay(1000);
+    return await Awx.trackWorkflowJob(
+      awxName,
+      j,
+      jobid,
+      ++counter,
+      printedNodeIds,
+      workflowJson
+    );
+  } catch (err) {
+    const message = err.toString();
+    logger.error(message);
+    retryCount++;
+    if (retryCount == 10) {
+      return Promise.resolve(message);
+    } else {
+      logger.warning(`Retrying jobid ${jobid} [${retryCount}]`);
+      await delay(1000);
+      return await Awx.trackWorkflowJob(
+        awxName,
+        job,
+        jobid,
+        counter,
+        printedNodeIds,
+        previousWorkflowJson,
+        retryCount
+      );
+    }
   }
 };
 Awx.getJobTextOutput = async function (awxName, job) {
@@ -2535,3 +2744,5 @@ Awx.findInventoryByName = async function (awxName, name) {
 };
 
 export default Job;
+// named export of the awx interaction functions (mainly for testing)
+export { Awx };

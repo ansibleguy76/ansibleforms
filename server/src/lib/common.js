@@ -188,7 +188,16 @@ Helpers.formatOutput = (records,asText)=>{
           line = "<span class='has-text-danger'>"+line+"</span>"
         }
       }else{ // regular output stream
-        if(line.match(/^\[WARNING\].*/g)){ // warnings
+        if(line.match(/^WORKFLOW( NODE)? \[.*\] \([a-z_ ]+\).*$/)){ // awx workflow (node) status lines
+          previousformat=""
+          matchfound=true
+          var statusclass=""
+          if(line.match(/\(successful\)/)) statusclass=" has-text-success"
+          else if(line.match(/\((failed|error)\)/)) statusclass=" has-text-danger"
+          else if(line.match(/\(canceled\)/)) statusclass=" has-text-warning"
+          else if(line.match(/\((skipped|pending|waiting)\)/)) statusclass=" has-text-info"
+          line = `<span class='has-text-weight-bold${statusclass}'>`+line+"</span>"
+        }else if(line.match(/^\[WARNING\].*/g)){ // warnings
           previousformat="warning"
           matchfound=true
           line = "<span class='has-text-warning'>"+line+"</span>"

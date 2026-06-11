@@ -1909,6 +1909,12 @@ onBeforeUnmount(() => {
           <template #default>{{ t('form.applyFilter') }}</template>
           <template #toggle>{{ t('form.removeFilter') }}</template>
         </BsButton>
+        <!-- awx workflow graph (only for awx workflow jobs) -->
+        <div class="row" v-if="job.awx_workflow?.nodes?.length">
+          <div class="col">
+            <AppAwxWorkflow :workflow="job.awx_workflow" />
+          </div>
+        </div>
         <div class="row">
           <div class="col">
             <AppAnsibleOutput :output="filteredJobOutput" :jobLog="job.job_log">
