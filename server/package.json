@@ -15,7 +15,8 @@
     "dev": "NODE_ENV=development nodemon --watch src --watch schema --watch config ./index.js",
     "prod": "NODE_ENV=production npm-run-all build server",
     "copyviews": "mkdir -p ./dist/views && cp -R ../client/dist/* ./dist/views/",
-    "clean": "rimraf dist"
+    "clean": "rimraf dist",
+    "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
     "@outlinewiki/passport-azure-ad-oauth2": "~0.1.0",

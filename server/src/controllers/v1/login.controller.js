@@ -6,6 +6,7 @@ import Token from "../../models/token.model.js";
 import passport from 'passport';
 import jwt from 'jsonwebtoken';
 import authConfig from '../../../config/auth.config.js';
+import appConfig from '../../../config/app.config.js';
 import logger from "../../lib/logger.js";
 import helpers from '../../lib/common.js';
 import RestResult from "../../models/restResult.model.js";
@@ -199,7 +200,7 @@ const logout = async function(req, res, next){
 
 // catches middleware error (non implemented strategy for example)
 const errorHandler = async function(err,req, res,next) {
-  res.redirect(`/login?error=${err}`)
+  res.redirect(`${appConfig.baseUrl}/login?error=${err}`)
 };
 
 /**
@@ -236,7 +237,7 @@ const authCallback = function(req, res, next, type) {
         logger.error(helpers.getError(err))
         return next(err)
       }else{
-        res.redirect(`/login?token=${token}`)
+        res.redirect(`${appConfig.baseUrl}/login?token=${token}`)
       }
 
     } catch (err) {

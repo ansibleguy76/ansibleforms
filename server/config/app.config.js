@@ -2,12 +2,17 @@ import path from "path";
 import os from "os";
 import { fileURLToPath } from "url";
 import { existsSync } from "fs";
+import { normalizeBaseUrl } from "../src/lib/baseurl.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 var app_config = {
   port: process.env.PORT || 8000,
+  // host the app under a url subpath, for example behind a reverse proxy (issue #106)
+  // BASE_URL=/ansibleforms => app is served under https://host/ansibleforms/
+  // normalized to "" for root hosting, or "/subpath" (leading slash, no trailing slash)
+  baseUrl: normalizeBaseUrl(process.env.BASE_URL),
   nodeEnvironment: process.env.NODE_ENV || "production",
   showDesigner: (process.env.SHOW_DESIGNER ?? 1) == 1,
   allowSchemaCreation: (process.env.ALLOW_SCHEMA_CREATION ?? 1) == 1,

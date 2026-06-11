@@ -26,16 +26,16 @@ const errorMessageHtml = computed(() =>
                             <li>Login as local admin</li>
                             <li>
                                 Double check your environment variables.
-                                <a class="btn btn-sm btn-secondary ms-2" href="/admin/settings">Settings</a>
+                                <router-link class="btn btn-sm btn-secondary ms-2" to="/admin/settings">Settings</router-link>
                             </li>
                             <li>
                                 Check the logfiles.
-                                <a class="btn btn-sm btn-secondary ms-2" href="/logs">Logs</a>
+                                <router-link class="btn btn-sm btn-secondary ms-2" to="/logs">Logs</router-link>
                             </li>
                             <li>
                                 Make sure you have a valid config.yaml file (or legacy forms.yaml).<br>
                                 Or make a repository to host your forms.
-                                <a class="btn btn-sm btn-success ms-2" href="/admin/repositories">Create repository</a>
+                                <router-link class="btn btn-sm btn-success ms-2" to="/admin/repositories">Create repository</router-link>
                             </li>
                             <li>Double check firewalls, hostname, username and password</li>
                         </ol>

@@ -3,7 +3,9 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" href="/favicon.svg" />
+  <!-- the server rewrites this base tag at runtime when BASE_URL is set (subpath hosting) -->
+  <base href="/" />
+  <link rel="icon" href="favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ansible Forms</title>
   <style>
@@ -13,7 +15,19 @@
       height: 100vh;
     }
   </style>
-  <link rel="stylesheet" href="/css/themes.css" />
+  <script>
+    // resolve the public login background images against the base tag, so they
+    // follow the subpath the app is hosted under (relative urls in css custom
+    // properties are unreliable across browsers, so we make them absolute here)
+    (function () {
+      var style = document.documentElement.style;
+      ['light', 'dark', 'color'].forEach(function (theme) {
+        style.setProperty('--af-login-background-' + theme,
+          'url(' + new URL('img/login_background_' + theme + '.jpg', document.baseURI) + ')');
+      });
+    })();
+  </script>
+  <link rel="stylesheet" href="css/themes.css" />
 </head>
 
 <body>

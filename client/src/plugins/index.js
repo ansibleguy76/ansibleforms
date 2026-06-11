@@ -4,6 +4,12 @@
  * Automatically included in `./src/main.js`
  */
 
+// the app can be hosted under a subpath (issue #106), all api calls
+// must be prefixed with the runtime base path (empty for root hosting)
+import axios from 'axios'
+import BaseUrl from '@/lib/BaseUrl'
+axios.defaults.baseURL = BaseUrl
+
 // Plugins
 // import vuetify from './vuetify'
 import pinia from '@/stores'

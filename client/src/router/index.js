@@ -2,6 +2,7 @@
 
 // Composables
 import { createRouter, createWebHistory } from 'vue-router'
+import BaseUrl from '@/lib/BaseUrl'
 
 import designer from "@/pages/designer.vue"
 import index from "@/pages/index.vue"
@@ -122,7 +123,7 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(`${BaseUrl}/`), // honor the subpath the app is hosted under
   routes
 })
 

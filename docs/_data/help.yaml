@@ -109,6 +109,16 @@
     short: Http port
     description: The listening port of the web application
     default: 8000
+  - name: BASE_URL
+    type: string
+    allowed: a url subpath, for example /ansibleforms
+    short: Url subpath to host the application under
+    required: false
+    default: /
+    description: |
+      Host the whole application (gui, rest api and swagger interface) under a url subpath, typically behind a reverse proxy.
+      For example with `BASE_URL=/ansibleforms`, the application is served under `https://host/ansibleforms/`.
+      Note : when using an OAuth2 identity provider (Entra ID / OIDC), make sure the instance url in the provider settings includes the subpath, so the generated redirect uri matches.
   - name: DEFAULT_LANGUAGE
     type: string
     allowed: en, nl, fr, it, de, es
