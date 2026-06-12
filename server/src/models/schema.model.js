@@ -479,6 +479,11 @@ async function patchVersion6(messages, success, failed) {
   // This stores the awx workflow nodes (name, status, relations) as json,
   // so the client can visualize the workflow graph of an awx workflow job
   await checkPromise(addColumn("jobs", "awx_workflow", "longtext", true, "NULL"), messages, success, failed);
+
+  // Add logo column to the settings table (6.3.0)
+  // This stores an optional custom logo as a base64 data url, shown in the
+  // navbar instead of the default AnsibleForms logo (admin panel > logo)
+  await checkPromise(addColumn("settings", "logo", "longtext", true, "NULL"), messages, success, failed);
 }
 
 // PATCHING : Patch All

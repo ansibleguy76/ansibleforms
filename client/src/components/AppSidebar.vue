@@ -13,6 +13,7 @@
 
     const items = computed(() => [
         { title: t('sidebar.ansibleForms'), icon: "fac,ansibleforms", link: "/admin/settings" },
+        { title: t('sidebar.logo'), icon: "image", link: "/admin/logo"},
         { title: t('sidebar.backups'), icon: "database", link: "/admin/backups" },
         { title: t('sidebar.mail'), icon: "envelope", link: "/admin/mailSettings"},
         { title: "divider" },

@@ -8,6 +8,8 @@ export const useAppStore = defineStore('app', () => {
   const authenticated = ref(false)
   const isAdmin = ref(false)
   const version = ref('')
+  const customLogo = ref(null) // logo data url shown in the navbar
+  const logoIsDefault = ref(true) // true while the seeded default logo is active
   const serverBuild = ref(null)
   const clientBuild = ref(null)
   const approvals = ref(0)
@@ -20,6 +22,6 @@ export const useAppStore = defineStore('app', () => {
   //   count.value++
   // }
 
-  return { theme, profile, authenticated, isAdmin, version, serverBuild, clientBuild, approvals, errorMessage, schemaData }
+  return { theme, profile, authenticated, isAdmin, version, customLogo, logoIsDefault, serverBuild, clientBuild, approvals, errorMessage, schemaData }
 })
 
