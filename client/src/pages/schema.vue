@@ -37,7 +37,7 @@ async function create() {
     const createResult = await axios.post(`/api/v2/schema`, {})
     toast.success(createResult.data.message)
     // Full page reload to reinitialize app with new database
-    window.location.href = '/'
+    window.location.href = document.baseURI
   } catch (error) {
     toast.error(error.message)
     loading.value = false
@@ -50,7 +50,7 @@ function startCountdown() {
     countdown.value--
     if (countdown.value <= 0) {
       clearInterval(countdownInterval)
-      window.location.href = '/'
+      window.location.href = document.baseURI
     }
   }, 1000)
 }

@@ -3,6 +3,7 @@ import { ref, onMounted } from "vue";
 import { useVuelidate } from "@vuelidate/core";
 import { required } from "@vuelidate/validators";
 import TokenStorage from "@/lib/TokenStorage"; // work with tokens and local storage
+import BaseUrl from '@/lib/BaseUrl';
 import State from "@/lib/State"; // work with state
 import Navigate from "@/lib/Navigate"; // navigate to routes
 import Helpers from "@/lib/Helpers"; // helper functions
@@ -50,11 +51,11 @@ const $v = useVuelidate(rules, { user });
 // methods
 function authAzureAd() {
    localStorage.setItem("authIssuer", "azuread");  // set cookie to azuread
-   window.location.replace(`/api/v2/auth/azureadoauth2`) // redirect to azuread
+   window.location.replace(`${BaseUrl}/api/v2/auth/azureadoauth2`) // redirect to azuread
 }
 function authOidc() {
    localStorage.setItem("authIssuer", "oidc");   // set cookie to oidc
-   window.location.replace(`/api/v2/auth/oidc`) // redirect to oidc
+   window.location.replace(`${BaseUrl}/api/v2/auth/oidc`) // redirect to oidc
 }
 function getGroupsAndLogin(token, url = `${azureGraphUrl.value}/v1.0/me/transitiveMemberOf`, type = 'azuread', allGroups = []) {
    if (type === 'azuread') {
@@ -239,19 +240,19 @@ onMounted(() => {
 }
 [data-bs-theme="light"] {
     .login{
-      background-image: url(/img/login_background_light.jpg) !important;
+      background-image: var(--af-login-background-light) !important;
       background-size: cover;
     }
   }
   [data-bs-theme="dark"] {
     .login{
-      background-image: url(/img/login_background_dark.jpg) !important;
+      background-image: var(--af-login-background-dark) !important;
       background-size: cover;
     }
   }
   [data-bs-theme="color"] {
     .login{
-      background-image: url(/img/login_background_color.jpg) !important;
+      background-image: var(--af-login-background-color) !important;
       background-size: cover;
     }
   }  

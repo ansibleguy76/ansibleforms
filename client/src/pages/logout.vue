@@ -64,21 +64,21 @@ if (userType == "oidc") {
 <style scoped lang="scss">
 [data-bs-theme="light"] {
     .login {
-        background-image: url(/img/login_background_light.jpg) !important;
+        background-image: var(--af-login-background-light) !important;
         background-size: cover;
     }
 }
 
 [data-bs-theme="dark"] {
     .login {
-        background-image: url(/img/login_background_dark.jpg) !important;
+        background-image: var(--af-login-background-dark) !important;
         background-size: cover;
     }
 }
 
 [data-bs-theme="color"] {
     .login {
-        background-image: url(/img/login_background_color.jpg) !important;
+        background-image: var(--af-login-background-color) !important;
         background-size: cover;
     }
 }

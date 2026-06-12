@@ -13,6 +13,9 @@ import { fileURLToPath, URL } from 'node:url'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // relative base, so a single build works under any subpath (issue #106)
+  // the server rewrites the <base href="/"> tag in index.html at runtime (BASE_URL)
+  base: './',
   plugins: [
     basicSsl(),
     svgLoader(
@@ -57,7 +60,6 @@ export default defineConfig({
     ],
   },
   build:{
-    base: './',
     minify: 'terser',
     terserOptions: {
       mangle: {

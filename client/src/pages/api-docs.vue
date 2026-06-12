@@ -31,8 +31,8 @@
             <div class="bg-light p-3 rounded border mb-3">
               <div class="mb-2">API Docs Endpoints:</div>
               <pre class="mb-0" style="font-family: 'Fira Mono', 'Consolas', monospace; background: none; border: none;">
-<a href="/api/v1/docs">/api/v1/docs</a> <span class="text-warning">(deprecated)</span>
-<a href="/api/v2/docs">/api/v2/docs</a> <span class="text-success">(recommended)</span>
+<a href="api/v1/docs">/api/v1/docs</a> <span class="text-warning">(deprecated)</span>
+<a href="api/v2/docs">/api/v2/docs</a> <span class="text-success">(recommended)</span>
               </pre>
             </div>
             <p class="mb-0 text-muted">

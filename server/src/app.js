@@ -139,18 +139,19 @@ const load = async (app) => {
   const authobj = passport.authenticate("jwt", { session: false });
 
   // api docs for v1 and v2
+  // note : the swagger paths must include the base url (subpath hosting, issue #106)
   const swaggerOptions = {
     customSiteTitle: "Ansibleforms Swagger UI",
-    customfavIcon: `/favicon.svg`,
-    customCssUrl: `/assets/css/swagger.css`,
+    customfavIcon: `${appConfig.baseUrl}/favicon.svg`,
+    customCssUrl: `${appConfig.baseUrl}/assets/css/swagger.css`,
     docExpansion: "none",
   };
   // v1 docs
-  swaggerDocumentV1.basePath = `/api/v1`;
+  swaggerDocumentV1.basePath = `${appConfig.baseUrl}/api/v1`;
   app.use(`/api/v1/docs`, cors(), swaggerUi.serveFiles(swaggerDocumentV1, swaggerOptions), swaggerUi.setup(swaggerDocumentV1, swaggerOptions));
-  
+
   // v2 docs
-  swaggerDocumentV2.basePath = `/api/v2`;
+  swaggerDocumentV2.basePath = `${appConfig.baseUrl}/api/v2`;
   app.use(`/api/v2/docs`, cors(), swaggerUi.serveFiles(swaggerDocumentV2, swaggerOptions), swaggerUi.setup(swaggerDocumentV2, swaggerOptions));
 
   // ========== V1 API Routes (DEPRECATED) ==========
