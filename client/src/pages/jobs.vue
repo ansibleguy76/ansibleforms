@@ -809,6 +809,13 @@
                         >{{ t('jobs.applyFilter') }}<template #toggle>{{ t('jobs.removeFilter') }}</template></BsButton>
                     <BsButton @click="download(jobId)" icon="download" cssClass="btn-sm me-2 fw-normal">{{ t('jobs.downloadJob') }}</BsButton>
 
+                    <!-- awx workflow graph (only for awx workflow jobs) -->
+                    <div class="row mt-4" v-if="job.awx_workflow?.nodes?.length">
+                        <div class="col">
+                            <AppAwxWorkflow :workflow="job.awx_workflow" />
+                        </div>
+                    </div>
+
                     <div class="row mt-4">
                         <div class="col">
                             <AppAnsibleOutput :output="filteredJobOutput" :jobLog="job?.job_log">

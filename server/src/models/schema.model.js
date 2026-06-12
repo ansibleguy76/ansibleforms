@@ -474,6 +474,11 @@ async function patchVersion6(messages, success, failed) {
   // Allow user/password to be NULL for vault-backed credentials.
   await checkPromise(makeColumnNullable("credentials", "user", "varchar(250)"), messages, success, failed);
   await checkPromise(makeColumnNullable("credentials", "password", "text"), messages, success, failed);
+
+  // Add awx_workflow column to jobs table (6.3.0)
+  // This stores the awx workflow nodes (name, status, relations) as json,
+  // so the client can visualize the workflow graph of an awx workflow job
+  await checkPromise(addColumn("jobs", "awx_workflow", "longtext", true, "NULL"), messages, success, failed);
 }
 
 // PATCHING : Patch All
