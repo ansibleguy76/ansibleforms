@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Translations (en, de, fr, es, it, nl)
 -   new environment var DEFAULT_LANGUAGE (if no client cookie preference is passed)
 -   New `wizard:` property on forms: render a sequence of reusable subforms as numbered steps with Back/Next navigation, per-step validation, optional `defaultModel` prefix to namespace each step's output, optional steps with `when:` visibility expressions, and a `summary` step that shows a read-only review of the merged extravars before submit. Cross-step references work via `$(__parent__.<stepname>.<field>)`.
+-   Full editor repository integration (#414) - tx to blaipr
+-   Added a logo uploader
 
 ### Fixed
 
