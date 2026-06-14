@@ -473,12 +473,19 @@ class Repository extends CrudModel {
     if (!claim.affectedRows) {
       throw new Error(`Repository '${name}' is busy (a pull or sync is running), try again`)
     }
-    return rows[0].status ?? null
+    // never carry 'running' forward as the prior status : the SELECT and the
+    // claim are separate statements, so the SELECT could briefly catch another
+    // op's claim that was released before ours succeeded ; restoring 'running'
+    // would wedge the repo. Fall back to null (cleared) in that case.
+    const prior = rows[0].status
+    return (prior && prior !== 'running') ? prior : null
   }
 
-  // release a write claim taken by claimForWrite, restoring the prior status
+  // release a write claim taken by claimForWrite, restoring the prior status ;
+  // guarded on status='running' so it only ever clears OUR own claim and never
+  // overwrites a status another operation legitimately set afterwards
   static async releaseWrite(name, priorStatus) {
-    await mysql.do("update AnsibleForms.`repositories` set status = ? where name = ?", [priorStatus ?? null, name])
+    await mysql.do("update AnsibleForms.`repositories` set status = ? where name = ? and status = 'running'", [priorStatus ?? null, name])
   }
 
   // clear any repository left at status='running' by a process that died mid
