@@ -531,6 +531,7 @@
     "diff": {"type": "boolean"},
     "help": {"type": "string"},
     "source": {"type": "string"},
+    "repository": {"type": "string"},
     "showHelp": {"type": "boolean"},
     "allowRelaunch": {"type": "boolean"},
     "varsFiles": {

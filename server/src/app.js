@@ -69,6 +69,7 @@ import sshRoutesv2 from "./routes/v2/ssh.routes.js";
 import logRoutesv2 from "./routes/v2/log.routes.js";
 import repositoryRoutesv2 from "./routes/v2/repository.routes.js";
 import configRoutesv2 from "./routes/v2/config.routes.js";
+import formsReposRoutes from "./routes/v2/forms-repos.routes.js";
 
 // __dirname and __filename setup for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -228,6 +229,8 @@ const load = async (app) => {
   app.use(`/api/v2/backup`, cors(), authobj, backupRoutes);
   app.use(`/api/v2/log`, cors(), authobj, logRoutesv2);
   app.use(`/api/v2/repository`, cors(), authobj, Middleware.checkSettingsMiddleware, repositoryRoutesv2);
+  // forms repositories (issue #414) : designer users can push without settings access
+  app.use(`/api/v2/forms-repos`, cors(), authobj, Middleware.checkDesignerMiddleware, formsReposRoutes);
   app.use(`/api/v2/config`, cors(), authobj, configRoutesv2);
 }
 

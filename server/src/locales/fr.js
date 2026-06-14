@@ -79,6 +79,8 @@ export default {
     failedCloneRepository: "Echec du clonage du depot",
     failedResetRepository: "Echec de la reinitialisation du depot",
     failedPullRepository: "Echec du pull du depot",
+    failedSyncRepository: "Échec de la synchronisation du dépôt",
+    noFormsRepositories: "Aucun dépôt de formulaires configuré",
     failedFindSsh: "Echec de la recherche de la cle SSH",
     failedUpdateSsh: "Echec de la mise a jour de la cle SSH",
     failedFindLdap: "Echec de la recherche LDAP",

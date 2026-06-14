@@ -79,6 +79,8 @@ export default {
     failedCloneRepository: "Kan repository niet klonen",
     failedResetRepository: "Kan repository niet resetten",
     failedPullRepository: "Kan repository niet pullen",
+    failedSyncRepository: "Repository synchroniseren mislukt",
+    noFormsRepositories: "Geen forms repositories geconfigureerd",
     failedFindSsh: "Kan SSH sleutel niet vinden",
     failedUpdateSsh: "Kan SSH sleutel niet bijwerken",
     failedFindLdap: "Kan LDAP niet vinden",

@@ -50,6 +50,12 @@
                 type: [String, Object],
                 default: 'width: 100%;height: 75vh;font-size:1rem',
             },
+            // emit update:modelValue on every change (not only on blur) ; only
+            // for parents that bind the raw string (see change handler)
+            liveSync: {
+                type: Boolean,
+                default: false,
+            },
         }
     );
 
@@ -61,6 +67,12 @@
 
     const change = (value) => {
         if (mounted.value){
+            // opt-in : keep the bound model in sync on every edit (not only on
+            // blur) so parents can react live — eg detect a reverted change.
+            // Only safe when the parent binds the raw string ; a parent that
+            // re-serializes the value (eg BsYamlEditor) would reformat mid-typing,
+            // so this stays off by default.
+            if (props.liveSync) emit('update:modelValue', code.value)
             emit('dirty')
         }
     }

@@ -5,6 +5,12 @@
     --bs-body-bg-rgb: var(--af-body-bg-rgb);
 }
 
+// Darker-orange outline button used for the designer "unsaved / unpushed"
+// indicators (issue #414) ; Bootstrap's warning (#ffc107) reads too light/yellow.
+.btn-outline-orange {
+    @include button-outline-variant(#d97400);
+}
+
 // Override Bootstrap's subtle background colors with theme-aware colors
 .bg-primary-subtle {
     background-color: var(--af-bg-primary-subtle-color) !important;

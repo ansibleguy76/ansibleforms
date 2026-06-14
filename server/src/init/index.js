@@ -173,6 +173,16 @@ const init = async function(){
     logger.error("Failed to abandon jobs : " + err)
   })
 
+  logger.info("Checking stale repository locks")
+  // awaited : the boot clone/pull below now use the atomic status='running'
+  // claim, so a stale 'running' must be cleared first or they'd be rejected
+  try {
+    const reset = await Repository.resetStaleLocks()
+    if(reset) logger.warning(`Reset ${reset} stale repository lock(s)`)
+  } catch(err) {
+    logger.error("Failed to reset stale repository locks : " + err)
+  }
+
   logger.info("Initializing cron service for scheduled tasks")
   // Initialize all cron jobs from database (repositories, datasources, schedules)
   await cronService.initializeAll();

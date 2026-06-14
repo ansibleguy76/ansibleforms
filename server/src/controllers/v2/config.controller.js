@@ -126,7 +126,7 @@ const restore = async function(req,res){
       if(!backupName){
         return res.status(400).json(RestResult.error(i18n.t(req, 'config.failedRestoreNoName')))
       }
-      var restore = Form.restore(backupName,backupBeforeRestore)
+      var restore = await Form.restore(backupName,backupBeforeRestore)
       if(restore) {
         res.json(RestResult.single(null));
       }else{
@@ -162,7 +162,7 @@ const save = async function(req,res){
         return res.status(400).json(RestResult.error(i18n.t(req, 'errors.requiredFields')));
     }
     try{
-      var forms = Form.save(newConfig)
+      var forms = await Form.save(newConfig)
       if(forms) {
         res.json(RestResult.single(null));
       }else{

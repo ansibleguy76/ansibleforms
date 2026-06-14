@@ -63,7 +63,8 @@ export default function getSettings(t) {
             { name: "change_password", icon: "lock", title: t('settings.common.changePassword'), color: "change" },
             { name: "trigger", icon: "play", title: t('settings.common.trigger'), color: "test" },
             { name: "preview", icon: "info-circle", title: t('settings.common.showOutput'), color: "preview" },
-            { name: "reset", icon: "redo", title: t('settings.repositories.resetRepository'), color: "refresh" }
+            { name: "reset", icon: "redo", title: t('settings.repositories.resetRepository'), color: "refresh" },
+            { name: "sync", icon: "upload", title: t('settings.repositories.syncRepository'), color: "test", dependency: ["use_for_forms", "use_for_config"] }
         ],
         fields: [
             { key: "id", hidden: true, noInput: true },
@@ -77,11 +78,11 @@ export default function getSettings(t) {
             { key: "uri", icon: "fab,git", label: t('settings.fields.uri'), placeholder: "https://github.com/account/repo.git", required: true, hidden: true, help: t('settings.repositories.helpUri') },
             { key: "cron", icon: "stopwatch", label: t('settings.fields.cronSchedule'), help: t('settings.fields.cronHelp'), hidden: true, regex: { expression: "^[0-9-,*/]+ [0-9-,*/]+ [0-9-,*/L]+ [0-9-,*/]+ [0-9-,*/L]+$", description: t('settings.fields.cronRegexDescription')} },
             { key: "description", icon: "info-circle", label: t('settings.fields.description'), placeholder: t('settings.fields.description'), required: true },
-            { key: "use_for_config", type: "checkbox", label: t('settings.repositories.useForConfig'), hidden: true },
-            { key: "use_for_forms", type: "checkbox", label: t('settings.repositories.useForForms'), hidden: true },
-            { key: "use_for_playbooks", type: "checkbox", label: t('settings.repositories.useForPlaybooks'), hidden: true },
-            { key: "use_for_vars_files", type: "checkbox", label: t('settings.repositories.useForVarsFiles'), hidden: true },
-            { key: "rebase_on_start", type: "checkbox", label: t('settings.repositories.cloneOnStart'), hidden: true }
+            { key: "use_for_config", type: "checkbox", label: t('settings.repositories.useForConfig'), help: t('settings.repositories.helpUseForConfig'), hidden: true },
+            { key: "use_for_forms", type: "checkbox", label: t('settings.repositories.useForForms'), help: t('settings.repositories.helpUseForForms'), hidden: true },
+            { key: "use_for_playbooks", type: "checkbox", label: t('settings.repositories.useForPlaybooks'), help: t('settings.repositories.helpUseForPlaybooks'), hidden: true },
+            { key: "use_for_vars_files", type: "checkbox", label: t('settings.repositories.useForVarsFiles'), help: t('settings.repositories.helpUseForVarsFiles'), hidden: true },
+            { key: "rebase_on_start", type: "checkbox", label: t('settings.repositories.cloneOnStart'), help: t('settings.repositories.helpCloneOnStart'), hidden: true }
         ]
     },
     oauth2_providers: {

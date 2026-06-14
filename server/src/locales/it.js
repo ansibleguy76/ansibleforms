@@ -79,6 +79,8 @@ export default {
     failedCloneRepository: "Impossibile clonare il repository",
     failedResetRepository: "Impossibile resettare il repository",
     failedPullRepository: "Impossibile fare pull del repository",
+    failedSyncRepository: "Impossibile sincronizzare il repository",
+    noFormsRepositories: "Nessun repository di moduli configurato",
     failedFindSsh: "Impossibile trovare la chiave SSH",
     failedUpdateSsh: "Impossibile aggiornare la chiave SSH",
     failedFindLdap: "Impossibile trovare LDAP",
