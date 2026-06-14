@@ -18,6 +18,9 @@ var app_config = {
   allowSchemaCreation: (process.env.ALLOW_SCHEMA_CREATION ?? 1) == 1,
   configPath: process.env.CONFIG_PATH || path.resolve(__dirname + "/../persistent/config.yaml"),
   formsFolderPath: process.env.FORMS_FOLDER_PATH || path.resolve(__dirname + "/../persistent/forms"),
+  // staging area for new forms in repository mode : they live here until a
+  // 'Push to repo' assigns them to a chosen repository (issue #414)
+  formsStagingPath: process.env.FORMS_STAGING_PATH || path.resolve(__dirname + "/../persistent/forms_staging"),
   formsPath: process.env.FORMS_PATH || path.resolve(__dirname + "/../persistent/forms.yaml"), // DEPRECATED: use configPath + formsFolderPath instead
   nightlyBackupRetention: parseInt(process.env.NIGHTLY_BACKUP_RETENTION || "7", 10),
   useYtt: (process.env.USE_YTT ?? 0) == 1,

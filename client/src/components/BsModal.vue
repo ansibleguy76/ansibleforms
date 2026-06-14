@@ -49,7 +49,7 @@
                 </div>
                 <div class="modal-footer">
                     <slot name="footer"></slot>
-                    <BsButton @click="emit('close')">{{ t('common.close') }}</BsButton>
+                    <BsButton icon="times" @click="emit('close')">{{ t('common.close') }}</BsButton>
                 </div>
             </div>
         </div>

@@ -32,7 +32,7 @@
     // INIT
 
     const { t } = useI18n();
-    const emit = defineEmits(['test','preview','trigger','reset']);
+    const emit = defineEmits(['test','preview','trigger','reset','sync']);
 
     // PROPS
 
@@ -557,6 +557,10 @@
     // `dependencyValues`, and `negateDependency` from the action definition.
     function isActionEnabled(action, item) {
         if (!action.dependency) return true;
+        // an array dependency means "enabled if ANY of these fields is truthy"
+        if (Array.isArray(action.dependency)) {
+            return action.dependency.some(dep => !!item[dep]);
+        }
         const v = item[action.dependency];
         if (Array.isArray(action.dependencyValues)) {
             return action.dependencyValues.includes(v);

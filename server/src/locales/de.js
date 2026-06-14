@@ -79,6 +79,8 @@ export default {
     failedCloneRepository: "Repository konnte nicht geklont werden",
     failedResetRepository: "Repository konnte nicht zurueckgesetzt werden",
     failedPullRepository: "Repository konnte nicht gepullt werden",
+    failedSyncRepository: "Repository konnte nicht synchronisiert werden",
+    noFormsRepositories: "Keine Forms-Repositories konfiguriert",
     failedFindSsh: "SSH-Schluessel konnte nicht gefunden werden",
     failedUpdateSsh: "SSH-Schluessel konnte nicht aktualisiert werden",
     failedFindLdap: "LDAP konnte nicht gefunden werden",

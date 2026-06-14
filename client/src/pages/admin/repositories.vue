@@ -30,6 +30,13 @@ async function triggerClone(repo) {
     await new Promise(r => setTimeout(r, 1000));
     adminMulti.value.loadItems()
 }
+async function triggerSync(repo) {
+    adminMulti.value.setItemProperty({ id: repo.name, key: "status", value: "running" });
+    await axios.post(`/api/v2/repository/${repo.name}/sync`, {}, TokenStorage.getAuthentication()).catch(() => {});
+    // wait 1 second to visually see the change
+    await new Promise(r => setTimeout(r, 1000));
+    adminMulti.value.loadItems()
+}
 async function triggerReset(repo) {
     adminMulti.value.setItemProperty({ id: repo.name, key: "status", value: "running" });
     await axios.post(`/api/v2/repository/${repo.name}/reset`, {}, TokenStorage.getAuthentication());
@@ -51,7 +58,7 @@ onMounted(async () => {
     <div class="flex-shrink-0">
         <main class="d-flex flex-nowrap container-xxl">
             <AppSidebar />
-            <AppAdminMulti v-if="authenticated" ref="adminMulti" :settings="settings.repositories" :apiVersion="2" @trigger="triggerClone" @preview="previewOutput" @reset="triggerReset" />
+            <AppAdminMulti v-if="authenticated" ref="adminMulti" :settings="settings.repositories" :apiVersion="2" @trigger="triggerClone" @preview="previewOutput" @reset="triggerReset" @sync="triggerSync" />
             <BsOffCanvas :title="t('admin.lastOutput')" :show="showRepoOutput" @close="offcanvasClose">
                 <pre>{{ currentRepo?.output || t('admin.loading') }}</pre>
             </BsOffCanvas>

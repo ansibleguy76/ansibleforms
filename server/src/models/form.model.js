@@ -13,9 +13,9 @@ import yaml from "yaml";
 import Ajv from 'ajv';
 import quote from 'shell-quote/quote.js';
 import Repository from './repository.model.js';
+import { resolveTargetDir, configRepoFromPath, claimAllOrRollback } from "../lib/forms-git.js";
 import Helpers from "../lib/common.js";
 import Settings from './settings.model.js';
-import os from 'os';
 import AJVErrorParser from './ajvErrorParser.model.js';
 
 
@@ -157,6 +157,73 @@ async function getConfigPath() {
   
   // Neither exists, will need to create from template
   return { path: appConfig.configPath, isLegacy: false, deprecationMessage: null };
+}
+
+// forms repositories are read AND write (issue #414) : the designer saves a
+// form file back into the repository working tree it was loaded from. This
+// resolves the write targets : the forms folders (with their repository name)
+// and the config file path, mirroring where they are read from. In repository
+// mode a staging folder is added : a brand new form (not yet in any repository)
+// is written there and stays visible until a 'Push to repo' assigns it to a
+// chosen repository.
+async function getSaveTargets() {
+  const repoFolders = await Repository.getFormsFolders()
+  const repoMode = repoFolders.length > 0
+  for (const folder of repoFolders) {
+    const repoDir = path.join(appConfig.repoPath, folder.name)
+    if (!fs.existsSync(path.join(repoDir, ".git"))) {
+      throw new Error(`The forms repository '${folder.name}' is not cloned yet ; clone it from the repositories settings first`)
+    }
+  }
+  // config is written where it is read from ; a legacy forms.yaml in a
+  // repository is migrated to config.yaml next to it (and the old file removed)
+  var targetConfigPath = appConfig.configPath
+  var legacyConfig = null
+  if (repoMode) {
+    const configInfo = await getConfigPath()
+    if (configInfo.path.startsWith(appConfig.repoPath)) {
+      if (configInfo.isLegacy) {
+        targetConfigPath = path.join(path.dirname(configInfo.path), "config.yaml")
+        legacyConfig = configInfo.path
+      } else {
+        targetConfigPath = configInfo.path
+      }
+    } else if (repoFolders.length === 1) {
+      // no config in the repository yet : adopt the single forms repository root
+      targetConfigPath = path.join(appConfig.repoPath, repoFolders[0].name, "config.yaml")
+    }
+  }
+  // staging is the default target for new files in repository mode ; it is
+  // listed last so an existing repository file is always matched first
+  const stagingDir = { name: null, path: appConfig.formsStagingPath, staging: true }
+  const formsDirs = repoMode ? [...repoFolders, stagingDir] : [{ name: null, path: formsPath }]
+  // the distinct git repositories this save writes into : the forms repos plus
+  // the repo that holds config.yaml (it may be a separate use_for_config repo) ;
+  // used to lock them for the duration of the write (issue #414)
+  let repoNames = []
+  if (repoMode) {
+    const names = new Set(repoFolders.map(f => f.name).filter(Boolean))
+    const configRepo = configRepoFromPath(targetConfigPath, appConfig.repoPath)
+    if (configRepo) names.add(configRepo)
+    repoNames = [...names]
+  }
+  return { configPath: targetConfigPath, formsDirs, repoMode, legacyConfig, repoNames }
+}
+
+// recursively list the yaml files of a forms folder, relative to it (skipping
+// the .git folder) ; used to remove forms that were deleted in the designer
+function listYamlFiles(dir, base = dir) {
+  var result = []
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name === ".git") continue
+    const full = path.join(dir, entry.name)
+    if (entry.isDirectory()) {
+      result = result.concat(listYamlFiles(full, base))
+    } else if (/\.(yaml|yml)$/i.test(entry.name)) {
+      result.push(path.relative(base, full))
+    }
+  }
+  return result
 }
 
 function copyConfigTemplate(to) {
@@ -402,11 +469,19 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
   var errors = []
   var warnings = []
   
-  // Get forms folder paths - can be multiple from repositories or single default path
-  const repoFormsPaths = (await Repository.getFormsFolderPath()) || []
-  const formsdirpaths = repoFormsPaths.length > 0 ? repoFormsPaths : [appConfig.formsFolderPath]
-  
-  logger.debug(`Loading forms from ${formsdirpaths.length} folder(s): ${formsdirpaths.join(", ")}`)
+  // Get the forms folders with their repository name - can be multiple from
+  // repositories or a single default path. In repository mode the staging
+  // folder is added (new forms not yet pushed) with no repository.
+  const repoFolders = await Repository.getFormsFolders()
+  const stagingPath = appConfig.formsStagingPath
+  // when several forms repos exist, tag each form with the repo it came from so
+  // a save writes it back there even if another repo has a same-named file
+  const tagRepository = repoFolders.length > 1
+  const formsdirs = repoFolders.length > 0
+    ? [...repoFolders, ...(fs.existsSync(stagingPath) ? [{ name: null, path: stagingPath }] : [])]
+    : [{ name: null, path: appConfig.formsFolderPath }]
+
+  logger.debug(`Loading forms from ${formsdirs.length} folder(s): ${formsdirs.map(d => d.path).join(", ")}`)
 
   function warn(message) {
     logger.warning(message);
@@ -454,8 +529,9 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
   };
   
   // read extra form files from all forms directories
-  // Loop through each forms directory path
-  for(const formsdirpath of formsdirpaths){
+  // Loop through each forms directory (with its repository name)
+  for(const formsdir of formsdirs){
+    const formsdirpath = formsdir.path
     var files = [];
     try {
       // walk directory recursively and collect relative paths for .yml/.yaml files
@@ -495,7 +571,13 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
         // read the file and add to the forms array
         logger.debug(`Loading forms from file ${item} in ${formsdirpath}`);
         try{
-          unvalidatedForms = unvalidatedForms.concat(getFormsFromFile(formsdirpath,item)); // get the forms from the file, including subpaths
+          const fileForms = getFormsFromFile(formsdirpath,item) // get the forms from the file, including subpaths
+          // tag with the originating repository so a save writes it back there
+          // (disambiguates same-named files across repos) ; only when needed
+          if (tagRepository && formsdir.name) {
+            for (const ff of fileForms) ff.repository = formsdir.name
+          }
+          unvalidatedForms = unvalidatedForms.concat(fileForms);
         }
         catch (e) {
           error(e.message);
@@ -509,7 +591,7 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
       var form = null; // initialize form
       if(!f?.name){
         error(`Form found with no name.`)
-        return // skip this form if no name is given
+        continue // skip this form, but keep loading the rest
       }
       if(formName && f.name != formName){
         logger.debug(`Skipping form ${f.name}, not requested.`)
@@ -817,31 +899,33 @@ Form.removeOld=function(days=60){
 }
 Form.backup = function(){
   logger.info("Making backup of config and forms")
+  const sourceConfigPath = appConfig.configPath
+  const sourceFormsPath = formsPath
   var timestamp=moment().format("YYYYMMDDkkmmssSSS")
   var backupformsdir=formsBackupPath +".bak."+timestamp
   var backupconfigfile=configFileBackupPath +".bak."+timestamp
   var backuplegacyformsfile=legacyFormFileBackupPath +".bak."+timestamp
   var backupfile=path.parse(backupconfigfile).base
   Form.removeOld(oldBackupDays)
-  
+
   // Back up config.yaml (new structure)
-  if(fs.existsSync(appConfig.configPath)){
-    logger.debug(`Copying config file '${appConfig.configPath}'->'${backupconfigfile}'`)
-    fse.copySync(appConfig.configPath,backupconfigfile)
+  if(fs.existsSync(sourceConfigPath)){
+    logger.debug(`Copying config file '${sourceConfigPath}'->'${backupconfigfile}'`)
+    fse.copySync(sourceConfigPath,backupconfigfile)
   }
-  
+
   // Back up forms.yaml (legacy - for backward compatibility)
   if(fs.existsSync(appConfig.formsPath)){
     logger.debug(`Copying legacy forms file '${appConfig.formsPath}'->'${backuplegacyformsfile}'`)
     fse.copySync(appConfig.formsPath,backuplegacyformsfile)
   }
-  
+
   // Back up forms directory
-  if(fs.existsSync(formsPath)){
-    logger.debug(`Copying forms directory '${formsPath}'->'${backupformsdir}'`)
+  if(fs.existsSync(sourceFormsPath)){
+    logger.debug(`Copying forms directory '${sourceFormsPath}'->'${backupformsdir}'`)
     fse.removeSync(backupformsdir) // just in case, remove it (unlikely hit)
     fse.ensureDirSync(backupformsdir) // make backupdir
-    fse.copySync(formsPath,backupformsdir) // make backup
+    fse.copySync(sourceFormsPath,backupformsdir) // make backup
   }
   return backupfile
 }
@@ -871,82 +955,127 @@ Form.remove = function(backupName){
   }
 }
 Form.restoreBackup = function(backupName){
+  const targetConfigPath = appConfig.configPath
+  const targetFormsPath = formsPath
   var backupformsdir=formsBackupPath+getBackupSuffix(backupName)
   var backupconfigfile=configFileBackupPath+getBackupSuffix(backupName)
   var backuplegacyformsfile=legacyFormFileBackupPath+getBackupSuffix(backupName)
-  
+
   // Restore config.yaml
   if(fs.existsSync(backupconfigfile)){
-    logger.debug(`Copying config file '${backupconfigfile}'->'${appConfig.configPath}'`)
-    fse.copySync(backupconfigfile,appConfig.configPath)
+    logger.debug(`Copying config file '${backupconfigfile}'->'${targetConfigPath}'`)
+    fse.copySync(backupconfigfile,targetConfigPath)
   }
-  
+
   // Restore legacy forms.yaml (if it exists in backup)
   if(fs.existsSync(backuplegacyformsfile)){
     logger.debug(`Copying legacy forms file '${backuplegacyformsfile}'->'${appConfig.formsPath}'`)
     fse.copySync(backuplegacyformsfile,appConfig.formsPath)
   }
-  
+
   // Restore forms directory
   if(fs.existsSync(backupformsdir)){
-    logger.debug(`Copying forms directory '${backupformsdir}'->'${formsPath}'`)
-    fse.removeSync(formsPath) // just in case, remove it (unlikely hit)
-    fse.ensureDirSync(formsPath) // make backupdir
-    fse.copySync(backupformsdir,formsPath) // make backup
+    logger.debug(`Copying forms directory '${backupformsdir}'->'${targetFormsPath}'`)
+    fse.removeSync(targetFormsPath) // just in case, remove it (unlikely hit)
+    fse.ensureDirSync(targetFormsPath) // make backupdir
+    fse.copySync(backupformsdir,targetFormsPath) // make backup
   }
 }
-Form.save = function(data){
+Form.save = async function(data){
   var formsConfig = Form.parse(data)
   formsConfig = Form.validate(formsConfig)
-  logger.info("Saving forms")
-  var files={}
+  const { configPath: targetConfigPath, formsDirs, repoMode, legacyConfig, repoNames } = await getSaveTargets()
+  logger.info(`Saving forms to ${formsDirs.map(d => d.path).join(", ")}`)
+  var groups={}  // key "<repository>\0<source>" -> { repository, source, forms:[] }
 
-  // filter source-forms out of forms and move to files
+  // filter source-forms out of forms and group them by their physical file :
+  // (repository, source). The repository field (set on load when several forms
+  // repos exist) keeps a form in its own repo even when another repo holds a
+  // file of the same name ; it is internal and stripped before writing.
   formsConfig.forms = formsConfig.forms.filter(item => {
     var src = item.source
     if(src){
-      if(!files[src]){
-        files[src]=[]
-      }
-      files[src].push(item)
+      const repo = item.repository ?? null
+      const key = (repo ?? '') + ' ' + src
+      if(!groups[key]) groups[key] = { repository: repo, source: src, forms: [] }
+      groups[key].forms.push(item)
       return false
     }else{
       return true
     }
   })
 
-  let tmpDir;
-  const appPrefix = 'ansibleforms';
-  try {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), appPrefix));
+  // a form 'source' is client-controlled ; reject any that would escape its
+  // forms folder (path traversal / absolute path) before it is used as a path
+  for (const g of Object.values(groups)) {
+    const probe = path.resolve(formsPath, g.source)
+    if (g.source.includes("\0") || path.isAbsolute(g.source) || !probe.startsWith(path.resolve(formsPath) + path.sep)) {
+      throw new Error(`Invalid form source '${g.source}' : must be a path inside the forms folder`)
+    }
+  }
 
-    for (const [file, forms] of Object.entries(files)) {
-      var tmpfile=path.join(tmpDir,file)
-      var formnames=forms.map(x => x.name)
-      if(forms.length==1){
-        logger.debug(`saving single form '${forms[0].name}' to '${tmpfile}'`)
+  // resolve the target folder per group (own repo, then existing holder, then staging)
+  for (const g of Object.values(groups)) {
+    g.dir = resolveTargetDir(g.repository, g.source, formsDirs, (d, src) => fs.existsSync(path.join(d.path, src)))
+  }
+
+  // repository is an internal placement field : never write it to a form file or config
+  for (const g of Object.values(groups)) for (const f of g.forms) delete f.repository
+  formsConfig.forms.forEach(f => delete f.repository)
+
+  // lock the working trees for the duration of the write so a concurrent
+  // pull/sync/clone/reset can't run git on the same files (issue #414). All-or-
+  // nothing : a failed claim rolls back the ones already taken and throws a
+  // 'busy, try again' error before anything is written.
+  const held = await claimAllOrRollback(repoNames,
+    name => Repository.claimForWrite(name),
+    (name, token) => Repository.releaseWrite(name, token))
+
+  try {
+    if (!repoMode) {
+      // local mode : snapshot before overwriting (in repo mode the git history is the backup)
+      var backupfile=Form.backup()
+      logger.debug(`Succesfull backup to ${backupfile}`)
+    }
+
+    for (const dirEntry of formsDirs) {
+      const dirGroups = Object.values(groups).filter(g => g.dir === dirEntry)
+      const dirFiles = dirGroups.map(g => g.source)
+      // write the surviving form files FIRST, then delete the leftovers : a crash
+      // mid-write then leaves the old files intact (no hole) rather than a folder
+      // that was emptied before the replacements were written.
+      for (const g of dirGroups) {
+        const target = path.join(dirEntry.path, g.source)
+        const forms = g.forms
+        logger.debug(`saving ${forms.length==1 ? `single form '${forms[0].name}'` : `forms ${forms.map(x => x.name)}`} to '${target}'`)
         // ensure parent directory exists for nested paths
-        fse.ensureDirSync(path.dirname(tmpfile));
-        fs.writeFileSync(tmpfile,yaml.stringify(forms[0]));
+        fse.ensureDirSync(path.dirname(target));
+        fs.writeFileSync(target, yaml.stringify(forms.length==1 ? forms[0] : forms));
       }
-      if(forms.length>1){
-        logger.debug(`saving forms ${formnames} to '${tmpfile}'`)
-        // ensure parent directory exists for nested paths
-        fse.ensureDirSync(path.dirname(tmpfile));
-        fs.writeFileSync(tmpfile,yaml.stringify(forms));
+      // a dedicated forms folder is fully managed : the yaml files of deleted
+      // forms are removed ; a repository ROOT serving forms can hold unrelated
+      // yaml files, there nothing is ever deleted. The staging folder is always
+      // fully managed.
+      const managed = !repoMode || dirEntry.staging || path.basename(dirEntry.path) === "forms"
+      if (managed && fs.existsSync(dirEntry.path)) {
+        for (const existing of listYamlFiles(dirEntry.path)) {
+          if (!dirFiles.includes(existing)) {
+            logger.debug(`Removing deleted form file '${existing}' from '${dirEntry.path}'`)
+            fse.removeSync(path.join(dirEntry.path, existing))
+          }
+        }
       }
     }
-    // backup current forms config
-    var backupfile=Form.backup()
-    logger.debug(`Succesfull backup to ${backupfile}`)
 
-    // now move tmp to prod
-    logger.debug(`Copy tmp directory '${tmpDir}'->'${formsPath}'`)
-    fse.emptyDirSync(formsPath) // empty formsdir
-    fse.copySync(tmpDir,formsPath) // copy from temp
-
-    logger.debug(`Writing base file '${appConfig.configPath}'`)
-    fs.writeFileSync(appConfig.configPath,yaml.stringify(formsConfig)); // write basefile
+    logger.debug(`Writing base file '${targetConfigPath}'`)
+    fse.ensureDirSync(path.dirname(targetConfigPath));
+    fs.writeFileSync(targetConfigPath,yaml.stringify(formsConfig)); // write basefile
+    // migrated a legacy forms.yaml to config.yaml : remove the old file so it
+    // doesn't linger and get committed alongside the new config
+    if (legacyConfig && legacyConfig !== targetConfigPath && fs.existsSync(legacyConfig)) {
+      logger.debug(`Removing migrated legacy config '${legacyConfig}'`)
+      fse.removeSync(legacyConfig)
+    }
   }
   catch(err) {
     // handle error
@@ -954,22 +1083,24 @@ Form.save = function(data){
     throw new Error(Helpers.getError(err,"Failed to save forms"))
   }
   finally {
-    try {
-      if (tmpDir) {
-        logger.debug(`Cleaning up folder '${tmpDir}'`)
-        fs.rmSync(tmpDir, { recursive: true });
-      }
-    }
-    catch (e) {
-      console.error(`An error has occurred while removing the temp folder at ${tmpDir}. Please remove it manually. Error: ${e}`);
+    // release the working-tree locks, restoring each repo's prior status (the
+    // save is not a git op, so its status must reflect the last pull/sync)
+    for (const h of held) {
+      await Repository.releaseWrite(h.name, h.token).catch(e => logger.error(`Failed to release write-lock on '${h.name}' : ${e.message}`))
     }
   }
 
   return true
 }
-Form.restore = function(backupName,backupBeforeRestore){
+Form.restore = async function(backupName,backupBeforeRestore){
   logger.info(`Restoring backup '${backupName}'`)
   var tmpbackup
+  const { repoMode } = await getSaveTargets()
+  if (repoMode) {
+    // forms live in git repositories : the snapshots only cover the local
+    // folders, restoring them would not affect the served forms
+    throw new Error("Forms are managed in git repositories ; restore a previous state from the git history instead")
+  }
   try {
     // first backup current
     tmpbackup=Form.backup()
