@@ -1,4 +1,6 @@
 import logger from "../lib/logger.js";
+import Settings from '../models/settings.model.js';
+import { DEFAULT_LOGO } from '../lib/defaultlogo.js';
 import Ssh from '../models/ssh.model.js';
 import Form from '../models/form.model.js';
 import Job from '../models/job.model.js';
@@ -151,6 +153,18 @@ const init = async function(){
     }catch(err){
       logger.error(`Failed to check/create ${record} : ` + err)
     }
+  }
+
+  // seed the default logo on fresh installs and on upgrades that just added
+  // the logo column ; afterwards it is never null again (removing a custom
+  // logo resets it to the default instead)
+  try{
+    if(await Settings.getLogo()===null){
+      logger.warning("No logo found, seeding the default AnsibleForms logo")
+      await Settings.setLogo(DEFAULT_LOGO)
+    }
+  }catch(err){
+    logger.error("Failed to check/seed the default logo : " + err)
   }
 
   logger.info("All database records are checked")

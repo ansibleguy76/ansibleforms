@@ -25,6 +25,7 @@ import groups from "@/pages/admin/groups.vue"
 import knownHosts from "@/pages/admin/knownHosts.vue"
 import ldap from "@/pages/admin/ldap.vue"
 import mailSettings from "@/pages/admin/mailSettings.vue"
+import logo from "@/pages/admin/logo.vue"
 import repositories from "@/pages/admin/repositories.vue"
 import dataSchemas from "@/pages/admin/dataSchemas.vue"
 import datasources from "@/pages/admin/datasources.vue"
@@ -110,6 +111,7 @@ const routes = [
   { path: '/admin/knownHosts', name: "/admin/knownHosts", component: knownHosts, beforeEnter: checkSettings },
   { path: '/admin/ldap', name: "/admin/ldap", component: ldap, beforeEnter: checkSettings },
   { path: '/admin/mailSettings', name: "/admin/mailSettings", component: mailSettings, beforeEnter: checkSettings },
+  { path: '/admin/logo', name: "/admin/logo", component: logo, beforeEnter: checkSettings },
   { path: '/admin/repositories', name: "/admin/repositories", component: repositories, beforeEnter: checkSettings },
   { path: '/admin/dataSchemas', name: "/admin/dataSchemas", component: dataSchemas, beforeEnter: checkSettings },
   { path: '/admin/datasources', name: "/admin/datasources", component: datasources, beforeEnter: checkSettings },

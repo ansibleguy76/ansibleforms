@@ -65,6 +65,7 @@ import awxRoutesv2 from "./routes/v2/awx.routes.js";
 import backupRoutes from "./routes/v2/backup.routes.js";
 import groupRoutesv2 from "./routes/v2/group.routes.js";
 import settingsRoutesv2 from "./routes/v2/settings.routes.js";
+import logoRoutesv2 from "./routes/v2/logo.routes.js";
 import sshRoutesv2 from "./routes/v2/ssh.routes.js";
 import logRoutesv2 from "./routes/v2/log.routes.js";
 import repositoryRoutesv2 from "./routes/v2/repository.routes.js";
@@ -215,6 +216,8 @@ const load = async (app) => {
   app.use(`/api/v2/user`, cors(), authobj, Middleware.checkSettingsMiddleware, userRoutesv2);
   app.use(`/api/v2/group`, cors(), authobj, Middleware.checkSettingsMiddleware, groupRoutesv2);
   app.use(`/api/v2/settings`, cors(), authobj, Middleware.checkSettingsMiddleware, settingsRoutesv2);
+  // custom logo ; reading is for all authenticated users (navbar), changing it is guarded in the routes
+  app.use(`/api/v2/logo`, cors(), authobj, logoRoutesv2);
   app.use(`/api/v2/sshkey`, cors(), authobj, Middleware.checkSettingsMiddleware, sshRoutesv2);
   app.use(`/api/v2/ldap`, cors(), authobj, Middleware.checkSettingsMiddleware, ldapRoutes);
   app.use(`/api/v2/oauth2`, cors(), authobj, Middleware.checkSettingsMiddleware, oauth2Routes);

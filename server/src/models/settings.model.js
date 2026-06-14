@@ -29,6 +29,18 @@ Settings.update = function (record) {
     logger.info(`Updating settings`)
     return mysql.do("UPDATE AnsibleForms.`settings` set ?", record)
 };
+Settings.getLogo = function () {
+  return mysql.do("SELECT logo FROM AnsibleForms.`settings` limit 1;")
+    .then((res) => (res.length > 0 && res[0].logo) ? res[0].logo : null)
+};
+Settings.setLogo = async function (logo) {
+  logger.info(`Updating custom logo`)
+  // the settings table holds a single record, but on a fresh install it can still be empty
+  const result = await mysql.do("UPDATE AnsibleForms.`settings` set logo=?", [logo])
+  if (result.affectedRows === 0) {
+    await mysql.do("INSERT INTO AnsibleForms.`settings` (logo) VALUES(?)", [logo])
+  }
+};
 Settings.importConfig = async function(){
   // Repository.getConfigPath() already handles config.yaml → forms.yaml fallback
   var configPath = (await Repository.getConfigPath()) || appConfig.configPath
