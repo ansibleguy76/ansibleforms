@@ -69,7 +69,7 @@ function pushEdit({ title, subtitle, subform, row, parentData, onSave }) {
     const snapshot = row ? JSON.parse(JSON.stringify(row)) : {};
     const entry = reactive({
         id, title, subtitle, subform, snapshot,
-        parentData: parentData ? JSON.parse(JSON.stringify(parentData)) : null,
+        parentData: parentData ? Helpers.safeDeepClone(parentData) : null,
         draft: {},
         showHelp: subform?.showHelp === true,
         onSave,

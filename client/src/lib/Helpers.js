@@ -140,6 +140,38 @@ const Helpers = {
     }
     
   },
+  // avoid circular references and skip cloning __user__ and window properties which can cause issues
+  safeDeepClone(obj, visited = new Map()) {
+    if (obj === null || typeof obj !== 'object') {
+      return obj;
+    }
+
+    // Cirkel gedetecteerd? Geef de al gemaakte kopie terug.
+    if (visited.has(obj)) {
+      return visited.get(obj);
+    }
+
+    if (Array.isArray(obj)) {
+      const arrClone = [];
+      visited.set(obj, arrClone);
+      for (const item of obj) {
+        arrClone.push(this.safeDeepClone(item, visited));
+      }
+      return arrClone;
+    }
+
+    const objClone = {};
+    visited.set(obj, objClone);
+
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        if (key === '__user__' || key === 'window') continue;
+        objClone[key] = this.safeDeepClone(obj[key], visited);
+      }
+    }
+
+    return objClone;
+  },
   // Build a field-driven output object (the same shape used for main-form
   // extravars). Honours `noOutput`, `outputObject`, `valueColumn`, dotted
   // `model` paths (including array indexes like `a.b[0].c`) and the datetime

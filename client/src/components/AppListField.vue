@@ -123,7 +123,7 @@ watch(() => props.modelValue, (v) => {
 }, { deep: true });
 
 function commit() {
-    emit('update:modelValue', rows.value);
+    emit('update:modelValue', [...rows.value]);
 }
 
 // Markers (row state tracking) - same semantics as AppTableField.
@@ -216,7 +216,9 @@ function openEditor({ row, index }) {
         subtitle,
         subform: props.subform,
         row: row ? (({ __output__: _, ...rest }) => rest)(row) : defaultRow(),
-        parentData: props.parentFormData,
+        // De parentFormData bevat de wizard context -> hier gebruiken we de veilige kloon!
+        parentData: Helpers.safeDeepClone(props.parentFormData), 
+
         onSave: (value) => applySave(value, index),
     });
 }
@@ -235,6 +237,7 @@ function defaultRow() {
 
 function applySave(value, index) {
     const isAdd = index == null;
+    
     if (isAdd) {
         if (insertMarker.value) value[insertMarker.value] = true;
         rows.value.push(value);
@@ -247,7 +250,19 @@ function applySave(value, index) {
         }
         rows.value.splice(index, 1, value);
     }
+
+    // 1. Emit the updated rows to the parent v-model
     commit();
+
+    // 2. THE WIZARD BYPASS: If we have parentFormData, write the update
+    //    DIRECTLY into the central form object of the wizard.
+    if (props.parentFormData && props.field && props.field.name) {
+        // Ensure the array in the wizard state is directly overwritten with our new rows
+        props.parentFormData[props.field.name] = [...rows.value];
+    }
+    
+    // 3. Force the local ref to recompute for the visibleRows
+    rows.value = [...rows.value];
 }
 
 function removeItem(index) {
