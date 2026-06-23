@@ -1,4 +1,4 @@
-import { spawn, execSync } from 'child_process';
+import { spawn, exec, execSync } from 'child_process';
 import logger from './logger.js';
 var Cmd = function(){
 
@@ -35,6 +35,10 @@ Cmd.killChildren = (pid) => {
   } catch (e) {
     logger.debug(`Cmd.killChildren: process.kill failed for pid ${numericPid}: ${e.message}`);
   }
+};
+
+Cmd.runCommand = (cmd) => {
+  return exec(cmd, {});
 };
 
 Cmd.executeSilentCommand = async (cmd,silent=false,singleLine=false,timeoutSeconds=60) => {
