@@ -282,3 +282,4 @@ Repo.sync = async function (name, message) {
     }
 };
 export default  Repo;
+export { validateRepoName, validateBranch, validateUri, validateHostname };
