@@ -30,6 +30,7 @@
 
 
     import dayjs from 'dayjs';
+    import Helpers from '@/lib/Helpers';
 
     // INIT
 
@@ -154,12 +155,13 @@
         } else {
             text = item[column]; // else get the value from the item
         }
+        var safeText = (text != undefined) ? Helpers.htmlEncode(text.toString()) : '';
         if (filter.value && text != undefined && field.filterable) {
-            return text.toString().replace(new RegExp(filter.value, 'gi'), match => {
+            return safeText.replace(new RegExp(Helpers.htmlEncode(filter.value), 'gi'), match => {
                 return `<b>${match}</b>`;
             }); // make the matching part bold
         } else {
-            return text; // no filter, no bold
+            return safeText; // no filter, no bold
         }
     };
 
