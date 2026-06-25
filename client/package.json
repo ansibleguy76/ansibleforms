@@ -24,6 +24,7 @@
     "bootstrap-icons": "^1.13.1",
     "core-js": "^3.49.0",
     "dayjs": "^1.11.20",
+    "dompurify": "^3.4.11",
     "highlight.js": "^11.11.1",
     "jsonwebtoken": "^9.0.3",
     "jwt-decode": "^4.0.0",
@@ -44,6 +45,7 @@
     "@vitejs/plugin-vue": "^6.0.7",
     "eslint": "^10.4.0",
     "eslint-plugin-vue": "^10.9.1",
+    "happy-dom": "^20.10.6",
     "nodemon": "^3.1.14",
     "pinia": "^3.0.4",
     "sass": "^1.99.0",
@@ -53,6 +55,7 @@
     "vite": "^8.0.13",
     "vite-plugin-pages": "^0.33.3",
     "vite-svg-loader": "^5.1.1",
+    "vitest": "^4.1.9",
     "vue-router": "^5.0.7"
   }
 }

@@ -1,11 +1,42 @@
 'use strict';
-import { exec } from 'child_process';
 import Cmd from "../lib/cmd.js";
 import logger from "../lib/logger.js";
 import path from "path";
 import fs from "fs";
 import config from '../../config/app.config.js';
 import quote from 'shell-quote/quote.js'; // shell-escape values interpolated into commands (Cmd runs with shell:true)
+
+const SAFE_NAME_REGEX = /^[a-zA-Z0-9_][a-zA-Z0-9._-]*$/;
+const SAFE_BRANCH_REGEX = /^[a-zA-Z0-9_][a-zA-Z0-9._\-/]*$/;
+const SAFE_URI_REGEX = /^(https?:\/\/|git:\/\/|ssh:\/\/|[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+:)/;
+const SAFE_HOST_REGEX = /^[a-zA-Z0-9._-]+$/;
+
+function validateRepoName(name) {
+  if (!name || typeof name !== 'string' || !SAFE_NAME_REGEX.test(name) || name.includes('..')) {
+    throw new Error(`Invalid repository name: ${name}. Only alphanumeric characters, hyphens, underscores, and dots are allowed.`);
+  }
+}
+
+function validateBranch(branch) {
+  if (!branch || typeof branch !== 'string' || !SAFE_BRANCH_REGEX.test(branch) || branch.includes('..')) {
+    throw new Error(`Invalid branch name: ${branch}. Only alphanumeric characters, hyphens, underscores, dots, and slashes are allowed.`);
+  }
+}
+
+function validateUri(uri) {
+  if (!uri || typeof uri !== 'string' || !SAFE_URI_REGEX.test(uri)) {
+    throw new Error(`Invalid repository URI. URI must start with http://, https://, git://, ssh://, or be an SSH-style path (user@host:path).`);
+  }
+  if (/[;|&$`\\!(){}[\]<>\n\r]/.test(uri.replace(/https?:\/\/[^@]*@/, ''))) {
+    throw new Error(`Repository URI contains invalid characters.`);
+  }
+}
+
+function validateHostname(host) {
+  if (!host || typeof host !== 'string' || !SAFE_HOST_REGEX.test(host)) {
+    throw new Error(`Invalid hostname: ${host}. Only alphanumeric characters, dots, hyphens, and underscores are allowed.`);
+  }
+}
 
 const Repo={
 
@@ -32,7 +63,7 @@ Repo.color = function(t){
 }
 
 Repo.delete = async function (name) {
-
+    validateRepoName(name);
     logger.notice("Deleting repository " + name)
     var directory = config.repoPath
 
@@ -46,9 +77,10 @@ Repo.delete = async function (name) {
 // run git clone
 Repo.info = async function (name) {
 
+    validateRepoName(name);
     // logger.notice(`Git repository info : ${name}`)
     var directory = path.join(config.repoPath,name)
-  
+
     var cmd
     if(name){
       cmd = `git rev-parse --short HEAD`
@@ -62,13 +94,19 @@ Repo.info = async function (name) {
 // run git clone
 Repo.clone = async function (uri,name,branch=undefined) {
 
+    validateRepoName(name);
+    validateUri(uri);
+    if (branch) {
+      validateBranch(branch);
+    }
+
     var directory = config.repoPath
     var exists = true
     try{
       fs.accessSync(path.join(directory,name))
-    }catch(e){  
-      exists=false    
-    }      
+    }catch(e){
+      exists=false
+    }
     if(exists){
       logger.notice("Repository already exists, pulling instead")
       return await Repo.pull(name)
@@ -88,8 +126,6 @@ Repo.clone = async function (uri,name,branch=undefined) {
 
       var cmd
       if(uri){
-        // branch/uri/name come from the repository config ; shell-escape them
-        // since Cmd runs the command string through a shell (no command injection)
         if(branch){
           cmd = `${config.gitCloneCommand} -b ${quote([branch])} --verbose ${quote([uri])} ${quote([name])}`
         }else{
@@ -106,6 +142,7 @@ Repo.clone = async function (uri,name,branch=undefined) {
       var match = hostRegex.exec(uri);
       if(match && uri){
         var host = match[1]
+        validateHostname(host);
         logger.notice(`Found host in command : ${host}; adding it to known_hosts`)
         cmd = `ssh-keyscan ${quote([host])} >> ~/.ssh/known_hosts ; ${cmd}`
       }else{
@@ -122,12 +159,16 @@ Repo.addKnownHosts = async function (hosts) {
     if(!hosts){
       throw new Error("No hosts given")
     }else{
+      var hostList = hosts.split(/[\s,]+/).filter(Boolean);
+      hostList.forEach(function(h) {
+        validateHostname(h);
+      });
+      var sanitizedHosts = hostList.join(' ');
       logger.notice(`Adding keys for hosts ${hosts}`)
-      // escape each host (user-controlled) ; the command runs through a shell
-      var safeHosts = String(hosts).split(/\s+/).filter(Boolean).map(h => quote([h])).join(' ')
+      var safeHosts = hostList.map(h => quote([h])).join(' ')
       var cmd = `ssh-keyscan ${safeHosts} >> ~/.ssh/known_hosts`
       logger.notice(`Running cmd : ${cmd}`)
-      var known_hosts = exec(cmd,{})
+      var known_hosts = Cmd.runCommand(cmd)
       var output = []
       known_hosts.stdout.on('data', function(a){
         logger.info(a)
@@ -153,6 +194,7 @@ Repo.addKnownHosts = async function (hosts) {
 
 // run a playbook
 Repo.pull = async function (name) {
+      validateRepoName(name);
       var command = `${config.gitPullCommand} --verbose`
       var directory = path.join(config.repoPath,name)
       return await Cmd.executeSilentCommand({directory:directory,command:command,description:"Pulling from git"},true)
@@ -240,3 +282,4 @@ Repo.sync = async function (name, message) {
     }
 };
 export default  Repo;
+export { validateRepoName, validateBranch, validateUri, validateHostname };

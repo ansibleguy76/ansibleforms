@@ -433,13 +433,12 @@
         if(!msg){
             return ""
         }
-        console.log("Replacing placeholders in message:", msg);
-        console.log("Job extravars:", job.value.extravars);
-
         return msg.replace(
             /\$\(([^\)]+)\)/g, // eslint-disable-line
             (placeholderWithDelimiters, placeholderWithoutDelimiters) =>
-            findExtravar(job.value.extravars,placeholderWithoutDelimiters) || placeholderWithDelimiters
+            Helpers.htmlEncode(
+                String(findExtravar(job.value.extravars,placeholderWithoutDelimiters) || placeholderWithDelimiters)
+            )
         );
     }
     // find extravars

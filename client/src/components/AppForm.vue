@@ -32,6 +32,7 @@ import { useTemplateRef, nextTick, inject } from "vue";
 import { copyText } from 'vue3-clipboard'
 import { useAppStore } from "@/stores/app";
 import Helpers from '@/lib/Helpers';
+import DOMPurify from 'dompurify';
 import TokenStorage from "@/lib/TokenStorage";
 import axios from "axios";
 import YAML from "yaml";
@@ -2227,7 +2228,7 @@ defineExpose({
                                     :class="{ 'text-body': !field.hide, 'text-grey': field.hide }">{{ typeof fieldLabels[field.name] === 'object' ? fieldLabels[field.name].value : fieldLabels[field.name] }}
                                 </label>
                                 
-                                <div v-show="!fieldOptions[field.name].viewable" v-html="v$.form[field.name].$model || ''"></div>
+                                <div v-show="!fieldOptions[field.name].viewable" v-html="DOMPurify.sanitize(v$.form[field.name].$model || '')"></div>
                                 <!-- raw data -->
                                 <div @dblclick="setExpressionFieldViewable(field.name, false)"
                                     v-if="fieldOptions[field.name].viewable"
