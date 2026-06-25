@@ -215,7 +215,7 @@
       if (rounded > 100) rounded = 100;
       return `<div class="progress" role="progressbar" aria-label="Basic example" aria-valuenow="${rounded}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width: ${rounded}%"></div></div>`;
     } else {
-      return value;
+      return Helpers.htmlEncode((value ?? "") + "");
     }
   }
   function select(i) {

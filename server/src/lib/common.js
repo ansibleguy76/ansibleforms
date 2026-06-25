@@ -8,6 +8,15 @@ var Helpers = function(){
 
 }
 
+Helpers.htmlEscape = function(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // Remove undefined, null, and empty string values from an object
 // Useful for preventing accidental data wiping during database updates
 Helpers.removeEmptyFields = function(obj) {
@@ -165,6 +174,7 @@ Helpers.formatOutput = (records,asText)=>{
   // loop all records
   var filterOutput=false
   records.forEach(function(el){
+    var escapedLine
     var line
     var addedTimestamp=false
     var output2=[] // => each record can still be multiple line => so this is intermediate output array
@@ -176,34 +186,35 @@ Helpers.formatOutput = (records,asText)=>{
 
     lines.forEach((line,i)=>{ // loop lines
       matchfound=false // => a flag to check if previous line was changed
+      escapedLine = Helpers.htmlEscape(line)
       if(el.output_type=="stderr"){ // if it was in the error stream
         // mark errors
         if(line.match(/^\[WARNING\].*/g) || previousformat=="warning"){ // warnings
           previousformat="warning"
           matchfound=true
-          line = "<span class='has-text-warning'>"+line+"</span>"
+          line = "<span class='has-text-warning'>"+escapedLine+"</span>"
         }else{  // errors
           previousformat="danger"
           matchfound=true
-          line = "<span class='has-text-danger'>"+line+"</span>"
+          line = "<span class='has-text-danger'>"+escapedLine+"</span>"
         }
       }else{ // regular output stream
         if(line.match(/^\[WARNING\].*/g)){ // warnings
           previousformat="warning"
           matchfound=true
-          line = "<span class='has-text-warning'>"+line+"</span>"
+          line = "<span class='has-text-warning'>"+escapedLine+"</span>"
         }else if(line.match(/^\[ERROR\].*/g)){ // errors
           previousformat="danger"
           matchfound=true
-          line = "<span class='has-text-danger'>"+line+"</span>"
+          line = "<span class='has-text-danger'>"+escapedLine+"</span>"
         }else if(line.match(/^([A-Z\s]*)[^\*]*(\*+)$/g)){ // task line with **** // mark play / task lines as bold
           previousformat=""
           matchfound=true
           if(i>1){
-            line = "<span class='has-text-weight-bold'>" + line + "</span>"
+            line = "<span class='has-text-weight-bold'>" + escapedLine + "</span>"
           }else{
             // it's a fresh line/// ansible output assumed
-            line = "\n<span class='has-text-weight-bold'>" + line + "</span>"
+            line = "\n<span class='has-text-weight-bold'>" + escapedLine + "</span>"
           }
           // if task line matches filter regex, register this task as low
           var filter=new RegExp(config.filterJobOutputRegex,"i")
@@ -215,27 +226,27 @@ Helpers.formatOutput = (records,asText)=>{
         }else if(line.match(/^(ok): \[([^\]]*)\].*/g)){ // mark succes lines
           matchfound=true
           previousformat="success"
-          line = "<span class='has-text-success'>" + line + "</span>"
+          line = "<span class='has-text-success'>" + escapedLine + "</span>"
         }else if(line.match(/^(changed): \[([^\]]*)\].*/g)){ // mark change lines
           previousformat="warning"
           matchfound=true
-          line = "<span class='has-text-warning'>" + line + "</span>"
+          line = "<span class='has-text-warning'>" + escapedLine + "</span>"
         }else if(line.match(/^(skipping): \[([^\]]*)\].*/g)){ // mark skip lines
           previousformat="info"
           matchfound=true
-          line = "<span class='has-text-info'>" + line + "</span>"
+          line = "<span class='has-text-info'>" + escapedLine + "</span>"
         }else if(!matchfound && previousformat && line && line.trim()!='\r\n' && line.trim()){ // if line continues on next line, give same format
-          line = `<span class='has-text-${previousformat}'>${line}</span>`
+          line = `<span class='has-text-${previousformat}'>${escapedLine}</span>`
         }else{
-          if(line && line.trim()!='\r\n' && line.trim()){  // is text ? 
-            line = `<span class=''>${line}</span>` // then wrap in span
+          if(line && line.trim()!='\r\n' && line.trim()){  // is text ?
+            line = `<span class=''>${escapedLine}</span>` // then wrap in span
           }
         }        
         // summary line ?
-        if(line.match('ok=.*failed.*')){
+        if(escapedLine.match('ok=.*failed.*')){
           matchfound=true
           previousformat=""
-          line=line.replace(/(ok=[1-9]+[0-9]*)/g, "<span class='tag is-success'>$1</span>")
+          line=escapedLine.replace(/(ok=[1-9]+[0-9]*)/g, "<span class='tag is-success'>$1</span>")
                       .replace(/(changed=[1-9]+[0-9]*)/g, "<span class='tag is-warning'>$1</span>")
                       .replace(/(failed=[1-9]+[0-9]*)/g, "<span class='tag is-warning'>$1</span>")
                       .replace(/(unreachable=[1-9]+[0-9]*)/g, "<span class='tag is-warning'>$1</span>")
