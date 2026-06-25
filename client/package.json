@@ -24,6 +24,7 @@
     "bootstrap-icons": "^1.13.1",
     "core-js": "^3.49.0",
     "dayjs": "^1.11.20",
+    "dompurify": "^3.4.11",
     "highlight.js": "^11.11.1",
     "jsonwebtoken": "^9.0.3",
     "jwt-decode": "^4.0.0",
