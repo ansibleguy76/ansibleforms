@@ -38,49 +38,44 @@ import backups from "@/pages/admin/backups.vue"
 
 import TokenStorage from '@/lib/TokenStorage.js'
 
-// checkDesigner
 const checkDesigner=(to, from, next) => {
   var payload = TokenStorage.getPayload()
   if(payload?.user?.options?.showDesigner){
     next()
   }else{
-    console.log("You don't have access to the designer")
+    next({ name: "/" })
   }
 }
-// checkLogs
 const checkLogs=(to, from, next) => {
   var payload = TokenStorage.getPayload()
   if(payload?.user?.options?.showLogs){
     next()
   }else{
-    console.log("You don't have access to the logs")
+    next({ name: "/" })
   }
 }
-// checkJobs
 const checkJobs=(to, from, next) => {
   var payload = TokenStorage.getPayload()
   if(payload?.user?.options?.showJobs){
     next()
   }else{
-    console.log("You don't have access to the jobs")
+    next({ name: "/" })
   }
 }
-// checkSettings
 const checkSettings=(to, from, next) => {
   var payload = TokenStorage.getPayload()
   if(payload?.user?.options?.showSettings){
     next()
   }else{
-    console.log("You don't have access to the settings")
+    next({ name: "/" })
   }
 }
-// allowBackupOps
 const allowBackupOps=(to, from, next) => {
   var payload = TokenStorage.getPayload()
   if(payload?.user?.options?.allowBackupOps){
     next()
   }else{
-    console.log("You don't have access to the backups page")
+    next({ name: "/" })
   }
 }
 
