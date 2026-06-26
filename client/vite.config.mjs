@@ -74,7 +74,7 @@ export default defineConfig({
     port: 8443,
     proxy: {
       '/api/': {
-        target: 'http://172.16.50.4:3001',
+        target: process.env.API_PROXY_TARGET || 'http://localhost:3001',
         changeOrigin: true,
         secure: false,
       }
