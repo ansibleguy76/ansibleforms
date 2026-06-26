@@ -1,7 +1,7 @@
 // tests for Helpers.formatOutput ; run with `npm test` (node --test)
 // covers the classic ansible output coloring (regression) and the
 // awx workflow status lines coloring (issue #420)
-import { test } from "node:test";
+const { test } = await import("vitest");
 import assert from "node:assert/strict";
 
 // minimal env so the config modules load without a real setup

@@ -1,5 +1,5 @@
 // tests for the logo image magic-byte sniffer ; run with `npm test` (node --test)
-import { test } from "node:test";
+const { test } = await import("vitest");
 import assert from "node:assert/strict";
 import { sniffImageMime } from "../src/lib/imagetype.js";
 
