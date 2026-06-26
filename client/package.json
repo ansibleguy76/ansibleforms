@@ -2,7 +2,7 @@
   "name": "ansible-forms",
   "description": "The Vue3 front of the ansible forms web application",
   "scripts": {
-    "dev": "vite --host",
+    "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --fix --ignore-path .gitignore"
