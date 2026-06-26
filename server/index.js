@@ -5,6 +5,7 @@ import { injectBaseUrl } from './src/lib/baseurl.js';
 import { resolve } from 'path';
 import history from 'connect-history-api-fallback';
 import httpsConfig from './config/https.config.js';
+import authConfig from './config/auth.config.js';
 import logger from './src/lib/logger.js';
 import https from 'https';
 import http from 'http';
@@ -19,6 +20,10 @@ const app = express();
 // load the ansibleforms app
 async function start(){
   await ansibleforms.load(app);
+
+  if (authConfig.secretIsGenerated) {
+    logger.warning('[SECURITY] JWT signing secret was auto-generated. All tokens will be invalidated on restart. Set the ACCESS_TOKEN_SECRET environment variable for persistent token signing.');
+  }
 
   // set the start directory to load our vue app (frontend/gui)
   const publicPath = resolve(__dirname, './views');
