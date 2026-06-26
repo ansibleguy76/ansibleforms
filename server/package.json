@@ -8,14 +8,8 @@
   },
   "description": "The nodejs backend for the ansible forms web applications",
   "scripts": {
-    "start": "npm run prod",
-    "build": "npm-run-all clean transpile",
-    "copy": "cp .env.development ./dist/.env.development",
-    "server": "NODE_ENV=development node ./",
+    "start": "NODE_ENV=production node ./",
     "dev": "NODE_ENV=development nodemon --watch src --watch schema --watch config ./index.js",
-    "prod": "NODE_ENV=production npm-run-all build server",
-    "copyviews": "mkdir -p ./dist/views && cp -R ../client/dist/* ./dist/views/",
-    "clean": "rimraf dist",
     "test": "vitest run",
     "test:watch": "vitest"
   },
@@ -67,8 +61,6 @@
   "devDependencies": {
     "eslint": "~10.4.0",
     "nodemon": "~3.1.14",
-    "npm-run-all": "*",
-    "rimraf": "~6.1.3",
     "vitest": "^4.1.9"
   },
   "eslintConfig": {
