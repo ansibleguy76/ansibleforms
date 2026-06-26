@@ -14,6 +14,7 @@ import passport from "passport";
 
 // App configuration and utilities
 import Middleware from "./lib/middleware.js";
+import logger from "./lib/logger.js";
 import init from "./init/index.js";
 import appConfig from "../config/app.config.js";
 
@@ -131,8 +132,11 @@ const load = async (app) => {
   // mysql2 has a bug that can throw an uncaught exception if the mysql server crashes (not enough mem for example)
   // also git commands can chain child processes and cause issues
   process.on("uncaughtException", function (err) {
-    // handle the error safely
-    console.error("An uncaught exception happened, ignore... ", err);
+    logger.error("Uncaught exception: ", err);
+  });
+
+  process.on("unhandledRejection", function (reason) {
+    logger.error("Unhandled promise rejection: ", reason);
   });
 
   // using json web tokens as middleware
