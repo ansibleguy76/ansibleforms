@@ -1,7 +1,7 @@
 // tests for the forms <-> git pure helpers (issue #414) ; run with `npm test`
 // (node --test). Covers the pull-error mapping, config-repo resolution and the
 // per-file save-target placement (incl. staging of new forms).
-import { test } from "node:test";
+const { test } = await import("vitest");
 import assert from "node:assert/strict";
 import path from "path";
 import { friendlyPullError, configRepoFromPath, resolveTargetDir, claimAllOrRollback } from "../src/lib/forms-git.js";

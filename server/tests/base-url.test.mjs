@@ -1,5 +1,5 @@
 // tests for the subpath hosting helpers (issue #106) ; run with `npm test` (node --test)
-import { test } from "node:test";
+const { test } = await import("vitest");
 import assert from "node:assert/strict";
 import { normalizeBaseUrl, injectBaseUrl } from "../src/lib/baseurl.js";
 

@@ -1,7 +1,7 @@
 // integration tests for the awx (workflow) job tracking ; run with `npm test` (node --test)
 // spins up a test awx api and mocks the database, then runs the real
 // Awx.trackJob / Awx.trackWorkflowJob polling loops against it (issue #420)
-import { test, before, after, beforeEach } from "node:test";
+const { test, beforeAll: before, afterAll: after, beforeEach } = await import("vitest");
 import assert from "node:assert/strict";
 import http from "http";
 

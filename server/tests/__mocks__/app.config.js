@@ -3,4 +3,5 @@ export default {
   gitCloneCommand: 'git clone',
   gitPullCommand: 'git pull',
   filterJobOutputRegex: '.*',
+  awxApiPrefix: '/api/v2',
 };
