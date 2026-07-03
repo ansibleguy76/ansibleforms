@@ -19,7 +19,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   new environment var DEFAULT_LANGUAGE (if no client cookie preference is passed)
 -   New `wizard:` property on forms: render a sequence of reusable subforms as numbered steps with Back/Next navigation, per-step validation, optional `defaultModel` prefix to namespace each step's output, optional steps with `when:` visibility expressions, and a `summary` step that shows a read-only review of the merged extravars before submit. Cross-step references work via `$(__parent__.<stepname>.<field>)`.
 -   Full editor repository integration (#414) - tx to blaipr
--   Added a logo uploader
+-   Custom logo uploader in the admin panel (#457) - tx to blaipr
+
+### Security
+
+-   Fix authentication bypass via hard-coded default JWT signing secret (GHSA-g27f-cjvv-42rf) - tx to blaipr
+-   Fix OS command injection in repository git operations (GHSA-56pr-p4x6-mwm6) - tx to blaipr
+-   Fix stored cross-site scripting in job output and form fields (GHSA-wcmj-wqvw-6c88) - tx to blaipr
 
 ### Fixed
 
@@ -29,6 +35,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   mask pw in yaml field (#450)
 -   show output for AWX workflow (#420) (huge thanks to blaipr for the fix)
 -   run AF under a sub path (#106) (huge thanks to blaipr for the fix)
+-   Guard forms-repo write lock against status wedge on transient race (#459) - tx to blaipr
+-   Use localhost and env var for Vite dev proxy target (#465) - tx to blaipr
+-   Remove dead server build scripts and unused deps (`npm-run-all`, `rimraf`) (#466) - tx to blaipr
+-   Make .mjs tests vitest-compatible and fix AWX abort test failures (#467) - tx to blaipr
+-   Fix password field validation checking wrong dirty state on login page (#468) - tx to blaipr
+-   Redirect to home when router guards deny access instead of blank page (#469) - tx to blaipr
+-   Remove unused `jsonwebtoken` from client dependencies (#470) - tx to blaipr
+-   Add `unhandledRejection` handler and log uncaught errors via winston (#471) - tx to blaipr
 
 ## [6.2.0] - 2026-05-26
 
