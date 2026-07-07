@@ -6,10 +6,12 @@ import OIDC from "../../models/oidc.model.js";
 import passport from 'passport';
 import jwt from 'jsonwebtoken';
 import authConfig from '../../../config/auth.config.js';
+import appConfig from '../../../config/app.config.js';
 import logger from "../../lib/logger.js";
 import helpers from '../../lib/common.js';
 import RestResult from "../../models/restResult.model.v2.js";
 import auth_oidc from "../../auth/auth_oidc.js";
+import i18n from "../../lib/i18n.js";
 
 function hasValidLoginOption(user) {
   // Support deprecated 'enableLogin' — use 'allowLogin' instead
@@ -109,7 +111,7 @@ const basic = async function(req, res,next) {
               logger.error(e)
             }
             
-            return res.status(401).json(RestResult.error("Authentication failed", e || "Invalid credentials"));
+            return res.status(401).json(RestResult.error(i18n.t(req, 'auth.authFailed'), e || i18n.t(req, 'auth.invalidCredentials')));
           }
           // we found a user (local or ldap) with correct password; we start the login process (a function attached by passport !)
           // http://www.passportjs.org/docs/login/
@@ -122,7 +124,7 @@ const basic = async function(req, res,next) {
                 //return next(error);
               }
               if(!hasValidLoginOption(user)){
-                return res.status(401).json({ error: "Not authenticated, login is not enabled for this user." });
+                return res.status(401).json({ error: i18n.t(req, 'auth.loginDisabled') });
               }        
               // send the tokens to the requester
               return res.json(userToJwt(user,req.query.expiryDays));
@@ -151,7 +153,7 @@ const basic_ldap = async function(req, res,next) {
           if(e && e.includes("No ldap configured")){
             errorMessage = res.locals.basic_authentication_error || "Authentication failed";
           }
-          return res.status(401).json(RestResult.error("Authentication failed", errorMessage || "Invalid credentials"));
+          return res.status(401).json(RestResult.error(i18n.t(req, 'auth.authFailed'), errorMessage || i18n.t(req, 'auth.invalidCredentials')));
         }
         // we found a user (local or ldap) with correct password; we start the login process (a function attached by passport !)
         // http://www.passportjs.org/docs/login/
@@ -165,7 +167,7 @@ const basic_ldap = async function(req, res,next) {
             }
           
             if(!hasValidLoginOption(user)){
-              return res.status(401).json({ error: "Not authenticated, login is not enabled for this user." });
+              return res.status(401).json({ error: i18n.t(req, 'auth.loginDisabled') });
             }
             // send the tokens to the requester
             return res.json(userToJwt(user,req.query.expiryDays));
@@ -194,7 +196,7 @@ const logout = async function(req, res, next){
 
 // catches middleware error (non implemented strategy for example)
 const errorHandler = async function(err,req, res,next) {
-  res.redirect(`/login?error=${err}`)
+  res.redirect(`${appConfig.baseUrl}/login?error=${err}`)
 };
 
 /**
@@ -231,7 +233,7 @@ const authCallback = function(req, res, next, type) {
         logger.error(helpers.getError(err))
         return next(err)
       }else{
-        res.redirect(`/login?token=${token}`)
+        res.redirect(`${appConfig.baseUrl}/login?token=${token}`)
       }
 
     } catch (err) {
@@ -289,14 +291,14 @@ const azureadoauth2login = async function(req, res,next) {
     user.roles = ro.roles
     user.options = ro.options  
     if(!hasValidLoginOption(user)){
-      return res.status(401).json({ error: "Not authenticated, login is not enabled for this user." });
+      return res.status(401).json({ error: i18n.t(req, 'auth.loginDisabled') });
     }     
     // return token
     res.json(userToJwt(user))
 
   } catch(err){
     logger.error(helpers.getError(err))
-    return res.status(401).json(RestResult.error("Azure AD authentication failed", helpers.getError(err)));
+    return res.status(401).json(RestResult.error(i18n.t(req, 'auth.azureFailed'), helpers.getError(err)));
   }
 };
 
@@ -321,14 +323,14 @@ const oidcLogin = async function(req, res, next) {
     user.roles = ro.roles
     user.options = ro.options  
     if(!hasValidLoginOption(user)){
-      return res.status(401).json({ error: "Not authenticated, login is not enabled for this user." });
+      return res.status(401).json({ error: i18n.t(req, 'auth.loginDisabled') });
     }     
     // return token
     res.json(userToJwt(user))
 
   } catch(err){
     logger.error(helpers.getError(err))
-    return res.status(401).json(RestResult.error("OIDC authentication failed", helpers.getError(err)));
+    return res.status(401).json(RestResult.error(i18n.t(req, 'auth.oidcFailed'), helpers.getError(err)));
   }
 };
 

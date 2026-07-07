@@ -32,7 +32,9 @@ async function getDirStats(dirPath) {
         totalSize += stat.size;
       }
     }
-  } catch {}
+  } catch (e) {
+    logger.warning(`getDirSize: failed to read ${dirPath}: ${e.message || e}`);
+  }
   return { fileCount, totalSize };
 }
 

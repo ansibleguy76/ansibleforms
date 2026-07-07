@@ -1,7 +1,11 @@
 <script setup>
 import axios from 'axios';
 import Profile from '@/lib/Profile';
-import settings from '@/config/settings';
+import getSettings from '@/config/settings';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
+const settings = computed(() => getSettings(t));
 import TokenStorage from '@/lib/TokenStorage';
 
 const adminMulti = ref(null);
@@ -42,8 +46,8 @@ onMounted(async () => {
         <main class="d-flex flex-nowrap container-xxl">
             <AppSidebar />
             <AppAdminMulti v-if="authenticated" ref="adminMulti" :settings="settings.dataSchemas" @preview="previewOutput" @reset="triggerReset" />
-            <BsOffCanvas title="Last Output" :show="showDataSchemaOutput" @close="offcanvasClose">
-                <pre>{{ currentDataSchema?.output || 'Loading...' }}</pre>
+            <BsOffCanvas :title="t('admin.lastOutput')" :show="showDataSchemaOutput" @close="offcanvasClose">
+                <pre>{{ currentDataSchema?.output || t('admin.loading') }}</pre>
             </BsOffCanvas>
         </main>
     </div>

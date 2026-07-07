@@ -5,6 +5,8 @@ import Helpers from "@/lib/Helpers";
 import TokenStorage from "@/lib/TokenStorage";
 import { useRoute, useRouter } from "vue-router";
 
+const { t } = useI18n();
+
 const authenticated = ref(false);
 const formConfig = ref({});
 const search = ref("");
@@ -131,7 +133,7 @@ onMounted(async () => {
     <BsOffCanvas
         :show="showWarnings && (formConfig?.warnings?.length > 0 || formConfig?.errors?.length > 0)"
         icon="triangle-exclamation"
-        title="Form warnings"
+        :title="t('forms.formWarnings')"
         @close="showWarnings = false"
     >
         <template #default>
@@ -146,7 +148,7 @@ onMounted(async () => {
                     <div class="col-md-auto bg-categories h-100 border-top-0">
                         <div class="d-flex align-items-center p-3 mb-3 link-body-emphasis text-decoration-none border-bottom">
                             <FaIcon icon="fas,layer-group" />
-                            <span class="ms-2 fs-5 fw-bold">Categories</span>
+                            <span class="ms-2 fs-5 fw-bold">{{ t('forms.categories') }}</span>
                         </div>
                         <ul class="list-unstyled my-3">
                             <li role="button">
@@ -155,7 +157,7 @@ onMounted(async () => {
                                         <span class="me-2">
                                             <FaIcon icon="check-double" :fixedwidth="true"></FaIcon>
                                         </span>
-                                        All Forms</span>
+                                        {{ t('forms.allForms') }}</span>
                                     <span v-if="isAll" class="badge px-3 rounded-pill active">{{ forms.length }}</span>
                                     <span v-else class="badge px-3 rounded-pill">{{
                                         forms.length
@@ -177,15 +179,15 @@ onMounted(async () => {
                                     <span class="me-1">
                                         <FaIcon icon="exclamation-triangle" />
                                     </span>
-                                    {{ showWarnings ? 'Hide' : 'This config has' }} Warnings or Errors
+                                    {{ showWarnings ? t('forms.hideWarnings') : t('forms.hasWarnings') }} {{ t('forms.warningsOrErrors') }}
                                 </button>
-                                <button class="btn btn-outline-secondary btn-sm ms-2" @click="(viewMode==='tiles')?setView('list'):setView('tiles')" title="Toggle view">
+                                <button class="btn btn-outline-secondary btn-sm ms-2" @click="(viewMode==='tiles')?setView('list'):setView('tiles')" :title="t('common.actions')">
                                     <span class="me-1"><FaIcon :icon="viewMode==='tiles'? 'th-list' : 'th'" /></span>
-                                    <span v-if="viewMode==='tiles'">List</span>
-                                    <span v-else>Tiles</span>
+                                    <span v-if="viewMode==='tiles'">{{ t('forms.list') }}</span>
+                                    <span v-else>{{ t('forms.tiles') }}</span>
                                 </button>
                             </div>
-                            <BsInput v-model="search" placeholder="Search" label="Filter" type="text" icon="search" />
+                            <BsInput v-model="search" :placeholder="t('forms.search')" :label="t('forms.filter')" type="text" icon="search" />
                             <div v-if="viewMode==='tiles'" class="row align-content-stretch g-4">
                                 <TransitionGroup>
                                     <div class="col-md-6 col-lg-4 col-xxl-3" v-for="form in getForms" :key="form.name">
@@ -223,8 +225,8 @@ onMounted(async () => {
                                 <table class="table table-bordered table-hover">
                                     <thead>
                                         <tr>
-                                            <th>Name</th>
-                                            <th>Description</th>
+                                            <th>{{ t('forms.name') }}</th>
+                                            <th>{{ t('forms.description') }}</th>
                                         </tr>
                                     </thead>
                                     <tbody>

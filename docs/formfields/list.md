@@ -207,6 +207,76 @@ forms:
     - email
 ```
 
+### Pre-populating rows
+
+A list can be pre-filled from three sources. In every case the produced rows must be objects whose keys match the referenced subform's field names.
+
+#### Static `default`
+
+```yaml
+- name: addresses
+  type: list
+  label: Addresses
+  subform: Address
+  columns:
+    - city
+    - country
+  default:
+    - street: Main 1
+      city: Brussels
+      country: BE
+    - street: Side 22
+      city: Paris
+      country: FR
+```
+
+#### From a REST API (`expression`)
+
+```yaml
+- name: users
+  type: list
+  label: Users
+  subform: User
+  columns:
+    - username
+    - email
+  expression: fn.fnRestBasic('get','https://api.example.com/users','','my_api_cred','')
+  refresh: true            # add a refresh button (or '30s' for auto-refresh)
+```
+
+#### From a database query (`dbConfig` + `query`)
+
+```yaml
+- name: servers
+  type: list
+  label: Servers
+  subform: Server
+  columns:
+    - hostname
+    - role
+  dbConfig: CMDB_CONN
+  query: SELECT hostname, role FROM servers WHERE active = 1
+```
+
+#### From a local expression (`runLocal`)
+
+```yaml
+- name: ports
+  type: list
+  label: Open ports
+  subform: Port
+  columns:
+    - port
+    - protocol
+  runLocal: true
+  expression: |
+    [
+      { port: 22,  protocol: 'tcp' },
+      { port: 80,  protocol: 'tcp' },
+      { port: 443, protocol: 'tcp' }
+    ]
+```
+
 ### Nested lists
 
 ```yaml

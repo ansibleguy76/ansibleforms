@@ -45,6 +45,7 @@ var v$ = null;
 
 // use
 const route = useRoute();
+const { t } = useI18n();
 
 const store = useAppStore();
 
@@ -72,7 +73,7 @@ const props = defineProps(
         },
         submitLabel: {
             type: String,
-            default: "Submit"
+            default: ""
         },
         submitIcon: {
             type: String,
@@ -94,10 +95,13 @@ const props = defineProps(
         // status bar and job-launching UI handled by the parent page.
         // 'subform' renders only the fields and validation, with Save/Cancel
         // buttons. Used by AppListField to edit a single row of a list.
+        // 'wizard' renders only the fields and validation, with no footer
+        // buttons (the wizard parent owns Back/Next/Skip/Submit). Use the
+        // exposed `validateForm()` method to gate navigation.
         mode: {
             type: String,
             default: "form",
-            validator: (v) => ["form", "subform"].includes(v)
+            validator: (v) => ["form", "subform", "wizard"].includes(v)
         },
         // Optional array of subform definitions (validated forms of type
         // "subform") provided by the server alongside a form. Propagated
@@ -157,27 +161,27 @@ const containerSize = ref({
 const containerRef = useTemplateRef("containerRef");
 
 // Define submit dropdown actions
-const submitActions = [
+const submitActions = computed(() => [
     {
         key: 'schedule',
-        label: 'Schedule (Recurring)',
+        label: t('form.scheduleRecurring'),
         icon: 'calendar-plus',
         roleOption: 'allowScheduledJobs'
     },
     {
         key: 'run-later',
-        label: 'Run Later (One-time)',
+        label: t('form.runLaterOneTime'),
         icon: 'clock',
         roleOption: 'allowPlannedJobs',
         divider: true
     },
     {
         key: 'store',
-        label: 'Store',
+        label: t('form.store'),
         icon: 'file-export',
         roleOption: 'allowStoredJobs'
     }
-];
+]);
 
 // COMPUTED
 //----------------------------------------------------------------
@@ -200,7 +204,7 @@ const unevaluatedFieldsWarning = computed(() => {
     if (canSubmit.value) {
         return undefined;
     } else {
-        return unevaluatedFields.value.join(",") + " " + ((unevaluatedFields.value.length == 1) ? "is" : "are") + " unevaluated...";
+        return unevaluatedFields.value.join(",") + " " + ((unevaluatedFields.value.length == 1) ? t('form.unevaluatedIs') : t('form.unevaluatedAre'));
     }
 });
 
@@ -732,9 +736,9 @@ function clip(v, doNotStringify = false) {
         } else {
             copyText(JSON.stringify(v))
         }
-        toast.success("Copied to clipboard")
+        toast.success(t('form.copiedToClipboard'))
     } catch (err) {
-        toast.error("Error copying to clipboard : \n" + err.toString())
+        toast.error(err.toString())
     }
 }
 
@@ -751,10 +755,28 @@ function clipYaml(fieldName) {
         const value = raw.__output__ ?? raw;
         const yamlContent = YAML.stringify(value);
         copyText(yamlContent);
-        toast.success("Copied modeled YAML to clipboard");
+        toast.success(t('form.copiedYamlToClipboard'));
     } catch (err) {
-        toast.error("Error copying to clipboard : \n" + err.toString());
+        toast.error(err.toString());
     }
+}
+
+// Build the YAML preview for a `yaml`-typed field with a subform. The
+// raw value carries the real password values so they can be saved /
+// downloaded / copied verbatim, but the on-screen YAML masks any
+// password-typed subform fields. Returns "" when there is no value to
+// display (the template falls back to the placeholder).
+function yamlSubformPreview(field) {
+    const raw = form.value[field.name];
+    if (!raw || typeof raw !== 'object') return '';
+    const value = raw.__output__ ?? raw;
+    const resolvedSubform = field.subform
+        ? props.subforms.find(s => s.name === field.subform)
+        : null;
+    const masked = resolvedSubform?.fields
+        ? Helpers.maskPasswordsForDisplay(value, resolvedSubform.fields, props.subforms || [])
+        : value;
+    return YAML.stringify(masked);
 }
 
 // Create a list of fields per group
@@ -1402,7 +1424,7 @@ function validateForm() {
         }
     });
     if (!isValid) {
-        toast.warning("Form contains invalid data");
+        toast.warning(t('form.invalidData'));
         return false; // do not start if form is invalid
     } else {
         return true;
@@ -1462,14 +1484,14 @@ function stripSubformInternals(src) {
 // is exposed as a separate top-toolbar button by the page (alongside Back),
 // because loading replaces the current draft and feels more like an entry
 // action than a commit action. Store keeps partial drafts without validation.
-const subformActions = [
+const subformActions = computed(() => [
     {
         key: 'store',
-        label: 'Store',
+        label: t('form.store'),
         icon: 'file-export',
         roleOption: 'allowStoredJobs',
     },
-];
+]);
 
 function handleSubformAction(actionKey) {
     // No validation for store/load - authors may want to save partial work.
@@ -1484,16 +1506,19 @@ function openYamlSubformEditor(field) {
     const resolvedSubform = props.subforms.find(s => s.name === field.subform);
     if (!resolvedSubform) return;
     const title = field.label || field.name;
-    // Build a starting draft from the current value or subform defaults.
+    // Build a starting draft from the current value, or an empty object so
+    // the embedded AppForm runs its own default-evaluation pipeline
+    // (initiateDefaults -> getDefaultValue), which honours placeholder
+    // resolution and `evalDefault`. Pre-filling raw `f.default` here would
+    // make the embedded form treat the value as user-supplied initialData
+    // and skip that pipeline, leaving expression strings like
+    // `$(otherfield) + 1` literally in the field.
     let row = form.value[field.name];
     if (!row || typeof row !== 'object' || Array.isArray(row)) {
         row = {};
-        for (const f of (resolvedSubform.fields || [])) {
-            if (f.default !== undefined) row[f.name] = f.default;
-            else if (f.type === 'list') row[f.name] = [];
-        }
     } else {
-        row = JSON.parse(JSON.stringify(row));
+        const { __output__: _omit, ...rest } = row;
+        row = JSON.parse(JSON.stringify(rest));
     }
     
     // Resolve placeholders in titleEdit so $(__parent__.fieldname) works
@@ -2080,7 +2105,7 @@ async function startDynamicFieldsLoop() {
             } else {
                 if (watchdog.value > 50) {
                     status.value = "";
-                    toast.warning("It took too long to evaluate all fields before run.\r\nLet the form stabilize and try again.");
+                    toast.warning(t('form.tooLongToEvaluate'));
                     toast.warning(unevaluatedFieldsWarning.value);
                 }
             }
@@ -2117,6 +2142,13 @@ onUnmounted(() => {
     window.removeEventListener('resize', calcContainerSize);
     clearInterval(interval.value);
 })
+
+// Exposed for the wizard parent: lets it gate Next/Submit on validation.
+// Returns true when the form is valid, false otherwise (and toasts a warning).
+defineExpose({
+    validateForm,
+    visibility,
+});
 </script>
 <template>
 
@@ -2126,7 +2158,7 @@ onUnmounted(() => {
 
         <!-- WARNINGS -->
         <BsOffCanvas v-if="showWarnings" :show="true"
-            icon="triangle-exclamation" title="Form warnings" @close="showWarnings = false">
+            icon="triangle-exclamation" :title="t('form.formWarnings')" @close="showWarnings = false">
             <template #actions> </template>
             <template #default>
                 <p v-if="!canSubmit && !formLoopIsBusy" class="mb-3" v-html="unevaluatedFieldsWarning"></p>
@@ -2447,7 +2479,7 @@ onUnmounted(() => {
                                         <div class="card p-3 yaml-readonly limit-height"
                                             :class="{ 'border-danger': v$.form[field.name].$invalid }">
                                             <pre v-if="v$.form[field.name].$model && typeof v$.form[field.name].$model === 'object'"
-                                                v-highlightjs><code language="yaml" style="border:none;padding:0">{{ YAML.stringify(v$.form[field.name].$model.__output__ ?? v$.form[field.name].$model) }}</code></pre>
+                                                v-highlightjs><code language="yaml" style="border:none;padding:0">{{ yamlSubformPreview(field) }}</code></pre>
                                             <span v-else class="text-muted fst-italic">{{ field.placeholder || '(empty)' }}</span>
                                         </div>
                                         <div v-if="v$.form[field.name].$invalid && getErrorsToDisplay(field.name).length > 0"
@@ -2513,7 +2545,7 @@ onUnmounted(() => {
         <div class="d-grid my-3" v-if="mode === 'form' && status == ''">
             <BsDropdownButton 
                 :icon="submitIcon"
-                :label="submitLabel"
+                :label="submitLabel || t('form.submit')"
                 colorClass="primary"
                 :actions="submitActions"
                 @click="handleSubmitAction('submit')"
@@ -2522,10 +2554,10 @@ onUnmounted(() => {
         </div>
         <!-- Subform Save/Cancel buttons (used when embedded in AppListField) -->
         <div class="d-flex justify-content-end gap-2 my-3" v-if="mode === 'subform'">
-            <BsButton icon="xmark" colorClass="secondary" @click="emit('cancel')">Cancel</BsButton>
+            <BsButton icon="xmark" colorClass="secondary" @click="emit('cancel')">{{ t('form.cancel') }}</BsButton>
             <BsDropdownButton
                 icon="check"
-                label="Save"
+                :label="t('form.save')"
                 colorClass="primary"
                 :fullWidth="false"
                 :menuEnd="true"
@@ -2534,13 +2566,15 @@ onUnmounted(() => {
                 @action="handleSubformAction"
             />
         </div>
+        <!-- Wizard mode renders no footer buttons; the wizard parent owns
+             Back/Next/Skip/Submit (gated by the exposed validateForm()). -->
     </div>
 
     <!-- LOADER & FORM NOT FOUND -->
 
     <div v-else>
-        <h2>Loading...</h2>
-        <div class="alert alert-info">The form is not ready...</div>
+        <h2>{{ t('form.loading') }}</h2>
+        <div class="alert alert-info">{{ t('form.formNotReady') }}</div>
     </div>
 
 </template>

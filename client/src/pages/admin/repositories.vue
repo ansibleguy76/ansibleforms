@@ -1,7 +1,11 @@
 <script setup>
 import axios from 'axios';
 import Profile from '@/lib/Profile';
-import settings from '@/config/settings';
+import getSettings from '@/config/settings';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
+const settings = computed(() => getSettings(t));
 import TokenStorage from '@/lib/TokenStorage';
 
 const adminMulti = ref(null);
@@ -22,6 +26,13 @@ function offcanvasClose() {
 async function triggerClone(repo) {
     adminMulti.value.setItemProperty({ id: repo.name, key: "status", value: "running" });
     await axios.post(`/api/v2/repository/${repo.name}/clone`, {}, TokenStorage.getAuthentication());
+    // wait 1 second to visually see the change
+    await new Promise(r => setTimeout(r, 1000));
+    adminMulti.value.loadItems()
+}
+async function triggerSync(repo) {
+    adminMulti.value.setItemProperty({ id: repo.name, key: "status", value: "running" });
+    await axios.post(`/api/v2/repository/${repo.name}/sync`, {}, TokenStorage.getAuthentication()).catch(() => {});
     // wait 1 second to visually see the change
     await new Promise(r => setTimeout(r, 1000));
     adminMulti.value.loadItems()
@@ -47,9 +58,9 @@ onMounted(async () => {
     <div class="flex-shrink-0">
         <main class="d-flex flex-nowrap container-xxl">
             <AppSidebar />
-            <AppAdminMulti v-if="authenticated" ref="adminMulti" :settings="settings.repositories" :apiVersion="2" @trigger="triggerClone" @preview="previewOutput" @reset="triggerReset" />
-            <BsOffCanvas title="Last Output" :show="showRepoOutput" @close="offcanvasClose">
-                <pre>{{ currentRepo?.output || 'Loading...' }}</pre>
+            <AppAdminMulti v-if="authenticated" ref="adminMulti" :settings="settings.repositories" :apiVersion="2" @trigger="triggerClone" @preview="previewOutput" @reset="triggerReset" @sync="triggerSync" />
+            <BsOffCanvas :title="t('admin.lastOutput')" :show="showRepoOutput" @close="offcanvasClose">
+                <pre>{{ currentRepo?.output || t('admin.loading') }}</pre>
             </BsOffCanvas>
         </main>
     </div>

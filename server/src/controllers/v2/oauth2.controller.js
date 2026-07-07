@@ -1,9 +1,9 @@
 
-
 'use strict';
 import OAuth2 from '../../models/oauth2.model.js';
 import RestResult from '../../models/restResult.model.v2.js';
 import Errors from '../../lib/errors.js';
+import i18n from '../../lib/i18n.js';
 import auth_azuread from '../../auth/auth_azuread.js';
 import auth_oidc from '../../auth/auth_oidc.js';
 
@@ -37,7 +37,7 @@ const oauth2Controller = {
       const created = await OAuth2.create(req.body);
       await auth_azuread.initialize(); // we wait for the azuread to be ready
       await auth_oidc.initialize(); // we wait for the oidc to be ready
-      return res.status(201).json(RestResult.single("oauth2 provider added", created));
+      return res.status(201).json(RestResult.single(i18n.t(req, 'resources.oauth2Added'), created));
     } catch (err) {
       Errors.ReturnError(res, err);
     }

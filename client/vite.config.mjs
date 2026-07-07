@@ -13,6 +13,9 @@ import { fileURLToPath, URL } from 'node:url'
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  // relative base, so a single build works under any subpath (issue #106)
+  // the server rewrites the <base href="/"> tag in index.html at runtime (BASE_URL)
+  base: './',
   plugins: [
     basicSsl(),
     svgLoader(
@@ -31,6 +34,7 @@ export default defineConfig({
       imports: [
         'vue',
         'vue-router',
+        { 'vue-i18n': ['useI18n'] },
       ],
       eslintrc: {
         enabled: true,
@@ -56,7 +60,6 @@ export default defineConfig({
     ],
   },
   build:{
-    base: './',
     minify: 'terser',
     terserOptions: {
       mangle: {
@@ -71,7 +74,7 @@ export default defineConfig({
     port: 8443,
     proxy: {
       '/api/': {
-        target: 'http://172.16.50.4:3001',
+        target: process.env.API_PROXY_TARGET || 'http://localhost:3001',
         changeOrigin: true,
         secure: false,
       }

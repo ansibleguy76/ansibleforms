@@ -3,16 +3,17 @@ import Job from '../../models/job.model.js';
 import RestResultv2 from '../../models/restResult.model.v2.js';
 import logger from "../../lib/logger.js";
 import stream from 'stream';
+import i18n from '../../lib/i18n.js';
 
 const abortJob = async function(req, res) {
   var jobid = req.params.id;
   if(!jobid){
-    res.status(409).json(RestResultv2.error("You must provide a jobid"));
+    res.status(409).json(RestResultv2.error(i18n.t(req, 'jobs.mustProvideJobId')));
     return false
   }
   try {
     await Job.abort(jobid);
-    res.status(200).json(RestResultv2.single({ message: "Job abort requested" }));
+    res.status(200).json(RestResultv2.single({ message: i18n.t(req, 'jobs.abortRequested') }));
   } catch (err) {
     if (err.name === 'NotFoundError') {
       res.status(404).json(RestResultv2.error(err.message));
@@ -21,7 +22,7 @@ const abortJob = async function(req, res) {
     } else if (err.name === 'AccessDeniedError') {
       res.status(403).json(RestResultv2.error(err.message));
     } else {
-      res.status(500).json(RestResultv2.error("Failed to abort job", err.toString()));
+      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedAbort'), err.toString()));
     }
   }
 };
@@ -42,7 +43,7 @@ const getJob = async function(req, res) {
     } else if (err.name === 'AccessDeniedError') {
       res.status(403).json(RestResultv2.error(err.message));
     } else {
-      res.status(500).json(RestResultv2.error("Failed to retrieve job", err.toString()));
+      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRetrieve'), err.toString()));
     }
   }
 };
@@ -53,7 +54,7 @@ const findAllJobs = async function(req, res) {
       const jobs = await Job.findAll(user,records)
       res.status(200).json(RestResultv2.list(jobs));
     }catch(err){
-      res.status(500).json(RestResultv2.error("Failed to retrieve jobs", err.toString()));
+      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRetrieveJobs'), err.toString()));
     }
 };
 const findApprovals = async function(req, res) {
@@ -62,7 +63,7 @@ const findApprovals = async function(req, res) {
       const count = await Job.findApprovals(user)
       res.status(200).json(RestResultv2.single(count));
     }catch(err){
-      res.status(500).json(RestResultv2.error("Failed to retrieve approval jobs", err.toString()));
+      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRetrieveApprovals'), err.toString()));
     }
 };
 const download = async function(req,res){
@@ -80,7 +81,16 @@ const download = async function(req,res){
   
     res.set('Content-disposition', 'attachment; filename="' + fileName + '"');
     res.set('Content-Type', 'text/plain');
-  
+
+    readStream.on('error', (err) => {
+      logger.error(`Job download stream error: ${err.message}`)
+      if (!res.headersSent) {
+        res.status(500).json(RestResultv2.error('stream error'))
+      } else {
+        res.destroy(err)
+      }
+    });
+
     readStream.pipe(res);
 
   }catch (err) {
@@ -89,7 +99,7 @@ const download = async function(req,res){
     } else if (err.name === 'AccessDeniedError') {
       res.status(403).json(RestResultv2.error(err.message));
     } else {
-      res.status(500).json(RestResultv2.error("Failed to retrieve job", err.toString()));
+      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRetrieve'), err.toString()));
     }
   }
 }
@@ -106,7 +116,7 @@ const getRawFormData = async function(req, res) {
     } else if (err.name === 'BadRequestError') {
       res.status(400).json(RestResultv2.error(err.message));
     } else {
-      res.status(500).json(RestResultv2.error("Failed to retrieve raw form data", err.toString()));
+      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRetrieveRawData'), err.toString()));
     }
   }
 };
@@ -114,14 +124,14 @@ const deleteJob = async function(req, res) {
   try {
     var user = req?.user?.user || {};
     await Job.delete(user, req.params.id);
-    res.status(200).json(RestResultv2.single({ message: "job deleted" }));
+    res.status(200).json(RestResultv2.single({ message: i18n.t(req, 'jobs.deleted') }));
   } catch (err) {
     if (err.name === 'NotFoundError') {
       res.status(404).json(RestResultv2.error(err.message));
     } else if (err.name === 'AccessDeniedError') {
       res.status(403).json(RestResultv2.error(err.message));
     } else {
-      res.status(500).json(RestResultv2.error("Failed to delete job", err.toString()));
+      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedDelete'), err.toString()));
     }
   }
 };
@@ -130,7 +140,7 @@ const launch = async function(req, res) {
     //handles null error
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
         // wrong implementation -> send 409 error
-        res.status(409).json(RestResultv2.error("No data was sent"));
+        res.status(409).json(RestResultv2.error(i18n.t(req, 'errors.noDataSent')));
     }else{
         // get the form data
         var form = req.body.formName || "";
@@ -142,7 +152,7 @@ const launch = async function(req, res) {
         extravars.ansibleforms_user = user
         // check permission for verbose mode
         if (extravars.__verbose__ && !user.options.allowVerboseMode) {
-          res.status(403).json(RestResultv2.error("You do not have permission to use verbose mode"));
+          res.status(403).json(RestResultv2.error(i18n.t(req, 'errors.noVerbosePermission')));
           return false;
         }
         try{
@@ -151,7 +161,7 @@ const launch = async function(req, res) {
         }catch(err){
           logger.error("Errors in job launch : ", err)
           try{
-            res.status(500).json(RestResultv2.error("Failed to launch form", err.toString()));
+            res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedLaunch'), err.toString()));
           }catch(e){}
         }
     }
@@ -162,18 +172,18 @@ const relaunchJob = async function(req, res) {
     var jobid = req.params.id;
     var verbose = (req.query.verbose || "false")=="true"
     if(!jobid){
-      res.status(409).json(RestResultv2.error("You must provide a jobid"));
+      res.status(409).json(RestResultv2.error(i18n.t(req, 'jobs.mustProvideJobId')));
       return false
     }
     var user = req?.user?.user || {}
     // check permission for verbose mode
     if (verbose && !user.options.allowVerboseMode) {
-      res.status(403).json(RestResultv2.error("You do not have permission to use verbose mode"));
+      res.status(403).json(RestResultv2.error(i18n.t(req, 'errors.noVerbosePermission')));
       return false;
     }
     try{
       const job = await Job.relaunch(user, jobid, verbose);
-      res.status(200).json(RestResultv2.single({ message: `Job has been relaunched with job id ${job.id}`, id: job.id }));
+      res.status(200).json(RestResultv2.single({ message: i18n.t(req, 'jobs.relaunched', { id: job.id }), id: job.id }));
     } catch(err) {
       if (err.name === 'NotFoundError') {
         res.status(404).json(RestResultv2.error(err.message));
@@ -183,7 +193,7 @@ const relaunchJob = async function(req, res) {
         res.status(409).json(RestResultv2.error(err.message));
       } else {
         logger.error(`Error relaunching job: ${err.toString()}`);
-        res.status(500).json(RestResultv2.error("Failed to relaunch job", err.toString()));
+        res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedRelaunch'), err.toString()));
       }
     }
 };
@@ -192,16 +202,16 @@ const approveJob = async function(req, res) {
     // get the form data
     var jobid = req.params.id;
     if(!jobid){
-      res.status(409).json(RestResultv2.error("You must provide a jobid"));
+      res.status(409).json(RestResultv2.error(i18n.t(req, 'jobs.mustProvideJobId')));
       return false
     }
     var user = req?.user?.user || {}
     try{
       await Job.approve(user,jobid);
-      res.status(200).json(RestResultv2.single({ message: `Job ${jobid} has been approved` }));
+      res.status(200).json(RestResultv2.single({ message: i18n.t(req, 'jobs.approved', { id: jobid }) }));
     }catch(err){
       logger.error(`Error : ${err.toString()}`)
-      res.status(500).json(RestResultv2.error("Failed to approve job", err.toString()));
+      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedApprove'), err.toString()));
     }    
 };
 const rejectJob = async function(req, res) {
@@ -209,16 +219,16 @@ const rejectJob = async function(req, res) {
     // get the form data
     var jobid = req.params.id;
     if(!jobid){
-      res.status(409).json(RestResultv2.error("You must provide a jobid"));
+      res.status(409).json(RestResultv2.error(i18n.t(req, 'jobs.mustProvideJobId')));
       return false
     }
     var user = req?.user?.user || {}
     try{
       await Job.reject(user,jobid)
-      res.status(200).json(RestResultv2.single({ message: `Job ${jobid} has been rejected` }));
+      res.status(200).json(RestResultv2.single({ message: i18n.t(req, 'jobs.rejected', { id: jobid }) }));
     }catch(err){
       logger.error(`Error : ${err.toString()}`)
-      res.status(500).json(RestResultv2.error("Failed to reject job", err.toString()));
+      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedReject'), err.toString()));
     }    
 
 };

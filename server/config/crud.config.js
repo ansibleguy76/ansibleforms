@@ -45,15 +45,16 @@ const crudConfigs = {
     fields: [
       { name: 'id', isKey: true },
       { name: 'name', isNaturalKey: true, required: true },
-      { name: 'user', required: true },
-      { name: 'password', isEncrypted: true, required: true },
+      { name: 'user' },
+      { name: 'password', isEncrypted: true },
       { name: 'host' },
       { name: 'port' },
       { name: 'db_name' },
       { name: 'secure', isBoolean: true },
       { name: 'is_database', isBoolean: true, setDefault: true },
       { name: 'description' },
-      { name: 'db_type' }
+      { name: 'db_type' },
+      { name: 'vault_path' }
     ],
     allowCache: true,
     cacheTTL: 3600

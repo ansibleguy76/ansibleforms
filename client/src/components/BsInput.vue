@@ -61,6 +61,7 @@
     rows: { type: Number, default: 3 },               // Rows for textarea
     lang: { type: String, default: "yaml" },          // Language for editor
     theme: { type: String, default: "monokai" },      // Theme for editor
+    liveSync: { type: Boolean, default: false },       // editor: emit model on every change (raw-string parents only)
     columns: { type: Array, default: () => [] },      // Columns for select_advanced
     previewColumn: { type: String, default: "" },     // Preview column for select_advanced
     valueColumn: { type: String, default: "" },       // Value column for select_advanced
@@ -155,7 +156,7 @@
       <div v-else class="col-sm-10">
         <BsInputSelectRaw v-if="type === 'select'" :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :id="uid" :hasError="hasError" :placeholder="placeholder" v-model="model" :values="values" />
         <BsInputTextAreaRaw v-else-if="type === 'textarea'" :rows="rows" :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :id="uid" :hasError="hasError" :placeholder="placeholder" v-model="model" />
-        <AceEditor v-else-if="type === 'editor'" v-model="model" :lang="lang" :theme="theme" @save="emit('save')" :style="style" :printMargin="true" @dirty="emit('dirty')" />
+        <AceEditor v-else-if="type === 'editor'" v-model="model" :lang="lang" :theme="theme" :liveSync="liveSync" @save="emit('save')" :style="style" :printMargin="true" @dirty="emit('dirty')" />
         <BsInputCheckboxRaw v-else-if="type === 'checkbox'" :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :uid="uid" :hasError="hasError" :label="label" v-model="model" />
         <BsInputRaw v-else :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :uid="uid" :type="type" @keyup_enter="emit('keyup_enter')" :hasError="hasError" :placeholder="placeholder" v-model="model" />
         <div v-if="hasError && errors.length>0" class="invalid-feedback">
@@ -185,7 +186,7 @@
         <BsInputSelectRaw v-if="type === 'select'" :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :id="uid" :hasError="hasError" :placeholder="placeholder" v-model="model" :values="values" />
         <BsInputSelectAdvanced v-else-if="type === 'select_advanced'" :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :id="uid" :hasError="hasError" :placeholder="placeholder" v-model="model" :values="values" defaultValue="defaultValue" :multiple="multiple" :columns="columns" :previewColumn="previewColumn" :valueColumn="valueColumn" :pctColumns="pctColumns" :filterColumns="filterColumns" :sticky="sticky" :horizontal="horizontal" :icon="icon" :uid="uid" :label="label" :isLoading="isLoading" :name="name" :isFloating="isFloating"/>
         <BsInputTextAreaRaw v-else-if="type === 'textarea'" :rows="rows" :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :id="uid" :hasError="hasError" :placeholder="placeholder" v-model="model" />
-        <AceEditor v-else-if="type === 'editor'" v-model="model" :lang="lang" :theme="theme" :style="style" :printMargin="false"  @save="emit('save')" @dirty="emit('dirty')" />
+        <AceEditor v-else-if="type === 'editor'" v-model="model" :lang="lang" :theme="theme" :liveSync="liveSync" :style="style" :printMargin="false"  @save="emit('save')" @dirty="emit('dirty')" />
         <BsSshKey v-else-if="[ 'sshPrivateKeyArt', 'sshPublicKey' ].includes(type)" v-model="model" :type="type" :icon="icon" :required="required" />
         <BsInputCheckboxRaw v-else-if="type === 'checkbox'" :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :id="uid" :hasError="hasError" :label="label" v-model="model" />
         <BsInputRaw v-else :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :id="uid" :type="type" @keyup_enter="emit('keyup_enter')" :hasError="hasError" :placeholder="placeholder" v-model="model" />

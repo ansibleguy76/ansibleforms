@@ -3,7 +3,11 @@
 import { toast } from "vue-sonner";
 import Profile from "@/lib/Profile";
 import axios from "axios";
-import settings from "@/config/settings";
+import getSettings from "@/config/settings";
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
+const settings = computed(() => getSettings(t));
 import TokenStorage from "@/lib/TokenStorage";
 import Helpers from "@/lib/Helpers";
 
@@ -15,7 +19,7 @@ async function test_connection(item) {
     if (item) {
         if (!tests.value[item.id]) {
             try {
-                tests.value[item.id] = "Testing...";
+                tests.value[item.id] = t('admin.testing');
                 const result = await axios.post(
                     `/api/v2/awx/${item.id}/check`,
                     {},
@@ -23,12 +27,12 @@ async function test_connection(item) {
                 );
                 toast.success(result.data.result);
             } catch (err) {
-                toast.error(Helpers.parseAxiosResponseError(err, "Connection test failed"));
+                toast.error(Helpers.parseAxiosResponseError(err, t('admin.connectionFailed')));
             } finally {
                 delete tests.value[item.id];
             }
         } else {
-            toast.warning("Test already in progress");
+            toast.warning(t('admin.testInProgress'));
         }
     }
 }

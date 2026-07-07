@@ -2,8 +2,33 @@
   "type": "object",
   "required": [
     "name",
-    "type",
-    "fields"
+    "type"
+  ],
+  "allOf": [
+    {
+      "$comment": "non-subform forms must declare either 'fields' or 'wizard' (or both)",
+      "if": {
+        "properties": { "type": { "not": { "const": "subform" } } }
+      },
+      "then": {
+        "anyOf": [
+          { "required": ["fields"] },
+          { "required": ["wizard"] }
+        ]
+      }
+    },
+    {
+      "$comment": "subform forms must declare 'fields' and never 'wizard'",
+      "if": {
+        "properties": { "type": { "const": "subform" } }
+      },
+      "then": {
+        "required": ["fields"],
+        "properties": {
+          "wizard": { "not": {} }
+        }
+      }
+    }
   ],
   "oneOf": [{
       "properties": {
@@ -506,6 +531,7 @@
     "diff": {"type": "boolean"},
     "help": {"type": "string"},
     "source": {"type": "string"},
+    "repository": {"type": "string"},
     "showHelp": {"type": "boolean"},
     "allowRelaunch": {"type": "boolean"},
     "varsFiles": {
@@ -1920,6 +1946,26 @@
               "additionalProperties": false
             }
           }
+        },
+        "additionalProperties": false
+      }
+    },
+    "wizard": {
+      "type": "array",
+      "items": {
+        "$comment": "Each wizard step references a subform. The summary step is appended automatically by the UI and must not be declared in YAML.",
+        "type": "object",
+        "required": ["subform"],
+        "properties": {
+          "subform": { "type": "string" },
+          "name": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "help": { "type": "string" },
+          "showHelp": { "type": "boolean" },
+          "defaultModel": { "type": "string" },
+          "when": { "type": "string" },
+          "optional": { "type": "boolean" }
         },
         "additionalProperties": false
       }

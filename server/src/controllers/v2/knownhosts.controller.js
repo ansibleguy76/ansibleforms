@@ -2,6 +2,7 @@
 import KnownHosts from '../../models/knownhosts.model.js';
 import RestResult from '../../models/restResult.model.v2.js';
 import Errors from '../../lib/errors.js';
+import i18n from '../../lib/i18n.js';
 
 // Controller following v2 response conventions
 const knownhostsController = {
@@ -20,7 +21,7 @@ const knownhostsController = {
     try {
       const host = (req.body?.host || '').trim();
       if (!host) {
-        return res.status(400).json(RestResult.error('host value required'));
+        return res.status(400).json(RestResult.error(i18n.t(req, 'resources.hostValueRequired')));
       }
       const result = await KnownHosts.add(host);
       return res.status(201).json(RestResult.single(result));
@@ -35,7 +36,7 @@ const knownhostsController = {
       // support both ?name= and ?host= and allow passing full known_hosts line
       const raw = (req.query?.name || req.query?.host || '').trim();
       if (!raw) {
-        return res.status(400).json(RestResult.error('host name (query param "name" or "host") required'));
+        return res.status(400).json(RestResult.error(i18n.t(req, 'resources.hostNameRequired')));
       }
       // if full line provided ("hostname keytype key"), extract first token
       const hostToken = raw.split(/\s+/)[0];

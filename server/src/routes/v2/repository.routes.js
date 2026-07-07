@@ -17,5 +17,7 @@ router.post('/:name/clone/', repositoryController.clone);
 router.post('/:name/reset/', repositoryController.reset);
 // Pull a repository by name
 router.post('/:name/pull/', repositoryController.pull);
+// Commit & push a forms repository by name
+router.post('/:name/sync/', repositoryController.sync);
 
 export default router

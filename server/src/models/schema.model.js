@@ -39,8 +39,23 @@ const __dirname = path.dirname(__filename);
 //user object create
 class Schema {
   constructor() { }
+
+  /**
+   * Cached result of the first successful schema check.
+   * Schema/table existence is essentially static at runtime — once the
+   * server has confirmed everything is present at boot, every subsequent
+   * call (e.g. the public schema endpoint that the SPA hits on every page
+   * load / hard refresh) should NOT re-run a flood of SHOW DATABASES /
+   * SHOW TABLES queries (with debug logging) for no reason. We cache the
+   * first OK result and return it directly. Failures are never cached.
+   */
+  static _cachedOk = null;
+
   static async hasSchema() {
-    return await checkAll();
+    if (Schema._cachedOk) return Schema._cachedOk;
+    const result = await checkAll();
+    Schema._cachedOk = result;
+    return result;
   }
   static async create() {
     logger.notice(`Trying to create database schema 'AnsibleForms' and tables`);
@@ -52,6 +67,8 @@ class Schema {
       if (res.length > 0) {
         logger.notice(`Created schema 'AnsibleForms' and tables`);
         await init()
+        // Invalidate so the next hasSchema() call re-runs the full check.
+        Schema._cachedOk = null;
         return { message: `Created schema 'AnsibleForms' and tables` };
       } else {
         throw new Error(`Failed to create schema 'AnsibleForms' and/or tables`);
@@ -241,6 +258,33 @@ function setUtf8mb4CharacterSet(table, name, fieldtype) {
     });
 }
 
+// PATCHING : Make a column nullable (drop NOT NULL constraint)
+function makeColumnNullable(table, name, fieldtype) {
+  var message;
+  var db = "AnsibleForms";
+  var checksql = "SELECT IS_NULLABLE FROM information_schema.columns WHERE table_schema = ? AND table_name = ? AND column_name = ?";
+  var sql = `ALTER TABLE ??.?? MODIFY ?? ${fieldtype} NULL`;
+  logger.debug(`make column '${name}' nullable on table '${table}'`);
+  return mysql
+    .do(checksql, [db, table, name])
+    .then((checkres) => {
+      if (checkres.length > 0 && checkres[0].IS_NULLABLE !== "YES") {
+        return mysql.do(sql, [db, table, name]);
+      }
+      return false;
+    })
+    .then((res) => {
+      if (!res) {
+        message = `Column '${name}' is already nullable on '${table}'`;
+        logger.debug(message);
+        return message;
+      }
+      message = `Made column '${name}' nullable on '${table}'`;
+      logger.warning(message);
+      return message;
+    });
+}
+
 async function patchVersion4(messages, success, failed) {
   var buffer;
   var sql;
@@ -421,6 +465,25 @@ async function patchVersion6(messages, success, failed) {
   buffer = fs.readFileSync(`${__dirname}/../db/create_stored_jobs_table.sql`);
   sql = buffer.toString();
   await checkPromise(addTable("stored_jobs", sql), messages, success, failed);
+
+  // Add vault_path column to credentials table (6.3.0)
+  // When set, the credential's user/password are fetched from HashiCorp Vault
+  // at this path instead of from the local DB columns. Non-secret connection
+  // metadata (host, port, db_name, db_type, secure, is_database) stays in DB.
+  await checkPromise(addColumn("credentials", "vault_path", "varchar(500)", true, "NULL"), messages, success, failed);
+  // Allow user/password to be NULL for vault-backed credentials.
+  await checkPromise(makeColumnNullable("credentials", "user", "varchar(250)"), messages, success, failed);
+  await checkPromise(makeColumnNullable("credentials", "password", "text"), messages, success, failed);
+
+  // Add awx_workflow column to jobs table (6.3.0)
+  // This stores the awx workflow nodes (name, status, relations) as json,
+  // so the client can visualize the workflow graph of an awx workflow job
+  await checkPromise(addColumn("jobs", "awx_workflow", "longtext", true, "NULL"), messages, success, failed);
+
+  // Add logo column to the settings table (6.3.0)
+  // This stores an optional custom logo as a base64 data url, shown in the
+  // navbar instead of the default AnsibleForms logo (admin panel > logo)
+  await checkPromise(addColumn("settings", "logo", "longtext", true, "NULL"), messages, success, failed);
 }
 
 // PATCHING : Patch All

@@ -2,6 +2,7 @@
 
 // Composables
 import { createRouter, createWebHistory } from 'vue-router'
+import BaseUrl from '@/lib/BaseUrl'
 
 import designer from "@/pages/designer.vue"
 import index from "@/pages/index.vue"
@@ -24,6 +25,7 @@ import groups from "@/pages/admin/groups.vue"
 import knownHosts from "@/pages/admin/knownHosts.vue"
 import ldap from "@/pages/admin/ldap.vue"
 import mailSettings from "@/pages/admin/mailSettings.vue"
+import logo from "@/pages/admin/logo.vue"
 import repositories from "@/pages/admin/repositories.vue"
 import dataSchemas from "@/pages/admin/dataSchemas.vue"
 import datasources from "@/pages/admin/datasources.vue"
@@ -36,49 +38,44 @@ import backups from "@/pages/admin/backups.vue"
 
 import TokenStorage from '@/lib/TokenStorage.js'
 
-// checkDesigner
 const checkDesigner=(to, from, next) => {
   var payload = TokenStorage.getPayload()
   if(payload?.user?.options?.showDesigner){
     next()
   }else{
-    console.log("You don't have access to the designer")
+    next({ name: "/" })
   }
 }
-// checkLogs
 const checkLogs=(to, from, next) => {
   var payload = TokenStorage.getPayload()
   if(payload?.user?.options?.showLogs){
     next()
   }else{
-    console.log("You don't have access to the logs")
+    next({ name: "/" })
   }
 }
-// checkJobs
 const checkJobs=(to, from, next) => {
   var payload = TokenStorage.getPayload()
   if(payload?.user?.options?.showJobs){
     next()
   }else{
-    console.log("You don't have access to the jobs")
+    next({ name: "/" })
   }
 }
-// checkSettings
 const checkSettings=(to, from, next) => {
   var payload = TokenStorage.getPayload()
   if(payload?.user?.options?.showSettings){
     next()
   }else{
-    console.log("You don't have access to the settings")
+    next({ name: "/" })
   }
 }
-// allowBackupOps
 const allowBackupOps=(to, from, next) => {
   var payload = TokenStorage.getPayload()
   if(payload?.user?.options?.allowBackupOps){
     next()
   }else{
-    console.log("You don't have access to the backups page")
+    next({ name: "/" })
   }
 }
 
@@ -109,6 +106,7 @@ const routes = [
   { path: '/admin/knownHosts', name: "/admin/knownHosts", component: knownHosts, beforeEnter: checkSettings },
   { path: '/admin/ldap', name: "/admin/ldap", component: ldap, beforeEnter: checkSettings },
   { path: '/admin/mailSettings', name: "/admin/mailSettings", component: mailSettings, beforeEnter: checkSettings },
+  { path: '/admin/logo', name: "/admin/logo", component: logo, beforeEnter: checkSettings },
   { path: '/admin/repositories', name: "/admin/repositories", component: repositories, beforeEnter: checkSettings },
   { path: '/admin/dataSchemas', name: "/admin/dataSchemas", component: dataSchemas, beforeEnter: checkSettings },
   { path: '/admin/datasources', name: "/admin/datasources", component: datasources, beforeEnter: checkSettings },
@@ -122,7 +120,7 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(`${BaseUrl}/`), // honor the subpath the app is hosted under
   routes
 })
 

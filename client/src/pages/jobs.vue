@@ -13,6 +13,8 @@
 
     // INIT
 
+    const { t } = useI18n();
+
     
     const router = useRouter();
     const route = useRoute();
@@ -46,6 +48,51 @@
     const tempJobId = ref(null);
     const noOfRecords = ref(500);
 
+    // ─── DataTable-style state (sort / per-column filter / column visibility) ──
+    const columnDefs = computed(() => [
+        { key: 'id',       label: t('jobs.id'),        filterable: true, sortable: true, type: 'number' },
+        { key: 'form',     label: t('jobs.form'),      filterable: true, sortable: true },
+        { key: 'job_type', label: t('jobs.jobType'),   filterable: true, sortable: true,
+          render: j => j.job_type || 'ansible' },
+        { key: 'status',   label: t('jobs.status'),    filterable: true, sortable: true },
+        { key: 'start',    label: t('jobs.startTime'), filterable: true, sortable: true,
+          render: j => formatTime(j.start) },
+        { key: 'end',      label: t('jobs.endTime'),   filterable: true, sortable: true,
+          render: j => formatTime(j.end) },
+        { key: 'user',     label: t('jobs.user'),      filterable: true, sortable: true,
+          render: j => `${j.user || ''}${j.user_type ? ' (' + j.user_type + ')' : ''}` },
+    ]);
+    const hiddenColumns = ref(new Set());
+    const columnFilters = ref({});
+    const sortKey = ref(null);
+    const sortDir = ref(1); // 1 asc, -1 desc
+
+    const visibleColumns = computed(() => columnDefs.value.filter(c => !hiddenColumns.value.has(c.key)));
+    const filterableColumns = computed(() => visibleColumns.value.filter(c => c.filterable));
+
+    function cellText(item, col) {
+        if (!item) return '';
+        if (col.render) return String(col.render(item) ?? '');
+        const v = item[col.key];
+        return v == null ? '' : String(v);
+    }
+
+    function toggleSort(key) {
+        if (sortKey.value === key) {
+            sortDir.value = -sortDir.value;
+        } else {
+            sortKey.value = key;
+            sortDir.value = 1;
+        }
+    }
+
+    function toggleColumn(key) {
+        const s = new Set(hiddenColumns.value);
+        if (s.has(key)) s.delete(key); else s.add(key);
+        hiddenColumns.value = s;
+        try { Helpers.setCookie('dt_cols_jobs', JSON.stringify([...s]), 365); } catch (e) { /* ignore */ }
+    }
+
     // COMPUTED
 
     // Check if user can relaunch jobs
@@ -73,22 +120,69 @@
     })
     // main jobs
     const parentJobs = computed(() => {
-        if(filter.value){
-            return jobs.value?.filter(x => !x.parent_id
-                &&
-                (
-                    x.id?.toString().match(filter.value) ||
-                    x.status?.match(filter.value) ||
-                    x.form?.match(filter.value)  ||
-                    x.job_type?.match(filter.value) ||
-                    x.start?.match(filter.value) ||
-                    x.end?.match(filter.value) ||
-                    x.user?.match(filter.value)
-                )
-            )
-        }else{
-            return jobs.value?.filter(x => !x.parent_id)
+        let list = jobs.value?.filter(x => !x.parent_id) || [];
+
+        // Global (legacy) filter — keeps its regex-style match semantics.
+        if (filter.value) {
+            const f = filter.value;
+            list = list.filter(x =>
+                x.id?.toString().match(f) ||
+                x.status?.match(f) ||
+                x.form?.match(f) ||
+                x.job_type?.match(f) ||
+                x.start?.match(f) ||
+                x.end?.match(f) ||
+                x.user?.match(f)
+            );
         }
+
+        // Per-column filters (case-insensitive substring on the rendered text).
+        // For the `id` and `form` columns we also match against any of the
+        // parent's children (child rows display `c.id` and `c.target`), so a
+        // user can find a multistep parent by typing a subjob's id/target.
+        const active = Object.entries(columnFilters.value).filter(([, v]) => v != null && String(v).trim() !== '');
+        if (active.length) {
+            const allJobs = jobs.value || [];
+            list = list.filter(item => active.every(([key, val]) => {
+                const col = columnDefs.value.find(c => c.key === key);
+                if (!col) return true;
+                const needle = String(val).toLowerCase();
+                if (cellText(item, col).toLowerCase().includes(needle)) return true;
+                if (key === 'id' || key === 'form') {
+                    const kids = allJobs.filter(x => x.parent_id === item.id);
+                    return kids.some(c => {
+                        if (key === 'id') return String(c.id ?? '').toLowerCase().includes(needle);
+                        return String(c.target ?? '').toLowerCase().includes(needle);
+                    });
+                }
+                return false;
+            }));
+        }
+
+        // Sorting.
+        if (sortKey.value) {
+            const col = columnDefs.value.find(c => c.key === sortKey.value);
+            if (col) {
+                const dir = sortDir.value;
+                list = [...list].sort((a, b) => {
+                    let av = col.render ? col.render(a) : a[col.key];
+                    let bv = col.render ? col.render(b) : b[col.key];
+                    if (col.type === 'number') {
+                        av = Number(av); bv = Number(bv);
+                        if (isNaN(av)) av = 0;
+                        if (isNaN(bv)) bv = 0;
+                    } else {
+                        av = av == null ? '' : String(av);
+                        bv = bv == null ? '' : String(bv);
+                    }
+                    if (av < bv) return -1 * dir;
+                    if (av > bv) return  1 * dir;
+                    return 0;
+                });
+            }
+        }
+
+        return list;
     })
     // subjobs
     const subjobs = computed(() => {
@@ -201,7 +295,7 @@
                 if (err.response && err.response.data && err.response.data.error) {
                     toast.error(err.response.data.error);
                 } else {
-                    toast.error("Failed to load jobs");
+                    toast.error(t('jobs.failedToLoad'));
                 }
             } finally {
                 isLoading.value = false;
@@ -211,12 +305,29 @@
     }
     // get child jobs by parent id
     function childJobs(id){
-        if(!isLoading.value){
-            return jobs.value.filter(x=> (x.parent_id===id && (collapsed.value[id] ?? false))).sort((a, b) => a.id > b.id && 1 || -1)
+        if (isLoading.value) return [];
+        const all = jobs.value.filter(x => x.parent_id === id);
+
+        // If the user is filtering by id or form, auto-show the children that
+        // match (so a multistep parent doesn't have to be manually expanded
+        // to see the matching subjob).
+        const idF   = (columnFilters.value.id   || '').toString().trim().toLowerCase();
+        const formF = (columnFilters.value.form || '').toString().trim().toLowerCase();
+        const filterActive = idF !== '' || formF !== '';
+
+        let visible;
+        if (collapsed.value[id]) {
+            visible = all;
+        } else if (filterActive) {
+            visible = all.filter(c =>
+                (idF   && String(c.id     ?? '').toLowerCase().includes(idF)) ||
+                (formF && String(c.target ?? '').toLowerCase().includes(formF))
+            );
         } else {
-            return []
+            visible = [];
         }
-    }    
+        return visible.sort((a, b) => (a.id > b.id ? 1 : -1));
+    }
 
     // load job output
     async function loadOutput(id, sub=false){
@@ -468,6 +579,14 @@
             }
         }catch(e){}
 
+        // restore column visibility from cookie
+        try {
+            const savedCols = Helpers.getCookie('dt_cols_jobs');
+            if (savedCols) {
+                hiddenColumns.value = new Set(JSON.parse(savedCols));
+            }
+        } catch (e) { /* ignore */ }
+
 
         if(route.params.id){
             jobId.value=parseInt(route.params.id)
@@ -494,59 +613,59 @@
   <div class="flex-shrink-0">
     <!-- Modal - delete verify -->
     <BsModal v-if="showDelete" @close="showDelete=false">
-        <template #title> Delete job {{ tempJobId }} </template>
-        <template #default><p class="mt-3 fs-6 user-select-none">Are you sure you want to delete job <strong>{{ tempJobId }}</strong>?</p></template>
-        <template #footer><BsButton icon="trash" @click="deleteJob(tempJobId);showDelete=false">Delete</BsButton></template>
+        <template #title> {{ t('jobs.deleteJob') }} {{ tempJobId }} </template>
+        <template #default><p class="mt-3 fs-6 user-select-none">{{ t('jobs.deleteConfirm') }} <strong>{{ tempJobId }}</strong>?</p></template>
+        <template #footer><BsButton icon="trash" @click="deleteJob(tempJobId);showDelete=false">{{ t('common.delete') }}</BsButton></template>
     </BsModal>    
     <!-- Modal - abort verify -->
     <BsModal v-if="showAbort" @close="showAbort=false">
-        <template #title> Abort job {{ tempJobId }} </template>
-        <template #default><p class="mt-3 fs-6 user-select-none">Are you sure you want to abort job <strong>{{ tempJobId }}</strong>?</p></template>
-        <template #footer><BsButton icon="ban" @click="abortJob(tempJobId);showAbort=false">Abort</BsButton></template>
+        <template #title> {{ t('jobs.abortJob') }} {{ tempJobId }} </template>
+        <template #default><p class="mt-3 fs-6 user-select-none">{{ t('jobs.abortConfirm') }} <strong>{{ tempJobId }}</strong>?</p></template>
+        <template #footer><BsButton icon="ban" @click="abortJob(tempJobId);showAbort=false">{{ t('jobs.abortJob') }}</BsButton></template>
     </BsModal>
     <!-- Modal - relaunch verify -->
     <BsModal v-if="showRelaunch" @close="showRelaunch=false">
-        <template #title> Relaunch job {{ tempJobId }} </template>
+        <template #title> {{ t('jobs.relaunchJob') }} {{ tempJobId }} </template>
         <template #default>
-            <p class="mt-3 fs-6 user-select-none">Choose how to relaunch job <strong>{{ tempJobId }}</strong>:</p>
-            <BsCheckbox v-if="store.profile.options?.allowVerboseMode" v-model="relaunchVerbose" label="Verbose mode" class="mt-2" :isSwitch="true" :inline="true" />
-            <BsCheckbox v-model="relaunchWithEdit" label="Edit values before relaunching" class="mt-2" :isSwitch="true" :inline="true" />
+            <p class="mt-3 fs-6 user-select-none">{{ t('jobs.relaunchChoose') }} <strong>{{ tempJobId }}</strong>:</p>
+            <BsCheckbox v-if="store.profile.options?.allowVerboseMode" v-model="relaunchVerbose" :label="t('jobs.relaunchVerbose')" class="mt-2" :isSwitch="true" :inline="true" />
+            <BsCheckbox v-model="relaunchWithEdit" :label="t('jobs.relaunchEdit')" class="mt-2" :isSwitch="true" :inline="true" />
         </template>
         <template #footer>
-            <BsButton v-if="!relaunchWithEdit" icon="redo" @click="relaunchJob(tempJobId,relaunchVerbose);showRelaunch=false">Relaunch</BsButton>
-            <BsButton v-else icon="edit" @click="editAndRelaunchJob(tempJobId);showRelaunch=false">Edit & Relaunch</BsButton>
+            <BsButton v-if="!relaunchWithEdit" icon="redo" @click="relaunchJob(tempJobId,relaunchVerbose);showRelaunch=false">{{ t('jobs.relaunch') }}</BsButton>
+            <BsButton v-else icon="edit" @click="editAndRelaunchJob(tempJobId);showRelaunch=false">{{ t('jobs.editRelaunch') }}</BsButton>
         </template>
     </BsModal>
     <!-- Modal - approval -->
     <BsModal v-if="showApprove" @close="showApprove=false">
-        <template #title> Approve job {{ tempJobId }} </template>
+        <template #title> {{ t('jobs.approveJob') }} {{ tempJobId }} </template>
         <template #default>
-            <p class="mt-3 fs-6 user-select-none">Are you sure you want to approve job <strong>{{ tempJobId }}</strong>?</p>
-            <BsDivider type="text" text="Approval info" />
+            <p class="mt-3 fs-6 user-select-none">{{ t('jobs.approveConfirm') }} <strong>{{ tempJobId }}</strong>?</p>
+            <BsDivider type="text" :text="t('jobs.approvalInfo')" />
             <p v-html="approvalMessage"></p>            
         </template>
-        <template #footer><BsButton icon="circle-check" @click="approveJob(tempJobId);showApprove=false">Approve</BsButton></template>
+        <template #footer><BsButton icon="circle-check" @click="approveJob(tempJobId);showApprove=false">{{ t('jobs.approve') }}</BsButton></template>
     </BsModal>
     <!-- Modal - reject -->
     <BsModal v-if="showReject" @close="showReject=false">
-        <template #title> Reject job {{ tempJobId }} </template>
-        <template #default><p class="mt-3 fs-6 user-select-none">Are you sure you want to reject job <strong>{{ tempJobId }}</strong>?</p></template>
-        <template #footer><BsButton icon="circle-xmark" @click="rejectJob(tempJobId);showReject=false">Reject</BsButton></template>
+        <template #title> {{ t('jobs.rejectJob') }} {{ tempJobId }} </template>
+        <template #default><p class="mt-3 fs-6 user-select-none">{{ t('jobs.rejectConfirm') }} <strong>{{ tempJobId }}</strong>?</p></template>
+        <template #footer><BsButton icon="circle-xmark" @click="rejectJob(tempJobId);showReject=false">{{ t('jobs.reject') }}</BsButton></template>
     </BsModal>
     <main class="d-flex container-xxl">
         
-        <AppSettings title="Jobs" icon="history">
+        <AppSettings :title="t('jobs.title')" icon="history">
             <template #feedback>
                 <div class="input-group ms-5" style="width: 400px;">
                     <span class="input-group-text">
                         <FaIcon icon="search" />
                     </span>
-                    <input v-model="filter" type="text" class="form-control text-start" placeholder="regex (on anything)" />
+                    <input v-model="filter" type="text" class="form-control text-start" :placeholder="t('jobs.filterPlaceholder')" />
                 </div>
             </template>
             <template #actions>
                 <div class="d-flex justify-content-end align-items-center">
-                    <BsButton icon="refresh" @click="loadJobs" cssClass="me-2">Refresh</BsButton>
+                    <BsButton icon="refresh" @click="loadJobs" cssClass="me-2">{{ t('jobs.refresh') }}</BsButton>
                     <div class="input-group me-2" style="width:300px">
                         <span class="input-group-text">
                             <FaIcon icon="list-ol" />
@@ -558,19 +677,56 @@
                             <option value="1000">1000</option>
                         </select>
                     </div>
+                    <!-- Column picker -->
+                    <div class="dropdown me-2">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
+                            <font-awesome-icon icon="table-columns" class="me-1" />{{ t('dataTable.columns') }}
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" style="min-width:200px">
+                            <li v-for="col in columnDefs" :key="'cp-' + col.key" class="dropdown-item">
+                                <label class="form-check mb-0 d-flex align-items-center gap-2" style="cursor:pointer">
+                                    <input type="checkbox" class="form-check-input" :checked="!hiddenColumns.has(col.key)" @change="toggleColumn(col.key)" />
+                                    {{ col.label }}
+                                </label>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
-            </template>            
-            <table class="custom-table table-bordered table-sm">
+            </template>
+            <table class="custom-table table-sm">
                 <thead>
                     <tr class="text-start">
                         <th class="action"></th>
-                        <th class="id">id</th>
-                        <th>form</th>
-                        <th class="jobtype">job type</th>
-                        <th class="status">status</th>
-                        <th>start time</th>
-                        <th>end time</th>
-                        <th>user</th>
+                        <th
+                            v-for="col in visibleColumns"
+                            :key="col.key"
+                            :class="{ 'is-clickable': col.sortable, [col.key]: true }"
+                            style="user-select:none; white-space:nowrap"
+                            @click="col.sortable ? toggleSort(col.key) : undefined"
+                        >
+                            {{ col.label }}
+                            <span v-if="col.sortable" class="text-muted ms-1" style="font-size:.7em">
+                                <template v-if="sortKey === col.key">
+                                    <font-awesome-icon :icon="sortDir === 1 ? 'sort-up' : 'sort-down'" />
+                                </template>
+                                <template v-else>
+                                    <font-awesome-icon icon="sort" class="opacity-25" />
+                                </template>
+                            </span>
+                        </th>
+                    </tr>
+                    <tr v-if="filterableColumns.length" class="bs-dt-filter-row">
+                        <th></th>
+                        <th v-for="col in visibleColumns" :key="'f-' + col.key">
+                            <input
+                                v-if="col.filterable"
+                                v-model="columnFilters[col.key]"
+                                type="search"
+                                class="form-control form-control-sm"
+                                :placeholder="col.label"
+                                @click.stop
+                            />
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -583,32 +739,25 @@
                             <span role="button" v-if="j.status=='approve' && approvalAllowed(j)" class="me-2 text-success" @click="tempJobId=j.id;showApproval(j.id)" title="Approve job"><font-awesome-icon icon="circle-check" /></span>
                             <span role="button" v-if="j.status=='approve' && approvalAllowed(j)" class="me-2 text-danger" @click="tempJobId=j.id;showApproval(j.id,true)" title="Reject job"><font-awesome-icon icon="circle-xmark" /></span>
                         </td>
-                        <td class="is-clickable text-left" @click="(j.job_type=='multistep')?toggleCollapse(j.id):loadOutput(j.id)">
-                            <span>{{j.id}}</span>
-                            <template v-if="j.job_type=='multistep'">
-                            <span class="mx-2 float-end" v-if="!collapsed[j.id]"><font-awesome-icon icon="angle-right" /></span>
-                            <span class="mx-2 float-end" v-else><font-awesome-icon icon="angle-down" /></span>
-                            </template>
-                        </td>
-                        <td role="button" class="text-start" @click="getJob(j.id)" :title="j.form">{{j.form}}</td>
-                        <td role="button" class="text-start" @click="getJob(j.id)" :title="j.job_type">{{j.job_type || "ansible" }}</td>
-                        <td role="button" class="text-start" @click="getJob(j.id)" :title="j.status">{{j.status}}</td>
-                        <td role="button" class="text-start" @click="getJob(j.id)" :title="j.start">{{ formatTime(j.start) }}</td>
-                        <td role="button" class="text-start" @click="getJob(j.id)" :title="j.end">{{ formatTime(j.end) }}</td>
-                        <td role="button" class="text-start" @click="getJob(j.id)" :title="j.user">{{j.user}} ({{j.user_type}})</td>
+                        <template v-for="col in visibleColumns" :key="col.key">
+                            <td v-if="col.key === 'id'" class="is-clickable text-left" @click="(j.job_type=='multistep')?toggleCollapse(j.id):loadOutput(j.id)">
+                                <span>{{ j.id }}</span>
+                                <template v-if="j.job_type=='multistep'">
+                                    <span class="mx-2 float-end" v-if="!collapsed[j.id]"><font-awesome-icon icon="angle-right" /></span>
+                                    <span class="mx-2 float-end" v-else><font-awesome-icon icon="angle-down" /></span>
+                                </template>
+                            </td>
+                            <td v-else role="button" class="text-start" @click="getJob(j.id)" :title="cellText(j, col)">{{ cellText(j, col) }}</td>
+                        </template>
                     </tr>
                     <template v-for="c in childJobs(j.id)" :key="c.id">
                     <tr :class="jobBackground(c)">
-                        <td class="table-info">
-                        <!-- <span v-if="isAdmin" class="icon text-danger is-clickable" @click="tempJobId=c.id;showDelete=true" title="Delete job"><font-awesome-icon icon="trash-alt" /></span> -->
-                        </td>
-                        <td role="button" class="text-end" @click="getJob(c.id)">{{c.id}}</td>
-                        <td role="button" class="text-start" @click="getJob(c.id)" :title="c.target">{{c.target}}</td>
-                        <td role="button" class="text-start" @click="getJob(c.id)" :title="c.job_type">{{c.job_type || "ansible" }}</td>
-                        <td role="button" class="text-start" @click="getJob(c.id)" :title="c.status">{{c.status}}</td>
-                        <td role="button" class="text-start" @click="getJob(c.id)" :title="c.start">{{ formatTime(c.start) }}</td>
-                        <td role="button" class="text-start" @click="getJob(c.id)" :title="c.end">{{ formatTime(c.start) }}</td>
-                        <td role="button" class="text-start" @click="getJob(c.id)" :title="c.user">{{c.user}} ({{c.user_type}})</td>
+                        <td class="table-info"></td>
+                        <template v-for="col in visibleColumns" :key="col.key">
+                            <td v-if="col.key === 'id'" role="button" class="text-end" @click="getJob(c.id)">{{ c.id }}</td>
+                            <td v-else-if="col.key === 'form'" role="button" class="text-start" @click="getJob(c.id)" :title="c.target">{{ c.target }}</td>
+                            <td v-else role="button" class="text-start" @click="getJob(c.id)" :title="cellText(c, col)">{{ cellText(c, col) }}</td>
+                        </template>
                     </tr>
                     </template>
                 </template>
@@ -624,7 +773,7 @@
             />
             <div v-if="job"  class="row">
                 <div class="col">
-                    <h3>Job output for job {{jobId}}
+                    <h3>{{ t('jobs.jobOutput') }} {{jobId}}
                         <sup><span class="badge rounded-pill me-2 text-bg-info">{{ job.job_type || 'ansible'}}</span></sup>
                         <sup><span class="badge rounded-pill" :class="Helpers.getColorClassByStatus(job.status,'text-bg')">{{ job.status}}</span></sup>
                     </h3>
@@ -636,7 +785,7 @@
                         iconToggle="eye-slash"
                         :toggle="showExtraVars"
                         @click="showExtraVars=!showExtraVars;showArtifacts=false"
-                        >Show Extravars<template #toggle>Hide Extravars</template>
+                        >{{ t('jobs.showExtravars') }}<template #toggle>{{ t('jobs.hideExtravars') }}</template>
                     </BsButton>
                     <BsButton
                         v-if="store.profile.options?.showArtifacts && job.job_type=='awx'"
@@ -646,9 +795,9 @@
                         iconToggle="square-poll-horizontal"
                         :toggle="showArtifacts"
                         @click="showArtifacts=!showArtifacts;showExtraVars=false"
-                        >Show Artifacts<template #toggle>Hide Artifacts</template>
+                        >{{ t('jobs.showArtifacts') }}<template #toggle>{{ t('jobs.hideArtifacts') }}</template>
                     </BsButton>                    
-                    <BsButton @click="loadOutput(jobId)" icon="sync-alt" cssClass="btn-sm me-2 fw-normal">Refresh</BsButton>
+                    <BsButton @click="loadOutput(jobId)" icon="sync-alt" cssClass="btn-sm me-2 fw-normal">{{ t('jobs.refreshOutput') }}</BsButton>
                     <BsButton 
                         cssClass="btn-sm me-2 fw-normal"
                         cssClassToggle="btn-sm me-2 fw-normal"
@@ -656,14 +805,21 @@
                         iconToggle="filter-circle-xmark"
                         :toggle="hide"
                         @click="hide=!hide"
-                        >Apply filter<template #toggle>Remove filter</template></BsButton>
-                    <BsButton @click="download(jobId)" icon="download" cssClass="btn-sm me-2 fw-normal">Download Job</BsButton>
+                        >{{ t('jobs.applyFilter') }}<template #toggle>{{ t('jobs.removeFilter') }}</template></BsButton>
+                    <BsButton @click="download(jobId)" icon="download" cssClass="btn-sm me-2 fw-normal">{{ t('jobs.downloadJob') }}</BsButton>
+
+                    <!-- awx workflow graph (only for awx workflow jobs) -->
+                    <div class="row mt-4" v-if="job.awx_workflow?.nodes?.length">
+                        <div class="col">
+                            <AppAwxWorkflow :workflow="job.awx_workflow" />
+                        </div>
+                    </div>
 
                     <div class="row mt-4">
                         <div class="col">
                             <AppAnsibleOutput :output="filteredJobOutput" :jobLog="job?.job_log">
                             <template #title>
-                                <h3 v-if="subjob">Main job (jobid {{jobId}}) 
+                                <h3 v-if="subjob">{{ t('jobs.mainJob') }} (jobid {{jobId}}) 
                                 <sup><span class="badge rounded-pill status" :class="Helpers.getColorClassByStatus(job.status,'bg')">{{ job.status }}</span></sup> 
                                 </h3>
                             </template>
@@ -672,7 +828,7 @@
                         <div class="col" v-if="subjob">
                             <AppAnsibleOutput :output="filteredSubJobOutput" :jobLog="subjob?.job_log">
                             <template #title>
-                                <h3>Current Step (jobid {{subjobId}}) 
+                                <h3>{{ t('jobs.currentStep') }} (jobid {{subjobId}}) 
                                 <sup><span class="badge rounded-pill status" :class="Helpers.getColorClassByStatus(subjob.status,'bg')">{{ subjob.status }}</span></sup>
                                 </h3>               
                             </template>
@@ -683,7 +839,7 @@
 
                 <!-- extra vars column -->
                 <div v-if="showExtraVars" class="col is-clipped-horizontal">
-                    <h3>Extravars</h3>
+                    <h3>{{ t('jobs.extravars') }}</h3>
                     <div class="d-flex justify-content-between">
                         <div>
                             <BsButton
@@ -692,8 +848,8 @@
                             :toggle="viewAsYaml"
                             @click="viewAsYaml = !viewAsYaml"
                             >
-                                <template #default>View as YAML</template>
-                                <template #toggle>View as JSON</template>
+                                <template #default>{{ t('jobs.viewAsYaml') }}</template>
+                                <template #toggle>{{ t('jobs.viewAsJson') }}</template>
                             </BsButton>
                         </div>
                         <!-- TOOLBAR ICONS-->
@@ -712,7 +868,7 @@
                 </div>
                 <!-- extra vars column -->
                 <div v-if="showArtifacts && job.job_type=='awx'" class="col is-clipped-horizontal">
-                    <h3>Artifacts</h3>
+                    <h3>{{ t('jobs.artifacts') }}</h3>
                     <div class="d-flex justify-content-between">
                         <div>
                             <BsButton
@@ -721,8 +877,8 @@
                             :toggle="viewAsYaml"
                             @click="viewAsYaml = !viewAsYaml"
                             >
-                                <template #default>View as YAML</template>
-                                <template #toggle>View as JSON</template>
+                                <template #default>{{ t('jobs.viewAsYaml') }}</template>
+                                <template #toggle>{{ t('jobs.viewAsJson') }}</template>
                             </BsButton>
                         </div>
                         <!-- TOOLBAR ICONS-->
@@ -752,6 +908,37 @@
     .custom-table {
         width: 100%;
         margin-bottom: 1rem;
+    }
+    /* Slim, dense rows for the jobs table — overrides Bootstrap's table-sm
+       defaults so a long jobs list takes much less vertical space. */
+    .custom-table th,
+    .custom-table td {
+        padding: .35rem .55rem;
+        line-height: 1.2;
+        vertical-align: middle;
+        border-left: 0;
+        border-right: 0;
+        border-color: var(--bs-border-color-translucent);
+    }
+    /* Header: bottom border only. */
+    .custom-table thead th {
+        font-weight: 600;
+        border-top: 0;
+        border-bottom: 1px solid var(--bs-border-color);
+    }
+    /* Body rows: horizontal separators only. */
+    .custom-table tbody td {
+        border-top: 0;
+        border-bottom: 1px solid var(--bs-border-color-translucent);
+    }
+    /* Filter row: even tighter, with smaller inputs. */
+    .custom-table thead tr.bs-dt-filter-row th {
+        padding: .15rem .3rem;
+        background: var(--bs-tertiary-bg);
+    }
+    .custom-table thead tr.bs-dt-filter-row .form-control-sm {
+        font-size: .8rem;
+        padding: .1rem .35rem;
     }
     tr.table-selected {
         border: 2px solid;

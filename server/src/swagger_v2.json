@@ -1448,17 +1448,18 @@
         "properties": {
           "id": { "type": "integer", "description": "Unique identifier for the credential.", "example": 1 },
           "name": { "type": "string", "description": "Credential name.", "example": "db-main" },
-          "user": { "type": "string", "description": "Database user.", "example": "dbuser" },
-          "password": { "type": "string", "description": "Database password.", "example": "secret" },
+          "user": { "type": "string", "description": "Database user (leave empty when using vault_path).", "example": "dbuser" },
+          "password": { "type": "string", "description": "Database password (leave empty when using vault_path).", "example": "secret" },
           "host": { "type": "string", "description": "Database host.", "example": "localhost" },
           "port": { "type": "integer", "description": "Database port.", "example": 3306 },
           "db_name": { "type": "string", "description": "Database name.", "example": "mydb" },
           "secure": { "type": "boolean", "description": "Use secure connection.", "example": false },
           "is_database": { "type": "boolean", "description": "Is this a database credential?", "example": true },
           "description": { "type": "string", "description": "Description of the credential.", "example": "Main DB credential" },
-          "db_type": { "type": "string", "description": "Type of database (mysql, postgres, etc).", "example": "mysql" }
+          "db_type": { "type": "string", "description": "Type of database (mysql, postgres, etc).", "example": "mysql" },
+          "vault_path": { "type": "string", "description": "Optional HashiCorp Vault path. When set, user and password are read from Vault at this path instead of from the local DB columns.", "example": "secret/data/myapp/prod" }
         },
-        "required": ["name", "user", "password", "host", "port", "db_type"]
+        "required": ["name"]
   },
       "BackupMeta": {
         "type": "object",

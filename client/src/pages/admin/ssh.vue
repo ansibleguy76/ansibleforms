@@ -1,7 +1,10 @@
 <script setup>
-import settings from '@/config/settings';
+import getSettings from '@/config/settings';
 import Profile from '@/lib/Profile';
+import { useI18n } from 'vue-i18n';
 
+const { t } = useI18n();
+const settings = computed(() => getSettings(t));
 const authenticated = ref(false);
 
 onMounted(async () => {

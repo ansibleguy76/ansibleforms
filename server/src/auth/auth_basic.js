@@ -2,7 +2,6 @@ import passport from 'passport';
 import { BasicStrategy as basicStrategy } from 'passport-http';
 import User from './../models/user.model.js';
 import authConfig from '../../config/auth.config.js';
-import appConfig from '../../config/app.config.js';
 import logger from '../lib/logger.js';
 import Helpers from '../lib/common.js';
 import Ldap from '../models/ldap.model.js';
@@ -15,16 +14,6 @@ passport.use(
     async (username, password, done) => {
       // authentication against database first
       try{
-        if(appConfig.enableBypass){
-          var user = {}
-          user.id = 0
-          user.username = 'bypass admin'
-          user.type = 'bypass'
-          user.groups = []
-          user.roles = ['admin']
-          logger.warning("Logging in with bypass")
-          return done(null,user)
-        }
         var result = await User.authenticate(username,password)
         if(!result.isValid){
           return done(new Error("Wrong password"))

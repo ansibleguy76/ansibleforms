@@ -1,7 +1,7 @@
-
 import Errors from '../../lib/errors.js';
 import BackupModel from '../../models/backup.model.js';
 import RestResult from '../../models/restResult.model.v2.js';
+import i18n from '../../lib/i18n.js';
 
 
 const backupController = {
@@ -9,7 +9,7 @@ const backupController = {
     try {
       const desc = req.body?.description;
       const result = await BackupModel.doBackup(desc);
-      res.json(RestResult.single({ message: 'Backup created', ...result }));
+      res.json(RestResult.single({ message: i18n.t(req, 'resources.backupCreated'), ...result }));
     } catch (err) {
       Errors.ReturnError(res, err);
     }

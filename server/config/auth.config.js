@@ -1,5 +1,17 @@
+import crypto from 'crypto';
+
+let jwtSecret = process.env.ACCESS_TOKEN_SECRET;
+let jwtSecretIsGenerated = false;
+
+if (!jwtSecret) {
+  jwtSecret = crypto.randomBytes(64).toString('hex');
+  jwtSecretIsGenerated = true;
+  console.warn('[SECURITY WARNING] ACCESS_TOKEN_SECRET is not set. A random secret has been generated for this process. Tokens will NOT survive a restart. Set ACCESS_TOKEN_SECRET in your environment for stable token signing.');
+}
+
 export default {
-  secret: process.env.ACCESS_TOKEN_SECRET || "j6fz%Q9S2YJC?x|u",
+  secret: jwtSecret,
+  secretIsGenerated: jwtSecretIsGenerated,
   jwtExpiration: process.env.ACCESS_TOKEN_EXPIRATION || "30m",
   jwtRefreshExpiration: process.env.ACCESS_TOKEN_REFRESH_EXPIRATION || "24h",
   jwtIssuer: process.env.ACCESS_TOKEN_ISSUER || "ansibleforms",
@@ -16,4 +28,3 @@ export default {
     "775":"Account locked"
   }
 };
-

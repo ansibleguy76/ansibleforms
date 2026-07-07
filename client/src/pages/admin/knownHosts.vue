@@ -3,7 +3,11 @@
 import { ref } from 'vue';
 import Profile from '@/lib/Profile';
 import { copyText } from 'vue3-clipboard';
-import settings from '@/config/settings';
+import getSettings from '@/config/settings';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
+const settings = computed(() => getSettings(t));
 import { toast } from 'vue-sonner';
 
 const currentItem = ref(null);
@@ -16,9 +20,9 @@ function preview(item) {
         currentItem.value = item;
         // clipboard.writeSync(currentItem.value)
         copyText(currentItem.value);
-        toast.success('Copied to clipboard');
+        toast.success(t('admin.copiedToClipboard'));
     } catch {
-        toast.error('Could not copy to clipboard, https required');
+        toast.error(t('admin.clipboardHttpsRequired'));
     }
 
 }

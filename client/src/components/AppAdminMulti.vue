@@ -26,10 +26,13 @@
     import { useVuelidate } from "@vuelidate/core";
     import yaml from 'yaml';
     import { required, helpers, email, sameAs } from "@vuelidate/validators";
+    import { useI18n } from 'vue-i18n';
+    import BsDataTable from './BsDataTable.vue';
 
     // INIT
 
-    const emit = defineEmits(['test','preview','trigger','reset']);
+    const { t } = useI18n();
+    const emit = defineEmits(['test','preview','trigger','reset','sync']);
 
     // PROPS
 
@@ -67,19 +70,20 @@
     const removeDoubles = props.settings.removeDoubles || false;
     const idKey = props.settings.idKey || 'id';
     const objectType = props.settings.type;
-    const objectLabel = props.settings.label || '';
-    const objectLabelPlural = props.settings.labelPlural || `${objectLabel}s`;
-    const objectIcon = props.settings.icon;
-    const children = props.settings.children || []
-    const actions = props.settings.actions || []
-    const fields = props.settings.fields || []
-    const childFields = props.settings.childFields || {}
+    const objectLabel = computed(() => props.settings.label || '');
+    const objectLabelPlural = computed(() => props.settings.labelPlural || `${objectLabel.value}s`);
+    const objectIcon = computed(() => props.settings.icon);
+    const children = computed(() => props.settings.children || []);
+    const actions = computed(() => props.settings.actions || []);
+    const fields = computed(() => props.settings.fields || []);
+    const childFields = computed(() => props.settings.childFields || {});
+    const noCreate = computed(() => props.settings.noCreate === true);
 
     // VUELIDATE
 
     function getRules() {
         const ruleObj = { item: {} }
-        fields.forEach(field => {
+        fields.value.forEach(field => {
             var rule = {}
             if (field.required) {
                 rule.required = helpers.withMessage(`${field.label} is required`, required)
@@ -121,13 +125,13 @@
 
     };
     const item = ref({});
-    const rules = getRules()
+    const rules = computed(() => getRules());
     const $v = useVuelidate(rules, { item });
 
     // METHODS
     
     function objectTitle(prefix = '', suffix = '') {
-        return `${prefix} ${objectLabel} ${suffix}`.trim()
+        return `${prefix} ${objectLabel.value} ${suffix}`.trim()
     }
     function resetItems() {
         itemList.value = [];
@@ -142,7 +146,7 @@
         }
         resetItems();
         itemList.value = await loadList(objectType,isFlat);
-        for (const field of fields) {
+        for (const field of fields.value) {
             if (field.parent && field.values && typeof field.values == 'string') {
                 parentLists.value[field.parent] = await loadList(field.values);
             }
@@ -214,7 +218,7 @@
                     } else {
                         throw new Error("Unsupported API version");
                     }
-                    for (const field of fields) {
+                    for (const field of fields.value) {
                         if (field.type == 'checkbox') {
                             item.value[field.key] = !!item.value[field.key]
                         }
@@ -230,7 +234,7 @@
                     delete item.value.client_secret // do not return client_secret in the API
                     // TODO : in de future, do not return passwords in the api
 
-                    for (const childList of children) {
+                    for (const childList of children.value) {
                         childLists.value[childList.type] = (await loadList(childList.type)).filter(child => child[childList.key] == itemId.value)
                     }
                 }
@@ -246,7 +250,7 @@
         action.value = 'select';    
         removeUnwantedProperties()
         // Set defaults for all fields with defaultMap
-        fields.forEach(field => {
+        fields.value.forEach(field => {
             if (field.defaultMap && field.dependency && item.value[field.dependency] && !item.value[field.key]) {
                 console.log("Setting default")
                 setFieldDefaults(field.dependency);
@@ -260,7 +264,7 @@
         action.value = 'edit';    
         removeUnwantedProperties()
         // Set defaults for all fields with defaultMap
-        fields.forEach(field => {
+        fields.value.forEach(field => {
             if (field.defaultMap && field.dependency && item.value[field.dependency] && !item.value[field.key]) {
                 console.log("Setting default")
                 setFieldDefaults(field.dependency);
@@ -299,7 +303,7 @@
     function newItem() {
         item.value = {};
         // Initialize fields with defaults to prevent undefined warnings
-        fields.forEach(field => {
+        fields.value.forEach(field => {
             if (field.type === 'editor' && item.value[field.key] === undefined) {
                 item.value[field.key] = '';
             }
@@ -317,11 +321,11 @@
                     if (result.data.status == "error") {
                         toast.error(result.data.message + ", " + result.data.data.error);
                     } else {
-                        toast.success(objectTitle('', 'is created'));
+                        toast.success(objectTitle('', t('settings.common.isCreated')));
                         loadItems();
                     }
                 } else if (props.apiVersion == 2) {
-                    toast.success(objectTitle('', 'is created'));
+                    toast.success(objectTitle('', t('settings.common.isCreated')));
                     loadItems();
                 }
             }
@@ -346,11 +350,11 @@
                     if (result.data.status == "error") {
                         toast.error(result.data.message + ", " + result.data.data.error);
                     } else {
-                        toast.success(objectTitle('', 'is updated'));
+                        toast.success(objectTitle('', t('settings.common.isUpdated')));
                         loadItems();
                     }
                 } else if (props.apiVersion == 2) {
-                    toast.success(objectTitle('', 'is updated'));
+                    toast.success(objectTitle('', t('settings.common.isUpdated')));
                     loadItems();
                 }
             } catch (err) {
@@ -372,12 +376,12 @@
                 if (result.data.status == "error") {
                     toast.error(result.data.message + ", " + result.data.data.error);
                 } else {
-                    toast.success(objectTitle('', 'is deleted'));
+                    toast.success(objectTitle('', t('settings.common.isDeleted')));
                     unselectItem();
                     loadItems();
                 }
             } else if (props.apiVersion == 2) {
-                toast.success(objectTitle('', 'is deleted'));
+                toast.success(objectTitle('', t('settings.common.isDeleted')));
                 unselectItem();
                 loadItems();
             }
@@ -427,7 +431,7 @@
 
     // Set dynamic defaults for fields with defaultMap when dependency changes
     function setFieldDefaults(depKey) {
-        fields.forEach(field => {
+        fields.value.forEach(field => {
             if (field.defaultMap && field.dependency === depKey) {
                 const depValue = item.value[depKey];
                 const def = field.defaultMap[depValue];
@@ -441,7 +445,7 @@
     }
 
 
-    fields.forEach(field => {
+    fields.value.forEach(field => {
         if (field.dependency) {
             watch(() => item.value[field.dependency], () => setFieldDefaults(field.dependency));
         }
@@ -457,7 +461,7 @@
         }
     });
     function removeUnwantedProperties(){
-        for (const field of fields) {
+        for (const field of fields.value) {
             if (field.type == 'password' && !["new","change_password"].includes(action.value)) {
                 delete item.value[field.key]
             }
@@ -474,22 +478,22 @@
     });
     const title = computed(() => {
         if (action.value == 'change_password') {
-            return "Change Password"
+            return t('settings.common.changePassword')
         }
         if (action.value == 'new') {
-            return objectTitle('New')
+            return t('settings.common.newItem', { item: objectLabel.value })
         } else if (action.value == 'edit') {
-            return objectTitle('Edit')
+            return `${t('settings.common.edit')} ${objectLabel.value}`
         } else {
-            return objectTitle()
+            return objectLabel.value
         }
 
     });
 
     const  isInvalid = computed(() => {
         // check if any field is invalid, but only check the ones that are not disabled
-        for (const field of fields) {
-            if (showField(field) && !["password","token","client_secret"].includes(field.key) && $v.value.item[field.key].$invalid) {
+        for (const field of fields.value) {
+            if (showField(field) && !["password","token","client_secret"].includes(field.key) && $v.value.item[field.key]?.$invalid) {
                 return true;
             }
         }
@@ -497,16 +501,138 @@
     })
     const  isInvalidPassword = computed(() => {
         // check if any field is invalid, but only check the ones that are not disabled
-        for (const field of fields) {
-            if (showField(field) && (["password","token","client_secret"].includes(field.key) || field.key == idKey) && $v.value.item[field.key].$invalid) {
+        for (const field of fields.value) {
+            if (showField(field) && (["password","token","client_secret"].includes(field.key) || field.key == idKey) && $v.value.item[field.key]?.$invalid) {
                 return true;
             }
         }
         return false
     })
     const checkboxFields = computed(() => {
-        return fields.filter(field => field.type === 'checkbox').map(field => field.key);
+        return fields.value.filter(field => field.type === 'checkbox').map(field => field.key);
     });
+
+    // BsDataTable mode (always on — BsDataTable is the only table renderer)
+    const dataTableSelectable = computed(() => props.settings.selectable !== false);
+    const selectedIds = ref(new Set());
+    const activeRowId = ref(null);
+
+    const hasEditAction = computed(() => actions.value.some(a => a.name === 'edit'));
+    const dataTableShowRowMenu = computed(() => actions.value.length > 0);
+
+    const dataTableColumns = computed(() => {
+        // Include every field as a possible column (so the user can opt any of
+        // them in via the column picker). Skip explicit `noTable` opt-outs and
+        // password-like fields whose values are never returned by the API.
+        const SECRET_KEYS = new Set(['password', 'token', 'client_secret']);
+        return fields.value
+            .filter(f => !f.noTable && !SECRET_KEYS.has(f.key) && f.type !== 'password')
+            .map(f => {
+                const col = {
+                    key: f.key,
+                    label: f.label,
+                    sortable: f.sortable !== false,
+                    filterable: f.filterable || false,
+                    mobileHidden: f.mobileHidden || false,
+                    // Fields previously flagged `hidden: true` keep that as the
+                    // default visibility but remain available in the column
+                    // picker so users can show them when wanted.
+                    defaultHidden: !!f.hidden,
+                };
+                if (f.type === 'select' && f.parent) {
+                    col.render = (val) => {
+                        const list = parentLists.value[f.parent] || [];
+                        const found = list.find(itm => itm[f.valueKey] == val);
+                        return found ? found[f.labelKey] : (val || '');
+                    };
+                }
+                if (f.type === 'checkbox') {
+                    col.type = 'checkbox';
+                }
+                return col;
+            });
+    });
+
+    // Whether a per-row action should be enabled. Honours `dependency`,
+    // `dependencyValues`, and `negateDependency` from the action definition.
+    function isActionEnabled(action, item) {
+        if (!action.dependency) return true;
+        // an array dependency means "enabled if ANY of these fields is truthy"
+        if (Array.isArray(action.dependency)) {
+            return action.dependency.some(dep => !!item[dep]);
+        }
+        const v = item[action.dependency];
+        if (Array.isArray(action.dependencyValues)) {
+            return action.dependencyValues.includes(v);
+        }
+        if (action.negateDependency) return !v;
+        return !!v;
+    }
+
+    // Map child-list `fields` (settings.js → childFields) to BsDataTable
+    // column defs so the read-only child tables get the same sort / filter /
+    // column-picker behaviour as the main table.
+    function childTableColumns(fieldList) {
+        if (!Array.isArray(fieldList)) return [];
+        return fieldList.map(f => ({
+            key: f.key,
+            label: f.label,
+            sortable: f.sortable !== false,
+            filterable: f.filterable !== false,
+            defaultHidden: !!f.hidden,
+            type: f.type === 'checkbox' ? 'checkbox' : undefined,
+        }));
+    }
+
+    function dispatchAction(action, item) {
+        if (!isActionEnabled(action, item)) return;
+        switch (action.name) {
+            case 'edit': return editItem(item);
+            case 'delete': return deleteItem(item);
+            case 'change_password': return changePasswordItem(item);
+            case 'select': return selectItem(item);
+            case 'preview': return previewItem(item);
+            case 'test': return testItem(item);
+            case 'trigger': return triggerItem(item);
+            case 'reset': return resetItem(item);
+            default: return emit(action.name, item);
+        }
+    }
+
+    function onDataTableRowClick(item) {
+        if (!dataTableSelectable.value) {
+            activeRowId.value = item[idKey];
+            if (hasEditAction.value) {
+                editItem(item);
+            } else {
+                // No edit action defined → open the read-only "show" offcanvas
+                // (used by pages like groups that have children to display).
+                selectItem(item);
+                emit('row-select', item);
+            }
+        }
+    }
+
+    async function bulkDelete() {
+        const ids = [...selectedIds.value];
+        if (!ids.length) return;
+        if (!confirm(`Delete ${ids.length} item(s)?`)) return;
+        try {
+            await Promise.all(ids.map(id => {
+                if (isFlat) {
+                    const row = itemList.value.find(r => r[idKey] === id);
+                    const name = row?.name ?? id;
+                    return axios.delete(`/api/v${props.apiVersion}/${objectType}?name=${encodeURIComponent(name)}`, TokenStorage.getAuthentication());
+                }
+                return axios.delete(`/api/v${props.apiVersion}/${objectType}/${id}`, TokenStorage.getAuthentication());
+            }));
+            toast.success(t('settings.common.isDeleted'));
+            selectedIds.value = new Set();
+            await loadItems();
+        } catch (err) {
+            toast.error(Helpers.parseAxiosResponseError(err, "Failed to delete items"));
+        }
+    }
 
 
     // HOOKS
@@ -540,43 +666,61 @@
 <template>
     <BsModal v-if="action == 'delete'" @close="unselectItem">
         <template #title>
-            Delete {{ objectLabel }}
+            {{ t('common.delete') }} {{ objectLabel }}
         </template>
         <template #default>
             <p class="mt-3 fs-6 user-select-none">
-                Are you sure you want to delete <strong>{{ selectedItem.name }}</strong>?
+                {{ t('settings.common.deleteConfirm') }} <strong>{{ selectedItem.name }}</strong>?
             </p>
         </template>
         <template #footer>
-            <BsButton icon="trash" @click="removeItem()">Delete</BsButton>
+            <BsButton icon="trash" @click="removeItem()">{{ t('common.delete') }}</BsButton>
         </template>
     </BsModal>
     <AppSettings :icon="objectIcon" :title="objectLabelPlural">
         <template #actions>
-            <BsButton cssClass="ms-3" icon="plus" @click="newItem()">New {{ objectLabel }}</BsButton>
+            <BsButton v-if="!noCreate" cssClass="ms-3" icon="plus" @click="newItem()">{{ t('settings.common.newItem', { item: objectLabel }) }}</BsButton>
         </template>
         <template #default>
-            <BsAdminTable v-if="!loading && itemList!=undefined" 
-                :items="itemList" 
-                :busyItems="busyItems"
-                :parentLists="parentLists" 
-                :fields="fields" 
+            <BsDataTable v-if="!loading && itemList!=undefined"
+                :items="itemList"
+                :columns="dataTableColumns"
                 :idKey="idKey"
-                :actions="actions" 
-                :removeDoubles="removeDoubles"
-                :checkboxFields="checkboxFields"
+                :selectedIds="selectedIds"
+                :selectable="dataTableSelectable"
+                :activeId="!dataTableSelectable ? activeRowId : null"
                 :name="Helpers.cleanupString(objectLabelPlural)"
-                @preview="previewItem" 
-                @edit="editItem" 
-                @test="testItem" 
-                @select="selectItem" 
-                @delete="deleteItem" 
-                @trigger="triggerItem"
-                @change_password="changePasswordItem" 
-                @reset="resetItem"
-                :pagination="pagination" />
+                @update:selectedIds="selectedIds = $event"
+                @row-click="onDataTableRowClick"
+            >
+                <template v-if="dataTableSelectable" #bulk-actions="{ count }">
+                    <BsButton v-if="count" cssClass="ms-2 btn-sm btn-outline-danger" icon="trash" @click="bulkDelete">
+                        {{ t('common.delete') }} ({{ count }})
+                    </BsButton>
+                </template>
+                <template v-if="dataTableShowRowMenu" #row-actions="{ item }">
+                    <div class="dropdown">
+                        <a role="button" class="bs-dt-row-menu px-2" data-bs-toggle="dropdown" data-bs-strategy="fixed">
+                            <font-awesome-icon icon="ellipsis-vertical" />
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <template v-for="(action, idx) in actions" :key="action.name + idx">
+                                <li v-if="action.name === 'delete'"><hr class="dropdown-divider" /></li>
+                                <li>
+                                    <a class="dropdown-item"
+                                       :class="{ 'disabled text-muted': !isActionEnabled(action, item), 'text-danger': action.name === 'delete' && isActionEnabled(action, item) }"
+                                       href="#"
+                                       @click.prevent="dispatchAction(action, item)">
+                                        <font-awesome-icon :icon="action.icon || 'circle'" class="me-2" />{{ action.title }}
+                                    </a>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </template>
+            </BsDataTable>
             <div class="spinner-border" role="status" v-if="loading">
-                <span class="visually-hidden">Loading...</span>
+                <span class="visually-hidden">{{ t('settings.common.loading') }}</span>
             </div>
         </template>
         <template #footer>
@@ -585,9 +729,9 @@
     </AppSettings>
     <BsOffCanvas v-if="!loading" :show="['select', 'edit', 'new', 'change_password'].includes(action)" :icon="objectIcon" :title="title" @close="unselectItem">
         <template #actions>
-            <BsButton v-if="action == 'new'" icon="save" @click="createItem()">Save</BsButton>
-            <BsButton v-if="action == 'edit'" icon="save" @click="updateItem()">Save</BsButton>
-            <BsButton v-if="action == 'change_password'" icon="lock" @click="updateItem(true)">Change Password</BsButton>
+            <BsButton v-if="action == 'new'" icon="save" @click="createItem()">{{ t('settings.common.save') }}</BsButton>
+            <BsButton v-if="action == 'edit'" icon="save" @click="updateItem()">{{ t('settings.common.save') }}</BsButton>
+            <BsButton v-if="action == 'change_password'" icon="lock" @click="updateItem(true)">{{ t('settings.common.changePassword') }}</BsButton>
         </template>
         <template #default>
             <template v-for="field in fields">
@@ -645,7 +789,11 @@
                 </ul>
                 <div v-for="(childList, index) in children">
                     <div class="p-2 border border-top-0" v-if="index == activeChild">
-                        <BsAdminTable :items="childLists[childList.type]" :fields="childFields[childList.type]" />
+                        <BsDataTable
+                            :items="childLists[childList.type] || []"
+                            :columns="childTableColumns(childFields[childList.type])"
+                            :selectable="false"
+                            :name="`child_${objectType}_${childList.type}`" />
                     </div>
                 </div>
             </div>
@@ -653,3 +801,18 @@
     </BsOffCanvas>
     
 </template>
+<style scoped>
+/* 3-dot row action trigger: muted by default, inherits color when the row is
+   selected/active (dark bg → light icon). */
+.bs-dt-row-menu {
+  color: var(--bs-secondary-color);
+  text-decoration: none;
+}
+.bs-dt-row-menu:hover {
+  color: var(--bs-body-color);
+}
+:deep(.bs-dt-selected) .bs-dt-row-menu,
+:deep(.bs-dt-selected) .bs-dt-row-menu:hover {
+  color: inherit;
+}
+</style>

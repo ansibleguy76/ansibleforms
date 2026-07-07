@@ -140,6 +140,38 @@ const Helpers = {
     }
     
   },
+  // avoid circular references and skip cloning __user__ and window properties which can cause issues
+  safeDeepClone(obj, visited = new Map()) {
+    if (obj === null || typeof obj !== 'object') {
+      return obj;
+    }
+
+    // Cirkel gedetecteerd? Geef de al gemaakte kopie terug.
+    if (visited.has(obj)) {
+      return visited.get(obj);
+    }
+
+    if (Array.isArray(obj)) {
+      const arrClone = [];
+      visited.set(obj, arrClone);
+      for (const item of obj) {
+        arrClone.push(this.safeDeepClone(item, visited));
+      }
+      return arrClone;
+    }
+
+    const objClone = {};
+    visited.set(obj, objClone);
+
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        if (key === '__user__' || key === 'window') continue;
+        objClone[key] = this.safeDeepClone(obj[key], visited);
+      }
+    }
+
+    return objClone;
+  },
   // Build a field-driven output object (the same shape used for main-form
   // extravars). Honours `noOutput`, `outputObject`, `valueColumn`, dotted
   // `model` paths (including array indexes like `a.b[0].c`) and the datetime
@@ -259,6 +291,62 @@ const Helpers = {
     });
     return fd;
   },
+
+  // Build the output for a single wizard step. Same rules as buildFormOutput,
+  // but with `defaultModel` (a dotted prefix declared on the wizard step)
+  // applied as a wrapper around each field's `model` (or `name` when no
+  // explicit model is set).
+  //
+  //   - fields without a `model` -> wrapped under `<defaultModel>.<name>`
+  //   - fields with a relative `model` -> wrapped under `<defaultModel>.<model>`
+  //   - fields with an absolute `model` (leading "/") -> escape the prefix
+  //     and write at the wizard root (the leading slash is stripped)
+  //
+  // The original field definitions are not mutated; we shallow-clone each
+  // field to override `model` before delegating to buildFormOutput.
+  buildWizardStepOutput(fields, raw, defaultModel, opts = {}) {
+    const prefix = (typeof defaultModel === 'string' && defaultModel.trim())
+      ? defaultModel.trim().replace(/^\.+|\.+$/g, '')
+      : '';
+    const wrapped = (fields || []).map((item) => {
+      if (!item || !item.name) return item;
+      // honour absolute models with leading "/" -> root, strip the slash
+      const rawModel = item.model;
+      const apply = (m) => {
+        if (typeof m !== 'string') return m;
+        if (m.startsWith('/')) return m.slice(1);            // escape prefix
+        return prefix ? `${prefix}.${m}` : m;
+      };
+      let nextModel;
+      if (Array.isArray(rawModel)) {
+        nextModel = rawModel.map(apply);
+      } else if (typeof rawModel === 'string') {
+        nextModel = apply(rawModel);
+      } else {
+        // no model declared -> synthesise from field name
+        nextModel = prefix ? `${prefix}.${item.name}` : item.name;
+      }
+      return { ...item, model: nextModel };
+    });
+    return this.buildFormOutput(wrapped, raw, opts);
+  },
+
+  // Deep-merge `src` into `dst` (mutates dst, returns it). Plain objects
+  // recurse; arrays / scalars overwrite. Used by the wizard to combine
+  // per-step outputs into a single extravars object.
+  deepMerge(dst, src) {
+    if (src == null || typeof src !== 'object' || Array.isArray(src)) return src;
+    if (dst == null || typeof dst !== 'object' || Array.isArray(dst)) dst = {};
+    for (const [k, v] of Object.entries(src)) {
+      if (v && typeof v === 'object' && !Array.isArray(v)
+          && dst[k] && typeof dst[k] === 'object' && !Array.isArray(dst[k])) {
+        dst[k] = this.deepMerge(dst[k], v);
+      } else {
+        dst[k] = this.deepClone(v);
+      }
+    }
+    return dst;
+  },
   
   // Recursively strip internal fields from objects/arrays (for YAML downloads).
   // Removes __output__, __user__, __parent__ and any additional fields specified.
@@ -278,6 +366,88 @@ const Helpers = {
       return cleaned;
     }
     return obj;
+  },
+
+  // Return a deep clone of `data` with values for password-typed fields
+  // replaced by a fixed bullet mask. Intended ONLY for display (read-only
+  // YAML previews, the extravars panel). The original object is never
+  // mutated, so anything sent on submit / copied / downloaded keeps the
+  // real value.
+  //
+  //   data     : an output-shaped object/array (typically the result of
+  //              buildFormOutput, or a saved __output__ blob)
+  //   fields   : field definitions whose `model` (or `name`) describes
+  //              where each value lives in `data`
+  //   subforms : optional subform list, used to recurse through `list`
+  //              rows and `yaml`-with-subform fields
+  maskPasswordsForDisplay(data, fields, subforms = []) {
+    if (data == null || !Array.isArray(fields)) return data;
+    const cloned = this.deepClone(data);
+    if (cloned == null) return data;
+    const subformByName = Object.fromEntries((subforms || []).map(s => [s.name, s]));
+    const MASK = '••••••••';
+
+    const setAtPath = (target, path, value) => {
+      if (!target || typeof target !== 'object') return;
+      const parts = String(path).split('.');
+      let cur = target;
+      for (let i = 0; i < parts.length - 1; i++) {
+        if (cur == null || typeof cur !== 'object') return;
+        cur = cur[parts[i]];
+      }
+      if (cur && typeof cur === 'object') {
+        const last = parts[parts.length - 1];
+        if (last in cur && cur[last] != null && cur[last] !== '') {
+          cur[last] = value;
+        }
+      }
+    };
+
+    const getAtPath = (target, path) => {
+      if (!target || typeof target !== 'object') return undefined;
+      const parts = String(path).split('.');
+      let cur = target;
+      for (const p of parts) {
+        if (cur == null || typeof cur !== 'object') return undefined;
+        cur = cur[p];
+      }
+      return cur;
+    };
+
+    const walk = (target, fieldDefs) => {
+      if (!target || typeof target !== 'object' || !Array.isArray(fieldDefs)) return;
+      for (const f of fieldDefs) {
+        if (!f || !f.name) continue;
+        if (f.noOutput || f.output === false) continue;
+        const paths = [].concat(f.model || f.name);
+        if (f.type === 'password') {
+          for (const p of paths) setAtPath(target, p, MASK);
+        } else if (f.type === 'list') {
+          const sub = (typeof f.subform === 'string') ? subformByName[f.subform] : f.subform;
+          if (sub && Array.isArray(sub.fields)) {
+            for (const p of paths) {
+              const arr = getAtPath(target, p);
+              if (Array.isArray(arr)) {
+                for (const row of arr) {
+                  if (row && typeof row === 'object') walk(row, sub.fields);
+                }
+              }
+            }
+          }
+        } else if (f.type === 'yaml' && f.subform) {
+          const sub = (typeof f.subform === 'string') ? subformByName[f.subform] : f.subform;
+          if (sub && Array.isArray(sub.fields)) {
+            for (const p of paths) {
+              const obj = getAtPath(target, p);
+              if (obj && typeof obj === 'object' && !Array.isArray(obj)) walk(obj, sub.fields);
+            }
+          }
+        }
+      }
+    };
+
+    walk(cloned, fields);
+    return cloned;
   },
   
   // Resolve placeholders in title strings (titleAdd, titleEdit) with __parent__ context.

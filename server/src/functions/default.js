@@ -21,8 +21,11 @@ const { firstBy } = thenbypkg;
 // Project-specific modules
 import logger from "../lib/logger.js";
 import ip from "../lib/ip.js";
+import { shellQuote } from "../lib/shell.js";
+import { assertUrlAllowed } from "../lib/hostfilter.js";
 import credentialModel from "../models/credential.model.v2.js";
 import Helpers from '../lib/common.js';
+import { vaultRead, mapVaultPayloadToCredential } from "../lib/vault.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -209,12 +212,27 @@ const fnDnsResolve = async function(hostname,type) {
     })
   })
 }
-const fnCredentials = async function(name,fallbackname=""){
+const fnCredentials = async function(name,fallbackname="",credJqe=null){
   var result=undefined
   if(name){
     try{
-      result = await credentialModel.findByName(name,fallbackname)
-      // console.log(result)
+      // Inline HashiCorp Vault lookup: "vault:secret/data/foo" or "vault:foo"
+      // (the latter uses VAULT_DEFAULT_MOUNT). No DB credential row required.
+      if (typeof name === "string" && name.toLowerCase().startsWith("vault:")) {
+        const path = name.slice(6).trim()
+        const payload = await vaultRead(path)
+        let projected = payload
+        if (credJqe) {
+          projected = await jq.run(combinedJqDef + credJqe, payload, { input: "json", output: "json" })
+        }
+        result = mapVaultPayloadToCredential(projected)
+      } else {
+        result = await credentialModel.findByName(name,fallbackname)
+        if (result && credJqe) {
+          // Allow callers to reshape a stored credential too (rare, but symmetric).
+          result = await jq.run(combinedJqDef + credJqe, result, { input: "json", output: "json" })
+        }
+      }
     }catch(e){
       logger.error("Error getting credentials",e)
       throw(e)
@@ -253,7 +271,11 @@ const fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort=n
     // If URL parsing fails, use the original URL
     logger.debug(`[fnRestAdvanced] URL parsing failed, using original URL: ${e.message}`);
   }
-  
+
+  // Outbound host allow/deny check (REST_ALLOWED_HOSTS / REST_DENIED_HOSTS).
+  // No-op when neither env var is set.
+  await assertUrlAllowed(url);
+
   const httpsAgent = new https.Agent({
     rejectUnauthorized: false,
   })
@@ -351,10 +373,11 @@ const fnRestJwtSecure = async function(action,url,body,tokenname,jqe=null,sort=n
 const fnSsh = async function(user,host,cmd,jqe=null){
 
   var result= await new Promise((resolve,reject)=>{
-    const u=user.replaceAll('"','\"') // escape quote in user to avoid code injection
-    const h=host.replaceAll('"','') // remove quote in host to avoid code injection
-    const c=cmd.replace('"','\"') // escape quote in command to avoid code injection
-    const command=`ssh "${u}"@${h} "${c}"`
+    // Form-controlled values — must be properly shell-escaped before going
+    // through `exec` (which uses /bin/sh -c). The previous .replace/.replaceAll
+    // calls were not real escaping (single replace, not all occurrences, and
+    // no protection against $(), backticks, ;, &&, ||).
+    const command=`ssh ${shellQuote(`${user}@${host}`)} ${shellQuote(cmd)}`
     logger.debug(`invoking ssh : ${command}`)
     var child = exec(command,{encoding: "UTF-8"});
     var output=[]

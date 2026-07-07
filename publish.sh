@@ -44,19 +44,34 @@ BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 echo "🐳 Building Docker image with SHA: $GIT_SHA"
 
-# Step 4: Build Docker with build args
+# Step 4: Ensure we're logged into Docker Hub as the expected user.
+# Override by exporting DOCKER_HUB_USER=someoneelse before running the script.
+DOCKER_HUB_USER="${DOCKER_HUB_USER:-ansibleguy}"
+CURRENT_DOCKER_USER=$(docker info 2>/dev/null | awk -F': ' '/^ Username:/ {print $2}' | tr -d '[:space:]')
+if [ "$CURRENT_DOCKER_USER" != "$DOCKER_HUB_USER" ]; then
+    if [ -n "$CURRENT_DOCKER_USER" ]; then
+        echo "⚠️  Currently logged in as '$CURRENT_DOCKER_USER', need '$DOCKER_HUB_USER'. Switching..."
+    else
+        echo "🔑 Not logged into Docker Hub. Logging in as '$DOCKER_HUB_USER'..."
+    fi
+    docker login -u "$DOCKER_HUB_USER"
+else
+    echo "✅ Logged into Docker Hub as '$DOCKER_HUB_USER'"
+fi
+
+# Step 5: Build Docker with build args
 docker build \
     --build-arg GIT_SHA="$GIT_SHA" \
     --build-arg BUILD_TIME="$BUILD_TIME" \
     -t ansibleforms .
 
-# Step 5: Tag and push
-docker tag ansibleforms ansibleguy/ansibleforms
-docker push ansibleguy/ansibleforms
-docker tag ansibleforms ansibleguy/ansibleforms:$version
-docker push ansibleguy/ansibleforms:$version
+# Step 6: Tag and push
+docker tag ansibleforms "$DOCKER_HUB_USER/ansibleforms"
+docker push "$DOCKER_HUB_USER/ansibleforms"
+docker tag ansibleforms "$DOCKER_HUB_USER/ansibleforms:$version"
+docker push "$DOCKER_HUB_USER/ansibleforms:$version"
 
 # Cleanup
 docker rmi $(docker images -f "dangling=true" -q) 2>/dev/null || true
 
-echo "✅ Published ansibleguy/ansibleforms:$version (SHA: $GIT_SHA)"
+echo "✅ Published $DOCKER_HUB_USER/ansibleforms:$version (SHA: $GIT_SHA)"

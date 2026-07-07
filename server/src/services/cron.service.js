@@ -4,6 +4,7 @@ import { Cron } from 'croner';
 import logger from '../lib/logger.js';
 import mysql from '../models/db.model.js';
 import Repository from '../models/repository.model.js';
+import Lock from '../models/lock.model.js';
 import Datasource from '../models/datasource.model.js';
 import Schedule from '../models/schedule.model.js';
 import logConfig from '../../config/log.config.js';
@@ -75,9 +76,21 @@ class CronService {
           );
           
           if (repos.length > 0) {
-            await Repository.pull(name).catch((e) => {
-              logger.error(`Failed to pull repository ${name}:`, e);
-            });
+            // skip the pull while the designer holds the lock : it is editing the
+            // working trees and may write form files at any moment ; a git pull
+            // racing those writes could corrupt them (issue #414)
+            if (await Lock.isHeld()) {
+              logger.debug(`Designer lock held, skipping cron pull for ${name}`);
+            } else if (await Repository.hasLocalChanges(name)) {
+              // skip the pull while the working tree has uncommitted/unpushed
+              // changes (e.g. the designer is mid-edit) : pulling would conflict
+              // and flip the status to 'failed' on every tick
+              logger.debug(`Repository ${name} has local changes, skipping cron pull`);
+            } else {
+              await Repository.pull(name).catch((e) => {
+                logger.error(`Failed to pull repository ${name}:`, e);
+              });
+            }
           } else {
             logger.debug(`Repository ${name} is already running, skipping cron execution`);
           }

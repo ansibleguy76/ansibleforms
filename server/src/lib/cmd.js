@@ -1,4 +1,4 @@
-import { spawn, execSync } from 'child_process';
+import { spawn, exec, execSync } from 'child_process';
 import logger from './logger.js';
 var Cmd = function(){
 
@@ -7,22 +7,38 @@ var Cmd = function(){
 Cmd.killChildren = (pid) => {
   const children = [];
 
+  // Defensive: pid must be numeric. Anything else is an injection attempt
+  // or a programming bug. Reject loudly rather than splice into a shell command.
+  const numericPid = parseInt(pid, 10);
+  if (!Number.isInteger(numericPid) || numericPid <= 0) {
+    logger.warning(`Cmd.killChildren: refusing non-numeric pid ${JSON.stringify(pid)}`);
+    return;
+  }
+
   try {
-    const psRes = execSync(`ps -opid="" -oppid="" |grep ${pid}`).toString().trim().split(/\n/);
+    const psRes = execSync(`ps -opid="" -oppid="" |grep ${numericPid}`).toString().trim().split(/\n/);
 
     (psRes || []).forEach(pidGroup => {
       const [actual, parent] = pidGroup.trim().split(/ +/);
 
-      if (parent.toString() === pid.toString()) {
+      if (parent && parent.toString() === numericPid.toString()) {
         children.push(parseInt(actual, 10));
       }
     });
-  } catch (e) {}
+  } catch (e) {
+    logger.debug(`Cmd.killChildren: ps lookup failed for pid ${numericPid}: ${e.message}`);
+  }
   try {
-    logger.debug(`Killing process ${pid}`)
-    process.kill(pid);
+    logger.debug(`Killing process ${numericPid}`)
+    process.kill(numericPid);
     children.forEach(childPid => Cmd.killChildren(childPid));
-  } catch (e) {}
+  } catch (e) {
+    logger.debug(`Cmd.killChildren: process.kill failed for pid ${numericPid}: ${e.message}`);
+  }
+};
+
+Cmd.runCommand = (cmd) => {
+  return exec(cmd, {});
 };
 
 Cmd.executeSilentCommand = async (cmd,silent=false,singleLine=false,timeoutSeconds=60) => {

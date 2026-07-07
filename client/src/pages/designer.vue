@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, onBeforeUnmount, computed } from "vue";
 import Form from "@/lib/Form";
 import Lock from "@/lib/Lock";
 import Backup from "@/lib/Backup";
@@ -8,10 +8,14 @@ import YAML from "yaml";
 import { toast } from "vue-sonner";
 import { useRoute, useRouter } from "vue-router";
 import Helpers from "@/lib/Helpers";
+import axios from "axios";
+import TokenStorage from "@/lib/TokenStorage";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 
 dayjs.extend(relativeTime);
+
+const { t } = useI18n();
 
 const categories = ref("");
 const roles = ref("");
@@ -40,7 +44,20 @@ const isValid = computed(() => {
   return warnings.value.length == 0;
 });
 
-const isDirty = ref(false);
+// change detection : the designer is "dirty" when the parsed content differs
+// from the last saved/loaded baseline. Comparing the PARSED content (not the
+// raw text) is robust to whitespace/newline noise from the editor and matches
+// what a save persists, so reverting an edit (eg type a char then erase it)
+// clears the dirty state. The ace editor live-syncs its v-model on every edit,
+// so this computed re-evaluates as you type.
+const dirtyBaseline = ref(null);
+function contentSnapshot() {
+  return JSON.stringify({ c: categoriesObj.value, r: rolesObj.value, k: constantsObj.value, f: formsObj.value });
+}
+function setDirtyBaseline() {
+  dirtyBaseline.value = contentSnapshot();
+}
+const isDirty = computed(() => dirtyBaseline.value !== null && contentSnapshot() !== dirtyBaseline.value);
 
 const formTemplate = {
   name: "New Form",
@@ -159,7 +176,7 @@ const idmapping = computed(() => {
 });
 
 const currentFormName = computed(() => {
-  return idmapping.value.find((x) => x.id == currentForm.value).name || null;
+  return idmapping.value.find((x) => x.id == currentForm.value)?.name || null;
 });
 
 const lockAge = computed(() => {
@@ -257,7 +274,16 @@ async function loadForms() {
     });
     selectDefaultForm();
     loaded.value = true;
+    // the freshly loaded content is the clean baseline (only on success, so a
+    // failed/partial load doesn't mark a blank designer as "clean" and saveable)
+    setDirtyBaseline();
   } catch (err) {
+    // a (re)load failed after the content was cleared : don't leave a blank
+    // editor paired with a stale baseline (that reads as dirty and would let a
+    // save overwrite the repo with empty content). Drop back to the not-loaded
+    // state with no baseline, so the editor is hidden and Save stays disabled.
+    loaded.value = false;
+    dirtyBaseline.value = null;
     toast.error(err.message);
   }
 }
@@ -284,7 +310,7 @@ async function loadBackups() {
 }
 
 function selectDefaultForm() {
-  currentForm.value = idmapping.value[0].id || null;
+  currentForm.value = idmapping.value[0]?.id || null;
   if (route.query.form) {
     // find form in forms by name
     const f = idmapping.value.find((x) => x.name == route.query.form);
@@ -312,7 +338,7 @@ function selectForm(id) {
   // get the name and update the route
   if (currentFormName.value) {
     const query = { ...route.query };
-    query.form = name;
+    query.form = currentFormName.value;
     router.push({ query });
   }
 }
@@ -327,24 +353,22 @@ function addForm(file) {
   // check if the form "New Form" already exists
 
   if (idmapping.value.find((x) => x.name == "New Form")) {
-    toast.error("Form 'New Form' already exists");
-    return;
+    toast.error(t('designer.newFormExists'));
+    return false;
   }
 
   const id = `form_${Object.keys(forms.value).length}`;
-  if (file) {
-    formTemplate.source = file;
-  }
+  // don't mutate the shared formTemplate ; the spread + source below is enough
   forms.value[id] = YAML.stringify({ ...formTemplate, source: file });
   currentForm.value = id;
-  isDirty.value = true;
+  // isDirty is computed from the content, adding a form makes it dirty
+  return true;
 }
 
 function doDeleteForm() {
   // delete the form by id from forms list
   if (currentFormName.value) {
     delete forms.value[currentForm.value];
-    isDirty.value = true;
     // select default form
     selectDefaultForm();
   } else {
@@ -368,6 +392,7 @@ function assembleForms() {
 
 function resetAction() {
   action.value = null;
+  nextAction.value = false; // clear any pending callback so a later flow can't fire a stale one
 }
 
 async function setLock(proceed = true) {
@@ -387,7 +412,7 @@ async function setLock(proceed = true) {
 async function restoreBackup() {
   try {
     await Backup.restore(backupToRestore.value.file, backupBeforeRestore.value);
-    toast.success("Backup restored");
+    toast.success(t('designer.backupRestored'));
     await loadAll();
     action.value = null;
   } catch (err) {
@@ -437,29 +462,189 @@ async function unLock() {
   };
 }
 
+// forms repositories (issue #414) : the forms live in git, the designer
+// saves into the working trees and 'Push to repo' commits & pushes them
+const formsRepos = ref([]);
+const configRepo = ref(""); // the repository that holds config.yaml
+const stagedForms = ref(false); // new forms saved but not yet pushed to a repo
+const syncing = ref(false);
+const loadingRepos = ref(false);
+const showPushModal = ref(false);
+const pushRepo = ref(""); // "" means all repositories
+const showLoadModal = ref(false);
+const loadRepo = ref("");
+
+// unpushed work : a repository with uncommitted/unpushed changes, or new forms
+// still staged. Drives the "you have unpushed changes" indicator on Save (repository).
+const hasUnpushed = computed(() => stagedForms.value || formsRepos.value.some(r => r.dirty));
+// a push or load is in flight : gate other actions that would race it
+const busy = computed(() => syncing.value || loadingRepos.value);
+
+async function loadFormsRepos() {
+  try {
+    const result = await axios.get(`/api/v2/forms-repos`, TokenStorage.getAuthentication());
+    formsRepos.value = result.data?.repositories || [];
+    configRepo.value = result.data?.configRepo || "";
+    stagedForms.value = !!result.data?.staged;
+  } catch (err) {
+    // a transient failure must not wipe the repo list (it would hide the push
+    // button and the unpushed indicator for work that is still unpushed)
+  }
+}
+
+// the default push target : the config-origin repository (config.yaml lives
+// there), falling back to the first forms repository
+function defaultRepo() {
+  return configRepo.value || formsRepos.value[0]?.name || "";
+}
+
+// re-read the forms from disk (working trees + staging) into the designer,
+// discarding any in-memory edits
+async function reloadFromDisk() {
+  forms.value = {};
+  categories.value = "";
+  roles.value = "";
+  constants.value = "";
+  currentForm.value = null;
+  await loadForms(); // sets a fresh baseline => isDirty false
+}
+
+// reload helper that warns when there are unsaved edits (they would be lost)
+function withReloadConfirm(run) {
+  if (isDirty.value) {
+    action.value = "confirmReload";
+    nextAction.value = async (proceed) => {
+      resetAction();
+      if (proceed) await run();
+    };
+  } else {
+    run();
+  }
+}
+
+// the load dropdown options : one entry per forms repository
+const loadRepoOptions = computed(() => formsRepos.value.map(r => ({ value: r.name, label: r.name })));
+
+// Load (repository) : with several repos open a chooser (pick one, or load
+// from all) ; with a single repo pull it directly
+function loadRepository() {
+  if (formsRepos.value.length > 1) {
+    // default to the config-origin repo, consistent with Save (repository)
+    loadRepo.value = defaultRepo();
+    showLoadModal.value = true;
+  } else {
+    pullAndReload();
+  }
+}
+
+// pull the given forms repository (or all when name is omitted) from its
+// remote, then reload the designer
+function pullAndReload(name) {
+  showLoadModal.value = false;
+  withReloadConfirm(async () => {
+    loadingRepos.value = true;
+    try {
+      const url = name ? `/api/v2/forms-repos/pull/${encodeURIComponent(name)}` : `/api/v2/forms-repos/pull`;
+      await axios.post(url, {}, TokenStorage.getAuthentication());
+      await reloadFromDisk();
+      toast.success(t('designer.loadDone'));
+    } catch (err) {
+      const error = err.response?.data?.error || err.message;
+      const details = err.response?.data?.details;
+      toast.error(details ? `${error}: ${details}` : error);
+    } finally {
+      loadingRepos.value = false;
+      await loadFormsRepos(); // refresh the unpushed indicator
+      await loadLock(); // the lock poll was suppressed while busy : re-verify now
+    }
+  });
+}
+
+// the dropdown options : one entry per forms repository
+const pushRepoOptions = computed(() => formsRepos.value.map(r => ({ value: r.name, label: r.name })));
+
+function pushToRepo() {
+  if (isDirty.value) {
+    toast.warning(t('designer.syncSaveFirst'));
+    return;
+  }
+  if (formsRepos.value.length > 1) {
+    // several forms repositories : choose one (default to the config-origin repo)
+    pushRepo.value = defaultRepo();
+    showPushModal.value = true;
+  } else {
+    syncRepos();
+  }
+}
+
+async function syncRepos(name) {
+  showPushModal.value = false;
+  syncing.value = true;
+  try {
+    const url = name ? `/api/v2/forms-repos/sync/${encodeURIComponent(name)}` : `/api/v2/forms-repos/sync`;
+    await axios.post(url, {}, TokenStorage.getAuthentication());
+    toast.success(t('designer.syncDone'));
+  } catch (err) {
+    const error = err.response?.data?.error || err.message;
+    const details = err.response?.data?.details;
+    toast.error(details ? `${error}: ${details}` : error);
+  } finally {
+    syncing.value = false;
+    await loadFormsRepos(); // refresh the unpushed indicator
+    await loadLock(); // the lock poll was suppressed while busy : re-verify now
+  }
+}
+
+// create a new forms file : a file only exists through a form pointing at it,
+// so this adds a new form with the given filename as its source. In repository
+// mode the new file is staged and assigned to a repository later, on push.
+const showNewFile = ref(false);
+const newFileName = ref("");
+
+function openNewFile() {
+  newFileName.value = "";
+  showNewFile.value = true;
+}
+
+function addFile() {
+  const name = (newFileName.value || "").trim();
+  if (!/^[A-Za-z0-9._-]+\.(yaml|yml)$/.test(name)) {
+    toast.error(t('designer.newFileInvalid'));
+    return;
+  }
+  if (files.value.includes(name)) {
+    toast.error(t('designer.newFileExists'));
+    return;
+  }
+  if (!addForm(name)) return; // addForm refused (eg "New Form" already exists)
+  showNewFile.value = false;
+  newFileName.value = "";
+}
+
 async function validateForms() {
   try {
     const formConfig = assembleForms();
     await Form.validate(formConfig);
-    toast.success("Forms are valid");
+    toast.success(t('designer.formsValid'));
   } catch (err) {
     toast.error(err.message);
   }
 }
 
 async function saveForms(close = false) {
-  if (!lock.value.match) {
-    toast.error("The editor is currently read-only");
+  if (busy.value) return; // a push/load is in flight : ignore (e.g. Ctrl+S)
+  if (!lock.value?.match) {
+    toast.error(t('designer.readOnly'));
     return;
   }
   // if there are warnings, show them and do not save
   if (warnings.value.length > 0) {
     showWarnings.value = true;
-    toast.warning("Fix the warnings before saving");
+    toast.warning(t('designer.fixWarnings'));
     return;
   }
   if (!isDirty.value) {
-    toast.info("No changes to save");
+    toast.info(t('designer.noChanges'));
     return;
   }
   try {
@@ -468,14 +653,16 @@ async function saveForms(close = false) {
     // save the forms with axios async
     await Form.save(formConfig);
 
-    isDirty.value = false;
-    toast.success("Forms saved successfully");
-    if (close) {
+    setDirtyBaseline(); // the saved content is the new clean baseline
+    toast.success(t('designer.formsSaved'));
+    if (formsRepos.value.length > 0) await loadFormsRepos(); // saved to a working tree => now unpushed
+    if (close && typeof nextAction.value === "function") {
+      const cb = nextAction.value;
+      nextAction.value = false;
       try {
-        nextAction.value(true);
-        nextAction.value = null;
+        cb(true);
       } catch (err) {
-        // toast.error(err.message);
+        toast.error(err.message);
       }
     }
   } catch (err) {
@@ -508,9 +695,19 @@ onMounted(async () => {
     return;
   }
   await loadAll();
+  await loadFormsRepos();
   lockInterval.value = setInterval(async () => {
+    // skip the poll while a push/load is in flight : a lock refresh that races
+    // a sync can pull the rug out from under the in-flight operation
+    if (busy.value) return;
     await loadLock();
   }, 5000);
+});
+
+onBeforeUnmount(() => {
+  // stop polling the lock when leaving the designer (avoids a leaked interval
+  // that keeps hitting /api/v2/lock for the life of the SPA)
+  if (lockInterval.value) clearInterval(lockInterval.value);
 });
 </script>
 <template>
@@ -520,66 +717,110 @@ onMounted(async () => {
     <main class="d-flex container-xxl">
       <!-- Modal - delete verify -->
       <BsModal v-if="action == 'delete'" @close="resetAction()">
-        <template #title> Delete {{ currentFormName }} </template>
+        <template #title> {{ t('designer.deleteForm') }} {{ currentFormName }} </template>
         <template #default>
           <p class="mt-3 fs-6 user-select-none">
-            Are you sure you want to delete <strong>{{ currentFormName }}</strong>?
+            {{ t('designer.deleteConfirm') }} <strong>{{ currentFormName }}</strong>?
           </p>
         </template>
         <template #footer>
-          <BsButton icon="trash" @click="doDeleteForm()">Delete</BsButton>
+          <BsButton icon="trash" @click="doDeleteForm()">{{ t('common.delete') }}</BsButton>
+        </template>
+      </BsModal>
+
+      <!-- Modal - new file -->
+      <BsModal v-if="showNewFile" @close="showNewFile = false">
+        <template #title> {{ t('designer.newFileTitle') }} </template>
+        <template #default>
+          <BsInput :isFloating="false" v-model="newFileName" :label="t('designer.newFileLabel')" placeholder="my-forms.yaml" icon="file" :help="t('designer.newFileHelp')" @keyup_enter="addFile()" />
+        </template>
+        <template #footer>
+          <BsButton icon="plus" @click="addFile()">{{ t('common.create') }}</BsButton>
+        </template>
+      </BsModal>
+
+      <!-- Modal - choose repository to push -->
+      <BsModal v-if="showPushModal" @close="showPushModal = false">
+        <template #title> {{ t('designer.pushChooseTitle') }} </template>
+        <template #default>
+          <BsInput :isFloating="false" type="select" icon="code-branch" v-model="pushRepo" :values="pushRepoOptions" name="pushRepo" :label="t('designer.pushRepoLabel')" />
+        </template>
+        <template #footer>
+          <BsButton icon="save" @click="syncRepos(pushRepo)">{{ t('common.save') }}</BsButton>
+        </template>
+      </BsModal>
+
+      <!-- Modal - choose repository to load -->
+      <BsModal v-if="showLoadModal" @close="showLoadModal = false">
+        <template #title> {{ t('designer.loadChooseTitle') }} </template>
+        <template #default>
+          <BsInput :isFloating="false" type="select" icon="code-branch" v-model="loadRepo" :values="loadRepoOptions" name="loadRepo" :label="t('designer.pushRepoLabel')" />
+        </template>
+        <template #footer>
+          <BsButton icon="cloud-arrow-down" @click="pullAndReload(loadRepo)">{{ t('designer.loadFromRepo') }}</BsButton>
+          <BsButton icon="cloud-arrow-down" @click="pullAndReload()">{{ t('designer.loadAll') }}</BsButton>
         </template>
       </BsModal>
 
       <!-- Modal - force unlock-->
       <BsModal v-if="action == 'forceUnlock'" @close="resetAction()">
-        <template #title> Force Unlock </template>
+        <template #title> {{ t('designer.forceUnlock') }} </template>
         <template #default>
           <p class="mt-3 fs-6 user-select-none">
-            Are you sure you want to force the unlock ?<br />
-            Whomever has the lock now, will loose all changes<br />
-            and will not be able to save them.<br /><br />
-            Proceed with care and respect.
+            {{ t('designer.forceUnlockConfirm') }}<br />
+            {{ t('designer.forceUnlockWarning') }}<br /><br />
+            {{ t('designer.forceUnlockCare') }}
           </p>
         </template>
         <template #footer>
-          <BsButton icon="unlock" @click="nextAction(true)">Force Unlock</BsButton>
+          <BsButton icon="unlock" @click="nextAction(true)">{{ t('designer.forceUnlock') }}</BsButton>
         </template>
       </BsModal>
 
       <!-- modal - dirty -->
       <BsModal v-if="action == 'dirty'" @close="resetAction()">
-        <template #title> Unsaved Changes </template>
+        <template #title> {{ t('designer.unsavedChanges') }} </template>
         <template #default>
           <p class="mt-3 fs-6 user-select-none">
-            Are you sure you want to leave the designer ?<br />You have unsaved
-            changes.
+            {{ t('designer.unsavedConfirm') }}<br />{{ t('designer.unsavedNote') }}
           </p>
         </template>
         <template #footer>
-          <BsButton icon="times" @click="nextAction(false)">Close without saving</BsButton>
-          <BsButton icon="save" @click="saveForms(true);resetAction();">Save and Close</BsButton>
+          <BsButton icon="times" @click="nextAction(false)">{{ t('designer.closeWithoutSaving') }}</BsButton>
+          <BsButton icon="save" @click="saveForms(true)">{{ t('designer.saveAndClose') }}</BsButton>
+        </template>
+      </BsModal>
+
+      <!-- modal - confirm reload (discards unsaved changes) -->
+      <BsModal v-if="action == 'confirmReload'" @close="nextAction(false)">
+        <template #title> {{ t('designer.reloadTitle') }} </template>
+        <template #default>
+          <p class="mt-3 fs-6 user-select-none">{{ t('designer.reloadConfirm') }}</p>
+        </template>
+        <template #footer>
+          <BsButton icon="times" @click="nextAction(false)">{{ t('common.cancel') }}</BsButton>
+          <BsButton icon="download" @click="nextAction(true)">{{ t('designer.reloadDiscard') }}</BsButton>
         </template>
       </BsModal>
 
       <BsModal v-if="action == 'restore'" @close="resetAction()">
-        <template #title> Restore backup </template>
+        <template #title> {{ t('designer.restoreBackup') }} </template>
         <template #default>
-          <BsInput type="select_advanced" v-model="backupToRestore" :values="backups" :required="true" name="backup" label="Backup" :sticky="true" :hasError="!backupToRestore" :isLoading="!backups" />
-          <BsInput type="checkbox" v-model="backupBeforeRestore" label="Make a backup before restore ?" />
+          <BsInput type="select_advanced" v-model="backupToRestore" :values="backups" :required="true" name="backup" :label="t('designer.backup')" :sticky="true" :hasError="!backupToRestore" :isLoading="!backups" />
+          <BsInput type="checkbox" v-model="backupBeforeRestore" :label="t('designer.backupBeforeRestore')" />
         </template>
         <template #footer>
-          <BsButton icon="undo" @click="restoreBackup(); resetAction()">Restore</BsButton>
+          <BsButton icon="undo" @click="restoreBackup(); resetAction()">{{ t('designer.restore') }}</BsButton>
         </template>
       </BsModal>
 
-      <BsOffCanvas v-if="showWarnings" :show="true" icon="triangle-exclamation" title="Warnings" @close="showWarnings = false">
+      <BsOffCanvas v-if="showWarnings" :show="true" icon="triangle-exclamation" :title="t('designer.warnings')" @close="showWarnings = false">
         <template #actions> </template>
         <template #default>
           <p v-for="(w, i) in warnings" :key="'warning' + i" class="mb-3" v-html="w"></p>
         </template>
       </BsOffCanvas>
-      <AppSettings v-if="authenticated" title="Designer" icon="pencil">
+      <AppSettings v-if="authenticated" :title="t('designer.title')" icon="pencil">
         <template #feedback>
           <template v-if="lock">
             <popper v-if="lock.lock">
@@ -591,30 +832,30 @@ onMounted(async () => {
                   <font-awesome-icon icon="lock" size="sm" />
                 </span>
                 <span v-if="lock.lock && !lock.match" class="mr-1">
-                  Locked by {{ lock.lock.username }}</span>
+                  {{ t('designer.lockedBy') }} {{ lock.lock.username }}</span>
                 <span v-if="lock.lock && lock.match" class="mr-1">
-                  Locked by me</span>
+                  {{ t('designer.lockedByMe') }}</span>
               </button>
               <template #content>
-                User: {{ lock.lock.username }}<br />
-                Type: {{ lock.lock.type }}<br />
+                {{ t('designer.user') }}: {{ lock.lock.username }}<br />
+                {{ t('designer.type') }}: {{ lock.lock.type }}<br />
                 Created: {{ lockAge }}
               </template>
             </popper>
-            <BsButton v-if="lock.free" cssClass="ms-2" icon="unlock" @click="setLock()">Start Designer</BsButton>
-            <BsButton v-if="!lock.match && !lock.free" cssClass="ms-2" icon="unlock" @click="unLock()">Force unlock</BsButton>
-            <BsButton v-if="lock.match" cssClass="ms-2" icon="unlock" @click="releaseLock()">Release lock</BsButton>
+            <BsButton v-if="lock.free" cssClass="ms-2" icon="unlock" @click="setLock()">{{ t('designer.startDesigner') }}</BsButton>
+            <BsButton v-if="!lock.match && !lock.free" cssClass="ms-2" icon="unlock" @click="unLock()">{{ t('designer.forceUnlock') }}</BsButton>
+            <BsButton v-if="lock.match" cssClass="ms-2" icon="unlock" @click="releaseLock()">{{ t('designer.releaseLock') }}</BsButton>
             <popper v-if="hasBaseForms">
               <button class="btn ms-2 btn-warning" type="button">
                 <span class="icon">
                     <font-awesome-icon icon="exclamation-triangle" size="sm" />
                 </span>
-                <span>Deprecation warning</span>
+                <span>{{ t('designer.deprecationWarning') }}</span>
               </button>
               <template #content>
-                Forms detected in the base config file (config.yaml or forms.yaml), which is DEPRECATED.<br />
-                Please move forms to the forms/ folder. The base config should only contain categories, roles, and constants.<br />
-                Please move them under a file in the forms directory.
+                {{ t('designer.deprecationMsg') }}<br />
+                {{ t('designer.deprecationAction') }}<br />
+                {{ t('designer.deprecationMove') }}
               </template>
             </popper>            
           </template>
@@ -624,7 +865,7 @@ onMounted(async () => {
                 <span class="me-2">
                   <font-awesome-icon icon="exclamation-triangle" />
                 </span>
-                <span class="mr-1">{{ showWarnings ? "Hide" : "This design has" }} Warnings
+                <span class="mr-1">{{ showWarnings ? t('designer.hideWarnings') : t('designer.hasWarnings') }} {{ t('designer.warnings') }}
                 </span>
               </button>
             </div>
@@ -633,11 +874,14 @@ onMounted(async () => {
         <template #actions>
           <small v-if="lockError!==''" class="d-inline-flex mb-3 px-2 py-1 fw-semibold text-warning-emphasis bg-warning-subtle border border-warning-subtle rounded-2">{{ lockError }}</small>
           <template v-if="lock && lock.match">
-            <BsButton class="ms-2" icon="check" @click="validateForms" :disabled="!isDirty">Validate</BsButton>
-            <BsButton class="ms-2" icon="save" @click="saveForms" :disabled="!isValid || !isDirty">Save</BsButton>
-            <BsButton class="ms-2" icon="undo" @click="restore">Restore</BsButton>
+            <BsButton v-if="currentTab == 'Forms'" class="ms-2" icon="file-circle-plus" @click="openNewFile()" :disabled="busy">{{ t('designer.newFile') }}</BsButton>
+            <BsButton v-if="formsRepos.length > 0" class="ms-2" icon="cloud-arrow-down" @click="loadRepository" :disabled="busy">{{ loadingRepos ? t('designer.loading') : t('designer.loadRepository') }}</BsButton>
+            <BsButton class="ms-2" icon="check" @click="validateForms" :disabled="!isDirty || busy">{{ t('designer.validate') }}</BsButton>
+            <BsButton class="ms-2" :colorClass="isDirty ? 'orange' : 'primary'" icon="save" @click="saveForms" :disabled="!isValid || !isDirty || busy">{{ formsRepos.length > 0 ? t('designer.saveLocal') : t('designer.save') }}</BsButton>
+            <BsButton v-if="formsRepos.length > 0" class="ms-2" :colorClass="hasUnpushed ? 'orange' : 'primary'" icon="code-branch" @click="pushToRepo" :disabled="isDirty || busy">{{ syncing ? t('designer.syncing') : t('designer.saveRepository') }}</BsButton>
+            <BsButton v-if="formsRepos.length === 0" class="ms-2" icon="undo" @click="restore">{{ t('designer.restore') }}</BsButton>
           </template>
-          <small v-if="lock && !lock.match && !lock.free" class="d-inline-flex mb-3 px-2 py-1 fw-semibold text-warning-emphasis bg-warning-subtle border border-warning-subtle rounded-2">The editor is read-only</small>
+          <small v-if="lock && !lock.match && !lock.free" class="d-inline-flex mb-3 px-2 py-1 fw-semibold text-warning-emphasis bg-warning-subtle border border-warning-subtle rounded-2">{{ t('designer.readOnly') }}</small>
         </template>
         <template #default v-if="lock && !lock.free">
           <div class="row">
@@ -648,21 +892,21 @@ onMounted(async () => {
                 </li>
               </ul>
 
-              <div v-if="currentTab == 'Categories'">
-                <BsInput type="editor" :isFloating="false" v-model="categories" @save="saveForms()" lang="yaml" style="width: 100%; height: 75vh; font-size: 1rem" @dirty="isDirty = true" />
+              <div v-if="loaded && currentTab == 'Categories'">
+                <BsInput type="editor" :isFloating="false" v-model="categories" @save="saveForms()" lang="yaml" :liveSync="true" style="width: 100%; height: 75vh; font-size: 1rem" />
               </div>
-              <div v-if="currentTab == 'Roles'">
-                <BsInput type="editor" :isFloating="false" v-model="roles" @save="saveForms()" lang="yaml" style="width: 100%; height: 75vh; font-size: 1rem" @dirty="isDirty = true" />
+              <div v-if="loaded && currentTab == 'Roles'">
+                <BsInput type="editor" :isFloating="false" v-model="roles" @save="saveForms()" lang="yaml" :liveSync="true" style="width: 100%; height: 75vh; font-size: 1rem" />
               </div>
-              <div v-if="currentTab == 'Constants'">
-                <BsInput type="editor" :isFloating="false" v-model="constants" @save="saveForms()" lang="yaml" style="width: 100%; height: 75vh; font-size: 1rem" @dirty="isDirty = true" />
+              <div v-if="loaded && currentTab == 'Constants'">
+                <BsInput type="editor" :isFloating="false" v-model="constants" @save="saveForms()" lang="yaml" :liveSync="true" style="width: 100%; height: 75vh; font-size: 1rem" />
               </div>
               <div v-if="currentTab == 'Forms'">
                 <template v-if="loaded">
                   <div v-for="f in files" :key="'file' + f">
                     <template v-for="n in formnames(f)" :key="n.id">
                       <div v-if="isCurrentForm(n.id)">
-                        <BsInput type="editor" :isFloating="false" v-model="forms[n.id]" @save="saveForms()" lang="yaml" style="width: 100%; height: 75vh; font-size: 1rem" @dirty="isDirty = true" />
+                        <BsInput type="editor" :isFloating="false" v-model="forms[n.id]" @save="saveForms()" lang="yaml" :liveSync="true" style="width: 100%; height: 75vh; font-size: 1rem" />
                       </div>
                     </template>
                   </div>
@@ -675,7 +919,7 @@ onMounted(async () => {
                   <li class="list-group-item">
                     <div class="ms-2 me-auto">
                       <div class="d-flex justify-content-between align-items-start">
-                        <span class="fw-bold">{{ f || "Base file" }}</span>
+                        <span class="fw-bold">{{ f || t('designer.baseFile') }}</span>
                       
                         <span role="button" class="text-success" @click="addForm(f)"><font-awesome-icon icon="plus" /></span>
                       </div>

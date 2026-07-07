@@ -4,6 +4,12 @@
  * Automatically included in `./src/main.js`
  */
 
+// the app can be hosted under a subpath (issue #106), all api calls
+// must be prefixed with the runtime base path (empty for root hosting)
+import axios from 'axios'
+import BaseUrl from '@/lib/BaseUrl'
+axios.defaults.baseURL = BaseUrl
+
 // Plugins
 // import vuetify from './vuetify'
 import pinia from '@/stores'
@@ -14,6 +20,7 @@ import clickOutside from "@/directives/clickOutside";
 import VueHighlightJS from "@/lib/Highlight.js";
 import VueJsonPretty from 'vue-json-pretty'
 import { VueDatePicker } from '@vuepic/vue-datepicker';
+import i18n from '@/plugins/i18n'
 
 
 // Import our custom CSS
@@ -46,6 +53,7 @@ library.add(fas, far, fab)
 export function registerPlugins (app) {
   app
     // .use(vuetify)
+    .use(i18n)
     .use(router)
     .use(pinia)
     .use(VueShowdownPlugin)

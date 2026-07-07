@@ -131,7 +131,7 @@ const restore = async function(req,res){
       var backupName=req.params.backupName
       var backupBeforeRestore=(req.query.backupBeforeRestore=="true")?true:false
       if(backupName){
-        var restore = Form.restore(backupName,backupBeforeRestore)
+        var restore = await Form.restore(backupName,backupBeforeRestore)
         if(restore) {
           res.json(new RestResult("success","Backup is restored",null,""));
         }else{
@@ -171,7 +171,7 @@ const save = async function(req,res){
         res.status(400).send({ error:true, message: 'Please provide all required fields' });
     }else{
       try{
-        var forms = Form.save(newConfig)
+        var forms = await Form.save(newConfig)
         if(forms) {
           res.json(new RestResult("success","Config saved",null,""));
         }else{

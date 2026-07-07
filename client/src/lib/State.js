@@ -42,6 +42,18 @@ var State = {
       // silent fail
     }
   },
+  async loadLogo() {
+    const store = useAppStore();
+    try {
+      const result = await axios.get(`/api/v2/logo`, TokenStorage.getAuthentication());
+      store.customLogo = result.data?.logo || null;
+      store.logoIsDefault = result.data?.isDefault ?? true;
+    } catch (err) {
+      // silent fail, the bundled default logo is shown
+      store.customLogo = null;
+      store.logoIsDefault = true;
+    }
+  },
   async refreshApprovals() {
     const store = useAppStore();
     const res = await axios.get(
@@ -86,6 +98,7 @@ var State = {
     } else {
       State.loadProfile();
       State.loadVersion();
+      State.loadLogo();
       State.refreshApprovals();
       Navigate.toOrigin(router, route);
     }

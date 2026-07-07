@@ -3,20 +3,24 @@ import { toast } from 'vue-sonner';
 import { useVuelidate } from '@vuelidate/core';
 import { required, helpers, email } from "@vuelidate/validators";
 import Profile from '@/lib/Profile';
-import settings from '@/config/settings';
+import getSettings from '@/config/settings';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
+const settings = computed(() => getSettings(t));
 import axios from 'axios';
 import TokenStorage from '@/lib/TokenStorage';
 
 const authenticated = ref(false);
 
-const rules = {
+const rules = computed(() => ({
     test: {
         to: {
-            required: helpers.withMessage("Enter you mail destination", required),
-            email: helpers.withMessage("Must be a valid email", email),
+            required: helpers.withMessage(t('admin.mail.enterDestination'), required),
+            email: helpers.withMessage(t('admin.mail.validEmail'), email),
         },
     }
-};
+}));
 
 const test = ref({
     to: ""
@@ -57,7 +61,7 @@ onMounted(async () => {
         <main class="d-flex flex-nowrap container-xxl">
             <AppSidebar />
             <AppAdminSingle v-if="authenticated" :apiVersion="2" :settings="settings.mailSettings" @test="test_connection">
-                <BsInput :isFloating="false" v-model="test.to" icon="envelope" type="email" label="Mail To" help="For testing only" :required="true" :hasError="$v.test.to.$invalid && $v.test.to.$dirty" :errors="$v.test.to.$errors" />
+                <BsInput :isFloating="false" v-model="test.to" icon="envelope" type="email" :label="t('admin.mail.mailTo')" :help="t('admin.mail.forTestingOnly')" :required="true" :hasError="$v.test.to.$invalid && $v.test.to.$dirty" :errors="$v.test.to.$errors" />
             </AppAdminSingle>   
         </main>
     </div>

@@ -1,4 +1,6 @@
 import logger from "../lib/logger.js";
+import Settings from '../models/settings.model.js';
+import { DEFAULT_LOGO } from '../lib/defaultlogo.js';
 import Ssh from '../models/ssh.model.js';
 import Form from '../models/form.model.js';
 import Job from '../models/job.model.js';
@@ -111,6 +113,17 @@ const init = async function(){
         var adminPassword = appConfig.adminPassword
         await User.create({username:adminUsername,email:'',password:adminPassword,group_id:adminGroupId})
         logger.info(`Created admin user ${adminUsername}`)
+      }else if(appConfig.reinitAdmin){
+        // Recovery hatch: REINIT_ADMIN=1 was set. Force-reset the admin
+        // password and re-attach to the admins group. Logged loudly so the
+        // operator notices if it stays enabled across restarts.
+        logger.warning(`REINIT_ADMIN=1 detected: resetting password and group for admin user '${adminUsername}'`)
+        try{
+          await User.update({password:appConfig.adminPassword,group_id:adminGroupId}, adminUser.id)
+          logger.warning(`REINIT_ADMIN: admin user '${adminUsername}' has been recreated. UNSET REINIT_ADMIN now.`)
+        }catch(e){
+          logger.error(`REINIT_ADMIN: failed to reset admin user '${adminUsername}': ${e.message || e}`)
+        }
       }else{
         logger.info(`Admin user ${adminUsername} already exists`)
       }
@@ -142,6 +155,18 @@ const init = async function(){
     }
   }
 
+  // seed the default logo on fresh installs and on upgrades that just added
+  // the logo column ; afterwards it is never null again (removing a custom
+  // logo resets it to the default instead)
+  try{
+    if(await Settings.getLogo()===null){
+      logger.warning("No logo found, seeding the default AnsibleForms logo")
+      await Settings.setLogo(DEFAULT_LOGO)
+    }
+  }catch(err){
+    logger.error("Failed to check/seed the default logo : " + err)
+  }
+
   logger.info("All database records are checked")
 
   logger.info("Checking ssh keys")
@@ -162,6 +187,16 @@ const init = async function(){
     logger.error("Failed to abandon jobs : " + err)
   })
 
+  logger.info("Checking stale repository locks")
+  // awaited : the boot clone/pull below now use the atomic status='running'
+  // claim, so a stale 'running' must be cleared first or they'd be rejected
+  try {
+    const reset = await Repository.resetStaleLocks()
+    if(reset) logger.warning(`Reset ${reset} stale repository lock(s)`)
+  } catch(err) {
+    logger.error("Failed to reset stale repository locks : " + err)
+  }
+
   logger.info("Initializing cron service for scheduled tasks")
   // Initialize all cron jobs from database (repositories, datasources, schedules)
   await cronService.initializeAll();
@@ -175,10 +210,14 @@ const init = async function(){
   .then((repositories)=>{
     repositories.map((repo)=>{
       logger.info("Pulling " + repo.name)
-      Repository.clone(repo.name).catch((e)=>{})
+      Repository.clone(repo.name).catch((e)=>{
+        logger.warning(`Failed to pull repository ${repo.name}: ${e.message || e}`)
+      })
     })
   })
-  .catch((e)=>{})
+  .catch((e)=>{
+    logger.warning(`Failed to query repositories for rebase_on_start: ${e.message || e}`)
+  })
 
   // now we check if there are any datasources that need to be imported, every 10 seconds
   // we only import 1 datasource that is with the lowest queue_id while there are no datasources with status running

@@ -36,12 +36,98 @@
     required: true
     description: |
       Ansible Forms requires a mysql database connection to store the configuration of the application.    
+  - name: DB_POOL_SIZE
+    type: number
+    allowed: a positive integer
+    short: MySQL connection pool size
+    required: false
+    default: 20
+    description: |
+      Maximum number of concurrent MySQL connections kept in the pool.
+      All database queries share this pool instead of opening a new connection per query, which dramatically reduces connection overhead and improves throughput under load.
+      Increase this if you have many concurrent users or long-running cron-driven jobs; decrease it if your MySQL server has a low `max_connections` limit.
+  - name: VAULT_ADDR
+    type: string
+    allowed: a valid HashiCorp Vault URL
+    short: HashiCorp Vault address
+    required: false
+    description: |
+      Base URL of a HashiCorp Vault server (e.g. `https://vault.example.com:8200`).
+      When set together with `VAULT_TOKEN`, AnsibleForms can resolve credentials from Vault.
+      A credential row in the local database can specify a `vault_path`; when present, the user/password are fetched from Vault at runtime instead of being read from the local encrypted columns.
+  - name: VAULT_TOKEN
+    type: string
+    allowed: a valid Vault token
+    short: HashiCorp Vault token
+    required: false
+    description: |
+      Authentication token used by AnsibleForms to read secrets from Vault.
+      Required when `VAULT_ADDR` is set.
+      Use a token with read-only access to the relevant secret paths.
+  - name: VAULT_NAMESPACE
+    type: string
+    short: HashiCorp Vault namespace
+    required: false
+    description: |
+      Optional Vault Enterprise namespace. Sent as the `X-Vault-Namespace` header on every request.
+  - name: VAULT_KV_VERSION
+    type: number
+    allowed: 1, 2
+    short: Vault KV secret engine version
+    required: false
+    default: 2
+    description: |
+      Version of the Vault KV secret engine. Defaults to 2 (recommended).
+      For KV v2, the client automatically inserts the `/data/` segment in the API path if it is missing.
+  - name: VAULT_DEFAULT_MOUNT
+    type: string
+    short: Default Vault KV mount
+    required: false
+    default: secret
+    description: |
+      Default KV mount used when a credential's `vault_path` is provided as a bare key (no slash).
+      For example, with the default `secret` mount, `vault_path = "myapp"` resolves to `secret/data/myapp` (KV v2).
+  - name: VAULT_CACHE_TTL_MS
+    type: number
+    short: Vault read cache TTL (ms)
+    required: false
+    default: 60000
+    description: |
+      Time-to-live in milliseconds of the in-memory cache used by AnsibleForms when reading secrets from Vault.
+      Lower this if you rotate secrets aggressively; raise it to reduce load on Vault.
+  - name: VAULT_SKIP_VERIFY
+    type: string
+    allowed: "true, false"
+    short: Skip Vault TLS verification
+    required: false
+    default: "false"
+    description: |
+      Disable TLS certificate verification when calling Vault. **For development/testing only** — never enable this in production.
   - name: PORT
     type: number
     allowed: a valid TCP port
     short: Http port
     description: The listening port of the web application
     default: 8000
+  - name: BASE_URL
+    type: string
+    allowed: a url subpath, for example /ansibleforms
+    short: Url subpath to host the application under
+    required: false
+    default: /
+    description: |
+      Host the whole application (gui, rest api and swagger interface) under a url subpath, typically behind a reverse proxy.
+      For example with `BASE_URL=/ansibleforms`, the application is served under `https://host/ansibleforms/`.
+      Note : when using an OAuth2 identity provider (Entra ID / OIDC), make sure the instance url in the provider settings includes the subpath, so the generated redirect uri matches.
+  - name: DEFAULT_LANGUAGE
+    type: string
+    allowed: en, nl, fr, it, de, es
+    short: Application language
+    required: false
+    description: |
+      Sets the language for the application.  Users can override this in the UI via the language switcher.
+      The chosen language is persisted in a cookie.  Both frontend UI and backend error messages are translated.
+    default: en
   - name: HTTPS
     type: number
     short: Enables HTTPS
@@ -182,20 +268,81 @@
       If you use a different database, you might want to enable this option, to at the very least create the schema the very first time.  
       If you want to disable this option, set this variable to 0.
     version: 5.0.3      
-  - name: ENABLE_BYPASS
+  - name: REINIT_ADMIN
     type: number
     choices:
     - name: 0
-      description: Disables the bypass admin authentication
+      description: Normal startup
     - name: 1
-      description: Enables the bypass admin authentication
+      description: Force reset of the local admin user at startup
     default: 0
-    short: Enable the bypass admin authentication
-    description: | 
-      When you have locked yourself out, you can enable the bypass admin authentication, by setting this variable to 1.  
-      This will allow you to login as temp admin with any combination of username and password.  You can then fix the issue and disable this option again.  
-      **Note** : This option will allow ANYONE to login as admin, so use with caution and disable as soon as possible.  
-    version: 5.0.3
+    short: Reset the local admin user/password at startup
+    description: |
+      Recovery hatch when you've lost access to the local `admin` account.
+      When set to `1`, AnsibleForms will at startup:
+      - ensure the `admins` group exists,
+      - if the local admin user already exists, reset its password to the value of `ADMIN_PASSWORD` and re-attach it to the `admins` group,
+      - if it doesn't exist, create it (same as a fresh install).
+
+      The action is logged loudly. **This is NOT a runtime auth bypass** — once the admin is back in shape, unset `REINIT_ADMIN` and restart.
+    version: 6.0.0
+  - name: API_BODY_LIMIT_MB
+    type: number
+    default: 50
+    short: Maximum JSON / urlencoded request body size (MB)
+    description: |
+      Cap on the size of JSON and urlencoded request bodies accepted by the AnsibleForms API.
+      Default is 50 MB, generous enough for large form designs and heavy job extravars.
+      Increase if you have unusually large forms or expression payloads.
+      Note: this does NOT apply to file uploads (those are governed by `UPLOAD_MAX_GB`).
+    version: 6.0.0
+  - name: UPLOAD_MAX_GB
+    type: number
+    default: 10
+    short: Maximum size of a single uploaded file (GB)
+    description: |
+      Cap on the size of a single file uploaded through the form upload field, in gigabytes.
+      Default is 10 GB to accommodate large artifacts (e.g. firmware images, upgrade bundles).
+      Set to `0` to disable the cap entirely (not recommended on shared instances).
+    version: 6.0.0
+  - name: REST_ALLOWED_HOSTS
+    type: string
+    default: ""
+    short: Whitelist of hosts/CIDRs reachable from REST expressions
+    description: |
+      Comma-separated list of hostnames and/or CIDR ranges that REST helper functions
+      (`fn.fnRestBasic`, `fn.fnRestAdvanced`, `fn.fnRestJwt`, `fn.fnRestNtlm`) are allowed to call.
+
+      When set, **only** these destinations are allowed; everything else is blocked.
+      When unset, no allow-list is applied (default behaviour, all hosts allowed).
+
+      Hostnames are matched case-insensitively against the URL host; CIDRs are matched
+      against the IPs that the host resolves to (so an entry like `10.0.0.0/8` blocks all
+      private targets in that range regardless of which DNS name was used).
+
+      Example: `REST_ALLOWED_HOSTS=api.example.com,partner.api.com,10.20.0.0/16`
+
+      **Caveat:** this only protects the AnsibleForms Node.js process. Ansible playbooks run
+      on the host directly and bypass this guard.
+    version: 6.0.0
+  - name: REST_DENIED_HOSTS
+    type: string
+    default: ""
+    short: Blacklist of hosts/CIDRs unreachable from REST expressions
+    description: |
+      Comma-separated list of hostnames and/or CIDR ranges that REST helper functions
+      (`fn.fnRestBasic`, `fn.fnRestAdvanced`, `fn.fnRestJwt`, `fn.fnRestNtlm`) must never call.
+
+      Wins over `REST_ALLOWED_HOSTS`. Useful to lock down dangerous targets like cloud
+      metadata services or your internal admin UIs:
+      `REST_DENIED_HOSTS=169.254.169.254,127.0.0.0/8,internal-secret.example`
+
+      Hostnames are matched case-insensitively against the URL host; CIDRs are matched
+      against the IPs that the host resolves to.
+
+      **Caveat:** this only protects the AnsibleForms Node.js process. Ansible playbooks run
+      on the host directly and bypass this guard.
+    version: 6.0.0
   - name: ENABLE_DB_QUERY_LOGGING
     type: number
     choices:
@@ -1552,6 +1699,56 @@
         short: Multistep steps
         description: |
           A multistep form is basically an array of multiple form type destinations, defined here as steps.
+      - name: wizard
+        type: array
+        with_types: ansible, awx, multistep
+        group: basic
+        version: 6.4.0
+        allowed: a wizard step object
+        objectLink: forms/form/wizard
+        docsObjectLink: "wizard"
+        short: Wizard steps (form-layer)
+        description: |
+          Turn a form into a multi-page wizard.  
+          Where [`steps`](multistep.html) splits the **execution** into multiple jobs, `wizard` splits the **input** of a single form into multiple pages.  
+          Each wizard step references a [`subform`](subform.html) and is rendered as its own page with Back / Next navigation. A read-only review page is appended automatically as the last step — you do not declare it in YAML.  
+          See the [Wizard page](wizard.html) for all step properties and examples.
+        examples:
+        - name: Three-step wizard
+          code: |
+            name: Provision host
+            type: ansible
+            playbook: provision.yml
+            wizard:
+              - subform: basics
+                title: Basics
+              - subform: network
+                title: Network
+                defaultModel: net
+              - subform: advanced
+                title: Advanced
+                optional: true
+                when: $(__parent__.basics.kind) === 'vm'
+        - name: Wizard mapped one-to-one onto multistep (defaultModel + key)
+          code: |
+            name: Provision and verify host
+            type: multistep
+            wizard:
+              - subform: basics
+                title: Basics
+                defaultModel: basics      # wraps fields under `basics`
+              - subform: network
+                title: Network
+                defaultModel: network     # wraps fields under `network`
+            steps:
+              - name: Create host
+                type: ansible
+                playbook: create_host.yml
+                key: basics                # receives only the basics payload
+              - name: Configure network
+                type: ansible
+                playbook: configure_network.yml
+                key: network                # receives only the network payload
       - name: inventory
         type: string
         with_types: ansible, awx
@@ -2127,6 +2324,163 @@
                   type: awx
                   template: email
                   always: true       # whether step 1 or 2 fails, this step always runs          
+        - name: Wizard step
+          itemName: attribute
+          link: forms/form/wizard
+          icon: fas,wand-magic-sparkles
+          description: |
+            Each wizard step references a [`subform`](/forms/subform.html) and is rendered as its own page with **Back** and **Next** navigation. The user must validate one step before moving to the next; data from earlier steps is available in later steps via [`__parent__`](/faq.html#how-do-i-access-parent-form-data-inside-a-subform).  
+            <br>
+            **Review step is automatic.** A read-only summary page that lists every step's input is appended as the last page of the wizard. You do **not** declare it in YAML — its title is taken from the active locale ("Summary" / "Samenvatting" / "Zusammenfassung" / ...).  
+            <br>
+            **Wizard vs Multistep.** [`steps`](/forms/multistep.html) splits the **execution** into multiple sequential jobs (each step is its own playbook/template). `wizard` splits the **input** of a single form into multiple pages — only one job runs at the end. The two can be combined: a `type: multistep` form can also have a `wizard:` block to gather its extravars across pages.
+          items:
+          - name: subform
+            type: string
+            required: true
+            group: basic
+            allowed: a valid subform name
+            short: Subform reference
+            description: |
+              The name of a [`type: subform`](/forms/subform.html) form to render on this wizard page. The subform's fields become this step's inputs.
+            examples:
+            - name: Reference a subform
+              code: |
+                wizard:
+                  - subform: basics
+                  - subform: network
+          - name: name
+            type: string
+            group: basic
+            allowed: alphanumeric + dash + underscore
+            short: Step namespace key
+            description: |
+              The key under which this step's values are exposed to later steps via `$(__parent__.<name>.<field>)`.  
+              Defaults to the value of `subform` when omitted.  
+              Set this explicitly when you reuse the same subform multiple times in the same wizard, or when you want a stable key independent of the subform name.
+            examples:
+            - name: Override the namespace
+              code: |
+                wizard:
+                  - subform: address
+                    name: shipping
+                  - subform: address
+                    name: billing
+          - name: title
+            type: string
+            group: basic
+            allowed: free text
+            short: Page title in the stepper
+            description: |
+              Title shown in the wizard stepper and at the top of the page.  
+              Defaults to the subform's `description`, or to the step's `name` if no description is set.
+            examples:
+            - name: Custom title
+              code: |
+                wizard:
+                  - subform: basics
+                    title: Tell us about your host
+          - name: help
+            type: string
+            group: basic
+            allowed: free text (markdown supported)
+            short: Help text shown on this page
+            description: |
+              Help text rendered on the wizard page. Defaults to the subform's own `help` when omitted.
+          - name: showHelp
+            type: boolean
+            group: basic
+            allowed: "true, false"
+            default: false
+            short: Show help on load
+            description: |
+              When `true`, the help block is expanded by default when the user lands on this page. Falls back to the subform's `showHelp` when omitted.
+          - name: defaultModel
+            type: string
+            group: basic
+            allowed: a model path (dot notation allowed)
+            short: Wrap this step's output under a prefix
+            description: |
+              Wraps every field of this step under the given object key in the final extravars payload. Useful when you reuse a generic subform and want its values namespaced.  
+              Without `defaultModel`, fields are merged into the top level of the extravars (still grouped per step under `__parent__` for cross-step references).
+            examples:
+            - name: Wrap network fields under `net`
+              code: |
+                wizard:
+                  - subform: network
+                    defaultModel: net
+
+                # The subform has fields `hostname` and `ipv4`.
+                # Final extravars contain:
+                #   net:
+                #     hostname: ...
+                #     ipv4: ...
+          - name: when
+            type: expression
+            group: workflow
+            allowed: a JavaScript expression returning truthy/falsy
+            short: Conditionally show this step
+            description: |
+              When the expression evaluates falsy, the step is **hidden entirely** — the user never sees it and its values are not collected.  
+              The expression has access to all earlier steps via `__parent__.<stepname>.<field>`. Steps after a hidden one are renumbered automatically.  
+              Note: `when` is purely about **visibility**; it is unrelated to [`optional`](#wizard_optional), which is about whether the user is allowed to skip a visible step.
+            examples:
+            - name: Only show when kind is "vm"
+              code: |
+                wizard:
+                  - subform: basics       # has a `kind` enum field
+                  - subform: advanced
+                    when: $(__parent__.basics.kind) === 'vm'
+          - name: optional
+            type: boolean
+            group: workflow
+            allowed: "true, false"
+            default: false
+            short: Allow skipping this step
+            description: |
+              When `true`, the user can press **Next** even if the step's fields are not (yet) valid, and **Submit** is allowed without ever visiting this step.  
+              The step is still shown in the stepper — use [`when`](#wizard_when) if you want to hide it altogether.
+            examples:
+            - name: Optional advanced page
+              code: |
+                wizard:
+                  - subform: basics
+                  - subform: advanced
+                    optional: true
+          examples:
+          - name: Minimal wizard (review page is auto-added)
+            code: |
+              - name: Provision host
+                type: ansible
+                playbook: provision.yml
+                wizard:
+                  - subform: basics
+                  - subform: network
+
+              - name: basics
+                type: subform
+                fields:
+                  - name: hostname
+                    type: text
+                    required: true
+
+              - name: network
+                type: subform
+                fields:
+                  - name: ipv4
+                    type: text
+          - name: Cross-step reference and namespace prefix
+            code: |
+              wizard:
+                - subform: basics
+                  title: Basics
+                - subform: network
+                  title: Network
+                  defaultModel: net          # wraps network fields under `net`
+
+              # In the `network` subform you can reference fields
+              # from the `basics` step like this:
+              #   default: $(__parent__.basics.hostname).local
         - name: Formfield
           itemName: attribute
           link: forms/form/formfield
@@ -2494,6 +2848,14 @@
                   The subform itself is a top-level form of type `subform`, referenced by name via the `subform` property.  
                   Subforms can be nested (a list field inside a subform) and can be reused across multiple forms (e.g. a single `Address` subform shared by customers, suppliers, ...).  
                   Use the `columns` property to pick which subform fields appear in the table. Other properties (`allowInsert`, `allowDelete`, `insertMarker`, `deleteMarker`, `updateMarker`) behave the same as in the deprecated `table` field.
+
+                  **Pre-population.** A list can be seeded with rows in three ways:
+
+                  * `default` — a static array of objects (keys must match subform field names). Useful for fixed seeds, possibly combined with placeholders + `evalDefault`.
+                  * `expression` (+ optional `runLocal`) — server- or browser-evaluated javascript that must return an array of objects.
+                  * `query` + `dbConfig` — pull rows from MySQL / MSSQL / Postgres / Oracle / MongoDB.
+
+                  See the examples below for each mode.
                 examples:
                 - name: List with a shared Address subform
                   code: |
@@ -2542,6 +2904,65 @@
                       columns:
                         - name
                         - email
+                - name: Pre-populate a list with a static default
+                  code: |
+                    # Each row must match the referenced subform's fields.
+                    - name: addresses
+                      type: list
+                      label: Addresses
+                      subform: Address
+                      columns:
+                        - city
+                        - country
+                      default:
+                        - street: Main 1
+                          city: Brussels
+                          country: BE
+                        - street: Side 22
+                          city: Paris
+                          country: FR
+                - name: Pre-populate a list from a REST API (expression)
+                  code: |
+                    # The expression must return an array of objects whose keys
+                    # line up with the subform's field names.
+                    - name: users
+                      type: list
+                      label: Users
+                      subform: User
+                      columns:
+                        - username
+                        - email
+                      expression: fn.fnRestBasic('get','https://api.example.com/users','','my_api_cred','')
+                      # add a refresh button (or auto-refresh, e.g. '30s')
+                      refresh: true
+                - name: Pre-populate a list from a database query
+                  code: |
+                    - name: servers
+                      type: list
+                      label: Servers
+                      subform: Server
+                      columns:
+                        - hostname
+                        - role
+                      dbConfig: CMDB_CONN
+                      query: SELECT hostname, role FROM servers WHERE active = 1
+                - name: Pre-populate a list from a local expression
+                  code: |
+                    # runLocal evaluates in the browser sandbox and gives full JS power.
+                    - name: ports
+                      type: list
+                      label: Open ports
+                      subform: Port
+                      columns:
+                        - port
+                        - protocol
+                      runLocal: true
+                      expression: |
+                        [
+                          { port: 22,  protocol: 'tcp' },
+                          { port: 80,  protocol: 'tcp' },
+                          { port: 443, protocol: 'tcp' }
+                        ]
               - name: yaml
                 description: A YAML editor field with syntax highlighting and validation
                 extra: |
@@ -2946,14 +3367,18 @@
               
               For `table` fields, the default must be an array of objects matching the tableFields structure.
               For `yaml` fields, the default can be any valid YAML structure (object or array).
+              For `list` fields, the default must be an array of objects matching the referenced subform's fields. Use it to pre-populate the list with existing rows on form load.
             changelog:
+              - version: 6.2.0
+                type: added
+                description: "`list` fields now support `default` for pre-populating rows from a static array."
               - version: 6.1.5
                 type: changed
                 description: Table and YAML fields now support default values for pre-populating initial data.
               - version: 4.0.5
                 type: added
                 description: A default can now hold placeholders like `$(other_field)`, and together with `evalDefault` be evaluated as javascript.           
-            with_types: text, textarea, number, expression, password, enum, radio, checkbox, datetime, table, yaml
+            with_types: text, textarea, number, expression, password, enum, radio, checkbox, datetime, table, yaml, list
           - name: evalDefault
             type: boolean
             group: data
@@ -3269,7 +3694,7 @@
                 **tip** : use the alias `local` (type='expression',runLocal=true,hide=true,output=false)  
                 **tip** : use the alias `local_out` (type='expression',runLocal=true,hide=true)  
                 **tip** : use the alias `credential` (type='expression',runLocal=true,hide=true,asCredential=true)  
-            with_types: enum, expression, table, html
+            with_types: enum, expression, table, html, yaml, list
             examples:
               - name: Get a list of users from a rest api
                 code: |
@@ -3311,7 +3736,7 @@
             type: boolean
             group: data
             default: false
-            with_types: enum, expression, table
+            with_types: enum, expression, table, yaml, list
             short: Run an expression locally
             description: |
               When running expressions, by default they are run remotely on the server.  
@@ -3363,7 +3788,7 @@
           - name: dbConfig
             type: string, array or object
             group: data
-            with_types: enum, expression, table
+            with_types: enum, expression, table, yaml, list
             short: A database connection 
             description: |
               When you want to query data from a database, you will need the proper connection information.  
@@ -3413,7 +3838,7 @@
             type: string
             group: data
             allowed: A valid sql query
-            with_types: expression, enum, table
+            with_types: expression, enum, table, yaml, list
             short: The query to select data from a database
             description: |
               This is typically a classic SELECT statement.  

@@ -1,5 +1,7 @@
 <script setup>
+import { ref, reactive, computed, provide, inject, watch, onMounted, onBeforeUnmount } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
 import Profile from "@/lib/Profile";
 import Form from "@/lib/Form";
@@ -11,11 +13,11 @@ import State from "@/lib/State";
 import Navigate from "@/lib/Navigate";
 import TokenStorage from "@/lib/TokenStorage";
 import YAML from "yaml";
-import { provide, reactive, computed } from "vue";
 
 // use
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 
 const store = useAppStore();
 
@@ -67,7 +69,7 @@ function pushEdit({ title, subtitle, subform, row, parentData, onSave }) {
     const snapshot = row ? JSON.parse(JSON.stringify(row)) : {};
     const entry = reactive({
         id, title, subtitle, subform, snapshot,
-        parentData: parentData ? JSON.parse(JSON.stringify(parentData)) : null,
+        parentData: parentData ? Helpers.safeDeepClone(parentData) : null,
         draft: {},
         showHelp: subform?.showHelp === true,
         onSave,
@@ -97,6 +99,381 @@ provide('formEditStack', {
     push: pushEdit,
     pop: popEdit,
 });
+
+// ---------------------------------------------------------------------------
+// Wizard mode
+//
+// When a form has a `wizard:` array, we render a sequence of subforms as
+// steps. Each step is an <AppForm mode="wizard"> with its own draft and
+// validation. Cross-step references work through `__parent__.<stepname>.field`
+// (the wizard injects every prior step's raw draft under its namespace).
+//
+// State:
+//   wizardSteps      : computed array of resolved steps with metadata
+//   wizardIndex      : currently visible step index
+//   wizardDrafts     : reactive { stepName: rawDraft }
+//   wizardVisibility : { stepName: { fieldName: bool } } (from each step)
+//   wizardSkipped    : reactive { stepName: true } when user pressed Skip
+//   wizardRefs       : refs to each AppForm so we can call validateForm()
+// ---------------------------------------------------------------------------
+const wizardIndex = ref(0);
+const wizardDrafts = reactive({});
+const wizardVisibility = reactive({});
+const wizardSkipped = reactive({});
+// Set only after a step's validateForm() returned true. Drives the green
+// “done” badge in the stepper and gates final submit.
+const wizardCompleted = reactive({});
+// Plain object map of stepName -> AppForm component instance (filled by
+// the template ref callback). Not reactive — we only ever read it from
+// click handlers, never from templates/computeds.
+const wizardRefs = { value: {} };
+
+function setWizardRef(stepName, el) {
+    if (!stepName) return;
+    if (el) wizardRefs.value[stepName] = el;
+    else delete wizardRefs.value[stepName];
+}
+
+const wizardActive = computed(() =>
+    Array.isArray(currentForm.value?.wizard) && currentForm.value.wizard.length > 0
+);
+
+// Resolve each step definition: subform lookup, step namespace (`name`
+// defaults to subform name), title, defaultModel, etc. The summary step
+// is appended automatically — authors don't declare it in YAML, and its
+// title is always taken from the active locale (language-agnostic).
+const wizardSteps = computed(() => {
+    if (!wizardActive.value) return [];
+    const subforms = currentForm.value?.subforms || [];
+    // Skip any author-declared summary entries; we always append our own.
+    const inputSteps = currentForm.value.wizard.filter(raw => !raw?.summary);
+    const steps = inputSteps.map((raw, i) => {
+        const sub = subforms.find(s => s.name === raw.subform);
+        const stepName = raw.name || raw.subform;
+        return {
+            index: i,
+            name: stepName,
+            title: raw.title || sub?.description || stepName,
+            help: raw.help || sub?.help || '',
+            showHelp: raw.showHelp === true || sub?.showHelp === true,
+            defaultModel: raw.defaultModel || '',
+            when: raw.when || '',
+            optional: raw.optional === true,
+            subform: sub,
+            subformName: raw.subform,
+        };
+    });
+    // Append the synthetic summary step. Title comes from i18n so it's
+    // always shown in the user's language.
+    steps.push({
+        index: steps.length,
+        name: '__summary__',
+        title: t('form.summary'),
+        isSummary: true,
+    });
+    return steps;
+});
+
+// Evaluate `when:` for a step against the current wizard state.
+// Returns true when there's no `when:` (always show) or when the expression
+// evaluates truthy. Falsy/error -> step is hidden.
+// Supports `$(__parent__.<stepname>.<field>)` placeholders, mirroring how
+// regular expressions resolve inside subform fields.
+function evalWhen(expr) {
+    if (!expr || typeof expr !== 'string') return true;
+    try {
+        // Build a context object that mirrors what a subform field would see:
+        //   __parent__.<stepname>.<field>
+        const context = { __parent__: {} };
+        Object.keys(wizardDrafts).forEach(k => {
+            context.__parent__[k] = wizardDrafts[k];
+        });
+        // Replace every $(path) placeholder with the JS literal value.
+        const replaced = expr.replace(/\$\(([^)]+)\)/g, (_, path) => {
+            const v = Helpers.replacePlaceholders(path, context);
+            if (v === undefined) return 'undefined';
+            return JSON.stringify(v);
+        });
+        // eslint-disable-next-line no-new-func
+        return !!new Function(`return (${replaced});`)();
+    } catch (e) {
+        // Hide the step on evaluation failure; this matches how expression
+        // fields silently degrade until their inputs are resolvable.
+        return false;
+    }
+}
+
+function isWizardStepVisible(step) {
+    if (!step) return false;
+    if (step.isSummary) return true;
+    if (step.optional && wizardSkipped[step.name]) return false;
+    if (!evalWhen(step.when)) return false;
+    return true;
+}
+
+// __parent__ data injected into each step's AppForm. We expose every
+// step's raw draft under its namespace, so a field in step "network"
+// can reference $(__parent__.basics.kind) -> raw value from step "basics".
+const wizardParentData = computed(() => {
+    const out = {};
+    for (const step of wizardSteps.value) {
+        if (step.isSummary) continue;
+        out[step.name] = wizardDrafts[step.name] || {};
+    }
+    return out;
+});
+
+// Per-step output: fields shaped by buildFormOutput, then wrapped under
+// the step's `defaultModel` prefix. Honours per-field `model`/`noOutput`.
+function buildWizardStepOutput(step) {
+    if (!step?.subform?.fields) return {};
+    const visMap = wizardVisibility[step.name] || {};
+    return Helpers.buildWizardStepOutput(
+        step.subform.fields,
+        wizardDrafts[step.name] || {},
+        step.defaultModel || '',
+        {
+            isVisible: (item) => !!visMap[item.name],
+            subforms: currentForm.value?.subforms || [],
+        }
+    );
+}
+
+// Merged wizard extravars: deep-merge of every visible step's output, in
+// declaration order. Hidden / skipped steps contribute nothing.
+const wizardMergedOutput = computed(() => {
+    if (!wizardActive.value) return {};
+    let merged = {};
+    for (const step of wizardSteps.value) {
+        if (step.isSummary) continue;
+        if (!isWizardStepVisible(step)) continue;
+        merged = Helpers.deepMerge(merged, buildWizardStepOutput(step));
+    }
+    return merged;
+});
+
+const activeWizardStep = computed(() => wizardSteps.value[wizardIndex.value] || null);
+
+// Navigation
+function wizardGoTo(index) {
+    if (index < 0 || index >= wizardSteps.value.length) return;
+    // When jumping forward, validate the current step first (fail-closed).
+    // Jumping backwards is always allowed.
+    if (index > wizardIndex.value) {
+        const step = activeWizardStep.value;
+        if (step && !step.isSummary && !wizardSkipped[step.name]) {
+            const ref = wizardRefs.value[step.name];
+            if (!ref || typeof ref.validateForm !== 'function') {
+                // Can't validate → don't advance.
+                return;
+            }
+            if (!ref.validateForm()) return;
+            wizardCompleted[step.name] = true;
+        }
+    }
+    wizardIndex.value = index;
+}
+function wizardBack() {
+    // walk backwards skipping hidden steps
+    for (let i = wizardIndex.value - 1; i >= 0; i--) {
+        if (isWizardStepVisible(wizardSteps.value[i])) {
+            wizardIndex.value = i;
+            return;
+        }
+    }
+}
+function wizardNext() {
+    const step = activeWizardStep.value;
+    if (!step) return;
+    // Validate the current step before advancing (summary steps have no form).
+    if (!step.isSummary) {
+        const ref = wizardRefs.value[step.name];
+        // Fail-closed: if the ref isn't available, don't silently advance.
+        if (!ref || typeof ref.validateForm !== 'function') {
+            toast.warning(t('form.invalidData'));
+            return;
+        }
+        if (!ref.validateForm()) return;
+        wizardCompleted[step.name] = true;
+        // Re-entering an optional step clears any prior skip mark.
+        if (wizardSkipped[step.name]) delete wizardSkipped[step.name];
+    } else {
+        wizardCompleted[step.name] = true;
+    }
+    // walk forwards skipping hidden steps
+    for (let i = wizardIndex.value + 1; i < wizardSteps.value.length; i++) {
+        if (isWizardStepVisible(wizardSteps.value[i])) {
+            wizardIndex.value = i;
+            return;
+        }
+    }
+}
+function wizardSkipCurrent() {
+    const step = activeWizardStep.value;
+    if (!step || !step.optional) return;
+    wizardSkipped[step.name] = true;
+    // Skipping clears any prior completion mark.
+    delete wizardCompleted[step.name];
+    // walk forwards to next visible step
+    for (let i = wizardIndex.value + 1; i < wizardSteps.value.length; i++) {
+        if (isWizardStepVisible(wizardSteps.value[i])) {
+            wizardIndex.value = i;
+            return;
+        }
+    }
+}
+function wizardUnskip(stepName) {
+    delete wizardSkipped[stepName];
+}
+
+// Returns the index of the last *non-summary* visible step. Used to know
+// whether to render Next or Submit.
+const wizardLastInputIndex = computed(() => {
+    let last = -1;
+    wizardSteps.value.forEach((s, i) => {
+        if (!s.isSummary && isWizardStepVisible(s)) last = i;
+    });
+    return last;
+});
+
+const wizardHasSummary = computed(() =>
+    wizardSteps.value.some(s => s.isSummary)
+);
+
+// Rows shown in the summary step body: one entry per non-summary step
+// with its visual status (ok / skipped / hidden / pending) so the user
+// sees at a glance what was done and what wasn't.
+const wizardSummaryRows = computed(() => {
+    return wizardSteps.value
+        .filter(s => !s.isSummary)
+        .map(s => {
+            let status, statusLabel;
+            if (!isWizardStepVisible(s) && !wizardSkipped[s.name]) {
+                status = 'hidden';
+                statusLabel = t('form.wizardSummaryHidden');
+            } else if (wizardSkipped[s.name]) {
+                status = 'skipped';
+                statusLabel = t('form.wizardSummarySkipped');
+            } else if (wizardCompleted[s.name]) {
+                status = 'ok';
+                statusLabel = t('form.wizardSummaryOk');
+            } else {
+                status = 'pending';
+                statusLabel = t('form.wizardSummaryPending');
+            }
+            return { name: s.name, title: s.title, index: s.index, status, statusLabel };
+        });
+});
+
+// Submit from the wizard: build merged extravars, then route through the
+// existing launch path. File fields inside wizard steps are not supported
+// in v1 — they would need a multi-step upload flow.
+function wizardSubmit() {
+    // Validate active step if it's not the summary
+    const step = activeWizardStep.value;
+    if (step && !step.isSummary) {
+        const ref = wizardRefs.value[step.name];
+        if (!ref || typeof ref.validateForm !== 'function') {
+            toast.warning(t('form.invalidData'));
+            return;
+        }
+        if (!ref.validateForm()) return;
+        wizardCompleted[step.name] = true;
+    }
+    // Safety net: make sure every visible non-summary step is either
+    // completed or explicitly skipped. Catches the case where a user
+    // clicks Submit on the summary without having walked through every
+    // step (e.g. via stepper jumps).
+    for (const s of wizardSteps.value) {
+        if (s.isSummary) continue;
+        if (!isWizardStepVisible(s)) continue;
+        if (wizardSkipped[s.name]) continue;
+        if (!wizardCompleted[s.name]) {
+            toast.warning(t('form.invalidData'));
+            // Jump back to the offending step so the user can fix it.
+            wizardIndex.value = s.index;
+            return;
+        }
+    }
+    // For wizard submit we bypass file-upload (none expected in v1)
+    status.value = 'initializing';
+    const postdata = {
+        files: {},
+        extravars: Helpers.deepClone(wizardMergedOutput.value) || {},
+        formName: currentForm.value.name,
+        rawFormData: Helpers.deepClone(wizardMergedOutput.value) || {},
+        credentials: {},
+    };
+    if (enableVerbose.value) {
+        postdata.extravars.__verbose__ = true;
+    }
+    // Collect credentials from steps: any field with asCredential=true.
+    for (const s of wizardSteps.value) {
+        if (s.isSummary || !s.subform?.fields) continue;
+        if (!isWizardStepVisible(s)) continue;
+        const draft = wizardDrafts[s.name] || {};
+        s.subform.fields.filter(f => f.asCredential === true).forEach(f => {
+            postdata.credentials[f.name] = draft[f.name];
+        });
+    }
+    launchForm(postdata);
+}
+
+// Submit dropdown actions for the wizard's final step (mirrors AppForm's
+// submitActions list so the user gets the same Schedule / Run later / Store
+// options as on a regular form).
+const wizardSubmitActions = computed(() => [
+    {
+        key: 'schedule',
+        label: t('form.scheduleRecurring'),
+        icon: 'calendar-plus',
+        roleOption: 'allowScheduledJobs'
+    },
+    {
+        key: 'run-later',
+        label: t('form.runLaterOneTime'),
+        icon: 'clock',
+        roleOption: 'allowPlannedJobs',
+        divider: true
+    },
+    {
+        key: 'store',
+        label: t('form.store'),
+        icon: 'file-export',
+        roleOption: 'allowStoredJobs'
+    }
+]);
+
+// Route the wizard's final-step submit dropdown actions. Validates the
+// active step (if not the summary) and ensures formdata mirrors the merged
+// wizard output before opening schedule/store offcanvases.
+function handleWizardSubmitAction(action) {
+    const step = activeWizardStep.value;
+    if (step && !step.isSummary) {
+        const ref = wizardRefs.value[step.name];
+        if (ref && typeof ref.validateForm === 'function') {
+            if (!ref.validateForm()) return;
+        }
+    }
+    // Make sure formdata reflects merged wizard output for downstream consumers.
+    generateJsonOutput();
+    switch (action) {
+        case 'submit':
+            wizardSubmit();
+            break;
+        case 'schedule':
+            openScheduleOffcanvas('schedule');
+            break;
+        case 'run-later':
+            openScheduleOffcanvas('run-later');
+            break;
+        case 'store':
+            storeCtx.value = buildMainStoreCtx();
+            openStoreOffcanvas();
+            break;
+    }
+}
+
 const hideForm = ref(false); // possible action to hide form onsubmit for example
 const formdata = ref({}); // the eventual object sent to the api in the correct hierarchy
 const showExtraVars = ref(false); // flag to show/hide extravars
@@ -157,8 +534,54 @@ function buildMainStoreCtx() {
         scope: 'form',
         formName: currentForm.value.name,
         title: currentForm.value.name,
-        getData: () => getFilteredRawFormData(),
+        getData: () => {
+            // Wizard forms persist per-step drafts (without password values)
+            // instead of merged extravars. That makes load-from-store
+            // round-trippable into the wizard UI without trying to split a
+            // flattened tree back into step buckets.
+            if (wizardActive.value) {
+                const drafts = {};
+                for (const step of wizardSteps.value) {
+                    if (step.isSummary || !step.subform?.fields) continue;
+                    const src = wizardDrafts[step.name] || {};
+                    const clean = {};
+                    step.subform.fields.forEach(f => {
+                        if (f.type === 'password' || f.type === 'constant') return;
+                        if (f.name in src) clean[f.name] = src[f.name];
+                    });
+                    drafts[step.name] = clean;
+                }
+                return {
+                    __wizard__: true,
+                    drafts,
+                    skipped: { ...wizardSkipped },
+                    completed: { ...wizardCompleted },
+                };
+            }
+            return getFilteredRawFormData();
+        },
         onLoad: (parsed) => {
+            // Wizard load: restore per-step drafts and skip/completion marks.
+            // Backwards compatible: if the stored blob is a flat object
+            // (legacy or non-wizard form), fall back to initialFormData.
+            if (wizardActive.value && parsed && parsed.__wizard__ === true) {
+                Object.keys(wizardDrafts).forEach(k => delete wizardDrafts[k]);
+                Object.keys(wizardSkipped).forEach(k => delete wizardSkipped[k]);
+                Object.keys(wizardCompleted).forEach(k => delete wizardCompleted[k]);
+                Object.keys(wizardVisibility).forEach(k => delete wizardVisibility[k]);
+                const drafts = parsed.drafts || {};
+                for (const step of wizardSteps.value) {
+                    if (step.isSummary) continue;
+                    wizardDrafts[step.name] = drafts[step.name]
+                        ? Helpers.deepClone(drafts[step.name])
+                        : {};
+                }
+                if (parsed.skipped) Object.assign(wizardSkipped, parsed.skipped);
+                if (parsed.completed) Object.assign(wizardCompleted, parsed.completed);
+                wizardIndex.value = 0;
+                key.value++;
+                return;
+            }
             initialFormData.value = parsed;
             key.value++;
         },
@@ -185,14 +608,68 @@ function buildSubformOutput(entry) {
 
 // When editing a subform, the right-hand "Extravars" panel switches to show
 // the draft of the active subform instead of the main-form output. Outside
-// subform editing this is just `formdata`.
-const displayedOutput = computed(() =>
-  activeEntry.value ? buildSubformOutput(activeEntry.value) : formdata.value
-);
-const displayedOutputYaml = computed(() => YAML.stringify(displayedOutput.value));
-const displayedOutputTitle = computed(() =>
-  activeEntry.value ? `Subform output - ${activeEntry.value.title}` : 'Extra vars'
-);
+// subform editing this is just `formdata`. In wizard mode the panel shows
+// the current step's contribution (or the merged result on the summary).
+const displayedOutput = computed(() => {
+  if (activeEntry.value) return buildSubformOutput(activeEntry.value);
+  if (wizardActive.value) {
+    const step = activeWizardStep.value;
+    if (step?.isSummary) return wizardMergedOutput.value;
+    if (step?.subform?.fields) return buildWizardStepOutput(step);
+    return wizardMergedOutput.value;
+  }
+  return formdata.value;
+});
+const displayedOutputYaml = computed(() => {
+  // Mask password-typed fields for display only - the underlying formdata
+  // still carries the real values for submission / store / download.
+  let fields;
+  if (activeEntry.value) {
+    fields = activeEntry.value.subform?.fields;
+  } else if (wizardActive.value) {
+    const step = activeWizardStep.value;
+    fields = step?.subform?.fields;
+    // For the summary step / merged view, build a synthetic field list
+    // covering every visible step so password masking still finds them.
+    if (!fields) {
+      const all = [];
+      for (const s of wizardSteps.value) {
+        if (s.isSummary || !s.subform?.fields) continue;
+        if (!isWizardStepVisible(s)) continue;
+        // Prefix each field's model with the step's defaultModel so masking
+        // walks the right paths in the merged tree.
+        s.subform.fields.forEach(f => {
+          const prefix = s.defaultModel ? s.defaultModel.replace(/^\.+|\.+$/g, '') : '';
+          const apply = (m) => typeof m === 'string'
+            ? (m.startsWith('/') ? m.slice(1) : (prefix ? `${prefix}.${m}` : m))
+            : m;
+          let nextModel;
+          if (Array.isArray(f.model)) nextModel = f.model.map(apply);
+          else if (typeof f.model === 'string') nextModel = apply(f.model);
+          else nextModel = prefix ? `${prefix}.${f.name}` : f.name;
+          all.push({ ...f, model: nextModel });
+        });
+      }
+      fields = all;
+    }
+  } else {
+    fields = currentForm.value?.fields;
+  }
+  const subforms = currentForm.value?.subforms || [];
+  const masked = Array.isArray(fields)
+    ? Helpers.maskPasswordsForDisplay(displayedOutput.value, fields, subforms)
+    : displayedOutput.value;
+  return YAML.stringify(masked);
+});
+const displayedOutputTitle = computed(() => {
+  if (activeEntry.value) return `${t('form.subformOutput')} - ${activeEntry.value.title}`;
+  if (wizardActive.value) {
+    const step = activeWizardStep.value;
+    if (step?.isSummary) return t('form.extraVars');
+    return `${t('form.subformOutput')} - ${step?.title || ''}`;
+  }
+  return t('form.extraVars');
+});
 
 // filter job output
 const filteredJobOutput = computed(() => {
@@ -215,7 +692,7 @@ const filteredSubJobOutput = computed(() => {
 const formStatus = computed(() => {
   if (status.value == "running") {
     return {
-      label: "Running",
+      label: t('form.running'),
       color: "primary",
       icon: "spinner",
       disabled: true,
@@ -224,7 +701,7 @@ const formStatus = computed(() => {
     };
   } else if (status.value == "success") {
     return {
-      label: "Finished",
+      label: t('form.finished'),
       color: "success",
       icon: "check",
       disabled: false,
@@ -233,7 +710,7 @@ const formStatus = computed(() => {
     };
   } else if (status.value == "failed") {
     return {
-      label: "Failed",
+      label: t('form.failed'),
       color: "danger",
       icon: "exclamation-triangle",
       disabled: false,
@@ -242,7 +719,7 @@ const formStatus = computed(() => {
     };
   } else if (status.value == "warning") {
     return {
-      label: "Finished with warning",
+      label: t('form.finishedWithWarning'),
       color: "warning",
       icon: "exclamation-triangle",
       disabled: false,
@@ -251,7 +728,7 @@ const formStatus = computed(() => {
     };
   }else if (status.value == "approve") {
     return {
-      label: "Waiting for approval",
+      label: t('form.waitingForApproval'),
       color: "warning",
       icon: "spinner",
       disabled: false,
@@ -260,7 +737,7 @@ const formStatus = computed(() => {
     };
   } else if (status.value == "abandoned") {
     return {
-      label: "Abandoned",
+      label: t('form.abandoned'),
       color: "warning",
       icon: "exclamation-triangle",
       disabled: false,
@@ -269,7 +746,7 @@ const formStatus = computed(() => {
     };
   } else if (status.value == "rejected") {
     return {
-      label: "Rejected",
+      label: t('form.rejected'),
       color: "warning",
       icon: "exclamation-triangle",
       disabled: false,
@@ -278,7 +755,7 @@ const formStatus = computed(() => {
     };
   } else if (status.value == "aborted") {
     return {
-      label: "Aborted",
+      label: t('form.aborted'),
       color: "warning",
       icon: "exclamation-triangle",
       disabled: false,
@@ -287,7 +764,7 @@ const formStatus = computed(() => {
     };
   } else if (status.value == "initializing") {
     return {
-      label: "Initializing",
+      label: t('form.initializing'),
       color: "primary",
       icon: "spinner",
       disabled: true,
@@ -296,7 +773,7 @@ const formStatus = computed(() => {
     };
   } else if (status.value == "stabilizing") {
     return {
-      label: "Stabilizing form",
+      label: t('form.stabilizingForm'),
       color: "primary",
       icon: "spinner",
       disabled: true,
@@ -305,7 +782,7 @@ const formStatus = computed(() => {
     };
   } else if (status.value == "submitting") {
     return {
-      label: "Submitting form",
+      label: t('form.submittingForm'),
       color: "primary",
       icon: "spinner",
       disabled: true,
@@ -314,7 +791,7 @@ const formStatus = computed(() => {
     };
   } else {
     return {
-      label: "Pending",
+      label: t('form.pending'),
       color: "secondary",
       icon: "spinner",
       disabled: false,
@@ -399,10 +876,37 @@ function formChanged(formObjectData) {
   generateJsonOutput(); 
 }
 
+// Per-wizard-step change handler: stores visibility under the step's name
+// so wizardMergedOutput can respect per-step `visible:` rules.
+function wizardStepChanged(stepName, formObjectData) {
+  wizardVisibility[stepName] = formObjectData.visibility || {};
+}
+
 // Get filtered raw form data (excludes constants, passwords, system fields)
 function getFilteredRawFormData() {
+  if (wizardActive.value) {
+    // Wizard rawFormData is the merged extravars (without passwords - we
+    // rebuild from drafts so password fields don't leak into stored jobs).
+    const result = {};
+    for (const step of wizardSteps.value) {
+      if (step.isSummary || !step.subform?.fields) continue;
+      if (!isWizardStepVisible(step)) continue;
+      const draftClone = { ...(wizardDrafts[step.name] || {}) };
+      step.subform.fields.forEach(f => {
+        if (f.type === 'password' || f.type === 'constant') delete draftClone[f.name];
+      });
+      const stepOutput = Helpers.buildWizardStepOutput(
+        step.subform.fields.filter(f => f.type !== 'password' && f.type !== 'constant'),
+        draftClone,
+        step.defaultModel || '',
+        { subforms: currentForm.value?.subforms || [] }
+      );
+      Object.assign(result, Helpers.deepMerge(result, stepOutput));
+    }
+    return result;
+  }
   const rawFormData = {};
-  currentForm.value.fields.forEach((field) => {
+  (currentForm.value.fields || []).forEach((field) => {
     const fieldName = field.name;
     
     // Skip if field value not in form
@@ -425,6 +929,13 @@ function getFilteredRawFormData() {
 
 // generate the form json output
 function generateJsonOutput(filedata = {}) {
+  if (wizardActive.value) {
+    // In wizard mode the canonical output lives in wizardMergedOutput;
+    // we just mirror it into formdata so downstream consumers (download,
+    // copy, schedule) keep working unchanged.
+    formdata.value = Helpers.deepClone(wizardMergedOutput.value) || {};
+    return;
+  }
   try {
     formdata.value = Helpers.buildFormOutput(
       currentForm.value.fields || [],
@@ -479,7 +990,7 @@ async function submitForm(formObjectData) {
   visibility.value = formObjectData.visibility;
 
   currentForm.value.fields
-    .filter((f) => f.type == "file" && form.value[f.name]?.name)
+    ?.filter((f) => f.type == "file" && form.value[f.name]?.name)
     .forEach((f) => {
       postdata.files[f.name] = form.value[f.name];
     });
@@ -514,7 +1025,7 @@ async function submitForm(formObjectData) {
   console.log('Submitting with rawFormData:', Object.keys(postdata.rawFormData));
   postdata.credentials = {};
   currentForm.value.fields
-    .filter((f) => f.asCredential == true)
+    ?.filter((f) => f.asCredential == true)
     .forEach((f) => {
       postdata.credentials[f.name] = formdata.value[f.name];
     });
@@ -637,7 +1148,7 @@ function closeScheduleOffcanvas() {
 async function createSchedule() {
   // Simple validation
   if (!scheduleForm.value.name) {
-    toast.warning('Name is required');
+    toast.warning(t('form.nameRequired'));
     return;
   }
   
@@ -645,12 +1156,12 @@ async function createSchedule() {
   scheduleForm.value.one_time_run = scheduleAction.value === 'run-later';
   
   if (!scheduleForm.value.one_time_run && !scheduleForm.value.cron) {
-    toast.warning('Cron expression is required');
+    toast.warning(t('form.cronRequired'));
     return;
   }
   
   if (scheduleForm.value.one_time_run && !scheduleForm.value.run_at) {
-    toast.warning('Run at date/time is required');
+    toast.warning(t('form.runAtRequired'));
     return;
   }
   
@@ -709,7 +1220,7 @@ function closeStoreOffcanvas() {
 async function createStoredJob() {
   // Simple validation
   if (!storeForm.value.name) {
-    toast.warning('Name is required');
+    toast.warning(t('form.nameRequired'));
     return;
   }
 
@@ -1008,6 +1519,21 @@ async function loadForm(){
     // Now set currentForm which will trigger component rendering
     currentForm.value = formConfig.value.forms[0];
     formLoaded.value = true;
+
+    // Initialize wizard drafts so v-model bindings have a stable target.
+    if (Array.isArray(currentForm.value?.wizard)) {
+      wizardIndex.value = 0;
+      Object.keys(wizardDrafts).forEach(k => delete wizardDrafts[k]);
+      Object.keys(wizardVisibility).forEach(k => delete wizardVisibility[k]);
+      Object.keys(wizardSkipped).forEach(k => delete wizardSkipped[k]);
+      Object.keys(wizardCompleted).forEach(k => delete wizardCompleted[k]);
+      wizardRefs.value = {};
+      currentForm.value.wizard.forEach((raw) => {
+        if (raw?.summary) return;
+        const stepName = raw.name || raw.subform;
+        if (stepName) wizardDrafts[stepName] = {};
+      });
+    }
     
 
     // see if the help should be show initially
@@ -1062,16 +1588,16 @@ onBeforeUnmount(() => {
               cssClassToggle="btn-sm ms-3 fw-normal"
               icon="question-circle" iconToggle="question-circle"
               :toggle="activeEntry.showHelp" @click="activeEntry.showHelp = !activeEntry.showHelp">
-              Show help
-              <template #toggle>Hide help</template>
+              {{ t('form.showHelp') }}
+              <template #toggle>{{ t('form.hideHelp') }}</template>
             </BsButton>
           </template>
           <template v-else>
             {{ currentForm.name }}
             <BsButton v-if="currentForm.help" cssClass="btn-sm ms-3 fw-normal" cssClassToggle="btn-sm ms-3 fw-normal"
               icon="question-circle" iconToggle="question-circle" :toggle="showHelp" @click="showHelp = !showHelp">
-              Show help
-              <template #toggle>Hide help</template>
+              {{ t('form.showHelp') }}
+              <template #toggle>{{ t('form.hideHelp') }}</template>
             </BsButton>
           </template>
         </h2>
@@ -1086,8 +1612,174 @@ onBeforeUnmount(() => {
         </div>
         <div class="row">
           <div class="col">
-            <!-- MAIN FORM: mounted always, hidden while editing a subform -->
-            <AppForm v-show="!activeEntry" :key="key" @change="formChanged" :currentForm="currentForm"
+            <!-- WIZARD: stepper + per-step AppForm. Mounted instead of the
+                 main form when currentForm.wizard is present. -->
+            <div v-if="wizardActive && !activeEntry" class="mb-3">
+              <!-- Wizard toolbar row: mirrors a regular form's
+                   #toolbarbuttons slot. The textual stepper itself lives
+                   one row below, inside each step's AppForm toolbar so it
+                   sits in line with the spinner / show-hidden-fields icons. -->
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="d-flex align-items-center flex-wrap">
+                  <BsButton v-if="store.profile.options?.showExtraVars" cssClass="btn-sm me-3 fw-normal"
+                    cssClassToggle="btn-sm me-3 fw-normal" icon="eye" iconToggle="eye-slash" :toggle="showExtraVars"
+                    @click="toggleShowExtraVars()">{{ t('form.showExtravars') }}<template #toggle>{{ t('form.hideExtravars') }}</template>
+                  </BsButton>
+                  <BsButton cssClass="btn-sm me-3 fw-normal" icon="redo" @click="reloadForm">
+                    {{ t('form.reloadForm') }}
+                  </BsButton>
+                  <BsButton v-if="store.profile.options?.allowStoredJobs" cssClass="btn-sm me-3 fw-normal"
+                    icon="file-import" @click="storeCtx = buildMainStoreCtx(); openLoadOffcanvas()">
+                    {{ t('form.loadFromStore') }}
+                  </BsButton>
+                  <BsInputCheckboxRaw v-if="store.profile.options?.allowVerboseMode" v-model="enableVerbose"
+                    :label="'verbose'" cssClass="ms-2 d-inline-block" />
+                </div>
+              </div>
+
+              <!-- Per-step AppForm (or summary view) -->
+              <template v-for="(step, idx) in wizardSteps" :key="step.name + ':' + key">
+                <div v-show="idx === wizardIndex">
+                  <!-- Step help -->
+                  <div v-if="step.help && step.showHelp" class="alert alert-light" role="alert">
+                    <vue-showdown :markdown="step.help" flavor="github" :options="{ ghCodeBlocks: true }" />
+                  </div>
+
+                  <!-- Regular subform step: stepper is injected into the
+                       AppForm's #toolbarbuttons slot so it lands on the
+                       same row as the show-hidden-fields / spinner icons. -->
+                  <AppForm v-if="!step.isSummary && step.subform"
+                    mode="wizard"
+                    :ref="(el) => setWizardRef(step.name, el)"
+                    :currentForm="step.subform"
+                    :constants="constants"
+                    :subforms="currentForm?.subforms || []"
+                    :parentData="wizardParentData"
+                    :showExtraVars="showExtraVars"
+                    :initialData="wizardDrafts[step.name] || {}"
+                    v-model="wizardDrafts[step.name]"
+                    @change="(d) => wizardStepChanged(step.name, d)">
+                    <template #toolbarbuttons>
+                      <ol class="ansibleforms-wizard-stepper d-flex flex-wrap align-items-center list-unstyled mb-0">
+                        <template v-for="(s, i) in wizardSteps" :key="'sb-' + s.name">
+                          <li v-if="isWizardStepVisible(s) || wizardSkipped[s.name]"
+                              class="wizard-step d-flex align-items-center"
+                              :class="{ active: i === wizardIndex }">
+                            <button type="button"
+                              class="wizard-step-btn"
+                              :title="s.title"
+                              :class="[
+                                i === wizardIndex ? 'is-current' :
+                                wizardSkipped[s.name] ? 'is-skipped' :
+                                wizardCompleted[s.name] ? 'is-done' : 'is-pending'
+                              ]"
+                              @click="wizardGoTo(i)">
+                              <i v-if="wizardSkipped[s.name]" class="fa fa-forward"></i>
+                              <i v-else-if="s.isSummary" class="fa fa-list-check"></i>
+                              <i v-else-if="wizardCompleted[s.name]" class="fa fa-check"></i>
+                              <span v-else>{{ i + 1 }}</span>
+                            </button>
+                            <span class="wizard-step-label ms-2 small">{{ s.title }}</span>
+                            <span v-if="i < wizardSteps.length - 1" class="wizard-step-connector"></span>
+                          </li>
+                        </template>
+                      </ol>
+                    </template>
+                  </AppForm>
+
+                  <!-- Missing subform reference -->
+                  <div v-else-if="!step.isSummary && !step.subform" class="alert alert-danger">
+                    {{ t('form.wizardMissingSubform') || 'Wizard step references unknown subform' }}:
+                    <strong>{{ step.subformName }}</strong>
+                  </div>
+
+                  <!-- Summary step: synthetic toolbar row (so the stepper
+                       still appears in the same place as it does for
+                       regular steps) + per-step status overview body. -->
+                  <div v-else-if="step.isSummary">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                      <ol class="ansibleforms-wizard-stepper d-flex flex-wrap align-items-center list-unstyled mb-0">
+                        <template v-for="(s, i) in wizardSteps" :key="'sm-' + s.name">
+                          <li v-if="isWizardStepVisible(s) || wizardSkipped[s.name]"
+                              class="wizard-step d-flex align-items-center"
+                              :class="{ active: i === wizardIndex }">
+                            <button type="button"
+                              class="wizard-step-btn"
+                              :title="s.title"
+                              :class="[
+                                i === wizardIndex ? 'is-current' :
+                                wizardSkipped[s.name] ? 'is-skipped' :
+                                wizardCompleted[s.name] ? 'is-done' : 'is-pending'
+                              ]"
+                              @click="wizardGoTo(i)">
+                              <i v-if="wizardSkipped[s.name]" class="fa fa-forward"></i>
+                              <i v-else-if="s.isSummary" class="fa fa-list-check"></i>
+                              <i v-else-if="wizardCompleted[s.name]" class="fa fa-check"></i>
+                              <span v-else>{{ i + 1 }}</span>
+                            </button>
+                            <span class="wizard-step-label ms-2 small">{{ s.title }}</span>
+                            <span v-if="i < wizardSteps.length - 1" class="wizard-step-connector"></span>
+                          </li>
+                        </template>
+                      </ol>
+                      <div></div>
+                    </div>
+                    <p class="text-muted">{{ t('form.wizardSummaryDescription') }}</p>
+                    <ul class="list-group">
+                      <li v-for="s in wizardSummaryRows" :key="'sum-' + s.name"
+                          class="list-group-item d-flex justify-content-between align-items-center"
+                          :class="{ 'list-group-item-action': s.status !== 'hidden' }"
+                          :role="s.status !== 'hidden' ? 'button' : null"
+                          @click="s.status !== 'hidden' && wizardGoTo(s.index)">
+                        <span>
+                          <i class="fa me-2"
+                             :class="{
+                               'fa-check text-success': s.status === 'ok',
+                               'fa-forward text-warning': s.status === 'skipped',
+                               'fa-eye-slash text-muted': s.status === 'hidden',
+                               'fa-circle-exclamation text-danger': s.status === 'pending'
+                             }"></i>
+                          <strong>{{ s.title }}</strong>
+                          <small class="text-muted ms-2">{{ s.statusLabel }}</small>
+                        </span>
+                        <i v-if="s.status !== 'hidden'" class="fa fa-pen text-muted"></i>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </template>
+
+              <!-- Navigation footer -->
+              <div class="d-flex justify-content-between align-items-center mt-3">
+                <div>
+                  <BsButton v-if="wizardIndex > 0" icon="arrow-left" colorClass="secondary" @click="wizardBack">
+                    {{ t('form.back') || 'Back' }}
+                  </BsButton>
+                </div>
+                <div class="d-flex gap-2">
+                  <BsButton v-if="activeWizardStep?.optional && !activeWizardStep?.isSummary"
+                    icon="forward" colorClass="warning" @click="wizardSkipCurrent">
+                    {{ t('form.skip') || 'Skip' }}
+                  </BsButton>
+                  <BsButton v-if="wizardIndex < wizardLastInputIndex || (wizardHasSummary && !activeWizardStep?.isSummary)"
+                    icon="arrow-right" colorClass="primary" @click="wizardNext">
+                    {{ t('form.next') || 'Next' }}
+                  </BsButton>
+                  <BsDropdownButton v-else
+                    :icon="status === 'initializing' || status === 'submitting' ? 'spinner' : 'circle-play'"
+                    :label="t('form.submit')"
+                    colorClass="primary"
+                    :actions="wizardSubmitActions"
+                    :disabled="status === 'initializing' || status === 'submitting'"
+                    @click="handleWizardSubmitAction('submit')"
+                    @action="handleWizardSubmitAction"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- MAIN FORM: mounted always, hidden while editing a subform or running a wizard -->
+            <AppForm v-if="!wizardActive" v-show="!activeEntry" :key="key" @change="formChanged" :currentForm="currentForm"
               :constants="constants" :showExtraVars="showExtraVars" :fileProgress="fileProgress"
               :initialData="initialFormData" v-model="form"
               :subforms="currentForm?.subforms || []"
@@ -1097,14 +1789,14 @@ onBeforeUnmount(() => {
                 <!-- DEBUG BUTTONS -->
                 <BsButton v-if="store.profile.options?.showExtraVars" cssClass="btn-sm me-3 fw-normal"
                   cssClassToggle="btn-sm me-3 fw-normal" icon="eye" iconToggle="eye-slash" :toggle="showExtraVars"
-                  @click="toggleShowExtraVars()">Show Extravars<template #toggle>Hide Extravars</template>
+                  @click="toggleShowExtraVars()">{{ t('form.showExtravars') }}<template #toggle>{{ t('form.hideExtravars') }}</template>
                 </BsButton>
                 <BsButton cssClass="btn-sm me-3 fw-normal" icon="redo" @click="reloadForm">
-                  Reload this form
+                  {{ t('form.reloadForm') }}
                 </BsButton>
                 <BsButton v-if="store.profile.options?.allowStoredJobs" cssClass="btn-sm me-3 fw-normal"
                   icon="file-import" @click="storeCtx = buildMainStoreCtx(); openLoadOffcanvas()">
-                  Load from Store
+                  {{ t('form.loadFromStore') }}
                 </BsButton>
 
                 <!-- enable verbose logging -->
@@ -1129,18 +1821,18 @@ onBeforeUnmount(() => {
                 @submit-action="(e) => handleSubformAction(entry, e)">
                 <template #toolbarbuttons>
                   <BsButton cssClass="btn-sm me-3 fw-normal" icon="arrow-left" @click="popEdit(entry.id)">
-                    Back
+                    {{ t('form.back') }}
                   </BsButton>
                   <BsButton v-if="store.profile.options?.allowStoredJobs"
                     cssClass="btn-sm me-3 fw-normal" icon="file-import"
                     @click="handleSubformAction(entry, { action: 'load', value: entry.draft })">
-                    Load from Store
+                    {{ t('form.loadFromStore') }}
                   </BsButton>
                   <BsButton v-if="store.profile.options?.showExtraVars"
                     cssClass="btn-sm me-3 fw-normal" cssClassToggle="btn-sm me-3 fw-normal"
                     icon="eye" iconToggle="eye-slash" :toggle="showExtraVars"
                     @click="toggleShowExtraVars()">
-                    Show Output<template #toggle>Hide Output</template>
+                    {{ t('form.showOutput') }}<template #toggle>{{ t('form.hideOutput') }}</template>
                   </BsButton>
                 </template>
               </AppForm>
@@ -1154,13 +1846,13 @@ onBeforeUnmount(() => {
                 </small>
                 <BsButton cssClass="btn-sm" cssClassToggle="btn-sm" :toggle="viewAsYaml"
                   @click="viewAsYaml = !viewAsYaml">
-                  <template #default>View as YAML</template>
-                  <template #toggle>View as JSON</template>
+                  <template #default>{{ t('form.viewAsYaml') }}</template>
+                  <template #toggle>{{ t('form.viewAsJson') }}</template>
                 </BsButton>
               </div>
               <!-- TOOLBAR ICONS-->
               <div>
-                <span class="ms-2" role="button" title="Copy ExtraVars" @click="clip(displayedOutput, false, viewAsYaml)">
+                <span class="ms-2" role="button" :title="t('form.copyExtravars')" @click="clip(displayedOutput, false, viewAsYaml)">
                   <font-awesome-icon icon="copy" class="text-primary" />
                 </span>
               </div>
@@ -1176,14 +1868,13 @@ onBeforeUnmount(() => {
       </div>
       <div v-else-if="!formNotFound" class="loader mx-auto">
         <div class="spinner-border" role="status">
-          <span class="visually-hidden">Loading...</span>
+          <span class="visually-hidden">{{ t('form.loading') }}</span>
         </div>
       </div>
       <div v-else class="alert alert-danger mt-5" role="alert">
-        <h4 class="alert-heading">Form not found</h4>
+        <h4 class="alert-heading">{{ t('form.formNotFound') }}</h4>
         <p>
-          The requested form could not be found. Please check the form name in
-          the URL or contact your administrator.
+          {{ t('form.formNotFoundMsg') }}
         </p>
       </div>
     </main>
@@ -1208,22 +1899,28 @@ onBeforeUnmount(() => {
           ">
             <div class="d-grid">
               <button type="button" class="btn btn-danger text-white" @click="abortJob(jobId)">
-                <FaIcon icon="stop"></FaIcon><span class="ms-3">Abort</span>
+                <FaIcon icon="stop"></FaIcon><span class="ms-3">{{ t('form.abort') }}</span>
               </button>
             </div>
           </div>
         </div>
         <BsButton v-if="status != ''" icon="filter" cssClass="btn-sm mb-3" cssClassToggle="btn-sm mb-3"
           iconToggle="filter-circle-xmark" :toggle="filterOutput" @click="filterOutput = !filterOutput">
-          <template #default>Apply filter</template>
-          <template #toggle>Remove filter</template>
+          <template #default>{{ t('form.applyFilter') }}</template>
+          <template #toggle>{{ t('form.removeFilter') }}</template>
         </BsButton>
+        <!-- awx workflow graph (only for awx workflow jobs) -->
+        <div class="row" v-if="job.awx_workflow?.nodes?.length">
+          <div class="col">
+            <AppAwxWorkflow :workflow="job.awx_workflow" />
+          </div>
+        </div>
         <div class="row">
           <div class="col">
             <AppAnsibleOutput :output="filteredJobOutput" :jobLog="job.job_log">
               <template #title>
                 <h3 v-if="job.job_type == 'multistep' && subjob?.output">
-                  Main job (jobid {{ job.id }})
+                  {{ t('form.mainJob') }} (jobid {{ job.id }})
                   <sup><span class="badge rounded-pill status" :class="Helpers.getColorClassByStatus(job.status,'bg')">{{ job.status }}</span></sup>
                 </h3>
               </template>
@@ -1233,7 +1930,7 @@ onBeforeUnmount(() => {
             <AppAnsibleOutput :output="filteredSubJobOutput" :jobLog="subjob.job_log">
               <template #title>
                 <h3>
-                  Current Step (jobid {{ subjob.id }})
+                  {{ t('form.currentStep') }} (jobid {{ subjob.id }})
                   <sup><span class="badge rounded-pill status" :class="Helpers.getColorClassByStatus(subjob.status,'bg')">{{ subjob.status
                       }}</span></sup>
                 </h3>
@@ -1242,8 +1939,8 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <BsButton v-if="status != 'executing'" icon="rotate-right" @click="resetResult()">Close output</BsButton>
-        <BsButton v-if="status != 'executing'" cssClass="ms-3" icon="download" @click="download(jobId)">Download output
+        <BsButton v-if="status != 'executing'" icon="rotate-right" @click="resetResult()">{{ t('form.closeOutput') }}</BsButton>
+        <BsButton v-if="status != 'executing'" cssClass="ms-3" icon="download" @click="download(jobId)">{{ t('form.downloadOutput') }}
         </BsButton>
       </div>
     </main>
@@ -1252,12 +1949,12 @@ onBeforeUnmount(() => {
   <!-- SCHEDULE OFF-CANVAS -->
   <BsOffCanvas 
     :show="showScheduleOffcanvas" 
-    :title="scheduleAction === 'schedule' ? 'Create Schedule' : 'Run Later'"
+    :title="scheduleAction === 'schedule' ? t('form.createSchedule') : t('form.runLater')"
     :icon="scheduleAction === 'schedule' ? 'calendar-plus' : 'clock'"
     @close="closeScheduleOffcanvas">
     <template #default>
       <div class="mb-3">
-        <label class="form-label">Name <span class="text-danger">*</span></label>
+        <label class="form-label">{{ t('form.scheduleName') }} <span class="text-danger">*</span></label>
         <input 
           type="text" 
           class="form-control" 
@@ -1269,7 +1966,7 @@ onBeforeUnmount(() => {
       </div>
       
       <div class="mb-3" v-if="scheduleAction === 'schedule'">
-        <label class="form-label">Cron Expression <span class="text-danger">*</span></label>
+        <label class="form-label">{{ t('form.cronExpression') }} <span class="text-danger">*</span></label>
         <input 
           type="text" 
           class="form-control font-monospace" 
@@ -1286,10 +1983,11 @@ onBeforeUnmount(() => {
       </div>
       
       <div class="mb-3" v-if="scheduleAction === 'run-later'">
-        <label class="form-label">Run At <span class="text-danger">*</span></label>
+        <label class="form-label">{{ t('form.runAt') }} <span class="text-danger">*</span></label>
         <VueDatePicker 
           v-model="scheduleForm.run_at"
           :disabled="scheduleSubmitting"
+          :dark="store.theme === 'dark'"
         />
         <small class="form-text text-muted">Select the date and time to run this job once</small>
       </div>
@@ -1300,7 +1998,7 @@ onBeforeUnmount(() => {
         @click="createSchedule"
         :disabled="scheduleSubmitting">
         <FaIcon :icon="scheduleSubmitting ? 'spinner' : 'save'" :spin="scheduleSubmitting" />
-        <span class="ms-2">{{ scheduleSubmitting ? 'Creating...' : (scheduleAction === 'schedule' ? 'Create Schedule' : 'Schedule Job') }}</span>
+        <span class="ms-2">{{ scheduleSubmitting ? t('form.creating') : (scheduleAction === 'schedule' ? t('form.createSchedule') : t('form.scheduleJob')) }}</span>
       </button>
     </template>
   </BsOffCanvas>
@@ -1308,12 +2006,12 @@ onBeforeUnmount(() => {
   <!-- STORE OFF-CANVAS -->
   <BsOffCanvas 
     :show="showStoreOffcanvas" 
-    :title="storeCtx ? `Save ${storeCtx.title}` : 'Save Form Data'"
+    :title="storeCtx ? `${t('form.save')} ${storeCtx.title}` : t('form.saveFormData')"
     icon="file-export"
     @close="closeStoreOffcanvas">
     <template #default>
       <div class="mb-3">
-        <label class="form-label">Name <span class="text-danger">*</span></label>
+        <label class="form-label">{{ t('form.scheduleName') }} <span class="text-danger">*</span></label>
         <input 
           type="text" 
           class="form-control" 
@@ -1321,27 +2019,26 @@ onBeforeUnmount(() => {
           placeholder="e.g., Production Config"
           :disabled="storeSubmitting"
         />
-        <small class="form-text text-muted">A unique name for this saved form</small>
       </div>
       
       <div class="mb-3">
-        <label class="form-label">Description</label>
+        <label class="form-label">{{ t('form.description') }}</label>
         <textarea 
           class="form-control" 
           rows="3"
           v-model="storeForm.description"
-          placeholder="Optional description"
+          placeholder=""
           :disabled="storeSubmitting"
         />
       </div>
       
       <div class="mb-3">
-        <label class="form-label">Expires At (Optional)</label>
+        <label class="form-label">{{ t('form.expiresAt') }}</label>
         <VueDatePicker 
           v-model="storeForm.expires_at"
           :disabled="storeSubmitting"
+          :dark="store.theme === 'dark'"
         />
-        <small class="form-text text-muted">Leave blank to never expire</small>
       </div>
     </template>
     <template #actions>
@@ -1350,7 +2047,7 @@ onBeforeUnmount(() => {
         @click="createStoredJob"
         :disabled="storeSubmitting">
         <FaIcon :icon="storeSubmitting ? 'spinner' : 'save'" :spin="storeSubmitting" />
-        <span class="ms-2">{{ storeSubmitting ? 'Saving...' : 'Save' }}</span>
+        <span class="ms-2">{{ storeSubmitting ? t('form.saving') : t('form.save') }}</span>
       </button>
     </template>
   </BsOffCanvas>
@@ -1358,18 +2055,18 @@ onBeforeUnmount(() => {
   <!-- LOAD OFF-CANVAS -->
   <BsOffCanvas 
     :show="showLoadOffcanvas" 
-    :title="storeCtx ? `Load ${storeCtx.title}` : 'Load Saved Form'"
+    :title="storeCtx ? `${t('form.loadFromStore')} - ${storeCtx.title}` : t('form.loadSavedForm')"
     icon="file-import"
     @close="closeLoadOffcanvas">
     <template #default>
       <div v-if="loadSubmitting" class="text-center py-4">
         <FaIcon icon="spinner" spin size="2x" />
-        <p class="mt-2">Loading saved forms...</p>
+        <p class="mt-2">{{ t('form.loadingSavedForms') }}</p>
       </div>
       
       <div v-else-if="storedJobs.length === 0" class="text-center py-4 text-muted">
         <FaIcon icon="inbox" size="3x" class="mb-3" />
-        <p>No saved forms found</p>
+        <p>{{ t('form.noSavedForms') }}</p>
       </div>
       
       <div v-else class="list-group">
@@ -1384,8 +2081,8 @@ onBeforeUnmount(() => {
               <h6 class="mb-1">{{ job.name }}</h6>
               <p v-if="job.description" class="mb-1 small text-muted">{{ job.description }}</p>
               <small class="text-muted">
-                Created: {{ new Date(job.created_at).toLocaleString() }}
-                <span v-if="job.expires_at"> • Expires: {{ new Date(job.expires_at).toLocaleString() }}</span>
+                {{ t('form.created') }}: {{ new Date(job.created_at).toLocaleString() }}
+                <span v-if="job.expires_at"> • {{ t('form.expires') }}: {{ new Date(job.expires_at).toLocaleString() }}</span>
               </small>
             </div>
           </div>
@@ -1404,6 +2101,73 @@ onBeforeUnmount(() => {
 
 .status {
   font-size: 0.75rem;
+}
+
+// Compact stepper used in the wizard's toolbar row. Sits inline with
+// AppForm's right-side icon-buttons (spinner, show hidden, warnings).
+.ansibleforms-wizard-stepper {
+  .wizard-step:not(:last-child) .wizard-step-label {
+    margin-right: 0.25rem;
+  }
+
+  .wizard-step-btn {
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    line-height: 1;
+    border: 1px solid transparent;
+    background: var(--bs-body-bg, #fff);
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+
+    &.is-current {
+      background: var(--bs-primary, #0d6efd);
+      color: #fff;
+      border-color: var(--bs-primary, #0d6efd);
+      box-shadow: 0 0 0 0.15rem rgba(13, 110, 253, 0.25);
+    }
+
+    &.is-done {
+      background: var(--bs-success, #198754);
+      color: #fff;
+      border-color: var(--bs-success, #198754);
+    }
+
+    &.is-skipped {
+      background: transparent;
+      color: var(--bs-warning, #ffc107);
+      border-color: var(--bs-warning, #ffc107);
+    }
+
+    &.is-pending {
+      background: transparent;
+      color: var(--bs-secondary, #6c757d);
+      border-color: var(--bs-secondary, #6c757d);
+    }
+  }
+
+  .wizard-step-label {
+    color: var(--bs-secondary, #6c757d);
+    white-space: nowrap;
+  }
+
+  .wizard-step.active .wizard-step-label {
+    color: var(--bs-body-color);
+    font-weight: 600;
+  }
+
+  .wizard-step-connector {
+    display: inline-block;
+    width: 1rem;
+    height: 1px;
+    background: var(--bs-border-color, #dee2e6);
+    margin: 0 0.25rem;
+  }
 }
 
 </style>

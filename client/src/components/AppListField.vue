@@ -123,7 +123,7 @@ watch(() => props.modelValue, (v) => {
 }, { deep: true });
 
 function commit() {
-    emit('update:modelValue', rows.value);
+    emit('update:modelValue', [...rows.value]);
 }
 
 // Markers (row state tracking) - same semantics as AppTableField.
@@ -216,22 +216,28 @@ function openEditor({ row, index }) {
         subtitle,
         subform: props.subform,
         row: row ? (({ __output__: _, ...rest }) => rest)(row) : defaultRow(),
-        parentData: props.parentFormData,
+        // De parentFormData bevat de wizard context -> hier gebruiken we de veilige kloon!
+        parentData: Helpers.safeDeepClone(props.parentFormData), 
+
         onSave: (value) => applySave(value, index),
     });
 }
 
 function defaultRow() {
-    const fresh = {};
-    for (const f of (props.subform?.fields || [])) {
-        if (f.default !== undefined) fresh[f.name] = f.default;
-        else if (f.type === 'list') fresh[f.name] = [];
-    }
-    return fresh;
+    // Return an empty row. AppForm applies field defaults itself via
+    // initiateDefaults() -> getDefaultValue(), which honours placeholder
+    // resolution and `evalDefault` (yielding an empty field when the
+    // expression's dependencies aren't ready, exactly like a top-level
+    // form). Pre-filling raw `f.default` here would make AppForm treat
+    // the value as user-supplied initialData and bypass that pipeline,
+    // causing literal expressions like `$(otherfield) + 1` to appear
+    // verbatim in the field instead of being evaluated (or left empty).
+    return {};
 }
 
 function applySave(value, index) {
     const isAdd = index == null;
+    
     if (isAdd) {
         if (insertMarker.value) value[insertMarker.value] = true;
         rows.value.push(value);
@@ -244,7 +250,19 @@ function applySave(value, index) {
         }
         rows.value.splice(index, 1, value);
     }
+
+    // 1. Emit the updated rows to the parent v-model
     commit();
+
+    // 2. THE WIZARD BYPASS: If we have parentFormData, write the update
+    //    DIRECTLY into the central form object of the wizard.
+    if (props.parentFormData && props.field && props.field.name) {
+        // Ensure the array in the wizard state is directly overwritten with our new rows
+        props.parentFormData[props.field.name] = [...rows.value];
+    }
+    
+    // 3. Force the local ref to recompute for the visibleRows
+    rows.value = [...rows.value];
 }
 
 function removeItem(index) {

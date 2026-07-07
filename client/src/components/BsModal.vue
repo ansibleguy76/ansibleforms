@@ -15,9 +15,11 @@
     /******************************************/
 
     import {getCurrentInstance} from "vue"
+    import { useI18n } from 'vue-i18n'
 
     // INIT
 
+    const { t } = useI18n()
     const {uid} = getCurrentInstance()
     const emit = defineEmits(['close'])
 
@@ -47,7 +49,7 @@
                 </div>
                 <div class="modal-footer">
                     <slot name="footer"></slot>
-                    <BsButton @click="emit('close')">Close</BsButton>
+                    <BsButton icon="times" @click="emit('close')">{{ t('common.close') }}</BsButton>
                 </div>
             </div>
         </div>

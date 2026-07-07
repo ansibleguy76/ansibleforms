@@ -2,6 +2,7 @@
 import CrudModel from "../../models/crud.model.js";
 import RestResult from "../../models/restResult.model.v2.js";
 import Errors from "../../lib/errors.js";
+import i18n from "../../lib/i18n.js";
 
 const stored_jobsController = {
   async find(req, res) {
@@ -36,7 +37,7 @@ const stored_jobsController = {
         username: `${req.user.user.type}/${req.user.user.username}`
       };
       const id = await CrudModel.create('stored_jobs', data);
-      return res.status(201).json(RestResult.single("stored job added", { id }));
+      return res.status(201).json(RestResult.single(i18n.t(req, 'resources.storedJobAdded'), { id }));
     } catch (err) {
       Errors.ReturnError(res, err);
     }
@@ -50,7 +51,7 @@ const stored_jobsController = {
       
       // Verify user owns this item (or is admin)
       if (!isAdmin && item.username !== username) {
-        throw new Errors.AccessDeniedError("You do not have access to this stored job");
+        throw new Errors.AccessDeniedError(i18n.t(req, 'resources.storedJobNoAccess'));
       }
       return res.json(RestResult.single(item));
     } catch (err) {
@@ -66,7 +67,7 @@ const stored_jobsController = {
       // Verify user owns this item (or is admin)
       const existing = await CrudModel.findById('stored_jobs', req.params.id);
       if (!isAdmin && existing.username !== username) {
-        throw new Errors.AccessDeniedError("You do not have access to this stored job");
+        throw new Errors.AccessDeniedError(i18n.t(req, 'resources.storedJobNoAccess'));
       }
       
       // Don't allow changing username
@@ -74,7 +75,7 @@ const stored_jobsController = {
       delete data.username;
       
       await CrudModel.update('stored_jobs', data, req.params.id);
-      return res.json(RestResult.single("stored job updated"));
+      return res.json(RestResult.single(i18n.t(req, 'resources.storedJobUpdated')));
     } catch (err) {
       Errors.ReturnError(res, err);
     }
@@ -88,11 +89,11 @@ const stored_jobsController = {
       // Verify user owns this item (or is admin)
       const existing = await CrudModel.findById('stored_jobs', req.params.id);
       if (!isAdmin && existing.username !== username) {
-        throw new Errors.AccessDeniedError("You do not have access to this stored job");
+        throw new Errors.AccessDeniedError(i18n.t(req, 'resources.storedJobNoAccess'));
       }
       
       await CrudModel.delete('stored_jobs', req.params.id);
-      return res.json(RestResult.single("stored job deleted"));
+      return res.json(RestResult.single(i18n.t(req, 'resources.storedJobDeleted')));
     } catch (err) {
       Errors.ReturnError(res, err);
     }

@@ -14,7 +14,9 @@ import passport from "passport";
 
 // App configuration and utilities
 import Middleware from "./lib/middleware.js";
+import logger from "./lib/logger.js";
 import init from "./init/index.js";
+import appConfig from "../config/app.config.js";
 
 // Authentication strategies
 import auth_azuread from "./auth/auth_azuread.js";
@@ -64,10 +66,12 @@ import awxRoutesv2 from "./routes/v2/awx.routes.js";
 import backupRoutes from "./routes/v2/backup.routes.js";
 import groupRoutesv2 from "./routes/v2/group.routes.js";
 import settingsRoutesv2 from "./routes/v2/settings.routes.js";
+import logoRoutesv2 from "./routes/v2/logo.routes.js";
 import sshRoutesv2 from "./routes/v2/ssh.routes.js";
 import logRoutesv2 from "./routes/v2/log.routes.js";
 import repositoryRoutesv2 from "./routes/v2/repository.routes.js";
 import configRoutesv2 from "./routes/v2/config.routes.js";
+import formsReposRoutes from "./routes/v2/forms-repos.routes.js";
 
 // __dirname and __filename setup for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -118,14 +122,21 @@ const load = async (app) => {
     next();
   });
 
-  app.use(bodyParser.json({ limit: "50mb" }));
-  app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
+  // Body size caps. Generous defaults to accommodate large form designs and
+  // job extravars; configurable via API_BODY_LIMIT_MB. File uploads have their
+  // own limit (UPLOAD_MAX_GB) enforced by multer in upload.controller.js.
+  const apiBodyLimit = `${appConfig.apiBodyLimitMb}mb`;
+  app.use(bodyParser.json({ limit: apiBodyLimit }));
+  app.use(bodyParser.urlencoded({ limit: apiBodyLimit, extended: true }));
 
   // mysql2 has a bug that can throw an uncaught exception if the mysql server crashes (not enough mem for example)
   // also git commands can chain child processes and cause issues
   process.on("uncaughtException", function (err) {
-    // handle the error safely
-    console.error("An uncaught exception happened, ignore... ", err);
+    logger.error("Uncaught exception: ", err);
+  });
+
+  process.on("unhandledRejection", function (reason) {
+    logger.error("Unhandled promise rejection: ", reason);
   });
 
   // using json web tokens as middleware
@@ -134,18 +145,19 @@ const load = async (app) => {
   const authobj = passport.authenticate("jwt", { session: false });
 
   // api docs for v1 and v2
+  // note : the swagger paths must include the base url (subpath hosting, issue #106)
   const swaggerOptions = {
     customSiteTitle: "Ansibleforms Swagger UI",
-    customfavIcon: `/favicon.svg`,
-    customCssUrl: `/assets/css/swagger.css`,
+    customfavIcon: `${appConfig.baseUrl}/favicon.svg`,
+    customCssUrl: `${appConfig.baseUrl}/assets/css/swagger.css`,
     docExpansion: "none",
   };
   // v1 docs
-  swaggerDocumentV1.basePath = `/api/v1`;
+  swaggerDocumentV1.basePath = `${appConfig.baseUrl}/api/v1`;
   app.use(`/api/v1/docs`, cors(), swaggerUi.serveFiles(swaggerDocumentV1, swaggerOptions), swaggerUi.setup(swaggerDocumentV1, swaggerOptions));
-  
+
   // v2 docs
-  swaggerDocumentV2.basePath = `/api/v2`;
+  swaggerDocumentV2.basePath = `${appConfig.baseUrl}/api/v2`;
   app.use(`/api/v2/docs`, cors(), swaggerUi.serveFiles(swaggerDocumentV2, swaggerOptions), swaggerUi.setup(swaggerDocumentV2, swaggerOptions));
 
   // ========== V1 API Routes (DEPRECATED) ==========
@@ -209,6 +221,8 @@ const load = async (app) => {
   app.use(`/api/v2/user`, cors(), authobj, Middleware.checkSettingsMiddleware, userRoutesv2);
   app.use(`/api/v2/group`, cors(), authobj, Middleware.checkSettingsMiddleware, groupRoutesv2);
   app.use(`/api/v2/settings`, cors(), authobj, Middleware.checkSettingsMiddleware, settingsRoutesv2);
+  // custom logo ; reading is for all authenticated users (navbar), changing it is guarded in the routes
+  app.use(`/api/v2/logo`, cors(), authobj, logoRoutesv2);
   app.use(`/api/v2/sshkey`, cors(), authobj, Middleware.checkSettingsMiddleware, sshRoutesv2);
   app.use(`/api/v2/ldap`, cors(), authobj, Middleware.checkSettingsMiddleware, ldapRoutes);
   app.use(`/api/v2/oauth2`, cors(), authobj, Middleware.checkSettingsMiddleware, oauth2Routes);
@@ -222,6 +236,8 @@ const load = async (app) => {
   app.use(`/api/v2/backup`, cors(), authobj, backupRoutes);
   app.use(`/api/v2/log`, cors(), authobj, logRoutesv2);
   app.use(`/api/v2/repository`, cors(), authobj, Middleware.checkSettingsMiddleware, repositoryRoutesv2);
+  // forms repositories (issue #414) : designer users can push without settings access
+  app.use(`/api/v2/forms-repos`, cors(), authobj, Middleware.checkDesignerMiddleware, formsReposRoutes);
   app.use(`/api/v2/config`, cors(), authobj, configRoutesv2);
 }
 

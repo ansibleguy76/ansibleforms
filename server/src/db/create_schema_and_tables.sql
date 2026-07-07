@@ -38,8 +38,8 @@ DROP TABLE IF EXISTS `credentials`;
 CREATE TABLE `credentials` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(250) NOT NULL,
-  `user` varchar(250) NOT NULL,
-  `password` text NOT NULL,
+  `user` varchar(250) DEFAULT NULL,
+  `password` text DEFAULT NULL,
   `host` varchar(250) DEFAULT NULL,
   `port` int(11) DEFAULT NULL,
   `description` text NOT NULL,
@@ -47,6 +47,7 @@ CREATE TABLE `credentials` (
   `db_type` varchar(10) DEFAULT NULL,
   `db_name` varchar(255) DEFAULT NULL,  
   `is_database` tinyint(4) DEFAULT 1,
+  `vault_path` varchar(500) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_AnsibleForms_credentials_natural_key` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -111,6 +112,7 @@ CREATE TABLE `jobs` (
   `parent_id` int(11) DEFAULT NULL,
   `awx_id` int(11) DEFAULT NULL,
   `awx_artifacts` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `awx_workflow` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8;
 CREATE TABLE `job_output` (
@@ -134,7 +136,8 @@ CREATE TABLE `settings` (
   `mail_password` text DEFAULT NULL,
   `mail_from` varchar(250) DEFAULT NULL,
   `url` varchar(250) DEFAULT NULL,
-  `forms_yaml` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL 
+  `forms_yaml` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `logo` longtext DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 -- oauth2 providers table
 USE `AnsibleForms`;

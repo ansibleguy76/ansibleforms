@@ -10,6 +10,18 @@ Common questions and answers about AnsibleForms features and usage.
 
 ## Getting Started
 
+### Deployment topology: single instance only
+
+AnsibleForms is designed to run as a **single instance**. Running multiple replicas behind a load balancer is **not supported** today.
+
+**Why:**
+- Schema migrations run at startup and assume they are the only writer.
+- The scheduler / cron loop is in-process; two instances would fire each scheduled job twice.
+- The job runner tracks state in memory and in the DB; concurrent runners can corrupt job state.
+- Datasource refresh is in-process and would duplicate work.
+
+**Recommendation:** run a single active instance with restart-on-failure (e.g. `restart: unless-stopped` in Docker / a Kubernetes Deployment with `replicas: 1`), and back up the database plus the persistent volume. If you need true HA, that would require a separate worker service to own migrations, scheduling and job execution — which does not exist yet.
+
 ### Multi-Repository Form Management
 
 Use multiple git repositories for forms.
@@ -473,6 +485,173 @@ You can do this in 2 ways:
   evalDefault: true
 ```
 
+## Wizard & Multistep
+
+### What is the difference between a wizard and a multistep form?
+
+A **wizard** and a **multistep** form sound similar but operate on different layers — and they can be combined.
+
+| | [`steps`](forms/multistep.html) (Multistep) | [`wizard`](forms/wizard.html) |
+|---|---|---|
+| **Layer** | Execution | Form / UI |
+| **What it splits** | The job into multiple sequential runs | The input of one form into multiple pages |
+| **Result** | N jobs run, one after the other (each with its own playbook/template) | 1 job runs at the end |
+| **Form `type`** | Must be `multistep` | Works with `ansible`, `awx` and `multistep` |
+| **Defined by** | A list of execution targets (`steps:`) | A list of [subform](forms/subform.html) references (`wizard:`) |
+| **Use it when** | "Do A, then B, then C as separate jobs" | "My form has too many fields for one page" |
+
+**Key takeaway:** `steps` is about *what runs and in which order*; `wizard` is about *how the user fills in the form*.
+
+#### Multistep only
+
+A `type: multistep` form runs one playbook/template per step. The user fills a single page of fields, presses Submit, and the executor runs each step sequentially:
+
+```yaml
+- name: Provision host
+  type: multistep
+  steps:
+    - name: Create host
+      type: ansible
+      playbook: create_host.yml
+    - name: Verify host
+      type: ansible
+      playbook: verify_host.yml
+  fields:
+    - name: hostname
+      type: text
+```
+
+#### Wizard only
+
+A `wizard:` block on an `ansible` (or `awx`) form turns input collection into a multi-page experience. Only **one** job runs at the end — the merged extravars from all pages are sent to a single playbook/template:
+
+```yaml
+- name: Provision host
+  type: ansible
+  playbook: provision.yml
+  wizard:
+    - subform: basics
+      title: Basics
+    - subform: network
+      title: Network
+      defaultModel: net
+
+- name: basics
+  type: subform
+  fields:
+    - name: hostname
+      type: text
+      required: true
+
+- name: network
+  type: subform
+  fields:
+    - name: ipv4
+      type: text
+```
+
+A read-only review page is appended automatically as the last wizard page — you do not declare it in YAML.
+
+#### Combined (wizard on top of multistep)
+
+A wizard can be layered on top of a multistep form. The user fills the wizard pages, presses Submit, and **then** the multistep execution kicks off. By matching a wizard step's `defaultModel` with a multistep step's [`key`](forms/multistep.html#step_key), you can route **one wizard page to one multistep step**:
+
+```yaml
+- name: Provision and verify host
+  type: multistep
+  wizard:
+    - subform: basics
+      title: Basics
+      defaultModel: basics            # wraps basics fields under `basics`
+    - subform: network
+      title: Network
+      defaultModel: network           # wraps network fields under `network`
+  steps:
+    - name: Create host
+      type: ansible
+      playbook: create_host.yml
+      key: basics                     # only sees the basics page payload
+    - name: Configure network
+      type: ansible
+      playbook: configure_network.yml
+      key: network                    # only sees the network page payload
+```
+
+`key` is a single-level lookup, so use a flat name in `defaultModel` (e.g. `defaultModel: basics`, not `defaultModel: input.basics`) when you want them to match.
+
+See the [Wizard page](forms/wizard.html) for the full property reference.
+
+### How do I conditionally show or skip wizard steps?
+
+Use `when:` to **hide** a step entirely, or `optional: true` to allow the user to **skip** a visible step. They are independent and should generally not be combined.
+
+#### `when:` — conditional visibility
+
+The step is hidden when the expression evaluates falsy. The user never sees it and its values are not collected. The expression can read earlier steps via `__parent__.<stepname>.<field>`:
+
+```yaml
+wizard:
+  - subform: basics             # has a `kind` enum field with values vm/bare-metal/container
+    title: Basics
+  - subform: virtualization
+    title: Virtualization
+    when: $(__parent__.basics.kind) === 'vm'
+  - subform: hardware
+    title: Hardware
+    when: $(__parent__.basics.kind) === 'bare-metal'
+```
+
+Only the page matching the chosen `kind` is shown. Steps after a hidden one are renumbered automatically.
+
+#### `optional: true` — allow skipping a visible step
+
+The step is **always shown** in the stepper, but the user can press **Next** without filling it in, and **Submit** is allowed even if the page was never visited or completed:
+
+```yaml
+wizard:
+  - subform: basics
+    title: Basics
+  - subform: advanced
+    title: Advanced (optional)
+    optional: true
+```
+
+The user can land on the Advanced page, fill nothing, hit Next, and proceed straight to the review page.
+
+{: .note }
+> `when:` is about *visibility*; `optional:` is about *whether the page is required to complete*. Don't combine them — if you want a page to disappear, use `when:`; if you want it visible-but-skippable, use `optional:`.
+
+### How do I reference values from an earlier wizard step?
+
+Use `$(__parent__.<stepname>.<field>)` inside any field of a later step.
+
+The `name` of a wizard step (defaults to its `subform` name) is the namespace under which its values are exposed to later steps:
+
+```yaml
+wizard:
+  - subform: basics            # step name defaults to "basics"
+    title: Basics
+  - subform: network
+    title: Network
+
+- name: basics
+  type: subform
+  fields:
+    - name: hostname
+      type: text
+      required: true
+
+- name: network
+  type: subform
+  fields:
+    - name: fqdn
+      type: text
+      # Re-evaluated when basics.hostname changes
+      default: $(__parent__.basics.hostname).local
+```
+
+This is the same `__parent__` mechanism used by `list` and `yaml` subforms — see [How do I access parent form data inside a subform?](#how-do-i-access-parent-form-data-inside-a-subform).
+
 ## Security & Credentials
 
 ### Credentials
@@ -520,6 +699,145 @@ fields:
   expression: "{vc_cred: 'vcenter',ad_cred: 'ad',veeam_cred:'$(veeam_server)'}"
   # note : in the expression you can use placeholders to make them dynamic
 ```
+
+### Recovering a lost admin password
+
+If you've lost the password for the local `admin` account (and you don't have any other admin user available), you can use the `REINIT_ADMIN` recovery hatch. **This is not a runtime auth bypass** — it only forces a one-time reset of the local admin account at startup, then lets normal authentication proceed.
+
+**How it works**
+
+When `REINIT_ADMIN=1` is set at startup, AnsibleForms will:
+
+1. Ensure the `admins` group exists (creating it if missing).
+2. Look up the local admin user (default username `admin`, override via `ADMIN_USERNAME`).
+3. If it exists, reset its password to the value of `ADMIN_PASSWORD` and re-attach it to the `admins` group.
+4. If it doesn't exist, create it (same as a fresh install).
+5. Log the action loudly so it shows up in your logs.
+
+**Steps**
+
+1. Stop AnsibleForms.
+2. Set the env vars (use a strong password):
+   ```bash
+   ADMIN_USERNAME=admin
+   ADMIN_PASSWORD=YourNewStrongPasswordHere
+   REINIT_ADMIN=1
+   ```
+   In Docker Compose, add them to the `environment:` block of the AnsibleForms service.
+3. Start AnsibleForms. Watch the logs for a line like:
+   ```
+   REINIT_ADMIN: admin user 'admin' has been recreated. UNSET REINIT_ADMIN now.
+   ```
+4. Log in with `admin` / `YourNewStrongPasswordHere`.
+5. **Unset `REINIT_ADMIN` (or set it back to `0`)** and restart so accidental future restarts don't keep resetting the admin password.
+
+**Notes**
+
+- If you were locked out because LDAP was the only configured login method and broke, the recovered local `admin` account always falls back to local DB auth — that's enough to get back in and fix LDAP.
+- The previous `ENABLE_BYPASS` env var is gone. It allowed login as admin with any password and was unsafe to leave enabled. `REINIT_ADMIN` only resets the password and stops there; normal auth runs after that.
+- Existing sessions and tokens are not invalidated by `REINIT_ADMIN` — only the password hash and group membership are changed.
+
+### Restricting REST helper destinations (allow/deny lists)
+
+The `fn.fnRestBasic`, `fn.fnRestAdvanced`, `fn.fnRestJwt` and `fn.fnRestNtlm` helpers can be called from form `expression` properties to fetch data over HTTP. By default, expression authors can target **any** URL the AnsibleForms host can reach. On a sensitive network you may want to limit this.
+
+Two environment variables provide allow- and deny-lists:
+
+| Variable | Behaviour |
+|---|---|
+| `REST_ALLOWED_HOSTS` | Comma-separated hostnames or CIDRs. When set, **only** these targets are allowed. |
+| `REST_DENIED_HOSTS` | Comma-separated hostnames or CIDRs. Always blocked. Wins over the allow-list. |
+
+Hostnames are matched case-insensitively against the URL host. CIDRs are matched against every IP the host resolves to, so `10.0.0.0/8` blocks any DNS name that resolves into the private range.
+
+**Examples:**
+
+```bash
+# Whitelist: only your two API partners are reachable
+REST_ALLOWED_HOSTS=api.example.com,partner.api.com
+
+# Blacklist: block cloud metadata + internal admin UIs
+REST_DENIED_HOSTS=169.254.169.254,127.0.0.0/8,internal-admin.example
+```
+
+{: .warning }
+> **This guard only protects the AnsibleForms Node.js process.** Once a playbook runs, Ansible itself can reach anything from the host — outside AF's control. Use these lists to stop form authors from turning expressions into a metadata-service / internal-UI proxy; do not rely on them as a network firewall.
+
+### HashiCorp Vault Integration
+
+Resolve credentials from HashiCorp Vault instead of (or in addition to) the local encrypted database.
+
+**Why use it:**
+- Centralised secret management across multiple AnsibleForms instances and other tools.
+- No need to copy-paste passwords into AnsibleForms when rotating them in Vault.
+- Audit trail: every secret read is logged by Vault.
+- Short-lived TTLs and key rotation handled by Vault, picked up by AnsibleForms within 60 seconds (configurable via `VAULT_CACHE_TTL_MS`).
+
+**Setup:**
+
+1. Set the following environment variables on the AnsibleForms server:
+
+   | Variable | Required | Description |
+   |---|---|---|
+   | `VAULT_ADDR` | yes | Base URL of your Vault server, e.g. `https://vault.example.com:8200` |
+   | `VAULT_TOKEN` | yes | Token with read-only access to the relevant paths |
+   | `VAULT_NAMESPACE` | no | Vault Enterprise namespace |
+   | `VAULT_KV_VERSION` | no | `1` or `2` (default: `2`) |
+   | `VAULT_DEFAULT_MOUNT` | no | Default mount for short-form paths (default: `secret`) |
+   | `VAULT_CACHE_TTL_MS` | no | Cache TTL in ms (default: `60000`) |
+   | `VAULT_SKIP_VERIFY` | no | `true` to disable TLS verification — **dev only** |
+
+2. Restart the server. The `credentials` table is automatically migrated to add a `vault_path` column.
+
+**Two ways to use it:**
+
+**A. Stored credential pointing at Vault** — go to Settings → Credentials, create or edit a credential, fill in **Vault Path** (e.g. `secret/data/ontap`), and leave the user/password fields empty. All existing forms that reference this credential by name keep working unchanged. Connection metadata (host, port, db_name, db_type, secure) stays in the local DB row, only the secret is fetched from Vault.
+
+**B. Inline `vault:` prefix** — no DB row required. Use the prefix anywhere a credential name is accepted:
+
+```yaml
+fields:
+- name: ontap_cred
+  type: expression
+  runLocal: true
+  expression: "'vault:secret/data/ontap'"
+
+credentials:
+  api_cred: vault:secret/data/myapi
+```
+
+Or in expressions / functions:
+
+```javascript
+fn.fnRestBasic('get','https://api.example.com','','vault:secret/data/myapi')
+fn.fnCredentials('vault:secret/data/ontap')
+```
+
+**Recognised key aliases:**
+
+| Credential field | Accepted Vault keys |
+|---|---|
+| `user` | `user`, `username`, `login` |
+| `password` | `password`, `token`, `api_key`, `apikey`, `secret` |
+
+**Reshape unconventional secrets:**
+
+If your Vault secret doesn't match the conventions above, pass a `jq` expression as the third argument to `fnCredentials`:
+
+```javascript
+// Vault secret: { "creds": { "u": "admin", "p": "Netapp12" } }
+fn.fnCredentials('vault:secret/data/weird','','.creds | { user: .u, password: .p }')
+```
+
+**Caching behaviour:**
+
+- Vault reads are cached in memory for 60 seconds by default.
+- Stored credentials with a `vault_path` skip the long-lived credential cache and rely solely on the Vault cache, so secret rotations are picked up within the TTL.
+- Database-backed credentials still use the existing 1-hour cache (no change in behaviour for them).
+
+**Alternative: Ansible LOOKUP plugin**
+
+For maximum flexibility (e.g. secrets with complex shapes used only in one playbook), you can also use the official Ansible Vault lookup plugin from `community.hashi_vault`. This bypasses AnsibleForms entirely and reads directly from inside the playbook — useful when you need fine-grained control per task. The two approaches are complementary: AnsibleForms-side resolution is transparent and centralised; LOOKUP is per-playbook and flexible.
 
 ## Integration
 

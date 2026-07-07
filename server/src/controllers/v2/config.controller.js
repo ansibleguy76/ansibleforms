@@ -7,6 +7,7 @@ import logger from "../../lib/logger.js";
 import helpers from "../../lib/common.js";
 import RestResult from "../../models/restResult.model.v2.js";
 import os from "os";
+import i18n from "../../lib/i18n.js";
 
 import { fileURLToPath } from 'url';
 
@@ -27,7 +28,7 @@ const findList = async function(req,res){
     // this is sufficient for frontend to display the forms
     res.json(RestResult.single(formConfig))
   }catch(err){
-    res.status(500).json(RestResult.error("Failed to get forms list", helpers.getError(err)))
+    res.status(500).json(RestResult.error(i18n.t(req, 'config.failedGetFormsList'), helpers.getError(err)))
   }
 }
 const findOne = async function(req,res){
@@ -35,7 +36,7 @@ const findOne = async function(req,res){
     var userRoles = req?.user?.user?.roles || []
     var formName = req.query.name
     if(!formName){
-      return res.status(400).json(RestResult.error("Form name not provided"))
+      return res.status(400).json(RestResult.error(i18n.t(req, 'config.formNameNotProvided')))
     }
     logger.info("Getting form config for " + formName)
     var formConfig = await Form.load(userRoles,formName)
@@ -44,19 +45,19 @@ const findOne = async function(req,res){
     res.json(RestResult.single(formConfig))
 
   }catch(err){
-    res.status(500).json(RestResult.error("Failed to get form config", helpers.getError(err)))
+    res.status(500).json(RestResult.error(i18n.t(req, 'config.failedGetFormConfig'), helpers.getError(err)))
   }
 }
 const findAll = async function(req,res){
   try{
     var user = req?.user?.user || {}
     if(!user.roles.includes("admin") && !user.options?.showDesigner){
-      return res.status(403).json(RestResult.error("Only admins or designers can access the full forms configuration"))
+      return res.status(403).json(RestResult.error(i18n.t(req, 'config.onlyAdminsOrDesigners')))
     }
     var forms = await Form.load(undefined,undefined,true) // true means load all forms, not just the ones for the user
     res.json(RestResult.single(forms))
   }catch(err){
-    res.status(500).json(RestResult.error("Failed to get forms configuration", helpers.getError(err)))
+    res.status(500).json(RestResult.error(i18n.t(req, 'config.failedGetFormsConfig'), helpers.getError(err)))
   }
 }
 
@@ -65,7 +66,7 @@ const backups = function(req,res){
     var backups = Form.backups()
     res.json(RestResult.single(backups))
   }catch(err){
-    res.status(500).json(RestResult.error("Failed to get backups", helpers.getError(err)))
+    res.status(500).json(RestResult.error(i18n.t(req, 'config.failedGetBackups'), helpers.getError(err)))
   }
 }
 const env = async function(req,res){
@@ -76,7 +77,7 @@ const env = async function(req,res){
     var envSection = help.filter(x => x.name=='Environment Variables')[0]
     if(!envSection){
       logger.error("Could not find 'Environment Variables' section in help.yaml")
-      return res.status(500).json(RestResult.error("Failed to get environment variables", "Environment Variables section not found in help.yaml"))
+      return res.status(500).json(RestResult.error(i18n.t(req, 'config.failedGetEnvVars'), i18n.t(req, 'config.envVarsNotFound')))
     }
     help = envSection.items
     // cleanup a bit (hide passwords and secrets and set default values)
@@ -103,7 +104,7 @@ const env = async function(req,res){
     });
     res.json(RestResult.single(env))
   }catch(err){
-    res.status(500).json(RestResult.error("Failed to get environment variables", helpers.getError(err)))
+    res.status(500).json(RestResult.error(i18n.t(req, 'config.failedGetEnvVars'), helpers.getError(err)))
   }
 }
 const restore = async function(req,res){
@@ -116,26 +117,26 @@ const restore = async function(req,res){
     }
   }catch(err){
     logger.error("Failed to get lock : ",err)
-    return res.status(500).json(RestResult.error("Failed to restore forms", helpers.getError(err,"Failed to get lock : ")))
+    return res.status(500).json(RestResult.error(i18n.t(req, 'config.failedRestoreForms'), helpers.getError(err,"Failed to get lock : ")))
   }
   if(lock.match || lock.free){
     try{
       var backupName=req.params.backupName
       var backupBeforeRestore=(req.query.backupBeforeRestore=="true")?true:false
       if(!backupName){
-        return res.status(400).json(RestResult.error("Failed to restore, no backup name provided"))
+        return res.status(400).json(RestResult.error(i18n.t(req, 'config.failedRestoreNoName')))
       }
-      var restore = Form.restore(backupName,backupBeforeRestore)
+      var restore = await Form.restore(backupName,backupBeforeRestore)
       if(restore) {
         res.json(RestResult.single(null));
       }else{
-        res.status(500).json(RestResult.error(`Failed to restore '${req.params.backupName}'`))
+        res.status(500).json(RestResult.error(i18n.t(req, 'config.failedRestoreBackup', { name: req.params.backupName })))
       }
     }catch(err){
-      res.status(500).json(RestResult.error("Failed to restore forms", helpers.getError(err)))
+      res.status(500).json(RestResult.error(i18n.t(req, 'config.failedRestoreForms'), helpers.getError(err)))
     }
   }else{
-    res.status(423).json(RestResult.error("Designer is locked", "Designer is locked by "+lock.lock.username))
+    res.status(423).json(RestResult.error(i18n.t(req, 'config.designerLocked'), i18n.t(req, 'config.designerLockedBy', { username: lock.lock.username })))
   }
 }
 const save = async function(req,res){
@@ -152,26 +153,26 @@ const save = async function(req,res){
     }
   }catch(err){
     logger.error("Failed to get lock : ",err)
-    return res.status(500).json(RestResult.error("Failed to save forms", helpers.getError(err,"Failed to get lock")))
+    return res.status(500).json(RestResult.error(i18n.t(req, 'config.failedSaveForms'), helpers.getError(err,"Failed to get lock")))
   }
   if(lock.match || lock.free){
     const newConfig = new Form(req.body);
     //handles null error
     if(req.body.constructor === Object && Object.keys(req.body).length === 0){
-        return res.status(400).json(RestResult.error('Please provide all required fields'));
+        return res.status(400).json(RestResult.error(i18n.t(req, 'errors.requiredFields')));
     }
     try{
-      var forms = Form.save(newConfig)
+      var forms = await Form.save(newConfig)
       if(forms) {
         res.json(RestResult.single(null));
       }else{
-        res.status(500).json(RestResult.error("Failed to save forms"))
+        res.status(500).json(RestResult.error(i18n.t(req, 'config.failedSaveForms')))
       }
     }catch(err){
-      res.status(500).json(RestResult.error("Failed to save forms", helpers.getError(err)))
+      res.status(500).json(RestResult.error(i18n.t(req, 'config.failedSaveForms'), helpers.getError(err)))
     }
   }else{
-    res.status(423).json(RestResult.error("Designer is locked", "Designer is locked by "+lock.lock.username))
+    res.status(423).json(RestResult.error(i18n.t(req, 'config.designerLocked'), i18n.t(req, 'config.designerLockedBy', { username: lock.lock.username })))
   }
 
 }
@@ -179,7 +180,7 @@ const validate = function(req,res){
   const newConfig = new Form(req.body);
   //handles null error
   if(req.body.constructor === Object && Object.keys(req.body).length === 0){
-      return res.status(400).json(RestResult.error('Please provide all required fields'));
+      return res.status(400).json(RestResult.error(i18n.t(req, 'errors.requiredFields')));
   }
   try{
     // convert to object
@@ -189,10 +190,10 @@ const validate = function(req,res){
     if(formsConfig) {
       res.json(RestResult.single(null));
     }else{
-      res.status(500).json(RestResult.error("Failed to validate new forms config"))
+      res.status(500).json(RestResult.error(i18n.t(req, 'config.failedValidateForms')))
     }
   }catch(err){
-    res.status(500).json(RestResult.error("Failed to validate new forms config", helpers.getError(err)))
+    res.status(500).json(RestResult.error(i18n.t(req, 'config.failedValidateForms'), helpers.getError(err)))
   }
 }
 

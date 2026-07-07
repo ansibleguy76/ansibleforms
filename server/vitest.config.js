@@ -13,5 +13,11 @@ export default defineConfig({
   },
   test: {
     globals: true,
+    environment: 'node',
+    alias: {
+      '../lib/cmd.js': new URL('./tests/__mocks__/cmd.js', import.meta.url).pathname,
+      '../lib/logger.js': new URL('./tests/__mocks__/logger.js', import.meta.url).pathname,
+      '../../config/app.config.js': new URL('./tests/__mocks__/app.config.js', import.meta.url).pathname,
+    },
   },
 });
