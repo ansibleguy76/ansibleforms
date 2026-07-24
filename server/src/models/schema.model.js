@@ -57,26 +57,30 @@ class Schema {
     Schema._cachedOk = result;
     return result;
   }
-  static async create() {
-    logger.notice(`Trying to create database schema 'AnsibleForms' and tables`);
-    if (appConfig.allowSchemaCreation) {
-      // added in 5.0.3
-      const buffer = fs.readFileSync(`${__dirname}/../db/create_schema_and_tables.sql`);
-      const query = buffer.toString();
-      var res = await mysql.do(query);
-      if (res.length > 0) {
-        logger.notice(`Created schema 'AnsibleForms' and tables`);
-        await init()
-        // Invalidate so the next hasSchema() call re-runs the full check.
-        Schema._cachedOk = null;
-        return { message: `Created schema 'AnsibleForms' and tables` };
-      } else {
-        throw new Error(`Failed to create schema 'AnsibleForms' and/or tables`);
-      }
-    } else {
+  // Creates the schema and tables only, without re-running the app
+  // initialization ; used by create() below and by the startup config seed
+  // (a declarative deployment must come up without a manual /schema call).
+  static async createTables() {
+    if (!appConfig.allowSchemaCreation) {
       throw new Error(`Schema creation is disabled`);
     }
-    
+    // added in 5.0.3
+    const buffer = fs.readFileSync(`${__dirname}/../db/create_schema_and_tables.sql`);
+    const query = buffer.toString();
+    var res = await mysql.do(query);
+    if (!(res.length > 0)) {
+      throw new Error(`Failed to create schema 'AnsibleForms' and/or tables`);
+    }
+    logger.notice(`Created schema 'AnsibleForms' and tables`);
+    // Invalidate so the next hasSchema() call re-runs the full check.
+    Schema._cachedOk = null;
+  }
+
+  static async create() {
+    logger.notice(`Trying to create database schema 'AnsibleForms' and tables`);
+    await Schema.createTables();
+    await init()
+    return { message: `Created schema 'AnsibleForms' and tables` };
   }
 }
 
@@ -484,6 +488,15 @@ async function patchVersion6(messages, success, failed) {
   // This stores an optional custom logo as a base64 data url, shown in the
   // navbar instead of the default AnsibleForms logo (admin panel > logo)
   await checkPromise(addColumn("settings", "logo", "longtext", true, "NULL"), messages, success, failed);
+
+  // Add managed column (6.3.0) : records created by the declarative config
+  // seed (CONFIG_SEED_PATH) are flagged managed and become read only for the API
+  await checkPromise(addColumn("awx", "managed", "tinyint(4)", true, "0"), messages, success, failed);
+  await checkPromise(addColumn("credentials", "managed", "tinyint(4)", true, "0"), messages, success, failed);
+  await checkPromise(addColumn("oauth2_providers", "managed", "tinyint(4)", true, "0"), messages, success, failed);
+  await checkPromise(addColumn("repositories", "managed", "tinyint(4)", true, "0"), messages, success, failed);
+  await checkPromise(addColumn("ldap", "managed", "tinyint(4)", true, "0"), messages, success, failed);
+  await checkPromise(addColumn("settings", "managed", "tinyint(4)", true, "0"), messages, success, failed);
 }
 
 // PATCHING : Patch All

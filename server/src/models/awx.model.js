@@ -30,16 +30,16 @@ class Awx extends CrudModel {
   }
 
   // Proxy CRUD methods to CrudModel, injecting custom preProcess
-  static async create(data) {
+  static async create(data, opts) {
     data = await this.preProcess(data, 'create');
-    return super.create(this.modelName, data);
+    return super.create(this.modelName, data, opts);
   }
-  static async update(data, id) {
+  static async update(data, id, opts) {
     data = await this.preProcess(data, 'update');
-    return super.update(this.modelName, data, id);
+    return super.update(this.modelName, data, id, opts);
   }
-  static async delete(id) {
-    return super.delete(this.modelName, id);
+  static async delete(id, opts) {
+    return super.delete(this.modelName, id, opts);
   }
   static async findById(id) {
     return super.findById(this.modelName, id);

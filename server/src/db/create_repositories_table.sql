@@ -14,6 +14,7 @@ CREATE TABLE `repositories` (
   `output` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `head` varchar(50) DEFAULT NULL,    
   `rebase_on_start` tinyint(4) DEFAULT NULL,  
+  `managed` tinyint(4) DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_AnsibleForms_repositories_natural_key` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

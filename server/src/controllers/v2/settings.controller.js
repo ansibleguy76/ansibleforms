@@ -39,10 +39,14 @@ const update = async function(req, res) {
         res.status(400).json(RestResult.error(i18n.t(req, 'errors.requiredFields')));
     }else{
         try {
+          const currentSettings = await Settings.find();
+          // settings coming from the config seed are read only for the API
+          if (currentSettings?.managed) {
+            return res.status(403).json(RestResult.error(i18n.t(req, 'resources.failedUpdateSettings'), 'Settings are managed by the config seed and are read only'));
+          }
           // If password is masked, preserve the existing password
           if (req.body.mail_password === '**********') {
-            const existingSettings = await Settings.find();
-            req.body.mail_password = existingSettings.mail_password;
+            req.body.mail_password = currentSettings.mail_password;
           }
           await Settings.update(new Settings(req.body));
           res.json(RestResult.single(null));

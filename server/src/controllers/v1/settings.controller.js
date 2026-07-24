@@ -35,10 +35,14 @@ const update = async function(req, res) {
         res.status(400).send({ error:true, message: 'Please provide all required fields' });
     }else{
         try {
+          const currentSettings = await Settings.find();
+          // settings coming from the config seed are read only for the API
+          if (currentSettings?.managed) {
+            return res.status(403).json(new RestResult("error","Settings are managed by the config seed and are read only",null,""));
+          }
           // If password is masked, preserve the existing password
           if (req.body.mail_password === '**********') {
-            const existingSettings = await Settings.find();
-            req.body.mail_password = existingSettings.mail_password;
+            req.body.mail_password = currentSettings.mail_password;
           }
           await Settings.update(new Settings(req.body));
           res.json(new RestResult("success","Settings updated",null,""));

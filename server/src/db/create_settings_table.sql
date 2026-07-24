@@ -8,6 +8,7 @@ CREATE TABLE `settings` (
   `mail_from` varchar(250) DEFAULT NULL,
   `url` varchar(250) DEFAULT NULL,
   `forms_yaml` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `logo` longtext DEFAULT NULL
+  `logo` longtext DEFAULT NULL,
+  `managed` tinyint(4) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

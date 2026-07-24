@@ -48,6 +48,7 @@ CREATE TABLE `credentials` (
   `db_name` varchar(255) DEFAULT NULL,  
   `is_database` tinyint(4) DEFAULT 1,
   `vault_path` varchar(500) DEFAULT NULL,
+  `managed` tinyint(4) DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_AnsibleForms_credentials_natural_key` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -71,7 +72,8 @@ CREATE TABLE `ldap` (
   `group_member_user_attribute` varchar(250) DEFAULT NULL,
   `is_advanced` tinyint(4) DEFAULT NULL,
   `mail_attribute` varchar(250) DEFAULT NULL,
-  `enable` tinyint(4) DEFAULT NULL
+  `enable` tinyint(4) DEFAULT NULL,
+  `managed` tinyint(4) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 -- create awx table
 DROP TABLE IF EXISTS `awx`;
@@ -87,6 +89,7 @@ CREATE TABLE `awx` (
   `use_credentials` tinyint(4) DEFAULT NULL,
   `ignore_certs` tinyint(4) DEFAULT NULL,
   `ca_bundle` text DEFAULT NULL,
+  `managed` tinyint(4) DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_AnsibleForms_awx_natural_key` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -137,7 +140,8 @@ CREATE TABLE `settings` (
   `mail_from` varchar(250) DEFAULT NULL,
   `url` varchar(250) DEFAULT NULL,
   `forms_yaml` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `logo` longtext DEFAULT NULL
+  `logo` longtext DEFAULT NULL,
+  `managed` tinyint(4) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 -- oauth2 providers table
 USE `AnsibleForms`;
@@ -158,6 +162,7 @@ CREATE TABLE `oauth2_providers` (
   `token_url` TEXT DEFAULT NULL,
   `userinfo_url` TEXT DEFAULT NULL,
   `extra` JSON DEFAULT NULL, -- for any additional provider-specific config
+  `managed` TINYINT(4) DEFAULT 0,
   UNIQUE KEY (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 -- create repositories table
@@ -176,6 +181,7 @@ CREATE TABLE `repositories` (
   `output` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `head` varchar(50) DEFAULT NULL,    
   `rebase_on_start` tinyint(4) DEFAULT NULL,  
+  `managed` tinyint(4) DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_AnsibleForms_repositories_natural_key` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

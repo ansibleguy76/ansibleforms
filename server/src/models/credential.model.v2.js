@@ -8,16 +8,16 @@ import { vaultRead, mapVaultPayloadToCredential } from '../lib/vault.js';
 class CredentialModel extends CrudModel {
   static modelName = 'credential';
 
-  static async create(data) {
-    return super.create(this.modelName, data);
+  static async create(data, opts) {
+    return super.create(this.modelName, data, opts);
   }
 
-  static async update(data, id) {
-    return super.update(this.modelName, data, id);
+  static async update(data, id, opts) {
+    return super.update(this.modelName, data, id, opts);
   }
 
-  static async delete(id) {
-    return super.delete(this.modelName, id);
+  static async delete(id, opts) {
+    return super.delete(this.modelName, id, opts);
   }
 
   static async findAll() {

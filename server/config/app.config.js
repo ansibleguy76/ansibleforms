@@ -17,6 +17,10 @@ var app_config = {
   showDesigner: (process.env.SHOW_DESIGNER ?? 1) == 1,
   allowSchemaCreation: (process.env.ALLOW_SCHEMA_CREATION ?? 1) == 1,
   configPath: process.env.CONFIG_PATH || path.resolve(__dirname + "/../persistent/config.yaml"),
+  // declarative config seed for admin objects (awx, credentials, oauth2,
+  // repositories, ldap, settings) ; empty = feature disabled. Not to be
+  // confused with configPath, which holds the forms configuration.
+  seedPath: process.env.CONFIG_SEED_PATH || "",
   formsFolderPath: process.env.FORMS_FOLDER_PATH || path.resolve(__dirname + "/../persistent/forms"),
   // staging area for new forms in repository mode : they live here until a
   // 'Push to repo' assigns them to a chosen repository (issue #414)

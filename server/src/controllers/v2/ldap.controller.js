@@ -44,9 +44,13 @@ const update = async function(req, res) {
     return false;
   }
   try {
+    const existingLdap = await Ldap.find();
+    // an ldap config coming from the config seed is read only for the API
+    if (existingLdap?.managed) {
+      return res.status(403).json(RestResultv2.error(i18n.t(req, 'resources.failedUpdateLdap'), 'The ldap configuration is managed by the config seed and is read only'));
+    }
     // If password is masked, preserve the existing password
     if (req.body.bind_user_pw === '**********') {
-      const existingLdap = await Ldap.find();
       req.body.bind_user_pw = existingLdap.bind_user_pw;
     }
     await Ldap.update(new Ldap(req.body));

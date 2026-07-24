@@ -16,6 +16,7 @@ import appConfig from "../../config/app.config.js";
 import User from "../models/user.model.js";
 import Group from "../models/group.model.js";
 import Token from "../models/token.model.js";
+import { applyConfigSeed } from "../lib/seed.js";
 
 const init = async function(){
 
@@ -78,6 +79,20 @@ const init = async function(){
     }
     // Schema is missing - stop initialization here
     schemaIsReady = false
+  }
+
+  // With a config seed declared, a missing schema is created automatically
+  // (when ALLOW_SCHEMA_CREATION permits) : a declarative deployment must come
+  // up on a fresh database without a manual /schema call.
+  if(!schemaIsReady && appConfig.seedPath){
+    logger.notice("Config seed is set and the schema is not ready : creating the schema")
+    try{
+      await Schema.createTables()
+      const recheck = await Schema.hasSchema()
+      schemaIsReady = recheck.data.failed.length==0
+    }catch(err){
+      logger.error("Failed to create the schema for the config seed : " + (err.message || err))
+    }
   }
 
   // Only continue with group/user creation if schema is ready
@@ -168,6 +183,18 @@ const init = async function(){
   }
 
   logger.info("All database records are checked")
+
+  // declarative config seed (CONFIG_SEED_PATH) : apply before the cron and
+  // repository bootstrap below, so seeded repositories and crons take part in
+  // them. A broken seed is fatal on purpose : better to refuse to start than
+  // to run with a configuration that does not match what was declared (under
+  // a rolling update the previous pod keeps serving).
+  try {
+    await applyConfigSeed({ schemaIsReady })
+  } catch (err) {
+    logger.error("Config seed failed, refusing to start : " + (err.message || err))
+    process.exit(1)
+  }
 
   logger.info("Checking ssh keys")
   Ssh.generate(false)

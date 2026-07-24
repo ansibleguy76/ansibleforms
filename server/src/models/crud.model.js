@@ -149,8 +149,21 @@ class CrudModel {
     return data;
   }
 
-  static async create(modelName, data) {
+  // Records flagged `managed` come from the declarative config seed and are
+  // read only for the API ; only the seed itself (opts.fromSeed) may touch them.
+  static async assertNotManaged(modelName, id) {
+    const config = this.getConfig(modelName);
+    if (!config.fields.some(f => f.name === 'managed')) return;
+    const key = config.fields.find(f => f.isKey)?.name || 'id';
+    const res = await mysql.do(`SELECT managed FROM ${config.table} WHERE ${key} = ?`, [id]);
+    if (res.length && res[0].managed) {
+      throw new Errors.AccessDeniedError(`This ${modelName} record is managed by the config seed and is read only`);
+    }
+  }
+
+  static async create(modelName, data, opts = {}) {
     // data = await this.preProcess(modelName, data, 'create');
+    if (!opts.fromSeed) delete data.managed; // the flag is owned by the seed
     const config = this.getConfig(modelName);
     // Check required fields
     for (const field of config.fields) {
@@ -165,12 +178,16 @@ class CrudModel {
     return res.insertId || null;
   }
 
-  static async update(modelName, data, id) {
+  static async update(modelName, data, id, opts = {}) {
     // data = await this.preProcess(modelName, data, 'update');
     const config = this.getConfig(modelName);
     const cache = this.getCache(modelName);
     const key = config.fields.find(f => f.isKey)?.name || 'id';
     await this.checkExist(modelName, id);
+    if (!opts.fromSeed) {
+      delete data.managed; // the flag is owned by the seed
+      await this.assertNotManaged(modelName, id);
+    }
     const fieldValues = this.getFieldValues(modelName, data, true);
     const sql = `UPDATE ${config.table} SET ? WHERE ${key} = ?`;
     const res = await mysql.do(sql, [fieldValues, id]);
@@ -182,11 +199,12 @@ class CrudModel {
     return res.affectedRows > 0;
   }
 
-  static async delete(modelName, id) {
+  static async delete(modelName, id, opts = {}) {
     const config = this.getConfig(modelName);
     const cache = this.getCache(modelName);
     const key = config.fields.find(f => f.isKey)?.name || 'id';
     await this.checkExist(modelName, id);
+    if (!opts.fromSeed) await this.assertNotManaged(modelName, id);
     // Get the record first to get the name for cache removal
     let record = null;
     if (config.allowCache && cache) {

@@ -11,6 +11,15 @@ const cache = new NodeCache({
 });
 
 
+// credentials flagged `managed` come from the declarative config seed and
+// are read only for the API (the seed applies through the v2 model)
+async function assertNotManaged(id) {
+  const res = await mysql.do("SELECT managed FROM AnsibleForms.`credentials` WHERE id = ?", [id]);
+  if (res.length && res[0].managed) {
+    throw "This credential is managed by the config seed and is read only";
+  }
+}
+
 //credential object create
 class Credential {
   constructor(credential) {
@@ -37,12 +46,14 @@ class Credential {
   static async update(record, id) {
     const r = await Credential.findById(id); // quickly search name
     record.name = r[0].name;
+    await assertNotManaged(id);
     logger.info(`Updating credential ${record.name}`);
     var res = await mysql.do("UPDATE AnsibleForms.`credentials` set ? WHERE id=?", [record, id]);
     cache.del(record.name);
     return res;
   }
   static async delete(id) {
+    await assertNotManaged(id);
     logger.info(`Deleting credential ${id}`);
     var res = await mysql.do("DELETE FROM AnsibleForms.`credentials` WHERE id = ? AND name<>'admins'", [id]);
     return res;

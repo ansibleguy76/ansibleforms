@@ -13,7 +13,8 @@ const crudConfigs = {
       { name: 'password', isEncrypted: true, setDefault: true },
       { name: 'token', isEncrypted: true, setDefault: true },
       { name: 'ignore_certs', isBoolean: true },
-      { name: 'ca_bundle' }
+      { name: 'ca_bundle' },
+      { name: 'managed', isBoolean: true }
     ],
     allowCache: true,
     cacheTTL: 3600
@@ -36,7 +37,8 @@ const crudConfigs = {
       { name: 'auth_url' },
       { name: 'token_url' },
       { name: 'userinfo_url' },
-      { name: 'extra' }
+      { name: 'extra' },
+      { name: 'managed', isBoolean: true }
     ],
     allowCache: false
   },
@@ -54,7 +56,8 @@ const crudConfigs = {
       { name: 'is_database', isBoolean: true, setDefault: true },
       { name: 'description' },
       { name: 'db_type' },
-      { name: 'vault_path' }
+      { name: 'vault_path' },
+      { name: 'managed', isBoolean: true }
     ],
     allowCache: true,
     cacheTTL: 3600
@@ -129,7 +132,8 @@ const crudConfigs = {
       { name: 'cron' },
       { name: 'status' },
       { name: 'output' },
-      { name: 'head' }
+      { name: 'head' },
+      { name: 'managed', isBoolean: true }
     ],
     allowCache: true,
     cacheTTL: 3600
@@ -155,7 +159,8 @@ const crudConfigs = {
       { name: 'group_class' },
       { name: 'group_member_attribute' },
       { name: 'group_member_user_attribute' },
-      { name: 'mail_attribute' }
+      { name: 'mail_attribute' },
+      { name: 'managed', isBoolean: true }
     ],
     allowCache: false
   },

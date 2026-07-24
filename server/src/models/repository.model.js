@@ -14,15 +14,15 @@ class Repository extends CrudModel {
   static modelName = 'repositories';
 
   // Override create to trigger clone after creation
-  static async create(data) {
+  static async create(data, opts) {
     logger.info(`Creating repository ${data.name}`);
-    const insertId = await super.create(this.modelName, data);
+    const insertId = await super.create(this.modelName, data, opts);
     Repository.clone(data.name); // Don't await - clone happens in background
     return insertId;
   }
 
   // Override update to handle password properly
-  static async update(data, name) {
+  static async update(data, name, opts) {
     logger.info(`Updating repository ${name}`);
     // Get current record to find id
     const repo = await this.findByName(name);
@@ -31,14 +31,16 @@ class Repository extends CrudModel {
     // Remove empty fields
     helpers.removeEmptyFields(data);
     
-    return super.update(this.modelName, data, repo.id);
+    return super.update(this.modelName, data, repo.id, opts);
   }
 
   // Override delete to cleanup disk
-  static async delete(name) {
+  static async delete(name, opts) {
     logger.info(`Deleting repository ${name}`);
     const repo = await this.findByName(name);
     if (!repo) throw new Error(`No repository found with name ${name}`);
+    // seed-managed repositories are read only for the API (deletes included)
+    if (!opts?.fromSeed) await Repository.assertNotManaged(this.modelName, repo.id);
     
     Repo.delete(name);
     const res = await mysql.do("DELETE FROM AnsibleForms.`repositories` WHERE name = ?", [name]);

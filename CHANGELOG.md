@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-   Declarative config seed (config as code): set `CONFIG_SEED_PATH` to a yaml file declaring awx connections, credentials, oauth2 providers, repositories, ldap and settings, and AnsibleForms applies it at startup. Seeded objects are flagged `managed` and become read only for the API/UI, objects created by hand are never touched. Removing an object from the seed releases it; sections accept `prune: true` to delete instead. Secret values are referenced as `${ENV_VAR}` and resolved from the environment, so the file itself holds no secrets. An invalid seed (bad yaml, schema violation, unresolved variable) makes the server refuse to start. On a fresh database with a seed configured the schema is created automatically. See the new "Config seed" documentation page.
+
+### Fixed
+
+-   Deleting a repository whose clone never succeeded no longer fails on the missing directory.
+
 ## [6.2.1] - 2026-07-07
 
 ### Changed
