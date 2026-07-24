@@ -67,8 +67,8 @@ Repo.delete = async function (name) {
     logger.notice("Deleting repository " + name)
     var directory = config.repoPath
 
-    fs.accessSync(path.join(directory,name))
-    // if found and access continue with delete
+    // a repository whose clone never succeeded has no directory on disk ;
+    // deleting it must not fail on that (rmSync with force is a no-op then)
     fs.rmSync(path.join(directory,name),{force:true,recursive:true})
     return
 
