@@ -114,12 +114,22 @@ const env = async function(req,res){
   }
 }
 const restore = async function(req,res){
-  var lock=undefined
+  var lock
   var user=req.user.user
+  // whether THIS request took the lock. A restore replaces the whole config, so it
+  // must not run next to a designer session ; but when the caller is not already in
+  // the designer the lock is ours only for the duration of the write and has to be
+  // handed back - a stranded lock makes every later config write answer 423.
+  var lockAcquired=false
   try{
     lock = await Lock.status(user)
     if(lock.free){
-      lock.set(user).catch(()=>{}) // set lock and fail silent
+      try{
+        await Lock.set(user)
+        lockAcquired=true
+      }catch(err){
+        // fail silent : a disabled designer must not block a restore
+      }
     }
   }catch(err){
     logger.error("Failed to get lock : ",err)
@@ -142,13 +152,23 @@ const restore = async function(req,res){
       }
     }catch(err){
       res.json(new RestResult("error","Failed to restore forms",null,helpers.getError(err)))
+    }finally{
+      // release ONLY when we took it : lock.match means the designer already held
+      // it before this call and expects to keep it
+      if(lockAcquired){
+        try{
+          await Lock.delete(user)
+        }catch(err){
+          logger.error(`Failed to release the designer lock after the restore : ${helpers.getError(err)}`)
+        }
+      }
     }
   }else{
     res.json(new RestResult("error","Failed to restore forms",null,"Designer is locked by "+lock.lock.username))
   }
 }
 const save = async function(req,res){
-  var lock=undefined
+  var lock
   var user=req.user.user
   try{
     lock = await Lock.status(user)

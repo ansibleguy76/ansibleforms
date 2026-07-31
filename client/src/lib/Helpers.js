@@ -1,17 +1,30 @@
+import { copyText } from 'vue3-clipboard';
+
 const Helpers = {
+  // Turns help.yaml's `allowed` text into select options when - and only when - it really
+  // is a short enum. 'true, false' and '1, 2' become dropdowns ; 'a valid Vault token' and
+  // 'a url subpath, for example /ansibleforms' stay free text.
+  //
+  // This matters beyond tidiness: vault.js tests VAULT_SKIP_VERIFY with
+  // `String(v).toLowerCase() === "true"`, so 'yes', '1' or 'True' silently do nothing. A
+  // dropdown that can only emit the documented literals removes that whole class of typo.
+  envAllowedOptions(allowed) {
+    if (!allowed) return null;
+    const parts = String(allowed).split(',').map(p => p.trim());
+    // 12, not 6 : the syslog levels are an eight-value enum and winston-syslog accepts
+    // eleven protocol strings. Both are real enums a dropdown should offer in full.
+    if (parts.length < 2 || parts.length > 12) return null;
+    if (!parts.every(p => /^[\w.:-]{1,12}$/.test(p))) return null;
+    // A documented `0, 1` enum is a boolean: show it as such and keep submitting 0/1,
+    // because the code tests these with `== 1` (SHOW_DESIGNER, USE_YTT, ENABLE_*). Only an
+    // exact 0/1 pair is treated this way - VAULT_KV_VERSION is also two numbers, but 1 and
+    // 2 are versions, not a truth value.
+    const isBoolean = parts.length === 2 && parts[0] === '0' && parts[1] === '1';
+    return parts.map(p => ({ value: p, label: isBoolean ? (p === '1' ? 'true' : 'false') : p }));
+  },
+
   findDuplicates(arry) {
     return arry.filter((item, index) => arry.indexOf(item) !== index);
-  },
-  forceFileDownload(response) {
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement("a");
-    let filename = response.headers["content-disposition"]
-      .split("filename=")[1]
-      .replace(/"/g, "");
-    link.href = url;
-    link.setAttribute("download", filename);
-    document.body.appendChild(link);
-    link.click();
   },
   htmlEncode(v){
     return v.toString().replace(/[\u00A0-\u9999<>\&]/g, function(i) { //eslint-disable-line
@@ -122,6 +135,26 @@ const Helpers = {
       default:
         return "body";
     }
+  },
+  // Show a server timestamp in the timezone the SERVER already put it in.
+  //
+  // Some endpoints deliberately convert to the application timezone before sending
+  // (backup dates come from Helpers.dateFromBackupFolder on the server, which parses
+  // the UTC folder name and applies LOG_TZ). Passing that through dayjs() converts it
+  // a second time, into the browser's zone - which is why a backup folder named
+  // ...20260726002146 displayed as 02:21 in a +02:00 browser, disagreeing with its own
+  // folder name. Read the wall clock straight out of the ISO string instead.
+  // Returns ONLY a `YYYY-MM-DD HH:MM:SS` string or ''. It never echoes its input back,
+  // because BsDataTable treats a column `render()` result as trusted HTML (cellHtml does
+  // not escape it) - a pass-through formatter in that slot would be an injection sink.
+  formatServerDate(value) {
+    if (!value) return '';
+    const text = typeof value === 'string'
+      ? value
+      // a Date or a number would otherwise render as 'Sun Jul 26 2026 …' or an epoch
+      : (value instanceof Date ? value.toISOString() : String(value));
+    const m = /^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})/.exec(text);
+    return m ? `${m[1]} ${m[2]}` : '';
   },
   humanFileSize(size) {
     if(size==undefined)return "Not a number"
@@ -506,7 +539,7 @@ const Helpers = {
   // sometimes we want undefined, sometimes if array, an empty array
   // sometimes if array of objects, we want it flattened by column
 
-    var keys = undefined;
+    var keys;
     var key = undefined;
     var wasArray = false;
     // do we pass a field
@@ -541,6 +574,7 @@ const Helpers = {
     }
     return field;
   },
+  // eslint-disable-next-line no-unused-vars -- `object` is referenced by name from the expression built below and run through eval
   replacePlaceholders(match,object){
     if(match.match(/^[a-zA-Z0-9_\-\[\]\.]*$/)){ /* eslint-disable-line */
       var to_eval="object"+match.replaceAll("[",".").replaceAll("]",".").split(".").filter(x=>!(x==="")).map(x=>{return "["+((/^-?\d+$/.test(x))?x:"'"+x+"'")+"]"}).join("")
@@ -677,7 +711,7 @@ const Helpers = {
     }    
     function matchRuleShort(str, rule) {
       var escapeRegex = (str) => str.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1"); // eslint-disable-line
-      return new RegExp("^" + rule.split("*").map(escapeRegex).join(".*") + "$").test(str); // eslint-disable-line
+      return new RegExp("^" + rule.split("*").map(escapeRegex).join(".*") + "$").test(str);
     }
 
     function compareProps(x1,x2,p){
@@ -773,12 +807,37 @@ const Helpers = {
           })
         }
     }   
-    var dummy = fnArray.from([]) // to make it available
-    var dummy = fnGetNumberedName([], "###", "") // to make it available
-    var dummy = fnToTable([]) // to make it available
+    fnArray.from([]) // to make it available
+    fnGetNumberedName([], "###", "") // to make it available
+    fnToTable([]) // to make it available
     if(expression) 
     return eval(expression)          
-  }  
+  },
+
+  /**
+   * Copy text to the clipboard, resolving only when it actually happened.
+   *
+   * vue3-clipboard's signature is copyText(text, container, callback) and it invokes that
+   * callback UNGUARDED from inside the synthetic click handler it dispatches. Every call
+   * site here passed only the text, so `callback(...)` threw a TypeError - and because
+   * that happens inside a DOM event dispatch the exception never reaches the caller's
+   * try/catch. So each copy logged an uncaught error, and the success toast fired even
+   * when execCommand('copy') had returned false and nothing had been copied at all
+   * (a page served over plain http, or a browser that refuses the synthetic copy).
+   *
+   * @param {string} text
+   * @returns {Promise<void>} rejects with the clipboard error when the copy failed
+   */
+  copyToClipboard(text) {
+    return new Promise((resolve, reject) => {
+      try {
+        copyText(String(text ?? ''), undefined, (err) => (err ? reject(err) : resolve()));
+      } catch (e) {
+        // a synchronous throw (no document, no selection) still has to reject
+        reject(e);
+      }
+    });
+  }
 
 };
 

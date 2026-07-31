@@ -11,7 +11,7 @@
   - name: NODE_ENV
     type: string
     allowed: a valid nodejs environment
-    short: The nodejs environment 
+    short: The Node.js environment 
     required: false
     description: Nodejs can have multiple environments, like development or production
     default: production
@@ -19,23 +19,37 @@
     type: string
     allowed: a valid IP or FQDN
     short: The database host
+    hint: Host name or IP address of the MySQL server.
     required: true
     description: |
-      Ansible Forms requires a mysql database connection to store the configuration of the application.  
+      Ansible Forms requires a MySQL database connection to store the configuration of the application.  
+  - name: DB_PORT
+    version: 6.3.0
+    type: number
+    allowed: a positive integer
+    short: Database port
+    hint: The TCP port MySQL/MariaDB listens on
+    default: 3306
+    description: |
+      Port of the MySQL or MariaDB server. Required at startup together with DB_HOST,
+      DB_USER and DB_PASSWORD - the application cannot reach its database without it, so
+      changing it needs a restart.
   - name: DB_USER
     type: string
     allowed: a valid mysql user
     short: The database user
+    hint: User name Ansible Forms connects to the database with.
     required: true
     description: |
-      Ansible Forms requires a mysql database connection to store the configuration of the application. 
+      Ansible Forms requires a MySQL database connection to store the configuration of the application. 
   - name: DB_PASSWORD
     type: string
     allowed: a valid mysql password
     short: The database password
+    hint: Password for that database user.
     required: true
     description: |
-      Ansible Forms requires a mysql database connection to store the configuration of the application.    
+      Ansible Forms requires a MySQL database connection to store the configuration of the application.    
   - name: DB_POOL_SIZE
     type: number
     allowed: a positive integer
@@ -90,6 +104,7 @@
   - name: VAULT_CACHE_TTL_MS
     type: number
     short: Vault read cache TTL (ms)
+    hint: How long a secret read from Vault is cached, in milliseconds.
     required: false
     default: 60000
     description: |
@@ -99,6 +114,7 @@
     type: string
     allowed: "true, false"
     short: Skip Vault TLS verification
+    hint: Skips certificate checks when calling Vault. For development only.
     required: false
     default: "false"
     description: |
@@ -106,23 +122,24 @@
   - name: PORT
     type: number
     allowed: a valid TCP port
-    short: Http port
+    short: HTTP port
     description: The listening port of the web application
     default: 8000
   - name: BASE_URL
     type: string
     allowed: a url subpath, for example /ansibleforms
-    short: Url subpath to host the application under
+    short: URL subpath to host the application under
+    hint: Serves the whole application under a subpath, for use behind a reverse proxy.
     required: false
     default: /
     description: |
-      Host the whole application (gui, rest api and swagger interface) under a url subpath, typically behind a reverse proxy.
+      Host the whole application (GUI, REST API and Swagger interface) under a URL subpath, typically behind a reverse proxy.
       For example with `BASE_URL=/ansibleforms`, the application is served under `https://host/ansibleforms/`.
       Note : when using an OAuth2 identity provider (Entra ID / OIDC), make sure the instance url in the provider settings includes the subpath, so the generated redirect uri matches.
   - name: DEFAULT_LANGUAGE
     type: string
     allowed: en, nl, fr, it, de, es
-    short: Application language
+    short: Default language
     required: false
     description: |
       Sets the language for the application.  Users can override this in the UI via the language switcher.
@@ -130,6 +147,7 @@
     default: en
   - name: HTTPS
     type: number
+    allowed: 0, 1
     short: Enables HTTPS
     choices:
     - name: 0
@@ -182,11 +200,38 @@
     version: 6.1.0
     type: string
     allowed: a valid file path
-    short: Config.yaml path
+    short: config.yaml path
     default: "%PERSISTENT_FOLDER%/config.yaml"
     description: | 
       The config.yaml file contains application configuration (categories, roles, constants).  
       This replaces the deprecated config.yaml file. Forms should now be stored in the forms/ folder.
+  - name: CONFIG_SEED_PATH
+    version: 6.3.0
+    type: string
+    allowed: a valid file path
+    short: Config seed file
+    hint: Declare awx, credentials, oauth2, repositories, ldap and mail in a file instead of clicking them together
+    default: ""
+    description: |
+      Path to a declarative config seed. When set, the yaml file it points to is applied at
+      startup and the admin objects it declares become read-only in the interface, so a whole
+      instance can be rebuilt from git on an empty database. Secrets are referenced as
+      ${ENV_VAR} and resolved from the environment, so the file itself holds none.
+      Unrelated to CONFIG_PATH, which holds the forms configuration. An invalid seed makes the
+      server refuse to start. See the Config seed page in the documentation.
+  - name: ALLOW_ENV_EDIT
+    version: 6.3.0
+    type: boolean
+    allowed: 0, 1
+    short: Allow editing these settings
+    hint: Turn off where the environment is declared elsewhere, so nothing here can be saved
+    default: 1
+    description: |
+      Whether the settings pages may write persistent/.env. Set it to 0 in a declarative
+      deployment (kubernetes, docker-compose, ArgoCD): there the file is either ephemeral, so a
+      save is silently lost at the next restart, or durable, so it drifts away from the manifest
+      that is meant to be authoritative. With 0 every variable is shown with its value in force
+      but cannot be changed, and the save endpoint refuses.
   - name: FORMS_FOLDER_PATH
     version: 6.1.0
     type: string
@@ -196,10 +241,21 @@
     description: | 
       The directory where individual form YAML files are stored.
       Forms can be organized in subdirectories within this folder.
+  - name: FORMS_STAGING_PATH
+    version: 6.1.0
+    type: string
+    allowed: a valid directory path
+    short: Forms staging folder path
+    hint: Where forms live that are not yet committed to a repository.
+    default: "%PERSISTENT_FOLDER%/forms_staging"
+    description: |
+      When forms come from a git repository, a form created or edited in the designer is written
+      here first and only lands in the repository once it is pushed. The loader reads this folder
+      alongside the repository ones, so a staged form is usable immediately.
   - name: FORMS_PATH
     type: string
     allowed: a valid file path
-    short: Forms.yaml path (DEPRECATED)
+    short: forms.yaml path (DEPRECATED)
     default: "%PERSISTENT_FOLDER%/forms.yaml"
     deprecated: true
     description: | 
@@ -212,7 +268,8 @@
   - name: LOCK_PATH
     type: string
     allowed: a valid file path
-    short: ansibleForm.lock path
+    short: Designer lock file path
+    hint: Where the designer's single-user lock file is written.
     default: "%PERSISTENT_FOLDER%/ansibleForms.lock"
     description: | 
       Only 1 user can use the designer, so we use a locking file to hold the current owners information.
@@ -227,16 +284,21 @@
   - name: OLD_BACKUP_DAYS
     version: 4.0.3
     type: number
-    allowed: a positive integer
-    short: Old backup retention days
+    allowed: a whole number where 0 disables the cleanup
+    short: Backup retention days
+    hint: How long a config restore point is kept. 0 keeps them for ever.
     default: "60"
-    description: | 
+    description: |
       When backups are made, they are kept for this many days before being removed.
       This applies to form backups made through the designer (not database backups).
+
+      0 keeps every restore point, matching AUDIT_RETENTION_DAYS, JOB_RETENTION_DAYS and
+      NIGHTLY_BACKUP_RETENTION. It used to mean the opposite here - everything older than a
+      day was removed - while the status page reported it as "never".
   - name: NIGHTLY_BACKUP_RETENTION
     version: 6.1.0
     type: number
-    allowed: a positive integer
+    allowed: a whole number where 0 disables the cleanup
     short: Nightly backup retention count
     default: "7"
     description: | 
@@ -244,16 +306,44 @@
       Ansible Forms automatically creates a full backup (database + config + forms) every night at midnight.
       Older nightly backups beyond this count are automatically deleted.
       Set to 0 to disable automatic cleanup (not recommended).
+      Only backups that actually contain a usable database dump count towards this number,
+      so a run of failed backups can never push a good one out.
+  - name: AUDIT_RETENTION_DAYS
+    version: 6.3.0
+    type: number
+    allowed: a whole number where 0 keeps every entry
+    short: Audit trail retention in days
+    default: "365"
+    description: |
+      How long entries in the audit trail are kept.
+      The trail is append-only, so without a sweep it grows for ever; a daily task at 3:30 AM
+      removes entries older than this.
+      Set to 0 to keep everything.
+  - name: JOB_RETENTION_DAYS
+    version: 6.3.0
+    type: number
+    allowed: a whole number where 0 keeps jobs for ever
+    short: Job history retention in days
+    default: "0"
+    description: |
+      How long finished jobs and their output are kept. Job output can be large, so this is
+      usually the fastest growing table in the database; the Status page reports its size.
+      A daily task at 2:30 AM removes finished jobs older than this, together with their output.
+      Only finished jobs are ever removed - a running job, or one awaiting approval, is kept
+      however old it is.
+      Defaults to 0, which means keep everything: upgrading must never silently delete job
+      history, so switching this on is a deliberate choice.
   - name: AZURE_GRAPH_URI
     version: 4.0.3
     type: string
     allowed: a valid base URI without slash on the end
-    short: The azure graph api base uri
+    short: The Azure Graph API base URI
     default: https://graph.microsoft.com
     description: |
-      This variable is used to acquire data from the Azure AD api.      
+      This variable is used to acquire data from the Azure AD API.      
   - name: ALLOW_SCHEMA_CREATION
     type: number
+    allowed: 0, 1
     choices:
     - name: 0
       description: Disables schema creation
@@ -261,6 +351,7 @@
       description: Enables schema creation
     default: 1    
     short: Enable the schema creation
+    hint: Allows the database schema to be created on a fresh install.
     description: | 
       When you start Ansible Forms for the first time and there is no database, Ansible Forms will present you the option to create the schema. 
       Although this is fairly handy, you might want to disable this option to prevent accidental schema re-creation.  
@@ -270,6 +361,7 @@
     version: 5.0.3      
   - name: REINIT_ADMIN
     type: number
+    allowed: 0, 1
     choices:
     - name: 0
       description: Normal startup
@@ -309,6 +401,7 @@
     type: string
     default: ""
     short: Whitelist of hosts/CIDRs reachable from REST expressions
+    hint: Hosts and CIDR ranges that REST expressions are allowed to reach.
     description: |
       Comma-separated list of hostnames and/or CIDR ranges that REST helper functions
       (`fn.fnRestBasic`, `fn.fnRestAdvanced`, `fn.fnRestJwt`, `fn.fnRestNtlm`) are allowed to call.
@@ -329,6 +422,7 @@
     type: string
     default: ""
     short: Blacklist of hosts/CIDRs unreachable from REST expressions
+    hint: Hosts and CIDR ranges that REST expressions may never reach.
     description: |
       Comma-separated list of hostnames and/or CIDR ranges that REST helper functions
       (`fn.fnRestBasic`, `fn.fnRestAdvanced`, `fn.fnRestJwt`, `fn.fnRestNtlm`) must never call.
@@ -345,6 +439,7 @@
     version: 6.0.0
   - name: ENABLE_DB_QUERY_LOGGING
     type: number
+    allowed: 0, 1
     choices:
     - name: 0
       description: Disables the database query logging
@@ -352,19 +447,22 @@
       description: Enables the database query logging
     default: 0
     short: Enable the database query logging
+    hint: Logs every database query. Very noisy, for debugging only.
     description: | 
       When you want to see the database queries that are executed, you can enable this option by setting this variable to 1.  
       introduced, due to massive amount of logging of database queries, which can be useful for debugging, but not for production.
     version: 5.0.3    
   - name: ENABLE_CONFIG_IN_DATABASE
     type: number
+    allowed: 0, 1
     choices:
     - name: 0
       description: Disables the config.yaml in database
     - name: 1
       description: Enables the config.yaml in database
     default: 0
-    short: Enable the config.yaml in database
+    short: Store the configuration in the database
+    hint: Stores config.yaml in the database instead of on disk.
     description: | 
       If you use git repositories to store the forms, you can choose to store the master config.yaml in git as well.  
       Or, you can choose to have the config.yaml in the database instead. Having a clean separation: master config.yaml in database, and the actual forms in git.
@@ -373,6 +471,7 @@
     version: 6.1.0
   - name: ENABLE_FORMS_YAML_IN_DATABASE
     type: number
+    allowed: 0, 1
     choices:
     - name: 0
       description: Disables the config.yaml in database
@@ -405,6 +504,7 @@
       The command used to pull git repositories.  Note that branch and repository will be auto added.
   - name: SHOW_DESIGNER
     type: number
+    allowed: 0, 1
     choices:
     - name: 0
       description: Hides the designer
@@ -412,12 +512,14 @@
       description: Shows the designer
     default: 1    
     short: Enable the internal designer
+    hint: Shows the built-in config.yaml designer in the menu.
     description: | 
       Although we encourage you to use an editor such as **Visual Studio Code** to edit the config.yaml file, preferably with some form of source control.  Ansible Forms comes with an internal yaml designer.  
       And although only admins can see the designer, you might want to disable it completely by setting this variable to 0.
     version: 4.0.0
   - name: USE_YTT
     type: number
+    allowed: 0, 1
     choices:
       - name: 0
         description: Does not execute ytt on the config.yaml
@@ -431,27 +533,30 @@
   - name: YTT_ALLOW_SYMLINK_DESTINATIONS
     type: string
     allowed: valid paths
-    short: Ytt allowed symlink destinations
+    short: ytt allowed symlink destinations
+    hint: Paths that ytt templates are allowed to follow symlinks into.
     default: ""
     description: |
       Ytt disables templating with symlinks by default.  If you want to allow symlink use on specific directories, this variable can be set to the path(s) where the symlinks are allowed (multiple paths separated by Node's `path.delimiter`). Note: enabling this may come with some risks, see ytt FAQ for more info.
     version: 5.0.8
   - name: YTT_DANGEROUS_ALLOW_ALL_SYMLINK_DESTINATIONS
     type: number
+    allowed: 0, 1
     choices:
       - name: 0
         description: Disables all symlink destinations
       - name: 1
         description: Enables all symlink destinations
     default: 0
-    short: Ytt dangerous allow all symlink destinations
+    short: ytt dangerous allow-all symlink destinations
+    hint: Lets ytt follow symlinks anywhere. Unsafe.
     description: |
       Ytt disables templating with symlinks by default.  If you want to allow all symlink use EVERYWHERE, you can set this variable to 1. Note: enabling this comes with some risks (hence the 'DANGEROUS' part), see ytt FAQ for more info.
     version: 5.0.8
   - name: YTT_VARS_PREFIX
     type: string
     allowed: a valid prefix
-    short: Ytt vars prefix
+    short: ytt vars prefix
     default: ""
     description: |
       Environment variable prefix for ytt to get data values from. For example, when set to `MY_PREFIX`, `MY_PREFIX_my_var=value` results to the ytt data value `my_var=value`.
@@ -459,7 +564,7 @@
   - name: YTT_LIB_DATA_{dynamic}
     type: string
     allowed: a valid lib data value
-    short: Ytt lib data
+    short: ytt lib data
     default: ""
     description: |
       This is not a single variable but rather an infinite amount of variables.  You can set as many as you want.  The dynamic part is the name of the lib data.  For example `YTT_LIB_DATA_MYLIB=values.yml` results in the contents of `values.yml` to be used by ytt in the `mylib` library.
@@ -474,6 +579,7 @@
     version: 5.0.8
   - name: LOG_LEVEL
     type: string
+    allowed: emerg, alert, crit, error, warning, notice, info, debug
     choices:
     - name: error
       description: Error message, something is wrong
@@ -503,6 +609,7 @@
         description: Make the logfiles rotating with daily timestamp.  30days of logs are kept.
   - name: LOG_CONSOLE_LEVEL
     type: string
+    allowed: emerg, alert, crit, error, warning, notice, info, debug
     choices:
     - name: error
       description: Error message, something is wrong
@@ -515,7 +622,7 @@
     - name: debug
       description: Debug message, if you really want to know more details
     default: debug    
-    short: Console Log level
+    short: Console log level
     description: | 
       When you run ansibleforms, by default the application also logs to the console.  
       For example with docker you can use the command docker logs to access this console log.  
@@ -536,6 +643,7 @@
     description: Setting the syslog settings, enables the logging to a syslog server
   - name: LOG_SYSLOG_LEVEL
     type: string
+    allowed: emerg, alert, crit, error, warning, notice, info, debug
     choices:
     - name: error
       description: Error message, something is wrong
@@ -554,12 +662,13 @@
   - name: LOG_SYSLOG_PORT
     type: number
     allowed: valid tcp/udp port number
-    short: Syslog Port
+    short: Syslog port
     default: 514
     version: 3.0.1
     description: The port on which the syslog server is listening
   - name: LOG_SYSLOG_PROTOCOL
     type: string
+    allowed: udp, udp4, udp6, tcp, tcp4, tcp6, tls, tls4, tls6, unix, unix-connect
     short: Syslog protocol
     choices:
     - name: tcp4
@@ -591,6 +700,7 @@
     description: Host to indicate where log messages are coming from      
   - name: LOG_SYSLOG_TYPE
     type: string
+    allowed: BSD, 5424
     choices:
     - name: BSD
       description: Syslog type BCD
@@ -609,7 +719,7 @@
   - name: LOG_SYSLOG_APPNAME
     type: string
     allowed: free text
-    short: App Name
+    short: App name
     default: Ansible Forms
     version: 3.0.1
     description: The name of the application    
@@ -651,7 +761,7 @@
   - name: ACCESS_TOKEN_SECRET
     type: string
     allowed: a hard secret string
-    short: Secret to encryp access tokens
+    short: Secret to encrypt access tokens
     default: "*** NOT REVEALED ***"
     description: |
       AnsibleForm uses Basic Authentication as authentication mechanism.  
@@ -661,7 +771,7 @@
   - name: ACCESS_TOKEN_EXPIRATION
     type: string
     allowed: a valid time indication
-    short: Expiration time access token
+    short: Access token expiration
     default: 30m
     description: |
       A JWT (Json Web Token) is only valid for a certain amount of time.  
@@ -670,10 +780,11 @@
   - name: ACCESS_TOKEN_REFRESH_EXPIRATION
     type: string
     allowed: a valid time indication
-    short: Expiration time refresh token
+    short: Refresh token expiration
+    hint: How long a refresh token stays valid before a new sign-in is needed.
     default: 24h
     description: |
-      Once the access token is expired, and the client tries to connect to the server, the client hits a 401 error (unauthorized). the client application captures this error, and calls the refresh api with its refresh token.  If the refresh token is valid, the client gets a new set of access and refresh tokens and retries the last unauthorized api call with the renew access token.  
+      Once the access token is expired, and the client tries to connect to the server, the client hits a 401 error (unauthorized). The client application captures this error, and calls the refresh API with its refresh token.  If the refresh token is valid, the client gets a new set of access and refresh tokens and retries the last unauthorized api call with the renew access token.  
       With this mechanism, the client can keep the user-connection open for a long time and avoid a sudden logout during a save action.  
       If the client has not connected back to the server during the expiration time of the refresh token, the client is logged of and authentication is required again.
   - name: ACCESS_TOKEN_ISSUER
@@ -690,6 +801,7 @@
     type: string
     allowed: a valid path
     short: The users home directory
+    hint: Home directory used for the generated SSH key and git credentials.
     default: OS Homedir path
     version: 3.0.0
     description: |
@@ -699,6 +811,7 @@
     type: string
     allowed: a valid path
     short: Repositories path
+    hint: Root folder where git repositories are cloned.
     default: "%PERSISTENT_FOLDER%/repositories"
     version: 3.0.0
     description: |
@@ -706,7 +819,7 @@
   - name: VARS_FILES_PATH
     type: string
     allowed: a valid directory path
-    short: Base path for varsFiles
+    short: Base path for vars files
     default: "%PERSISTENT_FOLDER%/vars"
     version: 6.1.0
     description: |
@@ -734,6 +847,7 @@
     type: string
     allowed: an escaped regular expression
     short: Filter out job output tasks
+    hint: Job output lines matching this regex are hidden.
     default: "\\[low\\]"
     description: |
       Sometime, the job output is flooded with meaningless output, such as 'Gathering Facts', or 'Includes'.  You filter out these by add a piece of string in the taskname, i.e. `[low]` and then used regex `\\[low\\]` to hide this information.  
@@ -742,6 +856,7 @@
     type: string
     allowed: an escaped regular expression
     short: Regex to mask extravars values
+    hint: Extravars whose name matches this regex are masked in job output.
     default: "password|secret|token"
     description: |
       When you have sensitive extravars, such as passwords, tokens, keys, credentials, you do not want these to be shown in clear text in the extravars section of a job.  
@@ -767,6 +882,7 @@
     version: 5.1.0
     allowed: a suiting label
     short: The label of home navigation link
+    hint: Text of the home link in the navigation bar.
     default: Forms
     description: |
       In the navigation bar, A home link is shown.  You can set the label/name of this link with this variable, for example `Services`.  Use in combination with `VUE_APP_NAV_HOME_ICON`.
@@ -775,23 +891,40 @@
     version: 5.1.0
     allowed: a valid free fontawesome icon
     short: The icon of navigation home link
+    hint: Icon of the home link in the navigation bar.
     default: home
     description: |
       In the navigation bar, A home link is shown.  You can set the icon of this link with this variable, for example `play` or `house`.  Use in combination with `VUE_APP_NAV_HOME_LABEL`.
   - name: MYSQLDUMP_COMMAND
+    short: Database dump command
+    hint: Command used to dump the database for a backup.
     type: string
     version: 6.0.0
     allowed: a valid mysqldump command
     default: mariadb-dump --ssl-verify-server-cert=OFF
     description:
-      Mysql dump command change and mysql/mariadb flavours differ, hence the need for a configurable command.
+      MySQL dump commands and MySQL/MariaDB flavours differ, hence the need for a configurable command.
   - name: MYSQL_COMMAND
+    short: Database restore command
+    hint: Command used to restore the database from a backup.
     type: string
     version: 6.0.0
     allowed: a valid mysql command
     default: mariadb --ssl-verify-server-cert=OFF
     description:
-      Mysql command change and mysql/mariadb flavours differ, hence the need for a configurable command.
+      MySQL restore commands and MySQL/MariaDB flavours differ, hence the need for a configurable command.
+  - name: BACKUP_COMMAND_TIMEOUT_SECONDS
+    short: Backup/restore command timeout
+    hint: Seconds the database dump and restore commands are allowed to run.
+    type: number
+    version: 6.3.0
+    required: false
+    default: 3600
+    description: |
+      How long the database dump and the database restore may run before they are killed.
+      Both used to inherit the generic 60 second command timeout, which no real database can honour.
+      Raise it if a large database is cut short; a restore that is killed part way leaves the database
+      partially replayed, because the dump drops and recreates each table in turn.
 - name: config.yml
   icon: fab,wpforms
   link: forms

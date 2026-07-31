@@ -3,6 +3,7 @@ import Job from '../../models/job.model.js';
 import RestResultv2 from '../../models/restResult.model.v2.js';
 import logger from "../../lib/logger.js";
 import stream from 'stream';
+import Audit from "../../models/audit.model.js";
 import i18n from '../../lib/i18n.js';
 
 const abortJob = async function(req, res) {
@@ -12,7 +13,7 @@ const abortJob = async function(req, res) {
     return false
   }
   try {
-    await Job.abort(jobid);
+    await Job.abort(req.user.user, jobid);
     res.status(200).json(RestResultv2.single({ message: i18n.t(req, 'jobs.abortRequested') }));
   } catch (err) {
     if (err.name === 'NotFoundError') {
@@ -144,6 +145,9 @@ const launch = async function(req, res) {
     }else{
         // get the form data
         var form = req.body.formName || "";
+        // the client may not choose the playbook, credentials or working directory unless
+        // the form declares a field of that name - stripped inside Job.launch, which is the
+        // first place the form definition is known (see stripReservedExtravars)
         var extravars = req.body.extravars || {}
         var creds = req.body.credentials || {}
         var rawFormData = req.body.rawFormData || {}
@@ -156,7 +160,7 @@ const launch = async function(req, res) {
           return false;
         }
         try{
-          const job = await Job.launch({ form, user, credentials: creds, extravars, rawFormData });
+          const job = await Job.launch({ form, user, credentials: creds, extravars, rawFormData, fromClient: true });
           res.status(200).json(RestResultv2.single(job));
         }catch(err){
           logger.error("Errors in job launch : ", err)
@@ -208,10 +212,26 @@ const approveJob = async function(req, res) {
     var user = req?.user?.user || {}
     try{
       await Job.approve(user,jobid);
+      // an approval is a human decision to let privileged automation run : worth its
+      // own entry beyond the generic 'someone POSTed here' the middleware records
+      Audit.log({ user, ip: req.ip, action: 'job.approve', targetType: 'job', target: jobid });
       res.status(200).json(RestResultv2.single({ message: i18n.t(req, 'jobs.approved', { id: jobid }) }));
     }catch(err){
-      logger.error(`Error : ${err.toString()}`)
-      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedApprove'), err.toString()));
+      // Mapped like every sibling in this file. A bare 500 for a permission refusal is
+      // wrong twice over: the caller is told the server broke, and auditMiddleware only
+      // files 401/403 as outcome='denied' - so a refused approval was recorded as a
+      // 'failure' and vanished from the very filter the audit log exists to provide.
+      // (Audit.log above only runs on success, so the middleware row is the only trace.)
+      if (err.name === 'NotFoundError') {
+        res.status(404).json(RestResultv2.error(err.message));
+      } else if (err.name === 'AccessDeniedError' || err.name === 'ForbiddenError') {
+        res.status(403).json(RestResultv2.error(err.message));
+      } else if (err.name === 'ConflictError') {
+        res.status(409).json(RestResultv2.error(err.message));
+      } else {
+        logger.error(`Error : ${err.toString()}`)
+        res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedApprove'), err.toString()));
+      }
     }    
 };
 const rejectJob = async function(req, res) {
@@ -225,10 +245,24 @@ const rejectJob = async function(req, res) {
     var user = req?.user?.user || {}
     try{
       await Job.reject(user,jobid)
+      Audit.log({ user, ip: req.ip, action: 'job.reject', targetType: 'job', target: jobid });
       res.status(200).json(RestResultv2.single({ message: i18n.t(req, 'jobs.rejected', { id: jobid }) }));
     }catch(err){
-      logger.error(`Error : ${err.toString()}`)
-      res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedReject'), err.toString()));
+      // Mapped like every sibling in this file. A bare 500 for a permission refusal is
+      // wrong twice over: the caller is told the server broke, and auditMiddleware only
+      // files 401/403 as outcome='denied' - so a refused approval was recorded as a
+      // 'failure' and vanished from the very filter the audit log exists to provide.
+      // (Audit.log above only runs on success, so the middleware row is the only trace.)
+      if (err.name === 'NotFoundError') {
+        res.status(404).json(RestResultv2.error(err.message));
+      } else if (err.name === 'AccessDeniedError' || err.name === 'ForbiddenError') {
+        res.status(403).json(RestResultv2.error(err.message));
+      } else if (err.name === 'ConflictError') {
+        res.status(409).json(RestResultv2.error(err.message));
+      } else {
+        logger.error(`Error : ${err.toString()}`)
+        res.status(500).json(RestResultv2.error(i18n.t(req, 'jobs.failedReject'), err.toString()));
+      }
     }    
 
 };

@@ -39,7 +39,7 @@ function getAJVErrorMessage(opts) {
 
     instancePath = instancePath.slice(1).replace(/\//g, '.');
     message = message.toLowerCase();
-    var msg = '';
+    var msg;
     switch (keyword) {
         case AJVError.AdditionalProperties: {
             msg = message + ' \'' + params.additionalProperty + '\'';

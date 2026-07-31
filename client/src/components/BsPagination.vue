@@ -6,7 +6,8 @@
     /*                                                  */
     /*  @props:                                         */
     /*      dataList: Array - List of items to paginate  */
-    /*      perPage: Number - Items per page             */
+    /*      perPage: Number - Initial items per page      */
+    /*        (default 10, a stored cookie wins over it)  */
     /*      buttonsShown: Number - Number of buttons     */
     /*      index: Number - Index of the item to show    */
     /*                                                  */
@@ -28,6 +29,7 @@
 
     const props = defineProps({
         dataList:{type:Array},
+        perPage:{type:Number, default:10},
         buttonsShown:{type:Number},
         index:{type:Number},
         name: { type: String, default: null }
@@ -36,7 +38,9 @@
     // DATA
 
     const page = ref(0)
-    const perPage = ref(10)
+    // the prop only seeds the initial page size : a perPage the user picked
+    // before is restored from the cookie on mount and wins over it
+    const pageSize = ref(props.perPage)
 
     // METHODS
 
@@ -45,12 +49,31 @@
         change()
     }
     function paginate (list) {
-        let from = (page.value * perPage.value) - perPage.value;
-        let to = (page.value * perPage.value);
+        let from = (page.value * pageSize.value) - pageSize.value;
+        let to = (page.value * pageSize.value);
         return  list.slice(from, to);
     }
     function change(){
-        emit('change',displayedItems.value)
+        // Do not emit a slice taken with an out-of-range page.
+        //
+        // displayedItems recomputes as soon as pageSize changes, while `page` is still
+        // the old, now too-large number - and the watcher that clamps `page` is a
+        // separate one that runs afterwards. So raising rows-per-page on the last page
+        // emitted an EMPTY slice first (page 10 at 100/page = rows 900-1000 of 250) and
+        // only then the corrected one. On the audit page each emit starts its own
+        // request, so two were in flight at once and whichever answered last won: the
+        // table could settle on rows 0-24 while the pager highlighted page 3.
+        //
+        // Skipping here is safe because the clamp watcher calls setPage(), which emits
+        // again with a valid page. Checked explicitly rather than relying on the two
+        // watchers' registration order.
+        if(pages.value.length && page.value > pages.value.length) return
+        // Second argument: what the pager currently IS. A listener cannot work the page
+        // size out from the slice alone - a short slice means either "the last page" or
+        // "the user picked a smaller size", and audit.vue guessed wrong, so choosing a
+        // SMALLER rows-per-page did nothing at all. Existing listeners that take only the
+        // slice are unaffected.
+        emit('change', displayedItems.value, { page: page.value, pageSize: pageSize.value, pages: pages.value.length })
     }
 
     // COMPUTED
@@ -79,11 +102,11 @@
     });
 
     const showFirstPage = computed(() => {
-        return !displayedPages.value.includes(1);
+        return pages.value.length > 0 && !displayedPages.value.includes(1);
     });
 
     const showLastPage = computed(() => {
-        return !displayedPages.value.includes(pages.value.length);
+        return pages.value.length > 1 && !displayedPages.value.includes(pages.value.length);
     });
 
     const showFirstEllipsis = computed(() => {
@@ -95,14 +118,18 @@
     });
 
     const pages = computed(() => {
-        let numberOfPages = Math.ceil(props.dataList.length / perPage.value);
+        // an empty list still has one (empty) page, so the pager shows an active "1"
+        let numberOfPages = Math.max(1, Math.ceil(props.dataList.length / pageSize.value));
         return Array.from(Array(numberOfPages), (_, x) => x + 1);
     });
 
     const pageByIndex = computed(() => {
         if(!(props.index > 0)) return 1;
-        let x = props.index / perPage.value;
-        return Math.floor(x + 1);
+        let x = props.index / pageSize.value;
+        let target = Math.floor(x + 1);
+        // clamp defensively: a stale/inconsistent index must never resolve to a
+        // page outside the valid range (which would render an empty slice)
+        return Math.min(Math.max(target, 1), pages.value.length);
     });
 
     // WATCHERS
@@ -111,8 +138,20 @@
         change()
     })
 
+    // keep `page` inside the valid range whenever the page count shrinks:
+    // raising perPage, deleting the last rows of the last page or a filter that
+    // narrows the list would otherwise leave `page` beyond `pages.length` and
+    // paginate() would slice past the end, rendering an empty table
+    watch(pages,(list)=>{
+        if(page.value > list.length){
+            setPage(list.length)
+        }else if(page.value < 1){
+            setPage(1)
+        }
+    })
+
     // persist perPage when changed
-    watch(perPage, (val)=>{
+    watch(pageSize, (val)=>{
         if(props.name){
             try{
                 Helpers.setCookie(`pagination_${props.name}_perPage`, String(val), 365);
@@ -127,11 +166,10 @@
         if(props.name){
             const saved = Helpers.getCookie(`pagination_${props.name}_perPage`);
             if(saved && !isNaN(parseInt(saved))){
-                perPage.value = parseInt(saved);
+                pageSize.value = parseInt(saved);
             }
         }
-        page.value=pageByIndex
-        setPage(1)
+        setPage(pageByIndex.value)
     })
 </script>
 <template>
@@ -139,12 +177,12 @@
 
         <ul class="pagination justify-content-end user-select-none">
             <li class="me-2">
-                <select class="form-select" v-model="perPage">
-                    <option value="10">10</option>
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                </select>        
+                <select class="form-select" v-model="pageSize">
+                    <option :value="10">10</option>
+                    <option :value="25">25</option>
+                    <option :value="50">50</option>
+                    <option :value="100">100</option>
+                </select>
             </li>
             <li role="button" class="page-item" :class="{'disabled':page <= 1}">
                 <a class="page-link" @click="setPage(page-1)">{{ t('common.previous') }}</a>
@@ -171,3 +209,14 @@
     </nav>    
 
 </template>
+
+<style scoped>
+/* Bootstrap's .pagination is a <ul>, so it inherits the list reset's 1rem bottom
+   margin. Stacked on the card body's own 1rem padding that made every paginated card
+   sit 32px clear of its bottom edge, while a card without a pager sits at 16px. Zero
+   it here so ALL tables match - the alternative is every consumer remembering a
+   compensating class. */
+.pagination {
+    margin-bottom: 0;
+}
+</style>

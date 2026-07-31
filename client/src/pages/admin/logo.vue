@@ -17,7 +17,7 @@ const busy = ref(false);
 
 // keep in sync with the server (logo.controller.js) ; the server re-validates
 // the type with magic-byte sniffing and enforces the size limit anyway
-const allowedTypes = ["image/png", "image/jpeg", "image/webp", "image/gif"];
+const allowedTypes = ["image/png", "image/jpeg", "image/webp", "image/gif", "image/svg+xml"];
 const maxBytes = 900 * 1024;
 
 function onFileChange(e) {
@@ -39,6 +39,12 @@ function onFileChange(e) {
   const reader = new FileReader();
   reader.onload = () => { preview.value = reader.result; };
   reader.readAsDataURL(file);
+}
+
+function clearPreview() {
+  selectedFile.value = null;
+  preview.value = null;
+  fileInput.value.value = "";
 }
 
 async function upload() {
@@ -86,33 +92,33 @@ onMounted(async () => {
   <div class="flex-shrink-0">
     <main class="d-flex flex-nowrap container-xxl">
       <AppSidebar />
-      <AppSettings v-if="authenticated" icon="image" :title="t('logo.title')">
+      <AppSettings v-if="authenticated" icon="image" :title="t('logo.title')" :description="t('logo.description')">
         <template #actions>
+          <BsButton icon="upload" :colorClass="!selectedFile || busy ? 'secondary' : 'primary'" :disabled="!selectedFile || busy" @click="upload()">{{ t('logo.uploadButton') }}</BsButton>
           <BsButton v-if="store.customLogo && !store.logoIsDefault" cssClass="ms-3" icon="trash" :disabled="busy" @click="removeLogo()">{{ t('logo.remove') }}</BsButton>
         </template>
         <template #default>
-          <div class="mb-3">
-            <label class="form-label fw-bold">{{ t('logo.current') }}</label>
-            <div class="p-3 bg-body-tertiary rounded d-flex align-items-center" style="min-height:4rem">
-              <img v-if="store.customLogo" :src="store.customLogo" class="logo-preview" />
-              <span v-else class="text-muted">{{ t('logo.default') }}</span>
+          <div class="row">
+            <div class="col-md-6">
+              <label class="form-label fw-bold mb-2">{{ t('logo.current') }}</label>
+              <div class="logo-display-box">
+                <img v-if="store.customLogo" :src="store.customLogo" class="logo-preview" />
+                <span v-else class="text-muted fst-italic">{{ t('logo.default') }}</span>
+              </div>
+            </div>
+            <div v-if="preview" class="col-md-6">
+              <label class="form-label fw-bold mb-2">{{ t('logo.newLogo') }}</label>
+              <div class="logo-display-box position-relative">
+                <button type="button" class="btn-close btn-close-preview" @click="clearPreview"></button>
+                <img :src="preview" class="logo-preview" />
+              </div>
             </div>
           </div>
-          <div class="mb-3">
-            <label class="form-label fw-bold">{{ t('logo.upload') }}</label>
-            <p>{{ t('logo.description') }}</p>
-            <input ref="fileInput" class="form-control" type="file" accept="image/png,image/jpeg,image/webp,image/gif" @change="onFileChange" />
-            <div class="form-text">{{ t('logo.constraints') }}</div>
+          <hr class="my-3">
+          <div>
+            <input ref="fileInput" class="form-control" style="max-width: 400px;" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" @change="onFileChange" />
           </div>
-          <div v-if="preview" class="mb-3">
-            <label class="form-label fw-bold">{{ t('logo.preview') }}</label>
-            <div class="p-3 bg-body-tertiary rounded d-flex align-items-center" style="min-height:4rem">
-              <img :src="preview" class="logo-preview" />
-            </div>
-          </div>
-          <div class="mb-3">
-            <BsButton icon="upload" :disabled="!selectedFile || busy" @click="upload()">{{ t('logo.uploadButton') }}</BsButton>
-          </div>
+          <div class="form-text mt-3">{{ t('logo.constraints') }}</div>
         </template>
       </AppSettings>
     </main>
@@ -121,6 +127,26 @@ onMounted(async () => {
 <style scoped lang="scss">
 .logo-preview {
   max-width: 200px;
-  max-height: 30px;
+  max-height: 40px;
+}
+.btn-close-preview {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  font-size: 0.6rem;
+  opacity: 0.5;
+  &:hover {
+    opacity: 1;
+  }
+}
+.logo-display-box {
+  background-color: var(--bs-tertiary-bg);
+  border: 1px dashed var(--bs-border-color);
+  border-radius: 0.375rem;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 5rem;
 }
 </style>

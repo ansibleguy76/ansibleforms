@@ -13,7 +13,10 @@ const crudConfigs = {
       { name: 'password', isEncrypted: true, setDefault: true },
       { name: 'token', isEncrypted: true, setDefault: true },
       { name: 'ignore_certs', isBoolean: true },
-      { name: 'ca_bundle' }
+      { name: 'ca_bundle' },
+      // owned by the declarative config seed, never by an API caller - CrudModel
+      // strips it from any payload that does not come from the seed itself
+      { name: 'managed', isBoolean: true }
     ],
     allowCache: true,
     cacheTTL: 3600
@@ -36,7 +39,8 @@ const crudConfigs = {
       { name: 'auth_url' },
       { name: 'token_url' },
       { name: 'userinfo_url' },
-      { name: 'extra' }
+      { name: 'extra' },
+      { name: 'managed', isBoolean: true }
     ],
     allowCache: false
   },
@@ -54,7 +58,8 @@ const crudConfigs = {
       { name: 'is_database', isBoolean: true, setDefault: true },
       { name: 'description' },
       { name: 'db_type' },
-      { name: 'vault_path' }
+      { name: 'vault_path' },
+      { name: 'managed', isBoolean: true }
     ],
     allowCache: true,
     cacheTTL: 3600
@@ -129,7 +134,8 @@ const crudConfigs = {
       { name: 'cron' },
       { name: 'status' },
       { name: 'output' },
-      { name: 'head' }
+      { name: 'head' },
+      { name: 'managed', isBoolean: true }
     ],
     allowCache: true,
     cacheTTL: 3600
@@ -150,12 +156,12 @@ const crudConfigs = {
       { name: 'username_attribute', required: true },
       { name: 'groups_attribute' },
       { name: 'enable', isBoolean: true },
-      { name: 'is_advanced', isBoolean: true },
       { name: 'groups_search_base' },
       { name: 'group_class' },
       { name: 'group_member_attribute' },
       { name: 'group_member_user_attribute' },
-      { name: 'mail_attribute' }
+      { name: 'mail_attribute' },
+      { name: 'managed', isBoolean: true }
     ],
     allowCache: false
   },

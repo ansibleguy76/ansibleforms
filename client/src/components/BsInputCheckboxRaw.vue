@@ -23,7 +23,7 @@
 
     // PROPS
 
-    const props = defineProps({
+    defineProps({
         label: {
             type: String,
             required: true,
@@ -55,7 +55,7 @@
     });
 
     const change = () => {
-        emit('change',model);
+        emit('change',model.value);
     };
 
 </script>

@@ -48,11 +48,29 @@ const jsonSchemaDraft6 = JSON.parse(fs.readFileSync(path.join(__dirname, "../../
 const backupPath = appConfig.formsBackupPath
 
 // New paths using config.yaml
-const configFilePath = path.dirname(appConfig.configPath)
 const configFileName = path.basename(appConfig.configPath)
 const formsPath = appConfig.formsFolderPath
 const formsBackupPath = path.join(backupPath,'forms')
 const configFileBackupPath = path.join(backupPath,configFileName)
+// A snapshot is normally of the ACTIVE config, and a restore reinstates it into
+// whatever source is active at that moment. The two writes that REPLACE one source
+// with the other - Settings.exportConfig (database -> file) and
+// Settings.importConfig (file -> database) - snapshot the source they are about to
+// destroy, so such a snapshot belongs to a FIXED source and must be reinstated
+// there, not into the active one : restoring an export's snapshot into the database
+// would overwrite the live config with a stale disk copy, the exact opposite of
+// undoing the export. The backup name therefore carries that source
+// ('config.file.yaml.bak.<ts>', 'config.database.yaml.bak.<ts>'), which also keeps
+// the two kinds apart in the backups list. They still end in 'yaml.bak.<ts>', so
+// the backups list, the suffix parser and the retention cleanup keep working
+// unchanged, and an 'active' snapshot keeps its plain historical name.
+const configBackupPathForSource = function(source){
+  if(source!=='file' && source!=='database') return configFileBackupPath
+  const parsed = path.parse(configFileName)
+  return path.join(backupPath,`${parsed.name}.${source}${parsed.ext}`)
+}
+// the snapshot sources that carry their name ; anything else is an 'active' snapshot
+const fixedBackupSources = ['file','database']
 
 // Legacy paths for backward compatibility
 const legacyFormFilePath = path.dirname(appConfig.formsPath)
@@ -64,9 +82,51 @@ const oldBackupDays = appConfig.oldBackupDays
 const pathDelimiterRegex = new RegExp(`(?<!\\\\)${path.delimiter}`, 'g');
 
 function getBackupSuffix(t){
-  var backuppartre=new RegExp("(\.bak\.[0-9]{17})$","g")
+  var backuppartre=/(\.bak\.[0-9]{17})$/g
   var backuppart=backuppartre.exec(t)[1]
   return backuppart
+}
+// Which source a stored snapshot was taken from, told by the artifact that exists
+// for its timestamp : a 'file' / 'database' snapshot carries its source in the name,
+// an older or plain one is an 'active' snapshot.
+function backupConfigSource(backupName){
+  const suffix = getBackupSuffix(backupName)
+  for(const source of fixedBackupSources){
+    if(fs.existsSync(configBackupPathForSource(source)+suffix)) return source
+  }
+  return 'active'
+}
+// Whether a config RESTORE must write into the database. The database only counts
+// when it really holds a config : with an empty forms_yaml the config is served
+// from disk/repository (see getBaseConfig), and writing to the database anyway
+// would flip the effective source to the database as a side effect.
+// Form.restore and Form.restoreBackup MUST share this one expression : the former
+// refuses a restore that would only touch local folders while git serves the
+// forms, and if the latter disagreed it would take its disk branch anyway and
+// write into a repository working tree - leaving an uncommitted change that breaks
+// the next scheduled pull, which is exactly what that guard exists to forbid.
+async function resolveRestoreInDatabase(){
+  const settings = await Settings.findFormsYaml()
+  return Settings.resolveConfigInDatabase(settings) && !!(settings.forms_yaml && settings.forms_yaml.trim())
+}
+// Copy a config snapshot onto the file the config is read from : a repository copy
+// wins over the local one, exactly like the designer save and
+// Settings.saveActiveConfig resolve it. When that file lives in a repository
+// working tree, claim its write-lock so this write can't race a concurrent
+// scheduled pull/sync (issue #414).
+async function restoreConfigFile(snapshot){
+  const targetConfigPath = (await Repository.getConfigPath()) || appConfig.configPath
+  logger.debug(`Copying config file '${snapshot}'->'${targetConfigPath}'`)
+  const repoName = configRepoFromPath(targetConfigPath, appConfig.repoPath)
+  const token = repoName ? await Repository.claimForWrite(repoName) : undefined
+  try{
+    fse.ensureDirSync(path.dirname(targetConfigPath))
+    fse.copySync(snapshot,targetConfigPath)
+  }finally{
+    if(repoName && token !== undefined){
+      await Repository.releaseWrite(repoName, token).catch(e => logger.error(`Failed to release write-lock on '${repoName}' : ${e.message}`))
+    }
+  }
 }
 ajv.addMetaSchema(jsonSchemaDraft6);
 var Form=function(data){
@@ -175,38 +235,39 @@ async function getSaveTargets() {
       throw new Error(`The forms repository '${folder.name}' is not cloned yet ; clone it from the repositories settings first`)
     }
   }
-  // config is written where it is read from ; a legacy forms.yaml in a
-  // repository is migrated to config.yaml next to it (and the old file removed)
+  // config is written where it is read from : Repository.getConfigPath() (the same
+  // resolution the READ path and Settings.saveActiveConfig use) wins over the local
+  // file. It must be consulted regardless of repoMode : a use_for_config repository
+  // holds the config even when it is not a forms repository, and writing to the
+  // local config.yaml then silently discarded every category/role edit, because the
+  // repository copy kept being served. A legacy forms.yaml in a repository is
+  // migrated to config.yaml next to it (and the old file removed).
   var targetConfigPath = appConfig.configPath
   var legacyConfig = null
-  if (repoMode) {
-    const configInfo = await getConfigPath()
-    if (configInfo.path.startsWith(appConfig.repoPath)) {
-      if (configInfo.isLegacy) {
-        targetConfigPath = path.join(path.dirname(configInfo.path), "config.yaml")
-        legacyConfig = configInfo.path
-      } else {
-        targetConfigPath = configInfo.path
-      }
-    } else if (repoFolders.length === 1) {
-      // no config in the repository yet : adopt the single forms repository root
-      targetConfigPath = path.join(appConfig.repoPath, repoFolders[0].name, "config.yaml")
+  const repoConfigPath = await Repository.getConfigPath()
+  if (repoConfigPath) {
+    if (repoConfigPath.endsWith("forms.yaml")) {
+      targetConfigPath = path.join(path.dirname(repoConfigPath), "config.yaml")
+      legacyConfig = repoConfigPath
+    } else {
+      targetConfigPath = repoConfigPath
     }
+  } else if (repoMode && repoFolders.length === 1) {
+    // no config in any repository yet : adopt the single forms repository root
+    targetConfigPath = path.join(appConfig.repoPath, repoFolders[0].name, "config.yaml")
   }
   // staging is the default target for new files in repository mode ; it is
   // listed last so an existing repository file is always matched first
   const stagingDir = { name: null, path: appConfig.formsStagingPath, staging: true }
   const formsDirs = repoMode ? [...repoFolders, stagingDir] : [{ name: null, path: formsPath }]
   // the distinct git repositories this save writes into : the forms repos plus
-  // the repo that holds config.yaml (it may be a separate use_for_config repo) ;
-  // used to lock them for the duration of the write (issue #414)
-  let repoNames = []
-  if (repoMode) {
-    const names = new Set(repoFolders.map(f => f.name).filter(Boolean))
-    const configRepo = configRepoFromPath(targetConfigPath, appConfig.repoPath)
-    if (configRepo) names.add(configRepo)
-    repoNames = [...names]
-  }
+  // the repo that holds config.yaml (it may be a separate use_for_config repo,
+  // and then there are no forms repos at all - which is why this is not gated on
+  // repoMode) ; used to lock them for the duration of the write (issue #414)
+  const names = new Set(repoFolders.map(f => f.name).filter(Boolean))
+  const configRepo = configRepoFromPath(targetConfigPath, appConfig.repoPath)
+  if (configRepo) names.add(configRepo)
+  const repoNames = [...names]
   return { configPath: targetConfigPath, formsDirs, repoMode, legacyConfig, repoNames }
 }
 
@@ -242,19 +303,22 @@ function copyConfigTemplate(to) {
     logger.warning("Config file copied from template")
   } catch (e) {
     logger.error(`Failed to copy config from template.`,e);
-    throw new Error(Helpers.getError(e,"There is no config.yaml nor could one be created from template."))
+    throw new Error(Helpers.getError(e,"There is no config.yaml nor could one be created from template."), { cause: e })
   }
 }
 
 function copyFormsDirectoryTemplate(toDir) {
+  // declared outside the try : the catch reports the path, and a const inside the
+  // try block is not in scope there (a ReferenceError would then replace the real
+  // copy error with a confusing one)
+  const formsDirTemplatePath = path.join(__dirname, "../../templates/forms.template");
   try {
-    const formsDirTemplatePath = path.join(__dirname, "../../templates/forms.template");
     logger.warning("No forms directory found... creating empty one from template");
     fse.copySync(formsDirTemplatePath, toDir, { overwrite: false, errorOnExist: false });
     logger.warning("Directory copied");
   } catch (e) {
     logger.error(`Failed to copy forms directory from template '${formsDirTemplatePath}'.`, e);
-    throw new Error(Helpers.getError(e, "There is no forms directory nor could there be one created from template."));
+    throw new Error(Helpers.getError(e, "There is no forms directory nor could there be one created from template."), { cause: e });
   }
 }
 
@@ -262,18 +326,17 @@ async function getBaseConfig() {
   var rawdata=''
   var deprecationMessage = null;
 
-  // if we should find the config in the database, let's do that
-  if(appConfig.enableConfigInDatabase){
-    // Check if using deprecated variable and log warning
-    if(process.env.ENABLE_FORMS_YAML_IN_DATABASE !== undefined && process.env.ENABLE_CONFIG_IN_DATABASE === undefined){
+  const settings = await Settings.findFormsYaml()
+  const useDatabase = Settings.resolveConfigInDatabase(settings)
+
+  if(useDatabase){
+    if(!settings.config_source && process.env.ENABLE_FORMS_YAML_IN_DATABASE !== undefined && process.env.ENABLE_CONFIG_IN_DATABASE === undefined){
       logger.warning("ENABLE_FORMS_YAML_IN_DATABASE is deprecated. Please use ENABLE_CONFIG_IN_DATABASE instead.")
     }
-    
-    const settings = await Settings.findFormsYaml()    
-    // if not empty
-    if(settings.forms_yaml.trim()){
-      logger.info(`Using config from database`)      
-      rawdata = settings.forms_yaml // loading from db
+
+    if(settings.forms_yaml && settings.forms_yaml.trim()){
+      logger.info(`Using config from database`)
+      rawdata = settings.forms_yaml
     }else{
       logger.warning("No config found in the database, falling back to disk file")
     }
@@ -303,7 +366,7 @@ async function getBaseConfig() {
         rawdata = execYtt(configPath,yttLibDir);
       } catch (e) {
         logger.error(`Failed to load '${configPath}' with ytt.`,e);
-        throw new Error(Helpers.getError(e,"Error processing the config file with ytt."))
+        throw new Error(Helpers.getError(e,"Error processing the config file with ytt."), { cause: e })
       }
     } else {
       // try to read the file
@@ -312,7 +375,7 @@ async function getBaseConfig() {
         rawdata = fs.readFileSync(configPath, 'utf8');
       } catch (e) {
         logger.error(`Failed to load '${configPath}'.`,e);
-        throw new Error(Helpers.getError(e,"Error reading the config file."))
+        throw new Error(Helpers.getError(e,"Error reading the config file."), { cause: e })
       }
     }
   }
@@ -324,7 +387,7 @@ async function getBaseConfig() {
     return { config, deprecationMessage };
   }catch(err){
     logger.error("Error",err)
-    throw new Error(Helpers.getError(err,"Error parsing the base config, it's not valid yaml."))
+    throw new Error(Helpers.getError(err,"Error parsing the base config, it's not valid yaml."), { cause: err })
   }  
 }
 
@@ -334,6 +397,12 @@ async function loadVarsFiles(varsFiles) {
   }
 
   let mergedVars = {};
+  // Every failure below used to be logged and dropped, so this returned {} or a partial
+  // merge and the caller's catch could never fire: the form loaded 200 with vars: {},
+  // $vars.* resolved to nothing, defaults and enums came back empty, and the job ran with
+  // the wrong extravars - with nothing on screen saying a file was missing. Collected and
+  // handed back so the caller can put them in the errors the client renders.
+  const problems = [];
   
   // Get vars files path from repository or default local path
   const varsFilesPath = await Repository.getVarsFilesPath();
@@ -349,6 +418,7 @@ async function loadVarsFiles(varsFiles) {
     // Validate file extension
     if (ext !== '.yml' && ext !== '.yaml') {
       logger.warning(`Skipping varsFile '${varsFile}': must end with .yml or .yaml`);
+      problems.push(`'${varsFile}' was skipped: a varsFile must end with .yml or .yaml`);
       continue;
     }
 
@@ -361,6 +431,7 @@ async function loadVarsFiles(varsFiles) {
       // Validate that the file contains a dict/object
       if (typeof data !== 'object' || Array.isArray(data)) {
         logger.warning(`Skipping varsFile '${varsFile}': content must be a dictionary, not ${Array.isArray(data) ? 'a list' : typeof data}`);
+        problems.push(`'${varsFile}' was skipped: its content must be a dictionary, not ${Array.isArray(data) ? 'a list' : typeof data}`);
         continue;
       }
 
@@ -369,11 +440,12 @@ async function loadVarsFiles(varsFiles) {
       logger.debug(`Successfully loaded and merged varsFile: ${varsFile}`);
     } catch (err) {
       logger.error(`Failed to load varsFile '${varsFile}': ${err.message}`);
-      // Continue with other files even if one fails
+      // Continue with the other files, but REMEMBER this one - see `problems` above
+      problems.push(`'${varsFile}' could not be loaded: ${err.message}`);
     }
   }
 
-  return mergedVars;
+  return { vars: mergedVars, problems };
 }
 
 function getFormInfo(form,formName='',loadFullConfig=false) {
@@ -412,7 +484,7 @@ function getFormInfo(form,formName='',loadFullConfig=false) {
 
 
 function getFormsFromFile(formsPath,filename){
-  var rawData = '';
+  var rawData;
   const formPath = path.join(formsPath, filename);
   if (appConfig.useYtt) {
     try{
@@ -420,7 +492,7 @@ function getFormsFromFile(formsPath,filename){
       const yttLibDir=path.join(path.dirname(formsPath),"/lib");
       rawData = execYtt(formPath, yttLibDir);
     } catch (e) {
-      throw new Error(`Failed to load '${formPath}' and process with ytt.`,e);
+      throw new Error(`Failed to load '${formPath}' and process with ytt.`,{ cause: e });
 
     }
   } else {
@@ -428,7 +500,7 @@ function getFormsFromFile(formsPath,filename){
       // read the file
       rawData =fs.readFileSync(formPath,'utf8');
     } catch (e) {
-      throw new Error(`Failed to load '${formPath}.`,e);
+      throw new Error(`Failed to load '${formPath}'.`,{ cause: e });
     }
   }
 
@@ -499,6 +571,16 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
     warn(deprecationMessage);
   }
   
+  // a content-free config (an empty file, or one holding only comments) parses to
+  // null, and a config that is not a yaml mapping parses to a scalar or an array :
+  // reading categories/roles off that would throw a bare TypeError, so report it
+  // as the config error it is
+  if(!unvalidatedBase || typeof unvalidatedBase !== "object" || Array.isArray(unvalidatedBase)){
+    const message = "The base config has no content. It must be a yaml mapping holding at least 'categories' and 'roles'."
+    error(message)
+    throw new Error(message)
+  }
+
   // let's grab the base config and validate it, without it the app won't work
   var baseConfig = {
     categories: unvalidatedBase.categories || [],
@@ -519,7 +601,32 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
   baseConfig.forms = []; // initialize forms array  
 
 
+  // The base config's `forms:` block is NOT schema validated - validateConfig above only
+  // covers categories/roles/constants - so whatever the yaml parsed to arrives here as
+  // is. Two shapes crashed the whole loader:
+  //
+  //   forms:            a trailing empty list item parses to null, and `delete null.source`
+  //     - name: a       throws "Cannot convert undefined or null to object"
+  //     -
+  //
+  //   forms: {a: 1}     not an array, so `.length` is undefined, the deprecation warning is
+  //                     skipped, and `for...of` throws "is not iterable"
+  //
+  // Neither is inside a try, so the rejection escaped Form.load and every forms endpoint
+  // answered 500 with a raw TypeError - measured: GET /config/formlist and the designer's
+  // GET /config both 500 on a single stray list item. A malformed config must be REPORTED,
+  // not fatal: the errors array is rendered to the user and the rest of the config loads.
   var unvalidatedForms = unvalidatedBase.forms || []; // get the forms from the base config, will be deprecated in the future
+  if (!Array.isArray(unvalidatedForms)) {
+    error(`The 'forms' section of the base config must be a list, found ${unvalidatedForms === null ? 'null' : typeof unvalidatedForms}. It is ignored.`)
+    unvalidatedForms = []
+  }
+  // an entry that is not an object cannot be a form ; name it rather than dying on it
+  const malformedBaseForms = unvalidatedForms.filter(f => !f || typeof f !== 'object')
+  if (malformedBaseForms.length > 0) {
+    error(`The 'forms' section of the base config has ${malformedBaseForms.length} entry/entries that are not forms (empty list items?). They are ignored.`)
+    unvalidatedForms = unvalidatedForms.filter(f => f && typeof f === 'object')
+  }
   if (unvalidatedForms.length > 0){
     warn("Found forms in base config file. This is DEPRECATED. Please move forms to the forms/ folder.")
   }
@@ -538,10 +645,35 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
       const walk = (dir) => {
         const entries = fs.readdirSync(dir, { withFileTypes: true });
         for (const entry of entries) {
+          // listYamlFiles (the delete pass) skips .git ; this walk did not, so a forms
+          // repository served from its root re-stated the whole object store on every
+          // request for the form list
+          if (entry.name === ".git") continue;
           const fullPath = path.join(dir, entry.name);
-          if (entry.isDirectory()) {
+          // A SYMLINK is neither isDirectory() nor isFile() - readdirSync does not follow
+          // them. That made this walk and listYamlFiles disagree, and the disagreement
+          // destroyed data: a symlinked form yaml (a normal way to share one form between
+          // an app and a git checkout) was invisible here - never listed, never in the
+          // designer, and not even reported as a warning - while listYamlFiles matches on
+          // the EXTENSION and so still saw it. On the next designer save it was therefore
+          // an unknown file whose form names were not among the saved ones, and it was
+          // removed. Resolve the link so both walks see the same set.
+          let isDir = entry.isDirectory();
+          let isFile = entry.isFile();
+          if (entry.isSymbolicLink()) {
+            try {
+              const st = fs.statSync(fullPath); // follows the link
+              isDir = st.isDirectory();
+              isFile = st.isFile();
+            } catch (e) {
+              // a broken symlink : name it rather than dropping it silently
+              warn(`Skipping '${fullPath}' : it is a symbolic link that does not resolve (${e.code || e.message})`);
+              continue;
+            }
+          }
+          if (isDir) {
             walk(fullPath);
-          } else if (entry.isFile()) {
+          } else if (isFile) {
             const ext = path.extname(entry.name).toLowerCase();
             if (ext === '.yml' || ext === '.yaml') {
               // store path relative to formsdirpath so getFormsFromFile(formsdirpath, relPath) works
@@ -610,6 +742,17 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
         warn(`skipping duplicate form ${f.name}`)
         continue
       }
+      // The name is claimed BEFORE the role check, so a name resolves to exactly one
+      // definition - the first in walk order - on every path.
+      //
+      // It used to be claimed after, which made the two ways through this loop disagree.
+      // With two files defining `Deploy`, the first restricted to `ops` and the second to
+      // `public`, a public user got: the LIST path skipped copy 1 without registering the
+      // name, so copy 2 passed the duplicate check and the tile appeared; the SINGLE-form
+      // path hit copy 1 first and threw AccessDenied, so copy 2 was never reached. The
+      // form was listed and then failed to open. Claiming the name first makes both paths
+      // answer "denied", and the designer edits the same copy the loader resolves.
+      existingFormNames.push(f.name) // collect all form names
       if(!checkFormRole(f,userRoles)){
         logger.debug(`User has no access to form ${f.name}.`)
         if(formName) { // if we are looking for a specific form, and no access, throw an error
@@ -617,7 +760,7 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
         } 
         continue // skip this form if user has no access to it
       }
-      existingFormNames.push(f.name) // collect all form names        
+      
       logger.debug(`adding form ${f.name}`)
       try{
         form = getFormInfo(f,formName,loadFullConfig); // retreive only the necessary form info
@@ -630,7 +773,13 @@ Form.load = async function(userRoles,formName='',loadFullConfig=false,baseOnly=f
         if(formName && form.varsFiles){
           logger.debug(`Loading varsFiles for form ${f.name}`);
           try {
-            form.vars = await loadVarsFiles(form.varsFiles);
+            const loaded = await loadVarsFiles(form.varsFiles);
+            form.vars = loaded.vars;
+            // A varsFile that could not be read is not a detail: the form still renders,
+            // but $vars.* is empty and the job runs with the wrong extravars. Say so.
+            for (const p of loaded.problems) {
+              error(`Form '${f.name}': ${p}`);
+            }
           } catch (e) {
             error(`Failed to load varsFiles for form '${f.name}'.\r\n${e.message}`);
           }
@@ -722,7 +871,7 @@ function collectSubformsForForm(parentForm, unvalidated, errors){
 // load the forms config
 Form.backups = function() {
   logger.info(`Loading backups`)
-  var files=undefined
+  var files
   var backups=[]
   try{
     files = fs.readdirSync(backupPath)
@@ -732,8 +881,13 @@ Form.backups = function() {
       // parse the backup data
       backups=files.map(file => {
         var item=file.substring(file.length-17)
-        var dt=moment(item.slice(0,8)+"T"+item.slice(8,14)+","+item.slice(14))
-        return {'file':file,'date':dt.format("YYYY-MM-DD kk:mm:ss")}
+        // snapshots taken before the timestamp fix were written with 'kk' (1-24), so
+        // a backup made at midnight carries hour '24' on its own date. Moment refuses
+        // to parse that ('Invalid date' in the list, and a broken sort), so read it
+        // back as hour 00 of the same day - which is the moment it was really taken
+        var hour=item.slice(8,10)==='24' ? '00' : item.slice(8,10)
+        var dt=moment(item.slice(0,8)+"T"+hour+item.slice(10,14)+","+item.slice(14))
+        return {'file':file,'date':dt.format("YYYY-MM-DD HH:mm:ss")}
       }).sort((a, b) => a.date < b.date && 1 || -1);
     }
   }catch(e){
@@ -741,6 +895,36 @@ Form.backups = function() {
   }
   return backups
 };
+/**
+ * Reject duplicate role names.
+ *
+ * ajv has no "unique by property", and this is a privilege escalation rather than a typo:
+ * getRolesAndOptions applies EVERY matching entry, so a second `- name: admin` grants
+ * admin to that entry's groups too - while the roles editor, the designer and the audit
+ * delta all key roles by name and only ever show one of them.
+ *
+ * Shared by validateConfig AND validate. It used to live inline in validateConfig only,
+ * under a comment claiming every write path was covered - but Form.save (the DESIGNER
+ * path, and POST /api/v2/config/check) goes through Form.validate, which had no such
+ * check. So the designer happily saved a config that the next Form.load then refused,
+ * 500ing every config endpoint and - until the user.model fix - hanging every login.
+ */
+function assertNoDuplicateRoles(obj){
+  const seen = new Set()
+  const duplicates = new Set()
+  for(const role of (Array.isArray(obj?.roles) ? obj.roles : [])){
+    const name = typeof role?.name === 'string' ? role.name.trim() : null
+    if(name === null) continue
+    if(seen.has(name)) duplicates.add(name)
+    seen.add(name)
+  }
+  if(duplicates.size > 0){
+    const message = `Duplicate role name(s) : ${[...duplicates].join(", ")}. Each role must appear once.`
+    logger.error(message)
+    throw new Error(message)
+  }
+}
+
 Form.validateConfig = function(obj){
   if(obj){
     logger.debug("validating base against schema")
@@ -771,10 +955,18 @@ Form.validateConfig = function(obj){
       logger.error(ajvMessages)
       throw new Error(`${ajvMessages.join("\r\n")}`)
     }else{
+      // JSON Schema cannot express "unique by property", so duplicate role names get
+      // past ajv - and they are a privilege escalation, not a cosmetic problem :
+      // getRolesAndOptions iterates EVERY entry (user.model.js), so a second
+      // `- name: admin` with different groups grants admin to those groups, while the
+      // roles editor and the audit delta both key roles by name and only ever see one
+      // of the two. Reject it here so every write path is covered (designer, config
+      // editor, import, and a hand-edited file).
+      assertNoDuplicateRoles(obj)
       logger.debug("Valid base")
       return obj
     }
-    
+
   }
 }
 Form.validateForm = function(obj){
@@ -817,6 +1009,8 @@ Form.validateForm = function(obj){
 Form.validate = function(forms){
   if(forms){
     logger.debug("validating forms.yaml against schema")
+    // the designer saves through here ; see assertNoDuplicateRoles
+    assertNoDuplicateRoles(forms)
     const validate = ajv.compile(formsSchema)
     const valid = validate(forms)
     if (!valid){
@@ -868,23 +1062,43 @@ Form.validate = function(forms){
   }
 }
 Form.parse = function(data){
-  var formsConfig = undefined
+  var formsConfig
   try{
     logger.info("Parsing yaml data")
     formsConfig = yaml.parse(data.forms,{prettyErrors:true})
   }catch(err){
     logger.error("Error : ", err)
-    throw new Error(Helpers.getError(err,"Failed to parse yaml"))
+    throw new Error(Helpers.getError(err,"Failed to parse yaml"), { cause: err })
   }
   return formsConfig
 }
 Form.removeOld=function(days=60){
+  // 0 KEEPS EVERYTHING, like every other retention setting in this product.
+  //
+  // `old > days` with days=0 deleted every restore point more than a day old - so the one
+  // value an operator would reach for to mean "never prune" was the most destructive one
+  // available, and it applies to the snapshots taken before each config-replacing write,
+  // which are the only way back from a bad import.
+  //
+  // The Status page already asserted the opposite in as many words: it prints
+  // 'restore points never' for 0 with the note "0 deletes nothing, for every one of
+  // these". That page's whole premise is that it never claims a fact it has not
+  // established, so the code is what was wrong here, not the note.
+  //
+  // A non-numeric value already behaved this way by accident (`old > NaN` is false);
+  // it is explicit now rather than incidental.
+  const keep = parseInt(days, 10)
+  if(!(keep >= 1)){
+    logger.debug("Config restore point retention is disabled (OLD_BACKUP_DAYS), keeping all snapshots")
+    return
+  }
+  days = keep
   var items = fs.readdirSync(backupPath)
   if(items && items.length){
     // filter only backup yamls
     items=items.filter((item)=>item.match(/\.bak\.[0-9]{17}$/g))
     // read files
-    items.forEach((item, i) => {
+    items.forEach((item) => {
       var dt=item.substring(item.length-17) // get time part
       var iso=moment(dt.slice(0,8)) // get date part
       var old=moment().diff(moment(iso),"days") // how old ?
@@ -897,35 +1111,100 @@ Form.removeOld=function(days=60){
     });
   }
 }
-Form.backup = function(){
-  logger.info("Making backup of config and forms")
-  const sourceConfigPath = appConfig.configPath
+// configOnly : snapshot only the base config (repo mode keeps forms in git, so
+// the forms directories are never snapshotted ; only the DB/disk config is).
+// source : 'active' snapshots the config that is really being served (database,
+// repository or local file) ; 'file' snapshots the on-disk config file and
+// 'database' the database copy, even when that is not the active source - see
+// below. A 'file' / 'database' snapshot is named after its source
+// (configBackupPathForSource) so the restore reinstates it there.
+Form.backup = async function(configOnly=false,source='active'){
+  logger.info(configOnly ? "Making backup of config" : "Making backup of config and forms")
   const sourceFormsPath = formsPath
-  var timestamp=moment().format("YYYYMMDDkkmmssSSS")
+  // 'HH' (00-23), not 'kk' (1-24) : with 'kk' a backup taken at midnight was named
+  // hour '24', which moment can no longer reparse (see Form.backups)
+  var timestamp=moment().format("YYYYMMDDHHmmssSSS")
   var backupformsdir=formsBackupPath +".bak."+timestamp
-  var backupconfigfile=configFileBackupPath +".bak."+timestamp
+  var backupconfigfile=configBackupPathForSource(source) +".bak."+timestamp
   var backuplegacyformsfile=legacyFormFileBackupPath +".bak."+timestamp
   var backupfile=path.parse(backupconfigfile).base
   Form.removeOld(oldBackupDays)
 
-  // Back up config.yaml (new structure)
-  if(fs.existsSync(sourceConfigPath)){
-    logger.debug(`Copying config file '${sourceConfigPath}'->'${backupconfigfile}'`)
-    fse.copySync(sourceConfigPath,backupconfigfile)
+  // Back up the ACTIVE base config, whatever serves it : the database (when
+  // config_source or the env default says so and forms_yaml is not empty), a
+  // repository working tree, or the local config.yaml - Settings.getActiveConfig
+  // resolves exactly that, the same way the designer save does. Snapshotting
+  // appConfig.configPath instead would write nothing at all in repository mode
+  // (that file is then stale or absent), while still reporting a backup name.
+  var activeConfig
+  const sourceLabel = source==='file' ? 'config file' : (source==='database' ? 'database config' : 'active config')
+  if(source==='file'){
+    // source 'file' : snapshot the on-disk config file itself, for a write that
+    // REPLACES that file with the database copy (Settings.exportConfig). There the
+    // active config is the database, so an 'active' snapshot would only preserve
+    // what is being written and the disk contents would be lost. The path is
+    // resolved exactly like the one that write targets, and Form.restoreBackup
+    // reinstates the snapshot onto that same file.
+    const diskConfigPath = (await Repository.getConfigPath()) || appConfig.configPath
+    logger.debug(`Backing up the config file '${diskConfigPath}'`)
+    activeConfig = fs.existsSync(diskConfigPath) ? fs.readFileSync(diskConfigPath,'utf8') : ''
+  }else if(source==='database'){
+    // source 'database' : snapshot the database copy itself, for a write that
+    // REPLACES it with the config file (Settings.importConfig). In file mode the
+    // ACTIVE config IS that file, so an 'active' snapshot would preserve the very
+    // content being imported and lose the database copy unrecoverably.
+    logger.debug("Backing up the database config")
+    const dbSettings = await Settings.findFormsYaml()
+    activeConfig = dbSettings.forms_yaml || ''
+  }else{
+    activeConfig = await Settings.getActiveConfig()
+  }
+  var configBackedUp = false
+  // an empty (or whitespace-only) source is not a restore point : a fresh install
+  // with no config yet must not leave a bogus empty snapshot behind
+  if(activeConfig && activeConfig.trim()){
+    logger.debug(`Snapshotting the ${sourceLabel} -> '${backupconfigfile}'`)
+    fse.ensureDirSync(path.dirname(backupconfigfile))
+    fs.writeFileSync(backupconfigfile, activeConfig)
+    configBackedUp = true
+  }else{
+    logger.warning(`There is no ${sourceLabel} to back up`)
   }
 
-  // Back up forms.yaml (legacy - for backward compatibility)
-  if(fs.existsSync(appConfig.formsPath)){
-    logger.debug(`Copying legacy forms file '${appConfig.formsPath}'->'${backuplegacyformsfile}'`)
-    fse.copySync(appConfig.formsPath,backuplegacyformsfile)
-  }
+  // in config-only mode (repo mode + DB config) the forms live in git : only the
+  // base config is snapshotted, the forms directory/legacy file are left to git
+  if(!configOnly){
+    // Back up forms.yaml (legacy - for backward compatibility)
+    if(fs.existsSync(appConfig.formsPath)){
+      logger.debug(`Copying legacy forms file '${appConfig.formsPath}'->'${backuplegacyformsfile}'`)
+      fse.copySync(appConfig.formsPath,backuplegacyformsfile)
+    }
 
-  // Back up forms directory
-  if(fs.existsSync(sourceFormsPath)){
-    logger.debug(`Copying forms directory '${sourceFormsPath}'->'${backupformsdir}'`)
-    fse.removeSync(backupformsdir) // just in case, remove it (unlikely hit)
-    fse.ensureDirSync(backupformsdir) // make backupdir
-    fse.copySync(sourceFormsPath,backupformsdir) // make backup
+    // Back up forms directory
+    if(fs.existsSync(sourceFormsPath)){
+      logger.debug(`Copying forms directory '${sourceFormsPath}'->'${backupformsdir}'`)
+      fse.removeSync(backupformsdir) // just in case, remove it (unlikely hit)
+      fse.ensureDirSync(backupformsdir) // make backupdir
+      fse.copySync(sourceFormsPath,backupformsdir) // make backup
+    }
+  }
+  // the returned name IS the config backup file name : it is what the backup list
+  // shows and what Form.restore uses as its rollback point. Never report one for a
+  // file that was not written, or a failed restore would silently not be undone.
+  if(!configBackedUp){
+    logger.warning("No config snapshot was written, so no backup is reported")
+    // the forms artifacts above were already written under a timestamp nobody is
+    // ever handed : Form.restore sees no rollback point and never calls Form.remove
+    // for it, so they would linger for the whole retention period and the legacy
+    // 'forms.yaml.bak.<ts>' would even show up in Form.backups as a phantom entry.
+    // Named exactly like Form.remove names them, so nothing can be left behind
+    for(const orphan of [backuplegacyformsfile,backupformsdir]){
+      if(fs.existsSync(orphan)){
+        logger.debug(`Removing orphaned forms backup '${orphan}'`)
+        fse.removeSync(orphan)
+      }
+    }
+    return null
   }
   return backupfile
 }
@@ -933,15 +1212,19 @@ Form.backup = function(){
 Form.remove = function(backupName){
   logger.debug(`Removing old backup '${backupName}'`)
   var backupformsdir=formsBackupPath+getBackupSuffix(backupName)
-  var backupconfigfile=configFileBackupPath+getBackupSuffix(backupName)
   var backuplegacyformsfile=legacyFormFileBackupPath+getBackupSuffix(backupName)
-  
-  // Remove config.yaml backup
-  if(fs.existsSync(backupconfigfile)){
-    logger.debug(`Removing config file '${backupconfigfile}'`)
-    fse.removeSync(backupconfigfile)
+
+  // Remove the config.yaml backup, whichever source it was taken from (a timestamp
+  // only ever carries one of them, see configBackupPathForSource ; all are tried so
+  // no orphan can be left behind)
+  for(const source of ['active',...fixedBackupSources]){
+    const backupconfigfile=configBackupPathForSource(source)+getBackupSuffix(backupName)
+    if(fs.existsSync(backupconfigfile)){
+      logger.debug(`Removing config file '${backupconfigfile}'`)
+      fse.removeSync(backupconfigfile)
+    }
   }
-  
+
   // Remove legacy forms.yaml backup
   if(fs.existsSync(backuplegacyformsfile)){
     logger.debug(`Removing legacy forms file '${backuplegacyformsfile}'`)
@@ -954,31 +1237,51 @@ Form.remove = function(backupName){
     fse.removeSync(backupformsdir)
   }
 }
-Form.restoreBackup = function(backupName){
-  const targetConfigPath = appConfig.configPath
+Form.restoreBackup = async function(backupName,configOnly=false){
   const targetFormsPath = formsPath
-  var backupformsdir=formsBackupPath+getBackupSuffix(backupName)
-  var backupconfigfile=configFileBackupPath+getBackupSuffix(backupName)
-  var backuplegacyformsfile=legacyFormFileBackupPath+getBackupSuffix(backupName)
+  const suffix = getBackupSuffix(backupName)
+  var backupformsdir=formsBackupPath+suffix
+  var backuplegacyformsfile=legacyFormFileBackupPath+suffix
+  // a snapshot taken from a FIXED source lives under its own name and goes back to
+  // that source ; only a plain 'active' snapshot follows whatever is serving the
+  // config at restore time
+  const configSource = backupConfigSource(backupName)
+  var backupconfigfile=configBackupPathForSource(configSource)+suffix
 
   // Restore config.yaml
   if(fs.existsSync(backupconfigfile)){
-    logger.debug(`Copying config file '${backupconfigfile}'->'${targetConfigPath}'`)
-    fse.copySync(backupconfigfile,targetConfigPath)
+    const toDatabase = configSource==='database' || (configSource==='active' && await resolveRestoreInDatabase())
+    if(toDatabase){
+      // the base config lives in the database : reinstate the snapshot into the
+      // settings row (writing only to disk would leave the DB config untouched). A
+      // 'database' snapshot (Settings.importConfig) goes here even when a file is
+      // what currently serves the config.
+      logger.debug(`Restoring database config from '${backupconfigfile}'`)
+      await Settings.update({ forms_yaml: fs.readFileSync(backupconfigfile,'utf8') })
+    }else{
+      // a 'file' snapshot (Settings.exportConfig) goes back onto the config file,
+      // which is what undoing that export means - reinstating it into the database
+      // would replace the live config with a stale disk copy instead
+      await restoreConfigFile(backupconfigfile)
+    }
   }
 
-  // Restore legacy forms.yaml (if it exists in backup)
-  if(fs.existsSync(backuplegacyformsfile)){
-    logger.debug(`Copying legacy forms file '${backuplegacyformsfile}'->'${appConfig.formsPath}'`)
-    fse.copySync(backuplegacyformsfile,appConfig.formsPath)
-  }
+  // in config-only mode (repo mode + DB config) the served forms come from git :
+  // only the base config is reinstated, no forms directory/legacy file is touched
+  if(!configOnly){
+    // Restore legacy forms.yaml (if it exists in backup)
+    if(fs.existsSync(backuplegacyformsfile)){
+      logger.debug(`Copying legacy forms file '${backuplegacyformsfile}'->'${appConfig.formsPath}'`)
+      fse.copySync(backuplegacyformsfile,appConfig.formsPath)
+    }
 
-  // Restore forms directory
-  if(fs.existsSync(backupformsdir)){
-    logger.debug(`Copying forms directory '${backupformsdir}'->'${targetFormsPath}'`)
-    fse.removeSync(targetFormsPath) // just in case, remove it (unlikely hit)
-    fse.ensureDirSync(targetFormsPath) // make backupdir
-    fse.copySync(backupformsdir,targetFormsPath) // make backup
+    // Restore forms directory
+    if(fs.existsSync(backupformsdir)){
+      logger.debug(`Copying forms directory '${backupformsdir}'->'${targetFormsPath}'`)
+      fse.removeSync(targetFormsPath) // just in case, remove it (unlikely hit)
+      fse.ensureDirSync(targetFormsPath) // make backupdir
+      fse.copySync(backupformsdir,targetFormsPath) // make backup
+    }
   }
 }
 Form.save = async function(data){
@@ -1019,9 +1322,14 @@ Form.save = async function(data){
     g.dir = resolveTargetDir(g.repository, g.source, formsDirs, (d, src) => fs.existsSync(path.join(d.path, src)))
   }
 
-  // repository is an internal placement field : never write it to a form file or config
-  for (const g of Object.values(groups)) for (const f of g.forms) delete f.repository
-  formsConfig.forms.forEach(f => delete f.repository)
+  // repository and source are internal placement fields : never write them to a form file or config
+  // source is re-stamped from the filename on load ; repository pins a form to its repo
+  for (const g of Object.values(groups)) for (const f of g.forms) { delete f.repository; delete f.source; }
+  formsConfig.forms.forEach(f => { delete f.repository; delete f.source; })
+
+  // determine write target before locking to avoid querying settings inside the lock
+  const configSettings = await Settings.findFormsYaml()
+  const useDatabase = Settings.resolveConfigInDatabase(configSettings)
 
   // lock the working trees for the duration of the write so a concurrent
   // pull/sync/clone/reset can't run git on the same files (issue #414). All-or-
@@ -1031,13 +1339,27 @@ Form.save = async function(data){
     name => Repository.claimForWrite(name),
     (name, token) => Repository.releaseWrite(name, token))
 
+  // declared once for both branches below : two `var backupfile` in the same
+  // function scope is the same variable, so only the branch that runs assigns it
+  let backupfile
   try {
     if (!repoMode) {
       // local mode : snapshot before overwriting (in repo mode the git history is the backup)
-      var backupfile=Form.backup()
-      logger.debug(`Succesfull backup to ${backupfile}`)
+      backupfile=await Form.backup()
+      logger.debug(backupfile ? `Succesfull backup to ${backupfile}` : "No backup was made, there is no config yet")
+    } else if (useDatabase) {
+      // repo mode, but the base config lives in the database : git covers the
+      // forms, yet the DB config has no git history, so snapshot it (config only)
+      // before overwriting so a bad config save can still be rolled back
+      backupfile=await Form.backup(true)
+      logger.debug(backupfile ? `Succesfull config backup to ${backupfile}` : "No config backup was made, there is no config yet")
     }
 
+    // every form name the save is writing, across ALL folders - a file is only a deletion
+    // candidate when none of the names it defines survive anywhere
+    const savedFormNames = new Set(
+      Object.values(groups).flatMap(g => (g.forms || []).map(f => f?.name)).filter(Boolean)
+    )
     for (const dirEntry of formsDirs) {
       const dirGroups = Object.values(groups).filter(g => g.dir === dirEntry)
       const dirFiles = dirGroups.map(g => g.source)
@@ -1056,31 +1378,67 @@ Form.save = async function(data){
       // forms are removed ; a repository ROOT serving forms can hold unrelated
       // yaml files, there nothing is ever deleted. The staging folder is always
       // fully managed.
-      const managed = !repoMode || dirEntry.staging || path.basename(dirEntry.path) === "forms"
+      // dirEntry.dedicated, NOT the basename : a repository named 'forms' has a ROOT path
+      // ending in /forms, which the old test could not tell from a dedicated subfolder.
+      const managed = !repoMode || dirEntry.staging || dirEntry.dedicated === true
       if (managed && fs.existsSync(dirEntry.path)) {
         for (const existing of listYamlFiles(dirEntry.path)) {
           if (!dirFiles.includes(existing)) {
+            // "absent from the payload" is NOT the same as "the user deleted it".
+            // Form.load silently drops a file it cannot parse, a form failing validation,
+            // and a form whose name duplicates one already loaded - and the designer never
+            // sees any of them, so they were never in the payload to begin with. Deleting
+            // on absence alone therefore removed working files nobody touched: two forms
+            // repositories both defining a form called 'Deploy' lost the second one's file
+            // on the next save, and in repo mode Form.save takes no snapshot first.
+            //
+            // So only delete a file we can read AND whose form names have all genuinely
+            // gone from the config. Anything unreadable, or still naming a form that
+            // survived, is left alone and reported.
+            const fullPath = path.join(dirEntry.path, existing)
+            let definedNames = null
+            try {
+              const parsed = yaml.parse(fs.readFileSync(fullPath, "utf8"))
+              const list = Array.isArray(parsed) ? parsed : [parsed]
+              definedNames = list.map(f => f?.name).filter(Boolean)
+            } catch (e) {
+              definedNames = null   // unparseable
+            }
+            if (definedNames === null) {
+              logger.warning(`Not removing '${existing}' from '${dirEntry.path}' : it could not be parsed, so it was never loaded and cannot have been deleted here`)
+              continue
+            }
+            const stillDefined = definedNames.filter(n => savedFormNames.has(n))
+            if (stillDefined.length > 0) {
+              logger.warning(`Not removing '${existing}' from '${dirEntry.path}' : it defines ${stillDefined.join(", ")}, which the configuration still has - most likely a duplicate form name that the loader skipped`)
+              continue
+            }
             logger.debug(`Removing deleted form file '${existing}' from '${dirEntry.path}'`)
-            fse.removeSync(path.join(dirEntry.path, existing))
+            fse.removeSync(fullPath)
           }
         }
       }
     }
 
-    logger.debug(`Writing base file '${targetConfigPath}'`)
-    fse.ensureDirSync(path.dirname(targetConfigPath));
-    fs.writeFileSync(targetConfigPath,yaml.stringify(formsConfig)); // write basefile
-    // migrated a legacy forms.yaml to config.yaml : remove the old file so it
-    // doesn't linger and get committed alongside the new config
-    if (legacyConfig && legacyConfig !== targetConfigPath && fs.existsSync(legacyConfig)) {
-      logger.debug(`Removing migrated legacy config '${legacyConfig}'`)
-      fse.removeSync(legacyConfig)
+    const configYaml = yaml.stringify(formsConfig)
+
+    if (useDatabase) {
+      logger.debug("Writing base config to database")
+      await Settings.update({ forms_yaml: configYaml })
+    } else {
+      logger.debug(`Writing base file '${targetConfigPath}'`)
+      fse.ensureDirSync(path.dirname(targetConfigPath));
+      fs.writeFileSync(targetConfigPath, configYaml);
+      if (legacyConfig && legacyConfig !== targetConfigPath && fs.existsSync(legacyConfig)) {
+        logger.debug(`Removing migrated legacy config '${legacyConfig}'`)
+        fse.removeSync(legacyConfig)
+      }
     }
   }
   catch(err) {
     // handle error
     logger.error("Failed to save forms : ",err)
-    throw new Error(Helpers.getError(err,"Failed to save forms"))
+    throw new Error(Helpers.getError(err,"Failed to save forms"), { cause: err })
   }
   finally {
     // release the working-tree locks, restoring each repo's prior status (the
@@ -1096,23 +1454,38 @@ Form.restore = async function(backupName,backupBeforeRestore){
   logger.info(`Restoring backup '${backupName}'`)
   var tmpbackup
   const { repoMode } = await getSaveTargets()
-  if (repoMode) {
-    // forms live in git repositories : the snapshots only cover the local
-    // folders, restoring them would not affect the served forms
+  // the SAME expression Form.restoreBackup routes on : with a different one this
+  // guard could pass while the restore below still took the disk branch and wrote
+  // config.yaml into a repository working tree (issue : config_source='database'
+  // with a forms_yaml that is still empty, e.g. right after switching source)
+  const useDatabase = await resolveRestoreInDatabase()
+  if (repoMode && !useDatabase) {
+    // forms live in git repositories and no config is in the database : the
+    // snapshots only cover the local folders, restoring them would not affect
+    // the served forms
     throw new Error("Forms are managed in git repositories ; restore a previous state from the git history instead")
   }
+  // in repo mode only the DB base config is restorable ; the forms stay in git
+  const configOnly = repoMode
   try {
-    // first backup current
-    tmpbackup=Form.backup()
-    Form.restoreBackup(backupName)
-    if(!backupBeforeRestore)
+    // first backup current (config only in repo mode : no repo working tree is touched)
+    // ; a null means nothing was snapshotted, so there is no rollback point either.
+    // Snapshot the same source the restore is about to write : undoing a failed
+    // restore of a 'file' / 'database' snapshot must reinstate that source, not
+    // whatever happens to be the active one.
+    tmpbackup=await Form.backup(configOnly,backupConfigSource(backupName))
+    if(!tmpbackup){
+      logger.warning("Could not snapshot the current config before restoring ; this restore can not be undone")
+    }
+    await Form.restoreBackup(backupName,configOnly)
+    if(!backupBeforeRestore && tmpbackup)
       Form.remove(tmpbackup)
     return true
   }catch(e){
-    logger.error("Failed to restore '${backupName}'." + e)
+    logger.error(`Failed to restore '${backupName}'.` + e)
     if(tmpbackup){
       try{
-        Form.restoreBackup(tmpbackup)
+        await Form.restoreBackup(tmpbackup,configOnly)
       }catch(err){
         logger.error(`Failed to undo failed restore '${tmpbackup}' !!`)
       }

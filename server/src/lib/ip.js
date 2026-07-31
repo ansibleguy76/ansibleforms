@@ -371,7 +371,7 @@ ip.normalizeToLong = function (addr) {
 
   if (parts.some(isNaN)) return -1; // Indicate error with -1
 
-  let val = 0;
+  let val;
   const n = parts.length;
 
   switch (n) {

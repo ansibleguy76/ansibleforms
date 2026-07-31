@@ -91,7 +91,7 @@ test("claimAllOrRollback skips undefined-token (untracked) resources, never hold
   await assert.rejects(
     claimAllOrRollback(["repo", "staging", "boom"],
       n => { if (n === "boom") throw new Error("x"); return n === "staging" ? undefined : null; },
-      (n, t) => released.push(n)),
+      (n, _t) => released.push(n)),
     /x/);
   assert.deepEqual(released, ["repo"]); // staging was skipped, only repo rolled back
 });

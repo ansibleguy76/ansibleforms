@@ -42,12 +42,13 @@ CREATE TABLE `credentials` (
   `password` text DEFAULT NULL,
   `host` varchar(250) DEFAULT NULL,
   `port` int(11) DEFAULT NULL,
-  `description` text NOT NULL,
+  `description` text DEFAULT NULL,
   `secure` tinyint(4) DEFAULT NULL,
   `db_type` varchar(10) DEFAULT NULL,
   `db_name` varchar(255) DEFAULT NULL,  
   `is_database` tinyint(4) DEFAULT 1,
   `vault_path` varchar(500) DEFAULT NULL,
+  `managed` tinyint(4) DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_AnsibleForms_credentials_natural_key` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -69,9 +70,9 @@ CREATE TABLE `ldap` (
   `group_class` varchar(250) DEFAULT NULL,
   `group_member_attribute` varchar(250) DEFAULT NULL,
   `group_member_user_attribute` varchar(250) DEFAULT NULL,
-  `is_advanced` tinyint(4) DEFAULT NULL,
   `mail_attribute` varchar(250) DEFAULT NULL,
-  `enable` tinyint(4) DEFAULT NULL
+  `enable` tinyint(4) DEFAULT NULL,
+  `managed` tinyint(4) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 -- create awx table
 DROP TABLE IF EXISTS `awx`;
@@ -87,6 +88,7 @@ CREATE TABLE `awx` (
   `use_credentials` tinyint(4) DEFAULT NULL,
   `ignore_certs` tinyint(4) DEFAULT NULL,
   `ca_bundle` text DEFAULT NULL,
+  `managed` tinyint(4) DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_AnsibleForms_awx_natural_key` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -113,7 +115,15 @@ CREATE TABLE `jobs` (
   `awx_id` int(11) DEFAULT NULL,
   `awx_artifacts` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `awx_workflow` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  PRIMARY KEY (`id`)
+  -- added by a patch on an existing install ; keep both paths in sync (schema.model.js)
+  `raw_form_data` longtext DEFAULT NULL,
+  `pid` int(11) DEFAULT NULL,
+  `host` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  -- the retention sweep selects on (parent_id, status, end) ; without this it full
+  -- scans the largest table in the schema on every batch. Keep in sync with the
+  -- patch in schema.model.js that adds it to an existing install.
+  KEY `idx_jobs_retention` (`parent_id`, `status`, `end`)
 ) ENGINE=InnoDB AUTO_INCREMENT=47 DEFAULT CHARSET=utf8;
 CREATE TABLE `job_output` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
@@ -137,7 +147,12 @@ CREATE TABLE `settings` (
   `mail_from` varchar(250) DEFAULT NULL,
   `url` varchar(250) DEFAULT NULL,
   `forms_yaml` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `logo` longtext DEFAULT NULL
+  `logo` longtext DEFAULT NULL,
+  `config_source` varchar(20) DEFAULT NULL,
+  `default_language` varchar(5) DEFAULT NULL,
+  `default_theme` varchar(10) DEFAULT NULL,
+  `default_theme_color` varchar(7) DEFAULT NULL,
+  `managed` tinyint(4) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 -- oauth2 providers table
 USE `AnsibleForms`;
@@ -148,6 +163,8 @@ CREATE TABLE `oauth2_providers` (
   `name` VARCHAR(100) DEFAULT NULL, -- required name for the provider
   `description` VARCHAR(250) DEFAULT NULL, -- optional description for the provider
   `issuer` TEXT DEFAULT NULL,
+  -- added by a patch on an existing install ; keep both paths in sync (schema.model.js)
+  `tenant_id` TEXT DEFAULT NULL,
   `client_id` TEXT DEFAULT NULL,
   `client_secret` TEXT DEFAULT NULL,
   `enable` TINYINT(4) DEFAULT NULL,
@@ -158,6 +175,7 @@ CREATE TABLE `oauth2_providers` (
   `token_url` TEXT DEFAULT NULL,
   `userinfo_url` TEXT DEFAULT NULL,
   `extra` JSON DEFAULT NULL, -- for any additional provider-specific config
+  `managed` tinyint(4) DEFAULT 0,
   UNIQUE KEY (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 -- create repositories table
@@ -168,14 +186,19 @@ CREATE TABLE `repositories` (
   `user` varchar(250) DEFAULT NULL,
   `password` text DEFAULT NULL,
   `uri` varchar(250) DEFAULT NULL,
-  `description` text NOT NULL,
+  `description` text DEFAULT NULL,
   `use_for_forms` tinyint(4) DEFAULT NULL,
-  `use_for_playbooks` tinyint(4) DEFAULT NULL,  
-  `cron` varchar(50) DEFAULT NULL,  
+  `use_for_playbooks` tinyint(4) DEFAULT NULL,
+  -- added by a patch on an existing install ; keep both paths in sync (schema.model.js)
+  `branch` varchar(250) DEFAULT NULL,
+  `use_for_config` tinyint(4) DEFAULT 0,
+  `use_for_vars_files` tinyint(4) DEFAULT 0,
+  `cron` varchar(50) DEFAULT NULL,
   `status` varchar(50) DEFAULT NULL,
   `output` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `head` varchar(50) DEFAULT NULL,    
-  `rebase_on_start` tinyint(4) DEFAULT NULL,  
+  `rebase_on_start` tinyint(4) DEFAULT NULL,
+  `managed` tinyint(4) DEFAULT 0,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_AnsibleForms_repositories_natural_key` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -229,10 +252,50 @@ CREATE TABLE `schedule` (
   `queue_id` INT DEFAULT 0,  
   `extra_vars` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `output` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  -- added by a patch on an existing install ; keep both paths in sync (schema.model.js)
+  `one_time_run` tinyint(4) DEFAULT 0,
+  `run_at` datetime DEFAULT NULL,
   UNIQUE KEY `uk_schedule_natural_key` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- create audit table (append only : there is no update or delete path for a row,
+-- only the retention sweep. Keep in sync with src/db/create_audit_table.sql, which
+-- is what the patch for existing installs runs)
+DROP TABLE IF EXISTS `audit`;
+CREATE TABLE `audit` (
+  `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+  `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `actor` VARCHAR(255) DEFAULT NULL,
+  `actor_type` VARCHAR(20) DEFAULT NULL,
+  `ip` VARCHAR(45) DEFAULT NULL,
+  `action` VARCHAR(64) NOT NULL,
+  `target_type` VARCHAR(64) DEFAULT NULL,
+  `target` VARCHAR(255) DEFAULT NULL,
+  `outcome` VARCHAR(16) NOT NULL,
+  `detail` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  KEY `idx_audit_created` (`created_at`),
+  KEY `idx_audit_actor` (`actor`, `created_at`),
+  KEY `idx_audit_action` (`action`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- default values are created at startup
+
+-- stored jobs
+-- This table used to be created only by a patch, which meant this file left its rows
+-- behind while dropping everything they refer to (forms, users) - and a fresh install
+-- with a grant that allows CREATE but not ALTER never got the table at all.
+DROP TABLE IF EXISTS `stored_jobs`;
+CREATE TABLE `stored_jobs` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `name` VARCHAR(255) NOT NULL,
+  `description` TEXT DEFAULT NULL,
+  `form_name` VARCHAR(255) NOT NULL,
+  `username` VARCHAR(255) NOT NULL,
+  `form_data` LONGTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `expires_at` DATETIME DEFAULT NULL,
+  UNIQUE KEY `uk_user_form_name` (`username`, `form_name`, `name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- enable foreign key checks
 SET FOREIGN_KEY_CHECKS=1;

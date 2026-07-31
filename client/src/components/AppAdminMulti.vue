@@ -17,7 +17,7 @@
     /*                                                                */
     /******************************************************************/
 
-    import { ref, onMounted, onBeforeUnmount, computed } from 'vue';
+    import { ref, onMounted, onBeforeUnmount, computed, nextTick } from 'vue';
     import { watch } from 'vue';    
     import { toast } from 'vue-sonner';
     import axios from 'axios';
@@ -73,6 +73,7 @@
     const objectLabel = computed(() => props.settings.label || '');
     const objectLabelPlural = computed(() => props.settings.labelPlural || `${objectLabel.value}s`);
     const objectIcon = computed(() => props.settings.icon);
+    const objectDescription = computed(() => props.settings.description || '');
     const children = computed(() => props.settings.children || []);
     const actions = computed(() => props.settings.actions || []);
     const fields = computed(() => props.settings.fields || []);
@@ -96,9 +97,41 @@
             }
             // regex validation
             if (field.regex && field.regex.expression) {
-                var regexObj = new RegExp(field.regex.expression)
+                // a malformed pattern must not throw out of the rules builder and take the
+                // whole form down - report it and skip the rule, as AppForm does
+                var regexObj = null
+                try { regexObj = new RegExp(field.regex.expression) } catch (e) {
+                    console.error(`Field '${field.key || field.label}': invalid regex '${field.regex.expression}' (${e.message}); the rule is ignored.`)
+                }
                 var description = field.regex.description
-                rule.regex = helpers.withMessage(description, (value) => !helpers.req(value) || regexObj.test(value))
+                // only when there is a usable pattern - otherwise regexObj.test would
+                // throw at validation time instead
+                if (regexObj) {
+                    rule.regex = helpers.withMessage(description, (value) => !helpers.req(value) || regexObj.test(value))
+                }
+            }
+            // A field can also carry a FUNCTION validator, returning the reason it is
+            // invalid or '' when it is fine. A regex cannot express every rule - the cron
+            // fields need "the start of a range must not exceed its end", which is why
+            // they saved values croner then refused, leaving the job unregistered and the
+            // page reporting success. The message is dynamic, so it rides on $response
+            // rather than being fixed when the rule is built.
+            if (typeof field.validator === 'function') {
+                const check = field.validator
+                rule.custom = helpers.withMessage(
+                    ({ $response }) => $response || `${field.label} is not valid`,
+                    (value) => {
+                        if (!helpers.req(value)) return true
+                        let message
+                        try { message = check(value) || '' } catch (e) {
+                            // a throwing validator must not take the whole form down, as
+                            // the regex branch above already guards against
+                            console.error(`Field '${field.key || field.label}': validator threw (${e.message}); the rule is ignored.`)
+                            return true
+                        }
+                        return message ? { $valid: false, $response: message } : true
+                    }
+                )
             }
             if (field.type == 'editor' && field.lang == 'yaml') {
                 rule.editorType = helpers.withMessage(
@@ -133,47 +166,94 @@
     function objectTitle(prefix = '', suffix = '') {
         return `${prefix} ${objectLabel.value} ${suffix}`.trim()
     }
-    function resetItems() {
-        itemList.value = [];
+    // Selection state only - see loadItems for why the list is no longer blanked here.
+    function resetSelection() {
         itemId.value = undefined;
         pagination.value.currentId = undefined; // reset selected item
         action.value = '';
     }
+    // Keep only ids that still exist in the loaded list. Assigning a new Set rather than
+    // mutating, because BsDataTable takes selectedIds as a prop and compares by identity.
+    function pruneSelection() {
+        if (!selectedIds.value.size) return;
+        const present = new Set((itemList.value || []).map(r => r[idKey]));
+        const kept = [...selectedIds.value].filter(id => present.has(id));
+        if (kept.length !== selectedIds.value.size) selectedIds.value = new Set(kept);
+    }
     async function loadItems(force=true) {
-        // if the offcanvas is open, do not load items
-        if (['select', 'edit', 'new', 'change_password'].includes(action.value) && !force){ 
+        // if the offcanvas or a confirmation is open, do not load items.
+        // 'delete' belongs here too: it was missing, so the 60 second auto-reload ran
+        // resetItems(), which clears action - and the delete confirmation simply vanished
+        // with nothing deleted and no message, on a timer, while the user was reading it.
+        if (['select', 'edit', 'new', 'change_password', 'delete'].includes(action.value) && !force){ 
             return 
         }
-        resetItems();
+        // Clear the SELECTION, not the list.
+        //
+        // resetItems() blanked itemList before the request, so on every 60 second refresh
+        // BsPagination briefly saw an empty dataList: its clamp watcher then called
+        // setPage(1) and the reader was thrown back to page 1 mid-read. (BsDataTable
+        // already stopped re-keying the paginator on a data change for this same reason;
+        // this was the other half.) Assigning the new list when it arrives also removes
+        // the "no data" flicker.
+        resetSelection();
         itemList.value = await loadList(objectType,isFlat);
+        // Drop selected rows that are no longer there. resetSelection() clears the SINGLE
+        // item selection (the offcanvas), not the multi-select set, so without this the
+        // toolbar kept counting rows that had been deleted - by this admin elsewhere, by
+        // another one, or by whatever writes the underlying file - and a bulk action was
+        // sized off a number that no longer described anything on screen. Ids are stable
+        // (see flatRow), so a row that is still there keeps its selection across the
+        // 60 second reload, which is the point of not simply clearing it.
+        pruneSelection();
         for (const field of fields.value) {
             if (field.parent && field.values && typeof field.values == 'string') {
-                parentLists.value[field.parent] = await loadList(field.values);
+                // a dropdown source can live on another api version than the page
+                // itself (e.g. datasources are v1-only but config/formnames is v2)
+                parentLists.value[field.parent] = await loadList(field.values, false, field.valuesApiVersion);
             }
             if (field.parent && field.values && Array.isArray(field.values)) {
                 parentLists.value[field.parent] = field.values;
             }
         }
     }
-    async function loadList(type,isFlat=false) {
+    /**
+     * A row for a FLAT list, whose records are bare values (known hosts are ssh key lines).
+     *
+     * The id is the VALUE, not the array index. An index is positional, and this list is
+     * reloaded every 60 seconds while `selectedIds` survives that reload - so once anything
+     * added or removed an entry, every selected index pointed at a DIFFERENT row and bulk
+     * delete removed the wrong host keys, behind a confirmation that only says
+     * "Delete N item(s)?". The known_hosts file changes exactly when this page is in use
+     * (a repository clone or pull over ssh adds to it), so that was not a rare race.
+     *
+     * The value is also what the delete endpoint takes (`?name=`), so id and name being the
+     * same thing is the honest model here rather than a coincidence.
+     */
+    function flatRow(value) {
+        const name = String(value);
+        return { id: name, name };
+    }
+    async function loadList(type,isFlat=false,version=undefined) {
+        const apiVersion = version || props.apiVersion;
         try {
-            const result = await axios.get(`/api/v${props.apiVersion}/${type}/`, TokenStorage.getAuthentication());
-            if(props.apiVersion == 1) {
+            const result = await axios.get(`/api/v${apiVersion}/${type}/`, TokenStorage.getAuthentication());
+            if(apiVersion == 1) {
                 if(isFlat){
                     const raw = Array.isArray(result.data.data.output) ? result.data.data.output : [];
                     const deduped = removeDoubles ? Array.from(new Set(raw)) : raw;
                     // v1 flat assumed array of primitive values (string/number)
-                    return deduped.map((val, idx) => ({ id: idx, name: String(val) }));
+                    return deduped.map((val) => flatRow(val));
                 }
                 return result.data.data.output;
-            } else if (props.apiVersion == 2) {
+            } else if (apiVersion == 2) {
                 if(isFlat){
                     const records = Array.isArray(result.data.records) ? result.data.records : [];
                     if (records.length === 0) return [];
                     // If primitives (strings/numbers)
                     if (typeof records[0] !== 'object' || records[0] === null) {
                         const deduped = removeDoubles ? Array.from(new Set(records)) : records;
-                        return deduped.map((val, idx) => ({ id: idx, name: String(val) }));
+                        return deduped.map((val) => flatRow(val));
                     }
                     // Objects: ensure id & name exist generically
                     return records.map((obj, idx) => {
@@ -203,12 +283,20 @@
 
 
     }
+    // set while a record is being read into `item`, so the dependency watchers above do
+    // not mistake the load for a user edit
+    const loadingItem = ref(false);
     async function loadItem() {
         if (itemId.value) {
+            loadingItem.value = true;
             try {
                 var result
                 if (isFlat) {
-                    item.value = itemList.value[itemId.value]
+                    // find by id, NOT itemList[itemId] : that indexed the array by the id,
+                    // which only worked while a flat id happened to BE the array index. It
+                    // is the value now (see flatRow), and it was already wrong for a flat
+                    // list of objects, where loadList sets id from the record's own idKey.
+                    item.value = itemList.value.find(r => r[idKey] === itemId.value)
                 } else {
                     result = await axios.get(`/api/v${props.apiVersion}/${objectType}/${itemId.value}`, TokenStorage.getAuthentication())
                     if (props.apiVersion == 1) {
@@ -240,9 +328,26 @@
                 }
             } catch (err) {
                 toast.error(Helpers.parseAxiosResponseError(err, "Failed to load item"))
+            } finally {
+                // released on the error path too, or every later dependency change on
+                // this page would be ignored
+                await nextTick();
+                loadingItem.value = false;
             }
         }
     }
+    // What to call the record in the delete confirmation.
+    //
+    // `selectedItem.name` alone rendered an empty bold span for anything without a `name`
+    // column - backups are keyed by `folder` (describeBackup returns no name at all), so
+    // the prompt read "Are you sure you want to delete ?" and you could not tell which
+    // backup you were about to destroy. Falls back through the page's own key.
+    const deleteLabel = computed(() => {
+        const it = selectedItem.value;
+        if (!it) return '';
+        return it.name ?? it.title ?? it.username ?? it[idKey] ?? it.id ?? '';
+    });
+
     async function selectItem(value) {
         itemId.value = value[idKey];
         pagination.value.currentId = value[idKey];
@@ -302,17 +407,21 @@
     }
     function newItem() {
         item.value = {};
-        // Initialize fields with defaults to prevent undefined warnings
         fields.value.forEach(field => {
             if (field.type === 'editor' && item.value[field.key] === undefined) {
                 item.value[field.key] = '';
+            }
+            if (field.type === 'select' && field.parent && field.valueKey) {
+                const list = parentLists.value[field.parent] || [];
+                if (list.length > 0 && item.value[field.key] === undefined) {
+                    item.value[field.key] = list[0][field.valueKey];
+                }
             }
         });
         action.value = 'new';
     }
     async function createItem() {
-        var invalid=false
-        invalid = isInvalid.value
+        var invalid = isInvalid.value
         if (!invalid) {
             try {
                 const result = await axios.post(`/api/v${props.apiVersion}/${objectType}/`, item.value, TokenStorage.getAuthentication())
@@ -337,7 +446,7 @@
         }
     }
     async function updateItem(passwordOnly=false) {
-        var invalid=false
+        var invalid
         if(passwordOnly){
             invalid = isInvalidPassword.value
         }else{
@@ -423,7 +532,7 @@
                 depShow = depValue;
             }
         }
-        if (field.type == 'password' && ["new","change_password"].includes(action.value)) return (true && depShow);
+        if (field.type == 'password' && ["new","change_password"].includes(action.value)) return depShow;
         if (field.type != 'password' && action.value == 'change_password') return false;
         if (field.type == 'password' && action.value != 'change_password') return false;
         return depShow;
@@ -445,9 +554,22 @@
     }
 
 
+    // Recompute a dependent default only when the USER changed the dependency.
+    //
+    // loadItem replaces item.value wholesale, so loading an existing record moves e.g.
+    // `provider` from undefined to 'azuread' and this watcher fired - and
+    // setFieldDefaults has no "only when empty" guard, unlike the loops in
+    // selectItem/editItem that spell that rule out. So opening an OAuth2 provider whose
+    // redirect_uri had been customised replaced it with the computed default, and Save
+    // then persisted that: the custom callback URL was lost by merely looking at it.
+    //
+    // The watcher cannot tell a load from an edit by itself, so the load says so.
     fields.value.forEach(field => {
         if (field.dependency) {
-            watch(() => item.value[field.dependency], () => setFieldDefaults(field.dependency));
+            watch(() => item.value[field.dependency], () => {
+                if (loadingItem.value) return;
+                setFieldDefaults(field.dependency);
+            });
         }
     });
 
@@ -508,9 +630,6 @@
         }
         return false
     })
-    const checkboxFields = computed(() => {
-        return fields.value.filter(field => field.type === 'checkbox').map(field => field.key);
-    });
 
     // BsDataTable mode (always on — BsDataTable is the only table renderer)
     const dataTableSelectable = computed(() => props.settings.selectable !== false);
@@ -539,11 +658,26 @@
                     // picker so users can show them when wanted.
                     defaultHidden: !!f.hidden,
                 };
-                if (f.type === 'select' && f.parent) {
+                // a field may bring its own cell renderer (see config/settings.js) :
+                // without this a `datetime` column shows the raw value it was sent
+                if (typeof f.render === 'function') {
+                    col.render = f.render;
+                }
+                // a field-level render wins : the select branch below would otherwise
+                // silently overwrite one the config deliberately supplied
+                if (f.type === 'select' && f.parent && typeof f.render !== 'function') {
                     col.render = (val) => {
                         const list = parentLists.value[f.parent] || [];
                         const found = list.find(itm => itm[f.valueKey] == val);
-                        return found ? found[f.labelKey] : (val || '');
+                        // ESCAPED. BsDataTable escapes a plain cell value but passes
+                        // render() output to v-html verbatim, and both branches here are
+                        // server data: found[labelKey] is e.g. a GROUP NAME, shown in the
+                        // Group column of Admin > Users. A group named `<img src=x
+                        // onerror=...>` therefore executed in the browser of everyone who
+                        // opened that page. The seed badge below already follows the rule
+                        // this codebase states - nothing reaches v-html unescaped,
+                        // whatever its provenance - this renderer did not.
+                        return escapeHtml(found ? found[f.labelKey] : (val ?? ''));
                     };
                 }
                 if (f.type === 'checkbox') {
@@ -553,9 +687,69 @@
             });
     });
 
+    // Only when something is actually seeded : an always-present column would be an
+    // empty stripe on every instance that does not use a config seed.
+    const anyManaged = computed(() => (itemList.value || []).some(isManaged));
+    const columnsWithManaged = computed(() => {
+        if (!anyManaged.value) return dataTableColumns.value;
+        return [...dataTableColumns.value, {
+            key: 'managed',
+            label: t('settings.common.seedManaged'),
+            sortable: true,
+            filterable: false,
+            // static markup only - nothing from the row is interpolated, because
+            // render() output goes through v-html
+            // Text only. This app loads the FontAwesome SVG core and renders icons via
+            // the FaIcon component - there is no webfont CSS - so an <i class="fas ...">
+            // here produced an empty element and a stray gap, not a lock.
+            render: (val) => val
+                ? '<span class="badge text-bg-secondary">' + escapeHtml(t('settings.common.seedManaged')) + '</span>'
+                : '',
+        }];
+    });
+
+    // Records the declarative config seed owns (docs/seed.md). The API answers 403 on
+    // them, so offering Edit and Delete would only produce an error - and the seed
+    // re-applies on every start, so even a successful change would be reverted.
+    // Read-only actions (test, preview, trigger) stay available.
+    // Every action that ends in a write the guard refuses. 'change_password' goes
+    // through changePasswordItem -> updateItem(true) -> the SAME PUT /:id as Edit, so
+    // leaving it out offered a form whose Save answered 403. test/preview/trigger/
+    // reset/sync are deliberately absent : they are read-only or write only runtime
+    // status, which the seed does not own.
+    const MANAGED_BLOCKS = new Set(['edit', 'delete', 'change_password']);
+    const isManaged = (item) => !!(item && item.managed);
+    // The badge below is built as markup because BsDataTable passes render() output to
+    // v-html. Only a locale string goes in, but it is escaped anyway : the rule in this
+    // codebase is that nothing reaches v-html unescaped, whatever its provenance.
+    const escapeHtml = (s) => String(s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
     // Whether a per-row action should be enabled. Honours `dependency`,
     // `dependencyValues`, and `negateDependency` from the action definition.
+    /**
+     * The in-progress label for a row, from the `busyItems` prop.
+     *
+     * That prop was declared and documented, and credentials.vue and aap.vue both pass a
+     * map of "testing..." strings into it - but nothing in this component ever read it,
+     * so pressing Test gave no per-row feedback at all and a second click fired another
+     * request. The parents key that map by the record id.
+     */
+    // Only the action that is actually running wears the label - swapping every entry in
+    // the menu to "Testing..." would say Edit and Delete were testing something too. Both
+    // pages that pass busyItems populate it from their `test` handler.
+    function busyAction(action, item) {
+        return !!busyLabel(item) && action?.name === 'test';
+    }
+
+    function busyLabel(item) {
+        if (!item) return '';
+        return props.busyItems?.[item.id] ?? props.busyItems?.[item[idKey]] ?? '';
+    }
+
     function isActionEnabled(action, item) {
+        if (isManaged(item) && MANAGED_BLOCKS.has(action.name)) return false;
         if (!action.dependency) return true;
         // an array dependency means "enabled if ANY of these fields is truthy"
         if (Array.isArray(action.dependency)) {
@@ -586,6 +780,8 @@
 
     function dispatchAction(action, item) {
         if (!isActionEnabled(action, item)) return;
+        // a row that is already running its action must not start it again
+        if (busyLabel(item)) return;
         switch (action.name) {
             case 'edit': return editItem(item);
             case 'delete': return deleteItem(item);
@@ -602,7 +798,11 @@
     function onDataTableRowClick(item) {
         if (!dataTableSelectable.value) {
             activeRowId.value = item[idKey];
-            if (hasEditAction.value) {
+            // A seed-managed row must open READ-ONLY here too. Clicking the row is the
+            // normal way to edit on these pages (selectable:false + an edit action), and
+            // it bypasses isActionEnabled entirely - so greying out the menu's Edit was
+            // decorative: the click still opened a live form whose Save answered 403.
+            if (hasEditAction.value && !isManaged(item)) {
                 editItem(item);
             } else {
                 // No edit action defined → open the read-only "show" offcanvas
@@ -614,14 +814,20 @@
     }
 
     async function bulkDelete() {
-        const ids = [...selectedIds.value];
+        // only what is still on screen : a selected row that has since disappeared must not
+        // be guessed at, and the count in the confirmation has to be the count acted on
+        const present = new Map(itemList.value.map(r => [r[idKey], r]));
+        const ids = [...selectedIds.value].filter(id => present.has(id));
         if (!ids.length) return;
         if (!confirm(`Delete ${ids.length} item(s)?`)) return;
         try {
             await Promise.all(ids.map(id => {
                 if (isFlat) {
-                    const row = itemList.value.find(r => r[idKey] === id);
-                    const name = row?.name ?? id;
+                    // `?? id` used to stand in here. With an index-based id that sent
+                    // `?name=3` and asked the server to delete an entry literally named
+                    // "3" - a wrong request rather than an error. The row is guaranteed
+                    // present now, so there is nothing to fall back to.
+                    const name = present.get(id).name;
                     return axios.delete(`/api/v${props.apiVersion}/${objectType}?name=${encodeURIComponent(name)}`, TokenStorage.getAuthentication());
                 }
                 return axios.delete(`/api/v${props.apiVersion}/${objectType}/${id}`, TokenStorage.getAuthentication());
@@ -670,21 +876,18 @@
         </template>
         <template #default>
             <p class="mt-3 fs-6 user-select-none">
-                {{ t('settings.common.deleteConfirm') }} <strong>{{ selectedItem.name }}</strong>?
+                {{ t('settings.common.deleteConfirm') }} <strong>{{ deleteLabel }}</strong>?
             </p>
         </template>
         <template #footer>
             <BsButton icon="trash" @click="removeItem()">{{ t('common.delete') }}</BsButton>
         </template>
     </BsModal>
-    <AppSettings :icon="objectIcon" :title="objectLabelPlural">
-        <template #actions>
-            <BsButton v-if="!noCreate" cssClass="ms-3" icon="plus" @click="newItem()">{{ t('settings.common.newItem', { item: objectLabel }) }}</BsButton>
-        </template>
+    <AppSettings :icon="objectIcon" :title="objectLabelPlural" :description="objectDescription">
         <template #default>
             <BsDataTable v-if="!loading && itemList!=undefined"
                 :items="itemList"
-                :columns="dataTableColumns"
+                :columns="columnsWithManaged"
                 :idKey="idKey"
                 :selectedIds="selectedIds"
                 :selectable="dataTableSelectable"
@@ -708,10 +911,11 @@
                                 <li v-if="action.name === 'delete'"><hr class="dropdown-divider" /></li>
                                 <li>
                                     <a class="dropdown-item"
-                                       :class="{ 'disabled text-muted': !isActionEnabled(action, item), 'text-danger': action.name === 'delete' && isActionEnabled(action, item) }"
+                                       :class="{ 'disabled text-muted': !isActionEnabled(action, item) || !!busyLabel(item), 'text-danger': action.name === 'delete' && isActionEnabled(action, item) }"
                                        href="#"
                                        @click.prevent="dispatchAction(action, item)">
-                                        <font-awesome-icon :icon="action.icon || 'circle'" class="me-2" />{{ action.title }}
+                                        <font-awesome-icon :icon="busyAction(action, item) ? 'spinner' : (action.icon || 'circle')"
+                                                           :spin="busyAction(action, item)" class="me-2" />{{ busyAction(action, item) ? busyLabel(item) : action.title }}
                                     </a>
                                 </li>
                             </template>
@@ -726,6 +930,10 @@
         <template #footer>
             <slot></slot>
         </template>
+        <!-- action buttons go BELOW the card, never in the header : see AppSettings -->
+        <template v-if="!noCreate" #actions>
+            <BsButton cssClass="ms-3" icon="plus" @click="newItem()">{{ t('settings.common.newItem', { item: objectLabel }) }}</BsButton>
+        </template>
     </AppSettings>
     <BsOffCanvas v-if="!loading" :show="['select', 'edit', 'new', 'change_password'].includes(action)" :icon="objectIcon" :title="title" @close="unselectItem">
         <template #actions>
@@ -734,7 +942,7 @@
             <BsButton v-if="action == 'change_password'" icon="lock" @click="updateItem(true)">{{ t('settings.common.changePassword') }}</BsButton>
         </template>
         <template #default>
-            <template v-for="field in fields">
+            <template v-for="field in fields" :key="field.key">
                 <!-- DATETIME FIELD -->
                 <div v-if="showField(field) && field.type === 'datetime'" class="row mb-3">
                     <label class="col-sm-2 col-form-label fw-bold">
@@ -759,8 +967,28 @@
                     </div>
                 </div>
                 
+                <!-- CRON FIELD -->
+                <div v-if="showField(field) && field.type === 'cron'" class="row mb-3">
+                    <label class="col-sm-2 col-form-label fw-bold">
+                        {{ field.label }}
+                        <span v-if="field.required" class="text-danger">*</span>
+                    </label>
+                    <div class="col-sm-10">
+                        <BsCron
+                            v-model="$v.item[field.key].$model"
+                            :icon="field.icon || 'stopwatch'"
+                            :hasError="$v.item[field.key].$invalid && $v.item[field.key].$dirty"
+                        />
+                        <div v-if="$v.item[field.key].$invalid && $v.item[field.key].$dirty" class="invalid-feedback d-block">
+                            <div v-for="error in $v.item[field.key].$errors" :key="error.$uid">
+                                {{ error.$message }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- ALL OTHER FIELD TYPES -->
-                <BsInput v-if="showField(field) && field.type !== 'datetime'" 
+                <BsInput v-if="showField(field) && field.type !== 'datetime' && field.type !== 'cron'"
                     :isHorizontal="true" 
                     :type="field.type" 
                     :placeholder="field.placeholder" 
@@ -781,13 +1009,13 @@
             </template>
             <div v-if="action == 'select' && childLists">
                 <ul class="nav nav-tabs">
-                    <li class="nav-item" v-for="(childList, index) in children">
+                    <li class="nav-item" v-for="(childList, index) in children" :key="childList.type">
                         <a role="button" class="nav-link" @click="activeChild = index" :class="{ 'active': index == activeChild }"><span class="me-2">
                                 <FaIcon :icon="childList.icon" />
                             </span>{{ childList.labelPlural }}</a>
                     </li>
                 </ul>
-                <div v-for="(childList, index) in children">
+                <div v-for="(childList, index) in children" :key="childList.type">
                     <div class="p-2 border border-top-0" v-if="index == activeChild">
                         <BsDataTable
                             :items="childLists[childList.type] || []"

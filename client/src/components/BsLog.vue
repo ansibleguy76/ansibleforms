@@ -12,7 +12,7 @@
 
     import logviewer from '@femessage/log-viewer';
 
-    const props = defineProps({
+    defineProps({
         log: {
             type: String,
             default: '...'

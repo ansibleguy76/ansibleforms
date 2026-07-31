@@ -140,11 +140,18 @@
 
   // WATCHERS
 
-  watch(() => props.values, (val) => {
+  watch(() => props.values, (_val) => {
     queryfilter.value = "";
     selected.value = {};
     getLabels();
     emit("reset");
+    // recalc() is what emits update:modelValue. getLabels() wraps its whole body in
+    // `if (props.values.length > 0)`, so when the list went from N rows to ZERO nothing
+    // was emitted: the dropdown showed "No data" and an empty box while form[name] still
+    // held the previously selected row, and that stale value was submitted as an
+    // extravar. emit("reset") only clears the visible text. The sibling component
+    // (BsInputSelectAdvancedTable2) has always called recalc() here.
+    recalc();
   }, { deep: true });
 
   watch(() => props.focus, (val) => {
@@ -201,7 +208,12 @@
         return Helpers.htmlEncode(s);
       }
     } else {
-      return v;
+      // htmlEncode(s), not the raw v. This branch is taken whenever the search box is
+      // EMPTY - i.e. the moment the dropdown opens - and its result goes to v-html, so an
+      // option value coming from a datasource/query row (a CMDB description, a hostname)
+      // executed in the browser of every user who opened the form. Every sibling branch
+      // above already encodes; this one was the hole. `s` is just String(v).
+      return Helpers.htmlEncode(s);
     }
   }
   function isPctColumn(label) {
@@ -209,7 +221,10 @@
   }
   function getProgressHtml(value) {
     var rounded;
-    if (!isNaN(value)) {
+    // isNaN("") and isNaN(null) are both FALSE (both coerce to 0), so an empty percentage
+    // cell took the progress-bar branch and Math.round(parseInt("")) is NaN - the row
+    // rendered an empty grey track with `width: NaN%`. Require an actual number.
+    if (value !== null && value !== undefined && String(value).trim() !== "" && !isNaN(value)) {
       rounded = Math.round(parseInt(value));
       if (rounded < 0) rounded = 0;
       if (rounded > 100) rounded = 100;
@@ -218,14 +233,24 @@
       return Helpers.htmlEncode((value ?? "") + "");
     }
   }
-  function select(i) {
+  /**
+   * @param fromUser false when this is a DEFAULT being applied, not a click.
+   *
+   * "isSelected" makes the parent close the dropdown and focus its input. select() is
+   * also called non-interactively from getLabels() to apply a default, and getLabels()
+   * re-runs from the props.values watcher every time the backing query resolves - so a
+   * query landing while the user was typing in another field pulled the caret out of it
+   * and the following keystrokes went into the readonly select input instead. Only a
+   * real click should move focus.
+   */
+  function select(i, fromUser = true) {
     if (props.multiple) {
       selected.value[i] = !selected.value[i];
     } else {
       var temp = !selected.value[i]; // if single just clear and invert selection
       selected.value = [];
       selected.value[i] = temp;
-      emit("isSelected");
+      if (fromUser) emit("isSelected");
     }
     recalc();
   }
@@ -292,7 +317,12 @@
     previewLabel.value = "";
     valueLabel.value = "";
     if (props.values.length > 0) {
-      if (typeof props.values[0] !== "object") {
+      // `props.values[0] &&` : typeof null is "object", so a null first entry fell into
+      // the else and Object.keys(null) threw - the exception escaped the values watcher
+      // and the select rendered with no labels and no rows at all. A null entry is a real
+      // possibility (`values: [~, a, b]` in the form yaml, or a jq/expression result with
+      // a null), which is why the rest of this file guards every other access.
+      if (!props.values[0] || typeof props.values[0] !== "object") {
         labels.value = [];
       } else {
         // get all labels
@@ -327,18 +357,18 @@
         if (labels.value.length > 0) valueLabel.value = labels.value[0];
       }
       if (props.defaultValue == "__auto__" && props.values.length > 0) {
-        select(0); // if __auto__ select the first
+        select(0, false); // if __auto__ select the first
       } else if (props.defaultValue == "__all__" && props.multiple) {
         // if all is set, we select all
         for (let i = 0; i < props.values.length; i++) {
-          select(i);
+          select(i, false);
         }
       } else if (
         props.defaultValue != "__none__" &&
         props.defaultValue != undefined
       ) {
         // if a regular default is set, we select it
-        var obj = undefined;
+        var obj;
         var defaulttype;
         try {
           obj = JSON.parse(props.defaultValue);
@@ -369,7 +399,7 @@
             // loop all values
             for (let i = 0; i < props.values.length; i++) {
               if (objectEqual(obj, props.values[i])) {
-                select(i);
+                select(i, false);
               }
             }
           }
@@ -378,7 +408,7 @@
               for(var i=0;i<props.values.length;i++){
                   for(var j=0;j<props.defaultValue.length;j++){
                     if(objectEqual(props.values[i],props.defaultValue[j])){
-                      select(i)
+                      select(i, false)
                     }
                   }
               }           
@@ -390,7 +420,7 @@
               props.defaultValue ==
               (props.values[i][valueLabel.value] || props.values[i])
             ) {
-              select(i);
+              select(i, false);
             } else if (
               props.multiple &&
               Array.isArray(props.defaultValue) &&
@@ -402,7 +432,7 @@
                   props.values[i][valueLabel.value] || props.values[i] || false
                 )
               ) {
-                select(i);
+                select(i, false);
               }
             }
           }

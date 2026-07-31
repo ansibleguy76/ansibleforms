@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, computed, provide, inject, watch, onMounted, onBeforeUnmount } from "vue";
+import { ref, reactive, computed, provide, watch, onMounted, onBeforeUnmount } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { toast } from "vue-sonner";
@@ -8,7 +8,6 @@ import Form from "@/lib/Form";
 import { useAppStore } from "@/stores/app";
 import Helpers from "@/lib/Helpers";
 import axios from "axios";
-import Lodash from "lodash";
 import State from "@/lib/State";
 import Navigate from "@/lib/Navigate";
 import TokenStorage from "@/lib/TokenStorage";
@@ -29,7 +28,14 @@ const formConfig = ref({}); // holds the form configuration
 const constants = ref({}); // holds the constants
 const formLoaded = ref(false); // flag to know if form is loaded
 const showHelp = ref(false); // flag to show/hide help
+const mainForm = ref(null); // the non-wizard AppForm, for its awaitStable gate
 const formNotFound = ref(false); // flag to know if form is not found
+// why it could not be loaded, when we know : shown instead of the generic message so a
+// 403 does not read as "this form does not exist"
+const loadError = ref('');
+// consecutive failed job polls ; reset on every success so only a sustained outage stops
+// the chain, not a single blip
+const pollFailures = ref(0);
 const filterOutput = ref(true); // flag to show/hide filter output
 
 // ---------------------------------------------------------------------------
@@ -194,7 +200,8 @@ function evalWhen(expr) {
             if (v === undefined) return 'undefined';
             return JSON.stringify(v);
         });
-        // eslint-disable-next-line no-new-func
+        // Dynamic evaluation is by design here : a `when` is an author-written
+        // JS expression coming from config.yaml, not from end user input.
         return !!new Function(`return (${replaced});`)();
     } catch (e) {
         // Hide the step on evaluation failure; this matches how expression
@@ -322,9 +329,6 @@ function wizardSkipCurrent() {
         }
     }
 }
-function wizardUnskip(stepName) {
-    delete wizardSkipped[stepName];
-}
 
 // Returns the index of the last *non-summary* visible step. Used to know
 // whether to render Next or Submit.
@@ -368,6 +372,31 @@ const wizardSummaryRows = computed(() => {
 // Submit from the wizard: build merged extravars, then route through the
 // existing launch path. File fields inside wizard steps are not supported
 // in v1 — they would need a multi-step upload flow.
+/**
+ * Every visible non-summary step is either completed or explicitly skipped.
+ *
+ * This lived inside wizardSubmit, so it ran for the direct Submit only. Schedule, Run
+ * later and Store went through handleWizardSubmitAction, whose own validation is a no-op
+ * on the summary step (`if (step && !step.isSummary)`) - so from the summary you could
+ * persist a RECURRING SCHEDULE whose extra_vars came from a wizard whose steps had never
+ * been filled in, and it then fired unattended against the playbook. The regular form
+ * validates for every action; the wizard now does too.
+ */
+function wizardStepsComplete() {
+    for (const s of wizardSteps.value) {
+        if (s.isSummary) continue;
+        if (!isWizardStepVisible(s)) continue;
+        if (wizardSkipped[s.name]) continue;
+        if (!wizardCompleted[s.name]) {
+            toast.warning(t('form.invalidData'));
+            // Jump back to the offending step so the user can fix it.
+            wizardIndex.value = s.index;
+            return false;
+        }
+    }
+    return true;
+}
+
 function wizardSubmit() {
     // Validate active step if it's not the summary
     const step = activeWizardStep.value;
@@ -380,21 +409,7 @@ function wizardSubmit() {
         if (!ref.validateForm()) return;
         wizardCompleted[step.name] = true;
     }
-    // Safety net: make sure every visible non-summary step is either
-    // completed or explicitly skipped. Catches the case where a user
-    // clicks Submit on the summary without having walked through every
-    // step (e.g. via stepper jumps).
-    for (const s of wizardSteps.value) {
-        if (s.isSummary) continue;
-        if (!isWizardStepVisible(s)) continue;
-        if (wizardSkipped[s.name]) continue;
-        if (!wizardCompleted[s.name]) {
-            toast.warning(t('form.invalidData'));
-            // Jump back to the offending step so the user can fix it.
-            wizardIndex.value = s.index;
-            return;
-        }
-    }
+    if (!wizardStepsComplete()) return;
     // For wizard submit we bypass file-upload (none expected in v1)
     status.value = 'initializing';
     const postdata = {
@@ -448,6 +463,14 @@ const wizardSubmitActions = computed(() => [
 // active step (if not the summary) and ensures formdata mirrors the merged
 // wizard output before opening schedule/store offcanvases.
 function handleWizardSubmitAction(action) {
+    // Refuse while a run is already under way. The button is only disabled for
+    // 'initializing'/'submitting', but launchForm sets status to 'running' within
+    // milliseconds - so it re-enabled itself immediately and stayed enabled for the whole
+    // job. A second click launched a SECOND Ansible job and overwrote timeout.value, which
+    // orphaned the first poll chain: nothing could clear it any more, so it kept polling
+    // and writing job/status every 2s after the user had navigated away, with the output
+    // pane alternating between the two jobs.
+    if (status.value !== '') return;
     const step = activeWizardStep.value;
     if (step && !step.isSummary) {
         const ref = wizardRefs.value[step.name];
@@ -455,6 +478,8 @@ function handleWizardSubmitAction(action) {
             if (!ref.validateForm()) return;
         }
     }
+    // Every action, not just 'submit' : schedule/run-later/store used to skip this
+    if (!wizardStepsComplete()) return;
     // Make sure formdata reflects merged wizard output for downstream consumers.
     generateJsonOutput();
     switch (action) {
@@ -592,9 +617,6 @@ function buildMainStoreCtx() {
 // computed
 /******************************** */
 
-// calculated formdata as yaml
-const formdataYaml = computed(() => YAML.stringify(formdata.value));
-
 // Build the output object for a subform draft, using the shared helper.
 // `model`, `noOutput`, `outputObject`, `valueColumn` on the subform's
 // fields are all honoured, and nested list fields recurse through their
@@ -677,7 +699,7 @@ const filteredJobOutput = computed(() => {
   return job.value.output
     ?.replace(/<span class='low[^<]*<\/span>/g, "")
     .replace(/\r\n/g, "<br>")
-    .replace(/(<br>\s*){3,}/gi, "<br><br>") || ""; // eslint-disable-line
+    .replace(/(<br>\s*){3,}/gi, "<br><br>") || "";
 });
 
 // filter subjob output
@@ -686,7 +708,7 @@ const filteredSubJobOutput = computed(() => {
   return subjob.value.output
     ?.replace(/<span class='low[^<]*<\/span>/g, "")
     .replace(/\r\n/g, "<br>")
-    .replace(/(<br>\s*){3,}/gi, "<br><br>") || ""; // eslint-disable-line
+    .replace(/(<br>\s*){3,}/gi, "<br><br>") || "";
 });
 
 const formStatus = computed(() => {
@@ -821,12 +843,22 @@ function toggleShowExtraVars() {
   }
 }
 
+// Timers scheduled by onSuccess/onFailure actions. They are tracked so onBeforeUnmount
+// can cancel them: their ids used to be discarded, and `router` stays functional after
+// the component is gone - so a form with `onSuccess: [{home: 30}]` yanked the user off
+// whatever page they had navigated to 30 seconds later, and `clear`/`reload` ran a
+// Form.load and wrote to dead refs on a destroyed component.
+const actionTimers = ref([]);
+function laterInThisForm(fn, seconds) {
+  actionTimers.value.push(setTimeout(fn, seconds * 1000));
+}
+
 // do action after form submit
 function doAction(a, jobid) {
   
   const action = Object.keys(a)[0];
   const value = a[action];
-  var wait = 0;
+  var wait;
   var form = "";
   if (typeof value == "string") {
     var tmp = value.split(/,(.*)/s);
@@ -836,34 +868,34 @@ function doAction(a, jobid) {
     wait = parseInt(value);
   }
   if (action == "clear") {
-    setTimeout(() => {
+    laterInThisForm(() => {
       reloadForm(false);
-    }, wait * 1000);
+    }, wait);
   }
   if (action == "home") {
-    setTimeout(() => {
+    laterInThisForm(() => {
       Navigate.toHome(router);
-    }, wait * 1000);
+    }, wait);
   }
   if (action == "load") {
-    setTimeout(() => {
+    laterInThisForm(() => {
       Navigate.toPath(router, "/form", { form: form, __previous_jobid__: jobid }, true);
-    }, wait * 1000);
+    }, wait);
   }
   if (action == "reload") {
-    setTimeout(() => {
+    laterInThisForm(() => {
       reloadForm();
-    }, wait * 1000);
+    }, wait);
   }
   if (action == "hide") {
-    setTimeout(() => {
+    laterInThisForm(() => {
       hideForm.value = true;
-    }, wait * 1000);
+    }, wait);
   }
   if (action == "show") {
-    setTimeout(() => {
+    laterInThisForm(() => {
       hideForm.value = false;
-    }, wait * 1000);
+    }, wait);
   }
 }
 
@@ -1003,14 +1035,14 @@ async function submitForm(formObjectData) {
         postdata.files[key] = result;
       } catch (e) {
         console.log(e);
-        throw new Error("Failed uploading files");
+        throw new Error("Failed uploading files", { cause: e });
       }
     });
     await Promise.all(uploadPromises);
   } catch (err) {
     toast.error(err.toString());
     resetResult();
-    throw new Error("Failed uploading files");
+    throw new Error("Failed uploading files", { cause: err });
   }
 
   pauseJsonOutput.value = true;
@@ -1092,13 +1124,23 @@ function resetResult() {
 }
 
 // Handle submit action from AppForm component
-function handleSubmitAction({ action, visibility: formVisibility }) {
+async function handleSubmitAction({ action, visibility: formVisibility }) {
   visibility.value = formVisibility;
   
   switch(action) {
     case 'submit':
       // Main submit action - trigger form submission
       status.value = 'initializing';
+      // Wait for every dynamic field to settle first. AppForm computes this (canSubmit)
+      // and even emits a "submit" event when it flips, but that event is not declared and
+      // nothing listens to it - so submitForm used to run the instant the button was
+      // pressed and a slow query/expression field was read while still undefined, sending
+      // the job a missing or stale extravar with no sign anything was wrong.
+      if (mainForm.value?.awaitStable && !(await mainForm.value.awaitStable())) {
+        toast.warning(t('form.tooLongToEvaluate'));
+        status.value = '';
+        return;
+      }
       submitForm({ visibility: formVisibility });
       break;
     case 'schedule':
@@ -1361,6 +1403,7 @@ async function getJob(id, final) {
       `/api/v2/job/${id}`,
       TokenStorage.getAuthentication()
     );
+    pollFailures.value = 0; // a poll got through : forget earlier blips
     // store the job result
     job.value = result.data;
     status.value = job.value.status;
@@ -1431,9 +1474,22 @@ async function getJob(id, final) {
     console.log("error getting job " + err.toString());
     toast.error("Failed to get job");
 
-    if (err.response.status != 401) {
-      message.value = "Error in axios call to get job\n\n" + err.toString();
-      status.value = "error";
+    // optional chaining : on a network failure err.response is undefined, so this threw a
+    // TypeError from inside the catch itself, killing the poll chain with an unhandled
+    // rejection. launchForm and openLoadOffcanvas already use err.response?.status.
+    if (err.response?.status != 401) {
+      // Retry rather than ending the chain. This branch scheduled nothing, so a single
+      // failed poll - a VPN reconnect, a laptop resume, a server restart - stopped the
+      // polling for good while the job was still running. And "error" has no case in
+      // formStatus, so it fell through to the "Pending" label with no spinner and no
+      // abort button: the only way out was closing the output or reloading the page.
+      pollFailures.value++;
+      if (pollFailures.value < 5) {
+        timeout.value = setTimeout(async () => await getJob(id), 2000);
+      } else {
+        message.value = "Error in axios call to get job\n\n" + err.toString();
+        status.value = "error";
+      }
     }
   }
 }
@@ -1475,7 +1531,39 @@ async function loadForm(){
     formNotFound.value = true;
     return;
   }
-  formConfig.value = await Form.load(formName);
+  if (route.query.preview) {
+    const previewPayload = sessionStorage.getItem('designer-preview');
+    let previewLoaded = false;
+    if (previewPayload) {
+      sessionStorage.removeItem('designer-preview');
+      try {
+        const { form, constants: previewConstants, subforms } = JSON.parse(previewPayload);
+        const parsed = YAML.parse(form);
+        // a comment-only / '---' buffer parses to null : that is not a form, and
+        // wrapping it in forms:[null] would leave the page on the loader forever
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+          console.error("Preview payload does not hold a form object");
+          formNotFound.value = true;
+          return;
+        }
+        // the designer resolves the subforms referenced by list/yaml fields and
+        // wizard steps (the server does that on the normal path), otherwise a
+        // wizard renders no steps and list fields render no columns
+        if (Array.isArray(subforms) && !parsed.subforms) {
+          parsed.subforms = subforms;
+        }
+        formConfig.value = { forms: [parsed], constants: previewConstants || {} };
+        previewLoaded = true;
+      } catch (e) {
+        console.error("Failed to parse preview payload", e);
+      }
+    }
+    if (!previewLoaded) {
+      formConfig.value = await Form.load(formName);
+    }
+  } else {
+    formConfig.value = await Form.load(formName);
+  }
   if (formConfig.value.forms.length == 0) {
     console.error("No forms found in the configuration for form: " + formName);
     formNotFound.value = true;
@@ -1548,7 +1636,18 @@ onMounted(async () => {
   if (!authenticated.value) {
     return;
   }
-  await loadForm();
+  // A failed load used to leave the page on the bare spinner for ever: Form.load throws
+  // on every non-200 (403 for a form your roles no longer grant, 404, 500 for a config
+  // error) and nothing caught it, so currentForm stayed null and formNotFound stayed
+  // false - the one branch that renders an explanation was never reached. The user got a
+  // spinner, no toast, and only an unhandled rejection in devtools.
+  try {
+    await loadForm();
+  } catch (err) {
+    formNotFound.value = true;
+    loadError.value = Helpers.parseAxiosResponseError(err, t('form.formNotFoundMsg'));
+    toast.error(loadError.value);
+  }
   resetResult();
 });
 
@@ -1562,6 +1661,10 @@ watch(() => route.query.form, async (newForm, oldForm) => {
 
 onBeforeUnmount(() => {
   clearTimeout(timeout.value);
+  // the onSuccess/onFailure timers too : otherwise they navigate the router, or reload a
+  // form, on a component that no longer exists
+  for (const id of actionTimers.value) clearTimeout(id);
+  actionTimers.value = [];
 });
 </script>
 
@@ -1654,6 +1757,7 @@ onBeforeUnmount(() => {
                     :currentForm="step.subform"
                     :constants="constants"
                     :subforms="currentForm?.subforms || []"
+                    :rootFormName="currentForm?.name || ''"
                     :parentData="wizardParentData"
                     :showExtraVars="showExtraVars"
                     :initialData="wizardDrafts[step.name] || {}"
@@ -1770,7 +1874,7 @@ onBeforeUnmount(() => {
                     :label="t('form.submit')"
                     colorClass="primary"
                     :actions="wizardSubmitActions"
-                    :disabled="status === 'initializing' || status === 'submitting'"
+                    :disabled="status !== ''"
                     @click="handleWizardSubmitAction('submit')"
                     @action="handleWizardSubmitAction"
                   />
@@ -1779,7 +1883,7 @@ onBeforeUnmount(() => {
             </div>
 
             <!-- MAIN FORM: mounted always, hidden while editing a subform or running a wizard -->
-            <AppForm v-if="!wizardActive" v-show="!activeEntry" :key="key" @change="formChanged" :currentForm="currentForm"
+            <AppForm v-if="!wizardActive" ref="mainForm" v-show="!activeEntry" :key="key" @change="formChanged" :currentForm="currentForm"
               :constants="constants" :showExtraVars="showExtraVars" :fileProgress="fileProgress"
               :initialData="initialFormData" v-model="form"
               :subforms="currentForm?.subforms || []"
@@ -1813,6 +1917,7 @@ onBeforeUnmount(() => {
                 :currentForm="entry.subform"
                 :constants="constants"
                 :subforms="currentForm?.subforms || []"
+                :rootFormName="currentForm?.name || ''"
                 :initialData="entry.snapshot"
                 :parentData="entry.parentData"
                 v-model="entry.draft"
@@ -1874,7 +1979,7 @@ onBeforeUnmount(() => {
       <div v-else class="alert alert-danger mt-5" role="alert">
         <h4 class="alert-heading">{{ t('form.formNotFound') }}</h4>
         <p>
-          {{ t('form.formNotFoundMsg') }}
+          {{ loadError || t('form.formNotFoundMsg') }}
         </p>
       </div>
     </main>

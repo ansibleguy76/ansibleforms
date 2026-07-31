@@ -103,20 +103,22 @@
     // job output filtered
     const filteredJobOutput = computed(() => {
         if(!hide.value) return job.value?.output?.replace(/\r\n/g,"<br>") || ""
-        return job.value?.output?.replace(/<span class='low[^<]*<\/span>/g,"").replace(/\r\n/g,"<br>").replace(/(<br>\s*){3,}/ig,"<br><br>") || "" // eslint-disable-line
+        return job.value?.output?.replace(/<span class='low[^<]*<\/span>/g,"").replace(/\r\n/g,"<br>").replace(/(<br>\s*){3,}/ig,"<br><br>") || ""
     })
     // subjob output filtered
     const filteredSubJobOutput = computed(() => {
         if(!hide.value) return subjob.value?.output?.replace(/\r\n/g,"<br>") || ""
-        return subjob.value?.output?.replace(/<span class='low[^<]*<\/span>/g,"").replace(/\r\n/g,"<br>").replace(/(<br>\s*){3,}/ig,"<br><br>") || "" // eslint-disable-line
+        return subjob.value?.output?.replace(/<span class='low[^<]*<\/span>/g,"").replace(/\r\n/g,"<br>").replace(/(<br>\s*){3,}/ig,"<br><br>") || ""
     })
-    // current job index (array based)
+    // current job index, expressed in the pager's own index space (position
+    // within parentJobs). A subjob resolves to its parent so deep-linking a
+    // child still opens the page that holds its parent row.
     const displayedJobIndex = computed(() => {
-        if(jobId.value){
-            return jobs.value.map((e)=>e.id).indexOf(jobId.value);
-        }else {
-            return -1
-        }
+        if(!jobId.value) return -1
+        const selected = jobs.value.find(e => e.id == jobId.value)
+        if(!selected) return -1
+        const targetId = selected.parent_id ? selected.parent_id : selected.id
+        return parentJobs.value.findIndex(e => e.id == targetId)
     })
     // main jobs
     const parentJobs = computed(() => {
@@ -124,15 +126,15 @@
 
         // Global (legacy) filter — keeps its regex-style match semantics.
         if (filter.value) {
-            const f = filter.value;
+            // includes(), not match(). String.match compiles its argument as a RegExp, so
+            // typing a bare '(' - or searching for a form actually named 'Deploy (prod)' -
+            // threw SyntaxError inside this computed and broke the whole jobs table render.
+            // Every other filter in this file already uses includes().
+            const f = filter.value.toLowerCase();
+            const has = (v) => String(v ?? '').toLowerCase().includes(f);
             list = list.filter(x =>
-                x.id?.toString().match(f) ||
-                x.status?.match(f) ||
-                x.form?.match(f) ||
-                x.job_type?.match(f) ||
-                x.start?.match(f) ||
-                x.end?.match(f) ||
-                x.user?.match(f)
+                has(x.id) || has(x.status) || has(x.form) ||
+                has(x.job_type) || has(x.start) || has(x.end) || has(x.user)
             );
         }
 
@@ -538,14 +540,19 @@
     }
     // get job by id - navigation
     function getJob(id){
-        router.push({ name:'/jobs/:id', params: { id } }).catch((e)=>{})
+        router.push({ name:'/jobs/:id', params: { id } }).catch((_e)=>{})
     }
     // check if approval is allowed for a job
     function approvalAllowed(job){
         if(store.profile?.roles?.includes("admin"))return true
         if(!job.approval)return true
         // not admin and approval - lets check access
-        var approval=JSON.parse(job.approval)
+        // The list endpoint returns `approval` as a JSON STRING, the single-job endpoint
+        // returns it already PARSED - and loadRunningJobs writes a single-job payload into
+        // this list. A multistep job going running -> approve mid-poll therefore reached
+        // here as an object, and JSON.parse('[object Object]') threw inside the render,
+        // breaking the jobs table for every non-admin approver.
+        var approval = typeof job.approval === 'string' ? JSON.parse(job.approval) : job.approval
         var access = approval?.roles?.filter(role => store.profile?.roles?.includes(role))
         if(access?.length>0){
           return true
@@ -590,7 +597,13 @@
 
         if(route.params.id){
             jobId.value=parseInt(route.params.id)
-            await loadOutput(jobId.value)
+            try{
+                await loadOutput(jobId.value)
+            }catch(err){
+                // a deep link to a job that is gone (or not visible) must not
+                // abort the mount : the list and the polling still have to start
+                toast.error(Helpers.parseAxiosResponseError(err,"Failed to load job output"))
+            }
         }
         await loadJobs(true);
         // After jobs are loaded, expand parent if jobId is a child job
@@ -609,7 +622,10 @@
 
 </script>
 <template>
-  <AppNav />    
+  <AppNav />
+  <!-- this page scrolls with the document : it is a stack of independent blocks
+       (table, pager, output actions, workflow graph, job and subjob output), not
+       a single pane, so it must not be trapped in one inner scroller -->
   <div class="flex-shrink-0">
     <!-- Modal - delete verify -->
     <BsModal v-if="showDelete" @close="showDelete=false">
@@ -663,7 +679,7 @@
                     <input v-model="filter" type="text" class="form-control text-start" :placeholder="t('jobs.filterPlaceholder')" />
                 </div>
             </template>
-            <template #actions>
+            <template #headerActions>
                 <div class="d-flex justify-content-end align-items-center">
                     <BsButton icon="refresh" @click="loadJobs" cssClass="me-2">{{ t('jobs.refresh') }}</BsButton>
                     <div class="input-group me-2" style="width:300px">
@@ -904,6 +920,12 @@
 <style scoped>
     .is-clipped-horizontal {
         overflow-x: hidden;
+    }
+    /* Status badge in the ansible-output headings. Same rule as form.vue, which
+       renders the identical markup — scoped styles don't cross components, so
+       it has to be repeated here rather than shared. */
+    .status {
+        font-size: 0.75rem;
     }
     .custom-table {
         width: 100%;

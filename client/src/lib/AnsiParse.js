@@ -1,4 +1,3 @@
-/* eslint-disable no-plusplus, no-continue */
 // CSI解释器，参考
 // 字体颜色https://github.com/mozilla-frontend-infra/react-lazylog/blob/master/src/ansiparse.js
 const foregroundColors = {

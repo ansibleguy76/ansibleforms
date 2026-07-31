@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -- the App prefix already namespaces this component, "404" is not seen as a second word -->
 <script setup>
     /******************************************************************/
     /*                                                                */

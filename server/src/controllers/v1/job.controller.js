@@ -10,8 +10,8 @@ const abortJob = function(req, res) {
     res.json(new RestResult("error","You must provide a jobid","",""));
     return false
   }
-  Job.abort(jobid)
-    .then((job)=>{res.json(new RestResult("success","job aborted",null,""))})
+  Job.abort(req.user.user, jobid)
+    .then(()=>{res.json(new RestResult("success","job aborted",null,""))})
     .catch((err)=>{res.json(new RestResult("error","failed to abort job",null,err.toString()))})
 };
 const getJob = async function(req, res) {
@@ -114,7 +114,7 @@ const download = async function(req,res){
 const deleteJob = function(req, res) {
     var user = req?.user?.user || {};
     Job.delete(user, req.params.id)
-    .then((job)=>{res.json(new RestResult("success","job deleted",null,""))})
+    .then(()=>{res.json(new RestResult("success","job deleted",null,""))})
     .catch((err)=>{res.json(new RestResult("error","failed to delete job",null,err))})
 };
 // this is the main launch code for everything
@@ -126,7 +126,10 @@ const launch = async function(req, res) {
     }else{
         // get the form data
         var form = req.body.formName || "";
-        var extravars = req.body.extravars || {}
+        // the client may not choose the playbook, credentials or working directory unless
+        // the form declares a field of that name - stripped inside Job.launch, which is the
+        // first place the form definition is known (see stripReservedExtravars)
+    var extravars = req.body.extravars || {}
         var creds = req.body.credentials || {}
         // new in 4.0.16, awxCreds are extracted from form and extravars
         var user = req?.user?.user || {}
@@ -137,12 +140,14 @@ const launch = async function(req, res) {
           return false;
         }
         try{
-          const job = await Job.launch({ form, user, credentials: creds, extravars });
+          const job = await Job.launch({ form, user, credentials: creds, extravars, fromClient: true });
           res.json(new RestResult("success","succesfully launched form",job,""))
         }catch(err){
           logger.error("Errors in job launch : ", err)
           try{
-            res.json(new RestResult("success","failed to launch form",null,err.toString()))
+            // "error", not "success" : the envelope carries the outcome, and a client
+            // checking it was told a failed launch had worked
+            res.status(500).json(new RestResult("error","failed to launch form",null,err.toString()))
           }catch(e){}
         }
     }

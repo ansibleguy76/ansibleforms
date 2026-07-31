@@ -14,34 +14,127 @@ class Repository extends CrudModel {
   static modelName = 'repositories';
 
   // Override create to trigger clone after creation
-  static async create(data) {
+  // opts carries { fromSeed:true } for the declarative config seed only
+  static async create(data, opts = {}) {
     logger.info(`Creating repository ${data.name}`);
-    const insertId = await super.create(this.modelName, data);
-    Repository.clone(data.name); // Don't await - clone happens in background
+    const insertId = await super.create(this.modelName, data, opts);
+    // Don't await - clone happens in background (it can take minutes and the API has to
+    // answer the create now). But the rejection must not escape: clone() throws before it
+    // writes any status when the claim fails, so the row was left with no status and no
+    // output at all, the process-level handler in app.js only logged it, and the
+    // repositories page showed a repository stuck blank with the reason nowhere the user
+    // could reach. Record it where they are already looking.
+    Repository.clone(data.name).catch(async (e) => {
+      logger.error(`Background clone of '${data.name}' failed : ${helpers.getError(e)}`)
+      try {
+        await mysql.do("update AnsibleForms.`repositories` set output = ?, status = 'failed' where name = ?", [helpers.getError(e), data.name])
+      } catch (e2) {
+        logger.error(`...and the failure could not be recorded on the repository either : ${helpers.getError(e2)}`)
+      }
+    });
     return insertId;
   }
 
   // Override update to handle password properly
-  static async update(data, name) {
+  static async update(data, name, opts = {}) {
     logger.info(`Updating repository ${name}`);
     // Get current record to find id
     const repo = await this.findByName(name);
     if (!repo) throw new Error(`No repository found with name ${name}`);
-    
+
     // Remove empty fields
     helpers.removeEmptyFields(data);
-    
-    return super.update(this.modelName, data, repo.id);
+
+    // `name` is an editable field (the repositories page renders it so), and the working
+    // tree lives at repoPath/<name>. Renaming the row alone left the tree behind under
+    // the old directory, so the renamed repository had no clone at all: every pull
+    // answered "not cloned yet" while the old directory sat there orphaned. Move it with
+    // the record, under the same claim every other tree-touching operation takes, so the
+    // move cannot race a pull or a sync (issue #414).
+    const newName = data.name && data.name !== name ? data.name : null;
+    if (newName) {
+      // BEFORE the claim and before the tree is touched, exactly as delete() does it.
+      // It used to be reached inside super.update, i.e. AFTER Repo.rename had already
+      // moved the directory - so renaming a seed-managed repository moved its working
+      // tree and then answered 403, leaving the row pointing at a name that no longer
+      // exists on disk. The repository then read as 'not cloned', every pull failed, and
+      // seed.ensureRepositoryClones cloned it again, orphaning the moved tree for good.
+      if (!opts.fromSeed) await CrudModel.assertNotManaged(this.modelName, repo.id);
+      const claim = await mysql.do("update AnsibleForms.`repositories` set status = 'running' where name = ? and COALESCE(status,'') <> 'running'", [name])
+      if (!claim.affectedRows) {
+        throw new Error(`Repository '${name}' not found or already running, try again later`)
+      }
+      let moved = false;
+      try {
+        // Repo.rename validates both names and refuses an occupied destination before it
+        // moves anything, so its own failures leave the disk untouched.
+        moved = Repo.rename(name, newName);
+        const res = await super.update(this.modelName, data, repo.id, opts);
+        // release the claim under the NEW name - the row carries it now
+        await mysql.do("update AnsibleForms.`repositories` set status = ? where name = ?", [repo.status ?? null, newName])
+        return res;
+      } catch (e) {
+        // Put the tree back. The row keeps the old name from here on, so a tree left at
+        // the new one is the same orphaned-clone bug this block exists to prevent - only
+        // reached through the failure path instead. Best effort: if the move back also
+        // fails there is nothing left to try, so say exactly what is where.
+        if (moved) {
+          try {
+            Repo.rename(newName, name);
+          } catch (e2) {
+            logger.error(`Repository '${name}' could not be renamed and its working tree could not be moved back : it is now at '${newName}' while the record still says '${name}'. Move it back by hand. (${helpers.getError(e2)})`)
+          }
+        }
+        await mysql.do("update AnsibleForms.`repositories` set status = ? where id = ?", [repo.status ?? null, repo.id])
+        throw e;
+      }
+    }
+
+    return super.update(this.modelName, data, repo.id, opts);
   }
 
   // Override delete to cleanup disk
-  static async delete(name) {
+  static async delete(name, opts = {}) {
     logger.info(`Deleting repository ${name}`);
     const repo = await this.findByName(name);
     if (!repo) throw new Error(`No repository found with name ${name}`);
-    
-    Repo.delete(name);
+
+    // This deletes with its own SQL rather than through CrudModel.delete, so the
+    // managed guard has to be asked for explicitly - otherwise a seeded repository
+    // would be refused an edit but still be deletable, which is worse than either.
+    if (!opts.fromSeed) await CrudModel.assertNotManaged(this.modelName, repo.id);
+
+    // Claim the repo BEFORE deleting the tree, exactly as reset() does and for the same
+    // reason: this rm -rf's the working tree, which must not race a pull or a sync
+    // running git on it (issue #414). Without the claim a scheduled pull could be
+    // checking out into the directory as it is being removed, recreating files after the
+    // rmSync - and since the row is then gone, persistent/repositories/<name> is left
+    // orphaned with a stale .git/config. Creating a repository with the same name
+    // afterwards hits Repo.clone's "already exists, pulling instead" path, so the new
+    // repository silently pulls from the OLD remote and reports success.
+    // Claimed after assertNotManaged, so a refused delete never touches the status.
+    const claim = await mysql.do("update AnsibleForms.`repositories` set status = 'running' where name = ? and COALESCE(status,'') <> 'running'", [name])
+    if (!claim.affectedRows) {
+      throw new Error(`Repository '${name}' not found or already running, try again later`)
+    }
+    try {
+      // awaited : it was fire-and-forget, so a validateRepoName throw became an unhandled
+      // rejection while the record was removed anyway
+      await Repo.delete(name);
+    } catch (e) {
+      // release the claim, or a failed rm wedges the repo at 'running' for ever
+      await mysql.do("update AnsibleForms.`repositories` set output = ?, status = 'failed' where name = ?", [e.message, name])
+      throw e
+    }
     const res = await mysql.do("DELETE FROM AnsibleForms.`repositories` WHERE name = ?", [name]);
+    // This deletes with its own SQL, so it must evict what CrudModel.delete would have.
+    // findByName above populated `name:<name>` in the shared cache (TTL 1h), so without
+    // this GET /api/v2/repository/<name> kept answering 200 with a deleted repository.
+    const cache = CrudModel.getCache(this.modelName);
+    if (cache) {
+      cache.del(`name:${name}`);
+      if (repo?.id !== undefined) cache.del(`id:${repo.id}`);
+    }
     return res;
   }
 
@@ -93,7 +186,7 @@ class Repository extends CrudModel {
   static getPrivateUri(repo) {
   if(repo.uri){
     if(repo.user && repo.password){
-      var httpRegex = new RegExp("^http[s]{0,1}:\/\/[^@]+$", "g");
+      var httpRegex = new RegExp("^http[s]{0,1}://[^@]+$", "g");
 
       var match = httpRegex.exec(repo.uri);
       if(match){
@@ -138,7 +231,11 @@ class Repository extends CrudModel {
   }
 
   static async getConfigPath() {
-  try{
+  // No catch that answers "" - same reasoning as getFormsFolders above. "" means "use the
+  // local config file", so a database blip made every config write land in
+  // persistent/config.yaml while the repository copy kept being served, discarding the
+  // edit silently. Let it throw; the caller reports the real cause.
+  {
     // First check for repositories with use_for_config enabled (new way since 6.1.0)
     var configRepositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_config")
     
@@ -172,10 +269,7 @@ class Repository extends CrudModel {
     
     // Fall back to old behavior: check use_for_forms repositories (backwards compatibility)
     var repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_forms")
-  }catch(e){
-    logger.error("Failed to get repositories.",e)
-    return ""
-  }    
+  }
   
   if(repositories.length === 0){
     return ""
@@ -217,22 +311,35 @@ class Repository extends CrudModel {
   // name : [{name, path}]. The 'forms' subfolder is used when it exists,
   // otherwise the repository root.
   static async getFormsFolders() {
-    try{
-      var repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_forms")
-    }catch(e){
-      logger.error("Failed to get repositories.",e)
-      return []
-    }
+    // Deliberately NOT wrapped in a catch that returns [].
+    //
+    // [] is not "there are no forms repositories", it is "I could not find out" - and
+    // every caller treats it as the fact. getSaveTargets computes `repoMode` from the
+    // length, so a transient database error during a designer save skipped the
+    // "repository is not cloned yet" guard, took no git write-lock, and wrote every form
+    // into the local persistent/forms folder instead of the repository working tree. The
+    // save reported success; once the database recovered the repository copies were
+    // served again and the user's work was simply gone. Form.load has the same problem in
+    // reverse: it would quietly serve the local forms in place of the repository's.
+    //
+    // Failing loudly is the only honest answer, and it is the rule this codebase already
+    // applies to health.model's authenticationFacts.
+    const repositories = await mysql.do("SELECT name FROM AnsibleForms.`repositories` WHERE use_for_forms")
 
     return repositories.map(repo => {
       const repoPath = path.join(appConfig.repoPath, repo.name)
       const formsSubPath = path.join(repoPath, "forms")
       if(fs.existsSync(formsSubPath)){
         logger.debug(`Using forms subfolder for repository '${repo.name}': ${formsSubPath}`)
-        return { name: repo.name, path: formsSubPath }
+        // dedicated: this folder is ours, so Form.save may delete files that no longer
+        // correspond to a form. Stated as a FLAG rather than inferred from the basename -
+        // a repository literally named 'forms' has a root path ending in /forms, and that
+        // made Form.save treat the whole repository root as fully managed and delete every
+        // unrelated yaml in it (playbooks, inventories, .gitlab-ci.yml) on the next save.
+        return { name: repo.name, path: formsSubPath, dedicated: true }
       } else {
         logger.debug(`Forms subfolder not found for repository '${repo.name}', using root path: ${repoPath}`)
-        return { name: repo.name, path: repoPath }
+        return { name: repo.name, path: repoPath, dedicated: false }
       }
     })
   }
@@ -363,8 +470,18 @@ class Repository extends CrudModel {
     output = Repository.maskSecrets(output, repo) // never expose git credentials
     await mysql.do("update AnsibleForms.`repositories` set output = ?,status = ? where name = ?", [output, status, name])
     if (status == "success") {
-      head = await Repo.info(name)
-      await mysql.do("update AnsibleForms.`repositories` set head = ? where name = ?", [head, name])
+      // Repo.info runs `git rev-parse --short HEAD`, which exits 128 on a repository
+      // whose remote is EMPTY - a case this model explicitly supports (see
+      // seedFormsRepo). The operation genuinely succeeded and its status is already
+      // stored, so a missing head must not become a rejection that unwinds past it -
+      // in the clone path that rejection has no caller at all, since create() runs it
+      // in the background.
+      try {
+        head = await Repo.info(name)
+        await mysql.do("update AnsibleForms.`repositories` set head = ? where name = ?", [head, name])
+      } catch (e) {
+        logger.warning(`'${name}' succeeded but its HEAD could not be read (an empty repository has none) : ${helpers.getError(e)}`)
+      }
     }
   }
 
@@ -377,19 +494,41 @@ class Repository extends CrudModel {
       throw new Error(`Repository '${name}' not found or already running, try again later`)
     }
     var pullRepo = null
+    var repoUnknown = false
     try {
-      pullRepo = await Repository.findByName(name).catch(() => null)
+      // the row is guaranteed to exist - the claim above matched it - so a failure here
+      // is a real database or decrypt fault, which is exactly when NOT to degrade
+      pullRepo = await Repository.findByName(name).catch(() => { repoUnknown = true; return null })
       output = await Repo.pull(name)
       status = "success"
     } catch (e) {
       output = e.message
       status = "failed"
     }
-    output = Repository.maskSecrets(output, pullRepo) // never expose git credentials
+    // maskSecrets does two things: it rewrites the https://user:pass@host form, AND it
+    // blanks any literal occurrence of this repository's password. With a null repo only
+    // the first runs, so a password appearing in any other shape survived into the output
+    // column and back to the API. Withhold the output entirely rather than risk it.
+    if (repoUnknown) {
+      logger.error(`Could not read repository '${name}' to mask its credentials ; withholding the git output`)
+      output = `The git output was withheld: this repository's record could not be read, so its credentials could not be masked.`
+    } else {
+      output = Repository.maskSecrets(output, pullRepo) // never expose git credentials
+    }
     await mysql.do("update AnsibleForms.`repositories` set output = ?,status = ? where name = ?", [output, status, name])
     if (status == "success") {
-      head = await Repo.info(name)
-      await mysql.do("update AnsibleForms.`repositories` set head = ? where name = ?", [head, name])
+      // Repo.info runs `git rev-parse --short HEAD`, which exits 128 on a repository
+      // whose remote is EMPTY - a case this model explicitly supports (see
+      // seedFormsRepo). The operation genuinely succeeded and its status is already
+      // stored, so a missing head must not become a rejection that unwinds past it -
+      // in the clone path that rejection has no caller at all, since create() runs it
+      // in the background.
+      try {
+        head = await Repo.info(name)
+        await mysql.do("update AnsibleForms.`repositories` set head = ? where name = ?", [head, name])
+      } catch (e) {
+        logger.warning(`'${name}' succeeded but its HEAD could not be read (an empty repository has none) : ${helpers.getError(e)}`)
+      }
     } else {
       // a pull failure used to be swallowed (status only) ; surface it so the
       // designer 'Load (repository)' does not report a false success. Local
@@ -581,8 +720,18 @@ class Repository extends CrudModel {
     output = Repository.maskSecrets(output, syncRepo) // never expose git credentials
     await mysql.do("update AnsibleForms.`repositories` set output = ?,status = ? where name = ?", [output, status, name])
     if (status == "success") {
-      head = await Repo.info(name)
-      await mysql.do("update AnsibleForms.`repositories` set head = ? where name = ?", [head, name])
+      // Repo.info runs `git rev-parse --short HEAD`, which exits 128 on a repository
+      // whose remote is EMPTY - a case this model explicitly supports (see
+      // seedFormsRepo). The operation genuinely succeeded and its status is already
+      // stored, so a missing head must not become a rejection that unwinds past it -
+      // in the clone path that rejection has no caller at all, since create() runs it
+      // in the background.
+      try {
+        head = await Repo.info(name)
+        await mysql.do("update AnsibleForms.`repositories` set head = ? where name = ?", [head, name])
+      } catch (e) {
+        logger.warning(`'${name}' succeeded but its HEAD could not be read (an empty repository has none) : ${helpers.getError(e)}`)
+      }
     } else {
       throw new Error(output)
     }

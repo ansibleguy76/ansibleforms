@@ -1,7 +1,7 @@
 'use strict';
 import Settings from '../../models/settings.model.js';
+import { seedManagedSettingChanges } from "../v2/settings.controller.js";
 import RestResult from '../../models/restResult.model.js';
-import logger from '../../lib/logger.js';
 import Helpers from '../../lib/common.js';
 
 
@@ -35,9 +35,18 @@ const update = async function(req, res) {
         res.status(400).send({ error:true, message: 'Please provide all required fields' });
     }else{
         try {
+          const existingSettings = await Settings.find();
+          // Scoped to the fields the seed actually owns, not the whole endpoint - the
+          // theme, language and config_source come through here too and are not seed
+          // material. Shared with the v2 controller so both agree on the field list.
+          if (existingSettings?.managed) {
+            const blocked = seedManagedSettingChanges(req.body, existingSettings);
+            if (blocked.length) {
+              return res.status(403).json(new RestResult("error",`Settings are managed by the config seed and are read only (${blocked.join(', ')})`,null,""));
+            }
+          }
           // If password is masked, preserve the existing password
           if (req.body.mail_password === '**********') {
-            const existingSettings = await Settings.find();
             req.body.mail_password = existingSettings.mail_password;
           }
           await Settings.update(new Settings(req.body));

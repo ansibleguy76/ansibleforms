@@ -5,6 +5,7 @@ import { injectBaseUrl } from './src/lib/baseurl.js';
 import { resolve } from 'path';
 import history from 'connect-history-api-fallback';
 import httpsConfig from './config/https.config.js';
+import { registerHttpsServer } from './src/lib/httpsContext.js';
 import authConfig from './config/auth.config.js';
 import logger from './src/lib/logger.js';
 import https from 'https';
@@ -85,6 +86,8 @@ async function start(){
     logger.notice("Running https !");
     const credentials = { key: httpsConfig.httpsKey, cert: httpsConfig.httpsCert };
     httpServer = https.createServer(credentials, rootApp);
+    // lets the settings page reload the certificate without a restart
+    registerHttpsServer(httpServer);
   } else {
     logger.notice("Running http !");
     httpServer = http.createServer(rootApp);

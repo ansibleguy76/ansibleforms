@@ -11,6 +11,7 @@
     { "name": "user", "description": "User management and profile" },
     { "name": "group", "description": "Group management" },
     { "name": "settings", "description": "Application settings and configuration" },
+    { "name": "config", "description": "Form configuration (config.yaml) and designer support" },
     { "name": "ssh", "description": "SSH key management" },
     { "name": "log", "description": "Application log access and download" },
     { "name": "repository", "description": "Git repository management" },
@@ -331,6 +332,7 @@
       "put": {
         "tags": ["settings"],
         "summary": "Update application settings",
+        "description": "Updates the settings row. Config CONTENT is deliberately not accepted here : it is written through PUT /settings/config, which validates it, honours the designer lock and the baseHash concurrency check, and writes a restore point.",
         "security": [ { "bearerAuth": [] } ],
         "requestBody": {
           "required": true,
@@ -346,7 +348,10 @@
                   "mail_password": { "type": "string", "description": "Use '**********' to preserve existing password, empty string to clear, or new password" },
                   "mail_from": { "type": "string" },
                   "url": { "type": "string" },
-                  "forms_yaml": { "type": "string" }
+                  "config_source": { "type": "string", "enum": ["database", "file"], "description": "Where the active config is read from and written to" },
+                  "default_language": { "type": "string" },
+                  "default_theme": { "type": "string" },
+                  "default_theme_color": { "type": "string" }
                 }
               }
             }
@@ -359,11 +364,64 @@
         }
       }
     },
+    "/settings/config": {
+      "get": {
+        "tags": ["settings"],
+        "summary": "Get the active form configuration",
+        "description": "Returns the active config.yaml content, read from the source set in config_source (database, use_for_config repository or local file). The returned baseHash is a sha256 fingerprint of that content; send it back on PUT to detect a concurrent change.",
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "Active config retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "forms_yaml": { "type": "string", "description": "The active config.yaml content (empty string when there is none yet)" },
+                    "baseHash": { "type": "string", "description": "sha256 fingerprint of forms_yaml, for optimistic concurrency on save" }
+                  }
+                }
+              }
+            }
+          },
+          "500": { "description": "Failed to find settings" }
+        }
+      },
+      "put": {
+        "tags": ["settings"],
+        "summary": "Save the active form configuration",
+        "description": "Validates the supplied yaml against the base schema and writes it to the active config source (database, use_for_config repository or local file). Refused while the designer holds the config lock.",
+        "security": [ { "bearerAuth": [] } ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["forms_yaml"],
+                "properties": {
+                  "forms_yaml": { "type": "string", "description": "The full config.yaml content (categories, roles, constants)" },
+                  "baseHash": { "type": "string", "description": "Optional baseHash from GET /settings/config; when sent, the save is refused with 409 if the active config changed in the meantime" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Config saved" },
+          "400": { "description": "Missing forms_yaml, invalid yaml, or config that fails the base schema validation" },
+          "409": { "description": "The active config changed elsewhere (stale baseHash)" },
+          "423": { "description": "Configuration is locked by the designer" },
+          "500": { "description": "Failed to update settings" }
+        }
+      }
+    },
     "/settings/importConfig": {
       "put": {
         "tags": ["settings"],
         "summary": "Import configuration from config.yaml",
-        "description": "Imports settings from config.yaml or forms.yaml file.",
+        "description": "Loads the config.yaml (or the deprecated forms.yaml) file into the database, replacing the database copy. A restore point of that database copy is written to the backups first. Refused while the designer holds the config lock.",
         "security": [ { "bearerAuth": [] } ],
         "responses": {
           "200": {
@@ -379,7 +437,141 @@
               }
             }
           },
+          "423": { "description": "Configuration is locked by the designer" },
           "500": { "description": "Failed to import config" }
+        }
+      }
+    },
+    "/settings/exportConfig": {
+      "put": {
+        "tags": ["settings"],
+        "summary": "Export configuration to config.yaml",
+        "description": "Writes the database config out to the config.yaml file (the repository copy when a use_for_config repository holds it). A restore point of the old file is written to the backups first. Refused when the database is not the active config source or holds no config, and while the designer holds the config lock.",
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "Config exported successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "The database is not the active config source, or there is no config in the database to export" },
+          "423": { "description": "Configuration is locked by the designer" },
+          "500": { "description": "Failed to export config" }
+        }
+      }
+    },
+    "/settings/legacyCheck": {
+      "get": {
+        "tags": ["settings"],
+        "summary": "Check for a legacy forms.yaml",
+        "description": "Returns whether this is a genuine legacy install: a forms.yaml is present and no config.yaml exists yet.",
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "Legacy check performed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "hasLegacy": { "type": "boolean", "description": "True when forms.yaml exists and config.yaml does not" }
+                  }
+                }
+              }
+            }
+          },
+          "500": { "description": "Failed to check for a legacy forms.yaml" }
+        }
+      }
+    },
+    "/settings/convertLegacy": {
+      "put": {
+        "tags": ["settings"],
+        "summary": "Convert forms.yaml to config.yaml",
+        "description": "Renames the legacy forms.yaml to config.yaml. Fails when there is no forms.yaml, or when a config.yaml already exists (it is never overwritten).",
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "Legacy file converted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "500": { "description": "No forms.yaml to convert, config.yaml already exists, or the conversion failed" }
+        }
+      }
+    },
+    "/config/mode": {
+      "get": {
+        "tags": ["config"],
+        "summary": "Get the active config mode",
+        "description": "Returns whether the active form configuration lives in the database, resolved from the config_source setting with the ENABLE_CONFIG_IN_DATABASE environment default as fallback. Designer access is enough, so a designer without settings access can learn the mode.",
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "Config mode retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "configInDatabase": { "type": "boolean", "description": "True when the active config is stored in the database" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized - no designer access" },
+          "500": { "description": "Failed to get the forms config" }
+        }
+      }
+    },
+    "/config/formnames": {
+      "get": {
+        "tags": ["config"],
+        "summary": "List form names",
+        "description": "Returns a sorted, de-duplicated flat list of the form names, for the form dropdowns of schedules and datasources. Subforms are excluded because they cannot be launched standalone.",
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "Form names retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": { "type": "integer" },
+                    "records": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized - no settings access" },
+          "500": { "description": "Failed to get the forms list" }
         }
       }
     },

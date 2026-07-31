@@ -4,8 +4,11 @@ import config from "../../config/app.config.js";
 import fs from "fs";
 import path from "path";
 import ssh_keygen from "../lib/ssh-keygen.js";
-const privateKeyPath = path.join(config.homePath, '/.ssh/id_rsa');
-const publicKeyPath = path.join(config.homePath, '/.ssh/id_rsa.pub');
+// Computed when used, not at import, so HOME_PATH can change without a restart. The value
+// is identical unless the setting changes, so nothing moves for an instance that never
+// touches it - and existing keys stay at the old path (the settings page says so).
+const privateKeyPath = () => path.join(config.homePath, '/.ssh/id_rsa');
+const publicKeyPath = () => path.join(config.homePath, '/.ssh/id_rsa.pub');
 
 // constructor for ssh config
 var Ssh=function(ssh){
@@ -14,13 +17,12 @@ var Ssh=function(ssh){
 // generate new keys (used only once during startup of ansibleforms (in the init/index.js))
 Ssh.generate = function(force){
   return ssh_keygen.keygen({
-    path: privateKeyPath,
+    path: privateKeyPath(),
     read: true,
     force: force,
     destroy: false,
     comment: 'info@ansibleguy.com',
     password: false,
-    read: true,
     size: '2048',
     format: 'PEM'
   })
@@ -37,11 +39,11 @@ Ssh.update = function (record) {
     logger.info(`Updating ssh key`)
     try{
       // write new private key
-      fs.writeFileSync(privateKeyPath,record.key,{mode:0o600})
+      fs.writeFileSync(privateKeyPath(),record.key,{mode:0o600})
       // autogenerate new public key
       return ssh_keygen.keygen({
         publicOnly: true,
-        path: privateKeyPath,
+        path: privateKeyPath(),
         read: true,
         force: true,
         destroy: false
@@ -56,28 +58,25 @@ Ssh.update = function (record) {
 
     }catch(e){
       logger.error(e)
-      fs.rmSync(privateKeyPath,true)
-      fs.rmSync(publicKeyPath,true)
+      fs.rmSync(privateKeyPath(),true)
+      fs.rmSync(publicKeyPath(),true)
       throw e
     }
 };
 // get private & public key info
 Ssh.find = function () {
-  var key
-  var pubkey=''
-
   logger.info("Reading sshkey key")
   return ssh_keygen.keygen({              // get random art for private key
     randomArt: true,
-    path: privateKeyPath
+    path: privateKeyPath()
   })
   .then((out)=>{
     // logger.debug("Private key found")
-    return fs.promises.readFile(publicKeyPath)  // read public key
+    return fs.promises.readFile(publicKeyPath())  // read public key
       .then((pubkey)=>{
         return {art:out.art,publicKey:pubkey.toString()}
       })
-      .catch((e)=>{
+      .catch(()=>{
         logger.error("No public key found")
         return Promise.resolve({art:out.art,publicKey:""})
       })

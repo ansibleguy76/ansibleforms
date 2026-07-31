@@ -52,6 +52,26 @@ Job.sendStatusNotification = async () => {};
 var awxState = {};
 var cancelCalls = [];
 
+/**
+ * The stdout AWX would return on a given poll: the whole output every time, one line per
+ * poll. `deviations` lists the polls on which AWX rewrites what it already returned; the
+ * prefix grows by one "R " per deviation passed, so consecutive deviations each break the
+ * substring relationship with the poll before them.
+ *
+ * Exported as a function so a test can compute what the tracker OUGHT to emit, instead of
+ * asserting a golden string copied out of the implementation.
+ */
+function longStdoutFor(deviations, poll) {
+  const applied = (deviations || []).filter((d) => poll >= d).length;
+  const prefix = "R ".repeat(applied);
+  const lines = [];
+  for (let i = 1; i <= poll; i++) lines.push(`${prefix}line ${i}`);
+  return lines.join("\n");
+}
+function longStdout(poll) {
+  return longStdoutFor(awxState.deviations, poll);
+}
+
 function resetState() {
   jobRow = {};
   outputs = [];
@@ -61,6 +81,9 @@ function resetState() {
     wfFinalStatus: "successful",
     jobPoll: 0, // number of times the regular job was polled
     abortAfterPoll: 0, // request an ansibleforms abort after this wf poll (0 = never)
+    longPoll: 0, // number of times the long running job was polled
+    longPolls: 3, // how many polls before it finishes
+    deviations: [], // polls on which AWX rewrites its output (see longStdout)
   };
 }
 
@@ -181,6 +204,32 @@ function handleRequest(req, res) {
   } else if (path == "/api/v2/jobs/55/stdout/") {
     res.writeHead(200, { "Content-Type": "text/plain" });
     res.end(awxState.jobPoll >= 2 ? "line one\nline two" : "line one");
+    return;
+  } else if (path == "/api/v2/jobs/66/") {
+    // a long running regular job : finishes only after longPolls polls, so the
+    // tracking loop has to iterate many times
+    awxState.longPoll++;
+    const finished = awxState.longPoll >= awxState.longPolls;
+    data = {
+      id: 66,
+      type: "job",
+      name: "long template",
+      url: "/api/v2/jobs/66/",
+      status: finished ? "successful" : "running",
+      finished: finished ? "2026-01-01T10:00:00Z" : null,
+      artifacts: {},
+      related: { stdout: "/api/v2/jobs/66/stdout/" },
+    };
+  } else if (path == "/api/v2/jobs/66/stdout/") {
+    // AWX returns the WHOLE output every time, growing by one line per poll -
+    // which is why the tracker subtracts the previous output
+    // EVERY line is rewritten on a deviating poll. That is what makes the previous
+    // output stop being a substring of the new one (changing only the first line does
+    // not: "line 1\nline 2" is still found inside "CHANGED line 1\nline 2"), which is
+    // the condition the increment-issue path actually tests. The prefix grows with each
+    // deviation, so two in a row each deviate from the one before.
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end(longStdout(awxState.longPoll));
     return;
   }
   if (data) {
@@ -304,4 +353,128 @@ test("abortJob hits the jobs endpoint by default and workflow_jobs for workflows
   await Awx.abortJob("myawx", 55);
   await Awx.abortJob("myawx", 1, true);
   assert.deepEqual(cancelCalls, ["/api/v2/jobs/55/cancel/", "/api/v2/workflow_jobs/1/cancel/"]);
+});
+
+/*****************************************************************/
+/* the tracking loop is a LOOP, not recursion                    */
+/*****************************************************************/
+// It used to call itself for every poll, once a second. Each frame kept its own copy of
+// the job's full stdout alive (AWX has no incremental output), so an hour-long template
+// built ~3600 nested frames each holding the whole output, and risked the stack too.
+
+function longJob() {
+  return {
+    id: 66,
+    type: "job",
+    name: "long template",
+    url: "/api/v2/jobs/66/",
+    status: "pending",
+    related: { stdout: "/api/v2/jobs/66/stdout/" },
+  };
+}
+
+test("a long running job assembles its output exactly once per line", { timeout: 60000 }, async () => {
+  awxState.longPolls = 12;
+  const result = await Awx.trackJob("myawx", longJob(), 8, 0);
+  assert.equal(result, true);
+  assert.equal(jobRow.status, "success");
+  const out = allOutput();
+  // every line present, and NOT duplicated : that is the previousoutput subtraction
+  // still working across many iterations of the loop
+  for (let i = 1; i <= 12; i++) {
+    const hits = out.match(new RegExp(`line ${i}\\b`, "g")) || [];
+    assert.equal(hits.length, 1, `line ${i} appeared ${hits.length} times`);
+  }
+});
+
+test("the stack does not grow with the number of polls", { timeout: 60000 }, async () => {
+  // the direct measurement : capture the call depth on the first and last poll. With
+  // recursion this climbed by a frame per poll ; with a loop it is flat.
+  const depths = [];
+  const realGet = Awx.getJobTextOutput;
+  // the default is 10, which SATURATES: recursion then reads as "grew by 5" instead of
+  // "grew by one per poll", and the assertion below would be measuring the cap
+  const realLimit = Error.stackTraceLimit;
+  Error.stackTraceLimit = 500;
+  Awx.getJobTextOutput = async function (...args) {
+    depths.push((new Error().stack.match(/\n\s+at /g) || []).length);
+    return realGet.apply(this, args);
+  };
+  try {
+    awxState.longPolls = 25;
+    await Awx.trackJob("myawx", longJob(), 9, 0);
+  } finally {
+    Awx.getJobTextOutput = realGet;
+    Error.stackTraceLimit = realLimit;
+  }
+  assert.ok(depths.length >= 20, `expected many polls, got ${depths.length}`);
+  const growth = Math.max(...depths) - Math.min(...depths);
+  // a couple of frames of noise is fine ; one frame PER POLL is the bug
+  assert.ok(growth < 5,
+    `stack grew by ${growth} frames over ${depths.length} polls (first ${depths[0]}, last ${depths[depths.length - 1]})`);
+});
+
+test("a deviating stdout takes the increment-issue path, once", { timeout: 60000 }, async () => {
+  // AWX's incremental output can deviate : the previous output is then no longer a
+  // substring of the new one, and the tracker re-bases on previousoutput2 and asks
+  // printJobOutput to drop the last (wrong) entry. The loop rewrite has to keep
+  // carrying the right one of the two forward.
+  const seen = [];
+  const realPrint = Job.printJobOutput;
+  Job.printJobOutput = async function (output, type, jobid, counter, incrementIssue) {
+    if (type === "stdout") seen.push(!!incrementIssue);
+    return realPrint.call(this, output, type, jobid, counter, incrementIssue);
+  };
+  try {
+    awxState.longPolls = 8;
+    awxState.deviations = [4];
+    const result = await Awx.trackJob("myawx", longJob(), 10, 0);
+    assert.equal(result, true, "tracking must still run to completion");
+  } finally {
+    Job.printJobOutput = realPrint;
+  }
+  assert.equal(seen.filter(Boolean).length, 1,
+    `the increment issue must be detected exactly once, got ${JSON.stringify(seen)}`);
+  // and only on the poll where the output changed shape
+  assert.equal(seen.indexOf(true), 3, "expected it on the 4th poll");
+  // afterwards previousoutput must be the DEVIATING output, so the polls that follow
+  // subtract cleanly again - if the loop carried the wrong one forward this stays true
+  assert.equal(seen.slice(4).some(Boolean), false, "later polls must subtract cleanly");
+});
+
+test("two deviations in a row : the SECOND-last output is the re-base, not the last", { timeout: 60000 }, async () => {
+  // The subtle half of the loop rewrite. On an increment issue the tracker re-bases on
+  // previousoutput2, so the next iteration must carry the OLD previousoutput2 forward -
+  // not the output it just rejected. With a single deviation the difference is invisible
+  // (previousoutput2 is never read again), so it takes two in a row to pin it.
+  const emitted = [];
+  const realPrint = Job.printJobOutput;
+  Job.printJobOutput = async function (output, type, jobid, counter, incrementIssue) {
+    if (type === "stdout") emitted.push({ output, incrementIssue: !!incrementIssue });
+    return realPrint.call(this, output, type, jobid, counter, incrementIssue);
+  };
+  try {
+    awxState.longPolls = 7;
+    awxState.deviations = [4, 5];
+    assert.equal(await Awx.trackJob("myawx", longJob(), 11, 0), true);
+  } finally {
+    Job.printJobOutput = realPrint;
+  }
+
+  const issues = emitted.map((e, i) => (e.incrementIssue ? i : -1)).filter((i) => i >= 0);
+  assert.deepEqual(issues, [3, 4], `expected an increment issue on polls 4 and 5, got ${JSON.stringify(issues)}`);
+
+  // The oracle, derived from the stub rather than from the implementation.
+  //
+  // previousoutput2 is NOT advanced on an increment issue - it stays pinned at the last
+  // output that was accepted before the first deviation. So poll 4 re-bases on poll 2's
+  // output, and poll 5, still deviating, re-bases on poll 2's output as well. That is
+  // what the recursive version did (it passed previousoutput2 straight through), and
+  // preserving it is the point of the ternary in the loop.
+  const poll2 = longStdoutFor([4, 5], 2);
+  const poll4 = longStdoutFor([4, 5], 4);
+  const poll5 = longStdoutFor([4, 5], 5);
+  assert.equal(emitted[3].output, poll4.substring(poll2.length), "poll 4 re-bases on poll 2");
+  assert.equal(emitted[4].output, poll5.substring(poll2.length),
+    "poll 5 must re-base on poll 2 too : previousoutput2 is carried through, not replaced");
 });

@@ -62,6 +62,14 @@
             type: Number,
             default: undefined
         },
+        // read below to build the class list, and it was never declared - so it was always
+        // undefined and the class silently never applied. BsInputRaw had exactly this bug
+        // and was fixed; this sibling was missed, as was its caller (BsInputForForm did not
+        // pass it either, unlike BsInput which passes it to every other raw input).
+        cssClass: {
+            type: String,
+            default: "",
+        },
     });
 
     // METHODS

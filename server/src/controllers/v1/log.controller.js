@@ -4,7 +4,7 @@ import Log from '../../models/log.model.js';
 const get = function(req, res) {
     Log.find(req.query.lines||100)
       .then((log)=>{res.send(log)})
-      .catch((err)=>{res.send("...")})
+      .catch(()=>{res.send("...")})
 };
 
 const download = function(req,res){

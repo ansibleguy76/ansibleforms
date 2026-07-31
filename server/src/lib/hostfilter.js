@@ -65,7 +65,7 @@ export async function assertUrlAllowed(url) {
     const all = await dnsLookup(hostname, { all: true });
     addresses = all.map(a => a.address);
   } catch (err) {
-    throw new Error(`[hostfilter] cannot resolve ${hostname}: ${err.message}`);
+    throw new Error(`[hostfilter] cannot resolve ${hostname}: ${err.message}`, { cause: err });
   }
 
   const denyList  = parseList(denyRaw);

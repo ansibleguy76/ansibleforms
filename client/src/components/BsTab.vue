@@ -36,7 +36,6 @@ const emit = defineEmits(['close']);
 
 const api = inject('bsTabs', null);
 if (!api) {
-    // eslint-disable-next-line no-console
     console.error('<BsTab> must be used inside <BsTabs>');
 }
 

@@ -17,12 +17,31 @@ var app_config = {
   showDesigner: (process.env.SHOW_DESIGNER ?? 1) == 1,
   allowSchemaCreation: (process.env.ALLOW_SCHEMA_CREATION ?? 1) == 1,
   configPath: process.env.CONFIG_PATH || path.resolve(__dirname + "/../persistent/config.yaml"),
+  // Declarative config seed for the admin objects (awx, credentials, oauth2 providers,
+  // repositories, ldap, mail/url). Empty = feature off. NOT the same thing as configPath,
+  // which holds the forms configuration - see docs/seed.md.
+  configSeedPath: process.env.CONFIG_SEED_PATH || "",
+  // Whether the settings pages may write persistent/.env. Turn this off where the
+  // environment is declared elsewhere (kubernetes ConfigMap, docker-compose, ArgoCD) :
+  // there the file is either ephemeral, so a save is silently lost at the next restart,
+  // or durable, so it drifts away from the manifest that is supposed to be authoritative.
+  allowEnvEdit: (process.env.ALLOW_ENV_EDIT ?? 1) == 1,
   formsFolderPath: process.env.FORMS_FOLDER_PATH || path.resolve(__dirname + "/../persistent/forms"),
   // staging area for new forms in repository mode : they live here until a
   // 'Push to repo' assigns them to a chosen repository (issue #414)
   formsStagingPath: process.env.FORMS_STAGING_PATH || path.resolve(__dirname + "/../persistent/forms_staging"),
   formsPath: process.env.FORMS_PATH || path.resolve(__dirname + "/../persistent/forms.yaml"), // DEPRECATED: use configPath + formsFolderPath instead
   nightlyBackupRetention: parseInt(process.env.NIGHTLY_BACKUP_RETENTION || "7", 10),
+  // How long audit entries are kept. The trail is append only, so without a sweep
+  // it grows for ever - set to 0 to disable the sweep and keep everything.
+  auditRetentionDays: parseInt(process.env.AUDIT_RETENTION_DAYS || "365", 10),
+  // How long finished jobs and their output are kept. Job output is longtext and
+  // nothing pruned it before, so this is the table that grows without limit on a
+  // busy instance.
+  // DEFAULT 0 = keep for ever, ON PURPOSE : upgrading must never silently delete
+  // job history somebody was relying on. Opting in is a deliberate choice, and the
+  // health page reports the size so it is a visible one.
+  jobRetentionDays: parseInt(process.env.JOB_RETENTION_DAYS || "0", 10),
   useYtt: (process.env.USE_YTT ?? 0) == 1,
   yttDangerousAllowAllSymlinkDestinations: (process.env.YTT_DANGEROUS_ALLOW_ALL_SYMLINK_DESTINATIONS ?? 0) == 1,
   yttAllowSymlinkDestinations: process.env.YTT_ALLOW_SYMLINK_DESTINATIONS || "",
@@ -38,7 +57,10 @@ var app_config = {
   varsFilesPath: process.env.VARS_FILES_PATH || path.resolve(__dirname + "/../persistent/vars"),
   repoPath: process.env.REPO_PATH || path.resolve(__dirname + "/../persistent/repositories"),
   formsBackupPath: process.env.FORMS_BACKUP_PATH || path.resolve(__dirname + "/../persistent/forms_backups"),
-  oldBackupDays: process.env.OLD_BACKUP_DAYS || 60,
+  // parseInt : a string here makes the age comparison in Form.removeOld either NaN
+  // (prunes nothing) or, with "0", "older than today" - which deletes the snapshot
+  // Form.restore is about to read
+  oldBackupDays: parseInt(process.env.OLD_BACKUP_DAYS || "60", 10),
   filterJobOutputRegex: process.env.REGEX_FILTER_JOB_OUTPUT || "\\[low\\]",
   // REINIT_ADMIN=1 forces a one-time recreation of the local `admin` user
   // (and its admins group) at startup, using ADMIN_USERNAME / ADMIN_PASSWORD.
@@ -73,6 +95,13 @@ var app_config = {
   backupPath: process.env.BACKUP_PATH || path.resolve(__dirname + "/../persistent/backups"),
   mysqldumpCommand: process.env.MYSQLDUMP_COMMAND || "mariadb-dump --ssl-verify-server-cert=OFF",
   mysqlCommand: process.env.MYSQL_COMMAND || "mariadb --ssl-verify-server-cert=OFF",
+  // Seconds allowed for the dump and the replay. Cmd.executeSilentCommand defaults to 60,
+  // which neither of these can honour on a real database - and the restore is the one
+  // operation where being killed part way is destructive, because the dump it is
+  // replaying drops and recreates each table in turn. One hour by default.
+  backupCommandTimeoutSeconds: parseInt(process.env.BACKUP_COMMAND_TIMEOUT_SECONDS, 10) > 0
+    ? parseInt(process.env.BACKUP_COMMAND_TIMEOUT_SECONDS, 10)
+    : 3600,
   maskExtravarsRegex: process.env.MASK_EXTRAVARS_REGEX || "password|secret|token",
   gitCloneCommand: process.env.GIT_CLONE_COMMAND || "git clone",
   gitPullCommand: process.env.GIT_PULL_COMMAND || "git pull"
@@ -80,7 +109,7 @@ var app_config = {
 
 // process dynamic YTT_LIB_DATA_ environment variables
 Object.entries(process.env)
-  .filter(([key, value]) => key.startsWith("YTT_LIB_DATA_"))
+  .filter(([key]) => key.startsWith("YTT_LIB_DATA_"))
   .forEach(([key, value]) => {
     const libName = key.replace("YTT_LIB_DATA_", "").toLowerCase();
     app_config.yttLibData[libName] = value;

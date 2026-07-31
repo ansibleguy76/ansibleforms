@@ -7,6 +7,9 @@ import Repository from '../models/repository.model.js';
 import Lock from '../models/lock.model.js';
 import Datasource from '../models/datasource.model.js';
 import Schedule from '../models/schedule.model.js';
+// imported rather than injected like Job/Token/BackupModel : audit.model only pulls
+// in the db pool and the logger, so there is no cycle to avoid here
+import Audit from '../models/audit.model.js';
 import logConfig from '../../config/log.config.js';
 import dayjs from 'dayjs';
 
@@ -146,9 +149,14 @@ class CronService {
       }, async () => {
         logger.info(`Cron triggered for datasource: ${name} (ID: ${id})`);
         try {
-          // Check if datasource is already running or queued
+          // Check if datasource is already running or queued.
+          // `state`, not `status` : the queue state lives in state ('queued'/'running'/
+          // 'idle', see datasource.model.js) while status only ever holds 'success' or
+          // 'failed'. So this predicate was always true, the guard never fired, and the
+          // "already running or queued, skipping" line below was unreachable. The two
+          // schedule handlers further down this file get it right.
           const datasources = await mysql.do(
-            "SELECT id FROM AnsibleForms.`datasource` WHERE id=? AND COALESCE(status,'')<>'running' AND COALESCE(status,'')<>'queued'",
+            "SELECT id FROM AnsibleForms.`datasource` WHERE id=? AND COALESCE(state,'')<>'running' AND COALESCE(state,'')<>'queued'",
             [id],
             true
           );
@@ -371,6 +379,63 @@ class CronService {
     this.jobs.system.set('tokenCleanup', tokenCleanupTask);
     logger.info('Initialized token cleanup (daily at 3:00 AM)');
 
+    // 2b. Audit retention - runs at 3:30 AM. Shipped with the audit trail rather
+    // than after it : an append-only table with no sweep is the same unbounded
+    // growth problem job_output already has.
+    const auditCleanupTask = new Cron('30 3 * * *', {
+      timezone: this.timezone,
+      protect: true
+    }, async () => {
+      const keep = appConfig.auditRetentionDays;
+      if (!keep || keep < 1) {
+        logger.info('Audit retention is disabled, keeping all entries');
+        return;
+      }
+      logger.info(`Running audit cleanup, keeping the last ${keep} days`);
+      try {
+        const removed = await Audit.removeOlderThan(keep);
+        logger.info(`Removed ${removed} audit entries older than ${keep} days`);
+      } catch (err) {
+        logger.error('Failed to cleanup audit entries:', err);
+      }
+    });
+    this.jobs.system.set('auditCleanup', auditCleanupTask);
+    logger.info('Initialized audit cleanup (daily at 3:30 AM)');
+
+    // 2c. Job retention - runs at 2:30 AM. Job output is longtext and nothing pruned
+    // it before, so this is the table that grows without limit on a busy instance.
+    // Disabled by default (JOB_RETENTION_DAYS=0) : upgrading must never silently
+    // delete job history somebody relied on. The health page reports the size, so
+    // switching it on is an informed choice rather than a surprise.
+    const jobCleanupTask = new Cron('30 2 * * *', {
+      timezone: this.timezone,
+      protect: true
+    }, async () => {
+      const keep = appConfig.jobRetentionDays;
+      if (!keep || keep < 1) {
+        logger.info('Job retention is disabled (JOB_RETENTION_DAYS), keeping all jobs');
+        return;
+      }
+      logger.info(`Running job cleanup, keeping the last ${keep} days`);
+      try {
+        const removed = await Job.removeOlderThan(keep);
+        // only audited when it actually removed something : a nightly 'removed 0 rows'
+        // entry for every task would bury the events worth reading
+        if (removed > 0) {
+          logger.warning(`Removed ${removed} finished jobs older than ${keep} days`);
+          Audit.log({
+            action: 'job.prune', outcome: 'success', targetType: 'job',
+            detail: { removed, retentionDays: keep }
+          });
+        }
+      } catch (err) {
+        logger.error('Failed to cleanup jobs:', err);
+        Audit.log({ action: 'job.prune', outcome: 'failure', targetType: 'job', detail: { error: err.message || String(err) } });
+      }
+    });
+    this.jobs.system.set('jobCleanup', jobCleanupTask);
+    logger.info('Initialized job cleanup (daily at 2:30 AM)');
+
     // 3. Nightly backup - runs at midnight
     const nightlyBackupTask = new Cron('0 0 * * *', {
       timezone: this.timezone,
@@ -380,22 +445,69 @@ class CronService {
       try {
         const result = await BackupModel.doBackup('Automated nightly backup');
         logger.info(`Nightly backup completed: ${result.backupFolder}`);
-        
-        // Cleanup old nightly backups
-        logger.info(`Cleaning up nightly backups, keeping last ${appConfig.nightlyBackupRetention} backups`);
-        const backups = await BackupModel.listBackups();
+        // Audited as well as logged : every nightly backup on this machine failed for
+        // weeks and the only trace was one line in a log file nobody reads. A cron
+        // task has no user, so the trail records it as actor_type 'system'.
+        Audit.log({
+          action: 'backup.create', outcome: 'success', targetType: 'backup',
+          target: result.timestamp || null,
+          detail: { folder: result.backupFolder, description: result.description }
+        });
+
+        // Cleanup old nightly backups.
+        // A retention of 0 (or a negative / non-numeric value) means DO NOT CLEAN UP :
+        // slice(0) returns the whole list, so this used to delete every nightly backup
+        // including the one taken seconds earlier - and help.yaml documents 0 as the way
+        // to disable cleanup. It also matches AUDIT_RETENTION_DAYS / JOB_RETENTION_DAYS,
+        // where 0 means keep for ever.
+        const keepBackups = appConfig.nightlyBackupRetention;
+        if (!(keepBackups >= 1)) {
+          logger.info('Nightly backup cleanup is disabled (NIGHTLY_BACKUP_RETENTION), keeping all backups');
+          return;
+        }
+        logger.info(`Cleaning up nightly backups, keeping last ${keepBackups} backups`);
+        const backups = await BackupModel.listBackups();   // newest first
         const nightlyBackups = backups.filter(b => b.description === 'Automated nightly backup');
-        
-        if (nightlyBackups.length > appConfig.nightlyBackupRetention) {
-          const toDelete = nightlyBackups.slice(appConfig.nightlyBackupRetention);
+        // Only VALID backups count towards the quota : an instance whose backups have
+        // been failing would otherwise keep N pieces of 0-byte junk and delete the last
+        // genuinely restorable snapshot to make room for them.
+        const validNightly = nightlyBackups.filter(b => b.valid);
+        const kept = new Set(validNightly.slice(0, keepBackups).map(b => b.folder));
+
+        // Nothing valid at all : keep everything. There is no snapshot to protect, and
+        // deleting the only record of what went wrong helps nobody - the health page
+        // reports the invalid count instead.
+        const newestKept = validNightly[0]?.folder || null;
+        if (!newestKept) {
+          logger.warning('No valid nightly backup exists, skipping the retention sweep entirely');
+        } else {
+          // INVALID folders are swept too. Excluding them from the quota (above) is right,
+          // but they were then also excluded from the deletion list, so a 0-byte folder was
+          // kept for ever - the retention setting silently did not apply to exactly the
+          // folders nobody wants. Nothing NEWER than the newest kept backup is ever a
+          // candidate, so a backup still being written cannot be deleted underneath itself.
+          const toDelete = nightlyBackups.filter(b => !kept.has(b.folder) && b.folder < newestKept);
           for (const backup of toDelete) {
-            logger.info(`Deleting old nightly backup: ${backup.folder}`);
+            logger.info(`Deleting old nightly backup: ${backup.folder}${backup.valid ? '' : ' (no usable dump)'}`);
             await BackupModel.deleteBackup(backup.folder);
+            Audit.log({
+              action: 'backup.delete', outcome: 'success', targetType: 'backup',
+              target: backup.folder, detail: { reason: 'retention', keep: keepBackups, valid: !!backup.valid }
+            });
           }
-          logger.info(`Cleaned up ${toDelete.length} old nightly backups`);
+          if (toDelete.length > 0) {
+            const junk = toDelete.filter(b => !b.valid).length;
+            logger.info(`Cleaned up ${toDelete.length} old nightly backups${junk ? ` (${junk} with no usable dump)` : ''}`);
+          }
         }
       } catch (err) {
         logger.error('Failed to create nightly backup:', err);
+        // the whole point : a failed backup is now queryable in the audit trail and
+        // red on the health page, instead of living only in the log
+        Audit.log({
+          action: 'backup.create', outcome: 'failure', targetType: 'backup',
+          detail: { error: err.message || String(err) }
+        });
       }
     });
     this.jobs.system.set('nightlyBackup', nightlyBackupTask);
