@@ -221,8 +221,16 @@ function isWizardStepVisible(step) {
 // __parent__ data injected into each step's AppForm. We expose every
 // step's raw draft under its namespace, so a field in step "network"
 // can reference $(__parent__.basics.kind) -> raw value from step "basics".
+//
+// varsFiles data (currentForm.vars) is spread in flat, top-level, so a step
+// can reach it via $(__parent__.someVarsKey). For a non-wizard form this
+// comes for free : __parent__ there is the root AppForm's own form.value,
+// and that root form is mounted and injects its own .vars into itself. A
+// wizard-active root form never mounts an AppForm at all, so nothing ever
+// does that injection - this is the substitute. Step namespaces are spread
+// after, so a step name always wins over a same-named vars key.
 const wizardParentData = computed(() => {
-    const out = {};
+    const out = { ...(currentForm.value?.vars || {}) };
     for (const step of wizardSteps.value) {
         if (step.isSummary) continue;
         out[step.name] = wizardDrafts[step.name] || {};

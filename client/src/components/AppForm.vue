@@ -1376,6 +1376,9 @@ function replacePlaceholderInString(value, ignoreIncomplete = false, mode = 'raw
         foundfield = foundfield?.replace(/\[[0-9]*\]/, '') // make xxx[y] => xxx
         fieldvalue = undefined
         targetflag = undefined
+        // fieldvalue from the branch below is already JSON/JS source text (an array/object
+        // literal), not a raw value - an 'expression' placeholder must splice it in as-is
+        var isObjectLiteral = false
 
         if (foundfield in form.value) {      // does field xxx exist in our form ?
             if (fieldOptions.value[foundfield] && (["expression", "table", "list", "constant"].includes(fieldOptions.value[foundfield].type) || column.includes(".")) && ((typeof form.value[foundfield] == "object") || (Array.isArray(form.value[foundfield])))) {
@@ -1388,7 +1391,13 @@ function replacePlaceholderInString(value, ignoreIncomplete = false, mode = 'raw
                 } else {
                     fieldvalue = JSON.stringify(Helpers.replacePlaceholders(match[1], form.value)) // allow full object reference
                 }
-                if (typeof fieldvalue == "string") { // drop quotes if string
+                isObjectLiteral = true
+                // Only 'raw' (SQL) substitution wants the bare, unquoted string here - an
+                // 'expression' placeholder is JS source, where a quoted string IS the
+                // correct literal ; stripping it there left an array/object's own quotes
+                // untouched, and re-quoting the whole thing below then turned e.g. a list
+                // into a one-element array holding its own JSON text as a string.
+                if (mode !== 'expression' && typeof fieldvalue == "string") { // drop quotes if string
                     fieldvalue = fieldvalue?.replace(/^\"+/, '').replace(/\"+$/, ''); // eslint-disable-line
                 }
             } else {
@@ -1412,7 +1421,9 @@ function replacePlaceholderInString(value, ignoreIncomplete = false, mode = 'raw
                 // keeps a real number a number, so `$(count) + 1` still adds. The
                 // __undefined__/__null__ sentinels stay on the raw path because the
                 // post-processing below strips their quotes by string match.
-                const literal = JSON.stringify(fieldvalue)
+                // isObjectLiteral : fieldvalue is already valid JS/JSON source (array/object) -
+                // stringifying it again would wrap it as a quoted string instead of splicing it in
+                const literal = isObjectLiteral ? fieldvalue : JSON.stringify(fieldvalue)
                 const escaped = foundmatch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
                 // a FUNCTION replacement, so the value is inserted verbatim. As a string it
                 // goes through the special replacement patterns : a field containing $& was
