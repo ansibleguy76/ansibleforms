@@ -2,7 +2,6 @@
 import Ssh from '../../models/ssh.model.js';
 import RestResult from '../../models/restResult.model.v2.js';
 import i18n from '../../lib/i18n.js';
-import logger from '../../lib/logger.js';
 
 const find = async function(req, res) {
     try {

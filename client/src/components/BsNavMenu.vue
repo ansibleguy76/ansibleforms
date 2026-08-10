@@ -23,7 +23,7 @@
 
     // PROPS
 
-    const props = defineProps({
+    defineProps({
         buttonClass: {
             type: String,
             default: "btn-link nav-link py-2 px-0 px-lg-2"

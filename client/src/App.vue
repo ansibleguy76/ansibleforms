@@ -41,8 +41,15 @@ function registerAxiosInterceptor() {
         throw error;
       }
       
-      if (error?.config?.url == `/api/v2/token` || error?.response?.data?.error == 'Account is disabled.' || error?.response?.data?.error?.includes('No access')) {
-        console.log("The error is from token refresh or account is disabled or you have no access, no refresh possible")
+      // A permission failure is NOT an authentication failure : the server answers
+      // 403 for those (see server/src/lib/middleware.js) and it never reaches here,
+      // so a page may probe an endpoint it might not have and simply catch the
+      // error. This used to test the error message for 'No access', which only
+      // ever matched in english - in any other locale it fell through to the
+      // refresh below, refreshed fine (the token was valid all along), retried,
+      // and 401'd again forever.
+      if (error?.config?.url == `/api/v2/token` || error?.response?.data?.error == 'Account is disabled.') {
+        console.log("The error is from token refresh or account is disabled, no refresh possible")
         var message = "Unauthorized.  Access denied."
         if (error?.response?.data?.error) {
           message += "\r\n" + error.response.data.error
@@ -57,35 +64,43 @@ function registerAxiosInterceptor() {
         throw new Error(message)
       }
 
-      // Try request again with new token
-      try {
-        const token = await TokenStorage.getNewToken()
-        if (!token) {
-          // No token was returned, this means the user is not authenticated
-          // Silently redirect to login without spamming errors
-          TokenStorage.clear();
-          Navigate.toLogin(router, route)
-          // Return a rejected promise to stop axios processing, but suppress the error message
-          return Promise.reject({ __silent__: true });
-        }
-        console.log("Refresh done")
-        console.log("Retrying previous call with new tokens")
-        // New request with new token
-        const config = error.config;
-        config.headers['Authorization'] = `Bearer ${token}`;
+      // The retry below re-enters this interceptor. If the fresh token is STILL
+      // refused, refreshing a second time cannot help - without this guard the
+      // pair would keep refreshing and retrying indefinitely.
+      if (error?.config?.__isRetry) {
+        console.log("Already retried once with a fresh token, giving up")
+        TokenStorage.clear();
+        Navigate.toLogin(router, route)
+        return Promise.reject({ __silent__: true });
+      }
 
-        const retryResponse = await axios.request(config);
-        if (retryResponse.error) {
-          // The response itself contains an error, throw it
-          throw retryResponse.error
-        } else {
-          // finally, the refresh worked and the response retried was successful
-          return retryResponse
-        }
-      } catch (e) {
-        // rethrow it.  It will likely be a new 401 error, not authorized to refresh, it will be caught by this interceptor in a second run
-        // in all other cases, something was wrong with the token refresh
-        throw e
+      // Try request again with new token.  Anything thrown from here on is left
+      // to propagate : it will likely be a new 401 error, not authorized to
+      // refresh, and it will be caught by this interceptor in a second run.
+      // In all other cases, something was wrong with the token refresh.
+      const token = await TokenStorage.getNewToken()
+      if (!token) {
+        // No token was returned, this means the user is not authenticated
+        // Silently redirect to login without spamming errors
+        TokenStorage.clear();
+        Navigate.toLogin(router, route)
+        // Return a rejected promise to stop axios processing, but suppress the error message
+        return Promise.reject({ __silent__: true });
+      }
+      console.log("Refresh done")
+      console.log("Retrying previous call with new tokens")
+      // New request with new token
+      const config = error.config;
+      config.headers['Authorization'] = `Bearer ${token}`;
+      config.__isRetry = true;
+
+      const retryResponse = await axios.request(config);
+      if (retryResponse.error) {
+        // The response itself contains an error, throw it
+        throw retryResponse.error
+      } else {
+        // finally, the refresh worked and the response retried was successful
+        return retryResponse
       }
     }
   });

@@ -88,7 +88,7 @@
 
     // METHODS
     const change = () => {
-        emit('change', model);
+        emit('change', model.value);
     };
 
 </script>

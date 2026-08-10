@@ -22,7 +22,7 @@ const Lock = {
             const res = await axios.post(`/api/v2/lock`, {}, TokenStorage.getAuthentication());
             return res.data; // { message: 'Lock added' }
         } catch (err) {
-            throw new Error(`Lock set failed: ${extractError(err)}`);
+            throw new Error(`Lock set failed: ${extractError(err)}`, { cause: err });
         }
     },
     async release() {
@@ -30,7 +30,7 @@ const Lock = {
             const res = await axios.delete(`/api/v2/lock`, TokenStorage.getAuthentication());
             return res.data; // { message: 'Lock deleted' } or { message: 'Lock not present', deleted:false }
         } catch (err) {
-            throw new Error(`Lock release failed: ${extractError(err)}`);
+            throw new Error(`Lock release failed: ${extractError(err)}`, { cause: err });
         }
     }
 };

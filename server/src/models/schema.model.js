@@ -57,26 +57,88 @@ class Schema {
     Schema._cachedOk = result;
     return result;
   }
-  static async create() {
-    logger.notice(`Trying to create database schema 'AnsibleForms' and tables`);
-    if (appConfig.allowSchemaCreation) {
-      // added in 5.0.3
-      const buffer = fs.readFileSync(`${__dirname}/../db/create_schema_and_tables.sql`);
-      const query = buffer.toString();
-      var res = await mysql.do(query);
-      if (res.length > 0) {
-        logger.notice(`Created schema 'AnsibleForms' and tables`);
-        await init()
-        // Invalidate so the next hasSchema() call re-runs the full check.
-        Schema._cachedOk = null;
-        return { message: `Created schema 'AnsibleForms' and tables` };
-      } else {
-        throw new Error(`Failed to create schema 'AnsibleForms' and/or tables`);
-      }
-    } else {
+
+  /**
+   * Whether this database holds anything worth protecting : the schema exists,
+   * the users table exists, and it holds at least one account. Until all three
+   * are true there is simply nobody to authenticate as, which is what lets the
+   * documented bootstrap (POST /api/v2/schema against an empty database) run
+   * unauthenticated - see the guard in routes/v2/schema.routes.js.
+   *
+   * The empty-users case is a genuinely broken install : create_schema_and_tables
+   * ran but init() never got to seed the admin. It is self-healing, because init
+   * re-creates the admin user on every boot when it is missing, so it can not
+   * stay open across a restart.
+   *
+   * Deliberately NOT cached (unlike hasSchema) : it flips exactly once, at the
+   * end of that bootstrap, and a wrong cached 'false' would keep a destructive
+   * endpoint open. Three cheap statements, on one endpoint.
+   */
+  static async isProvisioned() {
+    const db = "AnsibleForms";
+    const schema = await mysql.do("SHOW DATABASES LIKE ?", [db]);
+    if (!schema || schema.length === 0) return false;
+    const table = await mysql.do("SHOW TABLES FROM ?? WHERE ?? = ?", [db, `Tables_in_${db}`, "users"]);
+    if (table.length === 0) return false;
+    const count = await mysql.do("SELECT COUNT(*) AS total FROM ??.??", [db, "users"]);
+    return (count[0]?.total || 0) > 0;
+  }
+  /**
+   * Whether this database has no AnsibleForms tables at all : the schema is absent,
+   * or it exists and is completely empty.
+   *
+   * This is the ONLY safe precondition for running create_schema_and_tables.sql
+   * unattended, because that file DROPs all 16 tables before recreating them.
+   *
+   * It is deliberately much stricter than isProvisioned(), which answers a different
+   * question ("is there anybody to authenticate as?") and returns false for a database
+   * that is full of forms, jobs and audit history but happens to have an empty users
+   * table. hasSchema() is stricter still in the wrong direction : it fails for a single
+   * missing column or a patch that could not apply. Driving an automatic create from
+   * either of those would destroy a live database to fix a cosmetic gap - so the
+   * startup bootstrap asks this, and only this.
+   */
+  static async isEmpty() {
+    const db = "AnsibleForms";
+    const schema = await mysql.do("SHOW DATABASES LIKE ?", [db]);
+    if (!schema || schema.length === 0) return true;
+    const tables = await mysql.do("SHOW TABLES FROM ??", [db]);
+    return !tables || tables.length === 0;
+  }
+
+  /**
+   * Runs create_schema_and_tables.sql. DESTRUCTIVE : every table is dropped first.
+   * Callers are responsible for establishing that this is allowed - the endpoint
+   * checks isProvisioned(), the startup bootstrap checks isEmpty().
+   */
+  static async createTables() {
+    if (!appConfig.allowSchemaCreation) {
       throw new Error(`Schema creation is disabled`);
     }
-    
+    // added in 5.0.3
+    const buffer = fs.readFileSync(`${__dirname}/../db/create_schema_and_tables.sql`);
+    const query = buffer.toString();
+    // Invalidate BEFORE running, not after. This file drops tables first, so a failure
+    // part way through leaves the schema genuinely incomplete - and the throw used to
+    // skip the invalidation, leaving an earlier cached "everything is present" live.
+    // GET /api/v2/schema then kept reporting a healthy schema for a database that had
+    // just lost tables, so nothing ever offered the repair.
+    Schema._cachedOk = null;
+    // runIsolated, not do() : this script disables FOREIGN_KEY_CHECKS and selects a
+    // default schema, and a failure must not hand that session back to the pool.
+    const res = await mysql.runIsolated(query);
+    if (!res || res.length === 0) {
+      throw new Error(`Failed to create schema 'AnsibleForms' and/or tables`);
+    }
+    logger.notice(`Created schema 'AnsibleForms' and tables`);
+    return true;
+  }
+
+  static async create() {
+    logger.notice(`Trying to create database schema 'AnsibleForms' and tables`);
+    await Schema.createTables();
+    await init()
+    return { message: `Created schema 'AnsibleForms' and tables` };
   }
 }
 
@@ -206,6 +268,31 @@ function addColumn(table, name, fieldtype, nullable, defaultvalue) {
 
 
 // PATCHING : Add a table to the schema
+// Add an index when it is not already there. SHOW INDEX is the cheap existence check ;
+// ALTER TABLE ADD KEY has no IF NOT EXISTS in mysql.
+function addIndex(table, indexName, columns) {
+  var message;
+  var db = "AnsibleForms";
+  logger.debug(`adding index '${indexName}' on '${table}'`);
+  return mysql
+    .do("SHOW INDEX FROM ??.?? WHERE Key_name = ?", [db, table, indexName])
+    .then((checkres) => {
+      if (checkres.length > 0) {
+        message = `Index '${indexName}' is already present on '${table}'`;
+        logger.debug(message);
+        return message;
+      }
+      const cols = columns.map(() => "??").join(",");
+      return mysql
+        .do(`ALTER TABLE ??.?? ADD KEY ?? (${cols})`, [db, table, indexName, ...columns])
+        .then(() => {
+          message = `added index '${indexName}' on '${table}'`;
+          logger.warning(message);
+          return message;
+        });
+    });
+}
+
 function addTable(table, sql) {
   var message;
   var db = "AnsibleForms";
@@ -285,6 +372,145 @@ function makeColumnNullable(table, name, fieldtype) {
     });
 }
 
+// PATCHING : one-time cleanup of the removed LDAP is_advanced toggle
+// The is_advanced toggle was dropped from the UI ; the four group columns
+// (groups_search_base, group_class, group_member_attribute,
+// group_member_user_attribute) are now always applied when non-empty. On
+// installs where the toggle was OFF these may hold stale values that would
+// suddenly take effect, so drop the toggle column and blank them once. This is
+// gated on the is_advanced column still existing, which makes it strictly
+// one-time : after the drop it never runs again (so it can't wipe values a user
+// later enters through the new UI).
+function clearStaleLdapAdvancedGroupFields() {
+  var message;
+  var db = "AnsibleForms";
+  var table = "ldap";
+  var advancedFields = ["groups_search_base", "group_class", "group_member_attribute", "group_member_user_attribute"];
+  var clearsql = "SET groups_search_base = '', group_class = '', group_member_attribute = '', group_member_user_attribute = ''";
+  var checksql = "SHOW COLUMNS FROM ??.?? WHERE Field = ?";
+  var countsql = "SELECT COUNT(*) AS total FROM ??.??";
+  var selectsql = "SELECT groups_search_base, group_class, group_member_attribute, group_member_user_attribute FROM ??.?? WHERE is_advanced = 0 OR is_advanced IS NULL";
+  var updateallsql = `UPDATE ??.?? ${clearsql}`;
+  // the ldap table has no key (it is single-row by design), so a subset of rows can
+  // only be addressed by the values snapshotted before the drop ; NULL never
+  // matches in a comparison, hence the COALESCE on both sides
+  var updatesomesql = `UPDATE ??.?? ${clearsql} WHERE (COALESCE(groups_search_base,''), COALESCE(group_class,''), COALESCE(group_member_attribute,''), COALESCE(group_member_user_attribute,'')) IN (?)`;
+  // The "already done" marker, written in the same transaction as the blanking so the
+  // two can never disagree. See the long comment below the snapshot.
+  var marksql = "UPDATE ??.?? SET is_advanced = 1";
+  var dropsql = "ALTER TABLE ??.?? DROP COLUMN is_advanced";
+  logger.debug(`cleaning up stale ldap advanced group fields`);
+  return mysql
+    .do(checksql, [db, table, 'is_advanced'])
+    .then(async (checkres) => {
+      if (checkres.length == 0) {
+        return false;
+      }
+      // Snapshot the rows to blank while the toggle column still exists.
+      var stale = await mysql.do(selectsql, [db, table]);
+      var total = (await mysql.do(countsql, [db, table]))[0].total;
+      // only the rows that actually carry a value need blanking. On a retry (see
+      // below) they are already empty, so there is nothing left to clear and the
+      // update is skipped entirely.
+      var dirty = stale.filter((row) => advancedFields.some((f) => row[f] !== null && row[f] !== ""));
+      // Blank, and mark as done, in ONE transaction. Then drop, separately.
+      //
+      // The blanking has to be the undoable half, so it comes first : a failing UPDATE
+      // rolls itself back and the next boot retries from a clean state. MySQL implicitly
+      // commits before DDL and cannot roll a DDL back, so the DROP cannot be part of it.
+      //
+      // But keying "have I run?" on the column the DROP removes is not enough. A DROP
+      // that fails (no ALTER grant - which does not stop the app, see init) used to leave
+      // the values blanked AND the gate in place, so this ran again on every call. That is
+      // not harmless: GET /api/v2/schema is public and re-runs patchAll while patching is
+      // failing, so an admin who re-entered those four fields had them wiped again, over
+      // and over. Hence the marker: setting is_advanced = 1 makes the snapshot query
+      // (is_advanced = 0 OR NULL) match nothing next time, so the blanking is one-time
+      // whether or not the column ever goes away. Nothing reads is_advanced any more, and
+      // 1 is the truthful value - after 6.3.0 those fields are always applied.
+      await mysql.transaction(async (query) => {
+        if (dirty.length > 0) {
+          // log the non-empty values at warning level BEFORE clearing them : this is the
+          // only recovery trail for exactly what was cleared.
+          dirty.forEach((row) => {
+            var nonEmpty = advancedFields.filter((f) => row[f] !== null && row[f] !== "");
+            logger.warning(`clearing stale ldap advanced group fields : ` + nonEmpty.map((f) => `${f}='${row[f]}'`).join(", "));
+          });
+          if (stale.length == total) {
+            await query(updateallsql, [db, table]);
+          } else {
+            await query(updatesomesql, [db, table, dirty.map((row) => advancedFields.map((f) => row[f] || ""))]);
+          }
+        }
+        await query(marksql, [db, table]);
+      });
+      // Separate from the transaction above, because a DDL failure must not be able to
+      // look like the blanking never happened.
+      await mysql.do(dropsql, [db, table]);
+      return true;
+    })
+    .then((res) => {
+      if (!res) {
+        message = `Column 'is_advanced' is already absent on '${table}'`;
+        logger.debug(message);
+        return message;
+      }
+      message = `cleared stale advanced group fields and dropped 'is_advanced' on '${table}'`;
+      logger.warning(message);
+      return message;
+    });
+}
+
+// What a fully patched schema looks like, mapped back to the patch that creates each item.
+//
+// This lives HERE, beside the patches, for the same reason the fresh-install SQL and the
+// patches have to stay in sync: adding a patch means adding one line below, in the file you
+// are already editing. Put it in health.model.js and it drifts the first time somebody adds
+// a column without thinking about the health page.
+//
+// It exists because there is NO version table. Patches are idempotent and re-run on every
+// boot, so nothing records where a database actually got to - a patch that fails leaves a
+// half-migrated schema, one line in the startup log, and no way to ask about it afterwards.
+//
+// `audit` is included deliberately. The pre-patch `checkTables` excludes it, because that
+// runs BEFORE patching and would otherwise block the very patch that creates it; this
+// manifest is consumed after patching, so it must expect it.
+const SCHEMA_MANIFEST = {
+  // tables the fresh install creates, so they must exist however the database was built
+  base: {
+    tables: ['groups', 'users', 'tokens', 'credentials', 'ldap', 'awx', 'jobs', 'job_output',
+             'settings', 'repositories', 'datasource_schemas', 'datasource', 'staging',
+             'schedule', 'audit'],
+  },
+  patches: {
+    patchVersion4: { columns: ['ldap.groups_search_base', 'ldap.groups_attribute', 'ldap.group_class',
+                               'ldap.group_member_attribute', 'ldap.group_member_user_attribute', 'ldap.mail_attribute'] },
+    // NOT azuread / oidc : patchVersion5 still creates them for historical upgrades, but
+    // they are superseded by `oauth2_providers` (azureAd.model and oidc.model both query
+    // that table with a provider filter) and the fresh install does not create them. Every
+    // table a patch ever made is NOT the same as the expected schema - listing them here
+    // made this check report a false error on a perfectly healthy database.
+    patchVersion5: { tables: ['repositories', 'schedule'],
+                     columns: ['users.email', 'azuread.groupfilter', 'jobs.awx_id', 'awx.use_credentials',
+                               'settings.forms_yaml', 'repositories.branch', 'jobs.awx_artifacts',
+                               'jobs.abort_requested', 'awx.name', 'awx.description', 'awx.is_default'] },
+    // One entry per patch function, and there is one patch function per MAJOR version -
+    // so everything 6.x adds is listed here, including all of 6.3.0. `indexes` is a
+    // separate list from `columns` because the caller grades a missing index lower :
+    // its absence is slow rather than broken.
+    patchVersion6: { tables: ['datasource_schemas', 'datasource', 'staging', 'oauth2_providers', 'stored_jobs',
+                              'audit'],
+                     columns: ['oauth2_providers.tenant_id', 'jobs.raw_form_data', 'repositories.use_for_config',
+                               'repositories.use_for_vars_files', 'jobs.pid', 'jobs.host', 'schedule.one_time_run',
+                               'schedule.run_at', 'credentials.vault_path', 'jobs.awx_workflow', 'settings.logo',
+                               'settings.config_source', 'settings.default_language',
+                               'settings.default_theme', 'settings.default_theme_color',
+                               'awx.managed', 'credentials.managed', 'oauth2_providers.managed',
+                               'repositories.managed', 'ldap.managed', 'settings.managed'],
+                     indexes: ['jobs.idx_jobs_retention'] },
+  },
+};
+
 async function patchVersion4(messages, success, failed) {
   var buffer;
   var sql;
@@ -301,7 +527,11 @@ async function patchVersion4(messages, success, failed) {
   await checkPromise(addColumn("ldap", "group_class", "varchar(250)", true, "NULL"), messages, success, failed); // add column to have group class
   await checkPromise(addColumn("ldap", "group_member_attribute", "varchar(250)", true, "NULL"), messages, success, failed); // add column to have group member attribute
   await checkPromise(addColumn("ldap", "group_member_user_attribute", "varchar(250)", true, "NULL"), messages, success, failed); // add column to have group member user attribute
-  await checkPromise(addColumn("ldap", "is_advanced", "tinyint(4)", true, "0"), messages, success, failed); // is advanced config
+  // NOTE: the is_advanced toggle column is intentionally NOT (re)created here.
+  // It was removed from the UI and patchVersion6 does a one-time cleanup that
+  // blanks the stale advanced group fields and drops this column. Re-adding it
+  // here would let that cleanup re-run on the next boot and wipe group fields an
+  // admin has since configured through the new UI (see clearStaleLdapAdvancedGroupFields).
   await checkPromise(addColumn("ldap", "mail_attribute", "varchar(250)", true, "NULL"), messages, success, failed); // add column to have mail attribute
   // also the settings tables was not present before 4.0.0, it contains the URL and mail settings for notification
   // later the column forms_yaml was added to store the forms in yaml format (but that was in 5.x.x)
@@ -474,6 +704,15 @@ async function patchVersion6(messages, success, failed) {
   // Allow user/password to be NULL for vault-backed credentials.
   await checkPromise(makeColumnNullable("credentials", "user", "varchar(250)"), messages, success, failed);
   await checkPromise(makeColumnNullable("credentials", "password", "text"), messages, success, failed);
+  // `description` is optional metadata - crud.config.js does not mark it required and the
+  // other description columns in this schema are already DEFAULT NULL - but these two were
+  // NOT NULL with no default, so MySQL refused any insert that omitted them. An API client
+  // creating a credential or a repository without one got a raw
+  // "Field 'description' doesn't have a default value" 500 instead of the record it asked
+  // for. (A TEXT column cannot carry a literal DEFAULT, so nullable is the fix rather than
+  // DEFAULT ''.) The UI always sends the field, which is why this went unnoticed.
+  await checkPromise(makeColumnNullable("credentials", "description", "text"), messages, success, failed);
+  await checkPromise(makeColumnNullable("repositories", "description", "text"), messages, success, failed);
 
   // Add awx_workflow column to jobs table (6.3.0)
   // This stores the awx workflow nodes (name, status, relations) as json,
@@ -484,6 +723,47 @@ async function patchVersion6(messages, success, failed) {
   // This stores an optional custom logo as a base64 data url, shown in the
   // navbar instead of the default AnsibleForms logo (admin panel > logo)
   await checkPromise(addColumn("settings", "logo", "longtext", true, "NULL"), messages, success, failed);
+
+  // --- the rest of 6.3.0 ---
+  //
+  // It all belongs in THIS function. The patch number is the MAJOR version, not a
+  // counter : 4 is "for v4.x.x", 5 is "for v5.x.x", 6 is every 6.x, and the three
+  // columns above are already labelled 6.3.0. A patchVersion7 would mean AnsibleForms
+  // 7.0.0, and a function per feature invents versions that do not exist.
+  //
+  // Appending to a function that has already shipped is safe, and is what the entries
+  // above do: patchAll runs every patch on every boot with no version bookkeeping, so
+  // a new function would not be applied any differently. What makes that work is that
+  // each helper is existence-checked - addColumn, addTable and addIndex all look first,
+  // and the ldap cleanup no-ops once the column it keys off is gone.
+
+  // the active config source, and the server-wide language and theme defaults
+  await checkPromise(addColumn("settings", "config_source", "varchar(20)", true, "NULL"), messages, success, failed);
+  await checkPromise(addColumn("settings", "default_language", "varchar(5)", true, "NULL"), messages, success, failed);
+  await checkPromise(addColumn("settings", "default_theme", "varchar(10)", true, "NULL"), messages, success, failed);
+  await checkPromise(addColumn("settings", "default_theme_color", "varchar(7)", true, "NULL"), messages, success, failed);
+
+  // one-time cleanup after removing the ldap is_advanced toggle (see the helper : it
+  // snapshots, blanks and drops in one transaction, and no-ops once the column is gone)
+  await checkPromise(clearStaleLdapAdvancedGroupFields(), messages, success, failed);
+
+  // The audit trail. It is append only : nothing updates or deletes a row except the
+  // retention sweep, which is why it carries no natural key and no unique constraint.
+  buffer = fs.readFileSync(`${__dirname}/../db/create_audit_table.sql`);
+  sql = buffer.toString();
+  await checkPromise(addTable("audit", sql), messages, success, failed);
+
+  // Job retention selects on parent_id + status + end. Without an index that is a full
+  // scan of the biggest table in the schema, repeated once per batch.
+  await checkPromise(addIndex("jobs", "idx_jobs_retention", ["parent_id", "status", "end"]), messages, success, failed);
+
+  // The declarative config seed flags the objects it owns, so the API can refuse to
+  // change them behind the seed's back. One column per seedable table. Default 0 :
+  // everything that already exists was made by hand and stays editable.
+  for (const table of ["awx", "credentials", "oauth2_providers", "repositories", "ldap", "settings"]) {
+    await checkPromise(addColumn(table, "managed", "tinyint(4)", true, "0"), messages, success, failed);
+  }
+
 }
 
 // PATCHING : Patch All
@@ -517,7 +797,7 @@ async function checkAll() {
   var messages = [];
   var success = [];
   var failed = [];
-  var resultobj = undefined;
+  var resultobj;
 
   // check the database
   await checkPromise(checkSchema(), messages, success, failed);
@@ -525,7 +805,7 @@ async function checkAll() {
   if (failed.length > 0) {
     // if schema does not exist, we can't check the tables // throw now
     resultobj = { message: messages, data: { success: success, failed: failed } };
-    var err = new Error("Schema is missing");
+    const err = new Error("Schema is missing");
     err.result = resultobj;
     throw err;
   }
@@ -537,7 +817,7 @@ async function checkAll() {
   if (failed.length > 0) {
     // some of the tables are missing, we can't patch them // throw now
     resultobj = { message: messages, data: { success: success, failed: failed } };
-    var err = new Error("Tables are missing");
+    const err = new Error("Tables are missing");
     err.result = resultobj;
     throw err;
   }
@@ -548,7 +828,7 @@ async function checkAll() {
   if (failed.length > 0) {
     // some of the patches failed // throw now
     resultobj = { message: messages, data: { success: success, failed: failed } };
-    var err = new Error("Patching failed");
+    const err = new Error("Patching failed");
     err.result = resultobj;
     throw err;
   }
@@ -558,6 +838,7 @@ async function checkAll() {
   return resultobj;
 }
 
+export { SCHEMA_MANIFEST };
 export default Schema;
 
 // function addRecord(table,names,values){

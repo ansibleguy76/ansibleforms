@@ -62,13 +62,49 @@ Repo.color = function(t){
   return ([].concat(t)).map(x=> x.replace(/^([^:\n\r]+:)/gm,"<strong class='has-text-info'>$1</strong>")).join("\r\n")
 }
 
+/**
+ * Move a repository's working tree when the record is renamed.
+ *
+ * `name` is an editable field and the tree lives at repoPath/<name>, so renaming the row
+ * alone orphaned the clone: the renamed repository had no working tree at all and every
+ * pull answered "not cloned yet", while the old directory stayed behind. Both names are
+ * validated because both become path segments.
+ *
+ * A repository whose clone never ran has no directory, which is not an error - there is
+ * simply nothing to move.
+ *
+ * @returns {boolean} whether a directory was actually moved. The caller needs this to
+ *   know if it has anything to undo when the database write that follows fails: reversing
+ *   a move that never happened would be a second no-op at best, and misleading at worst.
+ */
+Repo.rename = function (oldName, newName) {
+    validateRepoName(oldName);
+    validateRepoName(newName);
+    const directory = config.repoPath;
+    const from = path.join(directory, oldName);
+    const to = path.join(directory, newName);
+    if (!fs.existsSync(from)) {
+        logger.notice(`Repository '${oldName}' has no working tree to move`);
+        return false;
+    }
+    if (fs.existsSync(to)) {
+        throw new Error(`Cannot rename repository to '${newName}': a working tree already exists at that name`);
+    }
+    logger.notice(`Moving repository working tree ${oldName} -> ${newName}`);
+    fs.renameSync(from, to);
+    return true;
+};
+
 Repo.delete = async function (name) {
     validateRepoName(name);
     logger.notice("Deleting repository " + name)
     var directory = config.repoPath
 
-    fs.accessSync(path.join(directory,name))
-    // if found and access continue with delete
+    // A repository whose clone never succeeded has no directory on disk. accessSync
+    // threw ENOENT for exactly that case, and since Repository.delete does not await
+    // this it surfaced as an unhandled rejection while the record was removed anyway.
+    // rmSync with force is already a no-op on a missing path, so the check was pure
+    // downside.
     fs.rmSync(path.join(directory,name),{force:true,recursive:true})
     return
 
@@ -154,43 +190,62 @@ Repo.clone = async function (uri,name,branch=undefined) {
     }
 };
 // add ssh known hosts
+/**
+ * Add the host keys for `hosts` to ~/.ssh/known_hosts.
+ *
+ * A PROMISE, deliberately. This used to register listeners and fall off the end, so the
+ * async function resolved `undefined` before ssh-keyscan had run - the `return` on the
+ * success branch returned from the 'exit' LISTENER, where nothing reads it, so a caller's
+ * `await` never saw success or failure. Worse, the failure branch threw from inside that
+ * listener: there is no frame above a child-process event handler, so it was an uncaught
+ * exception that would terminate the server. `ssh-keyscan ... >> ~/.ssh/known_hosts`
+ * exits non-zero whenever ~/.ssh does not exist or ssh-keyscan is not installed, so that
+ * was not a remote possibility.
+ *
+ * Nothing calls this today - knownhosts.model.js has its own promisified implementation -
+ * but it is exported, so the first caller added would have crashed the process.
+ */
+// Stays `async` on purpose: validateHostname below throws SYNCHRONOUSLY, and callers
+// (and tests/repo-integration.test.js) expect a rejected promise, not a thrown error.
 Repo.addKnownHosts = async function (hosts) {
-
     if(!hosts){
       throw new Error("No hosts given")
-    }else{
-      var hostList = hosts.split(/[\s,]+/).filter(Boolean);
-      hostList.forEach(function(h) {
-        validateHostname(h);
-      });
-      var sanitizedHosts = hostList.join(' ');
-      logger.notice(`Adding keys for hosts ${hosts}`)
-      var safeHosts = hostList.map(h => quote([h])).join(' ')
-      var cmd = `ssh-keyscan ${safeHosts} >> ~/.ssh/known_hosts`
-      logger.notice(`Running cmd : ${cmd}`)
+    }
+    var hostList = hosts.split(/[\s,]+/).filter(Boolean);
+    hostList.forEach(function(h) {
+      validateHostname(h);
+    });
+    logger.notice(`Adding keys for hosts ${hosts}`)
+    var safeHosts = hostList.map(h => quote([h])).join(' ')
+    var cmd = `ssh-keyscan ${safeHosts} >> ~/.ssh/known_hosts`
+    logger.notice(`Running cmd : ${cmd}`)
+    return new Promise((resolve, reject) => {
       var known_hosts = Cmd.runCommand(cmd)
       var output = []
       known_hosts.stdout.on('data', function(a){
         logger.info(a)
         output.push(a)
       });
-
-      known_hosts.on('exit',function(code){
-        logger.debug('exit')
-        if(code==0){
-          return `Adding keys ran succesfully\n${output.join("\n")}`
-        }else{
-          throw new Error(`\nAdding keys failed with code ${code}\n${output.join("\n")}`)
-        }
-      });
-
-      known_hosts.stderr.on('data',function(a){
+      known_hosts.stderr.on('data', function(a){
         output.push(a)
         logger.error('stderr:'+a);
       });
-    }
-
+      // spawn/exec can fail before the process exists (ENOENT); without this the promise
+      // would never settle and the caller would hang for ever
+      known_hosts.on('error', function(e){
+        reject(new Error(`Adding keys failed to start : ${e.message}`))
+      });
+      known_hosts.on('exit', function(code){
+        logger.debug('exit')
+        if(code==0){
+          resolve(`Adding keys ran succesfully\n${output.join("\n")}`)
+        }else{
+          reject(new Error(`\nAdding keys failed with code ${code}\n${output.join("\n")}`))
+        }
+      });
+    });
 };
+
 
 // run a playbook
 Repo.pull = async function (name) {
@@ -205,10 +260,19 @@ Repo.pull = async function (name) {
 Repo.hasChanges = async function (name) {
     const directory = path.join(config.repoPath, name)
     const clean = (out) => String(out).split("\n").filter(l => l.trim() && !l.startsWith("Running command"))
+    // `git status` is the FACT this function exists to establish, so it is not in the
+    // catch. It used to be: any failure - the tree not cloned, the 60s command timeout,
+    // a stale index.lock, git missing from PATH - was answered as "no local changes".
+    // That is the one answer that must never be invented here, because cron.service
+    // guards the scheduled pull with `else if (await hasLocalChanges(name))`: a false
+    // `false` skips the guard and runs `git pull` over a working tree the designer has
+    // uncommitted work in, which is exactly the race it was added for (issue #414). It
+    // also made the settings page report a dirty repository as clean.
+    const dirty = await Cmd.executeSilentCommand({ directory, command: "git status --porcelain", description: "Checking status" }, true)
+    if (clean(dirty).length > 0) return true
     try {
-      const dirty = await Cmd.executeSilentCommand({ directory, command: "git status --porcelain", description: "Checking status" }, true)
-      if (clean(dirty).length > 0) return true
-      // count commits ahead of the upstream (no upstream => command throws => caught)
+      // count commits ahead of the upstream. THIS one is genuinely allowed to fail: a
+      // branch with no upstream makes `@{u}` an error, and that means "nothing to push".
       const ahead = await Cmd.executeSilentCommand({ directory, command: "git rev-list --count @{u}..HEAD", description: "Checking ahead" }, true)
       return parseInt(clean(ahead)[0] || "0", 10) > 0
     } catch (e) {
@@ -271,10 +335,10 @@ Repo.sync = async function (name, message) {
           await Cmd.executeSilentCommand({ command: "git rebase --abort", directory, description: "Aborting rebase" }, true)
         } catch (e2) { /* no rebase in progress */ }
         if (conflicts && conflicts.trim()) {
-          throw new Error(`${out.join("\n")}\nSync failed, the rebase has been aborted.\nConflicted files :\n${conflicts.trim()}\nFix the conflicts manually or reset the repository.`)
+          throw new Error(`${out.join("\n")}\nSync failed, the rebase has been aborted.\nConflicted files :\n${conflicts.trim()}\nFix the conflicts manually or reset the repository.`, { cause: e })
         }
         if (attempt === attempts) {
-          throw new Error(`${out.join("\n")}\nSync failed after ${attempts} attempts :\n${e.message}`)
+          throw new Error(`${out.join("\n")}\nSync failed after ${attempts} attempts :\n${e.message}`, { cause: e })
         }
         out.push(`Sync attempt ${attempt} failed, retrying in 2 seconds...`)
         await new Promise(r => setTimeout(r, 2000))

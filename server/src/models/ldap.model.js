@@ -27,11 +27,10 @@ var Ldap=function(ldap){
     this.username_attribute = ldap.username_attribute;
     this.groups_attribute = ldap.groups_attribute;
     this.enable = (ldap.enable)?1:0;
-    this.is_advanced = (ldap.is_advanced)?1:0;
-    this.groups_search_base = (ldap.is_advanced)?ldap.groups_search_base:""
-    this.group_class = (ldap.is_advanced)?ldap.group_class:""
-    this.group_member_attribute = (ldap.is_advanced)?ldap.group_member_attribute:""
-    this.group_member_user_attribute = (ldap.is_advanced)?ldap.group_member_user_attribute:""
+    this.groups_search_base = ldap.groups_search_base || ""
+    this.group_class = ldap.group_class || ""
+    this.group_member_attribute = ldap.group_member_attribute || ""
+    this.group_member_user_attribute = ldap.group_member_user_attribute || ""
     this.mail_attribute = ldap.mail_attribute
     this.testpassword = ldap.testpassword || ""
     this.testuser = ldap.testuser || ""
@@ -58,6 +57,19 @@ Ldap.find = async function() {
     throw "No ldap record in the database, something is wrong";
   }
 }
+// Does an ldap-authentication failure mean 'the search found no such user' ?
+// authenticate() throws ONLY the last message of the failed result, and we always
+// call it in admin mode (no userDn, no verifyUserExists) : there a user search
+// that finds nothing yields 'Authentication identity not found'. The older
+// 'user not found or usernameAttribute is wrong' text only comes from the
+// verifyUserExists path and is matched as well, so both library paths keep
+// working. A wrong password yields the invalid-credentials message (the
+// directory's own bind error) and must NEVER match : the UPN retry may only fire
+// on a missing user, or it would double the bind attempts and, with it, the
+// directory's lockout counter.
+Ldap.isUserNotFound = function(message){
+  return /authentication identity not found|user not found or usernameAttribute is wrong/i.test(message || "")
+}
 Ldap.check = async function(ldapConfig){
     
     // auth with admin
@@ -80,13 +92,10 @@ Ldap.check = async function(ldapConfig){
       username: ldapConfig.testuser,
       // starttls: false
     }
-    // new in v4.0.20, add advanced ldap properties
-    if(ldapConfig.is_advanced){
-      if(ldapConfig.groups_search_base){ options.groupsSearchBase = ldapConfig.groups_search_base }
-      if(ldapConfig.group_class){ options.groupClass = ldapConfig.group_class }
-      if(ldapConfig.group_member_attribute){ options.groupMemberAttribute = ldapConfig.group_member_attribute }
-      if(ldapConfig.group_member_user_attribute){ options.groupMemberUserAttribute = ldapConfig.group_member_user_attribute }
-    }
+    if(ldapConfig.groups_search_base){ options.groupsSearchBase = ldapConfig.groups_search_base }
+    if(ldapConfig.group_class){ options.groupClass = ldapConfig.group_class }
+    if(ldapConfig.group_member_attribute){ options.groupMemberAttribute = ldapConfig.group_member_attribute }
+    if(ldapConfig.group_member_user_attribute){ options.groupMemberUserAttribute = ldapConfig.group_member_user_attribute }
     // console.log(options)
     // ldap-authentication has bad cert check, so we check first !!
     if(ldapConfig.enable_tls && !(ldapConfig.ignore_certs==1)){
@@ -121,10 +130,22 @@ Ldap.check = async function(ldapConfig){
       try{
         // logger.debug(JSON.stringify(options))
         logger.notice("Authenticating")
-        var user = await authenticate(options)
-        return user
+        try{
+          var user = await authenticate(options)
+          return user
+        }catch(err){
+          // mirror the login fallback : allow a UPN-style test user (user@domain.com)
+          // against directories whose username_attribute holds the bare name, but
+          // only when the search found no user (never on a wrong password)
+          const local = (ldapConfig.testuser || "").includes("@") ? ldapConfig.testuser.split("@")[0] : ""
+          if(local && Ldap.isUserNotFound(err?.message)){
+            logger.notice(`Ldap test user '${ldapConfig.testuser}' not found, retrying as '${local}'`)
+            return await authenticate({ ...options, username: local })
+          }
+          throw err
+        }
       }catch(err){
-        var em =""
+        var em
         console.log(err)
         if(err.message){
           em = err.message
@@ -147,12 +168,14 @@ Ldap.check = async function(ldapConfig){
           }
         }
         
-        if(em.includes("user not found")){
+        // a test user that does not exist still proves the connection and the
+        // binding credentials are fine : report ok, not a hard error
+        if(Ldap.isUserNotFound(em)){
           logger.notice("Checking ldap connection ok")
           return
         }else{
           logger.notice("Checking ldap connection result : " + em)
-          throw new Error(em)
+          throw new Error(em, { cause: err })
         }
       }
     }

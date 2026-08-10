@@ -1,5 +1,6 @@
 'use strict';
 import logger from "../lib/logger.js";
+import Errors from "../lib/errors.js";
 import mysql from "./db.model.js";
 import crypto from "../lib/crypto.js";
 import NodeCache from "node-cache";
@@ -10,6 +11,23 @@ const cache = new NodeCache({
     checkperiod: (3600 * 0.5)
 });
 
+
+// Credentials flagged `managed` come from the declarative config seed and are read
+// only. This v1 model writes its own SQL, so it does not pass through CrudModel's
+// guard and has to ask separately - the seed itself applies through the v2 model.
+//
+// Every failure in the v1 credential controller answers HTTP 200 with an error body
+// (its long-standing behaviour, not changed here), so what this achieves is refusing
+// the write, not the status code. The v2 API is the one the client uses, and there
+// AccessDeniedError becomes a proper 403.
+async function assertNotManaged(id) {
+  const res = await mysql.do("SELECT managed FROM AnsibleForms.`credentials` WHERE id = ?", [id]);
+  if (res.length && res[0].managed) {
+    // a typed error, so the controller can answer 403 rather than a bare 500 - this used
+    // to be a plain string and the v1 controller had no status mapping at all
+    throw new Errors.AccessDeniedError("This credential is managed by the config seed and is read only");
+  }
+}
 
 //credential object create
 class Credential {
@@ -37,12 +55,14 @@ class Credential {
   static async update(record, id) {
     const r = await Credential.findById(id); // quickly search name
     record.name = r[0].name;
+    await assertNotManaged(id);
     logger.info(`Updating credential ${record.name}`);
     var res = await mysql.do("UPDATE AnsibleForms.`credentials` set ? WHERE id=?", [record, id]);
     cache.del(record.name);
     return res;
   }
   static async delete(id) {
+    await assertNotManaged(id);
     logger.info(`Deleting credential ${id}`);
     var res = await mysql.do("DELETE FROM AnsibleForms.`credentials` WHERE id = ? AND name<>'admins'", [id]);
     return res;

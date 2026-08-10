@@ -2,7 +2,7 @@
 import axios from 'axios';
 import TokenStorage from '@/lib/TokenStorage';
 import ansiParse from '@/lib/AnsiParse';
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import Helpers from '@/lib/Helpers';
 
@@ -25,12 +25,27 @@ const lineOptions = [
 
 
 
-const filtered = computed(() => {
-  if (filter.value) {
-    return log.value.split("\n").filter(x => x.match(filter.value) && x != "").map(x => ansiParse(x))
-  } else {
-    return log.value.split("\n").filter(x => x != "").map(x => ansiParse(x))
+// The filter is a REGEX, which is the useful thing for a log - but String.match compiles
+// its string argument, so a half typed one ('[', '(', '*', 'a{2,1}') threw a SyntaxError
+// from inside this computed and took the whole page down. You cannot type '[abc]' without
+// passing through '['. Compile it once here: while it is not valid yet, fall back to a
+// plain case-insensitive substring match so the list keeps narrowing as you type.
+const filterMatcher = computed(() => {
+  const f = filter.value
+  if (!f) return null
+  try {
+    const re = new RegExp(f)
+    return (line) => re.test(line)
+  } catch {
+    const needle = f.toLowerCase()
+    return (line) => line.toLowerCase().includes(needle)
   }
+})
+
+const filtered = computed(() => {
+  const match = filterMatcher.value
+  const lines = log.value.split("\n").filter(x => x != "")
+  return (match ? lines.filter(match) : lines).map(x => ansiParse(x))
 })
 async function scrollToBottom() {
   await new Promise(resolve => setTimeout(resolve, 1000));
@@ -45,22 +60,48 @@ watch(lines, async () => {
 watch(refresh, async () => {
   if (refresh.value) {
     await load(true)
+  } else {
+    stopAutoRefresh()
   }
 })
+// The auto refresh is a timer we own, not a recursive chain we can't stop : it
+// is cleared when the switch goes off and when the page is left, otherwise the
+// polling keeps running for the rest of the session.
+let refreshTimer = null;
+let stopped = false;
+
+function stopAutoRefresh() {
+  if (refreshTimer) clearTimeout(refreshTimer)
+  refreshTimer = null
+}
+
+function scheduleAutoRefresh() {
+  stopAutoRefresh()
+  if (stopped || !refresh.value) return
+  refreshTimer = setTimeout(() => { refreshTimer = null; load() }, 2000)
+}
+
 async function load(force = false) {
-  if (!isLoading.value && (refresh.value || force)) {
-    isLoading.value = true;
+  if (isLoading.value || !(refresh.value || force)) return;
+  isLoading.value = true;
+  try {
     const result = await axios.get(`/api/v2/log?lines=${lines.value || 100}`, TokenStorage.getAuthentication())
     if (result.data != "...") {
       log.value = result.data
-      isLoading.value = false
       await scrollToBottom()
     }
-    if (refresh.value) {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      await load()
+  } catch (err) {
+    // a failing log endpoint must not leave the page loading forever (that
+    // disables both the refresh button and the auto refresh)
+    if (!stopped) {
+      refresh.value = false
+      toast.error(Helpers.parseAxiosResponseError(err))
     }
+  } finally {
+    // always released, also when the server answered the "..." placeholder
+    isLoading.value = false
   }
+  scheduleAutoRefresh()
 }
 async function downloadWithAxios(url, authHeaders) {
   const response = await axios({
@@ -82,15 +123,19 @@ async function download() {
 onMounted(async () => {
   await load(true)
 })
+onUnmounted(() => {
+  stopped = true
+  stopAutoRefresh()
+})
 </script>
 <template>
 
 
   <AppNav />
-  <div class="flex-shrink-0">
+  <div class="af-fill-page">
     <main class="d-flex container-xxl">
       <AppSettings :title="t('logs.title')" icon="file-lines">
-        <template #actions>
+        <template #headerActions>
           <div class="ms-2">
             <BsInput :isFloating="false" type="checkbox" v-model="refresh" :label="t('logs.autoRefresh')" :isInline="true"></BsInput>
           </div>
@@ -100,13 +145,21 @@ onMounted(async () => {
           <div class="ms-2">
             <BsInput cssClass="ms-2" label="" :isInline="true" :isFloating="false" icon="filter" v-model="filter" :placeholder="t('logs.filterPlaceholder')"></BsInput>
           </div>
+          <!-- view controls only : these decide WHAT the card shows, so they belong
+               above the content they filter. Refresh re-reads the same view, it does
+               not act on anything - the action buttons live under the card. -->
           <BsButton class="ms-2" icon="refresh" :isIconButton="true" @click="load(true)"></BsButton>
-          <BsButton class="ms-2" icon="download" @click="download()">{{ t('logs.download') }}</BsButton>
+        </template>
+        <template #actions>
+          <BsButton cssClass="ms-3" icon="download" @click="download()">{{ t('logs.download') }}</BsButton>
         </template>
         <template #default>
-          <div ref="scroller" id="scroller" class="font-monospace fs-6">
-            <div v-for="t, i in filtered">
-              <div class="text-end pe-1 me-3 d-inline-block bg-secondary-subtle" style="width:40px;">{{ i + 1 }}</div><span v-for="s in t" v-text="s.text" :class="s.foreground || ''"></span>
+          <!-- tabindex : the scrolling box is the card body around us, and a
+               scroll container is only driven by the arrow / page keys once
+               something inside it holds the focus -->
+          <div ref="scroller" id="scroller" class="font-monospace fs-6" tabindex="0" role="region" :aria-label="t('logs.title')">
+            <div v-for="t, i in filtered" :key="i">
+              <div class="text-end pe-1 me-3 d-inline-block bg-secondary-subtle" style="width:40px;">{{ i + 1 }}</div><span v-for="s, si in t" :key="si" v-text="s.text" :class="s.foreground || ''"></span>
             </div>
           </div>
         </template>
@@ -115,10 +168,10 @@ onMounted(async () => {
   </div>
 </template>
 <style scoped>
+/* The viewport is filled by `af-fill-page` (the card body is the scrolling
+   area), so the log itself only has to keep long lines from widening the page. */
 #scroller {
-  height: calc(100vh - 170px);
-  overflow-y: scroll;
-  overflow-x: hidden;
+  overflow-wrap: anywhere;
 }
 </style>
 <route lang="yaml">

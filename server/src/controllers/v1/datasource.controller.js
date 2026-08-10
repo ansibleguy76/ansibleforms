@@ -51,7 +51,7 @@ const findById = async function (req, res) {
     if (datasource.length > 0) {
       res.json(new RestResult("success", "found datasource", datasource[0], ""));
     } else {
-      res.json(new RestResult("error", "failed to find datasource", null, err.toString()));
+      res.json(new RestResult("error", "failed to find datasource", null, ""));
     }
   } catch (err) {
     res.json(new RestResult("error", "failed to find datasource", null, err.toString()));

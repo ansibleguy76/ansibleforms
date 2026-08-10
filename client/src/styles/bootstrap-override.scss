@@ -117,6 +117,93 @@
 .form-floating > select:not(:focus)::placeholder {
   opacity: 0 !important;
 }
+// Nav tabs with flush card connection
+// Bootstrap's bottom border on the nav is kept on purpose : it is the baseline
+// that closes the top edge of whatever sits under the tab strip (the flush card
+// below overlaps it, a plain `border border-top-0` panel - like the child lists
+// in AppAdminMulti - leans on it).
+.nav-tabs .nav-item:first-child {
+  padding-left: 0;
+}
+.nav-tabs .nav-link {
+  border: 1px solid var(--bs-border-color);
+  border-bottom-color: transparent;
+  margin-bottom: -1px;
+  color: var(--bs-secondary-color);
+}
+// Bootstrap's own `:hover` rule wins over the base rule above and repaints the
+// border with `--bs-secondary-bg` on top/left/right, which is the same tone as
+// the hover background : the tab would lose its outline while hovered, so the
+// frame is restored here.
+.nav-tabs .nav-link:hover:not(.active) {
+  color: var(--bs-primary);
+  background-color: var(--bs-tertiary-bg);
+  border-color: var(--bs-border-color) var(--bs-border-color) transparent;
+}
+.nav-tabs .nav-link.active {
+  background-color: var(--bs-body-bg) !important;
+  color: var(--bs-primary) !important;
+  border-top-color: var(--bs-primary) !important;
+  border-left-color: var(--bs-border-color) !important;
+  border-right-color: var(--bs-border-color) !important;
+  border-bottom-color: var(--bs-body-bg) !important;
+  box-shadow: inset 0 2px 0 var(--bs-primary);
+  position: relative;
+  z-index: 1;
+}
+// The inset marker above replaces Bootstrap's `:focus-visible` box-shadow while
+// `outline: 0` keeps applying, which leaves the active tab without any focus
+// indicator : keep the marker and add the focus ring next to it.
+.nav-tabs .nav-link.active:focus-visible {
+  box-shadow: inset 0 2px 0 var(--bs-primary),
+              0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.25);
+}
+// The card AppSettings renders right under a tab strip (it stamps
+// `tab-card-flush-card` on it as soon as the #tabs slot is filled) : pull it up
+// by one pixel so its top border lands on the nav baseline, which the active tab
+// then covers - the tab reads as being open into the card.
+.tab-card-flush-card {
+  margin-top: -1px;
+}
+.tab-card-flush-card > .card-body {
+  padding-top: 1.25rem;
+  /* 1rem to match a plain card : the bottom gap is one number across every page */
+  padding-bottom: 1rem;
+}
+.tab-card-flush-card > .card-body > :last-child {
+  margin-bottom: 0 !important;
+}
+
+// Full height pages (logs) : #app is a 100vh flex column, so a page can
+// fill exactly what the navbar leaves over instead of hard coding
+// `height: calc(100vh - <magic number>)` on its own viewport - which drifts as
+// soon as the chrome around it changes (header, tab strip, card padding, action
+// bar). Put `af-fill-page` on the page wrapper (the direct child of #app) : the
+// chain down to the AppSettings card body becomes a flex column, and the card
+// body is the single scrolling area, so the page itself does not grow a second
+// scrollbar as long as the chrome around it fits (see the floor below). Only
+// direct children are matched, so cards inside the content are left alone.
+.af-fill-page,
+.af-fill-page > main,
+.af-fill-page > main > .section,
+.af-fill-page > main > .section > .container-fluid,
+.af-fill-page > main > .section > .container-fluid > .card {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+// The scroll pane is the only part of the chain that can shrink, so it absorbs
+// the whole deficit when the chrome around it no longer fits (a wrapped action
+// bar, a large text size, 400% zoom) and would collapse to zero height. The
+// floor keeps it usable and lets the surplus overflow #app instead, which brings
+// back the document scrollbar - the page stays reachable.
+.af-fill-page > main > .section > .container-fluid > .card > .card-body {
+  flex: 1 1 auto;
+  min-height: 12rem;
+  overflow: auto;
+}
+
 // Vue Datepicker: align the input + popup background with Bootstrap's
 // form-control colors so it visually matches the surrounding text/select
 // inputs in both light, dark and color themes.
@@ -133,4 +220,34 @@
   --dp-menu-border-color: var(--bs-border-color);
   --dp-icon-color: var(--bs-body-color);
   --dp-disabled-color: var(--bs-secondary-bg);
+}
+
+// Shared config admin pages (categories, roles, constants): fixed-layout
+// config tables and the "no items yet" empty-state placeholder.
+.config-table {
+  table-layout: fixed;
+}
+.config-table th:first-child,
+.config-table td:first-child {
+  width: 45%;
+}
+.col-action {
+  width: 80px;
+}
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  color: var(--bs-secondary-color);
+  font-style: italic;
+  border: 1px dashed var(--bs-border-color);
+  border-radius: 0.375rem;
+  margin-bottom: 0.5rem;
+}
+.empty-state-icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.5;
 }

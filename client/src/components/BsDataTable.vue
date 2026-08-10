@@ -6,7 +6,8 @@
  * ─────
  *  items          Array   Full dataset
  *  columns        Array   [{ key, label, filterable?, sortable?, render?(val,row)→string }]
- *  pageSize       Number  Default page size (default 25)
+ *  pageSize       Number  Initial page size (default 25) — a page size the user
+ *                         picked before (cookie, needs `name`) wins over it
  *  name           String  Cookie key for pagination persistence
  *  selectedIds    Set     Parent-owned Set of selected item ids (v-model:selectedIds)
  *  idKey          String  Field used as row id (default 'id')
@@ -46,6 +47,17 @@ function toggleColumn(key) {
   const s = new Set(hiddenColumns.value);
   if (s.has(key)) s.delete(key); else s.add(key);
   hiddenColumns.value = s;
+  // Drop the column's filter when it is hidden. The filter inputs are rendered only for
+  // VISIBLE columns while filteredItems applies every entry in columnFilters, so hiding a
+  // column you had filtered left the table filtered by an input that no longer existed -
+  // with the row count and "Select all" still reduced and no control to clear it. Column
+  // visibility is persisted in a cookie and the filters are not, so a reload silently
+  // changed the row count too.
+  if (s.has(key) && columnFilters.value[key]) {
+    const next = { ...columnFilters.value };
+    delete next[key];
+    columnFilters.value = next;
+  }
   // Persist to cookie
   if (props.name) {
     Helpers.setCookie(`dt_cols_${props.name}`, JSON.stringify([...s]), 365);
@@ -134,9 +146,20 @@ function onPageChange(slice) {
   pageItems.value = slice;
 }
 
-// When filter changes, reset to first page by re-keying paginator
+// When a FILTER changes, reset to first page by re-keying the paginator.
+//
+// This used to watch filteredItems, which returns props.items by identity when nothing is
+// filtered - so replacing the parent array counted as "the filter changed". AppAdminMulti
+// reloads every 60 seconds and does it in two steps (itemList = [], then the new array),
+// so on Users, Credentials or Repositories the paginator was remounted twice a minute and
+// the reader was thrown back to page 1 mid-read, on a timer, with no way to stop it.
+// Sorting deliberately does not re-key either: the rows move, the page number still means
+// something, and BsPagination's own watcher clamps it if the list shrank.
 const filterVersion = ref(0);
-watch(filteredItems, () => { filterVersion.value++; anchorIndex = null; });
+watch([globalFilter, columnFilters], () => { filterVersion.value++; anchorIndex = null; }, { deep: true });
+// a data replacement still invalidates the shift-select anchor - the row it pointed at
+// may not be there any more - but it must not move the user's page
+watch(filteredItems, () => { anchorIndex = null; });
 
 // ─── Cell rendering ───────────────────────────────────────────────────────────
 // `cellText` returns RAW plain text — used for filtering, sorting, and export.
@@ -422,7 +445,7 @@ function clearSelection() {
         </thead>
         <tbody>
           <tr
-            v-for="(item, index) in pageItems"
+            v-for="item in pageItems"
             :key="item[idKey]"
             :class="{ 'bs-dt-selected': selectedIds.has(item[idKey]) || item[idKey] === activeId }"
             class="bs-dt-row"

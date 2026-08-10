@@ -20,7 +20,6 @@
     /******************************************************************/
 
     import { computed } from 'vue';
-    import { useAppStore } from '@/stores/app';
 
     // PROPS
 
@@ -76,8 +75,6 @@
     });
 
     // COMPUTED
-
-    const appStore = useAppStore();
 
     const i = computed(() => {
         if (props.icon?.includes(',')) {

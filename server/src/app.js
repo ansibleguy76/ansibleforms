@@ -9,7 +9,7 @@ import session from "cookie-session";
 import cors from "cors";
 import helmet from "helmet";
 import swaggerUi from "swagger-ui-express";
-import bodyParser from "body-parser";
+import { jsonBody, urlencodedBody } from "./lib/bodyParsers.js";
 import passport from "passport";
 
 // App configuration and utilities
@@ -66,6 +66,9 @@ import awxRoutesv2 from "./routes/v2/awx.routes.js";
 import backupRoutes from "./routes/v2/backup.routes.js";
 import groupRoutesv2 from "./routes/v2/group.routes.js";
 import settingsRoutesv2 from "./routes/v2/settings.routes.js";
+import healthRoutesv2 from "./routes/v2/health.routes.js";
+import auditRoutesv2 from "./routes/v2/audit.routes.js";
+import auditMiddleware from "./lib/auditMiddleware.js";
 import logoRoutesv2 from "./routes/v2/logo.routes.js";
 import sshRoutesv2 from "./routes/v2/ssh.routes.js";
 import logRoutesv2 from "./routes/v2/log.routes.js";
@@ -86,7 +89,7 @@ const swaggerDocumentV2 = JSON.parse(fs.readFileSync(path.join(__dirname, "swagg
 const load = async (app) => {
   // first time run of the app
   // from now on, it's async => we wait for mysql to be ready
-  await init()
+  await init({ boot: true })
   await auth_azuread.initialize(); // we wait for the azuread to be ready
   await auth_oidc.initialize(); // we wait for the oidc to be ready
 
@@ -125,9 +128,10 @@ const load = async (app) => {
   // Body size caps. Generous defaults to accommodate large form designs and
   // job extravars; configurable via API_BODY_LIMIT_MB. File uploads have their
   // own limit (UPLOAD_MAX_GB) enforced by multer in upload.controller.js.
-  const apiBodyLimit = `${appConfig.apiBodyLimitMb}mb`;
-  app.use(bodyParser.json({ limit: apiBodyLimit }));
-  app.use(bodyParser.urlencoded({ limit: apiBodyLimit, extended: true }));
+  // installed once ; the limit behind them is rebuilt when API_BODY_LIMIT_MB changes, so it
+  // needs no restart (see lib/bodyParsers.js)
+  app.use(jsonBody);
+  app.use(urlencodedBody);
 
   // mysql2 has a bug that can throw an uncaught exception if the mysql server crashes (not enough mem for example)
   // also git commands can chain child processes and cause issues
@@ -160,8 +164,15 @@ const load = async (app) => {
   swaggerDocumentV2.basePath = `${appConfig.baseUrl}/api/v2`;
   app.use(`/api/v2/docs`, cors(), swaggerUi.serveFiles(swaggerDocumentV2, swaggerOptions), swaggerUi.setup(swaggerDocumentV2, swaggerOptions));
 
+  // Audit every state-changing api request. Mounted BEFORE the route guards on
+  // purpose : it only registers a res.on('finish') handler, which reads req.user
+  // lazily once the response is known - so an authenticated actor is still
+  // attributed, while a request refused by authobj or a permission guard is
+  // recorded as 'denied' instead of vanishing before any model is reached.
+  app.use(`/api`, auditMiddleware);
+
   // ========== V1 API Routes (DEPRECATED) ==========
-  
+
   // api routes for querying
   app.use(`/api/v1/query`, cors(), authobj, queryRoutes);
   app.use(`/api/v1/expression`, cors(), authobj, expressionRoutes);
@@ -203,7 +214,8 @@ const load = async (app) => {
   // api route for profile
   app.use(`/api/v2/profile`, cors(), authobj, profileRoutesv2);
 
-  // schema route (non-authenticated)
+  // schema route : GET is public, POST guards itself (open only while the database
+  // has no accounts to authenticate against, admin-only afterwards - see the routes)
   app.use(`/api/v2/schema`, cors(), schemaRoutes);
 
   // lock route
@@ -221,6 +233,8 @@ const load = async (app) => {
   app.use(`/api/v2/user`, cors(), authobj, Middleware.checkSettingsMiddleware, userRoutesv2);
   app.use(`/api/v2/group`, cors(), authobj, Middleware.checkSettingsMiddleware, groupRoutesv2);
   app.use(`/api/v2/settings`, cors(), authobj, Middleware.checkSettingsMiddleware, settingsRoutesv2);
+  app.use(`/api/v2/health`, cors(), authobj, Middleware.checkSettingsMiddleware, healthRoutesv2);
+  app.use(`/api/v2/audit`, cors(), authobj, Middleware.checkSettingsMiddleware, auditRoutesv2);
   // custom logo ; reading is for all authenticated users (navbar), changing it is guarded in the routes
   app.use(`/api/v2/logo`, cors(), authobj, logoRoutesv2);
   app.use(`/api/v2/sshkey`, cors(), authobj, Middleware.checkSettingsMiddleware, sshRoutesv2);
@@ -234,7 +248,7 @@ const load = async (app) => {
 
   // backup/restore/list routes
   app.use(`/api/v2/backup`, cors(), authobj, backupRoutes);
-  app.use(`/api/v2/log`, cors(), authobj, logRoutesv2);
+  app.use(`/api/v2/log`, cors(), authobj, Middleware.checkLogsMiddleware, logRoutesv2);
   app.use(`/api/v2/repository`, cors(), authobj, Middleware.checkSettingsMiddleware, repositoryRoutesv2);
   // forms repositories (issue #414) : designer users can push without settings access
   app.use(`/api/v2/forms-repos`, cors(), authobj, Middleware.checkDesignerMiddleware, formsReposRoutes);

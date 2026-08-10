@@ -5,7 +5,10 @@
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint . --fix --ignore-path .gitignore"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint . --fix",
+    "lint:check": "eslint ."
   },
   "dependencies": {
     "@femessage/log-viewer": "^1.5.0",
@@ -40,10 +43,12 @@
     "yaml": "^2.9.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@vitejs/plugin-basic-ssl": "^2.3.0",
     "@vitejs/plugin-vue": "^6.0.7",
     "eslint": "^10.6.0",
     "eslint-plugin-vue": "^10.9.2",
+    "globals": "^17.7.0",
     "happy-dom": "^20.10.6",
     "nodemon": "^3.1.14",
     "pinia": "^3.0.4",

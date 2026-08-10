@@ -78,7 +78,7 @@ function getGroupsAndLogin(token, url = `${azureGraphUrl.value}/v1.0/me/transiti
                tokenLogin(token, allGroups)
             }
          })
-         .catch((err) => {
+         .catch((_err) => {
             toast.error("Failed to get group membership");
          });
    }

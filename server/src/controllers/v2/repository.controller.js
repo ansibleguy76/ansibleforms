@@ -10,7 +10,7 @@ const find = async function(req, res) {
     const repositories = await Repository.findAll();
     res.json(RestResult.list(repositories));
   } catch(err) {
-    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedFindRepositories'), err.toString()));
+    res.status(err.status || 500).json(RestResult.error(i18n.t(req, 'resources.failedFindRepositories'), err.message || String(err)));
   }
 };
 
@@ -29,7 +29,7 @@ const create = async function(req, res) {
     }
     res.json(RestResult.single({ id: insertId }));
   } catch(err) {
-    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedCreateRepository'), err.toString()));
+    res.status(err.status || 500).json(RestResult.error(i18n.t(req, 'resources.failedCreateRepository'), err.message || String(err)));
   }
 };
 
@@ -39,7 +39,7 @@ const findByName = async function(req, res) {
     repository.password = "**********"; // mask the password for api
     res.json(RestResult.single(repository));
   } catch(err) {
-    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedFindRepository'), err.toString()));
+    res.status(err.status || 500).json(RestResult.error(i18n.t(req, 'resources.failedFindRepository'), err.message || String(err)));
   }
 };
 
@@ -49,8 +49,18 @@ const update = async function(req, res) {
   }
   try {
     await Repository.update(req.body, req.params.name);
+    // The record may have been RENAMED : `name` is an editable field on the repositories
+    // page. Reading it back by req.params.name found nothing and threw, so a rename that
+    // had already committed was reported as a 500 - and neither cron call below ran, so
+    // the scheduler kept pulling the OLD name (which no longer exists) and never
+    // scheduled the new one.
+    const newName = (req.body.name && req.body.name !== req.params.name) ? req.body.name : req.params.name;
+    if (newName !== req.params.name) {
+      logger.info(`Repository renamed '${req.params.name}' -> '${newName}', moving its cron entry`);
+      cronService.removeRepository(req.params.name);
+    }
     // Fetch the updated record to get the cron field
-    const updated = await Repository.findByName(req.params.name);
+    const updated = await Repository.findByName(newName);
     // Update cron service with complete record
     if(updated.cron) {
       logger.info(`Updating repository '${updated.name}' in cron service with schedule: ${updated.cron}`);
@@ -61,7 +71,7 @@ const update = async function(req, res) {
     }
     res.json(RestResult.single(null));
   } catch(err) {
-    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedUpdateRepository'), err.toString()));
+    res.status(err.status || 500).json(RestResult.error(i18n.t(req, 'resources.failedUpdateRepository'), err.message || String(err)));
   }
 };
 
@@ -73,7 +83,7 @@ const deleteRepository = async function(req, res) {
     cronService.removeRepository(req.params.name);
     res.json(RestResult.single(null));
   } catch(err) {
-    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedDeleteRepository'), err.toString()));
+    res.status(err.status || 500).json(RestResult.error(i18n.t(req, 'resources.failedDeleteRepository'), err.message || String(err)));
   }
 };
 
@@ -82,7 +92,7 @@ const clone = async function(req, res) {
     await Repository.clone(req.params.name);
     res.json(RestResult.single(null));
   } catch(err) {
-    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedCloneRepository'), err.toString()));
+    res.status(err.status || 500).json(RestResult.error(i18n.t(req, 'resources.failedCloneRepository'), err.message || String(err)));
   }
 };
 
@@ -91,7 +101,7 @@ const reset = async function(req, res) {
     await Repository.reset(req.params.name);
     res.json(RestResult.single(null));
   } catch(err) {
-    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedResetRepository'), err.toString()));
+    res.status(err.status || 500).json(RestResult.error(i18n.t(req, 'resources.failedResetRepository'), err.message || String(err)));
   }
 };
 
@@ -100,7 +110,7 @@ const pull = async function(req, res) {
     await Repository.pull(req.params.name);
     res.json(RestResult.single(null));
   } catch(err) {
-    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedPullRepository'), err.toString()));
+    res.status(err.status || 500).json(RestResult.error(i18n.t(req, 'resources.failedPullRepository'), err.message || String(err)));
   }
 };
 
@@ -109,7 +119,7 @@ const sync = async function(req, res) {
     const output = await Repository.sync(req.params.name, req.user?.user?.username);
     res.json(RestResult.single({ output }));
   } catch(err) {
-    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedSyncRepository'), err.toString()));
+    res.status(err.status || 500).json(RestResult.error(i18n.t(req, 'resources.failedSyncRepository'), err.message || String(err)));
   }
 };
 
@@ -120,7 +130,7 @@ const formsRepos = async function(req, res) {
     const { repositories, configRepo, staged } = await Repository.formsRepoStatus();
     res.json(RestResult.single({ count: repositories.length, repositories, configRepo, staged }));
   } catch(err) {
-    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedFindRepositories'), err.toString()));
+    res.status(err.status || 500).json(RestResult.error(i18n.t(req, 'resources.failedFindRepositories'), err.message || String(err)));
   }
 };
 
@@ -134,7 +144,7 @@ const formsRepoSync = async function(req, res) {
     const output = await Repository.sync(req.params.name, req.user?.user?.username);
     res.json(RestResult.single({ output }));
   } catch(err) {
-    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedSyncRepository'), err.toString()));
+    res.status(err.status || 500).json(RestResult.error(i18n.t(req, 'resources.failedSyncRepository'), err.message || String(err)));
   }
 };
 
@@ -161,7 +171,7 @@ const formsRepoSyncAll = async function(req, res) {
     }
     res.json(RestResult.single({ results }));
   } catch(err) {
-    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedSyncRepository'), err.toString()));
+    res.status(err.status || 500).json(RestResult.error(i18n.t(req, 'resources.failedSyncRepository'), err.message || String(err)));
   }
 };
 
@@ -175,7 +185,7 @@ const formsRepoPull = async function(req, res) {
     await Repository.pull(req.params.name);
     res.json(RestResult.single(null));
   } catch(err) {
-    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedPullRepository'), err.toString()));
+    res.status(err.status || 500).json(RestResult.error(i18n.t(req, 'resources.failedPullRepository'), err.message || String(err)));
   }
 };
 
@@ -203,7 +213,7 @@ const formsRepoPullAll = async function(req, res) {
     }
     res.json(RestResult.single({ results }));
   } catch(err) {
-    res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedPullRepository'), err.toString()));
+    res.status(err.status || 500).json(RestResult.error(i18n.t(req, 'resources.failedPullRepository'), err.message || String(err)));
   }
 };
 

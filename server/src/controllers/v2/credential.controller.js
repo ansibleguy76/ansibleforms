@@ -73,17 +73,16 @@ const credentialController = {
     try {
       const credential = await CredentialModel.findById(req.params.id);
       const db_type = credential.db_type;
-      let result;
       if (db_type === 'mysql') {
-        result = await mysql.query(credential.name, 'select 1');
+        await mysql.query(credential.name, 'select 1');
       } else if (db_type === 'mssql') {
-        result = await mssql.query(credential.name, 'select 1');
+        await mssql.query(credential.name, 'select 1');
       } else if (db_type === 'postgres') {
-        result = await postgres.query(credential.name, 'select 1');
+        await postgres.query(credential.name, 'select 1');
       } else if (db_type === 'oracle') {
-        result = await oracle.query(credential.name, 'select 1');
+        await oracle.query(credential.name, 'select 1');
       } else if (db_type === 'mongodb') {
-        result = await mongodb.query(credential.name, 'admin~system.version~{}');
+        await mongodb.query(credential.name, 'admin~system.version~{}');
       } else {
         throw new Errors.BadRequestError(i18n.t(req, 'resources.dbTypeNotSet'));
       }

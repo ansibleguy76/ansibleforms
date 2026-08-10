@@ -12,7 +12,7 @@
     /*                                                                */
     /******************************************************************/
 
-    const props = defineProps({
+    defineProps({
         dropdown:{
             type: Boolean,
             default: false

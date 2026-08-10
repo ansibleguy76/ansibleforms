@@ -11,13 +11,22 @@ import Datasource from '../models/datasource.model.js';
 import Schedule from '../models/schedule.model.js';
 import BackupModel from '../models/backup.model.js';
 import cronService from '../services/cron.service.js';
-import dayjs from "dayjs";
 import appConfig from "../../config/app.config.js";
 import User from "../models/user.model.js";
 import Group from "../models/group.model.js";
 import Token from "../models/token.model.js";
+import { applyConfigSeed } from "../lib/seed.js";
 
-const init = async function(){
+/**
+ * @param {object} [opts]
+ * @param {boolean} [opts.boot] True only on the application boot path (app.js). A seed
+ *   failure is FATAL there - the process must not come up misconfigured. It must NOT be
+ *   fatal when init() is re-entered from POST /api/v2/schema, because process.exit()
+ *   inside a request handler kills the server in response to an API call - and that
+ *   endpoint is unauthenticated while the database has no accounts. There the failure is
+ *   thrown so the caller answers with an error instead.
+ */
+const init = async function({ boot = false } = {}){
 
 
   let adminGroupId = undefined;
@@ -42,8 +51,33 @@ const init = async function(){
 
   logger.info("Mysql is ready")
 
+  // Bootstrap an empty database.
+  //
+  // Until now a fresh install started, logged "please create the schema via the
+  // /schema endpoint" and waited for somebody to call it. A declarative deployment
+  // (kubernetes/ArgoCD) cannot express "and then a human clicks", so an empty
+  // database provisions itself here.
+  //
+  // isEmpty() is the ONLY safe precondition : create_schema_and_tables.sql DROPs all
+  // 16 tables first. It deliberately does not use schemaIsReady (false for a single
+  // missing column, or a patch that could not apply) nor isProvisioned() (false for a
+  // database full of forms and jobs whose users table happens to be empty) - driving
+  // an automatic create from either would destroy a live database to fix a small gap.
+  if(appConfig.allowSchemaCreation){
+    try{
+      if(await Schema.isEmpty()){
+        logger.notice("The database holds no AnsibleForms tables : creating the schema")
+        await Schema.createTables()
+      }
+    }catch(err){
+      // not fatal : hasSchema() below reports what is missing, and the /schema
+      // endpoint is still there as the manual route
+      logger.error("Failed to create the schema automatically : " + (err.message || err))
+    }
+  }
+
   // check Schema
-  var schemaIsReady = false
+  var schemaIsReady
   try{
     var schemaresult = await Schema.hasSchema()
     if(schemaresult.data.failed.length>0){
@@ -135,13 +169,13 @@ const init = async function(){
   // let's check other database records like settings,ldap. if no record exists, create them, this is for fresh install
   logger.info("Checking database records")
   const records = {
-    ldap:{server:'',port:389,ignore_certs:1,enable_tls:0,cert:'',ca_bundle:'',bind_user_dn:'',bind_user_pw:'',search_base:'',username_attribute:'sAMAccountName',groups_attribute:'memberOf',enable:0,is_advanced:0,groups_search_base:'',group_class:'',group_member_attribute:'',group_member_user_attribute:''},    
+    ldap:{server:'',port:389,ignore_certs:1,enable_tls:0,cert:'',ca_bundle:'',bind_user_dn:'',bind_user_pw:'',search_base:'',username_attribute:'sAMAccountName',groups_attribute:'memberOf',enable:0,groups_search_base:'',group_class:'',group_member_attribute:'',group_member_user_attribute:''},    
     settings:{mail_server:'',mail_port:25,mail_secure:0,mail_username:'',mail_password:'',mail_from:'',url:'',forms_yaml:''}    
   }
  
   for(let record in records){
     try{
-      var result = await mysql.do(`SELECT * FROM AnsibleForms.${record}`)
+      const result = await mysql.do(`SELECT * FROM AnsibleForms.${record}`)
       if(result.length==0){
         logger.warning(`No record found for ${record}, creating it`)
         var obj = records[record]
@@ -169,6 +203,23 @@ const init = async function(){
 
   logger.info("All database records are checked")
 
+  // Refusing to start is only useful if the REASON survives. winston's file transport is
+  // asynchronous, so process.exit() truncates whatever it has not written yet - which
+  // loses precisely the one line that explains a crash-looping container. Verified: three
+  // deliberately broken seeds logged "Applying config seed" and then died silently.
+  // stderr is what `kubectl logs` and `docker logs` show, so the reason goes there too,
+  // and the short wait gives the file transport a chance to catch up.
+  async function refuseToStart(message){
+    logger.error(message)
+    if(!boot){
+      // not the boot path : never exit the process for an API call
+      throw new Error(message)
+    }
+    console.error(message)
+    await new Promise(resolve => setTimeout(resolve, 250))
+    process.exit(1)
+  }
+
   logger.info("Checking ssh keys")
   Ssh.generate(false)
     .catch((err)=>{
@@ -195,6 +246,27 @@ const init = async function(){
     if(reset) logger.warning(`Reset ${reset} stale repository lock(s)`)
   } catch(err) {
     logger.error("Failed to reset stale repository locks : " + err)
+  }
+
+  // Declarative config seed (CONFIG_SEED_PATH).
+  //
+  // It MUST come after resetStaleLocks and before the cron/rebase bootstrap below.
+  // Creating a seeded repository fires Repository.clone WITHOUT awaiting it, and that
+  // clone takes the atomic status='running' claim. Run earlier, resetStaleLocks then
+  // wiped the claim of a clone that was still running - marking a healthy repository
+  // 'failed' and letting the rebase_on_start block start a SECOND git process in the
+  // same directory. In this position the claim survives, so that block is correctly
+  // rejected for a repository the seed is already cloning, and a seeded cron is still
+  // registered by initializeAll() in this same boot.
+  //
+  // A broken seed refuses to start, on purpose : running on the previous configuration
+  // would mean an instance that no longer matches the manifest describing it, with
+  // nothing saying so. Note this app is single-instance, so a deployment must use
+  // replicas 1 with the Recreate strategy (docs/seed.md).
+  try {
+    await applyConfigSeed({ schemaIsReady })
+  } catch (err) {
+    await refuseToStart("Config seed failed, refusing to start : " + (err.message || err))
   }
 
   logger.info("Initializing cron service for scheduled tasks")
@@ -254,10 +326,31 @@ const init = async function(){
     }
   }
   
-  // Initial call to start the process
-  setTimeout(checkDatasources, 10000);
+  // Initial call to start the process, after clearing anything a crash left behind :
+  // a datasource stuck at 'running' blocks the whole queue (the processor refuses to
+  // dequeue while one is running), same as for schedules
+  releaseStaleRunning('datasource').finally(() => setTimeout(checkDatasources, 10000));
 
   // just like datasource, be also process schedules, some database layout
+
+  /**
+   * Nothing can still be running: this process has just started, and AnsibleForms is
+   * single instance. A row left at 'running' is the remains of a crash or a kill during
+   * a launch, and since the check below refuses to dequeue anything while one is
+   * 'running', leaving it would disable every scheduled run until somebody edited the
+   * database by hand. Same reasoning as the abandoned-jobs sweep.
+   */
+  async function releaseStaleRunning(table){
+    try{
+      const res = await mysql.do(`UPDATE AnsibleForms.\`${table}\` SET state='idle' WHERE state='running'`)
+      if(res?.changedRows > 0){
+        logger.warning(`Released ${res.changedRows} ${table}(s) left at 'running' by a previous run`)
+      }
+    }catch(e){
+      logger.error(`Failed to release stale running ${table}s : ` + e)
+    }
+  }
+  const releaseStaleRunningSchedules = () => releaseStaleRunning('schedule')
 
   async function checkSchedules(){
     try{
@@ -290,8 +383,8 @@ const init = async function(){
     }
   }
 
-  // Initial call to start the process
-  setTimeout(checkSchedules,10000)
+  // Initial call to start the process, after clearing anything a crash left behind
+  releaseStaleRunningSchedules().finally(() => setTimeout(checkSchedules,10000))
 
   // Cleanup expired stored jobs daily at 3 AM
   logger.info("Initializing stored jobs cleanup");

@@ -45,7 +45,7 @@ if(process.env.HTTPS=="1"){
     certificate = fs.readFileSync(certificatePath)
   }catch(err){
     logger.error("Failed to open https private key and certificate : ",err)
-    throw new Error("Failed to open https private key and certificate : " + err.message)
+    throw new Error("Failed to open https private key and certificate : " + err.message, { cause: err })
   }
 }
 

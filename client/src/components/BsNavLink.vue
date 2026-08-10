@@ -17,7 +17,7 @@
 
     // PROPS
 
-    const props = defineProps({
+    defineProps({
         link: {
             type: Object,
             required: true

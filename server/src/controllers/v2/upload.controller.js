@@ -21,7 +21,7 @@ const _multerLimits = (_uploadMaxGb && _uploadMaxGb > 0)
   ? { fileSize: _uploadMaxGb * 1024 * 1024 * 1024 }
   : undefined;
 const uploadMulter = multer({ storage: storage, limits: _multerLimits });
-const upload = function(req, res, next) {
+const upload = function(req, res, _next) {
   const result = uploadMulter.single('file')
 
   result(req, res, function (err) {
@@ -29,6 +29,13 @@ const upload = function(req, res, next) {
           logger.error(`Upload error : ${err.toString()}`)
           return res.status(400).json(RestResult.error(i18n.t(req, 'resources.fileUploadFailed'), err.toString()))
       } 
+      // A multipart POST with no `file` part leaves req.file undefined. Dereferencing it
+      // threw from inside multer's callback, where only the global uncaughtException
+      // handler sees it - so NO RESPONSE was ever sent and the client hung until it timed
+      // out. It is a bad request, and it should say so.
+      if (!req.file) {
+          return res.status(400).json(RestResult.error(i18n.t(req, 'resources.fileUploadFailed'), 'No file was included in the request'))
+      }
       logger.info(`Uploaded file ${String(req.file.originalname).replace(/[\r\n]+/g,' ')} as ${req.file.path}`)
       return res.json(RestResult.single(req.file))
   })    

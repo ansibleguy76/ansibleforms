@@ -29,7 +29,6 @@ import { toast } from "vue-sonner";
 import { useVuelidate } from '@vuelidate/core';
 import { required, helpers, sameAs } from "@vuelidate/validators";
 import { useTemplateRef, nextTick, inject } from "vue";
-import { copyText } from 'vue3-clipboard'
 import { useAppStore } from "@/stores/app";
 import Helpers from '@/lib/Helpers';
 import DOMPurify from 'dompurify';
@@ -116,6 +115,20 @@ const props = defineProps(
         parentData: {
             type: Object,
             default: () => null
+        },
+        // Name of the ROOT form when `currentForm` is a subform (a wizard step or a
+        // list row being edited). Empty when this component IS the root form.
+        //
+        // The query endpoint resolves a field from the form definition, and a subform
+        // cannot be resolved on its own: the schema forbids it from carrying `roles`,
+        // so the server's role check denies it to every non-admin and Form.load throws.
+        // Sending the subform's own name therefore answered 500 on every query field in
+        // a wizard step or a list row - for everyone except an admin, who short-circuits
+        // the role check and so never saw it. The root form is what carries the roles,
+        // and the server looks the subform up inside it.
+        rootFormName: {
+            type: String,
+            default: ""
         },
     }
 )
@@ -211,7 +224,7 @@ const unevaluatedFieldsWarning = computed(() => {
 // vuelidate rules
 const rules = computed(() => {
     const ruleObj = { form: {} } // holdes the rules for each field
-    props.currentForm.fields.forEach((ff, i) => {
+    props.currentForm.fields.forEach((ff, _i) => {
         var rule = {} // holds the rules for a single field
         if(!ff.label){
             ff.label = ff.name
@@ -226,7 +239,7 @@ const rules = computed(() => {
         }
         // required for expressions and enums, the value must be present, but can be a special value like __auto__, __none__ or __all__
         if (((ff.type == 'expression') || (ff.type == 'enum')) && ff.required) {
-            var description = `${ff.label} is required`
+            const description = `${ff.label} is required`
             rule.required = helpers.withParams(
                 { description: description, type: "required" },
                 (value) => (value != undefined && value != null && value != '__auto__' && value != '__none__' && value != '__all__')
@@ -234,7 +247,7 @@ const rules = computed(() => {
         }
         // required for yaml fields
         if (ff.type == 'yaml' && ff.required) {
-            var description = `${ff.label} is required`
+            const description = `${ff.label} is required`
             rule.required = helpers.withParams(
                 { description: description, type: "required" },
                 (value) => value != undefined && value != null
@@ -297,7 +310,7 @@ const rules = computed(() => {
                     );
                 } else {
                     const numericMin = Number(ff.minSize);
-                    var description = `Size (${Helpers.humanFileSize(form.value[ff.name]?.size)}) cannot be lower than ${Helpers.humanFileSize(numericMin)}`
+                    const description = `Size (${Helpers.humanFileSize(form.value[ff.name]?.size)}) cannot be lower than ${Helpers.humanFileSize(numericMin)}`
                     rule.minSize = helpers.withParams(
                         { description: description, type: "minSize" },
                         (file) => !helpers.req(file?.name) || file?.size >= numericMin
@@ -333,7 +346,7 @@ const rules = computed(() => {
                     );
                 } else {
                     const numericMax = Number(ff.maxSize);
-                    description = `Size (${Helpers.humanFileSize(form.value[ff.name]?.size)}) cannot be higher than ${Helpers.humanFileSize(numericMax)}`
+                    const description = `Size (${Helpers.humanFileSize(form.value[ff.name]?.size)}) cannot be higher than ${Helpers.humanFileSize(numericMax)}`
                     rule.maxSize = helpers.withParams(
                         { description: description, type: "maxSize" },
                         (file) => !helpers.req(file?.name) || file?.size <= numericMax
@@ -369,7 +382,7 @@ const rules = computed(() => {
                 );
             } else {
                 const numericMin = Number(ff.minValue);
-                var description = `${ff.label} must be at least ${numericMin}`;
+                const description = `${ff.label} must be at least ${numericMin}`;
                 rule.minValue = helpers.withParams(
                     { description: description, type: "minValue" },
                     (value) => !helpers.req(value) || value >= numericMin
@@ -403,7 +416,7 @@ const rules = computed(() => {
                 );
             } else {
                 const numericMax = Number(ff.maxValue);
-                var description = `${ff.label} must be at most ${numericMax}`;
+                const description = `${ff.label} must be at most ${numericMax}`;
                 rule.maxValue = helpers.withParams(
                     { description: description, type: "maxValue" },
                     (value) => !helpers.req(value) || value <= numericMax
@@ -438,7 +451,7 @@ const rules = computed(() => {
                 );
             } else {
                 const numericMin = Number(ff.minLength);
-                var description = `${ff.label} must be at least ${numericMin} characters long`;
+                const description = `${ff.label} must be at least ${numericMin} characters long`;
                 rule.minLength = helpers.withParams(
                     { description: description, type: "minLength" },
                     (value) => !helpers.req(value) || value.length >= numericMin
@@ -472,7 +485,7 @@ const rules = computed(() => {
                 );
             } else {
                 const numericMax = Number(ff.maxLength);
-                var description = `${ff.label} must be at most ${numericMax} characters long`;
+                const description = `${ff.label} must be at most ${numericMax} characters long`;
                 rule.maxLength = helpers.withParams(
                     { description: description, type: "maxLength" },
                     (value) => !helpers.req(value) || value.length <= numericMax
@@ -481,26 +494,50 @@ const rules = computed(() => {
         }
         // regex validation
         if ("regex" in ff) {
-            var regexObj = new RegExp(ff.regex.expression)
-            var description = computed(() => {
+            // Guarded for the same reason as sameAs below: this runs inside the `rules`
+            // computed, so a throw here kills the WHOLE form - blank page, console error,
+            // instead of one field's validation message.
+            //
+            // Two ways it went wrong. An author typo in the pattern ('^[a-z', an
+            // unescaped backslash out of YAML) makes new RegExp raise a SyntaxError. And
+            // writing `regex: "^prod-"` instead of `regex: {expression: ...}` made
+            // ff.regex.expression undefined, so new RegExp(undefined) compiled to /(?:)/ -
+            // which matches everything, so the constraint silently never failed and the
+            // job ran with unvalidated input. Say so instead, and skip the rule.
+            const regexSource = (ff.regex && typeof ff.regex === 'object') ? ff.regex.expression : ff.regex;
+            var regexObj = null;
+            if (typeof regexSource !== 'string' || !regexSource) {
+                warnings.value.push(`Field '${ff.name}': regex must be given as { expression: "...", description: "..." }; the rule is ignored.`)
+            } else {
+                try {
+                    regexObj = new RegExp(regexSource)
+                } catch (e) {
+                    warnings.value.push(`Field '${ff.name}': the regex '${regexSource}' is not valid (${e.message}); the rule is ignored.`)
+                }
+            }
+            const description = computed(() => {
                 const result = replacePlaceholderInString(ff.regex.description, false);
                 return result.value !== undefined ? result.value : ff.regex.description;
             });
-            if (ff.type == 'file') {
-                rule.regex = helpers.withParams(
-                    { description: description, type: "regex" },
-                    (file) => !helpers.req(file?.name) || regexObj.test(file?.name)
-                )
-            } else {
-                rule.regex = helpers.withParams(
-                    { description: description, type: "regex" },
-                    (value) => !helpers.req(value) || regexObj.test(value)
-                )
+            // only register the rule when there is a usable pattern - otherwise the
+            // validator would throw on regexObj.test at validation time instead
+            if (regexObj) {
+                if (ff.type == 'file') {
+                    rule.regex = helpers.withParams(
+                        { description: description, type: "regex" },
+                        (file) => !helpers.req(file?.name) || regexObj.test(file?.name)
+                    )
+                } else {
+                    rule.regex = helpers.withParams(
+                        { description: description, type: "regex" },
+                        (value) => !helpers.req(value) || regexObj.test(value)
+                    )
+                }
             }
         }
         // validIf and validIfNot
         if ("validIf" in ff) {
-            var description = computed(() => {
+            const description = computed(() => {
                 const result = replacePlaceholderInString(ff.validIf.description, false);
                 return result.value !== undefined ? result.value : ff.validIf.description;
             });
@@ -510,7 +547,7 @@ const rules = computed(() => {
             )
         }
         if ("validIfNot" in ff) {
-            var description = computed(() => {
+            const description = computed(() => {
                 const result = replacePlaceholderInString(ff.validIfNot.description, false);
                 return result.value !== undefined ? result.value : ff.validIfNot.description;
             });
@@ -521,7 +558,7 @@ const rules = computed(() => {
         }
         // notIn and in
         if ("notIn" in ff) {
-            var description = computed(() => {
+            const description = computed(() => {
                 const result = replacePlaceholderInString(ff.notIn.description, false);
                 return result.value !== undefined ? result.value : ff.notIn.description;
             });
@@ -531,7 +568,7 @@ const rules = computed(() => {
             )
         }
         if ("in" in ff) {
-            var description = computed(() => {
+            const description = computed(() => {
                 const result = replacePlaceholderInString(ff.in.description, false);
                 return result.value !== undefined ? result.value : ff.in.description;
             });
@@ -541,7 +578,13 @@ const rules = computed(() => {
             )
         }
         if ("sameAs" in ff) {
-            var description = `Must match the field '${props.currentForm.fields.find((x) => ff.sameAs == x.name).label || ff.sameAs}'`
+            // find() returns undefined when sameAs names a field that is not on the form -
+            // a typo, or a field renamed/removed afterwards. Reading .label off that threw
+            // inside the rules computation, so the ENTIRE form never initialised and the
+            // user got a blank page with a console TypeError rather than a validation
+            // message about one field. Fall back to the name it was given.
+            const target = props.currentForm.fields.find((x) => ff.sameAs == x.name)
+            const description = `Must match the field '${target?.label || ff.sameAs}'`
             rule.sameAs = helpers.withParams(
                 { description: description, type: "sameAs" },
                 (value) => !helpers.req(value) || (form.value[ff.sameAs] != undefined && value == form.value[ff.sameAs])
@@ -570,18 +613,28 @@ const fieldGroups = computed(() => {
 
 })
 
+// fields that don't declare a "line" get one of their own, so they end up on a
+// row on their own.  Derived here instead of written back onto the currentForm
+// definition.
+const fieldLineMap = computed(() => {
+    var linecount = 0
+    const lines = new Map()
+    props.currentForm.fields?.forEach((cV) => {
+        linecount++
+        lines.set(cV, ("line" in cV) ? cV.line : `__line__${linecount}`)
+    })
+    return lines
+})
+
+// the line a field belongs to, declared or synthetic
+function fieldLine(field) {
+    return ("line" in field) ? field.line : fieldLineMap.value.get(field)
+}
+
 // set fieldLines in to groups
 const fieldLines = computed(() => {
-
-    var linecount = 0
-    return props.currentForm.fields?.reduce((pV, cV, cI) => {
-        linecount++
-        if ("line" in cV) {
-            return [...pV, cV.line];
-        } else {
-            props.currentForm.fields[cI].line = `__line__${linecount}`
-            return [...pV, `__line__${linecount}`];
-        }
+    return props.currentForm.fields?.reduce((pV, cV) => {
+        return [...pV, fieldLine(cV)];
     }, [""]).filter((v, i, a) => a.indexOf(v) === i) || [];
 })
 
@@ -731,12 +784,9 @@ function setExpressionFieldDebug(fieldname, value) {
 // copy to clipboard
 function clip(v, doNotStringify = false) {
     try {
-        if (doNotStringify) {
-            copyText(v)
-        } else {
-            copyText(JSON.stringify(v))
-        }
-        toast.success(t('form.copiedToClipboard'))
+        Helpers.copyToClipboard(doNotStringify ? v : JSON.stringify(v))
+            .then(() => toast.success(t('form.copiedToClipboard')))
+            .catch((err) => toast.error(err?.message || err))
     } catch (err) {
         toast.error(err.toString())
     }
@@ -754,8 +804,9 @@ function clipYaml(fieldName) {
         // This matches what the user sees on screen
         const value = raw.__output__ ?? raw;
         const yamlContent = YAML.stringify(value);
-        copyText(yamlContent);
-        toast.success(t('form.copiedYamlToClipboard'));
+        Helpers.copyToClipboard(yamlContent)
+            .then(() => toast.success(t('form.copiedYamlToClipboard')))
+            .catch((err) => toast.error(err?.message || err));
     } catch (err) {
         toast.error(err.toString());
     }
@@ -792,9 +843,7 @@ function filterfieldsByGroup(group) {
 // create of fields per group & line
 function filterfieldsByGroupAndLine(group, line) {
     const fields = filterfieldsByGroup(group).filter((el) => {
-        return (
-            (("line" in el && el.line === line)
-                || !("line" in el) && (line == ""))
+        return (fieldLine(el) === line
             && (el.hide !== true || showHidden.value))
     });
     // console.log(`[${group || 'default'}] [${line}] => ${fields.map(x => x.name).join(",")}`)
@@ -816,7 +865,7 @@ function checkDependencies(field) {
         }
         for (let i = 0; i < field.dependencies.length; i++) {
             const item = field.dependencies[i]
-            var value = undefined
+            var value
             var column = ""
             var inversed = item.name.startsWith("!")                            // detect ! => inversion
             var fieldname = inversed ? item.name.slice(1) : item.name           // drop the !
@@ -908,7 +957,7 @@ function setVisibility(fieldname, status) {
 //----------------------------------------------------------------
 function checkGroupDependencies(group) {
     var result = false
-    filterfieldsByGroup(group).forEach((item, i) => {
+    filterfieldsByGroup(group).forEach((item, _i) => {
         if (visibility.value[item.name]) {
             result = true
         }
@@ -931,11 +980,33 @@ function getGroupClass(group) {
 }
 
 // reset value of field - only for expression
+// Per-field generation counter.
+//
+// The loop tracked concurrency only through dynamicFieldStatus: "running" before the
+// await, "fixed" after. But resetField - called whenever a dependency changes - sets the
+// status back to undefined WHILE a request is in flight, so the next tick fires a second
+// one and neither response carried any identity. Whichever landed last won: pick A=1
+// (slow request starts), switch to A=2 (fast request returns, field correct), then the
+// first response arrives and overwrites it with the value derived from A=1 - flagged
+// "fixed", so nothing re-evaluates it and that is what gets submitted.
+//
+// Bumping this on every reset lets a response check whether it is still the current one.
+const fieldGeneration = ref({});
+function bumpFieldGeneration(fieldname) {
+    fieldGeneration.value[fieldname] = (fieldGeneration.value[fieldname] || 0) + 1;
+    return fieldGeneration.value[fieldname];
+}
+function isCurrentGeneration(fieldname, gen) {
+    return (fieldGeneration.value[fieldname] || 0) === gen;
+}
+
 function resetField(fieldname) {
     // reset to default value
     // reset this field status
     // console.log(`[${fieldname}] reset`)
     initiateDefaults(fieldname)
+    // any response still in flight for this field is now stale
+    bumpFieldGeneration(fieldname)
     setFieldStatus(fieldname, undefined)
     form.value[fieldname] = defaults.value[fieldname]
 }
@@ -948,13 +1019,6 @@ function setFieldUndefined(fieldname) {
     changed() // refresh json output
 }
 
-// reset all fields
-function resetFields() {
-    props.currentForm.fields.forEach((item, i) => {
-        resetField(item.name)
-    });
-}
-
 // instead of taking the default value, see if it needs to be evaluated
 // allowing dynamic defaults
 function getDefaultValue(fieldname, value) {
@@ -962,7 +1026,7 @@ function getDefaultValue(fieldname, value) {
         var _value = replacePlaceholderInString(value).value
         // console.log(`${fieldname} -> ${value} -> ${_value}`)
         if (fieldOptions.value[fieldname].evalDefault) {
-            var r = undefined
+            var r
             try {
                 r = Helpers.evalSandbox(_value)
                 return r
@@ -1035,7 +1099,7 @@ function setFieldStatus(fieldname, status, reeval = true) {
 function hasDefaultDependencies(fieldname) {
     var result = false
     if (dynamicFieldDependentOf.value[fieldname] && dynamicFieldStatus.value[fieldname] == "default") {
-        dynamicFieldDependentOf.value[fieldname].forEach((item, i) => {
+        dynamicFieldDependentOf.value[fieldname].forEach((item, _i) => {
             if ((defaults.value[item] != undefined) && dynamicFieldStatus.value[item] == "default") {
                 result = true
             }
@@ -1046,7 +1110,7 @@ function hasDefaultDependencies(fieldname) {
 
 // first time run, load all the default values (can be dynamic)
 function initiateDefaults(fieldname = undefined) {
-    props.currentForm.fields.filter(x => !fieldname || fieldname == x.name).forEach((item, i) => {
+    props.currentForm.fields.filter(x => !fieldname || fieldname == x.name).forEach((item, _i) => {
         // During initialization, use initialData as the default (overrides everything)
         if (isInitializing.value && item.name in pendingInitialData.value) {
             defaults.value[item.name] = pendingInitialData.value[item.name];
@@ -1123,13 +1187,13 @@ function findVariableDependencies() {
     var finishedFlag = false
     var fields = []
     // create a list of the fields
-    props.currentForm.fields.forEach((item, i) => {
+    props.currentForm.fields.forEach((item, _i) => {
         if (!item?.name) return
         fields.push(item.name)
     })
     // whilst checking, we also check if fields are unique
     var dups = Helpers.findDuplicates(fields)
-    dups.forEach((item, i) => {
+    dups.forEach((item, _i) => {
         warnings.value.push(`<span class="text-warning">'${item}' has duplicates</span><br><span>Each field must have a unique name</span>`)
         toast.error("You have duplicates for field '" + item + "'")
     })
@@ -1158,7 +1222,7 @@ function findVariableDependencies() {
     })
     
     // do the analysis
-    props.currentForm.fields.forEach((item, i) => {
+    props.currentForm.fields.forEach((item, _i) => {
         // while we are looping, we also check if there are issues
         if (!item?.name) return
         if (item.dependencies) {
@@ -1199,9 +1263,9 @@ function findVariableDependencies() {
         temp = Helpers.deepClone(dynamicFieldDependencies.value); // copy dependencies to temp
         for (const [key, value] of Object.entries(temp)) {
             // loop all found dependencies and dig deeper
-            value.forEach((item, i) => {
+            value.forEach((item, _i) => {
                 if (item in temp) { // can we go deeper?
-                    temp[item].forEach((item2, j) => {
+                    temp[item].forEach((item2, _j) => {
                         if (dynamicFieldDependencies.value[key].indexOf(item2) === -1) { // already in there?
                             dynamicFieldDependencies.value[key].push(item2); // push it
                             if (key == item2) {
@@ -1220,19 +1284,18 @@ function findVariableDependencies() {
 
 // search which fields are dependent of others
 function findVariableDependentOf() {
-    var foundmatch, foundfield
+    var foundfield
     var fields = []
     // create a list of the fields
-    props.currentForm.fields.forEach((item, i) => {
+    props.currentForm.fields.forEach((item, _i) => {
         if (!item?.name) return
         fields.push(item.name)
     })
-    props.currentForm.fields.forEach((item, i) => {
+    props.currentForm.fields.forEach((item, _i) => {
         if (["expression"].includes(item.type)) {
             var testRegex = /\$\(([^)]+)\)/g;
             var matches = (item.expression || item.query || '').matchAll(testRegex);
             for (var match of matches) {
-                foundmatch = match[0];                                              // found $(xxx)
                 foundfield = match[1];                                              // found xxx
                 var columnRegex = /(.+)\.(.+)/g;                                        // detect a "." in the field
                 var tmpArr = columnRegex.exec(foundfield)                             // found aaa.bbb
@@ -1257,23 +1320,43 @@ function findVariableDependentOf() {
     })
 }
 
-function replacePlaceholderInString(value, ignoreIncomplete = false) {
+/**
+ * @param {'raw'|'expression'} mode
+ *   'expression' substitutes each value as a JAVASCRIPT LITERAL and consumes the quotes
+ *   around the placeholder if there were any, so `'$(host)'.toUpperCase()` becomes
+ *   `"web01".toUpperCase()` rather than pasting the text straight in. Raw substitution
+ *   meant a field value could close the string it sat in and run code - and field values
+ *   are seedable from the URL query string, so a crafted link was enough.
+ *   'raw' is the previous behaviour, still used for queries: JSON quoting would produce
+ *   double quotes, which are not string literals in MySQL.
+ */
+function replacePlaceholderInString(value, ignoreIncomplete = false, mode = 'raw') {
     //---------------------------------------
     // replace placeholders if possible
     //---------------------------------------
     var testRegex = /\$\(([^)]+)\)/g                                        // a regex to find field placeholders $(xxx)
     var retestRegex = /\$\(([^)]+)\)/g                                      // the same regex, to retest after, because a regex can only be used once
     var match = undefined
-    var matches = undefined
-    var foundmatch = false
+    var matches
+    var foundmatch
     var column = ""
-    var foundfield = false
-    var fieldvalue = ""
-    var keys = undefined
-    var targetflag = undefined
+    var foundfield
+    var fieldvalue
+    var targetflag
     var hasPlaceholders = false
+    // What each placeholder resolved to, keyed by the RAW text between the brackets.
+    //
+    // A query is no longer sent as finished SQL - the server takes the query text from
+    // the form definition and substitutes these itself, so it cannot be told which SQL to
+    // run. It needs the VALUES though, and it must be this map rather than a flat field
+    // dump: resolution here understands `$(city.name)`, `$(rows[0].id)` and
+    // `placeholderColumn` (which makes a bare `$(city)` mean that record's chosen column).
+    // Re-deriving that server-side was a second implementation of this function and got
+    // all three wrong - the dotted forms were left in the SQL verbatim and
+    // placeholderColumn pasted the whole record instead of the column.
+    var resolved = {}
     if (typeof value !== "string") {
-        return { "hasPlaceholders": false, "value": value }
+        return { "hasPlaceholders": false, "value": value, "resolved": resolved }
     }
     value = value?.replace(/\n+/g, '') // put everything in 1 line.
     matches = [...value.matchAll(testRegex)] // force match array
@@ -1324,8 +1407,28 @@ function replacePlaceholderInString(value, ignoreIncomplete = false) {
             if (fieldvalue === null) {
                 fieldvalue = "__null__"   // catch null values
             }
-            fieldvalue = stringifyValue(fieldvalue)
-            value = value?.replace(foundmatch, fieldvalue);               // replace the placeholder with the value
+            if (mode === 'expression' && fieldvalue !== "__undefined__" && fieldvalue !== "__null__") {
+                // A JS literal, replacing any quotes that wrapped the placeholder. JSON
+                // keeps a real number a number, so `$(count) + 1` still adds. The
+                // __undefined__/__null__ sentinels stay on the raw path because the
+                // post-processing below strips their quotes by string match.
+                const literal = JSON.stringify(fieldvalue)
+                const escaped = foundmatch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+                // a FUNCTION replacement, so the value is inserted verbatim. As a string it
+                // goes through the special replacement patterns : a field containing $& was
+                // replaced by the placeholder text itself, $` and $' by the surrounding
+                // text, and $1 by a capture group - silently corrupting the expression.
+                // (the \\$& two lines up is the opposite case and is deliberate : that one
+                // IS a replacement pattern, escaping the regex metacharacter it matched.)
+                value = value?.replace(new RegExp(`'${escaped}'|"${escaped}"|${escaped}`), () => literal)
+            } else {
+                fieldvalue = stringifyValue(fieldvalue)
+                // exactly what was substituted here, so the server substituting the same
+                // template into the same text produces the same string
+                resolved[match[1]] = fieldvalue
+                // same reason as above - a value carrying $& must not be re-interpreted
+                value = value?.replace(foundmatch, () => fieldvalue);          // replace the placeholder with the value
+            }
         } else {
             value = undefined      // cannot evaluate yet
         }
@@ -1340,7 +1443,7 @@ function replacePlaceholderInString(value, ignoreIncomplete = false) {
         value = value.replaceAll("'__null__'", "null")  // replace undefined values
         value = value.replaceAll("__null__", "null")
     }
-    return { "hasPlaceholders": hasPlaceholders, "value": value }          // return the result
+    return { "hasPlaceholders": hasPlaceholders, "value": value, "resolved": resolved }          // return the result
 }
 
 // replace placeholders
@@ -1348,8 +1451,10 @@ function replacePlaceholders(item) {
     //---------------------------------------
     // replace placeholders if possible
     //---------------------------------------
+    // an expression is evaluated as JS, a query is sent as SQL - they need different
+    // substitution, so say which one this is
     var newValue = item.expression || item.query   // make a copy of our item
-    return replacePlaceholderInString(newValue, item.ignoreIncomplete)
+    return replacePlaceholderInString(newValue, item.ignoreIncomplete, item.expression ? 'expression' : 'raw')
 }
 // stringify value if needed
 function stringifyValue(fieldvalue) {
@@ -1359,21 +1464,6 @@ function stringifyValue(fieldvalue) {
         return fieldvalue
     }
 }
-// make a string impression of a value
-function stringifyObject(v) {
-    if (v) {
-        if (Array.isArray(v)) {
-            return "[ Array ]"
-        }
-        if (typeof v == "object") {
-            return "{ Object }"
-        }
-        return v.toString()
-    } else {
-        return v
-    }
-}
-
 // in case of unexpected error in the etneral loop, we stop the loop
 function stopLoop(error) {
     clearInterval(interval.value)
@@ -1387,7 +1477,7 @@ function evaluateDynamicFields(fieldname) {
     if (fieldname in dynamicFieldDependencies.value) {  // are any fields dependent from this field ?
         canSubmit.value = false; // after each dependency reset, we block submitting, untill all fields are resolved
         // set all variable ones to dirty
-        dynamicFieldDependencies.value[fieldname].forEach((item, i) => { // loop all dynamic fields and reset them
+        dynamicFieldDependencies.value[fieldname].forEach((item, _i) => { // loop all dynamic fields and reset them
             // set all variable fields blank and re-evaluate
             if (!fieldOptions.value[item].editable) {
                 // Skip reset for protected fields (prefilled or manually edited)
@@ -1517,7 +1607,8 @@ function openYamlSubformEditor(field) {
     if (!row || typeof row !== 'object' || Array.isArray(row)) {
         row = {};
     } else {
-        const { __output__: _omit, ...rest } = row;
+        const rest = { ...row };
+        delete rest.__output__;
         row = JSON.parse(JSON.stringify(rest));
     }
     
@@ -1576,7 +1667,7 @@ async function handleYamlSubformLoad(event, fieldName) {
     event.target.value = '';
 }
 
-function handleYamlSubformDownload(fieldName, label) {
+function handleYamlSubformDownload(fieldName, _label) {
     try {
         const raw = form.value[fieldName];
         if (!raw) {
@@ -1711,11 +1802,16 @@ function initForm() {
         if (route.query[item.name] != undefined) {
             var queryValue = route.query[item.name];
             if (item.type == "number") {
-                try {
-                    queryValue = parseInt(queryValue);
-                } catch (err) {
-                    queryValue = 0;
-                }
+                // parseInt RETURNS NaN, it never throws, so this catch was unreachable and
+                // ?count=abc put NaN into the form: the number box rendered empty, the
+                // required rule still passed (String(NaN) is non-empty) and the job was
+                // launched with count: null - or `.nan` on the schedule path. parseInt
+                // also truncated '12abc' to 12 just as silently. Ignore a value that is
+                // not a number, so the field's own default applies.
+                const parsed = Number(queryValue);
+                // return, not continue : this is a forEach callback, not a loop
+                if (!Number.isFinite(parsed)) return;
+                queryValue = parsed;
             }
             if (item.type == "checkbox") {
                 if (queryValue.toLowerCase() === "false") {
@@ -1854,7 +1950,7 @@ async function startDynamicFieldsLoop() {
             checkDependencies(item);
             if (visibility.value[item.name]) {
                 var flag = dynamicFieldStatus.value[item.name];
-                var placeholderCheck = undefined;
+                var placeholderCheck;
 
                 if (item.expression && (flag == undefined || hasDefaultDependencies(item.name))) {
                     hasUnevaluatedFields = true;
@@ -1924,7 +2020,7 @@ async function startDynamicFieldsLoop() {
                                 const body = { expression: placeholderCheck.value };
                                 if (item.jq) body.jq = item.jq;
                                 const result = await axios.post(`/api/v2/expression?noLog=${!!item.noLog}`, body, TokenStorage.getAuthentication());
-                                var restresult = result.data;
+                                const restresult = result.data;
                                 delete queryerrors.value[item.name];
                                 if (item.type == "html") {
                                     // HTML fields with expressions should re-evaluate, not use cached prefill values
@@ -1992,10 +2088,36 @@ async function startDynamicFieldsLoop() {
 
                     if (placeholderCheck.value != undefined) {
                         try {
-                            const body = { query: placeholderCheck.value, config: item.dbConfig };
+                            // Send the form and field, NOT the query text. The server
+                            // resolves the query from the definition with the caller's own
+                            // roles and substitutes these values itself - the endpoint used
+                            // to run whatever SQL the body contained, against any configured
+                            // datasource, for any authenticated user.
+                            //
+                            // `formName` must be the ROOT form: a subform carries no
+                            // `roles` (the schema forbids it) and so cannot be resolved on
+                            // its own - see the rootFormName prop. `values` is keyed by the
+                            // raw placeholder text, which is what makes `$(city.name)` and
+                            // placeholderColumn work; a flat field map cannot express them.
+                            const body = {
+                                formName: props.rootFormName || props.currentForm.name,
+                                fieldName: item.name,
+                                values: placeholderCheck.resolved || {},
+                                // kept so a settings user's designer preview still works, and
+                                // so an older client keeps functioning
+                                query: placeholderCheck.value,
+                                config: item.dbConfig,
+                            };
+                            if (props.rootFormName) body.subformName = props.currentForm.name;
                             if (item.jq) body.jq = item.jq;
+                            const gen = fieldGeneration.value[item.name] || 0;
                             const result = await axios.post(`/api/v2/query?noLog=${!!item.noLog}`, body, TokenStorage.getAuthentication());
-                            var restresult = result.data;
+                            // a dependency changed while this was in flight : a newer
+                            // request owns the field now, so drop this answer
+                            // return, not continue : the enclosing construct is a
+                            // forEach callback, not a loop
+                            if (!isCurrentGeneration(item.name, gen)) return;
+                            const restresult = result.data;
                             delete queryerrors.value[item.name];
                             if (item.type == "query" || item.type == "enum") queryresults.value[item.name] = restresult;
                             else if (item.type == "yaml") form.value[item.name] = restresult;
@@ -2058,7 +2180,14 @@ async function startDynamicFieldsLoop() {
                 var match = item.refresh.match(/([0-9]+)s/g);
                 if (match) {
                     var secs = parseInt(match[0]);
-                    if (refreshCounter % (10 * secs) == 0) {
+                    // Not while the user has the field open for editing. Clearing the
+                    // status makes the next tick re-run the expression and assign its
+                    // result over form.value[name] - so an `expression` field declared
+                    // with both `editable: true` and `refresh: "30s"` had whatever the
+                    // user typed silently replaced every 30 seconds, mid-edit.
+                    // evaluateDynamicFields already applies this rule; the refresh path
+                    // was the one place that did not.
+                    if (refreshCounter % (10 * secs) == 0 && !fieldOptions.value[item.name]?.editable) {
                         setFieldStatus(item.name, undefined);
                     }
                 }
@@ -2145,9 +2274,33 @@ onUnmounted(() => {
 
 // Exposed for the wizard parent: lets it gate Next/Submit on validation.
 // Returns true when the form is valid, false otherwise (and toasts a warning).
+/**
+ * Resolve once every dynamic field has settled, or false if it takes too long.
+ *
+ * AppForm already computes canSubmit and even emits a "submit" event when it flips - but
+ * "submit" is not in defineEmits above and nothing binds it, so that whole path was dead
+ * code: form.vue calls submitForm() the instant the button is pressed. A form with a slow
+ * query or expression field could therefore be submitted while it was still resolving,
+ * and generateJsonOutput built the extravars from a field that was still undefined or
+ * holding its default - the job ran with a missing or stale value, silently.
+ *
+ * Exposed rather than emitted so the parent can AWAIT it on the path it actually uses.
+ */
+function awaitStable(timeoutMs = 10000) {
+    return new Promise((resolve) => {
+        if (canSubmit.value) return resolve(true);
+        const started = Date.now();
+        const timer = setInterval(() => {
+            if (canSubmit.value) { clearInterval(timer); resolve(true); }
+            else if (Date.now() - started >= timeoutMs) { clearInterval(timer); resolve(false); }
+        }, 100);
+    });
+}
+
 defineExpose({
     validateForm,
     visibility,
+    awaitStable,
 });
 </script>
 <template>
@@ -2159,9 +2312,12 @@ defineExpose({
         <!-- WARNINGS -->
         <BsOffCanvas v-if="showWarnings" :show="true"
             icon="triangle-exclamation" :title="t('form.formWarnings')" @close="showWarnings = false">
-            <template #actions> </template>
             <template #default>
-                <p v-if="!canSubmit && !formLoopIsBusy" class="mb-3" v-html="unevaluatedFieldsWarning"></p>
+                <!-- text, not v-html : this is a comma-joined list of FIELD LABELS from
+                     the form definition, which is a yaml file in a forms repository, plus
+                     a translated word. No HTML is intended, and toast.warning() renders
+                     the very same string as text already. -->
+                <p v-if="!canSubmit && !formLoopIsBusy" class="mb-3">{{ unevaluatedFieldsWarning }}</p>
                 <p v-for="w, i in warnings" :key="'warning' + i" class="mb-3" v-html="w"></p>
                 <p v-for="q, i in Object.keys(queryerrors)" :key="'queryerror' + i" class="mb-3 has-text-danger">
                     '{{ q }}' has query errors<br>{{ queryerrors[q] }}
@@ -2208,8 +2364,8 @@ defineExpose({
 
 
         <!-- GROUPS -->
-        <template :key="group" v-for="group in fieldGroups" v-show="!hideForm">
-            <div v-if="checkGroupDependencies(group)" class="mt-4 p-3" :class="getGroupClass(group)">
+        <template :key="group" v-for="group in fieldGroups">
+            <div v-if="checkGroupDependencies(group)" v-show="!hideForm" class="mt-4 p-3" :class="getGroupClass(group)">
 
                 <!-- GROUP TITLE -->
                 <h3>{{ group }}</h3>
@@ -2217,7 +2373,7 @@ defineExpose({
                 <!-- ROWS -->
                 <div :key="line" v-for="line in fieldLines" class="row">
                     <!-- FIELDS -->
-                    <template v-for="field in filterfieldsByGroupAndLine(group, line)">
+                    <template :key="field.name" v-for="field in filterfieldsByGroupAndLine(group, line)">
 
                         <div class="col py-0" v-if="visibility[field.name]" :class="field.width">
                             
@@ -2476,7 +2632,7 @@ defineExpose({
                                                 style="display: none"
                                             />
                                         </div>
-                                        <div class="card p-3 yaml-readonly limit-height"
+                                        <div class="card p-3 limit-height"
                                             :class="{ 'border-danger': v$.form[field.name].$invalid }">
                                             <pre v-if="v$.form[field.name].$model && typeof v$.form[field.name].$model === 'object'"
                                                 v-highlightjs><code language="yaml" style="border:none;padding:0">{{ yamlSubformPreview(field) }}</code></pre>

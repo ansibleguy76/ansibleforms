@@ -7,6 +7,99 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.3.0] - 2026-07-31
+
+### Added
+
+-   Declarative config seed (`CONFIG_SEED_PATH`) — rebuild an instance from a yaml file. See `docs/seed.md`
+-   An empty database creates its own schema at startup
+-   Audit trail (`/admin/audit`) — append-only, and secrets are never stored
+-   Status page (`/admin/status`)
+-   Job and job output retention (`JOB_RETENTION_DAYS`), off by default
+-   Visual editors for Categories, Roles and Constants. Comments and anchors survive a save
+-   The config source is switchable from the UI (`config_source`) — file or database
+-   A HashiCorp Vault page, with a read-only connection test
+-   Environment variables are editable from the settings page, saved to `persistent/.env`
+-   Config API — read, write, import, export and convert. See `GET /api/v2/docs`
+-   The designer was rebuilt — a file tree, and buttons instead of raw YAML
+-   The settings pages were rebuilt — tabbed, with per-field help
+-   Server-wide default language and theme, plus a Color theme
+-   A visual cron editor with presets and a next-runs preview
+-   Schedules can be created from the admin UI
+
+### Changed
+
+-   Permission failures answer `403` instead of `401`
+-   `PUT /api/v2/settings/` is now a partial update
+-   The settings menu has five sections: System, Forms, Access, Connections, Jobs
+-   Menu entries your role cannot open are hidden
+-   The designer works when the config lives in the database
+-   Backup and restore follow the active config source
+-   LDAP loses its Advanced toggle — the four group fields always apply
+
+### Removed
+
+-   LDAP `is_advanced` toggle. On upgrade the fields are blanked where it was off, old values logged first
+
+### Fixed
+
+-   A designer save deleted form files the loader had skipped
+-   A repository named `forms` treated its whole root as a forms folder, so a save deleted unrelated yaml files
+-   A job whose credentials could not be resolved ran anyway, with the variable missing
+-   Approving a job twice at once launched it twice
+-   A multistep step whose status could not be read counted as passed
+-   A failed backup listed as a valid restore point
+-   Restoring a backup with no usable dump reported success
+-   `NIGHTLY_BACKUP_RETENTION=0` deleted every nightly backup
+-   The designer could silently overwrite a form — ids were reused
+-   Designer saves wrote to the local `config.yaml` while the app read a repository
+-   The designer overwrote a ytt-templated config with its rendered output
+-   Designer edits were discarded when navigating away or reloading
+-   The "Show Extravars" role option never took effect — two spellings
+-   A login with no `Authorization: Basic` header hung for ever, leaking a socket
+-   A `401` surviving a token refresh looped refresh and retry
+-   `LOG_SYSLOG_PROTOCOL` never had any effect — misspelt read, so syslog always used UDP
+-   MongoDB datasource queries always failed
+-   Query fields inside a wizard step or list row failed for everyone except an admin
+-   Query placeholders with dot notation, an index path or `placeholderColumn` stopped working
+-   Query values were escaped with MySQL's rules on every datasource, corrupting backslashes and quotes
+-   Renaming a repository moved its working tree before the change was written, orphaning it if refused
+-   A cron schedule with an inverted range (`0 0 * * 5-1`) saved and never ran
+-   An invalid `MASK_EXTRAVARS_REGEX` or `REGEX_FILTER_JOB_OUTPUT` broke job launching and made every job unviewable
+-   Bulk delete on Known Hosts removed the wrong entries — rows were keyed by position
+-   `OLD_BACKUP_DAYS=0` deleted every config restore point. It now keeps everything
+
+### Security
+
+-   A user without verbose permission could relaunch a verbose job and get its output
+-   Server-side expressions could break out of the evaluator and run commands — the guard only checked how one started
+-   A form you had no access to appeared on the home page when two files shared a name
+-   A server expression reached banned names through string property keys (`fn.x['constructor']`) — arbitrary code execution for any signed-in user
+-   A group name containing HTML ran as script in the users list
+-   Opening another user's job answered 200 with an empty body instead of refusing, and approve/reject skipped its role check
+-   A `git pull` that could not read its repository record published the stored password
+-   `/api/v1/query` accepted arbitrary SQL, bypassing the v2 guard
+-   Form load warnings rendered the form name as HTML on the home page
+-   A failed login revealed whether the username existed
+-   Changing a password needed no proof of the current one
+-   The query endpoint ran any SQL from the request body, with only a login required
+-   A field value reached a form expression as raw text, so a crafted link ran script
+-   Refresh tokens were never verified, re-checked or retired
+-   Anyone could sign in as any user, including admin, through the SSO endpoints
+-   Reserved extravars from the request beat the form, so any playbook could run with any credential. A `__x__` key is now accepted only when the form declares a field of that name
+-   Any authenticated user could abort any other user's job
+-   An AWX workflow node name ran as script in the job output
+-   Dropdown option values rendered unescaped while the search box was empty
+-   The `ansible-vault` password was written to the log in full
+-   `VAULT_TOKEN` was returned in clear text to any user with `showSettings`
+-   The v2 log endpoints had no permission check
+-   A duplicate role name in `config.yaml` granted its rights twice over
+-   The backup's environment filter missed `export NAME=value`, shipping `ENCRYPTION_SECRET` beside the dump it decrypts
+-   `POST /api/v2/schema` required no authentication and drops every table
+-   `PUT /api/v2/settings` accepted `forms_yaml`, bypassing the lock, validation and restore point
+-   `/admin/schedules` and `/admin/stored-jobs` were reachable with only `showSettings`
+-   A form's `constants` came from the request instead of the configuration, so a caller could rescope a query
+
 ## [6.2.1] - 2026-07-07
 
 ### Changed
