@@ -9,7 +9,7 @@
   /******************************************************************/
 
   import { getCurrentInstance, computed } from "vue";
-  import DOMPurify from 'dompurify';
+  import HtmlSanitizer from '@/lib/HtmlSanitizer';
   import ace from 'ace-builds';
   import 'ace-builds/src-noconflict/mode-yaml'; // Load the language definition file used below
   import 'ace-builds/src-noconflict/theme-monokai'; // Load the theme definition file used below
@@ -24,7 +24,7 @@
   // MODEL
 
   const model = defineModel();
-  const sanitizedModel = computed(() => DOMPurify.sanitize(model.value || ''));
+  const sanitizedModel = computed(() => HtmlSanitizer.sanitize(model.value));
 
   // PROPS
 
