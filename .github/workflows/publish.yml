@@ -47,6 +47,10 @@ jobs:
           version=$(jq -r .version server/package.json)
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "build_time=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
+          # short, not github.sha : generate-build-info.sh writes GIT_SHA verbatim into
+          # build-info.json, and publish.sh has always passed `git rev-parse --short`.
+          # The full 40 characters would change what the About dialog shows.
+          echo "sha_short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
           echo "Publishing $version"
 
       # a release must describe the version in the manifest, or the image and the git tag
@@ -87,7 +91,7 @@ jobs:
           push: true
           tags: ${{ steps.tags.outputs.list }}
           build-args: |
-            GIT_SHA=${{ github.sha }}
+            GIT_SHA=${{ steps.v.outputs.sha_short }}
             BUILD_TIME=${{ steps.v.outputs.build_time }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
