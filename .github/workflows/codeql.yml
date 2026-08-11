@@ -1,0 +1,44 @@
+name: Security
+
+# Static analysis for the client and the server. This repository has three published
+# advisories against its own code (GHSA-g27f-cjvv-42rf, GHSA-56pr-p4x6-mwm6,
+# GHSA-wcmj-wqvw-6c88), which is the argument for running this on every pull request
+# rather than only on a schedule.
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop]
+  schedule:
+    # Mondays 04:17 UTC - an hour no in-process cron task of the app itself occupies
+    - cron: '17 4 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    # reads as "Security / CodeQL". GitHub separately posts its own
+    # "Code scanning results / CodeQL" check when the SARIF is uploaded - that one is
+    # emitted by the code scanning service, not by Actions, and cannot be renamed here.
+    name: CodeQL
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+
+      # no build step - javascript is analysed from source
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:javascript-typescript

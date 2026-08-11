@@ -11,12 +11,21 @@
 // 'restore points never' for 0, with the note "0 deletes nothing, for every one of these" -
 // so the code was what was wrong, not the note. That claim is asserted here too: a page
 // whose premise is never claiming an unearned fact must not be the thing that is lying.
-import { test, describe, expect, vi, beforeEach } from "vitest";
+import { test, describe, expect, vi, beforeEach, afterEach } from "vitest";
 
 process.env.DB_HOST ||= "127.0.0.1";
 process.env.DB_PORT ||= "3306";
 process.env.DB_USER ||= "test";
 process.env.DB_PASSWORD ||= "test";
+
+// The fixtures below are dated relative to a fixed day, but removeOld measures them
+// against the real clock - so they aged with the calendar and the file went red on
+// 2026-08-01, when the 60-day-old snapshot became 61 real days old and started being
+// pruned. The clock is frozen instead, and the timezone pinned with it : removeOld
+// parses the date part as LOCAL midnight, so under UTC+13 or further the same stamp
+// is a day older than it reads. Both have to be set before the model is imported.
+process.env.TZ = "UTC";
+const NOW = Date.UTC(2026, 6, 31, 12);
 
 // a backup folder holding snapshots of various ages
 const removed = [];
@@ -40,14 +49,21 @@ const Form = (await import("../src/models/form.model.js")).default;
 
 // 'YYYYMMDDHHmmssSSS' - 17 digits, which is what removeOld filters on
 function stamp(daysAgo) {
-  const d = new Date(Date.UTC(2026, 6, 31) - daysAgo * 86400000);
+  const d = new Date(NOW - daysAgo * 86400000);
   const p = (n, w = 2) => String(n).padStart(w, "0");
   return `${d.getUTCFullYear()}${p(d.getUTCMonth() + 1)}${p(d.getUTCDate())}120000000`;
 }
 
 beforeEach(() => {
+  // only Date is faked - the model uses no timers, and faking those would hang vitest
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(NOW);
   removed.length = 0;
   entries = [90, 61, 60, 30, 1, 0].map((n) => `config.yaml.bak.${stamp(n)}`);
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe("OLD_BACKUP_DAYS", () => {

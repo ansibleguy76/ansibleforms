@@ -1,0 +1,114 @@
+name: CI
+
+# Runs on every pull request, and on develop after a merge.
+#
+# Client and server are separate jobs so they run in parallel - the server suite is the
+# long pole (~1 minute) and the client is a few seconds plus a build.
+#
+# No secrets are used anywhere in this workflow, which is deliberate : pull requests come
+# from forks, and a fork's GITHUB_TOKEN is read-only with no access to secrets. A check
+# that needed one would simply never run on the PRs that matter.
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop]
+
+permissions:
+  contents: read
+
+# a new push to the same PR cancels the run it supersedes
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  client:
+    name: Client
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: client
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: client/package-lock.json
+
+      # `npm ci` from client/package-lock.json - the root lockfile is not in the repo
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint:check
+
+      - name: Test
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+  server:
+    name: Server
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint:check
+
+      # No database service on purpose. The suite runs against the stubs in
+      # tests/__mocks__, and the schema tests read src/db/*.sql as TEXT rather than
+      # executing it. A MySQL service here would slow every run and invite tests that
+      # depend on one ; if integration coverage is ever wanted, give it its own workflow.
+      - name: Test
+        run: npm run test
+
+  schema:
+    name: Public schema is up to date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      # server/schema/public/*.json is generated but committed, and it is only
+      # regenerated inside publish.sh / publish-rc.sh - so it silently goes stale
+      # between releases. jq is preinstalled on the runner.
+      - name: Regenerate
+        run: ./server/schema/build-public-schema.sh
+
+      - name: Fail if the committed copy differs
+        run: |
+          if ! git diff --quiet -- server/schema/public; then
+            echo "::error::server/schema/public is out of date - run ./server/schema/build-public-schema.sh and commit the result"
+            git diff -- server/schema/public
+            exit 1
+          fi
+          echo "server/schema/public matches the authoritative schema"
+
+  dependencies:
+    name: Dependency review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v6
+
+      # flags a dependency the PR adds that has a known advisory
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high

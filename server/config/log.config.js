@@ -23,8 +23,12 @@ var log_config = {
 };
 if ( !fs.existsSync( log_config.path ) ) {
   try{
-    // Create the directory if it does not exist
-    fs.mkdirSync( log_config.path );
+    // Create the directory if it does not exist.
+    // `recursive` matters : the default LOG_PATH is ./persistent/logs and persistent/ is
+    // gitignored, so on a fresh clone the parent does not exist either and a plain mkdir
+    // fails with ENOENT - taking 22 test suites and `npm run dev` down with it. That is
+    // what "server/persistent/ must exist" was a manual workaround for.
+    fs.mkdirSync( log_config.path, { recursive: true } );
   }catch(err){
     throw new Error("Failed to create the path for the log files", { cause: err })
   }
