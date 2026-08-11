@@ -30,6 +30,9 @@ ontap*.yaml
 # build artifacts (generated during build)
 build-info.json
 
+# test coverage reports (vitest writes client/coverage and server/coverage)
+coverage
+
 # local post-build scripts (may contain credentials)
 *.post.sh
 

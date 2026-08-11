@@ -62,7 +62,23 @@ jobs:
         run: npm run lint:check
 
       - name: Test
-        run: npm run test
+        run: npm run test -- --coverage --coverage.reporter=text --coverage.reporter=json-summary
+
+      # Reported, not enforced. There is no threshold and this step cannot fail the job :
+      # a number in the summary lets a reviewer see that a PR added 300 lines of untested
+      # model code, while a gate on a 33% baseline would only teach people to raise the
+      # gate. `always()` so the figure still appears when a test failed.
+      - name: Coverage summary
+        if: always()
+        run: |
+          test -f coverage/coverage-summary.json || exit 0
+          {
+            echo "### Client coverage"
+            echo ""
+            echo "| metric | % |"
+            echo "| --- | --- |"
+            jq -r '.total | to_entries[] | select(.key | test("^(lines|statements|functions|branches)$")) | "| \(.key) | \(.value.pct)% |"' coverage/coverage-summary.json
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Build
         run: npm run build
@@ -98,7 +114,20 @@ jobs:
       # executing it. A MySQL service here would slow every run and invite tests that
       # depend on one ; if integration coverage is ever wanted, give it its own workflow.
       - name: Test
-        run: npm run test
+        run: npm run test -- --coverage --coverage.reporter=text --coverage.reporter=json-summary
+
+      # see the note on the client's copy of this step - reported, never enforced
+      - name: Coverage summary
+        if: always()
+        run: |
+          test -f coverage/coverage-summary.json || exit 0
+          {
+            echo "### Server coverage"
+            echo ""
+            echo "| metric | % |"
+            echo "| --- | --- |"
+            jq -r '.total | to_entries[] | select(.key | test("^(lines|statements|functions|branches)$")) | "| \(.key) | \(.value.pct)% |"' coverage/coverage-summary.json
+          } >> "$GITHUB_STEP_SUMMARY"
 
   schema:
     name: Public schema is up to date
