@@ -28,8 +28,16 @@ jobs:
             - name: Extract release notes
               id: extract_release_notes
               run: |
-                # Extract content between first two version headers in CHANGELOG.md
-                NOTES=$(awk '/^## \[/{if(n++)exit}n' CHANGELOG.md | tail -n +2)
+                # The section for THIS version, not "between the first two headings".
+                # The release workflow inserts `## [x.y.z]` directly beneath
+                # `## [Unreleased]`, which leaves Unreleased empty - so the old expression
+                # read that empty section and every release got blank notes. Measured: the
+                # 6.2.1 release has 0 characters of body.
+                NOTES=$(awk -v ver="## [$VERSION_NAME]" '
+                  index($0, ver) == 1 { inside = 1; next }
+                  inside && /^## \[/ { exit }
+                  inside { print }
+                ' CHANGELOG.md)
                 echo "release_notes<<EOF" >> $GITHUB_OUTPUT
                 echo "$NOTES" >> $GITHUB_OUTPUT
                 echo "EOF" >> $GITHUB_OUTPUT
