@@ -1,4 +1,4 @@
-name: Docker build
+name: Docker
 
 # Builds the image without pushing it, so "does the image still assemble" is answered at
 # review time instead of by hand during publish.sh. Path-filtered because it is the slow
