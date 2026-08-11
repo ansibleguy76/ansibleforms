@@ -3,7 +3,7 @@
   "version": "6.3.0",
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "repository": {
     "type": "git",
