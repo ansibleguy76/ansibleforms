@@ -1,11 +1,19 @@
-FROM ansibleguy/ansibleforms-base:latest AS nodebase
+# The base image is pinned by DIGEST, not by :latest. It is only ever published as
+# :latest (publish-base.sh), so a rebuild of the base silently changed what every
+# application build started from - with no commit here to show for it. Updating the pin
+# is now a deliberate, reviewable act.
+#
+#   docker pull ansibleguy/ansibleforms-base:latest
+#   docker inspect --format='{{index .RepoDigests 0}}' ansibleguy/ansibleforms-base:latest
+#
+FROM ansibleguy/ansibleforms-base:latest@sha256:8a1ea5dd0a80be59ce78b4520893e0d42dc0d1231c0af02064a48bce5aad4b23 AS nodebase
 
 ##################################################
 # builder stage
 # intermediate build to compile the client application with vite
 # can run in parallel with base stage
 
-FROM ansibleguy/ansibleforms-base:latest AS tmp_builder
+FROM ansibleguy/ansibleforms-base:latest@sha256:8a1ea5dd0a80be59ce78b4520893e0d42dc0d1231c0af02064a48bce5aad4b23 AS tmp_builder
 
 # Build arguments for git SHA and build time
 ARG GIT_SHA=unknown
