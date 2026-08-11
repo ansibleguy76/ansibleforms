@@ -104,7 +104,8 @@ var app_config = {
     : 3600,
   maskExtravarsRegex: process.env.MASK_EXTRAVARS_REGEX || "password|secret|token",
   gitCloneCommand: process.env.GIT_CLONE_COMMAND || "git clone",
-  gitPullCommand: process.env.GIT_PULL_COMMAND || "git pull"
+  gitPullCommand: process.env.GIT_PULL_COMMAND || "git pull",
+  gitPushCommand: process.env.GIT_PUSH_COMMAND || "git push"
 };
 
 // process dynamic YTT_LIB_DATA_ environment variables

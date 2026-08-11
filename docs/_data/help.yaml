@@ -502,6 +502,13 @@
     default: "git pull"
     description: |
       The command used to pull git repositories.  Note that branch and repository will be auto added.
+  - name: GIT_PUSH_COMMAND
+    type: string
+    allowed: a valid git push command
+    short: Git push command
+    default: "git push"
+    description: |
+      The command used to push git repositories (used by the designer's sync to git feature).  Note that `-u origin HEAD` will be auto added.
   - name: SHOW_DESIGNER
     type: number
     allowed: 0, 1

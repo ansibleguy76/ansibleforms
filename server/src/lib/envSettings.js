@@ -72,6 +72,7 @@ const LIVE = {
   MYSQL_COMMAND: { key: 'mysqlCommand', parse: v => v },
   GIT_CLONE_COMMAND: { key: 'gitCloneCommand', parse: v => v },
   GIT_PULL_COMMAND: { key: 'gitPullCommand', parse: v => v },
+  GIT_PUSH_COMMAND: { key: 'gitPushCommand', parse: v => v },
   MASK_EXTRAVARS_REGEX: { key: 'maskExtravarsRegex', parse: v => v },
   REGEX_FILTER_JOB_OUTPUT: { key: 'filterJobOutputRegex', parse: v => v },
   PROCESS_MAX_BUFFER: { key: 'processMaxBuffer', parse: v => parseInt(v, 10) || 1024 * 1024 },

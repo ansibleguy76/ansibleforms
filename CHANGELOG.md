@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+-   `GIT_PUSH_COMMAND` env var added, to customize the command used when pushing git repositories
+
+### Fixed
+
+-   Wizard didn't load varsFiles
+
 ## [6.3.0] - 2026-07-31
 
 ### Added

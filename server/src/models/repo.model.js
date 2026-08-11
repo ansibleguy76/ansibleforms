@@ -321,7 +321,7 @@ Repo.sync = async function (name, message) {
             throw e
           }
         }
-        out.push(await Cmd.executeSilentCommand({ command: "git push -u origin HEAD", directory, description: "Pushing to git" }, true))
+        out.push(await Cmd.executeSilentCommand({ command: `${config.gitPushCommand} -u origin HEAD`, directory, description: "Pushing to git" }, true))
         return out.join("\n")
       } catch (e) {
         // a rebase conflict can not be solved by retrying ; abort and report
