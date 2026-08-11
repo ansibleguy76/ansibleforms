@@ -2,6 +2,9 @@
   "name": "ansible-forms",
   "version": "6.3.0",
   "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "repository": {
     "type": "git",
     "url": "git://github.com/ansibleguy76/ansibleforms.git"
