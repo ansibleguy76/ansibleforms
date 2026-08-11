@@ -2,9 +2,12 @@ name: Create Release Branch
 on:
   workflow_dispatch:
     inputs:
-      versionName:
-        description: 'Name of version  (ie 5.5.0)'
+      bump:
+        description: 'Which part of the version to increase'
         required: true
+        type: choice
+        options: [patch, minor, major]
+        default: patch
 permissions:
   contents: write
   pull-requests: write
@@ -17,23 +20,31 @@ jobs:
     - name: Check out code
       uses: actions/checkout@v6
       with:
+        # ALWAYS develop, never the branch picked in "Use workflow from". That dropdown
+        # defaults to main, and a release cut from main is a release of the last release -
+        # silently, with no error anywhere.
+        ref: develop
         fetch-depth: 0
         token: ${{ secrets.PAT_TOKEN }}
-    - name: Create release branch
-      run: git checkout -b release/v${{ github.event.inputs.versionName }}
     - name: Initialize mandatory git config
       run: |
        git config user.name "GitHub Actions"
        git config user.email noreply@github.com
-    # `npm version` rather than writing the file by hand : it validates the semver, so a
-    # typo like "6.4" fails here instead of producing a bad tag and a bad image name, and
-    # it keeps package-lock.json's copy of the version in step.
+    # A bump type rather than a typed-out version : npm computes the number, so there is
+    # no "what comes after 6.3.0" and no typo to carry into a tag and an image name.
     - name: Change version number
+      id: bump
       working-directory: server
-      run: npm version "${{ github.event.inputs.versionName }}" --no-git-tag-version --allow-same-version
+      run: |
+        raw=$(npm version "${{ inputs.bump }}" --no-git-tag-version)
+        version="${raw#v}"
+        echo "version=$version" >> "$GITHUB_OUTPUT"
+        echo "Releasing $version"
+    - name: Create release branch
+      run: git checkout -b release/v${{ steps.bump.outputs.version }}
     - name: Update Changelog
       run: |
-        VERSION="${{ github.event.inputs.versionName }}"
+        VERSION="${{ steps.bump.outputs.version }}"
         DATE=$(date +%Y-%m-%d)
         sed -i "s/## \[Unreleased\]/## [Unreleased]\n\n## [$VERSION] - $DATE/" CHANGELOG.md
     - name: Commit changelog and manifest files
@@ -41,18 +52,18 @@ jobs:
       run: |
         git add server/package.json server/package-lock.json
         git add CHANGELOG.md
-        git commit --message "Prepare release ${{ github.event.inputs.versionName }}"
+        git commit --message "Prepare release ${{ steps.bump.outputs.version }}"
         echo "commit=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
     - name: Push new branch
-      run: git push origin release/v${{ github.event.inputs.versionName }}
+      run: git push origin release/v${{ steps.bump.outputs.version }}
     - name: Create pull request into main
       env:
         GH_TOKEN: ${{ secrets.PAT_TOKEN }}
       run: |
         gh pr create \
           --base main \
-          --head release/v${{ github.event.inputs.versionName }} \
-          --title "v${{ github.event.inputs.versionName }} into main" \
+          --head release/v${{ steps.bump.outputs.version }} \
+          --title "v${{ steps.bump.outputs.version }} into main" \
           --body "This PR was created by the release workflow. Version commit: ${{ steps.make-commit.outputs.commit }}"
     - name: Create pull request to develop
       env:
@@ -60,6 +71,6 @@ jobs:
       run: |
         gh pr create \
           --base develop \
-          --head release/v${{ github.event.inputs.versionName }} \
-          --title "v${{ github.event.inputs.versionName }} into develop" \
+          --head release/v${{ steps.bump.outputs.version }} \
+          --title "v${{ steps.bump.outputs.version }} into develop" \
           --body "This PR was created by the release workflow. Version commit: ${{ steps.make-commit.outputs.commit }}"
