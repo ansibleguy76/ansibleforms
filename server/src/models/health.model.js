@@ -7,6 +7,7 @@ import cronService from '../services/cron.service.js';
 import appConfig from '../../config/app.config.js';
 import logConfig from '../../config/log.config.js';
 import Vault from '../lib/vault.js';
+import { getSeedState } from '../lib/seed.js';
 import net from 'net';
 import tls from 'tls';
 import logger from '../lib/logger.js';
@@ -650,11 +651,14 @@ async function writableCheck() {
 }
 
 /**
- * The declarative config seed. A bad seed refuses to start, so this can never report
- * a seed that failed to apply - the process would not be here to answer. What it does
- * catch is the file going away or becoming unreadable AFTER boot, which is a live risk
- * on kubernetes : a remounted or renamed ConfigMap means the next restart fails, and
- * this is the only place that says so while the instance is still up.
+ * The declarative config seed. A bad seed refuses to START, so a file that never applied
+ * cannot be reported from here - the process would not be up to answer. A bad RELOAD is
+ * the opposite : it is survivable on purpose, the instance keeps the configuration it
+ * already had, and then this row is the only thing that says the file on disk and the
+ * configuration in force have parted company.
+ *
+ * It also still catches the file going away or becoming unreadable, which is a live risk
+ * on kubernetes where a ConfigMap can be remounted or renamed underneath a running pod.
  *
  * Side-effect free, like every row on this page : the file is read, never applied.
  */
@@ -663,6 +667,19 @@ async function configSeedCheck() {
   if (!seedPath) {
     return check('configSeed', OK, 'not configured',
       { note: 'Set CONFIG_SEED_PATH to declare the admin objects in a file - see docs/seed.md' });
+  }
+  // Before anything read from disk : a failed reload means what is on disk is NOT what is
+  // running, so reporting the file as healthy would describe configuration nobody applied.
+  const state = getSeedState();
+  if (state.failure) {
+    return check('configSeed', ERROR, 'last reload failed',
+      {
+        path: seedPath,
+        reason: state.failure.error,
+        failedAt: state.failure.at,
+        appliedAt: state.appliedAt,
+        note: 'The configuration in force is the one applied before the failed reload. Fix the file, or POST /api/v2/config-seed/apply to retry it now',
+      });
   }
   try {
     await fs.access(seedPath, fsConstants.R_OK);

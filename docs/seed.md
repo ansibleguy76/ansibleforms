@@ -185,10 +185,42 @@ credentials:
 `prune` only ever considers managed records. It cannot delete something somebody made by
 hand.
 
+## Changing the file without restarting
+
+The seed is re-read every `CONFIG_SEED_RELOAD_SECONDS` (60 by default, `0` turns it off)
+and re-applied when its content has changed. A change committed to git therefore reaches a
+running instance on its own: on Kubernetes a `ConfigMap` is remounted under the pod within
+about a minute and the next check picks it up. Nothing is rolled, nothing restarts, and no
+hook has to call anything.
+
+An unchanged file costs one hash and stops there, so the poll never rewrites a row it has
+already applied.
+
+Two ways to ask for it immediately rather than waiting:
+
+```
+POST /api/v2/config-seed/apply     # settings admin ; answers with what it did
+kill -HUP 1                        # inside the container, no credentials needed
+```
+
+Both **force** an apply even when the file has not changed, which is the point of asking:
+it re-asserts a managed record somebody edited straight in the database, and re-clones a
+declared repository whose working tree has gone missing.
+
+{: .note }
+> A reload is **never fatal**, unlike the apply at startup. An instance that is already
+> serving keeps the configuration it has, the reason is logged, and the *Config seed* row on
+> the Status page turns red naming it. A typo pushed to git must not be able to take a
+> running instance down with no operator action at all.
+>
+> The same broken content is not retried on every tick either, or one bad edit would write
+> the same error to the log for ever. Fix the file, or call the endpoint to retry it now.
+
 ## A broken seed refuses to start
 
 An unreadable file, invalid yaml, an unknown field, a duplicate name or an unresolved
-`${VARIABLE}` makes the server **exit** rather than start.
+`${VARIABLE}` makes the server **exit** rather than start. This is the **startup** path
+only: see the note above for what the same file does to an instance that is already up.
 
 That is deliberate. Carrying on with the previous configuration means an instance whose
 behaviour no longer matches the manifest that is supposed to describe it, and nothing
@@ -242,6 +274,10 @@ spec:
           env:
             - name: CONFIG_SEED_PATH
               value: /seed/seed.yaml
+            # a ConfigMap edited in git is remounted here within about a minute and
+            # applied from there, so changing the seed does not roll the pod
+            - name: CONFIG_SEED_RELOAD_SECONDS
+              value: "60"
             # the environment is declared here, so the settings pages must not
             # write persistent/.env behind this manifest's back
             - name: ALLOW_ENV_EDIT
@@ -309,8 +345,14 @@ a durable one drifts away from the manifest that is meant to be authoritative.
 
 Each apply that changes something writes one `seed.apply` entry to the audit log, naming
 the objects created, updated, released and pruned. Values are never recorded, because most
-of them are secrets. A no-op apply writes nothing, so the trail stays meaningful.
+of them are secrets. A no-op apply writes nothing, so the trail stays meaningful, and a
+poll that finds the file unchanged is a no-op - the trail does not gain a row per minute.
 
-The Status page reports the seed twice: a **check** that the file is still readable and
-parseable (a remounted ConfigMap would otherwise only be discovered at the next restart)
-and an **information** row saying how many records it currently owns.
+An apply asked for through the endpoint is recorded twice on purpose, and the two rows say
+different things: `config-seed.apply.create` is **who** asked for it, `seed.apply` is
+**what** it changed.
+
+The Status page reports the seed twice: a **check** that the file is still readable, parses,
+and that the last reload succeeded, and an **information** row saying how many records it
+currently owns. The check is the only place that says the file on disk and the configuration
+in force have parted company, since a failed reload leaves the instance running.

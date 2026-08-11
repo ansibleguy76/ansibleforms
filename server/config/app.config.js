@@ -21,6 +21,12 @@ var app_config = {
   // repositories, ldap, mail/url). Empty = feature off. NOT the same thing as configPath,
   // which holds the forms configuration - see docs/seed.md.
   configSeedPath: process.env.CONFIG_SEED_PATH || "",
+  // How often the seed file is re-read and re-applied when its content changed, in
+  // seconds. 0 turns the poll off, leaving the boot apply, POST /api/v2/config-seed/apply
+  // and SIGHUP. A poll rather than a watcher on purpose : a mounted ConfigMap is updated
+  // by swapping the ..data symlink, which fs.watch on the file never sees, and kubelet
+  // takes up to a minute to do it anyway - so a watcher would buy no time it could use.
+  configSeedReloadSeconds: parseInt(process.env.CONFIG_SEED_RELOAD_SECONDS || "60", 10),
   // Whether the settings pages may write persistent/.env. Turn this off where the
   // environment is declared elsewhere (kubernetes ConfigMap, docker-compose, ArgoCD) :
   // there the file is either ephemeral, so a save is silently lost at the next restart,
