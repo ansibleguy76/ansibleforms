@@ -74,6 +74,7 @@ import sshRoutesv2 from "./routes/v2/ssh.routes.js";
 import logRoutesv2 from "./routes/v2/log.routes.js";
 import repositoryRoutesv2 from "./routes/v2/repository.routes.js";
 import configRoutesv2 from "./routes/v2/config.routes.js";
+import configSeedRoutesv2 from "./routes/v2/configseed.routes.js";
 import formsReposRoutes from "./routes/v2/forms-repos.routes.js";
 
 // __dirname and __filename setup for ES modules
@@ -253,6 +254,9 @@ const load = async (app) => {
   // forms repositories (issue #414) : designer users can push without settings access
   app.use(`/api/v2/forms-repos`, cors(), authobj, Middleware.checkDesignerMiddleware, formsReposRoutes);
   app.use(`/api/v2/config`, cors(), authobj, configRoutesv2);
+  // separate mount from /config on purpose : the seed is not the forms configuration and
+  // does not share its permissions - this one is settings admin, like the pages it rewrites
+  app.use(`/api/v2/config-seed`, cors(), authobj, Middleware.checkSettingsMiddleware, configSeedRoutesv2);
 }
 
 

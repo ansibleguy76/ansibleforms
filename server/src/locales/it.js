@@ -94,6 +94,8 @@ export default {
     failedPullRepository: "Impossibile fare pull del repository",
     failedSyncRepository: "Impossibile sincronizzare il repository",
     noFormsRepositories: "Nessun repository di moduli configurato",
+    failedApplyConfigSeed: "Impossibile applicare il seed di configurazione",
+    noConfigSeed: "Nessun seed di configurazione e configurato (CONFIG_SEED_PATH e vuoto)",
     failedFindSsh: "Impossibile trovare la chiave SSH",
     failedUpdateSsh: "Impossibile aggiornare la chiave SSH",
     failedFindLdap: "Impossibile trovare LDAP",

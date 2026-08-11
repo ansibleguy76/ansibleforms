@@ -122,6 +122,7 @@ export default {
       settings_env_update: "Omgevingsinstellingen bijgewerkt",
       config_env_update: "Omgevingsinstellingen opgeslagen",
       seed_apply: "Configuratie-seed toegepast",
+      config_seed_apply_create: "Opnieuw toepassen van de configuratie-seed aangevraagd",
       backup_restore_env_create: "Omgevingsbestand hersteld uit een back-up",
       backup_restoreEnv: "Omgevingsbestand hersteld uit een back-up",
       config_save: "Configuratie opgeslagen",

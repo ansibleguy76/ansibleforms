@@ -37,7 +37,7 @@ const envGroupOrder = [
   // they render read-only with their reason - which is the point: an operator needs to
   // see that a seed is in force, and that is exactly why this page cannot be saved.
   { key: 'configuration', label: () => t('settings.settingsPage.tabConfiguration'), icon: 'right-left',
-    exact: ['ENABLE_CONFIG_IN_DATABASE', 'ENABLE_FORMS_YAML_IN_DATABASE', 'CONFIG_SEED_PATH', 'ALLOW_ENV_EDIT'] },
+    exact: ['ENABLE_CONFIG_IN_DATABASE', 'ENABLE_FORMS_YAML_IN_DATABASE', 'CONFIG_SEED_PATH', 'CONFIG_SEED_RELOAD_SECONDS', 'ALLOW_ENV_EDIT'] },
   { key: 'server', label: () => t('settings.settingsPage.envGroupServer'), icon: 'globe',
     // no BASE_URL : it is in OWNED_ELSEWHERE, which is filtered out before the groups are
     // consulted, so listing it here only claimed a variable this page never renders

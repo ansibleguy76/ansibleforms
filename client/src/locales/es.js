@@ -122,6 +122,7 @@ export default {
       settings_env_update: "Ajustes de entorno actualizados",
       config_env_update: "Ajustes de entorno guardados",
       seed_apply: "Seed de configuración aplicado",
+      config_seed_apply_create: "Reaplicación del seed de configuración solicitada",
       backup_restore_env_create: "Archivo de entorno restaurado desde una copia",
       backup_restoreEnv: "Archivo de entorno restaurado desde una copia",
       config_save: "Configuración guardada",

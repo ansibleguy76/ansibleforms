@@ -94,6 +94,8 @@ export default {
     failedPullRepository: "Echec du pull du depot",
     failedSyncRepository: "Échec de la synchronisation du dépôt",
     noFormsRepositories: "Aucun dépôt de formulaires configuré",
+    failedApplyConfigSeed: "Echec de l'application du seed de configuration",
+    noConfigSeed: "Aucun seed de configuration n'est configure (CONFIG_SEED_PATH est vide)",
     failedFindSsh: "Echec de la recherche de la cle SSH",
     failedUpdateSsh: "Echec de la mise a jour de la cle SSH",
     failedFindLdap: "Echec de la recherche LDAP",

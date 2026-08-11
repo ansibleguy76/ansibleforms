@@ -219,6 +219,21 @@
       ${ENV_VAR} and resolved from the environment, so the file itself holds none.
       Unrelated to CONFIG_PATH, which holds the forms configuration. An invalid seed makes the
       server refuse to start. See the Config seed page in the documentation.
+  - name: CONFIG_SEED_RELOAD_SECONDS
+    version: 6.3.0
+    type: integer
+    allowed: 0 or a number of seconds
+    short: Config seed reload interval
+    hint: How often the seed file is re-read, so a change in git reaches a running instance
+    default: 60
+    description: |
+      How often the config seed file is checked and re-applied when its content has changed,
+      in seconds. This is what lets a seed edited in git take effect without restarting: on
+      kubernetes a ConfigMap is remounted under the running pod within about a minute and the
+      change is picked up from there. A reload that fails is never fatal, unlike the one at
+      startup: the configuration already in force is kept and the Status page reports it.
+      Set it to 0 to check only at startup, leaving POST /api/v2/config-seed/apply and SIGHUP.
+      Ignored when CONFIG_SEED_PATH is empty.
   - name: ALLOW_ENV_EDIT
     version: 6.3.0
     type: boolean

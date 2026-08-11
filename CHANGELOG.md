@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 -   `GIT_PUSH_COMMAND` env var added, to customize the command used when pushing git repositories
+-   The config seed is re-applied when the file changes (`CONFIG_SEED_RELOAD_SECONDS`, 60s by default), so a seed edited in git reaches a running instance without restarting it. `POST /api/v2/config-seed/apply` and `SIGHUP` force an apply immediately. A failed reload is never fatal: the configuration already in force is kept and the Status page reports it. See `docs/seed.md`
 
 ### Fixed
 
