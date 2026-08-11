@@ -1,8 +1,18 @@
 name: Deploy Jekyll site to Pages
 
+# A pull request BUILDS the site but does not deploy it. docs/_data/help.yaml is the
+# single source of truth for the settings pages and is read by four tests, so a malformed
+# edit used to be discovered only after the merge, when this workflow failed on develop.
+
 on:
   push:
     branches: ["develop"]
+  pull_request:
+    branches: ["develop", "main"]
+    paths:
+      - 'docs/**'
+      - 'CHANGELOG.md'
+      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:
@@ -11,8 +21,9 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  # deploys keep the single "pages" group and are never cancelled ; each PR gets its own
+  group: pages-${{ github.event.pull_request.number || 'deploy' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
@@ -33,22 +44,28 @@ jobs:
           cache-version: 0
           working-directory: docs
       
+      # skipped on a pull request : it calls the Pages API, and a fork's token cannot.
+      # base_path is then empty, which jekyll reads as the site root - fine for a build
+      # that is only ever thrown away.
       - name: Setup Pages
         id: pages
+        if: github.event_name != 'pull_request'
         uses: actions/configure-pages@v4
-      
+
       - name: Build with Jekyll
         run: bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
         working-directory: docs
         env:
           JEKYLL_ENV: production
-      
+
       - name: Upload artifact
+        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
         with:
           path: docs/_site
 
   deploy:
+    if: github.event_name != 'pull_request'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

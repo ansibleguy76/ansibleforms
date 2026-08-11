@@ -1,0 +1,46 @@
+name: CodeQL
+
+# Static analysis for the client and the server. This repository has three published
+# advisories against its own code (GHSA-g27f-cjvv-42rf, GHSA-56pr-p4x6-mwm6,
+# GHSA-wcmj-wqvw-6c88), which is the argument for running this on every pull request
+# rather than only on a schedule.
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop]
+  schedule:
+    # Mondays 04:17 UTC - an hour no in-process cron task of the app itself occupies
+    - cron: '17 4 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    # A pull request from a FORK gets a read-only token, which cannot upload the SARIF
+    # result - so it is skipped there rather than left to fail a check on every PR.
+    # Nothing goes unanalysed : the push to develop and the weekly run still cover it.
+    # Drop this line if fork uploads turn out to work on this repository's plan.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+
+      # no build step - javascript is analysed from source
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:javascript-typescript
