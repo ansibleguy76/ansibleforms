@@ -1,4 +1,4 @@
-name: Create Release Branch
+name: Release
 on:
   workflow_dispatch:
     inputs:
@@ -14,6 +14,7 @@ permissions:
 
 jobs:
   createrelease:
+    name: Prepare
     runs-on: ubuntu-latest
 
     steps:
@@ -40,37 +41,42 @@ jobs:
         version="${raw#v}"
         echo "version=$version" >> "$GITHUB_OUTPUT"
         echo "Releasing $version"
-    - name: Create release branch
-      run: git checkout -b release/v${{ steps.bump.outputs.version }}
     - name: Update Changelog
       run: |
         VERSION="${{ steps.bump.outputs.version }}"
         DATE=$(date +%Y-%m-%d)
         sed -i "s/## \[Unreleased\]/## [Unreleased]\n\n## [$VERSION] - $DATE/" CHANGELOG.md
-    - name: Commit changelog and manifest files
+    # Straight onto develop, with no release branch in between. The last four release
+    # branches took no commits after being cut - they held one "Prepare release" commit,
+    # produced two pull requests and were merged twice - so the branch bought nothing and
+    # the back-merge was a rubber stamp. Committing here instead means develop cannot
+    # drift from main, and a hotfix branch can still be cut from the tag later.
+    - name: Commit to develop
       id: make-commit
       run: |
-        git add server/package.json server/package-lock.json
-        git add CHANGELOG.md
+        git add server/package.json server/package-lock.json CHANGELOG.md
         git commit --message "Prepare release ${{ steps.bump.outputs.version }}"
+        git push origin develop
         echo "commit=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
-    - name: Push new branch
-      run: git push origin release/v${{ steps.bump.outputs.version }}
-    - name: Create pull request into main
+    # One pull request, not two. Reused if a develop -> main one is already open, because
+    # gh pr create fails rather than no-ops in that case.
+    - name: Open the release pull request
       env:
         GH_TOKEN: ${{ secrets.PAT_TOKEN }}
       run: |
-        gh pr create \
-          --base main \
-          --head release/v${{ steps.bump.outputs.version }} \
-          --title "v${{ steps.bump.outputs.version }} into main" \
-          --body "This PR was created by the release workflow. Version commit: ${{ steps.make-commit.outputs.commit }}"
-    - name: Create pull request to develop
-      env:
-        GH_TOKEN: ${{ secrets.PAT_TOKEN }}
-      run: |
-        gh pr create \
-          --base develop \
-          --head release/v${{ steps.bump.outputs.version }} \
-          --title "v${{ steps.bump.outputs.version }} into develop" \
-          --body "This PR was created by the release workflow. Version commit: ${{ steps.make-commit.outputs.commit }}"
+        version="${{ steps.bump.outputs.version }}"
+        body=$(printf '%s\n' \
+          "Release **$version**, prepared by the release workflow." \
+          "" \
+          "Version commit: ${{ steps.make-commit.outputs.commit }}" \
+          "" \
+          "Merging this runs \`tag_release\`, which creates the GitHub release, which in" \
+          "turn runs \`publish\` and pushes the images. Nothing else is needed afterwards -" \
+          "the version bump is already on develop.")
+        existing=$(gh pr list --base main --head develop --state open --json number --jq '.[0].number // empty')
+        if [ -n "$existing" ]; then
+          gh pr edit "$existing" --title "Release $version" --body "$body"
+          echo "updated existing pull request #$existing"
+        else
+          gh pr create --base main --head develop --title "Release $version" --body "$body"
+        fi
