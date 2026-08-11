@@ -1,4 +1,8 @@
-FROM node:lts-bookworm-slim
+# node:lts is a MOVING target - it is 24 today (identical digest to node:24-bookworm-slim)
+# and will become 26 without a commit here. Pinned to the major it already resolves to, so
+# this is not a version change ; see the PR for the separate question of whether the image
+# should run 24 while .nvmrc and CI say 22.
+FROM node:24-bookworm-slim
 
 # Use /app as CWD
 WORKDIR /app
