@@ -1,6 +1,9 @@
 {
   "name": "ansible-forms",
   "description": "The Vue3 front of the ansible forms web application",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
