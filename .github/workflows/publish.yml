@@ -13,6 +13,11 @@ name: Publish
 #     the result mid-release ; CI already fails a pull request whose committed copy is
 #     stale, so by the time a release exists that file is correct and a publish step has
 #     no business writing to the repository.
+#
+# It pushes to GHCR always and to Docker Hub when the secret is there. Docker Hub stays
+# the canonical channel - docs/installation.md tells people to pull ansibleguy/ansibleforms
+# and every deployment in the wild points at it - so GHCR is a mirror beside it, not a
+# replacement. To drop Docker Hub one day, delete its login step and the two tags.
 
 on:
   release:
@@ -26,6 +31,7 @@ on:
 
 permissions:
   contents: read
+  packages: write   # GHCR, through the automatic GITHUB_TOKEN - no secret needed
 
 concurrency:
   group: publish
@@ -66,20 +72,58 @@ jobs:
           fi
           echo "release tag and manifest agree on $version"
 
+      # Docker Hub is optional, GHCR is not. GHCR needs no secret at all - the automatic
+      # GITHUB_TOKEN authenticates it - so the workflow publishes something useful before
+      # anyone has created a Docker Hub token, and the first run proves itself. When the
+      # secret is absent the Docker Hub login and its tags are simply left out rather than
+      # failing the job.
+      - name: Is Docker Hub configured?
+        id: hub
+        env:
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [ -n "$DOCKERHUB_TOKEN" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "Docker Hub credentials present - publishing there as well"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::DOCKERHUB_TOKEN is not set - publishing to GHCR only"
+          fi
+
       - name: Work out the tags
         id: tags
         run: |
-          repo="${{ vars.DOCKERHUB_REPOSITORY || 'ansibleguy/ansibleforms' }}"
           version="${{ steps.v.outputs.version }}"
+          # github.repository is already lowercase here ; GHCR rejects anything else
+          ghcr="ghcr.io/${{ github.repository }}"
+          hub="${{ vars.DOCKERHUB_REPOSITORY || 'ansibleguy/ansibleforms' }}"
+
           if [ "${{ inputs.rc }}" = "true" ]; then
-            printf 'list=%s:%s-rc,%s:latest-rc\n' "$repo" "$version" "$repo" >> "$GITHUB_OUTPUT"
+            primary="$version-rc"; moving="latest-rc"
           else
-            printf 'list=%s:%s,%s:latest\n' "$repo" "$version" "$repo" >> "$GITHUB_OUTPUT"
+            primary="$version"; moving="latest"
           fi
+
+          tags="$ghcr:$primary,$ghcr:$moving"
+          if [ "${{ steps.hub.outputs.enabled }}" = "true" ]; then
+            tags="$tags,$hub:$primary,$hub:$moving"
+          fi
+          echo "list=$tags" >> "$GITHUB_OUTPUT"
+          echo "$tags" | tr ',' '\n'
 
       - uses: docker/setup-buildx-action@v3
 
-      - uses: docker/login-action@v3
+      # no secret : GITHUB_TOKEN carries packages:write, declared on the job above
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log in to Docker Hub
+        if: steps.hub.outputs.enabled == 'true'
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
