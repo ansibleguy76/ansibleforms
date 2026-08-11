@@ -1,0 +1,105 @@
+name: Publish
+
+# Builds and pushes the application image from CI instead of from a maintainer's laptop.
+#
+# publish.sh and publish-rc.sh still work and are left in place ; this is the same
+# sequence with three differences that matter :
+#
+#   * the image is built from the commit the release points at, not from whatever is in
+#     someone's working tree - "it built on my machine" stops being part of a release
+#   * the credentials are a repository secret with a scoped token rather than a personal
+#     docker login on a workstation
+#   * it does not commit anything. publish.sh regenerates server/schema/public and pushes
+#     the result mid-release ; CI already fails a pull request whose committed copy is
+#     stale, so by the time a release exists that file is correct and a publish step has
+#     no business writing to the repository.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      rc:
+        description: 'Publish as a release candidate (<version>-rc and latest-rc)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Build and push
+    runs-on: ubuntu-latest
+    environment: dockerhub
+    steps:
+      - uses: actions/checkout@v6
+
+      # server/package.json is the single source of truth for the version - the same file
+      # tag_release.yml reads to name the tag, so the image and the tag cannot disagree
+      - name: Read the version
+        id: v
+        run: |
+          version=$(jq -r .version server/package.json)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "build_time=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
+          echo "Publishing $version"
+
+      # a release must describe the version in the manifest, or the image and the git tag
+      # would name different things - the failure this whole arrangement exists to prevent
+      - name: Check the release tag matches the manifest
+        if: github.event_name == 'release'
+        run: |
+          tag="${{ github.event.release.tag_name }}"
+          version="${{ steps.v.outputs.version }}"
+          if [ "${tag#v}" != "$version" ]; then
+            echo "::error::release tag '$tag' does not match server/package.json version '$version'"
+            exit 1
+          fi
+          echo "release tag and manifest agree on $version"
+
+      - name: Work out the tags
+        id: tags
+        run: |
+          repo="${{ vars.DOCKERHUB_REPOSITORY || 'ansibleguy/ansibleforms' }}"
+          version="${{ steps.v.outputs.version }}"
+          if [ "${{ inputs.rc }}" = "true" ]; then
+            printf 'list=%s:%s-rc,%s:latest-rc\n' "$repo" "$version" "$repo" >> "$GITHUB_OUTPUT"
+          else
+            printf 'list=%s:%s,%s:latest\n' "$repo" "$version" "$repo" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.tags.outputs.list }}
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+            BUILD_TIME=${{ steps.v.outputs.build_time }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Summary
+        run: |
+          {
+            echo "### Published"
+            echo ""
+            echo '```'
+            echo "${{ steps.tags.outputs.list }}" | tr ',' '\n'
+            echo '```'
+            echo ""
+            echo "from \`${{ github.sha }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
