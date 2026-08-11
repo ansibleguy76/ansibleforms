@@ -1,4 +1,4 @@
-name: CodeQL
+name: Security
 
 # Static analysis for the client and the server. This repository has three published
 # advisories against its own code (GHSA-g27f-cjvv-42rf, GHSA-56pr-p4x6-mwm6,
@@ -23,7 +23,10 @@ concurrency:
 
 jobs:
   analyze:
-    name: Analyze
+    # reads as "Security / CodeQL". GitHub separately posts its own
+    # "Code scanning results / CodeQL" check when the SARIF is uploaded - that one is
+    # emitted by the code scanning service, not by Actions, and cannot be renamed here.
+    name: CodeQL
     runs-on: ubuntu-latest
     permissions:
       contents: read
