@@ -2724,7 +2724,10 @@
                       required: true
                       default: "2026-01"                       
               - name: html
-                description: An HTML field
+                description: |
+                  An HTML field.
+                  The html is sanitized before it is rendered : `<script>`, event handlers (`onclick`, `onerror`, ...) and `javascript:` links are always removed.
+                  A link may carry `target="_blank"` to open in a new tab ; `rel="noopener noreferrer"` is added automatically.
                 version: 4.0.9
                 examples:
                 - name: Alert
@@ -2743,6 +2746,12 @@
                       type: html
                       expression: | 
                         '<h3 class="title is-3">Your own title</h3>'          
+                - name: Link opening in a new tab
+                  code: |
+                    - type: html
+                      name: documentation
+                      expression: |
+                        '<a href="https://ansibleforms.com/" target="_blank">Read the documentation</a>'
               - name: file
                 description: A file upload field, the file is uploaded prior to the job start and the extravars will contain the uploaded file info.
                 version: 4.0.16
@@ -3901,6 +3910,8 @@
             short: Renders text as html
             description: |
               If an expression value has html tags (for example <b></b>), it will render the value as such.
+              The html is sanitized before it is rendered : `<script>`, event handlers (`onclick`, `onerror`, ...) and `javascript:` links are always removed.
+              A link may carry `target="_blank"` to open in a new tab ; `rel="noopener noreferrer"` is added automatically.
             examples:
             - name: Show bold in an expression
               code: |
