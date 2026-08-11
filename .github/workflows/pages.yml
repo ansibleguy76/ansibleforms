@@ -27,10 +27,9 @@ concurrency:
 
 jobs:
   build:
-    # this is the check name a pull request shows - keep it distinct from the docker
-    # workflow's "Build image", and note that renaming it breaks any branch protection
-    # rule that requires it
-    name: Docs build
+    # reads as "Docs / Build" where the workflow name prefixes the job. Note that
+    # renaming it breaks any branch protection rule that requires it
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -69,7 +68,7 @@ jobs:
           path: docs/_site
 
   deploy:
-    name: Docs deploy
+    name: Deploy
     if: github.event_name != 'pull_request'
     environment:
       name: github-pages
