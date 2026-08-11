@@ -25,11 +25,6 @@ jobs:
   analyze:
     name: Analyze
     runs-on: ubuntu-latest
-    # A pull request from a FORK gets a read-only token, which cannot upload the SARIF
-    # result - so it is skipped there rather than left to fail a check on every PR.
-    # Nothing goes unanalysed : the push to develop and the weekly run still cover it.
-    # Drop this line if fork uploads turn out to work on this repository's plan.
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       contents: read
       security-events: write
