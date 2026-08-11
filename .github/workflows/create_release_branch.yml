@@ -5,9 +5,6 @@ on:
       versionName:
         description: 'Name of version  (ie 5.5.0)'
         required: true
-      versionCode:
-        description: 'Version number (50500)'
-        required: true
 permissions:
   contents: write
   pull-requests: write
@@ -28,8 +25,12 @@ jobs:
       run: |
        git config user.name "GitHub Actions"
        git config user.email noreply@github.com
-    - name: Change version number and name
-      run: printf 'ext.version_code = ${{ github.event.inputs.versionCode }}\next.version_name = "${{ github.event.inputs.versionName }}"\n' > app_versions.gradle
+    # `npm version` rather than writing the file by hand : it validates the semver, so a
+    # typo like "6.4" fails here instead of producing a bad tag and a bad image name, and
+    # it keeps package-lock.json's copy of the version in step.
+    - name: Change version number
+      working-directory: server
+      run: npm version "${{ github.event.inputs.versionName }}" --no-git-tag-version --allow-same-version
     - name: Update Changelog
       run: |
         VERSION="${{ github.event.inputs.versionName }}"
@@ -38,7 +39,7 @@ jobs:
     - name: Commit changelog and manifest files
       id: make-commit
       run: |
-        git add app_versions.gradle
+        git add server/package.json server/package-lock.json
         git add CHANGELOG.md
         git commit --message "Prepare release ${{ github.event.inputs.versionName }}"
         echo "commit=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT

@@ -18,7 +18,12 @@ jobs:
                   git config user.email noreply@github.com
             - name: Setup release information
               run: |
-                  versionName=$(sed '2q;d' app_versions.gradle | cut -d "=" -f2 | xargs)
+                  # server/package.json is the single source of truth for the version : it
+                  # is what the running app reports through /api/v2/version and what
+                  # publish.sh tags the image with. This step used to read a separate
+                  # app_versions.gradle, which nothing kept in step with it - so the git
+                  # tag and the docker tag could describe different releases.
+                  versionName=$(jq -r .version server/package.json)
                   echo "VERSION_NAME=$versionName" >> $GITHUB_ENV
             - name: Extract release notes
               id: extract_release_notes
