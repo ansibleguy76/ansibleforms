@@ -14,6 +14,16 @@ on:
     branches: [develop, main]
   push:
     branches: [develop]
+  # Daily, because some things break with no commit at all and a PR-triggered run only
+  # ever asks about changes. This repository has already had one: a retention test dated
+  # its fixtures relative to a fixed day and measured them against the real clock, so it
+  # went red on its own and stayed red for ten days - the discovery path was an innocent
+  # contributor opening a PR and being unable to tell whether they had broken it.
+  # It costs about two minutes and is free on a public repository, so daily rather than
+  # weekly : the only difference is whether that sits for a day or for a week.
+  # Note GitHub disables scheduled workflows after 60 days of repository inactivity.
+  schedule:
+    - cron: '40 3 * * *'
 
 permissions:
   contents: read
@@ -32,6 +42,11 @@ jobs:
         working-directory: client
     steps:
       - uses: actions/checkout@v6
+        with:
+          # a scheduled run fires on the DEFAULT branch (main) ; test develop,
+          # which is where the work lands. '' is checkout's own default for every
+          # other event, so pull requests keep checking out their merge ref.
+          ref: ${{ github.event_name == 'schedule' && 'develop' || '' }}
 
       - uses: actions/setup-node@v4
         with:
@@ -60,6 +75,11 @@ jobs:
         working-directory: server
     steps:
       - uses: actions/checkout@v6
+        with:
+          # a scheduled run fires on the DEFAULT branch (main) ; test develop,
+          # which is where the work lands. '' is checkout's own default for every
+          # other event, so pull requests keep checking out their merge ref.
+          ref: ${{ github.event_name == 'schedule' && 'develop' || '' }}
 
       - uses: actions/setup-node@v4
         with:
@@ -85,6 +105,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          # a scheduled run fires on the DEFAULT branch (main) ; test develop,
+          # which is where the work lands. '' is checkout's own default for every
+          # other event, so pull requests keep checking out their merge ref.
+          ref: ${{ github.event_name == 'schedule' && 'develop' || '' }}
 
       # server/schema/public/*.json is generated but committed, and it is only
       # regenerated inside publish.sh / publish-rc.sh - so it silently goes stale
