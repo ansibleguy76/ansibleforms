@@ -16,7 +16,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import { availableIcons } from "@/config/icons";
 import { editorStyle } from "@/config/editorStyle";
 import { authProviders, roleOptionKeys, roleOptionDefaults, roleOptionLabel as roleOptionLabelFor, roleToEditable, serializeRole } from "@/config/roles";
-import { coerceConstantValue, constantsToArray, arrayToConstants, flattenConstants } from "@/config/constants";
+import { coerceConstantValue, constantValueError, constantValueRows, constantsToArray, arrayToConstants, flattenConstants } from "@/config/constants";
 
 dayjs.extend(relativeTime);
 
@@ -932,6 +932,11 @@ function doAddConstant() {
   const root = addConstRoot.value;
   if (!root) { toast.error(t('designer.badYamlUpdate')); return; }
 
+  // a list or a map that cannot be parsed would be stored as its own yaml source
+  // text, so `$(KEY)` would hand a form a string that merely looks like a list
+  const valueError = constantValueError(newConstValue.value);
+  if (valueError) { toast.warning(t('designer.constantValueInvalid', { key, error: valueError })); return; }
+
   const value = coerceConstantValue(newConstValue.value);
   const parent = newConstParent.value === '' ? null : addConstParents.value[Number(newConstParent.value)];
   if (newConstParent.value !== '' && !parent) { toast.error(t('designer.badYamlUpdate')); return; }
@@ -1021,10 +1026,28 @@ function trimConstKeys(arr) {
   }));
 }
 
+// The first row whose value is meant to be a list or a map but cannot be parsed.
+// Stored as-is it would be its own yaml SOURCE, which reads back as a string.
+function findInvalidConstValue(arr) {
+  for (const row of arr) {
+    if (!(row.children && row.children.length > 0)) {
+      const error = constantValueError(row.value);
+      if (error) return { key: (row.key || '').trim(), error };
+    }
+    if (row.children && row.children.length > 0) {
+      const invalid = findInvalidConstValue(row.children);
+      if (invalid) return invalid;
+    }
+  }
+  return null;
+}
+
 function applyEditConstants() {
   const valid = validateConstKeys(editConsts.value);
   if (valid === false) { toast.warning(t('designer.constantKeyRequired')); return; }
   if (valid === 'duplicate') { toast.warning(t('designer.constantExists')); return; }
+  const invalid = findInvalidConstValue(editConsts.value);
+  if (invalid) { toast.warning(t('designer.constantValueInvalid', invalid)); return; }
   constants.value = YAML.stringify(arrayToConstants(trimConstKeys(editConsts.value)));
   showEditConstants.value = false;
 }
@@ -4036,7 +4059,7 @@ onBeforeUnmount(() => {
             </select>
           </div>
           <BsInput :isFloating="false" v-model="newConstKey" :label="t('settings.settingsPage.key')" icon="tag" placeholder="CONSTANT_NAME" class="mb-3" />
-          <BsInput :isFloating="false" type="textarea" :rows="2" v-model="newConstValue" :label="t('settings.settingsPage.value')" icon="pen" placeholder='value or {"json": true}' />
+          <BsInput :isFloating="false" type="textarea" :rows="3" v-model="newConstValue" :label="t('settings.settingsPage.value')" icon="pen" :placeholder="t('settings.settingsPage.constantValuePlaceholder')" />
         </template>
         <template #footer>
           <BsButton icon="plus" @click="doAddConstant()">{{ t('designer.addConstant') }}</BsButton>
@@ -4061,7 +4084,7 @@ onBeforeUnmount(() => {
               </template>
               <template v-else>
                 <label v-if="idx === 0 || flatEditConsts[idx - 1].depth !== entry.depth" class="form-label fw-bold">{{ t('settings.settingsPage.value') }}</label>
-                <textarea class="form-control" :rows="entry.row.value.includes('\n') ? 3 : 1" v-model="entry.row.value"></textarea>
+                <textarea class="form-control" :rows="constantValueRows(entry.row.value)" v-model="entry.row.value" :placeholder="t('settings.settingsPage.constantValuePlaceholder')"></textarea>
               </template>
             </div>
             <div class="d-flex gap-2 flex-shrink-0" style="margin-bottom: 1px;">

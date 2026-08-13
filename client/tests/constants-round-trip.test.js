@@ -14,6 +14,9 @@ import {
   constantsToArray,
   arrayToConstants,
   coerceConstantValue,
+  constantValueDisplay,
+  constantValueError,
+  constantValueRows,
   flattenConstants,
 } from '@/config/constants';
 
@@ -101,6 +104,112 @@ describe('value coercion', () => {
     expect(coerceConstantValue('{"a":1}')).toEqual({ a: 1 });
     expect(coerceConstantValue('[1,2]')).toEqual([1, 2]);
     expect(coerceConstantValue('{not json')).toBe('{not json');
+  });
+});
+
+// A constant is not only a key/value pair : config.yaml is yaml, so a value can be a
+// list or a nested object, and forms use those (a list of servers behind $(SERVERS), a
+// list of objects feeding an enum). The editors only ever parsed JSON, so a yaml list
+// typed into the box was stored as its own SOURCE TEXT - the config saved, the constant
+// resolved, and the form got the string "- one\n- two" instead of two items.
+describe('structured values', () => {
+  it('reads a block list', () => {
+    expect(coerceConstantValue('- one\n- two')).toEqual(['one', 'two']);
+  });
+
+  it('reads a list of objects', () => {
+    expect(coerceConstantValue('- name: a\n  id: 1\n- name: b\n  id: 2'))
+      .toEqual([{ name: 'a', id: 1 }, { name: 'b', id: 2 }]);
+  });
+
+  it('reads a block map, which the tree then shows as subkeys', () => {
+    expect(coerceConstantValue('host: srv1\nport: 8080')).toEqual({ host: 'srv1', port: 8080 });
+  });
+
+  it('reads yaml flow style, not only json', () => {
+    // {a: 1} is not json : JSON.parse threw and the whole thing was kept as a string
+    expect(coerceConstantValue('{a: 1}')).toEqual({ a: 1 });
+    expect(coerceConstantValue('[one, two]')).toEqual(['one', 'two']);
+  });
+
+  it('still reads json, which is what the box accepted before', () => {
+    expect(coerceConstantValue('{"a":1}')).toEqual({ a: 1 });
+    expect(coerceConstantValue('[1,2]')).toEqual([1, 2]);
+  });
+
+  it('keeps a multi-line STRING as it was typed', () => {
+    // yaml folds this into one line, and taking that would rewrite the value : only a
+    // list or a map is taken from the parse
+    const text = 'first line\nsecond line';
+    expect(coerceConstantValue(text)).toBe(text);
+  });
+
+  it('keeps a single line that merely contains a colon', () => {
+    expect(coerceConstantValue('note: not a map')).toBe('note: not a map');
+  });
+
+  it('round-trips a list through the editor untouched', () => {
+    const original = { SERVERS: ['srv1', 'srv2'], MATRIX: [{ name: 'a', tags: ['x'] }] };
+    expect(arrayToConstants(constantsToArray(original))).toEqual(original);
+  });
+
+  it('round-trips a list that WAS edited, through display and back', () => {
+    const rows = constantsToArray({ SERVERS: ['srv1', 'srv2'] });
+    // the display is what sits in the box : re-reading it must give the list back
+    expect(coerceConstantValue(rows[0].value)).toEqual(['srv1', 'srv2']);
+    rows[0].value += '\n- srv3';
+    expect(arrayToConstants(rows).SERVERS).toEqual(['srv1', 'srv2', 'srv3']);
+  });
+
+  it('shows a list as yaml, not as one line of json', () => {
+    expect(constantValueDisplay(['srv1', 'srv2'])).toBe('- srv1\n- srv2');
+    expect(constantValueDisplay([])).toBe('[]');
+    // a map is still empty : the tree renders it as subkey rows
+    expect(constantValueDisplay({ a: 1 })).toBe('');
+  });
+});
+
+// A broken list stored as its own text is the failure this prevents : it saves, it
+// resolves, and it is a string. The editors refuse the save and name the key instead.
+describe('reporting an unreadable value', () => {
+  it('reports yaml that cannot be parsed', () => {
+    expect(constantValueError('- a\n- b\n  c: 1')).toBeTruthy();   // indentation
+    expect(constantValueError('[1, 2')).toBeTruthy();              // never closed
+    expect(constantValueError('{not: yaml: at all}')).toBeTruthy();
+  });
+
+  it('cannot catch yaml that is valid but not what was meant', () => {
+    // '- one\n - two' is a LIST OF ONE : yaml folds the indented line into the first
+    // item. Nothing can flag that, which is the argument for showing the value back as
+    // yaml after a save - the row then reads as what was actually stored.
+    expect(constantValueError('- one\n - two\n- three')).toBe(null);
+    expect(coerceConstantValue('- one\n - two\n- three')).toEqual(['one - two', 'three']);
+  });
+
+  it('is silent about anything that is simply a string', () => {
+    for (const s of ['hello', '007', '1.10', 'note: not a map', 'first\nsecond']) {
+      expect(constantValueError(s), `${s} is a value, not an error`).toBe(null);
+    }
+  });
+
+  it('is silent about a value it can read', () => {
+    expect(constantValueError('- one\n- two')).toBe(null);
+    expect(constantValueError('{"a":1}')).toBe(null);
+    expect(constantValueError('')).toBe(null);
+  });
+});
+
+describe('the value box height', () => {
+  it('stays a single line for a plain value, so it reads as an input', () => {
+    expect(constantValueRows('hello')).toBe(1);
+    expect(constantValueRows('')).toBe(1);
+    expect(constantValueRows(undefined)).toBe(1);
+  });
+
+  it('grows to fit a structure, but not without limit', () => {
+    expect(constantValueRows('- a\n- b')).toBe(3);
+    expect(constantValueRows(Array.from({ length: 6 }, (_, i) => `- ${i}`).join('\n'))).toBe(6);
+    expect(constantValueRows(Array.from({ length: 40 }, (_, i) => `- ${i}`).join('\n'))).toBe(12);
   });
 });
 
