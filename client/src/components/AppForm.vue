@@ -1417,21 +1417,17 @@ function replacePlaceholderInString(value, ignoreIncomplete = false, mode = 'raw
                 fieldvalue = "__null__"   // catch null values
             }
             if (mode === 'expression' && fieldvalue !== "__undefined__" && fieldvalue !== "__null__") {
-                // A JS literal, replacing any quotes that wrapped the placeholder. JSON
-                // keeps a real number a number, so `$(count) + 1` still adds. The
-                // __undefined__/__null__ sentinels stay on the raw path because the
+                // An expression is JS source, so the substitution depends on where the
+                // placeholder sits : quotes that wrap it are replaced along with it by a JS
+                // literal (an apostrophe in the value cannot break out), a placeholder inside
+                // a longer string is escaped and spliced in as text (a JS literal there
+                // injected its own quotes into the middle of the string), and outside a
+                // string a literal keeps a number a number so `$(count) + 1` still adds.
+                // The __undefined__/__null__ sentinels stay on the raw path because the
                 // post-processing below strips their quotes by string match.
                 // isObjectLiteral : fieldvalue is already valid JS/JSON source (array/object) -
                 // stringifying it again would wrap it as a quoted string instead of splicing it in
-                const literal = isObjectLiteral ? fieldvalue : JSON.stringify(fieldvalue)
-                const escaped = foundmatch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-                // a FUNCTION replacement, so the value is inserted verbatim. As a string it
-                // goes through the special replacement patterns : a field containing $& was
-                // replaced by the placeholder text itself, $` and $' by the surrounding
-                // text, and $1 by a capture group - silently corrupting the expression.
-                // (the \\$& two lines up is the opposite case and is deliberate : that one
-                // IS a replacement pattern, escaping the regex metacharacter it matched.)
-                value = value?.replace(new RegExp(`'${escaped}'|"${escaped}"|${escaped}`), () => literal)
+                value = Helpers.substituteExpressionPlaceholder(value, foundmatch, fieldvalue, isObjectLiteral)
             } else {
                 fieldvalue = stringifyValue(fieldvalue)
                 // exactly what was substituted here, so the server substituting the same
