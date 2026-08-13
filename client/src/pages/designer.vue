@@ -17,6 +17,7 @@ import { availableIcons } from "@/config/icons";
 import { editorStyle } from "@/config/editorStyle";
 import { authProviders, roleOptionKeys, roleOptionDefaults, roleOptionLabel as roleOptionLabelFor, roleToEditable, serializeRole } from "@/config/roles";
 import { coerceConstantValue, constantValueError, constantValueRows, constantsToArray, arrayToConstants, flattenConstants } from "@/config/constants";
+import { isDefaultCategory, flattenCategories, canMoveUp, canMoveDown, canIndent, canOutdent, moveCategoryUp, moveCategoryDown, indentCategory, outdentCategory, movedCategoryPaths } from "@/config/categories";
 
 dayjs.extend(relativeTime);
 
@@ -481,26 +482,35 @@ function cloneCats(cats, path = []) {
   });
 }
 
-function flattenEditCats(cats, depth = 0) {
-  const result = [];
-  for (const cat of cats) {
-    result.push({ cat, depth });
-    if (cat.items && cat.items.length > 0) {
-      result.push(...flattenEditCats(cat.items, depth + 1));
-    }
-  }
-  return result;
+const flatEditCats = computed(() => flattenCategories(editCats.value));
+
+// Reorganizing the tree : nesting could be built but never changed, so moving a
+// category under another one meant deleting it and typing the subtree back.
+// The icon picker is keyed on a FLAT index, which every one of these shifts -
+// it would end up writing into a different category (same reason as
+// editCatRemove).
+function editCatMove(op, cat) {
+  if (editCatIconIdx.value !== null) editCatIconIdx.value = null;
+  op(editCats.value, cat);
 }
 
-const flatEditCats = computed(() => flattenEditCats(editCats.value));
+// Paths that the edit has moved or renamed away. A form points at a category by
+// path, so those forms stop appearing under it - said out loud rather than
+// refused, because reorganizing on purpose is the normal case.
+const editCatMovedPaths = computed(() => {
+  let before;
+  try { before = YAML.parse(categories.value) || []; } catch { before = []; }
+  if (!Array.isArray(before)) before = [];
+  return movedCategoryPaths(before, editCats.value);
+});
 
 // base_schema.json pins one entry : `categories` must CONTAIN exactly
 // {name: Default, icon: bars}. Renaming that row, restyling it, deleting it or
 // giving it subcategories makes EVERY save fail on a raw schema error, so the
 // row is locked here the same way the settings categories page locks it
-// (pages/admin/categories.vue, isDefaultCategory).
+// (config/categories.js, isDefaultCategory - which the move rules also apply).
 function isDefaultEditCat(cat, depth) {
-  return depth === 0 && cat.name === 'Default' && cat.icon === 'bars';
+  return isDefaultCategory(cat, depth);
 }
 
 function openEditCategories() {
@@ -3879,6 +3889,11 @@ onBeforeUnmount(() => {
         <template #title> {{ t('designer.editCategories') }} </template>
         <template #default>
           <div v-if="editCats.length === 0" class="text-muted text-center py-3">{{ t('designer.noCategories') }}</div>
+          <!-- a form references a category by its PATH, so a move or a rename leaves
+               those forms pointing at something that is no longer there -->
+          <div v-if="editCatMovedPaths.length > 0" class="alert alert-warning py-2" role="alert">
+            {{ t('settings.settingsPage.categoryPathsChanged', { paths: editCatMovedPaths.join(', ') }) }}
+          </div>
           <div v-for="(row, idx) in flatEditCats" :key="'editcat-' + idx" class="d-flex align-items-end gap-2 mb-2" :style="{ paddingLeft: row.depth * 1 + 'rem' }">
             <FaIcon v-if="row.depth > 0" icon="level-up-alt" class="text-muted fa-rotate-90 flex-shrink-0" style="font-size: 0.75rem; margin-bottom: 0.75rem;" />
             <div class="flex-shrink-0">
@@ -3899,6 +3914,20 @@ onBeforeUnmount(() => {
             <!-- the schema pins the Default category : no rename, no restyle, no
                  delete and no subcategories (same rule as the settings page) -->
             <template v-if="!isDefaultEditCat(row.cat, row.depth)">
+              <!-- reorganize : indent makes the row above the parent, outdent lifts it
+                   back out. Greyed instead of hidden so the row does not reshuffle. -->
+              <span :role="canMoveUp(editCats, row.cat) ? 'button' : undefined" class="d-flex align-items-center justify-content-center flex-shrink-0 rounded border" :class="canMoveUp(editCats, row.cat) ? 'border-secondary' : 'border-secondary-subtle opacity-50'" style="width: 2.5rem; height: calc(2.25rem + 2px);" @click="canMoveUp(editCats, row.cat) && editCatMove(moveCategoryUp, row.cat)" :title="t('designer.moveUp')">
+                <font-awesome-icon icon="chevron-up" style="color: var(--bs-secondary);" />
+              </span>
+              <span :role="canMoveDown(editCats, row.cat) ? 'button' : undefined" class="d-flex align-items-center justify-content-center flex-shrink-0 rounded border" :class="canMoveDown(editCats, row.cat) ? 'border-secondary' : 'border-secondary-subtle opacity-50'" style="width: 2.5rem; height: calc(2.25rem + 2px);" @click="canMoveDown(editCats, row.cat) && editCatMove(moveCategoryDown, row.cat)" :title="t('designer.moveDown')">
+                <font-awesome-icon icon="chevron-down" style="color: var(--bs-secondary);" />
+              </span>
+              <span :role="canIndent(editCats, row.cat) ? 'button' : undefined" class="d-flex align-items-center justify-content-center flex-shrink-0 rounded border" :class="canIndent(editCats, row.cat) ? 'border-secondary' : 'border-secondary-subtle opacity-50'" style="width: 2.5rem; height: calc(2.25rem + 2px);" @click="canIndent(editCats, row.cat) && editCatMove(indentCategory, row.cat)" :title="t('settings.settingsPage.indentCategory')">
+                <font-awesome-icon icon="indent" style="color: var(--bs-secondary);" />
+              </span>
+              <span :role="canOutdent(editCats, row.cat) ? 'button' : undefined" class="d-flex align-items-center justify-content-center flex-shrink-0 rounded border" :class="canOutdent(editCats, row.cat) ? 'border-secondary' : 'border-secondary-subtle opacity-50'" style="width: 2.5rem; height: calc(2.25rem + 2px);" @click="canOutdent(editCats, row.cat) && editCatMove(outdentCategory, row.cat)" :title="t('settings.settingsPage.outdentCategory')">
+                <font-awesome-icon icon="outdent" style="color: var(--bs-secondary);" />
+              </span>
               <span role="button" class="d-flex align-items-center justify-content-center flex-shrink-0 rounded border border-secondary" style="width: 2.5rem; height: calc(2.25rem + 2px);" @click="editCatAddSub(row.cat)" :title="t('designer.addSubcategory')">
                 <font-awesome-icon icon="plus" style="color: var(--bs-secondary);" />
               </span>
