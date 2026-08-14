@@ -61,16 +61,28 @@ describe("the client's placeholder substitution inserts values verbatim", () => 
     assert.ok(fn.includes("stringifyValue"), "should be the substitution branch");
   });
 
-  test("the expression branch uses a function replacement", () => {
-    assert.match(fn, /value\?\.replace\(new RegExp\([^)]*\),\s*\(\)\s*=>\s*literal\)/);
+  test("the expression branch delegates to the helper", () => {
+    // what it does with the value depends on where the placeholder sits (inside a string
+    // literal, wrapped in quotes, or bare) - client/tests/expression-placeholders.test.js
+    // covers that; here we only pin that this branch does not paste the value in itself
+    assert.match(fn, /value\s*=\s*Helpers\.substituteExpressionPlaceholder\(/);
+    assert.doesNotMatch(fn.slice(0, fn.indexOf("} else {")), /\.replace\(/,
+      "the expression branch must not paste a value in through String.replace");
   });
 
   test("the plain branch uses a function replacement", () => {
     assert.match(fn, /value\?\.replace\(foundmatch,\s*\(\)\s*=>\s*fieldvalue\)/);
   });
 
-  test("the regex-escape above it still uses $& deliberately", () => {
-    // that one IS a replacement pattern and must not be "fixed" along with the others
-    assert.match(fn, /replace\(\/\[\.\*\+\?\^\$\{\}\(\)\|\[\\\]\\\\\]\/g, '\\\\\$&'\)/);
+  test("the helper splices by index rather than by replacement", () => {
+    // slice concatenation cannot re-interpret $& , $1 or $` in a value at all, which is
+    // why the regex the expression branch used to build is gone
+    const helpers = readFileSync(path.join(here, "../../client/src/lib/Helpers.js"), "utf8");
+    const start = helpers.indexOf("substituteExpressionPlaceholder(");
+    assert.ok(start > -1, "helper not found, so this assertion would be vacuous");
+    const body = helpers.slice(start, helpers.indexOf("quoteContextAt(expression, index)", start));
+    assert.match(body, /expression\.slice\(0, at\)\s*\+/);
+    assert.doesNotMatch(body, /expression\.replace\(/,
+      "a value must never be handed to String.replace as a string replacement");
   });
 });

@@ -584,6 +584,81 @@ const Helpers = {
       return `$(${match})` // return original
     }
   },  
+  /**
+   * Splice a resolved value into an expression, at the FIRST occurrence of its placeholder.
+   *
+   * An expression is JS source, so where the placeholder sits decides how the value has to
+   * be written - and getting that wrong is silent, because the result is still valid JS:
+   *
+   *   fn.fnLs('$(dir)')            the quotes wrap the placeholder -> they are replaced
+   *                                together with it by a JS literal, so a value carrying an
+   *                                apostrophe ("O'Brien") cannot break out of the string
+   *   fn.fnLs('$(dir)/vars')       the placeholder is INSIDE a longer string -> the value is
+   *                                escaped for that quote character and spliced in as text.
+   *                                A JS literal here injected its own quotes into the middle
+   *                                of the string : '$(dir)/vars' with /app/persistent became
+   *                                '"/app/persistent"/vars', which is what ENOENT'd on every
+   *                                path and url built this way (the documented AWX examples
+   *                                in docs/faq.md are all of this shape).
+   *   $(count) + 1                 no string at all -> a JS literal, so a number stays a
+   *                                number and still adds instead of concatenating.
+   *
+   * @param {string} expression   the expression still holding the placeholder
+   * @param {string} placeholder  the literal placeholder text, e.g. "$(dir)"
+   * @param {*} value             the resolved value, or its JS source when isSource is set
+   * @param {boolean} isSource    value is already JS/JSON source (an array/object literal)
+   *                              and must be spliced in as-is rather than stringified
+   * @returns {string} the expression with that one occurrence substituted
+   */
+  substituteExpressionPlaceholder(expression, placeholder, value, isSource = false) {
+    const at = expression.indexOf(placeholder);
+    if (at < 0) return expression;
+    const end = at + placeholder.length;
+    const quote = this.quoteContextAt(expression, at);
+    // Everything below concatenates slices : a value containing $& or $1 must never be read
+    // as a replacement pattern, which is what String.replace with a string replacement does.
+    if (!quote) {
+      const literal = isSource ? value : JSON.stringify(value);
+      return expression.slice(0, at) + literal + expression.slice(end);
+    }
+    if (expression[at - 1] === quote && expression[end] === quote) {
+      const literal = isSource ? value : JSON.stringify(value);
+      return expression.slice(0, at - 1) + literal + expression.slice(end + 1);
+    }
+    // JSON escapes \ , " and the control characters ; the enclosing quote is added on top,
+    // and a real newline becoming \n also keeps the expression on one line, which the
+    // server refuses outright.
+    // isSource : the JSON text of an array/object is spliced in as text too, so its own
+    // quotes get escaped for the string it lands in and it reads back identically.
+    const body = JSON.stringify(String(value)).slice(1, -1);
+    const text = quote === "'" ? body.replace(/'/g, "\\'") : body;
+    return expression.slice(0, at) + text + expression.slice(end);
+  },
+
+  /**
+   * Which quote character, if any, encloses position `index` of a JS expression.
+   *
+   * Only ' and " are string delimiters here : a backtick is refused outright by the server
+   * expression sanitizer, so a template literal never reaches evaluation anyway.
+   *
+   * @param {string} expression
+   * @param {number} index
+   * @returns {string|null} the enclosing quote character, or null outside any string
+   */
+  quoteContextAt(expression, index) {
+    let quote = null;
+    for (let i = 0; i < index; i++) {
+      const c = expression[i];
+      if (quote) {
+        if (c === '\\') { i++; continue; }   // an escaped character, quote included
+        if (c === quote) quote = null;
+      } else if (c === "'" || c === '"') {
+        quote = c;
+      }
+    }
+    return quote;
+  },
+
   forceFileDownload(response) {
     const url = window.URL.createObjectURL(new Blob([response.data]))
     const link = document.createElement('a')
