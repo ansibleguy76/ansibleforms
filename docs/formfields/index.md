@@ -40,7 +40,12 @@ Browse the formfield types using the navigation sidebar, or refer to the table b
 {% for type in formfile.choices %}
     <tr>
       <td><strong><a href="/formfields/{{ type.name }}.html">{{ type.name }}</a></strong></td>
-      <td>{{ type.description }}</td>
+      <!-- markdownify, not the raw value : a description carries markdown (`code`
+           spans) AND html-looking text. The `html` type documents that `<script>` is
+           stripped, and unfiltered that opened a real script element which swallowed
+           every row after it - the page stopped at `html`, hiding 10 of the 14 types.
+           Kramdown escapes it inside the code span. -->
+      <td>{{ type.description | markdownify }}</td>
     </tr>
 {% endfor %}
   </tbody>
