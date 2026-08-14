@@ -5,7 +5,7 @@ import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 import { useFormsConfig } from '@/composables/useFormsConfig';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
-import { flattenConstants } from '@/config/constants';
+import { flattenConstants, constantValueError, constantValueRows } from '@/config/constants';
 
 const { t } = useI18n();
 const authenticated = ref(false);
@@ -21,6 +21,23 @@ const flatConstants = computed(() => flattenConstants(constants.value));
 
 function isParent(row) {
   return row.children && row.children.length > 0;
+}
+
+// A value that is meant to be a list or a map but cannot be parsed would be
+// stored as its own source text, which reads back as a string : refuse the save
+// and say which key, rather than write something that silently is not a list.
+function findInvalidConstantValue(arr) {
+  for (const row of arr) {
+    if (!(row.children && row.children.length > 0)) {
+      const error = constantValueError(row.value);
+      if (error) return { key: (row.key || '').trim(), error };
+    }
+    if (row.children && row.children.length > 0) {
+      const invalid = findInvalidConstantValue(row.children);
+      if (invalid) return invalid;
+    }
+  }
+  return null;
 }
 
 function addConstant() {
@@ -86,6 +103,11 @@ async function saveConstants() {
     toast.warning(t('settings.settingsPage.duplicateConstantKey', { key: duplicate }));
     return;
   }
+  const invalid = findInvalidConstantValue(constants.value);
+  if (invalid) {
+    toast.warning(t('settings.settingsPage.constantValueInvalid', invalid));
+    return;
+  }
   await save(t('settings.settingsPage.constants'));
 }
 
@@ -127,7 +149,10 @@ onMounted(async () => {
                     </div>
                   </td>
                   <td>
-                    <input v-if="!isParent(entry.row)" class="form-control form-control-sm" v-model="entry.row.value" :disabled="readOnly" />
+                    <!-- a textarea, not an input : a list is written as yaml, which
+                         needs more than one line. It renders as a single row until the
+                         value actually has one, so a plain constant looks unchanged. -->
+                    <textarea v-if="!isParent(entry.row)" class="form-control form-control-sm" :rows="constantValueRows(entry.row.value)" v-model="entry.row.value" :disabled="readOnly" :placeholder="t('settings.settingsPage.constantValuePlaceholder')"></textarea>
                     <span v-else class="text-muted fst-italic small">{{ entry.row.children.length }} {{ entry.row.children.length === 1 ? t('settings.settingsPage.subkey') : t('settings.settingsPage.subkeys') }}</span>
                   </td>
                   <td class="text-center">
