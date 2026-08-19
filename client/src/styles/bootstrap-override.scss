@@ -234,6 +234,19 @@
 .col-action {
   width: 80px;
 }
+// The categories table carries six controls (move up/down, indent/outdent, add
+// sub, delete) instead of two. `table-layout: fixed` above means a cell never
+// grows to fit its content, so a column too narrow for them does not clip - the
+// buttons spill LEFT, over the icon dropdown, and past the table border.
+//
+// In REM deliberately, unlike .col-action above. A button's size is rem based,
+// so it grows with the browser's base font size (18px and 20px defaults are
+// common) while a px column does not : 230px held six buttons on a 16px root
+// and was 20px short of them on a 20px one. This tracks whatever they measure.
+.col-action-move {
+  width: 14rem;
+  white-space: nowrap;
+}
 .empty-state {
   display: flex;
   flex-direction: column;
