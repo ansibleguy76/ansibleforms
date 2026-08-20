@@ -4030,12 +4030,12 @@
             group: data
             version: 6.1.4
             allowed: A valid jq expression
-            with_types: expression
+            with_types: expression, enum
             short: Transform database query results with jq
             description: |
-              Apply a jq expression to transform the returned database result.  
-              This only works for expression type in combination with `query` and `dbConfig` properties.  
-              The jq expression is applied after the database query executes, allowing you to filter, map, or reshape the result data.
+              Apply a jq expression to transform the result of a `query`+`dbConfig` or a remote `expression`.  
+              jq is a post-processor applied server-side, after that remote call returns, to filter, map or reshape the result.  
+              It only runs for remote calls : a local expression (`runLocal: true`) is evaluated in the browser and never reaches the server, so `jq` is ignored there.
             examples:
             - name: extract specific fields from query result
               code: |
