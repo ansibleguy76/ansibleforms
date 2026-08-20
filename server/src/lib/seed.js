@@ -16,10 +16,12 @@
 // the right outcome, but it overwrites what somebody typed, so it is logged as a
 // warning and recorded in the audit entry rather than happening silently.
 //
-// An invalid seed is FATAL on purpose. The alternative - carry on with the previous
-// configuration - means an instance whose behaviour no longer matches the manifest
-// that is supposed to describe it, and nothing says so out loud.
+// An invalid seed is FATAL on purpose AT BOOT. The alternative - come up on the previous
+// configuration - means an instance whose behaviour no longer matches the manifest that is
+// supposed to describe it, and nothing says so out loud. A RELOAD of an already running
+// instance is the opposite : see reloadConfigSeed.
 import fs from "fs";
+import { createHash } from "node:crypto";
 import path from "path";
 import yaml from "yaml";
 import logger from "./logger.js";
@@ -323,7 +325,8 @@ export async function applyConfigSeed({ schemaIsReady = true } = {}) {
   }
 
   logger.notice(`Applying config seed from ${seedPath}`);
-  let doc = yaml.parse(fs.readFileSync(seedPath, "utf8"));
+  const raw = fs.readFileSync(seedPath, "utf8");
+  let doc = yaml.parse(raw);
   // an empty file is a valid seed that declares nothing : it releases everything
   if (doc === null || doc === undefined) doc = {};
   if (typeof doc !== "object" || Array.isArray(doc)) {
@@ -345,8 +348,113 @@ export async function applyConfigSeed({ schemaIsReady = true } = {}) {
     throw e;
   }
 
+  // The hash of what was ACTUALLY applied, taken from the bytes this run read rather than
+  // from whatever the poller looked at a moment earlier. A file rewritten between the two
+  // is then simply applied on this pass instead of being remembered as already applied.
+  lastApplied = { hash: hashOf(raw), at: new Date().toISOString() };
+  lastFailure = { hash: null, error: null, at: null };
+
   await logApply(seedPath, summary, 'success');
   return summary;
+}
+
+// ---------------------------------------------------------------------------------
+// Live reload.
+//
+// The seed used to be the one file read exactly once. Everything else that comes from
+// disk is already refreshed under the running process : repositories have a cron pull,
+// config.yaml has PUT /settings/importConfig, the TLS certificate reloads itself. And
+// health.model's configSeedCheck could already SEE the file change, but the only thing
+// it could say about it was that the NEXT RESTART would refuse to start.
+//
+// Re-applying instead closes that gap. It matters most where the file is not edited by
+// hand at all : on kubernetes a ConfigMap updated from git is remounted under the running
+// pod within about a minute, so a change reaches the instance without rolling it - which
+// is the whole point of declaring the configuration in git in the first place.
+let lastApplied = { hash: null, at: null };
+let lastFailure = { hash: null, error: null, at: null };
+
+function hashOf(raw) {
+  return createHash("sha256").update(raw).digest("hex");
+}
+
+/**
+ * What the last apply and the last failed reload did, for the Status page. Deliberately
+ * carries no part of the file itself : almost every value in it is a secret.
+ */
+export function getSeedState() {
+  return {
+    path: appConfig.configSeedPath || null,
+    appliedAt: lastApplied.at,
+    failure: lastFailure.at ? { at: lastFailure.at, error: lastFailure.error } : null,
+  };
+}
+
+// Reset between tests. Not for production use : nothing in the application has any reason
+// to forget what it has applied.
+export function _resetSeedState() {
+  lastApplied = { hash: null, at: null };
+  lastFailure = { hash: null, error: null, at: null };
+}
+
+function recordFailure(hash, err, trigger) {
+  const error = err.message || String(err);
+  lastFailure = { hash, error, at: new Date().toISOString() };
+  logger.error(`Config seed reload (${trigger}) failed, keeping the configuration already in force : ${error}`);
+  return { status: "failed", error };
+}
+
+/**
+ * Re-apply the seed under a running process.
+ *
+ * NEVER fatal, which is the one way this differs from the boot path. Refusing to start is
+ * a safe failure - the old pod keeps serving under a rolling deployment and nothing has
+ * changed anywhere. Exiting an instance that is already up, because a file it watches was
+ * edited badly, would take the application down with no operator action at all - a typo in
+ * git would be enough. So a failed reload keeps the configuration already in force, says so
+ * in the log, and turns the Status page's seed row red.
+ *
+ * @param {object}  [opts]
+ * @param {boolean} [opts.force]   Apply even if the file is unchanged (the API and SIGHUP).
+ * @param {string}  [opts.trigger] Where the call came from, for the log line.
+ * @returns {Promise<object>} `{status}`, one of :
+ *   off       - CONFIG_SEED_PATH is not set, nothing to do
+ *   unchanged - byte for byte what was applied last
+ *   skipped   - broken, and unchanged since it last failed
+ *   applied   - re-applied, with the summary
+ *   failed    - threw ; the previous configuration is kept
+ */
+export async function reloadConfigSeed({ force = false, trigger = "poll" } = {}) {
+  const seedPath = appConfig.configSeedPath;
+  if (!seedPath) return { status: "off" };
+
+  let raw;
+  try {
+    raw = fs.readFileSync(seedPath, "utf8");
+  } catch (e) {
+    // A file that has gone missing is a failed reload like any other. The instance keeps
+    // running on what it already applied, which is exactly what the operator would want
+    // while a ConfigMap is being remounted underneath it.
+    return recordFailure(null, e, trigger);
+  }
+
+  const hash = hashOf(raw);
+  if (!force) {
+    if (hash === lastApplied.hash) return { status: "unchanged" };
+    // The same broken content as last time. Re-reading it every tick would write an
+    // identical error to the log for ever and could not end differently : the file has to
+    // change, or somebody has to ask for it explicitly, before another attempt is worth
+    // anything. The Status page keeps reporting it in the meantime, so it is not lost.
+    if (hash === lastFailure.hash) return { status: "skipped", error: lastFailure.error };
+  }
+
+  logger.notice(`Config seed re-apply triggered (${trigger})`);
+  try {
+    const summary = await applyConfigSeed();
+    return { status: "applied", summary };
+  } catch (e) {
+    return recordFailure(hash, e, trigger);
+  }
 }
 
 async function applySections(doc, summary) {
@@ -415,4 +523,4 @@ async function logApply(seedPath, summary, outcome) {
 }
 
 export { listSections };
-export default { applyConfigSeed };
+export default { applyConfigSeed, reloadConfigSeed, getSeedState };

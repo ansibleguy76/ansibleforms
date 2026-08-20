@@ -94,6 +94,8 @@ export default {
     failedPullRepository: "Kan repository niet pullen",
     failedSyncRepository: "Repository synchroniseren mislukt",
     noFormsRepositories: "Geen forms repositories geconfigureerd",
+    failedApplyConfigSeed: "Kan de configuratie-seed niet toepassen",
+    noConfigSeed: "Er is geen configuratie-seed geconfigureerd (CONFIG_SEED_PATH is leeg)",
     failedFindSsh: "Kan SSH sleutel niet vinden",
     failedUpdateSsh: "Kan SSH sleutel niet bijwerken",
     failedFindLdap: "Kan LDAP niet vinden",

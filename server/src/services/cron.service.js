@@ -10,6 +10,9 @@ import Schedule from '../models/schedule.model.js';
 // imported rather than injected like Job/Token/BackupModel : audit.model only pulls
 // in the db pool and the logger, so there is no cycle to avoid here
 import Audit from '../models/audit.model.js';
+// same reasoning as Audit : lib/seed pulls in the models and the logger, and nothing it
+// touches imports this service back, so there is no cycle to avoid by injecting it
+import { reloadConfigSeed } from '../lib/seed.js';
 import logConfig from '../../config/log.config.js';
 import dayjs from 'dayjs';
 
@@ -534,6 +537,34 @@ class CronService {
     });
     this.jobs.system.set('storedJobsCleanup', storedJobsCleanupTask);
     logger.info('Initialized stored jobs cleanup (daily at 4:00 AM)');
+
+    // 5. Config seed reload - re-applies CONFIG_SEED_PATH when its content changes
+    //
+    // Registered here rather than as a watcher of its own so it stops with everything
+    // else, and so the seed is refreshed by the same machinery that already refreshes
+    // the repositories. `interval` is croner's own throttle : the pattern fires every
+    // second and the option holds each run back until the interval has passed, which is
+    // how an arbitrary number of seconds is expressed - a `*/n` pattern silently breaks
+    // for anything above 59.
+    const seedReloadSeconds = appConfig.configSeedReloadSeconds;
+    if (appConfig.configSeedPath && seedReloadSeconds > 0) {
+      const configSeedTask = new Cron('* * * * * *', {
+        timezone: this.timezone,
+        interval: seedReloadSeconds,
+        // an apply that runs long (a seeded repository being cloned) must not have a
+        // second one started on top of it
+        protect: true
+      }, async () => {
+        // reloadConfigSeed handles its own failures - it must never throw into the
+        // scheduler, because a rejection here would leave the tick counted and the
+        // reason logged by croner rather than by the seed
+        await reloadConfigSeed({ trigger: 'poll' });
+      });
+      this.jobs.system.set('configSeedReload', configSeedTask);
+      logger.info(`Initialized config seed reload (every ${seedReloadSeconds}s)`);
+    } else if (appConfig.configSeedPath) {
+      logger.info('Config seed reload is off (CONFIG_SEED_RELOAD_SECONDS=0), the seed applies at startup only');
+    }
 
     logger.info('System maintenance tasks initialization complete');
   }
