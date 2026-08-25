@@ -13,6 +13,36 @@ import { friendlyPullError, configRepoFromPath } from "../lib/forms-git.js";
 class Repository extends CrudModel {
   static modelName = 'repositories';
 
+  // Every state write below (status, output, head) uses its own SQL rather than
+  // CrudModel.update, so nothing evicts the record CrudModel.findByName serves from
+  // the shared cache -- crud.config.js enables allowCache on this model, and the
+  // cache holds an entry for an hour.
+  //
+  // Left uncached-aware, GET /api/v2/repository/<name> keeps answering with the head
+  // from BEFORE a pull while GET /api/v2/repository, which never reads the cache,
+  // answers correctly. Anything polling the single record to learn whether a commit
+  // landed -- a CI job asking "is the instance on my commit yet?" -- therefore waits
+  // on a value that cannot change until the entry expires.
+  //
+  // delete() already had to evict by hand for the same reason; this keeps every other
+  // path honest, so a new raw write cannot reintroduce it.
+  static evictCache({ name, id } = {}) {
+    const cache = CrudModel.getCache(this.modelName);
+    if (!cache) return;
+    if (name === undefined && id === undefined) return cache.flushAll();
+    if (name !== undefined) cache.del(`name:${name}`);
+    if (id !== undefined) cache.del(`id:${id}`);
+  }
+
+  // Run a state write and evict what it invalidated. Pass the key the statement is
+  // scoped to; omit it when the statement can touch rows this caller cannot name,
+  // and the whole model cache is dropped instead.
+  static async writeState(sql, params = [], key) {
+    const res = await mysql.do(sql, params);
+    Repository.evictCache(key);
+    return res;
+  }
+
   // Override create to trigger clone after creation
   // opts carries { fromSeed:true } for the declarative config seed only
   static async create(data, opts = {}) {
@@ -27,7 +57,7 @@ class Repository extends CrudModel {
     Repository.clone(data.name).catch(async (e) => {
       logger.error(`Background clone of '${data.name}' failed : ${helpers.getError(e)}`)
       try {
-        await mysql.do("update AnsibleForms.`repositories` set output = ?, status = 'failed' where name = ?", [helpers.getError(e), data.name])
+        await Repository.writeState("update AnsibleForms.`repositories` set output = ?, status = 'failed' where name = ?", [helpers.getError(e), data.name], { name: data.name })
       } catch (e2) {
         logger.error(`...and the failure could not be recorded on the repository either : ${helpers.getError(e2)}`)
       }
@@ -60,7 +90,7 @@ class Repository extends CrudModel {
       // exists on disk. The repository then read as 'not cloned', every pull failed, and
       // seed.ensureRepositoryClones cloned it again, orphaning the moved tree for good.
       if (!opts.fromSeed) await CrudModel.assertNotManaged(this.modelName, repo.id);
-      const claim = await mysql.do("update AnsibleForms.`repositories` set status = 'running' where name = ? and COALESCE(status,'') <> 'running'", [name])
+      const claim = await Repository.writeState("update AnsibleForms.`repositories` set status = 'running' where name = ? and COALESCE(status,'') <> 'running'", [name], { name })
       if (!claim.affectedRows) {
         throw new Error(`Repository '${name}' not found or already running, try again later`)
       }
@@ -71,7 +101,7 @@ class Repository extends CrudModel {
         moved = Repo.rename(name, newName);
         const res = await super.update(this.modelName, data, repo.id, opts);
         // release the claim under the NEW name - the row carries it now
-        await mysql.do("update AnsibleForms.`repositories` set status = ? where name = ?", [repo.status ?? null, newName])
+        await Repository.writeState("update AnsibleForms.`repositories` set status = ? where name = ?", [repo.status ?? null, newName])
         return res;
       } catch (e) {
         // Put the tree back. The row keeps the old name from here on, so a tree left at
@@ -85,7 +115,7 @@ class Repository extends CrudModel {
             logger.error(`Repository '${name}' could not be renamed and its working tree could not be moved back : it is now at '${newName}' while the record still says '${name}'. Move it back by hand. (${helpers.getError(e2)})`)
           }
         }
-        await mysql.do("update AnsibleForms.`repositories` set status = ? where id = ?", [repo.status ?? null, repo.id])
+        await Repository.writeState("update AnsibleForms.`repositories` set status = ? where id = ?", [repo.status ?? null, repo.id])
         throw e;
       }
     }
@@ -113,7 +143,7 @@ class Repository extends CrudModel {
     // afterwards hits Repo.clone's "already exists, pulling instead" path, so the new
     // repository silently pulls from the OLD remote and reports success.
     // Claimed after assertNotManaged, so a refused delete never touches the status.
-    const claim = await mysql.do("update AnsibleForms.`repositories` set status = 'running' where name = ? and COALESCE(status,'') <> 'running'", [name])
+    const claim = await Repository.writeState("update AnsibleForms.`repositories` set status = 'running' where name = ? and COALESCE(status,'') <> 'running'", [name], { name })
     if (!claim.affectedRows) {
       throw new Error(`Repository '${name}' not found or already running, try again later`)
     }
@@ -123,19 +153,14 @@ class Repository extends CrudModel {
       await Repo.delete(name);
     } catch (e) {
       // release the claim, or a failed rm wedges the repo at 'running' for ever
-      await mysql.do("update AnsibleForms.`repositories` set output = ?, status = 'failed' where name = ?", [e.message, name])
+      await Repository.writeState("update AnsibleForms.`repositories` set output = ?, status = 'failed' where name = ?", [e.message, name], { name })
       throw e
     }
-    const res = await mysql.do("DELETE FROM AnsibleForms.`repositories` WHERE name = ?", [name]);
-    // This deletes with its own SQL, so it must evict what CrudModel.delete would have.
-    // findByName above populated `name:<name>` in the shared cache (TTL 1h), so without
-    // this GET /api/v2/repository/<name> kept answering 200 with a deleted repository.
-    const cache = CrudModel.getCache(this.modelName);
-    if (cache) {
-      cache.del(`name:${name}`);
-      if (repo?.id !== undefined) cache.del(`id:${repo.id}`);
-    }
-    return res;
+    // Deletes with its own SQL, so it must evict what CrudModel.delete would have:
+    // findByName above populated `name:<name>` in the shared cache, and without the
+    // eviction GET /api/v2/repository/<name> kept answering 200 with a deleted
+    // repository.
+    return await Repository.writeState("DELETE FROM AnsibleForms.`repositories` WHERE name = ?", [name], { name, id: repo?.id });
   }
 
   static async findById(id) {
@@ -167,7 +192,7 @@ class Repository extends CrudModel {
     logger.info(`Resetting repository ${name}`);
     // claim the repo BEFORE deleting the tree : a reset rm's the working tree,
     // which must not race a pull/sync running git on it (issue #414)
-    const claim = await mysql.do("update AnsibleForms.`repositories` set status = 'running' where name = ? and COALESCE(status,'') <> 'running'", [name])
+    const claim = await Repository.writeState("update AnsibleForms.`repositories` set status = 'running' where name = ? and COALESCE(status,'') <> 'running'", [name], { name })
     if (!claim.affectedRows) {
       throw new Error(`Repository '${name}' not found or already running, try again later`)
     }
@@ -176,7 +201,7 @@ class Repository extends CrudModel {
       await Repository.clone(name, true); // recreate it ; clone writes the final status
     } catch (e) {
       // release the claim so a delete failure doesn't wedge the repo at 'running'
-      await mysql.do("update AnsibleForms.`repositories` set output = ?, status = 'failed' where name = ?", [e.message, name])
+      await Repository.writeState("update AnsibleForms.`repositories` set output = ?, status = 'failed' where name = ?", [e.message, name], { name })
       throw e
     }
   }
@@ -449,7 +474,7 @@ class Repository extends CrudModel {
     if (!claimed) {
       // atomic check-and-set : a clone must not run git while a pull/sync/reset
       // is touching the same working tree
-      const claim = await mysql.do("update AnsibleForms.`repositories` set status = 'running' where name = ? and COALESCE(status,'') <> 'running'", [name])
+      const claim = await Repository.writeState("update AnsibleForms.`repositories` set status = 'running' where name = ? and COALESCE(status,'') <> 'running'", [name], { name })
       if (!claim.affectedRows) {
         throw new Error(`Repository '${name}' not found or already running, try again later`)
       }
@@ -468,7 +493,7 @@ class Repository extends CrudModel {
       status = "failed"
     }
     output = Repository.maskSecrets(output, repo) // never expose git credentials
-    await mysql.do("update AnsibleForms.`repositories` set output = ?,status = ? where name = ?", [output, status, name])
+    await Repository.writeState("update AnsibleForms.`repositories` set output = ?,status = ? where name = ?", [output, status, name], { name })
     if (status == "success") {
       // Repo.info runs `git rev-parse --short HEAD`, which exits 128 on a repository
       // whose remote is EMPTY - a case this model explicitly supports (see
@@ -478,7 +503,7 @@ class Repository extends CrudModel {
       // in the background.
       try {
         head = await Repo.info(name)
-        await mysql.do("update AnsibleForms.`repositories` set head = ? where name = ?", [head, name])
+        await Repository.writeState("update AnsibleForms.`repositories` set head = ? where name = ?", [head, name], { name })
       } catch (e) {
         logger.warning(`'${name}' succeeded but its HEAD could not be read (an empty repository has none) : ${helpers.getError(e)}`)
       }
@@ -489,7 +514,7 @@ class Repository extends CrudModel {
     var output, status, head
     // atomic check-and-set : a pull and a sync (or another pull) must not run
     // git on the same working tree at the same time (issue #414)
-    const claimed = await mysql.do("update AnsibleForms.`repositories` set status = 'running' where name = ? and COALESCE(status,'') <> 'running'", [name])
+    const claimed = await Repository.writeState("update AnsibleForms.`repositories` set status = 'running' where name = ? and COALESCE(status,'') <> 'running'", [name], { name })
     if (!claimed.affectedRows) {
       throw new Error(`Repository '${name}' not found or already running, try again later`)
     }
@@ -515,7 +540,7 @@ class Repository extends CrudModel {
     } else {
       output = Repository.maskSecrets(output, pullRepo) // never expose git credentials
     }
-    await mysql.do("update AnsibleForms.`repositories` set output = ?,status = ? where name = ?", [output, status, name])
+    await Repository.writeState("update AnsibleForms.`repositories` set output = ?,status = ? where name = ?", [output, status, name], { name })
     if (status == "success") {
       // Repo.info runs `git rev-parse --short HEAD`, which exits 128 on a repository
       // whose remote is EMPTY - a case this model explicitly supports (see
@@ -525,7 +550,7 @@ class Repository extends CrudModel {
       // in the background.
       try {
         head = await Repo.info(name)
-        await mysql.do("update AnsibleForms.`repositories` set head = ? where name = ?", [head, name])
+        await Repository.writeState("update AnsibleForms.`repositories` set head = ? where name = ?", [head, name], { name })
       } catch (e) {
         logger.warning(`'${name}' succeeded but its HEAD could not be read (an empty repository has none) : ${helpers.getError(e)}`)
       }
@@ -608,7 +633,7 @@ class Repository extends CrudModel {
   static async claimForWrite(name) {
     const rows = await mysql.do("SELECT status FROM AnsibleForms.`repositories` WHERE name = ?", [name])
     if (!rows.length) return undefined // not a tracked repo (e.g. the staging folder) : skip
-    const claim = await mysql.do("update AnsibleForms.`repositories` set status = 'running' where name = ? and COALESCE(status,'') <> 'running'", [name])
+    const claim = await Repository.writeState("update AnsibleForms.`repositories` set status = 'running' where name = ? and COALESCE(status,'') <> 'running'", [name], { name })
     if (!claim.affectedRows) {
       throw new Error(`Repository '${name}' is busy (a pull or sync is running), try again`)
     }
@@ -624,14 +649,14 @@ class Repository extends CrudModel {
   // guarded on status='running' so it only ever clears OUR own claim and never
   // overwrites a status another operation legitimately set afterwards
   static async releaseWrite(name, priorStatus) {
-    await mysql.do("update AnsibleForms.`repositories` set status = ? where name = ? and status = 'running'", [priorStatus ?? null, name])
+    await Repository.writeState("update AnsibleForms.`repositories` set status = ? where name = ? and status = 'running'", [priorStatus ?? null, name], { name })
   }
 
   // clear any repository left at status='running' by a process that died mid
   // pull/sync : the atomic claim (status<>'running') would otherwise wedge the
   // repo forever. Run once at startup, mirroring Job.abandon (issue #414)
   static async resetStaleLocks() {
-    const result = await mysql.do("update AnsibleForms.`repositories` set status = 'failed' where status = 'running'")
+    const result = await Repository.writeState("update AnsibleForms.`repositories` set status = 'failed' where status = 'running'", [])
     return result.affectedRows || 0
   }
 
@@ -691,7 +716,7 @@ class Repository extends CrudModel {
     var output, status, head, syncRepo = null
     // atomic check-and-set : refuse concurrent syncs of the same repository
     // (eg the settings page button while a designer push is in flight)
-    const claimed = await mysql.do("update AnsibleForms.`repositories` set status = 'running' where name = ? and COALESCE(status,'') <> 'running'", [name])
+    const claimed = await Repository.writeState("update AnsibleForms.`repositories` set status = 'running' where name = ? and COALESCE(status,'') <> 'running'", [name], { name })
     if (!claimed.affectedRows) {
       throw new Error(`Repository '${name}' not found or already running, try again later`)
     }
@@ -718,7 +743,7 @@ class Repository extends CrudModel {
       status = "failed"
     }
     output = Repository.maskSecrets(output, syncRepo) // never expose git credentials
-    await mysql.do("update AnsibleForms.`repositories` set output = ?,status = ? where name = ?", [output, status, name])
+    await Repository.writeState("update AnsibleForms.`repositories` set output = ?,status = ? where name = ?", [output, status, name], { name })
     if (status == "success") {
       // Repo.info runs `git rev-parse --short HEAD`, which exits 128 on a repository
       // whose remote is EMPTY - a case this model explicitly supports (see
@@ -728,7 +753,7 @@ class Repository extends CrudModel {
       // in the background.
       try {
         head = await Repo.info(name)
-        await mysql.do("update AnsibleForms.`repositories` set head = ? where name = ?", [head, name])
+        await Repository.writeState("update AnsibleForms.`repositories` set head = ? where name = ?", [head, name], { name })
       } catch (e) {
         logger.warning(`'${name}' succeeded but its HEAD could not be read (an empty repository has none) : ${helpers.getError(e)}`)
       }
