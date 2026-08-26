@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+-   `GET /api/v2/repository/<name>` kept answering with the `head` from before a pull for up to an hour. The repositories model is cached and `findByName` reads that cache, while the git operations wrote `status`, `output` and `head` with their own SQL and evicted nothing — so the single record disagreed with `GET /api/v2/repository` and with the database. Anything polling it to learn whether a commit had landed waited on a value that could not change
 -   Wizard didn't load varsFiles
 -   `target="_blank"` was stripped from links in `html` and `expression` fields, so they opened in the current tab and the form was lost (#480). `rel="noopener noreferrer"` is now forced on any link that opens a new tab
 -   Startup failed with `Failed to create the path for the log files` when `LOG_PATH`'s parent folder did not exist — the folder is now created recursively
