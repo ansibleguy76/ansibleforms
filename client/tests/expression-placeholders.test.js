@@ -75,6 +75,43 @@ describe('a placeholder inside a longer string', () => {
   });
 });
 
+describe('a source value that is really a string', () => {
+  // A DOTTED placeholder - $(ANSIBLE_FORMS.persistent_path), $(record.name) - is read out
+  // of an object field, so AppForm takes the "full object reference" branch : it hands the
+  // value over already JSON.stringify'd and flags it as source. For an array or object that
+  // is right, the JSON text IS the value. For a string it is not : the quotes JSON wrapped
+  // it in are not part of the path, and escaping them into the surrounding string rebuilt
+  // the original bug in a new spelling -
+  //   '\\"/home/mirko/server/persistent\\"/playbooks/vars/clusters.yml'
+  // which still resolves to "/home/.../persistent"/playbooks/... and still ENOENTs.
+  it('splices the string it denotes, not its JSON quotes, inside a longer string', () => {
+    const out = sub("fn.fnReadYamlFile('$(ANSIBLE_FORMS.persistent_path)/playbooks/vars/clusters.yml')",
+      '$(ANSIBLE_FORMS.persistent_path)', '"/home/mirko/server/persistent"', true);
+    expect(out).toBe("fn.fnReadYamlFile('/home/mirko/server/persistent/playbooks/vars/clusters.yml')");
+    expect(evaluate(out)).toBe('/home/mirko/server/persistent/playbooks/vars/clusters.yml');
+  });
+
+  it('still escapes the enclosing quote of a string source', () => {
+    const out = sub("fn.echo('hello $(user.name)')", '$(user.name)', '"O\'Brien"', true);
+    expect(evaluate(out)).toBe("hello O'Brien");
+  });
+
+  it('keeps splicing an array source as its JSON text inside a string', () => {
+    const out = sub("fn.echo('rows=$(rows)')", '$(rows)', '[{"id":7}]', true);
+    expect(evaluate(out)).toBe('rows=[{"id":7}]');
+  });
+
+  it('leaves a source that is not valid JSON untouched', () => {
+    const out = sub("fn.echo('x $(v)')", '$(v)', 'notjson', true);
+    expect(evaluate(out)).toBe('x notjson');
+  });
+
+  it('is unaffected when the placeholder is wrapped or bare', () => {
+    expect(evaluate(sub("fn.echo('$(p)')", '$(p)', '"/a/b"', true))).toBe('/a/b');
+    expect(evaluate(sub('$(n) + 1', '$(n)', '41', true))).toBe(42);
+  });
+});
+
 describe('a placeholder wrapped in quotes', () => {
   it('replaces the quotes together with the placeholder', () => {
     const out = sub("fn.fnReadYamlFile('$(file)')", '$(file)', '/app/persistent/x.yml');

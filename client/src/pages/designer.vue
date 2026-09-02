@@ -2146,7 +2146,10 @@ const formsObj = computed(() => {
         throw new Error("parsing issue");
       }
     } catch {
-      return { name: x, source: "Parsing issues" };
+      // same as idmapping : the file a form belongs to is known from formMeta and does
+      // not depend on its yaml parsing. It also keeps the plain-assembly fallback from
+      // writing an unparsable form out under a "Parsing issues" source.
+      return { name: x, source: formMeta.value[x]?.source };
     }
   });
 });
@@ -2238,7 +2241,13 @@ const idmapping = computed(() => {
         throw new Error("A form must have a few basic properties, like 'name'");
       }
     } catch (err) {
-      return { id: x, source: "Parsing issues", name: x, issue: err.message };
+      // Which FILE a form lives in is metadata (formMeta), not something read out of
+      // its yaml - so keep it even when the yaml does not parse. Reporting the source
+      // as "Parsing issues" moved the form into a group of that name in the tree on
+      // every keystroke that left the document invalid, which is every keystroke
+      // halfway through a line. The parse failure is carried by `issue` instead, and
+      // the warnings panel reports it from there.
+      return { id: x, source: formMeta.value[x]?.source, name: x, issue: err.message };
     }
   });
 });
@@ -2313,13 +2322,12 @@ const warnings = computed(() => {
   var names = idmapping.value.map((x) => x.name);
   var dups = names.filter((item, index) => names.indexOf(item) !== index);
   var empties = idmapping.value.filter((item, _index) => !item.name);
-  var parsing = idmapping.value.filter(
-    (item) => item.source == "Parsing issues"
-  );
+  // a parse failure is carried by `issue` now, not by a replaced source : the form
+  // keeps the file it belongs to so the tree does not move it while you type
+  var parsing = idmapping.value.filter((item) => item.issue);
   var badsource = idmapping.value.filter(
     (item) =>
       item.source &&
-      item.source !== "Parsing issues" &&
       !(item.source.endsWith(".yaml") || item.source.endsWith(".yml"))
   );
   warnings = warnings.concat(
@@ -4600,12 +4608,18 @@ onBeforeUnmount(() => {
                     <p class="mb-3 fw-semibold" style="font-size: 1.2rem">{{ t('designer.noFormSelected') }}</p>
                     <p class="fs-6 mb-0">{{ t('designer.noFormSelectedHint') }}</p>
                   </div>
-                  <div v-for="f in files" :key="'file' + f">
-                    <template v-for="n in formnames(f)" :key="n.id">
-                      <div v-if="isCurrentForm(n.id)">
-                        <BsInput type="editor" :isFloating="false" v-model="forms[n.id]" @save="saveForms()" @init="onEditorInit" lang="yaml" :theme="editorTheme" :liveSync="true" :style="editorStyle('100%')" />
-                      </div>
-                    </template>
+                  <!-- ONE editor, keyed by the form it edits. This used to be rendered
+                       inside v-for="f in files", and `files` is derived from the PARSED
+                       yaml : the moment a keystroke left the document invalid the form's
+                       source flipped to "Parsing issues", the enclosing v-for key changed
+                       with it, and vue tore the editor down and mounted a new one - so
+                       typing an incomplete line (which every line is, halfway through
+                       typing it) threw away the ace instance along with the cursor and the
+                       focus. Keying on currentForm keeps the editor alive while the yaml
+                       is broken, and still gives each form its own instance - and its own
+                       undo stack - when you switch forms. -->
+                  <div v-if="editorTarget" :key="'formeditor-' + currentForm">
+                    <BsInput type="editor" :isFloating="false" v-model="forms[currentForm]" @save="saveForms()" @init="onEditorInit" lang="yaml" :theme="editorTheme" :liveSync="true" :style="editorStyle('100%')" />
                   </div>
                 </template>
               </div>

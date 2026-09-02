@@ -628,9 +628,22 @@ const Helpers = {
     // JSON escapes \ , " and the control characters ; the enclosing quote is added on top,
     // and a real newline becoming \n also keeps the expression on one line, which the
     // server refuses outright.
-    // isSource : the JSON text of an array/object is spliced in as text too, so its own
-    // quotes get escaped for the string it lands in and it reads back identically.
-    const body = JSON.stringify(String(value)).slice(1, -1);
+    // isSource : the value is JS/JSON source, and inside a string only the TEXT it denotes
+    // belongs there. For an ARRAY or OBJECT that is the JSON text itself, escaped for the
+    // string it lands in so it reads back identically. For a STRING it is the string
+    // WITHOUT the quotes JSON put around it : a dotted read such as
+    // $(ANSIBLE_FORMS.persistent_path) takes the object-reference branch in AppForm and so
+    // arrives here as source, yet resolves to a plain path. Escaping those quotes and
+    // splicing them in rebuilt the very bug this function exists to fix, only spelled
+    // '\"/app/persistent\"/playbooks/...' instead of '"/app/persistent"/playbooks/...'.
+    let raw = value;
+    if (isSource) {
+      try {
+        const parsed = JSON.parse(value);
+        if (typeof parsed === 'string') raw = parsed;
+      } catch { /* not JSON after all - splice the source in as text, unchanged */ }
+    }
+    const body = JSON.stringify(String(raw)).slice(1, -1);
     const text = quote === "'" ? body.replace(/'/g, "\\'") : body;
     return expression.slice(0, at) + text + expression.slice(end);
   },
