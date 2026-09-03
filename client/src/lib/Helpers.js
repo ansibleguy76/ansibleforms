@@ -611,6 +611,10 @@ const Helpers = {
    * @returns {string} the expression with that one occurrence substituted
    */
   substituteExpressionPlaceholder(expression, placeholder, value, isSource = false) {
+    // A prior placeholder in the same expression can still be unresolved (the loop that
+    // calls this keeps going to later matches regardless), leaving expression undefined -
+    // mirror the old `value?.replace(...)` safety instead of throwing on .indexOf.
+    if (expression == null) return expression;
     const at = expression.indexOf(placeholder);
     if (at < 0) return expression;
     const end = at + placeholder.length;
