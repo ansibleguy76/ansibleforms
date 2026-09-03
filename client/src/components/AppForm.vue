@@ -1057,7 +1057,17 @@ function setFieldToDefault(fieldname) {
         if (isInitializing.value && fieldname in pendingInitialData.value) {
             return; // Don't apply default, let initialData win
         }
-        
+        // A field a prefill already applied to (relaunch / load from store) can still
+        // reach here long after isInitializing ended - a deeper dependency (e.g. an enum
+        // whose expression references a field that is itself still resolving) transiently
+        // un-resolves and this runs again for a field whose value was already confirmed
+        // correct. Once protected, "can't evaluate this tick" must not wipe it - only a
+        // real change to the field (via evaluateDynamicFields, which already checks this)
+        // should.
+        if (protectedFields.value[fieldname]) {
+            return;
+        }
+
         // if there is a default, set "default" status
         if (defaults.value[fieldname] != undefined) {
             setFieldStatus(fieldname, "default")
@@ -2075,7 +2085,11 @@ async function startDynamicFieldsLoop() {
                                 if (restresult == undefined && (defaults.value[item.name] != undefined)) {
                                     if (item.type == "expression") {
                                         setFieldToDefault(item.name);
-                                    } else {
+                                    } else if (!protectedFields.value[item.name]) {
+                                        // A prefilled enum/table/list momentarily getting an
+                                        // undefined result (a dependency re-resolving) must
+                                        // not wipe the value the same way setFieldToDefault
+                                        // already protects it above.
                                         resetField(item.name);
                                     }
                                 } else {
@@ -2145,7 +2159,7 @@ async function startDynamicFieldsLoop() {
                             try {
                                 if (item.type == "expression") {
                                     setFieldToDefault(item.name);
-                                } else {
+                                } else if (!protectedFields.value[item.name]) {
                                     resetField(item.name);
                                 }
                             } catch (err) {
@@ -2156,7 +2170,7 @@ async function startDynamicFieldsLoop() {
                         try {
                             if (item.type == "expression") {
                                 setFieldToDefault(item.name);
-                            } else {
+                            } else if (!protectedFields.value[item.name]) {
                                 resetField(item.name);
                             }
                         } catch (err) {
@@ -2182,7 +2196,7 @@ async function startDynamicFieldsLoop() {
                 } else {
                     if (item.type == "expression") {
                         setFieldToDefault(item.name);
-                    } else if (item.type == "query" || item.type == "enum" || item.type == "table") {
+                    } else if ((item.type == "query" || item.type == "enum" || item.type == "table") && !protectedFields.value[item.name]) {
                         resetField(item.name);
                     }
                 }
