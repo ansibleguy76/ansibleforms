@@ -268,6 +268,7 @@
             <div ref="contentRef" @keydown.esc="close()" @keydown.tab="close()"> 
                 <BsInputSelectAdvancedTable
                     :defaultValue="defaultValue"
+                    :initialValue="modelValue"
                     :required="required || false"
                     :multiple="multiple || false"
                     :name="name"
@@ -293,6 +294,7 @@
         <p class="m-3 text-body-secondary">{{ preview || 'Nothing selected' }}</p>
         <BsInputSelectAdvancedTable
             :defaultValue="defaultValue"
+            :initialValue="modelValue"
             :required="required || false"
             :multiple="multiple || false"
             :name="name"

@@ -59,6 +59,11 @@
     required: { type: Boolean },
     name: { type: String, required: true },
     defaultValue: { type: [String, Array, Object, Number] },
+    // The field's actual restored value - relaunch / load-from-store set it directly on
+    // the form model, bypassing the click-a-row interaction that normally feeds `selected`,
+    // so nothing here ever learned about it. Matched the same way defaultValue is, but
+    // only when defaultValue itself didn't already pick something.
+    initialValue: { type: [String, Array, Object, Number] },
     status: { type: String },
     sizeClass: { type: String },
     columns: { type: Array, default: () => [] },
@@ -154,6 +159,13 @@
     recalc();
   }, { deep: true });
 
+  // initialValue can arrive after values already settled (e.g. a slower relaunch/store
+  // fetch) - re-derive the selection then too, but only while nothing is picked yet so
+  // this never overrides a real user click.
+  watch(() => props.initialValue, (_val) => {
+    if (selectedItems.value.length === 0) getLabels();
+  });
+
   watch(() => props.focus, (val) => {
     if (val == "content") {
       nextTick(() => {
@@ -170,7 +182,20 @@
     // Unwrap Vue proxies to plain objects for comparison
     const obj1 = toRaw(object1);
     const obj2 = toRaw(object2);
-    
+
+    // valueColumn is the form author declaring WHICH column identifies a row, so match on
+    // it rather than on the whole object. A value being restored (relaunch / load from
+    // store) was serialised when the job ran and is compared against rows fetched again
+    // now: JSON.stringify equality also requires the same key ORDER and the exact same set
+    // of columns, so one extra column in the query - or a differently ordered row - left
+    // the stored row matching nothing, and the select then reported "no selection" and
+    // wiped the restored value. Without a valueColumn the strict comparison stands.
+    const col = props.valueColumn;
+    if (col && obj1 && obj2 && typeof obj1 === "object" && typeof obj2 === "object"
+        && col in obj1 && col in obj2) {
+      return obj1[col] === obj2[col];
+    }
+
     // Deep equality check using JSON comparison
     // This handles nested objects properly
     return JSON.stringify(obj1) === JSON.stringify(obj2);
@@ -356,6 +381,12 @@
       } else {
         if (labels.value.length > 0) valueLabel.value = labels.value[0];
       }
+      // defaultValue wins when the form author set one; "__none__"/unset falls back to
+      // initialValue (the restored value) so a relaunch/load-from-store prefill still
+      // shows as selected even though it never went through select().
+      const effectiveValue = (props.defaultValue !== undefined && props.defaultValue !== "__none__")
+          ? props.defaultValue
+          : props.initialValue;
       if (props.defaultValue == "__auto__" && props.values.length > 0) {
         select(0, false); // if __auto__ select the first
       } else if (props.defaultValue == "__all__" && props.multiple) {
@@ -363,15 +394,12 @@
         for (let i = 0; i < props.values.length; i++) {
           select(i, false);
         }
-      } else if (
-        props.defaultValue != "__none__" &&
-        props.defaultValue != undefined
-      ) {
+      } else if (effectiveValue !== undefined) {
         // if a regular default is set, we select it
         var obj;
         var defaulttype;
         try {
-          obj = JSON.parse(props.defaultValue);
+          obj = JSON.parse(effectiveValue);
           if (typeof obj == "object") {
             defaulttype = "object";
           }
@@ -379,21 +407,21 @@
           obj = undefined;
         }
 
-        if(props.multiple && !Array.isArray(props.defaultValue || [])){
+        if(props.multiple && !Array.isArray(effectiveValue || [])){
           console.log("You can't set a default value for a multiple select that is not an array")
           return
         }
-        if(!props.multiple && Array.isArray(props.defaultValue || '')){
+        if(!props.multiple && Array.isArray(effectiveValue || '')){
           console.log("You can't set a default value for a non multiple select that is an array")
           // this.$toast.error("You can't set a default value for a non multiple select that is an array")
           return
-        }         
+        }
 
-        if (typeof props.defaultValue == "object") {
-          obj = props.defaultValue;
+        if (typeof effectiveValue == "object") {
+          obj = effectiveValue;
           defaulttype = "object";
         }
-        if (defaulttype == "object" && !Array.isArray(props.defaultValue)) {
+        if (defaulttype == "object" && !Array.isArray(effectiveValue)) {
           // enum is of type object, we compare objects
           if (obj) {
             // loop all values
@@ -403,32 +431,32 @@
               }
             }
           }
-        }else if(props.multiple && Array.isArray(props.defaultValue) && props.defaultValue.length>0 && typeof props.defaultValue[0] == "object"){
+        }else if(props.multiple && Array.isArray(effectiveValue) && effectiveValue.length>0 && typeof effectiveValue[0] == "object"){
               // multiple enum of type object // compare objects
               for(var i=0;i<props.values.length;i++){
-                  for(var j=0;j<props.defaultValue.length;j++){
-                    if(objectEqual(props.values[i],props.defaultValue[j])){
+                  for(var j=0;j<effectiveValue.length;j++){
+                    if(objectEqual(props.values[i],effectiveValue[j])){
                       select(i, false)
                     }
                   }
-              }           
+              }
         } else {
           // we search for the value by string
           for (let i = 0; i < props.values.length; i++) {
             if (
               props.values[i] &&
-              props.defaultValue ==
+              effectiveValue ==
               (props.values[i][valueLabel.value] || props.values[i])
             ) {
               select(i, false);
             } else if (
               props.multiple &&
-              Array.isArray(props.defaultValue) &&
-              props.defaultValue.length > 0
+              Array.isArray(effectiveValue) &&
+              effectiveValue.length > 0
             ) {
               if (
                 props.values[i] &&
-                props.defaultValue.includes(
+                effectiveValue.includes(
                   props.values[i][valueLabel.value] || props.values[i] || false
                 )
               ) {
