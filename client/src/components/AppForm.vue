@@ -938,6 +938,13 @@ function checkDependencies(field) {
 function setVisibility(fieldname, status) {
     if (visibility.value[fieldname] != status) {
         visibility.value[fieldname] = status
+        // A prefilled/manually-set value - dependency-driven visibility flicker (the
+        // dependencies: block re-evaluates every tick and can toggle before its own
+        // dependent fields settle) must not wipe it, same guard evaluateDynamicFields
+        // already applies when resetting a field's dependents.
+        if (protectedFields.value[fieldname]) {
+            return
+        }
         if (status) {
             // Field is becoming visible - reset to default value
             resetField(fieldname)
