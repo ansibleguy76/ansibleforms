@@ -32,7 +32,7 @@
 
   // INIT
 
-  const emit = defineEmits(["update:modelValue", "isSelected", "focusset", "reset"]);
+  const emit = defineEmits(["update:modelValue", "update:preview", "isSelected", "focusset", "reset"]);
   const queryfilterRef = useTemplateRef("queryfilterRef");
 
   // DATA
@@ -43,6 +43,10 @@
   const previewLabel = ref("");
   const preview = ref("");
   const queryfilter = ref("");
+  // Plain variable, not a ref: this only needs to survive across recalc() calls within
+  // this component instance, and must never itself be reactive (it's read/written inside
+  // the same synchronous function, not rendered).
+  let lastEmittedJson = undefined;
 
   // PROPS
 
@@ -164,6 +168,20 @@
   // this never overrides a real user click.
   watch(() => props.initialValue, (_val) => {
     if (selectedItems.value.length === 0) getLabels();
+  });
+
+  // Forget our "already told the parent" memory only when the parent's own value is
+  // OBSERVED to have actually changed to something other than what we last sent - i.e. an
+  // external reset (elsewhere in the dependency chain) blanked the parent's displayed
+  // value without going through our own emit. The next recalc() will then see a mismatch
+  // against the (now cleared) memory and re-emit, re-syncing the parent's preview text.
+  // Firing right after our OWN emit is harmless: by then props.modelValue matches
+  // lastEmittedJson exactly, so this is a no-op in that case.
+  watch(() => props.modelValue, (val) => {
+    const incomingJson = JSON.stringify(toRaw(val?.values));
+    if (incomingJson !== lastEmittedJson) {
+      lastEmittedJson = undefined;
+    }
   });
 
   watch(() => props.focus, (val) => {
@@ -303,20 +321,39 @@
     } else {
       preview.value = "";
     }
-    if (props.multiple) {
-      // multiple and outputObject, return simple array
-      if (l > 0) {
-        emit("update:modelValue", { values: selectedItems.value, preview: preview.value });
-      } else {
-        emit("update:modelValue", { values: undefined, preview: preview.value });
-      }
-    } else {
-      if (l > 0)
-        emit("update:modelValue", { values: selectedItems.value[0], preview: preview.value });
-      else {
-        emit("update:modelValue", { values: undefined, preview: preview.value });
-      }
+    const newValues = props.multiple
+      ? (l > 0 ? selectedItems.value : undefined)
+      : (l > 0 ? selectedItems.value[0] : undefined);
+    // getLabels() re-runs (and calls select()) every time this field's OWN options
+    // reload, which happens constantly in a chain of dependent fields - re-confirming a
+    // selection that hasn't actually changed still emitted update:modelValue every time.
+    // The form's @update:modelValue handler treats any emission as a real user change and
+    // cascades an unprotected reset through every dependent field, which reloads their
+    // options, which re-confirms their own unchanged selection, which emits again - an
+    // infinite reset storm on any form with more than a couple of chained fields. Skip the
+    // emit when it matches our own memory of what we last sent (lastEmittedJson).
+    //
+    // Comparing against props.modelValue directly here (instead of just lastEmittedJson)
+    // was tried and reverted: a parent prop update lands on the NEXT tick, not
+    // synchronously, so it's stale on essentially every call, not just rarely - that made
+    // this skip almost nothing and reopened the storm. The watcher below handles the case
+    // that comparison was for (the parent's displayed value getting cleared by something
+    // else in between) without re-introducing the staleness race: it invalidates
+    // lastEmittedJson only when props.modelValue is OBSERVED to have changed to something
+    // other than what we last sent - i.e. only on a real external change, not every tick.
+    // The label the parent displays travels on its own channel, because it has to be re-sent
+    // in a case where the VALUE must not be: reloading the options makes us emit "reset",
+    // which blanks the parent's preview, and then re-select the very same row - so the value
+    // emit below is correctly skipped, and without this the parent would keep showing an
+    // empty box over a field that is in fact still selected.
+    emit("update:preview", preview.value);
+
+    const newValuesJson = JSON.stringify(toRaw(newValues));
+    if (newValuesJson === lastEmittedJson) {
+      return;
     }
+    lastEmittedJson = newValuesJson;
+    emit("update:modelValue", { values: newValues, preview: preview.value });
   }
   function multicheck() {
     if (!checkAll.value) {

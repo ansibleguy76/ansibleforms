@@ -283,6 +283,7 @@
                     :disabled="readonly || disabled"
                     @isSelected="isSelected"
                     @reset="preview = ''"
+                    @update:preview="preview = $event"
                     :focus="focus"
                     @focusset="focus = ''"
                 />
@@ -307,6 +308,7 @@
             :valueColumn="valueColumn || ''"
             :disabled="readonly || disabled"
             @reset="preview = ''"
+            @update:preview="preview = $event"
         /> 
     </div>
 
