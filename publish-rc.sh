@@ -56,7 +56,18 @@ if [ "$CURRENT_DOCKER_USER" != "$DOCKER_HUB_USER" ]; then
     else
         echo "🔑 Not logged into Docker Hub. Logging in as '$DOCKER_HUB_USER'..."
     fi
-    docker login -u "$DOCKER_HUB_USER"
+    # Personal access tokens live OUTSIDE the repo, one "user:token" per line, in
+    # ~/.ansibleforms-docker-pat (chmod 600) - never in a tracked file. Falls back to an
+    # interactive prompt for any account not listed there.
+    DOCKER_HUB_TOKEN=""
+    if [ -f "$HOME/.ansibleforms-docker-pat" ]; then
+        DOCKER_HUB_TOKEN=$(awk -F: -v u="$DOCKER_HUB_USER" '$1==u {print $2}' "$HOME/.ansibleforms-docker-pat")
+    fi
+    if [ -n "$DOCKER_HUB_TOKEN" ]; then
+        echo "$DOCKER_HUB_TOKEN" | docker login -u "$DOCKER_HUB_USER" --password-stdin
+    else
+        docker login -u "$DOCKER_HUB_USER"
+    fi
 else
     echo "✅ Logged into Docker Hub as '$DOCKER_HUB_USER'"
 fi

@@ -36,6 +36,10 @@ coverage
 # local post-build scripts (may contain credentials)
 *.post.sh
 
+# Docker Hub PATs for publish*.sh - the real one belongs in ~/.ansibleforms-docker-pat
+# (outside the repo entirely), never here; this just guards against a stray local copy.
+.ansibleforms-docker-pat
+
 # Editor directories and files
 .idea
 .vscode
