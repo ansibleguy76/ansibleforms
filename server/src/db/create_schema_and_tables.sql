@@ -71,6 +71,7 @@ CREATE TABLE `ldap` (
   `group_member_attribute` varchar(250) DEFAULT NULL,
   `group_member_user_attribute` varchar(250) DEFAULT NULL,
   `mail_attribute` varchar(250) DEFAULT NULL,
+  `groupfilter` varchar(250) DEFAULT NULL,
   `enable` tinyint(4) DEFAULT NULL,
   `managed` tinyint(4) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

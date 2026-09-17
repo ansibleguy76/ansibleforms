@@ -559,6 +559,8 @@ export default {
       groupMemberAttributeDesc: "Attribuut op het groepsobject dat de leden bevat (bijv. member, uniqueMember).",
       groupMemberUserAttribute: "Groepslid gebruiker attribuut",
       groupMemberUserAttributeDesc: "Gebruikersattribuut dat wordt vergeleken met het groepslidattribuut (bijv. dn, uid).",
+      groupFilter: "Groepfilter",
+      groupFilterDesc: "Reguliere expressie die wordt vergeleken met de groepsnaam. Laat leeg om alle groepen te behouden. Alleen overeenkomende groepen worden behouden, en die zijn wat de rolkoppeling, het __user__ veld in formulieren en de playbook zien.",
     },
     aap: {
       label: "Ansible Automation Platform",

@@ -235,14 +235,16 @@ static getGroups(user, groupObj, ldapConfig = {}) {
         var groupObject = v["objectName"] || v; // https://github.com/ansibleguy76/ansibleforms/issues/119 first try objectName and then fall back.  Different flavours of ldap servers return different group objects.  Until someone else hit's another flavour, these are the ones we implement.
         var groupMatch = groupObject.match("^[cCnN]{2}=([^,]*)");
         if (groupMatch.length > 0) {
-          // prefix with ldap
-          group = "ldap/" + groupMatch[1];
-          // add all the roles that match the group
-          groups.push(group);
+          groups.push(groupMatch[1]);
         }
       });
     }
-    return groups;
+    // The optional group filter, applied on the bare name and BEFORE the ldap/ prefix, so
+    // the pattern an admin writes here is the same one they would write for Entra ID or
+    // OIDC (login.vue filters those before the server prefixes them too). A directory user
+    // in a hundred AD groups otherwise carries all hundred through every role lookup, every
+    // token and every job.
+    return helpers.filterGroups(groups, ldapConfig.groupfilter).map((g) => "ldap/" + g);
   } else if (user.type == "local") {
     var localgroups = groupObj.split(",");
     localgroups.forEach(function (v) {

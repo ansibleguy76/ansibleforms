@@ -506,7 +506,8 @@ const SCHEMA_MANIFEST = {
                                'settings.config_source', 'settings.default_language',
                                'settings.default_theme', 'settings.default_theme_color',
                                'awx.managed', 'credentials.managed', 'oauth2_providers.managed',
-                               'repositories.managed', 'ldap.managed', 'settings.managed'],
+                               'repositories.managed', 'ldap.managed', 'settings.managed',
+                               'ldap.groupfilter'],
                      indexes: ['jobs.idx_jobs_retention'] },
   },
 };
@@ -756,6 +757,12 @@ async function patchVersion6(messages, success, failed) {
   // Job retention selects on parent_id + status + end. Without an index that is a full
   // scan of the biggest table in the schema, repeated once per batch.
   await checkPromise(addIndex("jobs", "idx_jobs_retention", ["parent_id", "status", "end"]), messages, success, failed);
+
+  // The optional ldap group filter. Entra ID and OIDC have had one since 5.x,
+  // in oauth2_providers.groupfilter ; this is the same thing for directory logins, and the
+  // column is deliberately named the same. NULL / empty keeps every group, which is what
+  // every existing installation has.
+  await checkPromise(addColumn("ldap", "groupfilter", "varchar(250)", true, "NULL"), messages, success, failed);
 
   // The declarative config seed flags the objects it owns, so the API can refuse to
   // change them behind the seed's back. One column per seedable table. Default 0 :

@@ -149,6 +149,12 @@ const ldapSection = {
     group_member_attribute: str,
     group_member_user_attribute: str,
     mail_attribute: str,
+    // The one field NOT in `required`, and the only exception to the rule above. It arrives
+    // after seed files are already in use : requiring it would reject every seed written
+    // before it existed, on upgrade, with a validation error about a field the operator has
+    // never heard of. Omitted means "leave the column alone" - applyLdap only writes keys
+    // the seed declared - which is the same as the empty filter it defaults to.
+    groupfilter: str,
   },
 };
 

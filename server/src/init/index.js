@@ -169,7 +169,7 @@ const init = async function({ boot = false } = {}){
   // let's check other database records like settings,ldap. if no record exists, create them, this is for fresh install
   logger.info("Checking database records")
   const records = {
-    ldap:{server:'',port:389,ignore_certs:1,enable_tls:0,cert:'',ca_bundle:'',bind_user_dn:'',bind_user_pw:'',search_base:'',username_attribute:'sAMAccountName',groups_attribute:'memberOf',enable:0,groups_search_base:'',group_class:'',group_member_attribute:'',group_member_user_attribute:''},    
+    ldap:{server:'',port:389,ignore_certs:1,enable_tls:0,cert:'',ca_bundle:'',bind_user_dn:'',bind_user_pw:'',search_base:'',username_attribute:'sAMAccountName',groups_attribute:'memberOf',enable:0,groups_search_base:'',group_class:'',group_member_attribute:'',group_member_user_attribute:'',groupfilter:''},    
     settings:{mail_server:'',mail_port:25,mail_secure:0,mail_username:'',mail_password:'',mail_from:'',url:'',forms_yaml:''}    
   }
  
