@@ -883,6 +883,20 @@
     description: |
       When you have sensitive extravars, such as passwords, tokens, keys, credentials, you do not want these to be shown in clear text in the extravars section of a job.  
       By setting this regex, any extravar key matching this regex will have its value masked with `********`.   Note the regex will be case insensitive.   
+  - name: EXTRAVARS_USER_FIELDS
+    type: string
+    allowed: empty, all, none, or a comma separated list of keys
+    short: Which keys of the user go into the extravars
+    hint: Trims the ansibleforms_user object sent to the playbook.
+    default: ""
+    description: |
+      Every job carries the launching user as `ansibleforms_user` in its extravars.  With an LDAP or Entra ID login that is the user's full group membership plus every resolved role option, which for a directory user in a hundred groups is a hundred lines of extravars the playbook never reads - stored in the AWX job and in `jobs.extravars`, readable by anyone with access to the job.
+
+      Leave it empty (the default) and the whole object is sent, exactly as in every release before this one.  Set it to a comma separated list of top level keys, for example `username,email,type`, and only those are sent.  Set it to `none` and `ansibleforms_user` is not sent at all.  `all` is the default said out loud, useful for a form that must override a trimmed global setting.
+
+      A single form can override this with its `userExtravars` property.  The frontend `__user__` object comes from the login token and is not affected, and neither are role checks or the form's own `roles` list.
+
+      **Note** : `docs/faq.md` suggests asserting on `ansibleforms_user.groups` inside a playbook as a defence in depth check.  If you do that, keep `groups` in the list.
   - name: UPLOAD_PATH
     type: string
     version: 4.0.16
@@ -2055,6 +2069,17 @@
 
           **Note** : You can also dynamically set this property by using a field called `__keepExtravars__`.  It must be sent as extravar.  If this extravar is found it will overwrite the static diff field.  The field must result in a boolean (expression or checkbox)          
           **Note** : If you use multistep and you want to dynamically set every step, use the `key` property and `model` property to create separate extravars per step.              
+      - name: userExtravars
+        type: string
+        with_types: ansible, awx, multistep
+        short: Which keys of the user go into the extravars
+        group: workflow
+        description: |
+          Overrides the `EXTRAVARS_USER_FIELDS` environment variable for this form, so one form can ask for the full user object while the rest of the instance stays trimmed, or the other way around.
+
+          Leave it out and the form follows the global setting.  `all` sends the whole `ansibleforms_user` object, `none` sends no `ansibleforms_user` at all, and a comma separated list such as `username,email,type` sends only those top level keys.
+
+          **Note** : a multistep applies the form's value to every step, including the partial extravars a step receives through `key`.
       - name: abortable
         type: boolean
         with_types: ansible, awx, multistep

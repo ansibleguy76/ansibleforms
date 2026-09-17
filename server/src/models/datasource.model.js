@@ -102,7 +102,6 @@ Ds.import = async function(id){
     delete extravars.datasource.cron
     delete extravars.datasource.extra_vars
 
-    extravars.ansibleforms_user = user
     // Job.launch is fire-and-forget and returns { id } - always truthy - so the else
     // below was unreachable and a datasource whose playbook failed still read 'success'
     // (with a literal "Result : [object Object]" in the output). Report what is actually

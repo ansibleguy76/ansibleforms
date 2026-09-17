@@ -946,6 +946,8 @@ export default {
     formAbortable: "Abbrechbar",
     formVerbose: "Ausführlich",
     formKeepExtravars: "Extravars behalten",
+    formUserExtravars: "Benutzer in Extravars",
+    formUserExtravarsHelp: "Welche Schluessel von ansibleforms_user an das Playbook gehen. Leer folgt EXTRAVARS_USER_FIELDS, all sendet das ganze Objekt, none sendet nichts.",
     formScmBranch: "SCM-Branch",
     formExecEnv: "Ausführungsumgebung",
     formInstanceGroups: "Instanzgruppen (kommagetrennt)",

@@ -122,6 +122,7 @@
         "allowRelaunch": {"not":{}},
         "verbose": {"not":{}},
         "keepExtravars": {"not":{}},
+        "userExtravars": {"not":{}},
         "image": {"not":{}},
         "icon": {"not":{}},
         "iconColor": {"not":{}},
@@ -294,6 +295,9 @@
     },
     "keepExtravars":{
       "type": "boolean"
+    },
+    "userExtravars":{
+      "type": "string"
     },
     "notifications":{
       "type": "object",
