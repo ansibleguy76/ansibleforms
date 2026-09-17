@@ -584,7 +584,15 @@ describe('a stale field response cannot overwrite a newer one', () => {
   });
 
   it('resetField invalidates anything in flight', () => {
-    const fn = src.slice(src.indexOf('function resetField'), src.indexOf('function resetField') + 500);
+    // Bounded by the next top level declaration, not by a character count. It was
+    // `indexOf(...) + 500`, and the prefill fix added a six line comment near the top of
+    // the function that pushed the bumpFieldGeneration call to offset 621 - so the test
+    // went red on a function that still does exactly what it is being asked about. A
+    // magic window measures how long the comments are, which is not the property under
+    // test; the same trap is written up on the doAction test above.
+    const at = src.indexOf('function resetField');
+    const end = src.slice(at + 10).search(/\n(?:function|const|async function) /) + at + 10;
+    const fn = src.slice(at, end);
     expect(fn).toMatch(/bumpFieldGeneration\(fieldname\)/);
   });
 
