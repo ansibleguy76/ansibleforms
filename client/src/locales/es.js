@@ -559,6 +559,8 @@ export default {
       groupMemberAttributeDesc: "Atributo del objeto de grupo que lista sus miembros (ej. member, uniqueMember).",
       groupMemberUserAttribute: "Atributo de Usuario de Miembro de Grupo",
       groupMemberUserAttributeDesc: "Atributo de usuario comparado con el atributo de miembro de grupo (ej. dn, uid).",
+      groupFilter: "Filtro de Grupo",
+      groupFilterDesc: "Expresion regular comparada con el nombre del grupo. Dejar vacio para conservar todos los grupos. Solo se conservan los grupos que coinciden, y son los que ven el mapeo de roles, el campo __user__ en los formularios y el playbook.",
     },
     aap: {
       label: "Plataforma de Automatización de Ansible",

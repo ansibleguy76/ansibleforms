@@ -92,6 +92,7 @@ ldap:
   group_member_attribute: ""
   group_member_user_attribute: ""
   mail_attribute: mail
+  groupfilter: ""            # optional, see below
 
 settings:
   mail_server: smtp.example.com
@@ -112,7 +113,11 @@ never writes — a seed setting just `url` made the Mail page answer 403 for SMT
 nothing would ever revert, and a seed omitting `enable` produced a managed, disabled LDAP that
 could not be switched on from anywhere.
 
-So both sections require **every** field, and a seed that omits one refuses to start naming it:
+`ldap.groupfilter` is the single exception. It arrives after seed files are already in use,
+so requiring it would reject every seed written before it existed. Omit it and the
+column is left alone, exactly like a field of a list section the seed does not mention.
+
+So both sections require **every** other field, and a seed that omits one refuses to start naming it:
 
 ```
 Config seed failed, refusing to start : Seed file validation failed :

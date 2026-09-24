@@ -31,6 +31,7 @@ var Ldap=function(ldap){
     this.group_class = ldap.group_class || ""
     this.group_member_attribute = ldap.group_member_attribute || ""
     this.group_member_user_attribute = ldap.group_member_user_attribute || ""
+    this.groupfilter = ldap.groupfilter || ""
     this.mail_attribute = ldap.mail_attribute
     this.testpassword = ldap.testpassword || ""
     this.testuser = ldap.testuser || ""

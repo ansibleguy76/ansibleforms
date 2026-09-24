@@ -559,6 +559,8 @@ export default {
       groupMemberAttributeDesc: "Attribut des Gruppeneintrags, das die Mitglieder auflistet (z.B. member, uniqueMember).",
       groupMemberUserAttribute: "Benutzerattribut fuer Gruppenmitglied",
       groupMemberUserAttributeDesc: "Benutzerattribut, das mit dem Gruppenmitglied-Attribut abgeglichen wird (z.B. dn, uid).",
+      groupFilter: "Gruppenfilter",
+      groupFilterDesc: "Regulaerer Ausdruck, der mit dem Gruppennamen abgeglichen wird. Leer lassen, um alle Gruppen zu behalten. Nur passende Gruppen werden behalten, und genau diese sehen die Rollenzuordnung, das Feld __user__ in Formularen und das Playbook.",
     },
     aap: {
       label: "Ansible Automation Platform",

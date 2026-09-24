@@ -559,6 +559,8 @@ export default {
       groupMemberAttributeDesc: "Attribut de l'entrée de groupe listant ses membres (ex. member, uniqueMember).",
       groupMemberUserAttribute: "Attribut utilisateur pour membre du groupe",
       groupMemberUserAttributeDesc: "Attribut utilisateur comparé à l'attribut membre du groupe (ex. dn, uid).",
+      groupFilter: "Filtre de groupe",
+      groupFilterDesc: "Expression reguliere comparee au nom du groupe. Laisser vide pour conserver tous les groupes. Seuls les groupes correspondants sont conserves, et ce sont eux que voient le mappage des roles, le champ __user__ dans les formulaires et le playbook.",
     },
     aap: {
       label: "Ansible Automation Platform",

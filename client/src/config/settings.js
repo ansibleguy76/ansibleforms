@@ -338,6 +338,7 @@ export default function getSettings(t) {
             { key: "group_class", icon:"users-rectangle", line: 6, label: t('settings.ldap.groupClass'), help: t('settings.ldap.groupClassDesc'), required: false, dependency: "enable" },
             { key: "group_member_attribute", icon:"users-line", line: 7, label: t('settings.ldap.groupMemberAttribute'), help: t('settings.ldap.groupMemberAttributeDesc'), required: false, dependency: "enable" },
             { key: "group_member_user_attribute", icon:"user-group", line: 7, label: t('settings.ldap.groupMemberUserAttribute'), help: t('settings.ldap.groupMemberUserAttributeDesc'), required: false, dependency: "enable" },
+            { key: "groupfilter", icon:"filter", line: 8, label: t('settings.ldap.groupFilter'), help: t('settings.ldap.groupFilterDesc'), required: false, dependency: "enable" },
         ]
     },
     aap:{

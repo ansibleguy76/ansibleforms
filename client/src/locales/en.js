@@ -559,6 +559,8 @@ export default {
       groupMemberAttributeDesc: "Attribute on the group entry that lists its members (e.g. member, uniqueMember).",
       groupMemberUserAttribute: "Group Member User Attribute",
       groupMemberUserAttributeDesc: "User attribute matched against the group member attribute (e.g. dn, uid).",
+      groupFilter: "Group Filter",
+      groupFilterDesc: "Regular expression matched against the group name. Leave empty to keep every group. Only matching groups are kept, and they are what the role mapping, the __user__ field in forms and the playbook all see.",
     },
     aap: {
       label: "Ansible Automation Platform",
