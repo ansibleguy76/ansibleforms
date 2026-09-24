@@ -16,6 +16,7 @@
 //     user - and under `none` there is nothing to overwrite it with, so skipping the
 //     assignment would let a forged object stand in for the one the setting took away.
 import { test, describe, expect, beforeEach, afterAll } from "vitest";
+import { readFileSync } from "fs";
 
 process.env.DB_HOST ||= "127.0.0.1";
 process.env.DB_PORT ||= "3306";
@@ -176,18 +177,18 @@ describe("setUserExtravars", () => {
     // a submitted one with, so skipping the assignment would ship the forged object
     appConfig.extravarsUserFields = "none";
     const ev = { ansibleforms_user: { username: "root", roles: ["admin"] } };
-    setUserExtravars(ev, USER, {}, true);
+    setUserExtravars(ev, USER, {});
     expect(ev.ansibleforms_user).toBeUndefined();
   });
 
   test("a client cannot forge the user object at all", () => {
     // `extravars` is req.body here. Anything the caller put in ansibleforms_user is a claim
     // about who they are, and the FAQ tells playbook authors to assert on exactly that -
-    // so the authenticated user is the ONLY acceptable source when fromClient is set.
+    // so the authenticated user is the ONLY acceptable source for anything but a replay.
     appConfig.extravarsUserFields = "";
     const forged = { username: "root", type: "local", groups: ["ldap/Domain Admins"], roles: ["admin"] };
     const ev = { target_hosts: "web01", ansibleforms_user: forged };
-    setUserExtravars(ev, USER, {}, true);
+    setUserExtravars(ev, USER, {});
     expect(ev.ansibleforms_user).toBe(USER);
     expect(ev.ansibleforms_user.groups).not.toContain("ldap/Domain Admins");
   });
@@ -195,27 +196,43 @@ describe("setUserExtravars", () => {
   test("and cannot smuggle one past a trimming setting either", () => {
     appConfig.extravarsUserFields = "username";
     const ev = { ansibleforms_user: { username: "root", roles: ["admin"] } };
-    setUserExtravars(ev, USER, {}, true);
+    setUserExtravars(ev, USER, {});
     expect(ev.ansibleforms_user).toEqual({ username: "jane.doe" });
   });
 
   test("a relaunch keeps the ORIGINAL submitter, not whoever pressed relaunch", () => {
     // Job.relaunch replays a stored job's extravars, which already carry the user who
-    // submitted it, and it does NOT set fromClient. Rewriting that would make the audit
-    // trail say the wrong thing.
+    // submitted it. Rewriting that would make the audit trail say the wrong thing.
     appConfig.extravarsUserFields = "";
     const original = { username: "john.smith", type: "ldap" };
     const ev = { ansibleforms_user: original };
-    setUserExtravars(ev, USER, {}, false);
+    setUserExtravars(ev, USER, {}, true);
     expect(ev.ansibleforms_user).toBe(original);
   });
 
-  test("a schedule or datasource falls through to its own synthetic user", () => {
-    // neither puts anything in the extravars, so there is nothing to prefer
+  test("a relaunch of a job stored without a user does not make the relauncher the submitter", () => {
+    // the original ran under `none`, so there is nobody stored to keep
+    appConfig.extravarsUserFields = "";
+    const ev = { target_hosts: "web01" };
+    setUserExtravars(ev, USER, {}, true);
+    expect("ansibleforms_user" in ev).toBe(false);
+  });
+
+  test("a schedule or datasource gets its own synthetic user", () => {
     appConfig.extravarsUserFields = "";
     const service = { id: 0, username: "Schedule Service", type: "schedule", groups: [], roles: ["admin"] };
     const ev = { schedule: { id: 3 } };
-    setUserExtravars(ev, service, {}, false);
+    setUserExtravars(ev, service, {});
+    expect(ev.ansibleforms_user).toBe(service);
+  });
+
+  test("a schedule's extra_vars cannot forge the user either", () => {
+    // whoever edits the schedule writes its extra_vars YAML, so an ansibleforms_user in
+    // there is a claim, not a stored fact, and the service user must replace it
+    appConfig.extravarsUserFields = "";
+    const service = { id: 0, username: "Schedule Service", type: "schedule", groups: [], roles: ["admin"] };
+    const ev = { schedule: { id: 3 }, ansibleforms_user: { username: "root", groups: ["ldap/Domain Admins"] } };
+    setUserExtravars(ev, service, {});
     expect(ev.ansibleforms_user).toBe(service);
   });
 
@@ -224,5 +241,24 @@ describe("setUserExtravars", () => {
     const ev = {};
     setUserExtravars(ev, USER, {});
     expect(ev.ansibleforms_user).toBe(USER);
+  });
+});
+
+// ── where the flag comes from ────────────────────────────────────────────────────────
+//
+// setUserExtravars trusts a stored user only when asked to, so what matters is that only
+// the relaunch asks, and that a multistep step's slice drops one the client put there.
+describe("the callers", () => {
+  const src = readFileSync(new URL("../src/models/job.model.js", import.meta.url), "utf8");
+
+  test("only Job.relaunch launches with replay", () => {
+    const hits = src.match(/replay: true/g) || [];
+    expect(hits.length).toBe(1);
+    const relaunch = src.slice(src.indexOf("Job.relaunch = async function"));
+    expect(relaunch.slice(0, relaunch.indexOf("\n};")).includes("replay: true")).toBe(true);
+  });
+
+  test("a step slice under none has its own ansibleforms_user removed", () => {
+    expect(src).toMatch(/ev\.ansibleforms_user = extravars\.ansibleforms_user;\s*\}\s*else\s*\{[^}]*delete ev\.ansibleforms_user;/);
   });
 });
