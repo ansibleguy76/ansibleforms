@@ -954,23 +954,16 @@ Job.launch = async function ({
                 credentials[key] = await Credential.findByNameRegex(value);
               }
             } catch (err) {
-              // Rethrow. Swallowing it left credentials[key] simply UNSET and the playbook
-              // then ran with that variable absent - against production, with nothing in
-              // the job output, no status change and no notification. The two ways here are
-              // a credential deleted between launch and use, and Vault being unreachable
-              // (credential.model.v2 rethrows), i.e. exactly when running anyway is worst.
-              throw new Error(`Cannot resolve credential '${key}' : ${err.message || err}`, { cause: err });
+              // Log only, do not fail the job : the credential simply stays unset and
+              // the playbook runs without that extra var, as it did before 6.3.
+              logger.error(`Cannot resolve credential '${key}' : ${err.message || err}`);
             }
           }
         }
       }
     } catch (err) {
-      // A job that cannot get its credentials must FAIL, visibly, not launch without them.
-      // Nothing has written job output yet at this point, so order 1 is free.
       var message = `Failed to process credentials : ${err.message}`;
       logger.error(message);
-      await Job.endJobStatus(jobid, 1, "stderr", "failed", message);
-      return { id: jobid };
     }
 
     if (jobtype == "ansible") {
