@@ -215,22 +215,23 @@ describe("a relaunch cannot smuggle verbose mode past the permission", () => {
   });
 });
 
-describe("a job that cannot get its credentials does not run", () => {
-  // The resolution failure was logged and swallowed, leaving credentials[key] unset - so the
-  // playbook ran against production with the variable absent, with nothing in the job
-  // output, no status change and no notification. The two ways in are a credential deleted
-  // between launch and use, and Vault being unreachable.
-  test("the launch path no longer swallows a credential error", async () => {
+describe("a credential that cannot be resolved does not stop the job", () => {
+  // 6.3 made an unresolvable credential fail the job. That was reverted on purpose
+  // ("don't crash on unfound credentials"): the credential stays unset and the playbook
+  // runs without that extra var, as it did before 6.3. What is kept from 6.3 is the log
+  // line naming WHICH credential failed, so the operator can find it afterwards.
+  test("the failure is logged with the credential key and the job carries on", async () => {
     const src = (await import("fs")).readFileSync(
       new URL("../src/models/job.model.js", import.meta.url), "utf8");
-    // the old shape: catch { log } and carry on to Ansible.launch
-    assert.equal(/catch \(err\) \{\s*logger\.error\("Cannot get credential\." \+ err\);\s*\}/.test(src), false,
-      "the swallow must be gone");
-    // assert on the THROW, not just the message : a revert that turns the throw back into
-    // a logger.error keeps the message string, so matching the text alone passed either way
-    assert.match(src, /throw new Error\(`Cannot resolve credential/,
-      "the resolution failure must propagate, not just be logged");
-    assert.match(src, /endJobStatus\(jobid, 1, "stderr", "failed"/, "and it must fail the job");
+    // the pre 6.3 shape logged the error without saying which credential it was
+    assert.equal(/logger\.error\("Cannot get credential\." \+ err\)/.test(src), false,
+      "the log line must name the credential");
+    assert.match(src, /logger\.error\(`Cannot resolve credential '\$\{key\}'/,
+      "the resolution failure must be logged with its key");
+    assert.equal(/throw new Error\(`Cannot resolve credential/.test(src), false,
+      "an unresolvable credential must not abort the launch");
+    assert.equal(/Failed to process credentials[\s\S]{0,200}endJobStatus\(jobid, 1, "stderr", "failed"/.test(src), false,
+      "and it must not fail the job");
   });
 });
 
