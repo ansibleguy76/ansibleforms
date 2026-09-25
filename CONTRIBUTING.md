@@ -3,11 +3,45 @@
 Thanks for helping out. This is the short version of everything you need to know before
 opening a pull request.
 
-## Pull requests go to `develop`, not `main`
+## Branches and pull requests
 
-`main` is the released code. `develop` is where work lands, and releases are cut from it
-by the **Create Release Branch** workflow. A PR opened against `main` will be asked to
-retarget, so save yourself the round trip.
+There is one long-lived branch, `main`, and it is protected: everything reaches it through
+a pull request, and pull requests are **squash-merged**. Your intermediate commits can be
+as messy as you like — only the pull request title survives.
+
+1. Branch from `main`, named `<type>/<short-description>`, for example
+   `fix/ldap-group-filter` or `feat/constants-editor`.
+2. Open the pull request against `main`.
+3. Give it a [Conventional Commits](https://www.conventionalcommits.org/) title — see below.
+
+The branch is deleted automatically once it is merged.
+
+### The title is the changelog
+
+The squash commit takes the pull request title as its message, and on release that title
+becomes a line in `CHANGELOG.md` and in the release notes. It also decides the next
+version:
+
+| Title | Release | Changelog section |
+|---|---|---|
+| `feat: group filter for ldap logins` | minor (6.3.0 → 6.4.0) | Added |
+| `fix: keep target on links in html fields` | patch (6.3.0 → 6.3.1) | Fixed |
+| `perf:` / `refactor:` | patch | Changed |
+| `security:` | patch | Security |
+| `feat!: drop the v1 api`, or a `BREAKING CHANGE:` line in the description | major | Added, flagged breaking |
+| `docs:` `test:` `ci:` `chore:` `build:` `style:` | none on its own | not listed |
+
+An optional scope goes in brackets: `fix(ldap): ...`. Write the subject in lowercase, as
+it should read in the changelog, describing what a user or an operator notices.
+
+**Do not edit `CHANGELOG.md`.** It is generated; a pull request that touches it fails the
+*Changelog untouched* check.
+
+### Required checks
+
+`CI / Client`, `CI / Server`, `CI / Public schema is up to date`, `Security / CodeQL`,
+`PR / Title` and `PR / Branch` must be green before a merge. *Docker* and *Docs* run only
+when their files change.
 
 ## Found a security problem?
 
@@ -65,12 +99,6 @@ about.
 **Environment variables need a `docs/_data/help.yaml` entry.** That file is the single
 source of truth for the label, the help text, the type and the allowed values. A variable
 missing from it appears nowhere in the settings UI.
-
-## Commit messages and changelog
-
-Conventional-ish prefixes (`fix:`, `feat:`, `ci:`, `docs:`, `chore:`) are the norm. Add a
-line to `CHANGELOG.md` under `## [Unreleased]` for anything a user or an operator would
-notice — the release workflow turns that section into the release notes.
 
 ## Questions
 

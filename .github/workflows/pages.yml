@@ -2,13 +2,13 @@ name: Docs
 
 # A pull request BUILDS the site but does not deploy it. docs/_data/help.yaml is the
 # single source of truth for the settings pages and is read by four tests, so a malformed
-# edit used to be discovered only after the merge, when this workflow failed on develop.
+# edit used to be discovered only after the merge, when this workflow failed on main.
 
 on:
   push:
-    branches: ["develop"]
+    branches: ["main"]
   pull_request:
-    branches: ["develop", "main"]
+    branches: ["main"]
     paths:
       - 'docs/**'
       - 'CHANGELOG.md'

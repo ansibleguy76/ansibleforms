@@ -1,0 +1,30 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "simple",
+  "include-v-in-tag": false,
+  "include-component-in-tag": false,
+  "pull-request-title-pattern": "chore: release ${version}",
+  "changelog-sections": [
+    { "type": "feat", "section": "Added" },
+    { "type": "fix", "section": "Fixed" },
+    { "type": "perf", "section": "Changed" },
+    { "type": "refactor", "section": "Changed" },
+    { "type": "revert", "section": "Reverted" },
+    { "type": "security", "section": "Security" },
+    { "type": "docs", "section": "Documentation", "hidden": true },
+    { "type": "test", "section": "Tests", "hidden": true },
+    { "type": "ci", "section": "CI", "hidden": true },
+    { "type": "chore", "section": "Chores", "hidden": true },
+    { "type": "build", "section": "Build", "hidden": true },
+    { "type": "style", "section": "Style", "hidden": true }
+  ],
+  "packages": {
+    ".": {
+      "extra-files": [
+        { "type": "json", "path": "server/package.json", "jsonpath": "$.version" },
+        { "type": "json", "path": "server/package-lock.json", "jsonpath": "$.version" },
+        { "type": "json", "path": "server/package-lock.json", "jsonpath": "$.packages[''].version" }
+      ]
+    }
+  }
+}

@@ -22,7 +22,9 @@ try {
 
 const get = function(req, res) {
     const versionData = {
-        version: pkg.version,
+        // a docker build bakes its version into build-info.json - that is how a release
+        // candidate reports 6.4.0-rc.512.7 - and package.json covers dev and local builds
+        version: buildInfo?.version || pkg.version,
         server: buildInfo || { gitSha: 'dev', dirty: false, buildTime: null }
     };
     res.json(RestResult.single(versionData));

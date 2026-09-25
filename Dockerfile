@@ -15,9 +15,12 @@ FROM ansibleguy/ansibleforms-base:latest@sha256:8a1ea5dd0a80be59ce78b4520893e0d4
 
 FROM ansibleguy/ansibleforms-base:latest@sha256:8a1ea5dd0a80be59ce78b4520893e0d42dc0d1231c0af02064a48bce5aad4b23 AS tmp_builder
 
-# Build arguments for git SHA and build time
+# Build arguments for git SHA, build time and version. VERSION is empty for a local build,
+# which leaves server/package.json as the version shown ; CI passes the release or
+# release candidate version (see .github/workflows/publish.yml)
 ARG GIT_SHA=unknown
 ARG BUILD_TIME=unknown
+ARG VERSION=
 
 ########## prep client ###########
 
@@ -41,7 +44,7 @@ RUN chmod +x /tmp/generate-build-info.sh
 RUN npm run build
 
 # Generate client build-info.json in dist folder
-RUN /tmp/generate-build-info.sh ./dist "$GIT_SHA" "$BUILD_TIME"
+RUN /tmp/generate-build-info.sh ./dist "$GIT_SHA" "$BUILD_TIME" "$VERSION"
 
 ######### prep server ##########
 
@@ -58,7 +61,7 @@ RUN npm ci --only=production
 COPY ./server .
 
 # Generate server build-info.json
-RUN /tmp/generate-build-info.sh . "$GIT_SHA" "$BUILD_TIME"
+RUN /tmp/generate-build-info.sh . "$GIT_SHA" "$BUILD_TIME" "$VERSION"
 
 # Copy the docs help file to /app/server
 COPY ./docs/_data/help.yaml .

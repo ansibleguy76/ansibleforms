@@ -1,34 +1,51 @@
 version: 2
 
-# target-branch is develop on every entry : the default would be main, and this project
-# merges into develop.
+# Every pull request title here must pass the PR / Title check (Conventional Commits), so
+# each entry sets a commit-message prefix : build(deps) for what ships in the image, ci for
+# the workflow actions. `build` is hidden in the generated CHANGELOG ; retitle a pull
+# request to `fix(deps): ...` when the update fixes something a user would notice.
 
 updates:
   - package-ecosystem: npm
     directory: /client
-    target-branch: develop
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    commit-message:
+      prefix: build
+      include: scope
     groups:
       client-dev:
         dependency-type: development
 
   - package-ecosystem: npm
     directory: /server
-    target-branch: develop
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    commit-message:
+      prefix: build
+      include: scope
     groups:
       server-dev:
         dependency-type: development
 
   - package-ecosystem: github-actions
     directory: /
-    target-branch: develop
     schedule:
       interval: weekly
+    commit-message:
+      prefix: ci
     groups:
       actions:
         patterns: ['*']
+
+  # Moves the digest pin on ansibleforms-base in Dockerfile when .github/workflows/base.yml
+  # publishes a new base image. Dockerfile.base (node) is watched too.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: daily
+    commit-message:
+      prefix: build
+      include: scope

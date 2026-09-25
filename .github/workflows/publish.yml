@@ -1,82 +1,86 @@
 name: Publish
 
-# Builds and pushes the application image from CI instead of from a maintainer's laptop.
-#
-# publish.sh and publish-rc.sh still work and are left in place ; this is the same
-# sequence with three differences that matter :
-#
-#   * the image is built from the commit the release points at, not from whatever is in
-#     someone's working tree - "it built on my machine" stops being part of a release
-#   * the credentials are a repository secret with a scoped token rather than a personal
-#     docker login on a workstation
-#   * it does not commit anything. publish.sh regenerates server/schema/public and pushes
-#     the result mid-release ; CI already fails a pull request whose committed copy is
-#     stale, so by the time a release exists that file is correct and a publish step has
-#     no business writing to the repository.
+# Builds and pushes the application image. Called by release.yml when a release is created
+# (x.y.z + latest) and by rc.yml for a release candidate (x.y.z-rc.<pr>.<run> + latest-rc).
+# "Run workflow" re-publishes an existing release tag, for when a push failed half way.
 #
 # It pushes to GHCR always and to Docker Hub when the secret is there. Docker Hub stays
 # the canonical channel - docs/installation.md tells people to pull ansibleguy/ansibleforms
 # and every deployment in the wild points at it - so GHCR is a mirror beside it, not a
-# replacement. To drop Docker Hub one day, delete its login step and the two tags.
+# replacement. To drop Docker Hub one day, delete its login step and its tags.
+#
+# It does not commit anything. CI fails a pull request whose server/schema/public is stale,
+# so by the time something is published that copy is correct.
 
 on:
-  release:
-    types: [published]
+  workflow_call:
+    inputs:
+      version:
+        description: 'The version the image is tagged with and reports in the UI'
+        type: string
+        required: true
+      ref:
+        description: 'The commit, branch or tag to build'
+        type: string
+        required: true
+      channel:
+        description: 'release (x.y.z + latest) or rc (x.y.z-rc.n + latest-rc)'
+        type: string
+        required: true
   workflow_dispatch:
     inputs:
-      rc:
-        description: 'Publish as a release candidate (<version>-rc and latest-rc)'
-        type: boolean
-        default: false
+      tag:
+        description: 'An existing release tag to publish again, e.g. 6.3.1'
+        type: string
+        required: true
 
 permissions:
   contents: read
   packages: write   # GHCR, through the automatic GITHUB_TOKEN - no secret needed
-
-concurrency:
-  group: publish
-  cancel-in-progress: false
 
 jobs:
   publish:
     name: Build and push
     runs-on: ubuntu-latest
     environment: dockerhub
+    # one publish per version at a time ; a newer rc run for the same pull request waits
+    concurrency:
+      group: publish-${{ inputs.version || inputs.tag }}
+      cancel-in-progress: false
+    env:
+      VERSION: ${{ inputs.version || inputs.tag }}
+      REF: ${{ inputs.ref || inputs.tag }}
+      CHANNEL: ${{ inputs.channel || 'release' }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.REF }}
 
-      # server/package.json is the single source of truth for the version - the same file
-      # tag_release.yml reads to name the tag, so the image and the tag cannot disagree
-      - name: Read the version
+      - name: Read the build facts
         id: v
         run: |
-          version=$(jq -r .version server/package.json)
-          echo "version=$version" >> "$GITHUB_OUTPUT"
+          case "$CHANNEL" in release|rc) ;; *) echo "::error::unknown channel '$CHANNEL'"; exit 1 ;; esac
           echo "build_time=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
-          # short, not github.sha : generate-build-info.sh writes GIT_SHA verbatim into
-          # build-info.json, and publish.sh has always passed `git rev-parse --short`.
-          # The full 40 characters would change what the About dialog shows.
-          echo "sha_short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
-          echo "Publishing $version"
+          # short, not the full sha : generate-build-info.sh writes GIT_SHA verbatim into
+          # build-info.json and the About dialog has always shown the short form
+          echo "sha_short=$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT"
+          echo "Publishing $VERSION ($CHANNEL) from $(git rev-parse HEAD)"
 
-      # a release must describe the version in the manifest, or the image and the git tag
-      # would name different things - the failure this whole arrangement exists to prevent
-      - name: Check the release tag matches the manifest
-        if: github.event_name == 'release'
+      # A release must be built from a commit whose manifest names that release, or the
+      # image, the tag and a local build of the tag would describe different versions.
+      # release-please guarantees it ; this makes a hand-run re-publish prove it too.
+      - name: Check the manifest matches the release
+        if: env.CHANNEL == 'release'
         run: |
-          tag="${{ github.event.release.tag_name }}"
-          version="${{ steps.v.outputs.version }}"
-          if [ "${tag#v}" != "$version" ]; then
-            echo "::error::release tag '$tag' does not match server/package.json version '$version'"
+          manifest=$(jq -r .version server/package.json)
+          if [ "$manifest" != "$VERSION" ]; then
+            echo "::error::server/package.json says '$manifest' at $REF, not '$VERSION'"
             exit 1
           fi
-          echo "release tag and manifest agree on $version"
+          echo "manifest and release agree on $VERSION"
 
-      # Docker Hub is optional, GHCR is not. GHCR needs no secret at all - the automatic
-      # GITHUB_TOKEN authenticates it - so the workflow publishes something useful before
-      # anyone has created a Docker Hub token, and the first run proves itself. When the
-      # secret is absent the Docker Hub login and its tags are simply left out rather than
-      # failing the job.
+      # Docker Hub is optional, GHCR is not. When the secret is absent the Docker Hub
+      # login and its tags are left out rather than failing the job.
       - name: Is Docker Hub configured?
         id: hub
         env:
@@ -84,7 +88,6 @@ jobs:
         run: |
           if [ -n "$DOCKERHUB_TOKEN" ]; then
             echo "enabled=true" >> "$GITHUB_OUTPUT"
-            echo "Docker Hub credentials present - publishing there as well"
           else
             echo "enabled=false" >> "$GITHUB_OUTPUT"
             echo "::notice::DOCKERHUB_TOKEN is not set - publishing to GHCR only"
@@ -93,27 +96,20 @@ jobs:
       - name: Work out the tags
         id: tags
         run: |
-          version="${{ steps.v.outputs.version }}"
           # github.repository is already lowercase here ; GHCR rejects anything else
           ghcr="ghcr.io/${{ github.repository }}"
           hub="${{ vars.DOCKERHUB_REPOSITORY || 'ansibleguy/ansibleforms' }}"
+          if [ "$CHANNEL" = "rc" ]; then moving="latest-rc"; else moving="latest"; fi
 
-          if [ "${{ inputs.rc }}" = "true" ]; then
-            primary="$version-rc"; moving="latest-rc"
-          else
-            primary="$version"; moving="latest"
-          fi
-
-          tags="$ghcr:$primary,$ghcr:$moving"
+          tags="$ghcr:$VERSION,$ghcr:$moving"
           if [ "${{ steps.hub.outputs.enabled }}" = "true" ]; then
-            tags="$tags,$hub:$primary,$hub:$moving"
+            tags="$tags,$hub:$VERSION,$hub:$moving"
           fi
           echo "list=$tags" >> "$GITHUB_OUTPUT"
           echo "$tags" | tr ',' '\n'
 
       - uses: docker/setup-buildx-action@v3
 
-      # no secret : GITHUB_TOKEN carries packages:write, declared on the job above
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
@@ -128,6 +124,8 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      # VERSION is baked into build-info.json, which /api/v2/version prefers over
+      # server/package.json - that is how a release candidate shows its own version
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
@@ -137,17 +135,18 @@ jobs:
           build-args: |
             GIT_SHA=${{ steps.v.outputs.sha_short }}
             BUILD_TIME=${{ steps.v.outputs.build_time }}
+            VERSION=${{ env.VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Summary
         run: |
           {
-            echo "### Published"
+            echo "### Published $VERSION ($CHANNEL)"
             echo ""
             echo '```'
             echo "${{ steps.tags.outputs.list }}" | tr ',' '\n'
             echo '```'
             echo ""
-            echo "from \`${{ github.sha }}\`"
+            echo "from \`$(git rev-parse HEAD)\`"
           } >> "$GITHUB_STEP_SUMMARY"
