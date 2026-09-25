@@ -130,6 +130,9 @@ describe("every call must be an fn. call, wherever it sits", () => {
     "1 + Date.now()",
     "fn.a()()",
     "fn.a()[0]()",
+    "fn.a().b()()",
+    "fn.a().constructor('return 1')()",
+    "x.format('a')",
   ]) {
     test(`refuses ${expr}`, () => {
       assert.throws(() => sanitizeExpression(expr), /custom functions|Abuse|not allowed/);
@@ -142,6 +145,9 @@ describe("every call must be an fn. call, wherever it sits", () => {
     "'x' + fn.upper('a')",
     "fn.a(fn.b(1))",
     "(1 + 2) * 3",
+    // methods on a call's result - fn.fnTime returns a dayjs object
+    "fn.fnTime().format('YYYY-MM-DD')",
+    "fn.fnTime().add(30,'day').format('YYYY-MM-DD')",
   ]) {
     test(`accepts ${expr}`, () => {
       assert.equal(sanitizeExpression(expr), expr);

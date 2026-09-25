@@ -66,7 +66,14 @@ function sanitizeExpression(expr){
   // Blank out the legitimate call heads, then refuse anything that still looks like a
   // call: an open parenthesis directly after an identifier, a `]` or a `)`. Grouping
   // parentheses in arithmetic are preceded by an operator or nothing, so they survive.
-  const callsRemoved = sanitized.replace(/\bfnc?\.[A-Za-z0-9_$]+\s*\(/g, "(")
+  //
+  // A METHOD on the result of a call is allowed too: `fn.fnTime().add(5,'day').format('YYYY')`.
+  // fn.fnTime returns a dayjs object, so it is useless without a chained method - refusing
+  // it broke existing forms. Only `).name(` is let through, so the thing being called on is
+  // always the outcome of an fn./fnc. call; the blacklist below still refuses `.constructor(`.
+  const callsRemoved = sanitized
+    .replace(/\bfnc?\.[A-Za-z0-9_$]+\s*\(/g, "(")
+    .replace(/\)\s*\.\s*[A-Za-z0-9_$]+\s*\(/g, ")+(")
   if(callsRemoved.match(/[A-Za-z0-9_$\])]\s*\(/)){
     message="Abuse attempt of eval function, using custom functions, try runLocal"
     logger.error(message)
