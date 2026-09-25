@@ -44,8 +44,8 @@ Release-As: 7.0.0
 
 ## Release candidates
 
-To test a version before it is released, label a pull request **`release-candidate`**.
-Every push to it then publishes:
+To test a pull request before it is merged: Actions → **Release candidate** → Run workflow →
+enter the pull request number. That publishes:
 
 - `ansibleguy/ansibleforms:<next>-rc.<pr>.<run>`, for example `6.4.0-rc.512.7`
 - `ansibleguy/ansibleforms:latest-rc`
@@ -54,7 +54,8 @@ and a comment on the pull request lists the tags. The UI and the Status page of 
 show the rc version.
 
 `<next>` is the version the pull request would release. On the release pull request it is
-exactly the upcoming version, so labeling that pull request tests the whole release.
+exactly the upcoming version, so a candidate of that pull request tests the whole release.
+Run the workflow again after new pushes to get a newer candidate.
 
 Only pull requests from branches of this repository publish. A fork's code never runs with
 the registry credentials.
@@ -73,7 +74,7 @@ versioned by date (`2026.10.01`, plus `latest`), independent of the application.
   `Dockerfile.base` changes on main, and on the 1st of every month for security updates.
 - **Use it:** the application `Dockerfile` pins the base by digest, so a new base changes
   nothing until the pin moves. Dependabot opens a `build(deps): bump ansibleforms-base`
-  pull request for that. Label it `release-candidate` to test the app on the new base, then
+  pull request for that. Build a release candidate of it to test the app on the new base, then
   merge it. Retitle it `fix(base): ...` if the update should appear in the changelog.
 
 ## Hotfix on an older version
@@ -102,7 +103,6 @@ A test server does not need an image copied to it: it can pull `latest-rc`.
 | `DOCKERHUB_REPOSITORY`, `DOCKERHUB_BASE_REPOSITORY` | optional repository variables | publish.yml, base.yml |
 | `dockerhub` environment | must allow `main` and pull request refs | publish.yml (rc runs on a pull request) |
 | `github-pages` environment | deployment branch `main` | pages.yml |
-| label `release-candidate` | repository labels | rc.yml |
 | ruleset on `main` | pull request required, squash only, required checks, no force push | everything |
 
 The App token is needed because a pull request opened with the default `GITHUB_TOKEN`

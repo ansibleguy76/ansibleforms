@@ -32,6 +32,6 @@ fail is worth more than the test passing.
 - [ ] New environment variable has a `docs/_data/help.yaml` entry
 
 <!--
-Maintainers: label this pull request `release-candidate` to publish a test image
-(<next version>-rc.<pr>.<run> and latest-rc) on every push. See RELEASING.md.
+Maintainers: Actions -> Release candidate -> Run workflow with this pull request's number
+publishes a test image (<next version>-rc.<pr>.<run> and latest-rc). See RELEASING.md.
 -->

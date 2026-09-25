@@ -1,51 +1,77 @@
 name: Release candidate
 
-# Put the `release-candidate` label on a pull request and every push to it publishes an
-# image to test before merging :
+# Publishes a test image of a pull request, on demand :
+#
+#   Actions -> Release candidate -> Run workflow -> enter the pull request number
 #
 #   <next version>-rc.<pr number>.<run number>   e.g. 6.4.0-rc.512.7
 #   latest-rc                                    always the most recent candidate
+#
+# A button rather than a label : a workflow listening for labels or pushes starts - and
+# shows a skipped run - on EVERY label and push of EVERY pull request, Dependabot's included.
 #
 # The next version is the one this pull request would release. On the release pull
 # request itself server/package.json already holds it (its tag does not exist yet) ;
 # on any other pull request it is the last release, bumped by the type in the PR title.
 #
 # Only pull requests from a branch of THIS repository. A fork's code never runs with the
-# Docker Hub secret, and only someone with write access can set the label.
+# Docker Hub secret.
 
 on:
-  pull_request:
-    types: [labeled, synchronize, reopened]
-    branches: [main]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: 'Pull request number'
+        type: number
+        required: true
 
 permissions:
   contents: read
 
 concurrency:
-  group: rc-${{ github.event.pull_request.number }}
+  group: rc-${{ inputs.pr }}
   cancel-in-progress: true
 
 jobs:
   version:
     name: Version
-    if: >-
-      contains(github.event.pull_request.labels.*.name, 'release-candidate') &&
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      (github.event.action != 'labeled' || github.event.label.name == 'release-candidate')
     runs-on: ubuntu-latest
     outputs:
       rc: ${{ steps.v.outputs.rc }}
+      sha: ${{ steps.pr.outputs.sha }}
     steps:
+      - name: Read the pull request
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ inputs.pr }}
+        run: |
+          pr=$(gh api "repos/${{ github.repository }}/pulls/$PR")
+          if [ "$(jq -r .head.repo.full_name <<< "$pr")" != "${{ github.repository }}" ]; then
+            echo "::error::#$PR comes from a fork - release candidates are built only from branches of this repository"
+            exit 1
+          fi
+          if [ "$(jq -r .state <<< "$pr")" != "open" ]; then
+            echo "::error::#$PR is not open"
+            exit 1
+          fi
+          echo "sha=$(jq -r .head.sha <<< "$pr")" >> "$GITHUB_OUTPUT"
+          {
+            echo "title<<EOF"
+            jq -r .title <<< "$pr"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ steps.pr.outputs.sha }}
           fetch-depth: 0
 
       - name: Work out the candidate version
         id: v
         env:
-          TITLE: ${{ github.event.pull_request.title }}
-          PR: ${{ github.event.pull_request.number }}
+          TITLE: ${{ steps.pr.outputs.title }}
+          PR: ${{ inputs.pr }}
           RUN: ${{ github.run_number }}
         run: |
           base=$(jq -r .version server/package.json)
@@ -64,7 +90,7 @@ jobs:
           fi
           rc="$next-rc.$PR.$RUN"
           echo "rc=$rc" >> "$GITHUB_OUTPUT"
-          echo "release candidate $rc (last release $base)"
+          echo "release candidate $rc (manifest $base)"
 
   publish:
     name: Publish
@@ -75,7 +101,7 @@ jobs:
     uses: ./.github/workflows/publish.yml
     with:
       version: ${{ needs.version.outputs.rc }}
-      ref: ${{ github.event.pull_request.head.sha }}
+      ref: ${{ needs.version.outputs.sha }}
       channel: rc
     secrets: inherit
 
@@ -88,6 +114,7 @@ jobs:
     steps:
       - uses: marocchino/sticky-pull-request-comment@v2
         with:
+          number: ${{ inputs.pr }}
           header: release-candidate
           message: |
             ### Release candidate `${{ needs.version.outputs.rc }}`
@@ -97,5 +124,5 @@ jobs:
             docker pull ghcr.io/${{ github.repository }}:${{ needs.version.outputs.rc }}
             ```
 
-            Also tagged `latest-rc`. Built from ${{ github.event.pull_request.head.sha }}.
-            Every push to this pull request publishes a new candidate while the label is on.
+            Also tagged `latest-rc`. Built from ${{ needs.version.outputs.sha }}.
+            Run the Release candidate workflow again to publish a newer candidate.

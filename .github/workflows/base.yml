@@ -10,7 +10,7 @@ name: Base image
 # The application Dockerfile pins the base by DIGEST, so publishing here changes nothing
 # by itself. Dependabot (the docker entry in .github/dependabot.yml) notices the new digest
 # behind :latest and opens a pull request that moves the pin - that pull request is where
-# a base update is reviewed, tested (label it release-candidate) and released.
+# a base update is reviewed, tested (build a release candidate of it) and released.
 
 on:
   workflow_dispatch:
