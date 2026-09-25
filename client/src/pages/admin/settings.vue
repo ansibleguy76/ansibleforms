@@ -52,7 +52,7 @@ const envGroupOrder = [
   { key: 'authentication', label: () => t('settings.settingsPage.envGroupAuthentication'), icon: 'user-shield',
     prefix: ['ADMIN_', 'ACCESS_TOKEN_'], exact: ['REINIT_ADMIN', 'AZURE_GRAPH_URI'] },
   { key: 'security', label: () => t('settings.settingsPage.envGroupSecurity'), icon: 'lock',
-    prefix: ['REST_'], exact: ['ENCRYPTION_SECRET', 'MASK_EXTRAVARS_REGEX'] },
+    prefix: ['REST_'], exact: ['ENCRYPTION_SECRET', 'MASK_EXTRAVARS_REGEX', 'EXTRAVARS_USER_FIELDS'] },
   { key: 'jobs', label: () => t('settings.settingsPage.envGroupJobs'), icon: 'fac,ansible',
     exact: ['ANSIBLE_PATH', 'PROCESS_MAX_BUFFER', 'REGEX_FILTER_JOB_OUTPUT', 'UPLOAD_PATH', 'UPLOAD_MAX_GB', 'VARS_FILES_PATH', 'AWX_API_PREFIX'] },
   { key: 'formsConfig', label: () => t('settings.settingsPage.envGroupFormsConfig'), icon: 'file-code',

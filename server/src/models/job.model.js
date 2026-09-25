@@ -133,6 +133,43 @@ function stripReservedExtravars(extravars, formObj = null) {
   return extravars;
 }
 
+/**
+ * Put the launching user into the extravars as `ansibleforms_user`, trimmed to whatever the
+ * instance and the form asked for (see Helpers.userForExtravars).
+ *
+ * Called from Job.launch rather than from the four places that used to assign the object -
+ * the two launch controllers, the schedule and the datasource - because this is the first
+ * point where the FORM is known, and the form may override the global setting with its own
+ * `userExtravars`. One place instead of four, and it runs before the job row is written, so
+ * the copy in jobs.extravars is trimmed too : that copy, not just the one AWX receives, is
+ * half of what the setting exists to stop leaking.
+ *
+ * Delete first, ALWAYS. A client controls req.body.extravars and the controllers used to
+ * overwrite `ansibleforms_user` with the real user - but under `none` there is nothing to
+ * overwrite it with, so an assignment that is merely skipped would leave a forged object
+ * standing in for the one the setting took away.
+ *
+ * Whose user object it is : the `user` passed to Job.launch, always, with one exception.
+ * A relaunch (`replay`) replays a stored job, whose extravars carry the user who SUBMITTED
+ * it, and replaying a job must not rewrite who ran it, so that one is kept. If the stored
+ * job has none, because it ran under `none`, the replay gets none either; filling in the
+ * person who pressed relaunch would make them the submitter.
+ *
+ * Nothing else may keep a user found in the extravars. The launch controllers get them
+ * from a request body, and the schedule and the datasource get them from their own
+ * `extra_vars` YAML, which whoever edits the schedule writes. Either way an
+ * `ansibleforms_user` in there is somebody claiming to be a user they are not, which is
+ * precisely the claim the FAQ tells playbook authors to assert on.
+ */
+function setUserExtravars(extravars, user, formObj, replay = false) {
+  const source = replay ? extravars.ansibleforms_user : user;
+  delete extravars.ansibleforms_user;
+  if (source === undefined || source === null) return extravars;
+  const trimmed = Helpers.userForExtravars(source, formObj?.userExtravars);
+  if (trimmed !== undefined) extravars.ansibleforms_user = trimmed;
+  return extravars;
+}
+
 function delay(t, v) {
   return new Promise((resolve) => setTimeout(resolve, t, v));
 }
@@ -817,10 +854,18 @@ Job.launch = async function ({
   // (datasource, schedule, and a multistep launching its own steps) build extravars server
   // side from stored configuration, where a `__x__` key is legitimate and stripping it
   // would break the run.
-  fromClient = false
+  fromClient = false,
+  // Set ONLY by Job.relaunch : keep the submitter stored in the replayed extravars instead
+  // of putting `user` there (see setUserExtravars).
+  replay = false
 }) {
   const creds = credentials; // Alias for backward compatibility internally
-  
+
+  // A step of a multistep arrives with its formObj already built; a real form arrives with
+  // a name and is loaded below. The difference matters for the user trim further down, so
+  // record it before the load overwrites the distinction.
+  const isStep = !!formObj;
+
   // a formobj can be a full step pushed
   if (!formObj) {
     // we load it, it's an actual form
@@ -838,6 +883,8 @@ Job.launch = async function ({
   // form's own value. formObj comes from Form.load(user.roles, ...), so the declarations are
   // read from a form this user is allowed to run.
   if (fromClient) stripReservedExtravars(extravars, formObj);
+
+  if (!isStep) setUserExtravars(extravars, user, formObj, replay);
 
   pushForminfoToExtravars(formObj, extravars, creds);
 
@@ -1197,7 +1244,8 @@ Job.relaunch = async function (user, id, verbose) {
       user,
       credentials,
       extravars,
-      rawFormData
+      rawFormData,
+      replay: true
     });
     // Send relaunch notification
     await Job.sendEventNotification(id, 'relaunch', user);
@@ -1650,8 +1698,15 @@ Multistep.launch = async function ({
             if (step.key && ev[step.key]) {
               // logger.warning(step.key + " exists using it")
               ev = ev[step.key];
-              // we copy the user profile in the step data
-              ev.ansibleforms_user = extravars.ansibleforms_user;
+              // we copy the user profile in the step data - unless the form asked for no
+              // user at all, in which case there is nothing to copy and assigning undefined
+              // would put a key back that the setting just removed
+              // the slice is client data, so one it carries itself is dropped either way
+              if (extravars.ansibleforms_user !== undefined) {
+                ev.ansibleforms_user = extravars.ansibleforms_user;
+              } else {
+                delete ev.ansibleforms_user;
+              }
             }
             // wait the promise of step
             if (!finalSuccessStatus) {
@@ -2945,4 +3000,4 @@ Awx.findInventoryByName = async function (awxName, name) {
 
 export default Job;
 // named export of the awx interaction functions (mainly for testing)
-export { Awx, stripReservedExtravars };
+export { Awx, stripReservedExtravars, setUserExtravars };

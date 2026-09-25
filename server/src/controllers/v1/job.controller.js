@@ -133,7 +133,6 @@ const launch = async function(req, res) {
         var creds = req.body.credentials || {}
         // new in 4.0.16, awxCreds are extracted from form and extravars
         var user = req?.user?.user || {}
-        extravars.ansibleforms_user = user
         // check permission for verbose mode
         if (extravars.__verbose__ && !user.options.allowVerboseMode) {
           res.json(new RestResult("error","You do not have permission to use verbose mode","",""));

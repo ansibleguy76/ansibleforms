@@ -109,6 +109,10 @@ var app_config = {
     ? parseInt(process.env.BACKUP_COMMAND_TIMEOUT_SECONDS, 10)
     : 3600,
   maskExtravarsRegex: process.env.MASK_EXTRAVARS_REGEX || "password|secret|token",
+  // Which keys of the launching user are sent as `ansibleforms_user` in the extravars.
+  // Empty (the default) is the full object, exactly as every release before this one, and a
+  // form can override it with its own `userExtravars` property. See Helpers.userForExtravars.
+  extravarsUserFields: (process.env.EXTRAVARS_USER_FIELDS || "").trim(),
   gitCloneCommand: process.env.GIT_CLONE_COMMAND || "git clone",
   gitPullCommand: process.env.GIT_PULL_COMMAND || "git pull",
   gitPushCommand: process.env.GIT_PUSH_COMMAND || "git push"

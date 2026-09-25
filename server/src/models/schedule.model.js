@@ -99,7 +99,6 @@ class Schedule extends CrudModel {
       delete extravars.schedule.last_run;
       delete extravars.schedule.cron;
       delete extravars.schedule.extra_vars;
-      extravars.ansibleforms_user = user;
       // Job.launch is fire-and-forget and returns { id } - always truthy - so the else
       // below was unreachable and a schedule whose playbook failed still read 'success'.
       // Report what is actually known: the job was STARTED, and name it so the operator

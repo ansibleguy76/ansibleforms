@@ -1900,7 +1900,7 @@ const forbiddenFormKeys = {
   ansible: ['template', 'awx', 'steps', 'awxCredentials', 'executionEnvironment', 'scm_branch', 'instanceGroups', 'expression'],
   awx: ['playbook', 'playbookSubPath', 'ansibleCredentials', 'vaultCredentials', 'steps', 'expression'],
   multistep: ['playbook', 'playbookSubPath', 'template', 'awx', 'inventory', 'tags', 'limit', 'check', 'diff', 'scm_branch', 'executionEnvironment', 'instanceGroups', 'ansibleCredentials', 'awxCredentials', 'vaultCredentials', 'key', 'expression'],
-  subform: ['playbook', 'playbookSubPath', 'template', 'awx', 'steps', 'expression', 'roles', 'categories', 'notifications', 'approval', 'hasApproval', 'onSubmit', 'onSuccess', 'onFailure', 'onAbort', 'onFinish', 'inventory', 'tags', 'limit', 'check', 'diff', 'scm_branch', 'executionEnvironment', 'instanceGroups', 'ansibleCredentials', 'awxCredentials', 'vaultCredentials', 'credentials', 'abortable', 'allowRelaunch', 'verbose', 'keepExtravars', 'image', 'icon', 'iconColor', 'iconSize', 'overlayIcon', 'overlayIconTransform', 'overlayIconColor', 'overlayIconCircle', 'overlayIconText', 'overlayIconTextPosition', 'overlayIconTextColor', 'tileClass', 'order'],
+  subform: ['playbook', 'playbookSubPath', 'template', 'awx', 'steps', 'expression', 'roles', 'categories', 'notifications', 'approval', 'hasApproval', 'onSubmit', 'onSuccess', 'onFailure', 'onAbort', 'onFinish', 'inventory', 'tags', 'limit', 'check', 'diff', 'scm_branch', 'executionEnvironment', 'instanceGroups', 'ansibleCredentials', 'awxCredentials', 'vaultCredentials', 'credentials', 'abortable', 'allowRelaunch', 'verbose', 'keepExtravars', 'userExtravars', 'image', 'icon', 'iconColor', 'iconSize', 'overlayIcon', 'overlayIconTransform', 'overlayIconColor', 'overlayIconCircle', 'overlayIconText', 'overlayIconTextPosition', 'overlayIconTextColor', 'tileClass', 'order'],
 };
 
 // also used by the template : an input for a key the selected type forbids must
@@ -1934,6 +1934,7 @@ function openFormSettings() {
       abortable: !!parsed.abortable,
       verbose: !!parsed.verbose,
       keepExtravars: !!parsed.keepExtravars,
+      userExtravars: parsed.userExtravars || '',
       scmBranch: parsed.scm_branch || '',
       executionEnvironment: parsed.executionEnvironment || '',
       instanceGroups: Array.isArray(parsed.instanceGroups) ? parsed.instanceGroups.join(', ') : (parsed.instanceGroups || ''),
@@ -1967,6 +1968,7 @@ function applyFormSettings() {
     if (formTypeAllows('abortable')) setDocValue(doc, 'abortable', s.abortable ? true : undefined);
     if (formTypeAllows('verbose')) setDocValue(doc, 'verbose', s.verbose ? true : undefined);
     if (formTypeAllows('keepExtravars')) setDocValue(doc, 'keepExtravars', s.keepExtravars ? true : undefined);
+    if (formTypeAllows('userExtravars')) setDocValue(doc, 'userExtravars', (s.userExtravars || '').trim() || undefined);
     if (formTypeAllows('scm_branch')) setDocValue(doc, 'scm_branch', s.scmBranch.trim() || undefined);
     if (formTypeAllows('executionEnvironment')) setDocValue(doc, 'executionEnvironment', s.executionEnvironment.trim() || undefined);
     if (formTypeAllows('instanceGroups')) {
@@ -4222,6 +4224,9 @@ onBeforeUnmount(() => {
             </div>
             <div class="col-md-4" v-if="formTypeAllows('order')">
               <BsInput :isFloating="false" v-model="formSettings.order" :label="t('designer.formOrder')" icon="sort" type="number" />
+            </div>
+            <div class="col-md-4" v-if="formTypeAllows('userExtravars')">
+              <BsInput :isFloating="false" v-model="formSettings.userExtravars" :label="t('designer.formUserExtravars')" :help="t('designer.formUserExtravarsHelp')" icon="user-shield" placeholder="username,email,type" />
             </div>
             <div class="col-12">
               <BsInput :isFloating="false" type="textarea" v-model="formSettings.help" :label="t('designer.helpText')" icon="circle-question" rows="3" />

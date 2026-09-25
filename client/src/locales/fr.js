@@ -946,6 +946,8 @@ export default {
     formAbortable: "Annulable",
     formVerbose: "Verbeux",
     formKeepExtravars: "Conserver extravars",
+    formUserExtravars: "Utilisateur dans les extravars",
+    formUserExtravarsHelp: "Quelles cles de ansibleforms_user sont envoyees au playbook. Vide suit EXTRAVARS_USER_FIELDS, all envoie l'objet entier, none n'envoie rien.",
     formScmBranch: "Branche SCM",
     formExecEnv: "Environnement d'exécution",
     formInstanceGroups: "Groupes d'instances (séparés par des virgules)",
