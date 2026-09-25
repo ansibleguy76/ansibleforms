@@ -30,14 +30,14 @@ jobs:
       tag_name: ${{ steps.rp.outputs.tag_name }}
     steps:
       # the App once RELEASE_APP_ID is set, PAT_TOKEN until then - see RELEASING.md
-      - uses: actions/create-github-app-token@v1
+      - uses: actions/create-github-app-token@v3
         id: app
         if: vars.RELEASE_APP_ID != ''
         with:
           app-id: ${{ vars.RELEASE_APP_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
 
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@v5
         id: rp
         with:
           token: ${{ steps.app.outputs.token || secrets.PAT_TOKEN }}
