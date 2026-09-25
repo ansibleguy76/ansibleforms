@@ -454,7 +454,9 @@
     version: 6.0.0
   - name: EXPRESSION_SANITIZER
     type: string
-    allowed: off, paranoid, strict, legacy
+    # legacy is left out on purpose : the settings page builds its dropdown from this list,
+    # and legacy can only be set in the real environment
+    allowed: off, paranoid, strict
     choices:
     - name: "off"
       description: Server expressions are refused, only runLocal expressions work
