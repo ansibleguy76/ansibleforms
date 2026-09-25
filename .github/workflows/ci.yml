@@ -41,14 +41,14 @@ jobs:
       run:
         working-directory: client
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           # a scheduled run fires on the DEFAULT branch (main) ; test develop,
           # which is where the work lands. '' is checkout's own default for every
           # other event, so pull requests keep checking out their merge ref.
           ref: ${{ github.event_name == 'schedule' && 'develop' || '' }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -90,14 +90,14 @@ jobs:
       run:
         working-directory: server
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           # a scheduled run fires on the DEFAULT branch (main) ; test develop,
           # which is where the work lands. '' is checkout's own default for every
           # other event, so pull requests keep checking out their merge ref.
           ref: ${{ github.event_name == 'schedule' && 'develop' || '' }}
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -133,7 +133,7 @@ jobs:
     name: Public schema is up to date
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           # a scheduled run fires on the DEFAULT branch (main) ; test develop,
           # which is where the work lands. '' is checkout's own default for every
@@ -160,9 +160,9 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       # flags a dependency the PR adds that has a known advisory
-      - uses: actions/dependency-review-action@v4
+      - uses: actions/dependency-review-action@v5
         with:
           fail-on-severity: high

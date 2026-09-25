@@ -19,7 +19,7 @@ jobs:
 
     steps:
     - name: Check out code
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
       with:
         # ALWAYS develop, never the branch picked in "Use workflow from". That dropdown
         # defaults to main, and a release cut from main is a release of the last release -
