@@ -9,23 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
--   `GIT_PUSH_COMMAND` env var added, to customize the command used when pushing git repositories
--   Group filter for LDAP (admin panel > LDAP > Group Filter). A regular expression matched against the group name, the same one Entra ID and OIDC already have — only matching groups are kept, mapped to roles and sent to playbooks. Empty keeps every group, which is what every existing installation does today. A pattern that does not compile is logged and ignored rather than stripping everyone's roles
--   `EXTRAVARS_USER_FIELDS` env var and the `userExtravars` form property, to choose which keys of the launching user are sent to the playbook as `ansibleforms_user`. Empty keeps the whole object, as before; a comma separated list keeps only those keys and `none` sends nothing. The form property overrides the environment variable. The frontend `__user__` object and every permission check are unaffected. See `docs/faq.md`
--   The config seed is re-applied when the file changes (`CONFIG_SEED_RELOAD_SECONDS`, 60s by default), so a seed edited in git reaches a running instance without restarting it. `POST /api/v2/config-seed/apply` and `SIGHUP` force an apply immediately. A failed reload is never fatal: the configuration already in force is kept and the Status page reports it. See `docs/seed.md`
-
-### Fixed
-
--   `GET /api/v2/repository/<name>` kept answering with the `head` from before a pull for up to an hour. The repositories model is cached and `findByName` reads that cache, while the git operations wrote `status`, `output` and `head` with their own SQL and evicted nothing — so the single record disagreed with `GET /api/v2/repository` and with the database. Anything polling it to learn whether a commit had landed waited on a value that could not change
--   Wizard didn't load varsFiles
--   `target="_blank"` was stripped from links in `html` and `expression` fields, so they opened in the current tab and the form was lost (#480). `rel="noopener noreferrer"` is now forced on any link that opens a new tab
--   Startup failed with `Failed to create the path for the log files` when `LOG_PATH`'s parent folder did not exist — the folder is now created recursively
--   Prefill bug (relaunch and load from form)
-
-## [6.3.0] - 2026-07-31
-
-### Added
-
 -   Declarative config seed (`CONFIG_SEED_PATH`) — rebuild an instance from a yaml file. See `docs/seed.md`
 -   An empty database creates its own schema at startup
 -   Audit trail (`/admin/audit`) — append-only, and secrets are never stored
@@ -41,6 +24,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   Server-wide default language and theme, plus a Color theme
 -   A visual cron editor with presets and a next-runs preview
 -   Schedules can be created from the admin UI
+-   `GIT_PUSH_COMMAND` env var added, to customize the command used when pushing git repositories
+-   Group filter for LDAP (admin panel > LDAP > Group Filter). A regular expression matched against the group name, the same one Entra ID and OIDC already have — only matching groups are kept, mapped to roles and sent to playbooks. Empty keeps every group, which is what every existing installation does today. A pattern that does not compile is logged and ignored rather than stripping everyone's roles
+-   `EXTRAVARS_USER_FIELDS` env var and the `userExtravars` form property, to choose which keys of the launching user are sent to the playbook as `ansibleforms_user`. Empty keeps the whole object, as before; a comma separated list keeps only those keys and `none` sends nothing. The form property overrides the environment variable. The frontend `__user__` object and every permission check are unaffected. See `docs/faq.md`
+-   The config seed is re-applied when the file changes (`CONFIG_SEED_RELOAD_SECONDS`, 60s by default), so a seed edited in git reaches a running instance without restarting it. `POST /api/v2/config-seed/apply` and `SIGHUP` force an apply immediately. A failed reload is never fatal: the configuration already in force is kept and the Status page reports it. See `docs/seed.md`
+-   `EXPRESSION_SANITIZER` env var, to choose how strictly server expressions (without `runLocal`) are checked: `off` refuses every server expression, `paranoid` allows only direct `fn.`/`fnc.` calls, `strict` (default) also allows methods on their result, and `legacy` restores the 6.2.1 rules. `legacy` lets any authenticated user run code on the server, so it can only be set in the real environment (not from the settings page), logs a warning at startup and for every expression `strict` would refuse, and shows as a warning on the Status page
+-   Categories can be moved around the tree — move up, move down, indent and outdent, in the settings Categories page and in the designer, taking the whole subtree along
+-   Constants can hold a list or a nested object — the value box in the designer and on the settings page is read as YAML, so a block list, a list of objects and a nested map are stored as such instead of as their source text
 
 ### Changed
 
@@ -60,7 +50,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -   A designer save deleted form files the loader had skipped
 -   A repository named `forms` treated its whole root as a forms folder, so a save deleted unrelated yaml files
--   A job whose credentials could not be resolved ran anyway, with the variable missing
 -   Approving a job twice at once launched it twice
 -   A multistep step whose status could not be read counted as passed
 -   A failed backup listed as a valid restore point
@@ -83,6 +72,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   An invalid `MASK_EXTRAVARS_REGEX` or `REGEX_FILTER_JOB_OUTPUT` broke job launching and made every job unviewable
 -   Bulk delete on Known Hosts removed the wrong entries — rows were keyed by position
 -   `OLD_BACKUP_DAYS=0` deleted every config restore point. It now keeps everything
+-   `GET /api/v2/repository/<name>` kept answering with the `head` from before a pull for up to an hour. The repositories model is cached and `findByName` reads that cache, while the git operations wrote `status`, `output` and `head` with their own SQL and evicted nothing — so the single record disagreed with `GET /api/v2/repository` and with the database. Anything polling it to learn whether a commit had landed waited on a value that could not change
+-   Wizard didn't load varsFiles
+-   `target="_blank"` was stripped from links in `html` and `expression` fields, so they opened in the current tab and the form was lost (#480). `rel="noopener noreferrer"` is now forced on any link that opens a new tab
+-   Startup failed with `Failed to create the path for the log files` when `LOG_PATH`'s parent folder did not exist — the folder is now created recursively
+-   Prefill bug (relaunch and load from form)
 
 ### Security
 
