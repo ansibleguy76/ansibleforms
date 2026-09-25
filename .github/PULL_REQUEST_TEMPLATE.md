@@ -1,5 +1,6 @@
 <!--
-Base branch should be `develop`, not `main`. See CONTRIBUTING.md.
+Base branch is `main`. The TITLE must be a Conventional Commit - `feat: ...`, `fix: ...` -
+because it becomes the squash commit and the CHANGELOG line. See CONTRIBUTING.md.
 Security problem? Do not open a PR or an issue - see SECURITY.md.
 -->
 
@@ -23,9 +24,14 @@ fail is worth more than the test passing.
 
 ## Checklist
 
-- [ ] Base branch is `develop`
-- [ ] `CHANGELOG.md` updated under `## [Unreleased]`, if a user or operator would notice
+- [ ] Branch is named `<type>/<description>` and the title is a Conventional Commit that reads well as a changelog line
+- [ ] `CHANGELOG.md` is NOT edited - it is generated from the title on release
 - [ ] UI strings added to **all six** locale files (`en`, `de`, `fr`, `it`, `es`, `nl`)
 - [ ] New page has a router entry with a `beforeEnter` guard, and a matching sidebar `permission:`
 - [ ] New database column is in **both** the schema patch and `create_schema_and_tables.sql`, plus `SCHEMA_MANIFEST`
 - [ ] New environment variable has a `docs/_data/help.yaml` entry
+
+<!--
+Maintainers: label this pull request `release-candidate` to publish a test image
+(<next version>-rc.<pr>.<run> and latest-rc) on every push. See RELEASING.md.
+-->

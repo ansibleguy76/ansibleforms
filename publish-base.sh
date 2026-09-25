@@ -52,4 +52,4 @@ docker push ansibleguy/ansibleforms-base:latest
 docker rmi $(docker images -f "dangling=true" -q) 2>/dev/null || true
 
 echo "Base image published successfully!"
-echo "You can now use ./publish-rc.sh, ./publish-local.sh, or ./publish.sh for much faster builds."
+echo "Update the digest pin in Dockerfile, or let Dependabot propose it. Normally the Base image workflow does all of this - see RELEASING.md."

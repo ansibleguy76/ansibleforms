@@ -774,7 +774,7 @@ Health.check = async function () {
   const add = (key, value, detail) => { if (value !== null && value !== undefined) info.push({ key, value, detail: detail ?? null }); };
   // version first : it is the one fact every support conversation opens with
   add('version', buildInfo?.gitSha && buildInfo.gitSha !== 'dev'
-    ? `${pkgVersion || 'unknown'} (${buildInfo.gitSha}${buildInfo.dirty ? '-dirty' : ''})`
+    ? `${buildInfo.version || pkgVersion || 'unknown'} (${buildInfo.gitSha}${buildInfo.dirty ? '-dirty' : ''})`
     : (pkgVersion || 'unknown'), buildInfo || null);
   // Omitted entirely when there is no local ansible, rather than shown as 'not installed'.
   // An instance that only drives AWX/AAP has none and does not need any, so the row would

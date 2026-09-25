@@ -1,6 +1,6 @@
 name: CI
 
-# Runs on every pull request, and on develop after a merge.
+# Runs on every pull request, and on main after a merge.
 #
 # Client and server are separate jobs so they run in parallel - the server suite is the
 # long pole (~1 minute) and the client is a few seconds plus a build.
@@ -11,9 +11,9 @@ name: CI
 
 on:
   pull_request:
-    branches: [develop, main]
+    branches: [main]
   push:
-    branches: [develop]
+    branches: [main]
   # Daily, because some things break with no commit at all and a PR-triggered run only
   # ever asks about changes. This repository has already had one: a retention test dated
   # its fixtures relative to a fixed day and measured them against the real clock, so it
@@ -42,11 +42,6 @@ jobs:
         working-directory: client
     steps:
       - uses: actions/checkout@v6
-        with:
-          # a scheduled run fires on the DEFAULT branch (main) ; test develop,
-          # which is where the work lands. '' is checkout's own default for every
-          # other event, so pull requests keep checking out their merge ref.
-          ref: ${{ github.event_name == 'schedule' && 'develop' || '' }}
 
       - uses: actions/setup-node@v4
         with:
@@ -91,11 +86,6 @@ jobs:
         working-directory: server
     steps:
       - uses: actions/checkout@v6
-        with:
-          # a scheduled run fires on the DEFAULT branch (main) ; test develop,
-          # which is where the work lands. '' is checkout's own default for every
-          # other event, so pull requests keep checking out their merge ref.
-          ref: ${{ github.event_name == 'schedule' && 'develop' || '' }}
 
       - uses: actions/setup-node@v4
         with:
@@ -134,11 +124,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-        with:
-          # a scheduled run fires on the DEFAULT branch (main) ; test develop,
-          # which is where the work lands. '' is checkout's own default for every
-          # other event, so pull requests keep checking out their merge ref.
-          ref: ${{ github.event_name == 'schedule' && 'develop' || '' }}
 
       # server/schema/public/*.json is generated but committed, and it is only
       # regenerated inside publish.sh / publish-rc.sh - so it silently goes stale
