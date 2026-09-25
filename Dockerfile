@@ -6,14 +6,14 @@
 #   docker pull ansibleguy/ansibleforms-base:latest
 #   docker inspect --format='{{index .RepoDigests 0}}' ansibleguy/ansibleforms-base:latest
 #
-FROM ansibleguy/ansibleforms-base:latest@sha256:8a1ea5dd0a80be59ce78b4520893e0d42dc0d1231c0af02064a48bce5aad4b23 AS nodebase
+FROM ansibleguy/ansibleforms-base:latest@sha256:783390a3d6811d096d6fd59efc5604e4ed8e1a4bbad6ebe37e2513718fca2bfb AS nodebase
 
 ##################################################
 # builder stage
 # intermediate build to compile the client application with vite
 # can run in parallel with base stage
 
-FROM ansibleguy/ansibleforms-base:latest@sha256:8a1ea5dd0a80be59ce78b4520893e0d42dc0d1231c0af02064a48bce5aad4b23 AS tmp_builder
+FROM ansibleguy/ansibleforms-base:latest@sha256:783390a3d6811d096d6fd59efc5604e4ed8e1a4bbad6ebe37e2513718fca2bfb AS tmp_builder
 
 # Build arguments for git SHA, build time and version. VERSION is empty for a local build,
 # which leaves server/package.json as the version shown ; CI passes the release or
