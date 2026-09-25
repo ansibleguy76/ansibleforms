@@ -1,7 +1,7 @@
-# The base image is pinned by DIGEST, not by :latest. It is only ever published as
-# :latest (publish-base.sh), so a rebuild of the base silently changed what every
-# application build started from - with no commit here to show for it. Updating the pin
-# is now a deliberate, reviewable act.
+# The base image is pinned by DIGEST, not by :latest. A rebuild of the base (the Base
+# image workflow) moves :latest, and without the pin that would silently change what every
+# application build starts from - with no commit here to show for it. Updating the pin
+# is a deliberate, reviewable act : Dependabot proposes it as a pull request.
 #
 #   docker pull ansibleguy/ansibleforms-base:latest
 #   docker inspect --format='{{index .RepoDigests 0}}' ansibleguy/ansibleforms-base:latest

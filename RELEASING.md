@@ -88,7 +88,6 @@ and release. If an old line must get a fix, branch from its tag, fix, bump
 ## Local scripts
 
 - `publish-local.sh` builds the application image on your machine, without pushing.
-- `publish-base.sh` builds and pushes the base image by hand, for when the workflow cannot.
 
 A test server does not need an image copied to it: it can pull `latest-rc`.
 

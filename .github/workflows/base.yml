@@ -87,7 +87,7 @@ jobs:
           echo "list=$tags" >> "$GITHUB_OUTPUT"
           echo "$tags" | tr ',' '\n'
 
-      # no cache, like publish-base.sh's --no-cache : the point of a rebuild is fresh packages
+      # no cache : the point of a rebuild is fresh packages
       - name: Build and push
         id: build
         uses: docker/build-push-action@v7
