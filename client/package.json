@@ -35,7 +35,7 @@
     "jwt-decode": "^4.0.0",
     "lodash": "^4.18.1",
     "roboto-fontface": "^0.10.0",
-    "vue": "^3.5.42",
+    "vue": "^3.5.43",
     "vue-i18n": "^11.4.10",
     "vue-json-pretty": "^2.6.0",
     "vue-showdown": "^4.2.0",
