@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.3.0] - 2026-09-25
+
 ### Added
 
 -   Declarative config seed (`CONFIG_SEED_PATH`) — rebuild an instance from a yaml file. See `docs/seed.md`
