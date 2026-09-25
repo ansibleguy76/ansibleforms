@@ -9,6 +9,7 @@ import { registerHttpsServer } from './src/lib/httpsContext.js';
 import authConfig from './config/auth.config.js';
 import logger from './src/lib/logger.js';
 import { reloadConfigSeed } from './src/lib/seed.js';
+import { getExpressionMode } from './src/lib/expressionMode.js';
 import https from 'https';
 import http from 'http';
 import fs from 'fs';
@@ -22,6 +23,10 @@ const app = express();
 // load the ansibleforms app
 async function start(){
   await ansibleforms.load(app);
+
+  if (getExpressionMode() === 'legacy') {
+    logger.warning('[SECURITY] EXPRESSION_SANITIZER=legacy : server expressions use the 6.2.1 rules, which let any authenticated user run code on the server. Rewrite the expressions the log reports and go back to strict.');
+  }
 
   if (authConfig.secretIsGenerated) {
     logger.warning('[SECURITY] JWT signing secret was auto-generated. All tokens will be invalidated on restart. Set the ACCESS_TOKEN_SECRET environment variable for persistent token signing.');

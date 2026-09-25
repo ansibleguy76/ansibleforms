@@ -5,14 +5,53 @@ import fnc from './../functions/custom.js';
 // use as fn.xxxxx (where xxxxx is you own function name)
 
 import logger from "../lib/logger.js";
+import { getExpressionMode } from "../lib/expressionMode.js";
 //expression object create - not used, but you could create an instance with it
 var Expression=function(){
 
 };
 
-function sanitizeExpression(expr){
+// mode is EXPRESSION_SANITIZER (see lib/expressionMode.js) : off, paranoid, strict or legacy
+function sanitizeExpression(expr, mode = 'strict'){
   var sanitized=expr
   var message
+  if(mode === 'off'){
+    message="Server expressions are disabled (EXPRESSION_SANITIZER=off), use runLocal"
+    logger.error(message)
+    throw Error(message)
+  }
+  // The 6.2.1 rules, kept as an upgrade escape hatch. They are known to be bypassable
+  // (`fn.x || import(...)`), so every expression the strict rules would refuse is logged -
+  // that list is what has to be rewritten before the mode can go back to strict.
+  if(mode === 'legacy'){
+    try {
+      sanitizeExpression(expr, 'strict')
+    } catch (e) {
+      logger.warning(`EXPRESSION_SANITIZER=legacy let through an expression the strict rules refuse (${e.message}) : ${expr}`)
+    }
+    if(sanitized.match(/\r|\n/)){
+      message="Abuse attempt of eval function, attempt to have multilines"
+      logger.error(message)
+      throw Error(message)
+    }
+    sanitized = sanitized.replace(/(["'])(?:(?=(\\?))\2.)*?\1/g,"")
+    if(sanitized.match(/;/)){
+      message="Abuse attempt of eval function, attempt to have multi expression, try runLocal"
+      logger.error(message)
+      throw Error(message)
+    }
+    if(sanitized.match(/process\.env/)){
+      message="Abuse attempt of eval function, attempt to get environment variables"
+      logger.error(message)
+      throw Error(message)
+    }
+    if(sanitized.match(/\(/) && !sanitized.match(/^fnc{0,1}\.+/g)){
+      message="Abuse attempt of eval function, using custom functions, try runLocal"
+      logger.error(message)
+      throw Error(message)
+    }
+    return expr
+  }
   // first we check if the expression has errors
   if(sanitized.match(/\r|\n/)){
     message="Abuse attempt of eval function, attempt to have multilines"
@@ -71,9 +110,11 @@ function sanitizeExpression(expr){
   // fn.fnTime returns a dayjs object, so it is useless without a chained method - refusing
   // it broke existing forms. Only `).name(` is let through, so the thing being called on is
   // always the outcome of an fn./fnc. call; the blacklist below still refuses `.constructor(`.
-  const callsRemoved = sanitized
-    .replace(/\bfnc?\.[A-Za-z0-9_$]+\s*\(/g, "(")
-    .replace(/\)\s*\.\s*[A-Za-z0-9_$]+\s*\(/g, ")+(")
+  // The paranoid mode drops this allowance.
+  let callsRemoved = sanitized.replace(/\bfnc?\.[A-Za-z0-9_$]+\s*\(/g, "(")
+  if(mode !== 'paranoid'){
+    callsRemoved = callsRemoved.replace(/\)\s*\.\s*[A-Za-z0-9_$]+\s*\(/g, ")+(")
+  }
   if(callsRemoved.match(/[A-Za-z0-9_$\])]\s*\(/)){
     message="Abuse attempt of eval function, using custom functions, try runLocal"
     logger.error(message)
@@ -112,7 +153,7 @@ function sanitizeExpression(expr){
   return expr
 }
 async function doAsync (expr) {
-    var sanitized = sanitizeExpression(expr)
+    var sanitized = sanitizeExpression(expr, getExpressionMode())
     // fn and fnc are resolved by name inside eval(), they must stay named as-is
     // eslint-disable-next-line no-unused-vars
     return await (function(fn, fnc) {

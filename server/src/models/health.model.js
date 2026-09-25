@@ -8,6 +8,7 @@ import appConfig from '../../config/app.config.js';
 import logConfig from '../../config/log.config.js';
 import Vault from '../lib/vault.js';
 import { getSeedState } from '../lib/seed.js';
+import { getExpressionMode } from '../lib/expressionMode.js';
 import net from 'net';
 import tls from 'tls';
 import logger from '../lib/logger.js';
@@ -650,6 +651,21 @@ async function writableCheck() {
     failures.length ? { failures } : { folders: [...byDir.keys()] });
 }
 
+// EXPRESSION_SANITIZER. legacy is a warning, not information : it re-opens remote code
+// execution for every authenticated user, and this page is where an operator notices it.
+async function expressionsCheck() {
+  const mode = getExpressionMode();
+  if (mode === 'legacy') {
+    return check('expressions', WARNING, 'legacy sanitizer', {
+      mode,
+      reason: 'Any authenticated user can run code on the server through a server expression',
+      note: 'The log lists every expression the strict rules would refuse - rewrite those, then set EXPRESSION_SANITIZER back to strict',
+    });
+  }
+  const values = { off: 'server expressions disabled', paranoid: 'paranoid sanitizer', strict: 'strict sanitizer' };
+  return check('expressions', OK, values[mode], { mode });
+}
+
 /**
  * The declarative config seed. A bad seed refuses to START, so a file that never applied
  * cannot be reported from here - the process would not be up to answer. A bad RELOAD is
@@ -739,6 +755,7 @@ Health.check = async function () {
     // next to repositories : both are about configuration arriving from outside the app
     safely('configSeed', configSeedCheck),
     safely('vault', vaultCheck),
+    safely('expressions', expressionsCheck),
     safely('ldap', ldapCheck),
     safely('storage', storageCheck),
     safely('writable', writableCheck),

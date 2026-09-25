@@ -125,6 +125,8 @@ const LIVE_ENV_ONLY = new Set([
   'NAV_HOME_LABEL', 'NAV_HOME_ICON',
   // hostfilter.assertUrlAllowed reads them on every outbound REST call
   'REST_ALLOWED_HOSTS', 'REST_DENIED_HOSTS',
+  // expression.model reads it through getExpressionMode() on every expression
+  'EXPRESSION_SANITIZER',
 ]);
 
 // Live, but needing more than an appConfig field or process.env : a function that
@@ -276,6 +278,13 @@ export function validate(name, value, doc) {
     return `${name} must be greater than 0`;
   }
   if (/[\r\n]/.test(v)) return `${name} cannot contain a line break`;
+  // legacy re-opens remote code execution for every authenticated user. That must be a
+  // decision taken where the deployment is defined, not a dropdown on this page.
+  if (name === 'EXPRESSION_SANITIZER' && v !== '') {
+    const mode = v.trim().toLowerCase();
+    if (mode === 'legacy') return 'EXPRESSION_SANITIZER=legacy can only be set in the real environment (docker-compose, kubernetes)';
+    if (!['off', 'paranoid', 'strict'].includes(mode)) return 'EXPRESSION_SANITIZER must be off, paranoid or strict';
+  }
   if (v.length > 4096) return `${name} is too long`;
   // A value documented as a regular expression is COMPILED by its consumer, and both of
   // them (MASK_EXTRAVARS_REGEX, REGEX_FILTER_JOB_OUTPUT) do so on a hot path - a logging

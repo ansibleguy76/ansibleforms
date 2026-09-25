@@ -452,6 +452,37 @@
       **Caveat:** this only protects the AnsibleForms Node.js process. Ansible playbooks run
       on the host directly and bypass this guard.
     version: 6.0.0
+  - name: EXPRESSION_SANITIZER
+    type: string
+    allowed: off, paranoid, strict, legacy
+    choices:
+    - name: "off"
+      description: Server expressions are refused, only runLocal expressions work
+    - name: paranoid
+      description: Only direct fn./fnc. calls, no methods on their result
+    - name: strict
+      description: fn./fnc. calls and methods on their result, like fn.fnTime().format('YYYY-MM-DD')
+    - name: legacy
+      description: The 6.2.1 rules - unsafe, only settable in the real environment
+    default: strict
+    short: Strictness of the server-side expression sanitizer
+    hint: How strictly server expressions (without runLocal) are checked before they run.
+    description: |
+      Server expressions (fields of type `expression` without `runLocal`) are evaluated on
+      the server by any authenticated user. The sanitizer refuses anything that is not a
+      call to an `fn.` or `fnc.` function.
+
+      - `off` : every server expression is refused, use `runLocal` instead.
+      - `paranoid` : only direct `fn.`/`fnc.` calls. `fn.fnTime().format('YYYY')` is refused.
+      - `strict` (default) : `fn.`/`fnc.` calls, and methods on their result.
+      - `legacy` : the rules of 6.2.1 and earlier, where anything is allowed once the
+        expression starts with `fn.`. **This allows remote code execution for every
+        authenticated user.** It exists only as a temporary escape hatch after an upgrade,
+        can only be set in the real environment (docker-compose, kubernetes), shows as a
+        warning on the status page, and logs every expression the strict rules would refuse.
+
+      An unknown value falls back to `strict`.
+    version: 6.3.0
   - name: ENABLE_DB_QUERY_LOGGING
     type: number
     allowed: 0, 1

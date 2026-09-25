@@ -208,6 +208,7 @@ export default {
     checkRepositories: "Repositorios",
     checkConfigSeed: "Seed de configuración",
     checkVault: "HashiCorp Vault",
+    checkExpressions: "Expresiones del servidor",
     checkLdap: "LDAP",
     checkStorage: "Almacenamiento de trabajos",
     checkWritable: "Carpetas con permiso de escritura",

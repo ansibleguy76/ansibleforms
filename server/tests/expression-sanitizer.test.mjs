@@ -18,10 +18,12 @@ import { fileURLToPath } from "url";
 // string check, so lift it out of the source rather than dragging that in.
 const here = path.dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(path.join(here, "../src/models/expression.model.js"), "utf8");
-const body = /function sanitizeExpression\(expr\)\{[\s\S]*?\n\}/.exec(src)[0];
-// stub the logger the body calls
+const body = /function sanitizeExpression\(expr, mode = 'strict'\)\{[\s\S]*?\n\}/.exec(src)[0];
+// stub the logger the body calls ; warnings are kept, the legacy mode is judged by them
+const warnings = [];
 const sanitizeExpression = new Function("logger", `${body}; return sanitizeExpression;`)({
   error: () => {},
+  warning: (m) => warnings.push(m),
 });
 
 describe("the sanitizer refuses the ways out of eval", () => {
@@ -194,4 +196,46 @@ describe("template literals are refused", () => {
   test("single and double quoted strings still work", () => {
     assert.equal(sanitizeExpression("fn.echo('a') + fn.echo(\"b\")"), "fn.echo('a') + fn.echo(\"b\")");
   });
+});
+
+// ─── EXPRESSION_SANITIZER modes ─────────────────────────────────
+describe("EXPRESSION_SANITIZER modes", () => {
+  const chained = "fn.fnTime().add(30,'day').format('YYYY-MM-DD')";
+
+  test("off refuses even the simplest expression", () => {
+    assert.throws(() => sanitizeExpression("fn.upper('a')", "off"), /disabled/);
+  });
+
+  test("paranoid accepts a direct fn. call", () => {
+    assert.equal(sanitizeExpression("fn.upper('a')", "paranoid"), "fn.upper('a')");
+  });
+
+  test("paranoid refuses a method on a call's result", () => {
+    assert.throws(() => sanitizeExpression(chained, "paranoid"), /custom functions/);
+  });
+
+  test("strict is the default and accepts a method on a call's result", () => {
+    assert.equal(sanitizeExpression(chained), chained);
+    assert.equal(sanitizeExpression(chained, "strict"), chained);
+  });
+
+  test("legacy accepts what 6.2.1 accepted, and logs that strict would refuse it", () => {
+    warnings.length = 0;
+    const e = "fn.a() + alert('x')";
+    assert.equal(sanitizeExpression(e, "legacy"), e);
+    assert.equal(warnings.length, 1);
+    assert.match(warnings[0], /legacy let through/);
+  });
+
+  test("legacy does not warn about an expression strict accepts", () => {
+    warnings.length = 0;
+    sanitizeExpression(chained, "legacy");
+    assert.equal(warnings.length, 0);
+  });
+
+  for (const expr of ["alert('x')", "fn.a(); fn.b()", "fn.a()\nfn.b()", "process.env.X"]) {
+    test(`legacy still refuses ${JSON.stringify(expr)}`, () => {
+      assert.throws(() => sanitizeExpression(expr, "legacy"), /Abuse/);
+    });
+  }
 });

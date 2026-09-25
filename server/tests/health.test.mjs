@@ -314,7 +314,7 @@ describe("health reports problems, not just ok", () => {
     const r = await Health.check();
     assert.equal(statusOf(r, "database"), "error");
     // every other check still reported (14 since the secrets check was removed)
-    assert.equal(r.checks.length, 14);
+    assert.equal(r.checks.length, 15);
   });
 
   // An AWX/AAP-only instance has no local ansible and does not need one, so the row is
@@ -469,7 +469,7 @@ describe("health reports problems, not just ok", () => {
     // showSettings it could never read anything but 'provisioned'), and configSource /
     // runtime moved to `info` because they have no failing value.
     assert.deepEqual(keys, [
-      "backupTooling", "configSeed", "database", "designerLock", "disk",
+      "backupTooling", "configSeed", "database", "designerLock", "disk", "expressions",
       "jobs", "lastBackup", "ldap", "repositories", "scheduler", "schema", "storage", "vault", "writable",
     ]);
     // and every info entry is status-free by construction
