@@ -7,6 +7,11 @@ name: Base image
 #   <date>           e.g. 2026.10.01 (a second build that day gets -<run number>)
 #   latest
 #
+# The base exists to make application builds fast, so it changes rarely and only on
+# purpose : when Dockerfile.base changes on main (a new python or ansible version), or
+# from Actions -> Base image -> Run workflow. Never on a schedule, and not when this
+# workflow file itself is edited - that rebuilt the base three times in one day.
+#
 # The application Dockerfile pins the base by DIGEST, so publishing here changes nothing
 # by itself. Dependabot (the docker entry in .github/dependabot.yml) notices the new digest
 # behind :latest and opens a pull request that moves the pin - that pull request is where
@@ -18,10 +23,6 @@ on:
     branches: [main]
     paths:
       - 'Dockerfile.base'
-      - '.github/workflows/base.yml'
-  # monthly, so os and python security fixes arrive without anyone committing anything
-  schedule:
-    - cron: '23 5 1 * *'
 
 permissions:
   contents: read

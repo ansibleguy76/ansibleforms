@@ -70,8 +70,9 @@ refuses when `server/package.json` at that tag names another version.
 `ansibleguy/ansibleforms-base` holds node, python, ansible and the os packages. It is
 versioned by date (`2026.10.01`, plus `latest`), independent of the application.
 
-- **Build it:** Actions → **Base image** → Run workflow. It also runs by itself when
-  `Dockerfile.base` changes on main, and on the 1st of every month for security updates.
+- **Build it:** Actions → **Base image** → Run workflow. It also runs by itself when a
+  change to `Dockerfile.base` (a new python or ansible version) is merged into main. Nothing
+  else rebuilds it.
 - **Use it:** the application `Dockerfile` pins the base by digest, so a new base changes
   nothing until the pin moves. Dependabot opens a `build(deps): bump ansibleforms-base`
   pull request for that. Build a release candidate of it to test the app on the new base, then
