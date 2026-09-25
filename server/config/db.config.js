@@ -10,7 +10,7 @@ if(!process.env["DB_USER"]){
   logger.error("DB_USER is missing")
 }
 if(!process.env["DB_PASSWORD"]){
-  logger.error("DB_USER is missing")
+  logger.error("DB_PASSWORD is missing")
 }
 if(!(process.env["DB_HOST"] && process.env["DB_PORT"] && process.env["DB_USER"] && process.env["DB_PASSWORD"])){
   logger.error("DB_PASSWORD = *******")

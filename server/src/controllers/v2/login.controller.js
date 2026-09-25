@@ -12,6 +12,50 @@ import helpers from '../../lib/common.js';
 import RestResult from "../../models/restResult.model.v2.js";
 import auth_oidc from "../../auth/auth_oidc.js";
 import i18n from "../../lib/i18n.js";
+import Audit from "../../models/audit.model.js";
+
+// Login is audited here rather than by the blanket middleware, which deliberately
+// skips /auth : on a failed attempt there is no req.user, so that layer could only
+// record an anonymous 'auth.login' - and a failed-login trail that does not say
+// WHICH account was tried is of no use to anyone. The actor is the attempted
+// username, which is the honest answer for both outcomes.
+// Fire and forget : never let this delay or break a login.
+//
+// The credentials arrive as an http Basic header, not a json body (see
+// client/src/pages/login.vue), so the attempted username has to be decoded from it
+// - req.body is empty on every login. Only the half before the colon is ever read;
+// the password half is never assigned to anything.
+function attemptedUsername(req) {
+  const header = req.headers?.authorization || '';
+  const m = /^Basic\s+(.+)$/i.exec(header.trim());
+  if (m) {
+    try {
+      const decoded = Buffer.from(m[1], 'base64').toString('utf8');
+      const sep = decoded.indexOf(':');
+      const name = sep >= 0 ? decoded.slice(0, sep) : decoded;
+      if (name) return name;
+    } catch {
+      // an unparsable header is still an attempt worth recording, just anonymously
+    }
+  }
+  // other clients may post a body instead
+  return req.body?.username || null;
+}
+
+function auditLogin(req, outcome, type, reason, resolvedUsername) {
+  // on success the resolved account is authoritative (it may differ in case from
+  // whatever was typed) ; on failure the attempted name is all there is
+  const username = resolvedUsername || attemptedUsername(req);
+  Audit.log({
+    user: username ? { username, type: type || 'unknown' } : null,
+    ip: req.ip,
+    action: 'auth.login',
+    outcome,
+    targetType: 'user',
+    target: username,
+    detail: reason ? { reason } : null,
+  });
+}
 
 function hasValidLoginOption(user) {
   // Support deprecated 'enableLogin' — use 'allowLogin' instead
@@ -102,7 +146,12 @@ const basic = async function(req, res,next) {
           var e=helpers.getError(err)
           if (e || !user) {
             // basic authentication returned no result, move to next middleware (ldap)
-            if(e.includes('not found')){
+            // e is undefined when passport simply found no credentials (getError(null)
+            // returns undefined), so this must be guarded : unguarded it threw a
+            // TypeError that the catch below swallowed, leaving the request hanging
+            // open for ever. Every login POST that sent a json body instead of a
+            // Basic header leaked a socket that way.
+            if(e && e.includes('not found')){
               // store error message if ldap is not enabled
               res.locals.basic_authentication_error=e
               return next()
@@ -111,7 +160,14 @@ const basic = async function(req, res,next) {
               logger.error(e)
             }
             
-            return res.status(401).json(RestResult.error(i18n.t(req, 'auth.authFailed'), e || i18n.t(req, 'auth.invalidCredentials')));
+            auditLogin(req, 'failure', 'local', e || 'invalid credentials');
+            // The specific reason stays on the server. Returning `e` told the caller
+            // WHICH half failed - "user not found" for an unknown name against "wrong
+            // password" for a real one - so the login form was a username oracle. The
+            // reason is in the log and in the audit trail, where an operator can see it
+            // and an attacker cannot.
+            if (e) logger.debug(`Local authentication failed : ${e}`);
+            return res.status(401).json(RestResult.error(i18n.t(req, 'auth.authFailed'), i18n.t(req, 'auth.invalidCredentials')));
           }
           // we found a user (local or ldap) with correct password; we start the login process (a function attached by passport !)
           // http://www.passportjs.org/docs/login/
@@ -124,15 +180,21 @@ const basic = async function(req, res,next) {
                 //return next(error);
               }
               if(!hasValidLoginOption(user)){
+                auditLogin(req, 'denied', user.type, 'login disabled for this user', user.username);
                 return res.status(401).json({ error: i18n.t(req, 'auth.loginDisabled') });
-              }        
+              }
+              auditLogin(req, 'success', user.type, null, user.username);
               // send the tokens to the requester
               return res.json(userToJwt(user,req.query.expiryDays));
             }
           );
         } catch (error) {
           logger.error(helpers.getError(error))
-          //return next(error);
+          // ALWAYS answer. Logging alone left the client waiting on a socket that was
+          // never written to and never closed.
+          if (!res.headersSent) {
+            return res.status(500).json(RestResult.error(i18n.t(req, 'auth.authFailed'), helpers.getError(error)));
+          }
         }
       }
     )(req, res, next);
@@ -149,11 +211,18 @@ const basic_ldap = async function(req, res,next) {
         // if we have an error; we return it
         var e=helpers.getError(err)
         if (e || !user) {
-          let errorMessage = e;
+          let reason = e;
           if(e && e.includes("No ldap configured")){
-            errorMessage = res.locals.basic_authentication_error || "Authentication failed";
+            reason = res.locals.basic_authentication_error || "Authentication failed";
           }
-          return res.status(401).json(RestResult.error(i18n.t(req, 'auth.authFailed'), errorMessage || i18n.t(req, 'auth.invalidCredentials')));
+          // the end of the chain : local said 'not found' and fell through to here,
+          // so this is the final verdict for the attempt
+          auditLogin(req, 'failure', 'ldap', reason || 'invalid credentials');
+          // Generic answer, same as the local branch above: `reason` distinguishes an
+          // unknown username from a wrong password, and also carries ldap internals
+          // (bind failures, server names) that no anonymous caller should see.
+          if (reason) logger.debug(`Ldap authentication failed : ${reason}`);
+          return res.status(401).json(RestResult.error(i18n.t(req, 'auth.authFailed'), i18n.t(req, 'auth.invalidCredentials')));
         }
         // we found a user (local or ldap) with correct password; we start the login process (a function attached by passport !)
         // http://www.passportjs.org/docs/login/
@@ -167,8 +236,10 @@ const basic_ldap = async function(req, res,next) {
             }
           
             if(!hasValidLoginOption(user)){
+              auditLogin(req, 'denied', user.type, 'login disabled for this user', user.username);
               return res.status(401).json({ error: i18n.t(req, 'auth.loginDisabled') });
             }
+            auditLogin(req, 'success', user.type, null, user.username);
             // send the tokens to the requester
             return res.json(userToJwt(user,req.query.expiryDays));
           }
@@ -184,7 +255,7 @@ const basic_ldap = async function(req, res,next) {
 /**
  * perform logout actions
  */
-const logout = async function(req, res, next){
+const logout = async function(req, res, _next){
   req.logout((err) => {
     if (err) {
       logger.error(helpers.getError(err))
@@ -195,7 +266,7 @@ const logout = async function(req, res, next){
 };
 
 // catches middleware error (non implemented strategy for example)
-const errorHandler = async function(err,req, res,next) {
+const errorHandler = async function(err,req, res,_next) {
   res.redirect(`${appConfig.baseUrl}/login?error=${err}`)
 };
 
@@ -220,13 +291,29 @@ const errorHandler = async function(err,req, res,next) {
  */
 const authCallback = function(req, res, next, type) {
   return async (err, payload) => {
-    // we assume the payload is a jwt token, with azuread this is the case
-    var token = payload
-    // in case of oidc, the payload is not a token, but a raw object
-    // we need to create a token from it, we use the type 'oidc' as the secret
-    if(type=="oidc"){
-      token = jwt.sign(payload, type);
+    // The HANDOFF token. Passport has just verified the provider's response, so this is
+    // the only point where the claims are known to be genuine - re-sign them with OUR
+    // secret so the /login endpoint below can tell them apart from anything a caller
+    // made up.
+    //
+    // It used to hand the browser either the raw Azure token (verified later with
+    // jwt.decode, which verifies NOTHING) or a token signed with the literal string
+    // "oidc" (verified with that same literal). Both endpoints are unauthenticated, so
+    // anyone who could reach them could mint a token for any username and any groups and
+    // receive a real session - on every deployment, whether or not SSO was configured.
+    //
+    // `sso` pins which endpoint may consume it, and there is deliberately no `access`
+    // claim, so auth_jwt.js will not take it as an access token.
+    var claims = payload
+    if (typeof claims === 'string') {
+      // azuread hands us the provider's own token ; take its claims, do not forward it
+      claims = jwt.decode(claims) || {}
     }
+    const token = jwt.sign(
+      { ...claims, sso: type },
+      authConfig.secret,
+      { expiresIn: SSO_HANDOFF_EXPIRES_IN, issuer: authConfig.jwtIssuer }
+    );
     try {
       // if we have an error; we return it
       if (err) {
@@ -242,6 +329,49 @@ const authCallback = function(req, res, next, type) {
     }
   }
 };
+
+// Short : it only has to survive the redirect from the provider back to the login page.
+const SSO_HANDOFF_EXPIRES_IN = '5m';
+
+/**
+ * Verifies a handoff token minted by authCallback. Throws if it was not signed by us,
+ * has expired, or was issued for a different provider - which also stops an ACCESS token
+ * being replayed here, since it carries no matching `sso` claim.
+ */
+function verifyHandoff(token, type) {
+  if (!token) throw new Error('No token given');
+  const payload = jwt.verify(token, authConfig.secret, { issuer: authConfig.jwtIssuer });
+  if (payload.sso !== type) throw new Error('This token was not issued for this login method');
+  return payload;
+}
+
+/**
+ * A login method that is switched off must not be a way in. Both endpoints are
+ * unauthenticated, and neither used to check this at all.
+ */
+async function assertProviderEnabled(model, name) {
+  const row = await model.isEnabled().catch(() => null);
+  if (!row || !row.enable) throw new Error(`${name} login is not enabled`);
+}
+
+/**
+ * The groups to trust.
+ *
+ * The provider's own claim wins whenever it is present, because it is inside the token we
+ * signed. `req.body.groups` is whatever the browser chose to send - the client fetches
+ * them from Graph/userinfo and filters them there - so it is used ONLY when the provider
+ * returned none, and that fallback is logged: a caller can otherwise name any group and
+ * getRolesAndOptions will grant the roles that match it.
+ */
+function ssoGroups(payload, bodyGroups, type) {
+  const fromToken = payload.groups;
+  if (Array.isArray(fromToken)) return fromToken;
+  const fromBody = Array.isArray(bodyGroups) ? bodyGroups : [];
+  if (fromBody.length) {
+    logger.warning(`${type} login: the provider returned no groups claim, falling back to the groups the client reported - configure the provider to emit groups so this is not client controlled`);
+  }
+  return fromBody;
+}
 
 const extractAzureUser = async function(payload, groups) {
   return {
@@ -281,18 +411,24 @@ const azureadoauth2callback = async function(req, res,next) {
   }
 };
 // callback with the Azure AD user info (including groups)
-const azureadoauth2login = async function(req, res,next) {
+const azureadoauth2login = async function(req, res,_next) {
   try {
     logger.debug("Azure AD login")
-    var payload = jwt.decode(req.body.token, '', true)
-    const user = await extractAzureUser(payload, req.body.groups)
+    const payload = verifyHandoff(req.body.token, 'azuread')
+    await assertProviderEnabled(AzureAd, 'azuread')
+    const user = await extractAzureUser(payload, ssoGroups(payload, req.body.groups, 'azuread'))
     user.type = "azuread"
     const ro = await User.getRolesAndOptions(user.groups,user)
     user.roles = ro.roles
     user.options = ro.options  
     if(!hasValidLoginOption(user)){
+      auditLogin(req, 'denied', 'azuread', 'login disabled for this user', user.username);
       return res.status(401).json({ error: i18n.t(req, 'auth.loginDisabled') });
-    }     
+    }
+    // Audited like every other way in. These two paths recorded NOTHING - and /auth is
+    // deliberately skipped by the blanket middleware, so an SSO login left no trace at all,
+    // successful or refused. The audit trail is the control that would surface a problem here.
+    auditLogin(req, 'success', 'azuread', null, user.username);
     // return token
     res.json(userToJwt(user))
 
@@ -314,17 +450,23 @@ const oidcCallback = async function(req, res,next) {
   passport.authenticate('oidc', authCallback(req, res, next, 'oidc'))(req, res, next)
 };
 // callback with the OIDC user info (including groups)
-const oidcLogin = async function(req, res, next) {
+const oidcLogin = async function(req, res, _next) {
   try {
-    var payload = jwt.verify(req.body.token, 'oidc'); // verify, with secret "oidc"
-    const user = await extractOidcUser(payload, req.body.groups)
+    const payload = verifyHandoff(req.body.token, 'oidc')
+    await assertProviderEnabled(OIDC, 'oidc')
+    const user = await extractOidcUser(payload, ssoGroups(payload, req.body.groups, 'oidc'))
     user.type = "oidc"
     const ro = await User.getRolesAndOptions(user.groups,user)
     user.roles = ro.roles
     user.options = ro.options  
     if(!hasValidLoginOption(user)){
+      auditLogin(req, 'denied', 'oidc', 'login disabled for this user', user.username);
       return res.status(401).json({ error: i18n.t(req, 'auth.loginDisabled') });
-    }     
+    }
+    // Audited like every other way in. These two paths recorded NOTHING - and /auth is
+    // deliberately skipped by the blanket middleware, so an SSO login left no trace at all,
+    // successful or refused. The audit trail is the control that would surface a problem here.
+    auditLogin(req, 'success', 'oidc', null, user.username);
     // return token
     res.json(userToJwt(user))
 

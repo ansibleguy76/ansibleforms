@@ -191,7 +191,7 @@ const basic_ldap = async function(req, res,next) {
 const logout = async function(req, res, next){
   req.logout((err) => {
     if (err) {
-      logger.error(helpers.getError(error))
+      logger.error(helpers.getError(err))
       return next(err)
     }
     res.json(new RestResult("success","",{logoutUrl: auth_oidc.getLogoutUrl()},""))
@@ -199,7 +199,7 @@ const logout = async function(req, res, next){
 };
 
 // catches middleware error (non implemented strategy for example)
-const errorHandler = async function(err,req, res,next) {
+const errorHandler = async function(err,req, res,_next) {
   res.redirect(`${appConfig.baseUrl}/login?error=${err}`)
 };
 
@@ -224,13 +224,19 @@ const errorHandler = async function(err,req, res,next) {
  */
 const authCallback = function(req, res, next, type) {
   return async (err, payload) => {
-    // we assume the payload is a jwt token, with azuread this is the case
-    var token = payload
-    // in case of oidc, the payload is not a token, but a raw object
-    // we need to create a token from it, we use the type 'oidc' as the secret
-    if(type=="oidc"){
-      token = jwt.sign(payload, type);
+    // Signed with OUR secret - see the long note on the v2 controller's authCallback.
+    // This used to hand out either the provider's raw token (later "verified" with
+    // jwt.decode, which verifies nothing) or a token signed with the literal string
+    // "oidc", on unauthenticated endpoints.
+    var claims = payload
+    if (typeof claims === 'string') {
+      claims = jwt.decode(claims) || {}
     }
+    const token = jwt.sign(
+      { ...claims, sso: type },
+      authConfig.secret,
+      { expiresIn: SSO_HANDOFF_EXPIRES_IN, issuer: authConfig.jwtIssuer }
+    );
     try {
       // if we have an error; we return it
       if (err) {
@@ -246,6 +252,32 @@ const authCallback = function(req, res, next, type) {
     }
   }
 };
+
+// Same handoff contract as the v2 controller ; both endpoints are mounted and both were
+// exploitable, so both are fixed. See v2/login.controller.js for the full reasoning.
+const SSO_HANDOFF_EXPIRES_IN = '5m';
+
+function verifyHandoff(token, type) {
+  if (!token) throw new Error('No token given');
+  const payload = jwt.verify(token, authConfig.secret, { issuer: authConfig.jwtIssuer });
+  if (payload.sso !== type) throw new Error('This token was not issued for this login method');
+  return payload;
+}
+
+async function assertProviderEnabled(model, name) {
+  const row = await model.isEnabled().catch(() => null);
+  if (!row || !row.enable) throw new Error(`${name} login is not enabled`);
+}
+
+function ssoGroups(payload, bodyGroups, type) {
+  const fromToken = payload.groups;
+  if (Array.isArray(fromToken)) return fromToken;
+  const fromBody = Array.isArray(bodyGroups) ? bodyGroups : [];
+  if (fromBody.length) {
+    logger.warning(`${type} login: the provider returned no groups claim, falling back to the groups the client reported`);
+  }
+  return fromBody;
+}
 
 const extractAzureUser = async function(payload, groups) {
   return {
@@ -288,8 +320,9 @@ const azureadoauth2callback = async function(req, res,next) {
 const azureadoauth2login = async function(req, res,next) {
   try {
     logger.debug("Azure AD login")
-    var payload = jwt.decode(req.body.token, '', true)
-    const user = await extractAzureUser(payload, req.body.groups)
+    const payload = verifyHandoff(req.body.token, 'azuread')
+    await assertProviderEnabled(AzureAd, 'azuread')
+    const user = await extractAzureUser(payload, ssoGroups(payload, req.body.groups, 'azuread'))
     user.type = "azuread"
     const ro = await User.getRolesAndOptions(user.groups,user)
     user.roles = ro.roles
@@ -320,8 +353,9 @@ const oidcCallback = async function(req, res,next) {
 // callback with the OIDC user info (including groups)
 const oidcLogin = async function(req, res, next) {
   try {
-    var payload = jwt.verify(req.body.token, 'oidc'); // verify, with secret "oidc"
-    const user = await extractOidcUser(payload, req.body.groups)
+    const payload = verifyHandoff(req.body.token, 'oidc')
+    await assertProviderEnabled(OIDC, 'oidc')
+    const user = await extractOidcUser(payload, ssoGroups(payload, req.body.groups, 'oidc'))
     user.type = "oidc"
     const ro = await User.getRolesAndOptions(user.groups,user)
     user.roles = ro.roles

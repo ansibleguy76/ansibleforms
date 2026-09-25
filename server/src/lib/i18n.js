@@ -17,7 +17,15 @@ import es from '../locales/es.js';
 
 const messages = { en, nl, fr, it, de, es };
 const supportedLocales = Object.keys(messages);
-const defaultLocale = process.env.DEFAULT_LANGUAGE || 'en';
+// `let`, with a setter, so the settings page can change DEFAULT_LANGUAGE without a restart.
+// The /api/v2/app/config route already reads process.env per request, so without this the
+// visible default would change while this fallback kept the old one.
+let defaultLocale = process.env.DEFAULT_LANGUAGE || 'en';
+
+export function setDefaultLocale(locale) {
+  if (locale && supportedLocales.includes(locale)) { defaultLocale = locale; return true; }
+  return false;
+}
 
 /**
  * Get the locale from a request object.
@@ -45,13 +53,27 @@ function getLocaleFromRequest(req) {
 /**
  * Simple cookie parser (no dependency needed).
  */
+function safeDecode(value) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 function parseCookies(cookieHeader) {
   const cookies = {};
   if (!cookieHeader) return cookies;
   cookieHeader.split(';').forEach(pair => {
     const [name, ...rest] = pair.trim().split('=');
     if (name) {
-      cookies[decodeURIComponent(name)] = decodeURIComponent(rest.join('='));
+      // decodeURIComponent THROWS a URIError on a stray '%' ("foo=100%", "x=abc%zz").
+      // parseCookies runs for every t(req, ...) - 189 call sites - so one malformed
+      // cookie anywhere in the caller's jar turned every translated response into a 500.
+      // Worst in middleware.js, whose catch calls t() again: the guard threw twice and
+      // escaped, so a permission check became an unconditional 500 rather than a 403.
+      // A value that is not valid percent-encoding is simply a literal.
+      cookies[safeDecode(name)] = safeDecode(rest.join('='));
     }
   });
   return cookies;

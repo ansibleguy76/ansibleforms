@@ -4,9 +4,20 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import { existsSync } from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// The settings page writes persistent/.env, so it must be loaded in production too -
+// that file is the only store that can hold DB_HOST and friends, which are needed before
+// any database is reachable. Loaded FIRST so a real environment variable still wins:
+// dotenv never overwrites a variable that is already set.
+const managedEnv = process.env.MANAGED_ENV_PATH || `${__dirname}/../persistent/.env`;
+if (existsSync(managedEnv)) {
+  console.log(`Importing managed env file : ${managedEnv}`);
+  dotenv.config({ path: managedEnv });
+}
 
 if (process.env.NODE_ENV !== 'production' || process.env.FORCE_DOTENV==1 || process.env.FORCE_DOTENV=="1" ){
   console.log(`Importing .env file : ${__dirname}/../.env.${process.env.NODE_ENV}` )

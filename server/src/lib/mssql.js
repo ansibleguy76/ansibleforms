@@ -31,7 +31,7 @@ Mssql.query = async function (connection_name, query) {
 
   var conn
   try{
-    var conn = await client.connect(config)
+    conn = await client.connect(config)
   }catch(err){
     logger.error(`[${connection_name}] connection error`,err)
     throw err

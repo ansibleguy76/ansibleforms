@@ -32,6 +32,12 @@ import datasources from "@/pages/admin/datasources.vue"
 import schedules from "@/pages/admin/schedules.vue"
 import storedJobs from "@/pages/admin/stored-jobs.vue"
 import settings from "@/pages/admin/settings.vue"
+import status from "@/pages/admin/status.vue"
+import vault from "@/pages/admin/vault.vue"
+import audit from "@/pages/admin/audit.vue"
+import categories from "@/pages/admin/categories.vue"
+import roles from "@/pages/admin/roles.vue"
+import constants from "@/pages/admin/constants.vue"
 import ssh from "@/pages/admin/ssh.vue"
 import users from "@/pages/admin/users.vue"
 import backups from "@/pages/admin/backups.vue"
@@ -65,6 +71,25 @@ const checkJobs=(to, from, next) => {
 const checkSettings=(to, from, next) => {
   var payload = TokenStorage.getPayload()
   if(payload?.user?.options?.showSettings){
+    next()
+  }else{
+    next({ name: "/" })
+  }
+}
+// the schedule and stored-jobs apis are gated on their own option, not on
+// showSettings : guard the pages the same way so a settings-only user is not
+// sent to a page where every request comes back 401
+const allowScheduledJobs=(to, from, next) => {
+  var payload = TokenStorage.getPayload()
+  if(payload?.user?.options?.allowScheduledJobs){
+    next()
+  }else{
+    next({ name: "/" })
+  }
+}
+const allowStoredJobs=(to, from, next) => {
+  var payload = TokenStorage.getPayload()
+  if(payload?.user?.options?.allowStoredJobs){
     next()
   }else{
     next({ name: "/" })
@@ -110,12 +135,25 @@ const routes = [
   { path: '/admin/repositories', name: "/admin/repositories", component: repositories, beforeEnter: checkSettings },
   { path: '/admin/dataSchemas', name: "/admin/dataSchemas", component: dataSchemas, beforeEnter: checkSettings },
   { path: '/admin/datasources', name: "/admin/datasources", component: datasources, beforeEnter: checkSettings },
-  { path: '/admin/schedules', name: "/admin/schedules", component: schedules, beforeEnter: checkSettings },
-  { path: '/admin/stored-jobs', name: "/admin/stored-jobs", component: storedJobs, beforeEnter: checkSettings },
+  { path: '/admin/schedules', name: "/admin/schedules", component: schedules, beforeEnter: allowScheduledJobs },
+  { path: '/admin/stored-jobs', name: "/admin/stored-jobs", component: storedJobs, beforeEnter: allowStoredJobs },
   { path: '/admin/settings', name: "/admin/settings", component: settings, beforeEnter: checkSettings },
+  { path: '/admin/categories', name: "/admin/categories", component: categories, beforeEnter: checkSettings },
+  { path: '/admin/roles', name: "/admin/roles", component: roles, beforeEnter: checkSettings },
+  { path: '/admin/constants', name: "/admin/constants", component: constants, beforeEnter: checkSettings },
   { path: '/admin/ssh', name: "/admin/ssh", component: ssh, beforeEnter: checkSettings },
   { path: '/admin/users', name: "/admin/users", component: users, beforeEnter: checkSettings },
   { path: '/admin/backups', name: "/admin/backups", component: backups, beforeEnter: allowBackupOps },
+  // GET /api/v2/health is mounted behind checkSettingsMiddleware, so the guard
+  // matches the permission the endpoint actually requires. The endpoint keeps the
+  // 'health' name (it is the conventional one for a monitor to poll); the PAGE is
+  // called Status because it states facts as well as verdicts.
+  { path: '/admin/status', name: "/admin/status", component: status, beforeEnter: checkSettings },
+  // reads and writes the VAULT_* environment variables through /api/v2/config/env, which
+  // is behind checkSettingsMiddleware - so the guard matches what the endpoint requires
+  { path: '/admin/vault', name: "/admin/vault", component: vault, beforeEnter: checkSettings },
+  // GET /api/v2/audit is mounted behind checkSettingsMiddleware, so the guard matches
+  { path: '/admin/audit', name: "/admin/audit", component: audit, beforeEnter: checkSettings },
 
 ]
 

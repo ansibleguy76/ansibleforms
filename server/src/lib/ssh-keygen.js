@@ -154,7 +154,7 @@ Keygen.ssh_keygen = function(privateKeyPath, opts){
   })
 };
 // main function to handle all options
-Keygen.keygen = async function(opts, callback){
+Keygen.keygen = async function(opts, _callback){
 
   // set defaults
   opts.randomArt = opts.randomArt ?? false    // get random art of priate key

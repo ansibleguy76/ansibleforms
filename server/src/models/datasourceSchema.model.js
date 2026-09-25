@@ -122,7 +122,7 @@ class DsSchema {
       table.columns = [];
 
       for (const column of table_definitions[table_name]) {
-        let c = "";
+        let c;
         let col_name = column.name || column;
         let col_type = (column.type || "varchar").toLowerCase();
         let col_length = column.length || (col_type === "varchar" ? 255 : null);

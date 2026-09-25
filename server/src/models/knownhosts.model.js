@@ -10,9 +10,6 @@ import path from 'path';
 const KnownHosts = {};
 const exec = promisify(execCb);
 
-function escapeRegExp(string) {
-  return string.replace(/[.*?^${}()\/|[\]\\]/g, '\\$&'); // $& means the whole matched string
-}
 function hostsFile() {
   return path.join(os.homedir(), '.ssh', 'known_hosts');
 }

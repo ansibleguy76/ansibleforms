@@ -194,11 +194,21 @@ Get up and running quickly with AnsibleForms:
     </tr>
   </thead>
   <tbody>
-{% assign formfile = site.data.help[1].help[2].help[1].items[1] %}
+<!-- Looked up BY NAME, like every other page does. The previous positional path
+     (help[1].help[2].help[1].items[1]) silently stopped resolving when help.yaml
+     grew, so this table rendered with an empty body : no error, no rows, and
+     nothing to notice unless you knew the field types belonged here. -->
+{% assign help = site.data.help %}
+{% assign formsyaml = help | where: "link", "forms" | first %}
+{% assign form_object = formsyaml.help | where: "name", "Form" | first %}
+{% assign formfield = form_object.help | where: "name", "Formfield" | first %}
+{% assign formfile = formfield.items | where: "name", "type" | first %}
 {% for type in formfile.choices %}
     <tr>
       <td><strong>{{ type.name }}</strong></td>
-      <td>{{ type.description }}</td>
+      <!-- markdownify : see docs/formfields/index.md - an unfiltered description
+           puts a live <script> tag in the cell and truncates the table -->
+      <td>{{ type.description | markdownify }}</td>
     </tr>
 {% endfor %}
   </tbody>

@@ -8,12 +8,12 @@ const Backup = {
             return result.data;
         }catch(err){
             if(err.response?.status == 401){
-                throw new Error(err.message)
+                throw new Error(err.message, { cause: err })
             }
             const error = err.response?.data?.error || err.message;
             const details = err.response?.data?.details;
             const errorMessage = details ? `${error}\n\n${details}` : error;
-            throw new Error(`Could not get the backups.\n\n${errorMessage}`)
+            throw new Error(`Could not get the backups.\n\n${errorMessage}`, { cause: err })
         }
     },
     async restore(backupName,backupBeforeRestore){
@@ -22,12 +22,12 @@ const Backup = {
             return true;
         }catch(err){
             if(err.response?.status == 401){
-                throw new Error(err.message)
+                throw new Error(err.message, { cause: err })
             }
             const error = err.response?.data?.error || err.message;
             const details = err.response?.data?.details;
             const errorMessage = details ? `${error}\n\n${details}` : error;
-            throw new Error(`Could not restore the backup.\n\n${errorMessage}`)
+            throw new Error(`Could not restore the backup.\n\n${errorMessage}`, { cause: err })
         }
     }
 }

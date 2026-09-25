@@ -290,6 +290,9 @@
             "keepExtravars": {
               "not": {}
             },
+            "userExtravars": {
+              "not": {}
+            },
             "image": {
               "not": {}
             },
@@ -1195,6 +1198,9 @@
         },
         "keepExtravars": {
           "type": "boolean"
+        },
+        "userExtravars": {
+          "type": "string"
         },
         "notifications": {
           "type": "object",
@@ -5339,6 +5345,9 @@
               "keepExtravars": {
                 "not": {}
               },
+              "userExtravars": {
+                "not": {}
+              },
               "image": {
                 "not": {}
               },
@@ -6244,6 +6253,9 @@
           },
           "keepExtravars": {
             "type": "boolean"
+          },
+          "userExtravars": {
+            "type": "string"
           },
           "notifications": {
             "type": "object",

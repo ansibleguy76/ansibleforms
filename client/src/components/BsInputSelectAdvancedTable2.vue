@@ -26,12 +26,13 @@
   /*                                                                */
   /******************************************************************/
 
-  import { computed } from "vue";
+  import { useTemplateRef, computed } from "vue";
   import Helpers from "@/lib/Helpers";
 
   // INIT
 
   const emit = defineEmits(["update:modelValue", "reset","focusset"]);
+  const queryfilterRef = useTemplateRef("queryfilterRef");
 
   // DATA
 
@@ -120,7 +121,7 @@
 
   // WATCHERS
 
-  watch(() => props.values, (val) => {
+  watch(() => props.values, (_val) => {
     queryfilter.value = "";
     selected.value = {};
     getLabels();
@@ -170,7 +171,12 @@
         return Helpers.htmlEncode(s);
       }
     } else {
-      return v;
+      // htmlEncode(s), not the raw v. This branch is taken whenever the search box is
+      // EMPTY - i.e. the moment the dropdown opens - and its result goes to v-html, so an
+      // option value coming from a datasource/query row (a CMDB description, a hostname)
+      // executed in the browser of every user who opened the form. Every sibling branch
+      // above already encodes; this one was the hole. `s` is just String(v).
+      return Helpers.htmlEncode(s);
     }
   }
 
@@ -217,7 +223,12 @@
     previewLabel.value = "";
     valueLabel.value = "";
     if (props.values.length > 0) {
-      if (typeof props.values[0] !== "object") {
+      // `props.values[0] &&` : typeof null is "object", so a null first entry fell into
+      // the else and Object.keys(null) threw - the exception escaped the values watcher
+      // and the select rendered with no labels and no rows at all. A null entry is a real
+      // possibility (`values: [~, a, b]` in the form yaml, or a jq/expression result with
+      // a null), which is why the rest of this file guards every other access.
+      if (!props.values[0] || typeof props.values[0] !== "object") {
         labels.value = [];
       } else {
         // get all labels
@@ -306,7 +317,7 @@
             v-for="v in filtered"
             @click="select(v.index)"
           >
-            <td  v-for="(l, i) in labels" v-html="highlightFilter(v.value[l], l)" :key="l"></td>
+            <td  v-for="l in labels" v-html="highlightFilter(v.value[l], l)" :key="l"></td>
             <td
               v-if="labels.length == 0"
               v-html="highlightFilter(v.value)"

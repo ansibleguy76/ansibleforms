@@ -1,0 +1,34 @@
+version: 2
+
+# target-branch is develop on every entry : the default would be main, and this project
+# merges into develop.
+
+updates:
+  - package-ecosystem: npm
+    directory: /client
+    target-branch: develop
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      client-dev:
+        dependency-type: development
+
+  - package-ecosystem: npm
+    directory: /server
+    target-branch: develop
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      server-dev:
+        dependency-type: development
+
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']

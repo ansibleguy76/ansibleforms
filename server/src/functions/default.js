@@ -41,7 +41,7 @@ const fnGetNumberedName=function(names,pattern,value,fillgap=false){
   var nrsequence
   var regex
   var nrs
-  var re=new RegExp("[^\#]*(\#+)[^\#]*")
+  var re=new RegExp("[^#]*(#+)[^#]*")
   var patternmatch=re.exec(pattern)
   if(!names || !Array.isArray(names)){
     const e = "[fnGetNumberedName] No input or no array"
@@ -172,7 +172,7 @@ const fnSort=function(input,sort){
 }
 const fnReadJsonFile = async function(path,jqe=null) {
   if(!path)return undefined
-  let result=undefined
+  let result
   try{
     let rawdata = fs.readFileSync(path,'utf8');
     result = JSON.parse(rawdata)
@@ -187,7 +187,7 @@ const fnReadJsonFile = async function(path,jqe=null) {
 };
 const fnReadYamlFile = async function(path,jqe=null) {
   if(!path)return undefined
-  let result=undefined
+  let result
   try{
     let rawdata = fs.readFileSync(path,'utf8');
     result = yaml.parse(rawdata)
@@ -330,7 +330,7 @@ const fnRestAdvanced = async function(action,url,body,headers={},jqe=null,sort=n
     axiosConfig.headers=headers
   }
 
-  let result=[]
+  let result
   let data=null
   try{
     if(action=="get"){
@@ -537,7 +537,7 @@ const fnParseHtmlWithRegex = async function(url, regexPattern, regexFlags = 'g',
     
   } catch (error) {
     logger.error(`[fnParseHtmlWithRegex] Error: ${error.message}`);
-    throw new Error(`Failed to fetch HTML or parse regex: ${error.message}`);
+    throw new Error(`Failed to fetch HTML or parse regex: ${error.message}`, { cause: error });
   }
 };
 

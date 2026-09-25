@@ -246,6 +246,11 @@ Ansible Forms automatically sends the userinformation in the extravars.
 You don't need to do anything.  
 It is sent as `ansibleforms_user`.
 
+You can choose how much of it is sent.  `EXTRAVARS_USER_FIELDS` takes a comma
+separated list of top level keys (`username,email,type`), or `none` to send nothing; a form
+can override it with its own `userExtravars` property.  The default is the whole object, as
+before.  The form side `__user__` below comes from the login token and is never affected.
+
 ### Userinfo Form
 
 Access current user info in the form (v4.0.2).
@@ -1081,6 +1086,12 @@ fields:
 - **Audit trail** — pass `ansibleforms_user.username` as an extra variable to write who triggered the job
 - **Dynamic field values** — show a different set of enum choices, pre-fill fields, or hide sections based on the user's groups or roles
 - **Playbook-side authorization** — assert that `ansibleforms_user.groups` contains a required group before the playbook proceeds, as a defence-in-depth check independent of the form's `roles` list
+
+{: .note }
+> The object above is what is sent by default. If the instance sets `EXTRAVARS_USER_FIELDS`,
+> or the form sets `userExtravars`, only the keys named there are sent — so a playbook that
+> asserts on `ansibleforms_user.groups` needs `groups` to be one of them. The frontend
+> `__user__` field comes from the login token and is never trimmed by either setting.
 
 ## Job Scheduling
 

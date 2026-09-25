@@ -87,7 +87,7 @@
             }
             
             // Handle case where newValue is an object with values and preview (from BsInputSelectAdvanced2)
-            if (typeof newValue === 'object' && newValue.hasOwnProperty('values') && newValue.hasOwnProperty('preview')) {
+            if (typeof newValue === 'object' && Object.prototype.hasOwnProperty.call(newValue, 'values') && Object.prototype.hasOwnProperty.call(newValue, 'preview')) {
                 selected.value.values = newValue.values
                 selected.value.preview = newValue.preview
                 preview.value = newValue.preview  // Also update the local preview ref
@@ -161,7 +161,7 @@
     }
 
 
-    function dropfocus(event){
+    function dropfocus(_event){
         if(isActive.value){
             close()
         }
@@ -176,9 +176,13 @@
     }, { deep: true })
 
     // we watch the container size and recalculate the dropdown menu width
-    watch(() => props.containerSize, (val) => {
+    // deep: AppForm creates containerSize as ref({x,width}) and its resize listener
+    // mutates .x/.width IN PLACE, so the getter returns the same object every time and a
+    // shallow watcher could never fire - the width computed when the dropdown opened
+    // stayed stale until it was closed and reopened.
+    watch(() => props.containerSize, (_val) => {
         calcDropdownMenuWidth()
-    })
+    }, { deep: true })
 
     // sync modelValue with selected.values
     watch(() => props.modelValue, (newValue) => {
@@ -264,6 +268,7 @@
             <div ref="contentRef" @keydown.esc="close()" @keydown.tab="close()"> 
                 <BsInputSelectAdvancedTable
                     :defaultValue="defaultValue"
+                    :initialValue="modelValue"
                     :required="required || false"
                     :multiple="multiple || false"
                     :name="name"
@@ -278,6 +283,7 @@
                     :disabled="readonly || disabled"
                     @isSelected="isSelected"
                     @reset="preview = ''"
+                    @update:preview="preview = $event"
                     :focus="focus"
                     @focusset="focus = ''"
                 />
@@ -289,6 +295,7 @@
         <p class="m-3 text-body-secondary">{{ preview || 'Nothing selected' }}</p>
         <BsInputSelectAdvancedTable
             :defaultValue="defaultValue"
+            :initialValue="modelValue"
             :required="required || false"
             :multiple="multiple || false"
             :name="name"
@@ -301,6 +308,7 @@
             :valueColumn="valueColumn || ''"
             :disabled="readonly || disabled"
             @reset="preview = ''"
+            @update:preview="preview = $event"
         /> 
     </div>
 
@@ -337,7 +345,13 @@
                 </span>
             </div>    
         </template>        
-        <div v-else class="input-group" :class="{'active':isActive}">
+        <!-- ref="dtRef" like the three sibling branches. Without it toggle()'s
+             `if (dt)` never ran, so isUp/isRight stayed false and calcDropdownMenuWidth()
+             was never called - and BsInputForForm always passes :isFloating="false", so
+             THIS is the branch every form field actually renders. The panel therefore
+             always dropped downward (clipped off-screen near the bottom of the viewport)
+             and kept width:100% instead of the computed multi-column width. -->
+        <div v-else class="input-group" :class="{'active':isActive}" ref="dtRef">
             <span class="input-group-text text-gray-500" :class="{'active':isActive}" v-if="icon" @mouseup="toggle()">
                 <FaIcon :fixedwidth="true" :icon="icon" />
             </span>

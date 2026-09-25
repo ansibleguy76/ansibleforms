@@ -13,19 +13,11 @@
   import Theme from "@/lib/Theme";
   import Helpers from "@/lib/Helpers";
   import { applyDefaultLanguage } from "@/plugins/i18n";
+  import { languages } from "@/config/languages";
 
   // INIT
   const store = useAppStore();
   const { t, locale } = useI18n();
-
-  const languages = [
-    { code: 'en', label: 'English', flag: '🇬🇧' },
-    { code: 'nl', label: 'Nederlands', flag: '🇳🇱' },
-    { code: 'fr', label: 'Francais', flag: '🇫🇷' },
-    { code: 'it', label: 'Italiano', flag: '🇮🇹' },
-    { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
-    { code: 'es', label: 'Español', flag: '🇪🇸' }
-  ];
 
   function setLanguage(code) {
     locale.value = code;
@@ -46,6 +38,10 @@
       // Apply server default language if user hasn't chosen one
       if (res.data?.defaultLanguage) {
         applyDefaultLanguage(res.data.defaultLanguage);
+      }
+      if (res.data?.defaultTheme) {
+        Theme.applyServerDefault(res.data.defaultTheme, res.data.defaultThemeColor);
+        currentTheme.value = store.theme;
       }
     } catch (e) {
       // fallback to defaults if API fails
@@ -226,12 +222,12 @@
   </BsModal>
   <BsNavBar :currentTheme="currentTheme">
     <ul class="navbar-nav ms-auto mb-2 mb-md-0">
-      <BsNavLink v-for="m in menu" :link="m" />
+      <BsNavLink v-for="m in menu" :key="m.link" :link="m" />
       <!-- help menu -->
       <BsNavDivider />
       <BsNavItem :dropdown="true">
         <BsNavMenu icon="circle-question" title="Help">
-          <li v-for="m in helpMenu">
+          <li v-for="m in helpMenu" :key="m.title">
             <a v-if="m.href" type="button" class="dropdown-item d-flex align-items-center" :href="m.href" :target="m.target">
               <span class="icon"><font-awesome-icon :icon="m.icon" /></span>
               <span class="ms-2">{{ m.title }}</span>
@@ -255,7 +251,7 @@
       <BsNavDivider />
       <BsNavItem :dropdown="true">
         <BsNavMenu icon="user" :title="store.profile?.username || ''" :showTitle="true">
-          <li v-for="m in profileMenu">
+          <li v-for="m in profileMenu" :key="m.link">
             <template v-if="(store.profile?.type=='local' && m.local_only) || !m.local_only">
                 <a v-if="m.href" type="button" class="dropdown-item d-flex align-items-center" :href="m.href">
                   <span class="icon"><font-awesome-icon :icon="m.icon" /></span>

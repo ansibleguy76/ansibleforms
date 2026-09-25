@@ -2,7 +2,7 @@
 
 import { ref } from 'vue';
 import Profile from '@/lib/Profile';
-import { copyText } from 'vue3-clipboard';
+import Helpers from '@/lib/Helpers';
 import getSettings from '@/config/settings';
 import { useI18n } from 'vue-i18n';
 
@@ -19,8 +19,9 @@ function preview(item) {
     try {
         currentItem.value = item;
         // clipboard.writeSync(currentItem.value)
-        copyText(currentItem.value);
-        toast.success(t('admin.copiedToClipboard'));
+        Helpers.copyToClipboard(currentItem.value)
+            .then(() => toast.success(t('admin.copiedToClipboard')))
+            .catch(() => toast.error(t('admin.clipboardHttpsRequired')));
     } catch {
         toast.error(t('admin.clipboardHttpsRequired'));
     }

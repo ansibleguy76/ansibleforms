@@ -25,13 +25,58 @@ poolConfig.queueLimit = 0;        // queue indefinitely (surfaces as latency, no
 poolConfig.enableKeepAlive = true;
 poolConfig.keepAliveInitialDelay = 10000;
 
-const pool = client.createPool(poolConfig);
+// `let`, so DB_POOL_SIZE can be changed without a restart. mysql2 fixes connectionLimit when
+// the pool is created, so a new size means a new pool.
+//
+// This is safe here for one specific reason: MySql.transaction takes a CONNECTION out of the
+// pool and holds that, not the pool reference - so a swap mid-transaction cannot split it
+// across two pools. Single queries through MySql.do are atomic. Only new acquisitions see the
+// new pool, and the old one is drained rather than killed: mysql2's end() waits for its
+// connections to be released.
+let pool;
 
-pool.on('connection', (conn) => {
-  logger.debug(`[ansibleforms] new pool connection (threadId ${conn.threadId})`);
-});
+function attachPoolLogging(p) {
+  p.on('connection', (conn) => {
+    logger.debug(`[ansibleforms] new pool connection (threadId ${conn.threadId})`);
+  });
+  return p;
+}
+
+pool = attachPoolLogging(client.createPool(poolConfig));
 
 const MySql = {};
+
+/**
+ * Applies a new DB_POOL_SIZE without a restart. The replacement pool takes new work; the old
+ * one is asked to end, which mysql2 does only once its connections are released - so an
+ * in-flight query or transaction finishes on the pool it started on.
+ */
+MySql.resizePool = function (connectionLimit) {
+  const size = parseInt(connectionLimit, 10);
+  if (!size || size < 1) return false;
+  if (size === poolConfig.connectionLimit) return true;
+  const previous = pool;
+  let next;
+  try {
+    // Built from a COPY, and poolConfig is only updated once the pool exists. Assigning
+    // the new size first left the config and the live pool disagreeing whenever
+    // createPool threw - and the early return above then read the config, so the very
+    // next attempt at the same size answered `true` without creating anything. The
+    // settings page reported DB_POOL_SIZE as applied while the old pool was still in use.
+    next = attachPoolLogging(client.createPool({ ...poolConfig, connectionLimit: size }));
+  } catch (e) {
+    logger.error(`[ansibleforms] could not resize the pool, keeping the current one : ${e.message}`);
+    return false;
+  }
+  poolConfig.connectionLimit = size;
+  pool = next;
+  // not awaited : draining waits on whatever is still running, and the caller must not
+  logger.notice(`[ansibleforms] connection pool resized to ${size}, draining the previous one`);
+  Promise.resolve(previous.end()).catch((e) => {
+    logger.warning(`[ansibleforms] the previous pool did not close cleanly : ${e.message}`);
+  });
+  return true;
+};
 
 /**
  * Run a query using a pool connection. Connection is auto-released.
@@ -49,6 +94,75 @@ MySql.do = async function (query, vars, silent = false) {
   } catch (err) {
     logger.error('[ansibleforms] Query error : ' + err);
     throw err;
+  }
+};
+
+/**
+ * Run several statements on ONE pooled connection, inside a transaction. The
+ * callback is handed a `do(query, vars)` bound to that connection ; throwing from
+ * it rolls everything back, returning commits. MySql.do takes a fresh connection
+ * per call, so it can not carry a transaction - use this whenever two writes must
+ * not be able to apply by halves.
+ *
+ * Caveat, on mysql : DDL (ALTER/CREATE/DROP) implicitly commits the transaction
+ * before it runs and can not be rolled back afterwards, so a statement that has
+ * to be undoable must come BEFORE any DDL in the callback.
+ */
+MySql.transaction = async function (fn) {
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    const result = await fn(async (query, vars) => {
+      if (appConfig.enableDbQueryLogging) {
+        logger.info('[ansibleforms] running query (tx) : ' + query);
+      }
+      const [res] = await conn.query(query, vars);
+      return res;
+    });
+    await conn.commit();
+    return result;
+  } catch (err) {
+    logger.error('[ansibleforms] Transaction error, rolling back : ' + err);
+    try {
+      await conn.rollback();
+    } catch (e) {
+      // a lost connection can not be rolled back ; the server drops the
+      // transaction on disconnect anyway
+    }
+    throw err;
+  } finally {
+    conn.release();
+  }
+};
+
+/**
+ * Run a query on a DEDICATED connection that is always DESTROYED afterwards, never
+ * returned to the pool.
+ *
+ * For the multi-statement schema script, which changes SESSION state: it opens with
+ * `SET FOREIGN_KEY_CHECKS=0` and `USE AnsibleForms` and only restores the flag in its
+ * last statement. Through MySql.do (pool.query) a failure part way through handed a
+ * connection back to the pool with foreign keys still DISABLED - so one of the 20
+ * connections silently stopped honouring `ON DELETE CASCADE`, and a job deletion that
+ * happened to land on it orphaned its job_output rows for good.
+ *
+ * The connection is discarded on SUCCESS too, because `USE AnsibleForms` also persists:
+ * a connection carrying a default schema makes unqualified table names work on that one
+ * connection and fail with "No database selected" on every other, which is worse than
+ * failing consistently. One connection is nothing - this runs once per install.
+ */
+MySql.runIsolated = async function (query, vars) {
+  const conn = await pool.getConnection();
+  try {
+    const [res] = await conn.query(query, vars);
+    return res;
+  } finally {
+    // destroy, not release : the session state this ran cannot be trusted either way
+    try {
+      conn.destroy();
+    } catch (e) {
+      logger.warning('[ansibleforms] Could not destroy the isolated connection : ' + e.message);
+    }
   }
 };
 

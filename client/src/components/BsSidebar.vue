@@ -5,72 +5,84 @@
   /*  Bootstrap Sidebar component                                   */
   /*                                                                */
   /*  @props:                                                       */
-  /*      title: String                                             */
-  /*      icon: String                                              */
-  /*      items: Array                                              */
+  /*      sections: Array of { title, items[] }                     */
+  /*      storageKey: String - localStorage key for collapse state  */
   /*                                                                */
   /******************************************************************/
 
+  import { ref } from "vue";
   import { useRoute } from "vue-router";
-
-  // INIT
 
   const route = useRoute();
 
-  // PROPS
-
   const props = defineProps({
-    title: String,
-    icon: String,
-    items: Array
+    sections: Array,
+    // Every page mounts its own sidebar, so the collapse state has to be
+    // persisted (same as the theme in Theme.js) or following any link remounts
+    // with an empty state and re-expands every section.
+    storageKey: { type: String, default: "af_sidebar_collapsed" }
   });
 
-  // COMPUTED
-  
-  const splitItems = computed(() => {
-    let result = [];
-    let current = [];
-    for (let i = 0; i < props.items.length; i++) {
-      if (props.items[i].title === "divider") {
-        result.push(current);
-        current = [];
-      } else {
-        current.push(props.items[i]);
-      }
+  // keyed by section index: stable across pages, and unlike the section title it
+  // does not change when the user switches language
+  function loadCollapsed() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(props.storageKey) || "{}");
+      return (saved && typeof saved === "object" && !Array.isArray(saved)) ? saved : {};
+    } catch (e) {
+      return {};
     }
-    result.push(current);
-    return result;
-  });
+  }
 
-  // METHODS
+  const collapsed = ref(loadCollapsed());
+
+  function toggle(idx) {
+    collapsed.value[idx] = !collapsed.value[idx];
+    try {
+      localStorage.setItem(props.storageKey, JSON.stringify(collapsed.value));
+    } catch (e) {
+      // storage full or disabled: keep the in-memory state
+    }
+  }
 
   const isActive = (link) => {
     return route.path.includes(link);
   };
 
-
 </script>
 <template>
     <div class="d-flex flex-column p-3 bg-body-tertiary" style="width: 280px;">
-    <h3 v-if="title" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto">
-      <span v-if="icon" class="icon"><font-awesome-icon :icon="icon" /></span>
-      <span class="ms-2">{{ title }}</span>
-    </h3>
     <div class="mb-auto">
-      <template v-for="itms in splitItems">
-
-      <ul class="nav nav-pills flex-column">
-        <li v-for="i in itms"  class="nav-item">
-          <router-link :to="i.link" class="nav-link" :class="{'active':isActive(i.link),'link-body-emphasis':!isActive(i.link)}" aria-current="page">
-            <FaIcon :icon="i.icon" :fixedwidth="true" />
-            {{ i.title }}
-          </router-link>
-        </li>
-      </ul>
-      <hr>
-    </template>      
+      <div v-for="(section, idx) in sections" :key="idx" :class="{'mt-2': idx > 0}">
+        <div class="sidebar-section-header d-flex align-items-center justify-content-between px-2 py-1" role="button" @click="toggle(idx)">
+          <small class="text-uppercase fw-semibold text-body-secondary letter-spacing">{{ section.title }}</small>
+          <FaIcon :icon="collapsed[idx] ? 'chevron-down' : 'chevron-up'" class="text-body-secondary" size="xs" />
+        </div>
+        <ul v-show="!collapsed[idx]" class="nav nav-pills flex-column mt-1">
+          <li v-for="item in section.items" :key="item.link" class="nav-item">
+            <router-link :to="item.link" class="nav-link" :class="{'active':isActive(item.link),'link-body-emphasis':!isActive(item.link)}" aria-current="page">
+              <FaIcon :icon="item.icon" :fixedwidth="true" />
+              {{ item.title }}
+            </router-link>
+          </li>
+        </ul>
+      </div>
     </div>
   </div>
 </template>
 <style scoped>
+.sidebar-section-header {
+  cursor: pointer;
+  border-radius: 0.25rem;
+}
+.sidebar-section-header:hover {
+  background-color: var(--bs-tertiary-bg);
+}
+.letter-spacing {
+  letter-spacing: 0.05em;
+  font-size: 0.9rem;
+}
+.nav-link:not(.active):hover {
+  background-color: var(--bs-secondary-bg);
+}
 </style>

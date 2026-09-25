@@ -1,17 +1,30 @@
+import { copyText } from 'vue3-clipboard';
+
 const Helpers = {
+  // Turns help.yaml's `allowed` text into select options when - and only when - it really
+  // is a short enum. 'true, false' and '1, 2' become dropdowns ; 'a valid Vault token' and
+  // 'a url subpath, for example /ansibleforms' stay free text.
+  //
+  // This matters beyond tidiness: vault.js tests VAULT_SKIP_VERIFY with
+  // `String(v).toLowerCase() === "true"`, so 'yes', '1' or 'True' silently do nothing. A
+  // dropdown that can only emit the documented literals removes that whole class of typo.
+  envAllowedOptions(allowed) {
+    if (!allowed) return null;
+    const parts = String(allowed).split(',').map(p => p.trim());
+    // 12, not 6 : the syslog levels are an eight-value enum and winston-syslog accepts
+    // eleven protocol strings. Both are real enums a dropdown should offer in full.
+    if (parts.length < 2 || parts.length > 12) return null;
+    if (!parts.every(p => /^[\w.:-]{1,12}$/.test(p))) return null;
+    // A documented `0, 1` enum is a boolean: show it as such and keep submitting 0/1,
+    // because the code tests these with `== 1` (SHOW_DESIGNER, USE_YTT, ENABLE_*). Only an
+    // exact 0/1 pair is treated this way - VAULT_KV_VERSION is also two numbers, but 1 and
+    // 2 are versions, not a truth value.
+    const isBoolean = parts.length === 2 && parts[0] === '0' && parts[1] === '1';
+    return parts.map(p => ({ value: p, label: isBoolean ? (p === '1' ? 'true' : 'false') : p }));
+  },
+
   findDuplicates(arry) {
     return arry.filter((item, index) => arry.indexOf(item) !== index);
-  },
-  forceFileDownload(response) {
-    const url = window.URL.createObjectURL(new Blob([response.data]));
-    const link = document.createElement("a");
-    let filename = response.headers["content-disposition"]
-      .split("filename=")[1]
-      .replace(/"/g, "");
-    link.href = url;
-    link.setAttribute("download", filename);
-    document.body.appendChild(link);
-    link.click();
   },
   htmlEncode(v){
     return v.toString().replace(/[\u00A0-\u9999<>\&]/g, function(i) { //eslint-disable-line
@@ -122,6 +135,26 @@ const Helpers = {
       default:
         return "body";
     }
+  },
+  // Show a server timestamp in the timezone the SERVER already put it in.
+  //
+  // Some endpoints deliberately convert to the application timezone before sending
+  // (backup dates come from Helpers.dateFromBackupFolder on the server, which parses
+  // the UTC folder name and applies LOG_TZ). Passing that through dayjs() converts it
+  // a second time, into the browser's zone - which is why a backup folder named
+  // ...20260726002146 displayed as 02:21 in a +02:00 browser, disagreeing with its own
+  // folder name. Read the wall clock straight out of the ISO string instead.
+  // Returns ONLY a `YYYY-MM-DD HH:MM:SS` string or ''. It never echoes its input back,
+  // because BsDataTable treats a column `render()` result as trusted HTML (cellHtml does
+  // not escape it) - a pass-through formatter in that slot would be an injection sink.
+  formatServerDate(value) {
+    if (!value) return '';
+    const text = typeof value === 'string'
+      ? value
+      // a Date or a number would otherwise render as 'Sun Jul 26 2026 …' or an epoch
+      : (value instanceof Date ? value.toISOString() : String(value));
+    const m = /^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})/.exec(text);
+    return m ? `${m[1]} ${m[2]}` : '';
   },
   humanFileSize(size) {
     if(size==undefined)return "Not a number"
@@ -506,7 +539,7 @@ const Helpers = {
   // sometimes we want undefined, sometimes if array, an empty array
   // sometimes if array of objects, we want it flattened by column
 
-    var keys = undefined;
+    var keys;
     var key = undefined;
     var wasArray = false;
     // do we pass a field
@@ -541,6 +574,7 @@ const Helpers = {
     }
     return field;
   },
+  // eslint-disable-next-line no-unused-vars -- `object` is referenced by name from the expression built below and run through eval
   replacePlaceholders(match,object){
     if(match.match(/^[a-zA-Z0-9_\-\[\]\.]*$/)){ /* eslint-disable-line */
       var to_eval="object"+match.replaceAll("[",".").replaceAll("]",".").split(".").filter(x=>!(x==="")).map(x=>{return "["+((/^-?\d+$/.test(x))?x:"'"+x+"'")+"]"}).join("")
@@ -550,6 +584,98 @@ const Helpers = {
       return `$(${match})` // return original
     }
   },  
+  /**
+   * Splice a resolved value into an expression, at the FIRST occurrence of its placeholder.
+   *
+   * An expression is JS source, so where the placeholder sits decides how the value has to
+   * be written - and getting that wrong is silent, because the result is still valid JS:
+   *
+   *   fn.fnLs('$(dir)')            the quotes wrap the placeholder -> they are replaced
+   *                                together with it by a JS literal, so a value carrying an
+   *                                apostrophe ("O'Brien") cannot break out of the string
+   *   fn.fnLs('$(dir)/vars')       the placeholder is INSIDE a longer string -> the value is
+   *                                escaped for that quote character and spliced in as text.
+   *                                A JS literal here injected its own quotes into the middle
+   *                                of the string : '$(dir)/vars' with /app/persistent became
+   *                                '"/app/persistent"/vars', which is what ENOENT'd on every
+   *                                path and url built this way (the documented AWX examples
+   *                                in docs/faq.md are all of this shape).
+   *   $(count) + 1                 no string at all -> a JS literal, so a number stays a
+   *                                number and still adds instead of concatenating.
+   *
+   * @param {string} expression   the expression still holding the placeholder
+   * @param {string} placeholder  the literal placeholder text, e.g. "$(dir)"
+   * @param {*} value             the resolved value, or its JS source when isSource is set
+   * @param {boolean} isSource    value is already JS/JSON source (an array/object literal)
+   *                              and must be spliced in as-is rather than stringified
+   * @returns {string} the expression with that one occurrence substituted
+   */
+  substituteExpressionPlaceholder(expression, placeholder, value, isSource = false) {
+    // A prior placeholder in the same expression can still be unresolved (the loop that
+    // calls this keeps going to later matches regardless), leaving expression undefined -
+    // mirror the old `value?.replace(...)` safety instead of throwing on .indexOf.
+    if (expression == null) return expression;
+    const at = expression.indexOf(placeholder);
+    if (at < 0) return expression;
+    const end = at + placeholder.length;
+    const quote = this.quoteContextAt(expression, at);
+    // Everything below concatenates slices : a value containing $& or $1 must never be read
+    // as a replacement pattern, which is what String.replace with a string replacement does.
+    if (!quote) {
+      const literal = isSource ? value : JSON.stringify(value);
+      return expression.slice(0, at) + literal + expression.slice(end);
+    }
+    if (expression[at - 1] === quote && expression[end] === quote) {
+      const literal = isSource ? value : JSON.stringify(value);
+      return expression.slice(0, at - 1) + literal + expression.slice(end + 1);
+    }
+    // JSON escapes \ , " and the control characters ; the enclosing quote is added on top,
+    // and a real newline becoming \n also keeps the expression on one line, which the
+    // server refuses outright.
+    // isSource : the value is JS/JSON source, and inside a string only the TEXT it denotes
+    // belongs there. For an ARRAY or OBJECT that is the JSON text itself, escaped for the
+    // string it lands in so it reads back identically. For a STRING it is the string
+    // WITHOUT the quotes JSON put around it : a dotted read such as
+    // $(ANSIBLE_FORMS.persistent_path) takes the object-reference branch in AppForm and so
+    // arrives here as source, yet resolves to a plain path. Escaping those quotes and
+    // splicing them in rebuilt the very bug this function exists to fix, only spelled
+    // '\"/app/persistent\"/playbooks/...' instead of '"/app/persistent"/playbooks/...'.
+    let raw = value;
+    if (isSource) {
+      try {
+        const parsed = JSON.parse(value);
+        if (typeof parsed === 'string') raw = parsed;
+      } catch { /* not JSON after all - splice the source in as text, unchanged */ }
+    }
+    const body = JSON.stringify(String(raw)).slice(1, -1);
+    const text = quote === "'" ? body.replace(/'/g, "\\'") : body;
+    return expression.slice(0, at) + text + expression.slice(end);
+  },
+
+  /**
+   * Which quote character, if any, encloses position `index` of a JS expression.
+   *
+   * Only ' and " are string delimiters here : a backtick is refused outright by the server
+   * expression sanitizer, so a template literal never reaches evaluation anyway.
+   *
+   * @param {string} expression
+   * @param {number} index
+   * @returns {string|null} the enclosing quote character, or null outside any string
+   */
+  quoteContextAt(expression, index) {
+    let quote = null;
+    for (let i = 0; i < index; i++) {
+      const c = expression[i];
+      if (quote) {
+        if (c === '\\') { i++; continue; }   // an escaped character, quote included
+        if (c === quote) quote = null;
+      } else if (c === "'" || c === '"') {
+        quote = c;
+      }
+    }
+    return quote;
+  },
+
   forceFileDownload(response) {
     const url = window.URL.createObjectURL(new Blob([response.data]))
     const link = document.createElement('a')
@@ -677,7 +803,7 @@ const Helpers = {
     }    
     function matchRuleShort(str, rule) {
       var escapeRegex = (str) => str.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1"); // eslint-disable-line
-      return new RegExp("^" + rule.split("*").map(escapeRegex).join(".*") + "$").test(str); // eslint-disable-line
+      return new RegExp("^" + rule.split("*").map(escapeRegex).join(".*") + "$").test(str);
     }
 
     function compareProps(x1,x2,p){
@@ -773,12 +899,37 @@ const Helpers = {
           })
         }
     }   
-    var dummy = fnArray.from([]) // to make it available
-    var dummy = fnGetNumberedName([], "###", "") // to make it available
-    var dummy = fnToTable([]) // to make it available
+    fnArray.from([]) // to make it available
+    fnGetNumberedName([], "###", "") // to make it available
+    fnToTable([]) // to make it available
     if(expression) 
     return eval(expression)          
-  }  
+  },
+
+  /**
+   * Copy text to the clipboard, resolving only when it actually happened.
+   *
+   * vue3-clipboard's signature is copyText(text, container, callback) and it invokes that
+   * callback UNGUARDED from inside the synthetic click handler it dispatches. Every call
+   * site here passed only the text, so `callback(...)` threw a TypeError - and because
+   * that happens inside a DOM event dispatch the exception never reaches the caller's
+   * try/catch. So each copy logged an uncaught error, and the success toast fired even
+   * when execCommand('copy') had returned false and nothing had been copied at all
+   * (a page served over plain http, or a browser that refuses the synthetic copy).
+   *
+   * @param {string} text
+   * @returns {Promise<void>} rejects with the clipboard error when the copy failed
+   */
+  copyToClipboard(text) {
+    return new Promise((resolve, reject) => {
+      try {
+        copyText(String(text ?? ''), undefined, (err) => (err ? reject(err) : resolve()));
+      } catch (e) {
+        // a synchronous throw (no document, no selection) still has to reject
+        reject(e);
+      }
+    });
+  }
 
 };
 

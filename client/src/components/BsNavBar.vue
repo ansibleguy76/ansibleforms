@@ -14,7 +14,7 @@
 
     import { useAppStore } from '@/stores/app';
 
-    const props = defineProps({
+    defineProps({
         currentTheme: {
             type: String,
             required: true

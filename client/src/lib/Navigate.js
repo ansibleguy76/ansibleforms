@@ -5,28 +5,28 @@ var Navigate = {
       // redirect to login page with original route as query parameter
       router
         .replace({ name: "/login", query: { from: (route.fullPath!="/logout")?route.fullPath:'' } })
-        .catch((err) => {}); // no token found, logout
+        .catch((_err) => {}); // no token found, logout
     }
   },
 
-  toHome(router,route) {
+  toHome(router,_route) {
     console.log("Redirecting to home")
-    router.push({ name: "/" }).catch((err) => {});
+    router.push({ name: "/" }).catch((_err) => {});
   },
   toError(router) {
       console.log("Redirecting to error")
-      router.push({ name: "/error" }).catch((err) => {});
+      router.push({ name: "/error" }).catch((_err) => {});
   },
 
   toSchema(router) {
       console.log("Redirecting to schema")
-      router.push({ name: "/schema" }).catch((err) => {});
+      router.push({ name: "/schema" }).catch((_err) => {});
   },
 
   toPath(router, path, query = "", forceReload = false) {
       // If path is already an object, just use it directly
       if (typeof path === 'object') {
-         router.push(path).catch((err) => {});
+         router.push(path).catch((_err) => {});
          return;
       }
       
@@ -46,11 +46,11 @@ var Navigate = {
       // first navigate away then back to trigger a reload
       if (forceReload && router.currentRoute.value.fullPath === fullPath) {
          router.push('/').then(() => {
-            router.push(fullPath).catch((err) => {});
-         }).catch((err) => {});
+            router.push(fullPath).catch((_err) => {});
+         }).catch((_err) => {});
       } else {
          // Use the pathname + search (which will have proper %20 encoding)
-         router.push(fullPath).catch((err) => {});
+         router.push(fullPath).catch((_err) => {});
       }
   },
 

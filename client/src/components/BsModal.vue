@@ -4,6 +4,14 @@
     /*                                        */
     /*  Bootstrap modal component             */
     /*                                        */
+    /*  @props:                               */
+    /*      size: String                      */
+    /*        'sm' | 'md' | 'lg' | 'xl'        */
+    /*        'md' is Bootstrap's default      */
+    /*        width (no modal-* class).        */
+    /*        Defaults to 'xl', which is what  */
+    /*        every modal was hard-coded to.   */
+    /*                                        */
     /*  @slots:                               */
     /*      title: String                     */
     /*      default: String                   */
@@ -14,7 +22,7 @@
     /*                                        */
     /******************************************/
 
-    import {getCurrentInstance} from "vue"
+    import {getCurrentInstance, computed} from "vue"
     import { useI18n } from 'vue-i18n'
 
     // INIT
@@ -22,6 +30,13 @@
     const { t } = useI18n()
     const {uid} = getCurrentInstance()
     const emit = defineEmits(['close'])
+    const props = defineProps({
+        size: { type: String, default: 'xl' }
+    })
+
+    // Bootstrap has modal-sm/-lg/-xl but no modal-md : the default width is the
+    // absence of a class, so 'md' must not emit one.
+    const sizeClass = computed(() => (props.size && props.size !== 'md') ? `modal-${props.size}` : '')
 
     // METHODS
 
@@ -37,7 +52,7 @@
 
     <div @click="backdropClick" :id="uid"  class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true"
         data-bs-keyboard="true" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" :class="sizeClass">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title"><slot name="title"></slot>

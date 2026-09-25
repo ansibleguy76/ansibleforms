@@ -11,9 +11,9 @@
     you can find the color schemes online.  Here we use
     atom-one-dark and atom-one-light.
 
-    colors about ace-editor, we always use the dark theme. 
-    We start from the monokai theme, but you can change the background
-    to match "--bg-dark" 
+    colors about ace-editor : the editor follows the app theme (monokai in the
+    dark theme, chrome otherwise).  The variable below only skins the monokai
+    background, you can change it to match "--bg-dark"
 
     If you ever created an awesome theme, please contribute it back
     to the project!
@@ -25,8 +25,8 @@
 
     /* primary color */
     --af-primary : var(--bs-primary);
-    --af-primary-subtle : var(--bs-primary-subtle);
-    --af-primary-bg-subtle: var(--bs-primary-bg-subtle);    
+    --af-primary-subtle : var(--bs-primary-bg-subtle);
+    --af-primary-bg-subtle: var(--bs-primary-bg-subtle);
 
     /* body color */
     --af-body-color: #495057;
@@ -85,8 +85,8 @@
     --af-bg-body-color            : var(--bs-body-bg);             /* subtle color for light theme */
     --af-bg-black-color           : var(--bs-black);               /* subtle color for light theme */
     --af-bg-white-color           : var(--bs-white);               /* subtle color for light theme */
-    --af-bg-transparent-color     : var(--bs-transparent);
-    
+    --af-bg-transparent-color     : transparent;
+
       /* navbar */
     --af-navbar-link-color       : var(--bs-dark);
     --af-navbar-link-hover-color : var(--af-primary);
@@ -114,13 +114,26 @@
     /* ansible output */
     --af-ansible-output-success: var(--bs-success);
     --af-ansible-output-warning: var(--bs-orange);
-    --af-ansible-output-error: var(--bs-danger);
+    /* the danger hue, darkened until the error lines pass WCAG AA as text on the
+       output pane background (--bs-light-bg-subtle, #fcfcfd) : 6.3:1 */
+    --af-ansible-output-error: #b02a37;
+    --af-ansible-output-danger: var(--af-ansible-output-error); /* alias : the output markup uses the 'danger' naming */
     --af-ansible-output-info: var(--bs-info);
+    /* The vars above colour the `tag is-*` BACKGROUNDS (light label on top), so they
+       must stay saturated. success/warning are ALSO used as TEXT on the pane
+       background by `has-text-*`, where the saturated hue fails WCAG AA, so text
+       gets its own darkened/lightened variant per theme. Two deliberate omissions:
+       danger needs no variant (`tag is-danger` is never emitted, so its var is
+       already text-tuned), and info needs none either (`has-text-info` is styled
+       nowhere, so it inherits the readable body colour - giving it a colour here
+       would make it worse, not better). */
+    --af-ansible-output-text-success: #146c43; /* 6.3:1 */
+    --af-ansible-output-text-warning: #a35200; /* 5.4:1 */
     --af-ansible-output-bg-timestamp: var(--bs-light);
     --af-ansible-output-timestamp: var(--bs-info);
 
     /* ace-editor */
-    --af-ace-editor-bg: var(--bs-dark); /* always dark theme */
+    --af-ace-editor-bg: var(--bs-dark); /* monokai skin background */
 
 }
 
@@ -188,12 +201,13 @@
     --af-bg-body-color            : var(--bs-body-bg);             /* subtle color for dark theme */
     --af-bg-black-color           : var(--bs-black);               /* subtle color for dark theme */
     --af-bg-white-color           : var(--bs-white);               /* subtle color for dark theme */
+    --af-bg-transparent-color     : transparent;
 
       /* navbar */
     --af-navbar-link-color       : var(--bs-white);
     --af-navbar-link-hover-color : var(--af-primary);
     --af-navbar-link-active-color: var(--af-primary);
-    --af-bg-navbar               : var(--bs-dark);
+    --af-bg-navbar               : var(--bs-black);
     --af-text-navbar             : var(--bs-light);
 
     /* defaults */
@@ -216,13 +230,19 @@
     /* ansible output */
     --af-ansible-output-success: var(--bs-success);
     --af-ansible-output-warning: var(--bs-orange);
-    --af-ansible-output-error: var(--bs-danger);
+    /* the danger hue, lightened until the error lines pass WCAG AA as text on the
+       output pane background (--bs-light-bg-subtle, #343a40) : 5.1:1 */
+    --af-ansible-output-error: #ff8b94;
+    --af-ansible-output-danger: var(--af-ansible-output-error); /* alias : the output markup uses the 'danger' naming */
     --af-ansible-output-info: var(--bs-info);
+    /* text variants, lightened for the dark pane background (see the light block) */
+    --af-ansible-output-text-success: #75b798; /* 4.9:1 */
+    --af-ansible-output-text-warning: #ffb366; /* 6.5:1 */
     --af-ansible-output-bg-timestamp: var(--bs-dark);
     --af-ansible-output-timestamp: var(--bs-info);
 
     /* ace-editor */
-    --af-ace-editor-bg: var(--bs-dark); /* always dark theme */
+    --af-ace-editor-bg: var(--bs-dark); /* monokai skin background */
 }
 
 [data-bs-theme=color] {
@@ -284,12 +304,12 @@
     --af-bg-light-subtle-color    : var(--bs-light-bg-subtle);     /* for the color theme we allow tile colors */           
     --af-bg-dark-color            : var(--bs-dark);                /* for the color theme we allow tile colors */
     --af-bg-dark-subtle-color     : var(--bs-dark-bg-subtle);      /* for the color theme we allow tile colors */          
-    --af-bg-body-secondary-color  : var(--bs-body-secondary);      /* for the color theme we allow tile colors */          
-    --af-bg-body-tertiary-color   : var(--bs-body-tertiary);       /* for the color theme we allow tile colors */         
-    --af-bg-body-color            : var(--bs-body);                /* for the color theme we allow tile colors */
-    --af-bg-black-color           : var(--bs-black);               /* for the color theme we allow tile colors */ 
-    --af-bg-white-color           : var(--bs-white);               /* for the color theme we allow tile colors */ 
-    --af-bg-transparent-color     : var(--bs-transparent);                  
+    --af-bg-body-secondary-color  : var(--bs-secondary-bg);        /* for the color theme we allow tile colors */
+    --af-bg-body-tertiary-color   : var(--bs-tertiary-bg);         /* for the color theme we allow tile colors */
+    --af-bg-body-color            : var(--bs-body-bg);             /* for the color theme we allow tile colors */
+    --af-bg-black-color           : var(--bs-black);               /* for the color theme we allow tile colors */
+    --af-bg-white-color           : var(--bs-white);               /* for the color theme we allow tile colors */
+    --af-bg-transparent-color     : transparent;
 
       /* navbar */
     --af-navbar-link-color       : var(--bs-white);
@@ -318,12 +338,18 @@
     /* ansible output */
     --af-ansible-output-success: var(--bs-success);
     --af-ansible-output-warning: var(--bs-orange);
-    --af-ansible-output-error: var(--bs-danger);
+    /* the danger hue, darkened until the error lines pass WCAG AA as text on the
+       output pane background (--bs-light-bg-subtle, #fcfcfd) : 6.3:1 */
+    --af-ansible-output-error: #b02a37;
+    --af-ansible-output-danger: var(--af-ansible-output-error); /* alias : the output markup uses the 'danger' naming */
     --af-ansible-output-info: var(--bs-info);
+    /* text variants ; the color theme's pane background is light (see the light block) */
+    --af-ansible-output-text-success: #146c43; /* 6.3:1 */
+    --af-ansible-output-text-warning: #a35200; /* 5.4:1 */
     --af-ansible-output-bg-timestamp: var(--bs-info-bg-subtle);
     --af-ansible-output-timestamp: var(--bs-info);
 
     /* ace-editor */
-    --af-ace-editor-bg: var(--bs-dark); /* always dark theme */
+    --af-ace-editor-bg: var(--bs-dark); /* monokai skin background */
 
 }

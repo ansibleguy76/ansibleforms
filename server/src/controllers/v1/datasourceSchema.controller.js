@@ -42,7 +42,7 @@ const findById = async function (req, res) {
     if (schema.length > 0) {
       res.json(new RestResult("success", "found schema", schema[0], ""));
     } else {
-      res.json(new RestResult("error", "failed to find schema", null, err.toString()));
+      res.json(new RestResult("error", "failed to find schema", null, ""));
     }
   } catch (err) {
     res.json(new RestResult("error", "failed to find schema", null, err.toString()));

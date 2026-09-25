@@ -11,6 +11,7 @@
     { "name": "user", "description": "User management and profile" },
     { "name": "group", "description": "Group management" },
     { "name": "settings", "description": "Application settings and configuration" },
+    { "name": "config", "description": "Form configuration (config.yaml) and designer support" },
     { "name": "ssh", "description": "SSH key management" },
     { "name": "log", "description": "Application log access and download" },
     { "name": "repository", "description": "Git repository management" },
@@ -21,7 +22,8 @@
     { "name": "backup", "description": "Backup and restore operations" },
     { "name": "credential", "description": "Credential management and database connection testing" },
     { "name": "oauth2", "description": "OAuth2 provider management (Azure AD, OIDC, etc.)" },
-    { "name": "knownhosts", "description": "Manage SSH known_hosts entries (flat list)" }
+    { "name": "knownhosts", "description": "Manage SSH known_hosts entries (flat list)" },
+    { "name": "audit", "description": "The append-only audit trail" }
   ],
   "servers": [
     { "url": "/api/v2" }
@@ -331,6 +333,7 @@
       "put": {
         "tags": ["settings"],
         "summary": "Update application settings",
+        "description": "Updates the settings row. Config CONTENT is deliberately not accepted here : it is written through PUT /settings/config, which validates it, honours the designer lock and the baseHash concurrency check, and writes a restore point.",
         "security": [ { "bearerAuth": [] } ],
         "requestBody": {
           "required": true,
@@ -346,7 +349,10 @@
                   "mail_password": { "type": "string", "description": "Use '**********' to preserve existing password, empty string to clear, or new password" },
                   "mail_from": { "type": "string" },
                   "url": { "type": "string" },
-                  "forms_yaml": { "type": "string" }
+                  "config_source": { "type": "string", "enum": ["database", "file"], "description": "Where the active config is read from and written to" },
+                  "default_language": { "type": "string" },
+                  "default_theme": { "type": "string" },
+                  "default_theme_color": { "type": "string" }
                 }
               }
             }
@@ -359,11 +365,64 @@
         }
       }
     },
+    "/settings/config": {
+      "get": {
+        "tags": ["settings"],
+        "summary": "Get the active form configuration",
+        "description": "Returns the active config.yaml content, read from the source set in config_source (database, use_for_config repository or local file). The returned baseHash is a sha256 fingerprint of that content; send it back on PUT to detect a concurrent change.",
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "Active config retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "forms_yaml": { "type": "string", "description": "The active config.yaml content (empty string when there is none yet)" },
+                    "baseHash": { "type": "string", "description": "sha256 fingerprint of forms_yaml, for optimistic concurrency on save" }
+                  }
+                }
+              }
+            }
+          },
+          "500": { "description": "Failed to find settings" }
+        }
+      },
+      "put": {
+        "tags": ["settings"],
+        "summary": "Save the active form configuration",
+        "description": "Validates the supplied yaml against the base schema and writes it to the active config source (database, use_for_config repository or local file). Refused while the designer holds the config lock.",
+        "security": [ { "bearerAuth": [] } ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["forms_yaml"],
+                "properties": {
+                  "forms_yaml": { "type": "string", "description": "The full config.yaml content (categories, roles, constants)" },
+                  "baseHash": { "type": "string", "description": "Optional baseHash from GET /settings/config; when sent, the save is refused with 409 if the active config changed in the meantime" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Config saved" },
+          "400": { "description": "Missing forms_yaml, invalid yaml, or config that fails the base schema validation" },
+          "409": { "description": "The active config changed elsewhere (stale baseHash)" },
+          "423": { "description": "Configuration is locked by the designer" },
+          "500": { "description": "Failed to update settings" }
+        }
+      }
+    },
     "/settings/importConfig": {
       "put": {
         "tags": ["settings"],
         "summary": "Import configuration from config.yaml",
-        "description": "Imports settings from config.yaml or forms.yaml file.",
+        "description": "Loads the config.yaml (or the deprecated forms.yaml) file into the database, replacing the database copy. A restore point of that database copy is written to the backups first. Refused while the designer holds the config lock.",
         "security": [ { "bearerAuth": [] } ],
         "responses": {
           "200": {
@@ -379,7 +438,141 @@
               }
             }
           },
+          "423": { "description": "Configuration is locked by the designer" },
           "500": { "description": "Failed to import config" }
+        }
+      }
+    },
+    "/settings/exportConfig": {
+      "put": {
+        "tags": ["settings"],
+        "summary": "Export configuration to config.yaml",
+        "description": "Writes the database config out to the config.yaml file (the repository copy when a use_for_config repository holds it). A restore point of the old file is written to the backups first. Refused when the database is not the active config source or holds no config, and while the designer holds the config lock.",
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "Config exported successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "description": "The database is not the active config source, or there is no config in the database to export" },
+          "423": { "description": "Configuration is locked by the designer" },
+          "500": { "description": "Failed to export config" }
+        }
+      }
+    },
+    "/settings/legacyCheck": {
+      "get": {
+        "tags": ["settings"],
+        "summary": "Check for a legacy forms.yaml",
+        "description": "Returns whether this is a genuine legacy install: a forms.yaml is present and no config.yaml exists yet.",
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "Legacy check performed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "hasLegacy": { "type": "boolean", "description": "True when forms.yaml exists and config.yaml does not" }
+                  }
+                }
+              }
+            }
+          },
+          "500": { "description": "Failed to check for a legacy forms.yaml" }
+        }
+      }
+    },
+    "/settings/convertLegacy": {
+      "put": {
+        "tags": ["settings"],
+        "summary": "Convert forms.yaml to config.yaml",
+        "description": "Renames the legacy forms.yaml to config.yaml. Fails when there is no forms.yaml, or when a config.yaml already exists (it is never overwritten).",
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "Legacy file converted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "500": { "description": "No forms.yaml to convert, config.yaml already exists, or the conversion failed" }
+        }
+      }
+    },
+    "/config/mode": {
+      "get": {
+        "tags": ["config"],
+        "summary": "Get the active config mode",
+        "description": "Returns whether the active form configuration lives in the database, resolved from the config_source setting with the ENABLE_CONFIG_IN_DATABASE environment default as fallback. Designer access is enough, so a designer without settings access can learn the mode.",
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "Config mode retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "configInDatabase": { "type": "boolean", "description": "True when the active config is stored in the database" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized - no designer access" },
+          "500": { "description": "Failed to get the forms config" }
+        }
+      }
+    },
+    "/config/formnames": {
+      "get": {
+        "tags": ["config"],
+        "summary": "List form names",
+        "description": "Returns a sorted, de-duplicated flat list of the form names, for the form dropdowns of schedules and datasources. Subforms are excluded because they cannot be launched standalone.",
+        "security": [ { "bearerAuth": [] } ],
+        "responses": {
+          "200": {
+            "description": "Form names retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "count": { "type": "integer" },
+                    "records": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": { "type": "string" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized - no settings access" },
+          "500": { "description": "Failed to get the forms list" }
         }
       }
     },
@@ -1402,6 +1595,820 @@
         "responses": {
           "200": { "description": "Restore completed" },
           "404": { "description": "Backup not found" }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "System health (Status page)",
+        "description": "Runs every health check in parallel - database, schema, disk, jobs, scheduler, backups, designer lock, repositories, config seed, Vault, expression sanitizer, LDAP, storage and writable folders - and lists facts about this instance. Side-effect free. Requires settings access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Health report",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "description": "Worst status of all checks",
+                      "enum": [
+                        "ok",
+                        "warning",
+                        "error"
+                      ]
+                    },
+                    "summary": {
+                      "type": "object",
+                      "properties": {
+                        "ok": {
+                          "type": "integer"
+                        },
+                        "warning": {
+                          "type": "integer"
+                        },
+                        "error": {
+                          "type": "integer"
+                        }
+                      }
+                    },
+                    "checks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string",
+                            "description": "Check name, e.g. database, expressions"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "ok",
+                              "warning",
+                              "error"
+                            ]
+                          },
+                          "value": {
+                            "type": "string",
+                            "description": "One-line result"
+                          },
+                          "detail": {
+                            "type": "object",
+                            "nullable": true
+                          }
+                        }
+                      }
+                    },
+                    "info": {
+                      "type": "array",
+                      "description": "Facts with no pass/fail verdict (version, node, timezone, ...)",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          },
+                          "detail": {
+                            "type": "object",
+                            "nullable": true
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - no settings access"
+          },
+          "500": {
+            "description": "Failed to run the health check"
+          }
+        }
+      }
+    },
+    "/audit": {
+      "get": {
+        "tags": [
+          "audit"
+        ],
+        "summary": "Search the audit trail",
+        "description": "Newest first. Every filter is optional and exact, except target, which matches a substring. Requires settings access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "actor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "e.g. settings.env.update, vault.check, backup.restoreEnv"
+          },
+          {
+            "name": "targetType",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "target",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Substring match"
+          },
+          {
+            "name": "outcome",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "success",
+                "failure"
+              ]
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "Unparsable dates are ignored"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "minimum": 1,
+              "maximum": 1000
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0,
+              "maximum": 1000000
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of audit records",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "integer"
+                    },
+                    "limit": {
+                      "type": "integer"
+                    },
+                    "offset": {
+                      "type": "integer"
+                    },
+                    "records": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "created_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "actor": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "actor_type": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "ip": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "action": {
+                            "type": "string"
+                          },
+                          "target_type": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "target": {
+                            "type": "string",
+                            "nullable": true
+                          },
+                          "outcome": {
+                            "type": "string"
+                          },
+                          "detail": {
+                            "type": "object",
+                            "nullable": true,
+                            "description": "Never contains secrets"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - no settings access"
+          },
+          "500": {
+            "description": "Failed to read the audit trail"
+          }
+        }
+      }
+    },
+    "/audit/facets": {
+      "get": {
+        "tags": [
+          "audit"
+        ],
+        "summary": "Distinct actions and actors in the audit trail",
+        "description": "For filter dropdowns. Requires settings access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Facets",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "actions": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "actors": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - no settings access"
+          },
+          "500": {
+            "description": "Failed to read the audit trail"
+          }
+        }
+      }
+    },
+    "/config-seed/apply": {
+      "post": {
+        "tags": [
+          "config"
+        ],
+        "summary": "Apply the config seed now",
+        "description": "Re-applies the file in CONFIG_SEED_PATH immediately, even when it has not changed (the same as SIGHUP). See docs/seed.md. Requires settings access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Seed applied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "applied",
+                        "unchanged",
+                        "skipped"
+                      ]
+                    },
+                    "summary": {
+                      "type": "object",
+                      "nullable": true,
+                      "description": "created, updated, adopted and unchanged items per section"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No config seed configured (CONFIG_SEED_PATH is not set)"
+          },
+          "403": {
+            "description": "Forbidden - no settings access"
+          },
+          "500": {
+            "description": "The seed could not be applied - the configuration in force is kept"
+          }
+        }
+      }
+    },
+    "/backup/{folder}/restore-env": {
+      "post": {
+        "tags": [
+          "backup"
+        ],
+        "summary": "Restore the managed environment file from a backup",
+        "description": "Puts the persistent/.env saved in the backup back in place. It takes effect after a restart.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "folder",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Result - restored is false with a reason when the backup holds no environment file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "restored": {
+                      "type": "boolean"
+                    },
+                    "restartRequired": {
+                      "type": "boolean"
+                    },
+                    "folder": {
+                      "type": "string"
+                    },
+                    "reason": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Backup not found"
+          }
+        }
+      }
+    },
+    "/config/env": {
+      "get": {
+        "tags": [
+          "config"
+        ],
+        "summary": "List the environment variables",
+        "description": "Every variable documented in help.yaml, with its current value and whether it can be edited from the settings page. Secret values are masked. Requires settings access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Environment variables",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "set": {
+                        "type": "boolean",
+                        "description": "True when set in the environment"
+                      },
+                      "value": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "Current value, or the default when not set; masked for secrets"
+                      },
+                      "secret": {
+                        "type": "boolean"
+                      },
+                      "editable": {
+                        "type": "string",
+                        "enum": [
+                          "live",
+                          "restart",
+                          "refused"
+                        ]
+                      },
+                      "refusedReason": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "overridden": {
+                        "type": "boolean",
+                        "description": "Set in the real environment, so it cannot be changed here"
+                      },
+                      "relocates": {
+                        "type": "boolean"
+                      },
+                      "short": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "hint": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "description": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "type": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "allowed": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "default": {
+                        "type": "string",
+                        "nullable": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - no settings access"
+          },
+          "500": {
+            "description": "Failed to read the environment variables"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "config"
+        ],
+        "summary": "Save environment variables",
+        "description": "Writes the given variables to the managed persistent/.env. An empty value or null clears the variable back to its default. Variables marked live take effect immediately; the others are listed in restartRequired. Refused when ALLOW_ENV_EDIT=0, for variables that cannot be edited from the UI, and for variables set in the real environment. Requires settings access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "example": {
+                  "JOB_RETENTION_DAYS": "30",
+                  "EXPRESSION_SANITIZER": "paranoid"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "changed": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "restartRequired": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unknown, refused or invalid variable, or nothing given"
+          },
+          "403": {
+            "description": "Environment editing is disabled (ALLOW_ENV_EDIT=0), or no settings access"
+          },
+          "409": {
+            "description": "The variable is set in the real environment and cannot be changed here"
+          }
+        }
+      }
+    },
+    "/config/vault/check": {
+      "post": {
+        "tags": [
+          "config"
+        ],
+        "summary": "Test the HashiCorp Vault connection",
+        "description": "Read-only: looks up the token, nothing is written. Requires settings access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Vault reachable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "addr": {
+                      "type": "string"
+                    },
+                    "namespace": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "kvVersion": {
+                      "type": "string"
+                    },
+                    "defaultMount": {
+                      "type": "string"
+                    },
+                    "renewable": {
+                      "type": "boolean"
+                    },
+                    "ttl": {
+                      "type": "integer",
+                      "nullable": true,
+                      "description": "Seconds left, null when the token does not expire"
+                    },
+                    "policies": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Vault is not configured, unreachable or refused the token"
+          },
+          "403": {
+            "description": "Forbidden - no settings access"
+          }
+        }
+      }
+    },
+    "/config/vault/mounts": {
+      "get": {
+        "tags": [
+          "config"
+        ],
+        "summary": "List the KV mounts in Vault",
+        "description": "Only kv mounts. Requires settings access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "KV mounts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "path": {
+                        "type": "string"
+                      },
+                      "version": {
+                        "type": "string",
+                        "description": "1 or 2, as Vault reports it",
+                        "nullable": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Vault is not configured or unreachable"
+          },
+          "403": {
+            "description": "Forbidden - no settings access"
+          }
+        }
+      }
+    },
+    "/config/templated": {
+      "get": {
+        "tags": [
+          "config"
+        ],
+        "summary": "Is the active config a ytt template",
+        "description": "True when the active config.yaml contains ytt annotations (#@), in which case the designer must not save its rendered output over it. Designer access is enough.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "templated": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - no designer access"
+          },
+          "500": {
+            "description": "Failed to read the forms config"
+          }
+        }
+      }
+    },
+    "/app/config": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Public application settings for the UI",
+        "description": "Navigation label and icon, and the server-wide default language and theme. Not wrapped in the usual result envelope. No authentication required.",
+        "responses": {
+          "200": {
+            "description": "Application settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "navHomeLabel": {
+                      "type": "string"
+                    },
+                    "navHomeIcon": {
+                      "type": "string"
+                    },
+                    "defaultLanguage": {
+                      "type": "string"
+                    },
+                    "defaultTheme": {
+                      "type": "string"
+                    },
+                    "defaultThemeColor": {
+                      "type": "string"
+                    },
+                    "logTz": {
+                      "type": "string",
+                      "description": "Application timezone (LOG_TZ)"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/schema": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Check the database schema",
+        "description": "Reports whether the AnsibleForms schema and tables are present and complete. No authentication required.",
+        "responses": {
+          "200": {
+            "description": "Schema is present"
+          },
+          "500": {
+            "description": "The schema is missing or incomplete"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Create the database schema",
+        "description": "DROPS AND RECREATES EVERY TABLE. Allowed without authentication only on a database that is not provisioned yet (fresh install); on a provisioned database it needs an authenticated administrator. Refused entirely when ALLOW_SCHEMA_CREATION=0. An empty database also creates its schema by itself at startup.",
+        "security": [
+          {},
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Schema created"
+          },
+          "401": {
+            "description": "The database is already provisioned and the request is not authenticated"
+          },
+          "403": {
+            "description": "Not an administrator"
+          },
+          "500": {
+            "description": "Failed to check or create the schema"
+          }
         }
       }
     }

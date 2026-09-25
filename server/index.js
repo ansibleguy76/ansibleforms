@@ -5,8 +5,11 @@ import { injectBaseUrl } from './src/lib/baseurl.js';
 import { resolve } from 'path';
 import history from 'connect-history-api-fallback';
 import httpsConfig from './config/https.config.js';
+import { registerHttpsServer } from './src/lib/httpsContext.js';
 import authConfig from './config/auth.config.js';
 import logger from './src/lib/logger.js';
+import { reloadConfigSeed } from './src/lib/seed.js';
+import { getExpressionMode } from './src/lib/expressionMode.js';
 import https from 'https';
 import http from 'http';
 import fs from 'fs';
@@ -20,6 +23,10 @@ const app = express();
 // load the ansibleforms app
 async function start(){
   await ansibleforms.load(app);
+
+  if (getExpressionMode() === 'legacy') {
+    logger.warning('[SECURITY] EXPRESSION_SANITIZER=legacy : server expressions use the 6.2.1 rules, which let any authenticated user run code on the server. Rewrite the expressions the log reports and go back to strict.');
+  }
 
   if (authConfig.secretIsGenerated) {
     logger.warning('[SECURITY] JWT signing secret was auto-generated. All tokens will be invalidated on restart. Set the ACCESS_TOKEN_SECRET environment variable for persistent token signing.');
@@ -85,6 +92,8 @@ async function start(){
     logger.notice("Running https !");
     const credentials = { key: httpsConfig.httpsKey, cert: httpsConfig.httpsCert };
     httpServer = https.createServer(credentials, rootApp);
+    // lets the settings page reload the certificate without a restart
+    registerHttpsServer(httpServer);
   } else {
     logger.notice("Running http !");
     httpServer = http.createServer(rootApp);
@@ -94,4 +103,19 @@ async function start(){
   httpServer.listen(appConfig.port,  () => logger.notice(`App running on port ${appConfig.port}!`));
 
 }
+
+// SIGHUP re-applies the config seed : the unix idiom for "re-read your configuration", and
+// the one way in that needs no credentials and no reachable port, which is what makes it
+// worth having from inside a container (`kubectl exec ... -- kill -HUP 1`).
+//
+// Node's default action for SIGHUP is to TERMINATE, so installing this changes what closing
+// the terminal does to a foreground process. That is the trade every daemon makes, and the
+// alternative here is a signal that kills an instance which may be running playbooks.
+process.on('SIGHUP', () => {
+  // never awaited : a signal handler that blocks would hold the event loop while the seed
+  // clones a repository, and reloadConfigSeed reports its own outcome to the log either way
+  reloadConfigSeed({ force: true, trigger: 'SIGHUP' })
+    .catch((err) => logger.error('SIGHUP config seed reload failed : ' + (err.message || err)));
+});
+
 start()

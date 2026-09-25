@@ -16,5 +16,6 @@ CREATE TABLE `oauth2_providers` (
   `token_url` TEXT DEFAULT NULL,
   `userinfo_url` TEXT DEFAULT NULL,
   `extra` JSON DEFAULT NULL, -- for any additional provider-specific config
+  `managed` tinyint(4) DEFAULT 0,
   UNIQUE KEY (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

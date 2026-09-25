@@ -11,6 +11,9 @@ import { required, helpers, sameAs } from "@vuelidate/validators";
 const router = useRouter();
 
 const item = ref({
+  // the server requires the current password before it will set a new one : a stolen
+  // access token expires, an account takeover does not
+  currentPassword: "",
   password: "",
   password2: "",
 });
@@ -31,7 +34,7 @@ async function updateItem() {
 
     if (!$v.$invalid) {
         try {
-            const result = await axios.put(`/api/v2/profile`, item.value, TokenStorage.getAuthentication())
+            await axios.put(`/api/v2/profile`, item.value, TokenStorage.getAuthentication())
             toast.success("Password is changed");
             Navigate.toHome(router);
         } catch (err) {
@@ -55,12 +58,20 @@ function getRules() {
     }
     // regex validation
     if (field.regex && field.regex.expression) {
-      var regexObj = new RegExp(field.regex.expression);
+      // a malformed pattern must not throw out of the rules builder and take the
+      // whole form down - report it and skip the rule, as AppForm does
+      var regexObj = null
+      try { regexObj = new RegExp(field.regex.expression) } catch (e) {
+          console.error(`Field '${field.key || field.label}': invalid regex '${field.regex.expression}' (${e.message}); the rule is ignored.`)
+      }
       var description = field.regex.description;
-      rule.regex = helpers.withMessage(
-        description,
-        (value) => !helpers.req(value) || regexObj.test(value)
-      );
+      // only when there is a usable pattern - see the guard above
+      if (regexObj) {
+        rule.regex = helpers.withMessage(
+          description,
+          (value) => !helpers.req(value) || regexObj.test(value)
+        );
+      }
     }
 
     ruleObj.item[field.key] = rule;
@@ -74,6 +85,11 @@ function getRules() {
 }
 
 const rules = getRules();
+// added outside getRules() : that loop appends a 'Confirm' box for every password-typed
+// field, and the current password must not get one
+rules.item.currentPassword = {
+  required: helpers.withMessage("Current password is required", required),
+};
 
 const $v = useVuelidate(rules, { item });
 // 
@@ -87,7 +103,18 @@ const $v = useVuelidate(rules, { item });
           <h5 class="card-title mb-0">Please Change Password</h5>
           <button class="btn-close" aria-label="Close" @click="Navigate.toHome(router)"></button>
         </div>
-        <template v-for="field in fields">
+        <BsInput
+          :isHorizontal="true"
+          type="password"
+          icon="key"
+          v-model="$v.item['currentPassword'].$model"
+          :isFloating="true"
+          :required="true"
+          label="Current password"
+          :hasError="$v.item['currentPassword'].$invalid && $v.item['currentPassword'].$dirty"
+          :errors="$v.item['currentPassword'].$errors"
+        />
+        <template v-for="field in fields" :key="field.key">
           <BsInput
             :isHorizontal="true"
             :type="field.type"

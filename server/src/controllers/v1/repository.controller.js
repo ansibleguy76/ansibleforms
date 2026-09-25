@@ -1,7 +1,6 @@
 'use strict';
 import Repository from '../../models/repository.model.js';
 import RestResult from '../../models/restResult.model.js';
-import logger from '../../lib/logger.js';
 
 
 const find = function(req, res) {
@@ -34,7 +33,7 @@ const update = function(req, res) {
         res.status(400).send({ error:true, message: 'Please provide all required fields' });
     }else{
         Repository.update(req.body,req.params.name)
-        .then((repository)=>{res.json(new RestResult("success","repository updated",null,""))})
+        .then(()=>{res.json(new RestResult("success","repository updated",null,""))})
         .catch((err)=>{ res.json(new RestResult("error","failed to update repository",null,err.toString())) })
     }
 };

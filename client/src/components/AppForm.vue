@@ -28,11 +28,10 @@ import { useRoute } from "vue-router";
 import { toast } from "vue-sonner";
 import { useVuelidate } from '@vuelidate/core';
 import { required, helpers, sameAs } from "@vuelidate/validators";
-import { useTemplateRef, nextTick, inject } from "vue";
-import { copyText } from 'vue3-clipboard'
+import { useTemplateRef, nextTick, inject, toRaw } from "vue";
 import { useAppStore } from "@/stores/app";
 import Helpers from '@/lib/Helpers';
-import DOMPurify from 'dompurify';
+import HtmlSanitizer from '@/lib/HtmlSanitizer';
 import TokenStorage from "@/lib/TokenStorage";
 import axios from "axios";
 import YAML from "yaml";
@@ -117,6 +116,20 @@ const props = defineProps(
             type: Object,
             default: () => null
         },
+        // Name of the ROOT form when `currentForm` is a subform (a wizard step or a
+        // list row being edited). Empty when this component IS the root form.
+        //
+        // The query endpoint resolves a field from the form definition, and a subform
+        // cannot be resolved on its own: the schema forbids it from carrying `roles`,
+        // so the server's role check denies it to every non-admin and Form.load throws.
+        // Sending the subform's own name therefore answered 500 on every query field in
+        // a wizard step or a list row - for everyone except an admin, who short-circuits
+        // the role check and so never saw it. The root form is what carries the roles,
+        // and the server looks the subform up inside it.
+        rootFormName: {
+            type: String,
+            default: ""
+        },
     }
 )
 
@@ -133,7 +146,24 @@ const hideForm = ref(false);         // flag to hide form
 const watchdog = ref(0);                  // main loop counter
 const loopDelay = ref(100);                // main loop delay
 const isInitializing = ref(false);         // flag set during pre-fill initialization to suppress defaults
-const pendingInitialData = ref({});        // tracks initialData fields not yet applied
+// A prefill (relaunch with edit values / load from store) is RETAINED for the whole init
+// phase instead of being consumed on first use. Deleting it on apply used to destroy the
+// value it had just restored: initiateDefaults only hands a prefill back as the field's
+// default while the entry still exists, so the next resetField wrote the field's ORIGINAL
+// default (typically the `__auto__` sentinel) straight over the restored value, with no
+// way back. Retention makes a reset cost a re-evaluation instead of the value.
+const prefillValues = ref({});             // the restored values, field-filtered; never deleted from during init
+const prefillApplied = ref({});            // name -> true once applied and still matching
+const prefillFlagged = ref({});            // name -> reason; terminal, never applied
+const prefillApplyCount = ref({});         // name -> how many times we actually had to WRITE it
+const waitingFields = ref({});             // name -> true while its dependencies are not evaluated yet
+const cycleFields = ref({});               // name -> true; in a dependency cycle or force-released, exempt from the gate
+const warnedOnce = ref({});                // dedup key -> true, for warnings raised from inside the loop
+// Bumped whenever the form actually gets somewhere - a field reaches a status it did not
+// have, or a value is restored. The stall watchdog watches THIS rather than elapsed time, so
+// a deep chain of slow queries is never mistaken for a form that is stuck.
+const progressCounter = ref(0);
+const MAX_PREFILL_APPLIES = 10;            // re-applying a prefill this often means the chain above it never settles
 const protectedFields = ref({});           // tracks fields with prefill/manual values that should not be reset
 const dynamicFieldDependencies = ref({});                 // which fields need to be re-evaluated if other fields change
 const dynamicFieldDependentOf = ref({});                 // which fields are dependend from others
@@ -211,7 +241,7 @@ const unevaluatedFieldsWarning = computed(() => {
 // vuelidate rules
 const rules = computed(() => {
     const ruleObj = { form: {} } // holdes the rules for each field
-    props.currentForm.fields.forEach((ff, i) => {
+    props.currentForm.fields.forEach((ff, _i) => {
         var rule = {} // holds the rules for a single field
         if(!ff.label){
             ff.label = ff.name
@@ -226,7 +256,7 @@ const rules = computed(() => {
         }
         // required for expressions and enums, the value must be present, but can be a special value like __auto__, __none__ or __all__
         if (((ff.type == 'expression') || (ff.type == 'enum')) && ff.required) {
-            var description = `${ff.label} is required`
+            const description = `${ff.label} is required`
             rule.required = helpers.withParams(
                 { description: description, type: "required" },
                 (value) => (value != undefined && value != null && value != '__auto__' && value != '__none__' && value != '__all__')
@@ -234,7 +264,7 @@ const rules = computed(() => {
         }
         // required for yaml fields
         if (ff.type == 'yaml' && ff.required) {
-            var description = `${ff.label} is required`
+            const description = `${ff.label} is required`
             rule.required = helpers.withParams(
                 { description: description, type: "required" },
                 (value) => value != undefined && value != null
@@ -297,7 +327,7 @@ const rules = computed(() => {
                     );
                 } else {
                     const numericMin = Number(ff.minSize);
-                    var description = `Size (${Helpers.humanFileSize(form.value[ff.name]?.size)}) cannot be lower than ${Helpers.humanFileSize(numericMin)}`
+                    const description = `Size (${Helpers.humanFileSize(form.value[ff.name]?.size)}) cannot be lower than ${Helpers.humanFileSize(numericMin)}`
                     rule.minSize = helpers.withParams(
                         { description: description, type: "minSize" },
                         (file) => !helpers.req(file?.name) || file?.size >= numericMin
@@ -333,7 +363,7 @@ const rules = computed(() => {
                     );
                 } else {
                     const numericMax = Number(ff.maxSize);
-                    description = `Size (${Helpers.humanFileSize(form.value[ff.name]?.size)}) cannot be higher than ${Helpers.humanFileSize(numericMax)}`
+                    const description = `Size (${Helpers.humanFileSize(form.value[ff.name]?.size)}) cannot be higher than ${Helpers.humanFileSize(numericMax)}`
                     rule.maxSize = helpers.withParams(
                         { description: description, type: "maxSize" },
                         (file) => !helpers.req(file?.name) || file?.size <= numericMax
@@ -369,7 +399,7 @@ const rules = computed(() => {
                 );
             } else {
                 const numericMin = Number(ff.minValue);
-                var description = `${ff.label} must be at least ${numericMin}`;
+                const description = `${ff.label} must be at least ${numericMin}`;
                 rule.minValue = helpers.withParams(
                     { description: description, type: "minValue" },
                     (value) => !helpers.req(value) || value >= numericMin
@@ -403,7 +433,7 @@ const rules = computed(() => {
                 );
             } else {
                 const numericMax = Number(ff.maxValue);
-                var description = `${ff.label} must be at most ${numericMax}`;
+                const description = `${ff.label} must be at most ${numericMax}`;
                 rule.maxValue = helpers.withParams(
                     { description: description, type: "maxValue" },
                     (value) => !helpers.req(value) || value <= numericMax
@@ -438,7 +468,7 @@ const rules = computed(() => {
                 );
             } else {
                 const numericMin = Number(ff.minLength);
-                var description = `${ff.label} must be at least ${numericMin} characters long`;
+                const description = `${ff.label} must be at least ${numericMin} characters long`;
                 rule.minLength = helpers.withParams(
                     { description: description, type: "minLength" },
                     (value) => !helpers.req(value) || value.length >= numericMin
@@ -472,7 +502,7 @@ const rules = computed(() => {
                 );
             } else {
                 const numericMax = Number(ff.maxLength);
-                var description = `${ff.label} must be at most ${numericMax} characters long`;
+                const description = `${ff.label} must be at most ${numericMax} characters long`;
                 rule.maxLength = helpers.withParams(
                     { description: description, type: "maxLength" },
                     (value) => !helpers.req(value) || value.length <= numericMax
@@ -481,26 +511,50 @@ const rules = computed(() => {
         }
         // regex validation
         if ("regex" in ff) {
-            var regexObj = new RegExp(ff.regex.expression)
-            var description = computed(() => {
+            // Guarded for the same reason as sameAs below: this runs inside the `rules`
+            // computed, so a throw here kills the WHOLE form - blank page, console error,
+            // instead of one field's validation message.
+            //
+            // Two ways it went wrong. An author typo in the pattern ('^[a-z', an
+            // unescaped backslash out of YAML) makes new RegExp raise a SyntaxError. And
+            // writing `regex: "^prod-"` instead of `regex: {expression: ...}` made
+            // ff.regex.expression undefined, so new RegExp(undefined) compiled to /(?:)/ -
+            // which matches everything, so the constraint silently never failed and the
+            // job ran with unvalidated input. Say so instead, and skip the rule.
+            const regexSource = (ff.regex && typeof ff.regex === 'object') ? ff.regex.expression : ff.regex;
+            var regexObj = null;
+            if (typeof regexSource !== 'string' || !regexSource) {
+                warnings.value.push(`Field '${ff.name}': regex must be given as { expression: "...", description: "..." }; the rule is ignored.`)
+            } else {
+                try {
+                    regexObj = new RegExp(regexSource)
+                } catch (e) {
+                    warnings.value.push(`Field '${ff.name}': the regex '${regexSource}' is not valid (${e.message}); the rule is ignored.`)
+                }
+            }
+            const description = computed(() => {
                 const result = replacePlaceholderInString(ff.regex.description, false);
                 return result.value !== undefined ? result.value : ff.regex.description;
             });
-            if (ff.type == 'file') {
-                rule.regex = helpers.withParams(
-                    { description: description, type: "regex" },
-                    (file) => !helpers.req(file?.name) || regexObj.test(file?.name)
-                )
-            } else {
-                rule.regex = helpers.withParams(
-                    { description: description, type: "regex" },
-                    (value) => !helpers.req(value) || regexObj.test(value)
-                )
+            // only register the rule when there is a usable pattern - otherwise the
+            // validator would throw on regexObj.test at validation time instead
+            if (regexObj) {
+                if (ff.type == 'file') {
+                    rule.regex = helpers.withParams(
+                        { description: description, type: "regex" },
+                        (file) => !helpers.req(file?.name) || regexObj.test(file?.name)
+                    )
+                } else {
+                    rule.regex = helpers.withParams(
+                        { description: description, type: "regex" },
+                        (value) => !helpers.req(value) || regexObj.test(value)
+                    )
+                }
             }
         }
         // validIf and validIfNot
         if ("validIf" in ff) {
-            var description = computed(() => {
+            const description = computed(() => {
                 const result = replacePlaceholderInString(ff.validIf.description, false);
                 return result.value !== undefined ? result.value : ff.validIf.description;
             });
@@ -510,7 +564,7 @@ const rules = computed(() => {
             )
         }
         if ("validIfNot" in ff) {
-            var description = computed(() => {
+            const description = computed(() => {
                 const result = replacePlaceholderInString(ff.validIfNot.description, false);
                 return result.value !== undefined ? result.value : ff.validIfNot.description;
             });
@@ -521,7 +575,7 @@ const rules = computed(() => {
         }
         // notIn and in
         if ("notIn" in ff) {
-            var description = computed(() => {
+            const description = computed(() => {
                 const result = replacePlaceholderInString(ff.notIn.description, false);
                 return result.value !== undefined ? result.value : ff.notIn.description;
             });
@@ -531,7 +585,7 @@ const rules = computed(() => {
             )
         }
         if ("in" in ff) {
-            var description = computed(() => {
+            const description = computed(() => {
                 const result = replacePlaceholderInString(ff.in.description, false);
                 return result.value !== undefined ? result.value : ff.in.description;
             });
@@ -541,7 +595,13 @@ const rules = computed(() => {
             )
         }
         if ("sameAs" in ff) {
-            var description = `Must match the field '${props.currentForm.fields.find((x) => ff.sameAs == x.name).label || ff.sameAs}'`
+            // find() returns undefined when sameAs names a field that is not on the form -
+            // a typo, or a field renamed/removed afterwards. Reading .label off that threw
+            // inside the rules computation, so the ENTIRE form never initialised and the
+            // user got a blank page with a console TypeError rather than a validation
+            // message about one field. Fall back to the name it was given.
+            const target = props.currentForm.fields.find((x) => ff.sameAs == x.name)
+            const description = `Must match the field '${target?.label || ff.sameAs}'`
             rule.sameAs = helpers.withParams(
                 { description: description, type: "sameAs" },
                 (value) => !helpers.req(value) || (form.value[ff.sameAs] != undefined && value == form.value[ff.sameAs])
@@ -570,18 +630,28 @@ const fieldGroups = computed(() => {
 
 })
 
+// fields that don't declare a "line" get one of their own, so they end up on a
+// row on their own.  Derived here instead of written back onto the currentForm
+// definition.
+const fieldLineMap = computed(() => {
+    var linecount = 0
+    const lines = new Map()
+    props.currentForm.fields?.forEach((cV) => {
+        linecount++
+        lines.set(cV, ("line" in cV) ? cV.line : `__line__${linecount}`)
+    })
+    return lines
+})
+
+// the line a field belongs to, declared or synthetic
+function fieldLine(field) {
+    return ("line" in field) ? field.line : fieldLineMap.value.get(field)
+}
+
 // set fieldLines in to groups
 const fieldLines = computed(() => {
-
-    var linecount = 0
-    return props.currentForm.fields?.reduce((pV, cV, cI) => {
-        linecount++
-        if ("line" in cV) {
-            return [...pV, cV.line];
-        } else {
-            props.currentForm.fields[cI].line = `__line__${linecount}`
-            return [...pV, `__line__${linecount}`];
-        }
+    return props.currentForm.fields?.reduce((pV, cV) => {
+        return [...pV, fieldLine(cV)];
     }, [""]).filter((v, i, a) => a.indexOf(v) === i) || [];
 })
 
@@ -731,12 +801,9 @@ function setExpressionFieldDebug(fieldname, value) {
 // copy to clipboard
 function clip(v, doNotStringify = false) {
     try {
-        if (doNotStringify) {
-            copyText(v)
-        } else {
-            copyText(JSON.stringify(v))
-        }
-        toast.success(t('form.copiedToClipboard'))
+        Helpers.copyToClipboard(doNotStringify ? v : JSON.stringify(v))
+            .then(() => toast.success(t('form.copiedToClipboard')))
+            .catch((err) => toast.error(err?.message || err))
     } catch (err) {
         toast.error(err.toString())
     }
@@ -754,8 +821,9 @@ function clipYaml(fieldName) {
         // This matches what the user sees on screen
         const value = raw.__output__ ?? raw;
         const yamlContent = YAML.stringify(value);
-        copyText(yamlContent);
-        toast.success(t('form.copiedYamlToClipboard'));
+        Helpers.copyToClipboard(yamlContent)
+            .then(() => toast.success(t('form.copiedYamlToClipboard')))
+            .catch((err) => toast.error(err?.message || err));
     } catch (err) {
         toast.error(err.toString());
     }
@@ -792,9 +860,7 @@ function filterfieldsByGroup(group) {
 // create of fields per group & line
 function filterfieldsByGroupAndLine(group, line) {
     const fields = filterfieldsByGroup(group).filter((el) => {
-        return (
-            (("line" in el && el.line === line)
-                || !("line" in el) && (line == ""))
+        return (fieldLine(el) === line
             && (el.hide !== true || showHidden.value))
     });
     // console.log(`[${group || 'default'}] [${line}] => ${fields.map(x => x.name).join(",")}`)
@@ -816,7 +882,7 @@ function checkDependencies(field) {
         }
         for (let i = 0; i < field.dependencies.length; i++) {
             const item = field.dependencies[i]
-            var value = undefined
+            var value
             var column = ""
             var inversed = item.name.startsWith("!")                            // detect ! => inversion
             var fieldname = inversed ? item.name.slice(1) : item.name           // drop the !
@@ -889,6 +955,13 @@ function checkDependencies(field) {
 function setVisibility(fieldname, status) {
     if (visibility.value[fieldname] != status) {
         visibility.value[fieldname] = status
+        // A prefilled/manually-set value - dependency-driven visibility flicker (the
+        // dependencies: block re-evaluates every tick and can toggle before its own
+        // dependent fields settle) must not wipe it, same guard evaluateDynamicFields
+        // already applies when resetting a field's dependents.
+        if (protectedFields.value[fieldname]) {
+            return
+        }
         if (status) {
             // Field is becoming visible - reset to default value
             resetField(fieldname)
@@ -896,7 +969,8 @@ function setVisibility(fieldname, status) {
             // Field is becoming hidden - clear its value to undefined
             form.value[fieldname] = undefined
             setFieldStatus(fieldname, undefined)
-            // Notify dependent fields that this field's value has changed to undefined
+            // Notify dependent fields that this field's value has changed to undefined -
+            // checkDependencies drives this every tick automatically, not a user action
             evaluateDynamicFields(fieldname)
         }
     }
@@ -908,7 +982,7 @@ function setVisibility(fieldname, status) {
 //----------------------------------------------------------------
 function checkGroupDependencies(group) {
     var result = false
-    filterfieldsByGroup(group).forEach((item, i) => {
+    filterfieldsByGroup(group).forEach((item, _i) => {
         if (visibility.value[item.name]) {
             result = true
         }
@@ -931,28 +1005,151 @@ function getGroupClass(group) {
 }
 
 // reset value of field - only for expression
+// Per-field generation counter.
+//
+// The loop tracked concurrency only through dynamicFieldStatus: "running" before the
+// await, "fixed" after. But resetField - called whenever a dependency changes - sets the
+// status back to undefined WHILE a request is in flight, so the next tick fires a second
+// one and neither response carried any identity. Whichever landed last won: pick A=1
+// (slow request starts), switch to A=2 (fast request returns, field correct), then the
+// first response arrives and overwrites it with the value derived from A=1 - flagged
+// "fixed", so nothing re-evaluates it and that is what gets submitted.
+//
+// Bumping this on every reset lets a response check whether it is still the current one.
+const fieldGeneration = ref({});
+function bumpFieldGeneration(fieldname) {
+    fieldGeneration.value[fieldname] = (fieldGeneration.value[fieldname] || 0) + 1;
+    return fieldGeneration.value[fieldname];
+}
+function isCurrentGeneration(fieldname, gen) {
+    return (fieldGeneration.value[fieldname] || 0) === gen;
+}
+
+//----------------------------------------------------------------
+// prefill (relaunch with edit values / load from store)
+//----------------------------------------------------------------
+
+// a warning the loop can raise without pushing the same text on every tick
+function addWarningOnce(key, html) {
+    if (warnedOnce.value[key]) return;
+    warnedOnce.value[key] = true;
+    warnings.value.push(html);
+    showWarnings.value = false;
+}
+
+// this field still wants its restored value
+function isPrefillPending(fieldname) {
+    return (fieldname in prefillValues.value)
+        && !prefillApplied.value[fieldname]
+        && !prefillFlagged.value[fieldname];
+}
+
+// give up on restoring this field, and say why - a flagged field no longer blocks
+// initialisation from completing
+function flagPrefill(fieldname, reason) {
+    prefillFlagged.value[fieldname] = reason;
+    addWarningOnce(`prefill:${fieldname}`,
+        `<span class="text-warning">'${fieldname}' could not be pre-filled</span><br><span>${reason}</span>`);
+}
+
+// Does the restored value still exist in the field's option list? Never set a value that is
+// not one of the options - the select would report "no selection" and clear it again.
+// Deliberately the same comparison BsInputSelectAdvancedTable.objectEqual makes: stricter
+// here and we flag a value the dropdown would happily have shown; looser and we write one it
+// then throws away.
+function optionMatchesValue(option, value, valueColumn) {
+    const o = toRaw(option);
+    const v = toRaw(value);
+    if (o && v && typeof o === "object" && typeof v === "object") {
+        if (valueColumn && valueColumn in o && valueColumn in v) return o[valueColumn] === v[valueColumn];
+        return JSON.stringify(o) === JSON.stringify(v);
+    }
+    if (o && typeof o === "object") {
+        const key = (valueColumn && valueColumn in o) ? valueColumn : Object.keys(o)[0];
+        return o[key] === v;
+    }
+    return o === v;
+}
+function prefillMatchesOptions(fieldname, value) {
+    const def = props.currentForm.fields.find(f => f.name === fieldname);
+    const options = def?.values || queryresults.value[fieldname] || [];
+    const valueColumn = fieldOptions.value[fieldname]?.valueColumn || "";
+    const wanted = [].concat(value ?? []);
+    if (wanted.length === 0) return true;   // restoring "nothing" is always possible
+    return wanted.every(v => options.some(o => optionMatchesValue(o, v, valueColumn)));
+}
+
+// Apply a restored value. Safe to call repeatedly - it only counts an application when the
+// value actually had to be written, so re-confirming an already-correct field never burns
+// the watchdog budget; only genuine churn does.
+function applyPrefill(fieldname, { validateOptions = false } = {}) {
+    if (!(fieldname in prefillValues.value) || prefillFlagged.value[fieldname]) return false;
+    const value = prefillValues.value[fieldname];
+    if (validateOptions && !prefillMatchesOptions(fieldname, value)) {
+        flagPrefill(fieldname, "the stored value is no longer one of the available options");
+        return false;
+    }
+    if (JSON.stringify(toRaw(form.value[fieldname])) !== JSON.stringify(toRaw(value))) {
+        if ((prefillApplyCount.value[fieldname] || 0) >= MAX_PREFILL_APPLIES) {
+            flagPrefill(fieldname, `it was restored ${MAX_PREFILL_APPLIES} times without settling - a field it depends on keeps changing`);
+            return false;
+        }
+        prefillApplyCount.value[fieldname] = (prefillApplyCount.value[fieldname] || 0) + 1;
+        form.value[fieldname] = value;
+    }
+    if (!prefillApplied.value[fieldname]) progressCounter.value++;
+    protectedFields.value[fieldname] = true;
+    prefillApplied.value[fieldname] = true;
+    setFieldStatus(fieldname, "fixed");
+    return true;
+}
+
+//----------------------------------------------------------------
+// dependency readiness - a field may only evaluate once every field it
+// references has actually been evaluated
+//----------------------------------------------------------------
+
+// A dependency is ready exactly when its value is substitutable into a placeholder: the
+// accept-list below is the same one replacePlaceholderInString applies. "default" counts as
+// ready on purpose - a field that legitimately failed and fell back to its default must not
+// deadlock everything underneath it.
+function isReadyDependency(fieldname) {
+    if (!(fieldname in fieldOptions.value)) return true;     // constants, credentials, env - always available
+    if (!fieldOptions.value[fieldname].isDynamic) return true; // static: final once initForm ran
+    if (visibility.value[fieldname] === false) return true;  // deliberately undefined; waiting on it would deadlock
+    if (cycleFields.value[fieldname]) return true;           // cyclic or force-released, already warned
+    const status = dynamicFieldStatus.value[fieldname];
+    return status === "fixed" || status === "variable" || status === "default";
+}
+function depsReady(fieldname) {
+    return (dynamicFieldDependentOf.value[fieldname] || []).every(isReadyDependency);
+}
+
 function resetField(fieldname) {
     // reset to default value
     // reset this field status
     // console.log(`[${fieldname}] reset`)
+    // While initialising, a reset means this field has to be restored again once its
+    // options have reloaded - initiateDefaults below hands the prefilled value back as the
+    // default, so the value survives, but it has to be re-confirmed as applied.
+    if (isInitializing.value && (fieldname in prefillValues.value)) {
+        prefillApplied.value[fieldname] = false;
+    }
     initiateDefaults(fieldname)
+    // any response still in flight for this field is now stale
+    bumpFieldGeneration(fieldname)
     setFieldStatus(fieldname, undefined)
     form.value[fieldname] = defaults.value[fieldname]
 }
 
 // reset number field => input type number seems to evaluate to empty string instead of undefined
+// Only called from the automatic loop today (an empty-string number field it just
+// found), not from a template handler - treat it as system-driven.
 function setFieldUndefined(fieldname) {
     // reset to undefined
     form.value[fieldname] = undefined;
     evaluateDynamicFields(fieldname);
     changed() // refresh json output
-}
-
-// reset all fields
-function resetFields() {
-    props.currentForm.fields.forEach((item, i) => {
-        resetField(item.name)
-    });
 }
 
 // instead of taking the default value, see if it needs to be evaluated
@@ -962,7 +1159,7 @@ function getDefaultValue(fieldname, value) {
         var _value = replacePlaceholderInString(value).value
         // console.log(`${fieldname} -> ${value} -> ${_value}`)
         if (fieldOptions.value[fieldname].evalDefault) {
-            var r = undefined
+            var r
             try {
                 r = Helpers.evalSandbox(_value)
                 return r
@@ -982,11 +1179,13 @@ function setFieldToDefault(fieldname) {
     // reset to default value
     // console.log(`defaulting ${fieldname}`)
     try {
-        // During initialization, check if field is in pending queue
-        if (isInitializing.value && fieldname in pendingInitialData.value) {
+        // A field still waiting for its restored value must not be defaulted out from
+        // under itself. This stays armed for the whole init phase now that prefills are
+        // retained rather than consumed on first use.
+        if (isInitializing.value && isPrefillPending(fieldname)) {
             return; // Don't apply default, let initialData win
         }
-        
+
         // if there is a default, set "default" status
         if (defaults.value[fieldname] != undefined) {
             setFieldStatus(fieldname, "default")
@@ -1020,36 +1219,33 @@ function setFieldStatus(fieldname, status, reeval = true) {
     if (fieldOptions.value[fieldname]?.isDynamic) {
         var prevState = dynamicFieldStatus.value[fieldname]
         dynamicFieldStatus.value[fieldname] = status
+        if (prevState != status) progressCounter.value++
         if (reeval && (prevState != status)) {
-            // re-evaluate if need
+            // this field's value changed meaning, so everything downstream has to be
+            // re-derived from it
             evaluateDynamicFields(fieldname)
         }
     }
 }
 
 // if 2 dependend fields (parent-child) both have defaults
-// this can potentially be an issue.
-// parent could fall back to default before the child is evaluated
-// we track this status and loop a continuous loop on the parent
-// if the parent cannot be resolved however, this becomes an infinite loop => we flag this as warning
-function hasDefaultDependencies(fieldname) {
-    var result = false
-    if (dynamicFieldDependentOf.value[fieldname] && dynamicFieldStatus.value[fieldname] == "default") {
-        dynamicFieldDependentOf.value[fieldname].forEach((item, i) => {
-            if ((defaults.value[item] != undefined) && dynamicFieldStatus.value[item] == "default") {
-                result = true
-            }
-        })
-    }
-    return result
-}
+// hasDefaultDependencies used to re-admit a field that had fallen back to "default" while a
+// dependency was also stuck at "default" - a deliberate busy-loop, because nothing else
+// would re-trigger it. It was inert for enum/query/table (dynamicFieldDependentOf only ever
+// covered `expression` fields), and now that the map is complete it would fire on every tick
+// for those too. The readiness gate replaces it: a field waits instead of defaulting, and
+// when a dependency leaves "default" that status change already cascades a resetField
+// through the reverse map.
 
 // first time run, load all the default values (can be dynamic)
 function initiateDefaults(fieldname = undefined) {
-    props.currentForm.fields.filter(x => !fieldname || fieldname == x.name).forEach((item, i) => {
-        // During initialization, use initialData as the default (overrides everything)
-        if (isInitializing.value && item.name in pendingInitialData.value) {
-            defaults.value[item.name] = pendingInitialData.value[item.name];
+    props.currentForm.fields.filter(x => !fieldname || fieldname == x.name).forEach((item, _i) => {
+        // During initialization the restored value IS the default. Reading the retained
+        // snapshot (rather than a queue that gets consumed on first use) is what makes a
+        // reset recoverable: resetField writes this back, instead of the field's original
+        // default clobbering a value we had already restored correctly.
+        if (isInitializing.value && (item.name in prefillValues.value) && !prefillFlagged.value[item.name]) {
+            defaults.value[item.name] = prefillValues.value[item.name];
         } else if (item.name in externalData.value) {
             defaults.value[item.name] = externalData.value[item.name]
         } else {
@@ -1076,6 +1272,17 @@ function addDynamicFieldDependency(fields, field, foundfield) {
     }
     foundfield = foundfield?.replace(/\[[0-9]*\]/, '') // xxx[y] => xxx
     if (fields.includes(foundfield)) {                         // does field xxx exist in our form ?
+        // The forward map (what a field depends ON) is written here, from the very same
+        // scan as the reverse map, so the two can never disagree. It used to be built by a
+        // separate pass that only looked at `expression` fields, leaving enum/query/table
+        // with no entry at all - which meant the loop could not answer "are my dependencies
+        // ready?" for exactly the fields that need it most.
+        if (!(field in dynamicFieldDependentOf.value)) {
+            dynamicFieldDependentOf.value[field] = []
+        }
+        if (dynamicFieldDependentOf.value[field].indexOf(foundfield) === -1) {
+            dynamicFieldDependentOf.value[field].push(foundfield)
+        }
         if (foundfield in dynamicFieldDependencies.value) {															 // did we declare it before ?
             if (dynamicFieldDependencies.value[foundfield].indexOf(field) === -1) {  // allready in there ?
                 dynamicFieldDependencies.value[foundfield].push(field);												 // push it
@@ -1123,13 +1330,13 @@ function findVariableDependencies() {
     var finishedFlag = false
     var fields = []
     // create a list of the fields
-    props.currentForm.fields.forEach((item, i) => {
+    props.currentForm.fields.forEach((item, _i) => {
         if (!item?.name) return
         fields.push(item.name)
     })
     // whilst checking, we also check if fields are unique
     var dups = Helpers.findDuplicates(fields)
-    dups.forEach((item, i) => {
+    dups.forEach((item, _i) => {
         warnings.value.push(`<span class="text-warning">'${item}' has duplicates</span><br><span>Each field must have a unique name</span>`)
         toast.error("You have duplicates for field '" + item + "'")
     })
@@ -1158,7 +1365,7 @@ function findVariableDependencies() {
     })
     
     // do the analysis
-    props.currentForm.fields.forEach((item, i) => {
+    props.currentForm.fields.forEach((item, _i) => {
         // while we are looping, we also check if there are issues
         if (!item?.name) return
         if (item.dependencies) {
@@ -1191,21 +1398,54 @@ function findVariableDependencies() {
 
         getPlaceholderMatches(fields, item.name, item.expression ?? item.query)
         getPlaceholderMatches(fields, item.name, item.default)
+        // A `dependencies:` block is a real dependency too - it decides whether this field
+        // is even shown - so it belongs in the same graph as the $() references. Without
+        // it, a field could be gated on a value it never waits for.
+        if (item.dependencies) {
+            item.dependencies.forEach((dep) => {
+                if (!dep?.name) return
+                addDynamicFieldDependency(fields, item.name, dep.name.startsWith("!") ? dep.name.slice(1) : dep.name)
+            })
+        }
+        // a dependent default that references another defaulted field is a known trap
+        if (defaults.value[item.name] != undefined) {
+            (dynamicFieldDependentOf.value[item.name] || []).forEach((foundfield) => {
+                if (fieldOptions.value[foundfield] && fieldOptions.value[foundfield].type == "expression" && (defaults.value[foundfield] != undefined)) {
+                    warnings.value.push(`<span class="text-warning">'${item.name}' has a default, referencing field '${foundfield}' which also has a default</span><br><span>Try to avoid dependent fields with both a default</span>`)
+                }
+            })
+        }
     })
 
-    // check self references
+    // Check for self/circular references (A depends on B depends on ... depends on A) by
+    // computing the transitive closure into a SEPARATE scratch map, not into
+    // dynamicFieldDependencies itself. That used to be mutated into the closure directly,
+    // so a field several hops upstream (e.g. `clusters`, at the root of a 7+ level chain
+    // in a form like this one) reset every single downstream field on every transition,
+    // not just its direct dependents - and each of those resets triggered its own status
+    // transition, which triggered its own all-fields reset, compounding into a runaway
+    // churn that never settled. dynamicFieldDependencies only needs the direct (one-hop)
+    // edges: a dependent that's 2+ hops away still gets reset correctly, just one tick
+    // later, as each intermediate field settles and cascades to ITS direct dependents in
+    // turn - the normal, cheap way this is meant to propagate.
+    var closureCheck = Helpers.deepClone(dynamicFieldDependencies.value);
     while (!finishedFlag) {
         finishedFlag = true
-        temp = Helpers.deepClone(dynamicFieldDependencies.value); // copy dependencies to temp
+        temp = Helpers.deepClone(closureCheck); // copy dependencies to temp
         for (const [key, value] of Object.entries(temp)) {
             // loop all found dependencies and dig deeper
-            value.forEach((item, i) => {
+            value.forEach((item, _i) => {
                 if (item in temp) { // can we go deeper?
-                    temp[item].forEach((item2, j) => {
-                        if (dynamicFieldDependencies.value[key].indexOf(item2) === -1) { // already in there?
-                            dynamicFieldDependencies.value[key].push(item2); // push it
+                    temp[item].forEach((item2, _j) => {
+                        if (closureCheck[key].indexOf(item2) === -1) { // already in there?
+                            closureCheck[key].push(item2); // push it
                             if (key == item2) {
                                 // we capture self references
+                                // A cycle can never satisfy the readiness gate - every member
+                                // waits for another member - so mark it exempt. Without this
+                                // a circular form would deadlock outright instead of merely
+                                // racing as it used to.
+                                cycleFields.value[key] = true
                                 warnings.value.push(`<span class="text-warning">'${key}' has a self reference</span><br><span>This will cause a racing condition</span>`)
                                 toast.error("You defined a self reference on field '" + key + "'")
                             }
@@ -1218,62 +1458,47 @@ function findVariableDependencies() {
     }
 }
 
-// search which fields are dependent of others
-function findVariableDependentOf() {
-    var foundmatch, foundfield
-    var fields = []
-    // create a list of the fields
-    props.currentForm.fields.forEach((item, i) => {
-        if (!item?.name) return
-        fields.push(item.name)
-    })
-    props.currentForm.fields.forEach((item, i) => {
-        if (["expression"].includes(item.type)) {
-            var testRegex = /\$\(([^)]+)\)/g;
-            var matches = (item.expression || item.query || '').matchAll(testRegex);
-            for (var match of matches) {
-                foundmatch = match[0];                                              // found $(xxx)
-                foundfield = match[1];                                              // found xxx
-                var columnRegex = /(.+)\.(.+)/g;                                        // detect a "." in the field
-                var tmpArr = columnRegex.exec(foundfield)                             // found aaa.bbb
-                if (tmpArr && tmpArr.length > 0) {
-                    foundfield = tmpArr[1]                                            // aaa
-                }
-                if (fields.includes(foundfield)) {                         // does field xxx exist in our form ?
-                    if (item.name in dynamicFieldDependentOf.value) {															 // did we declare it before ?
-                        if (dynamicFieldDependentOf.value[item.name].indexOf(foundfield) === -1) {  // already in there ?
-                            dynamicFieldDependentOf.value[item.name].push(foundfield);												 // push it
-                        }
-                    } else {
-                        dynamicFieldDependentOf.value[item.name] = [foundfield]
-                    }
-                    // track the dependent default => = potentially bad
-                    if ((defaults.value[item.name] != undefined) && fieldOptions.value[foundfield] && (fieldOptions.value[foundfield].type == "expression") && (defaults.value[foundfield] != undefined)) {
-                        warnings.value.push(`<span class="text-warning">'${item.name}' has a default, referencing field '${foundfield}' which also has a default</span><br><span>Try to avoid dependent fields with both a default</span>`)
-                    }
-                }
-            }
-        }
-    })
-}
+// findVariableDependentOf is gone: dynamicFieldDependentOf is now filled by
+// addDynamicFieldDependency, from the same scan that fills dynamicFieldDependencies, so both
+// directions always describe the same graph and every field type is covered.
 
-function replacePlaceholderInString(value, ignoreIncomplete = false) {
+/**
+ * @param {'raw'|'expression'} mode
+ *   'expression' substitutes each value as a JAVASCRIPT LITERAL and consumes the quotes
+ *   around the placeholder if there were any, so `'$(host)'.toUpperCase()` becomes
+ *   `"web01".toUpperCase()` rather than pasting the text straight in. Raw substitution
+ *   meant a field value could close the string it sat in and run code - and field values
+ *   are seedable from the URL query string, so a crafted link was enough.
+ *   'raw' is the previous behaviour, still used for queries: JSON quoting would produce
+ *   double quotes, which are not string literals in MySQL.
+ */
+function replacePlaceholderInString(value, ignoreIncomplete = false, mode = 'raw') {
     //---------------------------------------
     // replace placeholders if possible
     //---------------------------------------
     var testRegex = /\$\(([^)]+)\)/g                                        // a regex to find field placeholders $(xxx)
     var retestRegex = /\$\(([^)]+)\)/g                                      // the same regex, to retest after, because a regex can only be used once
     var match = undefined
-    var matches = undefined
-    var foundmatch = false
+    var matches
+    var foundmatch
     var column = ""
-    var foundfield = false
-    var fieldvalue = ""
-    var keys = undefined
-    var targetflag = undefined
+    var foundfield
+    var fieldvalue
+    var targetflag
     var hasPlaceholders = false
+    // What each placeholder resolved to, keyed by the RAW text between the brackets.
+    //
+    // A query is no longer sent as finished SQL - the server takes the query text from
+    // the form definition and substitutes these itself, so it cannot be told which SQL to
+    // run. It needs the VALUES though, and it must be this map rather than a flat field
+    // dump: resolution here understands `$(city.name)`, `$(rows[0].id)` and
+    // `placeholderColumn` (which makes a bare `$(city)` mean that record's chosen column).
+    // Re-deriving that server-side was a second implementation of this function and got
+    // all three wrong - the dotted forms were left in the SQL verbatim and
+    // placeholderColumn pasted the whole record instead of the column.
+    var resolved = {}
     if (typeof value !== "string") {
-        return { "hasPlaceholders": false, "value": value }
+        return { "hasPlaceholders": false, "value": value, "resolved": resolved }
     }
     value = value?.replace(/\n+/g, '') // put everything in 1 line.
     matches = [...value.matchAll(testRegex)] // force match array
@@ -1293,6 +1518,9 @@ function replacePlaceholderInString(value, ignoreIncomplete = false) {
         foundfield = foundfield?.replace(/\[[0-9]*\]/, '') // make xxx[y] => xxx
         fieldvalue = undefined
         targetflag = undefined
+        // fieldvalue from the branch below is already JSON/JS source text (an array/object
+        // literal), not a raw value - an 'expression' placeholder must splice it in as-is
+        var isObjectLiteral = false
 
         if (foundfield in form.value) {      // does field xxx exist in our form ?
             if (fieldOptions.value[foundfield] && (["expression", "table", "list", "constant"].includes(fieldOptions.value[foundfield].type) || column.includes(".")) && ((typeof form.value[foundfield] == "object") || (Array.isArray(form.value[foundfield])))) {
@@ -1305,7 +1533,13 @@ function replacePlaceholderInString(value, ignoreIncomplete = false) {
                 } else {
                     fieldvalue = JSON.stringify(Helpers.replacePlaceholders(match[1], form.value)) // allow full object reference
                 }
-                if (typeof fieldvalue == "string") { // drop quotes if string
+                isObjectLiteral = true
+                // Only 'raw' (SQL) substitution wants the bare, unquoted string here - an
+                // 'expression' placeholder is JS source, where a quoted string IS the
+                // correct literal ; stripping it there left an array/object's own quotes
+                // untouched, and re-quoting the whole thing below then turned e.g. a list
+                // into a one-element array holding its own JSON text as a string.
+                if (mode !== 'expression' && typeof fieldvalue == "string") { // drop quotes if string
                     fieldvalue = fieldvalue?.replace(/^\"+/, '').replace(/\"+$/, ''); // eslint-disable-line
                 }
             } else {
@@ -1324,8 +1558,26 @@ function replacePlaceholderInString(value, ignoreIncomplete = false) {
             if (fieldvalue === null) {
                 fieldvalue = "__null__"   // catch null values
             }
-            fieldvalue = stringifyValue(fieldvalue)
-            value = value?.replace(foundmatch, fieldvalue);               // replace the placeholder with the value
+            if (mode === 'expression' && fieldvalue !== "__undefined__" && fieldvalue !== "__null__") {
+                // An expression is JS source, so the substitution depends on where the
+                // placeholder sits : quotes that wrap it are replaced along with it by a JS
+                // literal (an apostrophe in the value cannot break out), a placeholder inside
+                // a longer string is escaped and spliced in as text (a JS literal there
+                // injected its own quotes into the middle of the string), and outside a
+                // string a literal keeps a number a number so `$(count) + 1` still adds.
+                // The __undefined__/__null__ sentinels stay on the raw path because the
+                // post-processing below strips their quotes by string match.
+                // isObjectLiteral : fieldvalue is already valid JS/JSON source (array/object) -
+                // stringifying it again would wrap it as a quoted string instead of splicing it in
+                value = Helpers.substituteExpressionPlaceholder(value, foundmatch, fieldvalue, isObjectLiteral)
+            } else {
+                fieldvalue = stringifyValue(fieldvalue)
+                // exactly what was substituted here, so the server substituting the same
+                // template into the same text produces the same string
+                resolved[match[1]] = fieldvalue
+                // same reason as above - a value carrying $& must not be re-interpreted
+                value = value?.replace(foundmatch, () => fieldvalue);          // replace the placeholder with the value
+            }
         } else {
             value = undefined      // cannot evaluate yet
         }
@@ -1340,7 +1592,7 @@ function replacePlaceholderInString(value, ignoreIncomplete = false) {
         value = value.replaceAll("'__null__'", "null")  // replace undefined values
         value = value.replaceAll("__null__", "null")
     }
-    return { "hasPlaceholders": hasPlaceholders, "value": value }          // return the result
+    return { "hasPlaceholders": hasPlaceholders, "value": value, "resolved": resolved }          // return the result
 }
 
 // replace placeholders
@@ -1348,8 +1600,10 @@ function replacePlaceholders(item) {
     //---------------------------------------
     // replace placeholders if possible
     //---------------------------------------
+    // an expression is evaluated as JS, a query is sent as SQL - they need different
+    // substitution, so say which one this is
     var newValue = item.expression || item.query   // make a copy of our item
-    return replacePlaceholderInString(newValue, item.ignoreIncomplete)
+    return replacePlaceholderInString(newValue, item.ignoreIncomplete, item.expression ? 'expression' : 'raw')
 }
 // stringify value if needed
 function stringifyValue(fieldvalue) {
@@ -1359,21 +1613,6 @@ function stringifyValue(fieldvalue) {
         return fieldvalue
     }
 }
-// make a string impression of a value
-function stringifyObject(v) {
-    if (v) {
-        if (Array.isArray(v)) {
-            return "[ Array ]"
-        }
-        if (typeof v == "object") {
-            return "{ Object }"
-        }
-        return v.toString()
-    } else {
-        return v
-    }
-}
-
 // in case of unexpected error in the etneral loop, we stop the loop
 function stopLoop(error) {
     clearInterval(interval.value)
@@ -1381,30 +1620,23 @@ function stopLoop(error) {
 }
 
 // trigger this when a field has changed and we need to see if it has an impact.
+//
+// A dependent is reset unconditionally: the readiness gate in the loop is what keeps a
+// reset from being premature, and prefill retention (prefillValues) is what keeps it from
+// being destructive - resetField restores the prefilled value as the field's default while
+// initialising, so a cascade during prefill costs a re-evaluation, not the value. Guards
+// that skipped protected/pending fields here were removed with the gate: with retention,
+// every prefilled field is protected AND pending for the whole init phase, so those guards
+// would have blocked every system cascade and frozen the chain.
 function evaluateDynamicFields(fieldname) {
     // console.log(`${fieldname} changed`)
     // if this field is dependency
     if (fieldname in dynamicFieldDependencies.value) {  // are any fields dependent from this field ?
         canSubmit.value = false; // after each dependency reset, we block submitting, untill all fields are resolved
         // set all variable ones to dirty
-        dynamicFieldDependencies.value[fieldname].forEach((item, i) => { // loop all dynamic fields and reset them
+        dynamicFieldDependencies.value[fieldname].forEach((item, _i) => { // loop all dynamic fields and reset them
             // set all variable fields blank and re-evaluate
             if (!fieldOptions.value[item].editable) {
-                // Skip reset for protected fields (prefilled or manually edited)
-                // UNLESS the field has a default with placeholders that needs re-evaluation
-                if (protectedFields.value[item]) {
-                    // Check if this field has a default value with placeholders
-                    const fieldDef = props.currentForm.fields.find(f => f.name === item);
-                    const hasPlaceholderInDefault = fieldDef?.default && 
-                                                   typeof fieldDef.default === 'string' && 
-                                                   /\$\(([^)]+)\)/.test(fieldDef.default);
-                    
-                    // If the default has placeholders, allow reset to re-evaluate the default
-                    if (!hasPlaceholderInDefault) {
-                        return;
-                    }
-                }
-                // all dependent fields we reset, so they can be re-evaluated
                 resetField(item)
             }
         })
@@ -1517,7 +1749,8 @@ function openYamlSubformEditor(field) {
     if (!row || typeof row !== 'object' || Array.isArray(row)) {
         row = {};
     } else {
-        const { __output__: _omit, ...rest } = row;
+        const rest = { ...row };
+        delete rest.__output__;
         row = JSON.parse(JSON.stringify(rest));
     }
     
@@ -1576,7 +1809,7 @@ async function handleYamlSubformLoad(event, fieldName) {
     event.target.value = '';
 }
 
-function handleYamlSubformDownload(fieldName, label) {
+function handleYamlSubformDownload(fieldName, _label) {
     try {
         const raw = form.value[fieldName];
         if (!raw) {
@@ -1626,18 +1859,30 @@ function initForm() {
     canSubmit.value = false;
     pretasksFinished.value = false;
     timeout.value = undefined;
-    pendingInitialData.value = {};
     isInitializing.value = false;
     protectedFields.value = {};
+    prefillValues.value = {};
+    prefillApplied.value = {};
+    prefillFlagged.value = {};
+    prefillApplyCount.value = {};
+    waitingFields.value = {};
+    cycleFields.value = {};
+    warnedOnce.value = {};
 
-    // Check if we have initialData to apply
-    const hasInitialData = Object.keys(props.initialData).length > 0;
-    if (hasInitialData) {
-        // Copy all initialData to pending queue
-        pendingInitialData.value = { ...props.initialData };
-        // Set initializing flag to suppress defaults during load
-        isInitializing.value = true;
-    }
+    // Take the restored values, but only for fields this form still declares. A stored job
+    // from before the form was edited carries keys that match nothing, and every apply site
+    // iterates over declared fields - so such a key could never be resolved and would keep
+    // the form "initialising" for the rest of the session.
+    const declaredFields = new Set(props.currentForm.fields.filter(f => f?.name).map(f => f.name));
+    Object.keys(props.initialData).forEach((key) => {
+        if (declaredFields.has(key)) {
+            prefillValues.value[key] = props.initialData[key];
+        } else {
+            warnings.value.push(`<span class="text-warning">Stored value for '${key}' was ignored</span><br><span>This form no longer has a field with that name.</span>`)
+        }
+    });
+    // Set initializing flag to suppress defaults during load
+    isInitializing.value = Object.keys(prefillValues.value).length > 0;
 
     // inject user
     form.value["__user__"] = TokenStorage.getPayload().user;
@@ -1711,11 +1956,16 @@ function initForm() {
         if (route.query[item.name] != undefined) {
             var queryValue = route.query[item.name];
             if (item.type == "number") {
-                try {
-                    queryValue = parseInt(queryValue);
-                } catch (err) {
-                    queryValue = 0;
-                }
+                // parseInt RETURNS NaN, it never throws, so this catch was unreachable and
+                // ?count=abc put NaN into the form: the number box rendered empty, the
+                // required rule still passed (String(NaN) is non-empty) and the job was
+                // launched with count: null - or `.nan` on the schedule path. parseInt
+                // also truncated '12abc' to 12 just as silently. Ignore a value that is
+                // not a number, so the field's own default applies.
+                const parsed = Number(queryValue);
+                // return, not continue : this is a forEach callback, not a loop
+                if (!Number.isFinite(parsed)) return;
+                queryValue = parsed;
             }
             if (item.type == "checkbox") {
                 if (queryValue.toLowerCase() === "false") {
@@ -1746,24 +1996,25 @@ function initForm() {
                 fieldOptions.value[item.name]["refresh"] = item.refresh;
             }
             // Check if we have initialData for this field
-            if (item.name in pendingInitialData.value) {
-                // For enum/query/table fields with expressions, keep in pendingInitialData for loop to apply after options load
-                // For expression/html/yaml or static enum/query/table, set value and status now
+            if (item.name in prefillValues.value) {
+                // enum/query/table need their options loaded before a value can be checked
+                // against them, so the loop applies those; html/expression/yaml recompute
+                // from their expression rather than being restored.
                 const needsOptionsFirst = ['enum', 'query', 'table'].includes(item.type) && (item.expression || item.query);
                 const isReactiveField = ((item.type === 'html' || item.type === 'expression' || item.type === 'yaml') && (item.expression || item.query));
-                
+
                 if (!needsOptionsFirst && !isReactiveField) {
-                    form.value[item.name] = pendingInitialData.value[item.name];
-                    protectedFields.value[item.name] = true;
-                    dynamicFieldStatus.value[item.name] = "fixed";
+                    applyPrefill(item.name);
                 } else if (isReactiveField) {
-                    delete pendingInitialData.value[item.name];
+                    // Flagged, not deleted: the field is deliberately recomputed, and
+                    // recording that keeps it from blocking init from completing while
+                    // still leaving a record of what was stored.
+                    prefillFlagged.value[item.name] = "computed field - re-evaluated instead of restored";
                     dynamicFieldStatus.value[item.name] = undefined;
                 } else {
                     // For enum/query/table with expressions, set status to undefined so loop will load options first
                     dynamicFieldStatus.value[item.name] = undefined;
                 }
-                // If needsOptionsFirst, leave in pendingInitialData for loop to handle
             } else {
                 form.value[item.name] = externalData.value[item.name] ?? getDefaultValue(item.name, item.default);
             }
@@ -1781,11 +2032,8 @@ function initForm() {
                 fallbackvalue = false;
             }
             // Check if we have initialData for this field - if so, use it instead of evaluating default
-            if (item.name in pendingInitialData.value) {
-                form.value[item.name] = pendingInitialData.value[item.name];
-                protectedFields.value[item.name] = true; // Mark as protected from reset
-                // Set status to 'fixed' so they can be referenced by expressions
-                dynamicFieldStatus.value[item.name] = "fixed";
+            if (item.name in prefillValues.value) {
+                applyPrefill(item.name);
             } else {
                 form.value[item.name] = externalData.value[item.name] ?? getDefaultValue(item.name, item.default) ?? fallbackvalue;
             }
@@ -1803,33 +2051,25 @@ function initForm() {
     // set all defaults
     initiateDefaults();
 
-    // find all variable dependencies (in both ways)
+    // find all variable dependencies (both directions, from one scan)
     findVariableDependencies();
-    findVariableDependentOf();
 
-    // Apply top-level fields from initialData (fields with no dependencies)
-    if (Object.keys(pendingInitialData.value).length > 0) {
-        props.currentForm.fields.forEach((item) => {
-            const fieldname = item.name;
-            if (fieldname in pendingInitialData.value) {
-                const hasNoDeps = !dynamicFieldDependentOf.value[fieldname] || 
-                                 dynamicFieldDependentOf.value[fieldname].length === 0;
-                // Skip enum/query/table fields - they need their options to load first
-                const needsOptionsFirst = ['enum', 'query', 'table'].includes(item.type) && (item.expression || item.query);
-                // Skip expression fields - they should re-evaluate with new context, not use cached values
-                const isExpressionField = item.type === 'expression' && (item.expression || item.query);
-                if (isExpressionField) {
-                    delete pendingInitialData.value[fieldname];
-                } else if (hasNoDeps && !needsOptionsFirst) {
-                    form.value[fieldname] = pendingInitialData.value[fieldname];
-                    protectedFields.value[fieldname] = true; // Mark as protected from reset
-                    // Set status to 'fixed' for ALL prefilled fields so they can be referenced by expressions
-                    dynamicFieldStatus.value[fieldname] = "fixed";
-                    delete pendingInitialData.value[fieldname];
-                }
-            }
-        });
-    }
+    // Fill in everything that can be restored right away - the fields nothing has to be
+    // fetched for. Everything else is left to the loop, which applies each field's value the
+    // moment that field's own dependencies have been evaluated. There is no "has no
+    // dependencies" shortcut here any more: that test was only ever standing in for the
+    // readiness gate, and it read a map that was empty for enum/query/table anyway.
+    props.currentForm.fields.forEach((item) => {
+        if (!item?.name || !(item.name in prefillValues.value)) return;
+        if (prefillApplied.value[item.name] || prefillFlagged.value[item.name]) return;
+        const needsOptionsFirst = ['enum', 'query', 'table'].includes(item.type) && (item.expression || item.query);
+        const isComputed = ['expression', 'html', 'yaml'].includes(item.type) && (item.expression || item.query);
+        if (isComputed) {
+            prefillFlagged.value[item.name] = "computed field - re-evaluated instead of restored";
+        } else if (!needsOptionsFirst) {
+            applyPrefill(item.name);
+        }
+    });
 
     // for future use, run something before the form starts
     pretasksFinished.value = true;
@@ -1845,6 +2085,7 @@ function initForm() {
 async function startDynamicFieldsLoop() {
     var refreshCounter = 0;
     var hasUnevaluatedFields = false;
+    var lastProgressCounter = -1;
     changed();
     interval.value = setInterval(async () => {
         hasUnevaluatedFields = false;
@@ -1854,9 +2095,34 @@ async function startDynamicFieldsLoop() {
             checkDependencies(item);
             if (visibility.value[item.name]) {
                 var flag = dynamicFieldStatus.value[item.name];
-                var placeholderCheck = undefined;
+                var placeholderCheck;
 
-                if (item.expression && (flag == undefined || hasDefaultDependencies(item.name))) {
+                // A field may only start evaluating once every field it references has been
+                // evaluated - the same rule a person filling this form in by hand follows.
+                // Until then it waits, silently: no default, no reset, no cascade, no status
+                // change. That is the whole point. Previously "my dependency isn't ready"
+                // came back from replacePlaceholders as an unresolved placeholder and was
+                // handled as "evaluation failed" - setFieldToDefault, which for a field with
+                // a default cascades a reset through everything below it. Every not-yet-ready
+                // field did that on every tick, which on a deep form is a churn engine that
+                // never settles.
+                //
+                // ignoreIncomplete is the author's explicit opt-out: evaluate now, with
+                // whatever is resolvable, and accept being re-evaluated later.
+                const gated = (flag == undefined)
+                    && (item.expression || item.query)
+                    && fieldOptions.value[item.name]?.isDynamic
+                    && !item.ignoreIncomplete
+                    && !cycleFields.value[item.name]
+                    && !depsReady(item.name);
+
+                if (!gated) delete waitingFields.value[item.name];
+
+                if (gated) {
+                    waitingFields.value[item.name] = true;
+                    hasUnevaluatedFields = true;
+                    unevaluatedFields.value.push(item.name);
+                } else if (item.expression && flag == undefined) {
                     hasUnevaluatedFields = true;
                     unevaluatedFields.value.push(item.name);
                     setFieldStatus(item.name, "running", false);
@@ -1872,35 +2138,16 @@ async function startDynamicFieldsLoop() {
                                 } else {
                                     result = Helpers.evalSandbox(placeholderCheck.value);
                                 }
-                                if (item.type == "html") {
-                                    // HTML fields with expressions should re-evaluate, not use cached prefill values
-                                    if (item.name in pendingInitialData.value) {
-                                        delete pendingInitialData.value[item.name];
-                                    }
-                                    form.value[item.name] = result;
-                                }
-                                if (item.type == "expression") {
-                                    // Expression fields should re-evaluate, not use cached prefill values
-                                    if (item.name in pendingInitialData.value) {
-                                        delete pendingInitialData.value[item.name];
-                                    }
-                                    form.value[item.name] = result;
-                                }
-                                if (item.type == "yaml") {
-                                    // YAML fields should re-evaluate, not use cached prefill values
-                                    if (item.name in pendingInitialData.value) {
-                                        delete pendingInitialData.value[item.name];
-                                    }
+                                // html/expression/yaml recompute rather than restore
+                                if (item.type == "html" || item.type == "expression" || item.type == "yaml") {
                                     form.value[item.name] = result;
                                 }
                                 if (item.type == "enum") {
                                     queryresults.value[item.name] = [].concat(result);
-                                    // Check if we have pending initialData for this enum field
-                                    if (item.name in pendingInitialData.value) {
-                                        form.value[item.name] = pendingInitialData.value[item.name];
-                                        protectedFields.value[item.name] = true; // Mark as protected from reset
-                                        setFieldStatus(item.name, "fixed"); // Mark as ready for dependent fields
-                                        delete pendingInitialData.value[item.name];
+                                    // options are loaded, so the stored value can now be
+                                    // checked against them and restored
+                                    if (isPrefillPending(item.name)) {
+                                        applyPrefill(item.name, { validateOptions: true });
                                     }
                                 }
                                 if (item.type == "table" && !defaults.value[item.name]) form.value[item.name] = [].concat(result);
@@ -1923,38 +2170,25 @@ async function startDynamicFieldsLoop() {
                             try {
                                 const body = { expression: placeholderCheck.value };
                                 if (item.jq) body.jq = item.jq;
+                                const gen = fieldGeneration.value[item.name] || 0;
                                 const result = await axios.post(`/api/v2/expression?noLog=${!!item.noLog}`, body, TokenStorage.getAuthentication());
-                                var restresult = result.data;
+                                // a dependency changed (resetField bumped the generation)
+                                // while this was in flight: a newer request owns the field
+                                // now, so drop this stale answer - return, not continue: the
+                                // enclosing construct is a forEach callback, not a loop
+                                if (!isCurrentGeneration(item.name, gen)) return;
+                                const restresult = result.data;
                                 delete queryerrors.value[item.name];
-                                if (item.type == "html") {
-                                    // HTML fields with expressions should re-evaluate, not use cached prefill values
-                                    if (item.name in pendingInitialData.value) {
-                                        delete pendingInitialData.value[item.name];
-                                    }
-                                    form.value[item.name] = restresult;
-                                }
-                                if (item.type == "expression") {
-                                    // Expression fields should re-evaluate, not use cached prefill values
-                                    if (item.name in pendingInitialData.value) {
-                                        delete pendingInitialData.value[item.name];
-                                    }
-                                    form.value[item.name] = restresult;
-                                }
-                                if (item.type == "yaml") {
-                                    // YAML fields should re-evaluate, not use cached prefill values
-                                    if (item.name in pendingInitialData.value) {
-                                        delete pendingInitialData.value[item.name];
-                                    }
+                                // html/expression/yaml recompute rather than restore
+                                if (item.type == "html" || item.type == "expression" || item.type == "yaml") {
                                     form.value[item.name] = restresult;
                                 }
                                 if (item.type == "enum") {
                                     queryresults.value[item.name] = [].concat(restresult ?? []);
-                                    // Check if we have pending initialData for this enum field
-                                    if (item.name in pendingInitialData.value) {
-                                        form.value[item.name] = pendingInitialData.value[item.name];
-                                        protectedFields.value[item.name] = true; // Mark as protected from reset
-                                        setFieldStatus(item.name, "fixed"); // Mark as ready for dependent fields
-                                        delete pendingInitialData.value[item.name];
+                                    // options are loaded, so the stored value can now be
+                                    // checked against them and restored
+                                    if (isPrefillPending(item.name)) {
+                                        applyPrefill(item.name, { validateOptions: true });
                                     }
                                 }
                                 if (item.type == "table" && !defaults.value[item.name]) form.value[item.name] = [].concat(restresult ?? []);
@@ -1982,9 +2216,16 @@ async function startDynamicFieldsLoop() {
                             }
                         }
                     } else {
+                        // Every dependency reported itself evaluated, yet a placeholder still
+                        // will not resolve - so this is a real failure (a reference to
+                        // something that never produces a value), not "too early". Default
+                        // once and say so; the gate above is what keeps this off the
+                        // every-tick path it used to be on.
+                        addWarningOnce(`unresolved:${item.name}`,
+                            `<span class="text-warning">'${item.name}' could not be evaluated</span><br><span>A field its expression refers to never produced a value.</span>`);
                         setFieldToDefault(item.name);
                     }
-                } else if (item.query && (flag == undefined)) {
+                } else if (item.query && flag == undefined) {
                     hasUnevaluatedFields = true;
                     unevaluatedFields.value.push(item.name);
                     setFieldStatus(item.name, "running", false);
@@ -1992,15 +2233,50 @@ async function startDynamicFieldsLoop() {
 
                     if (placeholderCheck.value != undefined) {
                         try {
-                            const body = { query: placeholderCheck.value, config: item.dbConfig };
+                            // Send the form and field, NOT the query text. The server
+                            // resolves the query from the definition with the caller's own
+                            // roles and substitutes these values itself - the endpoint used
+                            // to run whatever SQL the body contained, against any configured
+                            // datasource, for any authenticated user.
+                            //
+                            // `formName` must be the ROOT form: a subform carries no
+                            // `roles` (the schema forbids it) and so cannot be resolved on
+                            // its own - see the rootFormName prop. `values` is keyed by the
+                            // raw placeholder text, which is what makes `$(city.name)` and
+                            // placeholderColumn work; a flat field map cannot express them.
+                            const body = {
+                                formName: props.rootFormName || props.currentForm.name,
+                                fieldName: item.name,
+                                values: placeholderCheck.resolved || {},
+                                // kept so a settings user's designer preview still works, and
+                                // so an older client keeps functioning
+                                query: placeholderCheck.value,
+                                config: item.dbConfig,
+                            };
+                            if (props.rootFormName) body.subformName = props.currentForm.name;
                             if (item.jq) body.jq = item.jq;
+                            const gen = fieldGeneration.value[item.name] || 0;
                             const result = await axios.post(`/api/v2/query?noLog=${!!item.noLog}`, body, TokenStorage.getAuthentication());
-                            var restresult = result.data;
+                            // a dependency changed while this was in flight : a newer
+                            // request owns the field now, so drop this answer
+                            // return, not continue : the enclosing construct is a
+                            // forEach callback, not a loop
+                            if (!isCurrentGeneration(item.name, gen)) return;
+                            const restresult = result.data;
                             delete queryerrors.value[item.name];
                             if (item.type == "query" || item.type == "enum") queryresults.value[item.name] = restresult;
                             else if (item.type == "yaml") form.value[item.name] = restresult;
                             else if (item.type == "list") form.value[item.name] = [].concat(restresult ?? []);
                             else form.value[item.name] = restresult;
+
+                            // A query-backed enum/query field is restored the same way an
+                            // expression-backed one is - its options have just arrived, so the
+                            // stored value can be checked against them. This branch never had
+                            // a restore path at all, so such a field was simply never filled
+                            // back in.
+                            if ((item.type == "query" || item.type == "enum") && isPrefillPending(item.name)) {
+                                applyPrefill(item.name, { validateOptions: true });
+                            }
 
                             // Mark as fixed after successful evaluation - will re-evaluate when dependencies change via resetField
                             setFieldStatus(item.name, "fixed");
@@ -2017,12 +2293,15 @@ async function startDynamicFieldsLoop() {
                             }
                         }
                     } else {
+                        // As in the expression branch: dependencies are ready, so an
+                        // unresolved placeholder here is a genuine failure. Mark the field
+                        // defaulted rather than resetting it - a reset would clear the value
+                        // and put the field straight back into the queue it just failed out
+                        // of, once per tick.
+                        addWarningOnce(`unresolved:${item.name}`,
+                            `<span class="text-warning">'${item.name}' could not be evaluated</span><br><span>A field its query refers to never produced a value.</span>`);
                         try {
-                            if (item.type == "expression") {
-                                setFieldToDefault(item.name);
-                            } else {
-                                resetField(item.name);
-                            }
+                            setFieldToDefault(item.name);
                         } catch (err) {
                             stopLoop("Defaulting " + item.name);
                         }
@@ -2031,25 +2310,20 @@ async function startDynamicFieldsLoop() {
                     setFieldStatus(item.name, "running", false);
                     if (item.type == "expression" || item.type == "yaml") form.value[item.name] = item.value;
                     setFieldStatus(item.name, "fixed");
+                } else if (flag == "running") {
+                    // A request is still in flight. It entered no branch above, so without
+                    // this the form could call itself settled - and enable submit - while
+                    // answers were still on their way.
+                    hasUnevaluatedFields = true;
+                    unevaluatedFields.value.push(item.name);
                 }
             } else {
-                // Check if this field has pending initialData before defaulting
-                if (item.name in pendingInitialData.value) {
-                    // Check if all dependencies are satisfied (not undefined)
-                    const deps = dynamicFieldDependentOf.value[item.name] || [];
-                    const allDepsSatisfied = deps.every(dep => form.value[dep] !== undefined);
-                    
-                    if (allDepsSatisfied) {
-                        form.value[item.name] = pendingInitialData.value[item.name];
-                        delete pendingInitialData.value[item.name];
-                    }
-                } else {
-                    if (item.type == "expression") {
-                        setFieldToDefault(item.name);
-                    } else if (item.type == "query" || item.type == "enum" || item.type == "table") {
-                        resetField(item.name);
-                    }
-                }
+                // A hidden field needs no per-tick upkeep. setVisibility already clears its
+                // value and status once, on the transition to hidden, and a prefill it still
+                // owns survives in prefillValues - so when it is shown again, resetField
+                // hands that value straight back as its default. Re-defaulting or resetting
+                // it on every tick, forever, is what this branch used to do.
+                delete waitingFields.value[item.name];
             }
             if (item.type == "number" && form.value[item.name] === "") {
                 setFieldUndefined(item.name);
@@ -2058,32 +2332,74 @@ async function startDynamicFieldsLoop() {
                 var match = item.refresh.match(/([0-9]+)s/g);
                 if (match) {
                     var secs = parseInt(match[0]);
-                    if (refreshCounter % (10 * secs) == 0) {
+                    // Not while the user has the field open for editing. Clearing the
+                    // status makes the next tick re-run the expression and assign its
+                    // result over form.value[name] - so an `expression` field declared
+                    // with both `editable: true` and `refresh: "30s"` had whatever the
+                    // user typed silently replaced every 30 seconds, mid-edit.
+                    // evaluateDynamicFields already applies this rule; the refresh path
+                    // was the one place that did not.
+                    if (refreshCounter % (10 * secs) == 0 && !fieldOptions.value[item.name]?.editable) {
                         setFieldStatus(item.name, undefined);
                     }
                 }
             }
         });
 
-        if (hasUnevaluatedFields) {
-            canSubmit.value = false;
-            watchdog.value++;
+        // Settled means nothing is still waiting for a dependency and nothing is still in
+        // flight. Initialisation is finished on top of that only when every restored value
+        // has been put back, been flagged as impossible to put back, or belongs to a field
+        // that is not shown - which is the "keep going until every field matches its prefill
+        // value" rule.
+        // The watchdog counts ticks in which NOTHING happened, not ticks in total: a chain of
+        // seven slow queries makes steady progress and must never be mistaken for a stuck
+        // form, while a form that truly cannot advance trips it within a couple of seconds.
+        if (progressCounter.value !== lastProgressCounter) {
+            lastProgressCounter = progressCounter.value;
+            watchdog.value = 0;
         }
 
-        if (!hasUnevaluatedFields) {
-            // Check if initialization is complete (all pendingInitialData applied)
-            if (isInitializing.value && Object.keys(pendingInitialData.value).length == 0) {
-                // Clear all initialization-specific state
-                isInitializing.value = false;
-                pendingInitialData.value = {};  // Ensure clean state
-                protectedFields.value = {};      // Allow normal re-evaluation when user changes fields
-                console.log('Form initialization complete');
+        const anyWaiting = Object.keys(waitingFields.value).length > 0;
+        if (hasUnevaluatedFields || anyWaiting) {
+            canSubmit.value = false;
+            watchdog.value++;
+            // A field that never becomes ready would otherwise hold the form forever: a lost
+            // response, or a dependency that simply never resolves. Release it, evaluate with
+            // what is there, and say which field it was. This has to fire well inside
+            // awaitStable's 10s window, or a wizard step would time out instead.
+            if (watchdog.value > 50) {
+                Object.keys(waitingFields.value).forEach((name) => {
+                    cycleFields.value[name] = true;      // exempt from the gate from now on
+                    delete waitingFields.value[name];
+                    addWarningOnce(`stalled:${name}`,
+                        `<span class="text-warning">'${name}' waited too long for the fields it depends on</span><br><span>It was evaluated anyway - its value may be incomplete.</span>`);
+                });
             }
-            canSubmit.value = true;
-            if (watchdog.value > 0) {
-                // All fields are found
+        } else {
+            if (isInitializing.value) {
+                const unresolved = Object.keys(prefillValues.value).filter(name =>
+                    !prefillApplied.value[name] && !prefillFlagged.value[name] && visibility.value[name] !== false);
+                if (unresolved.length == 0) {
+                    isInitializing.value = false;
+                    // protectedFields is intentionally NOT cleared here : it used to be, but
+                    // that wiped every prefilled field's protection in one shot the instant
+                    // loading looked done - and "looks done this one tick" isn't "guaranteed
+                    // no more internal settling", especially several dependency-levels deep.
+                } else {
+                    // Nothing is waiting or running any more, yet these values still have not
+                    // gone back in - the chain they hang off cannot produce them. Say so and
+                    // finish, rather than holding the form hostage.
+                    watchdog.value++;
+                    if (watchdog.value > 50) {
+                        unresolved.forEach(name => flagPrefill(name, "the fields it depends on never produced it"));
+                        isInitializing.value = false;
+                    }
+                }
             }
-            watchdog.value = 0;
+            // Submitting stays blocked until the restore is actually complete, so a relaunch
+            // can never be sent with fields that had not been filled back in yet.
+            canSubmit.value = !isInitializing.value;
+            if (!isInitializing.value) watchdog.value = 0;
         }
 
         if (status.value == "initializing") {
@@ -2145,9 +2461,33 @@ onUnmounted(() => {
 
 // Exposed for the wizard parent: lets it gate Next/Submit on validation.
 // Returns true when the form is valid, false otherwise (and toasts a warning).
+/**
+ * Resolve once every dynamic field has settled, or false if it takes too long.
+ *
+ * AppForm already computes canSubmit and even emits a "submit" event when it flips - but
+ * "submit" is not in defineEmits above and nothing binds it, so that whole path was dead
+ * code: form.vue calls submitForm() the instant the button is pressed. A form with a slow
+ * query or expression field could therefore be submitted while it was still resolving,
+ * and generateJsonOutput built the extravars from a field that was still undefined or
+ * holding its default - the job ran with a missing or stale value, silently.
+ *
+ * Exposed rather than emitted so the parent can AWAIT it on the path it actually uses.
+ */
+function awaitStable(timeoutMs = 10000) {
+    return new Promise((resolve) => {
+        if (canSubmit.value) return resolve(true);
+        const started = Date.now();
+        const timer = setInterval(() => {
+            if (canSubmit.value) { clearInterval(timer); resolve(true); }
+            else if (Date.now() - started >= timeoutMs) { clearInterval(timer); resolve(false); }
+        }, 100);
+    });
+}
+
 defineExpose({
     validateForm,
     visibility,
+    awaitStable,
 });
 </script>
 <template>
@@ -2159,9 +2499,12 @@ defineExpose({
         <!-- WARNINGS -->
         <BsOffCanvas v-if="showWarnings" :show="true"
             icon="triangle-exclamation" :title="t('form.formWarnings')" @close="showWarnings = false">
-            <template #actions> </template>
             <template #default>
-                <p v-if="!canSubmit && !formLoopIsBusy" class="mb-3" v-html="unevaluatedFieldsWarning"></p>
+                <!-- text, not v-html : this is a comma-joined list of FIELD LABELS from
+                     the form definition, which is a yaml file in a forms repository, plus
+                     a translated word. No HTML is intended, and toast.warning() renders
+                     the very same string as text already. -->
+                <p v-if="!canSubmit && !formLoopIsBusy" class="mb-3">{{ unevaluatedFieldsWarning }}</p>
                 <p v-for="w, i in warnings" :key="'warning' + i" class="mb-3" v-html="w"></p>
                 <p v-for="q, i in Object.keys(queryerrors)" :key="'queryerror' + i" class="mb-3 has-text-danger">
                     '{{ q }}' has query errors<br>{{ queryerrors[q] }}
@@ -2208,8 +2551,8 @@ defineExpose({
 
 
         <!-- GROUPS -->
-        <template :key="group" v-for="group in fieldGroups" v-show="!hideForm">
-            <div v-if="checkGroupDependencies(group)" class="mt-4 p-3" :class="getGroupClass(group)">
+        <template :key="group" v-for="group in fieldGroups">
+            <div v-if="checkGroupDependencies(group)" v-show="!hideForm" class="mt-4 p-3" :class="getGroupClass(group)">
 
                 <!-- GROUP TITLE -->
                 <h3>{{ group }}</h3>
@@ -2217,7 +2560,7 @@ defineExpose({
                 <!-- ROWS -->
                 <div :key="line" v-for="line in fieldLines" class="row">
                     <!-- FIELDS -->
-                    <template v-for="field in filterfieldsByGroupAndLine(group, line)">
+                    <template :key="field.name" v-for="field in filterfieldsByGroupAndLine(group, line)">
 
                         <div class="col py-0" v-if="visibility[field.name]" :class="field.width">
                             
@@ -2228,7 +2571,7 @@ defineExpose({
                                     :class="{ 'text-body': !field.hide, 'text-grey': field.hide }">{{ typeof fieldLabels[field.name] === 'object' ? fieldLabels[field.name].value : fieldLabels[field.name] }}
                                 </label>
                                 
-                                <div v-show="!fieldOptions[field.name].viewable" v-html="DOMPurify.sanitize(v$.form[field.name].$model || '')"></div>
+                                <div v-show="!fieldOptions[field.name].viewable" v-html="HtmlSanitizer.sanitize(v$.form[field.name].$model)"></div>
                                 <!-- raw data -->
                                 <div @dblclick="setExpressionFieldViewable(field.name, false)"
                                     v-if="fieldOptions[field.name].viewable"
@@ -2476,7 +2819,7 @@ defineExpose({
                                                 style="display: none"
                                             />
                                         </div>
-                                        <div class="card p-3 yaml-readonly limit-height"
+                                        <div class="card p-3 limit-height"
                                             :class="{ 'border-danger': v$.form[field.name].$invalid }">
                                             <pre v-if="v$.form[field.name].$model && typeof v$.form[field.name].$model === 'object'"
                                                 v-highlightjs><code language="yaml" style="border:none;padding:0">{{ yamlSubformPreview(field) }}</code></pre>

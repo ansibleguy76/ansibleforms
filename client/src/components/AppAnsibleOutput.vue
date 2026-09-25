@@ -45,6 +45,7 @@ import { computed } from 'vue';
         };
         // Process sequentially, tracking open span depth so RESET closes ALL open spans
         let openSpans = 0;
+        // eslint-disable-next-line no-control-regex -- \x1B is the ANSI escape byte we are parsing
         result = result.replace(/\x1B\[([0-9;]*)m/g, (_match, code) => {
             if (code === '0' || code === '') {
                 // Reset — close every open span at once
@@ -62,7 +63,8 @@ import { computed } from 'vue';
         // Close any spans still open at end of string
         if (openSpans > 0) result += '</span>'.repeat(openSpans);
         // Strip any remaining unrecognised ANSI sequences
-        result = result.replace(/\x1B\[[0-?]*[ -\/]*[@-~]/g, '');
+        // eslint-disable-next-line no-control-regex -- \x1B is the ANSI escape byte we are parsing
+        result = result.replace(/\x1B\[[0-?]*[ -/]*[@-~]/g, '');
         return result;
     }
 
@@ -123,13 +125,15 @@ import { computed } from 'vue';
             color: var(--af-ansible-output-danger)!important;
         }
 
+        /* the -text-* variants, not the saturated ones used for the tag backgrounds :
+           #198754 / #ff8800 as text on the pane background fail WCAG AA */
         .has-text-success {
-            color: var(--af-ansible-output-success)!important;
+            color: var(--af-ansible-output-text-success)!important;
         }
 
         .has-text-warning {
-            color: var(--af-ansible-output-warning)!important;
-        }        
+            color: var(--af-ansible-output-text-warning)!important;
+        }
     } 
     .logfile {
         font-family: monospace;

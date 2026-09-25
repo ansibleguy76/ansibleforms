@@ -20,9 +20,9 @@ var TokenStorage = {
   },
 
   getPayload() {
-    var base64Url = "";
-    var base64 = "";
-    var jsonPayload = "";
+    var base64Url;
+    var base64;
+    var jsonPayload;
     try {
       base64Url = this.getToken().split(".")[1];
       base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
@@ -40,7 +40,6 @@ var TokenStorage = {
     }
   },
   async getNewToken() {
-    var ref = this;
     console.log("Getting new token from server...");
     
     const refreshToken= this.getRefreshToken();

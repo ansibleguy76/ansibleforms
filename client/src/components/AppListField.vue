@@ -53,31 +53,37 @@ function triggerFileInput() {
 async function handleFileLoad(event) {
     const file = event.target.files?.[0];
     if (!file) return;
-    const fileName = file.name.toLowerCase();
-    if (!fileName.endsWith('.yml') && !fileName.endsWith('.yaml')) {
-        toast.error('Please select a .yml or .yaml file');
-        return;
-    }
+    // try/finally : the early returns below (wrong extension, unparsable file) used
+    // to skip the reset at the end, so the <input type=file> kept the same value -
+    // re-picking the SAME path fired no change event and the button was dead.
     try {
-        const text = await file.text();
-        const parsed = YAML.parse(text);
-        if (parsed === null || parsed === undefined) {
-            toast.error('Invalid YAML file - no data found');
+        const fileName = file.name.toLowerCase();
+        if (!fileName.endsWith('.yml') && !fileName.endsWith('.yaml')) {
+            toast.error('Please select a .yml or .yaml file');
             return;
         }
-        const arrayData = Array.isArray(parsed) ? parsed : [parsed];
-        if (!Array.isArray(parsed)) toast.info('Single object converted to array');
+        try {
+            const text = await file.text();
+            const parsed = YAML.parse(text);
+            if (parsed === null || parsed === undefined) {
+                toast.error('Invalid YAML file - no data found');
+                return;
+            }
+            const arrayData = Array.isArray(parsed) ? parsed : [parsed];
+            if (!Array.isArray(parsed)) toast.info('Single object converted to array');
         
-        // Apply modeling transformation: build __output__ for each row from raw fields
-        // so the modeled structure is immediately visible without manual edit
-        rows.value = Helpers.applySubformModeling(arrayData, props.subform?.fields, props.subforms || []);
+            // Apply modeling transformation: build __output__ for each row from raw fields
+            // so the modeled structure is immediately visible without manual edit
+            rows.value = Helpers.applySubformModeling(arrayData, props.subform?.fields, props.subforms || []);
         
-        commit();
-        toast.success(`Loaded ${arrayData.length} row(s) from ${file.name}`);
-    } catch (e) {
-        toast.error(`Failed to parse ${file.name}: ${e.message}`);
+            commit();
+            toast.success(`Loaded ${arrayData.length} row(s) from ${file.name}`);
+        } catch (e) {
+            toast.error(`Failed to parse ${file.name}: ${e.message}`);
+        }
+    } finally {
+        event.target.value = '';
     }
-    event.target.value = '';
 }
 
 function handleDownload() {
@@ -92,6 +98,13 @@ function handleDownload() {
         const subformFieldNames = (props.subform?.fields || []).map(f => f.name);
         const cleanRows = subformFieldNames.length > 0
             ? rows.value.map(row => {
+                // `k in row` throws "Cannot use 'in' operator" on a scalar. That is
+                // reachable: handleFileLoad stores whatever applySubformModeling returns,
+                // and that helper passes non-object rows straight through - so loading a
+                // YAML file holding a plain list ("- one") and pressing Download failed
+                // with a TypeError message the user could make nothing of. A scalar row
+                // has no named fields to filter, so it is kept as-is.
+                if (!row || typeof row !== 'object') return row;
                 const filtered = Object.fromEntries(
                     subformFieldNames.filter(k => k in row).map(k => [k, row[k]])
                 );
@@ -258,6 +271,7 @@ function applySave(value, index) {
     //    DIRECTLY into the central form object of the wizard.
     if (props.parentFormData && props.field && props.field.name) {
         // Ensure the array in the wizard state is directly overwritten with our new rows
+        // eslint-disable-next-line vue/no-mutating-props -- parentFormData is handed over as a shared, writable wizard state object on purpose
         props.parentFormData[props.field.name] = [...rows.value];
     }
     

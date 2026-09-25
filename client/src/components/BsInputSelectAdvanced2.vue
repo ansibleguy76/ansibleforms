@@ -58,11 +58,11 @@
 
     // WATCHERS
 
-    watch(() => props.values, (val) => {
+    watch(() => props.values, (_val) => {
         recalc()
     }, { deep: true })
 
-    watch(() => selected.value, (val) => {
+    watch(() => selected.value, (_val) => {
         emitUpdate()
     }, { deep: true })
 
@@ -167,7 +167,7 @@
             }else if(props.defaultValue=="__all__"){ // if all is set, we select all
                 moveAllRight()
             }else if(props.defaultValue!="__none__" && props.defaultValue!=undefined){ // if a regular default is set, we select it
-                var obj=undefined
+                var obj
                 var defaulttype
                 try{
                     obj = JSON.parse(props.defaultValue)

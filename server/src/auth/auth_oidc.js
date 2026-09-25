@@ -19,7 +19,7 @@ const initialize = async () => {
 
   let oidcConfig;
   let oidcSettings;
-  let oidcEnabled = false;
+  let oidcEnabled;
   try {
     oidcSettings = await OIDC.isEnabled();
     oidcEnabled = !!oidcSettings.enable;

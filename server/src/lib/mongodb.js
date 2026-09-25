@@ -17,10 +17,10 @@ Mongo.query = async function (connection_name, query) {
   try{
     queryJson = JSON.parse(queryarr[2])
   }catch(err){
-    throw new Error("["+connection_name+"] query must be valid json. Use double quotes, not single quotes.  " + queryarr[2])
+    throw new Error("["+connection_name+"] query must be valid json. Use double quotes, not single quotes.  " + queryarr[2], { cause: err })
   }
   var creds = await Credential.findByNameRegex(connection_name)
-  var uri = `mongodb://${encodeURI(config.user)}:${encodeURI(config.password)}@${config.host}:${config.port}`
+  var uri = `mongodb://${encodeURI(creds.user)}:${encodeURI(creds.password)}@${creds.host}:${creds.port}`
   var client
   try{
     client = await Client.connect(uri)

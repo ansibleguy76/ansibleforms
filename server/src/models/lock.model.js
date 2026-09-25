@@ -5,7 +5,7 @@ import yaml from "yaml";
 import config from '../../config/app.config.js';
 import moment from "moment";
 import Repository from "./repository.model.js";
-import Settings from "./settings.model.js";
+
 import Errors from '../lib/errors.js';
 
 //lock object create
@@ -25,12 +25,6 @@ Lock.isHeld = async function(){
   }
 };
 Lock.status = async function(user){
-  // forms repositories are read AND write (issue #414) : the designer edits
-  // their working trees, so they no longer disable the designer
-  const settings = await Settings.findFormsYaml();
-  if (settings.forms_yaml) {
-    throw new Errors.AccessDeniedError("Designer is disabled: forms stored in database");
-  }
   try {
     const lock = await Lock.get(user);
     const lck = yaml.parse(lock);

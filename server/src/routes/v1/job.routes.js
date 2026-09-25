@@ -1,5 +1,4 @@
 import express from 'express';
-import logger from '../../lib/logger.js';
 const router = express.Router();
 import jobController from '../../controllers/v1/job.controller.js';
 import uploadController from '../../controllers/v1/upload.controller.js';

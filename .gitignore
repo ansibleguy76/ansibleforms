@@ -30,8 +30,15 @@ ontap*.yaml
 # build artifacts (generated during build)
 build-info.json
 
+# test coverage reports (vitest writes client/coverage and server/coverage)
+coverage
+
 # local post-build scripts (may contain credentials)
 *.post.sh
+
+# Docker Hub PATs for publish*.sh - the real one belongs in ~/.docker-hub-pat
+# (outside the repo entirely), never here; this just guards against a stray local copy.
+.docker-hub-pat
 
 # Editor directories and files
 .idea

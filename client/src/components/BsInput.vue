@@ -23,7 +23,8 @@
   import { getCurrentInstance } from "vue";
   import ace from 'ace-builds';
   import 'ace-builds/src-noconflict/mode-yaml'; // Load the language definition file used below
-  import 'ace-builds/src-noconflict/theme-monokai'; // Load the theme definition file used below
+  import 'ace-builds/src-noconflict/theme-monokai';
+  import 'ace-builds/src-noconflict/theme-chrome';
   import extSearchboxUrl from 'ace-builds/src-noconflict/ext-searchbox?url';
 
   // MODEL
@@ -33,12 +34,12 @@
   // INIT 
   
   ace.config.setModuleUrl('ace/ext/searchbox', extSearchboxUrl);
-  const emit = defineEmits(['update:modelValue','dirty','keyup_enter','save']);
+  const emit = defineEmits(['update:modelValue','dirty','keyup_enter','save','init']);
   const { uid } = getCurrentInstance();
 
   // PROPS
 
-  const props = defineProps({
+  defineProps({
     icon: { type: String, },                          // Icon name
     label: { type: String, default: "" },             // Label text
     help: { type: String, default: "" },              // Help text
@@ -55,12 +56,13 @@
     cssClass: { type: String, default: "" },          // CSS class
     isHorizontal: { type: Boolean, default: false },  // label and input in the same row
     isInline: { type: Boolean, default: false },      // Field is inline with other fields
+    isSwitch: { type: Boolean, default: true },       // checkbox: render as a switch
     values: { type: Array, default: () => [] },       // values for select and select_advanced
     valueKey: { type: String, default: "value" },     // Value key for select
     labelKey: { type: String, default: "label" },     // Label key for select
     rows: { type: Number, default: 3 },               // Rows for textarea
     lang: { type: String, default: "yaml" },          // Language for editor
-    theme: { type: String, default: "monokai" },      // Theme for editor
+    theme: { type: String, default: null },             // Theme for editor (null = auto-detect light/dark)
     liveSync: { type: Boolean, default: false },       // editor: emit model on every change (raw-string parents only)
     columns: { type: Array, default: () => [] },      // Columns for select_advanced
     previewColumn: { type: String, default: "" },     // Preview column for select_advanced
@@ -123,7 +125,9 @@
   <template v-else-if="isHorizontal">
     <div class="row" :class="{'mb-3':!isInline,'d-flex align-items-center':isInline}">
       <label :for="uid" class="form-label fw-bold col-form-label col-sm-2">{{ (type!='checkbox')?label:'' }}<span v-if="required && type!='checkbox'" class="text-danger ms-1">*</span></label>
-      <div v-if="icon && type!='select_advanced'" class="col-sm-10">
+      <!-- a checkbox/switch has no input-group, so it must not take the icon
+           branch: it would fall through to BsInputRaw and render as a text box -->
+      <div v-if="icon && type!='select_advanced' && type!='checkbox'" class="col-sm-10">
         <div class="input-group">
           <span class="input-group-text text-gray-500" :style="style">
             <FaIcon :fixedwidth="true" :icon="icon" />
@@ -156,8 +160,8 @@
       <div v-else class="col-sm-10">
         <BsInputSelectRaw v-if="type === 'select'" :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :id="uid" :hasError="hasError" :placeholder="placeholder" v-model="model" :values="values" />
         <BsInputTextAreaRaw v-else-if="type === 'textarea'" :rows="rows" :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :id="uid" :hasError="hasError" :placeholder="placeholder" v-model="model" />
-        <AceEditor v-else-if="type === 'editor'" v-model="model" :lang="lang" :theme="theme" :liveSync="liveSync" @save="emit('save')" :style="style" :printMargin="true" @dirty="emit('dirty')" />
-        <BsInputCheckboxRaw v-else-if="type === 'checkbox'" :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :uid="uid" :hasError="hasError" :label="label" v-model="model" />
+        <AceEditor v-else-if="type === 'editor'" v-model="model" :lang="lang" :theme="theme" :liveSync="liveSync" @save="emit('save')" @init="(e) => emit('init', e)" :style="style" :printMargin="true" @dirty="emit('dirty')" />
+        <BsInputCheckboxRaw v-else-if="type === 'checkbox'" :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :uid="uid" :isSwitch="isSwitch" :hasError="hasError" :label="label" v-model="model" />
         <BsInputRaw v-else :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :uid="uid" :type="type" @keyup_enter="emit('keyup_enter')" :hasError="hasError" :placeholder="placeholder" v-model="model" />
         <div v-if="hasError && errors.length>0" class="invalid-feedback">
             {{ errors[0].$message || errors[0] }}
@@ -172,7 +176,8 @@
     <div :class="{'mb-3':!isInline,'d-flex align-items-center':isInline}">
       <label :for="uid" class="form-label fw-bold">{{ (type!='checkbox')?label:'' }}<span v-if="required && type!='checkbox'" class="text-danger ms-1">*</span></label>
       <p v-if="description" v-html="description"></p>
-      <div v-if="icon && type!=='select_advanced'">
+      <!-- see the horizontal branch: a checkbox/switch has no input-group -->
+      <div v-if="icon && type!=='select_advanced' && type!=='checkbox'">
         <div class="input-group">
           <span class="input-group-text text-gray-500" :style="style">
             <FaIcon :fixedwidth="true" :icon="icon" />
@@ -184,11 +189,14 @@
       </div>
       <div v-else>
         <BsInputSelectRaw v-if="type === 'select'" :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :id="uid" :hasError="hasError" :placeholder="placeholder" v-model="model" :values="values" />
-        <BsInputSelectAdvanced v-else-if="type === 'select_advanced'" :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :id="uid" :hasError="hasError" :placeholder="placeholder" v-model="model" :values="values" defaultValue="defaultValue" :multiple="multiple" :columns="columns" :previewColumn="previewColumn" :valueColumn="valueColumn" :pctColumns="pctColumns" :filterColumns="filterColumns" :sticky="sticky" :horizontal="horizontal" :icon="icon" :uid="uid" :label="label" :isLoading="isLoading" :name="name" :isFloating="isFloating"/>
+        <BsInputSelectAdvanced v-else-if="type === 'select_advanced'" :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :id="uid" :hasError="hasError" :placeholder="placeholder" v-model="model" :values="values" :defaultValue="defaultValue" :multiple="multiple" :columns="columns" :previewColumn="previewColumn" :valueColumn="valueColumn" :pctColumns="pctColumns" :filterColumns="filterColumns" :sticky="sticky" :horizontal="horizontal" :icon="icon" :uid="uid" :label="label" :isLoading="isLoading" :name="name" :isFloating="isFloating"/>
         <BsInputTextAreaRaw v-else-if="type === 'textarea'" :rows="rows" :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :id="uid" :hasError="hasError" :placeholder="placeholder" v-model="model" />
-        <AceEditor v-else-if="type === 'editor'" v-model="model" :lang="lang" :theme="theme" :liveSync="liveSync" :style="style" :printMargin="false"  @save="emit('save')" @dirty="emit('dirty')" />
+        <AceEditor v-else-if="type === 'editor'" v-model="model" :lang="lang" :theme="theme" :liveSync="liveSync" :style="style" :printMargin="false" @save="emit('save')" @init="(e) => emit('init', e)" @dirty="emit('dirty')" />
         <BsSshKey v-else-if="[ 'sshPrivateKeyArt', 'sshPublicKey' ].includes(type)" v-model="model" :type="type" :icon="icon" :required="required" />
-        <BsInputCheckboxRaw v-else-if="type === 'checkbox'" :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :id="uid" :hasError="hasError" :label="label" v-model="model" />
+        <!-- BsInputCheckboxRaw declares `uid`, not `id`: passing `id` left it
+             empty, so the rendered <label for=""> matched no input and clicking
+             the label did nothing -->
+        <BsInputCheckboxRaw v-else-if="type === 'checkbox'" :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :uid="uid" :isSwitch="isSwitch" :hasError="hasError" :label="label" v-model="model" />
         <BsInputRaw v-else :readonly="readonly" :disabled="disabled" :style="style" :cssClass="cssClass" :id="uid" :type="type" @keyup_enter="emit('keyup_enter')" :hasError="hasError" :placeholder="placeholder" v-model="model" />
       </div>
       <div v-if="hasError && errors.length>0" class="invalid-feedback">

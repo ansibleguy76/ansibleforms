@@ -86,11 +86,6 @@ const props = defineProps({
 
 // DATA
 
-const sort = ref({
-    field: '',
-    desc: true
-});
-
 const rows = ref(undefined);
 const editedItem = ref({});
 const showEdit = ref(false);
@@ -104,7 +99,7 @@ const fileInputRef = ref(null);
 // validation rules for each field in the form
 const rules = computed(() => {
     const ruleObj = { editedItem: {} } // holdes the rules for each field
-    props.tableFields.forEach((ff, i) => {
+    props.tableFields.forEach((ff, _i) => {
         var rule = {} // holds the rules for a single field
         if(!ff.label){
             ff.label = ff.name
@@ -119,7 +114,7 @@ const rules = computed(() => {
         }
         // required for expressions and enums, the value must be present, but can be a special value like __auto__, __none__ or __all__
         if ((ff.type == 'enum') && ff.required) {
-            var description = `${ff.label} is required`
+            const description = `${ff.label} is required`
             rule.required = helpers.withParams(
                 { description: description, type: "required" },
                 (value) => (value != undefined && value != null && value != '__auto__' && value != '__none__' && value != '__all__')
@@ -127,14 +122,14 @@ const rules = computed(() => {
         }
         // min and max value for numbers
         if ("minValue" in ff) {
-            var description = `${ff.label} must be at least ${ff.minValue}`
+            const description = `${ff.label} must be at least ${ff.minValue}`
             rule.minValue = helpers.withParams(
                 { description: description, type: "minValue" },
                 (value) => !helpers.req(value) || value >= ff.minValue
             )
         }
         if ("maxValue" in ff) {
-            var description = `${ff.label} must be at most ${ff.maxValue}`
+            const description = `${ff.label} must be at most ${ff.maxValue}`
             rule.maxValue = helpers.withParams(
                 { description: description, type: "maxValue" },
                 (value) => !helpers.req(value) || value <= ff.maxValue
@@ -142,14 +137,14 @@ const rules = computed(() => {
         }
         // min and max length for strings
         if ("minLength" in ff) {
-            var description = `${ff.label} must be at least ${ff.minLength} characters long`
+            const description = `${ff.label} must be at least ${ff.minLength} characters long`
             rule.minLength = helpers.withParams(
                 { description: description, type: "minLength" },
                 (value) => !helpers.req(value) || value.length >= ff.minLength
             )
         }
         if ("maxLength" in ff) {
-            var description = `${ff.label} must be at most ${ff.maxLength} characters long`
+            const description = `${ff.label} must be at most ${ff.maxLength} characters long`
             rule.maxLength = helpers.withParams(
                 { description: description, type: "maxLength" },
                 (value) => !helpers.req(value) || value.length <= ff.maxLength
@@ -157,40 +152,56 @@ const rules = computed(() => {
         }
         // regex validation
         if ("regex" in ff) {
-            var regexObj = new RegExp(ff.regex.expression)
-            var description = ff.regex.description
-            if (ff.type == 'file') {
-                rule.regex = helpers.withParams(
-                    { description: description, type: "regex" },
-                    (file) => !helpers.req(file?.name) || regexObj.test(file?.name)
-                )
+            // Guarded like the identical rule in AppForm. This is inside `rules`, a
+            // computed, so a throw here kills the whole table field rather than
+            // reporting one column's problem. Two ways it went wrong: an author typo in
+            // the pattern raises a SyntaxError, and writing `regex: "^x"` instead of
+            // `regex: {expression: "^x"}` made new RegExp(undefined) compile to /(?:)/,
+            // which matches everything - so the constraint silently never failed.
+            const regexSource = (ff.regex && typeof ff.regex === 'object') ? ff.regex.expression : ff.regex
+            var regexObj = null
+            if (typeof regexSource === 'string' && regexSource) {
+                try { regexObj = new RegExp(regexSource) } catch (e) {
+                    console.error(`Column '${ff.name}': the regex '${regexSource}' is not valid (${e.message}); the rule is ignored.`)
+                }
             } else {
-                rule.regex = helpers.withParams(
-                    { description: description, type: "regex" },
-                    (value) => !helpers.req(value) || regexObj.test(value)
-                )
+                console.error(`Column '${ff.name}': regex must be given as { expression: "...", description: "..." }; the rule is ignored.`)
+            }
+            const description = (ff.regex && typeof ff.regex === 'object') ? ff.regex.description : undefined
+            if (regexObj) {
+                if (ff.type == 'file') {
+                    rule.regex = helpers.withParams(
+                        { description: description, type: "regex" },
+                        (file) => !helpers.req(file?.name) || regexObj.test(file?.name)
+                    )
+                } else {
+                    rule.regex = helpers.withParams(
+                        { description: description, type: "regex" },
+                        (value) => !helpers.req(value) || regexObj.test(value)
+                    )
+                }
             }
         }
         // notIn and in
         if ("notIn" in ff) {
-            var description = ff.notIn.description
+            const description = ff.notIn.description
             rule.notIn = helpers.withParams(
                 { description: description, type: "notIn" },
-                (value) => !helpers.req(value) || (form.value[ff.notIn.ff] != undefined && Array.isArray(form.value[ff.notIn.ff]) && !form.value[ff.notIn.ff].includes(value))
+                (value) => !helpers.req(value) || (props.form[ff.notIn.field] != undefined && Array.isArray(props.form[ff.notIn.field]) && !props.form[ff.notIn.field].includes(value))
             )
         }
         if ("in" in ff) {
-            var description = ff.in.description
+            const description = ff.in.description
             rule.in = helpers.withParams(
                 { description: description, type: "in" },
-                (value) => !helpers.req(value) || (form.value[ff.in.ff] != undefined && Array.isArray(form.value[ff.in.ff]) && form.value[ff.in.ff].includes(value))
+                (value) => !helpers.req(value) || (props.form[ff.in.field] != undefined && Array.isArray(props.form[ff.in.field]) && props.form[ff.in.field].includes(value))
             )
         }
         if ("sameAs" in ff) {
-            var description = `Must match the field '${currentForm.value.fields.find((x) => ff.sameAs == x.name).label || ff.sameAs}'`
+            const description = `Must match the field '${props.tableFields.find((x) => ff.sameAs == x.name)?.label || ff.sameAs}'`
             rule.sameAs = helpers.withParams(
                 { description: description, type: "sameAs" },
-                (value) => !helpers.req(value) || (form.value[ff.sameAs] != undefined && value == form.value[ff.sameAs])
+                (value) => !helpers.req(value) || (props.form[ff.sameAs] != undefined && value == props.form[ff.sameAs])
             )
         }
 
@@ -209,15 +220,22 @@ const editFields = computed(() => {
 watch(
     () => props.values,
     (newValues) => {
-        rows.value = newValues;
-        if (newValues?.length > 0) {
-            const fields = props.tableFields.map(x => x.name);
-            const data = Object.keys(newValues[0]);
-            // const missing = Helpers.findMissing(data, fields);
-            // if (missing.length > 0) {
-            //     emit('warning', missing);
-            // }
-        }
+        // A COPY. `rows` used to be the parent's own array, so every splice/push/assign
+        // below wrote straight into it - and AppForm hands the same array object to
+        // form[name] AND defaults[name] (both by reference). Deleting a row therefore
+        // mutated the defaults too, so when the field was re-evaluated and "reset to its
+        // default" the deleted row never came back: the original prefill of a stored job
+        // was gone for the rest of the session. Every mutation here already emits
+        // update:model-value, so the parent gets the new array that way.
+        rows.value = Array.isArray(newValues) ? [...newValues] : newValues;
+        // if (newValues?.length > 0) {
+        //     const fields = props.tableFields.map(x => x.name);
+        //     const data = Object.keys(newValues[0]);
+        //     const missing = Helpers.findMissing(data, fields);
+        //     if (missing.length > 0) {
+        //         emit('warning', missing);
+        //     }
+        // }
     },
     { immediate: true }
 );
@@ -308,6 +326,16 @@ function undoRemoveItem(index) {
     emit('update:model-value', rows.value);
 }
 
+// Key-sorted JSON, so two rows compare equal when they hold the same data whatever order
+// their properties happen to be in.
+function canonical(value) {
+    if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';
+    if (value && typeof value === 'object') {
+        return '{' + Object.keys(value).sort().map(k => JSON.stringify(k) + ':' + canonical(value[k])).join(',') + '}';
+    }
+    return JSON.stringify(value ?? null);
+}
+
 function getEditedItemValues() {
     // Create a copy of editedItem and flatten enum fields with valueColumn
     const result = Helpers.deepClone(editedItem.value);
@@ -351,15 +379,26 @@ function saveItem() {
                 rows.value.splice(editIndex.value, 0, getEditedItemValues());
             }
         } else {
-            if (props.updateMarker && !editedItem.value[props.updateMarker] && !editedItem.value[insert_marker.value]) {
-                // compare original and edited item
+            // Compare what will actually be STORED, not the live edit buffer.
+            //
+            // getEditedItemValues() flattens an `enum` column that has a valueColumn back
+            // from the selected row object to its primitive - and merely opening the edit
+            // pane inflates it, because the select matches the string default and emits
+            // the whole row. So the old comparison was {host:"web01"} against
+            // {host:{name:"web01",...}}: they differ as text, and a row where nothing had
+            // been touched was written back marked as updated. The playbook then received
+            // an unchanged row flagged as changed.
+            //
+            // Key-sorted, so a difference in property ORDER between the stored row and the
+            // edit buffer cannot masquerade as a change either.
+            const stored = getEditedItemValues();
+            if (props.updateMarker && !stored[props.updateMarker] && !stored[insert_marker.value]) {
                 const original = rows.value[editIndex.value];
-                const edited = editedItem.value;
-                if (JSON.stringify(original) !== JSON.stringify(edited)) {
-                    editedItem.value[props.updateMarker] = true; // mark as updated
+                if (canonical(original) !== canonical(stored)) {
+                    stored[props.updateMarker] = true; // mark as updated
                 }
             }
-            rows.value[editIndex.value] = getEditedItemValues();
+            rows.value[editIndex.value] = stored;
         }
         emit('update:model-value', rows.value);
         closeOffCanvas();
@@ -398,7 +437,7 @@ function init() {
         insert_marker.value = "__inserted__";
     }
 
-    rows.value = props.values;
+    rows.value = Array.isArray(props.values) ? [...props.values] : props.values; // copy - see the watcher above
 
 }
 
@@ -411,43 +450,50 @@ function triggerFileInput() {
 async function handleFileLoad(event) {
     const file = event.target.files?.[0];
     if (!file) return;
-    
-    // Check file extension
-    const fileName = file.name.toLowerCase();
-    if (!fileName.endsWith('.yml') && !fileName.endsWith('.yaml')) {
-        toast.error('Please select a .yml or .yaml file');
-        return;
-    }
-    
+    // try/finally : the early returns below (wrong extension, unparsable file)
+    // used to skip the reset at the end, so the <input type=file> kept the same
+    // value - re-picking the SAME path fired no change event and the button was
+    // simply dead until a different file was chosen.
     try {
-        const text = await file.text();
-        const parsed = YAML.parse(text);
-        
-        // Must be valid YAML
-        if (parsed === null || parsed === undefined) {
-            toast.error('Invalid YAML file - no data found');
+    
+        // Check file extension
+        const fileName = file.name.toLowerCase();
+        if (!fileName.endsWith('.yml') && !fileName.endsWith('.yaml')) {
+            toast.error('Please select a .yml or .yaml file');
             return;
         }
-        
-        // Force to array if not already
-        let arrayData;
-        if (Array.isArray(parsed)) {
-            arrayData = parsed;
-        } else {
-            // Wrap single object in array
-            arrayData = [parsed];
-            toast.info('Single object converted to array');
-        }
-        
-        rows.value = arrayData;
-        emit('update:model-value', arrayData);
-        toast.success(`Loaded ${arrayData.length} row(s) from ${file.name}`);
-    } catch (e) {
-        toast.error(`Failed to parse ${file.name}: ${e.message}`);
-    }
     
-    // Reset input so same file can be loaded again
-    event.target.value = '';
+        try {
+            const text = await file.text();
+            const parsed = YAML.parse(text);
+        
+            // Must be valid YAML
+            if (parsed === null || parsed === undefined) {
+                toast.error('Invalid YAML file - no data found');
+                return;
+            }
+        
+            // Force to array if not already
+            let arrayData;
+            if (Array.isArray(parsed)) {
+                arrayData = parsed;
+            } else {
+                // Wrap single object in array
+                arrayData = [parsed];
+                toast.info('Single object converted to array');
+            }
+        
+            rows.value = arrayData;
+            emit('update:model-value', arrayData);
+            toast.success(`Loaded ${arrayData.length} row(s) from ${file.name}`);
+        } catch (e) {
+            toast.error(`Failed to parse ${file.name}: ${e.message}`);
+        }
+    
+    } finally {
+        // Reset input so same file can be loaded again
+        event.target.value = '';
+    }
 }
 
 // Handle download as YAML

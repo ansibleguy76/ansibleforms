@@ -1,0 +1,46 @@
+name: Docker
+
+# Builds the image without pushing it, so "does the image still assemble" is answered at
+# review time instead of by hand during publish.sh. Path-filtered because it is the slow
+# one - it runs npm ci and a vite build inside the image - and for that reason it is not
+# a check worth requiring in branch protection.
+
+on:
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - 'Dockerfile'
+      - 'Dockerfile.base'
+      - 'client/package.json'
+      - 'client/package-lock.json'
+      - 'server/package.json'
+      - 'server/package-lock.json'
+      - 'generate-build-info.sh'
+      - '.github/workflows/docker.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

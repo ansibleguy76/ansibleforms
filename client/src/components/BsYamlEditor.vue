@@ -12,10 +12,10 @@
 /*                                                                */
 /******************************************************************/
 
-import ace from 'ace-builds';
+import 'ace-builds';
 import 'ace-builds/src-noconflict/mode-yaml';
-import 'ace-builds/src-noconflict/theme-monokai';
 import YAML from 'yaml';
+import Helpers from '@/lib/Helpers';
 import { toast } from 'vue-sonner';
 
 const model = defineModel();
@@ -151,10 +151,9 @@ function handleDownload() {
           <FaIcon :icon="icon" />
         </span>
         <div class="ace-editor-wrapper" :class="{ 'is-invalid': hasError }">
-          <AceEditor 
-            v-model="yamlString" 
-            lang="yaml" 
-            theme="monokai"
+          <AceEditor
+            v-model="yamlString"
+            lang="yaml"
             :readonly="disabled"
             :style="{ width: '100%', height: '250px', fontSize: '1rem' }"
             @blur="emit('blur')"
@@ -163,9 +162,8 @@ function handleDownload() {
       </div>
       <div v-else class="ace-editor-wrapper" :class="{ 'is-invalid': hasError }">
         <AceEditor
-          v-model="yamlString" 
-          lang="yaml" 
-          theme="monokai"
+          v-model="yamlString"
+          lang="yaml"
           :readonly="disabled"
           :style="{ width: '100%', height: '250px', fontSize: '1rem' }"
           @blur="emit('blur')"

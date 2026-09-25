@@ -63,11 +63,11 @@
         return { weekNumber, year: tempWeekDate.getFullYear() };
     }
 
-    function focus(event){
+    function focus(_event){
         hasFocus.value = true;
     }
-    
-    function blur(event){
+
+    function blur(_event){
         hasFocus.value = false;
         // Sync picker to output when losing focus
         syncToOutput();

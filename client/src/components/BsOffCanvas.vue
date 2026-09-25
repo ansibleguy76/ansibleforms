@@ -27,7 +27,7 @@
 
     // PROPS
 
-    const props = defineProps({
+    defineProps({
         title: {
             type: String,
             required: true
@@ -47,7 +47,7 @@
     function close() {
         emit('close');
     }
-    function backdropClick(e) {
+    function backdropClick(_e) {
         close()
     }
 </script>

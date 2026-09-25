@@ -12,11 +12,12 @@
     /*                                                                */
     /******************************************************************/
 
-    import { ref, nextTick } from 'vue';
+    import { ref, computed, nextTick } from 'vue';
     import { VAceEditor } from 'vue3-ace-editor';
     import ace from 'ace-builds';
     import 'ace-builds/src-noconflict/mode-yaml'; // Load the language definition file used below
     import 'ace-builds/src-noconflict/theme-monokai'; // Load the theme definition file used below
+    import 'ace-builds/src-noconflict/theme-chrome';
     import extSearchboxUrl from 'ace-builds/src-noconflict/ext-searchbox?url';
     import workerYamlUrl from 'ace-builds/src-noconflict/worker-yaml?url';
 
@@ -24,7 +25,7 @@
 
     ace.config.setModuleUrl('ace/mode/yaml_worker', workerYamlUrl);
     ace.config.setModuleUrl('ace/ext/searchbox', extSearchboxUrl);    
-    const emit = defineEmits(['update:modelValue','dirty','save']);
+    const emit = defineEmits(['update:modelValue','dirty','save','init']);
 
     // MODEL
 
@@ -44,7 +45,7 @@
             },
             theme: {
                 type: String,
-                default: 'monokai',
+                default: null,
             },
             style: {
                 type: [String, Object],
@@ -62,10 +63,16 @@
     // DATA
 
     const mounted = ref(false);
+    const systemDark = ref(document.documentElement.getAttribute('data-bs-theme') === 'dark');
+    const themeObserver = new MutationObserver(() => {
+        systemDark.value = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+    });
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-bs-theme'] });
+    const effectiveTheme = computed(() => props.theme || (systemDark.value ? 'monokai' : 'chrome'));
 
     // METHODS
 
-    const change = (value) => {
+    const change = (_value) => {
         if (mounted.value){
             // opt-in : keep the bound model in sync on every edit (not only on
             // blur) so parents can react live — eg detect a reverted change.
@@ -112,11 +119,12 @@
     }),
     onBeforeUnmount(()=> {
         document.removeEventListener('keydown', keyListener.value);
+        themeObserver.disconnect();
     })
 
 </script>
 <template>
     <div>
-        <v-ace-editor @change="change" @blur="blur" v-model:value="code" :lang="lang" :theme="theme" :style="style" :printMargin="false" :options="{ useWorker: true}" />
+        <v-ace-editor @change="change" @blur="blur" @init="(e) => emit('init', e)" v-model:value="code" :lang="lang" :theme="effectiveTheme" :style="style" :printMargin="false" :options="{ useWorker: true}" />
     </div>
 </template>

@@ -13,12 +13,11 @@
   /*                                                                */
   /******************************************************************/
 
-  import { useRoute, useRouter } from "vue-router";
+  import { useRouter } from "vue-router";
 
   // INIT
 
   const emit = defineEmits(["click"]);
-  const route = useRoute();
   const router = useRouter();
 
   // PROPS
@@ -60,14 +59,13 @@
     if (path) {
       router
         .replace({ path: "/", query: { category: encodeURIComponent(path) } })
-        .catch((e) => {});
+        .catch((_e) => {});
     } else {
-      router.replace({ path: "/" }).catch((e) => {});
+      router.replace({ path: "/" }).catch((_e) => {});
     }
   }
 
   function filterAllowedForms(category){
-    var intersect = [];
     return filterForms(category)
   };
 
@@ -107,9 +105,6 @@
     return filterAllowedForms(category).length;
   }
 
-  function isAdmin() {
-    return props.roles.includes("admin");
-  }
 </script>
 <template>
   <li role="button" v-if="countFormsByCategory(path) > 0">

@@ -8,12 +8,12 @@ const Form = {
             return result.data;
         }catch(err){
             if(err.response?.status == 401){
-                throw new Error(err.message)
+                throw new Error(err.message, { cause: err })
             }
             const error = err.response?.data?.error || err.message;
             const details = err.response?.data?.details;
             const errorMessage = details ? `${error}\n\n${details}` : error;
-            throw new Error(`Could not load the forms.\n\n${errorMessage}`)
+            throw new Error(`Could not load the forms.\n\n${errorMessage}`, { cause: err })
         }
     },
 
@@ -23,12 +23,12 @@ const Form = {
             return result.data;
         }catch(err){
             if(err.response?.status == 401){
-                throw new Error(err.message)
+                throw new Error(err.message, { cause: err })
             }
             const error = err.response?.data?.error || err.message;
             const details = err.response?.data?.details;
             const errorMessage = details ? `${error}\n\n${details}` : error;
-            throw new Error(`Could not load the form.\n\n${errorMessage}`)
+            throw new Error(`Could not load the form.\n\n${errorMessage}`, { cause: err })
         }
     },    
 
@@ -38,12 +38,12 @@ const Form = {
             return result.data;
         }catch(err){
             if(err.response?.status == 401){
-                throw new Error(err.message)
+                throw new Error(err.message, { cause: err })
             }
             const error = err.response?.data?.error || err.message;
             const details = err.response?.data?.details;
             const errorMessage = details ? `${error}\n\n${details}` : error;
-            throw new Error(`Could not load the forms list.\n\n${errorMessage}`)
+            throw new Error(`Could not load the forms list.\n\n${errorMessage}`, { cause: err })
         }
     },
 
@@ -53,12 +53,12 @@ const Form = {
             return true;
         }catch(err){
             if(err.response?.status == 401){
-                throw new Error(err.message)
+                throw new Error(err.message, { cause: err })
             }
             const error = err.response?.data?.error || err.message;
             const details = err.response?.data?.details;
             const errorMessage = details ? `${error}\n\n${details}` : error;
-            throw new Error(`Could not save the forms.\n\n${errorMessage}`)
+            throw new Error(`Could not save the forms.\n\n${errorMessage}`, { cause: err })
         }
     },
     async validate(forms){
@@ -67,12 +67,12 @@ const Form = {
             return true;
         }catch(err){
             if(err.response?.status == 401){
-                throw new Error(err.message)
+                throw new Error(err.message, { cause: err })
             }
             const error = err.response?.data?.error || err.message;
             const details = err.response?.data?.details;
             const errorMessage = details ? `${error}\n\n${details}` : error;
-            throw new Error(`Could not validate the forms.\n\n${errorMessage}`)
+            throw new Error(`Could not validate the forms.\n\n${errorMessage}`, { cause: err })
         }
     },
 

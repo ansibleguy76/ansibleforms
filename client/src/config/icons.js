@@ -1,0 +1,46 @@
+// The icon catalogue offered by the category picker (admin/categories.vue) and the
+// designer's icon pickers.
+//
+// Every name must resolve through the FontAwesome library built in plugins/index.js
+// (`library.add(fas, far, fab)`), and no two entries may render the SAME glyph. FontAwesome
+// keeps its FA5 names as ALIASES of the FA6/7 ones - `cog` is an alias of `gear`, and both
+// resolve, so listing both put six pairs of identical-looking icons in the picker with
+// nothing to tell them apart. Only the canonical name is listed; an alias still renders
+// fine, so a category that already stores `icon: cog` keeps working and categories.vue
+// renders an extra <option> for a value outside this list.
+//
+// Pinned by client/tests/icon-catalog.test.js, which compares the FULL rendered SVG path
+// through the real library - a prefix comparison would not see it.
+export const availableIcons = [
+  'bullseye', 'bars', 'folder', 'folder-open', 'server', 'database', 'cloud',
+  'network-wired', 'shield-halved', 'lock', 'key', 'users', 'user',
+  'user-gear', 'code', 'code-branch', 'terminal', 'laptop-code',
+  'globe', 'earth-americas', 'building', 'sitemap',
+  'sliders-h', 'wrench', 'screwdriver-wrench', 'toolbox',
+  'play', 'rocket', 'bolt', 'fire', 'bug', 'clipboard-list',
+  'list', 'th-list', 'table', 'chart-bar', 'chart-line', 'chart-pie',
+  'bell', 'envelope', 'comment', 'comments', 'file', 'file-code',
+  'file-lines', 'book', 'graduation-cap',
+  'hard-drive', 'microchip', 'memory', 'plug', 'tower-broadcast',
+  'cube', 'cubes', 'box', 'boxes-stacked', 'layer-group',
+  'palette', 'paint-brush', 'wand-magic-sparkles',
+  'question-circle',
+  'heart', 'star', 'flag', 'tag', 'tags', 'bookmark',
+  'circle-play', 'circle-check', 'circle-xmark', 'circle-info',
+  'house', 'gear', 'gears', 'download', 'upload', 'link',
+  'arrow-right', 'arrow-left', 'arrow-up', 'arrow-down',
+  'plus', 'minus', 'xmark', 'check', 'search',
+  'eye', 'eye-slash', 'pen', 'pencil', 'trash', 'copy',
+  'clock', 'calendar', 'map', 'location-dot',
+  'wifi', 'signal', 'battery-full', 'power-off',
+  'desktop', 'mobile', 'tablet', 'laptop',
+  'image', 'camera', 'video', 'music', 'headphones',
+  'shopping-cart', 'credit-card', 'money-bill', 'coins',
+  'truck', 'plane', 'car', 'bicycle',
+  'flask', 'atom', 'dna', 'microscope',
+  'hammer', 'shield', 'fingerprint', 'robot',
+  'share-nodes', 'rss', 'at', 'hashtag',
+  'circle', 'square', 'triangle-exclamation',
+  'spinner', 'sync', 'redo', 'undo',
+  'expand', 'compress', 'maximize', 'minimize',
+];

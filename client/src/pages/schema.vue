@@ -1,17 +1,13 @@
 <script setup>
 import axios from 'axios'
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useAppStore } from '@/stores/app'
 import { toast } from 'vue-sonner'
-import { useRoute, useRouter } from 'vue-router'
 import State from '@/lib/State'
-import Navigate from '@/lib/Navigate'
 
 const store = useAppStore()
-const router = useRouter()
-const route = useRoute()
 
-const emit = defineEmits(['recheckSchema'])
+defineEmits(['recheckSchema'])
 
 const error = store.errorMessage
 const loading = ref(false)
@@ -44,16 +40,31 @@ async function create() {
   }
 }
 
+function stopCountdown() {
+  if (countdownInterval) {
+    clearInterval(countdownInterval)
+    countdownInterval = null
+  }
+}
+
 function startCountdown() {
+  // clear first : a second call used to leave the previous interval running, so the
+  // counter dropped twice a second and the reload fired early
+  stopCountdown()
   countdown.value = 3
   countdownInterval = setInterval(() => {
     countdown.value--
     if (countdown.value <= 0) {
-      clearInterval(countdownInterval)
+      stopCountdown()
       window.location.href = document.baseURI
     }
   }, 1000)
 }
+
+// Without this the countdown survived leaving the page and then navigated the browser to
+// the app root regardless of where the user had gone in the meantime - a hard reload out
+// from under them a few seconds after they left.
+onBeforeUnmount(stopCountdown)
 
 onMounted(async () => {
   try {

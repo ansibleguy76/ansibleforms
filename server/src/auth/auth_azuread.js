@@ -16,7 +16,7 @@ const initialize = async () =>{
 
   var azureConfig
   var azure
-  var azureEnabled = false
+  var azureEnabled
   try{
     azure = await AzureAd.isEnabled()
     azureEnabled = !!azure.enable

@@ -86,7 +86,7 @@ var State = {
         return false;
       } else {
         store.errorMessage = "Failed to check AnsibleForms database schema\n\nUnknown error";
-        throw new Error(store.errorMessage);
+        throw new Error(store.errorMessage, { cause: err });
       }
     }
   }, 

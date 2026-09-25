@@ -100,12 +100,6 @@ function onTabClick(tab, ev) {
     if (tab.disabled) return;
     activate(tab.id);
 }
-
-function onCloseClick(tab, ev) {
-    ev?.preventDefault();
-    ev?.stopPropagation();
-    tab.onClose?.();
-}
 </script>
 
 <template>

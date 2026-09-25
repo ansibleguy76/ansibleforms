@@ -25,7 +25,9 @@ const execute = function(req, res) {
           })
           .catch((err)=>{
             logger.error(`Error in expression : ${err}`)
-            res.json(new RestResult("success","failed to execute expression " + expression,undefined,err.toString()))
+            // "error", not "success" - see the job controller ; the message already said
+            // "failed" while the status field said the opposite
+            res.status(500).json(new RestResult("error","failed to execute expression " + expression,undefined,err.toString()))
           })
     }
 };

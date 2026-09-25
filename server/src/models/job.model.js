@@ -55,7 +55,7 @@ function pushForminfoToExtravars(formObj, extravars, creds = {}) {
   for (const fieldName of topFields) {
     // Check if the field exists in formObj and if the property is not present in extravars
     if (
-      formObj.hasOwnProperty(fieldName) &&
+      Object.prototype.hasOwnProperty.call(formObj, fieldName) &&
       extravars[`__${fieldName}__`] === undefined
     ) {
       extravars[`__${fieldName}__`] = formObj[fieldName];
@@ -65,6 +65,111 @@ function pushForminfoToExtravars(formObj, extravars, creds = {}) {
   extravars["__credentials__"] = { ...extravars["__credentials__"], ...creds };
   // console.log(extravars)
 }
+/**
+ * Strip the reserved `__x__` execution parameters from a CLIENT-supplied extravars object.
+ *
+ * pushForminfoToExtravars copies playbook, inventory, tags, limit, credentials and friends
+ * out of the FORM definition into `__x__` keys - but only when the key is not already set.
+ * Since the launch controller passed req.body.extravars through untouched, a caller could
+ * pre-set them and win:
+ *
+ *   {"formName":"Some form I may run","extravars":{"__playbook__":"provision.yml"}}
+ *
+ * ...which runs a playbook the role filter on forms was there to keep them away from, with
+ * __playbookSubPath__ choosing the working directory and __ansibleCredentials__ choosing
+ * whose credentials to inject. These belong to the form, never to the request.
+ *
+ * `__verbose__` is the one exception: it is a real client choice and the controller checks
+ * allowVerboseMode before this runs.
+ */
+const CLIENT_SETTABLE_RESERVED = new Set(["__verbose__"]);
+
+/**
+ * The reserved keys the FORM declares as fields of its own.
+ *
+ * Several `__x__` keys are a documented feature: "you can also dynamically set the template
+ * by using a field called `__template__`" (help.yaml), and the same for `__playbook__`,
+ * `__inventory__` and `__tags__`. Such a field is declared in config.yaml, so it is the FORM
+ * author's decision - but its value is submitted by the browser like any other field, which
+ * makes it indistinguishable on the wire from a key an attacker injected into a raw API
+ * call. Stripping every `__x__` therefore silently disabled the documented overrides: the
+ * key was dropped, pushForminfoToExtravars then filled it from the static form property
+ * (it only writes a reserved key when it is absent), and the job ran the WRONG template
+ * while reporting success.
+ *
+ * The form definition is the thing that tells the two apart, so it is the gate: a reserved
+ * key is accepted only when the form declares a field of exactly that name. A client that
+ * invents `__playbook__` for a form which never declared it is still refused, which is the
+ * hole this was written to close.
+ */
+function declaredReservedFields(formObj) {
+  const names = new Set();
+  if (!formObj || typeof formObj !== "object") return names;
+  const addFields = (fields) => {
+    for (const field of fields || []) {
+      if (field && typeof field.name === "string" && /^__.*__$/.test(field.name)) {
+        names.add(field.name);
+      }
+    }
+  };
+  addFields(formObj.fields);
+  // multistep: each step carries its own fields, and a step is launched as a form of its own
+  for (const step of formObj.steps || []) addFields(step?.fields);
+  return names;
+}
+function stripReservedExtravars(extravars, formObj = null) {
+  if (!extravars || typeof extravars !== "object") return {};
+  const declared = declaredReservedFields(formObj);
+  const removed = [];
+  for (const key of Object.keys(extravars)) {
+    if (/^__.*__$/.test(key) && !CLIENT_SETTABLE_RESERVED.has(key) && !declared.has(key)) {
+      delete extravars[key];
+      removed.push(key);
+    }
+  }
+  if (removed.length) {
+    logger.warning(`Ignoring reserved extravars supplied by the client : ${removed.join(", ")}`);
+  }
+  return extravars;
+}
+
+/**
+ * Put the launching user into the extravars as `ansibleforms_user`, trimmed to whatever the
+ * instance and the form asked for (see Helpers.userForExtravars).
+ *
+ * Called from Job.launch rather than from the four places that used to assign the object -
+ * the two launch controllers, the schedule and the datasource - because this is the first
+ * point where the FORM is known, and the form may override the global setting with its own
+ * `userExtravars`. One place instead of four, and it runs before the job row is written, so
+ * the copy in jobs.extravars is trimmed too : that copy, not just the one AWX receives, is
+ * half of what the setting exists to stop leaking.
+ *
+ * Delete first, ALWAYS. A client controls req.body.extravars and the controllers used to
+ * overwrite `ansibleforms_user` with the real user - but under `none` there is nothing to
+ * overwrite it with, so an assignment that is merely skipped would leave a forged object
+ * standing in for the one the setting took away.
+ *
+ * Whose user object it is : the `user` passed to Job.launch, always, with one exception.
+ * A relaunch (`replay`) replays a stored job, whose extravars carry the user who SUBMITTED
+ * it, and replaying a job must not rewrite who ran it, so that one is kept. If the stored
+ * job has none, because it ran under `none`, the replay gets none either; filling in the
+ * person who pressed relaunch would make them the submitter.
+ *
+ * Nothing else may keep a user found in the extravars. The launch controllers get them
+ * from a request body, and the schedule and the datasource get them from their own
+ * `extra_vars` YAML, which whoever edits the schedule writes. Either way an
+ * `ansibleforms_user` in there is somebody claiming to be a user they are not, which is
+ * precisely the claim the FAQ tells playbook authors to assert on.
+ */
+function setUserExtravars(extravars, user, formObj, replay = false) {
+  const source = replay ? extravars.ansibleforms_user : user;
+  delete extravars.ansibleforms_user;
+  if (source === undefined || source === null) return extravars;
+  const trimmed = Helpers.userForExtravars(source, formObj?.userExtravars);
+  if (trimmed !== undefined) extravars.ansibleforms_user = trimmed;
+  return extravars;
+}
+
 function delay(t, v) {
   return new Promise((resolve) => setTimeout(resolve, t, v));
 }
@@ -131,7 +236,7 @@ Exec.executeCommand = (cmd, jobid, counter) => {
       // capture the abort event, logging only
       ac.signal.addEventListener(
         "abort",
-        (event) => {
+        () => {
           logger.warning("Operator aborted the process");
         },
         { once: true }
@@ -307,7 +412,7 @@ Job.abandon = async function (all = false) {
 };
 Job.resetAbortRequested = async function (id) {
   logger.debug(`Resetting abort requested for job ${id}`);
-  const res = await mysql.do(
+  await mysql.do(
     "UPDATE AnsibleForms.`jobs` set abort_requested=0 WHERE id=?",
     [id]
   );
@@ -370,8 +475,29 @@ Job.isAbortRequested = async function (id) {
   );
   return !!res[0].abort_requested;
 };
-Job.abort = async function (id) {
+/**
+ * @param {object} user The caller. REQUIRED - this had no authorization at all, so any
+ *   authenticated user could abort any other user's running playbook by id. Every sibling
+ *   (delete, findById) filters on j.user/j.user_type; this one did not, which also made
+ *   the AccessDeniedError branch in both job controllers dead code.
+ *   Aborting is a mutation of somebody else's run, so it uses the OWNER rule rather than
+ *   the read rule - showAllJobLogs lets you watch a job, not kill it.
+ */
+Job.abort = async function (user, id) {
   logger.notice(`Aborting job ${id}`);
+  await Job.checkExists(id);
+  if (!user || !user.username) {
+    throw new Errors.AccessDeniedError(`You do not have access to job ${id}`);
+  }
+  if (!user.roles?.includes("admin")) {
+    const owned = await mysql.do(
+      "SELECT id FROM AnsibleForms.`jobs` WHERE id=? AND user=? AND user_type=?",
+      [id, user.username, user.type]
+    );
+    if (owned.length !== 1) {
+      throw new Errors.AccessDeniedError(`You do not have access to job ${id}`);
+    }
+  }
   const abort_requested = await Job.isAbortRequested(id);
   if (abort_requested) {
     throw new Errors.ConflictError("Abort already requested for this job");
@@ -430,8 +556,8 @@ Job.createOutput = async function (record) {
   // logger.debug(`Creating job output`)
   if (record.output) {
     // insert output and return status in 1 go
-    const check = await Job.checkExists(record.job_id);
-    const dummy = await mysql.do(
+    await Job.checkExists(record.job_id);
+    await mysql.do(
       "INSERT INTO AnsibleForms.`job_output` set ?;",
       [record]
     );
@@ -443,7 +569,7 @@ Job.delete = async function (user, id) {
 
   var query;
   var params;
-  const check = await Job.checkExists(id);
+  await Job.checkExists(id);
   if (user.roles.includes("admin") || user.options?.showAllJobLogs) {
     query =
       "SELECT j.*,sj.subjobs,j2.no_of_records,o.counter FROM AnsibleForms.jobs j LEFT JOIN (SELECT parent_id,GROUP_CONCAT(id separator ',') subjobs FROM AnsibleForms.jobs GROUP BY parent_id) sj ON sj.parent_id=j.id,(SELECT COUNT(id) no_of_records FROM AnsibleForms.jobs)j2,(SELECT max(`order`)+1 counter FROM AnsibleForms.job_output WHERE job_output.job_id=?)o WHERE j.id=?;";
@@ -465,6 +591,55 @@ Job.delete = async function (user, id) {
     [id, id]
   );
   return result;
+};
+// Retention. `job_output.job_id` is ON DELETE CASCADE, so output rows follow their
+// job automatically - but `parent_id` has NO foreign key, so a multistep parent has
+// to take its children with it explicitly or they are orphaned (the same reason
+// Job.delete above matches `id = ? OR parent_id = ?`).
+//
+// Only FINISHED jobs are eligible : `end IS NOT NULL` plus an explicit exclusion of
+// 'running', so a long-running or awaiting-approval job is never removed however old
+// it is. Parents are selected first and deleted with their children, which also means
+// a child is never deleted out from under a parent that is still running.
+//
+// Deleted in batches : the first run on an instance that has never pruned could
+// otherwise lock the table for minutes.
+// The statuses a job can never leave. WHITELISTED on purpose : blacklisting 'running'
+// looked equivalent and was not, because all four approval paths write status 'approve'
+// TOGETHER WITH an `end` timestamp (see the Job.update calls around the approval
+// handling). A job awaiting approval therefore looks finished, and pruning it destroys
+// un-executed work plus the approval link that was mailed out - not history.
+// 'abandoned' has no `end` at all (Job.abandon only sets the status), so age is measured
+// on COALESCE(end, start) or those rows would never be prunable.
+// 'warning' belongs here : Multistep.launch writes it as a FINAL status when a step failed
+// with continue:true. Leaving it out meant the retention sweep never selected those parents,
+// and because children are only removed via `OR parent_id IN (?)`, every step row and all
+// their job_output survived too - for exactly the jobs that tend to be the largest.
+const TERMINAL_STATUS = ['success', 'failed', 'aborted', 'rejected', 'abandoned', 'warning'];
+
+Job.removeOlderThan = async function (days, batchSize = 500) {
+  const keep = parseInt(days, 10);
+  // 0 / absent / negative means keep for ever - never turn that into a delete
+  if (!keep || keep < 1) return 0;
+  var removed = 0;
+  for (;;) {
+    const candidates = await mysql.do(
+      "SELECT id FROM AnsibleForms.`jobs` " +
+      "WHERE parent_id IS NULL AND status IN (?) " +
+      "AND COALESCE(`end`, `start`) < (NOW() - INTERVAL ? DAY) LIMIT ?",
+      [TERMINAL_STATUS, keep, batchSize]
+    );
+    if (candidates.length === 0) break;
+    const ids = candidates.map((r) => r.id);
+    const res = await mysql.do(
+      "DELETE FROM AnsibleForms.`jobs` WHERE id IN (?) OR parent_id IN (?)",
+      [ids, ids]
+    );
+    removed += res?.affectedRows || 0;
+    // a batch that deleted nothing would loop for ever
+    if (!res?.affectedRows) break;
+  }
+  return removed;
 };
 Job.checkExists = async function (id) {
   const res = await mysql.do(
@@ -500,10 +675,10 @@ Job.findApprovals = async function (user) {
   if (user.roles.includes("admin")) {
     return res.length;
   } else {
-    res.forEach((item, i) => {
+    res.forEach((item) => {
       //
       var matches = item.approval
-        .match(/\"roles\":\[([^\]]*)\]/)[1]
+        .match(/"roles":\[([^\]]*)\]/)[1]
         .replaceAll('"', "")
         .split(",")
         .filter((x) => user.roles.includes(x));
@@ -516,7 +691,7 @@ Job.findById = async function (user, id, asText, logSafe = false) {
   logger.info(`Finding job ${id}`);
   var query;
   var params;
-  const check = await Job.checkExists(id);
+  await Job.checkExists(id);
   // Sanitize timezone to prevent SQL injection - only allow valid timezone format
   // Sanitize timezone to prevent SQL injection - only allow valid timezone format
   const safeTimezone = loggerConfig.tz.match(/^[A-Za-z/_+-]+$/) ? loggerConfig.tz : 'UTC';
@@ -573,13 +748,30 @@ Job.findById = async function (user, id, asText, logSafe = false) {
         jobLogContent = fs.readFileSync(logPath, "utf-8");
       }
     } catch (e) {
-      logger.warn(`Could not read job_log_${id}.log: ${e.message}`);
+      // logger.warning, not .warn : this logger is built with winston.config.syslog.levels,
+      // which has no `warn`. The TypeError thrown here escaped to the outer catch, which
+      // returns [] - so a job whose extravars made the try block throw became permanently
+      // unviewable (200 with an empty body) and the AccessDeniedError path never fired.
+      logger.warning(`Could not read job_log_${id}.log: ${e.message}`);
     }
 
     return { ...job, ...{ output: Helpers.formatOutput(res, asText), job_log: jobLogContent } };
   } catch (err) {
+    // Rethrow. This used to `return []`, which swallowed the AccessDeniedError thrown a
+    // few lines up - the comment above already described the symptom while the cause was
+    // still here. Every caller then read [] as a job:
+    //
+    //   GET /api/v2/job/<someone else's id>  answered 200 with an empty body instead of
+    //     403, and the controller's AccessDeniedError branch could never run;
+    //   the download route produced an empty attachment named ...job-undefined.txt;
+    //   worst, approve/reject read `job.approval` off [] as undefined, so the block that
+    //     checks the caller against the job's approval roles was skipped entirely - the
+    //     check only failed to be a hole because the status test after it threw.
+    //
+    // The controllers already map AccessDeniedError to 403 and NotFoundError to 404, and
+    // a genuine database fault deserves a 500 rather than a plausible empty job.
     logger.error("Error : ", err);
-    return [];
+    throw err;
   }
 };
 Job.getRawFormData = async function (user, id) {
@@ -637,6 +829,7 @@ Job.getRawFormData = async function (user, id) {
     }
     
     // Remove __form__ before returning to client
+    // eslint-disable-next-line no-unused-vars -- destructured only to omit __form__ from cleanData
     const { __form__, ...cleanData } = parsedData;
     logger.info(`Successfully loaded raw form data for job ${id} with ${Object.keys(cleanData).length} fields`);
     return cleanData;
@@ -655,10 +848,24 @@ Job.launch = async function ({
   extravars = {},
   parentId = null,
   rawFormData = {},
-  waitForCompletion = false
+  waitForCompletion = false,
+  // Set ONLY by the two launch controllers : it means `extravars` came from a request body
+  // and must be stripped of reserved keys the form did not declare. The other callers
+  // (datasource, schedule, and a multistep launching its own steps) build extravars server
+  // side from stored configuration, where a `__x__` key is legitimate and stripping it
+  // would break the run.
+  fromClient = false,
+  // Set ONLY by Job.relaunch : keep the submitter stored in the replayed extravars instead
+  // of putting `user` there (see setUserExtravars).
+  replay = false
 }) {
   const creds = credentials; // Alias for backward compatibility internally
-  
+
+  // A step of a multistep arrives with its formObj already built; a real form arrives with
+  // a name and is loaded below. The difference matters for the user trim further down, so
+  // record it before the load overwrites the distinction.
+  const isStep = !!formObj;
+
   // a formobj can be a full step pushed
   if (!formObj) {
     // we load it, it's an actual form
@@ -668,6 +875,16 @@ Job.launch = async function ({
     }
     formObj = formConfig.forms[0]; // we take the first one, as it should be the only one
   }
+
+  // Here rather than in the controller : this is the first point where the FORM is known,
+  // and the form is what says which reserved keys it declares as fields. It must run BEFORE
+  // pushForminfoToExtravars, which fills a reserved key from the static form property only
+  // when the key is absent - so stripping afterwards would be indistinguishable from the
+  // form's own value. formObj comes from Form.load(user.roles, ...), so the declarations are
+  // read from a form this user is allowed to run.
+  if (fromClient) stripReservedExtravars(extravars, formObj);
+
+  if (!isStep) setUserExtravars(extravars, user, formObj, replay);
 
   pushForminfoToExtravars(formObj, extravars, creds);
 
@@ -784,7 +1001,9 @@ Job.launch = async function ({
                 credentials[key] = await Credential.findByNameRegex(value);
               }
             } catch (err) {
-              logger.error("Cannot get credential." + err);
+              // Log only, do not fail the job : the credential simply stays unset and
+              // the playbook runs without that extra var, as it did before 6.3.
+              logger.error(`Cannot resolve credential '${key}' : ${err.message || err}`);
             }
           }
         }
@@ -846,7 +1065,7 @@ Job.continue = async function ({ form, user, credentials = {}, extravars = {}, j
   const creds = credentials; // Alias for backward compatibility internally
   var formObj;
   // we load it, it's an actual form
-  const check = await Job.checkExists(jobid);
+  await Job.checkExists(jobid);
   const formConfig = await Form.load(user?.roles, form);
   if (formConfig.forms.length == 0) {
     throw new Errors.NotFoundError(`No such form '${form}'`);
@@ -883,11 +1102,23 @@ Job.continue = async function ({ form, user, credentials = {}, extravars = {}, j
     jobid,
     ++counter
   );
-  await Job.update({ status: "running" }, jobid);
+  // Conditional claim, not a blind update. Job.approve reads the row, sees 'approve' and
+  // calls this - so two approvers clicking within the same second (or one double click)
+  // both got here and both launched the SAME job: two ansible-playbook processes,
+  // interleaved output, and jobs.pid overwritten by whichever started second, so a later
+  // abort killed only one of them. Job.abort already uses this pattern.
+  const claimed = await mysql.do(
+    "UPDATE AnsibleForms.`jobs` SET status='running' WHERE id=? AND status='approve'",
+    [jobid]
+  );
+  if (!claimed.affectedRows) {
+    logger.warning(`Job ${jobid} is no longer awaiting approval, not continuing`);
+    return;
+  }
 
   // the rest is now happening in the background
   // if credentials are requested, we now get them.
-  var credentials = {};
+  credentials = {};
   if (creds) {
     for (const [key, value] of Object.entries(creds)) {
       if (value == "__self__") {
@@ -978,7 +1209,6 @@ Job.relaunch = async function (user, id, verbose) {
   }
   
   // Check if user has allowJobRelaunch option (unless admin)
-  const isAdmin = user.roles?.includes("admin") ?? false;
   if (!user.options.allowJobRelaunch) {
     throw new Errors.AccessDeniedError(`You do not have permission to relaunch jobs. Contact your administrator to enable the 'allowJobRelaunch' role option.`);
   }
@@ -989,7 +1219,15 @@ Job.relaunch = async function (user, id, verbose) {
   if (job.extravars) {
     extravars = safeParse(job.extravars, {}, `job.extravars id=${id}`);
   }
+  // The stored extravars carry whatever the ORIGINAL launch used, __verbose__ included, so
+  // a user without allowVerboseMode could relaunch a verbose job (or any job in 'approve',
+  // which findById exposes to everyone) and get -vvv output. The controller checks the
+  // ?verbose= query parameter; it never looked at what was already in the row.
+  delete extravars["__verbose__"];
   if (verbose) {
+    if (!user.options?.allowVerboseMode) {
+      throw new Errors.AccessDeniedError(`You do not have permission to run jobs in verbose mode.`);
+    }
     extravars["__verbose__"] = true;
   }
   if (job.credentials) {
@@ -1006,7 +1244,8 @@ Job.relaunch = async function (user, id, verbose) {
       user,
       credentials,
       extravars,
-      rawFormData
+      rawFormData,
+      replay: true
     });
     // Send relaunch notification
     await Job.sendEventNotification(id, 'relaunch', user);
@@ -1094,20 +1333,25 @@ Job._buildAndSendEmail = async function ({
     var color2 = "#ffa73b";
     var logo = `${url}/assets/img/logo.png`;
     
-    // Apply all replacements
+    // Apply all replacements.
+    // Every value goes in through a FUNCTION replacement so it is inserted verbatim. As a
+    // plain string it is read for the special replacement patterns, so a job carrying $&
+    // in its name, its message or its run details had the placeholder text itself pasted
+    // back in ($&), or the whole surrounding template ($` / $'), into the mail body.
+    const lit = (v) => () => (v ?? "");
     message = message
-      .replace("${message}", replacements.message || "")
-      .replaceAll("${url}", url)
-      .replaceAll("${jobid}", replacements.jobid || "")
-      .replaceAll("${title}", subject)
-      .replaceAll("${logo}", logo)
-      .replaceAll("${color}", color)
-      .replaceAll("${color2}", color2)
-      .replaceAll("${heading}", replacements.heading || "")
-      .replaceAll("${subtitle}", replacements.subtitle || "")
-      .replaceAll("${buttonLabel}", replacements.buttonLabel || "")
-      .replaceAll("${regards}", replacements.regards || "")
-      .replaceAll("${runDetails}", replacements.runDetails || "");
+      .replace("${message}", lit(replacements.message))
+      .replaceAll("${url}", lit(url))
+      .replaceAll("${jobid}", lit(replacements.jobid))
+      .replaceAll("${title}", lit(subject))
+      .replaceAll("${logo}", lit(logo))
+      .replaceAll("${color}", lit(color))
+      .replaceAll("${color2}", lit(color2))
+      .replaceAll("${heading}", lit(replacements.heading))
+      .replaceAll("${subtitle}", lit(replacements.subtitle))
+      .replaceAll("${buttonLabel}", lit(replacements.buttonLabel))
+      .replaceAll("${regards}", lit(replacements.regards))
+      .replaceAll("${runDetails}", lit(replacements.runDetails));
     
     const messageid = await Settings.mailsend(
       recipients.join(","),
@@ -1283,7 +1527,7 @@ Job.reject = async function (user, id) {
       `changed: [rejected by ${user.username}]`,
       "stderr",
       id,
-      ++counter
+      counter + 1
     );
     const result = await Job.update({ status: "rejected", end: getTimestamp() }, id);
     // Send reject notification
@@ -1326,7 +1570,7 @@ Multistep.launch = async function ({
         `APPROVE [${form}] ${"*".repeat(69 - form.length)}`,
         "stdout",
         jobid,
-        ++counter
+        counter + 1
       );
       await Job.update(
         {
@@ -1424,7 +1668,7 @@ Multistep.launch = async function ({
           }
         }
         // print title of new step and check abort
-        var abort_requested = await Job.printJobOutput(
+        abort_requested = await Job.printJobOutput(
           `STEP [${step.name}] ${"*".repeat(72 - step.name.length)}`,
           "stdout",
           jobid,
@@ -1454,8 +1698,15 @@ Multistep.launch = async function ({
             if (step.key && ev[step.key]) {
               // logger.warning(step.key + " exists using it")
               ev = ev[step.key];
-              // we copy the user profile in the step data
-              ev.ansibleforms_user = extravars.ansibleforms_user;
+              // we copy the user profile in the step data - unless the form asked for no
+              // user at all, in which case there is nothing to copy and assigning undefined
+              // would put a key back that the setting just removed
+              // the slice is client data, so one it carries itself is dropped either way
+              if (extravars.ansibleforms_user !== undefined) {
+                ev.ansibleforms_user = extravars.ansibleforms_user;
+              } else {
+                delete ev.ansibleforms_user;
+              }
             }
             // wait the promise of step
             if (!finalSuccessStatus) {
@@ -1489,9 +1740,20 @@ Multistep.launch = async function ({
                 
                 // Check the actual status of the child job
                 const childJob = await Job.findById(user, jobSuccess.id, false);
-                if (childJob.status === 'failed' || childJob.status === 'aborted') {
+                // A step counts as passed only when it can be READ and says so. findById
+                // returns [] on any internal error, and `[].status` is undefined - which
+                // used to skip this throw entirely, so the multistep carried on to the next
+                // step and reported success for a step whose outcome was never established.
+                // Treat unreadable as a failure: a step you cannot check has not passed.
+                const childStatus = Array.isArray(childJob) ? undefined : childJob?.status;
+                if (!childStatus) {
                   throw new Errors.ApiError(
-                    `Step ${step.name} (jobid ${jobSuccess.id}) ${childJob.status}`
+                    `Step ${step.name} (jobid ${jobSuccess.id}) : could not read the step status, treating it as failed`
+                  );
+                }
+                if (childStatus === 'failed' || childStatus === 'aborted') {
+                  throw new Errors.ApiError(
+                    `Step ${step.name} (jobid ${jobSuccess.id}) ${childStatus}`
                   );
                 }
                 
@@ -1644,7 +1906,7 @@ Ansible.launch = async (
     inventory.push(invent); // push the main inventory
   }
   if (extravars["__inventory__"]) {
-    [].concat(extravars["__inventory__"]).forEach((item, i) => {
+    [].concat(extravars["__inventory__"]).forEach((item) => {
       if (typeof item == "string") {
         inventory.push(item); // add extra inventories
       } else {
@@ -1670,7 +1932,7 @@ Ansible.launch = async (
         `APPROVE [${playbook}] ${"*".repeat(69 - playbook.length)}`,
         "stdout",
         jobid,
-        ++counter
+        counter + 1
       );
       await Job.update(
         {
@@ -1703,7 +1965,7 @@ Ansible.launch = async (
     logger.error("Failed to get ansible credentials : ", err);
     await Job.endJobStatus(
       jobid,
-      ++counter,
+      counter + 1,
       "stderr",
       "failed",
       "[ERROR]: Failed to get ansible credentials"
@@ -1721,7 +1983,7 @@ Ansible.launch = async (
     logger.error("Failed to get vault credentials : ", err);
     await Job.endJobStatus(
       jobid,
-      ++counter,
+      counter + 1,
       "stderr",
       "failed",
       "[ERROR]: Failed to get vault credentials"
@@ -1746,7 +2008,7 @@ Ansible.launch = async (
   // All form-controlled segments below MUST be wrapped in shellQuote().
   // The command runs through `exec` (i.e. /bin/sh -c), so any unquoted value
   // ending up in the string is a shell injection vector.
-  inventory.forEach((item, i) => {
+  inventory.forEach((item) => {
     command += ` -i ${shellQuote(item)}`;
   });
   if (tags) {
@@ -1767,7 +2029,7 @@ Ansible.launch = async (
 
   command += ` ${shellQuote(playbook)}`;
   var directory = await Repository.getAnsiblePath();
-  var directory = directory || ansibleConfig.path;
+  directory = directory || ansibleConfig.path;
   if (playbookSubPath) {
     directory = path.join(directory, playbookSubPath);
   }
@@ -1841,7 +2103,7 @@ Awx.launch = async function (
   approval,
   approved = false
 ) {
-  var message = "";
+  var message;
   if (!counter) {
     counter = 0;
   } else {
@@ -1872,7 +2134,7 @@ Awx.launch = async function (
         `APPROVE [${template}] ${"*".repeat(69 - template.length)}`,
         "stdout",
         jobid,
-        ++counter
+        counter + 1
       );
       await Job.update(
         {
@@ -1912,7 +2174,7 @@ Awx.launch = async function (
   } catch (err) {
     message = "failed to launch awx template " + template + "\n" + err.message;
     // any error, we just end the job, no need to throw an error.
-    await Job.endJobStatus(jobid, ++counter, "stdout", "failed", message);
+    await Job.endJobStatus(jobid, counter + 1, "stdout", "failed", message);
     throw new Errors.ApiError(message);
   }
 };
@@ -1934,7 +2196,7 @@ Awx.launchTemplate = async function (
   jobid,
   counter
 ) {
-  var message = "";
+  var message;
   if (!counter) {
     counter = 0;
   }
@@ -2040,7 +2302,7 @@ Awx.launchTemplate = async function (
   if (template.related === undefined) {
     message = `Failed to launch, no launch attribute found for template ${template.name}`;
     logger.error(message);
-    await Job.endJobStatus(jobid, ++counter, "stderr", "failed", message);
+    await Job.endJobStatus(jobid, counter + 1, "stderr", "failed", message);
     throw new Errors.ConflictError(message);
   } else {
     // prepare axiosConfig
@@ -2056,24 +2318,34 @@ Awx.launchTemplate = async function (
         axiosConfig
       );
     } catch (error) {
-      var message = `failed to launch ${template.name}`;
+      message = `failed to launch ${template.name}`;
       if (error.response) {
         logger.error("", error.response.data);
         message += "\r\n" + yaml.stringify(error.response.data);
         await Job.endJobStatus(
           jobid,
-          ++counter,
+          counter + 1,
           "stderr",
-          "success",
+          // "failed", not "success". endJobStatus writes the status AND sends the status
+          // notification built from it, so a template AWX refused to launch (a missing
+          // survey variable, a credential that is not prompt-on-launch) mailed everyone
+          // "- success" and then a second mail "- failed" once Awx.launch's own catch
+          // corrected the row.
+          "failed",
           `Failed to launch template ${template.name}. ${message}`
         );
       } else {
         logger.error("Failed to launch : ", error);
         await Job.endJobStatus(
           jobid,
-          ++counter,
+          counter + 1,
           "stderr",
-          "success",
+          // "failed", not "success". endJobStatus writes the status AND sends the status
+          // notification built from it, so a template AWX refused to launch (a missing
+          // survey variable, a credential that is not prompt-on-launch) mailed everyone
+          // "- success" and then a second mail "- failed" once Awx.launch's own catch
+          // corrected the row.
+          "failed",
           `Failed to launch template ${template.name}. ${error}`
         );
       }
@@ -2093,7 +2365,7 @@ Awx.launchTemplate = async function (
         ++counter
       );
       // track the job in the background
-      return Awx.trackJob(awxName, job, jobid, ++counter);
+      return Awx.trackJob(awxName, job, jobid, counter + 1);
     } else {
       // no awx job, end failed
       message = `could not launch job template ${template.name}`;
@@ -2110,6 +2382,19 @@ Awx.launchTemplate = async function (
   }
 };
 
+/**
+ * Poll an AWX job to completion.
+ *
+ * This is a LOOP, and must stay one. It used to call itself for the next poll, once a
+ * second, for as long as the job ran - so an hour-long template built up ~3600 nested
+ * async frames, and every one of them held its own `o` / `previousoutput` alive: AWX has
+ * no incremental output, so those are each a full copy of the job's stdout so far. A job
+ * with a few MB of output therefore retained hundreds of MB until it finished and the
+ * whole chain finally unwound, on top of a real risk of exhausting the stack.
+ *
+ * Each place that used to recurse now assigns the next iteration's parameters and
+ * `continue`s, so only the current poll's output is reachable.
+ */
 Awx.trackJob = async function (
   awxName,
   job,
@@ -2128,10 +2413,11 @@ Awx.trackJob = async function (
     ? await AwxModel.findByName(awxName)
     : await AwxModel.findByProperty("is_default", 1);
   if (!awxConfig) throw new Error("Failed to get AWX configuration");
-  var message = "";
-  logger.info(`searching for job with id ${job.id}`);
+  var message;
   // prepare axiosConfig
   const axiosConfig = AwxModel.getAuthorization(awxConfig);
+  for (;;) {
+  logger.info(`searching for job with id ${job.id}`);
   try {
     // get job info
     const axiosResult = await axios.get(awxConfig.uri + job.url, axiosConfig);
@@ -2199,15 +2485,14 @@ Awx.trackJob = async function (
               ++counter
             );
             await Job.resetAbortRequested(jobid);
-            return Awx.trackJob(
-              awxName,
-              j,
-              jobid,
-              ++counter,
-              o,
-              previousoutput,
-              j.finished
-            );
+            // next poll (was: recurse) - previousoutput becomes the second last
+            job = j;
+            ++counter;
+            previousoutput2 = previousoutput;
+            previousoutput = o;
+            lastrun = j.finished;
+            retryCount = 0;
+            continue;
           }
         } else {
           if (j.finished && lastrun) {
@@ -2224,7 +2509,7 @@ Awx.trackJob = async function (
             } else {
               // if error, end with status (aborted or failed)
               var status = "failed";
-              var message = `Template ${j.name} completed with status ${j.status}`;
+              message = `Template ${j.name} completed with status ${j.status}`;
               if (j.status == "canceled") {
                 status = "aborted";
                 message = `Template ${j.name} was aborted`;
@@ -2242,31 +2527,19 @@ Awx.trackJob = async function (
             }
           } else {
             // not finished, try again
-            return await delay(1000).then(async () => {
-              if (j.finished) {
-                logger.debug("Getting final stdout");
-              }
-              if (incrementIssue) {
-                return await Awx.trackJob(
-                  awxName,
-                  j,
-                  jobid,
-                  ++counter,
-                  o,
-                  previousoutput2,
-                  j.finished
-                );
-              }
-              return await Awx.trackJob(
-                awxName,
-                j,
-                jobid,
-                ++counter,
-                o,
-                previousoutput,
-                j.finished
-              );
-            });
+            await delay(1000);
+            if (j.finished) {
+              logger.debug("Getting final stdout");
+            }
+            // next poll (was: recurse). After an increment issue the SECOND last output
+            // is the reliable reference, so it is the one carried forward.
+            job = j;
+            ++counter;
+            previousoutput2 = incrementIssue ? previousoutput2 : previousoutput;
+            previousoutput = o;
+            lastrun = j.finished;
+            retryCount = 0;
+            continue;
           }
         }
       } catch (err) {
@@ -2278,16 +2551,8 @@ Awx.trackJob = async function (
         } else {
           logger.warning(`Retrying jobid ${jobid} [${retryCount}]`);
           await delay(1000);
-          return await Awx.trackJob(
-            awxName,
-            job,
-            jobid,
-            counter,
-            previousoutput,
-            previousoutput2,
-            lastrun,
-            retryCount
-          );
+          // retry the SAME poll : job, counter and both outputs stay as they were
+          continue;
         }
       }
     } else {
@@ -2299,21 +2564,14 @@ Awx.trackJob = async function (
       } else {
         logger.warning(`Retrying jobid ${jobid} [${retryCount}]`);
         await delay(1000);
-        return await Awx.trackJob(
-          awxName,
-          job,
-          jobid,
-          counter,
-          previousoutput,
-          previousoutput2,
-          lastrun,
-          retryCount
-        );
+        // retry the SAME poll, as above
+        continue;
       }
     }
   } catch (e) {
     logger.error("Failed to track job : ", e);
     return e.message;
+  }
   }
 };
 // format a workflow (node) status line ; Helpers.formatOutput() colors these by status
@@ -2549,7 +2807,7 @@ Awx.findJobTemplateByName = async function (awxName, name) {
     ? await AwxModel.findByName(awxName)
     : await AwxModel.findByProperty("is_default", 1);
   if (!awxConfig) throw new Errors.ApiError("Failed to get AWX configuration");
-  var message = "";
+  var message;
   logger.info(`searching job template ${name}`);
   // prepare axiosConfig
   const axiosConfig = AwxModel.getAuthorization(awxConfig);
@@ -2560,7 +2818,7 @@ Awx.findJobTemplateByName = async function (awxName, name) {
       encodeURI(name),
     axiosConfig
   );
-  var job_template = axiosResult.data.results.find(function (x, index) {
+  var job_template = axiosResult.data.results.find(function (x) {
     return x.name == name;
   });
   if (job_template) {
@@ -2575,7 +2833,7 @@ Awx.findJobTemplateByName = async function (awxName, name) {
         encodeURI(name),
       axiosConfig
     );
-    var job_template = axiosResult.data.results.find(function (x, index) {
+    job_template = axiosResult.data.results.find(function (x) {
       return x.name == name;
     });
     if (job_template) {
@@ -2594,7 +2852,7 @@ Awx.findCredentialByName = async function (awxName, name) {
     ? await AwxModel.findByName(awxName)
     : await AwxModel.findByProperty("is_default", 1);
   if (!awxConfig) throw new Errors.ApiError("Failed to get AWX configuration");
-  var message = "";
+  var message;
   logger.info(`searching credential ${name}`);
   // prepare axiosConfig
   const axiosConfig = AwxModel.getAuthorization(awxConfig);
@@ -2605,7 +2863,7 @@ Awx.findCredentialByName = async function (awxName, name) {
       encodeURI(name),
     axiosConfig
   );
-  var credential = axiosResult.data.results.find(function (x, index) {
+  var credential = axiosResult.data.results.find(function (x) {
     return x.name == name;
   });
   if (credential) {
@@ -2623,7 +2881,7 @@ Awx.findExecutionEnvironmentByName = async function (awxName, name) {
     ? await AwxModel.findByName(awxName)
     : await AwxModel.findByProperty("is_default", 1);
   if (!awxConfig) throw new Errors.ApiError("Failed to get AWX configuration");
-  var message = "";
+  var message;
   logger.info(`searching execution environment ${name}`);
   // prepare axiosConfig
   const axiosConfig = AwxModel.getAuthorization(awxConfig);
@@ -2640,10 +2898,7 @@ Awx.findExecutionEnvironmentByName = async function (awxName, name) {
   } catch (error) {
     throw new Errors.ApiError(`${message}, ${error.message}`);
   }
-  var execution_environment = axiosResult.data.results.find(function (
-    x,
-    index
-  ) {
+  var execution_environment = axiosResult.data.results.find(function (x) {
     return x.name == name;
   });
   if (execution_environment) {
@@ -2660,7 +2915,7 @@ Awx.findInstanceGroupByName = async function (awxName, name) {
     ? await AwxModel.findByName(awxName)
     : await AwxModel.findByProperty("is_default", 1);
   if (!awxConfig) throw new Errors.ApiError("Failed to get AWX configuration");
-  var message = "";
+  var message;
   logger.info(`searching instance group ${name}`);
   // prepare axiosConfig
   const axiosConfig = AwxModel.getAuthorization(awxConfig);
@@ -2677,7 +2932,7 @@ Awx.findInstanceGroupByName = async function (awxName, name) {
   } catch (error) {
     throw new Errors.ApiError(`${message}, ${error.message}`);
   }
-  var instance_group = axiosResult.data.results.find(function (x, index) {
+  var instance_group = axiosResult.data.results.find(function (x) {
     return x.name == name;
   });
   if (instance_group) {
@@ -2715,7 +2970,7 @@ Awx.findInventoryByName = async function (awxName, name) {
     ? await AwxModel.findByName(awxName)
     : await AwxModel.findByProperty("is_default", 1);
   if (!awxConfig) throw new Errors.ApiError("Failed to get AWX configuration");
-  var message = "";
+  var message;
   logger.info(`searching inventory ${name}`);
   // prepare axiosConfig
   const axiosConfig = AwxModel.getAuthorization(awxConfig);
@@ -2732,7 +2987,7 @@ Awx.findInventoryByName = async function (awxName, name) {
   } catch (error) {
     throw new Errors.ApiError(`${message}, ${error.message}`);
   }
-  var inventory = axiosResult.data.results.find(function (x, index) {
+  var inventory = axiosResult.data.results.find(function (x) {
     return x.name == name;
   });
   if (inventory) {
@@ -2745,4 +3000,4 @@ Awx.findInventoryByName = async function (awxName, name) {
 
 export default Job;
 // named export of the awx interaction functions (mainly for testing)
-export { Awx };
+export { Awx, stripReservedExtravars, setUserExtravars };

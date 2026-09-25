@@ -39,6 +39,15 @@
             type: String,
             default: "text",
         },
+        // read by `classes` below, but never declared - so it was always undefined and
+        // the class was dropped, while Vue put the value on the <input> as a stray
+        // `cssclass="..."` attribute instead. Every sibling (BsInputTextAreaRaw,
+        // BsInputSelectRaw, BsInputCheckboxRaw) declares it. Visible on the log viewer,
+        // whose filter box asks for `ms-2` and never got it.
+        cssClass: {
+            type: String,
+            default: "",
+        },
         placeholder: {
             type: String,
             default: "",

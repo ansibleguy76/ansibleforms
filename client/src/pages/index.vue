@@ -19,8 +19,11 @@ const router = useRouter();
 const showWarnings = ref(false);
 
 const forms = computed(() => {
+    // sort a copy : sorting formConfig.value.forms in place would mutate the
+    // loaded config from inside a computed
     return formConfig.value?.forms
-        ?.sort((a, b) => {
+        ?.slice()
+        .sort((a, b) => {
             // First, sort by "order" (undefined orders go last)
             const orderA = a.order !== undefined ? a.order : Number.MAX_SAFE_INTEGER;
             const orderB = b.order !== undefined ? b.order : Number.MAX_SAFE_INTEGER;
@@ -69,9 +72,9 @@ function select(path) {
     if (path) {
         router
             .replace({ path: "/", query: { category: encodeURIComponent(path) } })
-            .catch((e) => { });
+            .catch((_e) => { });
     } else {
-        router.replace({ path: "/" }).catch((e) => { });
+        router.replace({ path: "/" }).catch((_e) => { });
     }
 }
 
@@ -137,8 +140,18 @@ onMounted(async () => {
         @close="showWarnings = false"
     >
         <template #default>
-            <p v-for="(w, i) in formConfig.warnings" :key="'warning' + i" class="mb-3" v-html="w"></p>
-            <p v-for="(e, i) in formConfig.errors" :key="'error' + i" class="mb-3 has-text-danger" v-html="e"></p>
+            <!--
+              TEXT, not v-html. These strings are built by Form.load and embed the FORM
+              NAME and the yaml/validator error verbatim - and a form is a file in a forms
+              repository, which is a different trust domain from AnsibleForms itself
+              (whoever may push to that git repo, not only an AnsibleForms admin). A form
+              named `<img src=x onerror=...>` therefore executed in the browser of every
+              user who opened this page, and the tokens live in localStorage. None of
+              these messages contains deliberate HTML, so nothing is lost; pre-line keeps
+              the \r\n in "Failed to validate form 'x'.<newline><reason>" readable.
+            -->
+            <p v-for="(w, i) in formConfig.warnings" :key="'warning' + i" class="mb-3 text-prewrap">{{ w }}</p>
+            <p v-for="(e, i) in formConfig.errors" :key="'error' + i" class="mb-3 has-text-danger text-prewrap">{{ e }}</p>
         </template>
     </BsOffCanvas>
     <div class="flex-shrink-0">
@@ -255,6 +268,12 @@ onMounted(async () => {
     </div>
 </template>
 <style scoped lang="scss">
+// the warning/error list renders as TEXT rather than v-html (see the template) ; these
+// messages carry \r\n between the summary and the reason, which text nodes collapse
+.text-prewrap {
+    white-space: pre-line;
+}
+
 .badge {
     background-color: var(--af-bg-badge) !important;
     color: var(--af-text-badge) !important;
