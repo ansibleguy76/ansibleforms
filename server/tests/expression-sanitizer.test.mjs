@@ -18,11 +18,12 @@ import { fileURLToPath } from "url";
 // string check, so lift it out of the source rather than dragging that in.
 const here = path.dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(path.join(here, "../src/models/expression.model.js"), "utf8");
-const body = /function sanitizeExpression\(expr, mode = 'strict'\)\{[\s\S]*?\n\}/.exec(src)[0];
+const body = /function sanitizeExpression\(expr, mode = 'strict', log = logger\)\{[\s\S]*?\n\}/.exec(src)[0];
 // stub the logger the body calls ; warnings are kept, the legacy mode is judged by them
 const warnings = [];
+const errors = [];
 const sanitizeExpression = new Function("logger", `${body}; return sanitizeExpression;`)({
-  error: () => {},
+  error: (m) => errors.push(m),
   warning: (m) => warnings.push(m),
 });
 
@@ -221,10 +222,13 @@ describe("EXPRESSION_SANITIZER modes", () => {
 
   test("legacy accepts what 6.2.1 accepted, and logs that strict would refuse it", () => {
     warnings.length = 0;
+    errors.length = 0;
     const e = "fn.a() + alert('x')";
     assert.equal(sanitizeExpression(e, "legacy"), e);
     assert.equal(warnings.length, 1);
     assert.match(warnings[0], /legacy let through/);
+    // the expression ran, so an "Abuse attempt" error would be a false alarm
+    assert.equal(errors.length, 0);
   });
 
   test("legacy does not warn about an expression strict accepts", () => {

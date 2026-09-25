@@ -12,12 +12,13 @@ var Expression=function(){
 };
 
 // mode is EXPRESSION_SANITIZER (see lib/expressionMode.js) : off, paranoid, strict or legacy
-function sanitizeExpression(expr, mode = 'strict'){
+// log : the legacy mode passes a silent one when it only ASKS whether strict would refuse
+function sanitizeExpression(expr, mode = 'strict', log = logger){
   var sanitized=expr
   var message
   if(mode === 'off'){
     message="Server expressions are disabled (EXPRESSION_SANITIZER=off), use runLocal"
-    logger.error(message)
+    log.error(message)
     throw Error(message)
   }
   // The 6.2.1 rules, kept as an upgrade escape hatch. They are known to be bypassable
@@ -25,29 +26,29 @@ function sanitizeExpression(expr, mode = 'strict'){
   // that list is what has to be rewritten before the mode can go back to strict.
   if(mode === 'legacy'){
     try {
-      sanitizeExpression(expr, 'strict')
+      sanitizeExpression(expr, 'strict', { error: () => {} })
     } catch (e) {
-      logger.warning(`EXPRESSION_SANITIZER=legacy let through an expression the strict rules refuse (${e.message}) : ${expr}`)
+      log.warning(`EXPRESSION_SANITIZER=legacy let through an expression the strict rules refuse (${e.message}) : ${expr}`)
     }
     if(sanitized.match(/\r|\n/)){
       message="Abuse attempt of eval function, attempt to have multilines"
-      logger.error(message)
+      log.error(message)
       throw Error(message)
     }
     sanitized = sanitized.replace(/(["'])(?:(?=(\\?))\2.)*?\1/g,"")
     if(sanitized.match(/;/)){
       message="Abuse attempt of eval function, attempt to have multi expression, try runLocal"
-      logger.error(message)
+      log.error(message)
       throw Error(message)
     }
     if(sanitized.match(/process\.env/)){
       message="Abuse attempt of eval function, attempt to get environment variables"
-      logger.error(message)
+      log.error(message)
       throw Error(message)
     }
     if(sanitized.match(/\(/) && !sanitized.match(/^fnc{0,1}\.+/g)){
       message="Abuse attempt of eval function, using custom functions, try runLocal"
-      logger.error(message)
+      log.error(message)
       throw Error(message)
     }
     return expr
@@ -55,7 +56,7 @@ function sanitizeExpression(expr, mode = 'strict'){
   // first we check if the expression has errors
   if(sanitized.match(/\r|\n/)){
     message="Abuse attempt of eval function, attempt to have multilines"
-    logger.error(message)
+    log.error(message)
     // return "'ACCESS DENIED, no multiline expressions allowed'"
     throw Error(message)
   }
@@ -75,7 +76,7 @@ function sanitizeExpression(expr, mode = 'strict'){
   // rejections above.
   if(sanitized.match(/`/)){
     message="Abuse attempt of eval function, template literals are not allowed, try runLocal"
-    logger.error(message)
+    log.error(message)
     throw Error(message)
   }
   // then we remove all harmless strings
@@ -83,14 +84,14 @@ function sanitizeExpression(expr, mode = 'strict'){
   // we check if ";" is present, no multi commands
   if(sanitized.match(/;/)){
     message="Abuse attempt of eval function, attempt to have multi expression, try runLocal"
-    logger.error(message)
+    log.error(message)
     // return "'ACCESS DENIED, no multiple expressions allowed'"
     throw Error(message)
   }
   // if contains process.env
   if(sanitized.match(/process\.env/)){
     message="Abuse attempt of eval function, attempt to get environment variables"
-    logger.error(message)
+    log.error(message)
     // return "'ACCESS DENIED, no access to environment variables (process.env)'"
     throw Error(message)
   }
@@ -117,7 +118,7 @@ function sanitizeExpression(expr, mode = 'strict'){
   }
   if(callsRemoved.match(/[A-Za-z0-9_$\])]\s*\(/)){
     message="Abuse attempt of eval function, using custom functions, try runLocal"
-    logger.error(message)
+    log.error(message)
     throw Error(message)
   }
   // The check above only asks how the expression STARTS. Once it began with `fn.`, every
@@ -133,7 +134,7 @@ function sanitizeExpression(expr, mode = 'strict'){
   const banned = sanitized.match(FORBIDDEN)
   if(banned){
     message=`Abuse attempt of eval function, '${banned[0]}' is not allowed in a server expression, try runLocal`
-    logger.error(message)
+    log.error(message)
     throw Error(message)
   }
   // A property reached by STRING KEY is invisible to the check above, because the string
@@ -146,7 +147,7 @@ function sanitizeExpression(expr, mode = 'strict'){
     const key = m[2]
     if (FORBIDDEN.test(key)) {
       message=`Abuse attempt of eval function, '${key}' is not allowed as a property name in a server expression, try runLocal`
-      logger.error(message)
+      log.error(message)
       throw Error(message)
     }
   }
