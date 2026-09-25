@@ -52,7 +52,7 @@ jobs:
       REF: ${{ inputs.ref || inputs.tag }}
       CHANNEL: ${{ inputs.channel || 'release' }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.REF }}
 
@@ -108,10 +108,10 @@ jobs:
           echo "list=$tags" >> "$GITHUB_OUTPUT"
           echo "$tags" | tr ',' '\n'
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
 
       - name: Log in to GHCR
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -119,7 +119,7 @@ jobs:
 
       - name: Log in to Docker Hub
         if: steps.hub.outputs.enabled == 'true'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -127,7 +127,7 @@ jobs:
       # VERSION is baked into build-info.json, which /api/v2/version prefers over
       # server/package.json - that is how a release candidate shows its own version
       - name: Build and push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: true
