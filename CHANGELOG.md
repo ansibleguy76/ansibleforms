@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.3.1](https://github.com/ansibleguy76/ansibleforms/compare/6.3.0...6.3.1) (2026-09-25)
+
+
+### Fixed
+
+* legacy expression sanitizer no longer logs an abuse error for expressions it runs ([#524](https://github.com/ansibleguy76/ansibleforms/issues/524)) ([e3e1814](https://github.com/ansibleguy76/ansibleforms/commit/e3e1814d4384d1dfe2c5baca334567f1ef370dac))
+
 ## [6.3.0] - 2026-09-25
 
 ### Added
