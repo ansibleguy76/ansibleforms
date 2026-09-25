@@ -43,7 +43,7 @@
     "vue3-ace-editor": "^2.2.4",
     "vue3-clipboard": "^1.0.0",
     "vue3-popper": "^1.5.0",
-    "yaml": "^2.9.0"
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
