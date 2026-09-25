@@ -2,7 +2,8 @@ version: 2
 
 # Every pull request title here must pass the PR / Title check (Conventional Commits), so
 # each entry sets a commit-message prefix : build(deps) for what ships in the image, ci for
-# the workflow actions. `build` is hidden in the generated CHANGELOG ; retitle a pull
+# the workflow actions. At most one pull request per entry per week : every update of an
+# entry is grouped. `build` is hidden in the generated CHANGELOG ; retitle a pull
 # request to `fix(deps): ...` when the update fixes something a user would notice.
 
 updates:
@@ -14,9 +15,10 @@ updates:
     commit-message:
       prefix: build
       include: scope
+    # everything in one weekly pull request - majors included, so review those with care
     groups:
-      client-dev:
-        dependency-type: development
+      client:
+        patterns: ['*']
 
   - package-ecosystem: npm
     directory: /server
@@ -27,8 +29,8 @@ updates:
       prefix: build
       include: scope
     groups:
-      server-dev:
-        dependency-type: development
+      server:
+        patterns: ['*']
 
   - package-ecosystem: github-actions
     directory: /
