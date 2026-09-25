@@ -1,27 +1,58 @@
 version: 2
 
-# npm packages are NOT watched here, on purpose : client and server dependencies are
-# updated by hand (npm outdated, read the changelogs, decide), so that no breaking change
-# arrives through a pull request that looks routine. Known vulnerabilities in them are
-# still reported, as Dependabot security alerts on the Security tab.
+# Dependabot NEVER proposes a major version : every entry ignores semver-major updates.
+# Majors carry breaking changes by definition, so they are done by hand (npm outdated,
+# read the changelog, decide) and never arrive through a routine-looking pull request.
+# Minor and patch updates are grouped into one pull request per entry per week.
 #
 # Every pull request title here must pass the PR / Title check (Conventional Commits), so
-# each entry sets a commit-message prefix : ci for the workflow actions, build(deps) for
-# the docker images. `build` is hidden in the generated CHANGELOG.
+# each entry sets a commit-message prefix : build(deps) for what ships in the image, ci for
+# the workflow actions. `build` is hidden in the generated CHANGELOG.
 
 updates:
+  - package-ecosystem: npm
+    directory: /client
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
+      include: scope
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+    groups:
+      client:
+        patterns: ['*']
+
+  - package-ecosystem: npm
+    directory: /server
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
+      include: scope
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+    groups:
+      server:
+        patterns: ['*']
+
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
     commit-message:
       prefix: ci
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
     groups:
       actions:
         patterns: ['*']
 
   # Moves the digest pin on ansibleforms-base in Dockerfile when .github/workflows/base.yml
-  # publishes a new base image. Dockerfile.base (node) is watched too.
+  # publishes a new base image. Dockerfile.base (node) is watched too - within its major.
   - package-ecosystem: docker
     directory: /
     schedule:
@@ -29,3 +60,6 @@ updates:
     commit-message:
       prefix: build
       include: scope
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
