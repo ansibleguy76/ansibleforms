@@ -97,6 +97,7 @@ export default {
       lock_delete: "Verrou du concepteur libéré",
       logo_create: "Logo téléversé",
       logo_delete: "Logo supprimé",
+      mcp_create: "Requête MCP (agent IA)",
       oauth2_create: "Fournisseur OAuth2 créé",
       oauth2_update: "Fournisseur OAuth2 modifié",
       oauth2_delete: "Fournisseur OAuth2 supprimé",

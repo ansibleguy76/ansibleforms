@@ -76,6 +76,7 @@ import repositoryRoutesv2 from "./routes/v2/repository.routes.js";
 import configRoutesv2 from "./routes/v2/config.routes.js";
 import configSeedRoutesv2 from "./routes/v2/configseed.routes.js";
 import formsReposRoutes from "./routes/v2/forms-repos.routes.js";
+import mcpRoutes from "./mcp/router.js";
 
 // __dirname and __filename setup for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -257,6 +258,12 @@ const load = async (app) => {
   // separate mount from /config on purpose : the seed is not the forms configuration and
   // does not share its permissions - this one is settings admin, like the pages it rewrites
   app.use(`/api/v2/config-seed`, cors(), authobj, Middleware.checkSettingsMiddleware, configSeedRoutesv2);
+
+  // MCP server for AI agents (ENABLE_MCP) : every tool runs as the authenticated user
+  if (appConfig.enableMcp) {
+    app.use(`/api/v2/mcp`, cors(), authobj, mcpRoutes);
+    logger.notice(`MCP endpoint enabled on ${appConfig.baseUrl}/api/v2/mcp`);
+  }
 }
 
 

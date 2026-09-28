@@ -1,0 +1,126 @@
+---
+layout: default
+title: MCP server
+nav_order: 6
+---
+
+# MCP server
+{: .no_toc }
+
+Let an AI agent use your forms. AnsibleForms can serve a
+[Model Context Protocol](https://modelcontextprotocol.io) server, so an MCP client - a chat
+backend, an IDE assistant - can list the forms a user may use, work out their fields, launch
+jobs and follow them.
+
+1. TOC
+{:toc}
+
+## What it is, and what it is not
+
+The MCP server is a technical interface to the same form flow the browser uses. It runs
+**as the user whose token it receives**: the same form roles, the same job visibility, the
+same checks on reserved extravars as a browser submission.
+
+It adds no AI policy of its own. Whether an agent must ask for confirmation before a launch,
+which forms it may use, or how many requests it may make is for the MCP client to decide.
+The launch tool is marked as destructive, so a well-behaved client asks first, but nothing on
+the server enforces that.
+
+## Enabling it
+
+Set [`ENABLE_MCP`](customization) to `1` and restart. The endpoint is
+
+```
+POST <your url>/api/v2/mcp
+```
+
+It speaks the Streamable HTTP transport, stateless, and answers in plain JSON. `GET` and
+`DELETE` answer 405, because there are no sessions to stream or end.
+
+## Authentication
+
+Every request needs an AnsibleForms access token:
+
+```
+Authorization: Bearer <token>
+```
+
+Get one the usual way (`POST /api/v2/auth/login`, or the OIDC / Entra ID flows) and refresh
+it with `POST /api/v2/token`. There is deliberately **no login tool**: a password passed as a
+tool argument would end up in the language model's context and its chat history.
+
+- **A chat backend** logs the user in itself, keeps the refresh token and passes the access
+  token on every MCP call.
+- **An IDE client** needs a token that lives long enough to configure once. A role with the
+  `extendedTokenExpiration` option may log in with `?expiryDays=<n>` on the login url for a token valid that many days.
+
+For example, with Claude Code:
+
+```bash
+claude mcp add --transport http ansibleforms https://af.example.com/api/v2/mcp \
+  --header "Authorization: Bearer <token>"
+```
+
+## Tools
+
+| Tool | What it does |
+|---|---|
+| `list_forms` | The forms the user may use: name, description, categories. |
+| `get_form` | One form's full definition. Each field also carries `dynamic` (evaluated from an expression or query) and `dependsOn` (the fields it reads). |
+| `resolve_field` | Evaluates the form for the values filled in so far. See below. |
+| `launch_job` | Launches the form with the given values, exactly as a browser submission would. Returns the job id. |
+| `get_job` | Status and output of a job (`tail` limits the output to the last lines). |
+
+There is no tool to run an arbitrary expression, query, playbook or extravars. Expressions
+and queries only ever run as the form defines them.
+
+### Filling in a form
+
+Call `resolve_field` with the form name and the values you have so far, then again after
+every answer. It works through the fields in dependency order, the way a person fills in
+the form, and reports per field:
+
+- `status`: `resolved`, `waiting` (with `waitingFor`: the fields it still needs), `hidden`
+  (its `dependencies` hide it) or `error` (evaluation failed; the field falls back to its
+  default, as in the browser);
+- `value`, `default` and, for choice fields, `options` (capped by `maxOptions`, default 200,
+  with `optionCount` and `optionsTruncated`);
+- `needsInput`: a required field without a value, or a choice field still on `__auto__`.
+
+On top of that, `missing` lists the fields that need an answer and `complete` says whether
+the form can be launched. `launch_job` refuses a form that is not complete.
+
+Pass `field` to resolve only that field and what it depends on. For a list row or a wizard
+step, pass `subform` (and optionally `parent`, the parent form's values).
+
+Values are the raw values the browser holds: the selected option for an enum (the whole
+record, or the `valueColumn` value), `true`/`false` for a checkbox, rows for a list. A
+computed field ignores a value sent for it, unless it is `editable`.
+
+## runLocal expressions
+
+`runLocal` expressions, `local` / `credential` / `html` fields and `evalDefault` defaults are
+evaluated on the server, in a separate V8 context: no `process`, `require`, network or
+timers, no compiling strings into code, a 2 second time limit, and only the helper
+functions the browser offers (`fnArray`, `fnGetNumberedName`, `fnToTable`, ...).
+
+This guards against buggy or runaway expressions. It is not a sandbox for hostile code,
+and it does not have to be: the code comes from the form definition, never from the MCP
+caller, and every value a caller sends is substituted as a JavaScript literal.
+
+An expression that uses a browser API (`window`, `document`, `fetch`) cannot run here and
+comes back with `status: error`.
+
+Server-side expressions (without `runLocal`) go through the same
+[`EXPRESSION_SANITIZER`](customization) rules as they do for the browser.
+
+## Limitations
+
+- **Wizard forms** cannot be launched yet. Their steps can be resolved with `subform`.
+- **File fields** cannot be filled in; a form whose file field has a value is refused.
+- Validation is limited to required fields. `regex`, `minLength`, `validIf` and the other
+  rules are in the definition `get_form` returns, and are for the client to apply. A
+  dependency on `isValid` is read as "has a value".
+- An enum left on `__auto__` is never filled in with its first option: the caller chooses.
+- Every MCP request is one entry in the audit log (action "MCP request"), the job itself is
+  recorded under the user as for any other launch.

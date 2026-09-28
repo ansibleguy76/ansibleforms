@@ -97,6 +97,7 @@ export default {
       lock_delete: "Designer-Sperre aufgehoben",
       logo_create: "Logo hochgeladen",
       logo_delete: "Logo entfernt",
+      mcp_create: "MCP-Anfrage (KI-Agent)",
       oauth2_create: "OAuth2-Anbieter erstellt",
       oauth2_update: "OAuth2-Anbieter aktualisiert",
       oauth2_delete: "OAuth2-Anbieter gelöscht",
