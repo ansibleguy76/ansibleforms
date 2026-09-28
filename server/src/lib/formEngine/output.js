@@ -1,4 +1,5 @@
 'use strict';
+import crypto from 'crypto';
 import { getFieldValue } from './placeholders.js';
 
 /**
@@ -135,4 +136,72 @@ export function filterRawFormData(fields, values) {
   return out;
 }
 
-export default { deepClone, buildFormOutput, collectCredentials, filterRawFormData };
+/**
+ * A copy of `data` with the values of password-typed fields replaced by a mask, for display
+ * only. MIRROR of client/src/lib/Helpers.js maskPasswordsForDisplay.
+ */
+export function maskPasswords(data, fields, subforms = []) {
+  if (data == null || !Array.isArray(fields)) return data;
+  const cloned = deepClone(data);
+  if (cloned == null) return data;
+  const subformByName = Object.fromEntries((subforms || []).map((s) => [s.name, s]));
+  const MASK = '********';
+  const setAtPath = (target, p, value) => {
+    const parts = String(p).split('.');
+    let cur = target;
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (cur == null || typeof cur !== 'object') return;
+      cur = cur[parts[i]];
+    }
+    if (cur && typeof cur === 'object') {
+      const last = parts[parts.length - 1];
+      if (last in cur && cur[last] != null && cur[last] !== '') cur[last] = value;
+    }
+  };
+  const getAtPath = (target, p) => {
+    let cur = target;
+    for (const part of String(p).split('.')) {
+      if (cur == null || typeof cur !== 'object') return undefined;
+      cur = cur[part];
+    }
+    return cur;
+  };
+  const walk = (target, fieldDefs) => {
+    if (!target || typeof target !== 'object' || !Array.isArray(fieldDefs)) return;
+    for (const f of fieldDefs) {
+      if (!f || !f.name || f.noOutput || f.output === false) continue;
+      const paths = [].concat(f.model || f.name);
+      const sub = (typeof f.subform === 'string') ? subformByName[f.subform] : f.subform;
+      if (f.type === 'password') {
+        for (const p of paths) setAtPath(target, p, MASK);
+      } else if (f.type === 'list' && sub && Array.isArray(sub.fields)) {
+        for (const p of paths) {
+          const arr = getAtPath(target, p);
+          if (Array.isArray(arr)) arr.forEach((row) => walk(row, sub.fields));
+        }
+      } else if (f.type === 'yaml' && sub && Array.isArray(sub.fields)) {
+        for (const p of paths) {
+          const obj = getAtPath(target, p);
+          if (obj && typeof obj === 'object' && !Array.isArray(obj)) walk(obj, sub.fields);
+        }
+      }
+    }
+  };
+  walk(cloned, fields);
+  return cloned;
+}
+
+/** JSON with object keys sorted at every level, so equal data always hashes the same. */
+export function canonicalJson(value) {
+  if (value === undefined) return 'null';
+  if (value === null || typeof value !== 'object') return JSON.stringify(value);
+  if (Array.isArray(value)) return '[' + value.map((v) => (v === undefined ? 'null' : canonicalJson(v))).join(',') + ']';
+  const keys = Object.keys(value).filter((k) => value[k] !== undefined).sort();
+  return '{' + keys.map((k) => JSON.stringify(k) + ':' + canonicalJson(value[k])).join(',') + '}';
+}
+
+export function sha256(value) {
+  return 'sha256:' + crypto.createHash('sha256').update(canonicalJson(value)).digest('hex');
+}
+
+export default { deepClone, buildFormOutput, collectCredentials, filterRawFormData, maskPasswords, canonicalJson, sha256 };

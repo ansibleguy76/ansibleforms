@@ -2,7 +2,7 @@
 import { z } from 'zod';
 import { resolveForm, normalizeFields, isDynamicField } from '../lib/formEngine/resolve.js';
 import { scanDependencies } from '../lib/formEngine/placeholders.js';
-import { buildFormOutput, collectCredentials, filterRawFormData } from '../lib/formEngine/output.js';
+import { buildFormOutput, collectCredentials, filterRawFormData, maskPasswords, sha256 } from '../lib/formEngine/output.js';
 
 /**
  * The MCP tools. Deliberately technical : they expose the form flow a browser goes through
@@ -16,9 +16,26 @@ import { buildFormOutput, collectCredentials, filterRawFormData } from '../lib/f
  * database ; mcp/router.js passes the real ones.
  */
 
-export class ToolError extends Error {}
+/**
+ * A refusal the caller can act on. `code` and `details` are returned as structured content
+ * next to the text, so a client does not have to parse the message.
+ */
+export class ToolError extends Error {
+  constructor(message, code = 'invalid_request', details = {}) {
+    super(message);
+    this.code = code;
+    this.details = details;
+  }
+}
 
-const KNOWN_ERRORS = ['AccessDeniedError', 'NotFoundError', 'ConflictError', 'BadRequestError', 'ForbiddenError'];
+// model errors, by name, and the code a caller gets for them
+const KNOWN_ERRORS = {
+  AccessDeniedError: 'access_denied',
+  ForbiddenError: 'access_denied',
+  NotFoundError: 'not_found',
+  ConflictError: 'conflict',
+  BadRequestError: 'invalid_request',
+};
 
 function lastLines(text, n) {
   if (!n || n <= 0) return text;
@@ -54,7 +71,7 @@ export function createHandlers({ user, deps }) {
   async function loadForm(name) {
     const formConfig = await Form.load(roles, name);
     const formObj = formConfig?.forms?.[0];
-    if (!formObj) throw new ToolError(`Form '${name}' not found or you do not have access to it`);
+    if (!formObj) throw new ToolError(`Form '${name}' not found or you do not have access to it`, 'not_found');
     return { formConfig, formObj };
   }
 
@@ -84,11 +101,12 @@ export function createHandlers({ user, deps }) {
     if (!subform && Array.isArray(formObj.wizard) && formObj.wizard.length > 0) {
       throw new ToolError(`'${formObj.name}' is a wizard form ; its fields live in its steps `
         + `(${formObj.wizard.map((s) => s?.subform).filter(Boolean).join(', ')}). Resolve a step with \`subform\`. `
-        + 'Wizard forms cannot be launched through MCP yet.');
+        + 'Wizard forms cannot be launched through MCP yet.', 'unsupported',
+        { steps: formObj.wizard.map((s) => s?.subform).filter(Boolean) });
     }
     if (subform) {
       target = (formObj.subforms || []).find((s) => s?.name === subform);
-      if (!target) throw new ToolError(`Subform '${subform}' is not part of form '${formObj.name}'`);
+      if (!target) throw new ToolError(`Subform '${subform}' is not part of form '${formObj.name}'`, 'not_found');
       // a subform sees its parent form's values (and through them the constants and
       // varsFiles data) as __parent__, as a list row or wizard step does in the browser
       parentData = { ...(formConfig.constants || {}), ...(formObj.vars || {}), ...(parent || {}) };
@@ -105,6 +123,27 @@ export function createHandlers({ user, deps }) {
       services: servicesFor(formConfig, formObj, subform),
     });
     return { res, formConfig, formObj };
+  }
+
+  /**
+   * What launch_job submits for a complete resolution, and its hash. The hash covers the
+   * form name, the modelled extravars and the credential names, computed over the REAL
+   * values (passwords included) ; the preview a caller sees has the passwords masked.
+   * Job.launch adds ansibleforms_user and __jobid__ afterwards, and `verbose` adds
+   * __verbose__ - none of those are part of the hash.
+   */
+  function launchPayload(res, formObj) {
+    const extravars = buildFormOutput(res._fields, res._values, {
+      isVisible: (f) => !!res._visibility[f.name],
+      subforms: formObj.subforms || [],
+    });
+    const credentials = collectCredentials(res._fields, extravars);
+    return {
+      extravars,
+      credentials,
+      preview: maskPasswords(extravars, res._fields, formObj.subforms || []),
+      payloadHash: sha256({ form: formObj.name, extravars, credentials }),
+    };
   }
 
   return {
@@ -137,20 +176,29 @@ export function createHandlers({ user, deps }) {
     },
 
     async resolveField(args) {
-      const { res } = await resolveFor(args);
-      return publicResolution(res);
+      const { res, formObj } = await resolveFor(args);
+      const out = publicResolution(res);
+      // the exact launch payload, only where it is one : a whole root form, resolved
+      out.formFingerprint = sha256(formObj);
+      if (res.complete && !args.subform && !args.field) {
+        const payload = launchPayload(res, formObj);
+        out.modeledExtravars = payload.preview;
+        out.credentials = payload.credentials;
+        out.payloadHash = payload.payloadHash;
+      }
+      return out;
     },
 
-    async launchJob({ form, values, verbose }) {
+    async launchJob({ form, values, verbose, expectedPayloadHash }) {
       const { formConfig, formObj } = await loadForm(form);
       if (formObj.type === 'subform') {
-        throw new ToolError(`'${formObj.name}' is a subform and cannot be launched on its own`);
+        throw new ToolError(`'${formObj.name}' is a subform and cannot be launched on its own`, 'unsupported');
       }
       if (Array.isArray(formObj.wizard) && formObj.wizard.length > 0) {
-        throw new ToolError(`'${formObj.name}' is a wizard form ; wizard forms cannot be launched through MCP yet`);
+        throw new ToolError(`'${formObj.name}' is a wizard form ; wizard forms cannot be launched through MCP yet`, 'unsupported');
       }
       if (verbose && !user?.options?.allowVerboseMode) {
-        throw new ToolError('You do not have permission to run jobs in verbose mode');
+        throw new ToolError('You do not have permission to run jobs in verbose mode', 'access_denied');
       }
       const res = await resolveForm({
         form: formObj,
@@ -163,20 +211,25 @@ export function createHandlers({ user, deps }) {
       if (!res.complete) {
         const parts = [];
         if (res.missing.length) parts.push(`missing input for : ${res.missing.join(', ')}`);
+        if (res.invalid.length) parts.push(`not one of the options : ${res.invalid.join(', ')}`);
         if (res.waiting.length) parts.push(`not resolvable yet : ${res.waiting.join(', ')}`);
-        throw new ToolError(`The form is not complete - ${parts.join(' ; ')}. Call resolve_field to see what is needed.`);
+        throw new ToolError(`The form is not complete - ${parts.join(' ; ')}. Call resolve_field to see what is needed.`,
+          'form_incomplete', { missing: res.missing, invalid: res.invalid, waiting: res.waiting });
       }
       const files = res._fields.filter((f) => f.type === 'file' && res._visibility[f.name]
         && res._values[f.name] !== undefined && res._values[f.name] !== null && res._values[f.name] !== '');
       if (files.length) {
-        throw new ToolError(`File fields cannot be filled through MCP (${files.map((f) => f.name).join(', ')})`);
+        throw new ToolError(`File fields cannot be filled through MCP (${files.map((f) => f.name).join(', ')})`,
+          'unsupported', { fields: files.map((f) => f.name) });
       }
-      const extravars = buildFormOutput(res._fields, res._values, {
-        isVisible: (f) => !!res._visibility[f.name],
-        subforms: formObj.subforms || [],
-      });
+      const { extravars, credentials, payloadHash } = launchPayload(res, formObj);
+      // the resolution changed since it was approved : a query answered differently, the
+      // form was edited, or other values were sent
+      if (expectedPayloadHash && expectedPayloadHash !== payloadHash) {
+        throw new ToolError('The payload differs from the one that was resolved - resolve the form again and have it confirmed.',
+          'payload_mismatch', { expectedPayloadHash, payloadHash });
+      }
       if (verbose) extravars.__verbose__ = true;
-      const credentials = collectCredentials(res._fields, extravars);
       const rawFormData = filterRawFormData(res._fields, res._values);
       const job = await Job.launch({
         form: formObj.name,
@@ -186,7 +239,7 @@ export function createHandlers({ user, deps }) {
         rawFormData,
         fromClient: true,
       });
-      return { id: job?.id, form: formObj.name, warnings: res.warnings };
+      return { id: job?.id, form: formObj.name, payloadHash, warnings: res.warnings };
     },
 
     async getJob({ id, tail }) {
@@ -211,18 +264,32 @@ export function createHandlers({ user, deps }) {
 }
 
 const valuesSchema = z.record(z.string(), z.any())
-  .describe('Raw field values keyed by field name, as the browser holds them (an enum takes the selected option or its valueColumn value).');
+  .describe('Raw field values keyed by field name. A choice field takes the selected option record, a partial record or its valueColumn value (an array of those when multiple).');
 
-/** Wrap a handler : JSON text out, model errors as tool errors, no stack traces. */
+/**
+ * Wrap a handler : the result as JSON text and as structured content, a refusal as a tool
+ * error carrying `{ code, message, ...details }`, no stack traces.
+ */
 function wrap(fn) {
   return async (args) => {
     try {
       const result = await fn(args || {});
-      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+      return {
+        content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
+        structuredContent: result,
+      };
     } catch (err) {
-      const known = err instanceof ToolError || KNOWN_ERRORS.includes(err?.name) || err?.statusCode;
-      const message = known ? err.message : `Internal error : ${err?.message || err}`;
-      return { isError: true, content: [{ type: 'text', text: message }] };
+      let error;
+      if (err instanceof ToolError) {
+        error = { code: err.code, message: err.message, ...err.details };
+      } else if (KNOWN_ERRORS[err?.name]) {
+        error = { code: KNOWN_ERRORS[err.name], message: err.message };
+      } else if (err?.statusCode) {
+        error = { code: err.statusCode === 403 ? 'access_denied' : err.statusCode === 404 ? 'not_found' : 'invalid_request', message: err.message };
+      } else {
+        error = { code: 'internal_error', message: `Internal error : ${err?.message || err}` };
+      }
+      return { isError: true, content: [{ type: 'text', text: error.message }], structuredContent: error };
     }
   };
 }
@@ -250,9 +317,12 @@ export function registerTools(server, handlers) {
     description: 'Evaluate a form for the values filled in so far, in dependency order : which fields are '
       + 'visible, their defaults, computed expression and query values, and the options of every choice '
       + 'field. Fields whose inputs are not there yet come back as `waiting` with `waitingFor`. '
-      + '`missing` lists fields that need a value from you ; `complete` is true when the form can be '
-      + 'launched. Pass `field` to resolve only that field and what it depends on. Call it again after '
-      + 'every answer.',
+      + '`missing` lists fields that need a value from you, `invalid` choices that are not among the '
+      + 'options ; `complete` is true when the form can be launched. A choice may be sent as the option '
+      + 'record, a partial record or its valueColumn value - it is replaced by the full option. When '
+      + 'complete, the answer holds `modeledExtravars` (passwords masked) and `credentials` exactly as '
+      + 'launch_job will submit them, and a `payloadHash` to pass to launch_job. Pass `field` to resolve '
+      + 'only that field and what it depends on. Call it again after every answer.',
     inputSchema: {
       form: z.string().describe('Form name'),
       values: valuesSchema.optional(),
@@ -267,12 +337,15 @@ export function registerTools(server, handlers) {
   server.registerTool('launch_job', {
     title: 'Launch job',
     description: 'Launch the form with the given values, exactly as a browser submission would : the form '
-      + 'is resolved first and the launch is refused while fields are missing or unresolved. Returns the '
-      + 'job id. Runs the automation behind the form - confirm with the user before calling it.',
+      + 'is resolved first and the launch is refused while fields are missing, invalid or unresolved '
+      + '(code `form_incomplete`), or when `expectedPayloadHash` no longer matches (code '
+      + '`payload_mismatch`). Returns the job id. Runs the automation behind the form - confirm the '
+      + 'modeledExtravars from resolve_field with the user before calling it.',
     inputSchema: {
       form: z.string().describe('Form name'),
       values: valuesSchema,
       verbose: z.boolean().optional().describe('Verbose ansible output (needs the allowVerboseMode role option)'),
+      expectedPayloadHash: z.string().optional().describe('The payloadHash resolve_field returned for the approved values ; the launch is refused when the payload differs'),
     },
     annotations: { readOnlyHint: false, destructiveHint: true },
   }, wrap((a) => handlers.launchJob(a)));

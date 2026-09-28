@@ -166,4 +166,46 @@ describe("MCP tools", () => {
     expect(r.text).not.toContain("credentials");
     expect(r.text).not.toContain("cluster_c1");
   });
+
+  test("resolve_field on a complete form returns the exact launch payload and its hash", async () => {
+    const client = await connect();
+    const values = { cluster: "c1", name: "v1", secret: "pw" };
+    const r = await call(client, "resolve_field", { form: "Create volume", values });
+    expect(r.data.complete).toBe(true);
+    expect(r.data.modeledExtravars).toEqual({ cluster: "c1", volume: { name: "v1", size: 10 }, secret: "********", cred: "cluster_c1" });
+    expect(r.data.credentials).toEqual({ cred: "cluster_c1" });
+    expect(r.data.payloadHash).toMatch(/^sha256:[0-9a-f]{64}$/);
+    expect(r.data.formFingerprint).toMatch(/^sha256:/);
+
+    // the same values launch, and the hash they launch with is the one that was shown
+    const ok = await call(client, "launch_job", { form: "Create volume", values, expectedPayloadHash: r.data.payloadHash });
+    expect(ok.isError).toBe(false);
+    expect(ok.data.payloadHash).toBe(r.data.payloadHash);
+    expect(deps.Job.launch.mock.calls[0][0].extravars.secret).toBe("pw");
+  });
+
+  test("a launch whose payload changed since it was resolved is refused", async () => {
+    const client = await connect();
+    const r = await call(client, "resolve_field", { form: "Create volume", values: { cluster: "c1", name: "v1" } });
+    const res = await client.callTool({ name: "launch_job", arguments: { form: "Create volume", values: { cluster: "c1", name: "v2" }, expectedPayloadHash: r.data.payloadHash } });
+    expect(res.isError).toBe(true);
+    expect(res.structuredContent).toMatchObject({ code: "payload_mismatch", expectedPayloadHash: r.data.payloadHash });
+    expect(deps.Job.launch).not.toHaveBeenCalled();
+  });
+
+  test("an incomplete launch carries a structured error", async () => {
+    const client = await connect();
+    const res = await client.callTool({ name: "launch_job", arguments: { form: "Create volume", values: { cluster: "c9" } } });
+    expect(res.isError).toBe(true);
+    expect(res.structuredContent).toEqual(expect.objectContaining({
+      code: "form_incomplete", missing: ["name"], invalid: ["cluster"], waiting: [],
+    }));
+  });
+
+  test("access errors carry their code", async () => {
+    const client = await connect();
+    const res = await client.callTool({ name: "get_form", arguments: { name: "Admin only" } });
+    expect(res.structuredContent).toEqual({ code: "access_denied", message: "Access denied to form Admin only." });
+  });
 });
+

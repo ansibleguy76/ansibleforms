@@ -203,6 +203,62 @@ export async function resolveForm({
     }
   }
 
+  /**
+   * Turn a choice into what the browser's select holds : the selected option RECORD(S).
+   *
+   * A caller may send the valueColumn value ("bb8") or a partial record ({name: "vol1"})
+   * instead of the whole option. Expressions and queries downstream read other columns of
+   * that record ($(cluster.management_ip)), so the bare value must be looked up in the
+   * options and replaced by the full record - otherwise it reaches them as a string, and a
+   * query resolves "bb8" as a host name. A value that matches no option is flagged, and the
+   * form is not complete while it is (the browser's select cannot hold such a value).
+   */
+  function applyChoice(f, s, patch, inputValue) {
+    // `__all__` on a multiple select picks every option (BsInputSelectAdvancedTable)
+    if (patch.value === '__all__' && f.multiple) {
+      patch.value = [...(s.options || [])];
+      return;
+    }
+    const options = s.options || [];
+    const vc = f.valueColumn || "";
+    const pick = (v) => {
+      if (v === undefined || v === null || SENTINELS.includes(v)) return { v, ok: true };
+      let hit = options.find((o) => optionMatches(o, v, vc));
+      // a scalar on a field without valueColumn : the column the user sees (previewColumn),
+      // then the listed columns, then - only if unambiguous - any column holding it.
+      // Without this, "bb8" was compared with the record's FIRST key (management_ip).
+      if (hit === undefined && (typeof v !== 'object')) {
+        const isRec = (o) => o && typeof o === 'object';
+        for (const k of [...new Set([f.previewColumn, ...(f.columns || [])].filter(Boolean))]) {
+          hit = options.find((o) => isRec(o) && o[k] === v);
+          if (hit !== undefined) break;
+        }
+        if (hit === undefined) {
+          const any = options.filter((o) => isRec(o) && Object.values(o).includes(v));
+          if (any.length === 1) hit = any[0];
+        }
+      }
+      // a partial record : the option whose columns agree on every key that was sent
+      if (hit === undefined && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length > 0) {
+        hit = options.find((o) => o && typeof o === 'object'
+          && Object.keys(v).every((k) => JSON.stringify(o[k]) === JSON.stringify(v[k])));
+      }
+      return hit !== undefined ? { v: hit, ok: true } : { v, ok: false };
+    };
+    let ok = true;
+    if (Array.isArray(patch.value)) {
+      patch.value = patch.value.map((v) => { const p = pick(v); ok = ok && p.ok; return p.v; });
+    } else {
+      const p = pick(patch.value);
+      ok = p.ok;
+      patch.value = p.v;
+    }
+    if (!ok && has(f.name) && !isEmptyValue(inputValue, f.type)) {
+      warnings.push(`'${f.name}' : the given value is not one of the available options`);
+      patch.notInOptions = true;
+    }
+  }
+
   function finish(f, patch) {
     const s = st[f.name];
     Object.assign(s, patch);
@@ -220,8 +276,12 @@ export async function resolveForm({
       let value = has(f.name) ? inputValue : dflt;
       if (value === undefined && f.type === 'checkbox') value = false;
       if (value === undefined && f.type === 'list') value = [];
-      if (f.type === 'enum' && Array.isArray(f.values)) s.options = f.values;
-      return finish(f, { status: 'resolved', value, source: has(f.name) ? 'input' : 'default' });
+      const patch = { status: 'resolved', value, source: has(f.name) ? 'input' : 'default' };
+      if (f.type === 'enum' && Array.isArray(f.values)) {
+        s.options = f.values;
+        applyChoice(f, s, patch, inputValue);
+      }
+      return finish(f, patch);
     }
 
     // a static `value:` on an expression/yaml field
@@ -277,18 +337,7 @@ export async function resolveForm({
     if (OPTION_TYPES.includes(f.type)) {
       patch.value = optionValue();
       patch.source = has(f.name) ? 'input' : 'default';
-      // `__all__` on a multiple select picks every option (BsInputSelectAdvancedTable)
-      if (patch.value === '__all__' && f.multiple) {
-        patch.value = [...(s.options || [])];
-      }
-      if (has(f.name) && !isEmptyValue(inputValue, f.type)) {
-        const wanted = [].concat(inputValue);
-        const vc = f.valueColumn || "";
-        if (!wanted.every((v) => SENTINELS.includes(v) || (s.options || []).some((o) => optionMatches(o, v, vc)))) {
-          warnings.push(`'${f.name}' : the given value is not one of the available options`);
-          patch.notInOptions = true;
-        }
-      }
+      applyChoice(f, s, patch, inputValue);
     }
     return finish(f, patch);
   }
@@ -361,12 +410,14 @@ export async function resolveForm({
     out.push(r);
   }
   const missing = out.filter((r) => r.needsInput).map((r) => r.name);
+  const invalid = out.filter((r) => r.notInOptions && r.visible).map((r) => r.name);
   const waiting = out.filter((r) => r.status === 'waiting').map((r) => r.name);
   return {
     form: form?.name,
-    complete: missing.length === 0 && waiting.length === 0,
+    complete: missing.length === 0 && waiting.length === 0 && invalid.length === 0,
     missing,
     waiting,
+    invalid,
     fields: out,
     warnings,
     // internal : the raw values and visibility the launch builds its extravars from

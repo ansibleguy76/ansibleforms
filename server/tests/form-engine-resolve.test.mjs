@@ -154,4 +154,61 @@ describe("resolveForm", () => {
     expect(byName(res).pw.value).toBe("********");
     expect(res._values.pw).toBe("s3cret");
   });
+
+  describe("choices are normalised to the option records (MCP beta feedback)", () => {
+    const clusterForm = {
+      name: "f",
+      fields: [
+        { name: "cluster", type: "enum", runLocal: true, required: true, valueColumn: "name",
+          expression: "[{name:'bb8', management_ip:'172.16.56.1'},{name:'r2d2', management_ip:'172.16.56.2'}]" },
+        { name: "svm", type: "enum", query: "select * from svm where ip='$(cluster.management_ip)'", dbConfig: "db" },
+        { name: "volumes", type: "enum", multiple: true, required: true, valueColumn: "name",
+          runLocal: true, expression: "[{name:'vol1', size:1},{name:'vol2', size:2}]" },
+        { name: "plan", type: "local", expression: "$(volumes_json)" },
+      ],
+    };
+
+    test("a valueColumn value becomes the whole record, so other columns resolve", async () => {
+      const svc = services();
+      const res = await resolveForm({ form: clusterForm, values: { cluster: "bb8", volumes: ["vol1"] }, services: svc });
+      const f = byName(res);
+      expect(f.cluster.value).toEqual({ name: "bb8", management_ip: "172.16.56.1" });
+      expect(svc.query).toHaveBeenCalledWith(expect.objectContaining({ name: "svm" }), { "cluster.management_ip": "172.16.56.1" });
+      expect(f.volumes.value).toEqual([{ name: "vol1", size: 1 }]);
+      expect(res.invalid).toEqual([]);
+    });
+
+    test("a partial record becomes the whole record", async () => {
+      const res = await resolveForm({ form: clusterForm, values: { cluster: { name: "r2d2" }, volumes: [{ name: "vol2" }] }, services: services() });
+      expect(byName(res).cluster.value).toEqual({ name: "r2d2", management_ip: "172.16.56.2" });
+      expect(byName(res).volumes.value).toEqual([{ name: "vol2", size: 2 }]);
+    });
+
+    test("a value that is no option makes the form incomplete", async () => {
+      const res = await resolveForm({ form: clusterForm, values: { cluster: "bb8", volumes: ["vol1", "nope"] }, services: services() });
+      expect(res.invalid).toEqual(["volumes"]);
+      expect(res.complete).toBe(false);
+    });
+
+    test("without valueColumn a scalar matches the previewColumn, not the first key", async () => {
+      const res = await resolveForm({
+        form: { name: "f", fields: [{ name: "cluster", type: "enum", previewColumn: "name", columns: ["name", "management_ip"],
+          values: [{ management_ip: "172.16.56.1", name: "bb8" }, { management_ip: "172.16.57.1", name: "r2d2" }] }] },
+        values: { cluster: "bb8" },
+        services: services(),
+      });
+      expect(byName(res).cluster.value).toEqual({ management_ip: "172.16.56.1", name: "bb8" });
+      expect(res.invalid).toEqual([]);
+    });
+
+    test("a static enum is normalised the same way", async () => {
+      const res = await resolveForm({
+        form: { name: "f", fields: [{ name: "size", type: "enum", valueColumn: "id", values: [{ id: "s", gb: 10 }, { id: "m", gb: 50 }] }] },
+        values: { size: "m" },
+        services: services(),
+      });
+      expect(byName(res).size.value).toEqual({ id: "m", gb: 50 });
+    });
+  });
 });
+

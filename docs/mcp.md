@@ -87,15 +87,48 @@ the form, and reports per field:
   with `optionCount` and `optionsTruncated`);
 - `needsInput`: a required field without a value, or a choice field still on `__auto__`.
 
-On top of that, `missing` lists the fields that need an answer and `complete` says whether
-the form can be launched. `launch_job` refuses a form that is not complete.
+On top of that, `missing` lists the fields that need an answer, `invalid` the choices that
+are not among the options, and `complete` says whether the form can be launched.
+`launch_job` refuses a form that is not complete.
 
 Pass `field` to resolve only that field and what it depends on. For a list row or a wizard
 step, pass `subform` (and optionally `parent`, the parent form's values).
 
-Values are the raw values the browser holds: the selected option for an enum (the whole
-record, or the `valueColumn` value), `true`/`false` for a checkbox, rows for a list. A
-computed field ignores a value sent for it, unless it is `editable`.
+Values are the raw values the browser holds: `true`/`false` for a checkbox, rows for a
+list. A choice field takes the selected option record, a partial record (`{"name": "vol1"}`)
+or its `valueColumn` value (`"vol1"`), or an array of those when it is `multiple`. Each is
+replaced by the full option record before anything else is evaluated, so an expression or
+query that reads another column (`$(cluster.management_ip)`) gets it. A computed field
+ignores a value sent for it, unless it is `editable`.
+
+### Approving the exact payload
+
+When the form is complete, `resolve_field` also returns what `launch_job` will submit:
+
+- `modeledExtravars`: the extravars after `model`, `valueColumn` and `output` are applied,
+  with password fields masked;
+- `credentials`: the AnsibleForms credentials the job will use (names, not secrets);
+- `payloadHash`: a sha256 of the form name, the real extravars and the credentials;
+- `formFingerprint`: a sha256 of the form definition it was resolved against.
+
+Show `modeledExtravars` to the operator, and pass the `payloadHash` they approved to
+`launch_job` as `expectedPayloadHash`. The launch resolves the form again and is refused
+when the result differs, for example because a query now answers differently or the form
+was edited. `ansibleforms_user`, `__jobid__` and `__verbose__` are added at launch and are
+not part of the hash.
+
+### Errors
+
+A refused call is a tool error whose structured content carries a `code` and the details:
+
+| Code | When |
+|---|---|
+| `form_incomplete` | `launch_job` on a form that is not complete, with `missing`, `invalid` and `waiting` |
+| `payload_mismatch` | the payload differs from `expectedPayloadHash`, with both hashes |
+| `access_denied` | the user's roles do not grant the form or job, or verbose mode |
+| `not_found` | no such form, subform or job |
+| `unsupported` | a wizard form, a subform on its own, or a file field |
+| `internal_error` | anything else |
 
 ## runLocal expressions
 
