@@ -129,6 +129,11 @@ onMounted(async () => {
   max-width: 200px;
   max-height: 40px;
 }
+/* an svg without width/height has no size of its own (see .logo in BsNavBar.vue) */
+.logo-preview[src^="data:image/svg+xml"] {
+  height: 40px;
+  width: auto;
+}
 .btn-close-preview {
   position: absolute;
   top: 0.5rem;
