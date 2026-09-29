@@ -1,0 +1,350 @@
+'use strict';
+
+/**
+ * Field placeholder handling for the server-side form engine (used by the MCP server).
+ *
+ * MIRROR of the browser implementation - keep the two in sync:
+ *   getFieldValue, quoteContextAt,
+ *   substituteExpressionPlaceholder,
+ *   readPlaceholderPath              -> client/src/lib/Helpers.js
+ *                                       (readPlaceholderPath = Helpers.replacePlaceholders,
+ *                                        without its eval)
+ *   replacePlaceholderInString       -> client/src/components/AppForm.vue
+ *   scanDependencies                 -> AppForm.vue addDynamicFieldDependency /
+ *                                       getPlaceholderMatches / findVariableDependencies
+ *   checkDependencies                -> AppForm.vue checkDependencies
+ *
+ * Everything here is a pure function of its arguments : no Vue refs, no module state. The
+ * reactive status map the browser keeps is replaced by an `isReady(name)` callback.
+ */
+
+const PLACEHOLDER = /\$\(([^)]+)\)/g;
+const SENTINELS = ['__auto__', '__none__', '__all__'];
+
+/**
+ * The value a field contributes to a placeholder or a dependency check.
+ * A record picks `column` (falling back to its first key), an array of records is
+ * flattened by that column, and the enum sentinels read as undefined.
+ */
+export function getFieldValue(field, column, keepArray) {
+  let keys;
+  let key;
+  let wasArray = false;
+  if (field) {
+    if (Array.isArray(field)) {
+      wasArray = true;
+    } else {
+      field = [].concat(field ?? []);
+    }
+    if (field.length > 0) {
+      if (column != "*") {
+        if (typeof field[0] === "object") {
+          keys = Object.keys(field[0] || {});
+          if (keys.length > 0) {
+            key = (keys.includes(column)) ? column : keys[0];
+            field = field.map((item) => ((item) ? ((item[key] == null) ? null : (item[key] ?? item)) : undefined));
+          } else {
+            field = (!keepArray) ? undefined : field;
+          }
+        }
+      }
+      if (field !== undefined) {
+        field = (!wasArray || !keepArray) ? field[0] : field;
+      }
+    } else {
+      field = (!keepArray) ? undefined : field;
+    }
+  }
+  if (SENTINELS.includes(field)) {
+    field = undefined;
+  }
+  return field;
+}
+
+/**
+ * Read `a.b[0].c` out of an object. Helpers.replacePlaceholders on the client does this
+ * with eval ; a path is all it ever evaluates, so a plain walk gives the same answer.
+ * A path with other characters is handed back as the literal placeholder, like the client.
+ */
+export function readPlaceholderPath(match, object) {
+  if (!/^[a-zA-Z0-9_\-[\].]*$/.test(match)) return `$(${match})`;
+  const parts = String(match).replaceAll('[', '.').replaceAll(']', '.').split('.').filter((x) => x !== '');
+  let cur = object;
+  for (const part of parts) {
+    if (cur === null || cur === undefined) return undefined;
+    cur = cur[part];
+  }
+  return cur;
+}
+
+/** Which quote character, if any, encloses position `index` of a JS expression. */
+export function quoteContextAt(expression, index) {
+  let quote = null;
+  for (let i = 0; i < index; i++) {
+    const c = expression[i];
+    if (quote) {
+      if (c === '\\') { i++; continue; }
+      if (c === quote) quote = null;
+    } else if (c === "'" || c === '"') {
+      quote = c;
+    }
+  }
+  return quote;
+}
+
+/**
+ * Splice a resolved value into an expression at the first occurrence of its placeholder,
+ * as a JS literal - see the long comment on the client version for the three cases.
+ */
+export function substituteExpressionPlaceholder(expression, placeholder, value, isSource = false) {
+  if (expression == null) return expression;
+  const at = expression.indexOf(placeholder);
+  if (at < 0) return expression;
+  const end = at + placeholder.length;
+  const quote = quoteContextAt(expression, at);
+  if (!quote) {
+    const literal = isSource ? value : JSON.stringify(value);
+    return expression.slice(0, at) + literal + expression.slice(end);
+  }
+  if (expression[at - 1] === quote && expression[end] === quote) {
+    const literal = isSource ? value : JSON.stringify(value);
+    return expression.slice(0, at - 1) + literal + expression.slice(end + 1);
+  }
+  let raw = value;
+  if (isSource) {
+    try {
+      const parsed = JSON.parse(value);
+      if (typeof parsed === 'string') raw = parsed;
+    } catch { /* not JSON after all - splice the source in as text */ }
+  }
+  const body = JSON.stringify(String(raw)).slice(1, -1);
+  const text = quote === "'" ? body.replace(/'/g, "\\'") : body;
+  return expression.slice(0, at) + text + expression.slice(end);
+}
+
+function stringifyValue(fieldvalue) {
+  if (typeof fieldvalue === 'object' || Array.isArray(fieldvalue)) {
+    return JSON.stringify(fieldvalue);
+  }
+  return fieldvalue;
+}
+
+/**
+ * Substitute every `$(...)` placeholder in `value`.
+ *
+ * @param {string} value
+ * @param {object} ctx
+ * @param {object} ctx.values        name -> current raw value (fields, constants, vars, __user__)
+ * @param {object} ctx.fieldOptions  name -> { type, placeholderColumn }
+ * @param {function} [ctx.isReady]   name -> boolean ; a field that is not ready yet cannot be
+ *                                   substituted (the browser's "fixed/variable/default" test)
+ * @param {boolean} ignoreIncomplete substitute unresolved placeholders as undefined
+ * @param {'raw'|'expression'} mode  'expression' splices JS literals (safe inside an
+ *                                   expression), 'raw' pastes text (queries, escaped later)
+ * @returns {{hasPlaceholders: boolean, value: string|undefined, resolved: object, missing: string[]}}
+ *   `value` is undefined when a placeholder could not be resolved ; `missing` names the
+ *   fields responsible, `resolved` maps each raw placeholder text to what it became (raw mode)
+ */
+export function replacePlaceholderInString(value, ctx, ignoreIncomplete = false, mode = 'raw') {
+  const values = ctx?.values || {};
+  const fieldOptions = ctx?.fieldOptions || {};
+  const isReady = ctx?.isReady || (() => true);
+  const resolved = {};
+  const missing = [];
+  let hasPlaceholders = false;
+  if (typeof value !== "string") {
+    return { hasPlaceholders: false, value, resolved, missing };
+  }
+  value = value.replace(/\n+/g, '');
+  const matches = [...value.matchAll(PLACEHOLDER)];
+  for (const match of matches) {
+    const foundmatch = match[0];
+    let foundfield = match[1];
+    let column = "";
+    const tmpArr = /([^.]+)\.(.+)/.exec(foundfield);
+    if (tmpArr && tmpArr.length > 0) {
+      foundfield = tmpArr[1];
+      column = tmpArr[2];
+    } else if (foundfield in fieldOptions) {
+      column = fieldOptions[foundfield].placeholderColumn || "";
+    }
+    foundfield = foundfield.replace(/\[[0-9]*\]/, '');
+    let fieldvalue;
+    let ready = false;
+    let isObjectLiteral = false;
+
+    if (Object.prototype.hasOwnProperty.call(values, foundfield)) {
+      const opts = fieldOptions[foundfield];
+      const raw = values[foundfield];
+      if (opts && (["expression", "table", "list", "constant"].includes(opts.type) || column.includes(".")) && (typeof raw == "object")) {
+        if (opts.type === 'list' && Array.isArray(raw)) {
+          fieldvalue = JSON.stringify(raw.map((row) => row?.__output__ ?? row));
+        } else {
+          fieldvalue = JSON.stringify(readPlaceholderPath(match[1], values));
+        }
+        isObjectLiteral = true;
+        if (mode !== 'expression' && typeof fieldvalue == "string") {
+          fieldvalue = fieldvalue.replace(/^"+/, '').replace(/"+$/, '');
+        }
+      } else {
+        fieldvalue = getFieldValue(raw, column, true);
+      }
+      ready = isReady(foundfield);
+    }
+    if ((ready && fieldvalue !== undefined) || (ignoreIncomplete && value !== undefined)) {
+      if (fieldvalue === undefined) fieldvalue = "__undefined__";
+      if (fieldvalue === null) fieldvalue = "__null__";
+      if (mode === 'expression' && fieldvalue !== "__undefined__" && fieldvalue !== "__null__") {
+        value = substituteExpressionPlaceholder(value, foundmatch, fieldvalue, isObjectLiteral);
+      } else {
+        fieldvalue = stringifyValue(fieldvalue);
+        resolved[match[1]] = fieldvalue;
+        value = value?.replace(foundmatch, () => fieldvalue);
+      }
+    } else {
+      if (!missing.includes(foundfield)) missing.push(foundfield);
+      value = undefined;
+    }
+    hasPlaceholders = true;
+  }
+  if (value !== undefined && /\$\(([^)]+)\)/.test(value)) {
+    value = undefined;
+  }
+  if (value != undefined) {
+    value = value.replaceAll("'__undefined__'", "undefined");
+    value = value.replaceAll("__undefined__", "undefined");
+    value = value.replaceAll("'__null__'", "null");
+    value = value.replaceAll("__null__", "null");
+  }
+  return { hasPlaceholders, value, resolved, missing };
+}
+
+/** The field a placeholder or dependency name is rooted at : `a.b` -> `a`, `x[0]` -> `x`. */
+export function rootFieldName(name) {
+  let found = String(name);
+  const tmpArr = /([^.]+)\..+/.exec(found);
+  if (tmpArr && tmpArr.length > 0) found = tmpArr[1];
+  return found.replace(/\[[0-9]*\]/, '');
+}
+
+/**
+ * Build the field dependency graph : which fields each field reads, through `$()` in its
+ * expression/query/default and through its `dependencies:` block.
+ *
+ * @param {object[]} fields      the form's field definitions
+ * @param {string[]} knownNames  names that exist without being fields (constants, vars, __user__)
+ * @returns {{dependsOn: object, dependents: object, cycles: string[], warnings: string[]}}
+ */
+export function scanDependencies(fields, knownNames = []) {
+  const names = (fields || []).filter((f) => f?.name).map((f) => f.name);
+  const dependsOn = {};
+  const dependents = {};
+  const warnings = [];
+  const add = (field, found) => {
+    const root = rootFieldName(found);
+    if (names.includes(root)) {
+      (dependsOn[field] ||= []);
+      if (!dependsOn[field].includes(root)) dependsOn[field].push(root);
+      (dependents[root] ||= []);
+      if (!dependents[root].includes(field)) dependents[root].push(field);
+      if (root === field) warnings.push(`'${field}' has a self reference`);
+    } else if (!knownNames.includes(root)) {
+      warnings.push(`'${field}' has a reference to unknown field '${root}'`);
+    }
+  };
+  const scan = (field, s) => {
+    if (!s || typeof s !== 'string') return;
+    for (const m of s.matchAll(PLACEHOLDER)) add(field, m[1]);
+  };
+  for (const item of fields || []) {
+    if (!item?.name) continue;
+    scan(item.name, item.expression ?? item.query);
+    scan(item.name, item.default);
+    for (const dep of item.dependencies || []) {
+      if (!dep?.name) continue;
+      add(item.name, dep.name.startsWith('!') ? dep.name.slice(1) : dep.name);
+    }
+  }
+  // cycle detection on the transitive closure, in a scratch copy (see the client comment
+  // on why the graph itself must stay one-hop)
+  const cycles = [];
+  for (const start of Object.keys(dependsOn)) {
+    const seen = new Set();
+    const stack = [...dependsOn[start]];
+    while (stack.length) {
+      const n = stack.pop();
+      if (n === start) { cycles.push(start); break; }
+      if (seen.has(n)) continue;
+      seen.add(n);
+      stack.push(...(dependsOn[n] || []));
+    }
+  }
+  for (const c of cycles) {
+    if (!warnings.some((w) => w.startsWith(`'${c}' has a self reference`))) {
+      warnings.push(`'${c}' is part of a circular reference`);
+    }
+  }
+  return { dependsOn, dependents, cycles, warnings };
+}
+
+/**
+ * Whether a field's `dependencies:` block lets it be shown.
+ *
+ * @param {object} field
+ * @param {object} values        name -> raw value
+ * @param {object} fieldOptions  name -> { valueColumn }
+ * @param {function} isValid     name -> boolean, stands in for the browser's vuelidate state
+ * @returns {boolean}
+ */
+export function checkDependencies(field, values, fieldOptions = {}, isValid = () => true) {
+  if (!("dependencies" in field)) return true;
+  const dependencyFn = field.dependencyFn || "and";
+  const isAnd = (dependencyFn == "and" || dependencyFn == "nand");
+  const isOr = (dependencyFn == "or" || dependencyFn == "nor");
+  let result = isAnd;
+  for (const item of field.dependencies || []) {
+    let value;
+    let column = "";
+    const inversed = item.name.startsWith("!");
+    let fieldname = inversed ? item.name.slice(1) : item.name;
+    const tmpArr = /(.+)\.(.+)/.exec(fieldname);
+    if (tmpArr && tmpArr.length > 0) {
+      fieldname = tmpArr[1];
+      column = tmpArr[2];
+    } else if (fieldname in fieldOptions) {
+      column = fieldOptions[fieldname].valueColumn || "";
+    }
+    if (column) {
+      value = getFieldValue(values[fieldname], column, false);
+    } else {
+      value = values[fieldname];
+    }
+    let tmp;
+    if (item.isValid != undefined) {
+      tmp = item.isValid == isValid(fieldname);
+    } else {
+      tmp = item.values?.includes(value);
+    }
+    if (isAnd && ((!inversed && !tmp) || (inversed && tmp))) {
+      result = false;
+      break;
+    }
+    if (isOr && ((!inversed && tmp) || (inversed && !tmp))) {
+      result = true;
+      break;
+    }
+  }
+  if (dependencyFn == "nand" || dependencyFn == "nor") result = !result;
+  return result;
+}
+
+export default {
+  getFieldValue,
+  readPlaceholderPath,
+  quoteContextAt,
+  substituteExpressionPlaceholder,
+  replacePlaceholderInString,
+  rootFieldName,
+  scanDependencies,
+  checkDependencies,
+};

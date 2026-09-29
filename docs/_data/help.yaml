@@ -485,6 +485,19 @@
 
       An unknown value falls back to `strict`.
     version: 6.3.0
+  - name: ENABLE_MCP
+    version: 6.4.0
+    type: boolean
+    allowed: 0, 1
+    short: Enable the MCP server for AI agents
+    hint: Serves the Model Context Protocol endpoint on /api/v2/mcp
+    default: 0
+    description: |
+      Serves an MCP (Model Context Protocol) server on `/api/v2/mcp`, so an AI agent or an
+      MCP client (a chat backend, an IDE) can list the forms a user may use, resolve their
+      fields, launch jobs and follow them. Every request carries an AnsibleForms access token
+      and runs as that user, with the same form roles and job visibility as in the browser.
+      Changing it needs a restart. See the MCP page of the documentation.
   - name: ENABLE_DB_QUERY_LOGGING
     type: number
     allowed: 0, 1

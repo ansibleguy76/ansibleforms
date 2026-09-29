@@ -204,23 +204,13 @@ export async function resolveQuery(req) {
   let values = null;
 
   if (body.formName && body.fieldName) {
-    const formConfig = await Form.load(user.roles, body.formName);
-    const formObj = formConfig?.forms?.[0];
-    if (!formObj) {
-      throw new QueryPolicyError(404, `Form '${body.formName}' not found or you do not have access to it`);
-    }
-    const owner = findFieldOwner(formConfig, formObj, body.subformName);
-    if (!owner) {
-      throw new QueryPolicyError(404, `Subform '${body.subformName}' is not part of form '${body.formName}'`);
-    }
-    const field = (owner.fields || []).find(f => f.name === body.fieldName);
-    if (!field || !field.query) {
-      throw new QueryPolicyError(404, `Field '${body.fieldName}' has no query on form '${owner.name}'`);
-    }
-    query = field.query;
-    values = authoritativeValues(query, body.values, formConfig, owner);
-    config = field.dbConfig;
-    jq = field.jq || '';
+    return resolveFormQuery({
+      user,
+      formName: body.formName,
+      subformName: body.subformName,
+      fieldName: body.fieldName,
+      values: body.values,
+    });
   } else if (!user.options?.showSettings) {
     throw new QueryPolicyError(403, 'noAccess',
       'A raw query may only be run by a user with settings access. Send formName and fieldName to run a query defined on a form.');
@@ -232,4 +222,46 @@ export async function resolveQuery(req) {
   return { query, config, jq, values };
 }
 
-export default { escapeSqlValue, substitute, resolveQuery, QueryPolicyError };
+/**
+ * The form-bound half of resolveQuery, callable without an http request (the MCP server
+ * uses it). Same rules : the query text, datasource and jq come from the form definition
+ * loaded with the caller's roles, constants/varsFiles placeholders are taken from the
+ * configuration, only field values come from the caller.
+ *
+ * @param {object} args
+ * @param {object} args.user          the authenticated user (req.user.user)
+ * @param {string} args.formName      the ROOT form, which carries the roles
+ * @param {string} [args.subformName] a subform inlined into that form
+ * @param {string} args.fieldName
+ * @param {object} [args.values]      resolved placeholder values, keyed by raw placeholder text
+ * @param {object} [args.formConfig]  an already loaded Form.load(user.roles, formName) result
+ * @returns {Promise<{query: string, config: string, jq: string, values: object}>}
+ */
+export async function resolveFormQuery({ user, formName, subformName, fieldName, values, formConfig }) {
+  const loaded = formConfig || await Form.load((user || {}).roles, formName);
+  const formObj = loaded?.forms?.[0];
+  if (!formObj) {
+    throw new QueryPolicyError(404, `Form '${formName}' not found or you do not have access to it`);
+  }
+  const owner = findFieldOwner(loaded, formObj, subformName);
+  if (!owner) {
+    throw new QueryPolicyError(404, `Subform '${subformName}' is not part of form '${formName}'`);
+  }
+  const field = (owner.fields || []).find(f => f.name === fieldName);
+  if (!field || !field.query) {
+    throw new QueryPolicyError(404, `Field '${fieldName}' has no query on form '${owner.name}'`);
+  }
+  const query = field.query;
+  const config = field.dbConfig;
+  if (!config) {
+    throw new QueryPolicyError(400, 'missingDbConfig');
+  }
+  return {
+    query,
+    config,
+    jq: field.jq || '',
+    values: authoritativeValues(query, values, loaded, owner),
+  };
+}
+
+export default { escapeSqlValue, substitute, resolveQuery, resolveFormQuery, QueryPolicyError };

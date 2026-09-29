@@ -48,6 +48,9 @@ var app_config = {
   // job history somebody was relying on. Opting in is a deliberate choice, and the
   // health page reports the size so it is a visible one.
   jobRetentionDays: parseInt(process.env.JOB_RETENTION_DAYS || "0", 10),
+  // Serve the MCP server for AI agents on /api/v2/mcp. Off by default : it is a new way
+  // in, and an operator should opt in to it.
+  enableMcp: (process.env.ENABLE_MCP ?? 0) == 1,
   useYtt: (process.env.USE_YTT ?? 0) == 1,
   yttDangerousAllowAllSymlinkDestinations: (process.env.YTT_DANGEROUS_ALLOW_ALL_SYMLINK_DESTINATIONS ?? 0) == 1,
   yttAllowSymlinkDestinations: process.env.YTT_ALLOW_SYMLINK_DESTINATIONS || "",

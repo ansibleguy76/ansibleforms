@@ -97,6 +97,7 @@ export default {
       lock_delete: "Blocco del designer rilasciato",
       logo_create: "Logo caricato",
       logo_delete: "Logo rimosso",
+      mcp_create: "Richiesta MCP (agente IA)",
       oauth2_create: "Provider OAuth2 creato",
       oauth2_update: "Provider OAuth2 aggiornato",
       oauth2_delete: "Provider OAuth2 eliminato",

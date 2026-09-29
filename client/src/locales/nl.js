@@ -97,6 +97,7 @@ export default {
       lock_delete: "Designer-vergrendeling vrijgegeven",
       logo_create: "Logo geüpload",
       logo_delete: "Logo verwijderd",
+      mcp_create: "MCP-verzoek (AI-agent)",
       oauth2_create: "OAuth2-provider aangemaakt",
       oauth2_update: "OAuth2-provider bijgewerkt",
       oauth2_delete: "OAuth2-provider verwijderd",
