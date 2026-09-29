@@ -58,6 +58,7 @@ export async function runFixture(fx, { resolveForm, buildFormOutput, evalSandbox
     values: res._values,
     validation,
     invalid: res.invalid,
+    rowErrors: res.rowErrors,
     missing: res.missing,
     waiting: res.waiting,
     extravars: buildFormOutput(res._fields, res._values, {

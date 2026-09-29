@@ -7,6 +7,7 @@ import {
 } from './placeholders.js';
 import { SENTINELS, isEmptyValue } from './values.js';
 import { validateField } from './validate.js';
+import { buildFormOutput, listMarkers } from './output.js';
 
 /**
  * Stateless resolution of a form for a non-browser client (the MCP server).
@@ -36,6 +37,9 @@ const DYNAMIC_TYPES = ["expression", "enum", "table", "html", "yaml", "list", "q
 const VALUE_TYPES = ["expression", "html", "yaml", "table", "list"];   // the expression yields the VALUE
 const OPTION_TYPES = ["enum", "query"];                                // the expression yields the OPTIONS
 export const DEFAULT_MAX_OPTIONS = 200;
+// list rows resolved per launch, all nesting levels together : a row runs its subform's
+// expressions and queries, so a huge list would multiply them
+export const MAX_LIST_ROWS = 500;
 
 /** The browser's type aliases (AppForm.vue initForm), on a copy - never on the loaded definition. */
 export function normalizeFields(fields) {
@@ -95,6 +99,9 @@ function optionMatches(option, value, valueColumn) {
  * @param {function} args.services.serverExpression  (expression, field) => Promise<result>
  * @param {function} args.services.query             (field, resolvedPlaceholders) => Promise<result>
  * @param {function} args.services.evalSandbox       (code) => result, for runLocal and evalDefault
+ * @param {function} [args.services.forSubform]      (subformName) => services for a list row's queries
+ * @param {object[]} [args.subforms]  every subform of the root form (Form.load inlines them) ;
+ *                                    defaults to form.subforms
  */
 export async function resolveForm({
   form,
@@ -106,6 +113,9 @@ export async function resolveForm({
   only = undefined,
   maxOptions = DEFAULT_MAX_OPTIONS,
   services,
+  subforms = undefined,
+  // internal : the rows still allowed across the nested resolutions of one launch
+  rowBudget = { left: MAX_LIST_ROWS },
 }) {
   if (typeof services?.evalSandbox !== 'function') {
     throw new Error('resolveForm needs services.evalSandbox (node: formEngine/node/sandbox.js)');
@@ -144,6 +154,18 @@ export async function resolveForm({
 
   const graph = scanDependencies(fields, knownNames);
   warnings.push(...graph.warnings);
+  const allSubforms = subforms ?? form?.subforms ?? [];
+  const subformOf = (f) => (typeof f.subform === 'string'
+    ? allSubforms.find((x) => x?.name === f.subform) : f.subform);
+  // a list's rows read the parent through $(__parent__.x) : the list waits for those fields,
+  // so its rows are resolved against settled parent values
+  for (const f of fields) {
+    const sub = f.type === 'list' ? subformOf(f) : null;
+    if (!sub) continue;
+    const reads = [...JSON.stringify(sub.fields || []).matchAll(/\$\(__parent__\.([A-Za-z0-9_-]+)/g)]
+      .map((m) => m[1]).filter((n) => byName[n] && n !== f.name);
+    graph.dependsOn[f.name] = [...new Set([...(graph.dependsOn[f.name] || []), ...reads])];
+  }
   const cycle = new Set(graph.cycles);
 
   // which fields to evaluate : all, or the upstream closure of `only`
@@ -351,6 +373,69 @@ export async function resolveForm({
     return finish(f, patch);
   }
 
+  /**
+   * The rows of a list field, each through its subform - as the browser's row editor does,
+   * with the parent's values as __parent__. Only rows the user added or edited are resolved
+   * (they carry __output__ from the editor, or an insert/update marker) : a row the list's
+   * own expression produced is sent as it is, in the browser too. A row marked deleted is
+   * kept as it is. Server-computed row fields win ; the markers stay ; __output__ is rebuilt.
+   */
+  async function resolveRows(f) {
+    const s = st[f.name];
+    const sub = subformOf(f);
+    if (s.status !== 'resolved' || !sub || !Array.isArray(sub.fields) || !Array.isArray(vals[f.name])) return;
+    const m = listMarkers(f);
+    const markerKeys = [m.insert, m.update, m.delete].filter(Boolean);
+    const touched = (row) => row && typeof row === 'object' && !(m.delete && row[m.delete])
+      && ('__output__' in row || (m.insert && row[m.insert]) || (m.update && row[m.update]));
+    const rows = vals[f.name];
+    const todo = rows.filter(touched).length;
+    if (todo > rowBudget.left) {
+      rowBudget.left = 0;
+      s.error = `too many list rows to resolve (more than ${MAX_LIST_ROWS} in one launch)`;
+      s.rowsRefused = true;
+      return;
+    }
+    rowBudget.left -= todo;
+    const { __user__, ...parentValues } = vals; // eslint-disable-line no-unused-vars
+    const rowServices = typeof services.forSubform === 'function' ? services.forSubform(sub.name) : services;
+    const failing = [];
+    const out = [];
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (!touched(row)) { out.push(row); continue; }
+      const input = {};
+      for (const [k, v] of Object.entries(row)) if (k !== '__output__' && !markerKeys.includes(k)) input[k] = v;
+      const res = await resolveForm({
+        form: sub, constants, vars, user, parent: parentValues, values: input,
+        services: rowServices, subforms: allSubforms, rowBudget,
+      });
+      const resolved = {};
+      for (const sf of sub.fields || []) if (sf?.name) resolved[sf.name] = res._values[sf.name];
+      const output = buildFormOutput(sub.fields, resolved, { subforms: allSubforms });
+      for (const k of markerKeys) if (row[k]) { resolved[k] = row[k]; output[k] = row[k]; }
+      resolved.__output__ = output;
+      out.push(resolved);
+      if (!res.complete) {
+        failing.push({
+          index: i,
+          ...(res.missing.length ? { missing: res.missing } : {}),
+          ...(res.invalid.length ? { invalid: res.invalid } : {}),
+          ...(res.waiting.length ? { waiting: res.waiting } : {}),
+          ...(Object.keys(res.validationErrors).length ? { validationErrors: res.validationErrors } : {}),
+          ...(Object.keys(res.rowErrors).length ? { rowErrors: res.rowErrors } : {}),
+        });
+      }
+      for (const w of res.warnings) {
+        const tagged = `${f.name}[${i}] : ${w}`;
+        if (!warnings.includes(tagged)) warnings.push(tagged);
+      }
+    }
+    vals[f.name] = out;
+    s.value = out;
+    if (failing.length) s.rows = failing;
+  }
+
   // dependency-ordered fill : whatever can be evaluated now, then whatever that unlocked
   const pending = () => fields.filter((f) => st[f.name].status === 'pending');
   const visibilityDeps = (f) => (f.dependencies || [])
@@ -372,6 +457,7 @@ export async function resolveForm({
       }
       if (!exempt && !(graph.dependsOn[f.name] || []).every(settled)) continue;
       await evaluate(f);
+      if (f.type === 'list') await resolveRows(f);
       progress = true;
     }
     if (progress) { released = false; continue; }
@@ -428,6 +514,7 @@ export async function resolveForm({
     }
     if (s.notInOptions) r.notInOptions = true;
     if (s.validationErrors?.length) r.validationErrors = s.validationErrors;
+    if (s.rows?.length) r.rows = s.rows;
     if (s.error) r.error = s.error;
     if (s.waitingFor) r.waitingFor = s.waitingFor;
     out.push(r);
@@ -435,7 +522,8 @@ export async function resolveForm({
   const missing = out.filter((r) => r.needsInput).map((r) => r.name);
   // a required field that is simply empty is `missing` ; `invalid` is what a value breaks
   const invalid = out.filter((r) => r.visible
-    && (r.notInOptions || (r.validationErrors?.length && !r.needsInput))).map((r) => r.name);
+    && (r.notInOptions || (r.validationErrors?.length && !r.needsInput) || r.rows?.length
+      || st[r.name]?.rowsRefused)).map((r) => r.name);
   const waiting = out.filter((r) => r.status === 'waiting').map((r) => r.name);
   const validationErrors = Object.fromEntries(out
     .filter((r) => r.visible && r.validationErrors?.length && !r.needsInput)
@@ -447,6 +535,8 @@ export async function resolveForm({
     waiting,
     invalid,
     validationErrors,
+    // failing list rows, per list field : [{ index, missing, invalid, waiting, validationErrors }]
+    rowErrors: Object.fromEntries(out.filter((r) => r.visible && r.rows?.length).map((r) => [r.name, r.rows])),
     fields: out,
     warnings,
     // internal : the raw values and visibility the launch builds its extravars from

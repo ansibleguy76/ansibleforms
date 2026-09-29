@@ -5,6 +5,7 @@ import { scanDependencies } from '../lib/formEngine/placeholders.js';
 import { buildLaunchPayload, filterRawFormData, maskPasswords } from '../lib/formEngine/output.js';
 import { sha256 } from '../lib/formEngine/node/hash.js';
 import { createFormServices } from '../lib/formServices.js';
+import { describeRowErrors } from '../lib/launchValidation.js';
 
 /**
  * The MCP tools. Deliberately technical : they expose the form flow a browser goes through
@@ -201,10 +202,13 @@ export function createHandlers({ user, deps }) {
         if (res.missing.length) parts.push(`missing input for : ${res.missing.join(', ')}`);
         if (notAnOption.length) parts.push(`not one of the options : ${notAnOption.join(', ')}`);
         if (failing.length) parts.push(`validation failed : ${failing.join(' ; ')}`);
+        const rows = describeRowErrors(res.rowErrors);
+        if (rows.length) parts.push(`list rows failing : ${rows.join(', ')}`);
         if (res.waiting.length) parts.push(`not resolvable yet : ${res.waiting.join(', ')}`);
         throw new ToolError(`The form is not complete - ${parts.join(' ; ')}. Call resolve_field to see what is needed.`,
           'form_incomplete', {
             missing: res.missing, invalid: res.invalid, waiting: res.waiting, validationErrors: res.validationErrors,
+            rowErrors: res.rowErrors,
           });
       }
       const files = res._fields.filter((f) => f.type === 'file' && res._visibility[f.name]

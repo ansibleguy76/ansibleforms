@@ -1,0 +1,152 @@
+{
+  "name": "list rows : touched rows resolved and validated with __parent__, untouched and deleted rows as sent",
+  "mirrors": "AppListField row editor (AppForm mode=subform) : rows added or edited are resolved ; rows from the list's expression and deleted rows are not",
+  "form": {
+    "name": "t",
+    "subforms": [
+      {
+        "name": "disk",
+        "type": "subform",
+        "fields": [
+          {
+            "name": "name",
+            "type": "text",
+            "required": true,
+            "regex": {
+              "expression": "^vol_",
+              "description": "Must start with vol_"
+            }
+          },
+          {
+            "name": "size",
+            "type": "number",
+            "maxValue": "$(__parent__.max_size)"
+          },
+          {
+            "name": "label",
+            "type": "local",
+            "expression": "'$(name)' + ':' + '$(__parent__.cluster)'",
+            "output": true
+          },
+          {
+            "name": "tier",
+            "type": "text",
+            "default": "gold"
+          }
+        ]
+      }
+    ],
+    "fields": [
+      {
+        "name": "cluster",
+        "type": "text"
+      },
+      {
+        "name": "max_size",
+        "type": "number"
+      },
+      {
+        "name": "disks",
+        "type": "list",
+        "subform": "disk",
+        "deleteMarker": "deleted"
+      }
+    ]
+  },
+  "values": {
+    "cluster": "c1",
+    "max_size": 100,
+    "disks": [
+      {
+        "name": "vol_a",
+        "size": 10,
+        "__output__": {
+          "name": "forged"
+        }
+      },
+      {
+        "name": "bad",
+        "size": 500,
+        "__output__": {}
+      },
+      {
+        "name": "untouched",
+        "size": 999
+      },
+      {
+        "name": "gone",
+        "size": 999,
+        "deleted": true
+      },
+      {
+        "name": "vol_new",
+        "size": 5,
+        "__inserted__": true
+      }
+    ]
+  },
+  "expect": {
+    "invalid": [
+      "disks"
+    ],
+    "extravars": {
+      "cluster": "c1",
+      "max_size": 100,
+      "disks": [
+        {
+          "name": "vol_a",
+          "size": 10,
+          "label": "vol_a:c1",
+          "tier": "gold"
+        },
+        {
+          "name": "bad",
+          "size": 500,
+          "label": "bad:c1",
+          "tier": "gold"
+        },
+        {
+          "name": "untouched",
+          "size": 999
+        },
+        {
+          "name": "gone",
+          "size": 999,
+          "deleted": true
+        },
+        {
+          "name": "vol_new",
+          "size": 5,
+          "label": "vol_new:c1",
+          "tier": "gold",
+          "__inserted__": true
+        }
+      ]
+    },
+    "rowErrors": {
+      "disks": [
+        {
+          "index": 1,
+          "invalid": [
+            "name",
+            "size"
+          ],
+          "validationErrors": {
+            "name": [
+              {
+                "type": "regex",
+                "description": "Must start with vol_"
+              }
+            ],
+            "size": [
+              {
+                "type": "maxValue",
+                "description": "size must be at most 100"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

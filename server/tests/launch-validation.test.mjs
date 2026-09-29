@@ -15,7 +15,7 @@ vi.mock("../src/models/db.model.js", () => ({ default: { do: async () => [] } })
 const { guardLaunch } = await import("../src/models/job.model.js");
 const appConfig = (await import("./__mocks__/app.config.js")).default;
 const logger = (await import("./__mocks__/logger.js")).default;
-const { validateLaunch, verifyUploads, compareExtravars, describeLaunchErrors } = await import("../src/lib/launchValidation.js");
+const { validateLaunch, verifyUploads, compareExtravars, describeLaunchErrors, describeRowErrors } = await import("../src/lib/launchValidation.js");
 const { evalSandbox } = await import("../src/lib/formEngine/node/sandbox.js");
 
 const user = { username: "bob", roles: ["public"], options: {} };
@@ -86,8 +86,20 @@ describe("validateLaunch", () => {
     const line = describeLaunchErrors({ missing: ["a"], invalid: ["host", "cluster"], waiting: [],
       validationErrors: { host: [{ type: "regex", description: "contains s3cr3t" }] },
       uploads: [{ field: "upload", reason: "the uploaded file does not exist" }] });
-    expect(line).toBe("missing : a ; failing rules : host (regex) ; not one of the options : cluster ; uploads : upload (the uploaded file does not exist)");
+    expect(line).toBe("missing : a ; failing rules : host (regex) ; invalid : cluster ; uploads : upload (the uploaded file does not exist)");
     expect(line).not.toContain("s3cr3t");
+  });
+});
+
+describe("list row errors", () => {
+  test("name the row and the rule, nested rows included, never a value", () => {
+    const line = describeRowErrors({
+      disks: [{ index: 1, invalid: ["name"], validationErrors: { name: [{ type: "regex", description: "s3cr3t" }] } }],
+      vms: [{ index: 0, invalid: ["disks"], rowErrors: { disks: [{ index: 2, missing: ["size"] }] } }],
+    });
+    expect(line).toEqual(["disks[1].name (regex)", "vms[0].disks[2].size (missing)"]);
+    expect(describeLaunchErrors({ invalid: ["disks"], rowErrors: { disks: [{ index: 0, missing: ["x"] }] } }))
+      .toBe("failing rows : disks[0].x (missing)");
   });
 });
 

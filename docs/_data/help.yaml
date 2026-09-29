@@ -533,7 +533,11 @@
         server's evaluation, and a file field must point at a real upload in `UPLOAD_PATH`.
         Wizard forms cannot be checked yet and are refused.
 
-      List rows (subforms) are taken as sent. Applied without a restart.
+      The rows of a `list` field that were added or edited go through their subform on the
+      server as well, with the form's values as `__parent__` : its rules are checked and
+      its computed fields evaluated. Rows the list's own expression produced, and rows
+      marked deleted, are sent as they are - as in the browser. At most 500 rows are
+      resolved per launch. Applied without a restart.
   - name: ENABLE_DB_QUERY_LOGGING
     type: number
     allowed: 0, 1
@@ -4387,8 +4391,9 @@
               marking the record as deleted and sending it to the playbook for removal.   
 
               **Since 6.4.1** the markers of a `list` field reach the playbook as well : a
-              removed row is sent with its delete marker instead of disappearing. Before, only
-              a `table` field sent them. When rows can be deleted or updated but no
+              removed row is sent with its delete marker instead of looking like a live row.
+              Before, a list row only carried a marker when its subform declared it as a
+              (hidden) field. When rows can be deleted or updated but no
               `insertMarker` is set, new rows are marked `__inserted__`.
             examples:
             - name: Mark delete record

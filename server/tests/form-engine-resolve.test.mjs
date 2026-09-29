@@ -214,3 +214,38 @@ describe("resolveForm", () => {
   });
 });
 
+
+describe("list rows", () => {
+  const rowForm = {
+    name: "t",
+    subforms: [{ name: "row", type: "subform", fields: [
+      { name: "vol", type: "enum", query: "select name from vol where svm='$(__parent__.svm)'", dbConfig: "db", valueColumn: "name" },
+    ] }],
+    fields: [
+      { name: "svm", type: "text" },
+      { name: "rows", type: "list", subform: "row" },
+    ],
+  };
+
+  test("a row's queries go to its subform's services, after the parent field they read", async () => {
+    const rowQuery = vi.fn(async () => [{ name: "v1" }]);
+    const svc = { ...services(), forSubform: vi.fn(() => ({ ...services(), query: rowQuery })) };
+    const res = await resolveForm({ form: rowForm, values: { svm: "s1", rows: [{ vol: "v1", __output__: {} }] }, services: svc });
+    expect(svc.forSubform).toHaveBeenCalledWith("row");
+    expect(rowQuery).toHaveBeenCalledTimes(1);
+    expect(rowQuery.mock.calls[0][1]).toEqual({ "__parent__.svm": "s1" });
+    expect(res.complete).toBe(true);
+    expect(res._values.rows[0].vol).toEqual({ name: "v1" });
+  });
+
+  test("more than 500 touched rows in one launch are refused, not resolved", async () => {
+    const svc = services();
+    const rows = Array.from({ length: 501 }, () => ({ vol: "v1", __output__: {} }));
+    const res = await resolveForm({ form: rowForm, values: { svm: "s1", rows }, services: svc });
+    const f = res.fields.find((x) => x.name === "rows");
+    expect(f.error).toMatch(/too many list rows to resolve \(more than 500/);
+    expect(res.invalid).toContain("rows");
+    expect(res.complete).toBe(false);
+    expect(svc.query).not.toHaveBeenCalled();
+  });
+});

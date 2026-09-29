@@ -56,6 +56,7 @@ export async function validateLaunch({ formConfig, formObj, user, rawFormData, e
     invalid: res.invalid,
     waiting: res.waiting,
     validationErrors: res.validationErrors,
+    ...(Object.keys(res.rowErrors || {}).length ? { rowErrors: res.rowErrors } : {}),
     ...(uploadErrors.length ? { uploads: uploadErrors } : {}),
   };
   if (!res.complete || uploadErrors.length) return { ok: false, errors, warnings: res.warnings };
@@ -137,11 +138,30 @@ export function describeLaunchErrors(errors) {
   if (errors?.missing?.length) parts.push(`missing : ${errors.missing.join(', ')}`);
   const rules = Object.entries(errors?.validationErrors || {}).map(([n, errs]) => `${n} (${errs.map((e) => e.type).join(', ')})`);
   if (rules.length) parts.push(`failing rules : ${rules.join(', ')}`);
-  const other = (errors?.invalid || []).filter((n) => !(n in (errors?.validationErrors || {})));
-  if (other.length) parts.push(`not one of the options : ${other.join(', ')}`);
+  const rows = describeRowErrors(errors?.rowErrors);
+  if (rows.length) parts.push(`failing rows : ${rows.join(', ')}`);
+  const other = (errors?.invalid || [])
+    .filter((n) => !(n in (errors?.validationErrors || {})) && !(n in (errors?.rowErrors || {})));
+  if (other.length) parts.push(`invalid : ${other.join(', ')}`);
   if (errors?.waiting?.length) parts.push(`not resolvable : ${errors.waiting.join(', ')}`);
   if (errors?.uploads?.length) parts.push(`uploads : ${errors.uploads.map((u) => `${u.field} (${u.reason})`).join(', ')}`);
   return parts.join(' ; ');
 }
 
-export default { validateLaunch, verifyUploads, compareExtravars, describeLaunchErrors };
+/** `list[2].field (rule)` for every failing row, nested lists included - names and rule types only. */
+export function describeRowErrors(rowErrors, prefix = '') {
+  const out = [];
+  for (const [list, rows] of Object.entries(rowErrors || {})) {
+    for (const row of rows) {
+      const at = `${prefix}${list}[${row.index}]`;
+      for (const n of row.missing || []) out.push(`${at}.${n} (missing)`);
+      for (const [n, errs] of Object.entries(row.validationErrors || {})) out.push(`${at}.${n} (${errs.map((e) => e.type).join(', ')})`);
+      for (const n of (row.invalid || []).filter((x) => !(x in (row.validationErrors || {})) && !(x in (row.rowErrors || {})))) out.push(`${at}.${n} (invalid)`);
+      for (const n of row.waiting || []) out.push(`${at}.${n} (not resolvable)`);
+      out.push(...describeRowErrors(row.rowErrors, `${at}.`));
+    }
+  }
+  return out;
+}
+
+export default { validateLaunch, describeRowErrors, verifyUploads, compareExtravars, describeLaunchErrors };
