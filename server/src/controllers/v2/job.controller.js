@@ -192,11 +192,21 @@ const relaunchJob = async function(req, res) {
       res.status(403).json(RestResultv2.error(i18n.t(req, 'errors.noVerbosePermission')));
       return false;
     }
+    // a body with `values` : relaunch with those fields changed, through the form engine ;
+    // without one : replay the job as it ran
+    const values = (req.body && typeof req.body.values === 'object' && req.body.values !== null && !Array.isArray(req.body.values))
+      ? req.body.values : null;
     try{
-      const job = await Job.relaunch(user, jobid, verbose);
+      const job = values
+        ? await Job.relaunchWithValues({ user, id: jobid, values, verbose })
+        : await Job.relaunch(user, jobid, verbose);
       res.status(200).json(RestResultv2.single({ message: i18n.t(req, 'jobs.relaunched', { id: job.id }), id: job.id }));
     } catch(err) {
-      if (err.name === 'NotFoundError') {
+      if (err.name === 'ValidationError') {
+        res.status(422).json(RestResultv2.error(i18n.t(req, 'jobs.invalidFormData'), err.details || err.message));
+      } else if (err.name === 'BadRequestError') {
+        res.status(400).json(RestResultv2.error(err.message));
+      } else if (err.name === 'NotFoundError') {
         res.status(404).json(RestResultv2.error(err.message));
       } else if (err.name === 'AccessDeniedError' || err.name === 'ForbiddenError') {
         res.status(403).json(RestResultv2.error(err.message));

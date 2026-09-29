@@ -24,6 +24,8 @@ import Query from "./query.model.js";
 import { resolveFormQuery } from "../lib/queryPolicy.js";
 import { createFormServices } from "../lib/formServices.js";
 import { validateLaunch, describeLaunchErrors, compareExtravars } from "../lib/launchValidation.js";
+import { filterRawFormData, readModelPath, maskPasswords } from "../lib/formEngine/output.js";
+import { sha256 } from "../lib/formEngine/node/hash.js";
 import Credential from "./credential.model.v2.js";
 import AwxModel from "./awx.model.js";
 import path from "path";
@@ -796,20 +798,7 @@ Job.getRawFormData = async function (user, id) {
     }
     logger.info(`Form loaded, checking disableRelaunch: ${formObj.disableRelaunch}, allowRelaunch: ${formObj.allowRelaunch}`);
     
-    // Support deprecated 'disableRelaunch: true' — use 'allowRelaunch: false' instead
-    if (formObj.disableRelaunch !== undefined) {
-      logger.warning(`Form '${job.form}' uses deprecated 'disableRelaunch' property. Please use 'allowRelaunch: false' instead.`);
-    }
-    if (formObj.disableRelaunch === true || formObj.allowRelaunch === false) {
-      throw new Errors.AccessDeniedError(`Form '${job.form}' has job relaunch disabled`);
-    }
-    
-    // Check if user has allowJobRelaunch option (unless admin)
-    const isAdmin = user.roles?.includes("admin") ?? false;
-    logger.info(`Checking relaunch permission: isAdmin=${isAdmin}, user.options=${JSON.stringify(user.options)}, allowJobRelaunch=${user.options?.allowJobRelaunch}`);
-    if (!user.options.allowJobRelaunch) {
-      throw new Errors.AccessDeniedError(`You do not have permission to relaunch jobs. Contact your administrator to enable the 'allowJobRelaunch' role option.`);
-    }
+    assertRelaunchable(job, formObj, user);
     
     // Read raw form data from database
     logger.info(`Loading raw form data from database for job ${id}`);
@@ -1022,26 +1011,10 @@ Job.launch = async function ({
       // Add form name for validation on reload
       filteredRawFormData.__form__ = form;
       
-      // Only include actual user input fields (exclude constants, passwords, system fields)
-      formObj.fields.forEach((field) => {
-        const fieldName = field.name;
-        
-        // Skip if field value not in rawFormData
-        if (!(fieldName in rawFormData)) return;
-        
-        // Skip constants (readonly fields that get their value from config)
-        if (field.type === 'constant') return;
-        
-        // Skip password fields for security
-        if (field.type === 'password') return;
-        
-        // Skip system fields
-        if (fieldName === 'server' || fieldName === 'database' || fieldName === 'metadata') return;
-        
-        // Include this field
-        filteredRawFormData[fieldName] = rawFormData[fieldName];
-      });
-      
+      // Only the user's input : no constants, no passwords (list rows included), no
+      // system fields - the same filter the browser applies before it sends them
+      Object.assign(filteredRawFormData, filterRawFormData(formObj.fields || [], rawFormData, formObj.subforms || []));
+
       // Store in database
       const rawFormDataJson = JSON.stringify(filteredRawFormData);
       await mysql.do(
@@ -1278,6 +1251,129 @@ Job.continue = async function ({ form, user, credentials = {}, extravars = {}, j
 
   return { id: jobid };
 };
+/**
+ * Whether this user may relaunch this job of this form : the form allows it
+ * (allowRelaunch, or the deprecated disableRelaunch) and the user's roles grant
+ * allowJobRelaunch. Shared by the plain replay, the raw form data read and the relaunch
+ * with changes, so they can never disagree.
+ */
+function assertRelaunchable(job, formObj, user) {
+  // Support deprecated 'disableRelaunch: true' — use 'allowRelaunch: false' instead
+  if (formObj.disableRelaunch !== undefined) {
+    logger.warning(`Form '${job.form}' uses deprecated 'disableRelaunch' property. Please use 'allowRelaunch: false' instead.`);
+  }
+  if (formObj.disableRelaunch === true || formObj.allowRelaunch === false) {
+    throw new Errors.AccessDeniedError(`Form '${job.form}' has job relaunch disabled`);
+  }
+  if (!user?.options?.allowJobRelaunch) {
+    throw new Errors.AccessDeniedError(`You do not have permission to relaunch jobs. Contact your administrator to enable the 'allowJobRelaunch' role option.`);
+  }
+}
+
+/** An error the MCP server passes on with its own code (tools.js wrap) and the details. */
+function codedError(ErrorClass, message, code, details = {}) {
+  const err = new ErrorClass(message);
+  err.code = code;
+  err.details = details;
+  return err;
+}
+
+/**
+ * Relaunch a job with some fields changed : the stored raw form data, with `values` laid
+ * over it, goes through the form engine again - resolved, validated, the extravars built
+ * by the server - as a NEW launch by `user` (ansibleforms_user is the caller, not the
+ * original submitter ; a plain Job.relaunch replays the stored extravars instead).
+ *
+ * Passwords are never stored and never reused, so a form with a password field anywhere -
+ * its subforms included - cannot be relaunched this way : the data lost the password. The uploads of file fields are reused (verified
+ * again). A wizard form cannot be relaunched this way yet, and neither can a job from
+ * before raw form data was stored.
+ *
+ * @param {object} args
+ * @param {boolean} [args.preview]  resolve and build only : { form, extravars (passwords
+ *   masked), credentials, payloadHash, warnings } - nothing is launched
+ * @param {string} [args.expectedPayloadHash]  refuse when the payload differs (payload_mismatch)
+ */
+Job.relaunchWithValues = async function ({ user, id, values = {}, verbose = false, preview = false, expectedPayloadHash }) {
+  const job = await Job.findById(user, id, true); // not log-safe : the stored passwords are needed
+  const formConfig = await Form.load(user?.roles, job.form);
+  const formObj = formConfig.forms?.[0];
+  if (!formObj) {
+    throw new Errors.NotFoundError(`Form '${job.form}' not found or you don't have access to it`);
+  }
+  assertRelaunchable(job, formObj, user);
+  if (Array.isArray(formObj.wizard) && formObj.wizard.length > 0) {
+    throw codedError(Errors.BadRequestError, `'${job.form}' is a wizard form ; it cannot be relaunched with changes yet`, 'unsupported');
+  }
+  // a password is never stored, so a job of a form holding one - in a subform too - lost it :
+  // it cannot be relaunched from its data
+  const passwordFields = [formObj, ...(formObj.subforms || [])]
+    .flatMap((f) => (f?.fields || []).filter((x) => x?.type === 'password').map((x) => x.name));
+  if (passwordFields.length) {
+    throw codedError(Errors.BadRequestError,
+      `'${job.form}' has password fields (${[...new Set(passwordFields)].join(', ')}) ; passwords are never stored, so its jobs cannot be relaunched with changes`,
+      'unsupported', { passwordFields: [...new Set(passwordFields)] });
+  }
+  if (verbose && !user?.options?.allowVerboseMode) {
+    throw new Errors.AccessDeniedError(`You do not have permission to run jobs in verbose mode.`);
+  }
+  const stored = job.raw_form_data ? safeParse(job.raw_form_data, null, `job.raw_form_data id=${id}`) : null;
+  if (!stored) {
+    throw new Errors.NotFoundError(`No saved form data found for job ${id}, so it cannot be relaunched with changes. This job may have been created before the relaunch feature was enabled.`);
+  }
+  if (stored.__form__ && stored.__form__ !== job.form) {
+    throw new Errors.BadRequestError(`Cannot relaunch: saved data is from form '${stored.__form__}', not '${job.form}'.`);
+  }
+  const { __form__, ...raw } = stored; // eslint-disable-line no-unused-vars
+  // read for the uploads only - never for a password
+  const storedExtravars = safeParse(job.extravars, {}, `job.extravars id=${id}`) || {};
+  const files = {};
+  for (const f of formObj.fields || []) {
+    if (f?.type !== 'file' || !f.name) continue;
+    const upload = readModelPath(storedExtravars, [].concat(f.model || f.name)[0]);
+    if (upload && typeof upload === 'object') files[f.name] = upload;
+  }
+  const rawFormData = { ...raw, ...(values || {}) };
+  const result = await validateLaunch({
+    // no extravars : they hold no password to reuse anyway (forms with one are refused above)
+    formConfig, formObj, user, rawFormData, extravars: {}, files,
+    uploadPath: appConfig.uploadPath,
+    services: createFormServices({ user, formConfig, formObj, deps: { Expression, Query, resolveFormQuery } }),
+    allRows: true,
+  });
+  if (!result.ok) {
+    throw codedError(Errors.ValidationError,
+      `Job ${id} cannot be relaunched with these values - ${describeLaunchErrors(result.errors)}`,
+      'form_incomplete', result.errors);
+  }
+  const { extravars, credentials } = result.payload;
+  delete extravars.__verbose__;
+  const payloadHash = sha256({ form: job.form, extravars, credentials });
+  if (expectedPayloadHash && expectedPayloadHash !== payloadHash) {
+    throw codedError(Errors.ConflictError, 'The payload differs from the one that was previewed - preview again and have it confirmed.',
+      'payload_mismatch', { expectedPayloadHash, payloadHash });
+  }
+  if (preview) {
+    return {
+      form: job.form,
+      extravars: maskPasswords(extravars, formObj.fields || [], formObj.subforms || []),
+      credentials,
+      payloadHash,
+      warnings: result.warnings,
+    };
+  }
+  if (job.status == "running" || job.abort_requested) {
+    throw new Errors.ConflictError(`Job ${id} is not in a status to be relaunched (status=${job.status})`);
+  }
+  if (verbose) extravars.__verbose__ = true;
+  logger.notice(`Relaunching job ${id} with form ${job.form}, with ${Object.keys(values || {}).length} changed field(s)`);
+  const launched = await Job.launch({
+    form: job.form, user, credentials, extravars, rawFormData, fromClient: true, validated: true,
+  });
+  await Job.sendEventNotification(id, 'relaunch', user);
+  return { ...launched, payloadHash, warnings: result.warnings };
+};
+
 Job.relaunch = async function (user, id, verbose) {
   const job = await Job.findById(user, id, true);
   
@@ -1288,18 +1384,7 @@ Job.relaunch = async function (user, id, verbose) {
     throw new Errors.NotFoundError(`Form '${job.form}' not found or you don't have access to it`);
   }
   
-  // Support deprecated 'disableRelaunch: true' — use 'allowRelaunch: false' instead
-  if (formObj.disableRelaunch !== undefined) {
-    logger.warning(`Form '${job.form}' uses deprecated 'disableRelaunch' property. Please use 'allowRelaunch: false' instead.`);
-  }
-  if (formObj.disableRelaunch === true || formObj.allowRelaunch === false) {
-    throw new Errors.AccessDeniedError(`Form '${job.form}' has job relaunch disabled`);
-  }
-  
-  // Check if user has allowJobRelaunch option (unless admin)
-  if (!user.options.allowJobRelaunch) {
-    throw new Errors.AccessDeniedError(`You do not have permission to relaunch jobs. Contact your administrator to enable the 'allowJobRelaunch' role option.`);
-  }
+  assertRelaunchable(job, formObj, user);
   
   var extravars = {};
   var credentials = {};

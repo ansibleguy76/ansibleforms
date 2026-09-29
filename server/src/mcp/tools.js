@@ -38,6 +38,7 @@ const KNOWN_ERRORS = {
   NotFoundError: 'not_found',
   ConflictError: 'conflict',
   BadRequestError: 'invalid_request',
+  ValidationError: 'form_incomplete',
 };
 
 function lastLines(text, n) {
@@ -243,6 +244,18 @@ export function createHandlers({ user, deps }) {
       return { id: job?.id, form: formObj.name, payloadHash, warnings: res.warnings };
     },
 
+    async relaunchJob({ id, values, verbose, preview, expectedPayloadHash }) {
+      if (verbose && !user?.options?.allowVerboseMode) {
+        throw new ToolError('You do not have permission to run jobs in verbose mode', 'access_denied');
+      }
+      const out = await Job.relaunchWithValues({ user, id, values: values || {}, verbose: !!verbose, preview: !!preview, expectedPayloadHash });
+      if (preview) {
+        const { extravars, ...rest } = out;
+        return { job: id, ...rest, modeledExtravars: extravars };
+      }
+      return { id: out?.id, relaunchOf: id, payloadHash: out?.payloadHash, warnings: out?.warnings || [] };
+    },
+
     async getJob({ id, tail }) {
       const job = await Job.findById(user, id, true, true);
       return {
@@ -283,6 +296,9 @@ function wrap(fn) {
       let error;
       if (err instanceof ToolError) {
         error = { code: err.code, message: err.message, ...err.details };
+      } else if (typeof err?.code === 'string' && /^[a-z_]+$/.test(err.code) && KNOWN_ERRORS[err?.name]) {
+        // a model error that names its own tool code (Job.relaunchWithValues)
+        error = { code: err.code, message: err.message, ...(err.details || {}) };
       } else if (KNOWN_ERRORS[err?.name]) {
         error = { code: KNOWN_ERRORS[err.name], message: err.message };
       } else if (err?.statusCode) {
@@ -353,6 +369,26 @@ export function registerTools(server, handlers) {
     },
     annotations: { readOnlyHint: false, destructiveHint: true },
   }, wrap((a) => handlers.launchJob(a)));
+
+  server.registerTool('relaunch_job', {
+    title: 'Relaunch job with changes',
+    description: 'Launch a job again with some fields changed : the values the job was launched with, '
+      + 'with `values` laid over them, are resolved and validated like launch_job and launched as a new '
+      + 'job by you. Uploads of the original are reused. Passwords are never stored, so a form with a '
+      + 'password field (subforms included) cannot be relaunched this way. Call it with `preview: true` '
+      + 'first : that returns `modeledExtravars` (passwords masked), `credentials` and a `payloadHash` '
+      + 'without launching - confirm them with the user, then call again with `expectedPayloadHash`. '
+      + 'Refused while fields are missing, invalid or fail validation (code `form_incomplete`), for a '
+      + 'wizard form or a form with a password field (`unsupported`), or when the payload changed (`payload_mismatch`).',
+    inputSchema: {
+      id: z.number().int().positive().describe('Id of the job to relaunch'),
+      values: valuesSchema.optional().describe('Only the fields to change, as raw values ; the rest is taken from the job'),
+      verbose: z.boolean().optional().describe('Verbose ansible output (needs the allowVerboseMode role option)'),
+      preview: z.boolean().optional().describe('Resolve and build the payload only, do not launch'),
+      expectedPayloadHash: z.string().optional().describe('The payloadHash of the confirmed preview ; the relaunch is refused when the payload differs'),
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true },
+  }, wrap((a) => handlers.relaunchJob(a)));
 
   server.registerTool('get_job', {
     title: 'Get job',

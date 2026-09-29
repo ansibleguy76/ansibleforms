@@ -67,10 +67,10 @@ const call = async (client, name, args = {}) => {
 };
 
 describe("MCP tools", () => {
-  test("exactly the five tools, and no expression or eval tool", async () => {
+  test("exactly the six tools, and no expression or eval tool", async () => {
     const client = await connect();
     const { tools } = await client.listTools();
-    expect(tools.map((t) => t.name).sort()).toEqual(["get_form", "get_job", "launch_job", "list_forms", "resolve_field"]);
+    expect(tools.map((t) => t.name).sort()).toEqual(["get_form", "get_job", "launch_job", "list_forms", "relaunch_job", "resolve_field"]);
   });
 
   test("list_forms asks Form.load with the user's roles", async () => {
@@ -207,6 +207,43 @@ describe("MCP tools", () => {
     const client = await connect();
     const res = await client.callTool({ name: "get_form", arguments: { name: "Admin only" } });
     expect(res.structuredContent).toEqual({ code: "access_denied", message: "Access denied to form Admin only." });
+  });
+
+  describe("relaunch_job", () => {
+    test("previews, then relaunches with the confirmed hash", async () => {
+      deps.Job.relaunchWithValues = vi.fn(async ({ preview }) => (preview
+        ? { form: "Create volume", extravars: { volume: { name: "v2" }, secret: "********" }, credentials: {}, payloadHash: "sha256:x", warnings: [] }
+        : { id: 43, payloadHash: "sha256:x", warnings: [] }));
+      const client = await connect();
+      const p = await call(client, "relaunch_job", { id: 42, values: { name: "v2" }, preview: true });
+      expect(p.data).toMatchObject({ job: 42, modeledExtravars: { volume: { name: "v2" }, secret: "********" }, payloadHash: "sha256:x" });
+      expect(p.data.extravars).toBeUndefined();
+      const r = await call(client, "relaunch_job", { id: 42, values: { name: "v2" }, expectedPayloadHash: "sha256:x" });
+      expect(r.data).toEqual({ id: 43, relaunchOf: 42, payloadHash: "sha256:x", warnings: [] });
+      expect(deps.Job.relaunchWithValues.mock.calls[1][0]).toMatchObject({ user, id: 42, values: { name: "v2" }, preview: false, expectedPayloadHash: "sha256:x" });
+    });
+
+    test("a refusal of the model keeps its code and details", async () => {
+      deps.Job.relaunchWithValues = vi.fn(async () => {
+        const e = new Error("Job 42 cannot be relaunched with these values - missing : name");
+        e.name = "ValidationError";
+        e.code = "form_incomplete";
+        e.details = { missing: ["name"] };
+        throw e;
+      });
+      const client = await connect();
+      const r = await client.callTool({ name: "relaunch_job", arguments: { id: 42, values: { name: "" } } });
+      expect(r.isError).toBe(true);
+      expect(r.structuredContent).toEqual({ code: "form_incomplete", message: "Job 42 cannot be relaunched with these values - missing : name", missing: ["name"] });
+    });
+
+    test("verbose needs the permission", async () => {
+      deps.Job.relaunchWithValues = vi.fn();
+      const client = await connect();
+      const r = await client.callTool({ name: "relaunch_job", arguments: { id: 42, verbose: true } });
+      expect(r.structuredContent.code).toBe("access_denied");
+      expect(deps.Job.relaunchWithValues).not.toHaveBeenCalled();
+    });
   });
 
   describe("list rows", () => {

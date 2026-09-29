@@ -1375,9 +1375,41 @@
       "post": {
         "security": [ { "bearerAuth": [] } ],
         "tags": ["job"],
-        "summary": "Relaunch job by ID",
+        "summary": "Relaunch job by ID, as it ran or with some fields changed",
+        "description": "Without a body the job is replayed with the extravars it ran with. With a body holding `values`, the values the job was launched with are taken, `values` is laid over them, and the result goes through the form engine again - resolved, validated and the extravars built by the server - as a new launch by the caller. Uploads of the original are reused. Passwords are never stored, so a form with a password field (subforms included) cannot be relaunched with values (400). Needs the form to allow relaunch and the allowJobRelaunch role option.",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "verbose", "in": "query", "required": false, "schema": { "type": "boolean" }, "description": "Verbose ansible output (needs the allowVerboseMode role option)" }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": { "application/json": { "schema": { "type": "object", "properties": {
+            "values": { "type": "object", "additionalProperties": true, "description": "Only the fields to change, as raw field values, keyed by field name" }
+          } } } }
+        },
+        "responses": {
+          "200": { "description": "Job relaunched ; the new job id" },
+          "400": { "description": "The form is a wizard form or has a password field (relaunch with values), or the stored form data belongs to another form" },
+          "403": { "description": "Relaunch or verbose mode not allowed" },
+          "404": { "description": "Job or form not found, or no stored form data (relaunch with values)" },
+          "409": { "description": "The job is still running" },
+          "422": { "description": "The changed values break the form's rules ; details list the failing fields and rows" }
+        }
+      }
+    },
+    "/job/{id}/rawformdata": {
+      "get": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["job"],
+        "summary": "The raw field values a job was launched with, for a relaunch",
+        "description": "Field name to raw value, as the form held them. Constants and passwords (also inside list rows) are never stored. Needs the form to allow relaunch and the allowJobRelaunch role option.",
         "parameters": [ { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } } ],
-        "responses": { "200": { "description": "Job relaunched" }, "404": { "description": "Not found" } }
+        "responses": {
+          "200": { "description": "The raw form data" },
+          "400": { "description": "The stored data is corrupted or belongs to another form" },
+          "403": { "description": "Relaunch not allowed" },
+          "404": { "description": "Job or form not found, or the job has no stored form data" }
+        }
       }
     },
     "/job/{id}/approve": {

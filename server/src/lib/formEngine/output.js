@@ -171,16 +171,68 @@ export function collectCredentials(fields, extravars) {
 }
 
 /** form.vue getFilteredRawFormData : the values kept for a relaunch. */
-export function filterRawFormData(fields, values) {
+export function filterRawFormData(fields, values, subforms = []) {
   const out = {};
   (fields || []).forEach((field) => {
     const name = field?.name;
     if (!name || !(name in (values || {}))) return;
     if (field.type === 'constant' || field.type === 'password') return;
     if (name === 'server' || name === 'database' || name === 'metadata') return;
-    out[name] = values[name];
+    out[name] = field.type === 'list' ? stripRowPasswords(field, values[name], subforms) : values[name];
   });
   return out;
+}
+
+function subformFor(field, subforms) {
+  return (typeof field?.subform === 'string') ? (subforms || []).find((s) => s?.name === field.subform) : field?.subform;
+}
+
+function deleteAtPath(obj, modelPath) {
+  const parts = String(modelPath).split(/\s*\.\s*/);
+  let cur = obj;
+  for (let i = 0; i < parts.length - 1; i++) {
+    if (cur == null || typeof cur !== 'object') return;
+    cur = cur[parts[i]];
+  }
+  if (cur && typeof cur === 'object') delete cur[parts[parts.length - 1]];
+}
+
+/** modelled rows (a row's __output__, or a nested list inside it) without their passwords */
+function stripOutputPasswords(sub, outRows, subforms) {
+  if (!Array.isArray(outRows)) return;
+  for (const out of outRows) {
+    if (!out || typeof out !== 'object') continue;
+    for (const f of sub?.fields || []) {
+      if (!f?.name) continue;
+      const paths = [].concat(f.model || f.name);
+      if (f.type === 'password') paths.forEach((p) => deleteAtPath(out, p));
+      else if (f.type === 'list') paths.forEach((p) => stripOutputPasswords(subformFor(f, subforms), readModelPath(out, p), subforms));
+    }
+  }
+}
+
+/**
+ * List rows as they are stored for a relaunch : without the values of their password
+ * fields - the top-level filter only knew the form's own fields, so a password inside a
+ * list row was stored in raw_form_data. Nested lists and each row's __output__ included.
+ */
+function stripRowPasswords(field, rows, subforms) {
+  const sub = subformFor(field, subforms);
+  if (!sub || !Array.isArray(rows)) return rows;
+  return rows.map((row) => {
+    if (!row || typeof row !== 'object') return row;
+    const copy = { ...row };
+    for (const f of sub.fields || []) {
+      if (!f?.name) continue;
+      if (f.type === 'password') delete copy[f.name];
+      else if (f.type === 'list') copy[f.name] = stripRowPasswords(f, copy[f.name], subforms);
+    }
+    if (copy.__output__ && typeof copy.__output__ === 'object') {
+      copy.__output__ = deepClone(copy.__output__);
+      stripOutputPasswords(sub, [copy.__output__], subforms);
+    }
+    return copy;
+  });
 }
 
 /**
