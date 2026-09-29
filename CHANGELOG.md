@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.4.0](https://github.com/ansibleguy76/ansibleforms/compare/6.3.1...6.4.0) (2026-09-29)
+
+
+### Added
+
+* mcp server for ai agents ([#534](https://github.com/ansibleguy76/ansibleforms/issues/534)) ([d7520f4](https://github.com/ansibleguy76/ansibleforms/commit/d7520f472d9a68fbe0498181ec0301c34b96955b))
+* one set of form validation rules for the browser, MCP and the launch API ([#535](https://github.com/ansibleguy76/ansibleforms/issues/535)) ([4d429c2](https://github.com/ansibleguy76/ansibleforms/commit/4d429c2ea97889bcdd89adf89e2edee245343c04))
+
 ## [6.3.1](https://github.com/ansibleguy76/ansibleforms/compare/6.3.0...6.3.1) (2026-09-25)
 
 
