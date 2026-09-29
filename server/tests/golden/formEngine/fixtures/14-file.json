@@ -1,0 +1,63 @@
+{
+  "name": "a file : name regex and size limits",
+  "mirrors": "AppForm.vue rules : minSize / maxSize / regex on file.name",
+  "form": {
+    "name": "t",
+    "fields": [
+      {
+        "name": "upload",
+        "type": "file",
+        "regex": {
+          "expression": "\\.txt$",
+          "description": "Only .txt files"
+        },
+        "minSize": 100,
+        "maxSize": 1024
+      },
+      {
+        "name": "small",
+        "type": "file",
+        "minSize": "$(min)"
+      },
+      {
+        "name": "min",
+        "type": "number"
+      }
+    ]
+  },
+  "values": {
+    "upload": {
+      "name": "a.exe",
+      "size": 2048
+    },
+    "small": {
+      "name": "s.txt",
+      "size": 10
+    },
+    "min": 1000
+  },
+  "expect": {
+    "validation": {
+      "upload": [
+        {
+          "type": "maxSize",
+          "description": "Size (2 kB) cannot be higher than 1 kB"
+        },
+        {
+          "type": "regex",
+          "description": "Only .txt files"
+        }
+      ],
+      "small": [
+        {
+          "type": "minSize",
+          "description": "Size (10 B) cannot be lower than 1000 B"
+        }
+      ]
+    },
+    "invalid": [
+      "upload",
+      "small"
+    ]
+  }
+}

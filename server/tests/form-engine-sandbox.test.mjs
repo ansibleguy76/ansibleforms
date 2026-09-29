@@ -1,6 +1,6 @@
-// runLocal evaluation on the server (lib/formEngine/sandbox.js).
+// runLocal evaluation on the server (lib/formEngine/node/sandbox.js).
 import { describe, test, expect } from "vitest";
-import { evalSandbox } from "../src/lib/formEngine/sandbox.js";
+import { evalSandbox } from "../src/lib/formEngine/node/sandbox.js";
 
 describe("evalSandbox", () => {
   test("plain expressions and the completion value of several statements", () => {

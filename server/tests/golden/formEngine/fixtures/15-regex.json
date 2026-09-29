@@ -1,0 +1,81 @@
+{
+  "name": "regex : placeholder description, bare string and invalid pattern are ignored with a warning",
+  "mirrors": "AppForm.vue rules : regex and its guards",
+  "form": {
+    "name": "t",
+    "fields": [
+      {
+        "name": "prefix",
+        "type": "text"
+      },
+      {
+        "name": "host",
+        "type": "text",
+        "regex": {
+          "expression": "^prod-",
+          "description": "Must start with $(prefix)"
+        }
+      },
+      {
+        "name": "good",
+        "type": "text",
+        "regex": {
+          "expression": "^prod-",
+          "description": "x"
+        }
+      },
+      {
+        "name": "bare",
+        "type": "text",
+        "regex": "^prod-"
+      },
+      {
+        "name": "broken",
+        "type": "text",
+        "regex": {
+          "expression": "^[a-z",
+          "description": "never"
+        }
+      },
+      {
+        "name": "empty",
+        "type": "text",
+        "regex": {
+          "expression": "^prod-",
+          "description": "skip on empty"
+        }
+      }
+    ]
+  },
+  "values": {
+    "prefix": "prod-",
+    "host": "test-1",
+    "good": "prod-1",
+    "bare": "anything",
+    "broken": "anything",
+    "empty": ""
+  },
+  "expect": {
+    "validation": {
+      "host": [
+        {
+          "type": "regex",
+          "description": "Must start with prod-"
+        }
+      ],
+      "bare": [
+        {
+          "type": "regex",
+          "description": ""
+        }
+      ]
+    },
+    "invalid": [
+      "host",
+      "bare"
+    ],
+    "warnings": [
+      "Field 'broken': the regex '^[a-z' is not valid"
+    ]
+  }
+}

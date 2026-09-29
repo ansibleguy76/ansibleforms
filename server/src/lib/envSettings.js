@@ -80,6 +80,8 @@ const LIVE = {
   AWX_API_PREFIX: { key: 'awxApiPrefix', parse: v => v },
   SHOW_DESIGNER: { key: 'showDesigner', parse: v => v == 1 },
   USE_YTT: { key: 'useYtt', parse: v => v == 1 },
+  // Job.launch reads it on every launch
+  ENFORCE_LAUNCH_VALIDATION: { key: 'enforceLaunchValidation', parse: v => v == 1 },
   // db.model.js checks this inside mysql.do, so it is evaluated per query - exactly the
   // setting you want to flip on while debugging and off again without a restart
   ENABLE_DB_QUERY_LOGGING: { key: 'enableDbQueryLogging', parse: v => v == 1 },

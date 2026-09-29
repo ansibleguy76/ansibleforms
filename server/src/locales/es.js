@@ -136,6 +136,7 @@ export default {
     failedDelete: "Error al eliminar el trabajo",
     deleted: "Trabajo eliminado",
     failedLaunch: "Error al lanzar el formulario",
+    invalidFormData: "Los datos del formulario no son válidos",
     failedRelaunch: "Error al relanzar el trabajo",
     failedApprove: "Error al aprobar el trabajo",
     failedReject: "Error al rechazar el trabajo",

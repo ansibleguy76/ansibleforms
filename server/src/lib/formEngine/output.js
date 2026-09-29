@@ -1,5 +1,4 @@
 'use strict';
-import crypto from 'crypto';
 import { getFieldValue } from './placeholders.js';
 
 /**
@@ -114,6 +113,20 @@ export function buildFormOutput(fields, raw, opts = {}) {
   return fd;
 }
 
+/**
+ * Read a value back out of modelled extravars, at a `model` path as buildFormOutput writes it
+ * (`a.b.c`, `list[2].name`). Undefined when any step is missing.
+ */
+export function readModelPath(obj, modelPath) {
+  let cur = obj;
+  for (const part of String(modelPath).split(/\s*\.\s*/)) {
+    if (cur == null || typeof cur !== 'object') return undefined;
+    const m = part.match(/^(.*)\[([0-9]+)\]$/);
+    cur = m ? cur[m[1]]?.[m[2]] : cur[part];
+  }
+  return cur;
+}
+
 /** form.vue submitForm : credentials come from the MODELLED output of asCredential fields. */
 export function collectCredentials(fields, extravars) {
   const credentials = {};
@@ -200,8 +213,4 @@ export function canonicalJson(value) {
   return '{' + keys.map((k) => JSON.stringify(k) + ':' + canonicalJson(value[k])).join(',') + '}';
 }
 
-export function sha256(value) {
-  return 'sha256:' + crypto.createHash('sha256').update(canonicalJson(value)).digest('hex');
-}
-
-export default { deepClone, buildFormOutput, collectCredentials, filterRawFormData, maskPasswords, canonicalJson, sha256 };
+export default { deepClone, buildFormOutput, readModelPath, collectCredentials, filterRawFormData, maskPasswords, canonicalJson };

@@ -36,6 +36,10 @@ RUN npm ci
 # copy all
 COPY ./client ./
 
+# the form engine shared with the server - the client imports it as @engine
+# (../server/src/lib/formEngine), and the server itself is only copied further down
+COPY ./server/src/lib/formEngine /app/server/src/lib/formEngine
+
 # Copy build info generator script
 COPY ./generate-build-info.sh /tmp/generate-build-info.sh
 RUN chmod +x /tmp/generate-build-info.sh

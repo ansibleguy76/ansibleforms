@@ -1,0 +1,128 @@
+{
+  "name": "cascade : runLocal choices, evalDefault, dependencies, server expression and query",
+  "mirrors": "AppForm.vue startDynamicFieldsLoop per-field semantics",
+  "form": {
+    "name": "Create volume",
+    "fields": [
+      {
+        "name": "cluster",
+        "type": "enum",
+        "runLocal": true,
+        "expression": "['c1','c2']",
+        "default": "__auto__",
+        "required": true
+      },
+      {
+        "name": "svm",
+        "type": "enum",
+        "runLocal": true,
+        "expression": "({c1:['s1','s2'], c2:['s3']})['$(cluster)']",
+        "required": true
+      },
+      {
+        "name": "volume_name",
+        "type": "text",
+        "default": "$(svm)_vol",
+        "required": true,
+        "model": "volume.name"
+      },
+      {
+        "name": "size",
+        "type": "number",
+        "default": 10,
+        "model": "volume.size"
+      },
+      {
+        "name": "double",
+        "type": "number",
+        "default": "2 * $(size)",
+        "evalDefault": true
+      },
+      {
+        "name": "advanced",
+        "type": "checkbox"
+      },
+      {
+        "name": "advanced_opt",
+        "type": "text",
+        "dependencies": [
+          {
+            "name": "advanced",
+            "values": [
+              true
+            ]
+          }
+        ]
+      },
+      {
+        "name": "summary",
+        "type": "local",
+        "expression": "'$(svm)' + ':' + '$(volume_name)'"
+      },
+      {
+        "name": "upper",
+        "type": "expression",
+        "expression": "fn.upper('$(svm)')"
+      },
+      {
+        "name": "aggr",
+        "type": "enum",
+        "query": "select name from aggr where svm='$(svm)'",
+        "dbConfig": "db",
+        "valueColumn": "name"
+      }
+    ]
+  },
+  "values": {
+    "cluster": "c1",
+    "svm": "s1",
+    "aggr": "aggr2"
+  },
+  "stubs": {
+    "expressions": {
+      "fn.upper(\"s1\")": "S1"
+    },
+    "queries": {
+      "aggr": [
+        {
+          "name": "aggr1"
+        },
+        {
+          "name": "aggr2"
+        }
+      ]
+    }
+  },
+  "expect": {
+    "visibility": {
+      "advanced_opt": false,
+      "summary": true
+    },
+    "values": {
+      "cluster": "c1",
+      "svm": "s1",
+      "volume_name": "s1_vol",
+      "double": 20,
+      "summary": "s1:s1_vol",
+      "upper": "S1",
+      "aggr": {
+        "name": "aggr2"
+      }
+    },
+    "missing": [],
+    "waiting": [],
+    "invalid": [],
+    "extravars": {
+      "cluster": "c1",
+      "svm": "s1",
+      "volume": {
+        "name": "s1_vol",
+        "size": 10
+      },
+      "double": 20,
+      "advanced": false,
+      "upper": "S1",
+      "aggr": "aggr2"
+    }
+  }
+}

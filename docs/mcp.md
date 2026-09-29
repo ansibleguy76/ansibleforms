@@ -85,11 +85,21 @@ the form, and reports per field:
   default, as in the browser);
 - `value`, `default` and, for choice fields, `options` (capped by `maxOptions`, default 200,
   with `optionCount` and `optionsTruncated`);
-- `needsInput`: a required field without a value, or a choice field still on `__auto__`.
+- `needsInput`: a required field without a value, or a choice field still on `__auto__`;
+- `validationErrors`: the validation rules of the form the value breaks, as
+  `[{type, description}]` with the message the browser shows - `required`, `regex`,
+  `minValue`/`maxValue`, `minLength`/`maxLength`, `minSize`/`maxSize`, `sameAs`,
+  `in`/`notIn`, `validIf`/`validIfNot`, `validYaml` (and `checkboxRequired`).
 
 On top of that, `missing` lists the fields that need an answer, `invalid` the choices that
-are not among the options, and `complete` says whether the form can be launched.
+are not among the options and the fields that fail validation (collected in a top-level
+`validationErrors` map), and `complete` says whether the form can be launched.
 `launch_job` refuses a form that is not complete.
+
+The rules are the browser's own: since 6.4 the browser, the MCP server and the launch
+validation ([`ENFORCE_LAUNCH_VALIDATION`](customization)) run the same validation code. A
+hidden field is not validated, and a dependency on `isValid` means what it means in the
+browser: an empty optional field is valid, a hidden one is neither valid nor invalid.
 
 Pass `field` to resolve only that field and what it depends on. For a list row or a wizard
 step, pass `subform` (and optionally `parent`, the parent form's values).
@@ -123,7 +133,7 @@ A refused call is a tool error whose structured content carries a `code` and the
 
 | Code | When |
 |---|---|
-| `form_incomplete` | `launch_job` on a form that is not complete, with `missing`, `invalid` and `waiting` |
+| `form_incomplete` | `launch_job` on a form that is not complete, with `missing`, `invalid`, `waiting` and `validationErrors` |
 | `payload_mismatch` | the payload differs from `expectedPayloadHash`, with both hashes |
 | `access_denied` | the user's roles do not grant the form or job, or verbose mode |
 | `not_found` | no such form, subform or job |
@@ -151,9 +161,8 @@ Server-side expressions (without `runLocal`) go through the same
 
 - **Wizard forms** cannot be launched yet. Their steps can be resolved with `subform`.
 - **File fields** cannot be filled in; a form whose file field has a value is refused.
-- Validation is limited to required fields. `regex`, `minLength`, `validIf` and the other
-  rules are in the definition `get_form` returns, and are for the client to apply. A
-  dependency on `isValid` is read as "has a value".
+- **List rows** are not validated yet: the rows of a `list` field are taken as sent. Resolve
+  a row with `subform` (and `parent`) to check it.
 - An enum left on `__auto__` is never filled in with its first option: the caller chooses.
 - Every MCP request is one entry in the audit log (action "MCP request"), the job itself is
   recorded under the user as for any other launch.

@@ -1,0 +1,146 @@
+{
+  "name": "a list of subform rows, models, valueColumn, noOutput and a hidden field in the extravars",
+  "mirrors": "Helpers.js buildFormOutput",
+  "form": {
+    "name": "t",
+    "subforms": [
+      {
+        "name": "disk",
+        "type": "subform",
+        "fields": [
+          {
+            "name": "size",
+            "type": "number",
+            "model": "spec.size"
+          },
+          {
+            "name": "tier",
+            "type": "enum",
+            "values": [
+              {
+                "name": "gold",
+                "id": 1
+              },
+              {
+                "name": "silver",
+                "id": 2
+              }
+            ],
+            "valueColumn": "name"
+          }
+        ]
+      }
+    ],
+    "fields": [
+      {
+        "name": "cluster",
+        "type": "enum",
+        "values": [
+          {
+            "name": "c1",
+            "ip": "10.0.0.1"
+          },
+          {
+            "name": "c2",
+            "ip": "10.0.0.2"
+          }
+        ],
+        "valueColumn": "name"
+      },
+      {
+        "name": "name",
+        "type": "text",
+        "model": [
+          "volume.name",
+          "meta.label"
+        ]
+      },
+      {
+        "name": "secret",
+        "type": "password"
+      },
+      {
+        "name": "flag",
+        "type": "checkbox"
+      },
+      {
+        "name": "only_when_flag",
+        "type": "text",
+        "dependencies": [
+          {
+            "name": "flag",
+            "values": [
+              true
+            ]
+          }
+        ]
+      },
+      {
+        "name": "internal",
+        "type": "text",
+        "noOutput": true
+      },
+      {
+        "name": "disks",
+        "type": "list",
+        "subform": "disk"
+      }
+    ]
+  },
+  "values": {
+    "cluster": "c1",
+    "name": "vol1",
+    "secret": "s3cr3t",
+    "only_when_flag": "dropped",
+    "internal": "x",
+    "disks": [
+      {
+        "size": 5,
+        "tier": {
+          "name": "gold",
+          "id": 1
+        }
+      },
+      {
+        "size": 7,
+        "tier": {
+          "name": "silver",
+          "id": 2
+        }
+      }
+    ]
+  },
+  "expect": {
+    "visibility": {
+      "only_when_flag": false
+    },
+    "missing": [],
+    "waiting": [],
+    "invalid": [],
+    "extravars": {
+      "cluster": "c1",
+      "volume": {
+        "name": "vol1"
+      },
+      "meta": {
+        "label": "vol1"
+      },
+      "secret": "s3cr3t",
+      "flag": false,
+      "disks": [
+        {
+          "spec": {
+            "size": 5
+          },
+          "tier": "gold"
+        },
+        {
+          "spec": {
+            "size": 7
+          },
+          "tier": "silver"
+        }
+      ]
+    }
+  }
+}

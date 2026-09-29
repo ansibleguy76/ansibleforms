@@ -1,0 +1,84 @@
+{
+  "name": "required per field type",
+  "mirrors": "AppForm.vue rules : required / checkboxRequired / expression-enum required / yaml required (a required checkbox reports checkboxRequired where vuelidate said sameAs)",
+  "form": {
+    "name": "t",
+    "fields": [
+      {
+        "name": "spaces",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "filled",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "box",
+        "type": "checkbox",
+        "required": true
+      },
+      {
+        "name": "choice",
+        "type": "enum",
+        "values": [
+          "a",
+          "b"
+        ],
+        "required": true
+      },
+      {
+        "name": "doc",
+        "type": "yaml",
+        "required": true
+      },
+      {
+        "name": "optional",
+        "type": "text"
+      }
+    ]
+  },
+  "values": {
+    "spaces": "   ",
+    "filled": "x",
+    "box": false,
+    "choice": "__none__"
+  },
+  "expect": {
+    "validation": {
+      "spaces": [
+        {
+          "type": "required",
+          "description": "spaces is required"
+        }
+      ],
+      "box": [
+        {
+          "type": "checkboxRequired",
+          "description": "box is required"
+        }
+      ],
+      "choice": [
+        {
+          "type": "required",
+          "description": "choice is required"
+        }
+      ],
+      "doc": [
+        {
+          "type": "required",
+          "description": "doc is required"
+        }
+      ]
+    },
+    "invalid": [
+      "spaces"
+    ],
+    "missing": [
+      "box",
+      "choice",
+      "doc"
+    ]
+  }
+}

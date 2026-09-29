@@ -1,0 +1,41 @@
+{
+  "name": "a hidden field is never validated",
+  "mirrors": "AppForm.vue validateForm : visible fields only",
+  "form": {
+    "name": "t",
+    "fields": [
+      {
+        "name": "flag",
+        "type": "checkbox"
+      },
+      {
+        "name": "host",
+        "type": "text",
+        "required": true,
+        "regex": {
+          "expression": "^prod-",
+          "description": "prod only"
+        },
+        "dependencies": [
+          {
+            "name": "flag",
+            "values": [
+              true
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "values": {
+    "flag": false,
+    "host": "test"
+  },
+  "expect": {
+    "validation": {},
+    "invalid": [],
+    "visibility": {
+      "host": false
+    }
+  }
+}

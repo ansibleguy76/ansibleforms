@@ -19,6 +19,11 @@ import appConfig from "../../config/app.config.js";
 import Repository from "./repository.model.js";
 import mysql from "./db.model.js";
 import Form from "./form.model.js";
+import Expression from "./expression.model.js";
+import Query from "./query.model.js";
+import { resolveFormQuery } from "../lib/queryPolicy.js";
+import { createFormServices } from "../lib/formServices.js";
+import { validateLaunch, describeLaunchErrors } from "../lib/launchValidation.js";
 import Credential from "./credential.model.v2.js";
 import AwxModel from "./awx.model.js";
 import path from "path";
@@ -840,6 +845,49 @@ Job.getRawFormData = async function (user, id) {
 };
 
 
+/**
+ * ENFORCE_LAUNCH_VALIDATION : validate the raw field values of a REST launch with the form
+ * engine the browser and the MCP server use. 0 (default) only logs what would be refused -
+ * so an operator can see what enforcing would do before turning it on - and 1 refuses the
+ * launch with a ValidationError (422) carrying the failing fields.
+ *
+ * A launch without rawFormData (the v1 API, or a raw REST call leaving it out) cannot be
+ * validated, and with enforcement on that is itself a refusal : otherwise leaving it out
+ * would be the way around the check.
+ */
+async function guardLaunch({ form, formConfig, formObj, user, rawFormData, extravars }) {
+  const enforce = !!appConfig.enforceLaunchValidation;
+  const hasRaw = !!rawFormData && typeof rawFormData === 'object' && Object.keys(rawFormData).length > 0;
+  const hasFields = (formObj?.fields || []).length > 0;
+  let result;
+  if (!hasRaw && hasFields) {
+    result = { ok: false, reason: 'no rawFormData was sent (v1 API or a raw REST call), so the field values cannot be validated' };
+  } else {
+    try {
+      result = await validateLaunch({
+        formConfig, formObj, user, rawFormData, extravars,
+        services: createFormServices({ user, formConfig, formObj, deps: { Expression, Query, resolveFormQuery } }),
+      });
+    } catch (err) {
+      if (enforce) throw new Errors.ValidationError(`Launch validation of form '${form}' failed : ${err.message}`);
+      logger.error(`Launch validation of form '${form}' failed, launching anyway (ENFORCE_LAUNCH_VALIDATION=0) : ${err.message}`);
+      return;
+    }
+  }
+  if (result.skipped) {
+    logger.debug(`Launch validation of form '${form}' skipped : ${result.skipped}`);
+    return;
+  }
+  if (result.ok) return;
+  const why = result.reason || describeLaunchErrors(result.errors);
+  if (enforce) {
+    const err = new Errors.ValidationError(`The form data of '${form}' is not valid - ${why}`);
+    err.details = result.errors || { reason: result.reason };
+    throw err;
+  }
+  logger.warning(`Launch validation would refuse form '${form}' for ${user?.username || 'unknown'} (ENFORCE_LAUNCH_VALIDATION=0) : ${why}`);
+}
+
 Job.launch = async function ({
   form,
   formObj = null,
@@ -857,7 +905,10 @@ Job.launch = async function ({
   fromClient = false,
   // Set ONLY by Job.relaunch : keep the submitter stored in the replayed extravars instead
   // of putting `user` there (see setUserExtravars).
-  replay = false
+  replay = false,
+  // Set ONLY by the MCP server, which resolved and validated the form with the same engine
+  // just before : the launch validation below need not run it a second time.
+  validated = false
 }) {
   const creds = credentials; // Alias for backward compatibility internally
 
@@ -867,9 +918,10 @@ Job.launch = async function ({
   const isStep = !!formObj;
 
   // a formobj can be a full step pushed
+  let formConfig = null;
   if (!formObj) {
     // we load it, it's an actual form
-    const formConfig = await Form.load(user?.roles, form);
+    formConfig = await Form.load(user?.roles, form);
     if (formConfig.forms.length == 0) {
       throw new Errors.NotFoundError(`No such form '${form}'`);
     }
@@ -883,6 +935,11 @@ Job.launch = async function ({
   // form's own value. formObj comes from Form.load(user.roles, ...), so the declarations are
   // read from a form this user is allowed to run.
   if (fromClient) stripReservedExtravars(extravars, formObj);
+
+  // the field values of a REST launch against the form's rules, as the browser checks them
+  if (fromClient && !validated && !isStep) {
+    await guardLaunch({ form, formConfig, formObj, user, rawFormData, extravars });
+  }
 
   if (!isStep) setUserExtravars(extravars, user, formObj, replay);
 
@@ -3000,4 +3057,4 @@ Awx.findInventoryByName = async function (awxName, name) {
 
 export default Job;
 // named export of the awx interaction functions (mainly for testing)
-export { Awx, stripReservedExtravars, setUserExtravars };
+export { Awx, stripReservedExtravars, setUserExtravars, guardLaunch };

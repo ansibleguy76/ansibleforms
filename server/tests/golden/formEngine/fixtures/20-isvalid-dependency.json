@@ -1,0 +1,103 @@
+{
+  "name": "dependencies on isValid : an empty optional field is valid, a failing rule or a hidden field is not",
+  "mirrors": "AppForm.vue checkDependencies : item.isValid != v$.form[name].$invalid (&& dependencyOk)",
+  "form": {
+    "name": "t",
+    "fields": [
+      {
+        "name": "opt",
+        "type": "text"
+      },
+      {
+        "name": "when_opt_valid",
+        "type": "text",
+        "dependencies": [
+          {
+            "name": "opt",
+            "isValid": true
+          }
+        ]
+      },
+      {
+        "name": "bad",
+        "type": "text",
+        "regex": {
+          "expression": "^prod-",
+          "description": "prod only"
+        }
+      },
+      {
+        "name": "when_bad_valid",
+        "type": "text",
+        "dependencies": [
+          {
+            "name": "bad",
+            "isValid": true
+          }
+        ]
+      },
+      {
+        "name": "when_bad_invalid",
+        "type": "text",
+        "dependencies": [
+          {
+            "name": "bad",
+            "isValid": false
+          }
+        ]
+      },
+      {
+        "name": "flag",
+        "type": "checkbox"
+      },
+      {
+        "name": "gone",
+        "type": "text",
+        "dependencies": [
+          {
+            "name": "flag",
+            "values": [
+              true
+            ]
+          }
+        ]
+      },
+      {
+        "name": "when_gone_valid",
+        "type": "text",
+        "dependencies": [
+          {
+            "name": "gone",
+            "isValid": true
+          }
+        ]
+      },
+      {
+        "name": "when_gone_invalid",
+        "type": "text",
+        "dependencies": [
+          {
+            "name": "gone",
+            "isValid": false
+          }
+        ]
+      }
+    ]
+  },
+  "values": {
+    "bad": "test"
+  },
+  "expect": {
+    "visibility": {
+      "when_opt_valid": true,
+      "when_bad_valid": false,
+      "when_bad_invalid": true,
+      "gone": false,
+      "when_gone_valid": false,
+      "when_gone_invalid": false
+    },
+    "invalid": [
+      "bad"
+    ]
+  }
+}

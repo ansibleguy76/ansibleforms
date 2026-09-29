@@ -1,0 +1,68 @@
+{
+  "name": "validIf / validIfNot, skipped on an empty value",
+  "mirrors": "AppForm.vue rules : validIf / validIfNot",
+  "form": {
+    "name": "t",
+    "fields": [
+      {
+        "name": "flag",
+        "type": "checkbox"
+      },
+      {
+        "name": "flag2",
+        "type": "checkbox"
+      },
+      {
+        "name": "a",
+        "type": "text",
+        "validIf": {
+          "field": "flag",
+          "description": "Needs $(flag2) ... flag"
+        }
+      },
+      {
+        "name": "b",
+        "type": "text",
+        "validIfNot": {
+          "field": "flag2",
+          "description": "Not with flag2"
+        }
+      },
+      {
+        "name": "c",
+        "type": "text",
+        "validIf": {
+          "field": "flag",
+          "description": "skip on empty"
+        }
+      }
+    ]
+  },
+  "values": {
+    "flag": false,
+    "flag2": true,
+    "a": "x",
+    "b": "y",
+    "c": ""
+  },
+  "expect": {
+    "validation": {
+      "a": [
+        {
+          "type": "validIf",
+          "description": "Needs true ... flag"
+        }
+      ],
+      "b": [
+        {
+          "type": "validIfNot",
+          "description": "Not with flag2"
+        }
+      ]
+    },
+    "invalid": [
+      "a",
+      "b"
+    ]
+  }
+}
