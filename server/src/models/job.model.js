@@ -846,17 +846,21 @@ Job.getRawFormData = async function (user, id) {
 
 
 /**
- * ENFORCE_LAUNCH_VALIDATION : validate the raw field values of a REST launch with the form
- * engine the browser and the MCP server use. 0 (default) only logs what would be refused -
- * so an operator can see what enforcing would do before turning it on - and 1 refuses the
- * launch with a ValidationError (422) carrying the failing fields.
+ * LAUNCH_VALIDATION : validate the raw field values of a REST launch with the form engine
+ * the browser and the MCP server use. `off` (default) does nothing - the check re-runs the
+ * form's expressions and queries, so an upgrade must not start doing that unasked. `log`
+ * logs what would be refused, so an operator can see what enforcing would do before turning
+ * it on, and `enforce` refuses the launch with a ValidationError (422) carrying the failing
+ * fields.
  *
  * A launch without rawFormData (the v1 API, or a raw REST call leaving it out) cannot be
  * validated, and with enforcement on that is itself a refusal : otherwise leaving it out
  * would be the way around the check.
  */
 async function guardLaunch({ form, formConfig, formObj, user, rawFormData, extravars }) {
-  const enforce = !!appConfig.enforceLaunchValidation;
+  const mode = appConfig.launchValidation;
+  if (mode !== 'log' && mode !== 'enforce') return;
+  const enforce = mode === 'enforce';
   const hasRaw = !!rawFormData && typeof rawFormData === 'object' && Object.keys(rawFormData).length > 0;
   const hasFields = (formObj?.fields || []).length > 0;
   let result;
@@ -870,7 +874,7 @@ async function guardLaunch({ form, formConfig, formObj, user, rawFormData, extra
       });
     } catch (err) {
       if (enforce) throw new Errors.ValidationError(`Launch validation of form '${form}' failed : ${err.message}`);
-      logger.error(`Launch validation of form '${form}' failed, launching anyway (ENFORCE_LAUNCH_VALIDATION=0) : ${err.message}`);
+      logger.error(`Launch validation of form '${form}' failed, launching anyway (LAUNCH_VALIDATION=log) : ${err.message}`);
       return;
     }
   }
@@ -885,7 +889,7 @@ async function guardLaunch({ form, formConfig, formObj, user, rawFormData, extra
     err.details = result.errors || { reason: result.reason };
     throw err;
   }
-  logger.warning(`Launch validation would refuse form '${form}' for ${user?.username || 'unknown'} (ENFORCE_LAUNCH_VALIDATION=0) : ${why}`);
+  logger.warning(`Launch validation would refuse form '${form}' for ${user?.username || 'unknown'} (LAUNCH_VALIDATION=log) : ${why}`);
 }
 
 Job.launch = async function ({

@@ -162,7 +162,7 @@ const launch = async function(req, res) {
           const job = await Job.launch({ form, user, credentials: creds, extravars, rawFormData, fromClient: true });
           res.status(200).json(RestResultv2.single(job));
         }catch(err){
-          // ENFORCE_LAUNCH_VALIDATION : the field values break the form's rules
+          // LAUNCH_VALIDATION=enforce : the field values break the form's rules
           if (err?.name === 'ValidationError') {
             logger.warning(err.message);
             res.status(422).json(RestResultv2.error(i18n.t(req, 'jobs.invalidFormData'), err.details || err.message));

@@ -52,9 +52,11 @@ var app_config = {
   // in, and an operator should opt in to it.
   enableMcp: (process.env.ENABLE_MCP ?? 0) == 1,
   // Validate the field values of every launch from the browser or the REST API against the
-  // form's rules (the same engine as the MCP server). 0 = only log what would be refused,
-  // so an operator can see the effect first ; 1 = refuse. Read at every launch.
-  enforceLaunchValidation: (process.env.ENFORCE_LAUNCH_VALIDATION ?? 0) == 1,
+  // form's rules (the same engine as the MCP server). off (default) = no check at all, so an
+  // upgrade changes nothing ; log = log what would be refused ; enforce = refuse.
+  // Read at every launch.
+  launchValidation: ['log', 'enforce'].includes(String(process.env.LAUNCH_VALIDATION || '').trim().toLowerCase())
+    ? String(process.env.LAUNCH_VALIDATION).trim().toLowerCase() : 'off',
   useYtt: (process.env.USE_YTT ?? 0) == 1,
   yttDangerousAllowAllSymlinkDestinations: (process.env.YTT_DANGEROUS_ALLOW_ALL_SYMLINK_DESTINATIONS ?? 0) == 1,
   yttAllowSymlinkDestinations: process.env.YTT_ALLOW_SYMLINK_DESTINATIONS || "",

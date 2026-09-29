@@ -4,7 +4,7 @@ import { readModelPath } from './formEngine/output.js';
 
 /**
  * Validate a launch that came in over the REST API against the form definition, with the
- * same engine and rules as the browser and the MCP server (ENFORCE_LAUNCH_VALIDATION).
+ * same engine and rules as the browser and the MCP server (LAUNCH_VALIDATION).
  *
  * The browser sends `rawFormData` - the raw field values - next to the modelled extravars ;
  * those raw values are what the rules apply to. Two gaps are filled in :

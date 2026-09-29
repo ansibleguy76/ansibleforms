@@ -1,4 +1,4 @@
-// ENFORCE_LAUNCH_VALIDATION : a REST launch checked against the form's rules with the same
+// LAUNCH_VALIDATION : a REST launch checked against the form's rules with the same
 // engine as the browser and the MCP server (lib/launchValidation.js, Job.launch guardLaunch).
 import { describe, test, expect, vi, beforeEach, afterEach } from "vitest";
 
@@ -32,9 +32,9 @@ let warned;
 beforeEach(() => {
   warned = [];
   logger.warning = (m) => warned.push(m);
-  appConfig.enforceLaunchValidation = false;
+  appConfig.launchValidation = 'log';
 });
-afterEach(() => { delete appConfig.enforceLaunchValidation; });
+afterEach(() => { delete appConfig.launchValidation; });
 
 describe("validateLaunch", () => {
   test("the raw field values are checked, passwords read back from the modelled extravars", async () => {
@@ -64,13 +64,20 @@ describe("validateLaunch", () => {
 });
 
 describe("guardLaunch", () => {
-  test("off : an invalid launch is logged and goes ahead", async () => {
+  test("off : nothing is checked, nothing is logged", async () => {
+    appConfig.launchValidation = 'off';
+    await expect(guardLaunch(args({ host: "test-1" }))).resolves.toBeUndefined();
+    await expect(guardLaunch(args({}, { host: "anything" }))).resolves.toBeUndefined();
+    expect(warned).toEqual([]);
+  });
+
+  test("log : an invalid launch is logged and goes ahead", async () => {
     await expect(guardLaunch(args({ host: "test-1" }))).resolves.toBeUndefined();
     expect(warned.join("\n")).toMatch(/would refuse form 'Create host' for bob .* failing rules : host \(regex\)/);
   });
 
   test("on : an invalid launch is refused with the failing fields", async () => {
-    appConfig.enforceLaunchValidation = true;
+    appConfig.launchValidation = 'enforce';
     const err = await guardLaunch(args({ host: "test-1" })).catch((e) => e);
     expect(err.name).toBe("ValidationError");
     expect(err.status).toBe(422);
@@ -78,13 +85,13 @@ describe("guardLaunch", () => {
   });
 
   test("on : a valid launch goes ahead", async () => {
-    appConfig.enforceLaunchValidation = true;
+    appConfig.launchValidation = 'enforce';
     await expect(guardLaunch(args({ host: "prod-1" }))).resolves.toBeUndefined();
     expect(warned).toEqual([]);
   });
 
   test("on : leaving rawFormData out is not a way around the check", async () => {
-    appConfig.enforceLaunchValidation = true;
+    appConfig.launchValidation = 'enforce';
     const err = await guardLaunch(args({}, { host: "anything" })).catch((e) => e);
     expect(err.name).toBe("ValidationError");
     expect(err.message).toMatch(/no rawFormData was sent/);
