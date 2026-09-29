@@ -102,6 +102,9 @@ function optionMatches(option, value, valueColumn) {
  * @param {function} [args.services.forSubform]      (subformName) => services for a list row's queries
  * @param {object[]} [args.subforms]  every subform of the root form (Form.load inlines them) ;
  *                                    defaults to form.subforms
+ * @param {boolean} [args.allRows]    resolve every (non-deleted) list row, not only the rows
+ *                                    the browser's row editor touched - for the MCP server,
+ *                                    whose caller sends plain rows
  */
 export async function resolveForm({
   form,
@@ -114,6 +117,7 @@ export async function resolveForm({
   maxOptions = DEFAULT_MAX_OPTIONS,
   services,
   subforms = undefined,
+  allRows = false,
   // internal : the rows still allowed across the nested resolutions of one launch
   rowBudget = { left: MAX_LIST_ROWS },
 }) {
@@ -377,7 +381,8 @@ export async function resolveForm({
    * The rows of a list field, each through its subform - as the browser's row editor does,
    * with the parent's values as __parent__. Only rows the user added or edited are resolved
    * (they carry __output__ from the editor, or an insert/update marker) : a row the list's
-   * own expression produced is sent as it is, in the browser too. A row marked deleted is
+   * own expression produced is sent as it is, in the browser too. With `allRows` (the MCP
+   * server) every row is resolved : an agent's rows never went through an editor. A row marked deleted is
    * kept as it is. Server-computed row fields win ; the markers stay ; __output__ is rebuilt.
    */
   async function resolveRows(f) {
@@ -387,7 +392,7 @@ export async function resolveForm({
     const m = listMarkers(f);
     const markerKeys = [m.insert, m.update, m.delete].filter(Boolean);
     const touched = (row) => row && typeof row === 'object' && !(m.delete && row[m.delete])
-      && ('__output__' in row || (m.insert && row[m.insert]) || (m.update && row[m.update]));
+      && (allRows || '__output__' in row || (m.insert && row[m.insert]) || (m.update && row[m.update]));
     const rows = vals[f.name];
     const todo = rows.filter(touched).length;
     if (todo > rowBudget.left) {
@@ -408,7 +413,7 @@ export async function resolveForm({
       for (const [k, v] of Object.entries(row)) if (k !== '__output__' && !markerKeys.includes(k)) input[k] = v;
       const res = await resolveForm({
         form: sub, constants, vars, user, parent: parentValues, values: input,
-        services: rowServices, subforms: allSubforms, rowBudget,
+        services: rowServices, subforms: allSubforms, rowBudget, allRows,
       });
       const resolved = {};
       for (const sf of sub.fields || []) if (sf?.name) resolved[sf.name] = res._values[sf.name];

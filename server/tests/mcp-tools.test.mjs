@@ -209,6 +209,54 @@ describe("MCP tools", () => {
     expect(res.structuredContent).toEqual({ code: "access_denied", message: "Access denied to form Admin only." });
   });
 
+  describe("list rows", () => {
+    const vmForm = {
+      name: "Create vms",
+      type: "ansible",
+      playbook: "vms.yml",
+      roles: ["public"],
+      subforms: [
+        { name: "vm", type: "subform", fields: [
+          { name: "host", type: "text", required: true, regex: { expression: "^web", description: "web hosts only" } },
+          { name: "disks", type: "list", subform: "vmdisk" },
+        ] },
+        { name: "vmdisk", type: "subform", fields: [
+          { name: "path", type: "local", output: true, expression: "'/' + '$(__parent__.__parent__.site)' + '/' + '$(__parent__.host)'" },
+          { name: "size", type: "number", required: true },
+        ] },
+      ],
+      fields: [
+        { name: "site", type: "text", required: true },
+        { name: "vms", type: "list", subform: "vm" },
+      ],
+    };
+    beforeEach(() => {
+      deps.Form.load = vi.fn(async () => ({ constants: {}, forms: [structuredClone(vmForm)], errors: [], warnings: [] }));
+    });
+
+    test("an agent's plain rows are validated at every level", async () => {
+      const client = await connect();
+      const r = await client.callTool({ name: "launch_job", arguments: { form: "Create vms",
+        values: { site: "gent", vms: [{ host: "db1", disks: [{ size: 10 }] }, { host: "web2", disks: [{}] }] } } });
+      expect(r.isError).toBe(true);
+      expect(r.structuredContent.rowErrors).toEqual({ vms: [
+        { index: 0, invalid: ["host"], validationErrors: { host: [{ type: "regex", description: "web hosts only" }] } },
+        { index: 1, invalid: ["disks"], rowErrors: { disks: [{ index: 0, missing: ["size"] }] } },
+      ] });
+      expect(r.structuredContent.message).toContain("list rows failing : vms[0].host (regex), vms[1].disks[0].size (missing)");
+      expect(deps.Job.launch).not.toHaveBeenCalled();
+    });
+
+    test("valid nested rows launch with the rows the server built", async () => {
+      const client = await connect();
+      const r = await call(client, "launch_job", { form: "Create vms",
+        values: { site: "gent", vms: [{ host: "web1", disks: [{ size: 10 }, { size: 20 }] }] } });
+      expect(r.isError).toBeFalsy();
+      expect(deps.Job.launch.mock.calls[0][0].extravars).toEqual({ site: "gent",
+        vms: [{ host: "web1", disks: [{ path: "/gent/web1", size: 10 }, { path: "/gent/web1", size: 20 }] }] });
+    });
+  });
+
   describe("validation", () => {
     const hostForm = {
       name: "Create host",

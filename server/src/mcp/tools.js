@@ -111,6 +111,9 @@ export function createHandlers({ user, deps }) {
       only: field,
       maxOptions,
       services: servicesFor(formConfig, formObj, subform),
+      subforms: formObj.subforms || [],
+      // an agent's rows never went through the browser's row editor : resolve them all
+      allRows: true,
     });
     return { res, formConfig, formObj };
   }
@@ -193,6 +196,7 @@ export function createHandlers({ user, deps }) {
         user,
         values: values || {},
         services: servicesFor(formConfig, formObj),
+        allRows: true,
       });
       if (!res.complete) {
         const parts = [];

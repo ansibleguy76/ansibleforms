@@ -161,11 +161,12 @@ Server-side expressions (without `runLocal`) go through the same
 
 - **Wizard forms** cannot be launched yet. Their steps can be resolved with `subform`.
 - **File fields** cannot be filled in; a form whose file field has a value is refused.
-- **List rows**: rows added or edited (they carry `__output__`, or an insert or update
-  marker) are resolved through their subform with the form as `__parent__` and validated;
-  failing rows are listed per list field in `rowErrors`. Rows sent without either are taken
-  as they are, like rows a list's expression produced in the browser. At most 500 rows per
-  call.
+- **List rows**: every row you send (except one carrying the list's `deleteMarker`) is
+  resolved through its subform with the form's values as `__parent__`, and validated -
+  nested lists included, where `__parent__.__parent__` reaches the form. Send plain rows:
+  the raw subform field values. Failing rows are listed per list field in `rowErrors`
+  (`vms[1].disks[0].size (missing)` in the message). At most 500 rows per call, all levels
+  together.
 - An enum left on `__auto__` is never filled in with its first option: the caller chooses.
 - Every MCP request is one entry in the audit log (action "MCP request"), the job itself is
   recorded under the user as for any other launch.
