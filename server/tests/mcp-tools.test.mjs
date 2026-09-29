@@ -284,6 +284,23 @@ describe("MCP tools", () => {
       expect(deps.Job.launch).not.toHaveBeenCalled();
     });
 
+    test("a yaml field with a subform takes a plain object and models it", async () => {
+      deps.Form.load = vi.fn(async () => ({ constants: {}, errors: [], warnings: [], forms: [{
+        name: "Web", type: "ansible", playbook: "web.yml", roles: ["public"],
+        subforms: [{ name: "cfg", type: "subform", fields: [
+          { name: "port", type: "number", required: true, maxValue: 9000, model: "listen.port" },
+          { name: "host", type: "text", required: true },
+        ] }],
+        fields: [{ name: "config", type: "yaml", subform: "cfg" }],
+      }] }));
+      const client = await connect();
+      const bad = await client.callTool({ name: "launch_job", arguments: { form: "Web", values: { config: { port: 99999 } } } });
+      expect(bad.structuredContent.message).toContain("list rows failing : config.host (missing), config.port (maxValue)");
+      const ok = await call(client, "launch_job", { form: "Web", values: { config: { port: 443, host: "web1" } } });
+      expect(ok.isError).toBeFalsy();
+      expect(deps.Job.launch.mock.calls[0][0].extravars).toEqual({ config: { listen: { port: 443 }, host: "web1" } });
+    });
+
     test("valid nested rows launch with the rows the server built", async () => {
       const client = await connect();
       const r = await call(client, "launch_job", { form: "Create vms",

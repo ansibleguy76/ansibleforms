@@ -694,6 +694,42 @@ Job.findApprovals = async function (user) {
     return count;
   }
 };
+// form name -> { at, fields, subforms } : the definitions masking needs, kept for a minute -
+// a job being followed is read every few seconds, and Form.load reads the whole config
+const PASSWORD_FIELDS_TTL_MS = 60 * 1000;
+const passwordFieldsCache = new Map();
+
+async function formFieldsFor(formName) {
+  const hit = passwordFieldsCache.get(formName);
+  if (hit && Date.now() - hit.at < PASSWORD_FIELDS_TTL_MS) return hit;
+  // the definition is only read to know which fields are passwords, never returned : load
+  // it regardless of the reader's roles (an approver may not have the form's role)
+  const formObj = (await Form.load(["admin"], formName))?.forms?.[0];
+  const entry = { at: Date.now(), fields: formObj?.fields || [], subforms: formObj?.subforms || [] };
+  if (passwordFieldsCache.size > 500) passwordFieldsCache.clear();
+  passwordFieldsCache.set(formName, entry);
+  return entry;
+}
+
+/**
+ * Stored extravars (JSON text) with the value of every password field of the form masked,
+ * at its model path, list rows and yaml subforms included. Anything that goes wrong leaves
+ * the text as it was - it has been through the key-name regex already.
+ */
+async function maskPasswordFields(formName, extravarsText) {
+  if (!formName || !extravarsText) return extravarsText;
+  try {
+    const { fields, subforms } = await formFieldsFor(formName);
+    const hasPassword = [{ fields }, ...subforms].some((f) => (f?.fields || []).some((x) => x?.type === 'password'));
+    if (!hasPassword) return extravarsText;
+    const data = JSON.parse(extravarsText);
+    return JSON.stringify(maskPasswords(data, fields, subforms));
+  } catch (err) {
+    logger.debug(`Could not mask the password fields of form '${formName}' : ${err.message}`);
+    return extravarsText;
+  }
+}
+
 Job.findById = async function (user, id, asText, logSafe = false) {
   logger.info(`Finding job ${id}`);
   var query;
@@ -723,8 +759,10 @@ Job.findById = async function (user, id, asText, logSafe = false) {
     job.awx_artifacts = safeParse(job.awx_artifacts, {}, `job.awx_artifacts id=${id}`);
     // convert awx workflow info (null when not a workflow job)
     job.awx_workflow = safeParse(job.awx_workflow, null, `job.awx_workflow id=${id}`);
-    // mask passwords
-    if (logSafe) job.extravars = Helpers.logSafe(job.extravars);
+    // mask passwords : by key name (MASK_EXTRAVARS_REGEX), and every password field of the
+    // form by its definition - a password field whose key the regex does not catch (`pw`)
+    // was returned readable
+    if (logSafe) job.extravars = await maskPasswordFields(job.form, Helpers.logSafe(job.extravars));
     // get output summary
     res = await mysql.do(
       `SELECT 

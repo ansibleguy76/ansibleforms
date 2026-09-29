@@ -1,0 +1,66 @@
+{
+  "name": "a yaml field with a subform is one row : resolved, validated, modelled by the server",
+  "mirrors": "AppForm openYamlSubformEditor (subform editor, __parent__ = the form) + buildFormOutput yaml __output__",
+  "form": {
+    "name": "t",
+    "subforms": [
+      {
+        "name": "cfg",
+        "type": "subform",
+        "fields": [
+          {
+            "name": "port",
+            "type": "number",
+            "maxValue": "$(__parent__.max_port)",
+            "model": "listen.port"
+          },
+          {
+            "name": "host",
+            "type": "text",
+            "required": true
+          },
+          {
+            "name": "url",
+            "type": "local",
+            "expression": "'https://' + '$(host)' + ':' + '$(port)'",
+            "output": true
+          }
+        ]
+      }
+    ],
+    "fields": [
+      {
+        "name": "max_port",
+        "type": "number"
+      },
+      {
+        "name": "config",
+        "type": "yaml",
+        "subform": "cfg"
+      }
+    ]
+  },
+  "values": {
+    "max_port": 9000,
+    "config": {
+      "port": 443,
+      "host": "web1",
+      "__output__": {
+        "forged": true
+      }
+    }
+  },
+  "expect": {
+    "invalid": [],
+    "extravars": {
+      "max_port": 9000,
+      "config": {
+        "listen": {
+          "port": 443
+        },
+        "host": "web1",
+        "url": "https://web1:443"
+      }
+    }
+  }
+}

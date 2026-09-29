@@ -182,7 +182,8 @@ Server-side expressions (without `runLocal`) go through the same
 
 - **Wizard forms** cannot be launched yet. Their steps can be resolved with `subform`.
 - **File fields** cannot be filled in; a form whose file field has a value is refused.
-- **List rows**: every row you send (except one carrying the list's `deleteMarker`) is
+- **List rows** (and a `yaml` field with a subform, which is one such row): every row you
+  send (except one carrying the list's `deleteMarker`) is
   resolved through its subform with the form's values as `__parent__`, and validated -
   nested lists included, where `__parent__.__parent__` reaches the form. Send plain rows:
   the raw subform field values. Failing rows are listed per list field in `rowErrors`

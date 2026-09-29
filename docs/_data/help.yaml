@@ -969,6 +969,10 @@
     description: |
       When you have sensitive extravars, such as passwords, tokens, keys, credentials, you do not want these to be shown in clear text in the extravars section of a job.  
       By setting this regex, any extravar key matching this regex will have its value masked with `********`.   Note the regex will be case insensitive.   
+
+      **Since 6.4.1** the value of every `password` field of the form is masked as well, whatever
+      its key or model path - in list rows and yaml subforms too. The regex is for the other
+      secrets, the ones that are not password fields.
   - name: EXTRAVARS_USER_FIELDS
     type: string
     allowed: empty, all, none, or a comma separated list of keys

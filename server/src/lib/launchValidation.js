@@ -155,7 +155,8 @@ export function describeRowErrors(rowErrors, prefix = '') {
   const out = [];
   for (const [list, rows] of Object.entries(rowErrors || {})) {
     for (const row of rows) {
-      const at = `${prefix}${list}[${row.index}]`;
+      // a yaml field with a subform is one row, without an index
+      const at = row.index === null || row.index === undefined ? `${prefix}${list}` : `${prefix}${list}[${row.index}]`;
       for (const n of row.missing || []) out.push(`${at}.${n} (missing)`);
       for (const [n, errs] of Object.entries(row.validationErrors || {})) out.push(`${at}.${n} (${errs.map((e) => e.type).join(', ')})`);
       for (const n of (row.invalid || []).filter((x) => !(x in (row.validationErrors || {})) && !(x in (row.rowErrors || {})))) out.push(`${at}.${n} (invalid)`);

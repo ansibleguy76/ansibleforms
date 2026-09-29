@@ -163,8 +163,9 @@ export async function resolveForm({
     ? allSubforms.find((x) => x?.name === f.subform) : f.subform);
   // a list's rows read the parent through $(__parent__.x) : the list waits for those fields,
   // so its rows are resolved against settled parent values
+  const hasRows = (f) => f.type === 'list' || (f.type === 'yaml' && !!f.subform);
   for (const f of fields) {
-    const sub = f.type === 'list' ? subformOf(f) : null;
+    const sub = hasRows(f) ? subformOf(f) : null;
     if (!sub) continue;
     const reads = [...JSON.stringify(sub.fields || []).matchAll(/\$\(__parent__\.([A-Za-z0-9_-]+)/g)]
       .map((m) => m[1]).filter((n) => byName[n] && n !== f.name);
@@ -384,16 +385,23 @@ export async function resolveForm({
    * own expression produced is sent as it is, in the browser too. With `allRows` (the MCP
    * server) every row is resolved : an agent's rows never went through an editor. A row marked deleted is
    * kept as it is. Server-computed row fields win ; the markers stay ; __output__ is rebuilt.
+   *
+   * A `yaml` field with a subform is ONE such row : an object the browser edits through the
+   * same subform editor, output through its __output__. It is resolved the same way ; its
+   * failures are reported with `index: null`.
    */
   async function resolveRows(f) {
     const s = st[f.name];
     const sub = subformOf(f);
-    if (s.status !== 'resolved' || !sub || !Array.isArray(sub.fields) || !Array.isArray(vals[f.name])) return;
-    const m = listMarkers(f);
+    if (s.status !== 'resolved' || !sub || !Array.isArray(sub.fields)) return;
+    const single = f.type === 'yaml';
+    const value = vals[f.name];
+    if (single ? !(value && typeof value === 'object' && !Array.isArray(value)) : !Array.isArray(value)) return;
+    const m = single ? { insert: '', update: '', delete: '' } : listMarkers(f);
     const markerKeys = [m.insert, m.update, m.delete].filter(Boolean);
     const touched = (row) => row && typeof row === 'object' && !(m.delete && row[m.delete])
       && (allRows || '__output__' in row || (m.insert && row[m.insert]) || (m.update && row[m.update]));
-    const rows = vals[f.name];
+    const rows = single ? [value] : value;
     const todo = rows.filter(touched).length;
     if (todo > rowBudget.left) {
       rowBudget.left = 0;
@@ -423,7 +431,7 @@ export async function resolveForm({
       out.push(resolved);
       if (!res.complete) {
         failing.push({
-          index: i,
+          index: single ? null : i,
           ...(res.missing.length ? { missing: res.missing } : {}),
           ...(res.invalid.length ? { invalid: res.invalid } : {}),
           ...(res.waiting.length ? { waiting: res.waiting } : {}),
@@ -432,12 +440,12 @@ export async function resolveForm({
         });
       }
       for (const w of res.warnings) {
-        const tagged = `${f.name}[${i}] : ${w}`;
+        const tagged = `${f.name}${single ? '' : `[${i}]`} : ${w}`;
         if (!warnings.includes(tagged)) warnings.push(tagged);
       }
     }
-    vals[f.name] = out;
-    s.value = out;
+    vals[f.name] = single ? out[0] : out;
+    s.value = vals[f.name];
     if (failing.length) s.rows = failing;
   }
 
@@ -462,7 +470,7 @@ export async function resolveForm({
       }
       if (!exempt && !(graph.dependsOn[f.name] || []).every(settled)) continue;
       await evaluate(f);
-      if (f.type === 'list') await resolveRows(f);
+      if (hasRows(f)) await resolveRows(f);
       progress = true;
     }
     if (progress) { released = false; continue; }
