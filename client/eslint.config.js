@@ -33,6 +33,11 @@ export default defineConfig([
       // idiomatic here rather than oversights.
       'no-unused-vars': ['error', { caughtErrors: 'none', argsIgnorePattern: '^_' }],
       'no-empty': ['error', { allowEmptyCatch: true }],
+      // the shared form engine's node/ folder uses node:vm and crypto - never ship it
+      'no-restricted-imports': ['error', { patterns: [{
+        group: ['@engine/node/*', '@engine/resolve.js'],
+        message: 'Only the browser-safe form engine files may be imported in the client.',
+      }] }],
     },
   },
   {

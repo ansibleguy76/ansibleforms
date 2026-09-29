@@ -136,6 +136,7 @@ export default {
     failedDelete: "Job konnte nicht geloescht werden",
     deleted: "Job geloescht",
     failedLaunch: "Formular konnte nicht gestartet werden",
+    invalidFormData: "Die Formulardaten sind ungültig",
     failedRelaunch: "Job konnte nicht neu gestartet werden",
     failedApprove: "Job-Freigabe fehlgeschlagen",
     failedReject: "Job-Ablehnung fehlgeschlagen",

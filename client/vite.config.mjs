@@ -48,10 +48,14 @@ return {
   ],
   define: { 'process.env': {} },
   resolve: {
-    dedupe: ['vue'],
+    // yaml is deduped so the shared form engine (@engine, under server/) resolves it from
+    // client/node_modules - server/node_modules does not exist when the image builds the client
+    dedupe: ['vue', 'yaml'],
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
-      '~@': fileURLToPath(new URL('./src', import.meta.url))
+      '~@': fileURLToPath(new URL('./src', import.meta.url)),
+      // the form engine shared with the server (MCP, launch validation) - browser-safe files only
+      '@engine': fileURLToPath(new URL('../server/src/lib/formEngine', import.meta.url))
     },
     extensions: [
       '.js',
@@ -81,6 +85,10 @@ return {
     // passed through as-is it makes Vite resolve a literal hostname called "true"
     host: env.VITE_DEV_HOST === 'true' ? true : (env.VITE_DEV_HOST || '127.0.0.1'),
     port: 8443,
+    // @engine lives outside client/ : let the dev server serve it
+    fs: {
+      allow: [fileURLToPath(new URL('..', import.meta.url))]
+    },
     proxy: {
       '/api/': {
         target: env.API_PROXY_TARGET || 'http://localhost:3001',

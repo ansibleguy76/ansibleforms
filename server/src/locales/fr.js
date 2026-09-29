@@ -136,6 +136,7 @@ export default {
     failedDelete: "Echec de la suppression de la tache",
     deleted: "Tache supprimee",
     failedLaunch: "Echec du lancement du formulaire",
+    invalidFormData: "Les données du formulaire ne sont pas valides",
     failedRelaunch: "Echec du relancement de la tache",
     failedApprove: "Echec de l'approbation de la tache",
     failedReject: "Echec du rejet de la tache",

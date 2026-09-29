@@ -1,0 +1,55 @@
+{
+  "name": "limits given as a placeholder : resolved, non-numeric, unresolvable",
+  "mirrors": "AppForm.vue rules : minValue / maxValue / minLength, placeholder branch",
+  "form": {
+    "name": "t",
+    "fields": [
+      {
+        "name": "lo",
+        "type": "number"
+      },
+      {
+        "name": "hi",
+        "type": "text"
+      },
+      {
+        "name": "a",
+        "type": "number",
+        "minValue": "$(lo)"
+      },
+      {
+        "name": "b",
+        "type": "number",
+        "maxValue": "$(hi)"
+      },
+      {
+        "name": "c",
+        "type": "text",
+        "minLength": "$(nothere)"
+      }
+    ]
+  },
+  "values": {
+    "lo": 5,
+    "hi": "abc",
+    "a": 3,
+    "b": 100,
+    "c": "x"
+  },
+  "expect": {
+    "validation": {
+      "a": [
+        {
+          "type": "minValue",
+          "description": "a must be at least 5"
+        }
+      ]
+    },
+    "invalid": [
+      "a"
+    ],
+    "warnings": [
+      "maxValue placeholder resolved to non-numeric value: abc"
+    ]
+  }
+}

@@ -1,4 +1,5 @@
 'use strict';
+import { SENTINELS } from './values.js';
 
 /**
  * Field placeholder handling for the server-side form engine (used by the MCP server).
@@ -19,7 +20,6 @@
  */
 
 const PLACEHOLDER = /\$\(([^)]+)\)/g;
-const SENTINELS = ['__auto__', '__none__', '__all__'];
 
 /**
  * The value a field contributes to a placeholder or a dependency check.

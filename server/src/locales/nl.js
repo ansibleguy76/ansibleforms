@@ -136,6 +136,7 @@ export default {
     failedDelete: "Kan job niet verwijderen",
     deleted: "Job verwijderd",
     failedLaunch: "Kan formulier niet starten",
+    invalidFormData: "De formuliergegevens zijn niet geldig",
     failedRelaunch: "Kan job niet herstarten",
     failedApprove: "Kan job niet goedkeuren",
     failedReject: "Kan job niet afwijzen",

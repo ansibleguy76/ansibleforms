@@ -80,6 +80,8 @@ const LIVE = {
   AWX_API_PREFIX: { key: 'awxApiPrefix', parse: v => v },
   SHOW_DESIGNER: { key: 'showDesigner', parse: v => v == 1 },
   USE_YTT: { key: 'useYtt', parse: v => v == 1 },
+  // Job.launch reads it on every launch
+  LAUNCH_VALIDATION: { key: 'launchValidation', parse: v => (['log', 'enforce'].includes(String(v || '').trim().toLowerCase()) ? String(v).trim().toLowerCase() : 'off') },
   // db.model.js checks this inside mysql.do, so it is evaluated per query - exactly the
   // setting you want to flip on while debugging and off again without a restart
   ENABLE_DB_QUERY_LOGGING: { key: 'enableDbQueryLogging', parse: v => v == 1 },
@@ -284,6 +286,9 @@ export function validate(name, value, doc) {
     const mode = v.trim().toLowerCase();
     if (mode === 'legacy') return 'EXPRESSION_SANITIZER=legacy can only be set in the real environment (docker-compose, kubernetes)';
     if (!['off', 'paranoid', 'strict'].includes(mode)) return 'EXPRESSION_SANITIZER must be off, paranoid or strict';
+  }
+  if (name === 'LAUNCH_VALIDATION' && v !== '' && !['off', 'log', 'enforce'].includes(v.trim().toLowerCase())) {
+    return 'LAUNCH_VALIDATION must be off, log or enforce';
   }
   if (v.length > 4096) return `${name} is too long`;
   // A value documented as a regular expression is COMPILED by its consumer, and both of

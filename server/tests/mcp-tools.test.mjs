@@ -120,6 +120,7 @@ describe("MCP tools", () => {
       form: "Create volume",
       user,
       fromClient: true,
+      validated: true,
       credentials: { cred: "cluster_c1" },
       extravars: {
         cluster: "c1",
@@ -206,6 +207,54 @@ describe("MCP tools", () => {
     const client = await connect();
     const res = await client.callTool({ name: "get_form", arguments: { name: "Admin only" } });
     expect(res.structuredContent).toEqual({ code: "access_denied", message: "Access denied to form Admin only." });
+  });
+
+  describe("validation", () => {
+    const hostForm = {
+      name: "Create host",
+      type: "ansible",
+      playbook: "host.yml",
+      roles: ["public"],
+      fields: [
+        { name: "host", type: "text", required: true, regex: { expression: "^prod-", description: "Must start with prod-" } },
+        { name: "pw", type: "password", label: "Password" },
+        { name: "pw2", type: "password", sameAs: "pw" },
+      ],
+    };
+    beforeEach(() => {
+      deps.Form.load = vi.fn(async () => ({ constants: {}, forms: [structuredClone(hostForm)], errors: [], warnings: [] }));
+    });
+
+    test("resolve_field reports the failing rules with the browser's messages", async () => {
+      const client = await connect();
+      const r = await call(client, "resolve_field", { form: "Create host", values: { host: "test-1", pw: "a", pw2: "b" } });
+      expect(r.data.complete).toBe(false);
+      expect(r.data.invalid).toEqual(["host", "pw2"]);
+      expect(r.data.validationErrors).toEqual({
+        host: [{ type: "regex", description: "Must start with prod-" }],
+        pw2: [{ type: "sameAs", description: "Must match the field 'Password'" }],
+      });
+      expect(r.data.modeledExtravars).toBeUndefined();
+      // the password values are nowhere in the answer
+      expect(r.text).not.toMatch(/"a"|"b"/);
+    });
+
+    test("launch_job refuses a form that fails validation, and says why", async () => {
+      const client = await connect();
+      const r = await client.callTool({ name: "launch_job", arguments: { form: "Create host", values: { host: "test-1", pw: "a", pw2: "a" } } });
+      expect(r.isError).toBe(true);
+      expect(r.structuredContent.code).toBe("form_incomplete");
+      expect(r.structuredContent.validationErrors).toEqual({ host: [{ type: "regex", description: "Must start with prod-" }] });
+      expect(r.structuredContent.message).toContain("validation failed : host (regex: Must start with prod-)");
+      expect(deps.Job.launch).not.toHaveBeenCalled();
+    });
+
+    test("a valid form launches", async () => {
+      const client = await connect();
+      const r = await call(client, "launch_job", { form: "Create host", values: { host: "prod-1", pw: "a", pw2: "a" } });
+      expect(r.isError).toBeFalsy();
+      expect(deps.Job.launch).toHaveBeenCalledTimes(1);
+    });
   });
 });
 

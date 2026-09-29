@@ -2,7 +2,9 @@
 import { z } from 'zod';
 import { resolveForm, normalizeFields, isDynamicField } from '../lib/formEngine/resolve.js';
 import { scanDependencies } from '../lib/formEngine/placeholders.js';
-import { buildFormOutput, collectCredentials, filterRawFormData, maskPasswords, sha256 } from '../lib/formEngine/output.js';
+import { buildFormOutput, collectCredentials, filterRawFormData, maskPasswords } from '../lib/formEngine/output.js';
+import { sha256 } from '../lib/formEngine/node/hash.js';
+import { createFormServices } from '../lib/formServices.js';
 
 /**
  * The MCP tools. Deliberately technical : they expose the form flow a browser goes through
@@ -76,20 +78,7 @@ export function createHandlers({ user, deps }) {
   }
 
   function servicesFor(formConfig, formObj, subformName) {
-    return {
-      serverExpression: (expression, field) => Expression.execute(expression, !!field.noLog),
-      query: async (field, resolved) => {
-        const q = await resolveFormQuery({
-          user,
-          formName: formObj.name,
-          subformName,
-          fieldName: field.name,
-          values: resolved,
-          formConfig,
-        });
-        return Query.findAll(q.query, q.jq, q.config, !!field.noLog, q.values);
-      },
-    };
+    return createFormServices({ user, formConfig, formObj, subformName, deps: { Expression, Query, resolveFormQuery } });
   }
 
   async function resolveFor({ form, values, field, subform, parent, maxOptions }) {
@@ -210,11 +199,17 @@ export function createHandlers({ user, deps }) {
       });
       if (!res.complete) {
         const parts = [];
+        const notAnOption = res.fields.filter((f) => f.notInOptions && res.invalid.includes(f.name)).map((f) => f.name);
+        const failing = Object.entries(res.validationErrors)
+          .map(([name, errs]) => `${name} (${errs.map((e) => e.description ? `${e.type}: ${e.description}` : e.type).join(', ')})`);
         if (res.missing.length) parts.push(`missing input for : ${res.missing.join(', ')}`);
-        if (res.invalid.length) parts.push(`not one of the options : ${res.invalid.join(', ')}`);
+        if (notAnOption.length) parts.push(`not one of the options : ${notAnOption.join(', ')}`);
+        if (failing.length) parts.push(`validation failed : ${failing.join(' ; ')}`);
         if (res.waiting.length) parts.push(`not resolvable yet : ${res.waiting.join(', ')}`);
         throw new ToolError(`The form is not complete - ${parts.join(' ; ')}. Call resolve_field to see what is needed.`,
-          'form_incomplete', { missing: res.missing, invalid: res.invalid, waiting: res.waiting });
+          'form_incomplete', {
+            missing: res.missing, invalid: res.invalid, waiting: res.waiting, validationErrors: res.validationErrors,
+          });
       }
       const files = res._fields.filter((f) => f.type === 'file' && res._visibility[f.name]
         && res._values[f.name] !== undefined && res._values[f.name] !== null && res._values[f.name] !== '');
@@ -238,6 +233,8 @@ export function createHandlers({ user, deps }) {
         extravars,
         rawFormData,
         fromClient: true,
+        // resolved and validated above ; the REST launch guard need not do it again
+        validated: true,
       });
       return { id: job?.id, form: formObj.name, payloadHash, warnings: res.warnings };
     },
@@ -317,8 +314,10 @@ export function registerTools(server, handlers) {
     description: 'Evaluate a form for the values filled in so far, in dependency order : which fields are '
       + 'visible, their defaults, computed expression and query values, and the options of every choice '
       + 'field. Fields whose inputs are not there yet come back as `waiting` with `waitingFor`. '
-      + '`missing` lists fields that need a value from you, `invalid` choices that are not among the '
-      + 'options ; `complete` is true when the form can be launched. A choice may be sent as the option '
+      + '`missing` lists fields that need a value from you ; `invalid` lists choices that are not among the '
+      + 'options and fields that fail a validation rule of the form (regex, minValue/maxValue, '
+      + 'minLength/maxLength, sameAs, in/notIn, validIf/validIfNot, ...), each described in `validationErrors` '
+      + 'with the message the browser shows ; `complete` is true when the form can be launched. A choice may be sent as the option '
       + 'record, a partial record or its valueColumn value - it is replaced by the full option. When '
       + 'complete, the answer holds `modeledExtravars` (passwords masked) and `credentials` exactly as '
       + 'launch_job will submit them, and a `payloadHash` to pass to launch_job. Pass `field` to resolve '
@@ -337,7 +336,8 @@ export function registerTools(server, handlers) {
   server.registerTool('launch_job', {
     title: 'Launch job',
     description: 'Launch the form with the given values, exactly as a browser submission would : the form '
-      + 'is resolved first and the launch is refused while fields are missing, invalid or unresolved '
+      + 'is resolved and validated first and the launch is refused while fields are missing, invalid, fail '
+      + 'validation or are unresolved '
       + '(code `form_incomplete`), or when `expectedPayloadHash` no longer matches (code '
       + '`payload_mismatch`). Returns the job id. Runs the automation behind the form - confirm the '
       + 'modeledExtravars from resolve_field with the user before calling it.',

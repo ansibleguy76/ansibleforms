@@ -136,6 +136,7 @@ export default {
     failedDelete: "Eliminazione job non riuscita",
     deleted: "Job eliminato",
     failedLaunch: "Avvio modulo non riuscito",
+    invalidFormData: "I dati del modulo non sono validi",
     failedRelaunch: "Riavvio job non riuscito",
     failedApprove: "Approvazione job non riuscita",
     failedReject: "Rifiuto job non riuscito",

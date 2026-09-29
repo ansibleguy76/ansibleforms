@@ -1,0 +1,97 @@
+{
+  "name": "min/max value and length with static limits",
+  "mirrors": "AppForm.vue rules : minValue / maxValue / minLength / maxLength, static branch",
+  "form": {
+    "name": "t",
+    "fields": [
+      {
+        "name": "low",
+        "type": "number",
+        "minValue": 5
+      },
+      {
+        "name": "zero",
+        "type": "number",
+        "minValue": 5,
+        "label": "Zero"
+      },
+      {
+        "name": "high",
+        "type": "number",
+        "maxValue": 10
+      },
+      {
+        "name": "ok",
+        "type": "number",
+        "minValue": 1,
+        "maxValue": 10
+      },
+      {
+        "name": "short",
+        "type": "text",
+        "minLength": 3
+      },
+      {
+        "name": "long",
+        "type": "text",
+        "maxLength": 4,
+        "label": "Long one"
+      },
+      {
+        "name": "empty",
+        "type": "text",
+        "minLength": 3
+      }
+    ]
+  },
+  "values": {
+    "low": 3,
+    "zero": 0,
+    "high": 11,
+    "ok": 5,
+    "short": "ab",
+    "long": "abcde",
+    "empty": ""
+  },
+  "expect": {
+    "validation": {
+      "low": [
+        {
+          "type": "minValue",
+          "description": "low must be at least 5"
+        }
+      ],
+      "zero": [
+        {
+          "type": "minValue",
+          "description": "Zero must be at least 5"
+        }
+      ],
+      "high": [
+        {
+          "type": "maxValue",
+          "description": "high must be at most 10"
+        }
+      ],
+      "short": [
+        {
+          "type": "minLength",
+          "description": "short must be at least 3 characters long"
+        }
+      ],
+      "long": [
+        {
+          "type": "maxLength",
+          "description": "Long one must be at most 4 characters long"
+        }
+      ]
+    },
+    "invalid": [
+      "low",
+      "zero",
+      "high",
+      "short",
+      "long"
+    ]
+  }
+}

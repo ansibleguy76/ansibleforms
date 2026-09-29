@@ -1,0 +1,77 @@
+{
+  "name": "sameAs : loose equality, mismatch, missing target field, empty target",
+  "mirrors": "AppForm.vue rules : sameAs",
+  "form": {
+    "name": "t",
+    "fields": [
+      {
+        "name": "pw",
+        "type": "password",
+        "label": "Password"
+      },
+      {
+        "name": "pw2",
+        "type": "password",
+        "sameAs": "pw"
+      },
+      {
+        "name": "num",
+        "type": "number"
+      },
+      {
+        "name": "numtext",
+        "type": "text",
+        "sameAs": "num"
+      },
+      {
+        "name": "typo",
+        "type": "text",
+        "sameAs": "nope"
+      },
+      {
+        "name": "blank",
+        "type": "text"
+      },
+      {
+        "name": "vsblank",
+        "type": "text",
+        "sameAs": "blank"
+      }
+    ]
+  },
+  "values": {
+    "pw": "s3cr3t",
+    "pw2": "other-secret",
+    "num": 1,
+    "numtext": "1",
+    "typo": "x",
+    "vsblank": "y"
+  },
+  "expect": {
+    "validation": {
+      "pw2": [
+        {
+          "type": "sameAs",
+          "description": "Must match the field 'Password'"
+        }
+      ],
+      "typo": [
+        {
+          "type": "sameAs",
+          "description": "Must match the field 'nope'"
+        }
+      ],
+      "vsblank": [
+        {
+          "type": "sameAs",
+          "description": "Must match the field 'blank'"
+        }
+      ]
+    },
+    "invalid": [
+      "pw2",
+      "typo",
+      "vsblank"
+    ]
+  }
+}

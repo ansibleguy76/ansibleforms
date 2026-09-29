@@ -8,6 +8,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { compileFieldRules, validateField } from '@engine/validate.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const read = (p) => readFileSync(path.join(here, '..', p), 'utf8');
@@ -16,23 +17,17 @@ describe('a sameAs naming a field that does not exist', () => {
   // fields.find() returns undefined for a typo, or for a field renamed or removed after
   // the rule was written. Reading .label off it threw inside the rules computation, so
   // the ENTIRE form failed to initialise - a blank page and a console TypeError, rather
-  // than a validation message about the one field.
-  const src = read('src/components/AppForm.vue');
-  const block = src.slice(src.indexOf('if ("sameAs" in ff)'), src.indexOf('ruleObj.form[ff.name]'));
+  // than a validation message about the one field. The rules live in the shared form
+  // engine since 6.4, so this runs them rather than reading the component.
+  const field = { name: 'confirm', type: 'text', sameAs: 'renamed_away' };
 
-  it('found the block, so these assertions are not vacuous', () => {
-    expect(block).toContain('rule.sameAs');
-  });
-
-  it('does not dereference the find() result unguarded', () => {
-    // lazy .*? and not [^)]* : the predicate has parentheses of its own ((x) => ...), so
-    // a [^)]* class stops at the FIRST one and the pattern can never match - this
-    // assertion passed against the broken code until it was written this way
-    expect(block).not.toMatch(/\.find\(.*?\)\.label/);
+  it('building the rules does not throw', () => {
+    expect(() => compileFieldRules(field, [field])).not.toThrow();
   });
 
   it('falls back to the name it was given', () => {
-    expect(block).toMatch(/target\?\.label\s*\|\|\s*ff\.sameAs/);
+    const { errors } = validateField(field, 'x', { values: {} }, [field]);
+    expect(errors).toEqual([{ type: 'sameAs', description: "Must match the field 'renamed_away'" }]);
   });
 });
 
@@ -469,27 +464,29 @@ describe('one failed job poll does not end the polling', () => {
 });
 
 describe('form field rules cannot take the whole form down', () => {
-  const src = read('src/components/AppForm.vue');
-  const fn = src.slice(src.indexOf('if ("regex" in ff)'), src.indexOf('if ("sameAs" in ff)'));
-
-  it('found the block, so these assertions are not vacuous', () => {
-    expect(fn).toContain('new RegExp');
-  });
-
+  // The rules are built inside a computed, so a throw there blanks the whole form. They
+  // live in the shared form engine since 6.4 : run them.
   it('a malformed pattern is reported, not thrown', () => {
-    // this runs inside the rules computed - a SyntaxError there blanks the whole form
-    expect(fn).toMatch(/try \{[\s\S]*new RegExp\(regexSource\)[\s\S]*\} catch \(e\) \{/);
-    expect(fn).toMatch(/warnings\.value\.push/);
+    const field = { name: 'host', type: 'text', regex: { expression: '^[a-z', description: 'x' } };
+    let built;
+    expect(() => { built = compileFieldRules(field); }).not.toThrow();
+    expect(built.warnings).toEqual([expect.stringContaining("Field 'host': the regex '^[a-z' is not valid")]);
+    // and the rule is only registered when there is a usable pattern
+    expect(built.rules).toEqual([]);
   });
 
-  it('a wrongly shaped regex no longer matches everything', () => {
-    // regex: "^prod-" instead of {expression: ...} made new RegExp(undefined) => /(?:)/,
-    // which matches every string, so the constraint silently never failed
-    expect(fn).toMatch(/typeof regexSource !== 'string'/);
+  it('a regex without an expression does not match everything', () => {
+    // new RegExp(undefined) compiles to /(?:)/, which matches every string - the
+    // constraint silently never failed. Say so and skip the rule instead.
+    const built = compileFieldRules({ name: 'host', type: 'text', regex: { description: 'no expression' } });
+    expect(built.rules).toEqual([]);
+    expect(built.warnings).toEqual([expect.stringContaining('regex must be given as { expression')]);
   });
 
-  it('the rule is only registered when there is a usable pattern', () => {
-    expect(fn).toMatch(/if \(regexObj\) \{/);
+  it('a bare string is used as the pattern', () => {
+    const field = { name: 'host', type: 'text', regex: '^prod-' };
+    expect(validateField(field, 'test-1', { values: {} }).errors.map((e) => e.type)).toEqual(['regex']);
+    expect(validateField(field, 'prod-1', { values: {} }).errors).toEqual([]);
   });
 });
 
@@ -670,9 +667,9 @@ describe('no rules builder can be taken down by a bad regex', () => {
   // AppTableField (both halves) and unprotected against a malformed pattern in
   // AppAdminMulti and change-password. This test covers every site so a new one cannot
   // reintroduce it.
+  // AppForm and AppTableField build their rules from the shared engine since 6.4 ; the
+  // engine's own guard is run in 'form field rules cannot take the whole form down'
   const sites = [
-    ['src/components/AppForm.vue', 'regexSource'],
-    ['src/components/AppTableField.vue', 'regexSource'],
     ['src/components/AppAdminMulti.vue', 'field.regex.expression'],
     ['src/pages/change-password.vue', 'field.regex.expression'],
   ];
@@ -697,19 +694,12 @@ describe('no rules builder can be taken down by a bad regex', () => {
     expect(src.slice(Math.max(0, at - 400), at)).toMatch(/if \(regexObj\) \{/);
   });
 
-  it('the two form-runtime sites also reject a wrongly shaped regex', () => {
-    // regex: "^x" instead of {expression: "^x"} made new RegExp(undefined) compile to
-    // /(?:)/ - matches everything, so the constraint silently never failed
-    for (const f of ['src/components/AppForm.vue', 'src/components/AppTableField.vue']) {
-      expect(code(f)).toMatch(/typeof regexSource !== 'string'|typeof regexSource === 'string'/);
-    }
-  });
-
   it('every dynamic RegExp in the client is either guarded or built from a literal', () => {
     // a sweep, so a new unguarded site anywhere is caught
     const files = [
       'src/pages/login.vue', 'src/pages/logs.vue', 'src/pages/change-password.vue',
       'src/components/AppForm.vue', 'src/components/AppTableField.vue', 'src/components/AppAdminMulti.vue',
+      '../server/src/lib/formEngine/validate.js',
     ];
     const unguarded = [];
     for (const f of files) {

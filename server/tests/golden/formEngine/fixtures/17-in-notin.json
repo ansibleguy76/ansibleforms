@@ -1,0 +1,87 @@
+{
+  "name": "in / notIn against an array field and a non-array field",
+  "mirrors": "AppForm.vue rules : in / notIn",
+  "form": {
+    "name": "t",
+    "fields": [
+      {
+        "name": "taken",
+        "type": "expression",
+        "value": [
+          "a",
+          "b"
+        ]
+      },
+      {
+        "name": "scalar",
+        "type": "text"
+      },
+      {
+        "name": "n1",
+        "type": "text",
+        "notIn": {
+          "field": "taken",
+          "description": "Already taken"
+        }
+      },
+      {
+        "name": "n2",
+        "type": "text",
+        "notIn": {
+          "field": "taken",
+          "description": "never"
+        }
+      },
+      {
+        "name": "i1",
+        "type": "text",
+        "in": {
+          "field": "taken",
+          "description": "Must be one of the taken"
+        }
+      },
+      {
+        "name": "i2",
+        "type": "text",
+        "in": {
+          "field": "scalar",
+          "description": "Target is not a list"
+        }
+      }
+    ]
+  },
+  "values": {
+    "scalar": "x",
+    "n1": "a",
+    "n2": "z",
+    "i1": "z",
+    "i2": "x"
+  },
+  "expect": {
+    "validation": {
+      "n1": [
+        {
+          "type": "notIn",
+          "description": "Already taken"
+        }
+      ],
+      "i1": [
+        {
+          "type": "in",
+          "description": "Must be one of the taken"
+        }
+      ],
+      "i2": [
+        {
+          "type": "in",
+          "description": "Target is not a list"
+        }
+      ]
+    },
+    "invalid": [
+      "n1",
+      "i1",
+      "i2"
+    ]
+  }
+}

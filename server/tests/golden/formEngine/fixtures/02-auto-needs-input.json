@@ -1,0 +1,48 @@
+{
+  "name": "an enum left on __auto__ needs input, and what hangs off it waits",
+  "mirrors": "resolve.js : __auto__ is never auto-picked (deliberate difference) ; a waiting field is reported as waiting, not validated",
+  "form": {
+    "name": "t",
+    "fields": [
+      {
+        "name": "cluster",
+        "type": "enum",
+        "values": [
+          "c1",
+          "c2"
+        ],
+        "default": "__auto__",
+        "required": true
+      },
+      {
+        "name": "svm",
+        "type": "enum",
+        "runLocal": true,
+        "expression": "({c1:['s1'], c2:['s3']})['$(cluster)']",
+        "required": true
+      }
+    ]
+  },
+  "values": {},
+  "expect": {
+    "values": {
+      "cluster": "__auto__"
+    },
+    "missing": [
+      "cluster"
+    ],
+    "waiting": [
+      "svm"
+    ],
+    "extravars": {},
+    "validation": {
+      "cluster": [
+        {
+          "type": "required",
+          "description": "cluster is required"
+        }
+      ]
+    },
+    "invalid": []
+  }
+}

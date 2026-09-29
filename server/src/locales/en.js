@@ -136,6 +136,7 @@ export default {
     failedDelete: "Failed to delete job",
     deleted: "Job deleted",
     failedLaunch: "Failed to launch form",
+    invalidFormData: "The form data is not valid",
     failedRelaunch: "Failed to relaunch job",
     failedApprove: "Failed to approve job",
     failedReject: "Failed to reject job",

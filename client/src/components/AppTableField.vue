@@ -30,8 +30,8 @@
 
 
 import { useVuelidate } from '@vuelidate/core';
-import { required, helpers, sameAs } from "@vuelidate/validators";
 import Helpers from '@/lib/Helpers';
+import { buildVuelidateRules } from '@/lib/validationRules';
 import YAML from 'yaml';
 import { toast } from 'vue-sonner';
 
@@ -96,118 +96,21 @@ const fileInputRef = ref(null);
 
 // COMPUTED
 
-// validation rules for each field in the form
+// validation rules for each column - the same engine rules as a form field
+// (@engine/validate.js) ; cross-field rules (validIf, in, notIn, sameAs) read the PARENT form
 const rules = computed(() => {
-    const ruleObj = { editedItem: {} } // holdes the rules for each field
-    props.tableFields.forEach((ff, _i) => {
-        var rule = {} // holds the rules for a single field
+    props.tableFields.forEach((ff) => {
         if(!ff.label){
             ff.label = ff.name
         }
-        // required but not for checkboxes, expressions and enums, where we simply expect a value to be present
-        if (ff.type != 'checkbox' && ff.type != 'enum' && ff.required) {
-            rule.required = helpers.withMessage(`${ff.label} is required`, required)
-        }
-        // required for checkboxes (we required the value to be true)
-        if (ff.type == 'checkbox' && ff.required) {
-            rule.checkboxRequired = helpers.withMessage(`${ff.label} is required`, sameAs(computed(() => true)))
-        }
-        // required for expressions and enums, the value must be present, but can be a special value like __auto__, __none__ or __all__
-        if ((ff.type == 'enum') && ff.required) {
-            const description = `${ff.label} is required`
-            rule.required = helpers.withParams(
-                { description: description, type: "required" },
-                (value) => (value != undefined && value != null && value != '__auto__' && value != '__none__' && value != '__all__')
-            )
-        }
-        // min and max value for numbers
-        if ("minValue" in ff) {
-            const description = `${ff.label} must be at least ${ff.minValue}`
-            rule.minValue = helpers.withParams(
-                { description: description, type: "minValue" },
-                (value) => !helpers.req(value) || value >= ff.minValue
-            )
-        }
-        if ("maxValue" in ff) {
-            const description = `${ff.label} must be at most ${ff.maxValue}`
-            rule.maxValue = helpers.withParams(
-                { description: description, type: "maxValue" },
-                (value) => !helpers.req(value) || value <= ff.maxValue
-            )
-        }
-        // min and max length for strings
-        if ("minLength" in ff) {
-            const description = `${ff.label} must be at least ${ff.minLength} characters long`
-            rule.minLength = helpers.withParams(
-                { description: description, type: "minLength" },
-                (value) => !helpers.req(value) || value.length >= ff.minLength
-            )
-        }
-        if ("maxLength" in ff) {
-            const description = `${ff.label} must be at most ${ff.maxLength} characters long`
-            rule.maxLength = helpers.withParams(
-                { description: description, type: "maxLength" },
-                (value) => !helpers.req(value) || value.length <= ff.maxLength
-            )
-        }
-        // regex validation
-        if ("regex" in ff) {
-            // Guarded like the identical rule in AppForm. This is inside `rules`, a
-            // computed, so a throw here kills the whole table field rather than
-            // reporting one column's problem. Two ways it went wrong: an author typo in
-            // the pattern raises a SyntaxError, and writing `regex: "^x"` instead of
-            // `regex: {expression: "^x"}` made new RegExp(undefined) compile to /(?:)/,
-            // which matches everything - so the constraint silently never failed.
-            const regexSource = (ff.regex && typeof ff.regex === 'object') ? ff.regex.expression : ff.regex
-            var regexObj = null
-            if (typeof regexSource === 'string' && regexSource) {
-                try { regexObj = new RegExp(regexSource) } catch (e) {
-                    console.error(`Column '${ff.name}': the regex '${regexSource}' is not valid (${e.message}); the rule is ignored.`)
-                }
-            } else {
-                console.error(`Column '${ff.name}': regex must be given as { expression: "...", description: "..." }; the rule is ignored.`)
-            }
-            const description = (ff.regex && typeof ff.regex === 'object') ? ff.regex.description : undefined
-            if (regexObj) {
-                if (ff.type == 'file') {
-                    rule.regex = helpers.withParams(
-                        { description: description, type: "regex" },
-                        (file) => !helpers.req(file?.name) || regexObj.test(file?.name)
-                    )
-                } else {
-                    rule.regex = helpers.withParams(
-                        { description: description, type: "regex" },
-                        (value) => !helpers.req(value) || regexObj.test(value)
-                    )
-                }
-            }
-        }
-        // notIn and in
-        if ("notIn" in ff) {
-            const description = ff.notIn.description
-            rule.notIn = helpers.withParams(
-                { description: description, type: "notIn" },
-                (value) => !helpers.req(value) || (props.form[ff.notIn.field] != undefined && Array.isArray(props.form[ff.notIn.field]) && !props.form[ff.notIn.field].includes(value))
-            )
-        }
-        if ("in" in ff) {
-            const description = ff.in.description
-            rule.in = helpers.withParams(
-                { description: description, type: "in" },
-                (value) => !helpers.req(value) || (props.form[ff.in.field] != undefined && Array.isArray(props.form[ff.in.field]) && props.form[ff.in.field].includes(value))
-            )
-        }
-        if ("sameAs" in ff) {
-            const description = `Must match the field '${props.tableFields.find((x) => ff.sameAs == x.name)?.label || ff.sameAs}'`
-            rule.sameAs = helpers.withParams(
-                { description: description, type: "sameAs" },
-                (value) => !helpers.req(value) || (props.form[ff.sameAs] != undefined && value == props.form[ff.sameAs])
-            )
-        }
-
-        ruleObj.editedItem[ff.name] = rule
     })
-    return ruleObj
+    return {
+        editedItem: buildVuelidateRules(props.tableFields, {
+            getValue: (name) => editedItem.value[name],
+            getValues: () => props.form,
+            warn: (w) => console.error(w),
+        })
+    }
 });
 
 const editFields = computed(() => {

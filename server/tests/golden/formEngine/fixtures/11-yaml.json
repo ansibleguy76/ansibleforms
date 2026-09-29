@@ -1,0 +1,62 @@
+{
+  "name": "validYaml with a placeholder in yamlError",
+  "mirrors": "AppForm.vue rules : validYaml",
+  "form": {
+    "name": "t",
+    "fields": [
+      {
+        "name": "env",
+        "type": "text"
+      },
+      {
+        "name": "broken",
+        "type": "yaml",
+        "yamlError": {
+          "description": "Invalid YAML for $(env)"
+        }
+      },
+      {
+        "name": "broken_default",
+        "type": "yaml",
+        "label": "Config"
+      },
+      {
+        "name": "good",
+        "type": "yaml"
+      },
+      {
+        "name": "object",
+        "type": "yaml"
+      }
+    ]
+  },
+  "values": {
+    "env": "prod",
+    "broken": "key: [unclosed",
+    "broken_default": "a: b: c",
+    "good": "a: 1",
+    "object": {
+      "a": 1
+    }
+  },
+  "expect": {
+    "validation": {
+      "broken": [
+        {
+          "type": "validYaml",
+          "description": "Invalid YAML for prod"
+        }
+      ],
+      "broken_default": [
+        {
+          "type": "validYaml",
+          "description": "Config must be valid YAML"
+        }
+      ]
+    },
+    "invalid": [
+      "broken",
+      "broken_default"
+    ]
+  }
+}

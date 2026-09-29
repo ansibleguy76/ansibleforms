@@ -3957,7 +3957,7 @@
               },
               "sameAs": {
                 "type": "string",
-                "pattern": "[A-Za-z0-9_\\-]+"
+                "description": "The name of the field this one must match"
               },
               "validIf": {
                 "type": "object",
@@ -9012,7 +9012,7 @@
                 },
                 "sameAs": {
                   "type": "string",
-                  "pattern": "[A-Za-z0-9_\\-]+"
+                  "description": "The name of the field this one must match"
                 },
                 "validIf": {
                   "type": "object",

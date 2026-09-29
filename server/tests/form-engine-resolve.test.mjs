@@ -1,6 +1,7 @@
 // The stateless, dependency-ordered form resolution behind the MCP resolve_field tool.
 import { describe, test, expect, vi } from "vitest";
 import { resolveForm } from "../src/lib/formEngine/resolve.js";
+import { evalSandbox } from "../src/lib/formEngine/node/sandbox.js";
 
 const form = {
   name: "Create volume",
@@ -20,6 +21,7 @@ const form = {
 
 function services() {
   return {
+    evalSandbox,
     serverExpression: vi.fn(async (expr) => `server:${expr}`),
     query: vi.fn(async () => [{ name: "aggr1" }, { name: "aggr2" }]),
   };

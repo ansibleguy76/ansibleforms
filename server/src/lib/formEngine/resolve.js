@@ -5,7 +5,8 @@ import {
   checkDependencies,
   rootFieldName,
 } from './placeholders.js';
-import { evalSandbox } from './sandbox.js';
+import { SENTINELS, isEmptyValue } from './values.js';
+import { validateField } from './validate.js';
 
 /**
  * Stateless resolution of a form for a non-browser client (the MCP server).
@@ -19,9 +20,9 @@ import { evalSandbox } from './sandbox.js';
  * mirrors : the same readiness gate, the same "default on failure", the same result
  * handling per field type.
  *
- * Nothing here talks to a database or the expression endpoint directly : the caller passes
- * `services`, which keeps the RBAC-bound lookups in one place (mcp/tools.js) and makes this
- * testable without them.
+ * Nothing here talks to a database, the expression endpoint or node:vm directly : the
+ * caller passes `services`, which keeps the RBAC-bound lookups in one place (mcp/tools.js),
+ * lets the browser supply its own sandbox, and makes this testable without them.
  *
  * Deliberate differences with the browser, both toward safety :
  *   - an `evalDefault` default is substituted in 'expression' mode (values become JS
@@ -34,7 +35,6 @@ import { evalSandbox } from './sandbox.js';
 const DYNAMIC_TYPES = ["expression", "enum", "table", "html", "yaml", "list", "query"];
 const VALUE_TYPES = ["expression", "html", "yaml", "table", "list"];   // the expression yields the VALUE
 const OPTION_TYPES = ["enum", "query"];                                // the expression yields the OPTIONS
-const SENTINELS = ['__auto__', '__none__', '__all__'];
 export const DEFAULT_MAX_OPTIONS = 200;
 
 /** The browser's type aliases (AppForm.vue initForm), on a copy - never on the loaded definition. */
@@ -69,14 +69,6 @@ export function isDynamicField(f) {
   return DYNAMIC_TYPES.includes(f.type) && !!(f.expression ?? f.query ?? f.value ?? false);
 }
 
-function isEmptyValue(value, type) {
-  if (type === 'checkbox') return value !== true;
-  if (value === undefined || value === null || value === '') return true;
-  if (SENTINELS.includes(value)) return true;
-  if (Array.isArray(value) && value.length === 0 && type !== 'enum' && type !== 'expression') return true;
-  return false;
-}
-
 function optionMatches(option, value, valueColumn) {
   if (option && value && typeof option === "object" && typeof value === "object") {
     if (valueColumn && valueColumn in option && valueColumn in value) return option[valueColumn] === value[valueColumn];
@@ -102,6 +94,7 @@ function optionMatches(option, value, valueColumn) {
  * @param {object} args.services
  * @param {function} args.services.serverExpression  (expression, field) => Promise<result>
  * @param {function} args.services.query             (field, resolvedPlaceholders) => Promise<result>
+ * @param {function} args.services.evalSandbox       (code) => result, for runLocal and evalDefault
  */
 export async function resolveForm({
   form,
@@ -114,6 +107,10 @@ export async function resolveForm({
   maxOptions = DEFAULT_MAX_OPTIONS,
   services,
 }) {
+  if (typeof services?.evalSandbox !== 'function') {
+    throw new Error('resolveForm needs services.evalSandbox (node: formEngine/node/sandbox.js)');
+  }
+  const { evalSandbox } = services;
   const fields = normalizeFields(form?.fields);
   const byName = Object.fromEntries(fields.map((f) => [f.name, f]));
   const input = (values && typeof values === 'object' && !Array.isArray(values)) ? values : {};
@@ -186,8 +183,20 @@ export async function resolveForm({
       const s = st[name];
       return !s || s.status === 'resolved' || s.status === 'error';
     },
+    secretNames: fields.filter((f) => f.type === 'password').map((f) => f.name),
   };
-  const isValid = (name) => st[name]?.status === 'resolved' && !isEmptyValue(vals[name], byName[name]?.type);
+  const hasValue = (name) => st[name]?.status === 'resolved' || st[name]?.status === 'error';
+  // a `dependencies: [{ name, isValid }]` check : the browser's !v$.form[name].$invalid. A
+  // hidden field is neither valid nor invalid there (dependencyOk is false), so both
+  // isValid: true and isValid: false fail on it - undefined equals neither.
+  const validityUsed = {};
+  const isValid = (name) => {
+    if (st[name]?.status === 'hidden') return undefined;
+    if (!hasValue(name) || !byName[name]) return false;
+    const ok = validateField(byName[name], vals[name], ctx, fields).errors.length === 0;
+    validityUsed[name] = ok;
+    return ok;
+  };
 
   function computeDefault(f) {
     if (f.default === undefined) return undefined;
@@ -380,6 +389,19 @@ export async function resolveForm({
     };
   }
 
+  // validation, on the settled values : every shown field that has a value (a waiting
+  // field is reported as waiting, not as invalid)
+  for (const f of fields) {
+    const s = st[f.name];
+    if (!hasValue(f.name)) continue;
+    const v = validateField(f, vals[f.name], ctx, fields);
+    s.validationErrors = v.errors;
+    for (const w of v.warnings) if (!warnings.includes(w)) warnings.push(w);
+    if (f.name in validityUsed && validityUsed[f.name] !== (v.errors.length === 0)) {
+      warnings.push(`'${f.name}' : its validity changed after a field depending on it was shown or hidden (a validation that depends back on it) ; visibility may differ from the browser`);
+    }
+  }
+
   // report
   const out = [];
   for (const f of fields) {
@@ -405,19 +427,26 @@ export async function resolveForm({
       if (s.options.length > maxOptions) r.optionsTruncated = true;
     }
     if (s.notInOptions) r.notInOptions = true;
+    if (s.validationErrors?.length) r.validationErrors = s.validationErrors;
     if (s.error) r.error = s.error;
     if (s.waitingFor) r.waitingFor = s.waitingFor;
     out.push(r);
   }
   const missing = out.filter((r) => r.needsInput).map((r) => r.name);
-  const invalid = out.filter((r) => r.notInOptions && r.visible).map((r) => r.name);
+  // a required field that is simply empty is `missing` ; `invalid` is what a value breaks
+  const invalid = out.filter((r) => r.visible
+    && (r.notInOptions || (r.validationErrors?.length && !r.needsInput))).map((r) => r.name);
   const waiting = out.filter((r) => r.status === 'waiting').map((r) => r.name);
+  const validationErrors = Object.fromEntries(out
+    .filter((r) => r.visible && r.validationErrors?.length && !r.needsInput)
+    .map((r) => [r.name, r.validationErrors]));
   return {
     form: form?.name,
     complete: missing.length === 0 && waiting.length === 0 && invalid.length === 0,
     missing,
     waiting,
     invalid,
+    validationErrors,
     fields: out,
     warnings,
     // internal : the raw values and visibility the launch builds its extravars from
