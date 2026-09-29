@@ -2,7 +2,7 @@
 import { z } from 'zod';
 import { resolveForm, normalizeFields, isDynamicField } from '../lib/formEngine/resolve.js';
 import { scanDependencies } from '../lib/formEngine/placeholders.js';
-import { buildFormOutput, collectCredentials, filterRawFormData, maskPasswords } from '../lib/formEngine/output.js';
+import { buildLaunchPayload, filterRawFormData, maskPasswords } from '../lib/formEngine/output.js';
 import { sha256 } from '../lib/formEngine/node/hash.js';
 import { createFormServices } from '../lib/formServices.js';
 
@@ -122,11 +122,7 @@ export function createHandlers({ user, deps }) {
    * __verbose__ - none of those are part of the hash.
    */
   function launchPayload(res, formObj) {
-    const extravars = buildFormOutput(res._fields, res._values, {
-      isVisible: (f) => !!res._visibility[f.name],
-      subforms: formObj.subforms || [],
-    });
-    const credentials = collectCredentials(res._fields, extravars);
+    const { extravars, credentials } = buildLaunchPayload(res, formObj.subforms || []);
     return {
       extravars,
       credentials,

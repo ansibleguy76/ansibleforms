@@ -127,6 +127,20 @@ export function readModelPath(obj, modelPath) {
   return cur;
 }
 
+/**
+ * The extravars and credentials a launch submits for a resolved form (resolveForm's result),
+ * exactly as form.vue submitForm builds them : buildFormOutput over the visible fields, with
+ * `overrides` for the uploaded files, and the credentials read from that output.
+ */
+export function buildLaunchPayload(res, subforms = [], { overrides = {} } = {}) {
+  const extravars = buildFormOutput(res._fields, res._values, {
+    isVisible: (f) => !!res._visibility[f.name],
+    overrides,
+    subforms: subforms || [],
+  });
+  return { extravars, credentials: collectCredentials(res._fields, extravars) };
+}
+
 /** form.vue submitForm : credentials come from the MODELLED output of asCredential fields. */
 export function collectCredentials(fields, extravars) {
   const credentials = {};
@@ -213,4 +227,4 @@ export function canonicalJson(value) {
   return '{' + keys.map((k) => JSON.stringify(k) + ':' + canonicalJson(value[k])).join(',') + '}';
 }
 
-export default { deepClone, buildFormOutput, readModelPath, collectCredentials, filterRawFormData, maskPasswords, canonicalJson };
+export default { deepClone, buildFormOutput, buildLaunchPayload, readModelPath, collectCredentials, filterRawFormData, maskPasswords, canonicalJson };

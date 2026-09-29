@@ -23,7 +23,7 @@ import Expression from "./expression.model.js";
 import Query from "./query.model.js";
 import { resolveFormQuery } from "../lib/queryPolicy.js";
 import { createFormServices } from "../lib/formServices.js";
-import { validateLaunch, describeLaunchErrors } from "../lib/launchValidation.js";
+import { validateLaunch, describeLaunchErrors, compareExtravars } from "../lib/launchValidation.js";
 import Credential from "./credential.model.v2.js";
 import AwxModel from "./awx.model.js";
 import path from "path";
@@ -847,17 +847,24 @@ Job.getRawFormData = async function (user, id) {
 
 /**
  * LAUNCH_VALIDATION : validate the raw field values of a REST launch with the form engine
- * the browser and the MCP server use. `off` (default) does nothing - the check re-runs the
- * form's expressions and queries, so an upgrade must not start doing that unasked. `log`
- * logs what would be refused, so an operator can see what enforcing would do before turning
- * it on, and `enforce` refuses the launch with a ValidationError (422) carrying the failing
- * fields.
+ * the browser and the MCP server use.
+ *   - `off` (default) does nothing - the check re-runs the form's expressions and queries,
+ *     so an upgrade must not start doing that unasked ;
+ *   - `log` logs what would be refused, and where the client's extravars differ from the
+ *     ones the server builds, so an operator can see what enforcing would do ;
+ *   - `enforce` refuses an invalid launch with a ValidationError (422) carrying the failing
+ *     fields, and for a valid one RETURNS the extravars and credentials the server built
+ *     from the validated values : Job.launch runs those, not the client's. Otherwise valid
+ *     rawFormData next to arbitrary extravars would pass. Computed fields are the server's
+ *     evaluation. A wizard form cannot be checked yet, so it is refused.
  *
  * A launch without rawFormData (the v1 API, or a raw REST call leaving it out) cannot be
  * validated, and with enforcement on that is itself a refusal : otherwise leaving it out
  * would be the way around the check.
+ *
+ * @returns {Promise<{extravars: object, credentials: object}|undefined>} enforce only
  */
-async function guardLaunch({ form, formConfig, formObj, user, rawFormData, extravars }) {
+async function guardLaunch({ form, formConfig, formObj, user, rawFormData, extravars, files = {} }) {
   const mode = appConfig.launchValidation;
   if (mode !== 'log' && mode !== 'enforce') return;
   const enforce = mode === 'enforce';
@@ -869,7 +876,8 @@ async function guardLaunch({ form, formConfig, formObj, user, rawFormData, extra
   } else {
     try {
       result = await validateLaunch({
-        formConfig, formObj, user, rawFormData, extravars,
+        formConfig, formObj, user, rawFormData, extravars, files,
+        uploadPath: appConfig.uploadPath,
         services: createFormServices({ user, formConfig, formObj, deps: { Expression, Query, resolveFormQuery } }),
       });
     } catch (err) {
@@ -879,10 +887,22 @@ async function guardLaunch({ form, formConfig, formObj, user, rawFormData, extra
     }
   }
   if (result.skipped) {
+    if (enforce) {
+      const err = new Errors.ValidationError(`Form '${form}' cannot be launched with LAUNCH_VALIDATION=enforce yet : ${result.skipped}`);
+      err.details = { reason: result.skipped };
+      throw err;
+    }
     logger.debug(`Launch validation of form '${form}' skipped : ${result.skipped}`);
     return;
   }
-  if (result.ok) return;
+  if (result.ok) {
+    if (enforce) return result.payload;
+    const differ = compareExtravars(extravars, result.payload.extravars);
+    if (differ.length) {
+      logger.warning(`Launch of form '${form}' : the extravars differ from the ones the server builds for ${differ.join(', ')} (LAUNCH_VALIDATION=log ; enforce would run the server's)`);
+    }
+    return;
+  }
   const why = result.reason || describeLaunchErrors(result.errors);
   if (enforce) {
     const err = new Errors.ValidationError(`The form data of '${form}' is not valid - ${why}`);
@@ -912,9 +932,11 @@ Job.launch = async function ({
   replay = false,
   // Set ONLY by the MCP server, which resolved and validated the form with the same engine
   // just before : the launch validation below need not run it a second time.
-  validated = false
+  validated = false,
+  // the uploads of the form's file fields (POST /api/v2/job/upload results), keyed by field
+  files = {}
 }) {
-  const creds = credentials; // Alias for backward compatibility internally
+  let creds = credentials; // Alias for backward compatibility internally
 
   // A step of a multistep arrives with its formObj already built; a real form arrives with
   // a name and is loaded below. The difference matters for the user trim further down, so
@@ -942,7 +964,12 @@ Job.launch = async function ({
 
   // the field values of a REST launch against the form's rules, as the browser checks them
   if (fromClient && !validated && !isStep) {
-    await guardLaunch({ form, formConfig, formObj, user, rawFormData, extravars });
+    const built = await guardLaunch({ form, formConfig, formObj, user, rawFormData, extravars, files });
+    // LAUNCH_VALIDATION=enforce : the job runs what the server built from the validated values
+    if (built) {
+      extravars = built.extravars;
+      creds = built.credentials;
+    }
   }
 
   if (!isStep) setUserExtravars(extravars, user, formObj, replay);
