@@ -675,9 +675,31 @@ function isCurrentGeneration(fieldname, gen) {
 // a warning the loop can raise without pushing the same text on every tick
 function addWarningOnce(key, html) {
     if (warnedOnce.value[key]) return;
-    warnedOnce.value[key] = true;
+    warnedOnce.value[key] = html;
     warnings.value.push(html);
     showWarnings.value = false;
+}
+
+// take back a warning raised with addWarningOnce, once it no longer holds
+function clearWarningOnce(key) {
+    const html = warnedOnce.value[key];
+    if (!html) return;
+    delete warnedOnce.value[key];
+    const i = warnings.value.indexOf(html);
+    if (i >= 0) warnings.value.splice(i, 1);
+}
+
+// A field this one depends on has no value (yet) - typically an input the user has not
+// filled in. The readiness gate lets such a field through (an input is final the moment
+// it exists), so a placeholder on it cannot resolve : that is waiting for the user, not a
+// reference that "never produced a value", and it must not be reported as one.
+function dependsOnEmptyField(fieldname) {
+    return (dynamicFieldDependentOf.value[fieldname] || []).some((dep) => {
+        if (!(dep in fieldOptions.value) || visibility.value[dep] === false) return false;
+        const v = form.value[dep];
+        return v === undefined || v === null || v === '' || (Array.isArray(v) && v.length === 0)
+            || v === '__auto__' || v === '__none__' || v === '__all__';
+    });
 }
 
 // this field still wants its restored value
@@ -863,6 +885,8 @@ function setFieldStatus(fieldname, status, reeval = true) {
         var prevState = dynamicFieldStatus.value[fieldname]
         dynamicFieldStatus.value[fieldname] = status
         if (prevState != status) progressCounter.value++
+        // evaluated after all : an earlier "could not be evaluated" was only too early
+        if (status === "fixed") clearWarningOnce(`unresolved:${fieldname}`)
         if (reeval && (prevState != status)) {
             // this field's value changed meaning, so everything downstream has to be
             // re-derived from it
@@ -1864,8 +1888,10 @@ async function startDynamicFieldsLoop() {
                         // something that never produces a value), not "too early". Default
                         // once and say so; the gate above is what keeps this off the
                         // every-tick path it used to be on.
-                        addWarningOnce(`unresolved:${item.name}`,
-                            `<span class="text-warning">'${item.name}' could not be evaluated</span><br><span>A field its expression refers to never produced a value.</span>`);
+                        if (!dependsOnEmptyField(item.name)) {
+                            addWarningOnce(`unresolved:${item.name}`,
+                                `<span class="text-warning">'${item.name}' could not be evaluated</span><br><span>A field its expression refers to never produced a value.</span>`);
+                        }
                         setFieldToDefault(item.name);
                     }
                 } else if (item.query && flag == undefined) {
@@ -1941,8 +1967,10 @@ async function startDynamicFieldsLoop() {
                         // defaulted rather than resetting it - a reset would clear the value
                         // and put the field straight back into the queue it just failed out
                         // of, once per tick.
-                        addWarningOnce(`unresolved:${item.name}`,
-                            `<span class="text-warning">'${item.name}' could not be evaluated</span><br><span>A field its query refers to never produced a value.</span>`);
+                        if (!dependsOnEmptyField(item.name)) {
+                            addWarningOnce(`unresolved:${item.name}`,
+                                `<span class="text-warning">'${item.name}' could not be evaluated</span><br><span>A field its query refers to never produced a value.</span>`);
+                        }
                         try {
                             setFieldToDefault(item.name);
                         } catch (err) {
