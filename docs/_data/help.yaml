@@ -4385,6 +4385,11 @@
               You need to explicitly set the status to `absent`.  
               So you can add a custom property to the deleted record, 
               marking the record as deleted and sending it to the playbook for removal.   
+
+              **Since 6.4.1** the markers of a `list` field reach the playbook as well : a
+              removed row is sent with its delete marker instead of disappearing. Before, only
+              a `table` field sent them. When rows can be deleted or updated but no
+              `insertMarker` is set, new rows are marked `__inserted__`.
             examples:
             - name: Mark delete record
               code: |

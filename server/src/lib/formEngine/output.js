@@ -8,6 +8,18 @@ import { getFieldValue } from './placeholders.js';
  * client/src/pages/form.vue submitForm + getFilteredRawFormData. Keep in sync.
  */
 
+/**
+ * The marker keys a `list` field sets on its rows (AppListField) : the configured names,
+ * and `__inserted__` for new rows when rows can be deleted or updated but no insertMarker
+ * is given - so a freshly added row stays removable. Empty string : no such marker.
+ */
+export function listMarkers(field) {
+  const f = field || {};
+  let insert = f.insertMarker || '';
+  if (!insert && (f.allowDelete === false || f.deleteMarker || f.updateMarker)) insert = '__inserted__';
+  return { insert, update: f.updateMarker || '', delete: f.deleteMarker || '' };
+}
+
 export function deepClone(o) {
   if (o === undefined) return o;
   try {
@@ -68,7 +80,15 @@ export function buildFormOutput(fields, raw, opts = {}) {
     if (item.type === 'list' && Array.isArray(outputValue)) {
       const sub = (typeof item.subform === 'string') ? subformByName[item.subform] : item.subform;
       if (sub && Array.isArray(sub.fields)) {
-        outputValue = outputValue.map((row) => buildFormOutput(sub.fields, row || {}, { subforms }));
+        // a row is rebuilt from its subform's fields ; the row-state markers are not fields,
+        // so they are carried over - without them a soft-deleted row reached the playbook
+        // looking exactly like a live one
+        const markers = Object.values(listMarkers(item)).filter(Boolean);
+        outputValue = outputValue.map((row) => {
+          const out = buildFormOutput(sub.fields, row || {}, { subforms });
+          for (const m of markers) if (row?.[m]) out[m] = row[m];
+          return out;
+        });
       }
     }
 
@@ -227,4 +247,4 @@ export function canonicalJson(value) {
   return '{' + keys.map((k) => JSON.stringify(k) + ':' + canonicalJson(value[k])).join(',') + '}';
 }
 
-export default { deepClone, buildFormOutput, buildLaunchPayload, readModelPath, collectCredentials, filterRawFormData, maskPasswords, canonicalJson };
+export default { listMarkers, deepClone, buildFormOutput, buildLaunchPayload, readModelPath, collectCredentials, filterRawFormData, maskPasswords, canonicalJson };

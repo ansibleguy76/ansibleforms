@@ -55,7 +55,8 @@ export function getFieldValue(field, column, keepArray) {
       field = (!keepArray) ? undefined : field;
     }
   }
-  if (SENTINELS.includes(field)) {
+  // loosely, as the browser always did : a one-element ['__auto__'] is no choice either
+  if (SENTINELS.some((s) => field == s)) {
     field = undefined;
   }
   return field;

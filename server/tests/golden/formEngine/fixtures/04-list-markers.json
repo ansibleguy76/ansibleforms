@@ -1,0 +1,138 @@
+{
+  "name": "list markers reach the playbook : inserted, updated, soft-deleted, custom names",
+  "mirrors": "AppListField applySave/removeItem + buildFormOutput list branch (markers carried since 6.4.1)",
+  "form": {
+    "name": "t",
+    "subforms": [
+      {
+        "name": "disk",
+        "type": "subform",
+        "fields": [
+          {
+            "name": "size",
+            "type": "number",
+            "model": "spec.size"
+          },
+          {
+            "name": "label",
+            "type": "text"
+          }
+        ]
+      }
+    ],
+    "fields": [
+      {
+        "name": "disks",
+        "type": "list",
+        "subform": "disk",
+        "deleteMarker": "deleted",
+        "updateMarker": "changed"
+      },
+      {
+        "name": "tags",
+        "type": "list",
+        "subform": "disk",
+        "insertMarker": "is_new"
+      },
+      {
+        "name": "plain",
+        "type": "list",
+        "subform": "disk"
+      }
+    ]
+  },
+  "values": {
+    "disks": [
+      {
+        "size": 5,
+        "label": "kept",
+        "__output__": {
+          "spec": {
+            "size": 5
+          },
+          "label": "kept"
+        }
+      },
+      {
+        "size": 6,
+        "label": "edited",
+        "changed": true
+      },
+      {
+        "size": 7,
+        "label": "removed",
+        "deleted": true
+      },
+      {
+        "size": 8,
+        "label": "added",
+        "__inserted__": true
+      }
+    ],
+    "tags": [
+      {
+        "size": 1,
+        "label": "x",
+        "is_new": true
+      }
+    ],
+    "plain": [
+      {
+        "size": 2,
+        "label": "y",
+        "deleted": true,
+        "__inserted__": true
+      }
+    ]
+  },
+  "expect": {
+    "extravars": {
+      "disks": [
+        {
+          "spec": {
+            "size": 5
+          },
+          "label": "kept"
+        },
+        {
+          "spec": {
+            "size": 6
+          },
+          "label": "edited",
+          "changed": true
+        },
+        {
+          "spec": {
+            "size": 7
+          },
+          "label": "removed",
+          "deleted": true
+        },
+        {
+          "spec": {
+            "size": 8
+          },
+          "label": "added",
+          "__inserted__": true
+        }
+      ],
+      "tags": [
+        {
+          "spec": {
+            "size": 1
+          },
+          "label": "x",
+          "is_new": true
+        }
+      ],
+      "plain": [
+        {
+          "spec": {
+            "size": 2
+          },
+          "label": "y"
+        }
+      ]
+    }
+  }
+}

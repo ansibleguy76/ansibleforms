@@ -1,6 +1,6 @@
 // The form engine shared with the server (server/src/lib/formEngine, imported as @engine)
-// against the browser helpers it mirrors. Until the browser calls the engine itself, these
-// are the tripwire for drift between the two copies.
+// against the browser helpers. Helpers.buildFormOutput and getFieldValue delegate to the
+// engine since 6.4.1 ; these keep the browser's callers pinned to what the engine returns.
 import { describe, it, expect } from 'vitest';
 import * as engine from '@engine/index.js';
 import Helpers from '@/lib/Helpers.js';

@@ -1,4 +1,6 @@
 import { copyText } from 'vue3-clipboard';
+import { buildFormOutput as engineBuildFormOutput } from '@engine/output.js';
+import { getFieldValue as engineGetFieldValue } from '@engine/placeholders.js';
 
 const Helpers = {
   // Turns help.yaml's `allowed` text into select options when - and only when - it really
@@ -222,107 +224,10 @@ const Helpers = {
   //                 `field.subform` (string name) to the subform object so
   //                 list rows are rebuilt recursively through the subform's
   //                 fields (honours model/noOutput/outputObject per row)
+  // the form engine shared with the server (@engine/output.js) - the server builds the
+  // same extravars from the same code (MCP, LAUNCH_VALIDATION=enforce)
   buildFormOutput(fields, raw, opts = {}){
-    const isVisible = opts.isVisible || (() => true);
-    const overrides = opts.overrides || {};
-    const subforms = opts.subforms || [];
-    const subformByName = Object.fromEntries((subforms || []).map((s) => [s.name, s]));
-    const fd = {};
-    (fields || []).forEach((item) => {
-      if (!item || !item.name) return;
-      if (item.name === '__user__') return;
-      if (item.name === '__parent__') return;
-      if (item.noOutput || item.output === false) return;
-      if (!isVisible(item)) return;
-
-      const outputObject =
-        item.outputObject ||
-        item.type === 'expression' ||
-        item.type === 'file' ||
-        item.type === 'table' ||
-        item.type === 'list' ||
-        item.type === 'yaml' ||
-        item.type === 'datetime' ||
-        false;
-
-      let outputValue = (item.name in overrides) ? overrides[item.name] : this.deepClone(raw?.[item.name]);
-
-      if (item.type === 'datetime' && item.dateType === 'month' && outputValue && typeof outputValue === 'object') {
-        outputValue = {
-          ...outputValue,
-          month: typeof outputValue.month === 'number' ? outputValue.month + 1 : outputValue.month,
-        };
-      }
-
-      if (!outputObject) {
-        outputValue = this.getFieldValue(outputValue, item.valueColumn || '', true);
-      }
-
-      // If the value was saved by a subform editor it carries __output__ alongside
-      // the raw fields (for re-editing). Use __output__ as the extravars value so
-      // subform-field model/valueColumn transformations are honoured without a
-      // second recursive pass. List rows are handled below via buildFormOutput on
-      // the subform fields, so only apply this for non-array objects.
-      if (outputValue && typeof outputValue === 'object' && !Array.isArray(outputValue) && '__output__' in outputValue) {
-        outputValue = outputValue.__output__;
-      }
-
-      // Recursively re-shape list rows through the subform's field defs so
-      // that `model`, `noOutput`, `outputObject`, `valueColumn` declared on
-      // subform fields are honoured in the extravars. `item.subform` may
-      // already be an object (subform inlined by the server) or a name
-      // looked up against opts.subforms. Missing subform or non-array value
-      // -> pass through unchanged.
-      if (item.type === 'list' && Array.isArray(outputValue)) {
-        const sub = (typeof item.subform === 'string')
-          ? subformByName[item.subform]
-          : item.subform;
-        if (sub && Array.isArray(sub.fields)) {
-          outputValue = outputValue.map((row) =>
-            this.buildFormOutput(sub.fields, row || {}, { subforms })
-          );
-        }
-      }
-
-      const fieldmodel = [].concat(item.model || []);
-      if (fieldmodel.length === 0) {
-        fd[item.name] = this.deepClone(outputValue);
-        return;
-      }
-
-      fieldmodel.forEach((f) => {
-        f.split(/\s*\.\s*/).reduce((master, obj, level, arr) => {
-          let arrsplit;
-          if (level === arr.length - 1) {
-            if (obj.match(/.*\[[0-9]+\]$/)) {
-              arrsplit = obj.split(/\[([0-9]+)\]$/);
-              if (master[arrsplit[0]] === undefined) master[arrsplit[0]] = [];
-              if (master[arrsplit[0]][arrsplit[1]] === undefined) master[arrsplit[0]][arrsplit[1]] = {};
-              master[arrsplit[0]][arrsplit[1]] = outputValue;
-              return master[arrsplit[0]][arrsplit[1]];
-            }
-            if (master[obj] === undefined) {
-              master[obj] = outputValue;
-            } else if (typeof master[obj] !== 'object' || master[obj] === null || typeof outputValue !== 'object' || outputValue === null) {
-              master[obj] = outputValue;
-            } else {
-              master[obj] = { ...master[obj], ...outputValue };
-            }
-            return master[obj];
-          }
-          if (obj.match(/.*\[[0-9]+\]$/)) {
-            arrsplit = obj.split(/\[([0-9]+)\]$/);
-            if (master[arrsplit[0]] === undefined) master[arrsplit[0]] = [];
-            if (master[arrsplit[0]][arrsplit[1]] === undefined) master[arrsplit[0]][arrsplit[1]] = {};
-            return master[arrsplit[0]][arrsplit[1]];
-          }
-          if (typeof master !== 'object' || master === null) return {};
-          if (master[obj] === undefined) master[obj] = {};
-          return master[obj];
-        }, fd);
-      });
-    });
-    return fd;
+    return engineBuildFormOutput(fields, raw, opts);
   },
 
   // Build the output for a single wizard step. Same rules as buildFormOutput,
@@ -530,49 +435,9 @@ const Helpers = {
     return rawData;
   },
   
+  // the form engine shared with the server (@engine/placeholders.js)
   getFieldValue(field, column, keepArray) {
-
-  // get the value of a field
-  // can be many things and more complex than you think
-  // if a record is selected in a query for example
-  // the value can be the valueColumn, ....
-  // sometimes we want undefined, sometimes if array, an empty array
-  // sometimes if array of objects, we want it flattened by column
-
-    var keys;
-    var key = undefined;
-    var wasArray = false;
-    // do we pass a field
-    if (field) {
-        // first we force to array
-        if (Array.isArray(field)) {
-            wasArray = true;
-        } else {
-            field = [].concat(field ?? []); // force to array
-        }
-        // any value
-        if (field.length > 0) { // not empty
-            if (column != "*") {
-                if (typeof field[0] === "object") { // array of objects, analyze first object
-                    keys = Object.keys(field[0]); // get properties
-                    if (keys.length > 0) {
-                        key = (keys.includes(column)) ? column : keys[0]; // get column, fall back to first
-                        field = field.map((item) => ((item) ? ((item[key] == null) ? null : (item[key] ?? item)) : undefined)); // flatten array
-                    } else {
-                        field = (!keepArray) ? undefined : field; // force undefined if we don't want arrays
-                    }
-                } // no else, array is already flattened
-            }
-
-            field = (!wasArray || !keepArray) ? field[0] : field; // if it wasn't an array, we take first again
-        } else {
-            field = (!keepArray) ? undefined : field; // force undefined if we don't want arrays
-        }
-    }
-    if (field == '__auto__' || field == '__none__' || field == '__all__') {
-        field = undefined;
-    }
-    return field;
+    return engineGetFieldValue(field, column, keepArray);
   },
   // eslint-disable-next-line no-unused-vars -- `object` is referenced by name from the expression built below and run through eval
   replacePlaceholders(match,object){
