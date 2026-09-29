@@ -49,5 +49,13 @@
   max-width: 200px;
   max-height: 30px;
 }
+/* an svg without width/height attributes has no size of its own - only the ratio of its
+   viewBox - so with just max-width/max-height it collapsed to 0 wide and the logo vanished.
+   A height gives it one and the width follows from the ratio. Raster images carry their
+   own size and keep the rule above, so a small png is not scaled up. */
+.logo[src^="data:image/svg+xml"] {
+  height: 30px;
+  width: auto;
+}
 
 </style>
