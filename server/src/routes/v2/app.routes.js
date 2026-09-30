@@ -43,19 +43,10 @@ async function resolveDefaults() {
 
 // Whether the chat button may show : ENABLE_CHAT, and a provider with a key and a model.
 // Only a boolean - this route is unauthenticated, the provider details stay behind the
-// settings page. Cached briefly : every page load asks.
-let chatCache = { value: false, fetchedAt: 0 };
+// settings page.
 async function chatEnabled() {
   if (!appConfig.enableChat) return false;
-  if (Date.now() - chatCache.fetchedAt < 30 * 1000) return chatCache.value;
-  let value = false;
-  try {
-    value = ChatSettings.isConfigured(await ChatSettings.find());
-  } catch (e) {
-    logger.debug(`Could not read the chat settings : ${e.message}`);
-  }
-  chatCache = { value, fetchedAt: Date.now() };
-  return value;
+  return ChatSettings.configuredCached();
 }
 
 router.get("/config", async (req, res) => {

@@ -62,9 +62,11 @@ function clampInt(v, min, max, dflt) {
   return Math.min(max, Math.max(min, n));
 }
 
-ChatSettings.update = function (record) {
+ChatSettings.update = async function (record) {
   logger.info(`Updating chat settings (provider ${record.provider || 'none'})`);
-  return mysql.do("UPDATE AnsibleForms.`chat_settings` set ?", record);
+  const res = await mysql.do("UPDATE AnsibleForms.`chat_settings` set ?", record);
+  configuredCache.fetchedAt = 0; // on or off shows on the next page load, not 30 s later
+  return res;
 };
 
 /** the row with the api key DECRYPTED - for the server only */
@@ -91,6 +93,22 @@ ChatSettings.isConfigured = function (row) {
   if (!vendor || !row.model) return false;
   if (vendor.url && !row.base_url) return false;
   return !!(row.api_key || row.base_url || effectiveSettings(row).auth_type === 'none');
+};
+
+// Whether a provider is configured, for the unauthenticated /app/config that every page
+// load asks : cached briefly, and dropped on every update of the row.
+const configuredCache = { value: false, fetchedAt: 0 };
+ChatSettings.configuredCached = async function () {
+  if (Date.now() - configuredCache.fetchedAt < 30 * 1000) return configuredCache.value;
+  let value = false;
+  try {
+    value = ChatSettings.isConfigured(await ChatSettings.find());
+  } catch (e) {
+    logger.debug(`Could not read the chat settings : ${e.message}`);
+  }
+  configuredCache.value = value;
+  configuredCache.fetchedAt = Date.now();
+  return value;
 };
 
 export default ChatSettings;
