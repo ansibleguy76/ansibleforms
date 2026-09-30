@@ -111,12 +111,40 @@ async function approve(proposal) {
         const res = await axios.post('/api/v2/chat/approve', { sessionId, planId: proposal.planId }, TokenStorage.getAuthentication());
         proposal.state = 'done';
         proposal.jobId = res.data?.job?.id ?? null;
+        if (proposal.jobId) track(proposal);
     } catch (err) {
         proposal.state = 'failed';
         proposal.error = errorText(err, t('chat.failed'));
     }
     scrollDown();
 }
+
+// Follow a launched job until it ends, as the form page does : its status and the last
+// lines of its output, here in the page only - none of it goes to the model.
+const FINAL = ['success', 'error', 'failed', 'warning', 'rejected', 'abandoned', 'aborted'];
+const TAIL_LINES = 6;
+const timers = new Set();
+function track(proposal, failures = 0) {
+    const timer = setTimeout(async () => {
+        timers.delete(timer);
+        try {
+            const res = await axios.get(`/api/v2/job/${proposal.jobId}`, TokenStorage.getAuthentication());
+            const job = res.data || {};
+            proposal.jobStatus = job.status;
+            proposal.jobTail = String(job.output || '').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>/g, '')
+                .split(/\r?\n/).map((l) => l.trimEnd()).filter(Boolean).slice(-TAIL_LINES).join('\n');
+            if (!FINAL.includes(job.status)) track(proposal);
+            scrollDown();
+        } catch {
+            // a blip, or no permission to read jobs : stop after a few, the link stays
+            if (failures < 3) track(proposal, failures + 1);
+        }
+    }, 2000);
+    timers.add(timer);
+}
+onBeforeUnmount(() => timers.forEach((t) => clearTimeout(t)));
+
+const statusClass = (s) => ({ success: 'text-success', failed: 'text-danger', error: 'text-danger', aborted: 'text-danger', warning: 'text-warning', rejected: 'text-danger' }[s] || 'text-body-secondary');
 
 async function newConversation() {
     const old = sessionId;
@@ -207,12 +235,14 @@ const expires = (p) => { try { return new Date(p.expiresAt).toLocaleTimeString()
                                         <FaIcon :icon="p.state === 'busy' ? 'spinner' : 'play'" class="me-1" />{{ labelFor(p) }}
                                     </button>
                                     <span v-if="p.state === 'open'" class="small text-body-secondary">{{ t('chat.expires', { time: expires(p) }) }}</span>
-                                    <span v-if="p.state === 'done'" class="small text-success">
-                                        <FaIcon icon="circle-check" class="me-1" />{{ t('chat.jobStarted') }}
-                                        <router-link v-if="p.jobId" :to="`/jobs/${p.jobId}`">#{{ p.jobId }}</router-link>
+                                    <span v-if="p.state === 'done'" class="small">
+                                        <FaIcon :icon="p.jobStatus && !FINAL.includes(p.jobStatus) ? 'spinner' : 'circle-check'" class="me-1" :class="statusClass(p.jobStatus || 'success')" />
+                                        <router-link v-if="p.jobId" :to="`/jobs/${p.jobId}`">{{ t('chat.job') }} #{{ p.jobId }}</router-link>
+                                        <strong class="ms-1" :class="statusClass(p.jobStatus)">{{ p.jobStatus || t('chat.jobStarted') }}</strong>
                                     </span>
                                     <span v-if="p.state === 'failed'" class="small text-danger">{{ p.error }}</span>
                                 </div>
+                                <pre v-if="p.jobTail" class="af-chat-pre small mt-2 mb-0">{{ p.jobTail }}</pre>
                             </div>
                         </div>
 

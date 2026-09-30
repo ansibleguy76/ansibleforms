@@ -297,6 +297,7 @@ export default {
     failed: "Echec de connexion"
   },
   chat: {
+    job: "Job",
     open: "Ouvrir l'assistant",
     title: "Assistant",
     newConversation: "Nouvelle conversation",

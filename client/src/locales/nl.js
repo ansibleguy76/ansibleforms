@@ -297,6 +297,7 @@ export default {
     failed: "Inloggen mislukt"
   },
   chat: {
+    job: "Job",
     open: "Open de assistent",
     title: "Assistent",
     newConversation: "Nieuw gesprek",

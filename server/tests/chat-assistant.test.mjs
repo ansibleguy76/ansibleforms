@@ -205,6 +205,9 @@ describe("a summary launches exactly its payload, once, from the click", () => {
     await expect(chat.approve(user, { sessionId: other.sessionId, planId })).rejects.toMatchObject({ code: "plan_wrong_session" });
     const done = await chat.approve(user, { sessionId, planId });
     expect(done.job.id).toBe(77);
+    // the conversation knows the job now : the next question can be about it
+    await chat.message(user, { sessionId, message: "did it work?" });
+    expect(model.histories.at(-1).some((m) => m.role === "user" && /job 77 was launched/.test(m.text))).toBe(true);
     expect(deps.Job.launch).toHaveBeenCalledTimes(1);
     expect(deps.Job.launch.mock.calls[0][0]).toMatchObject({ form: "Create a snapshot", fromClient: true, validated: true });
     await expect(chat.approve(user, { sessionId, planId })).rejects.toMatchObject({ code: "plan_used" });

@@ -297,6 +297,7 @@ export default {
     failed: "Error al iniciar sesión"
   },
   chat: {
+    job: "Job",
     open: "Abrir el asistente",
     title: "Asistente",
     newConversation: "Nueva conversación",

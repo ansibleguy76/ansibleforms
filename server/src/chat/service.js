@@ -95,6 +95,12 @@ export function createChatService({
       }
       const jobId = launched?.id ?? null;
       markLaunched(plan, jobId);
+      // the conversation learns what the click did : "did it work ?" can then be answered
+      // (the job tool), and the operator may refer to this job without retyping its id
+      if (jobId) {
+        session.messages.push({ role: 'user', text: `[The operator clicked ${plan.label} : job ${jobId} was launched for the form '${plan.form}'.]` });
+        session.operatorMessages.push(`job ${jobId}`);
+      }
       logger.notice(`Chat : ${user.username} launched '${plan.form}' as job ${jobId} (plan ${plan.planId})`);
       audit({
         user, ip, action: 'chat.launch', targetType: 'job', target: jobId,
