@@ -107,6 +107,7 @@ async function send(text, selection) {
             job: d.job || null,
         });
     } catch (err) {
+        if (switchedOff(err)) { store.chatEnabled = false; return; }
         const code = err?.response?.data?.error?.code;
         entries.value.push({ role: 'error', text: errorText(err, t('chat.failed')), limit: code === 'turn_limit' });
     } finally {
@@ -175,16 +176,22 @@ function onKey(e) {
     }
 }
 
-// whether the assistant may read a job's status (a setting) : the welcome text says what it can do
+// read on every open : the chat may have been switched off since the page loaded (the
+// button then goes away), and whether it may read a job's status sets the welcome text
 const jobStatus = ref(false);
-let configLoaded = false;
 async function loadConfig() {
-    if (configLoaded) return;
     try {
         const res = await axios.get('/api/v2/chat/config', TokenStorage.getAuthentication());
+        if (!res.data?.enabled) store.chatEnabled = false;
         jobStatus.value = !!res.data?.jobStatus;
-        configLoaded = true;
-    } catch { /* the welcome text without it */ }
+    } catch (err) {
+        if (switchedOff(err)) store.chatEnabled = false;
+    }
+}
+// the chat was switched off : ENABLE_CHAT off since the restart (no route), or no provider
+function switchedOff(err) {
+    const code = err?.response?.data?.error?.code;
+    return err?.response?.status === 404 && !code ? true : ['chat_disabled', 'chat_not_configured'].includes(code);
 }
 
 function toggle() {

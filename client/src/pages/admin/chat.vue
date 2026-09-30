@@ -5,6 +5,7 @@ import getSettings from '@/config/settings';
 import TokenStorage from '@/lib/TokenStorage';
 import Helpers from '@/lib/Helpers';
 import Profile from '@/lib/Profile';
+import State from '@/lib/State';
 import { useI18n } from 'vue-i18n';
 
 const { t } = useI18n();
@@ -34,7 +35,7 @@ onMounted(async () => {
     <div class="flex-shrink-0">
         <main class="d-flex flex-nowrap container-xxl">
             <AppSidebar />
-            <AppAdminSingle v-if="authenticated" apiVersion="2" :settings="settings.chat" @test="testProvider" />
+            <AppAdminSingle v-if="authenticated" apiVersion="2" :settings="settings.chat" @test="testProvider" @saved="State.loadChatConfig()" />
         </main>
     </div>
 </template>

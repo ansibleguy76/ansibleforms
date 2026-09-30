@@ -31,6 +31,11 @@ describe('the chat panel', () => {
     expect(vhtml).toEqual(['render(e.text)']);
   });
 
+  it('goes away once the chat is switched off, without a page reload', () => {
+    expect(src).toMatch(/if \(!res\.data\?\.enabled\) store\.chatEnabled = false;/);
+    expect(src).toMatch(/if \(switchedOff\(err\)\) \{ store\.chatEnabled = false; return; \}/);
+  });
+
   it('follows a launched job by its status only - no job output in the chat', () => {
     expect(src).not.toMatch(/job\.output/);
     expect(src).toMatch(/proposal\.jobStatus = job\.status/);

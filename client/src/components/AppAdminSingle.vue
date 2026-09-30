@@ -11,6 +11,7 @@
     /*  @emits:                                                       */
     /*      test: Function                                            */
     /*      import: Function                                          */
+    /*      saved: Function (after a successful update)               */
     /*                                                                */
     /******************************************************************/
 
@@ -35,7 +36,7 @@
         }
     });
 
-    const emit = defineEmits(["test","import"]);
+    const emit = defineEmits(["test","import","saved"]);
 
     const objectLabel = computed(() => props.settings?.label || '');
     const objectIcon = computed(() => props.settings?.icon || '');
@@ -126,6 +127,7 @@
             try{
                 await axios.put(`/api/v${props.apiVersion}/${objectType.value}/`, item.value, TokenStorage.getAuthentication());
                 toast.success(objectTitle('', t('settings.common.isUpdated')));
+                emit('saved', item.value);
                 loadItem();
             }catch(err){
                 if (props.apiVersion == 2) {
