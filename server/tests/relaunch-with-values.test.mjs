@@ -64,12 +64,20 @@ describe("Job.relaunchWithValues", () => {
     expect(Job.launch).not.toHaveBeenCalled();
   });
 
+  test("a password field its dependencies hide does not stand in the way", async () => {
+    const hiddenPw = structuredClone(form);
+    hiddenPw.fields.push({ name: "pw", type: "password", dependencies: [{ name: "MODE", values: ["manual"] }] });
+    Form.load.mockResolvedValue({ constants: { MODE: "auto" }, forms: [hiddenPw] });
+    await expect(Job.relaunchWithValues({ user, id: 42, values: { size: 20 } })).resolves.toMatchObject({ id: 43 });
+    expect(Job.launch.mock.calls[0][0].extravars).toEqual({ vm: { name: "prod-1" }, size: 20, acls: [{ who: "bob" }] });
+  });
+
   test("a password in a subform only counts too", async () => {
     const withRowPw = structuredClone(form);
     withRowPw.subforms[0].fields.push({ name: "token", type: "password" });
     Form.load.mockResolvedValue({ constants: {}, forms: [withRowPw] });
-    const err = await Job.relaunchWithValues({ user, id: 42, preview: true }).catch((e) => e);
-    expect(err).toMatchObject({ code: "unsupported", details: { passwordFields: ["token"] } });
+    const err = await Job.relaunchWithValues({ user, id: 42, values: { size: 20 }, preview: true }).catch((e) => e);
+    expect(err).toMatchObject({ code: "unsupported", details: { passwordFields: ["acls[0].token"] } });
   });
 
   test("a preview builds and hashes without launching", async () => {
@@ -106,13 +114,62 @@ describe("Job.relaunchWithValues", () => {
 
   test("a job without stored form data cannot be relaunched with changes", async () => {
     Job.findById = vi.fn(async () => ({ ...storedJob(), raw_form_data: null }));
-    await expect(Job.relaunchWithValues({ user, id: 42 })).rejects.toMatchObject({ name: "NotFoundError" });
+    await expect(Job.relaunchWithValues({ user, id: 42, values: { size: 20 } })).rejects.toMatchObject({ name: "NotFoundError" });
   });
 
   test("a running job is previewed but not relaunched", async () => {
     Job.findById = vi.fn(async () => ({ ...storedJob(), status: "running" }));
     await expect(Job.relaunchWithValues({ user, id: 42, preview: true })).resolves.toHaveProperty("payloadHash");
     await expect(Job.relaunchWithValues({ user, id: 42 })).rejects.toMatchObject({ name: "ConflictError" });
+  });
+});
+
+describe("a relaunch without changes", () => {
+  const withPw = () => {
+    const f = structuredClone(form);
+    f.fields.push({ name: "pw", type: "password", model: "secrets.pw" });
+    return f;
+  };
+  const jobWithPw = () => ({ ...storedJob(), extravars: JSON.stringify({ vm: { name: "prod-1" }, size: 10, acls: [{ who: "bob" }], secrets: { pw: "s3cr3t" }, __verbose__: true }) });
+
+  test("off / log : a replay of the stored extravars - passwords included, on the server", async () => {
+    Form.load.mockResolvedValue({ constants: {}, forms: [withPw()] });
+    Job.findById = vi.fn(async () => jobWithPw());
+    const r = await Job.relaunchWithValues({ user, id: 42 });
+    expect(r).toMatchObject({ id: 43, replayed: true });
+    const arg = Job.launch.mock.calls[0][0];
+    expect(arg).toMatchObject({ replay: true });
+    expect(arg.extravars.secrets).toEqual({ pw: "s3cr3t" });
+    expect(arg.extravars.__verbose__).toBeUndefined();
+  });
+
+  test("its preview masks the stored password", async () => {
+    Form.load.mockResolvedValue({ constants: {}, forms: [withPw()] });
+    Job.findById = vi.fn(async () => jobWithPw());
+    const p = await Job.relaunchWithValues({ user, id: 42, preview: true });
+    expect(p).toMatchObject({ replayed: true, extravars: { secrets: { pw: "********" } } });
+    expect(JSON.stringify(p)).not.toContain("s3cr3t");
+    expect(Job.launch).not.toHaveBeenCalled();
+  });
+
+  test("enforce : through the engine - refused when a password field is shown", async () => {
+    Form.load.mockResolvedValue({ constants: {}, forms: [{ ...withPw(), launchValidation: "enforce" }] });
+    Job.findById = vi.fn(async () => jobWithPw());
+    await expect(Job.relaunchWithValues({ user, id: 42 })).rejects.toMatchObject({ code: "unsupported", details: { passwordFields: ["pw"] } });
+    // the plain Relaunch (REST, browser button) takes the same road
+    await expect(Job.relaunch(user, 42, false)).rejects.toMatchObject({ code: "unsupported" });
+    expect(Job.launch).not.toHaveBeenCalled();
+  });
+
+  test("enforce : a hidden password field does not stand in the way - the server builds the extravars", async () => {
+    const f = { ...structuredClone(form), launchValidation: "enforce", fields: [...form.fields, { name: "pw", type: "password", dependencies: [{ name: "MODE", values: ["manual"] }] }] };
+    Form.load.mockResolvedValue({ constants: { MODE: "auto" }, forms: [f] });
+    Job.findById = vi.fn(async () => jobWithPw());
+    await Job.relaunch(user, 42, false);
+    const arg = Job.launch.mock.calls[0][0];
+    expect(arg).toMatchObject({ validated: true });
+    expect(arg.replay).toBeUndefined();
+    expect(arg.extravars).toEqual({ vm: { name: "prod-1" }, size: 10, acls: [{ who: "bob" }] });
   });
 });
 

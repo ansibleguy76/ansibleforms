@@ -421,6 +421,9 @@ export async function resolveForm({
    * same subform editor, output through its __output__. It is resolved the same way ; its
    * failures are reported with `index: null`.
    */
+  // password fields shown in the resolved rows (`acls[1].token`) - a relaunch needs to know
+  const rowPasswordsVisible = [];
+
   async function resolveRows(f) {
     const s = st[f.name];
     const sub = subformOf(f);
@@ -479,6 +482,7 @@ export async function resolveForm({
           ...(Object.keys(res.rowErrors).length ? { rowErrors: res.rowErrors } : {}),
         });
       }
+      for (const pw of res._passwordsVisible || []) rowPasswordsVisible.push(`${f.name}${single ? '' : `[${i}]`}.${pw}`);
       for (const w of res.warnings) {
         const tagged = `${f.name}${single ? '' : `[${i}]`} : ${w}`;
         if (!warnings.includes(tagged)) warnings.push(tagged);
@@ -596,6 +600,11 @@ export async function resolveForm({
     _values: { ...vals },
     _visibility: Object.fromEntries(fields.map((f) => [f.name, st[f.name].status !== 'hidden'])),
     _fields: fields,
+    // the password fields that are shown (not hidden by their dependencies), rows included
+    _passwordsVisible: [
+      ...fields.filter((f) => f.type === 'password' && st[f.name].status !== 'hidden' && st[f.name].status !== 'skipped').map((f) => f.name),
+      ...rowPasswordsVisible,
+    ],
   };
 }
 

@@ -1376,7 +1376,7 @@
         "security": [ { "bearerAuth": [] } ],
         "tags": ["job"],
         "summary": "Relaunch job by ID, as it ran or with some fields changed",
-        "description": "Without a body the job is replayed with the extravars it ran with. With a body holding `values`, the values the job was launched with are taken, `values` is laid over them, and the result goes through the form engine again - resolved, validated and the extravars built by the server - as a new launch by the caller. Uploads of the original are reused. Passwords are never stored, so a form with a password field (subforms included) cannot be relaunched with values (400). Needs the form to allow relaunch and the allowJobRelaunch role option.",
+        "description": "Without a body the job is replayed with the extravars it ran with. With a body holding `values`, the values the job was launched with are taken, `values` is laid over them, and the result goes through the form engine again - resolved, validated and the extravars built by the server - as a new launch by the caller. Uploads of the original are reused. Without a body, or for a form under launch validation 'enforce', see the Launch validation page : a relaunch that goes through the check is refused (400) for a password field the form shows, since passwords are never stored with the field values ; one its dependencies hide does not count. Only for the job's owner, an admin or a user who sees every job. Needs the form to allow relaunch and the allowJobRelaunch role option.",
         "parameters": [
           { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
           { "name": "verbose", "in": "query", "required": false, "schema": { "type": "boolean" }, "description": "Verbose ansible output (needs the allowVerboseMode role option)" }
@@ -1389,7 +1389,7 @@
         },
         "responses": {
           "200": { "description": "Job relaunched ; the new job id" },
-          "400": { "description": "The form is a wizard form or has a password field (relaunch with values), or the stored form data belongs to another form" },
+          "400": { "description": "A wizard form, a password field the form shows (relaunch through the check), or stored form data of another form" },
           "403": { "description": "Relaunch or verbose mode not allowed" },
           "404": { "description": "Job or form not found, or no stored form data (relaunch with values)" },
           "409": { "description": "The job is still running" },

@@ -68,7 +68,8 @@ export async function validateLaunch({ formConfig, formObj, user, rawFormData, e
     ...(Object.keys(res.rowErrors || {}).length ? { rowErrors: res.rowErrors } : {}),
     ...(uploadErrors.length ? { uploads: uploadErrors } : {}),
   };
-  if (!res.complete || uploadErrors.length) return { ok: false, errors, warnings: res.warnings, visibility: res._visibility };
+  const passwordsVisible = res._passwordsVisible || [];
+  if (!res.complete || uploadErrors.length) return { ok: false, errors, warnings: res.warnings, visibility: res._visibility, passwordsVisible };
 
   // through JSON, as the browser's payload travels : an empty field leaves no `undefined`
   // behind, so the job - and the comparison with the client's extravars - sees the same
@@ -83,7 +84,7 @@ export async function validateLaunch({ formConfig, formObj, user, rawFormData, e
   const uploadKeys = Object.keys(uploads.verified)
     .map((n) => (formObj.fields || []).find((f) => f.name === n))
     .map((f) => String([].concat(f?.model || f?.name)[0]).split(/\s*\.\s*/)[0].replace(/\[[0-9]+\]$/, ''));
-  return { ok: true, errors, warnings: res.warnings, payload, visibility: res._visibility, uploadKeys };
+  return { ok: true, errors, warnings: res.warnings, payload, visibility: res._visibility, uploadKeys, passwordsVisible };
 }
 
 /**

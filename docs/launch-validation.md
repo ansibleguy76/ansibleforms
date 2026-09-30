@@ -239,13 +239,19 @@ file name) are checked against the real upload.
 
 ## Relaunching
 
-- **Relaunch as it ran** (the Relaunch button, `POST /api/v2/job/{id}/relaunch` without a
-  body): the job is replayed with its stored extravars, on the server. Unchanged.
-- **Relaunch with changes** (`POST /api/v2/job/{id}/relaunch` with a body
-  `{ "values": { ... } }`, or the MCP tool `relaunch_job`): the job's stored field values,
-  with `values` laid over them, go through the whole check above and are launched as a new
-  job by the caller. A form with a password field anywhere - its subforms included - cannot
-  be relaunched this way: its stored data lost the password.
+| Relaunch | launch validation `off` / `log` | launch validation `enforce` |
+|---|---|---|
+| **as it ran** (the Relaunch button, `POST /api/v2/job/{id}/relaunch` without a body, `relaunch_job` without `values`) | a replay of the job's stored extravars, on the server - passwords included, as a relaunch always was | through the whole check above, from the job's stored field values |
+| **with changes** (`POST /api/v2/job/{id}/relaunch` with `{ "values": { ... } }`, `relaunch_job` with `values`) | through the whole check above: the stored field values with `values` laid over them | same |
+
+Whenever a relaunch goes through the check, the job is launched as a new job by the caller,
+with the extravars the server builds. The stored field values never hold a password, so a
+**password field the form shows** - at the top or in a list row - has lost its value, and
+such a relaunch is refused (`unsupported`, with the `passwordFields`): launch the form
+again and enter it. A password field the form's dependencies **hide** (for example through
+a constant) is not needed and does not stand in the way. Under `enforce` that includes the
+plain Relaunch button: a form that shows a password field cannot be replayed without its
+password being entered again - which is the point of `enforce`.
 
 Both need the form to allow relaunch (`allowRelaunch`) and the `allowJobRelaunch` role
 option, and are only for **the job's owner**, an admin, or a user who sees every job

@@ -1372,20 +1372,36 @@ Job.relaunchWithValues = async function ({ user, id, values = {}, verbose = fals
     throw new Errors.NotFoundError(`Form '${job.form}' not found or you don't have access to it`);
   }
   assertRelaunchable(job, formObj, user);
-  if (Array.isArray(formObj.wizard) && formObj.wizard.length > 0) {
-    throw codedError(Errors.BadRequestError, `'${job.form}' is a wizard form ; it cannot be relaunched with changes yet`, 'unsupported');
-  }
-  // a password is never stored, so a job of a form holding one - in a subform too - lost it :
-  // it cannot be relaunched from its data
-  const passwordFields = [formObj, ...(formObj.subforms || [])]
-    .flatMap((f) => (f?.fields || []).filter((x) => x?.type === 'password').map((x) => x.name));
-  if (passwordFields.length) {
-    throw codedError(Errors.BadRequestError,
-      `'${job.form}' has password fields (${[...new Set(passwordFields)].join(', ')}) ; passwords are never stored, so its jobs cannot be relaunched with changes`,
-      'unsupported', { passwordFields: [...new Set(passwordFields)] });
-  }
   if (verbose && !user?.options?.allowVerboseMode) {
     throw new Errors.AccessDeniedError(`You do not have permission to run jobs in verbose mode.`);
+  }
+  const changed = !!values && Object.keys(values).length > 0;
+
+  // no changes, and the form is not enforced : a replay of the job as it ran - its stored
+  // extravars, on the server, as a relaunch always was (passwords included, they never leave
+  // the server ; the preview masks them)
+  if (!changed && launchValidationMode(formObj) !== 'enforce') {
+    const storedExtravars = safeParse(job.extravars, {}, `job.extravars id=${id}`) || {};
+    delete storedExtravars.__verbose__;
+    const credentials = safeParse(job.credentials, {}, `job.credentials id=${id}`) || {};
+    const payloadHash = sha256({ form: job.form, extravars: storedExtravars, credentials });
+    if (expectedPayloadHash && expectedPayloadHash !== payloadHash) {
+      throw codedError(Errors.ConflictError, 'The payload differs from the one that was previewed - preview again and have it confirmed.',
+        'payload_mismatch', { expectedPayloadHash, payloadHash });
+    }
+    if (preview) {
+      // masked with the form just loaded - by definition - and then by key name
+      const byDefinition = maskPasswords(storedExtravars, formObj.fields || [], formObj.subforms || []);
+      const masked = safeParse(Helpers.logSafe(JSON.stringify(byDefinition)), {}, `masked extravars id=${id}`);
+      return { form: job.form, replayed: true, extravars: masked, credentials, payloadHash, warnings: [] };
+    }
+    const replayed = await replayJob(user, job, verbose);
+    return { ...replayed, replayed: true, payloadHash, warnings: [] };
+  }
+
+  // otherwise through the form engine : resolved, validated, the extravars built here
+  if (Array.isArray(formObj.wizard) && formObj.wizard.length > 0) {
+    throw codedError(Errors.BadRequestError, `'${job.form}' is a wizard form ; it cannot be ${changed ? 'relaunched with changes' : 'checked under launch validation \'enforce\''} yet`, 'unsupported');
   }
   const stored = job.raw_form_data ? safeParse(job.raw_form_data, null, `job.raw_form_data id=${id}`) : null;
   if (!stored) {
@@ -1405,12 +1421,20 @@ Job.relaunchWithValues = async function ({ user, id, values = {}, verbose = fals
   }
   const rawFormData = { ...raw, ...(values || {}) };
   const result = await validateLaunch({
-    // no extravars : they hold no password to reuse anyway (forms with one are refused above)
+    // no extravars : a password is never taken from the stored data here
     formConfig, formObj, user, rawFormData, extravars: {}, files,
     uploadPath: appConfig.uploadPath,
     services: createFormServices({ user, formConfig, formObj, deps: { Expression, Query, resolveFormQuery } }),
     allRows: true,
   });
+  // a password is never stored in the form data, so a password field the form SHOWS - at the
+  // top or in a row - lost its value : that cannot be relaunched from the data. One its
+  // dependencies hide is not needed, and does not stand in the way.
+  if (result.passwordsVisible?.length) {
+    throw codedError(Errors.BadRequestError,
+      `Job ${id} cannot be relaunched ${changed ? 'with changes' : 'under launch validation \'enforce\''} : its password field(s) ${result.passwordsVisible.join(', ')} are shown and passwords are never stored ; launch the form again and enter them`,
+      'unsupported', { passwordFields: result.passwordsVisible });
+  }
   if (!result.ok) {
     throw codedError(Errors.ValidationError,
       `Job ${id} cannot be relaunched with these values - ${describeLaunchErrors(result.errors)}`,
@@ -1444,18 +1468,28 @@ Job.relaunchWithValues = async function ({ user, id, values = {}, verbose = fals
   return { ...launched, payloadHash, warnings: result.warnings };
 };
 
+/**
+ * Relaunch a job as it ran. A form under launch validation 'enforce' goes through the form
+ * engine instead (relaunchWithValues without changes) : its stored extravars are not
+ * trusted as they are, and a password field it shows makes it refuse.
+ */
 Job.relaunch = async function (user, id, verbose) {
   const job = await Job.findById(user, id, true);
-  
-  // Check permissions and form settings before allowing relaunch
   const formConfig = await Form.load(user?.roles, job.form);
   const formObj = formConfig.forms?.[0];
   if (!formObj) {
     throw new Errors.NotFoundError(`Form '${job.form}' not found or you don't have access to it`);
   }
-  
   assertRelaunchable(job, formObj, user);
-  
+  if (launchValidationMode(formObj) === 'enforce') {
+    return Job.relaunchWithValues({ user, id, values: {}, verbose });
+  }
+  return replayJob(user, job, verbose);
+};
+
+/** the replay itself : the stored extravars, credentials and raw form data, launched again */
+async function replayJob(user, job, verbose) {
+  const id = job.id;
   var extravars = {};
   var credentials = {};
   var rawFormData = {};
@@ -1498,7 +1532,7 @@ Job.relaunch = async function (user, id, verbose) {
       `Job ${id} is not in a status to be relaunched (status=${job.status})`
     );
   }
-};
+}
 Job.approve = async function (user, id) {
   const job = await Job.findById(user, id, true);
 

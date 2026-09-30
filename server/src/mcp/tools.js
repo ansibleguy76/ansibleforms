@@ -374,12 +374,13 @@ export function registerTools(server, handlers) {
     title: 'Relaunch job with changes',
     description: 'Launch a job again with some fields changed : the values the job was launched with, '
       + 'with `values` laid over them, are resolved and validated like launch_job and launched as a new '
-      + 'job by you. Uploads of the original are reused. Passwords are never stored, so a form with a '
-      + 'password field (subforms included) cannot be relaunched this way. Call it with `preview: true` '
+      + 'job by you. Uploads of the original are reused. Without `values` it replays the job as it ran '
+      + '(unless the form is under launch validation enforce). A relaunch through the check is refused '
+      + 'for a password field the form shows - passwords are never stored with the values. Call it with `preview: true` '
       + 'first : that returns `modeledExtravars` (passwords masked), `credentials` and a `payloadHash` '
       + 'without launching - confirm them with the user, then call again with `expectedPayloadHash`. '
       + 'Refused while fields are missing, invalid or fail validation (code `form_incomplete`), for a '
-      + 'wizard form or a form with a password field (`unsupported`), or when the payload changed (`payload_mismatch`).',
+      + 'wizard form or a shown password field (`unsupported`), or when the payload changed (`payload_mismatch`).',
     inputSchema: {
       id: z.number().int().positive().describe('Id of the job to relaunch'),
       values: valuesSchema.optional().describe('Only the fields to change, as raw values ; the rest is taken from the job'),

@@ -134,16 +134,23 @@ not part of the hash.
 values the job was launched with are taken, `values` is laid over them, and the result is
 resolved and validated exactly like `launch_job` - list rows included - and launched as a
 new job by you (`ansibleforms_user` is you, not the original submitter). File uploads of
-the original are reused. **Passwords are never stored**, so a form with a password field
-anywhere - its subforms included - cannot be relaunched this way (`unsupported`, with the
-`passwordFields`): its data lost the password.
+the original are reused.
+
+Without `values` it is a relaunch **as the job ran**: its stored extravars are replayed on
+the server, passwords included (the preview masks them) - unless the form is under launch
+validation `enforce`, then it goes through the same check as a relaunch with changes.
+
+**Passwords are never stored with the field values**, so a relaunch that goes through the
+check is refused for a password field the form shows - at the top or in a list row
+(`unsupported`, with the `passwordFields`). A password field its dependencies hide does not
+stand in the way. See [Launch validation](launch-validation).
 
 Call it with `preview: true` first: it returns `modeledExtravars` (passwords masked),
 `credentials` and a `payloadHash` without launching. Confirm them with the user, then call
 it again with `expectedPayloadHash`. The same permissions as a relaunch in the browser
 apply: the form must allow relaunch and your roles need the `allowJobRelaunch` option. A
-job without stored form data (launched before relaunch existed), a form with a password
-field and a wizard form cannot be relaunched this way.
+job without stored form data (launched before relaunch existed) and a wizard form cannot be
+relaunched with changes.
 
 The REST API does the same on `POST /api/v2/job/{id}/relaunch` with a body
 `{ "values": { ... } }`; without a body it replays the job as it ran.
@@ -158,7 +165,7 @@ A refused call is a tool error whose structured content carries a `code` and the
 | `payload_mismatch` | the payload differs from `expectedPayloadHash`, with both hashes |
 | `access_denied` | the user's roles do not grant the form or job, or verbose mode |
 | `not_found` | no such form, subform or job |
-| `unsupported` | a wizard form, a subform on its own, a file field, or `relaunch_job` on a form with a password field |
+| `unsupported` | a wizard form, a subform on its own, a file field, or a `relaunch_job` that would need a shown password field |
 | `internal_error` | anything else |
 
 ## runLocal expressions
