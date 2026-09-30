@@ -304,7 +304,7 @@ export default {
     fullscreen: "Plein écran",
     exitFullscreen: "Quitter le plein écran",
     close: "Fermer",
-    intro: "Demandez ce que vous pouvez lancer, ou décrivez votre besoin - par exemple \"prends un snapshot du volume vol1\". Je remplis le formulaire avec vous ; un job ne démarre que lorsque vous cliquez sur le bouton du résumé.",
+    intro: "Demandez ce que vous pouvez lancer, ou décrivez votre besoin - par exemple \"redémarre le service web sur server01\". Je remplis le formulaire avec vous ; un job ne démarre que lorsque vous cliquez sur le bouton du résumé.",
     failed: "L'assistant n'a pas pu répondre",
     moreChoices: "{count} de plus - tapez la valeur",
     choose: "Choisir {field}",

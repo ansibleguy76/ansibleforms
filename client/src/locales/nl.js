@@ -304,7 +304,7 @@ export default {
     fullscreen: "Volledig scherm",
     exitFullscreen: "Volledig scherm verlaten",
     close: "Sluiten",
-    intro: "Vraag wat je kan uitvoeren, of beschrijf wat je nodig hebt - bijvoorbeeld \"neem een snapshot van volume vol1\". Ik vul het formulier samen met je in ; een job start pas als je op de knop van de samenvatting klikt.",
+    intro: "Vraag wat je kan uitvoeren, of beschrijf wat je nodig hebt - bijvoorbeeld \"herstart de webservice op server01\". Ik vul het formulier samen met je in ; een job start pas als je op de knop van de samenvatting klikt.",
     failed: "De assistent kon niet antwoorden",
     moreChoices: "nog {count} - typ de waarde",
     choose: "Kies {field}",

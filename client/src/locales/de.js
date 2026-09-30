@@ -304,7 +304,7 @@ export default {
     fullscreen: "Vollbild",
     exitFullscreen: "Vollbild verlassen",
     close: "Schließen",
-    intro: "Fragen Sie, was Sie ausführen können, oder beschreiben Sie, was Sie brauchen - zum Beispiel \"erstelle einen Snapshot von Volume vol1\". Ich fülle das Formular mit Ihnen aus ; ein Job startet erst, wenn Sie auf die Schaltfläche der Zusammenfassung klicken.",
+    intro: "Fragen Sie, was Sie ausführen können, oder beschreiben Sie, was Sie brauchen - zum Beispiel \"starte den Webdienst auf server01 neu\". Ich fülle das Formular mit Ihnen aus ; ein Job startet erst, wenn Sie auf die Schaltfläche der Zusammenfassung klicken.",
     failed: "Der Assistent konnte nicht antworten",
     moreChoices: "{count} weitere - Wert eintippen",
     choose: "{field} wählen",

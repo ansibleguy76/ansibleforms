@@ -141,7 +141,7 @@ Conversations and summaries live in memory: a restart means "start a new convers
 "Run job 1234 again" (the user must type the job id) previews a relaunch with the same rules
 as the MCP server's `relaunch_job` - including the password rule of
 [launch validation](launch-validation) - and shows a **Relaunch** summary; the button
-launches it, once. "Run job 1234 again with snapshot name weekly" changes only that field.
+launches it, once. "Run job 1234 again with server web02" changes only that field.
 
 ## Audit
 
