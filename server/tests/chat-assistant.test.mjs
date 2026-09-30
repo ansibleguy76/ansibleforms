@@ -313,3 +313,16 @@ describe("the conversation loop", () => {
     expect(await on.config()).toEqual({ enabled: true, provider: "anthropic", model: "m", maxTurns: 20 });
   });
 });
+
+describe("the real form list carries the chat flags", () => {
+  // Regression : Form.load without a form name trims every form to its tile info, and the
+  // flags were not part of it - the catalog was always empty on a real instance while the
+  // tests above (whose fake Form.load returns whole forms) passed.
+  test("getFormInfo's list mode keeps enableForChat and chatRisk", async () => {
+    const { readFileSync } = await import("fs");
+    const src = readFileSync(new URL("../src/models/form.model.js", import.meta.url), "latin1");
+    const list = src.slice(src.indexOf("function getFormInfo"), src.indexOf("else if(form.name == formName)"));
+    expect(list).toMatch(/enableForChat: form\.enableForChat === true/);
+    expect(list).toMatch(/chatRisk: form\.chatRisk === 'read' \? 'read' : 'change'/);
+  });
+});
