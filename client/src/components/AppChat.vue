@@ -136,18 +136,8 @@ async function approve(proposal) {
     scrollDown();
 }
 
-// Follow a launched job until it ends, as the form page does : its status and the last
-// lines of its output, here in the page only - none of it goes to the model.
+// Follow a launched job until it ends : its status only - the output is on the job page
 const FINAL = ['success', 'error', 'failed', 'warning', 'rejected', 'abandoned', 'aborted'];
-const TAIL_LINES = 6;
-// The job output is html (formatted for the job page). Its TEXT, taken by the browser's own
-// parser - never by stripping tags with a regex, which leaves pieces of a crafted tag behind.
-// It is shown with {{ }}, so it is text either way.
-function textOf(html) {
-    const doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
-    doc.querySelectorAll('br').forEach((br) => br.replaceWith('\n'));
-    return doc.body.textContent || '';
-}
 const timers = new Set();
 function track(proposal, failures = 0) {
     const timer = setTimeout(async () => {
@@ -156,7 +146,6 @@ function track(proposal, failures = 0) {
             const res = await axios.get(`/api/v2/job/${proposal.jobId}`, TokenStorage.getAuthentication());
             const job = res.data || {};
             proposal.jobStatus = job.status;
-            proposal.jobTail = textOf(job.output).split(/\r?\n/).map((l) => l.trimEnd()).filter(Boolean).slice(-TAIL_LINES).join('\n');
             if (!FINAL.includes(job.status)) track(proposal);
             scrollDown();
         } catch {
@@ -244,9 +233,8 @@ watch(visible, (shown) => {
                         {{ e.text }}
                         <button v-if="e.limit" type="button" class="btn btn-sm btn-link p-0 ms-1" @click="newConversation">{{ t('chat.newConversation') }}</button>
                     </div>
-                    <div v-else class="d-flex gap-2 align-items-start">
-                        <div class="af-chat-avatar" aria-hidden="true">AI</div>
-                        <div class="flex-grow-1 af-chat-min0">
+                    <div v-else>
+                        <div>
                             <!-- eslint-disable-next-line vue/no-v-html -- markdown of the model, through the app's html sanitizer -->
                             <div class="af-chat-assistant" v-html="render(e.text)"></div>
 
@@ -261,17 +249,12 @@ watch(visible, (shown) => {
 
                             <div v-for="p in e.proposals" :key="p.planId" class="af-chat-box mt-2">
                                 <div class="fw-semibold">{{ p.fields?.length ? p.form : p.summary }}</div>
-                                <table v-if="p.fields?.length" class="table table-sm table-borderless small mb-1 mt-1 af-chat-fields">
-                                    <tbody>
-                                        <tr v-for="f in p.fields" :key="f.label">
-                                            <th scope="row" class="text-body-secondary fw-normal">{{ f.label }}</th>
-                                            <td><FaIcon v-if="f.value === true" icon="check" class="text-success" /><code v-else>{{ show(f.value) }}</code></td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                                <div v-if="p.optionalSwitches?.length" class="small text-body-secondary mt-1">
+                                <ul v-if="p.fields?.length" class="af-chat-list small">
+                                    <li v-for="f in p.fields" :key="f.label">{{ f.label }}: <FaIcon v-if="f.value === true" icon="check" class="text-success" /><code v-else>{{ show(f.value) }}</code></li>
+                                </ul>
+                                <div v-if="p.optionalSwitches?.length" class="small text-body-secondary mt-2">
                                     {{ t('chat.switchesOff') }}
-                                    <ul class="mb-0 ps-3">
+                                    <ul class="af-chat-list">
                                         <li v-for="s in p.optionalSwitches" :key="s.slot">{{ s.prompt }}</li>
                                     </ul>
                                 </div>
@@ -291,7 +274,6 @@ watch(visible, (shown) => {
                                     </span>
                                     <span v-if="p.state === 'failed'" class="small text-danger">{{ p.error }}</span>
                                 </div>
-                                <pre v-if="p.jobTail" class="af-chat-pre small mt-2 mb-0">{{ p.jobTail }}</pre>
                             </div>
 
                             <div v-if="e.job" class="small text-body-secondary mt-1">
@@ -362,20 +344,6 @@ watch(visible, (shown) => {
     white-space: pre-wrap;
 }
 .af-chat-assistant { overflow-wrap: anywhere; padding-top: .2rem; }
-.af-chat-min0 { min-width: 0; }
-.af-chat-avatar {
-    flex: 0 0 auto;
-    width: 1.75rem;
-    height: 1.75rem;
-    border-radius: .5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: .7rem;
-    font-weight: 700;
-    color: var(--bs-white);
-    background: linear-gradient(135deg, var(--bs-primary), var(--bs-indigo, #6610f2));
-}
 .af-chat-box {
     border: 1px solid var(--bs-border-color);
     border-radius: .75rem;
@@ -404,9 +372,10 @@ watch(visible, (shown) => {
 .af-chat-assistant :deep(pre) { white-space: pre-wrap; }
 /* names and values : one calm colour that stands out from the text, not bootstrap's pink */
 .af-chat-assistant :deep(code),
-.af-chat-fields code { color: var(--bs-primary-text-emphasis); background: var(--bs-primary-bg-subtle); border: 1px solid var(--bs-primary-border-subtle); border-radius: .25rem; padding: 0 .3em; overflow-wrap: anywhere; }
-.af-chat-fields { width: auto; }
-.af-chat-fields th { white-space: nowrap; padding-right: 1rem; }
+.af-chat-list code { color: var(--bs-primary-text-emphasis); background: var(--bs-primary-bg-subtle); border: 1px solid var(--bs-primary-border-subtle); border-radius: .25rem; padding: 0 .3em; overflow-wrap: anywhere; }
+/* the card's lists : bullets in line with the text above them */
+.af-chat-list { margin: .25rem 0 0; padding-left: 1.1rem; }
+.af-chat-list li { margin-bottom: .15rem; }
 .af-chat-pre {
     max-height: 16rem;
     overflow: auto;

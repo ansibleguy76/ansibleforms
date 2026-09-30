@@ -31,10 +31,9 @@ describe('the chat panel', () => {
     expect(vhtml).toEqual(['render(e.text)']);
   });
 
-  it('turns job output into text with the browser parser, never a tag-stripping regex', () => {
-    expect(src).toMatch(/new DOMParser\(\)\.parseFromString\(/);
-    expect(src).not.toMatch(/\.replace\(\/<\[\^>\]\*>\//);
-    expect(src).toMatch(/\{\{ p\.jobTail \}\}/);
+  it('follows a launched job by its status only - no job output in the chat', () => {
+    expect(src).not.toMatch(/job\.output/);
+    expect(src).toMatch(/proposal\.jobStatus = job\.status/);
   });
 
   it('talks to the server only - no provider, no key in the browser', () => {
