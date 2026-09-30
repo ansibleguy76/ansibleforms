@@ -325,7 +325,7 @@ describe("the conversation loop", () => {
     const unconfigured = createChatService({ deps, complete: vi.fn(), loadSettings: async () => ({ provider: "anthropic", api_key: "", model: "m" }), enabled: () => true });
     await expect(unconfigured.openSession(user)).rejects.toMatchObject({ code: "chat_not_configured", status: 503 });
     const on = service([]);
-    expect(await on.config()).toEqual({ enabled: true, provider: "anthropic", model: "m", maxTurns: 20 });
+    expect(await on.config()).toEqual({ enabled: true, provider: "anthropic", model: "m", maxTurns: 20, jobStatus: true });
   });
 });
 

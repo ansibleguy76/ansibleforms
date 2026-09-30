@@ -175,9 +175,24 @@ function onKey(e) {
     }
 }
 
+// whether the assistant may read a job's status (a setting) : the welcome text says what it can do
+const jobStatus = ref(false);
+let configLoaded = false;
+async function loadConfig() {
+    if (configLoaded) return;
+    try {
+        const res = await axios.get('/api/v2/chat/config', TokenStorage.getAuthentication());
+        jobStatus.value = !!res.data?.jobStatus;
+        configLoaded = true;
+    } catch { /* the welcome text without it */ }
+}
+
 function toggle() {
     open.value = !open.value;
-    if (open.value) nextTick(() => { inputBox.value?.focus(); scrollDown(); });
+    if (open.value) {
+        loadConfig();
+        nextTick(() => { inputBox.value?.focus(); scrollDown(); });
+    }
 }
 
 function onEscape(e) {
@@ -224,7 +239,10 @@ watch(visible, (shown) => {
             </header>
 
             <div ref="scroller" class="card-body af-chat-body">
-                <p v-if="!entries.length" class="text-body-secondary small">{{ t('chat.intro') }}</p>
+                <template v-if="!entries.length">
+                    <p class="text-body-secondary small mb-1">{{ t('chat.intro') }}</p>
+                    <p class="text-body-secondary small">{{ jobStatus ? t('chat.introJobs') : t('chat.introRelaunch') }}</p>
+                </template>
                 <div v-for="(e, i) in entries" :key="i" class="mb-3">
                     <div v-if="e.role === 'user'" class="d-flex justify-content-end">
                         <div class="af-chat-bubble af-chat-user">{{ e.text }}</div>

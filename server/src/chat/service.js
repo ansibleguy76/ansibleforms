@@ -37,7 +37,7 @@ export function createChatService({
       const ok = ChatSettings.isConfigured(settings);
       return {
         enabled: ok,
-        ...(ok ? { provider: settings.provider, model: settings.model, maxTurns: settings.max_turns } : {}),
+        ...(ok ? { provider: settings.provider, model: settings.model, maxTurns: settings.max_turns, jobStatus: settings.allow_job_status !== 0 } : {}),
       };
     },
 
