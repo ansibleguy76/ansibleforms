@@ -24,6 +24,7 @@ import oauth2 from "@/pages/admin/oauth2.vue"
 import groups from "@/pages/admin/groups.vue"
 import knownHosts from "@/pages/admin/knownHosts.vue"
 import ldap from "@/pages/admin/ldap.vue"
+import chatSettings from "@/pages/admin/chat.vue"
 import mailSettings from "@/pages/admin/mailSettings.vue"
 import logo from "@/pages/admin/logo.vue"
 import repositories from "@/pages/admin/repositories.vue"
@@ -130,6 +131,7 @@ const routes = [
   { path: '/admin/groups', name: "/admin/groups", component: groups, beforeEnter: checkSettings },
   { path: '/admin/knownHosts', name: "/admin/knownHosts", component: knownHosts, beforeEnter: checkSettings },
   { path: '/admin/ldap', name: "/admin/ldap", component: ldap, beforeEnter: checkSettings },
+  { path: '/admin/chat', name: "/admin/chat", component: chatSettings, beforeEnter: checkSettings },
   { path: '/admin/mailSettings', name: "/admin/mailSettings", component: mailSettings, beforeEnter: checkSettings },
   { path: '/admin/logo', name: "/admin/logo", component: logo, beforeEnter: checkSettings },
   { path: '/admin/repositories', name: "/admin/repositories", component: repositories, beforeEnter: checkSettings },

@@ -49,6 +49,7 @@ Middleware.checkBackupMiddleware = permissionGuard(u => u.options.allowBackupOps
 Middleware.checkScheduledJobsMiddleware = permissionGuard(u => u.options.allowScheduledJobs, 'errors.noScheduleAccess')
 
 Middleware.checkStoredJobsMiddleware = permissionGuard(u => u.options.allowStoredJobs, 'errors.noStoredJobsAccess')
+Middleware.checkChatMiddleware = permissionGuard(u => u.options.allowChat !== false, 'errors.noChatAccess')
 
 // The schedules page is gated on allowScheduledJobs rather than showSettings, but
 // its form dropdown reads config/formnames - a list that is deliberately NOT role

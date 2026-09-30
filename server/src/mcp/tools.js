@@ -144,6 +144,8 @@ export function createHandlers({ user, deps }) {
           name: f.name,
           description: f.description || '',
           categories: f.categories || [],
+          // the chat assistant's allowlist and its button (Approve for change, Launch for read)
+          enableForChat: f.enableForChat === true,
         })),
       };
     },
@@ -284,6 +286,27 @@ const valuesSchema = z.record(z.string(), z.any())
  * Wrap a handler : the result as JSON text and as structured content, a refusal as a tool
  * error carrying `{ code, message, ...details }`, no stack traces.
  */
+/**
+ * A handler's refusal as `{ code, message, ...details }` - the MCP tool error, and what the
+ * chat assistant hands its model. One mapping, so both speak the same codes.
+ */
+export function describeError(err) {
+  if (err instanceof ToolError) {
+    return { code: err.code, message: err.message, ...err.details };
+  }
+  if (typeof err?.code === 'string' && /^[a-z_]+$/.test(err.code) && KNOWN_ERRORS[err?.name]) {
+    // a model error that names its own tool code (Job.relaunchWithValues)
+    return { code: err.code, message: err.message, ...(err.details || {}) };
+  }
+  if (KNOWN_ERRORS[err?.name]) {
+    return { code: KNOWN_ERRORS[err.name], message: err.message };
+  }
+  if (err?.statusCode) {
+    return { code: err.statusCode === 403 ? 'access_denied' : err.statusCode === 404 ? 'not_found' : 'invalid_request', message: err.message };
+  }
+  return { code: 'internal_error', message: `Internal error : ${err?.message || err}` };
+}
+
 function wrap(fn) {
   return async (args) => {
     try {
@@ -293,19 +316,7 @@ function wrap(fn) {
         structuredContent: result,
       };
     } catch (err) {
-      let error;
-      if (err instanceof ToolError) {
-        error = { code: err.code, message: err.message, ...err.details };
-      } else if (typeof err?.code === 'string' && /^[a-z_]+$/.test(err.code) && KNOWN_ERRORS[err?.name]) {
-        // a model error that names its own tool code (Job.relaunchWithValues)
-        error = { code: err.code, message: err.message, ...(err.details || {}) };
-      } else if (KNOWN_ERRORS[err?.name]) {
-        error = { code: KNOWN_ERRORS[err.name], message: err.message };
-      } else if (err?.statusCode) {
-        error = { code: err.statusCode === 403 ? 'access_denied' : err.statusCode === 404 ? 'not_found' : 'invalid_request', message: err.message };
-      } else {
-        error = { code: 'internal_error', message: `Internal error : ${err?.message || err}` };
-      }
+      const error = describeError(err);
       return { isError: true, content: [{ type: 'text', text: error.message }], structuredContent: error };
     }
   };
@@ -402,4 +413,4 @@ export function registerTools(server, handlers) {
   }, wrap((a) => handlers.getJob(a)));
 }
 
-export default { createHandlers, registerTools, ToolError };
+export default { createHandlers, registerTools, describeError, ToolError };

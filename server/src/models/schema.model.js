@@ -480,7 +480,7 @@ const SCHEMA_MANIFEST = {
   base: {
     tables: ['groups', 'users', 'tokens', 'credentials', 'ldap', 'awx', 'jobs', 'job_output',
              'settings', 'repositories', 'datasource_schemas', 'datasource', 'staging',
-             'schedule', 'audit'],
+             'schedule', 'audit', 'chat_settings'],
   },
   patches: {
     patchVersion4: { columns: ['ldap.groups_search_base', 'ldap.groups_attribute', 'ldap.group_class',
@@ -499,7 +499,7 @@ const SCHEMA_MANIFEST = {
     // separate list from `columns` because the caller grades a missing index lower :
     // its absence is slow rather than broken.
     patchVersion6: { tables: ['datasource_schemas', 'datasource', 'staging', 'oauth2_providers', 'stored_jobs',
-                              'audit'],
+                              'audit', 'chat_settings'],
                      columns: ['oauth2_providers.tenant_id', 'jobs.raw_form_data', 'repositories.use_for_config',
                                'repositories.use_for_vars_files', 'jobs.pid', 'jobs.host', 'schedule.one_time_run',
                                'schedule.run_at', 'credentials.vault_path', 'jobs.awx_workflow', 'settings.logo',
@@ -507,7 +507,8 @@ const SCHEMA_MANIFEST = {
                                'settings.default_theme', 'settings.default_theme_color',
                                'awx.managed', 'credentials.managed', 'oauth2_providers.managed',
                                'repositories.managed', 'ldap.managed', 'settings.managed',
-                               'ldap.groupfilter'],
+                               'ldap.groupfilter', 'chat_settings.auth_type', 'chat_settings.api_version',
+                               'chat_settings.request_user', 'chat_settings.extra_headers'],
                      indexes: ['jobs.idx_jobs_retention'] },
   },
 };
@@ -753,6 +754,17 @@ async function patchVersion6(messages, success, failed) {
   buffer = fs.readFileSync(`${__dirname}/../db/create_audit_table.sql`);
   sql = buffer.toString();
   await checkPromise(addTable("audit", sql), messages, success, failed);
+
+  // The chat assistant's model provider : one row, its api key encrypted (6.5)
+  buffer = fs.readFileSync(`${__dirname}/../db/create_chat_settings_table.sql`);
+  sql = buffer.toString();
+  await checkPromise(addTable("chat_settings", sql), messages, success, failed);
+  // how to talk to an OpenAI-compatible provider or proxy : auth header, api version, the
+  // user a proxy wants, extra headers (a table created before they existed gets them here)
+  await checkPromise(addColumn("chat_settings", "auth_type", "varchar(20)", true, "NULL"), messages, success, failed);
+  await checkPromise(addColumn("chat_settings", "api_version", "varchar(50)", true, "NULL"), messages, success, failed);
+  await checkPromise(addColumn("chat_settings", "request_user", "varchar(100)", true, "NULL"), messages, success, failed);
+  await checkPromise(addColumn("chat_settings", "extra_headers", "text", true, "NULL"), messages, success, failed);
 
   // Job retention selects on parent_id + status + end. Without an index that is a full
   // scan of the biggest table in the schema, repeated once per batch.

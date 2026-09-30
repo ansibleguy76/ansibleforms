@@ -1900,7 +1900,7 @@ const forbiddenFormKeys = {
   ansible: ['template', 'awx', 'steps', 'awxCredentials', 'executionEnvironment', 'scm_branch', 'instanceGroups', 'expression'],
   awx: ['playbook', 'playbookSubPath', 'ansibleCredentials', 'vaultCredentials', 'steps', 'expression'],
   multistep: ['playbook', 'playbookSubPath', 'template', 'awx', 'inventory', 'tags', 'limit', 'check', 'diff', 'scm_branch', 'executionEnvironment', 'instanceGroups', 'ansibleCredentials', 'awxCredentials', 'vaultCredentials', 'key', 'expression'],
-  subform: ['playbook', 'playbookSubPath', 'template', 'awx', 'steps', 'expression', 'roles', 'categories', 'notifications', 'approval', 'hasApproval', 'onSubmit', 'onSuccess', 'onFailure', 'onAbort', 'onFinish', 'inventory', 'tags', 'limit', 'check', 'diff', 'scm_branch', 'executionEnvironment', 'instanceGroups', 'ansibleCredentials', 'awxCredentials', 'vaultCredentials', 'credentials', 'abortable', 'allowRelaunch', 'launchValidation', 'verbose', 'keepExtravars', 'userExtravars', 'image', 'icon', 'iconColor', 'iconSize', 'overlayIcon', 'overlayIconTransform', 'overlayIconColor', 'overlayIconCircle', 'overlayIconText', 'overlayIconTextPosition', 'overlayIconTextColor', 'tileClass', 'order'],
+  subform: ['playbook', 'playbookSubPath', 'template', 'awx', 'steps', 'expression', 'roles', 'categories', 'notifications', 'approval', 'hasApproval', 'onSubmit', 'onSuccess', 'onFailure', 'onAbort', 'onFinish', 'inventory', 'tags', 'limit', 'check', 'diff', 'scm_branch', 'executionEnvironment', 'instanceGroups', 'ansibleCredentials', 'awxCredentials', 'vaultCredentials', 'credentials', 'abortable', 'allowRelaunch', 'launchValidation', 'enableForChat', 'verbose', 'keepExtravars', 'userExtravars', 'image', 'icon', 'iconColor', 'iconSize', 'overlayIcon', 'overlayIconTransform', 'overlayIconColor', 'overlayIconCircle', 'overlayIconText', 'overlayIconTextPosition', 'overlayIconTextColor', 'tileClass', 'order'],
 };
 
 // also used by the template : an input for a key the selected type forbids must
@@ -1939,6 +1939,7 @@ function openFormSettings() {
       diff: !!parsed.diff,
       allowRelaunch: !!parsed.allowRelaunch,
       launchValidation: ['log', 'enforce'].includes(parsed.launchValidation) ? parsed.launchValidation : '',
+      enableForChat: parsed.enableForChat === true,
       hasWizard: Array.isArray(parsed.wizard) && parsed.wizard.length > 0,
       abortable: !!parsed.abortable,
       verbose: !!parsed.verbose,
@@ -1975,6 +1976,7 @@ function applyFormSettings() {
     if (formTypeAllows('diff')) setDocValue(doc, 'diff', s.diff ? true : undefined);
     if (formTypeAllows('allowRelaunch')) setDocValue(doc, 'allowRelaunch', s.allowRelaunch ? true : undefined);
     if (formTypeAllows('launchValidation') && !s.hasWizard) setDocValue(doc, 'launchValidation', s.launchValidation || undefined);
+    if (formTypeAllows('enableForChat') && !s.hasWizard) setDocValue(doc, 'enableForChat', s.enableForChat ? true : undefined);
     if (formTypeAllows('abortable')) setDocValue(doc, 'abortable', s.abortable ? true : undefined);
     if (formTypeAllows('verbose')) setDocValue(doc, 'verbose', s.verbose ? true : undefined);
     if (formTypeAllows('keepExtravars')) setDocValue(doc, 'keepExtravars', s.keepExtravars ? true : undefined);
@@ -4251,6 +4253,7 @@ onBeforeUnmount(() => {
                 <BsInput v-if="formTypeAllows('diff')" :isFloating="false" :isInline="true" type="checkbox" v-model="formSettings.diff" :isSwitch="true" :label="t('designer.formDiff')" />
                 <BsInput v-if="formTypeAllows('allowRelaunch')" :isFloating="false" :isInline="true" type="checkbox" v-model="formSettings.allowRelaunch" :isSwitch="true" :label="t('designer.formAllowRelaunch')" />
                 <BsInput v-if="formTypeAllows('abortable')" :isFloating="false" :isInline="true" type="checkbox" v-model="formSettings.abortable" :isSwitch="true" :label="t('designer.formAbortable')" />
+                <BsInput v-if="formTypeAllows('enableForChat') && !formSettings.hasWizard" :isFloating="false" :isInline="true" type="checkbox" v-model="formSettings.enableForChat" :isSwitch="true" :label="t('designer.formChat')" />
                 <BsInput v-if="formTypeAllows('verbose')" :isFloating="false" :isInline="true" type="checkbox" v-model="formSettings.verbose" :isSwitch="true" :label="t('designer.formVerbose')" />
                 <BsInput v-if="formTypeAllows('keepExtravars')" :isFloating="false" :isInline="true" type="checkbox" v-model="formSettings.keepExtravars" :isSwitch="true" :label="t('designer.formKeepExtravars')" />
               </div>

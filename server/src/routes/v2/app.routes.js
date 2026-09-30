@@ -2,6 +2,8 @@ import express from "express";
 import Settings from "../../models/settings.model.js";
 import logger from "../../lib/logger.js";
 import logConfig from "../../../config/log.config.js";
+import appConfig from "../../../config/app.config.js";
+import ChatSettings from "../../models/chatSettings.model.js";
 const router = express.Router();
 
 // /config is an unauthenticated bootstrap endpoint the SPA hits on every load,
@@ -39,6 +41,14 @@ async function resolveDefaults() {
   return result;
 }
 
+// Whether the chat button may show : ENABLE_CHAT, and a provider with a key and a model.
+// Only a boolean - this route is unauthenticated, the provider details stay behind the
+// settings page.
+async function chatEnabled() {
+  if (!appConfig.enableChat) return false;
+  return ChatSettings.configuredCached();
+}
+
 router.get("/config", async (req, res) => {
   const defaults = await resolveDefaults();
   res.json({
@@ -49,7 +59,8 @@ router.get("/config", async (req, res) => {
     defaultThemeColor: defaults.color,
     // timezone the server logs and schedules in : the client renders cron next-run
     // previews in it, so a cron shown in the UI matches when the job really runs
-    logTz: logConfig.tz
+    logTz: logConfig.tz,
+    chatEnabled: await chatEnabled(),
   });
 });
 

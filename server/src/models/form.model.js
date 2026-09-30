@@ -472,6 +472,9 @@ function getFormInfo(form,formName='',loadFullConfig=false) {
       description: form.description || '',
       tileClass: form.tileClass || '',
       order: form.order ?? Number.MAX_SAFE_INTEGER,
+      // the chat assistant's allowlist and its button : read from this list (MCP list_forms,
+      // the chat catalog), so they must survive the trimming to tile info
+      enableForChat: form.enableForChat === true,
     };
   }
   else if(form.name == formName) {

@@ -1371,6 +1371,82 @@
         "responses": { "200": { "description": "Job aborted" }, "404": { "description": "Not found" } }
       }
     },
+    "/chat/config": {
+      "get": {
+        "security": [ { "bearerAuth": [] } ], "tags": ["chat"],
+        "summary": "Whether the chat assistant is on, and its provider and model (never the key)",
+        "responses": { "200": { "description": "{ enabled, provider, model, maxTurns, jobStatus }" }, "403": { "description": "allowChat is off" }, "404": { "description": "ENABLE_CHAT is off" } }
+      }
+    },
+    "/chat/session": {
+      "post": {
+        "security": [ { "bearerAuth": [] } ], "tags": ["chat"],
+        "summary": "Start a conversation",
+        "responses": { "200": { "description": "{ sessionId }" }, "503": { "description": "No model provider configured" } }
+      }
+    },
+    "/chat/message": {
+      "post": {
+        "security": [ { "bearerAuth": [] } ], "tags": ["chat"],
+        "summary": "Send one message ; the model and its tools run on the server",
+        "description": "Returns the reply, the choices the form offers, and the summaries (proposals) that can be approved. Never launches a job.",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["sessionId", "message"], "properties": {
+          "sessionId": { "type": "string" }, "message": { "type": "string", "maxLength": 4000 },
+          "selection": { "type": "object", "description": "{ slot, value } of a clicked choice", "properties": { "slot": { "type": "string" }, "value": { "type": "string" } } }
+        } } } } },
+        "responses": { "200": { "description": "{ reply, choices, proposals, job }" }, "404": { "description": "Unknown conversation" }, "409": { "description": "The previous message is still being answered" }, "429": { "description": "A message, tool round or hourly limit" }, "502": { "description": "The model provider failed" } }
+      }
+    },
+    "/chat/approve": {
+      "post": {
+        "security": [ { "bearerAuth": [] } ], "tags": ["chat"],
+        "summary": "Launch the summary the user approved - once",
+        "description": "The form is resolved again ; refused (plan_stale) when the payload hash moved. Only for the user and conversation the summary was made for, within 15 minutes, once.",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["sessionId", "planId"], "properties": { "sessionId": { "type": "string" }, "planId": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "{ job: { id }, form, summary }" }, "403": { "description": "Another user's or conversation's summary" }, "409": { "description": "Used already, or stale" }, "410": { "description": "Expired" } }
+      }
+    },
+    "/chat/reset": {
+      "post": {
+        "security": [ { "bearerAuth": [] } ], "tags": ["chat"],
+        "summary": "Forget a conversation",
+        "responses": { "200": { "description": "Done" } }
+      }
+    },
+    "/chatsettings": {
+      "get": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["settings"],
+        "summary": "The chat assistant's model provider",
+        "description": "Provider (anthropic, openai, azure, gemini, grok, mistral, deepseek, groq, openrouter, ollama, custom), model, base URL, auth type, api version, user, extra headers and limits. The api key comes back masked. Needs showSettings.",
+        "responses": { "200": { "description": "The chat settings" }, "403": { "description": "No showSettings" } }
+      },
+      "put": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["settings"],
+        "summary": "Update the chat assistant's model provider",
+        "description": "The api key is stored encrypted ; send it masked (**********) to keep the stored one. Refused (403) while the row is managed by the config seed.",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": {
+          "provider": { "type": "string", "enum": ["", "anthropic", "openai", "azure", "gemini", "grok", "mistral", "deepseek", "groq", "openrouter", "ollama", "custom"] },
+          "api_key": { "type": "string" }, "base_url": { "type": "string" }, "model": { "type": "string" },
+          "max_turns": { "type": "integer" }, "max_tool_rounds": { "type": "integer" }, "timeout_seconds": { "type": "integer" },
+          "allow_job_status": { "type": "boolean" },
+          "auth_type": { "type": "string", "enum": ["", "bearer", "api-key", "x-api-key", "none"], "description": "How the key is sent ; empty for the provider's default" },
+          "api_version": { "type": "string", "description": "Anthropic : the anthropic-version header ; OpenAI-compatible : ?api-version= (Azure)" },
+          "request_user": { "type": "string", "description": "Sent as user (OpenAI) or metadata.user_id (Anthropic), e.g. for a proxy ; empty sends none" },
+          "extra_headers": { "type": "string", "description": "A JSON object of extra request headers" }
+        } } } } },
+        "responses": { "200": { "description": "Updated" }, "400": { "description": "Invalid settings, e.g. extra headers that are not a JSON object" }, "403": { "description": "Managed by the config seed, or no showSettings" } }
+      }
+    },
+    "/chatsettings/check": {
+      "post": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["settings"],
+        "summary": "Test the chat model provider with one tiny call",
+        "responses": { "200": { "description": "The provider answered" }, "502": { "description": "The provider could not be reached or refused" } }
+      }
+    },
     "/job/{id}/relaunch": {
       "post": {
         "security": [ { "bearerAuth": [] } ],

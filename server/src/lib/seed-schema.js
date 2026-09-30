@@ -8,6 +8,7 @@
 // and resolved from the process environment at apply time, which is what lets the
 // file live in git next to the rest of the deployment.
 import Ajv from "ajv";
+import { CHAT_PROVIDERS } from "../chat/vendors.js";
 
 const str = { type: "string" };
 const bool = { type: "boolean" };
@@ -124,6 +125,31 @@ const listSection = (item) => ({
 // Requiring everything is verbose, but it makes the file the complete truth about the row
 // and the refusal honest. It also removes the earlier trap in the other direction: nothing
 // is silently defaulted, so the seed cannot blank a field the operator forgot to think about.
+// The chat assistant's model provider - a single row too, so every field is required for
+// the same reason as ldap. `api_key` is written as ${SOME_ENV_VAR} like every secret.
+const chatSection = {
+  type: "object",
+  additionalProperties: false,
+  required: ["provider", "api_key", "base_url", "model", "max_turns", "max_tool_rounds",
+             "timeout_seconds", "allow_job_status"],
+  properties: {
+    provider: { type: "string", enum: ["", ...CHAT_PROVIDERS] },
+    api_key: str,
+    base_url: str,
+    model: str,
+    max_turns: strOrInt,
+    max_tool_rounds: strOrInt,
+    timeout_seconds: strOrInt,
+    allow_job_status: bool,
+    // how to talk to an OpenAI-compatible provider or a proxy. Optional, unlike the rest :
+    // omitted means "leave the column alone", like ldap's groupfilter
+    auth_type: { type: "string", enum: ["", "bearer", "api-key", "x-api-key", "none"] },
+    api_version: str,
+    request_user: str,
+    extra_headers: { type: ["object", "string"] },
+  },
+};
+
 const ldapSection = {
   type: "object",
   additionalProperties: false,
@@ -191,6 +217,7 @@ export const seedSchema = {
     repositories: listSection(repositoryItem),
     ldap: ldapSection,
     settings: settingsSection,
+    chat: chatSection,
   },
 };
 

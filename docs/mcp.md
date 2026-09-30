@@ -75,6 +75,9 @@ claude mcp add --transport http ansibleforms https://af.example.com/api/v2/mcp \
 There is no tool to run an arbitrary expression, query, playbook or extravars. Expressions
 and queries only ever run as the form defines them.
 
+The built-in [Chat assistant](chat) uses the same tools, in process, for the forms marked
+`enableForChat: true` - with a human Launch button instead of `launch_job`.
+
 ### Filling in a form
 
 Call `resolve_field` with the form name and the values you have so far, then again after

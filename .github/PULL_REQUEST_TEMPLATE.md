@@ -29,6 +29,7 @@ fail is worth more than the test passing.
 - [ ] UI strings added to **all six** locale files (`en`, `de`, `fr`, `it`, `es`, `nl`)
 - [ ] New page has a router entry with a `beforeEnter` guard, and a matching sidebar `permission:`
 - [ ] New database column is in **both** the schema patch and `create_schema_and_tables.sql`, plus `SCHEMA_MANIFEST`
+- [ ] A new or changed table or column that holds configuration is covered by the config seed (`server/src/lib/seed-schema.js`, `seed.js`, `docs/seed.md`) - or the PR says why not
 - [ ] New environment variable has a `docs/_data/help.yaml` entry
 
 <!--

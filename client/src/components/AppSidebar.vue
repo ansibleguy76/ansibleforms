@@ -83,6 +83,7 @@
                 { title: t('sidebar.knownHosts'), icon: "server", link: "/admin/knownHosts", permission: 'showSettings' },
                 { title: t('sidebar.aap'), icon: "fac,ansible", link: "/admin/aap", permission: 'showSettings' },
                 { title: t('sidebar.repositories'), icon: "fab,git", link: "/admin/repositories", permission: 'showSettings' },
+                { title: t('sidebar.chat'), icon: "comments", link: "/admin/chat", permission: 'showSettings' },
             ]
         },
         {

@@ -11,6 +11,7 @@
     /*  @emits:                                                       */
     /*      test: Function                                            */
     /*      import: Function                                          */
+    /*      saved: Function (after a successful update)               */
     /*                                                                */
     /******************************************************************/
 
@@ -35,7 +36,7 @@
         }
     });
 
-    const emit = defineEmits(["test","import"]);
+    const emit = defineEmits(["test","import","saved"]);
 
     const objectLabel = computed(() => props.settings?.label || '');
     const objectIcon = computed(() => props.settings?.icon || '');
@@ -126,6 +127,7 @@
             try{
                 await axios.put(`/api/v${props.apiVersion}/${objectType.value}/`, item.value, TokenStorage.getAuthentication());
                 toast.success(objectTitle('', t('settings.common.isUpdated')));
+                emit('saved', item.value);
                 loadItem();
             }catch(err){
                 if (props.apiVersion == 2) {
@@ -253,7 +255,7 @@
             <template v-for="(cols, rIdx) in rows" :key="rIdx">
                 <div v-if="cols && cols.some(f => isVisible(f))" class="row">
                     <div :class="field.type === 'checkbox' ? 'col-auto' : 'col'" v-for="field in cols" :key="field.key" v-show="isVisible(field)">
-                        <BsInput :isFloating="false" :placeholder="field.placeholder" :description="field.description" :style="field.style" :icon="field.icon" :help="field.help" :type="field.type" :liveSync="field.type === 'editor'" v-model="$v.item[field.key].$model" :disabled="disabledFields[field.key]" :label="field.label" :required="field.required" :hasError="$v.item[field.key].$invalid && $v.item[field.key].$dirty && !disabledFields[field.key]" :errors="$v.item[field.key].$errors" />
+                        <BsInput :isFloating="false" :placeholder="field.placeholder" :description="field.description" :style="field.style" :icon="field.icon" :help="field.help" :type="field.type" :values="field.values" :liveSync="field.type === 'editor'" v-model="$v.item[field.key].$model" :disabled="disabledFields[field.key]" :label="field.label" :required="field.required" :hasError="$v.item[field.key].$invalid && $v.item[field.key].$dirty && !disabledFields[field.key]" :errors="$v.item[field.key].$errors" />
                     </div>
                 </div>
             </template>

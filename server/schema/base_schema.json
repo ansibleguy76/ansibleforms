@@ -61,6 +61,7 @@
               "allowScheduledJobs": { "type": "boolean" },
               "allowStoredJobs": { "type": "boolean" },
               "allowPlannedJobs": { "type": "boolean" },
+              "allowChat": { "type": "boolean" },
               "allowLogin": { "type": "boolean" }
             },
             "additionalProperties": true
@@ -104,6 +105,7 @@
               "allowScheduledJobs": { "type": "boolean" },
               "allowStoredJobs": { "type": "boolean" },
               "allowPlannedJobs": { "type": "boolean" },
+              "allowChat": { "type": "boolean" },
               "allowLogin": { "type": "boolean" }
             },
             "additionalProperties": true
