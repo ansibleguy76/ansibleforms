@@ -156,21 +156,22 @@ export async function resolveForm({
     delete vals[f.name];
   }
 
-  const graph = scanDependencies(fields, knownNames);
-  warnings.push(...graph.warnings);
   const allSubforms = subforms ?? form?.subforms ?? [];
   const subformOf = (f) => (typeof f.subform === 'string'
     ? allSubforms.find((x) => x?.name === f.subform) : f.subform);
-  // a list's rows read the parent through $(__parent__.x) : the list waits for those fields,
-  // so its rows are resolved against settled parent values
   const hasRows = (f) => f.type === 'list' || (f.type === 'yaml' && !!f.subform);
+  // a list's rows read the parent through $(__parent__.x) : the list waits for those fields,
+  // so its rows are resolved against settled parent values. They go into the graph before
+  // its cycle detection, so a parent field that reads the list back is seen as a cycle.
+  const parentReads = {};
   for (const f of fields) {
     const sub = hasRows(f) ? subformOf(f) : null;
     if (!sub) continue;
-    const reads = [...JSON.stringify(sub.fields || []).matchAll(/\$\(__parent__\.([A-Za-z0-9_-]+)/g)]
-      .map((m) => m[1]).filter((n) => byName[n] && n !== f.name);
-    graph.dependsOn[f.name] = [...new Set([...(graph.dependsOn[f.name] || []), ...reads])];
+    parentReads[f.name] = [...new Set([...JSON.stringify(sub.fields || []).matchAll(/\$\(__parent__\.([A-Za-z0-9_-]+)/g)]
+      .map((m) => m[1]).filter((n) => byName[n] && n !== f.name))];
   }
+  const graph = scanDependencies(fields, knownNames, parentReads);
+  warnings.push(...graph.warnings);
   const cycle = new Set(graph.cycles);
 
   // which fields to evaluate : all, or the upstream closure of `only`

@@ -699,6 +699,14 @@ Job.findApprovals = async function (user) {
 const PASSWORD_FIELDS_TTL_MS = 60 * 1000;
 const passwordFieldsCache = new Map();
 
+// a launch hands over the exact definition its job runs with : a password field added a
+// moment ago is then masked on that job's very first read, whatever was cached before
+function rememberFormFields(formName, formObj) {
+  if (!formName || !formObj) return;
+  if (passwordFieldsCache.size > 500) passwordFieldsCache.clear();
+  passwordFieldsCache.set(formName, { at: Date.now(), fields: formObj.fields || [], subforms: formObj.subforms || [] });
+}
+
 async function formFieldsFor(formName) {
   const hit = passwordFieldsCache.get(formName);
   if (hit && Date.now() - hit.at < PASSWORD_FIELDS_TTL_MS) return hit;
@@ -936,7 +944,7 @@ async function guardLaunch({ form, formConfig, formObj, user, rawFormData, extra
   }
   if (result.ok) {
     if (enforce) return result.payload;
-    const differ = compareExtravars(extravars, result.payload.extravars);
+    const differ = compareExtravars(extravars, result.payload.extravars, result.uploadKeys || []);
     if (differ.length) {
       logger.warning(`Launch of form '${form}' : the extravars differ from the ones the server builds for ${differ.join(', ')} (launch validation 'log' ; 'enforce' would run the server's)`);
     }
@@ -992,6 +1000,8 @@ Job.launch = async function ({
     }
     formObj = formConfig.forms[0]; // we take the first one, as it should be the only one
   }
+
+  if (!isStep) rememberFormFields(form, formObj);
 
   // Here rather than in the controller : this is the first point where the FORM is known,
   // and the form is what says which reserved keys it declares as fields. It must run BEFORE
@@ -1308,6 +1318,13 @@ Job.continue = async function ({ form, user, credentials = {}, extravars = {}, j
  * with changes, so they can never disagree.
  */
 function assertRelaunchable(job, formObj, user) {
+  // Job.findById also hands a non-owner every job waiting for approval (so it can be
+  // approved) : that is not a licence to read its form data or launch it again under
+  // another name. Only the owner, an admin, or a user who sees every job may.
+  const seesAll = (user?.roles || []).includes("admin") || !!user?.options?.showAllJobLogs;
+  if (!seesAll && !(job.user === user?.username && (job.user_type ?? user?.type) === user?.type)) {
+    throw new Errors.AccessDeniedError(`You can only relaunch your own jobs`);
+  }
   // Support deprecated 'disableRelaunch: true' — use 'allowRelaunch: false' instead
   if (formObj.disableRelaunch !== undefined) {
     logger.warning(`Form '${job.form}' uses deprecated 'disableRelaunch' property. Please use 'allowRelaunch: false' instead.`);

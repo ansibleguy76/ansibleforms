@@ -59,6 +59,18 @@ describe("a job read through the API", () => {
     expect(JSON.parse(job.extravars).secrets.pw).toBe("s3cr3t");
   });
 
+  test("a launch refreshes the definition masking uses : a password field just added is masked at once", async () => {
+    // the cache holds the definition from the reads above ; the form then gains a password
+    const current = (await Form.load()).forms[0];
+    const edited = { ...current, fields: [...current.fields.filter((f) => f.name !== "host"), { name: "host", type: "password" }] };
+    Form.load.mockResolvedValue({ forms: [edited] });
+    Job.create = vi.fn(async () => 8);
+    Job.sendStatusNotification = vi.fn(async () => {});
+    await Job.launch({ form: "Secrets form", user: admin, extravars: { host: "prod-1" } }).catch(() => {});
+    const job = await Job.findById(admin, 7, true, true);
+    expect(JSON.parse(job.extravars).host).toBe("********");
+  });
+
   test("the form definition is cached, not loaded on every read", async () => {
     Form.load.mockClear();
     await Job.findById(admin, 7, true, true);

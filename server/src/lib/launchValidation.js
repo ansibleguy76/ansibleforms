@@ -36,10 +36,16 @@ export async function validateLaunch({ formConfig, formObj, user, rawFormData, e
     const v = readModelPath(extravars || {}, at);
     if (v !== undefined) values[f.name] = v;
   }
+  // a file field's value only ever comes from a verified upload : whatever the request put
+  // in rawFormData for it (a serialised File is {}, a forged object names any path) is
+  // dropped, so a required file without an upload is `missing`
   const uploads = verifyUploads(formObj, files, uploadPath);
-  for (const [name, upload] of Object.entries(uploads.verified)) {
+  for (const f of formObj?.fields || []) {
+    if (f?.type !== 'file' || !f.name) continue;
+    const upload = uploads.verified[f.name];
     // what the browser's rules saw : a File, with a name and a size
-    values[name] = { ...upload, name: upload.originalname, size: upload.size };
+    if (upload) values[f.name] = { ...upload, name: upload.originalname, size: upload.size };
+    else delete values[f.name];
   }
   const res = await resolveForm({
     form: formObj,
@@ -70,7 +76,13 @@ export async function validateLaunch({ formConfig, formObj, user, rawFormData, e
   // the verbose flag is the one thing a browser adds to the output ; the controller has
   // already checked the user may use it
   if (extravars?.__verbose__) payload.extravars.__verbose__ = true;
-  return { ok: true, errors, warnings: res.warnings, payload, visibility: res._visibility };
+  // the extravars keys of the verified uploads : the server writes them from the disk
+  // (absolute path, its own destination), so a comparison with the browser's copy would
+  // always differ - they were checked against the disk already
+  const uploadKeys = Object.keys(uploads.verified)
+    .map((n) => (formObj.fields || []).find((f) => f.name === n))
+    .map((f) => String([].concat(f?.model || f?.name)[0]).split(/\s*\.\s*/)[0].replace(/\[[0-9]+\]$/, ''));
+  return { ok: true, errors, warnings: res.warnings, payload, visibility: res._visibility, uploadKeys };
 }
 
 /**
@@ -123,10 +135,11 @@ export function verifyUploads(formObj, files, uploadPath) {
 
 /**
  * The top-level keys whose value differs between the client's extravars and the server's.
- * `__verbose__` and reserved `__x__` keys are not form output, so they are left out.
+ * `__verbose__` and reserved `__x__` keys are not form output, so they are left out, and so
+ * are the `ignore` keys (verified uploads).
  */
-export function compareExtravars(client, server) {
-  const isOutputKey = (k) => !/^__.*__$/.test(k);
+export function compareExtravars(client, server, ignore = []) {
+  const isOutputKey = (k) => !/^__.*__$/.test(k) && !ignore.includes(k);
   const keys = new Set([...Object.keys(client || {}), ...Object.keys(server || {})].filter(isOutputKey));
   return [...keys].filter((k) => canonicalJson(client?.[k]) !== canonicalJson(server?.[k])).sort();
 }

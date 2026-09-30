@@ -238,6 +238,23 @@ describe("list rows", () => {
     expect(res._values.rows[0].vol).toEqual({ name: "v1" });
   });
 
+  test("a list whose rows read a parent field that reads the list back is a cycle, released - not left waiting", async () => {
+    const cyc = {
+      name: "t",
+      subforms: [{ name: "vm", type: "subform", fields: [
+        { name: "host", type: "text" },
+        { name: "note", type: "local", output: true, expression: "'$(host)' + ' of ' + '$(__parent__.count)'" },
+      ] }],
+      fields: [
+        { name: "vms", type: "list", subform: "vm" },
+        { name: "count", type: "local", output: true, expression: "$(vms).length" },
+      ],
+    };
+    const res = await resolveForm({ form: cyc, values: { vms: [{ host: "a", __output__: {} }] }, services: services() });
+    expect(res.waiting).toEqual([]);
+    expect(res.warnings.join("\n")).toMatch(/circular reference/);
+  });
+
   test("more than 500 touched rows in one launch are refused, not resolved", async () => {
     const svc = services();
     const rows = Array.from({ length: 501 }, () => ({ vol: "v1", __output__: {} }));

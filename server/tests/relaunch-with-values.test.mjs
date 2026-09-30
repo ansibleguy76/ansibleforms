@@ -27,9 +27,9 @@ const Job = (await import("../src/models/job.model.js")).default;
 const Form = (await import("../src/models/form.model.js")).default;
 const { filterRawFormData } = await import("../src/lib/formEngine/output.js");
 
-const user = { username: "alice", roles: ["public"], options: { allowJobRelaunch: true } };
+const user = { username: "alice", type: "local", roles: ["public"], options: { allowJobRelaunch: true } };
 const storedJob = () => ({
-  id: 42, form: "Create host", status: "success",
+  id: 42, form: "Create host", status: "success", user: "alice", user_type: "local",
   extravars: JSON.stringify({ vm: { name: "prod-1" }, size: 10, acls: [{ who: "bob" }], __verbose__: true, ansibleforms_user: { username: "bob" } }),
   credentials: "{}",
   raw_form_data: JSON.stringify({ __form__: "Create host", host: "prod-1", size: 10, acls: [{ who: "bob", __output__: { who: "bob" } }] }),
@@ -88,6 +88,15 @@ describe("Job.relaunchWithValues", () => {
     expect(err.details.validationErrors).toEqual({ host: [{ type: "regex", description: "Must start with prod-" }] });
     expect(err.details.rowErrors).toEqual({ acls: [{ index: 0, missing: ["who"] }] });
     expect(Job.launch).not.toHaveBeenCalled();
+  });
+
+  test("someone else's job - even one waiting for approval, which findById hands out - is not relaunched or previewed", async () => {
+    Job.findById = vi.fn(async () => ({ ...storedJob(), user: "bob", status: "approve" }));
+    await expect(Job.relaunchWithValues({ user, id: 42, preview: true })).rejects.toMatchObject({ name: "AccessDeniedError" });
+    await expect(Job.relaunchWithValues({ user, id: 42 })).rejects.toMatchObject({ name: "AccessDeniedError" });
+    // an admin, or a user who sees every job, may
+    await expect(Job.relaunchWithValues({ user: { ...user, roles: ["admin"] }, id: 42, preview: true })).resolves.toHaveProperty("payloadHash");
+    await expect(Job.relaunchWithValues({ user: { ...user, options: { ...user.options, showAllJobLogs: true } }, id: 42, preview: true })).resolves.toHaveProperty("payloadHash");
   });
 
   test("the relaunch permission and the verbose permission are checked", async () => {

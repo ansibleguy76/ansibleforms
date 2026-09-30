@@ -178,7 +178,11 @@ export function filterRawFormData(fields, values, subforms = []) {
     if (!name || !(name in (values || {}))) return;
     if (field.type === 'constant' || field.type === 'password') return;
     if (name === 'server' || name === 'database' || name === 'metadata') return;
-    out[name] = field.type === 'list' ? stripRowPasswords(field, values[name], subforms) : values[name];
+    if (field.type === 'list') out[name] = stripRowPasswords(field, values[name], subforms);
+    // a yaml field with a subform is one such row
+    else if (field.type === 'yaml' && field.subform && values[name] && typeof values[name] === 'object' && !Array.isArray(values[name])) {
+      out[name] = stripRowPasswords(field, [values[name]], subforms)[0];
+    } else out[name] = values[name];
   });
   return out;
 }
@@ -189,12 +193,16 @@ function subformFor(field, subforms) {
 
 function deleteAtPath(obj, modelPath) {
   const parts = String(modelPath).split(/\s*\.\s*/);
-  let cur = obj;
-  for (let i = 0; i < parts.length - 1; i++) {
-    if (cur == null || typeof cur !== 'object') return;
-    cur = cur[parts[i]];
+  const last = parts.pop();
+  const parent = parts.length ? readModelPath(obj, parts.join('.')) : obj;
+  if (!parent || typeof parent !== 'object') return;
+  const m = last.match(/^(.*)\[([0-9]+)\]$/);
+  if (m) {
+    const arr = parent[m[1]];
+    if (Array.isArray(arr) && arr[m[2]] !== undefined) arr[m[2]] = undefined;
+  } else {
+    delete parent[last];
   }
-  if (cur && typeof cur === 'object') delete cur[parts[parts.length - 1]];
 }
 
 /** modelled rows (a row's __output__, or a nested list inside it) without their passwords */

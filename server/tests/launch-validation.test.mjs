@@ -186,6 +186,13 @@ describe("guardLaunch", () => {
     expect(warned.join("\n")).toMatch(/would refuse form 'Create host' for bob .* failing rules : host \(regex\)/);
   });
 
+  test("log : a verified upload is not reported as differing, however the browser wrote its path", async () => {
+    const u = upload("notes.txt", 100);
+    const browserCopy = { ...u, destination: "./persistent/uploads/", path: path.relative(process.cwd(), u.path), size: 100 };
+    await guardLaunch(args({ host: "prod-1" }, { vm: { name: "prod-1" }, size: 10, secrets: {}, cred: "cred_prod-1", upload: browserCopy }, { upload: browserCopy }));
+    expect(warned).toEqual([]);
+  });
+
   test("log : forged extravars are named, the client's are still used", async () => {
     const forged = { vm: { name: "rm -rf" }, size: 10, secrets: {}, extra: "x" };
     await expect(guardLaunch(args({ host: "prod-1" }, forged))).resolves.toBeUndefined();
@@ -207,6 +214,17 @@ describe("guardLaunch", () => {
     const built = await guardLaunch(args({ host: "prod-1" }, { vm: { name: "rm -rf" }, size: 999, cred: "stolen", __verbose__: true }));
     expect(built.extravars).toEqual({ vm: { name: "prod-1" }, size: 10, secrets: {}, cred: "cred_prod-1", __verbose__: true });
     expect(built.credentials).toEqual({ cred: "cred_prod-1" });
+  });
+
+  test("enforce : a file value in rawFormData without a verified upload never reaches the extravars", async () => {
+    appConfig.launchValidation = "enforce";
+    const built = await guardLaunch(args({ host: "prod-1", upload: { path: "/etc/shadow", originalname: "x.txt" } }, { upload: { path: "/etc/shadow" } }));
+    expect(built.extravars.upload).toBeUndefined();
+    expect(JSON.stringify(built)).not.toContain("/etc/shadow");
+    // and a required file without an upload is missing
+    const required = { ...formObj, fields: formObj.fields.map((f) => (f.name === "upload" ? { ...f, required: true } : f)) };
+    const err = await guardLaunch({ ...args({ host: "prod-1", upload: {} }), formObj: required }).catch((e) => e);
+    expect(err.details.missing).toEqual(["upload"]);
   });
 
   test("enforce : a forged upload path is refused", async () => {
