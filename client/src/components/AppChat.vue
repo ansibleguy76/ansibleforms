@@ -183,7 +183,7 @@ function onEscape(e) {
 onMounted(() => window.addEventListener('keydown', onEscape));
 onBeforeUnmount(() => window.removeEventListener('keydown', onEscape));
 
-const labelFor = (p) => ({ Approve: t('chat.approve'), Launch: t('chat.launch'), Relaunch: t('chat.relaunch') }[p.label] || p.label);
+const labelFor = (p) => ({ Launch: t('chat.launch'), Relaunch: t('chat.relaunch') }[p.label] || p.label);
 const pretty = (v) => JSON.stringify(v, null, 2);
 const expires = (p) => { try { return new Date(p.expiresAt).toLocaleTimeString(); } catch { return ''; } };
 </script>
@@ -238,7 +238,7 @@ const expires = (p) => { try { return new Date(p.expiresAt).toLocaleTimeString()
                                 </button>
                                 <pre v-if="p.showDetails" class="af-chat-pre small mt-1 mb-2">{{ pretty(p.extravars) }}</pre>
                                 <div class="d-flex align-items-center gap-2 mt-2">
-                                    <button v-if="p.state === 'open' || p.state === 'busy'" type="button" class="btn btn-sm" :class="p.risk === 'read' ? 'btn-primary' : 'btn-warning'" :disabled="p.state === 'busy'" @click="approve(p)">
+                                    <button v-if="p.state === 'open' || p.state === 'busy'" type="button" class="btn btn-sm btn-primary" :disabled="p.state === 'busy'" @click="approve(p)">
                                         <FaIcon :icon="p.state === 'busy' ? 'spinner' : 'play'" class="me-1" />{{ labelFor(p) }}
                                     </button>
                                     <span v-if="p.state === 'open'" class="small text-body-secondary">{{ t('chat.expires', { time: expires(p) }) }}</span>

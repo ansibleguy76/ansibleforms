@@ -508,7 +508,7 @@
     description: |
       Shows a chat button on every page. The assistant fills in a form with the user by
       talking, through the same form engine as the browser, and launches it only when the
-      user clicks the Approve button on the exact payload it was shown.
+      user clicks the Launch button on the exact payload it was shown.
 
       It also needs a model provider on the **Chat assistant** settings page (or in the
       config seed), forms with `enableForChat: true`, and users whose roles allow `allowChat`
@@ -2282,8 +2282,8 @@
           even for a user who may open it in the browser.
 
           The assistant fills the form in with the user, through the same form engine as the
-          browser, and never launches it : the user clicks Approve (or Launch, see
-          `chatRisk`) on the exact payload the chat showed. Not for wizard forms.
+          browser, and never launches it : the user clicks Launch on the exact payload
+          the chat showed. Not for wizard forms.
         examples:
           - name: A form the chat may offer
             code: |
@@ -2291,20 +2291,6 @@
                 type: ansible
                 playbook: snapshot.yml
                 enableForChat: true
-                chatRisk: change
-      - name: chatRisk
-        type: string
-        with_types: ansible, awx, multistep
-        short: The button the chat shows for this form
-        group: workflow
-        version: 6.5.0
-        allowed: "read, change"
-        default: change
-        description: |
-          `change` (the default) shows an **Approve** button, `read` - for a report or a
-          check that changes nothing - a **Launch** button. Both launch only when the user
-          clicks, on the exact payload the chat showed. It is the form author who knows
-          which one a form is ; the chat does not guess it from a name.
       - name: order
         type: integer
         with_types: ansible, awx, multistep

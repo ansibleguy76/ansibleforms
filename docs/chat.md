@@ -9,7 +9,7 @@ nav_order: 7.5
 
 Fill in and launch forms by talking. A chat button on every page opens an assistant that
 finds the right form, asks for what is missing, offers the form's own choices as buttons,
-and shows a summary with an **Approve** button. A job starts only when the user clicks it.
+and shows a summary with a **Launch** button. A job starts only when the user clicks it.
 
 1. TOC
 {:toc}
@@ -24,8 +24,8 @@ the user types           -> AnsibleForms server -> the AI model (Anthropic, Open
                                    |   the same form engine as the browser and the MCP server,
                                    |   as the logged-in user, with their roles
                                    v
-the page shows the reply, the choices, and a summary card with an Approve button
-the user clicks Approve  -> AnsibleForms resolves the form again and launches exactly that payload, once
+the page shows the reply, the choices, and a summary card with a Launch button
+the user clicks Launch   -> AnsibleForms resolves the form again and launches exactly that payload, once
 ```
 
 - **Every model call goes from the AnsibleForms server**, never from the browser. The
@@ -35,14 +35,14 @@ the user clicks Approve  -> AnsibleForms resolves the form again and launches ex
 - **The model cannot launch anything.** Its tools are: list the forms, evaluate a form with
   the answers so far, preview a relaunch, read a job's status. There is no launch tool. A
   complete form becomes a *summary*: sealed, for this user and this conversation, valid 15
-  minutes, usable once. The Approve button sends that summary's id - never a payload - and
+  minutes, usable once. The Launch button sends that summary's id - never a payload - and
   the server resolves the form again: when anything moved (a query answers differently, the
   form was edited) it refuses and the user asks again.
 - **The user chooses the targets.** A cluster, an SVM, a name to create - every choice field
   and every required name without a default - must be typed by the user or picked from the
   buttons the form offered. The model cannot pick one for them, and never gets the
   browser's "first option" (`__auto__`).
-- **Typing "yes" or "approve" does nothing.** Only the button launches.
+- **Typing "yes" or "launch" does nothing.** Only the button launches.
 
 ## Switching it on
 
@@ -60,36 +60,41 @@ Four things, all needed:
 
 The button appears for a user once all of that holds.
 
-### Approve or Launch
-
-```yaml
-- name: Create a snapshot
-  enableForChat: true
-  chatRisk: change      # an Approve button (the default)
-
-- name: Cluster health report
-  enableForChat: true
-  chatRisk: read        # a Launch button : a report, a check, nothing changes
-```
-
-Both wait for the click. The form author knows which one a form is; the assistant does not
-guess it from a name.
-
 ## Providers
 
-| Provider | Base URL | Key |
-|---|---|---|
-| **Anthropic** (Claude) | empty = `https://api.anthropic.com` | required |
-| **OpenAI** | empty = `https://api.openai.com/v1` | required |
-| **Azure OpenAI** | provider `openai`, the deployment URL with `?api-version=...` | required (sent as `api-key`) |
-| **An OpenAI-compatible proxy** (LiteLLM, a company gateway, ...) | provider `openai`, the proxy's URL ending in `/v1` | whatever the proxy wants - may be empty |
-| **A local model** (Ollama, vLLM, LM Studio, ...) | provider `openai`, e.g. `http://ollama:11434/v1` | may be empty |
+Pick the provider on the settings page; it fills in the base URL, the authentication and the
+API version, which stay editable. Empty fields fall back to the provider's defaults.
+
+| Provider | Protocol | Base URL (default) | Key sent as |
+|---|---|---|---|
+| **Anthropic** | Anthropic | `https://api.anthropic.com` | `x-api-key` |
+| **OpenAI** | OpenAI | `https://api.openai.com/v1` | `Authorization: Bearer` |
+| **Azure OpenAI** | OpenAI | required: `https://<resource>.openai.azure.com/openai/deployments/<deployment>` | `api-key`, API version `2024-10-21` |
+| **Google Gemini** | OpenAI | `https://generativelanguage.googleapis.com/v1beta/openai` | Bearer |
+| **xAI Grok** | OpenAI | `https://api.x.ai/v1` | Bearer |
+| **Mistral** | OpenAI | `https://api.mistral.ai/v1` | Bearer |
+| **DeepSeek** | OpenAI | `https://api.deepseek.com/v1` | Bearer |
+| **Groq** | OpenAI | `https://api.groq.com/openai/v1` | Bearer |
+| **OpenRouter** | OpenAI | `https://openrouter.ai/api/v1` | Bearer |
+| **Ollama** | OpenAI | `http://localhost:11434/v1` | none |
+| **Other OpenAI-compatible** (LiteLLM, a gateway, vLLM, LM Studio, ...) | OpenAI | required, usually ending in `/v1` | Bearer |
 
 The model id is the one the provider or proxy uses (`claude-opus-5-5`, `gpt-5`, `llama3.3`,
 ...). The assistant needs a model that supports **tool calling**; small local models vary.
 
 A base URL without a key is enough to switch the chat on: many local model servers and
 internal proxies take no key. Then no authorization header is sent at all.
+
+### For a proxy
+
+- **Authentication** - how the key is sent: `Authorization: Bearer`, `api-key`, `x-api-key`,
+  or none. Empty is the provider's default.
+- **API version** - Anthropic: the `anthropic-version` header (default `2023-06-01`).
+  OpenAI-compatible: added to the URL as `?api-version=` (Azure), unless the URL has one.
+- **User** - sent with every call as `user` (OpenAI-compatible) or `metadata.user_id`
+  (Anthropic). Some proxies require it. Empty sends none.
+- **Extra headers** - a JSON object, e.g. `{"X-Org": "ops"}`. One-line text values, at most 20;
+  the key and content headers cannot be replaced.
 
 ### In a container, behind a proxy
 

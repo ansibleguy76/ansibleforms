@@ -45,7 +45,7 @@ export async function runTurn({ session, message, selection, settings, handlers,
   const ctx = { handlers, user, session, settings };
 
   for (let round = 0; round < maxRounds; round++) {
-    const result = await complete({ settings, system: SYSTEM_PROMPT, history: session.messages, tools: TOOLS, user: user.username });
+    const result = await complete({ settings, system: SYSTEM_PROMPT, history: session.messages, tools: TOOLS });
     const calls = result.toolCalls || [];
     if (!result.text && !calls.length && !retriedEmpty) {
       retriedEmpty = true;

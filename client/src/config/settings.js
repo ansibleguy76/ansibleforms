@@ -18,6 +18,22 @@ import { cronValidationMessage } from './cron'
 // this is the early, explanatory answer rather than the only line of defence.
 const cronValidator = (t) => (value) => cronValidationMessage(t, value)
 
+// The chat assistant's providers (server/src/chat/vendors.js has the same list and defaults) :
+// choosing one fills in its base url, auth type and api version, which stay editable
+export const CHAT_PROVIDERS = [
+    { value: "anthropic", label: "Anthropic", base_url: "https://api.anthropic.com" },
+    { value: "openai", label: "OpenAI", base_url: "https://api.openai.com/v1" },
+    { value: "azure", label: "Azure OpenAI", base_url: "", auth_type: "api-key", api_version: "2024-10-21" },
+    { value: "gemini", label: "Google Gemini", base_url: "https://generativelanguage.googleapis.com/v1beta/openai" },
+    { value: "grok", label: "xAI Grok", base_url: "https://api.x.ai/v1" },
+    { value: "mistral", label: "Mistral", base_url: "https://api.mistral.ai/v1" },
+    { value: "deepseek", label: "DeepSeek", base_url: "https://api.deepseek.com/v1" },
+    { value: "groq", label: "Groq", base_url: "https://api.groq.com/openai/v1" },
+    { value: "openrouter", label: "OpenRouter", base_url: "https://openrouter.ai/api/v1" },
+    { value: "ollama", label: "Ollama", base_url: "http://localhost:11434/v1", auth_type: "none" },
+    { value: "custom", base_url: "" },
+];
+
 export default function getSettings(t) {
   return {
     users: {
@@ -352,15 +368,27 @@ export default function getSettings(t) {
             { name: 'test', title: t('settings.common.testConnection'), icon: 'plug', dependency: "provider" }
         ],
         fields: [
-            { key: "provider", icon: "robot", line: 0, type: "select", label: t('settings.chat.provider'), help: t('settings.chat.providerHelp'),
-              values: [{ value: "", label: t('settings.chat.providerNone') }, { value: "anthropic", label: "Anthropic" }, { value: "openai", label: "OpenAI" }] },
-            { key: "model", icon: "microchip", line: 0, label: t('settings.chat.model'), help: t('settings.chat.modelHelp'), placeholder: "claude-opus-5-5 / gpt-5", required: true, dependency: "provider" },
-            { key: "api_key", icon: "key", line: 1, type: "password", label: t('settings.chat.apiKey'), help: t('settings.chat.apiKeyHelp'), required: true, dependency: "provider" },
-            { key: "base_url", icon: "link", line: 1, label: t('settings.chat.baseUrl'), help: t('settings.chat.baseUrlHelp'), placeholder: "https://api.anthropic.com", dependency: "provider" },
-            { key: "max_turns", icon: "comments", line: 2, type: "number", label: t('settings.chat.maxTurns'), help: t('settings.chat.maxTurnsHelp'), dependency: "provider" },
-            { key: "max_tool_rounds", icon: "arrows-rotate", line: 2, type: "number", label: t('settings.chat.maxToolRounds'), help: t('settings.chat.maxToolRoundsHelp'), dependency: "provider" },
-            { key: "timeout_seconds", icon: "clock", line: 2, type: "number", label: t('settings.chat.timeout'), help: t('settings.chat.timeoutHelp'), dependency: "provider" },
-            { key: "allow_job_status", line: 3, type: "checkbox", label: t('settings.chat.allowJobStatus'), help: t('settings.chat.allowJobStatusHelp'), dependency: "provider" },
+            { key: "provider", icon: "robot", line: 0, type: "select", label: t('settings.chat.provider'),
+              values: [{ value: "", label: t('settings.chat.providerNone') }, ...CHAT_PROVIDERS.map((p) => ({ value: p.value, label: p.label || t('settings.chat.providerCustom') }))],
+              onChange: (val, item) => {
+                  const p = CHAT_PROVIDERS.find((x) => x.value === val);
+                  if (!p) return;
+                  item.base_url = p.base_url;
+                  item.auth_type = p.auth_type || "";
+                  item.api_version = p.api_version || "";
+              } },
+            { key: "model", icon: "microchip", line: 0, label: t('settings.chat.model'), help: t('settings.chat.modelHelp'), placeholder: "claude-sonnet-5-5 / gpt-5 / llama3.3", required: true, dependency: "provider" },
+            { key: "base_url", icon: "link", line: 1, label: t('settings.chat.baseUrl'), help: t('settings.chat.baseUrlHelp'), placeholder: "https://<proxy>/v1", dependency: "provider" },
+            { key: "api_key", icon: "key", line: 1, type: "password", label: t('settings.chat.apiKey'), help: t('settings.chat.apiKeyHelp'), dependency: "provider" },
+            { key: "auth_type", icon: "id-card", line: 2, type: "select", label: t('settings.chat.authType'), help: t('settings.chat.authTypeHelp'), dependency: "provider",
+              values: [{ value: "", label: t('settings.chat.authDefault') }, { value: "bearer", label: "Authorization: Bearer" }, { value: "api-key", label: "api-key" }, { value: "x-api-key", label: "x-api-key" }, { value: "none", label: t('settings.chat.authNone') }] },
+            { key: "api_version", icon: "code-branch", line: 2, label: t('settings.chat.apiVersion'), help: t('settings.chat.apiVersionHelp'), placeholder: "2024-10-21", dependency: "provider" },
+            { key: "request_user", icon: "user", line: 2, label: t('settings.chat.user'), help: t('settings.chat.userHelp'), dependency: "provider" },
+            { key: "extra_headers", icon: "list", line: 3, type: "textarea", label: t('settings.chat.extraHeaders'), help: t('settings.chat.extraHeadersHelp'), placeholder: '{"X-Org": "ops"}', dependency: "provider" },
+            { key: "max_turns", icon: "comments", line: 4, type: "number", label: t('settings.chat.maxTurns'), help: t('settings.chat.maxTurnsHelp'), dependency: "provider" },
+            { key: "max_tool_rounds", icon: "arrows-rotate", line: 4, type: "number", label: t('settings.chat.maxToolRounds'), help: t('settings.chat.maxToolRoundsHelp'), dependency: "provider" },
+            { key: "timeout_seconds", icon: "clock", line: 4, type: "number", label: t('settings.chat.timeout'), dependency: "provider" },
+            { key: "allow_job_status", line: 5, type: "checkbox", label: t('settings.chat.allowJobStatus'), help: t('settings.chat.allowJobStatusHelp'), dependency: "provider" },
         ]
     },
     aap:{

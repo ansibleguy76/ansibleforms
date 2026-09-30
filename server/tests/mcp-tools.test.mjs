@@ -77,8 +77,8 @@ describe("MCP tools", () => {
     const client = await connect();
     const r = await call(client, "list_forms");
     expect(deps.Form.load).toHaveBeenCalledWith(["public"]);
-    // not flagged for the chat : enableForChat false, and the default risk
-    expect(r.data.forms).toEqual([{ name: "Create volume", description: "Makes a volume", categories: ["Storage"], enableForChat: false, chatRisk: "change" }]);
+    // not flagged for the chat : enableForChat false
+    expect(r.data.forms).toEqual([{ name: "Create volume", description: "Makes a volume", categories: ["Storage"], enableForChat: false }]);
   });
 
   test("get_form normalises aliases and adds dependsOn", async () => {

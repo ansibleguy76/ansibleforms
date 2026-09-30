@@ -475,7 +475,6 @@ function getFormInfo(form,formName='',loadFullConfig=false) {
       // the chat assistant's allowlist and its button : read from this list (MCP list_forms,
       // the chat catalog), so they must survive the trimming to tile info
       enableForChat: form.enableForChat === true,
-      chatRisk: form.chatRisk === 'read' ? 'read' : 'change',
     };
   }
   else if(form.name == formName) {

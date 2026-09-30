@@ -1,5 +1,5 @@
 'use strict';
-import { postJson, withPath, parseArguments } from './http.js';
+import { postJson, withPath, withApiVersion, requestHeaders, parseArguments } from './http.js';
 
 export const DEFAULT_BASE_URL = 'https://api.openai.com/v1';
 
@@ -35,17 +35,21 @@ export function parseOpenai(json) {
   };
 }
 
+/**
+ * The OpenAI-compatible protocol sends the key as a bearer token, unless the settings say
+ * otherwise - and an Azure OpenAI url with no auth type chosen means its `api-key` header.
+ */
 export function authHeaders(settings) {
-  // no key (a local model server, a proxy that authenticates by network) : no auth header
-  if (!settings.api_key) return {};
-  return /azure/i.test(settings.base_url || '') ? { 'api-key': settings.api_key } : { authorization: `Bearer ${settings.api_key}` };
+  const azure = /\.openai\.azure\.com|\.cognitiveservices\.azure\.com/i.test(settings.base_url || '');
+  return requestHeaders(settings, azure ? 'api-key' : 'bearer');
 }
 
-export async function complete({ settings, system, history, tools, user }) {
+export async function complete({ settings, system, history, tools }) {
   const json = await postJson(
-    withPath(settings.base_url || DEFAULT_BASE_URL, '/chat/completions'),
+    withApiVersion(withPath(settings.base_url || DEFAULT_BASE_URL, '/chat/completions'), settings.api_version),
     authHeaders(settings),
-    openaiBody({ model: settings.model, system, history, tools, user }),
+    // the user a proxy asks for, when the settings name one
+    openaiBody({ model: settings.model, system, history, tools, user: settings.request_user || undefined }),
     { timeoutSeconds: settings.timeout_seconds, provider: 'OpenAI' },
   );
   return parseOpenai(json);

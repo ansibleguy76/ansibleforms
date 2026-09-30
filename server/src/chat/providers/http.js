@@ -36,6 +36,30 @@ export function withPath(base, path) {
   return `${head.replace(/\/+$/, '')}${path}${query ? `?${query}` : ''}`;
 }
 
+/** the url with ?api-version=... when the settings name one and the url does not carry it */
+export function withApiVersion(url, apiVersion) {
+  if (!apiVersion || /[?&]api-version=/.test(url)) return url;
+  return `${url}${url.includes('?') ? '&' : '?'}api-version=${encodeURIComponent(apiVersion)}`;
+}
+
+/**
+ * The headers of a provider call : the key the way the settings say (auth type, or the
+ * protocol's own when empty), and the proxy's extra headers. No key : no auth header.
+ */
+export function requestHeaders(settings, defaultAuth) {
+  const headers = {};
+  if (settings.extra_headers) {
+    try { Object.assign(headers, JSON.parse(settings.extra_headers)); } catch { /* validated on save */ }
+  }
+  const type = settings.auth_type || defaultAuth;
+  if (settings.api_key && type !== 'none') {
+    if (type === 'bearer') headers.authorization = `Bearer ${settings.api_key}`;
+    else if (type === 'api-key') headers['api-key'] = settings.api_key;
+    else if (type === 'x-api-key') headers['x-api-key'] = settings.api_key;
+  }
+  return headers;
+}
+
 /** tool call arguments the model sent as text ; broken JSON is flagged, not thrown */
 export function parseArguments(value) {
   if (value && typeof value === 'object') return value;
@@ -47,4 +71,4 @@ export function parseArguments(value) {
   }
 }
 
-export default { postJson, withPath, parseArguments };
+export default { postJson, withPath, withApiVersion, requestHeaders, parseArguments };

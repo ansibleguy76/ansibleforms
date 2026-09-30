@@ -47,9 +47,6 @@
               },
               "enableForChat": {
                 "not": {}
-              },
-              "chatRisk": {
-                "not": {}
               }
             }
           }
@@ -309,9 +306,6 @@
               "not": {}
             },
             "enableForChat": {
-              "not": {}
-            },
-            "chatRisk": {
               "not": {}
             },
             "verbose": {
@@ -1660,14 +1654,6 @@
         "enableForChat": {
           "type": "boolean",
           "description": "Offer this form in the chat assistant (ENABLE_CHAT). Not for wizard forms."
-        },
-        "chatRisk": {
-          "type": "string",
-          "enum": [
-            "read",
-            "change"
-          ],
-          "description": "In the chat : read shows a Launch button, change (the default) an Approve button. Both wait for the click."
         },
         "varsFiles": {
           "type": "array",
@@ -5153,9 +5139,6 @@
                 },
                 "enableForChat": {
                   "not": {}
-                },
-                "chatRisk": {
-                  "not": {}
                 }
               }
             }
@@ -5415,9 +5398,6 @@
                 "not": {}
               },
               "enableForChat": {
-                "not": {}
-              },
-              "chatRisk": {
                 "not": {}
               },
               "verbose": {
@@ -6766,14 +6746,6 @@
           "enableForChat": {
             "type": "boolean",
             "description": "Offer this form in the chat assistant (ENABLE_CHAT). Not for wizard forms."
-          },
-          "chatRisk": {
-            "type": "string",
-            "enum": [
-              "read",
-              "change"
-            ],
-            "description": "In the chat : read shows a Launch button, change (the default) an Approve button. Both wait for the click."
           },
           "varsFiles": {
             "type": "array",

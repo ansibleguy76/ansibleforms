@@ -72,7 +72,12 @@ describe("chat settings", () => {
     expect(ChatSettings.isConfigured({ ...row, provider: "" })).toBe(false);
     // a local model server or an internal proxy : a base url and no key
     expect(ChatSettings.isConfigured({ ...row, api_key: "", base_url: "http://ollama:11434/v1" })).toBe(true);
+    // Ollama takes no key ; Azure and a custom endpoint have no url of their own
+    expect(ChatSettings.isConfigured({ ...row, provider: "ollama", api_key: "" })).toBe(true);
+    expect(ChatSettings.isConfigured({ ...row, provider: "azure", base_url: "" })).toBe(false);
+    expect(ChatSettings.isConfigured({ ...row, provider: "custom", base_url: "https://proxy/v1" })).toBe(true);
   });
+
 });
 
 describe("provider requests", () => {
@@ -110,9 +115,9 @@ describe("provider requests", () => {
     expect(out.raw[0].type).toBe("thinking");
   });
 
-  test("openai : bearer, function tools, the operator as user, assistant content a string, broken arguments flagged", async () => {
+  test("openai : bearer, function tools, the settings' user, assistant content a string, broken arguments flagged", async () => {
     vi.stubGlobal("fetch", reply({ choices: [{ message: { content: null, tool_calls: [{ id: "c1", type: "function", function: { name: "resolve", arguments: "{bad" } }] } }] }));
-    const out = await complete({ settings: { provider: "openai", api_key: "sk-o", model: "gpt", timeout_seconds: 5 }, system: "S", history, tools, user: "mirko" });
+    const out = await complete({ settings: { provider: "openai", api_key: "sk-o", model: "gpt", timeout_seconds: 5, request_user: "mirko" }, system: "S", history, tools });
     const c = calls[0];
     expect(c.url).toBe("https://api.openai.com/v1/chat/completions");
     expect(c.headers.authorization).toBe("Bearer sk-o");
@@ -134,6 +139,21 @@ describe("provider requests", () => {
     expect(calls[0].body.user).toBeUndefined();
   });
 
+  test("a vendor speaks the openai protocol with its own url and auth ; the settings win", async () => {
+    vi.stubGlobal("fetch", reply({ choices: [{ message: { content: "OK" } }] }));
+    const hi = [{ role: "user", text: "hi" }];
+    await complete({ settings: { provider: "gemini", api_key: "g", model: "gemini-2.5-pro", timeout_seconds: 5 }, system: "S", history: hi, tools: [] });
+    expect(calls[0].url).toBe("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions");
+    expect(calls[0].headers.authorization).toBe("Bearer g");
+    await complete({ settings: { provider: "azure", api_key: "az", model: "gpt", base_url: "https://x.openai.azure.com/openai/deployments/gpt", timeout_seconds: 5 }, system: "S", history: hi, tools: [] });
+    expect(calls[1].url).toBe("https://x.openai.azure.com/openai/deployments/gpt/chat/completions?api-version=2024-10-21");
+    expect(calls[1].headers["api-key"]).toBe("az");
+    await complete({ settings: { provider: "ollama", api_key: "", model: "llama3", timeout_seconds: 5 }, system: "S", history: hi, tools: [] });
+    expect(calls[2].url).toBe("http://localhost:11434/v1/chat/completions");
+    await complete({ settings: { provider: "grok", api_key: "x", model: "grok-4", base_url: "https://gw.local/v1", timeout_seconds: 5 }, system: "S", history: hi, tools: [] });
+    expect(calls[3].url).toBe("https://gw.local/v1/chat/completions");
+  });
+
   test("a provider error is reported with its status, never the key", async () => {
     vi.stubGlobal("fetch", reply({ error: { message: "invalid x-api-key" } }, 401));
     const err = await complete({ settings: { provider: "anthropic", api_key: "sk-secret", model: "m", timeout_seconds: 5 }, system: "S", history: [{ role: "user", text: "hi" }], tools: [] }).catch((e) => e);
@@ -148,6 +168,50 @@ describe("provider requests", () => {
     expect(calls[0].url).toBe("http://ollama:11434/v1/chat/completions");
     expect(calls[0].headers.authorization).toBeUndefined();
     expect(calls[0].headers["api-key"]).toBeUndefined();
+  });
+
+  test("a user is only sent when the settings name one", async () => {
+    vi.stubGlobal("fetch", reply({ choices: [{ message: { content: "OK" } }] }));
+    await complete({ settings: { provider: "openai", api_key: "k", model: "m", timeout_seconds: 5 }, system: "S", history: [{ role: "user", text: "hi" }], tools: [] });
+    expect(calls[0].body.user).toBeUndefined();
+    vi.stubGlobal("fetch", reply({ content: [{ type: "text", text: "OK" }] }));
+    await complete({ settings: { provider: "anthropic", api_key: "k", model: "m", timeout_seconds: 5, request_user: "mirko" }, system: "S", history: [{ role: "user", text: "hi" }], tools: [] });
+    expect(calls[1].body.metadata).toEqual({ user_id: "mirko" });
+  });
+
+  test("auth type, api version and extra headers for a proxy", async () => {
+    vi.stubGlobal("fetch", reply({ choices: [{ message: { content: "OK" } }] }));
+    const base = { provider: "openai", api_key: "k1", model: "m", timeout_seconds: 5, base_url: "https://proxy.local/v1" };
+    const hi = [{ role: "user", text: "hi" }];
+    await complete({ settings: { ...base, auth_type: "api-key", api_version: "2024-10-21", extra_headers: JSON.stringify({ "X-Org": "ops" }) }, system: "S", history: hi, tools: [] });
+    expect(calls[0].url).toBe("https://proxy.local/v1/chat/completions?api-version=2024-10-21");
+    expect(calls[0].headers).toMatchObject({ "api-key": "k1", "X-Org": "ops" });
+    expect(calls[0].headers.authorization).toBeUndefined();
+    await complete({ settings: { ...base, auth_type: "none" }, system: "S", history: hi, tools: [] });
+    expect(calls[1].headers.authorization).toBeUndefined();
+    await complete({ settings: { ...base, auth_type: "x-api-key" }, system: "S", history: hi, tools: [] });
+    expect(calls[2].headers["x-api-key"]).toBe("k1");
+    // an api-version already in the url is kept, not doubled
+    await complete({ settings: { ...base, base_url: "https://x.openai.azure.com/openai/deployments/gpt?api-version=2024-10-21", api_version: "2025-01-01" }, system: "S", history: hi, tools: [] });
+    expect(calls[3].url).toBe("https://x.openai.azure.com/openai/deployments/gpt/chat/completions?api-version=2024-10-21");
+    expect(calls[3].headers["api-key"]).toBe("k1");
+  });
+
+  test("anthropic : the api version is its header", async () => {
+    vi.stubGlobal("fetch", reply({ content: [{ type: "text", text: "OK" }] }));
+    await complete({ settings: { provider: "anthropic", api_key: "k", model: "m", timeout_seconds: 5, api_version: "2025-01-01" }, system: "S", history: [{ role: "user", text: "hi" }], tools: [] });
+    expect(calls[0].headers["anthropic-version"]).toBe("2025-01-01");
+    expect(calls[0].url).toBe("https://api.anthropic.com/v1/messages");
+  });
+
+  test("extra headers : a JSON object of one-line strings, never a header the adapter owns", () => {
+    expect(new ChatSettings({ extra_headers: '{"X-Org":"ops"}' }).extra_headers).toBe('{"X-Org":"ops"}');
+    expect(new ChatSettings({ extra_headers: "" }).extra_headers).toBe("");
+    expect(() => new ChatSettings({ extra_headers: "not json" })).toThrow(/JSON object/);
+    expect(() => new ChatSettings({ extra_headers: '["a"]' })).toThrow(/JSON object/);
+    expect(() => new ChatSettings({ extra_headers: '{"Authorization":"Bearer x"}' })).toThrow(/set by AnsibleForms/);
+    expect(() => new ChatSettings({ extra_headers: '{"X-A":"a\\nb"}' })).toThrow(/one line/);
+    expect(new ChatSettings({ auth_type: "weird" }).auth_type).toBe("");
   });
 
   test("no provider configured", async () => {

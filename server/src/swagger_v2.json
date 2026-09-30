@@ -1418,7 +1418,7 @@
         "security": [ { "bearerAuth": [] } ],
         "tags": ["settings"],
         "summary": "The chat assistant's model provider",
-        "description": "Provider (anthropic, openai), model, base URL and limits. The api key comes back masked. Needs showSettings.",
+        "description": "Provider (anthropic, openai, azure, gemini, grok, mistral, deepseek, groq, openrouter, ollama, custom), model, base URL, auth type, api version, user, extra headers and limits. The api key comes back masked. Needs showSettings.",
         "responses": { "200": { "description": "The chat settings" }, "403": { "description": "No showSettings" } }
       },
       "put": {
@@ -1427,12 +1427,16 @@
         "summary": "Update the chat assistant's model provider",
         "description": "The api key is stored encrypted ; send it masked (**********) to keep the stored one. Refused (403) while the row is managed by the config seed.",
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": {
-          "provider": { "type": "string", "enum": ["", "anthropic", "openai"] },
+          "provider": { "type": "string", "enum": ["", "anthropic", "openai", "azure", "gemini", "grok", "mistral", "deepseek", "groq", "openrouter", "ollama", "custom"] },
           "api_key": { "type": "string" }, "base_url": { "type": "string" }, "model": { "type": "string" },
           "max_turns": { "type": "integer" }, "max_tool_rounds": { "type": "integer" }, "timeout_seconds": { "type": "integer" },
-          "allow_job_status": { "type": "boolean" }
+          "allow_job_status": { "type": "boolean" },
+          "auth_type": { "type": "string", "enum": ["", "bearer", "api-key", "x-api-key", "none"], "description": "How the key is sent ; empty for the provider's default" },
+          "api_version": { "type": "string", "description": "Anthropic : the anthropic-version header ; OpenAI-compatible : ?api-version= (Azure)" },
+          "request_user": { "type": "string", "description": "Sent as user (OpenAI) or metadata.user_id (Anthropic), e.g. for a proxy ; empty sends none" },
+          "extra_headers": { "type": "string", "description": "A JSON object of extra request headers" }
         } } } } },
-        "responses": { "200": { "description": "Updated" }, "403": { "description": "Managed by the config seed, or no showSettings" } }
+        "responses": { "200": { "description": "Updated" }, "400": { "description": "Invalid settings, e.g. extra headers that are not a JSON object" }, "403": { "description": "Managed by the config seed, or no showSettings" } }
       }
     },
     "/chatsettings/check": {

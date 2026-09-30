@@ -1,5 +1,5 @@
 'use strict';
-import { postJson, withPath } from './http.js';
+import { postJson, withPath, requestHeaders } from './http.js';
 
 export const DEFAULT_BASE_URL = 'https://api.anthropic.com';
 const MAX_TOKENS = 4096;
@@ -43,10 +43,14 @@ export function parseAnthropic(json) {
 }
 
 export async function complete({ settings, system, history, tools }) {
+  const body = anthropicBody({ model: settings.model, system, history, tools });
+  // the user a proxy asks for, when the settings name one
+  if (settings.request_user) body.metadata = { user_id: settings.request_user };
   const json = await postJson(
     withPath(settings.base_url || DEFAULT_BASE_URL, '/v1/messages'),
-    { ...(settings.api_key ? { 'x-api-key': settings.api_key } : {}), 'anthropic-version': '2023-06-01' },
-    anthropicBody({ model: settings.model, system, history, tools }),
+    // the api version is Anthropic's header, not a query parameter
+    { ...requestHeaders(settings, 'x-api-key'), 'anthropic-version': settings.api_version || '2023-06-01' },
+    body,
     { timeoutSeconds: settings.timeout_seconds, provider: 'Anthropic' },
   );
   return parseAnthropic(json);

@@ -4,7 +4,7 @@ import { canonicalJson } from '../lib/formEngine/output.js';
 
 /**
  * Approval plans : what the operator was shown, sealed, one use, for a short while. The model
- * cannot launch anything ; the Approve button hands a plan id to /chat/approve, which launches
+ * cannot launch anything ; the Launch button hands a plan id to /chat/approve, which launches
  * only this plan's payload hash, for this user, from this conversation, once.
  *
  * In memory on purpose : a plan lives minutes, and a restart only means "ask again".
@@ -33,7 +33,7 @@ export class PlanError extends Error {
 
 /**
  * @param {object} p  { username, userType, sessionId, form, values, payloadHash, formFingerprint,
- *                      summary, label, risk, sourceJobId }
+ *                      summary, label, sourceJobId }
  */
 export function createPlan(p, now = Date.now()) {
   sweep(now);
@@ -48,7 +48,6 @@ export function createPlan(p, now = Date.now()) {
     formFingerprint: p.formFingerprint || '',
     summary: p.summary || p.form,
     label: p.label,
-    risk: p.risk,
     sourceJobId: p.sourceJobId ?? null,
     createdAt: now,
     expiresAt: now + PLAN_TTL_MS,
@@ -59,7 +58,7 @@ export function createPlan(p, now = Date.now()) {
 }
 
 /**
- * The plan behind an Approve click, marked used right away - a second click, or two clicks
+ * The plan behind a Launch click, marked used right away - a second click, or two clicks
  * racing, can never launch twice. Refuses anything not made for this user and conversation.
  */
 export function takePlan(planId, { username, userType, sessionId }, now = Date.now()) {

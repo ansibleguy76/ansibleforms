@@ -405,7 +405,7 @@ describe("the chat assistant's provider is seedable (a single-row section)", () 
   test("every field is required, and the provider is one we have", () => {
     const { model, ...partial } = FULL_CHAT; // eslint-disable-line no-unused-vars
     assert.throws(() => validateSeed({ chat: partial }), /required property 'model'/);
-    assert.throws(() => validateSeed({ chat: { ...FULL_CHAT, provider: "gemini" } }), /validation failed/);
+    assert.throws(() => validateSeed({ chat: { ...FULL_CHAT, provider: "watson" } }), /validation failed/);
   });
 
   test("applied : adopted, the key encrypted, the row managed", async () => {
@@ -422,6 +422,21 @@ describe("the chat assistant's provider is seedable (a single-row section)", () 
     assert.equal(writes[0].provider, "anthropic");
     assert.notEqual(writes[0].api_key, "sk-live");
     assert.equal(seedCrypto.decrypt(writes[0].api_key), "sk-live");
+  });
+
+  test("the proxy settings are optional, and extra headers may be a yaml mapping", async () => {
+    assert.equal(validateSeed({ chat: { ...FULL_CHAT, auth_type: "api-key", api_version: "2024-10-21", request_user: "af-chat", extra_headers: { "X-Org": "ops" } } }), true);
+    assert.throws(() => validateSeed({ chat: { ...FULL_CHAT, auth_type: "basic" } }), /validation failed/);
+    const writes = [];
+    dbHandler = async (sql, rec) => {
+      if (/^UPDATE/.test(sql)) { writes.push(rec); return { affectedRows: 1 }; }
+      return [{ ...FULL_CHAT, api_key: seedCrypto.encrypt("sk-live"), allow_job_status: 1, managed: 1, extra_headers: '{"X-Org":"ops"}', request_user: "af-chat" }];
+    };
+    const s = summary();
+    await applyChat({ ...FULL_CHAT, api_key: "sk-live", request_user: "af-chat", extra_headers: { "X-Org": "ops" } }, s);
+    assert.equal(s.unchanged, 1, "a mapping equal to the stored JSON is no change");
+    await applyChat({ ...FULL_CHAT, api_key: "sk-live", request_user: "af-chat", extra_headers: { "X-Org": "dev" } }, summary());
+    assert.equal(writes[0].extra_headers, '{"X-Org":"dev"}');
   });
 
   test("an unchanged managed row is not rewritten", async () => {

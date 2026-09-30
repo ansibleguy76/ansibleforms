@@ -31,7 +31,13 @@ const update = async function (req, res) {
     }
     const body = { ...req.body };
     if (body.api_key === MASK) body.api_key = existing.api_key;
-    const record = new ChatSettings(body);
+    let record;
+    try {
+      record = new ChatSettings(body);
+    } catch (err) {
+      // a setting that cannot be sent as it is (extra headers) : say which, do not store it
+      return res.status(400).json(RestResultv2.error(i18n.t(req, 'resources.failedUpdateChatSettings'), err.message));
+    }
     await ChatSettings.update(record);
     res.status(200).json(RestResultv2.single({ message: i18n.t(req, 'resources.chatSettingsUpdated') }));
   } catch (err) {

@@ -66,6 +66,6 @@ export function checkOperatorSlots(operatorSlots, answers, text, selections) {
 export const UNFOUNDED_LAUNCH = /(plan is (already )?(stored|set|ready|scheduled)|ready to be executed|has been (launched|initiated|approved|scheduled|started)|you have now approved|job (is|has been) (scheduled|initiated|launched|started)|i (have )?(launched|started|submitted) (the|a|your) job)/i;
 
 export const NUDGE = 'Nothing was launched. The chat does not launch jobs. Call resolve now with every answer from this conversation. Do not say a job is launched, approved or scheduled.';
-export const HONEST = 'Nothing was launched. A job starts only when you click the Approve (or Launch) button on the summary - and there is no summary yet.';
+export const HONEST = 'Nothing was launched. A job starts only when you click the Launch button on the summary - and there is no summary yet.';
 
 export default { mask, operatorText, typedByOperator, checkOperatorSlots, UNFOUNDED_LAUNCH, NUDGE, HONEST, SECRET_KEY, MASK };

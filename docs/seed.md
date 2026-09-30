@@ -105,17 +105,27 @@ settings:
   url: https://forms.example.com
 
 chat:                        # the chat assistant's model provider (6.5)
-  provider: anthropic        # anthropic | openai | "" (chat off)
+  provider: anthropic        # see below, or "" (chat off)
   api_key: ${SEED_CHAT_API_KEY}
-  base_url: ""               # empty for the provider default ; Azure OpenAI : the deployment url
+  base_url: ""               # empty for the provider default ; azure and custom need one
   model: claude-opus-5-5
   max_turns: 20
   max_tool_rounds: 6
   timeout_seconds: 60
   allow_job_status: true
+  # optional - for a proxy or a vendor with its own ways
+  auth_type: ""              # "" (provider default) | bearer | api-key | x-api-key | none
+  api_version: ""            # e.g. 2024-10-21 for Azure OpenAI
+  request_user: ""           # sent as user, e.g. for a proxy that requires one
+  extra_headers:             # a mapping of extra request headers
+    X-Org: ops
 ```
 
-The chat section is a single row like `ldap`, so every field is required. The chat also
+`provider` is one of `anthropic`, `openai`, `azure`, `gemini`, `grok`, `mistral`,
+`deepseek`, `groq`, `openrouter`, `ollama`, `custom` (any other OpenAI-compatible endpoint).
+
+The chat section is a single row like `ldap`, so every field is required, except the four
+optional ones - an omitted one is left as it is. The chat also
 needs `ENABLE_CHAT=1`; see the [Chat assistant](chat) page.
 
 ## Single-row sections are all or nothing

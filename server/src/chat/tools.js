@@ -110,7 +110,6 @@ async function catalog(args, ctx) {
   let forms = (await chatForms(ctx.handlers)).map((f) => ({
     form: f.name,
     description: String(f.description || '').trim(),
-    risk: f.chatRisk === 'read' ? 'read' : 'change',
     ...(query ? { score: score(query, [f.name, f.description]) } : {}),
   }));
   if (query) forms.sort((a, b) => b.score - a.score);
@@ -125,7 +124,7 @@ async function chatForm(name, ctx) {
   if (!allowed) return { refused: error('unsupported_form', `'${name}' is not a form this chat may use. Call catalog for the forms it can.`) };
   const def = await ctx.handlers.getForm({ name });
   if (def.supported === false) return { refused: error('unsupported_form', `'${name}' ${def.unsupportedReason || 'cannot be used in the chat'}`) };
-  return { def, info: describeForm({ ...def, chatRisk: allowed.chatRisk }) };
+  return { def, info: describeForm(def) };
 }
 
 /** slot answers -> form values ; unknown slots refused before AnsibleForms is asked */
@@ -200,7 +199,7 @@ async function resolve(args, ctx, planOnly) {
 
   if (!res.complete || !res.payloadHash) {
     const payload = {
-      status: 'needs_input', form: info.form, risk: info.risk, missing_fields: missing, choices,
+      status: 'needs_input', form: info.form, missing_fields: missing, choices,
       validation_errors: validationErrors, other_fields: other,
       ...(Object.keys(info.slotHelp).length ? { slot_help: info.slotHelp } : {}),
       ...(res.warnings?.length ? { warnings: res.warnings.slice(0, 5) } : {}),
@@ -212,22 +211,22 @@ async function resolve(args, ctx, planOnly) {
 
   // complete : the summary the operator can approve - never launched from here
   const optionalSwitches = other.filter((o) => o.switch && o.value !== true).map((o) => ({ slot: o.slot, prompt: o.prompt, ...(info.slotHelp[o.slot] ? { help: info.slotHelp[o.slot] } : {}) }));
-  const label = info.risk === 'read' ? 'Launch' : 'Approve';
+  const label = 'Launch';
   const summary = summaryOf(info, res.fields, values);
   const plan = createPlan({
     username: ctx.user.username, userType: ctx.user.type, sessionId: ctx.session.id,
     form: info.form, values, payloadHash: res.payloadHash, formFingerprint: res.formFingerprint,
-    summary, label, risk: info.risk,
+    summary, label,
   });
   const extravars = mask(res.modeledExtravars || {});
   return {
     payload: {
-      status: 'planned', form: info.form, risk: info.risk, plan_id: plan.planId, summary,
+      status: 'planned', form: info.form, plan_id: plan.planId, summary,
       expires_at: new Date(plan.expiresAt).toISOString(),
       ...(optionalSwitches.length ? { optional_switches: optionalSwitches } : {}),
     },
     proposal: {
-      planId: plan.planId, label, risk: info.risk, form: info.form, summary, extravars,
+      planId: plan.planId, label, form: info.form, summary, extravars,
       expiresAt: new Date(plan.expiresAt).toISOString(),
       ...(optionalSwitches.length ? { optionalSwitches } : {}),
     },
@@ -258,12 +257,12 @@ async function relaunch(args, ctx) {
   const plan = createPlan({
     username: ctx.user.username, userType: ctx.user.type, sessionId: ctx.session.id,
     form: info.form, values: prepared, payloadHash: preview.payloadHash, summary, label: 'Relaunch',
-    risk: info.risk, sourceJobId: id,
+    sourceJobId: id,
   });
   return {
     payload: { status: 'planned', form: info.form, source_job_id: id, plan_id: plan.planId, summary, expires_at: new Date(plan.expiresAt).toISOString() },
     proposal: {
-      planId: plan.planId, label: 'Relaunch', risk: info.risk, form: info.form, summary, sourceJobId: id,
+      planId: plan.planId, label: 'Relaunch', form: info.form, summary, sourceJobId: id,
       extravars: mask(preview.modeledExtravars || {}), expiresAt: new Date(plan.expiresAt).toISOString(),
     },
   };

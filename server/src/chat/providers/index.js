@@ -2,6 +2,7 @@
 import anthropic from './anthropic.js';
 import openai from './openai.js';
 import { ChatError } from '../errors.js';
+import { effectiveSettings } from '../vendors.js';
 
 const PROVIDERS = { anthropic, openai };
 
@@ -10,9 +11,10 @@ const PROVIDERS = { anthropic, openai };
  * tool - the chat turn does, and only its own.
  */
 export async function complete(args) {
-  const provider = PROVIDERS[args.settings?.provider];
-  if (!provider) throw new ChatError('chat_not_configured', 'No chat model provider is configured', 503);
-  return provider.complete(args);
+  const settings = effectiveSettings(args.settings);
+  const adapter = PROVIDERS[settings.protocol];
+  if (!adapter) throw new ChatError('chat_not_configured', 'No chat model provider is configured', 503);
+  return adapter.complete({ ...args, settings });
 }
 
 /** the admin page's check : one tiny round trip with the given settings */

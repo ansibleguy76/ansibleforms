@@ -20,7 +20,7 @@
     {
       "$comment": "a wizard form cannot be checked on the server yet, so it cannot set launchValidation, nor be offered in the chat",
       "if": { "required": ["wizard"] },
-      "then": { "properties": { "launchValidation": { "not": {} }, "enableForChat": { "not": {} }, "chatRisk": { "not": {} } } }
+      "then": { "properties": { "launchValidation": { "not": {} }, "enableForChat": { "not": {} } } }
     },
     {
       "$comment": "subform forms must declare 'fields' and never 'wizard'",
@@ -127,7 +127,6 @@
         "allowRelaunch": {"not":{}},
         "launchValidation": {"not":{}},
         "enableForChat": {"not":{}},
-        "chatRisk": {"not":{}},
         "verbose": {"not":{}},
         "keepExtravars": {"not":{}},
         "userExtravars": {"not":{}},
@@ -554,11 +553,6 @@
     "enableForChat": {
       "type": "boolean",
       "description": "Offer this form in the chat assistant (ENABLE_CHAT). Not for wizard forms."
-    },
-    "chatRisk": {
-      "type": "string",
-      "enum": ["read", "change"],
-      "description": "In the chat : read shows a Launch button, change (the default) an Approve button. Both wait for the click."
     },
     "varsFiles": {
       "type": "array",

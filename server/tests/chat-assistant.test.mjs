@@ -21,7 +21,7 @@ const other = { username: "bob", type: "local", roles: ["public"], options: {} }
 
 const FORMS = {
   "Create a snapshot": {
-    name: "Create a snapshot", type: "ansible", playbook: "snap.yml", roles: ["public"], enableForChat: true, chatRisk: "change",
+    name: "Create a snapshot", type: "ansible", playbook: "snap.yml", roles: ["public"], enableForChat: true,
     description: "Take a snapshot of volumes",
     fields: [
       { name: "cluster", type: "enum", values: ["bb8", "r2d2"], default: "__auto__", required: true, label: "Cluster" },
@@ -34,7 +34,7 @@ const FORMS = {
     ],
   },
   "Health report": {
-    name: "Health report", type: "ansible", playbook: "health.yml", roles: ["public"], enableForChat: true, chatRisk: "read",
+    name: "Health report", type: "ansible", playbook: "health.yml", roles: ["public"], enableForChat: true,
     description: "Report the health of the clusters",
     fields: [{ name: "scope", type: "text", default: "all" }],
   },
@@ -125,7 +125,6 @@ describe("the model cannot launch", () => {
     await chat.message(user, { sessionId, message: "what can I run for snapshots?" });
     const payload = JSON.parse(model.histories.at(-1).find((m) => m.role === "tool").text);
     expect(payload.forms.map((f) => f.form)).toEqual(["Create a snapshot", "Health report"]);
-    expect(payload.forms[0].risk).toBe("change");
   });
 });
 
@@ -183,12 +182,12 @@ describe("a summary launches exactly its payload, once, from the click", () => {
     return { sessionId, out };
   };
 
-  test("a complete form becomes an Approve summary ; nothing is launched ; secrets masked ; switches listed", async () => {
-    const chat = service([call("resolve", ready), say("Click Approve.")]);
+  test("a complete form becomes a Launch summary ; nothing is launched ; secrets masked ; switches listed", async () => {
+    const chat = service([call("resolve", ready), say("Click Launch.")]);
     const { out } = await planned(chat);
     expect(out.proposals).toHaveLength(1);
     const p = out.proposals[0];
-    expect(p).toMatchObject({ label: "Approve", risk: "change", form: "Create a snapshot" });
+    expect(p).toMatchObject({ label: "Launch", form: "Create a snapshot" });
     expect(p.summary).toMatch(/Cluster bb8/);
     expect(p.extravars.api_token).toBe("********");
     expect(p.optionalSwitches.map((s) => s.slot)).toEqual(["add_expiry"]);
@@ -198,7 +197,7 @@ describe("a summary launches exactly its payload, once, from the click", () => {
   });
 
   test("the click launches it once ; a second click is plan_used ; another conversation is refused", async () => {
-    const chat = service([call("resolve", ready), say("Click Approve.")]);
+    const chat = service([call("resolve", ready), say("Click Launch.")]);
     const { sessionId, out } = await planned(chat);
     const planId = out.proposals[0].planId;
     const other = await chat.openSession(user);
@@ -215,14 +214,14 @@ describe("a summary launches exactly its payload, once, from the click", () => {
   });
 
   test("another user cannot even reach the conversation", async () => {
-    const chat = service([call("resolve", ready), say("Click Approve.")]);
+    const chat = service([call("resolve", ready), say("Click Launch.")]);
     const { sessionId, out } = await planned(chat);
     await expect(chat.approve(other, { sessionId, planId: out.proposals[0].planId })).rejects.toMatchObject({ code: "session_not_found" });
     expect(deps.Job.launch).not.toHaveBeenCalled();
   });
 
   test("a payload that moved since the summary is refused (plan_stale), nothing launched", async () => {
-    const chat = service([call("resolve", ready), say("Click Approve.")]);
+    const chat = service([call("resolve", ready), say("Click Launch.")]);
     const { sessionId, out } = await planned(chat);
     ticket = "T-2"; // the server expression now answers differently
     await expect(chat.approve(user, { sessionId, planId: out.proposals[0].planId })).rejects.toMatchObject({ code: "plan_stale" });
@@ -321,11 +320,10 @@ describe("the real form list carries the chat flags", () => {
   // Regression : Form.load without a form name trims every form to its tile info, and the
   // flags were not part of it - the catalog was always empty on a real instance while the
   // tests above (whose fake Form.load returns whole forms) passed.
-  test("getFormInfo's list mode keeps enableForChat and chatRisk", async () => {
+  test("getFormInfo's list mode keeps enableForChat", async () => {
     const { readFileSync } = await import("fs");
     const src = readFileSync(new URL("../src/models/form.model.js", import.meta.url), "latin1");
     const list = src.slice(src.indexOf("function getFormInfo"), src.indexOf("else if(form.name == formName)"));
     expect(list).toMatch(/enableForChat: form\.enableForChat === true/);
-    expect(list).toMatch(/chatRisk: form\.chatRisk === 'read' \? 'read' : 'change'/);
   });
 });

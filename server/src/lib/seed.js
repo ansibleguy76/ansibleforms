@@ -35,7 +35,7 @@ import Credential from "../models/credential.model.v2.js";
 import Repository from "../models/repository.model.js";
 import Ldap from "../models/ldap.model.js";
 import Settings from "../models/settings.model.js";
-import ChatSettings from "../models/chatSettings.model.js";
+import ChatSettings, { normaliseExtraHeaders } from "../models/chatSettings.model.js";
 import Audit from "../models/audit.model.js";
 import mysql from "../models/db.model.js";
 
@@ -294,7 +294,10 @@ async function applySettings(cfg, summary) {
 
 // The chat assistant's provider row : the ldap rule - only the declared keys, converted by
 // the model's constructor (encryption, clamping), compared against what was declared.
-export async function applyChat(cfg, summary) {
+export async function applyChat(declared, summary) {
+  // extra headers may be written as a yaml mapping : compared and stored as the model keeps
+  // them (normalised JSON text), or every start would see a difference
+  const cfg = declared.extra_headers === undefined ? declared : { ...declared, extra_headers: normaliseExtraHeaders(declared.extra_headers) };
   const stored = await ChatSettings.find();
   const converted = { ...new ChatSettings(cfg) };
   const record = {};

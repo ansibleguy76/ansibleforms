@@ -2,7 +2,7 @@
 
 /**
  * What the chat knows about a form, derived from the live definition (MCP get_form) - no
- * per-form configuration besides `enableForChat` and `chatRisk`.
+ * per-form configuration besides `enableForChat`.
  */
 
 // computed, display, secret and upload fields are never answered by the operator
@@ -57,7 +57,6 @@ export function describeForm(form) {
   }
   return {
     form: form?.name,
-    risk: form?.chatRisk === 'read' ? 'read' : 'change',
     slots, operatorSlots, listSlots, switchSlots, slotHelp, summaryFields,
   };
 }
