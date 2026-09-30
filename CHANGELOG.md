@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.4.1](https://github.com/ansibleguy76/ansibleforms/compare/6.4.0...6.4.1) (2026-09-30)
+
+
+### Fixed
+
+* an uploaded svg logo without width and height is shown ([#540](https://github.com/ansibleguy76/ansibleforms/issues/540)) ([fb56d62](https://github.com/ansibleguy76/ansibleforms/commit/fb56d6245a508b6836e14e0cf619bba696d688b0))
+* server-side launch validation - server-built extravars, list rows, per-form launchValidation, relaunch with changes ([#537](https://github.com/ansibleguy76/ansibleforms/issues/537)) ([81f2f50](https://github.com/ansibleguy76/ansibleforms/commit/81f2f505ff5013b182c72ff020e9ae9e8f56f76b))
+* the Azure AD login no longer fails on the handoff token ([#543](https://github.com/ansibleguy76/ansibleforms/issues/543)) ([af0d7b0](https://github.com/ansibleguy76/ansibleforms/commit/af0d7b02eacbc4e60c3d3999f90c97039aa8fd85))
+
 ## [6.4.0](https://github.com/ansibleguy76/ansibleforms/compare/6.3.1...6.4.0) (2026-09-29)
 
 
