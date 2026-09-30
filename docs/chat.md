@@ -102,6 +102,11 @@ The chat is plain outbound HTTPS from the AnsibleForms server container. Behind 
 corporate egress proxy, set `HTTPS_PROXY` **and** `NODE_USE_ENV_PROXY=1` - Node's built-in
 HTTP client ignores `HTTPS_PROXY` without the second one. A provider on an internal CA needs
 that CA trusted by Node (`NODE_EXTRA_CA_CERTS=/path/to/ca.pem`).
+With `NODE_USE_ENV_PROXY=1`, a model or proxy inside the network must be listed in
+`NO_PROXY`, or the call goes to the egress proxy, which cannot reach it.
+
+When the connection test fails, its message names the host and the reason: a name that does
+not resolve, a refused connection, or a certificate the container does not trust.
 
 ## What leaves the network
 
