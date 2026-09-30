@@ -7,7 +7,7 @@ import {
 } from './placeholders.js';
 import { SENTINELS, isEmptyValue } from './values.js';
 import { validateField } from './validate.js';
-import { buildFormOutput, listMarkers } from './output.js';
+import { buildFormOutput, listMarkers, canonicalJson } from './output.js';
 
 /**
  * Stateless resolution of a form for a non-browser client (the MCP server).
@@ -105,6 +105,12 @@ function optionMatches(option, value, valueColumn) {
  * @param {boolean} [args.allRows]    resolve every (non-deleted) list row, not only the rows
  *                                    the browser's row editor touched - for the MCP server,
  *                                    whose caller sends plain rows
+ * @param {boolean} [args.verifyUntouched]  a row the editor did not touch passes as sent only
+ *                                    when it is one the list's own source (default, expression
+ *                                    or query, evaluated here) produces - otherwise it is
+ *                                    resolved and validated. For the launch validation : a
+ *                                    REST caller cannot slip a plain row past the checks, a
+ *                                    browser's untouched rows still pass unchanged
  */
 export async function resolveForm({
   form,
@@ -118,6 +124,7 @@ export async function resolveForm({
   services,
   subforms = undefined,
   allRows = false,
+  verifyUntouched = false,
   // internal : the rows still allowed across the nested resolutions of one launch
   rowBudget = { left: MAX_LIST_ROWS },
 }) {
@@ -303,11 +310,45 @@ export async function resolveForm({
     vals[f.name] = s.value;
   }
 
+  /** a dynamic field's expression or query, run : { ok, result } or { ok: false, missing | error } */
+  async function runSource(f) {
+    const isExpression = !!f.expression;
+    const r = replacePlaceholderInString(
+      isExpression ? f.expression : f.query, ctx, !!f.ignoreIncomplete, isExpression ? 'expression' : 'raw');
+    if (r.value === undefined) return { ok: false, missing: r.missing };
+    try {
+      if (isExpression && f.runLocal) {
+        const code = (r.value.at(0) == "{" && r.value.at(-1) == "}") ? `Object.assign(${r.value})` : r.value;
+        return { ok: true, result: evalSandbox(code) };
+      }
+      if (isExpression) return { ok: true, result: await services.serverExpression(r.value, f) };
+      return { ok: true, result: await services.query(f, r.resolved) };
+    } catch (err) {
+      return { ok: false, error: err?.message || String(err) };
+    }
+  }
+
+  /**
+   * The rows a list (or the object a yaml+subform field) holds when nobody edited it : its
+   * default, else its expression or query - as the browser fills it. null when that cannot
+   * be evaluated : then no untouched row counts as the source's.
+   */
+  async function sourceRowsOf(f, dflt) {
+    if (dflt !== undefined) return [].concat(dflt);
+    if (!f.expression && !f.query) return [];
+    const src = await runSource(f);
+    return src.ok ? [].concat(src.result ?? []) : null;
+  }
+
   async function evaluate(f) {
     const dflt = computeDefault(f);
     const s = st[f.name];
     s.default = dflt;
     const inputValue = has(f.name) ? input[f.name] : undefined;
+
+    if (verifyUntouched && (f.type === 'list' || (f.type === 'yaml' && f.subform)) && has(f.name)) {
+      s.sourceRows = await sourceRowsOf(f, dflt);
+    }
 
     if (!isDynamicField(f)) {
       let value = has(f.name) ? inputValue : dflt;
@@ -336,26 +377,15 @@ export async function resolveForm({
     const fallback = () => (computesValue ? dflt : optionValue());
 
     const isExpression = !!f.expression;
-    const r = replacePlaceholderInString(
-      isExpression ? f.expression : f.query, ctx, !!f.ignoreIncomplete, isExpression ? 'expression' : 'raw');
-    if (r.value === undefined) {
-      warnings.push(`'${f.name}' could not be evaluated : a field it refers to never produced a value (${r.missing.join(', ')})`);
-      return finish(f, { status: 'error', error: `unresolved placeholder(s) : ${r.missing.join(', ')}`, value: fallback(), source: 'default' });
+    const src = await runSource(f);
+    if (!src.ok && src.missing) {
+      warnings.push(`'${f.name}' could not be evaluated : a field it refers to never produced a value (${src.missing.join(', ')})`);
+      return finish(f, { status: 'error', error: `unresolved placeholder(s) : ${src.missing.join(', ')}`, value: fallback(), source: 'default' });
     }
-
-    let result;
-    try {
-      if (isExpression && f.runLocal) {
-        const code = (r.value.at(0) == "{" && r.value.at(-1) == "}") ? `Object.assign(${r.value})` : r.value;
-        result = evalSandbox(code);
-      } else if (isExpression) {
-        result = await services.serverExpression(r.value, f);
-      } else {
-        result = await services.query(f, r.resolved);
-      }
-    } catch (err) {
-      return finish(f, { status: 'error', error: err?.message || String(err), value: fallback(), source: 'default' });
+    if (!src.ok) {
+      return finish(f, { status: 'error', error: src.error, value: fallback(), source: 'default' });
     }
+    const result = src.result;
 
     const patch = { status: 'resolved', source: 'computed' };
     if (isExpression) {
@@ -400,8 +430,17 @@ export async function resolveForm({
     if (single ? !(value && typeof value === 'object' && !Array.isArray(value)) : !Array.isArray(value)) return;
     const m = single ? { insert: '', update: '', delete: '' } : listMarkers(f);
     const markerKeys = [m.insert, m.update, m.delete].filter(Boolean);
+    const strip = (row) => {
+      const out = {};
+      for (const [k, v] of Object.entries(row || {})) if (k !== '__output__' && !markerKeys.includes(k)) out[k] = v;
+      return canonicalJson(out);
+    };
+    const sourceKeys = verifyUntouched && Array.isArray(s.sourceRows) ? new Set(s.sourceRows.map(strip)) : null;
+    const editorTouched = (row) => '__output__' in row || (m.insert && row[m.insert]) || (m.update && row[m.update]);
+    // a row to resolve : any the editor touched ; with allRows, every one ; with
+    // verifyUntouched, an untouched one that the list's own source does not produce
     const touched = (row) => row && typeof row === 'object' && !(m.delete && row[m.delete])
-      && (allRows || '__output__' in row || (m.insert && row[m.insert]) || (m.update && row[m.update]));
+      && (allRows || editorTouched(row) || (verifyUntouched && !(sourceKeys && sourceKeys.has(strip(row)))));
     const rows = single ? [value] : value;
     const todo = rows.filter(touched).length;
     if (todo > rowBudget.left) {
@@ -422,7 +461,7 @@ export async function resolveForm({
       for (const [k, v] of Object.entries(row)) if (k !== '__output__' && !markerKeys.includes(k)) input[k] = v;
       const res = await resolveForm({
         form: sub, constants, vars, user, parent: parentValues, values: input,
-        services: rowServices, subforms: allSubforms, rowBudget, allRows,
+        services: rowServices, subforms: allSubforms, rowBudget, allRows, verifyUntouched,
       });
       const resolved = {};
       for (const sf of sub.fields || []) if (sf?.name) resolved[sf.name] = res._values[sf.name];

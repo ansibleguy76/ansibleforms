@@ -98,7 +98,7 @@ are not among the options and the fields that fail validation (collected in a to
 `launch_job` refuses a form that is not complete.
 
 The rules are the browser's own: since 6.4 the browser, the MCP server and the launch
-validation ([`LAUNCH_VALIDATION`](customization)) run the same validation code. A
+validation ([Launch validation](launch-validation)) run the same validation code. A
 hidden field is not validated, and a dependency on `isValid` means what it means in the
 browser: an empty optional field is valid, a hidden one is neither valid nor invalid.
 

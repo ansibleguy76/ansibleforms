@@ -554,7 +554,8 @@
       resolved per launch. Applied without a restart.
 
       A form can be made stricter with its own `launchValidation` property ; the stricter of
-      the two wins.
+      the two wins. See the **Launch validation** page of the documentation for the whole
+      picture : what is checked, list rows, uploads, passwords and how to roll it out.
   - name: ENABLE_DB_QUERY_LOGGING
     type: number
     allowed: 0, 1
@@ -2239,7 +2240,8 @@
           stricter than the instance, never looser. The MCP server always validates and builds
           the extravars itself, whatever this says.
 
-          Not for wizard forms yet : a wizard form with `launchValidation` does not load.
+          Not for wizard forms yet : a wizard form with `launchValidation` does not load. See
+          the **Launch validation** page of the documentation.
         examples:
           - name: A form that is launched over REST
             code: |

@@ -25,7 +25,7 @@ import { readModelPath, buildLaunchPayload, canonicalJson } from './formEngine/o
  * @returns {Promise<{ skipped?: string, ok?: boolean, errors?: object, warnings?: string[],
  *   payload?: { extravars: object, credentials: object } }>}
  */
-export async function validateLaunch({ formConfig, formObj, user, rawFormData, extravars, files, uploadPath, services, allRows = false }) {
+export async function validateLaunch({ formConfig, formObj, user, rawFormData, extravars, files, uploadPath, services, allRows = false, verifyUntouched = false }) {
   if (Array.isArray(formObj?.wizard) && formObj.wizard.length > 0) {
     return { skipped: 'wizard forms send merged step output, not raw field values' };
   }
@@ -56,6 +56,7 @@ export async function validateLaunch({ formConfig, formObj, user, rawFormData, e
     services,
     subforms: formObj.subforms || [],
     allRows,
+    verifyUntouched,
   });
   // an upload that did not check out is refused only when its field is shown
   const uploadErrors = uploads.errors.filter((e) => res._visibility[e.field]);

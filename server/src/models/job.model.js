@@ -926,6 +926,9 @@ async function guardLaunch({ form, formConfig, formObj, user, rawFormData, extra
         formConfig, formObj, user, rawFormData, extravars, files,
         uploadPath: appConfig.uploadPath,
         services: createFormServices({ user, formConfig, formObj, deps: { Expression, Query, resolveFormQuery } }),
+        // an untouched list row passes only when the list's own source produces it : a
+        // REST caller cannot slip a plain row past the row checks
+        verifyUntouched: true,
       });
     } catch (err) {
       if (enforce) throw new Errors.ValidationError(`Launch validation of form '${form}' failed : ${err.message}`);

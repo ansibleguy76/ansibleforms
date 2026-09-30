@@ -255,6 +255,40 @@ describe("list rows", () => {
     expect(res.warnings.join("\n")).toMatch(/circular reference/);
   });
 
+  describe("verifyUntouched : an untouched row must be one the list's own source produces", () => {
+    const aclForm = {
+      name: "t",
+      subforms: [{ name: "acl", type: "subform", fields: [
+        { name: "who", type: "text", required: true, regex: { expression: "^[a-z]+$", description: "lower case only" } },
+        { name: "perm", type: "text", default: "read" },
+      ] }],
+      fields: [
+        // existing entries - one of which breaks today's rule, as old data does
+        { name: "acls", type: "list", subform: "acl", runLocal: true, expression: "[{who:'bob',perm:'full'},{who:'Old_Admin',perm:'full'}]" },
+      ],
+    };
+    const run = (acls) => resolveForm({ form: aclForm, values: { acls }, services: services(), verifyUntouched: true });
+
+    test("the existing rows, untouched, pass exactly as sent - even the one that breaks a rule", async () => {
+      const res = await run([{ who: "bob", perm: "full" }, { who: "Old_Admin", perm: "full" }]);
+      expect(res.complete).toBe(true);
+      expect(res._values.acls).toEqual([{ who: "bob", perm: "full" }, { who: "Old_Admin", perm: "full" }]);
+    });
+
+    test("a plain row the source does not produce is resolved and validated", async () => {
+      const res = await run([{ who: "bob", perm: "full" }, { who: "Forged!" }]);
+      expect(res.rowErrors).toEqual({ acls: [{ index: 1, invalid: ["who"], validationErrors: { who: [{ type: "regex", description: "lower case only" }] } }] });
+      // and a valid one is filled in by its subform, as the editor would
+      const ok = await run([{ who: "carol" }]);
+      expect(ok._values.acls[0]).toMatchObject({ who: "carol", perm: "read" });
+    });
+
+    test("without verifyUntouched a plain row passes as sent (browser parity)", async () => {
+      const res = await resolveForm({ form: aclForm, values: { acls: [{ who: "Forged!" }] }, services: services() });
+      expect(res.complete).toBe(true);
+    });
+  });
+
   test("more than 500 touched rows in one launch are refused, not resolved", async () => {
     const svc = services();
     const rows = Array.from({ length: 501 }, () => ({ vol: "v1", __output__: {} }));

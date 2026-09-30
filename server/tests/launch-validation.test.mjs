@@ -227,6 +227,19 @@ describe("guardLaunch", () => {
     expect(err.details.missing).toEqual(["upload"]);
   });
 
+  test("enforce : a plain list row the list's source does not produce is validated", async () => {
+    appConfig.launchValidation = "enforce";
+    const listForm = {
+      name: "L", fields: [{ name: "users", type: "list", subform: "u", default: [{ name: "alice" }] }],
+      subforms: [{ name: "u", type: "subform", fields: [{ name: "name", type: "text", regex: { expression: "^[a-z]+$", description: "lower case only" } }] }],
+    };
+    const call = (rows) => guardLaunch({ form: "L", formConfig: { forms: [listForm] }, formObj: listForm, user, rawFormData: { users: rows }, extravars: {} });
+    // the untouched default row passes ; a forged one is checked
+    await expect(call([{ name: "alice" }])).resolves.toMatchObject({ extravars: { users: [{ name: "alice" }] } });
+    const err = await call([{ name: "alice" }, { name: "Robert'); DROP" }]).catch((e) => e);
+    expect(err.details.rowErrors.users[0]).toMatchObject({ index: 1, invalid: ["name"] });
+  });
+
   test("enforce : a forged upload path is refused", async () => {
     appConfig.launchValidation = "enforce";
     const err = await guardLaunch(args({ host: "prod-1" }, {}, { upload: { originalname: "x.txt", path: outside } })).catch((e) => e);
