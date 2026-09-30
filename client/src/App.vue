@@ -150,7 +150,9 @@ onMounted(async () => {
 
 
 <template>
-  <Toaster position="bottom-right" :duration="5000" :close-button="true" :theme="appStore.theme" :expand="true" />
+  <!-- lifted above the chat button, which shares the bottom-right corner -->
+  <Toaster position="bottom-right" :duration="5000" :close-button="true" :theme="appStore.theme" :expand="true" :offset="{ bottom: '6rem', right: '1.25rem' }" />
+  <AppChat />
   <router-view v-if="isLoaded || route.name === '/schema' || route.name === '/login' || route.name === '/error'" />
   <div v-else class="d-flex justify-content-center align-items-center vh-100">
     <div class="text-center">

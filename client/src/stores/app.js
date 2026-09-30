@@ -15,6 +15,7 @@ export const useAppStore = defineStore('app', () => {
   const approvals = ref(0)
   const errorMessage = ref('')
   const schemaData = ref(null)
+  const chatEnabled = ref(false) // ENABLE_CHAT and a configured provider (/api/v2/app/config)
 
 
   // const doubleCount = computed(() => count.value * 2)
@@ -22,6 +23,6 @@ export const useAppStore = defineStore('app', () => {
   //   count.value++
   // }
 
-  return { theme, profile, authenticated, isAdmin, version, customLogo, logoIsDefault, serverBuild, clientBuild, approvals, errorMessage, schemaData }
+  return { theme, profile, authenticated, isAdmin, version, customLogo, logoIsDefault, serverBuild, clientBuild, approvals, errorMessage, schemaData, chatEnabled }
 })
 

@@ -54,6 +54,16 @@ var State = {
       store.logoIsDefault = true;
     }
   },
+  // whether the chat button may show : the server says so (ENABLE_CHAT and a provider)
+  async loadChatConfig() {
+    const store = useAppStore();
+    try {
+      const result = await axios.get(`/api/v2/app/config`);
+      store.chatEnabled = !!result.data?.chatEnabled;
+    } catch (err) {
+      store.chatEnabled = false;
+    }
+  },
   async refreshApprovals() {
     const store = useAppStore();
     const res = await axios.get(
@@ -99,6 +109,7 @@ var State = {
       State.loadProfile();
       State.loadVersion();
       State.loadLogo();
+      State.loadChatConfig();
       State.refreshApprovals();
       Navigate.toOrigin(router, route);
     }
