@@ -1,4 +1,4 @@
-// The chat assistant's contracts, ported from the msaf-chat prototype's tests : the model
+// The chat assistant's contracts : the model
 // has no launch tool, a target must come from the operator, a summary launches exactly its
 // payload once and only from the operator's click, a claimed launch that never happened is
 // replaced, and the limits hold. The chat service and the MCP handlers are the real ones ;

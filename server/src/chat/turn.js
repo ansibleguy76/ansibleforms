@@ -9,7 +9,7 @@ export const MAX_MESSAGE_LENGTH = 4000;
 
 /**
  * One operator message : model rounds, the tools they ask for, then a page-ready result
- * `{ reply, choices, proposals, job }`. The loop of the msaf-chat prototype :
+ * `{ reply, choices, proposals, job }`. The loop :
  *   - an empty model reply is retried once ;
  *   - a reply claiming a launch while this turn stored no summary is nudged once, and if it
  *     insists, replaced by an honest one - the model cannot launch, and must not say it did ;

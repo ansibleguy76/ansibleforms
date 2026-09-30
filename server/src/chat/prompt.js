@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * The system prompt : the model's rules, from the msaf-chat prototype. No secret belongs
+ * The system prompt : the model's rules. No secret belongs
  * here. The tools enforce the same rules - the prompt only keeps the model from wasting
  * rounds on calls the tools refuse.
  */

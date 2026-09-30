@@ -61,7 +61,7 @@ export function describeForm(form) {
   };
 }
 
-/** share of the best phrase's words that appear in the query (the prototype's ranking) */
+/** share of the best phrase's words that appear in the query */
 export function score(query, phrases) {
   const words = new Set((String(query).toLowerCase().match(WORD) || []).filter((w) => !FILLER.has(w)));
   let best = 0;

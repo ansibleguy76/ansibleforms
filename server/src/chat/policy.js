@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * The guards that make the chat safe, ported from the msaf-chat prototype. None of them is
+ * The guards that make the chat safe. None of them is
  * polish : each one closes a way the model could act on something the operator did not say.
  */
 
