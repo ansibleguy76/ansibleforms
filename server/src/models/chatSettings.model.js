@@ -54,6 +54,7 @@ const ChatSettings = function (s) {
   this.api_version = String(s.api_version || '').trim().slice(0, 50);
   this.request_user = String(s.request_user || '').trim().slice(0, 100);
   this.extra_headers = normaliseExtraHeaders(s.extra_headers);
+  this.ignore_certs = s.ignore_certs ? 1 : 0;
 };
 
 function clampInt(v, min, max, dflt) {

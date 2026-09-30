@@ -51,7 +51,7 @@ export async function complete({ settings, system, history, tools }) {
     // the api version is Anthropic's header, not a query parameter
     { ...requestHeaders(settings, 'x-api-key'), 'anthropic-version': settings.api_version || '2023-06-01' },
     body,
-    { timeoutSeconds: settings.timeout_seconds, provider: 'Anthropic' },
+    { timeoutSeconds: settings.timeout_seconds, provider: 'Anthropic', ignoreCerts: !!settings.ignore_certs },
   );
   return parseAnthropic(json);
 }

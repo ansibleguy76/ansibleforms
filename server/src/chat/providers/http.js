@@ -1,14 +1,23 @@
 'use strict';
+import { Agent, fetch as undiciFetch } from 'undici';
 import { ChatError } from '../errors.js';
+
+// "Ignore certificate errors" : a proxy on a self-signed certificate. Its own fetch with its
+// own agent, so only these calls skip the check - never the rest of the server.
+let insecureAgent = null;
+function insecureFetch(url, options) {
+  insecureAgent = insecureAgent || new Agent({ connect: { rejectUnauthorized: false } });
+  return undiciFetch(url, { ...options, dispatcher: insecureAgent });
+}
 
 /**
  * POST json to a model provider. The api key only ever travels in a header ; a failure is
  * reported with the provider's status and the start of its message - never the request.
  */
-export async function postJson(url, headers, body, { timeoutSeconds = 60, provider = 'provider' } = {}) {
+export async function postJson(url, headers, body, { timeoutSeconds = 60, provider = 'provider', ignoreCerts = false } = {}) {
   let res;
   try {
-    res = await fetch(url, {
+    res = await (ignoreCerts ? insecureFetch : fetch)(url, {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...headers },
       body: JSON.stringify(body),
@@ -51,10 +60,10 @@ export function networkReason(err) {
     ETIMEDOUT: 'the connection timed out',
     EHOSTUNREACH: 'the host cannot be reached',
     ENETUNREACH: 'the network cannot be reached',
-    UNABLE_TO_VERIFY_LEAF_SIGNATURE: 'the certificate is not trusted - set NODE_EXTRA_CA_CERTS to its CA',
-    UNABLE_TO_GET_ISSUER_CERT_LOCALLY: 'the certificate is not trusted - set NODE_EXTRA_CA_CERTS to its CA',
-    SELF_SIGNED_CERT_IN_CHAIN: 'the certificate is not trusted (self-signed CA) - set NODE_EXTRA_CA_CERTS to its CA',
-    DEPTH_ZERO_SELF_SIGNED_CERT: 'the certificate is self-signed - set NODE_EXTRA_CA_CERTS to it',
+    UNABLE_TO_VERIFY_LEAF_SIGNATURE: 'the certificate is not trusted - set NODE_EXTRA_CA_CERTS to its CA, or ignore certificate errors',
+    UNABLE_TO_GET_ISSUER_CERT_LOCALLY: 'the certificate is not trusted - set NODE_EXTRA_CA_CERTS to its CA, or ignore certificate errors',
+    SELF_SIGNED_CERT_IN_CHAIN: 'the certificate is not trusted (self-signed CA) - set NODE_EXTRA_CA_CERTS to its CA, or ignore certificate errors',
+    DEPTH_ZERO_SELF_SIGNED_CERT: 'the certificate is self-signed - set NODE_EXTRA_CA_CERTS to it, or ignore certificate errors',
     CERT_HAS_EXPIRED: 'the certificate has expired',
     ERR_TLS_CERT_ALTNAME_INVALID: 'the certificate does not match the host name',
   }[code];

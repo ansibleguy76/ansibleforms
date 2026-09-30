@@ -1434,7 +1434,8 @@
           "auth_type": { "type": "string", "enum": ["", "bearer", "api-key", "x-api-key", "none"], "description": "How the key is sent ; empty for the provider's default" },
           "api_version": { "type": "string", "description": "Anthropic : the anthropic-version header ; OpenAI-compatible : ?api-version= (Azure)" },
           "request_user": { "type": "string", "description": "Sent as user (OpenAI) or metadata.user_id (Anthropic), e.g. for a proxy ; empty sends none" },
-          "extra_headers": { "type": "string", "description": "A JSON object of extra request headers" }
+          "extra_headers": { "type": "string", "description": "A JSON object of extra request headers" },
+          "ignore_certs": { "type": "boolean", "description": "Skip the certificate check of the provider (a self-signed proxy). Insecure." }
         } } } } },
         "responses": { "200": { "description": "Updated" }, "400": { "description": "Invalid settings, e.g. extra headers that are not a JSON object" }, "403": { "description": "Managed by the config seed, or no showSettings" } }
       }

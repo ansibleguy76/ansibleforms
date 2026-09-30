@@ -12,5 +12,6 @@ CREATE TABLE `chat_settings` (
   `api_version` varchar(50) DEFAULT NULL,
   `request_user` varchar(100) DEFAULT NULL,
   `extra_headers` text DEFAULT NULL,
+  `ignore_certs` tinyint(4) DEFAULT 0,
   `managed` tinyint(4) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

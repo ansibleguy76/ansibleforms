@@ -591,6 +591,8 @@ export default {
       providerCustom: "Andere OpenAI-compatibele (proxy, LiteLLM, vLLM)",
       user: "Gebruiker",
       userHelp: "Verstuurd als user, bv. voor een proxy",
+      ignoreCerts: "Certificaatfouten negeren",
+      ignoreCertsHelp: "Onveilig - voor een proxy met een self-signed certificaat",
       checkOk: "De provider antwoordde : {reply}",
       checkFailed: "De providertest is mislukt",
     },

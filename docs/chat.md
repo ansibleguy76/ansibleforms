@@ -93,6 +93,8 @@ internal proxies take no key. Then no authorization header is sent at all.
   OpenAI-compatible: added to the URL as `?api-version=` (Azure), unless the URL has one.
 - **User** - sent with every call as `user` (OpenAI-compatible) or `metadata.user_id`
   (Anthropic). Some proxies require it. Empty sends none.
+- **Ignore certificate errors** - for a proxy on a self-signed certificate. Insecure: the
+  key goes to whoever answers. Prefer trusting its CA with `NODE_EXTRA_CA_CERTS`.
 - **Extra headers** - a JSON object, e.g. `{"X-Org": "ops"}`. One-line text values, at most 20;
   the key and content headers cannot be replaced.
 

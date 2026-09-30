@@ -146,6 +146,7 @@ const chatSection = {
     auth_type: { type: "string", enum: ["", "bearer", "api-key", "x-api-key", "none"] },
     api_version: str,
     request_user: str,
+    ignore_certs: bool,
     extra_headers: { type: ["object", "string"] },
   },
 };

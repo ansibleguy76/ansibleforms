@@ -591,6 +591,8 @@ export default {
       providerCustom: "Autre compatible OpenAI (proxy, LiteLLM, vLLM)",
       user: "Utilisateur",
       userHelp: "Envoyé comme user, p. ex. pour un proxy",
+      ignoreCerts: "Ignorer les erreurs de certificat",
+      ignoreCertsHelp: "Non sécurisé - pour un proxy au certificat auto-signé",
       checkOk: "Le fournisseur a répondu : {reply}",
       checkFailed: "La vérification du fournisseur a échoué",
     },
