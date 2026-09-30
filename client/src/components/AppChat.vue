@@ -17,14 +17,19 @@ import { useI18n } from 'vue-i18n';
 import TokenStorage from '@/lib/TokenStorage';
 import { sanitize } from '@/lib/HtmlSanitizer';
 import { useAppStore } from '@/stores/app';
+import { useRoute } from 'vue-router';
 
 const { t } = useI18n();
 const store = useAppStore();
+const route = useRoute();
 
 const SESSION_KEY = 'af_chat_session';
 const MAX_SHOWN_CHOICES = 12;
 
-const visible = computed(() => store.authenticated && store.chatEnabled && store.profile?.options?.allowChat !== false);
+// an expired session sends the user to the login page without resetting store.authenticated :
+// the chat goes away on the pages outside a login too
+const NO_CHAT_ROUTES = new Set(['/login', '/logout', '/error', '/schema']);
+const visible = computed(() => store.authenticated && store.chatEnabled && store.profile?.options?.allowChat !== false && !NO_CHAT_ROUTES.has(route.name));
 const open = ref(false);
 const fullscreen = ref(false);
 const busy = ref(false);
@@ -186,6 +191,18 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onEscape));
 const labelFor = (p) => ({ Launch: t('chat.launch'), Relaunch: t('chat.relaunch') }[p.label] || p.label);
 const pretty = (v) => JSON.stringify(v, null, 2);
 const expires = (p) => { try { return new Date(p.expiresAt).toLocaleTimeString(); } catch { return ''; } };
+
+// logged out, or sent to the login page : the conversation belongs to that login - the
+// next one starts empty
+watch(visible, (shown) => {
+    if (shown) return;
+    open.value = false;
+    fullscreen.value = false;
+    busy.value = false;
+    entries.value = [];
+    input.value = '';
+    writeSession('');
+});
 </script>
 
 <template>

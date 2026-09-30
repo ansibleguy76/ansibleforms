@@ -11,7 +11,10 @@ const app = readFileSync(path.join(here, '../src/App.vue'), 'utf8');
 
 describe('the chat panel', () => {
   it('shows only for a logged-in user, with the chat enabled on the server, and allowChat not off', () => {
-    expect(src).toMatch(/const visible = computed\(\(\) => store\.authenticated && store\.chatEnabled && store\.profile\?\.options\?\.allowChat !== false\)/);
+    expect(src).toMatch(/const visible = computed\(\(\) => store\.authenticated && store\.chatEnabled && store\.profile\?\.options\?\.allowChat !== false && !NO_CHAT_ROUTES\.has\(route\.name\)\)/);
+    // an expired session lands on the login page with store.authenticated still true
+    expect(src).toMatch(/NO_CHAT_ROUTES = new Set\(\['\/login', '\/logout', '\/error', '\/schema'\]\)/);
+    expect(src).toMatch(/watch\(visible, \(shown\) => \{\n    if \(shown\) return;\n    open\.value = false;/);
     expect(src).toMatch(/<template v-if="visible">/);
     expect(app).toMatch(/<AppChat \/>/);
   });
