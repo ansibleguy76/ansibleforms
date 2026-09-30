@@ -1371,6 +1371,48 @@
         "responses": { "200": { "description": "Job aborted" }, "404": { "description": "Not found" } }
       }
     },
+    "/chat/config": {
+      "get": {
+        "security": [ { "bearerAuth": [] } ], "tags": ["chat"],
+        "summary": "Whether the chat assistant is on, and its provider and model (never the key)",
+        "responses": { "200": { "description": "{ enabled, provider, model, maxTurns }" }, "403": { "description": "allowChat is off" }, "404": { "description": "ENABLE_CHAT is off" } }
+      }
+    },
+    "/chat/session": {
+      "post": {
+        "security": [ { "bearerAuth": [] } ], "tags": ["chat"],
+        "summary": "Start a conversation",
+        "responses": { "200": { "description": "{ sessionId }" }, "503": { "description": "No model provider configured" } }
+      }
+    },
+    "/chat/message": {
+      "post": {
+        "security": [ { "bearerAuth": [] } ], "tags": ["chat"],
+        "summary": "Send one message ; the model and its tools run on the server",
+        "description": "Returns the reply, the choices the form offers, and the summaries (proposals) that can be approved. Never launches a job.",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["sessionId", "message"], "properties": {
+          "sessionId": { "type": "string" }, "message": { "type": "string", "maxLength": 4000 },
+          "selection": { "type": "object", "description": "{ slot, value } of a clicked choice", "properties": { "slot": { "type": "string" }, "value": { "type": "string" } } }
+        } } } } },
+        "responses": { "200": { "description": "{ reply, choices, proposals, job }" }, "404": { "description": "Unknown conversation" }, "409": { "description": "The previous message is still being answered" }, "429": { "description": "A message, tool round or hourly limit" }, "502": { "description": "The model provider failed" } }
+      }
+    },
+    "/chat/approve": {
+      "post": {
+        "security": [ { "bearerAuth": [] } ], "tags": ["chat"],
+        "summary": "Launch the summary the user approved - once",
+        "description": "The form is resolved again ; refused (plan_stale) when the payload hash moved. Only for the user and conversation the summary was made for, within 15 minutes, once.",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["sessionId", "planId"], "properties": { "sessionId": { "type": "string" }, "planId": { "type": "string" } } } } } },
+        "responses": { "200": { "description": "{ job: { id }, form, summary }" }, "403": { "description": "Another user's or conversation's summary" }, "409": { "description": "Used already, or stale" }, "410": { "description": "Expired" } }
+      }
+    },
+    "/chat/reset": {
+      "post": {
+        "security": [ { "bearerAuth": [] } ], "tags": ["chat"],
+        "summary": "Forget a conversation",
+        "responses": { "200": { "description": "Done" } }
+      }
+    },
     "/chatsettings": {
       "get": {
         "security": [ { "bearerAuth": [] } ],
