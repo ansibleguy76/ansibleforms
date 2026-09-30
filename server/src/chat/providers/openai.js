@@ -50,7 +50,7 @@ export async function complete({ settings, system, history, tools }) {
     authHeaders(settings),
     // the user a proxy asks for, when the settings name one
     openaiBody({ model: settings.model, system, history, tools, user: settings.request_user || undefined }),
-    { timeoutSeconds: settings.timeout_seconds, provider: 'OpenAI' },
+    { timeoutSeconds: settings.timeout_seconds, provider: 'OpenAI', ignoreCerts: !!settings.ignore_certs },
   );
   return parseOpenai(json);
 }

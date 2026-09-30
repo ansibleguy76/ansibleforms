@@ -425,7 +425,7 @@ describe("the chat assistant's provider is seedable (a single-row section)", () 
   });
 
   test("the proxy settings are optional, and extra headers may be a yaml mapping", async () => {
-    assert.equal(validateSeed({ chat: { ...FULL_CHAT, auth_type: "api-key", api_version: "2024-10-21", request_user: "af-chat", extra_headers: { "X-Org": "ops" } } }), true);
+    assert.equal(validateSeed({ chat: { ...FULL_CHAT, auth_type: "api-key", api_version: "2024-10-21", request_user: "af-chat", ignore_certs: true, extra_headers: { "X-Org": "ops" } } }), true);
     assert.throws(() => validateSeed({ chat: { ...FULL_CHAT, auth_type: "basic" } }), /validation failed/);
     const writes = [];
     dbHandler = async (sql, rec) => {

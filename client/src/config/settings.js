@@ -388,6 +388,7 @@ export default function getSettings(t) {
             { key: "max_turns", icon: "comments", line: 4, type: "number", label: t('settings.chat.maxTurns'), help: t('settings.chat.maxTurnsHelp'), dependency: "provider" },
             { key: "max_tool_rounds", icon: "arrows-rotate", line: 4, type: "number", label: t('settings.chat.maxToolRounds'), help: t('settings.chat.maxToolRoundsHelp'), dependency: "provider" },
             { key: "timeout_seconds", icon: "clock", line: 4, type: "number", label: t('settings.chat.timeout'), dependency: "provider" },
+            { key: "ignore_certs", line: 5, type: "checkbox", label: t('settings.chat.ignoreCerts'), help: t('settings.chat.ignoreCertsHelp'), dependency: "provider" },
             { key: "allow_job_status", line: 5, type: "checkbox", label: t('settings.chat.allowJobStatus'), help: t('settings.chat.allowJobStatusHelp'), dependency: "provider" },
         ]
     },

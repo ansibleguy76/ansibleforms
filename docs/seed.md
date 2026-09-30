@@ -117,6 +117,7 @@ chat:                        # the chat assistant's model provider (6.5)
   auth_type: ""              # "" (provider default) | bearer | api-key | x-api-key | none
   api_version: ""            # e.g. 2024-10-21 for Azure OpenAI
   request_user: ""           # sent as user, e.g. for a proxy that requires one
+  ignore_certs: false        # true skips the certificate check (a self-signed proxy) - insecure
   extra_headers:             # a mapping of extra request headers
     X-Org: ops
 ```
@@ -124,8 +125,8 @@ chat:                        # the chat assistant's model provider (6.5)
 `provider` is one of `anthropic`, `openai`, `azure`, `gemini`, `grok`, `mistral`,
 `deepseek`, `groq`, `openrouter`, `ollama`, `custom` (any other OpenAI-compatible endpoint).
 
-The chat section is a single row like `ldap`, so every field is required, except the four
-optional ones - an omitted one is left as it is. The chat also
+The chat section is a single row like `ldap`, so every field is required, except the optional
+ones - an omitted one is left as it is. The chat also
 needs `ENABLE_CHAT=1`; see the [Chat assistant](chat) page.
 
 ## Single-row sections are all or nothing

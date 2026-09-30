@@ -93,6 +93,8 @@ internal proxies take no key. Then no authorization header is sent at all.
   OpenAI-compatible: added to the URL as `?api-version=` (Azure), unless the URL has one.
 - **User** - sent with every call as `user` (OpenAI-compatible) or `metadata.user_id`
   (Anthropic). Some proxies require it. Empty sends none.
+- **Ignore certificate errors** - for a proxy on a self-signed certificate. Insecure: the
+  key goes to whoever answers. Prefer trusting its CA with `NODE_EXTRA_CA_CERTS`.
 - **Extra headers** - a JSON object, e.g. `{"X-Org": "ops"}`. One-line text values, at most 20;
   the key and content headers cannot be replaced.
 
@@ -102,6 +104,11 @@ The chat is plain outbound HTTPS from the AnsibleForms server container. Behind 
 corporate egress proxy, set `HTTPS_PROXY` **and** `NODE_USE_ENV_PROXY=1` - Node's built-in
 HTTP client ignores `HTTPS_PROXY` without the second one. A provider on an internal CA needs
 that CA trusted by Node (`NODE_EXTRA_CA_CERTS=/path/to/ca.pem`).
+With `NODE_USE_ENV_PROXY=1`, a model or proxy inside the network must be listed in
+`NO_PROXY`, or the call goes to the egress proxy, which cannot reach it.
+
+When the connection test fails, its message names the host and the reason: a name that does
+not resolve, a refused connection, or a certificate the container does not trust.
 
 ## What leaves the network
 

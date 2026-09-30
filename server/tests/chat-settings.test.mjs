@@ -18,6 +18,16 @@ vi.mock("../src/models/db.model.js", () => ({
   },
 }));
 
+// "ignore certificate errors" goes through undici's own fetch with a lax agent
+const insecure = { calls: [], agents: [] };
+vi.mock("undici", () => ({
+  Agent: class { constructor(opts) { insecure.agents.push(opts); } },
+  fetch: async (url, opts) => {
+    insecure.calls.push({ url, opts });
+    return { ok: true, status: 200, text: async () => JSON.stringify({ choices: [{ message: { content: "OK" } }] }) };
+  },
+}));
+
 const appConfig = (await import("./__mocks__/app.config.js")).default;
 appConfig.encryptionSecret ||= "0123456789abcdef0123456789abcdef";
 const crypto = (await import("../src/lib/crypto.js")).default;
@@ -212,6 +222,40 @@ describe("provider requests", () => {
     expect(() => new ChatSettings({ extra_headers: '{"Authorization":"Bearer x"}' })).toThrow(/set by AnsibleForms/);
     expect(() => new ChatSettings({ extra_headers: '{"X-A":"a\\nb"}' })).toThrow(/one line/);
     expect(new ChatSettings({ auth_type: "weird" }).auth_type).toBe("");
+  });
+
+  test("a call that does not get through says why, and where - never the key or the path", async () => {
+    const failing = (code) => vi.fn(async () => { const e = new TypeError("fetch failed"); e.cause = Object.assign(new Error(`boom ${code}`), { code }); throw e; });
+    const settings = { provider: "custom", api_key: "sk-secret", model: "m", base_url: "https://llm.corp.local/v1?token=abc", timeout_seconds: 5 };
+    const hi = [{ role: "user", text: "hi" }];
+    vi.stubGlobal("fetch", failing("SELF_SIGNED_CERT_IN_CHAIN"));
+    let err = await complete({ settings, system: "S", history: hi, tools: [] }).catch((e) => e);
+    expect(err).toMatchObject({ code: "provider_unreachable", status: 502 });
+    expect(err.message).toMatch(/at https:\/\/llm\.corp\.local : .*NODE_EXTRA_CA_CERTS.*\(SELF_SIGNED_CERT_IN_CHAIN\)/);
+    expect(err.message).not.toMatch(/sk-secret|token=abc|\/v1/);
+    vi.stubGlobal("fetch", failing("ENOTFOUND"));
+    err = await complete({ settings, system: "S", history: hi, tools: [] }).catch((e) => e);
+    expect(err.message).toMatch(/does not resolve \(ENOTFOUND\)/);
+    vi.stubGlobal("fetch", failing("ESOMETHING"));
+    err = await complete({ settings, system: "S", history: hi, tools: [] }).catch((e) => e);
+    expect(err.message).toMatch(/boom ESOMETHING \(ESOMETHING\)/);
+  });
+
+  test("ignore certificate errors : only then the lax agent, and only for this call", async () => {
+    vi.stubGlobal("fetch", reply({ choices: [{ message: { content: "OK" } }] }));
+    const settings = { provider: "custom", api_key: "k", model: "m", base_url: "https://llm.corp.local/v1", timeout_seconds: 5 };
+    const hi = [{ role: "user", text: "hi" }];
+    await complete({ settings, system: "S", history: hi, tools: [] });
+    expect(calls).toHaveLength(1);
+    expect(insecure.calls).toHaveLength(0);
+    await complete({ settings: { ...settings, ignore_certs: 1 }, system: "S", history: hi, tools: [] });
+    expect(calls).toHaveLength(1);
+    expect(insecure.calls).toHaveLength(1);
+    expect(insecure.calls[0].url).toBe("https://llm.corp.local/v1/chat/completions");
+    expect(insecure.agents).toEqual([{ connect: { rejectUnauthorized: false } }]);
+    expect(insecure.calls[0].opts.headers.authorization).toBe("Bearer k");
+    expect(new ChatSettings({ ignore_certs: true }).ignore_certs).toBe(1);
+    expect(new ChatSettings({}).ignore_certs).toBe(0);
   });
 
   test("no provider configured", async () => {

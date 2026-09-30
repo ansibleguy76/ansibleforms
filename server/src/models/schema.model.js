@@ -508,7 +508,8 @@ const SCHEMA_MANIFEST = {
                                'awx.managed', 'credentials.managed', 'oauth2_providers.managed',
                                'repositories.managed', 'ldap.managed', 'settings.managed',
                                'ldap.groupfilter', 'chat_settings.auth_type', 'chat_settings.api_version',
-                               'chat_settings.request_user', 'chat_settings.extra_headers'],
+                               'chat_settings.request_user', 'chat_settings.extra_headers',
+                               'chat_settings.ignore_certs'],
                      indexes: ['jobs.idx_jobs_retention'] },
   },
 };
@@ -765,6 +766,8 @@ async function patchVersion6(messages, success, failed) {
   await checkPromise(addColumn("chat_settings", "api_version", "varchar(50)", true, "NULL"), messages, success, failed);
   await checkPromise(addColumn("chat_settings", "request_user", "varchar(100)", true, "NULL"), messages, success, failed);
   await checkPromise(addColumn("chat_settings", "extra_headers", "text", true, "NULL"), messages, success, failed);
+  // a proxy on a self-signed certificate (6.5.1)
+  await checkPromise(addColumn("chat_settings", "ignore_certs", "tinyint(4)", true, "0"), messages, success, failed);
 
   // Job retention selects on parent_id + status + end. Without an index that is a full
   // scan of the biggest table in the schema, repeated once per batch.
