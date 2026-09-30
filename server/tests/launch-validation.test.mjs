@@ -12,7 +12,8 @@ process.env.DB_USER ||= "test";
 process.env.DB_PASSWORD ||= "test";
 vi.mock("../src/models/db.model.js", () => ({ default: { do: async () => [] } }));
 
-const { guardLaunch } = await import("../src/models/job.model.js");
+const { guardLaunch, launchValidationMode } = await import("../src/models/job.model.js");
+const Form = (await import("../src/models/form.model.js")).default;
 const appConfig = (await import("./__mocks__/app.config.js")).default;
 const logger = (await import("./__mocks__/logger.js")).default;
 const { validateLaunch, verifyUploads, compareExtravars, describeLaunchErrors, describeRowErrors } = await import("../src/lib/launchValidation.js");
@@ -136,6 +137,42 @@ describe("compareExtravars", () => {
   });
 });
 
+describe("per-form launchValidation", () => {
+  test("the stricter of the form and LAUNCH_VALIDATION wins", () => {
+    appConfig.launchValidation = "off";
+    expect(launchValidationMode({})).toBe("off");
+    expect(launchValidationMode({ launchValidation: "enforce" })).toBe("enforce");
+    expect(launchValidationMode({ launchValidation: "log" })).toBe("log");
+    appConfig.launchValidation = "enforce";
+    // a form can never loosen what the instance enforces
+    expect(launchValidationMode({ launchValidation: "off" })).toBe("enforce");
+    appConfig.launchValidation = "log";
+    expect(launchValidationMode({ launchValidation: "enforce" })).toBe("enforce");
+    expect(launchValidationMode({ launchValidation: "bogus" })).toBe("log");
+  });
+
+  test("a form with launchValidation: enforce is enforced while the instance is off", async () => {
+    appConfig.launchValidation = "off";
+    const strict = { ...formObj, launchValidation: "enforce" };
+    const err = await guardLaunch({ ...args({ host: "test-1" }), formObj: strict }).catch((e) => e);
+    expect(err.name).toBe("ValidationError");
+    const built = await guardLaunch({ ...args({ host: "prod-1" }, { vm: { name: "forged" } }), formObj: strict });
+    expect(built.extravars.vm).toEqual({ name: "prod-1" });
+    // the same form without the property : no check at all
+    await expect(guardLaunch(args({ host: "test-1" }))).resolves.toBeUndefined();
+  });
+
+  test("the form schema takes it on a form, refuses it on a wizard form and on a subform", () => {
+    const base = { name: "F", type: "ansible", playbook: "p.yml", roles: ["public"], categories: [], fields: [{ name: "a", type: "text" }] };
+    expect(() => Form.validateForm({ ...base, launchValidation: "enforce" })).not.toThrow();
+    expect(() => Form.validateForm({ ...base, launchValidation: "strict" })).toThrow();
+    const wizard = { ...base, fields: undefined, wizard: [{ subform: "s1" }] };
+    expect(() => Form.validateForm(wizard)).not.toThrow();
+    expect(() => Form.validateForm({ ...wizard, launchValidation: "enforce" })).toThrow();
+    expect(() => Form.validateForm({ name: "S", type: "subform", fields: [{ name: "a", type: "text" }], launchValidation: "log" })).toThrow();
+  });
+});
+
 describe("guardLaunch", () => {
   test("off : nothing is checked, nothing is logged", async () => {
     appConfig.launchValidation = "off";
@@ -184,7 +221,7 @@ describe("guardLaunch", () => {
     const wizard = { ...formObj, wizard: [{ subform: "s1" }] };
     const err = await guardLaunch({ ...args({ host: "prod-1" }), formObj: wizard }).catch((e) => e);
     expect(err.name).toBe("ValidationError");
-    expect(err.message).toMatch(/cannot be launched with LAUNCH_VALIDATION=enforce yet/);
+    expect(err.message).toMatch(/cannot be launched with launch validation 'enforce' yet/);
   });
 
   test("enforce : leaving rawFormData out is not a way around the check", async () => {

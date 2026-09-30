@@ -538,6 +538,9 @@
       its computed fields evaluated. Rows the list's own expression produced, and rows
       marked deleted, are sent as they are - as in the browser. At most 500 rows are
       resolved per launch. Applied without a restart.
+
+      A form can be made stricter with its own `launchValidation` property ; the stricter of
+      the two wins.
   - name: ENABLE_DB_QUERY_LOGGING
     type: number
     allowed: 0, 1
@@ -2196,6 +2199,35 @@
             code: |
               - name: Production Deployment
                 allowRelaunch: false
+      - name: launchValidation
+        type: string
+        with_types: ansible, awx, multistep
+        short: Check every launch of this form on the server
+        group: workflow
+        version: 6.4.1
+        allowed: "off, log, enforce"
+        default: the LAUNCH_VALIDATION environment variable
+        description: |
+          Checks every launch of this form on the server against its validation rules, with
+          the same engine the browser and the MCP server use - see the `LAUNCH_VALIDATION`
+          environment variable for what `log` and `enforce` do.
+
+          Set it on a form that is launched over the REST API : with `enforce`, a launch that
+          breaks the form's rules is refused, and the job runs the extravars the **server**
+          builds from the checked values - whatever the caller sent as extravars.
+
+          The stricter of this property and `LAUNCH_VALIDATION` wins : a form can be made
+          stricter than the instance, never looser. The MCP server always validates and builds
+          the extravars itself, whatever this says.
+
+          Not for wizard forms yet : a wizard form with `launchValidation` does not load.
+        examples:
+          - name: A form that is launched over REST
+            code: |
+              - name: Create VM
+                type: ansible
+                playbook: vm.yml
+                launchValidation: enforce
       - name: order
         type: integer
         with_types: ansible, awx, multistep

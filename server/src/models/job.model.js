@@ -873,8 +873,8 @@ Job.getRawFormData = async function (user, id) {
 
 
 /**
- * LAUNCH_VALIDATION : validate the raw field values of a REST launch with the form engine
- * the browser and the MCP server use.
+ * LAUNCH_VALIDATION (or the form's `launchValidation`, the stricter wins) : validate the raw
+ * field values of a REST launch with the form engine the browser and the MCP server use.
  *   - `off` (default) does nothing - the check re-runs the form's expressions and queries,
  *     so an upgrade must not start doing that unasked ;
  *   - `log` logs what would be refused, and where the client's extravars differ from the
@@ -891,8 +891,20 @@ Job.getRawFormData = async function (user, id) {
  *
  * @returns {Promise<{extravars: object, credentials: object}|undefined>} enforce only
  */
+const LAUNCH_VALIDATION_LEVELS = ['off', 'log', 'enforce'];
+
+/**
+ * The launch validation of a form : the stricter of the form's `launchValidation` and the
+ * LAUNCH_VALIDATION environment variable. An architect can make a form stricter than the
+ * instance (a form that is launched over REST : enforce), never looser.
+ */
+function launchValidationMode(formObj) {
+  const level = (v) => Math.max(0, LAUNCH_VALIDATION_LEVELS.indexOf(String(v || 'off').toLowerCase()));
+  return LAUNCH_VALIDATION_LEVELS[Math.max(level(formObj?.launchValidation), level(appConfig.launchValidation))];
+}
+
 async function guardLaunch({ form, formConfig, formObj, user, rawFormData, extravars, files = {} }) {
-  const mode = appConfig.launchValidation;
+  const mode = launchValidationMode(formObj);
   if (mode !== 'log' && mode !== 'enforce') return;
   const enforce = mode === 'enforce';
   const hasRaw = !!rawFormData && typeof rawFormData === 'object' && Object.keys(rawFormData).length > 0;
@@ -909,13 +921,13 @@ async function guardLaunch({ form, formConfig, formObj, user, rawFormData, extra
       });
     } catch (err) {
       if (enforce) throw new Errors.ValidationError(`Launch validation of form '${form}' failed : ${err.message}`);
-      logger.error(`Launch validation of form '${form}' failed, launching anyway (LAUNCH_VALIDATION=log) : ${err.message}`);
+      logger.error(`Launch validation of form '${form}' failed, launching anyway (launch validation 'log') : ${err.message}`);
       return;
     }
   }
   if (result.skipped) {
     if (enforce) {
-      const err = new Errors.ValidationError(`Form '${form}' cannot be launched with LAUNCH_VALIDATION=enforce yet : ${result.skipped}`);
+      const err = new Errors.ValidationError(`Form '${form}' cannot be launched with launch validation 'enforce' yet : ${result.skipped}`);
       err.details = { reason: result.skipped };
       throw err;
     }
@@ -926,7 +938,7 @@ async function guardLaunch({ form, formConfig, formObj, user, rawFormData, extra
     if (enforce) return result.payload;
     const differ = compareExtravars(extravars, result.payload.extravars);
     if (differ.length) {
-      logger.warning(`Launch of form '${form}' : the extravars differ from the ones the server builds for ${differ.join(', ')} (LAUNCH_VALIDATION=log ; enforce would run the server's)`);
+      logger.warning(`Launch of form '${form}' : the extravars differ from the ones the server builds for ${differ.join(', ')} (launch validation 'log' ; 'enforce' would run the server's)`);
     }
     return;
   }
@@ -936,7 +948,7 @@ async function guardLaunch({ form, formConfig, formObj, user, rawFormData, extra
     err.details = result.errors || { reason: result.reason };
     throw err;
   }
-  logger.warning(`Launch validation would refuse form '${form}' for ${user?.username || 'unknown'} (LAUNCH_VALIDATION=log) : ${why}`);
+  logger.warning(`Launch validation would refuse form '${form}' for ${user?.username || 'unknown'} (launch validation 'log') : ${why}`);
 }
 
 Job.launch = async function ({
@@ -3211,4 +3223,4 @@ Awx.findInventoryByName = async function (awxName, name) {
 
 export default Job;
 // named export of the awx interaction functions (mainly for testing)
-export { Awx, stripReservedExtravars, setUserExtravars, guardLaunch };
+export { Awx, stripReservedExtravars, setUserExtravars, guardLaunch, launchValidationMode };
