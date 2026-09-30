@@ -46,9 +46,13 @@ ChatSettings.find = async function () {
   return row;
 };
 
-/** whether a provider is configured well enough to chat : provider, key and model */
+/**
+ * whether a provider is configured well enough to chat : a provider and a model, and a key -
+ * or a base url of its own, since a local model server (Ollama, vLLM) or an internal proxy
+ * often takes no key at all
+ */
 ChatSettings.isConfigured = function (row) {
-  return !!(row && CHAT_PROVIDERS.includes(row.provider) && row.api_key && row.model);
+  return !!(row && CHAT_PROVIDERS.includes(row.provider) && row.model && (row.api_key || row.base_url));
 };
 
 export default ChatSettings;

@@ -45,7 +45,7 @@ export function parseAnthropic(json) {
 export async function complete({ settings, system, history, tools }) {
   const json = await postJson(
     withPath(settings.base_url || DEFAULT_BASE_URL, '/v1/messages'),
-    { 'x-api-key': settings.api_key, 'anthropic-version': '2023-06-01' },
+    { ...(settings.api_key ? { 'x-api-key': settings.api_key } : {}), 'anthropic-version': '2023-06-01' },
     anthropicBody({ model: settings.model, system, history, tools }),
     { timeoutSeconds: settings.timeout_seconds, provider: 'Anthropic' },
   );

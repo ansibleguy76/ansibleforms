@@ -36,6 +36,8 @@ export function parseOpenai(json) {
 }
 
 export function authHeaders(settings) {
+  // no key (a local model server, a proxy that authenticates by network) : no auth header
+  if (!settings.api_key) return {};
   return /azure/i.test(settings.base_url || '') ? { 'api-key': settings.api_key } : { authorization: `Bearer ${settings.api_key}` };
 }
 

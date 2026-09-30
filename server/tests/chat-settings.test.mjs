@@ -70,6 +70,8 @@ describe("chat settings", () => {
     expect(ChatSettings.isConfigured(await ChatSettings.find())).toBe(true);
     expect(ChatSettings.isConfigured({ ...row, api_key: "" })).toBe(false);
     expect(ChatSettings.isConfigured({ ...row, provider: "" })).toBe(false);
+    // a local model server or an internal proxy : a base url and no key
+    expect(ChatSettings.isConfigured({ ...row, api_key: "", base_url: "http://ollama:11434/v1" })).toBe(true);
   });
 });
 
@@ -138,6 +140,14 @@ describe("provider requests", () => {
     expect(err).toMatchObject({ code: "provider_error", status: 502 });
     expect(err.message).toMatch(/Anthropic returned 401/);
     expect(err.message).not.toContain("sk-secret");
+  });
+
+  test("no key (Ollama, an internal proxy) : no auth header at all", async () => {
+    vi.stubGlobal("fetch", reply({ choices: [{ message: { content: "OK" } }] }));
+    await complete({ settings: { provider: "openai", api_key: "", model: "llama3", base_url: "http://ollama:11434/v1", timeout_seconds: 5 }, system: "S", history: [{ role: "user", text: "hi" }], tools: [] });
+    expect(calls[0].url).toBe("http://ollama:11434/v1/chat/completions");
+    expect(calls[0].headers.authorization).toBeUndefined();
+    expect(calls[0].headers["api-key"]).toBeUndefined();
   });
 
   test("no provider configured", async () => {

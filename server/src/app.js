@@ -57,6 +57,7 @@ import tokenRoutesv2 from "./routes/v2/token.routes.js";
 import jobRoutesv2 from "./routes/v2/job.routes.js";
 import ldapRoutes from "./routes/v2/ldap.routes.js";
 import chatSettingsRoutes from "./routes/v2/chatSettings.routes.js";
+import chatRoutes from "./chat/router.js";
 import oauth2Routes from "./routes/v2/oauth2.routes.js";
 import credentialRoutesv2 from "./routes/v2/credential.routes.js";
 import knownhostsRoutes from "./routes/v2/knownhosts.routes.js";
@@ -266,6 +267,14 @@ const load = async (app) => {
     app.use(`/api/v2/mcp`, cors(), authobj, mcpRoutes);
     logger.notice(`MCP endpoint enabled on ${appConfig.baseUrl}/api/v2/mcp`);
   }
+
+  // The chat assistant (ENABLE_CHAT) : the same form service as the MCP server, in
+  // process, as the authenticated user ; the allowChat role option may switch it off
+  if (appConfig.enableChat) {
+    app.use('/api/v2/chat', cors(), authobj, Middleware.checkChatMiddleware, chatRoutes);
+    logger.notice("Chat assistant enabled on /api/v2/chat");
+  }
+
 }
 
 
