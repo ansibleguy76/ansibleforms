@@ -533,6 +533,20 @@
         server's evaluation, and a file field must point at a real upload in `UPLOAD_PATH`.
         Wizard forms cannot be checked yet and are refused.
 
+        **What the user saw is not always what runs.** The server evaluates every computed
+        field again at launch, a moment after the browser did, as the launching user. A value
+        that depends on WHEN or WHERE it is evaluated can differ, and then the server's value
+        runs :
+          - time : `fn.fnTime()`, `new Date()`, a timestamp or a name built from it ;
+          - outside data : a query, `fnRestAdvanced` / `fnSsh` / `fnDnsResolve`, a file read
+            - if the data changed in between ;
+          - the browser's own settings : a `runLocal` expression using the user's timezone or
+            locale (`toLocaleString`) runs with the server's.
+        The same goes for validation : a rule that reads such a field (`notIn` against a
+        query's result, `validIf` on a computed flag) is checked against the server's value.
+        Run `log` first : it names every extravars key where the client and the server
+        differ, so you see which forms this affects before you enforce.
+
       The rows of a `list` field that were added or edited go through their subform on the
       server as well, with the form's values as `__parent__` : its rules are checked and
       its computed fields evaluated. Rows the list's own expression produced, and rows
@@ -2215,6 +2229,11 @@
           Set it on a form that is launched over the REST API : with `enforce`, a launch that
           breaks the form's rules is refused, and the job runs the extravars the **server**
           builds from the checked values - whatever the caller sent as extravars.
+
+          Mind the fields the server computes again : a timestamp (`fn.fnTime()`), a query or
+          REST result that changed, or a `runLocal` expression using the browser's timezone or
+          locale can come out different from what the user saw, and the server's value runs.
+          See `LAUNCH_VALIDATION` ; try `log` first, it names the keys that differ.
 
           The stricter of this property and `LAUNCH_VALIDATION` wins : a form can be made
           stricter than the instance, never looser. The MCP server always validates and builds
