@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.5.1](https://github.com/ansibleguy76/ansibleforms/compare/6.5.0...6.5.1) (2026-09-30)
+
+
+### Fixed
+
+* **chat:** ignore certificate errors for a self-signed proxy, and say why a provider cannot be reached ([#546](https://github.com/ansibleguy76/ansibleforms/issues/546)) ([278f690](https://github.com/ansibleguy76/ansibleforms/commit/278f690be1f083ee519bd129620793c911e43d8e))
+
 ## [6.5.0](https://github.com/ansibleguy76/ansibleforms/compare/6.4.1...6.5.0) (2026-09-30)
 
 
