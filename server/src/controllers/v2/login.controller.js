@@ -9,6 +9,7 @@ import authConfig from '../../../config/auth.config.js';
 import appConfig from '../../../config/app.config.js';
 import logger from "../../lib/logger.js";
 import helpers from '../../lib/common.js';
+import { signHandoff } from '../../lib/ssoHandoff.js';
 import RestResult from "../../models/restResult.model.v2.js";
 import auth_oidc from "../../auth/auth_oidc.js";
 import i18n from "../../lib/i18n.js";
@@ -291,38 +292,17 @@ const errorHandler = async function(err,req, res,_next) {
  */
 const authCallback = function(req, res, next, type) {
   return async (err, payload) => {
-    // The HANDOFF token. Passport has just verified the provider's response, so this is
-    // the only point where the claims are known to be genuine - re-sign them with OUR
-    // secret so the /login endpoint below can tell them apart from anything a caller
-    // made up.
-    //
-    // It used to hand the browser either the raw Azure token (verified later with
-    // jwt.decode, which verifies NOTHING) or a token signed with the literal string
-    // "oidc" (verified with that same literal). Both endpoints are unauthenticated, so
-    // anyone who could reach them could mint a token for any username and any groups and
-    // receive a real session - on every deployment, whether or not SSO was configured.
-    //
-    // `sso` pins which endpoint may consume it, and there is deliberately no `access`
-    // claim, so auth_jwt.js will not take it as an access token.
-    var claims = payload
-    if (typeof claims === 'string') {
-      // azuread hands us the provider's own token ; take its claims, do not forward it
-      claims = jwt.decode(claims) || {}
-    }
-    const token = jwt.sign(
-      { ...claims, sso: type },
-      authConfig.secret,
-      { expiresIn: SSO_HANDOFF_EXPIRES_IN, issuer: authConfig.jwtIssuer }
-    );
+    // The HANDOFF token : the claims passport just verified, re-signed with OUR secret
+    // (lib/ssoHandoff.js explains why). Signed inside the try and only without an error :
+    // a failing sign used to be an unhandled rejection, and the browser was never
+    // redirected (#542).
     try {
-      // if we have an error; we return it
       if (err) {
         logger.error(helpers.getError(err))
         return next(err)
-      }else{
-        res.redirect(`${appConfig.baseUrl}/login?token=${token}`)
       }
-
+      const token = signHandoff(payload, type);
+      res.redirect(`${appConfig.baseUrl}/login?token=${token}`)
     } catch (err) {
       logger.error(helpers.getError(err))
       return next(err)
@@ -330,8 +310,6 @@ const authCallback = function(req, res, next, type) {
   }
 };
 
-// Short : it only has to survive the redirect from the provider back to the login page.
-const SSO_HANDOFF_EXPIRES_IN = '5m';
 
 /**
  * Verifies a handoff token minted by authCallback. Throws if it was not signed by us,
