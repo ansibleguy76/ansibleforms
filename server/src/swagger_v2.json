@@ -1371,6 +1371,36 @@
         "responses": { "200": { "description": "Job aborted" }, "404": { "description": "Not found" } }
       }
     },
+    "/chatsettings": {
+      "get": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["settings"],
+        "summary": "The chat assistant's model provider",
+        "description": "Provider (anthropic, openai), model, base URL and limits. The api key comes back masked. Needs showSettings.",
+        "responses": { "200": { "description": "The chat settings" }, "403": { "description": "No showSettings" } }
+      },
+      "put": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["settings"],
+        "summary": "Update the chat assistant's model provider",
+        "description": "The api key is stored encrypted ; send it masked (**********) to keep the stored one. Refused (403) while the row is managed by the config seed.",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": {
+          "provider": { "type": "string", "enum": ["", "anthropic", "openai"] },
+          "api_key": { "type": "string" }, "base_url": { "type": "string" }, "model": { "type": "string" },
+          "max_turns": { "type": "integer" }, "max_tool_rounds": { "type": "integer" }, "timeout_seconds": { "type": "integer" },
+          "allow_job_status": { "type": "boolean" }
+        } } } } },
+        "responses": { "200": { "description": "Updated" }, "403": { "description": "Managed by the config seed, or no showSettings" } }
+      }
+    },
+    "/chatsettings/check": {
+      "post": {
+        "security": [ { "bearerAuth": [] } ],
+        "tags": ["settings"],
+        "summary": "Test the chat model provider with one tiny call",
+        "responses": { "200": { "description": "The provider answered" }, "502": { "description": "The provider could not be reached or refused" } }
+      }
+    },
     "/job/{id}/relaunch": {
       "post": {
         "security": [ { "bearerAuth": [] } ],

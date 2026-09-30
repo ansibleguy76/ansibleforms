@@ -341,6 +341,28 @@ export default function getSettings(t) {
             { key: "groupfilter", icon:"filter", line: 8, label: t('settings.ldap.groupFilter'), help: t('settings.ldap.groupFilterDesc'), required: false, dependency: "enable" },
         ]
     },
+    chat: {
+        // the chat assistant's model provider ; the api key never comes back from the server
+        type: "chatsettings",
+        showDisabledFields: true,
+        label: t('settings.chat.label'),
+        description: t('settings.chat.description'),
+        icon: "comments",
+        actions: [
+            { name: 'test', title: t('settings.common.testConnection'), icon: 'plug', dependency: "provider" }
+        ],
+        fields: [
+            { key: "provider", icon: "robot", line: 0, type: "select", label: t('settings.chat.provider'), help: t('settings.chat.providerHelp'),
+              values: [{ value: "", label: t('settings.chat.providerNone') }, { value: "anthropic", label: "Anthropic" }, { value: "openai", label: "OpenAI" }] },
+            { key: "model", icon: "microchip", line: 0, label: t('settings.chat.model'), help: t('settings.chat.modelHelp'), placeholder: "claude-opus-5-5 / gpt-5", required: true, dependency: "provider" },
+            { key: "api_key", icon: "key", line: 1, type: "password", label: t('settings.chat.apiKey'), help: t('settings.chat.apiKeyHelp'), required: true, dependency: "provider" },
+            { key: "base_url", icon: "link", line: 1, label: t('settings.chat.baseUrl'), help: t('settings.chat.baseUrlHelp'), placeholder: "https://api.anthropic.com", dependency: "provider" },
+            { key: "max_turns", icon: "comments", line: 2, type: "number", label: t('settings.chat.maxTurns'), help: t('settings.chat.maxTurnsHelp'), dependency: "provider" },
+            { key: "max_tool_rounds", icon: "arrows-rotate", line: 2, type: "number", label: t('settings.chat.maxToolRounds'), help: t('settings.chat.maxToolRoundsHelp'), dependency: "provider" },
+            { key: "timeout_seconds", icon: "clock", line: 2, type: "number", label: t('settings.chat.timeout'), help: t('settings.chat.timeoutHelp'), dependency: "provider" },
+            { key: "allow_job_status", line: 3, type: "checkbox", label: t('settings.chat.allowJobStatus'), help: t('settings.chat.allowJobStatusHelp'), dependency: "provider" },
+        ]
+    },
     aap:{
         type: "awx",
         label: t('settings.aap.label'),
