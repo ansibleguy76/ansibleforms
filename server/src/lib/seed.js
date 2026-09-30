@@ -35,6 +35,7 @@ import Credential from "../models/credential.model.v2.js";
 import Repository from "../models/repository.model.js";
 import Ldap from "../models/ldap.model.js";
 import Settings from "../models/settings.model.js";
+import ChatSettings from "../models/chatSettings.model.js";
 import Audit from "../models/audit.model.js";
 import mysql from "../models/db.model.js";
 
@@ -291,6 +292,29 @@ async function applySettings(cfg, summary) {
   summary.updated.push("settings");
 }
 
+// The chat assistant's provider row : the ldap rule - only the declared keys, converted by
+// the model's constructor (encryption, clamping), compared against what was declared.
+export async function applyChat(cfg, summary) {
+  const stored = await ChatSettings.find();
+  const converted = { ...new ChatSettings(cfg) };
+  const record = {};
+  for (const key of Object.keys(converted)) {
+    if (cfg[key] === undefined || converted[key] === undefined) continue;
+    record[key] = converted[key];
+  }
+  if (stored?.managed && !differs(cfg, stored)) {
+    summary.unchanged++;
+    return;
+  }
+  if (!stored?.managed) {
+    logger.warning("Config seed adopts the existing chat settings, which were not managed before : its declared fields are now enforced from the seed file");
+    summary.adopted.push("chat");
+  }
+  record.managed = 1;
+  await ChatSettings.update(record);
+  summary.updated.push("chat");
+}
+
 /**
  * Applies the seed file when CONFIG_SEED_PATH is set. Returns a summary, or null when
  * no seed is configured. Throws on anything wrong : the caller treats that as fatal.
@@ -478,6 +502,13 @@ async function applySections(doc, summary) {
   } else {
     const res = await mysql.do("UPDATE AnsibleForms.`settings` SET managed=0 WHERE managed=1");
     if (res.affectedRows > 0) summary.released.push("settings");
+  }
+
+  if (doc.chat) {
+    await applyChat(doc.chat, summary);
+  } else {
+    const res = await mysql.do("UPDATE AnsibleForms.`chat_settings` SET managed=0 WHERE managed=1");
+    if (res.affectedRows > 0) summary.released.push("chat");
   }
 
 }

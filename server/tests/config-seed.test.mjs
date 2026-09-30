@@ -32,7 +32,10 @@ vi.mock("../src/models/db.model.js", () => ({
 }));
 
 const { validateSeed, interpolateEnv } = await import("../src/lib/seed-schema.js");
-const { buildRecord, listSections, canonicalJson } = await import("../src/lib/seed.js");
+const appConfig = (await import("./__mocks__/app.config.js")).default;
+appConfig.encryptionSecret ||= "0123456789abcdef0123456789abcdef";
+const { buildRecord, listSections, canonicalJson, applyChat } = await import("../src/lib/seed.js");
+const seedCrypto = (await import("../src/lib/crypto.js")).default;
 const CrudModel = (await import("../src/models/crud.model.js")).default;
 const Schema = (await import("../src/models/schema.model.js")).default;
 
@@ -383,5 +386,53 @@ describe("the unattended schema bootstrap cannot wipe a live database", () => {
     dbHandler = async (sql) => (/SHOW DATABASES/.test(sql) ? [{ x: 1 }] : [{ Tables_in_AnsibleForms: "jobs" }]);
     await Schema.isEmpty();
     assert.equal(queries.some((q) => /COUNT\(\*\)/i.test(q.sql)), false);
+  });
+});
+
+describe("the chat assistant's provider is seedable (a single-row section)", () => {
+  const FULL_CHAT = {
+    provider: "anthropic", api_key: "${CHAT_API_KEY}", base_url: "", model: "claude-opus-5-5",
+    max_turns: 20, max_tool_rounds: 6, timeout_seconds: 60, allow_job_status: true,
+  };
+  const summary = () => ({ created: [], updated: [], unchanged: 0, adopted: [], released: [], deleted: [] });
+
+  test("a fully declared chat section validates, its key from the environment", () => {
+    assert.equal(validateSeed({ chat: FULL_CHAT }), true);
+    assert.equal(interpolateEnv({ chat: FULL_CHAT }, { CHAT_API_KEY: "sk-live" }).chat.api_key, "sk-live");
+    assert.throws(() => interpolateEnv({ chat: FULL_CHAT }, {}), /undefined environment variables : CHAT_API_KEY/);
+  });
+
+  test("every field is required, and the provider is one we have", () => {
+    const { model, ...partial } = FULL_CHAT; // eslint-disable-line no-unused-vars
+    assert.throws(() => validateSeed({ chat: partial }), /required property 'model'/);
+    assert.throws(() => validateSeed({ chat: { ...FULL_CHAT, provider: "gemini" } }), /validation failed/);
+  });
+
+  test("applied : adopted, the key encrypted, the row managed", async () => {
+    const writes = [];
+    dbHandler = async (sql, rec) => {
+      if (/^UPDATE/.test(sql)) { writes.push(rec); return { affectedRows: 1 }; }
+      return [{ provider: "", api_key: "", model: "", managed: 0 }];
+    };
+    const s = summary();
+    await applyChat({ ...FULL_CHAT, api_key: "sk-live" }, s);
+    assert.deepEqual(s.adopted, ["chat"]);
+    assert.deepEqual(s.updated, ["chat"]);
+    assert.equal(writes[0].managed, 1);
+    assert.equal(writes[0].provider, "anthropic");
+    assert.notEqual(writes[0].api_key, "sk-live");
+    assert.equal(seedCrypto.decrypt(writes[0].api_key), "sk-live");
+  });
+
+  test("an unchanged managed row is not rewritten", async () => {
+    const writes = [];
+    dbHandler = async (sql, rec) => {
+      if (/^UPDATE/.test(sql)) { writes.push(rec); return { affectedRows: 1 }; }
+      return [{ ...FULL_CHAT, api_key: seedCrypto.encrypt("sk-live"), allow_job_status: 1, managed: 1 }];
+    };
+    const s = summary();
+    await applyChat({ ...FULL_CHAT, api_key: "sk-live" }, s);
+    assert.equal(s.unchanged, 1);
+    assert.deepEqual(writes, []);
   });
 });

@@ -31,6 +31,7 @@ declares the objects that until now existed only in the database:
 | `repositories` | Git repositories                     |
 | `ldap`         | The LDAP configuration               |
 | `settings`     | The mail settings and the public url |
+| `chat`         | The chat assistant's model provider  |
 
 This is **not** the same thing as `config.yaml`, which holds the forms, categories, roles
 and constants and has its own `CONFIG_PATH`. The two are separate on purpose: the
@@ -102,7 +103,20 @@ settings:
   mail_password: ""
   mail_from: ansibleforms@example.com
   url: https://forms.example.com
+
+chat:                        # the chat assistant's model provider (6.5)
+  provider: anthropic        # anthropic | openai | "" (chat off)
+  api_key: ${SEED_CHAT_API_KEY}
+  base_url: ""               # empty for the provider default ; Azure OpenAI : the deployment url
+  model: claude-opus-5-5
+  max_turns: 20
+  max_tool_rounds: 6
+  timeout_seconds: 60
+  allow_job_status: true
 ```
+
+The chat section is a single row like `ldap`, so every field is required. The chat also
+needs `ENABLE_CHAT=1`; see the [Chat assistant](chat) page.
 
 ## Single-row sections are all or nothing
 
@@ -289,7 +303,7 @@ spec:
               value: "0"
           envFrom:
             - secretRef:
-                name: ansibleforms-seed-secrets   # SEED_AWX_TOKEN, SEED_LDAP_PW, ...
+                name: ansibleforms-seed-secrets   # SEED_AWX_TOKEN, SEED_LDAP_PW, SEED_CHAT_API_KEY, ...
             - secretRef:
                 name: ansibleforms-secrets        # DB_PASSWORD, ENCRYPTION_SECRET, ...
           volumeMounts:
