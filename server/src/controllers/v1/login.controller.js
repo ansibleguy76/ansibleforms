@@ -9,6 +9,7 @@ import authConfig from '../../../config/auth.config.js';
 import appConfig from '../../../config/app.config.js';
 import logger from "../../lib/logger.js";
 import helpers from '../../lib/common.js';
+import { signHandoff } from '../../lib/ssoHandoff.js';
 import RestResult from "../../models/restResult.model.js";
 import auth_oidc from "../../auth/auth_oidc.js";
 
@@ -224,28 +225,17 @@ const errorHandler = async function(err,req, res,_next) {
  */
 const authCallback = function(req, res, next, type) {
   return async (err, payload) => {
-    // Signed with OUR secret - see the long note on the v2 controller's authCallback.
-    // This used to hand out either the provider's raw token (later "verified" with
-    // jwt.decode, which verifies nothing) or a token signed with the literal string
-    // "oidc", on unauthenticated endpoints.
-    var claims = payload
-    if (typeof claims === 'string') {
-      claims = jwt.decode(claims) || {}
-    }
-    const token = jwt.sign(
-      { ...claims, sso: type },
-      authConfig.secret,
-      { expiresIn: SSO_HANDOFF_EXPIRES_IN, issuer: authConfig.jwtIssuer }
-    );
+    // The HANDOFF token : the claims passport just verified, re-signed with OUR secret
+    // (lib/ssoHandoff.js explains why). Signed inside the try and only without an error :
+    // a failing sign used to be an unhandled rejection, and the browser was never
+    // redirected (#542).
     try {
-      // if we have an error; we return it
       if (err) {
         logger.error(helpers.getError(err))
         return next(err)
-      }else{
-        res.redirect(`${appConfig.baseUrl}/login?token=${token}`)
       }
-
+      const token = signHandoff(payload, type);
+      res.redirect(`${appConfig.baseUrl}/login?token=${token}`)
     } catch (err) {
       logger.error(helpers.getError(err))
       return next(err)
@@ -255,7 +245,6 @@ const authCallback = function(req, res, next, type) {
 
 // Same handoff contract as the v2 controller ; both endpoints are mounted and both were
 // exploitable, so both are fixed. See v2/login.controller.js for the full reasoning.
-const SSO_HANDOFF_EXPIRES_IN = '5m';
 
 function verifyHandoff(token, type) {
   if (!token) throw new Error('No token given');
