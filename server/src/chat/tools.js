@@ -56,6 +56,9 @@ const MAX_CATALOG = 25;
 
 const error = (code, message, extra = {}) => ({ status: 'error', error: { code, message, ...extra } });
 
+const MAX_CARD_FIELDS = 20;
+const isEmpty = (v) => v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length);
+
 /** a short value for the model : option records by their name, long text cut */
 function brief(value) {
   if (value && typeof value === 'object' && !Array.isArray(value) && 'name' in value) return value.name;
@@ -212,6 +215,9 @@ async function resolve(args, ctx, planOnly) {
   // complete : the summary the operator can approve - never launched from here
   const optionalSwitches = other.filter((o) => o.switch && o.value !== true).map((o) => ({ slot: o.slot, prompt: o.prompt, ...(info.slotHelp[o.slot] ? { help: info.slotHelp[o.slot] } : {}) }));
   const label = 'Launch';
+  // what the card shows as a table : every field with a value, a switch only when it is on
+  const chosen = other.filter((o) => (o.switch ? o.value === true : !isEmpty(o.value)))
+    .slice(0, MAX_CARD_FIELDS).map((o) => ({ label: o.prompt, value: o.switch ? true : o.value }));
   const summary = summaryOf(info, res.fields, values);
   const plan = createPlan({
     username: ctx.user.username, userType: ctx.user.type, sessionId: ctx.session.id,
@@ -226,7 +232,7 @@ async function resolve(args, ctx, planOnly) {
       ...(optionalSwitches.length ? { optional_switches: optionalSwitches } : {}),
     },
     proposal: {
-      planId: plan.planId, label, form: info.form, summary, extravars,
+      planId: plan.planId, label, form: info.form, summary, fields: chosen, extravars,
       expiresAt: new Date(plan.expiresAt).toISOString(),
       ...(optionalSwitches.length ? { optionalSwitches } : {}),
     },

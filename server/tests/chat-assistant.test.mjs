@@ -201,6 +201,9 @@ describe("a summary launches exactly its payload, once, from the click", () => {
     expect(p.summary).toMatch(/Cluster bb8/);
     expect(p.extravars.api_token).toBe("********");
     expect(p.optionalSwitches.map((s) => s.slot)).toEqual(["add_expiry"]);
+    // the card's table : the chosen values by label, an off switch left to the list above
+    expect(p.fields.map((f) => f.value)).toContain("bb8");
+    expect(p.fields.some((f) => f.label === "add_expiry" || f.value === false)).toBe(false);
     expect(deps.Job.launch).not.toHaveBeenCalled();
     expect(allToolText(model.histories.at(-1))).toMatch(/"status":"planned"/);
     expect(allToolText(model.histories.at(-1))).not.toContain("t0k3n");

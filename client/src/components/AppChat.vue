@@ -42,6 +42,8 @@ let sessionId = readSession();
 const converter = new showdown.Converter({ ghCodeBlocks: true, simplifiedAutoLink: true, tables: true, openLinksInNewWindow: true, strikethrough: true, literalMidWordUnderscores: true });
 // the model's text is untrusted : markdown to html, then the one html policy of the app
 const render = (text) => sanitize(converter.makeHtml(String(text || '')));
+// a value in the summary table : a list as a list, a record as short json
+const show = (v) => Array.isArray(v) ? v.map(show).join(', ') : (v !== null && typeof v === 'object' ? JSON.stringify(v) : String(v));
 
 function readSession() {
     try { return sessionStorage.getItem(SESSION_KEY) || ''; } catch { return ''; }
@@ -246,9 +248,20 @@ watch(visible, (shown) => {
 
                         <div v-for="p in e.proposals" :key="p.planId" class="card mt-2 border-primary">
                             <div class="card-body py-2">
-                                <div class="fw-semibold">{{ p.summary }}</div>
+                                <div class="fw-semibold">{{ p.fields?.length ? p.form : p.summary }}</div>
+                                <table v-if="p.fields?.length" class="table table-sm table-borderless small mb-1 af-chat-fields">
+                                    <tbody>
+                                        <tr v-for="f in p.fields" :key="f.label">
+                                            <th scope="row" class="text-body-secondary fw-normal">{{ f.label }}</th>
+                                            <td><FaIcon v-if="f.value === true" icon="check" class="text-success" /><code v-else>{{ show(f.value) }}</code></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                                 <div v-if="p.optionalSwitches?.length" class="small text-body-secondary mt-1">
-                                    {{ t('chat.switchesOff') }} {{ p.optionalSwitches.map((s) => s.prompt).join(', ') }}
+                                    {{ t('chat.switchesOff') }}
+                                    <ul class="mb-0 ps-3">
+                                        <li v-for="s in p.optionalSwitches" :key="s.slot">{{ s.prompt }}</li>
+                                    </ul>
                                 </div>
                                 <button type="button" class="btn btn-sm btn-link p-0 mt-1" @click="p.showDetails = !p.showDetails">
                                     {{ p.showDetails ? t('chat.hideDetails') : t('chat.showDetails') }}
@@ -279,7 +292,7 @@ watch(visible, (shown) => {
             </div>
 
             <footer class="card-footer p-2">
-                <div class="d-flex gap-2 align-items-end">
+                <div class="d-flex gap-2 align-items-center">
                     <textarea ref="inputBox" v-model="input" class="form-control form-control-sm af-chat-input" rows="2" :placeholder="t('chat.placeholder')" :disabled="busy" @keydown="onKey"></textarea>
                     <button type="button" class="btn btn-primary btn-sm" :disabled="busy || !input.trim()" :title="t('chat.send')" @click="send()"><FaIcon icon="paper-plane" /></button>
                 </div>
@@ -308,15 +321,16 @@ watch(visible, (shown) => {
     display: flex;
     flex-direction: column;
 }
+/* inset, not 100vw : 100vw includes the page's scrollbar, which then covers the panel's right edge */
 .af-chat-full {
     inset: 0;
-    width: 100vw;
-    height: 100vh;
+    width: auto;
+    height: auto;
     border-radius: 0;
 }
 /* a phone gets the whole screen */
 @media (max-width: 767.98px) {
-    .af-chat-panel { inset: 0; width: 100vw; height: 100vh; border-radius: 0; }
+    .af-chat-panel { inset: 0; width: auto; height: auto; border-radius: 0; }
 }
 .af-chat-body {
     flex: 1 1 auto;
@@ -339,8 +353,11 @@ watch(visible, (shown) => {
 }
 .af-chat-assistant :deep(p:last-child) { margin-bottom: 0; }
 .af-chat-assistant :deep(pre) { white-space: pre-wrap; }
-/* names and values : monochrome, not bootstrap's pink */
-.af-chat-assistant :deep(code) { color: inherit; background: var(--bs-tertiary-bg); border: 1px solid var(--bs-border-color); border-radius: .25rem; padding: 0 .3em; }
+/* names and values : one calm colour that stands out from the text, not bootstrap's pink */
+.af-chat-assistant :deep(code),
+.af-chat-fields code { color: var(--bs-primary-text-emphasis); background: var(--bs-primary-bg-subtle); border: 1px solid var(--bs-primary-border-subtle); border-radius: .25rem; padding: 0 .3em; overflow-wrap: anywhere; }
+.af-chat-fields { width: auto; }
+.af-chat-fields th { white-space: nowrap; padding-right: 1rem; }
 .af-chat-pre {
     max-height: 16rem;
     overflow: auto;
