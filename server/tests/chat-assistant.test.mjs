@@ -129,6 +129,16 @@ describe("the model cannot launch", () => {
 });
 
 describe("the operator chooses the targets", () => {
+  test("a value typed at the end of a sentence counts ; a longer name does not", async () => {
+    const { typedByOperator } = await import("../src/chat/policy.js");
+    expect(typedByOperator("vol_mirko", 'vol_mirko.  snap is "test_ai"')).toBe(true);
+    expect(typedByOperator("vol_mirko", "use vol_mirko, please")).toBe(true);
+    expect(typedByOperator("vol_mirko", "is it vol_mirko?")).toBe(true);
+    expect(typedByOperator("vol", "vol.1")).toBe(false);
+    expect(typedByOperator("vol", "vol-2")).toBe(false);
+    expect(typedByOperator("vol.1", "take vol.1.")).toBe(true);
+  });
+
   test("resolve asks the missing fields and offers the choices", async () => {
     const chat = service([call("resolve", { form: "Create a snapshot", answers: {} }), say("Which cluster?")]);
     const { sessionId } = await chat.openSession(user);

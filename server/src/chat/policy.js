@@ -33,7 +33,9 @@ function escapeRegex(s) {
 export function typedByOperator(value, text) {
   const v = String(value ?? '').toLowerCase().trim();
   if (!v) return false;
-  return new RegExp(`(^|[^\\w.@-])${escapeRegex(v)}($|[^\\w.@-])`).test(text);
+  // punctuation that ends a sentence ends the value too ("vol_mirko." is vol_mirko), but a
+  // dot, @ or - inside a name keeps it going ("vol.1", "a@b", "vol-2" are not "vol")
+  return new RegExp(`(^|[^\\w.@-])${escapeRegex(v)}($|[^\\w.@-]|[.@-](?![\\w.@-]))`).test(text);
 }
 
 /**

@@ -34,7 +34,7 @@ const scroller = ref(null);
 const inputBox = ref(null);
 let sessionId = readSession();
 
-const converter = new showdown.Converter({ ghCodeBlocks: true, simplifiedAutoLink: true, tables: true, openLinksInNewWindow: true, strikethrough: true });
+const converter = new showdown.Converter({ ghCodeBlocks: true, simplifiedAutoLink: true, tables: true, openLinksInNewWindow: true, strikethrough: true, literalMidWordUnderscores: true });
 // the model's text is untrusted : markdown to html, then the one html policy of the app
 const render = (text) => sanitize(converter.makeHtml(String(text || '')));
 
@@ -322,6 +322,8 @@ const expires = (p) => { try { return new Date(p.expiresAt).toLocaleTimeString()
 }
 .af-chat-assistant :deep(p:last-child) { margin-bottom: 0; }
 .af-chat-assistant :deep(pre) { white-space: pre-wrap; }
+/* names and values : monochrome, not bootstrap's pink */
+.af-chat-assistant :deep(code) { color: inherit; background: var(--bs-tertiary-bg); border: 1px solid var(--bs-border-color); border-radius: .25rem; padding: 0 .3em; }
 .af-chat-pre {
     max-height: 16rem;
     overflow: auto;
