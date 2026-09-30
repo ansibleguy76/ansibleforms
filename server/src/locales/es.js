@@ -7,6 +7,7 @@ export default {
     noLogsAccess: "No tienes acceso a los registros",
     noDatabaseAccess: "No tienes acceso a las operaciones de base de datos",
     noScheduleAccess: "No tienes permiso para gestionar trabajos programados",
+    noChatAccess: "No tiene permiso para usar el asistente de chat",
     noStoredJobsAccess: "No tienes permiso para gestionar trabajos almacenados",
     noDataSent: "No se enviaron datos",
     missingDbConfig: "Falta la configuración de la base de datos",

@@ -1900,7 +1900,7 @@ const forbiddenFormKeys = {
   ansible: ['template', 'awx', 'steps', 'awxCredentials', 'executionEnvironment', 'scm_branch', 'instanceGroups', 'expression'],
   awx: ['playbook', 'playbookSubPath', 'ansibleCredentials', 'vaultCredentials', 'steps', 'expression'],
   multistep: ['playbook', 'playbookSubPath', 'template', 'awx', 'inventory', 'tags', 'limit', 'check', 'diff', 'scm_branch', 'executionEnvironment', 'instanceGroups', 'ansibleCredentials', 'awxCredentials', 'vaultCredentials', 'key', 'expression'],
-  subform: ['playbook', 'playbookSubPath', 'template', 'awx', 'steps', 'expression', 'roles', 'categories', 'notifications', 'approval', 'hasApproval', 'onSubmit', 'onSuccess', 'onFailure', 'onAbort', 'onFinish', 'inventory', 'tags', 'limit', 'check', 'diff', 'scm_branch', 'executionEnvironment', 'instanceGroups', 'ansibleCredentials', 'awxCredentials', 'vaultCredentials', 'credentials', 'abortable', 'allowRelaunch', 'launchValidation', 'verbose', 'keepExtravars', 'userExtravars', 'image', 'icon', 'iconColor', 'iconSize', 'overlayIcon', 'overlayIconTransform', 'overlayIconColor', 'overlayIconCircle', 'overlayIconText', 'overlayIconTextPosition', 'overlayIconTextColor', 'tileClass', 'order'],
+  subform: ['playbook', 'playbookSubPath', 'template', 'awx', 'steps', 'expression', 'roles', 'categories', 'notifications', 'approval', 'hasApproval', 'onSubmit', 'onSuccess', 'onFailure', 'onAbort', 'onFinish', 'inventory', 'tags', 'limit', 'check', 'diff', 'scm_branch', 'executionEnvironment', 'instanceGroups', 'ansibleCredentials', 'awxCredentials', 'vaultCredentials', 'credentials', 'abortable', 'allowRelaunch', 'launchValidation', 'enableForChat', 'chatRisk', 'verbose', 'keepExtravars', 'userExtravars', 'image', 'icon', 'iconColor', 'iconSize', 'overlayIcon', 'overlayIconTransform', 'overlayIconColor', 'overlayIconCircle', 'overlayIconText', 'overlayIconTextPosition', 'overlayIconTextColor', 'tileClass', 'order'],
 };
 
 // also used by the template : an input for a key the selected type forbids must
@@ -1910,6 +1910,13 @@ const launchValidationOptions = computed(() => [
   { value: '', label: t('designer.formLaunchValidationDefault') },
   { value: 'log', label: 'log' },
   { value: 'enforce', label: 'enforce' },
+]);
+
+// the chat assistant : one select for enableForChat + chatRisk ('change' is the default)
+const chatOptions = computed(() => [
+  { value: '', label: t('designer.formChatOff') },
+  { value: 'change', label: t('designer.formChatChange') },
+  { value: 'read', label: t('designer.formChatRead') },
 ]);
 
 function formTypeAllows(key) {
@@ -1939,6 +1946,7 @@ function openFormSettings() {
       diff: !!parsed.diff,
       allowRelaunch: !!parsed.allowRelaunch,
       launchValidation: ['log', 'enforce'].includes(parsed.launchValidation) ? parsed.launchValidation : '',
+      chat: parsed.enableForChat === true ? (parsed.chatRisk === 'read' ? 'read' : 'change') : '',
       hasWizard: Array.isArray(parsed.wizard) && parsed.wizard.length > 0,
       abortable: !!parsed.abortable,
       verbose: !!parsed.verbose,
@@ -1975,6 +1983,10 @@ function applyFormSettings() {
     if (formTypeAllows('diff')) setDocValue(doc, 'diff', s.diff ? true : undefined);
     if (formTypeAllows('allowRelaunch')) setDocValue(doc, 'allowRelaunch', s.allowRelaunch ? true : undefined);
     if (formTypeAllows('launchValidation') && !s.hasWizard) setDocValue(doc, 'launchValidation', s.launchValidation || undefined);
+    if (formTypeAllows('enableForChat') && !s.hasWizard) {
+      setDocValue(doc, 'enableForChat', s.chat ? true : undefined);
+      setDocValue(doc, 'chatRisk', s.chat === 'read' ? 'read' : undefined);
+    }
     if (formTypeAllows('abortable')) setDocValue(doc, 'abortable', s.abortable ? true : undefined);
     if (formTypeAllows('verbose')) setDocValue(doc, 'verbose', s.verbose ? true : undefined);
     if (formTypeAllows('keepExtravars')) setDocValue(doc, 'keepExtravars', s.keepExtravars ? true : undefined);
@@ -4237,6 +4249,9 @@ onBeforeUnmount(() => {
             </div>
             <div class="col-md-4" v-if="formTypeAllows('launchValidation') && !formSettings.hasWizard">
               <BsInput :isFloating="false" type="select" v-model="formSettings.launchValidation" name="launchValidation" :values="launchValidationOptions" :label="t('designer.formLaunchValidation')" :help="t('designer.formLaunchValidationHelp')" icon="shield-halved" />
+            </div>
+            <div class="col-md-4" v-if="formTypeAllows('enableForChat') && !formSettings.hasWizard">
+              <BsInput :isFloating="false" type="select" v-model="formSettings.chat" name="chat" :values="chatOptions" :label="t('designer.formChat')" :help="t('designer.formChatHelp')" icon="comments" />
             </div>
             <div class="col-md-4" v-if="formTypeAllows('userExtravars')">
               <BsInput :isFloating="false" v-model="formSettings.userExtravars" :label="t('designer.formUserExtravars')" :help="t('designer.formUserExtravarsHelp')" icon="user-shield" placeholder="username,email,type" />

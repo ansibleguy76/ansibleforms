@@ -144,6 +144,9 @@ export function createHandlers({ user, deps }) {
           name: f.name,
           description: f.description || '',
           categories: f.categories || [],
+          // the chat assistant's allowlist and its button (Approve for change, Launch for read)
+          enableForChat: f.enableForChat === true,
+          chatRisk: f.chatRisk === 'read' ? 'read' : 'change',
         })),
       };
     },

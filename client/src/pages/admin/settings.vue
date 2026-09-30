@@ -41,7 +41,7 @@ const envGroupOrder = [
   { key: 'server', label: () => t('settings.settingsPage.envGroupServer'), icon: 'globe',
     // no BASE_URL : it is in OWNED_ELSEWHERE, which is filtered out before the groups are
     // consulted, so listing it here only claimed a variable this page never renders
-    exact: ['NODE_ENV', 'PORT', 'HTTPS', 'HTTPS_KEY', 'HTTPS_CERT', 'API_BODY_LIMIT_MB', 'ENABLE_MCP'] },
+    exact: ['NODE_ENV', 'PORT', 'HTTPS', 'HTTPS_KEY', 'HTTPS_CERT', 'API_BODY_LIMIT_MB', 'ENABLE_MCP', 'ENABLE_CHAT'] },
   { key: 'database', label: () => t('settings.settingsPage.envGroupDatabase'), icon: 'database',
     prefix: ['DB_'],
     exact: ['ENABLE_DB_QUERY_LOGGING', 'ALLOW_SCHEMA_CREATION'] },

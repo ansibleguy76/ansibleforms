@@ -33,6 +33,8 @@ function applyOptionDefaults(options, isAdmin) {
   if (options.allowScheduledJobs === undefined) options.allowScheduledJobs = isAdmin;
   if (options.allowStoredJobs === undefined) options.allowStoredJobs = true;
   if (options.allowPlannedJobs === undefined) options.allowPlannedJobs = true;
+  // the chat assistant (ENABLE_CHAT) : on for everyone unless a role says otherwise
+  if (options.allowChat === undefined) options.allowChat = true;
   return options;
 }
 

@@ -87,7 +87,7 @@ describe('keys built by concatenation are covered too', () => {
     const roles = read('client/src/config/roles.js');
     const block = roles.slice(roles.indexOf('export const roleOptionKeys'), roles.indexOf('];', roles.indexOf('export const roleOptionKeys')));
     const keys = [...block.matchAll(/'([A-Za-z]+)'/g)].map((m) => m[1]);
-    expect(keys.length).toBe(16);
+    expect(keys.length).toBe(17);
     const gaps = [];
     for (const k of keys) for (const lang of LANGS) {
       const key = `settings.settingsPage.roleOption${cap(k)}`;

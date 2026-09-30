@@ -7,6 +7,7 @@ export default {
     noLogsAccess: "You do not have access to logs",
     noDatabaseAccess: "You do not have access to database operations",
     noScheduleAccess: "You do not have permission to manage scheduled jobs",
+    noChatAccess: "You do not have permission to use the chat assistant",
     noStoredJobsAccess: "You do not have permission to manage stored jobs",
     noDataSent: "No data was sent",
     missingDbConfig: "Missing database configuration",

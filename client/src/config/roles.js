@@ -8,7 +8,7 @@ export const roleOptionKeys = [
   'showDesigner', 'showLogs', 'showDebugButtons', 'showSettings',
   'showExtravars', 'showAllJobLogs', 'showArtifacts', 'showJobs',
   'allowLogin', 'allowBackupOps', 'allowVerboseMode', 'allowJobRelaunch',
-  'allowScheduledJobs', 'allowStoredJobs', 'allowPlannedJobs',
+  'allowScheduledJobs', 'allowStoredJobs', 'allowPlannedJobs', 'allowChat',
   'extendedTokenExpiration',
 ];
 
@@ -21,7 +21,7 @@ export const roleOptionKeys = [
 // found in hand-written yaml are preserved verbatim by serializeRole).
 const trueByDefaultOptions = [
   'allowVerboseMode', 'showJobs', 'showDebugButtons', 'showExtravars',
-  'showArtifacts', 'allowStoredJobs', 'allowPlannedJobs', 'allowLogin',
+  'showArtifacts', 'allowStoredJobs', 'allowPlannedJobs', 'allowLogin', 'allowChat',
 ];
 
 // Options whose effective value defaults to the "is this an admin" check.

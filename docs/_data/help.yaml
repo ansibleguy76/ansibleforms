@@ -498,6 +498,23 @@
       fields, launch jobs and follow them. Every request carries an AnsibleForms access token
       and runs as that user, with the same form roles and job visibility as in the browser.
       Changing it needs a restart. See the MCP page of the documentation.
+  - name: ENABLE_CHAT
+    version: 6.5.0
+    type: boolean
+    allowed: 0, 1
+    short: Enable the chat assistant
+    hint: A chat in the browser that fills in and launches forms with an AI model
+    default: 0
+    description: |
+      Shows a chat button on every page. The assistant fills in a form with the user by
+      talking, through the same form engine as the browser, and launches it only when the
+      user clicks the Approve button on the exact payload it was shown.
+
+      It also needs a model provider on the **Chat assistant** settings page (or in the
+      config seed), forms with `enableForChat: true`, and users whose roles allow `allowChat`
+      (the default). Form definitions and the values being filled in are sent to that
+      provider ; passwords, credentials and job output never are. Changing it needs a
+      restart. See the Chat assistant page of the documentation.
   - name: LAUNCH_VALIDATION
     version: 6.4.0
     type: string
@@ -1130,6 +1147,7 @@
       - allowScheduledJobs: The user can create and manage scheduled jobs (recurring cron or one-time). (Added in 6.1.5)
       - allowStoredJobs: The user can store and load job data for later use. (Added in 6.1.5)
       - allowPlannedJobs: The user can schedule jobs to run at a specific time. (Added in 6.1.5)
+      - allowChat: The user can use the chat assistant (when it is enabled). Default true. (Added in 6.5.0)
         
       When options are not set, the admin role will have all options.  
       When options are set on the public role, they will have the lowest precedence and can be used as default options for all roles.  
@@ -1328,6 +1346,7 @@
           - allowScheduledJobs: The user can create and manage scheduled jobs (recurring cron or one-time). (Added in 6.1.5)
           - allowStoredJobs: The user can store and load job data for later use. (Added in 6.1.5)
           - allowPlannedJobs: The user can schedule jobs to run at a specific time. (Added in 6.1.5)
+          - allowChat: The user can use the chat assistant (when it is enabled). Default true. (Added in 6.5.0)
 
           When options are not set, the admin role will have all options.  
           When options are set on the public role, they will have the lowest precedence and can be used as default options for all roles.  
@@ -2249,6 +2268,43 @@
                 type: ansible
                 playbook: vm.yml
                 launchValidation: enforce
+      - name: enableForChat
+        type: boolean
+        with_types: ansible, awx, multistep
+        short: Offer this form in the chat assistant
+        group: workflow
+        version: 6.5.0
+        default: false
+        description: |
+          The chat assistant (`ENABLE_CHAT`) only offers the forms that set `enableForChat:
+          true` - and of those, only the ones the user's roles may open. It is the only
+          allowlist : a form without it is never discussed, resolved or launched by the chat,
+          even for a user who may open it in the browser.
+
+          The assistant fills the form in with the user, through the same form engine as the
+          browser, and never launches it : the user clicks Approve (or Launch, see
+          `chatRisk`) on the exact payload the chat showed. Not for wizard forms.
+        examples:
+          - name: A form the chat may offer
+            code: |
+              - name: Create a snapshot
+                type: ansible
+                playbook: snapshot.yml
+                enableForChat: true
+                chatRisk: change
+      - name: chatRisk
+        type: string
+        with_types: ansible, awx, multistep
+        short: The button the chat shows for this form
+        group: workflow
+        version: 6.5.0
+        allowed: "read, change"
+        default: change
+        description: |
+          `change` (the default) shows an **Approve** button, `read` - for a report or a
+          check that changes nothing - a **Launch** button. Both launch only when the user
+          clicks, on the exact payload the chat showed. It is the form author who knows
+          which one a form is ; the chat does not guess it from a name.
       - name: order
         type: integer
         with_types: ansible, awx, multistep

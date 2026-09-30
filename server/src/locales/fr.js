@@ -7,6 +7,7 @@ export default {
     noLogsAccess: "Vous n'avez pas acces aux journaux",
     noDatabaseAccess: "Vous n'avez pas acces aux operations de base de donnees",
     noScheduleAccess: "Vous n'avez pas la permission de gerer les taches planifiees",
+    noChatAccess: "Vous n'avez pas l'autorisation d'utiliser l'assistant de chat",
     noStoredJobsAccess: "Vous n'avez pas la permission de gerer les taches enregistrees",
     noDataSent: "Aucune donnee n'a ete envoyee",
     missingDbConfig: "Configuration de base de donnees manquante",
