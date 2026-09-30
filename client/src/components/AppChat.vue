@@ -123,6 +123,14 @@ async function approve(proposal) {
 // lines of its output, here in the page only - none of it goes to the model.
 const FINAL = ['success', 'error', 'failed', 'warning', 'rejected', 'abandoned', 'aborted'];
 const TAIL_LINES = 6;
+// The job output is html (formatted for the job page). Its TEXT, taken by the browser's own
+// parser - never by stripping tags with a regex, which leaves pieces of a crafted tag behind.
+// It is shown with {{ }}, so it is text either way.
+function textOf(html) {
+    const doc = new DOMParser().parseFromString(String(html || ''), 'text/html');
+    doc.querySelectorAll('br').forEach((br) => br.replaceWith('\n'));
+    return doc.body.textContent || '';
+}
 const timers = new Set();
 function track(proposal, failures = 0) {
     const timer = setTimeout(async () => {
@@ -131,8 +139,7 @@ function track(proposal, failures = 0) {
             const res = await axios.get(`/api/v2/job/${proposal.jobId}`, TokenStorage.getAuthentication());
             const job = res.data || {};
             proposal.jobStatus = job.status;
-            proposal.jobTail = String(job.output || '').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]*>/g, '')
-                .split(/\r?\n/).map((l) => l.trimEnd()).filter(Boolean).slice(-TAIL_LINES).join('\n');
+            proposal.jobTail = textOf(job.output).split(/\r?\n/).map((l) => l.trimEnd()).filter(Boolean).slice(-TAIL_LINES).join('\n');
             if (!FINAL.includes(job.status)) track(proposal);
             scrollDown();
         } catch {

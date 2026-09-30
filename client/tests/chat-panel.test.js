@@ -28,6 +28,12 @@ describe('the chat panel', () => {
     expect(vhtml).toEqual(['render(e.text)']);
   });
 
+  it('turns job output into text with the browser parser, never a tag-stripping regex', () => {
+    expect(src).toMatch(/new DOMParser\(\)\.parseFromString\(/);
+    expect(src).not.toMatch(/\.replace\(\/<\[\^>\]\*>\//);
+    expect(src).toMatch(/\{\{ p\.jobTail \}\}/);
+  });
+
   it('talks to the server only - no provider, no key in the browser', () => {
     expect(src).not.toMatch(/anthropic|openai|api[_-]?key/i);
     for (const url of src.matchAll(/axios\.post\('([^']+)'/g)) expect(url[1]).toMatch(/^\/api\/v2\/chat\//);
