@@ -14,7 +14,7 @@ describe('the chat panel', () => {
     expect(src).toMatch(/const visible = computed\(\(\) => store\.authenticated && store\.chatEnabled && store\.profile\?\.options\?\.allowChat !== false && !NO_CHAT_ROUTES\.has\(route\.name\)\)/);
     // an expired session lands on the login page with store.authenticated still true
     expect(src).toMatch(/NO_CHAT_ROUTES = new Set\(\['\/login', '\/logout', '\/error', '\/schema'\]\)/);
-    expect(src).toMatch(/watch\(visible, \(shown\) => \{\n    if \(shown\) return;\n    open\.value = false;/);
+    expect(src).toMatch(/watch\(visible, \(shown\) => \{\n {4}if \(shown\) return;\n {4}open\.value = false;/);
     expect(src).toMatch(/<template v-if="visible">/);
     expect(app).toMatch(/<AppChat \/>/);
   });

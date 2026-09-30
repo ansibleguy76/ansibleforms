@@ -307,6 +307,7 @@ export default {
     intro: "Demandez ce que vous pouvez lancer, ou décrivez votre besoin - par exemple \"prends un snapshot du volume vol1\". Je remplis le formulaire avec vous ; un job ne démarre que lorsque vous cliquez sur le bouton du résumé.",
     failed: "L'assistant n'a pas pu répondre",
     moreChoices: "{count} de plus - tapez la valeur",
+    choose: "Choisir {field}",
     switchesOff: "Options désactivées :",
     showDetails: "Afficher ce qui sera envoyé",
     hideDetails: "Masquer les détails",

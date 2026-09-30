@@ -307,6 +307,7 @@ export default {
     intro: "Fragen Sie, was Sie ausführen können, oder beschreiben Sie, was Sie brauchen - zum Beispiel \"erstelle einen Snapshot von Volume vol1\". Ich fülle das Formular mit Ihnen aus ; ein Job startet erst, wenn Sie auf die Schaltfläche der Zusammenfassung klicken.",
     failed: "Der Assistent konnte nicht antworten",
     moreChoices: "{count} weitere - Wert eintippen",
+    choose: "{field} wählen",
     switchesOff: "Ausgeschaltete Optionen :",
     showDetails: "Zeigen, was gesendet wird",
     hideDetails: "Details ausblenden",

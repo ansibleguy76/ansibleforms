@@ -307,6 +307,7 @@ export default {
     intro: "Vraag wat je kan uitvoeren, of beschrijf wat je nodig hebt - bijvoorbeeld \"neem een snapshot van volume vol1\". Ik vul het formulier samen met je in ; een job start pas als je op de knop van de samenvatting klikt.",
     failed: "De assistent kon niet antwoorden",
     moreChoices: "nog {count} - typ de waarde",
+    choose: "Kies {field}",
     switchesOff: "Opties die uit staan :",
     showDetails: "Toon wat er verstuurd wordt",
     hideDetails: "Details verbergen",

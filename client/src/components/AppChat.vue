@@ -65,6 +65,15 @@ function errorText(err, fallback) {
     return e?.message || err?.message || fallback;
 }
 
+// the message box grows with its text, up to a few lines
+function grow() {
+    const el = inputBox.value;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+}
+watch(input, (v) => { if (!v) nextTick(grow); });
+
 async function scrollDown() {
     await nextTick();
     if (scroller.value) scroller.value.scrollTop = scroller.value.scrollHeight;
@@ -94,7 +103,7 @@ async function send(text, selection) {
             role: 'assistant',
             text: d.reply,
             choices: (d.choices || []).slice(0, 3),
-            proposals: (d.proposals || []).map((p) => ({ ...p, state: 'open', showDetails: false })),
+            proposals: (d.proposals || []).map((p) => ({ ...p, state: 'open' })),
             job: d.job || null,
         });
     } catch (err) {
@@ -108,6 +117,7 @@ async function send(text, selection) {
 }
 
 function pick(group, option) {
+    group.picked = String(option.value);
     send(String(option.value), { slot: group.slot, value: String(option.value) });
 }
 
@@ -234,22 +244,24 @@ watch(visible, (shown) => {
                         {{ e.text }}
                         <button v-if="e.limit" type="button" class="btn btn-sm btn-link p-0 ms-1" @click="newConversation">{{ t('chat.newConversation') }}</button>
                     </div>
-                    <div v-else>
-                        <!-- eslint-disable-next-line vue/no-v-html -- markdown of the model, through the app's html sanitizer -->
-                        <div class="af-chat-bubble af-chat-assistant" v-html="render(e.text)"></div>
+                    <div v-else class="d-flex gap-2 align-items-start">
+                        <div class="af-chat-avatar" aria-hidden="true">AI</div>
+                        <div class="flex-grow-1 af-chat-min0">
+                            <!-- eslint-disable-next-line vue/no-v-html -- markdown of the model, through the app's html sanitizer -->
+                            <div class="af-chat-assistant" v-html="render(e.text)"></div>
 
-                        <div v-for="g in e.choices" :key="g.slot" class="mt-2">
-                            <div class="small text-body-secondary mb-1">{{ g.slot }}</div>
-                            <div class="d-flex flex-wrap gap-1">
-                                <button v-for="o in g.options.slice(0, MAX_SHOWN_CHOICES)" :key="String(o.value)" type="button" class="btn btn-sm btn-outline-primary" :disabled="busy || i !== entries.length - 1" @click="pick(g, o)">{{ o.value }}</button>
-                                <span v-if="g.options.length > MAX_SHOWN_CHOICES" class="small text-body-secondary align-self-center">{{ t('chat.moreChoices', { count: g.options.length - MAX_SHOWN_CHOICES }) }}</span>
+                            <div v-for="g in e.choices" :key="g.slot" class="af-chat-box mt-2">
+                                <div class="fw-semibold small mb-2">{{ t('chat.choose', { field: g.label || g.slot }) }}</div>
+                                <div class="d-flex flex-wrap gap-1">
+                                    <button v-for="o in g.options.slice(0, MAX_SHOWN_CHOICES)" :key="String(o.value)" type="button" class="btn btn-sm rounded-pill"
+                                        :class="g.picked === String(o.value) ? 'btn-primary' : 'btn-outline-secondary'" :disabled="busy || i !== entries.length - 1" @click="pick(g, o)">{{ o.value }}</button>
+                                    <span v-if="g.options.length > MAX_SHOWN_CHOICES" class="small text-body-secondary align-self-center">{{ t('chat.moreChoices', { count: g.options.length - MAX_SHOWN_CHOICES }) }}</span>
+                                </div>
                             </div>
-                        </div>
 
-                        <div v-for="p in e.proposals" :key="p.planId" class="card mt-2 border-primary">
-                            <div class="card-body py-2">
+                            <div v-for="p in e.proposals" :key="p.planId" class="af-chat-box mt-2">
                                 <div class="fw-semibold">{{ p.fields?.length ? p.form : p.summary }}</div>
-                                <table v-if="p.fields?.length" class="table table-sm table-borderless small mb-1 af-chat-fields">
+                                <table v-if="p.fields?.length" class="table table-sm table-borderless small mb-1 mt-1 af-chat-fields">
                                     <tbody>
                                         <tr v-for="f in p.fields" :key="f.label">
                                             <th scope="row" class="text-body-secondary fw-normal">{{ f.label }}</th>
@@ -263,17 +275,17 @@ watch(visible, (shown) => {
                                         <li v-for="s in p.optionalSwitches" :key="s.slot">{{ s.prompt }}</li>
                                     </ul>
                                 </div>
-                                <button type="button" class="btn btn-sm btn-link p-0 mt-1" @click="p.showDetails = !p.showDetails">
-                                    {{ p.showDetails ? t('chat.hideDetails') : t('chat.showDetails') }}
-                                </button>
-                                <pre v-if="p.showDetails" class="af-chat-pre small mt-1 mb-2">{{ pretty(p.extravars) }}</pre>
+                                <details class="small mt-2">
+                                    <summary class="text-body-secondary">{{ t('chat.showDetails') }}</summary>
+                                    <pre class="af-chat-pre small mt-1 mb-0">{{ pretty(p.extravars) }}</pre>
+                                </details>
                                 <div class="d-flex align-items-center gap-2 mt-2">
                                     <button v-if="p.state === 'open' || p.state === 'busy'" type="button" class="btn btn-sm btn-primary" :disabled="p.state === 'busy'" @click="approve(p)">
                                         <FaIcon :icon="p.state === 'busy' ? 'spinner' : 'play'" class="me-1" />{{ labelFor(p) }}
                                     </button>
                                     <span v-if="p.state === 'open'" class="small text-body-secondary">{{ t('chat.expires', { time: expires(p) }) }}</span>
                                     <span v-if="p.state === 'done'" class="small">
-                                        <FaIcon :icon="p.jobStatus && !FINAL.includes(p.jobStatus) ? 'spinner' : 'circle-check'" class="me-1" :class="statusClass(p.jobStatus || 'success')" />
+                                        <FaIcon :icon="p.jobStatus && !FINAL.includes(p.jobStatus) ? 'spinner' : 'circle'" class="me-1 af-chat-dot" :class="statusClass(p.jobStatus || 'success')" />
                                         <router-link v-if="p.jobId" :to="`/jobs/${p.jobId}`">{{ t('chat.job') }} #{{ p.jobId }}</router-link>
                                         <strong class="ms-1" :class="statusClass(p.jobStatus)">{{ p.jobStatus || t('chat.jobStarted') }}</strong>
                                     </span>
@@ -281,10 +293,10 @@ watch(visible, (shown) => {
                                 </div>
                                 <pre v-if="p.jobTail" class="af-chat-pre small mt-2 mb-0">{{ p.jobTail }}</pre>
                             </div>
-                        </div>
 
-                        <div v-if="e.job" class="small text-body-secondary mt-1">
-                            <router-link :to="`/jobs/${e.job.id}`">#{{ e.job.id }}</router-link> {{ e.job.form }} : <strong>{{ e.job.status }}</strong>
+                            <div v-if="e.job" class="small text-body-secondary mt-1">
+                                <router-link :to="`/jobs/${e.job.id}`">#{{ e.job.id }}</router-link> {{ e.job.form }} : <strong>{{ e.job.status }}</strong>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -292,11 +304,12 @@ watch(visible, (shown) => {
             </div>
 
             <footer class="card-footer p-2">
-                <div class="d-flex gap-2 align-items-center">
-                    <textarea ref="inputBox" v-model="input" class="form-control form-control-sm af-chat-input" rows="2" :placeholder="t('chat.placeholder')" :disabled="busy" @keydown="onKey"></textarea>
-                    <button type="button" class="btn btn-primary btn-sm" :disabled="busy || !input.trim()" :title="t('chat.send')" @click="send()"><FaIcon icon="paper-plane" /></button>
+                <!-- one rounded box : the message and the send button inside it, always the same height -->
+                <div class="af-chat-compose d-flex align-items-end gap-2">
+                    <textarea ref="inputBox" v-model="input" class="af-chat-input flex-grow-1" rows="1" :placeholder="t('chat.placeholder')" :disabled="busy" @keydown="onKey" @input="grow"></textarea>
+                    <button type="button" class="btn btn-primary rounded-circle af-chat-send" :disabled="busy || !input.trim()" :title="t('chat.send')" :aria-label="t('chat.send')" @click="send()"><FaIcon icon="arrow-right" /></button>
                 </div>
-                <div class="small text-body-secondary mt-1">{{ t('chat.disclaimer') }}</div>
+                <div class="small text-body-secondary text-center mt-1">{{ t('chat.disclaimer') }}</div>
             </footer>
         </section>
     </template>
@@ -348,8 +361,44 @@ watch(visible, (shown) => {
     color: var(--bs-white);
     white-space: pre-wrap;
 }
-.af-chat-assistant {
+.af-chat-assistant { overflow-wrap: anywhere; padding-top: .2rem; }
+.af-chat-min0 { min-width: 0; }
+.af-chat-avatar {
+    flex: 0 0 auto;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: .5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .7rem;
+    font-weight: 700;
+    color: var(--bs-white);
+    background: linear-gradient(135deg, var(--bs-primary), var(--bs-indigo, #6610f2));
+}
+.af-chat-box {
+    border: 1px solid var(--bs-border-color);
+    border-radius: .75rem;
+    padding: .75rem 1rem;
     background: var(--bs-tertiary-bg);
+}
+.af-chat-box details summary { cursor: pointer; }
+.af-chat-dot { font-size: .6rem; vertical-align: middle; }
+.af-chat-compose {
+    border: 1px solid var(--bs-border-color);
+    border-radius: 1rem;
+    padding: .375rem .375rem .375rem .75rem;
+    background: var(--bs-body-bg);
+}
+.af-chat-compose:focus-within { border-color: var(--bs-primary); }
+.af-chat-send {
+    flex: 0 0 auto;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .af-chat-assistant :deep(p:last-child) { margin-bottom: 0; }
 .af-chat-assistant :deep(pre) { white-space: pre-wrap; }
@@ -365,5 +414,14 @@ watch(visible, (shown) => {
     padding: 0.5rem;
     border-radius: 0.375rem;
 }
-.af-chat-input { resize: none; }
+.af-chat-input {
+    resize: none;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--bs-body-color);
+    line-height: 1.5;
+    padding: .375rem 0;
+    max-height: 160px;
+}
 </style>

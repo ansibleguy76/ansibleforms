@@ -207,7 +207,7 @@ async function resolve(args, ctx, planOnly) {
       ...(Object.keys(info.slotHelp).length ? { slot_help: info.slotHelp } : {}),
       ...(res.warnings?.length ? { warnings: res.warnings.slice(0, 5) } : {}),
     };
-    const list = Object.entries(choices).map(([slot, options]) => ({ slot, options }));
+    const list = Object.entries(choices).map(([slot, options]) => ({ slot, label: byName[slot]?.label || defs[slot]?.label || slot, options }));
     if (planOnly) payload.note = 'The form is not complete yet ; ask for the missing fields.';
     return { payload, choices: list };
   }

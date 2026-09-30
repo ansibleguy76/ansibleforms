@@ -307,6 +307,7 @@ export default {
     intro: "Chiedi cosa puoi eseguire, o descrivi ciò che ti serve - per esempio \"fai uno snapshot del volume vol1\". Compilo il modulo con te ; un job parte solo quando clicchi il pulsante del riepilogo.",
     failed: "L'assistente non ha potuto rispondere",
     moreChoices: "altri {count} - digita il valore",
+    choose: "Scegli {field}",
     switchesOff: "Opzioni disattivate :",
     showDetails: "Mostra cosa verrà inviato",
     hideDetails: "Nascondi dettagli",

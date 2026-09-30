@@ -307,6 +307,7 @@ export default {
     intro: "Ask what you can run, or describe what you need - for example \"take a snapshot of volume vol1\". I fill in the form with you ; a job only starts when you click the button on the summary.",
     failed: "The assistant could not answer",
     moreChoices: "{count} more - type the value",
+    choose: "Choose {field}",
     switchesOff: "Options that are off :",
     showDetails: "Show what will be sent",
     hideDetails: "Hide details",

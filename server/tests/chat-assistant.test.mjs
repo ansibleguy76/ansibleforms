@@ -143,7 +143,7 @@ describe("the operator chooses the targets", () => {
     const chat = service([call("resolve", { form: "Create a snapshot", answers: {} }), say("Which cluster?")]);
     const { sessionId } = await chat.openSession(user);
     const out = await chat.message(user, { sessionId, message: "take a snapshot" });
-    expect(out.choices).toEqual([{ slot: "cluster", options: [{ value: "bb8" }, { value: "r2d2" }] }]);
+    expect(out.choices).toEqual([{ slot: "cluster", label: "Cluster", options: [{ value: "bb8" }, { value: "r2d2" }] }]);
     const payload = JSON.parse(model.histories.at(-1).find((m) => m.role === "tool").text);
     expect(payload.status).toBe("needs_input");
     expect(payload.missing_fields.map((f) => f.slot)).toEqual(["cluster", "snapshot_name", "svm"].filter((s) => payload.missing_fields.some((f) => f.slot === s)));
