@@ -55,7 +55,8 @@ export function getFieldValue(field, column, keepArray) {
       field = (!keepArray) ? undefined : field;
     }
   }
-  if (SENTINELS.includes(field)) {
+  // loosely, as the browser always did : a one-element ['__auto__'] is no choice either
+  if (SENTINELS.some((s) => field == s)) {
     field = undefined;
   }
   return field;
@@ -233,9 +234,12 @@ export function rootFieldName(name) {
  *
  * @param {object[]} fields      the form's field definitions
  * @param {string[]} knownNames  names that exist without being fields (constants, vars, __user__)
+ * @param {object} [extraDeps]    field -> names it depends on beyond its own text (a list
+ *                                reads the parent through its subform's $(__parent__.x)) ;
+ *                                part of the graph BEFORE the cycle detection runs
  * @returns {{dependsOn: object, dependents: object, cycles: string[], warnings: string[]}}
  */
-export function scanDependencies(fields, knownNames = []) {
+export function scanDependencies(fields, knownNames = [], extraDeps = {}) {
   const names = (fields || []).filter((f) => f?.name).map((f) => f.name);
   const dependsOn = {};
   const dependents = {};
@@ -264,6 +268,9 @@ export function scanDependencies(fields, knownNames = []) {
       if (!dep?.name) continue;
       add(item.name, dep.name.startsWith('!') ? dep.name.slice(1) : dep.name);
     }
+  }
+  for (const [field, deps] of Object.entries(extraDeps || {})) {
+    for (const d of deps || []) if (names.includes(d) && d !== field) add(field, d);
   }
   // cycle detection on the transitive closure, in a scratch copy (see the client comment
   // on why the graph itself must stay one-hop)

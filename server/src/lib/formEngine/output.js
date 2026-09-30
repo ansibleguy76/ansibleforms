@@ -8,6 +8,18 @@ import { getFieldValue } from './placeholders.js';
  * client/src/pages/form.vue submitForm + getFilteredRawFormData. Keep in sync.
  */
 
+/**
+ * The marker keys a `list` field sets on its rows (AppListField) : the configured names,
+ * and `__inserted__` for new rows when rows can be deleted or updated but no insertMarker
+ * is given - so a freshly added row stays removable. Empty string : no such marker.
+ */
+export function listMarkers(field) {
+  const f = field || {};
+  let insert = f.insertMarker || '';
+  if (!insert && (f.allowDelete === false || f.deleteMarker || f.updateMarker)) insert = '__inserted__';
+  return { insert, update: f.updateMarker || '', delete: f.deleteMarker || '' };
+}
+
 export function deepClone(o) {
   if (o === undefined) return o;
   try {
@@ -68,7 +80,15 @@ export function buildFormOutput(fields, raw, opts = {}) {
     if (item.type === 'list' && Array.isArray(outputValue)) {
       const sub = (typeof item.subform === 'string') ? subformByName[item.subform] : item.subform;
       if (sub && Array.isArray(sub.fields)) {
-        outputValue = outputValue.map((row) => buildFormOutput(sub.fields, row || {}, { subforms }));
+        // a row is rebuilt from its subform's fields ; the row-state markers are not fields,
+        // so they are carried over - without them a soft-deleted row reached the playbook
+        // looking exactly like a live one
+        const markers = Object.values(listMarkers(item)).filter(Boolean);
+        outputValue = outputValue.map((row) => {
+          const out = buildFormOutput(sub.fields, row || {}, { subforms });
+          for (const m of markers) if (row?.[m]) out[m] = row[m];
+          return out;
+        });
       }
     }
 
@@ -127,6 +147,20 @@ export function readModelPath(obj, modelPath) {
   return cur;
 }
 
+/**
+ * The extravars and credentials a launch submits for a resolved form (resolveForm's result),
+ * exactly as form.vue submitForm builds them : buildFormOutput over the visible fields, with
+ * `overrides` for the uploaded files, and the credentials read from that output.
+ */
+export function buildLaunchPayload(res, subforms = [], { overrides = {} } = {}) {
+  const extravars = buildFormOutput(res._fields, res._values, {
+    isVisible: (f) => !!res._visibility[f.name],
+    overrides,
+    subforms: subforms || [],
+  });
+  return { extravars, credentials: collectCredentials(res._fields, extravars) };
+}
+
 /** form.vue submitForm : credentials come from the MODELLED output of asCredential fields. */
 export function collectCredentials(fields, extravars) {
   const credentials = {};
@@ -137,16 +171,76 @@ export function collectCredentials(fields, extravars) {
 }
 
 /** form.vue getFilteredRawFormData : the values kept for a relaunch. */
-export function filterRawFormData(fields, values) {
+export function filterRawFormData(fields, values, subforms = []) {
   const out = {};
   (fields || []).forEach((field) => {
     const name = field?.name;
     if (!name || !(name in (values || {}))) return;
     if (field.type === 'constant' || field.type === 'password') return;
     if (name === 'server' || name === 'database' || name === 'metadata') return;
-    out[name] = values[name];
+    if (field.type === 'list') out[name] = stripRowPasswords(field, values[name], subforms);
+    // a yaml field with a subform is one such row
+    else if (field.type === 'yaml' && field.subform && values[name] && typeof values[name] === 'object' && !Array.isArray(values[name])) {
+      out[name] = stripRowPasswords(field, [values[name]], subforms)[0];
+    } else out[name] = values[name];
   });
   return out;
+}
+
+function subformFor(field, subforms) {
+  return (typeof field?.subform === 'string') ? (subforms || []).find((s) => s?.name === field.subform) : field?.subform;
+}
+
+function deleteAtPath(obj, modelPath) {
+  const parts = String(modelPath).split(/\s*\.\s*/);
+  const last = parts.pop();
+  const parent = parts.length ? readModelPath(obj, parts.join('.')) : obj;
+  if (!parent || typeof parent !== 'object') return;
+  const m = last.match(/^(.*)\[([0-9]+)\]$/);
+  if (m) {
+    const arr = parent[m[1]];
+    if (Array.isArray(arr) && arr[m[2]] !== undefined) arr[m[2]] = undefined;
+  } else {
+    delete parent[last];
+  }
+}
+
+/** modelled rows (a row's __output__, or a nested list inside it) without their passwords */
+function stripOutputPasswords(sub, outRows, subforms) {
+  if (!Array.isArray(outRows)) return;
+  for (const out of outRows) {
+    if (!out || typeof out !== 'object') continue;
+    for (const f of sub?.fields || []) {
+      if (!f?.name) continue;
+      const paths = [].concat(f.model || f.name);
+      if (f.type === 'password') paths.forEach((p) => deleteAtPath(out, p));
+      else if (f.type === 'list') paths.forEach((p) => stripOutputPasswords(subformFor(f, subforms), readModelPath(out, p), subforms));
+    }
+  }
+}
+
+/**
+ * List rows as they are stored for a relaunch : without the values of their password
+ * fields - the top-level filter only knew the form's own fields, so a password inside a
+ * list row was stored in raw_form_data. Nested lists and each row's __output__ included.
+ */
+function stripRowPasswords(field, rows, subforms) {
+  const sub = subformFor(field, subforms);
+  if (!sub || !Array.isArray(rows)) return rows;
+  return rows.map((row) => {
+    if (!row || typeof row !== 'object') return row;
+    const copy = { ...row };
+    for (const f of sub.fields || []) {
+      if (!f?.name) continue;
+      if (f.type === 'password') delete copy[f.name];
+      else if (f.type === 'list') copy[f.name] = stripRowPasswords(f, copy[f.name], subforms);
+    }
+    if (copy.__output__ && typeof copy.__output__ === 'object') {
+      copy.__output__ = deepClone(copy.__output__);
+      stripOutputPasswords(sub, [copy.__output__], subforms);
+    }
+    return copy;
+  });
 }
 
 /**
@@ -213,4 +307,4 @@ export function canonicalJson(value) {
   return '{' + keys.map((k) => JSON.stringify(k) + ':' + canonicalJson(value[k])).join(',') + '}';
 }
 
-export default { deepClone, buildFormOutput, readModelPath, collectCredentials, filterRawFormData, maskPasswords, canonicalJson };
+export default { listMarkers, deepClone, buildFormOutput, buildLaunchPayload, readModelPath, collectCredentials, filterRawFormData, maskPasswords, canonicalJson };

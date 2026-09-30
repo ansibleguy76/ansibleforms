@@ -251,11 +251,12 @@ describe("setUserExtravars", () => {
 describe("the callers", () => {
   const src = readFileSync(new URL("../src/models/job.model.js", import.meta.url), "utf8");
 
-  test("only Job.relaunch launches with replay", () => {
+  test("only the relaunch replay launches with replay", () => {
     const hits = src.match(/replay: true/g) || [];
     expect(hits.length).toBe(1);
-    const relaunch = src.slice(src.indexOf("Job.relaunch = async function"));
-    expect(relaunch.slice(0, relaunch.indexOf("\n};")).includes("replay: true")).toBe(true);
+    // Job.relaunch hands a replay to replayJob (the stored extravars, launched again)
+    const replay = src.slice(src.indexOf("async function replayJob("));
+    expect(replay.slice(0, replay.indexOf("\n}\n")).includes("replay: true")).toBe(true);
   });
 
   test("a step slice under none has its own ansibleforms_user removed", () => {

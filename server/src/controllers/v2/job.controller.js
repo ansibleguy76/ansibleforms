@@ -151,6 +151,8 @@ const launch = async function(req, res) {
         var extravars = req.body.extravars || {}
         var creds = req.body.credentials || {}
         var rawFormData = req.body.rawFormData || {}
+        // the uploads of the form's file fields, as POST /api/v2/job/upload returned them
+        var files = (req.body.files && typeof req.body.files === 'object') ? req.body.files : {}
         // new in 4.0.16, awxCreds are extracted from form and extravars
         var user = req?.user?.user || {}
         // check permission for verbose mode
@@ -159,7 +161,7 @@ const launch = async function(req, res) {
           return false;
         }
         try{
-          const job = await Job.launch({ form, user, credentials: creds, extravars, rawFormData, fromClient: true });
+          const job = await Job.launch({ form, user, credentials: creds, extravars, rawFormData, files, fromClient: true });
           res.status(200).json(RestResultv2.single(job));
         }catch(err){
           // LAUNCH_VALIDATION=enforce : the field values break the form's rules
@@ -190,11 +192,21 @@ const relaunchJob = async function(req, res) {
       res.status(403).json(RestResultv2.error(i18n.t(req, 'errors.noVerbosePermission')));
       return false;
     }
+    // a body with `values` : relaunch with those fields changed, through the form engine ;
+    // without one : replay the job as it ran
+    const values = (req.body && typeof req.body.values === 'object' && req.body.values !== null && !Array.isArray(req.body.values))
+      ? req.body.values : null;
     try{
-      const job = await Job.relaunch(user, jobid, verbose);
+      const job = values
+        ? await Job.relaunchWithValues({ user, id: jobid, values, verbose })
+        : await Job.relaunch(user, jobid, verbose);
       res.status(200).json(RestResultv2.single({ message: i18n.t(req, 'jobs.relaunched', { id: job.id }), id: job.id }));
     } catch(err) {
-      if (err.name === 'NotFoundError') {
+      if (err.name === 'ValidationError') {
+        res.status(422).json(RestResultv2.error(i18n.t(req, 'jobs.invalidFormData'), err.details || err.message));
+      } else if (err.name === 'BadRequestError') {
+        res.status(400).json(RestResultv2.error(err.message));
+      } else if (err.name === 'NotFoundError') {
         res.status(404).json(RestResultv2.error(err.message));
       } else if (err.name === 'AccessDeniedError' || err.name === 'ForbiddenError') {
         res.status(403).json(RestResultv2.error(err.message));

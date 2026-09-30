@@ -69,6 +69,7 @@ claude mcp add --transport http ansibleforms https://af.example.com/api/v2/mcp \
 | `get_form` | One form's full definition. Each field also carries `dynamic` (evaluated from an expression or query) and `dependsOn` (the fields it reads). |
 | `resolve_field` | Evaluates the form for the values filled in so far. See below. |
 | `launch_job` | Launches the form with the given values, exactly as a browser submission would. Returns the job id. |
+| `relaunch_job` | Launches a job again with some fields changed. See below. |
 | `get_job` | Status and output of a job (`tail` limits the output to the last lines). |
 
 There is no tool to run an arbitrary expression, query, playbook or extravars. Expressions
@@ -97,7 +98,7 @@ are not among the options and the fields that fail validation (collected in a to
 `launch_job` refuses a form that is not complete.
 
 The rules are the browser's own: since 6.4 the browser, the MCP server and the launch
-validation ([`LAUNCH_VALIDATION`](customization)) run the same validation code. A
+validation ([Launch validation](launch-validation)) run the same validation code. A
 hidden field is not validated, and a dependency on `isValid` means what it means in the
 browser: an empty optional field is valid, a hidden one is neither valid nor invalid.
 
@@ -127,17 +128,44 @@ when the result differs, for example because a query now answers differently or 
 was edited. `ansibleforms_user`, `__jobid__` and `__verbose__` are added at launch and are
 not part of the hash.
 
+### Relaunching with changes
+
+`relaunch_job` takes a job `id` and `values`: only the fields to change, as raw values. The
+values the job was launched with are taken, `values` is laid over them, and the result is
+resolved and validated exactly like `launch_job` - list rows included - and launched as a
+new job by you (`ansibleforms_user` is you, not the original submitter). File uploads of
+the original are reused.
+
+Without `values` it is a relaunch **as the job ran**: its stored extravars are replayed on
+the server, passwords included (the preview masks them) - unless the form is under launch
+validation `enforce`, then it goes through the same check as a relaunch with changes.
+
+**Passwords are never stored with the field values**, so a relaunch that goes through the
+check is refused for a password field the form shows - at the top or in a list row
+(`unsupported`, with the `passwordFields`). A password field its dependencies hide does not
+stand in the way. See [Launch validation](launch-validation).
+
+Call it with `preview: true` first: it returns `modeledExtravars` (passwords masked),
+`credentials` and a `payloadHash` without launching. Confirm them with the user, then call
+it again with `expectedPayloadHash`. The same permissions as a relaunch in the browser
+apply: the form must allow relaunch and your roles need the `allowJobRelaunch` option. A
+job without stored form data (launched before relaunch existed) and a wizard form cannot be
+relaunched with changes.
+
+The REST API does the same on `POST /api/v2/job/{id}/relaunch` with a body
+`{ "values": { ... } }`; without a body it replays the job as it ran.
+
 ### Errors
 
 A refused call is a tool error whose structured content carries a `code` and the details:
 
 | Code | When |
 |---|---|
-| `form_incomplete` | `launch_job` on a form that is not complete, with `missing`, `invalid`, `waiting` and `validationErrors` |
+| `form_incomplete` | `launch_job` or `relaunch_job` on a form that is not complete, with `missing`, `invalid`, `waiting`, `validationErrors` and `rowErrors` |
 | `payload_mismatch` | the payload differs from `expectedPayloadHash`, with both hashes |
 | `access_denied` | the user's roles do not grant the form or job, or verbose mode |
 | `not_found` | no such form, subform or job |
-| `unsupported` | a wizard form, a subform on its own, or a file field |
+| `unsupported` | a wizard form, a subform on its own, a file field, or a `relaunch_job` that would need a shown password field |
 | `internal_error` | anything else |
 
 ## runLocal expressions
@@ -161,8 +189,13 @@ Server-side expressions (without `runLocal`) go through the same
 
 - **Wizard forms** cannot be launched yet. Their steps can be resolved with `subform`.
 - **File fields** cannot be filled in; a form whose file field has a value is refused.
-- **List rows** are not validated yet: the rows of a `list` field are taken as sent. Resolve
-  a row with `subform` (and `parent`) to check it.
+- **List rows** (and a `yaml` field with a subform, which is one such row): every row you
+  send (except one carrying the list's `deleteMarker`) is
+  resolved through its subform with the form's values as `__parent__`, and validated -
+  nested lists included, where `__parent__.__parent__` reaches the form. Send plain rows:
+  the raw subform field values. Failing rows are listed per list field in `rowErrors`
+  (`vms[1].disks[0].size (missing)` in the message). At most 500 rows per call, all levels
+  together.
 - An enum left on `__auto__` is never filled in with its first option: the caller chooses.
 - Every MCP request is one entry in the audit log (action "MCP request"), the job itself is
   recorded under the user as for any other launch.

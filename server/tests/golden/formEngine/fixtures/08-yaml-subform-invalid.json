@@ -1,0 +1,79 @@
+{
+  "name": "a yaml field with a subform that breaks its rules",
+  "mirrors": "AppForm openYamlSubformEditor (subform editor, __parent__ = the form) + buildFormOutput yaml __output__",
+  "form": {
+    "name": "t",
+    "subforms": [
+      {
+        "name": "cfg",
+        "type": "subform",
+        "fields": [
+          {
+            "name": "port",
+            "type": "number",
+            "maxValue": "$(__parent__.max_port)",
+            "model": "listen.port"
+          },
+          {
+            "name": "host",
+            "type": "text",
+            "required": true
+          },
+          {
+            "name": "url",
+            "type": "local",
+            "expression": "'https://' + '$(host)' + ':' + '$(port)'",
+            "output": true
+          }
+        ]
+      }
+    ],
+    "fields": [
+      {
+        "name": "max_port",
+        "type": "number"
+      },
+      {
+        "name": "config",
+        "type": "yaml",
+        "subform": "cfg"
+      }
+    ]
+  },
+  "values": {
+    "max_port": 100,
+    "config": {
+      "port": 443,
+      "__output__": {}
+    }
+  },
+  "expect": {
+    "invalid": [
+      "config"
+    ],
+    "rowErrors": {
+      "config": [
+        {
+          "index": null,
+          "missing": [
+            "host"
+          ],
+          "invalid": [
+            "port"
+          ],
+          "waiting": [
+            "url"
+          ],
+          "validationErrors": {
+            "port": [
+              {
+                "type": "maxValue",
+                "description": "port must be at most 100"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

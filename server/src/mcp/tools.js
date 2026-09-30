@@ -2,9 +2,10 @@
 import { z } from 'zod';
 import { resolveForm, normalizeFields, isDynamicField } from '../lib/formEngine/resolve.js';
 import { scanDependencies } from '../lib/formEngine/placeholders.js';
-import { buildFormOutput, collectCredentials, filterRawFormData, maskPasswords } from '../lib/formEngine/output.js';
+import { buildLaunchPayload, filterRawFormData, maskPasswords } from '../lib/formEngine/output.js';
 import { sha256 } from '../lib/formEngine/node/hash.js';
 import { createFormServices } from '../lib/formServices.js';
+import { describeRowErrors } from '../lib/launchValidation.js';
 
 /**
  * The MCP tools. Deliberately technical : they expose the form flow a browser goes through
@@ -37,6 +38,7 @@ const KNOWN_ERRORS = {
   NotFoundError: 'not_found',
   ConflictError: 'conflict',
   BadRequestError: 'invalid_request',
+  ValidationError: 'form_incomplete',
 };
 
 function lastLines(text, n) {
@@ -110,6 +112,9 @@ export function createHandlers({ user, deps }) {
       only: field,
       maxOptions,
       services: servicesFor(formConfig, formObj, subform),
+      subforms: formObj.subforms || [],
+      // an agent's rows never went through the browser's row editor : resolve them all
+      allRows: true,
     });
     return { res, formConfig, formObj };
   }
@@ -122,11 +127,7 @@ export function createHandlers({ user, deps }) {
    * __verbose__ - none of those are part of the hash.
    */
   function launchPayload(res, formObj) {
-    const extravars = buildFormOutput(res._fields, res._values, {
-      isVisible: (f) => !!res._visibility[f.name],
-      subforms: formObj.subforms || [],
-    });
-    const credentials = collectCredentials(res._fields, extravars);
+    const { extravars, credentials } = buildLaunchPayload(res, formObj.subforms || []);
     return {
       extravars,
       credentials,
@@ -196,6 +197,7 @@ export function createHandlers({ user, deps }) {
         user,
         values: values || {},
         services: servicesFor(formConfig, formObj),
+        allRows: true,
       });
       if (!res.complete) {
         const parts = [];
@@ -205,10 +207,13 @@ export function createHandlers({ user, deps }) {
         if (res.missing.length) parts.push(`missing input for : ${res.missing.join(', ')}`);
         if (notAnOption.length) parts.push(`not one of the options : ${notAnOption.join(', ')}`);
         if (failing.length) parts.push(`validation failed : ${failing.join(' ; ')}`);
+        const rows = describeRowErrors(res.rowErrors);
+        if (rows.length) parts.push(`list rows failing : ${rows.join(', ')}`);
         if (res.waiting.length) parts.push(`not resolvable yet : ${res.waiting.join(', ')}`);
         throw new ToolError(`The form is not complete - ${parts.join(' ; ')}. Call resolve_field to see what is needed.`,
           'form_incomplete', {
             missing: res.missing, invalid: res.invalid, waiting: res.waiting, validationErrors: res.validationErrors,
+            rowErrors: res.rowErrors,
           });
       }
       const files = res._fields.filter((f) => f.type === 'file' && res._visibility[f.name]
@@ -237,6 +242,18 @@ export function createHandlers({ user, deps }) {
         validated: true,
       });
       return { id: job?.id, form: formObj.name, payloadHash, warnings: res.warnings };
+    },
+
+    async relaunchJob({ id, values, verbose, preview, expectedPayloadHash }) {
+      if (verbose && !user?.options?.allowVerboseMode) {
+        throw new ToolError('You do not have permission to run jobs in verbose mode', 'access_denied');
+      }
+      const out = await Job.relaunchWithValues({ user, id, values: values || {}, verbose: !!verbose, preview: !!preview, expectedPayloadHash });
+      if (preview) {
+        const { extravars, ...rest } = out;
+        return { job: id, ...rest, modeledExtravars: extravars };
+      }
+      return { id: out?.id, relaunchOf: id, payloadHash: out?.payloadHash, warnings: out?.warnings || [] };
     },
 
     async getJob({ id, tail }) {
@@ -279,6 +296,9 @@ function wrap(fn) {
       let error;
       if (err instanceof ToolError) {
         error = { code: err.code, message: err.message, ...err.details };
+      } else if (typeof err?.code === 'string' && /^[a-z_]+$/.test(err.code) && KNOWN_ERRORS[err?.name]) {
+        // a model error that names its own tool code (Job.relaunchWithValues)
+        error = { code: err.code, message: err.message, ...(err.details || {}) };
       } else if (KNOWN_ERRORS[err?.name]) {
         error = { code: KNOWN_ERRORS[err.name], message: err.message };
       } else if (err?.statusCode) {
@@ -349,6 +369,27 @@ export function registerTools(server, handlers) {
     },
     annotations: { readOnlyHint: false, destructiveHint: true },
   }, wrap((a) => handlers.launchJob(a)));
+
+  server.registerTool('relaunch_job', {
+    title: 'Relaunch job with changes',
+    description: 'Launch a job again with some fields changed : the values the job was launched with, '
+      + 'with `values` laid over them, are resolved and validated like launch_job and launched as a new '
+      + 'job by you. Uploads of the original are reused. Without `values` it replays the job as it ran '
+      + '(unless the form is under launch validation enforce). A relaunch through the check is refused '
+      + 'for a password field the form shows - passwords are never stored with the values. Call it with `preview: true` '
+      + 'first : that returns `modeledExtravars` (passwords masked), `credentials` and a `payloadHash` '
+      + 'without launching - confirm them with the user, then call again with `expectedPayloadHash`. '
+      + 'Refused while fields are missing, invalid or fail validation (code `form_incomplete`), for a '
+      + 'wizard form or a shown password field (`unsupported`), or when the payload changed (`payload_mismatch`).',
+    inputSchema: {
+      id: z.number().int().positive().describe('Id of the job to relaunch'),
+      values: valuesSchema.optional().describe('Only the fields to change, as raw values ; the rest is taken from the job'),
+      verbose: z.boolean().optional().describe('Verbose ansible output (needs the allowVerboseMode role option)'),
+      preview: z.boolean().optional().describe('Resolve and build the payload only, do not launch'),
+      expectedPayloadHash: z.string().optional().describe('The payloadHash of the confirmed preview ; the relaunch is refused when the payload differs'),
+    },
+    annotations: { readOnlyHint: false, destructiveHint: true },
+  }, wrap((a) => handlers.relaunchJob(a)));
 
   server.registerTool('get_job', {
     title: 'Get job',

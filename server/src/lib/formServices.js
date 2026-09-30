@@ -20,6 +20,8 @@ export function createFormServices({ user, formConfig, formObj, subformName, dep
   const { Expression, Query, resolveFormQuery } = deps;
   return {
     evalSandbox,
+    // a list row's queries belong to its subform (queryPolicy resolves them there)
+    forSubform: (name) => createFormServices({ user, formConfig, formObj, subformName: name, deps }),
     serverExpression: (expression, field) => Expression.execute(expression, !!field.noLog),
     query: async (field, resolved) => {
       const q = await resolveFormQuery({

@@ -23,7 +23,9 @@ import Expression from "./expression.model.js";
 import Query from "./query.model.js";
 import { resolveFormQuery } from "../lib/queryPolicy.js";
 import { createFormServices } from "../lib/formServices.js";
-import { validateLaunch, describeLaunchErrors } from "../lib/launchValidation.js";
+import { validateLaunch, describeLaunchErrors, compareExtravars } from "../lib/launchValidation.js";
+import { filterRawFormData, readModelPath, maskPasswords } from "../lib/formEngine/output.js";
+import { sha256 } from "../lib/formEngine/node/hash.js";
 import Credential from "./credential.model.v2.js";
 import AwxModel from "./awx.model.js";
 import path from "path";
@@ -692,6 +694,50 @@ Job.findApprovals = async function (user) {
     return count;
   }
 };
+// form name -> { at, fields, subforms } : the definitions masking needs, kept for a minute -
+// a job being followed is read every few seconds, and Form.load reads the whole config
+const PASSWORD_FIELDS_TTL_MS = 60 * 1000;
+const passwordFieldsCache = new Map();
+
+// a launch hands over the exact definition its job runs with : a password field added a
+// moment ago is then masked on that job's very first read, whatever was cached before
+function rememberFormFields(formName, formObj) {
+  if (!formName || !formObj) return;
+  if (passwordFieldsCache.size > 500) passwordFieldsCache.clear();
+  passwordFieldsCache.set(formName, { at: Date.now(), fields: formObj.fields || [], subforms: formObj.subforms || [] });
+}
+
+async function formFieldsFor(formName) {
+  const hit = passwordFieldsCache.get(formName);
+  if (hit && Date.now() - hit.at < PASSWORD_FIELDS_TTL_MS) return hit;
+  // the definition is only read to know which fields are passwords, never returned : load
+  // it regardless of the reader's roles (an approver may not have the form's role)
+  const formObj = (await Form.load(["admin"], formName))?.forms?.[0];
+  const entry = { at: Date.now(), fields: formObj?.fields || [], subforms: formObj?.subforms || [] };
+  if (passwordFieldsCache.size > 500) passwordFieldsCache.clear();
+  passwordFieldsCache.set(formName, entry);
+  return entry;
+}
+
+/**
+ * Stored extravars (JSON text) with the value of every password field of the form masked,
+ * at its model path, list rows and yaml subforms included. Anything that goes wrong leaves
+ * the text as it was - it has been through the key-name regex already.
+ */
+async function maskPasswordFields(formName, extravarsText) {
+  if (!formName || !extravarsText) return extravarsText;
+  try {
+    const { fields, subforms } = await formFieldsFor(formName);
+    const hasPassword = [{ fields }, ...subforms].some((f) => (f?.fields || []).some((x) => x?.type === 'password'));
+    if (!hasPassword) return extravarsText;
+    const data = JSON.parse(extravarsText);
+    return JSON.stringify(maskPasswords(data, fields, subforms));
+  } catch (err) {
+    logger.debug(`Could not mask the password fields of form '${formName}' : ${err.message}`);
+    return extravarsText;
+  }
+}
+
 Job.findById = async function (user, id, asText, logSafe = false) {
   logger.info(`Finding job ${id}`);
   var query;
@@ -721,8 +767,10 @@ Job.findById = async function (user, id, asText, logSafe = false) {
     job.awx_artifacts = safeParse(job.awx_artifacts, {}, `job.awx_artifacts id=${id}`);
     // convert awx workflow info (null when not a workflow job)
     job.awx_workflow = safeParse(job.awx_workflow, null, `job.awx_workflow id=${id}`);
-    // mask passwords
-    if (logSafe) job.extravars = Helpers.logSafe(job.extravars);
+    // mask passwords : by key name (MASK_EXTRAVARS_REGEX), and every password field of the
+    // form by its definition - a password field whose key the regex does not catch (`pw`)
+    // was returned readable
+    if (logSafe) job.extravars = await maskPasswordFields(job.form, Helpers.logSafe(job.extravars));
     // get output summary
     res = await mysql.do(
       `SELECT 
@@ -796,20 +844,7 @@ Job.getRawFormData = async function (user, id) {
     }
     logger.info(`Form loaded, checking disableRelaunch: ${formObj.disableRelaunch}, allowRelaunch: ${formObj.allowRelaunch}`);
     
-    // Support deprecated 'disableRelaunch: true' — use 'allowRelaunch: false' instead
-    if (formObj.disableRelaunch !== undefined) {
-      logger.warning(`Form '${job.form}' uses deprecated 'disableRelaunch' property. Please use 'allowRelaunch: false' instead.`);
-    }
-    if (formObj.disableRelaunch === true || formObj.allowRelaunch === false) {
-      throw new Errors.AccessDeniedError(`Form '${job.form}' has job relaunch disabled`);
-    }
-    
-    // Check if user has allowJobRelaunch option (unless admin)
-    const isAdmin = user.roles?.includes("admin") ?? false;
-    logger.info(`Checking relaunch permission: isAdmin=${isAdmin}, user.options=${JSON.stringify(user.options)}, allowJobRelaunch=${user.options?.allowJobRelaunch}`);
-    if (!user.options.allowJobRelaunch) {
-      throw new Errors.AccessDeniedError(`You do not have permission to relaunch jobs. Contact your administrator to enable the 'allowJobRelaunch' role option.`);
-    }
+    assertRelaunchable(job, formObj, user);
     
     // Read raw form data from database
     logger.info(`Loading raw form data from database for job ${id}`);
@@ -846,19 +881,38 @@ Job.getRawFormData = async function (user, id) {
 
 
 /**
- * LAUNCH_VALIDATION : validate the raw field values of a REST launch with the form engine
- * the browser and the MCP server use. `off` (default) does nothing - the check re-runs the
- * form's expressions and queries, so an upgrade must not start doing that unasked. `log`
- * logs what would be refused, so an operator can see what enforcing would do before turning
- * it on, and `enforce` refuses the launch with a ValidationError (422) carrying the failing
- * fields.
+ * LAUNCH_VALIDATION (or the form's `launchValidation`, the stricter wins) : validate the raw
+ * field values of a REST launch with the form engine the browser and the MCP server use.
+ *   - `off` (default) does nothing - the check re-runs the form's expressions and queries,
+ *     so an upgrade must not start doing that unasked ;
+ *   - `log` logs what would be refused, and where the client's extravars differ from the
+ *     ones the server builds, so an operator can see what enforcing would do ;
+ *   - `enforce` refuses an invalid launch with a ValidationError (422) carrying the failing
+ *     fields, and for a valid one RETURNS the extravars and credentials the server built
+ *     from the validated values : Job.launch runs those, not the client's. Otherwise valid
+ *     rawFormData next to arbitrary extravars would pass. Computed fields are the server's
+ *     evaluation. A wizard form cannot be checked yet, so it is refused.
  *
  * A launch without rawFormData (the v1 API, or a raw REST call leaving it out) cannot be
  * validated, and with enforcement on that is itself a refusal : otherwise leaving it out
  * would be the way around the check.
+ *
+ * @returns {Promise<{extravars: object, credentials: object}|undefined>} enforce only
  */
-async function guardLaunch({ form, formConfig, formObj, user, rawFormData, extravars }) {
-  const mode = appConfig.launchValidation;
+const LAUNCH_VALIDATION_LEVELS = ['off', 'log', 'enforce'];
+
+/**
+ * The launch validation of a form : the stricter of the form's `launchValidation` and the
+ * LAUNCH_VALIDATION environment variable. An architect can make a form stricter than the
+ * instance (a form that is launched over REST : enforce), never looser.
+ */
+function launchValidationMode(formObj) {
+  const level = (v) => Math.max(0, LAUNCH_VALIDATION_LEVELS.indexOf(String(v || 'off').toLowerCase()));
+  return LAUNCH_VALIDATION_LEVELS[Math.max(level(formObj?.launchValidation), level(appConfig.launchValidation))];
+}
+
+async function guardLaunch({ form, formConfig, formObj, user, rawFormData, extravars, files = {} }) {
+  const mode = launchValidationMode(formObj);
   if (mode !== 'log' && mode !== 'enforce') return;
   const enforce = mode === 'enforce';
   const hasRaw = !!rawFormData && typeof rawFormData === 'object' && Object.keys(rawFormData).length > 0;
@@ -869,27 +923,43 @@ async function guardLaunch({ form, formConfig, formObj, user, rawFormData, extra
   } else {
     try {
       result = await validateLaunch({
-        formConfig, formObj, user, rawFormData, extravars,
+        formConfig, formObj, user, rawFormData, extravars, files,
+        uploadPath: appConfig.uploadPath,
         services: createFormServices({ user, formConfig, formObj, deps: { Expression, Query, resolveFormQuery } }),
+        // an untouched list row passes only when the list's own source produces it : a
+        // REST caller cannot slip a plain row past the row checks
+        verifyUntouched: true,
       });
     } catch (err) {
       if (enforce) throw new Errors.ValidationError(`Launch validation of form '${form}' failed : ${err.message}`);
-      logger.error(`Launch validation of form '${form}' failed, launching anyway (LAUNCH_VALIDATION=log) : ${err.message}`);
+      logger.error(`Launch validation of form '${form}' failed, launching anyway (launch validation 'log') : ${err.message}`);
       return;
     }
   }
   if (result.skipped) {
+    if (enforce) {
+      const err = new Errors.ValidationError(`Form '${form}' cannot be launched with launch validation 'enforce' yet : ${result.skipped}`);
+      err.details = { reason: result.skipped };
+      throw err;
+    }
     logger.debug(`Launch validation of form '${form}' skipped : ${result.skipped}`);
     return;
   }
-  if (result.ok) return;
+  if (result.ok) {
+    if (enforce) return result.payload;
+    const differ = compareExtravars(extravars, result.payload.extravars, result.uploadKeys || []);
+    if (differ.length) {
+      logger.warning(`Launch of form '${form}' : the extravars differ from the ones the server builds for ${differ.join(', ')} (launch validation 'log' ; 'enforce' would run the server's)`);
+    }
+    return;
+  }
   const why = result.reason || describeLaunchErrors(result.errors);
   if (enforce) {
     const err = new Errors.ValidationError(`The form data of '${form}' is not valid - ${why}`);
     err.details = result.errors || { reason: result.reason };
     throw err;
   }
-  logger.warning(`Launch validation would refuse form '${form}' for ${user?.username || 'unknown'} (LAUNCH_VALIDATION=log) : ${why}`);
+  logger.warning(`Launch validation would refuse form '${form}' for ${user?.username || 'unknown'} (launch validation 'log') : ${why}`);
 }
 
 Job.launch = async function ({
@@ -912,9 +982,11 @@ Job.launch = async function ({
   replay = false,
   // Set ONLY by the MCP server, which resolved and validated the form with the same engine
   // just before : the launch validation below need not run it a second time.
-  validated = false
+  validated = false,
+  // the uploads of the form's file fields (POST /api/v2/job/upload results), keyed by field
+  files = {}
 }) {
-  const creds = credentials; // Alias for backward compatibility internally
+  let creds = credentials; // Alias for backward compatibility internally
 
   // A step of a multistep arrives with its formObj already built; a real form arrives with
   // a name and is loaded below. The difference matters for the user trim further down, so
@@ -932,6 +1004,8 @@ Job.launch = async function ({
     formObj = formConfig.forms[0]; // we take the first one, as it should be the only one
   }
 
+  if (!isStep) rememberFormFields(form, formObj);
+
   // Here rather than in the controller : this is the first point where the FORM is known,
   // and the form is what says which reserved keys it declares as fields. It must run BEFORE
   // pushForminfoToExtravars, which fills a reserved key from the static form property only
@@ -942,7 +1016,12 @@ Job.launch = async function ({
 
   // the field values of a REST launch against the form's rules, as the browser checks them
   if (fromClient && !validated && !isStep) {
-    await guardLaunch({ form, formConfig, formObj, user, rawFormData, extravars });
+    const built = await guardLaunch({ form, formConfig, formObj, user, rawFormData, extravars, files });
+    // LAUNCH_VALIDATION=enforce : the job runs what the server built from the validated values
+    if (built) {
+      extravars = built.extravars;
+      creds = built.credentials;
+    }
   }
 
   if (!isStep) setUserExtravars(extravars, user, formObj, replay);
@@ -995,26 +1074,10 @@ Job.launch = async function ({
       // Add form name for validation on reload
       filteredRawFormData.__form__ = form;
       
-      // Only include actual user input fields (exclude constants, passwords, system fields)
-      formObj.fields.forEach((field) => {
-        const fieldName = field.name;
-        
-        // Skip if field value not in rawFormData
-        if (!(fieldName in rawFormData)) return;
-        
-        // Skip constants (readonly fields that get their value from config)
-        if (field.type === 'constant') return;
-        
-        // Skip password fields for security
-        if (field.type === 'password') return;
-        
-        // Skip system fields
-        if (fieldName === 'server' || fieldName === 'database' || fieldName === 'metadata') return;
-        
-        // Include this field
-        filteredRawFormData[fieldName] = rawFormData[fieldName];
-      });
-      
+      // Only the user's input : no constants, no passwords (list rows included), no
+      // system fields - the same filter the browser applies before it sends them
+      Object.assign(filteredRawFormData, filterRawFormData(formObj.fields || [], rawFormData, formObj.subforms || []));
+
       // Store in database
       const rawFormDataJson = JSON.stringify(filteredRawFormData);
       await mysql.do(
@@ -1251,16 +1314,20 @@ Job.continue = async function ({ form, user, credentials = {}, extravars = {}, j
 
   return { id: jobid };
 };
-Job.relaunch = async function (user, id, verbose) {
-  const job = await Job.findById(user, id, true);
-  
-  // Check permissions and form settings before allowing relaunch
-  const formConfig = await Form.load(user?.roles, job.form);
-  const formObj = formConfig.forms?.[0];
-  if (!formObj) {
-    throw new Errors.NotFoundError(`Form '${job.form}' not found or you don't have access to it`);
+/**
+ * Whether this user may relaunch this job of this form : the form allows it
+ * (allowRelaunch, or the deprecated disableRelaunch) and the user's roles grant
+ * allowJobRelaunch. Shared by the plain replay, the raw form data read and the relaunch
+ * with changes, so they can never disagree.
+ */
+function assertRelaunchable(job, formObj, user) {
+  // Job.findById also hands a non-owner every job waiting for approval (so it can be
+  // approved) : that is not a licence to read its form data or launch it again under
+  // another name. Only the owner, an admin, or a user who sees every job may.
+  const seesAll = (user?.roles || []).includes("admin") || !!user?.options?.showAllJobLogs;
+  if (!seesAll && !(job.user === user?.username && (job.user_type ?? user?.type) === user?.type)) {
+    throw new Errors.AccessDeniedError(`You can only relaunch your own jobs`);
   }
-  
   // Support deprecated 'disableRelaunch: true' — use 'allowRelaunch: false' instead
   if (formObj.disableRelaunch !== undefined) {
     logger.warning(`Form '${job.form}' uses deprecated 'disableRelaunch' property. Please use 'allowRelaunch: false' instead.`);
@@ -1268,12 +1335,161 @@ Job.relaunch = async function (user, id, verbose) {
   if (formObj.disableRelaunch === true || formObj.allowRelaunch === false) {
     throw new Errors.AccessDeniedError(`Form '${job.form}' has job relaunch disabled`);
   }
-  
-  // Check if user has allowJobRelaunch option (unless admin)
-  if (!user.options.allowJobRelaunch) {
+  if (!user?.options?.allowJobRelaunch) {
     throw new Errors.AccessDeniedError(`You do not have permission to relaunch jobs. Contact your administrator to enable the 'allowJobRelaunch' role option.`);
   }
-  
+}
+
+/** An error the MCP server passes on with its own code (tools.js wrap) and the details. */
+function codedError(ErrorClass, message, code, details = {}) {
+  const err = new ErrorClass(message);
+  err.code = code;
+  err.details = details;
+  return err;
+}
+
+/**
+ * Relaunch a job with some fields changed : the stored raw form data, with `values` laid
+ * over it, goes through the form engine again - resolved, validated, the extravars built
+ * by the server - as a NEW launch by `user` (ansibleforms_user is the caller, not the
+ * original submitter ; a plain Job.relaunch replays the stored extravars instead).
+ *
+ * Passwords are never stored and never reused, so a form with a password field anywhere -
+ * its subforms included - cannot be relaunched this way : the data lost the password. The uploads of file fields are reused (verified
+ * again). A wizard form cannot be relaunched this way yet, and neither can a job from
+ * before raw form data was stored.
+ *
+ * @param {object} args
+ * @param {boolean} [args.preview]  resolve and build only : { form, extravars (passwords
+ *   masked), credentials, payloadHash, warnings } - nothing is launched
+ * @param {string} [args.expectedPayloadHash]  refuse when the payload differs (payload_mismatch)
+ */
+Job.relaunchWithValues = async function ({ user, id, values = {}, verbose = false, preview = false, expectedPayloadHash }) {
+  const job = await Job.findById(user, id, true); // not log-safe : the stored passwords are needed
+  const formConfig = await Form.load(user?.roles, job.form);
+  const formObj = formConfig.forms?.[0];
+  if (!formObj) {
+    throw new Errors.NotFoundError(`Form '${job.form}' not found or you don't have access to it`);
+  }
+  assertRelaunchable(job, formObj, user);
+  if (verbose && !user?.options?.allowVerboseMode) {
+    throw new Errors.AccessDeniedError(`You do not have permission to run jobs in verbose mode.`);
+  }
+  const changed = !!values && Object.keys(values).length > 0;
+
+  // no changes, and the form is not enforced : a replay of the job as it ran - its stored
+  // extravars, on the server, as a relaunch always was (passwords included, they never leave
+  // the server ; the preview masks them)
+  if (!changed && launchValidationMode(formObj) !== 'enforce') {
+    const storedExtravars = safeParse(job.extravars, {}, `job.extravars id=${id}`) || {};
+    delete storedExtravars.__verbose__;
+    const credentials = safeParse(job.credentials, {}, `job.credentials id=${id}`) || {};
+    const payloadHash = sha256({ form: job.form, extravars: storedExtravars, credentials });
+    if (expectedPayloadHash && expectedPayloadHash !== payloadHash) {
+      throw codedError(Errors.ConflictError, 'The payload differs from the one that was previewed - preview again and have it confirmed.',
+        'payload_mismatch', { expectedPayloadHash, payloadHash });
+    }
+    if (preview) {
+      // masked with the form just loaded - by definition - and then by key name
+      const byDefinition = maskPasswords(storedExtravars, formObj.fields || [], formObj.subforms || []);
+      const masked = safeParse(Helpers.logSafe(JSON.stringify(byDefinition)), {}, `masked extravars id=${id}`);
+      return { form: job.form, replayed: true, extravars: masked, credentials, payloadHash, warnings: [] };
+    }
+    const replayed = await replayJob(user, job, verbose);
+    return { ...replayed, replayed: true, payloadHash, warnings: [] };
+  }
+
+  // otherwise through the form engine : resolved, validated, the extravars built here
+  if (Array.isArray(formObj.wizard) && formObj.wizard.length > 0) {
+    throw codedError(Errors.BadRequestError, `'${job.form}' is a wizard form ; it cannot be ${changed ? 'relaunched with changes' : 'checked under launch validation \'enforce\''} yet`, 'unsupported');
+  }
+  const stored = job.raw_form_data ? safeParse(job.raw_form_data, null, `job.raw_form_data id=${id}`) : null;
+  if (!stored) {
+    throw new Errors.NotFoundError(`No saved form data found for job ${id}, so it cannot be relaunched with changes. This job may have been created before the relaunch feature was enabled.`);
+  }
+  if (stored.__form__ && stored.__form__ !== job.form) {
+    throw new Errors.BadRequestError(`Cannot relaunch: saved data is from form '${stored.__form__}', not '${job.form}'.`);
+  }
+  const { __form__, ...raw } = stored; // eslint-disable-line no-unused-vars
+  // read for the uploads only - never for a password
+  const storedExtravars = safeParse(job.extravars, {}, `job.extravars id=${id}`) || {};
+  const files = {};
+  for (const f of formObj.fields || []) {
+    if (f?.type !== 'file' || !f.name) continue;
+    const upload = readModelPath(storedExtravars, [].concat(f.model || f.name)[0]);
+    if (upload && typeof upload === 'object') files[f.name] = upload;
+  }
+  const rawFormData = { ...raw, ...(values || {}) };
+  const result = await validateLaunch({
+    // no extravars : a password is never taken from the stored data here
+    formConfig, formObj, user, rawFormData, extravars: {}, files,
+    uploadPath: appConfig.uploadPath,
+    services: createFormServices({ user, formConfig, formObj, deps: { Expression, Query, resolveFormQuery } }),
+    allRows: true,
+  });
+  // a password is never stored in the form data, so a password field the form SHOWS - at the
+  // top or in a row - lost its value : that cannot be relaunched from the data. One its
+  // dependencies hide is not needed, and does not stand in the way.
+  if (result.passwordsVisible?.length) {
+    throw codedError(Errors.BadRequestError,
+      `Job ${id} cannot be relaunched ${changed ? 'with changes' : 'under launch validation \'enforce\''} : its password field(s) ${result.passwordsVisible.join(', ')} are shown and passwords are never stored ; launch the form again and enter them`,
+      'unsupported', { passwordFields: result.passwordsVisible });
+  }
+  if (!result.ok) {
+    throw codedError(Errors.ValidationError,
+      `Job ${id} cannot be relaunched with these values - ${describeLaunchErrors(result.errors)}`,
+      'form_incomplete', result.errors);
+  }
+  const { extravars, credentials } = result.payload;
+  delete extravars.__verbose__;
+  const payloadHash = sha256({ form: job.form, extravars, credentials });
+  if (expectedPayloadHash && expectedPayloadHash !== payloadHash) {
+    throw codedError(Errors.ConflictError, 'The payload differs from the one that was previewed - preview again and have it confirmed.',
+      'payload_mismatch', { expectedPayloadHash, payloadHash });
+  }
+  if (preview) {
+    return {
+      form: job.form,
+      extravars: maskPasswords(extravars, formObj.fields || [], formObj.subforms || []),
+      credentials,
+      payloadHash,
+      warnings: result.warnings,
+    };
+  }
+  if (job.status == "running" || job.abort_requested) {
+    throw new Errors.ConflictError(`Job ${id} is not in a status to be relaunched (status=${job.status})`);
+  }
+  if (verbose) extravars.__verbose__ = true;
+  logger.notice(`Relaunching job ${id} with form ${job.form}, with ${Object.keys(values || {}).length} changed field(s)`);
+  const launched = await Job.launch({
+    form: job.form, user, credentials, extravars, rawFormData, fromClient: true, validated: true,
+  });
+  await Job.sendEventNotification(id, 'relaunch', user);
+  return { ...launched, payloadHash, warnings: result.warnings };
+};
+
+/**
+ * Relaunch a job as it ran. A form under launch validation 'enforce' goes through the form
+ * engine instead (relaunchWithValues without changes) : its stored extravars are not
+ * trusted as they are, and a password field it shows makes it refuse.
+ */
+Job.relaunch = async function (user, id, verbose) {
+  const job = await Job.findById(user, id, true);
+  const formConfig = await Form.load(user?.roles, job.form);
+  const formObj = formConfig.forms?.[0];
+  if (!formObj) {
+    throw new Errors.NotFoundError(`Form '${job.form}' not found or you don't have access to it`);
+  }
+  assertRelaunchable(job, formObj, user);
+  if (launchValidationMode(formObj) === 'enforce') {
+    return Job.relaunchWithValues({ user, id, values: {}, verbose });
+  }
+  return replayJob(user, job, verbose);
+};
+
+/** the replay itself : the stored extravars, credentials and raw form data, launched again */
+async function replayJob(user, job, verbose) {
+  const id = job.id;
   var extravars = {};
   var credentials = {};
   var rawFormData = {};
@@ -1316,7 +1532,7 @@ Job.relaunch = async function (user, id, verbose) {
       `Job ${id} is not in a status to be relaunched (status=${job.status})`
     );
   }
-};
+}
 Job.approve = async function (user, id) {
   const job = await Job.findById(user, id, true);
 
@@ -3061,4 +3277,4 @@ Awx.findInventoryByName = async function (awxName, name) {
 
 export default Job;
 // named export of the awx interaction functions (mainly for testing)
-export { Awx, stripReservedExtravars, setUserExtravars, guardLaunch };
+export { Awx, stripReservedExtravars, setUserExtravars, guardLaunch, launchValidationMode };

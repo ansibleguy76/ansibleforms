@@ -26,6 +26,7 @@ import { ref, computed, watch, inject } from 'vue';
 import YAML from 'yaml';
 import { toast } from 'vue-sonner';
 import Helpers from '@/lib/Helpers';
+import { listMarkers } from '@engine/output.js';
 
 const props = defineProps({
     field: { type: Object, required: true },
@@ -139,19 +140,26 @@ function commit() {
     emit('update:modelValue', [...rows.value]);
 }
 
-// Markers (row state tracking) - same semantics as AppTableField.
-// If `allowDelete: false` or a `deleteMarker` is configured but no
-// `insertMarker` is provided, fall back to `__inserted__` so freshly added
-// rows remain fully removable (locked rows are the pre-existing ones).
-const insertMarker = computed(() => {
-    if (props.field.insertMarker) return props.field.insertMarker;
-    if (props.field.allowDelete === false || props.field.deleteMarker || props.field.updateMarker) {
-        return '__inserted__';
+// Markers (row state tracking) - same semantics as AppTableField. The names come from the
+// form engine (@engine listMarkers), which is also what puts them in the extravars : if
+// `allowDelete: false` or a delete/update marker is configured but no `insertMarker`,
+// freshly added rows get `__inserted__` so they stay removable.
+const markers = computed(() => listMarkers(props.field));
+const insertMarker = computed(() => markers.value.insert);
+const updateMarker = computed(() => markers.value.update);
+const deleteMarker = computed(() => markers.value.delete);
+
+// a marker goes on the row AND on its modelled output, so a `$(list)` placeholder - which
+// reads `__output__` - sees the same row state as the playbook
+function withMarker(row, marker, on = true) {
+    const copy = { ...row };
+    if (copy.__output__ && typeof copy.__output__ === 'object') copy.__output__ = { ...copy.__output__ };
+    for (const target of [copy, copy.__output__].filter(Boolean)) {
+        if (on) target[marker] = true;
+        else delete target[marker];
     }
-    return '';
-});
-const updateMarker = computed(() => props.field.updateMarker || '');
-const deleteMarker = computed(() => props.field.deleteMarker || '');
+    return copy;
+}
 const allowInsert = computed(() => props.field.allowInsert !== false);
 const allowDelete = computed(() => props.field.allowDelete !== false);
 
@@ -252,14 +260,14 @@ function applySave(value, index) {
     const isAdd = index == null;
     
     if (isAdd) {
-        if (insertMarker.value) value[insertMarker.value] = true;
+        if (insertMarker.value) value = withMarker(value, insertMarker.value);
         rows.value.push(value);
     } else {
         const existing = rows.value[index] || {};
         if (insertMarker.value && existing[insertMarker.value]) {
-            value[insertMarker.value] = true;
+            value = withMarker(value, insertMarker.value);
         } else if (updateMarker.value) {
-            value[updateMarker.value] = true;
+            value = withMarker(value, updateMarker.value);
         }
         rows.value.splice(index, 1, value);
     }
@@ -285,7 +293,7 @@ function removeItem(index) {
     if (insertMarker.value && row[insertMarker.value]) {
         rows.value.splice(index, 1);
     } else if (deleteMarker.value) {
-        rows.value.splice(index, 1, { ...row, [deleteMarker.value]: true });
+        rows.value.splice(index, 1, withMarker(row, deleteMarker.value));
     } else {
         rows.value.splice(index, 1);
     }
@@ -295,9 +303,7 @@ function removeItem(index) {
 function undoRemove(index) {
     const row = rows.value[index];
     if (!row || !deleteMarker.value) return;
-    const copy = { ...row };
-    delete copy[deleteMarker.value];
-    rows.value.splice(index, 1, copy);
+    rows.value.splice(index, 1, withMarker(row, deleteMarker.value, false));
     commit();
 }
 

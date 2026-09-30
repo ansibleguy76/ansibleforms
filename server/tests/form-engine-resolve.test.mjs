@@ -214,3 +214,89 @@ describe("resolveForm", () => {
   });
 });
 
+
+describe("list rows", () => {
+  const rowForm = {
+    name: "t",
+    subforms: [{ name: "row", type: "subform", fields: [
+      { name: "vol", type: "enum", query: "select name from vol where svm='$(__parent__.svm)'", dbConfig: "db", valueColumn: "name" },
+    ] }],
+    fields: [
+      { name: "svm", type: "text" },
+      { name: "rows", type: "list", subform: "row" },
+    ],
+  };
+
+  test("a row's queries go to its subform's services, after the parent field they read", async () => {
+    const rowQuery = vi.fn(async () => [{ name: "v1" }]);
+    const svc = { ...services(), forSubform: vi.fn(() => ({ ...services(), query: rowQuery })) };
+    const res = await resolveForm({ form: rowForm, values: { svm: "s1", rows: [{ vol: "v1", __output__: {} }] }, services: svc });
+    expect(svc.forSubform).toHaveBeenCalledWith("row");
+    expect(rowQuery).toHaveBeenCalledTimes(1);
+    expect(rowQuery.mock.calls[0][1]).toEqual({ "__parent__.svm": "s1" });
+    expect(res.complete).toBe(true);
+    expect(res._values.rows[0].vol).toEqual({ name: "v1" });
+  });
+
+  test("a list whose rows read a parent field that reads the list back is a cycle, released - not left waiting", async () => {
+    const cyc = {
+      name: "t",
+      subforms: [{ name: "vm", type: "subform", fields: [
+        { name: "host", type: "text" },
+        { name: "note", type: "local", output: true, expression: "'$(host)' + ' of ' + '$(__parent__.count)'" },
+      ] }],
+      fields: [
+        { name: "vms", type: "list", subform: "vm" },
+        { name: "count", type: "local", output: true, expression: "$(vms).length" },
+      ],
+    };
+    const res = await resolveForm({ form: cyc, values: { vms: [{ host: "a", __output__: {} }] }, services: services() });
+    expect(res.waiting).toEqual([]);
+    expect(res.warnings.join("\n")).toMatch(/circular reference/);
+  });
+
+  describe("verifyUntouched : an untouched row must be one the list's own source produces", () => {
+    const aclForm = {
+      name: "t",
+      subforms: [{ name: "acl", type: "subform", fields: [
+        { name: "who", type: "text", required: true, regex: { expression: "^[a-z]+$", description: "lower case only" } },
+        { name: "perm", type: "text", default: "read" },
+      ] }],
+      fields: [
+        // existing entries - one of which breaks today's rule, as old data does
+        { name: "acls", type: "list", subform: "acl", runLocal: true, expression: "[{who:'bob',perm:'full'},{who:'Old_Admin',perm:'full'}]" },
+      ],
+    };
+    const run = (acls) => resolveForm({ form: aclForm, values: { acls }, services: services(), verifyUntouched: true });
+
+    test("the existing rows, untouched, pass exactly as sent - even the one that breaks a rule", async () => {
+      const res = await run([{ who: "bob", perm: "full" }, { who: "Old_Admin", perm: "full" }]);
+      expect(res.complete).toBe(true);
+      expect(res._values.acls).toEqual([{ who: "bob", perm: "full" }, { who: "Old_Admin", perm: "full" }]);
+    });
+
+    test("a plain row the source does not produce is resolved and validated", async () => {
+      const res = await run([{ who: "bob", perm: "full" }, { who: "Forged!" }]);
+      expect(res.rowErrors).toEqual({ acls: [{ index: 1, invalid: ["who"], validationErrors: { who: [{ type: "regex", description: "lower case only" }] } }] });
+      // and a valid one is filled in by its subform, as the editor would
+      const ok = await run([{ who: "carol" }]);
+      expect(ok._values.acls[0]).toMatchObject({ who: "carol", perm: "read" });
+    });
+
+    test("without verifyUntouched a plain row passes as sent (browser parity)", async () => {
+      const res = await resolveForm({ form: aclForm, values: { acls: [{ who: "Forged!" }] }, services: services() });
+      expect(res.complete).toBe(true);
+    });
+  });
+
+  test("more than 500 touched rows in one launch are refused, not resolved", async () => {
+    const svc = services();
+    const rows = Array.from({ length: 501 }, () => ({ vol: "v1", __output__: {} }));
+    const res = await resolveForm({ form: rowForm, values: { svm: "s1", rows }, services: svc });
+    const f = res.fields.find((x) => x.name === "rows");
+    expect(f.error).toMatch(/too many list rows to resolve \(more than 500/);
+    expect(res.invalid).toContain("rows");
+    expect(res.complete).toBe(false);
+    expect(svc.query).not.toHaveBeenCalled();
+  });
+});

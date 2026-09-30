@@ -67,10 +67,10 @@ const call = async (client, name, args = {}) => {
 };
 
 describe("MCP tools", () => {
-  test("exactly the five tools, and no expression or eval tool", async () => {
+  test("exactly the six tools, and no expression or eval tool", async () => {
     const client = await connect();
     const { tools } = await client.listTools();
-    expect(tools.map((t) => t.name).sort()).toEqual(["get_form", "get_job", "launch_job", "list_forms", "resolve_field"]);
+    expect(tools.map((t) => t.name).sort()).toEqual(["get_form", "get_job", "launch_job", "list_forms", "relaunch_job", "resolve_field"]);
   });
 
   test("list_forms asks Form.load with the user's roles", async () => {
@@ -207,6 +207,108 @@ describe("MCP tools", () => {
     const client = await connect();
     const res = await client.callTool({ name: "get_form", arguments: { name: "Admin only" } });
     expect(res.structuredContent).toEqual({ code: "access_denied", message: "Access denied to form Admin only." });
+  });
+
+  describe("relaunch_job", () => {
+    test("previews, then relaunches with the confirmed hash", async () => {
+      deps.Job.relaunchWithValues = vi.fn(async ({ preview }) => (preview
+        ? { form: "Create volume", extravars: { volume: { name: "v2" }, secret: "********" }, credentials: {}, payloadHash: "sha256:x", warnings: [] }
+        : { id: 43, payloadHash: "sha256:x", warnings: [] }));
+      const client = await connect();
+      const p = await call(client, "relaunch_job", { id: 42, values: { name: "v2" }, preview: true });
+      expect(p.data).toMatchObject({ job: 42, modeledExtravars: { volume: { name: "v2" }, secret: "********" }, payloadHash: "sha256:x" });
+      expect(p.data.extravars).toBeUndefined();
+      const r = await call(client, "relaunch_job", { id: 42, values: { name: "v2" }, expectedPayloadHash: "sha256:x" });
+      expect(r.data).toEqual({ id: 43, relaunchOf: 42, payloadHash: "sha256:x", warnings: [] });
+      expect(deps.Job.relaunchWithValues.mock.calls[1][0]).toMatchObject({ user, id: 42, values: { name: "v2" }, preview: false, expectedPayloadHash: "sha256:x" });
+    });
+
+    test("a refusal of the model keeps its code and details", async () => {
+      deps.Job.relaunchWithValues = vi.fn(async () => {
+        const e = new Error("Job 42 cannot be relaunched with these values - missing : name");
+        e.name = "ValidationError";
+        e.code = "form_incomplete";
+        e.details = { missing: ["name"] };
+        throw e;
+      });
+      const client = await connect();
+      const r = await client.callTool({ name: "relaunch_job", arguments: { id: 42, values: { name: "" } } });
+      expect(r.isError).toBe(true);
+      expect(r.structuredContent).toEqual({ code: "form_incomplete", message: "Job 42 cannot be relaunched with these values - missing : name", missing: ["name"] });
+    });
+
+    test("verbose needs the permission", async () => {
+      deps.Job.relaunchWithValues = vi.fn();
+      const client = await connect();
+      const r = await client.callTool({ name: "relaunch_job", arguments: { id: 42, verbose: true } });
+      expect(r.structuredContent.code).toBe("access_denied");
+      expect(deps.Job.relaunchWithValues).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("list rows", () => {
+    const vmForm = {
+      name: "Create vms",
+      type: "ansible",
+      playbook: "vms.yml",
+      roles: ["public"],
+      subforms: [
+        { name: "vm", type: "subform", fields: [
+          { name: "host", type: "text", required: true, regex: { expression: "^web", description: "web hosts only" } },
+          { name: "disks", type: "list", subform: "vmdisk" },
+        ] },
+        { name: "vmdisk", type: "subform", fields: [
+          { name: "path", type: "local", output: true, expression: "'/' + '$(__parent__.__parent__.site)' + '/' + '$(__parent__.host)'" },
+          { name: "size", type: "number", required: true },
+        ] },
+      ],
+      fields: [
+        { name: "site", type: "text", required: true },
+        { name: "vms", type: "list", subform: "vm" },
+      ],
+    };
+    beforeEach(() => {
+      deps.Form.load = vi.fn(async () => ({ constants: {}, forms: [structuredClone(vmForm)], errors: [], warnings: [] }));
+    });
+
+    test("an agent's plain rows are validated at every level", async () => {
+      const client = await connect();
+      const r = await client.callTool({ name: "launch_job", arguments: { form: "Create vms",
+        values: { site: "gent", vms: [{ host: "db1", disks: [{ size: 10 }] }, { host: "web2", disks: [{}] }] } } });
+      expect(r.isError).toBe(true);
+      expect(r.structuredContent.rowErrors).toEqual({ vms: [
+        { index: 0, invalid: ["host"], validationErrors: { host: [{ type: "regex", description: "web hosts only" }] } },
+        { index: 1, invalid: ["disks"], rowErrors: { disks: [{ index: 0, missing: ["size"] }] } },
+      ] });
+      expect(r.structuredContent.message).toContain("list rows failing : vms[0].host (regex), vms[1].disks[0].size (missing)");
+      expect(deps.Job.launch).not.toHaveBeenCalled();
+    });
+
+    test("a yaml field with a subform takes a plain object and models it", async () => {
+      deps.Form.load = vi.fn(async () => ({ constants: {}, errors: [], warnings: [], forms: [{
+        name: "Web", type: "ansible", playbook: "web.yml", roles: ["public"],
+        subforms: [{ name: "cfg", type: "subform", fields: [
+          { name: "port", type: "number", required: true, maxValue: 9000, model: "listen.port" },
+          { name: "host", type: "text", required: true },
+        ] }],
+        fields: [{ name: "config", type: "yaml", subform: "cfg" }],
+      }] }));
+      const client = await connect();
+      const bad = await client.callTool({ name: "launch_job", arguments: { form: "Web", values: { config: { port: 99999 } } } });
+      expect(bad.structuredContent.message).toContain("list rows failing : config.host (missing), config.port (maxValue)");
+      const ok = await call(client, "launch_job", { form: "Web", values: { config: { port: 443, host: "web1" } } });
+      expect(ok.isError).toBeFalsy();
+      expect(deps.Job.launch.mock.calls[0][0].extravars).toEqual({ config: { listen: { port: 443 }, host: "web1" } });
+    });
+
+    test("valid nested rows launch with the rows the server built", async () => {
+      const client = await connect();
+      const r = await call(client, "launch_job", { form: "Create vms",
+        values: { site: "gent", vms: [{ host: "web1", disks: [{ size: 10 }, { size: 20 }] }] } });
+      expect(r.isError).toBeFalsy();
+      expect(deps.Job.launch.mock.calls[0][0].extravars).toEqual({ site: "gent",
+        vms: [{ host: "web1", disks: [{ path: "/gent/web1", size: 10 }, { path: "/gent/web1", size: 20 }] }] });
+    });
   });
 
   describe("validation", () => {

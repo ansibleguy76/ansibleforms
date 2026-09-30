@@ -1,0 +1,113 @@
+{
+  "name": "nested list : a row's own list resolved against the row as __parent__",
+  "mirrors": "nested AppForm subform editors (formEditStack) : __parent__ is the enclosing row, __parent__.__parent__ the form",
+  "form": {
+    "name": "t",
+    "subforms": [
+      {
+        "name": "vm",
+        "type": "subform",
+        "fields": [
+          {
+            "name": "host",
+            "type": "text",
+            "required": true
+          },
+          {
+            "name": "disks",
+            "type": "list",
+            "subform": "vmdisk"
+          }
+        ]
+      },
+      {
+        "name": "vmdisk",
+        "type": "subform",
+        "fields": [
+          {
+            "name": "path",
+            "type": "local",
+            "expression": "'/' + '$(__parent__.__parent__.site)' + '/' + '$(__parent__.host)'",
+            "output": true
+          },
+          {
+            "name": "size",
+            "type": "number",
+            "required": true
+          }
+        ]
+      }
+    ],
+    "fields": [
+      {
+        "name": "site",
+        "type": "text"
+      },
+      {
+        "name": "vms",
+        "type": "list",
+        "subform": "vm"
+      }
+    ]
+  },
+  "values": {
+    "site": "gent",
+    "vms": [
+      {
+        "host": "web1",
+        "__output__": {},
+        "disks": [
+          {
+            "size": 10,
+            "__output__": {}
+          },
+          {
+            "__output__": {}
+          }
+        ]
+      }
+    ]
+  },
+  "expect": {
+    "invalid": [
+      "vms"
+    ],
+    "extravars": {
+      "site": "gent",
+      "vms": [
+        {
+          "host": "web1",
+          "disks": [
+            {
+              "path": "/gent/web1",
+              "size": 10
+            },
+            {
+              "path": "/gent/web1"
+            }
+          ]
+        }
+      ]
+    },
+    "rowErrors": {
+      "vms": [
+        {
+          "index": 0,
+          "invalid": [
+            "disks"
+          ],
+          "rowErrors": {
+            "disks": [
+              {
+                "index": 1,
+                "missing": [
+                  "size"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

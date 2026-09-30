@@ -18,6 +18,11 @@
       }
     },
     {
+      "$comment": "a wizard form cannot be checked on the server yet, so it cannot set launchValidation",
+      "if": { "required": ["wizard"] },
+      "then": { "properties": { "launchValidation": { "not": {} } } }
+    },
+    {
       "$comment": "subform forms must declare 'fields' and never 'wizard'",
       "if": {
         "properties": { "type": { "const": "subform" } }
@@ -120,6 +125,7 @@
         "diff": {"not":{}},
         "abortable": {"not":{}},
         "allowRelaunch": {"not":{}},
+        "launchValidation": {"not":{}},
         "verbose": {"not":{}},
         "keepExtravars": {"not":{}},
         "userExtravars": {"not":{}},
@@ -538,6 +544,11 @@
     "repository": {"type": "string"},
     "showHelp": {"type": "boolean"},
     "allowRelaunch": {"type": "boolean"},
+    "launchValidation": {
+      "type": "string",
+      "enum": ["off", "log", "enforce"],
+      "description": "Check every launch of this form on the server : log what would be refused, or enforce (refuse, and run the extravars the server builds). The stricter of this and LAUNCH_VALIDATION wins. Not for wizard forms."
+    },
     "varsFiles": {
       "type": "array",
       "items": {

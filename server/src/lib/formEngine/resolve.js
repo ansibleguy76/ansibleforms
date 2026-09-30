@@ -7,6 +7,7 @@ import {
 } from './placeholders.js';
 import { SENTINELS, isEmptyValue } from './values.js';
 import { validateField } from './validate.js';
+import { buildFormOutput, listMarkers, canonicalJson } from './output.js';
 
 /**
  * Stateless resolution of a form for a non-browser client (the MCP server).
@@ -36,6 +37,9 @@ const DYNAMIC_TYPES = ["expression", "enum", "table", "html", "yaml", "list", "q
 const VALUE_TYPES = ["expression", "html", "yaml", "table", "list"];   // the expression yields the VALUE
 const OPTION_TYPES = ["enum", "query"];                                // the expression yields the OPTIONS
 export const DEFAULT_MAX_OPTIONS = 200;
+// list rows resolved per launch, all nesting levels together : a row runs its subform's
+// expressions and queries, so a huge list would multiply them
+export const MAX_LIST_ROWS = 500;
 
 /** The browser's type aliases (AppForm.vue initForm), on a copy - never on the loaded definition. */
 export function normalizeFields(fields) {
@@ -95,6 +99,18 @@ function optionMatches(option, value, valueColumn) {
  * @param {function} args.services.serverExpression  (expression, field) => Promise<result>
  * @param {function} args.services.query             (field, resolvedPlaceholders) => Promise<result>
  * @param {function} args.services.evalSandbox       (code) => result, for runLocal and evalDefault
+ * @param {function} [args.services.forSubform]      (subformName) => services for a list row's queries
+ * @param {object[]} [args.subforms]  every subform of the root form (Form.load inlines them) ;
+ *                                    defaults to form.subforms
+ * @param {boolean} [args.allRows]    resolve every (non-deleted) list row, not only the rows
+ *                                    the browser's row editor touched - for the MCP server,
+ *                                    whose caller sends plain rows
+ * @param {boolean} [args.verifyUntouched]  a row the editor did not touch passes as sent only
+ *                                    when it is one the list's own source (default, expression
+ *                                    or query, evaluated here) produces - otherwise it is
+ *                                    resolved and validated. For the launch validation : a
+ *                                    REST caller cannot slip a plain row past the checks, a
+ *                                    browser's untouched rows still pass unchanged
  */
 export async function resolveForm({
   form,
@@ -106,6 +122,11 @@ export async function resolveForm({
   only = undefined,
   maxOptions = DEFAULT_MAX_OPTIONS,
   services,
+  subforms = undefined,
+  allRows = false,
+  verifyUntouched = false,
+  // internal : the rows still allowed across the nested resolutions of one launch
+  rowBudget = { left: MAX_LIST_ROWS },
 }) {
   if (typeof services?.evalSandbox !== 'function') {
     throw new Error('resolveForm needs services.evalSandbox (node: formEngine/node/sandbox.js)');
@@ -142,7 +163,21 @@ export async function resolveForm({
     delete vals[f.name];
   }
 
-  const graph = scanDependencies(fields, knownNames);
+  const allSubforms = subforms ?? form?.subforms ?? [];
+  const subformOf = (f) => (typeof f.subform === 'string'
+    ? allSubforms.find((x) => x?.name === f.subform) : f.subform);
+  const hasRows = (f) => f.type === 'list' || (f.type === 'yaml' && !!f.subform);
+  // a list's rows read the parent through $(__parent__.x) : the list waits for those fields,
+  // so its rows are resolved against settled parent values. They go into the graph before
+  // its cycle detection, so a parent field that reads the list back is seen as a cycle.
+  const parentReads = {};
+  for (const f of fields) {
+    const sub = hasRows(f) ? subformOf(f) : null;
+    if (!sub) continue;
+    parentReads[f.name] = [...new Set([...JSON.stringify(sub.fields || []).matchAll(/\$\(__parent__\.([A-Za-z0-9_-]+)/g)]
+      .map((m) => m[1]).filter((n) => byName[n] && n !== f.name))];
+  }
+  const graph = scanDependencies(fields, knownNames, parentReads);
   warnings.push(...graph.warnings);
   const cycle = new Set(graph.cycles);
 
@@ -275,11 +310,45 @@ export async function resolveForm({
     vals[f.name] = s.value;
   }
 
+  /** a dynamic field's expression or query, run : { ok, result } or { ok: false, missing | error } */
+  async function runSource(f) {
+    const isExpression = !!f.expression;
+    const r = replacePlaceholderInString(
+      isExpression ? f.expression : f.query, ctx, !!f.ignoreIncomplete, isExpression ? 'expression' : 'raw');
+    if (r.value === undefined) return { ok: false, missing: r.missing };
+    try {
+      if (isExpression && f.runLocal) {
+        const code = (r.value.at(0) == "{" && r.value.at(-1) == "}") ? `Object.assign(${r.value})` : r.value;
+        return { ok: true, result: evalSandbox(code) };
+      }
+      if (isExpression) return { ok: true, result: await services.serverExpression(r.value, f) };
+      return { ok: true, result: await services.query(f, r.resolved) };
+    } catch (err) {
+      return { ok: false, error: err?.message || String(err) };
+    }
+  }
+
+  /**
+   * The rows a list (or the object a yaml+subform field) holds when nobody edited it : its
+   * default, else its expression or query - as the browser fills it. null when that cannot
+   * be evaluated : then no untouched row counts as the source's.
+   */
+  async function sourceRowsOf(f, dflt) {
+    if (dflt !== undefined) return [].concat(dflt);
+    if (!f.expression && !f.query) return [];
+    const src = await runSource(f);
+    return src.ok ? [].concat(src.result ?? []) : null;
+  }
+
   async function evaluate(f) {
     const dflt = computeDefault(f);
     const s = st[f.name];
     s.default = dflt;
     const inputValue = has(f.name) ? input[f.name] : undefined;
+
+    if (verifyUntouched && (f.type === 'list' || (f.type === 'yaml' && f.subform)) && has(f.name)) {
+      s.sourceRows = await sourceRowsOf(f, dflt);
+    }
 
     if (!isDynamicField(f)) {
       let value = has(f.name) ? inputValue : dflt;
@@ -308,26 +377,15 @@ export async function resolveForm({
     const fallback = () => (computesValue ? dflt : optionValue());
 
     const isExpression = !!f.expression;
-    const r = replacePlaceholderInString(
-      isExpression ? f.expression : f.query, ctx, !!f.ignoreIncomplete, isExpression ? 'expression' : 'raw');
-    if (r.value === undefined) {
-      warnings.push(`'${f.name}' could not be evaluated : a field it refers to never produced a value (${r.missing.join(', ')})`);
-      return finish(f, { status: 'error', error: `unresolved placeholder(s) : ${r.missing.join(', ')}`, value: fallback(), source: 'default' });
+    const src = await runSource(f);
+    if (!src.ok && src.missing) {
+      warnings.push(`'${f.name}' could not be evaluated : a field it refers to never produced a value (${src.missing.join(', ')})`);
+      return finish(f, { status: 'error', error: `unresolved placeholder(s) : ${src.missing.join(', ')}`, value: fallback(), source: 'default' });
     }
-
-    let result;
-    try {
-      if (isExpression && f.runLocal) {
-        const code = (r.value.at(0) == "{" && r.value.at(-1) == "}") ? `Object.assign(${r.value})` : r.value;
-        result = evalSandbox(code);
-      } else if (isExpression) {
-        result = await services.serverExpression(r.value, f);
-      } else {
-        result = await services.query(f, r.resolved);
-      }
-    } catch (err) {
-      return finish(f, { status: 'error', error: err?.message || String(err), value: fallback(), source: 'default' });
+    if (!src.ok) {
+      return finish(f, { status: 'error', error: src.error, value: fallback(), source: 'default' });
     }
+    const result = src.result;
 
     const patch = { status: 'resolved', source: 'computed' };
     if (isExpression) {
@@ -351,6 +409,90 @@ export async function resolveForm({
     return finish(f, patch);
   }
 
+  /**
+   * The rows of a list field, each through its subform - as the browser's row editor does,
+   * with the parent's values as __parent__. Only rows the user added or edited are resolved
+   * (they carry __output__ from the editor, or an insert/update marker) : a row the list's
+   * own expression produced is sent as it is, in the browser too. With `allRows` (the MCP
+   * server) every row is resolved : an agent's rows never went through an editor. A row marked deleted is
+   * kept as it is. Server-computed row fields win ; the markers stay ; __output__ is rebuilt.
+   *
+   * A `yaml` field with a subform is ONE such row : an object the browser edits through the
+   * same subform editor, output through its __output__. It is resolved the same way ; its
+   * failures are reported with `index: null`.
+   */
+  // password fields shown in the resolved rows (`acls[1].token`) - a relaunch needs to know
+  const rowPasswordsVisible = [];
+
+  async function resolveRows(f) {
+    const s = st[f.name];
+    const sub = subformOf(f);
+    if (s.status !== 'resolved' || !sub || !Array.isArray(sub.fields)) return;
+    const single = f.type === 'yaml';
+    const value = vals[f.name];
+    if (single ? !(value && typeof value === 'object' && !Array.isArray(value)) : !Array.isArray(value)) return;
+    const m = single ? { insert: '', update: '', delete: '' } : listMarkers(f);
+    const markerKeys = [m.insert, m.update, m.delete].filter(Boolean);
+    const strip = (row) => {
+      const out = {};
+      for (const [k, v] of Object.entries(row || {})) if (k !== '__output__' && !markerKeys.includes(k)) out[k] = v;
+      return canonicalJson(out);
+    };
+    const sourceKeys = verifyUntouched && Array.isArray(s.sourceRows) ? new Set(s.sourceRows.map(strip)) : null;
+    const editorTouched = (row) => '__output__' in row || (m.insert && row[m.insert]) || (m.update && row[m.update]);
+    // a row to resolve : any the editor touched ; with allRows, every one ; with
+    // verifyUntouched, an untouched one that the list's own source does not produce
+    const touched = (row) => row && typeof row === 'object' && !(m.delete && row[m.delete])
+      && (allRows || editorTouched(row) || (verifyUntouched && !(sourceKeys && sourceKeys.has(strip(row)))));
+    const rows = single ? [value] : value;
+    const todo = rows.filter(touched).length;
+    if (todo > rowBudget.left) {
+      rowBudget.left = 0;
+      s.error = `too many list rows to resolve (more than ${MAX_LIST_ROWS} in one launch)`;
+      s.rowsRefused = true;
+      return;
+    }
+    rowBudget.left -= todo;
+    const { __user__, ...parentValues } = vals; // eslint-disable-line no-unused-vars
+    const rowServices = typeof services.forSubform === 'function' ? services.forSubform(sub.name) : services;
+    const failing = [];
+    const out = [];
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      if (!touched(row)) { out.push(row); continue; }
+      const input = {};
+      for (const [k, v] of Object.entries(row)) if (k !== '__output__' && !markerKeys.includes(k)) input[k] = v;
+      const res = await resolveForm({
+        form: sub, constants, vars, user, parent: parentValues, values: input,
+        services: rowServices, subforms: allSubforms, rowBudget, allRows, verifyUntouched,
+      });
+      const resolved = {};
+      for (const sf of sub.fields || []) if (sf?.name) resolved[sf.name] = res._values[sf.name];
+      const output = buildFormOutput(sub.fields, resolved, { subforms: allSubforms });
+      for (const k of markerKeys) if (row[k]) { resolved[k] = row[k]; output[k] = row[k]; }
+      resolved.__output__ = output;
+      out.push(resolved);
+      if (!res.complete) {
+        failing.push({
+          index: single ? null : i,
+          ...(res.missing.length ? { missing: res.missing } : {}),
+          ...(res.invalid.length ? { invalid: res.invalid } : {}),
+          ...(res.waiting.length ? { waiting: res.waiting } : {}),
+          ...(Object.keys(res.validationErrors).length ? { validationErrors: res.validationErrors } : {}),
+          ...(Object.keys(res.rowErrors).length ? { rowErrors: res.rowErrors } : {}),
+        });
+      }
+      for (const pw of res._passwordsVisible || []) rowPasswordsVisible.push(`${f.name}${single ? '' : `[${i}]`}.${pw}`);
+      for (const w of res.warnings) {
+        const tagged = `${f.name}${single ? '' : `[${i}]`} : ${w}`;
+        if (!warnings.includes(tagged)) warnings.push(tagged);
+      }
+    }
+    vals[f.name] = single ? out[0] : out;
+    s.value = vals[f.name];
+    if (failing.length) s.rows = failing;
+  }
+
   // dependency-ordered fill : whatever can be evaluated now, then whatever that unlocked
   const pending = () => fields.filter((f) => st[f.name].status === 'pending');
   const visibilityDeps = (f) => (f.dependencies || [])
@@ -372,6 +514,7 @@ export async function resolveForm({
       }
       if (!exempt && !(graph.dependsOn[f.name] || []).every(settled)) continue;
       await evaluate(f);
+      if (hasRows(f)) await resolveRows(f);
       progress = true;
     }
     if (progress) { released = false; continue; }
@@ -428,6 +571,7 @@ export async function resolveForm({
     }
     if (s.notInOptions) r.notInOptions = true;
     if (s.validationErrors?.length) r.validationErrors = s.validationErrors;
+    if (s.rows?.length) r.rows = s.rows;
     if (s.error) r.error = s.error;
     if (s.waitingFor) r.waitingFor = s.waitingFor;
     out.push(r);
@@ -435,7 +579,8 @@ export async function resolveForm({
   const missing = out.filter((r) => r.needsInput).map((r) => r.name);
   // a required field that is simply empty is `missing` ; `invalid` is what a value breaks
   const invalid = out.filter((r) => r.visible
-    && (r.notInOptions || (r.validationErrors?.length && !r.needsInput))).map((r) => r.name);
+    && (r.notInOptions || (r.validationErrors?.length && !r.needsInput) || r.rows?.length
+      || st[r.name]?.rowsRefused)).map((r) => r.name);
   const waiting = out.filter((r) => r.status === 'waiting').map((r) => r.name);
   const validationErrors = Object.fromEntries(out
     .filter((r) => r.visible && r.validationErrors?.length && !r.needsInput)
@@ -447,12 +592,19 @@ export async function resolveForm({
     waiting,
     invalid,
     validationErrors,
+    // failing list rows, per list field : [{ index, missing, invalid, waiting, validationErrors }]
+    rowErrors: Object.fromEntries(out.filter((r) => r.visible && r.rows?.length).map((r) => [r.name, r.rows])),
     fields: out,
     warnings,
     // internal : the raw values and visibility the launch builds its extravars from
     _values: { ...vals },
     _visibility: Object.fromEntries(fields.map((f) => [f.name, st[f.name].status !== 'hidden'])),
     _fields: fields,
+    // the password fields that are shown (not hidden by their dependencies), rows included
+    _passwordsVisible: [
+      ...fields.filter((f) => f.type === 'password' && st[f.name].status !== 'hidden' && st[f.name].status !== 'skipped').map((f) => f.name),
+      ...rowPasswordsVisible,
+    ],
   };
 }
 

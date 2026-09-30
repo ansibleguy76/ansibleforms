@@ -523,11 +523,39 @@
       - `off` (default) : no check, launches behave exactly as before.
       - `log` : a launch that would be refused is logged as a warning and still runs. Use
         this first, to see in the log what enforcing would refuse.
+      - `log` also names the extravars keys where what the client sent differs from what the
+        server builds (never their values).
       - `enforce` : such a launch is refused with status 422 and the failing fields. A launch
         that sends no `rawFormData` (the v1 API, or a REST call that leaves it out) is
-        refused as well, because its values cannot be checked.
+        refused as well, because its values cannot be checked. A valid
+        launch runs the extravars and credentials the SERVER builds from the checked values,
+        not the ones the client sent : computed fields (expressions, queries) are the
+        server's evaluation, and a file field must point at a real upload in `UPLOAD_PATH`.
+        Wizard forms cannot be checked yet and are refused.
 
-      List rows (subforms) and wizard forms are not checked yet. Applied without a restart.
+        **What the user saw is not always what runs.** The server evaluates every computed
+        field again at launch, a moment after the browser did, as the launching user. A value
+        that depends on WHEN or WHERE it is evaluated can differ, and then the server's value
+        runs :
+          - time : `fn.fnTime()`, `new Date()`, a timestamp or a name built from it ;
+          - outside data : a query, `fnRestAdvanced` / `fnSsh` / `fnDnsResolve`, a file read
+            - if the data changed in between ;
+          - the browser's own settings : a `runLocal` expression using the user's timezone or
+            locale (`toLocaleString`) runs with the server's.
+        The same goes for validation : a rule that reads such a field (`notIn` against a
+        query's result, `validIf` on a computed flag) is checked against the server's value.
+        Run `log` first : it names every extravars key where the client and the server
+        differ, so you see which forms this affects before you enforce.
+
+      The rows of a `list` field that were added or edited go through their subform on the
+      server as well, with the form's values as `__parent__` : its rules are checked and
+      its computed fields evaluated. Rows the list's own expression produced, and rows
+      marked deleted, are sent as they are - as in the browser. At most 500 rows are
+      resolved per launch. Applied without a restart.
+
+      A form can be made stricter with its own `launchValidation` property ; the stricter of
+      the two wins. See the **Launch validation** page of the documentation for the whole
+      picture : what is checked, list rows, uploads, passwords and how to roll it out.
   - name: ENABLE_DB_QUERY_LOGGING
     type: number
     allowed: 0, 1
@@ -959,6 +987,10 @@
     description: |
       When you have sensitive extravars, such as passwords, tokens, keys, credentials, you do not want these to be shown in clear text in the extravars section of a job.  
       By setting this regex, any extravar key matching this regex will have its value masked with `********`.   Note the regex will be case insensitive.   
+
+      **Since 6.4.1** the value of every `password` field of the form is masked as well, whatever
+      its key or model path - in list rows and yaml subforms too. The regex is for the other
+      secrets, the ones that are not password fields.
   - name: EXTRAVARS_USER_FIELDS
     type: string
     allowed: empty, all, none, or a comma separated list of keys
@@ -2182,6 +2214,41 @@
             code: |
               - name: Production Deployment
                 allowRelaunch: false
+      - name: launchValidation
+        type: string
+        with_types: ansible, awx, multistep
+        short: Check every launch of this form on the server
+        group: workflow
+        version: 6.4.1
+        allowed: "off, log, enforce"
+        default: the LAUNCH_VALIDATION environment variable
+        description: |
+          Checks every launch of this form on the server against its validation rules, with
+          the same engine the browser and the MCP server use - see the `LAUNCH_VALIDATION`
+          environment variable for what `log` and `enforce` do.
+
+          Set it on a form that is launched over the REST API : with `enforce`, a launch that
+          breaks the form's rules is refused, and the job runs the extravars the **server**
+          builds from the checked values - whatever the caller sent as extravars.
+
+          Mind the fields the server computes again : a timestamp (`fn.fnTime()`), a query or
+          REST result that changed, or a `runLocal` expression using the browser's timezone or
+          locale can come out different from what the user saw, and the server's value runs.
+          See `LAUNCH_VALIDATION` ; try `log` first, it names the keys that differ.
+
+          The stricter of this property and `LAUNCH_VALIDATION` wins : a form can be made
+          stricter than the instance, never looser. The MCP server always validates and builds
+          the extravars itself, whatever this says.
+
+          Not for wizard forms yet : a wizard form with `launchValidation` does not load. See
+          the **Launch validation** page of the documentation.
+        examples:
+          - name: A form that is launched over REST
+            code: |
+              - name: Create VM
+                type: ansible
+                playbook: vm.yml
+                launchValidation: enforce
       - name: order
         type: integer
         with_types: ansible, awx, multistep
@@ -4379,6 +4446,12 @@
               You need to explicitly set the status to `absent`.  
               So you can add a custom property to the deleted record, 
               marking the record as deleted and sending it to the playbook for removal.   
+
+              **Since 6.4.1** the markers of a `list` field reach the playbook as well : a
+              removed row is sent with its delete marker instead of looking like a live row.
+              Before, a list row only carried a marker when its subform declared it as a
+              (hidden) field. When rows can be deleted or updated but no
+              `insertMarker` is set, new rows are marked `__inserted__`.
             examples:
             - name: Mark delete record
               code: |

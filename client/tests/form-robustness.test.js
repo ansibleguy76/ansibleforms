@@ -1011,3 +1011,30 @@ describe('a flat admin list identifies rows by value, not by position', () => {
     expect(resolvedByValue.name).toBe('host-b');   // the fix: the one that was selected
   });
 });
+
+describe('"could not be evaluated" is not raised for a field that is only waiting for input', () => {
+  // An input without an expression counts as ready the moment it exists, so a dependent
+  // expression ran while that input was still empty and was reported as referring to
+  // something that "never produced a value" - on every fresh form, and the warning stayed
+  // after the field evaluated fine once the input was filled in.
+  const src = read('src/components/AppForm.vue').replace(/\/\/[^\n]*/g, '');
+
+  it('both warning sites skip a field whose dependency is still empty', () => {
+    const sites = [...src.matchAll(/addWarningOnce\(`unresolved:/g)];
+    expect(sites).toHaveLength(2);
+    for (const m of sites) {
+      expect(src.slice(Math.max(0, m.index - 120), m.index)).toMatch(/if \(!dependsOnEmptyField\(item\.name\)\) \{/);
+    }
+  });
+
+  it('an empty dependency is undefined, null, empty, an empty list or an enum sentinel', () => {
+    const fn = src.slice(src.indexOf('function dependsOnEmptyField'), src.indexOf('// this field still wants its restored value'));
+    for (const t of ["v === undefined", "v === null", "v === ''", "v.length === 0", "'__auto__'"]) expect(fn).toContain(t);
+    expect(fn).toContain('visibility.value[dep] === false');
+  });
+
+  it('the warning is taken back once the field evaluates', () => {
+    const fn = src.slice(src.indexOf('function setFieldStatus'), src.indexOf('function setFieldStatus') + 800);
+    expect(fn).toMatch(/if \(status === "fixed"\) clearWarningOnce\(`unresolved:\$\{fieldname\}`\)/);
+  });
+});
