@@ -5,6 +5,10 @@ For maintainers. Contributors only need [CONTRIBUTING.md](CONTRIBUTING.md).
 Everything below runs in GitHub Actions. Nothing is built or pushed from a laptop, and no
 version number or changelog line is ever typed by hand.
 
+There are two release lines: `main` (the next major, released as `7.0.0-beta.N`) and
+`release/6.x` (patches of the current one). Everything below works the same on both; each
+branch has its own release pull request, manifest and `CHANGELOG.md`.
+
 ## How a release happens
 
 ```
@@ -26,12 +30,24 @@ feature PR ──squash──▶ main ──▶ release-please updates the open 
    release contains.
 4. **Merging it is the release.** The same workflow then creates the tag `x.y.z` (no `v`, like
    the tags before it), the GitHub release with the changelog section as notes, and calls
-   **Publish**, which pushes `x.y.z` and `latest` to Docker Hub and GHCR.
+   **Publish**, which pushes the image to Docker Hub and GHCR.
+
+### The image tags
+
+| Release | Tags |
+|---|---|
+| `6.5.3` | `6.5.3`, and `6.5`, `6`, `latest` - each only while it is the highest of its kind |
+| `7.0.0-beta.2` | `7.0.0-beta.2`, `7-beta`, `next` - never `latest` |
+| release candidate | `6.5.3-rc.551.1`, `6-rc`, `latest-rc` |
+
+So a patch on 6 after 7.0.0 is out moves `6.5` and `6` but not `latest`, and re-publishing an
+old tag never moves anything backwards. `latest` reaches 7 with the final 7.0.0. The release
+workflow also keeps GitHub's "Latest release" badge on the highest final version.
 
 ### Changing the changelog wording before a release
 
-Edit `CHANGELOG.md` on the release pull request's branch (`release-please--branches--main`)
-and push. Once the release exists, you can also edit the GitHub release notes directly.
+Edit `CHANGELOG.md` on the release pull request's branch (`release-please--branches--main`,
+or `release-please--branches--release/6.x`) and push. Once the release exists, you can also edit the GitHub release notes directly.
 
 ### Forcing a specific version
 
@@ -78,12 +94,20 @@ versioned by date (`2026.10.01`, plus `latest`), independent of the application.
   pull request for that. Build a release candidate of it to test the app on the new base, then
   merge it. Retitle it `fix(base): ...` if the update should appear in the changelog.
 
-## Hotfix on an older version
+## A patch release of 6.x
 
-Rarely needed: while the next release is being prepared on main, you normally fix on main
-and release. If an old line must get a fix, branch from its tag, fix, bump
-`server/package.json`, tag it by hand and run **Publish** with that tag. Do not move
-`latest` backwards: re-publish the current release afterwards if needed.
+Open the fix against `release/6.x` (see CONTRIBUTING.md: fix on main first, then
+cherry-pick). release-please keeps a "chore: release 6.5.x" pull request open on that
+branch; merging it releases and publishes, exactly like on main. Its config bumps the patch
+only, so a stray `feat:` cannot make a 6.6.0.
+
+## Starting and ending the 7 betas
+
+- The first 7 pull request on main sets `"prerelease": true`, `"versioning": "prerelease"`
+  and `"prerelease-type": "beta"` in `release-please-config.json`, and ends its description
+  with `Release-As: 7.0.0-beta.0`. Every later merge into main counts the beta up.
+- When 7 is ready: remove those three settings and merge a pull request ending with
+  `Release-As: 7.0.0`. Its publish moves `latest` to 7.
 
 ## Local scripts
 
@@ -101,9 +125,9 @@ A test server does not need an image copied to it: it can pull `latest-rc`.
 | `PAT_TOKEN` | repository secret, used by release.yml until `RELEASE_APP_ID` is set | release.yml |
 | `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN` | secrets of the `dockerhub` environment | publish.yml, base.yml |
 | `DOCKERHUB_REPOSITORY`, `DOCKERHUB_BASE_REPOSITORY` | optional repository variables | publish.yml, base.yml |
-| `dockerhub` environment | must allow `main` and pull request refs | publish.yml (rc runs on a pull request) |
-| `github-pages` environment | deployment branch `main` | pages.yml |
-| ruleset on `main` | pull request required, squash only, required checks, no force push | everything |
+| `dockerhub` environment | must allow `main`, `release/*` and pull request refs | publish.yml (rc runs on a pull request) |
+| `github-pages` environment | deployment branch `main` (it also builds the frozen `release/6.x` docs under `/v6/`) | pages.yml |
+| ruleset on `main` and `release/*` | pull request required, squash only, required checks, no force push | everything |
 
 The App token is needed because a pull request opened with the default `GITHUB_TOKEN`
 starts no workflows, so the release pull request would never get its required checks.

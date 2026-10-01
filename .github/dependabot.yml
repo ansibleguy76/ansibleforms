@@ -63,3 +63,48 @@ updates:
     ignore:
       - dependency-name: '*'
         update-types: ['version-update:semver-major']
+
+  # The maintenance line (release/6.x) : patch updates only - a minor of a dependency is
+  # no business of a patch release. Dependabot reads this file from main only, so the
+  # entries for the other branch live here.
+  - package-ecosystem: npm
+    directory: /client
+    target-branch: release/6.x
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
+      include: scope
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major', 'version-update:semver-minor']
+    groups:
+      client-6x:
+        patterns: ['*']
+
+  - package-ecosystem: npm
+    directory: /server
+    target-branch: release/6.x
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
+      include: scope
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major', 'version-update:semver-minor']
+    groups:
+      server-6x:
+        patterns: ['*']
+
+  - package-ecosystem: docker
+    directory: /
+    target-branch: release/6.x
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
+      include: scope
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major', 'version-update:semver-minor']

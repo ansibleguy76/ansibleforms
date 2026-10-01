@@ -1,8 +1,12 @@
 name: Publish
 
 # Builds and pushes the application image. Called by release.yml when a release is created
-# (x.y.z + latest) and by rc.yml for a release candidate (x.y.z-rc.<pr>.<run> + latest-rc).
-# "Run workflow" re-publishes an existing release tag, for when a push failed half way.
+# and by rc.yml for a release candidate. "Run workflow" re-publishes an existing release tag,
+# for when a push failed half way. The tags (see "Work out the tags") :
+#   release 6.5.3      -> 6.5.3, 6.5, 6 and latest - each only while it is the highest of
+#                         its kind, so a patch on an older line never moves them backwards
+#   pre-release 7.0.0-beta.2 -> 7.0.0-beta.2, 7-beta, next (never latest)
+#   rc 6.5.3-rc.551.1  -> 6.5.3-rc.551.1, 6-rc, latest-rc
 #
 # It pushes to GHCR always and to Docker Hub when the secret is there. Docker Hub stays
 # the canonical channel - docs/installation.md tells people to pull ansibleguy/ansibleforms
@@ -99,12 +103,30 @@ jobs:
           # github.repository is already lowercase here ; GHCR rejects anything else
           ghcr="ghcr.io/${{ github.repository }}"
           hub="${{ vars.DOCKERHUB_REPOSITORY || 'ansibleguy/ansibleforms' }}"
-          if [ "$CHANNEL" = "rc" ]; then moving="latest-rc"; else moving="latest"; fi
+          major="${VERSION%%.*}"
+          minor="$major.$(echo "$VERSION" | cut -d. -f2)"
 
-          tags="$ghcr:$VERSION,$ghcr:$moving"
-          if [ "${{ steps.hub.outputs.enabled }}" = "true" ]; then
-            tags="$tags,$hub:$VERSION,$hub:$moving"
+          # the final release tags of the repository, e.g. 6.5.2 ; pre-releases and rcs left out
+          finals=$(git ls-remote --tags --refs origin | sed 's#.*refs/tags/##' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' || true)
+          highest() { { echo "$finals"; echo "$VERSION"; } | grep -E "^$1" | sort -V | tail -1; }
+
+          if [ "$CHANNEL" = "rc" ]; then
+            names="$VERSION latest-rc $major-rc"
+          elif [[ "$VERSION" == *-* ]]; then
+            names="$VERSION next $major-beta"
+          else
+            names="$VERSION"
+            [ "$(highest "$minor\.")" = "$VERSION" ] && names="$names $minor"
+            [ "$(highest "$major\.")" = "$VERSION" ] && names="$names $major"
+            [ "$(highest "")" = "$VERSION" ] && names="$names latest"
           fi
+
+          tags=""
+          for n in $names; do
+            tags="$tags,$ghcr:$n"
+            if [ "${{ steps.hub.outputs.enabled }}" = "true" ]; then tags="$tags,$hub:$n"; fi
+          done
+          tags="${tags#,}"
           echo "list=$tags" >> "$GITHUB_OUTPUT"
           echo "$tags" | tr ',' '\n'
 

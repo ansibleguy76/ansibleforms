@@ -7,7 +7,7 @@ name: Docker
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, 'release/**']
     paths:
       - 'Dockerfile'
       - 'Dockerfile.base'

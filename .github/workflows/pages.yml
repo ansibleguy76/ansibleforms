@@ -8,7 +8,7 @@ on:
   push:
     branches: ["main"]
   pull_request:
-    branches: ["main"]
+    branches: ["main", "release/**"]
     paths:
       - 'docs/**'
       - 'CHANGELOG.md'
@@ -57,6 +57,35 @@ jobs:
 
       - name: Build with Jekyll
         run: bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
+        working-directory: docs
+        env:
+          JEKYLL_ENV: production
+
+      # The docs of the maintenance line, frozen under /v6/ : the site is built from main
+      # (the next major), and 6.x users still need the pages that match their version.
+      # Skipped until the branch exists, and on pull requests (only main deploys).
+      - name: Check out the 6.x docs
+        id: v6
+        if: github.event_name != 'pull_request'
+        run: |
+          if git ls-remote --exit-code --heads origin release/6.x >/dev/null; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::no release/6.x branch yet - no /v6/ docs"
+          fi
+
+      - uses: actions/checkout@v7
+        if: steps.v6.outputs.present == 'true'
+        with:
+          ref: release/6.x
+          path: v6
+
+      - name: Build the 6.x docs
+        if: steps.v6.outputs.present == 'true'
+        run: |
+          { echo '---'; echo 'layout: default'; echo 'title: Changelog'; echo 'nav_order: 10'; echo '---'; echo ''; cat ../v6/CHANGELOG.md; } > ../v6/docs/changelog.md
+          bundle exec jekyll build --source ../v6/docs --destination _site/v6 --baseurl "${{ steps.pages.outputs.base_path }}/v6"
         working-directory: docs
         env:
           JEKYLL_ENV: production
