@@ -5,7 +5,7 @@
 remote_theme: just-the-docs/just-the-docs@v0.8.2
 
 # Site settings
-title: AnsibleForms Documentation
+title: AnsibleForms 6.x Documentation
 description: Technical documentation for AnsibleForms
 baseurl: "" # Empty for custom domain
 url: "https://ansibleforms.com" # Custom domain
@@ -42,8 +42,8 @@ nav_sort: case_insensitive
 
 # Aux links (top right)
 aux_links:
-  "Docs for 6.x":
-    - "/v6/"
+  "Current docs":
+    - "/"
   "GitHub":
     - "https://github.com/ansibleguy76/ansibleforms"
   "Docker Hub":
