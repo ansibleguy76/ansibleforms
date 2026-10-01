@@ -873,7 +873,7 @@ describe('a cron field is validated with the same check the editor uses', () => 
 
   it('every cron field uses the shared validator', () => {
     const cronFields = settings.split('\n').filter(l => /type:\s*"cron"/.test(l));
-    expect(cronFields.length).toBe(3);   // repositories, datasources, schedules
+    expect(cronFields.length).toBe(2);   // repositories, schedules
     for (const line of cronFields) {
       expect(line).toMatch(/validator: cronValidator\(t\)/);
       expect(line).not.toMatch(/regex:/);

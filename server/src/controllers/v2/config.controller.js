@@ -417,7 +417,7 @@ const formNames = async function(req,res){
   try{
     var formConfig = await Form.load(undefined,undefined,true)
     // loadFullConfig=true keeps subforms in the list, but they can't be launched
-    // standalone, so exclude them from the schedules/datasources form dropdown
+    // standalone, so exclude them from the schedules form dropdown
     const names = [...new Set((formConfig.forms || [])
       .filter(f => f.type !== 'subform')
       .map(f => f.name)

@@ -41,8 +41,6 @@ import sshRoutes from "./routes/v1/ssh.routes.js";
 import logRoutes from "./routes/v1/log.routes.js";
 import repositoryRoutes from "./routes/v1/repository.routes.js";
 import configRoutes from "./routes/v1/config.routes.js";
-import datasourceSchemaRoutes from "./routes/v1/datasourceSchema.routes.js";
-import datasourceRoutes from "./routes/v1/datasource.routes.js";
 
 // V2 routes (CURRENT - REST standards compliant)
 import queryRoutesv2 from "./routes/v2/query.routes.js";
@@ -200,8 +198,6 @@ const load = async (app) => {
   app.use(`/api/v1/sshkey`, cors(), authobj, Middleware.checkSettingsMiddleware, sshRoutes);
   app.use(`/api/v1/log`, cors(), authobj, Middleware.checkLogsMiddleware, logRoutes);
   app.use(`/api/v1/repository`, cors(), authobj, Middleware.checkSettingsMiddleware, repositoryRoutes);
-  app.use(`/api/v1/datasource/schema`, cors(), authobj, Middleware.checkSettingsMiddleware, datasourceSchemaRoutes);
-  app.use(`/api/v1/datasource`, cors(), authobj, Middleware.checkSettingsMiddleware, datasourceRoutes);
 
   // routes for form config (extra middleware in the routes itself)
   app.use(`/api/v1/config`, cors(), authobj, configRoutes);

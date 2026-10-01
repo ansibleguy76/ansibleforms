@@ -5,7 +5,6 @@ import logger from '../lib/logger.js';
 import mysql from '../models/db.model.js';
 import Repository from '../models/repository.model.js';
 import Lock from '../models/lock.model.js';
-import Datasource from '../models/datasource.model.js';
 import Schedule from '../models/schedule.model.js';
 // imported rather than injected like Job/Token/BackupModel : audit.model only pulls
 // in the db pool and the logger, so there is no cycle to avoid here
@@ -18,14 +17,13 @@ import dayjs from 'dayjs';
 
 /**
  * Centralized Cron Service
- * Manages all scheduled tasks for repositories, datasources, and schedules
+ * Manages all scheduled tasks for repositories and schedules
  * Uses the application timezone from LOG_TZ (via log.config.js)
  */
 class CronService {
   constructor() {
     this.jobs = {
       repositories: new Map(),
-      datasources: new Map(),
       schedules: new Map(),
       system: new Map() // For maintenance tasks
     };
@@ -122,75 +120,6 @@ class CronService {
       task.stop();
       this.jobs.repositories.delete(name);
       logger.info(`Removed cron job for repository: ${name}`);
-    }
-  }
-
-  /**
-   * Add or update a datasource cron job
-   */
-  addDatasource(id, name, cronExpression) {
-    try {
-      // Remove existing job if any
-      this.removeDatasource(id);
-
-      if (!cronExpression || cronExpression.trim() === '') {
-        logger.debug(`No cron expression for datasource ${name} (ID: ${id}), skipping`);
-        return;
-      }
-
-      // Validate cron expression
-      if (!this.validateCronExpression(cronExpression)) {
-        logger.error(`Invalid cron expression for datasource ${name} (ID: ${id}): ${cronExpression}`);
-        return;
-      }
-
-      // Create new cron job
-      const task = new Cron(cronExpression, {
-        timezone: this.timezone,
-        paused: true,
-        protect: true
-      }, async () => {
-        logger.info(`Cron triggered for datasource: ${name} (ID: ${id})`);
-        try {
-          // Check if datasource is already running or queued.
-          // `state`, not `status` : the queue state lives in state ('queued'/'running'/
-          // 'idle', see datasource.model.js) while status only ever holds 'success' or
-          // 'failed'. So this predicate was always true, the guard never fired, and the
-          // "already running or queued, skipping" line below was unreachable. The two
-          // schedule handlers further down this file get it right.
-          const datasources = await mysql.do(
-            "SELECT id FROM AnsibleForms.`datasource` WHERE id=? AND COALESCE(state,'')<>'running' AND COALESCE(state,'')<>'queued'",
-            [id],
-            true
-          );
-          
-          if (datasources.length > 0) {
-            await Datasource.queue(id);
-          } else {
-            logger.debug(`Datasource ${name} (ID: ${id}) is already running or queued, skipping cron execution`);
-          }
-        } catch (err) {
-          logger.error(`Error in datasource cron job for ${name} (ID: ${id}):`, err);
-        }
-      });
-
-      task.resume();
-      this.jobs.datasources.set(id, task);
-      logger.info(`Added cron job for datasource: ${name} (ID: ${id}) with schedule: ${cronExpression}`);
-    } catch (err) {
-      logger.error(`Failed to add datasource cron job for ${name} (ID: ${id}):`, err);
-    }
-  }
-
-  /**
-   * Remove a datasource cron job
-   */
-  removeDatasource(id) {
-    const task = this.jobs.datasources.get(id);
-    if (task) {
-      task.stop();
-      this.jobs.datasources.delete(id);
-      logger.info(`Removed cron job for datasource ID: ${id}`);
     }
   }
 
@@ -307,21 +236,6 @@ class CronService {
       logger.info(`Initialized ${repositories.length} repository cron jobs`);
     } catch (err) {
       logger.error('Failed to initialize repository cron jobs:', err);
-    }
-
-    try {
-      // Initialize datasources
-      const datasources = await mysql.do(
-        "SELECT id, name, cron FROM AnsibleForms.`datasource` WHERE cron<>''",
-        undefined,
-        true
-      );
-      datasources.forEach(ds => {
-        this.addDatasource(ds.id, ds.name, ds.cron);
-      });
-      logger.info(`Initialized ${datasources.length} datasource cron jobs`);
-    } catch (err) {
-      logger.error('Failed to initialize datasource cron jobs:', err);
     }
 
     try {
@@ -580,12 +494,6 @@ class CronService {
       logger.debug(`Stopped repository cron job: ${name}`);
     });
     this.jobs.repositories.clear();
-
-    this.jobs.datasources.forEach((task, id) => {
-      task.stop();
-      logger.debug(`Stopped datasource cron job: ${id}`);
-    });
-    this.jobs.datasources.clear();
 
     this.jobs.schedules.forEach((task, id) => {
       task.stop();

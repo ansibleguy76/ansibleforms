@@ -236,7 +236,6 @@ async function schedulerCheck() {
     system: system.size,
     schedules: cronService.jobs?.schedules?.size || 0,
     repositories: cronService.jobs?.repositories?.size || 0,
-    datasources: cronService.jobs?.datasources?.size || 0,
   };
   // A registered task is not a running one. croner returns a null next run for a task
   // that has been stopped or whose pattern has no future occurrence, and that is the

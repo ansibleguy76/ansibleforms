@@ -498,7 +498,7 @@
       "get": {
         "tags": ["config"],
         "summary": "List form names",
-        "description": "Returns a sorted, de-duplicated flat list of the form names, for the form dropdowns of schedules and datasources. Subforms are excluded because they cannot be launched standalone.",
+        "description": "Returns a sorted, de-duplicated flat list of the form names, for the form dropdown of schedules. Subforms are excluded because they cannot be launched standalone.",
         "security": [ { "bearerAuth": [] } ],
         "responses": {
           "200": {

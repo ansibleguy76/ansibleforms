@@ -4,7 +4,7 @@
 // they used to disagree:
 //
 //   - the editor, which shows an inline reason and a next-run preview ;
-//   - the SAVE validator on the repositories, datasources and schedules pages, which used
+//   - the SAVE validator on the repositories and schedules pages, which used
 //     to be a hand written regex in config/settings.js.
 //
 // A regex cannot express "the start of a range must not exceed its end", so `0 0 * * 5-1`

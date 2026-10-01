@@ -64,7 +64,6 @@ vi.mock("../src/services/cron.service.js", () => ({
       system: new Map([["nightlyBackup", { nextRun: () => new Date("2030-01-01T00:00:00Z") }]]),
       schedules: new Map(),
       repositories: new Map(),
-      datasources: new Map(),
     },
   },
 }));

@@ -175,34 +175,18 @@ describe("a missing HEAD does not unwind a successful git operation", () => {
 });
 
 describe("queue numbers are allocated atomically", () => {
-  // Both queues used to read MAX(queue_id) and write it back in a separate statement, so
-  // a cron tick and a manual queue could interleave and hand two rows the same number -
-  // losing the FIFO order the processor depends on (ORDER BY queue_id LIMIT 1). The
-  // datasource one was worse: MAX(x)+1 over an all-NULL column is NULL, not 1, so on a
-  // fresh install the first datasource was queued with no queue number at all.
-  const models = {
-    datasource: readFileSync(path.join(here, "../src/models/datasource.model.js"), "utf8"),
-    schedule: readFileSync(path.join(here, "../src/models/schedule.model.js"), "utf8"),
-  };
+  // The queue used to read MAX(queue_id) and write it back in a separate statement, so a
+  // cron tick and a manual queue could interleave and hand two rows the same number -
+  // losing the FIFO order the processor depends on (ORDER BY queue_id LIMIT 1).
+  const src = readFileSync(path.join(here, "../src/models/schedule.model.js"), "utf8");
 
-  test.each([["datasource", "Ds.queue = async function(id)"], ["schedule", "static async queue(id)"]])(
-    "%s allocates and writes in one statement",
-    (name, marker) => {
-      const src = models[name];
-      const fn = src.slice(src.indexOf(marker), src.indexOf(marker) + 1200);
-      assert.ok(fn.includes("queue_id"), "the slice must be the queue function");
-      // exactly one statement reaches the database
-      const stmts = [...fn.matchAll(/mysql\.do\(|super\.update\(|super\.findAll\(/g)];
-      assert.equal(stmts.length, 1, `${name} still makes ${stmts.length} calls to allocate a queue slot`);
-      assert.match(fn, /COALESCE\(MAX\(queue_id\),0\)\+1/, "the next number must be computed in SQL");
-    }
-  );
-
-  test("the datasource cannot be queued with a NULL number", () => {
-    // COALESCE, not a bare MAX+1. Comments stripped first: the comment explaining this
-    // fix quotes the old SQL, so matching the raw file matched the PROSE.
-    const code = models.datasource.replace(/\/\/[^\n]*/g, "");
-    assert.doesNotMatch(code, /SELECT MAX\(queue_id\)\+1/);
+  test("the schedule allocates and writes in one statement", () => {
+    const marker = "static async queue(id)";
+    const fn = src.slice(src.indexOf(marker), src.indexOf(marker) + 1200);
+    assert.ok(fn.includes("queue_id"), "the slice must be the queue function");
+    const stmts = [...fn.matchAll(/mysql\.do\(|super\.update\(|super\.findAll\(/g)];
+    assert.equal(stmts.length, 1, `schedule still makes ${stmts.length} calls to allocate a queue slot`);
+    assert.match(fn, /COALESCE\(MAX\(queue_id\),0\)\+1/, "the next number must be computed in SQL");
   });
 });
 

@@ -18,7 +18,6 @@ AnsibleForms is designed to run as a **single instance**. Running multiple repli
 - Schema migrations run at startup and assume they are the only writer.
 - The scheduler / cron loop is in-process; two instances would fire each scheduled job twice.
 - The job runner tracks state in memory and in the DB; concurrent runners can corrupt job state.
-- Datasource refresh is in-process and would duplicate work.
 
 **Recommendation:** run a single active instance with restart-on-failure (e.g. `restart: unless-stopped` in Docker / a Kubernetes Deployment with `replicas: 1`), and back up the database plus the persistent volume. If you need true HA, that would require a separate worker service to own migrations, scheduling and job execution — which does not exist yet.
 

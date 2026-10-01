@@ -209,7 +209,7 @@
         for (const field of fields.value) {
             if (field.parent && field.values && typeof field.values == 'string') {
                 // a dropdown source can live on another api version than the page
-                // itself (e.g. datasources are v1-only but config/formnames is v2)
+                // itself
                 parentLists.value[field.parent] = await loadList(field.values, false, field.valuesApiVersion);
             }
             if (field.parent && field.values && Array.isArray(field.values)) {

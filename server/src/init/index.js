@@ -7,7 +7,6 @@ import Job from '../models/job.model.js';
 import Schema from '../models/schema.model.js';
 import mysql from "../models/db.model.js";
 import Repository from '../models/repository.model.js';
-import Datasource from '../models/datasource.model.js';
 import Schedule from '../models/schedule.model.js';
 import BackupModel from '../models/backup.model.js';
 import cronService from '../services/cron.service.js';
@@ -292,47 +291,7 @@ const init = async function({ boot = false } = {}){
     logger.warning(`Failed to query repositories for rebase_on_start: ${e.message || e}`)
   })
 
-  // now we check if there are any datasources that need to be imported, every 10 seconds
-  // we only import 1 datasource that is with the lowest queue_id while there are no datasources with status running
-  // in the interval, we only import one datasource
-
-  async function checkDatasources() {
-    try {
-      // logger.info("Checking datasources")
-      // check if another one is still running... skip if it is (in theory not possible)
-      // but in case 2 instances are running against the same database
-      const running = await mysql.do("SELECT id FROM AnsibleForms.`datasource` WHERE state='running'", undefined, true);
-      // still running, don't do anything
-      if (running.length > 0) {
-        logger.error("Datasource is running, skipping, this is not normal, this means 2 instances are running against the same database");
-        return;
-      }
-      // logger.info("No datasource is running, checking for queued datasources")
-      const datasources = await mysql.do("SELECT id FROM AnsibleForms.`datasource` WHERE state='queued' ORDER BY queue_id LIMIT 1", undefined, true);
-      if (datasources.length > 0) {
-        logger.info("Found queued datasource");
-        const ds = datasources[0];
-        logger.info(`Importing datasource ${ds.id}`);
-        try {
-          await Datasource.import(ds.id);
-        } catch (e) {
-          logger.error(`Failed to import datasource ${ds.id} : ` + e);
-        }
-      }
-    } catch (e) {
-      logger.error(e);
-    } finally {
-      // Schedule the next execution
-      setTimeout(checkDatasources, 10000);
-    }
-  }
-  
-  // Initial call to start the process, after clearing anything a crash left behind :
-  // a datasource stuck at 'running' blocks the whole queue (the processor refuses to
-  // dequeue while one is running), same as for schedules
-  releaseStaleRunning('datasource').finally(() => setTimeout(checkDatasources, 10000));
-
-  // just like datasource, be also process schedules, some database layout
+  // the schedules : a queue in the database, processed one at a time
 
   /**
    * Nothing can still be running: this process has just started, and AnsibleForms is

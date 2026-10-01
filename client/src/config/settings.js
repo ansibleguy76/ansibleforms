@@ -157,57 +157,6 @@ export default function getSettings(t) {
         ]
 
     },    
-    dataSchemas:{
-        type: "datasource/schema",
-        label: t('settings.dataSchemas.label'),
-        labelPlural: t('settings.dataSchemas.labelPlural'),
-        description: t('settings.dataSchemas.description'),
-        // reloadSeconds: 7,
-        icon: "database",
-        actions: [
-            { name: "edit", icon: "pencil", title: t('settings.dataSchemas.editSchema'), color: "edit" },
-            { name: "delete", icon: "trash", title: t('settings.dataSchemas.deleteSchema'), color: "delete" },
-            { name: "reset", icon: "redo", title: t('settings.dataSchemas.resetSchema'), color: "refresh" },
-            { name: "preview", icon: "info-circle", title: t('settings.common.showOutput'), color: "preview" }
-        ],
-        fields: [
-            { key: "id", hidden: true, noInput: true },
-            { key: "output", hidden: true, noInput: true },
-            { key: "force", type: "checkbox", label: t('settings.dataSchemas.force'), hidden: true },
-            { key: "name", icon: "heading", label: t('settings.fields.name'), placeholder: t('settings.dataSchemas.placeholderName'), readonly: false, required: true, help: t('settings.repositories.helpName') },
-            { key: "status", label: t('settings.fields.status'), noInput: true },
-            { key: "description", icon: "info-circle", label: t('settings.fields.description'), placeholder: t('settings.fields.description'), required: false },
-            { key: "table_definitions", type: "editor", label: t('settings.dataSchemas.tableDefinitions'), hidden: true, lang:"yaml", style: editorStyle("40vh") }
-        ]
-    },    
-    datasources:{
-        type: "datasource",
-        label: t('settings.datasources.label'),
-        labelPlural: t('settings.datasources.labelPlural'),
-        description: t('settings.datasources.description'),
-        // reloadSeconds: 7,
-        icon: "file-import",
-        actions: [
-            { name: "edit", icon: "pencil", title: t('settings.datasources.editDatasource'), color: "edit" },
-            { name: "delete", icon: "trash", title: t('settings.datasources.deleteDatasource'), color: "delete" },
-            { name: "trigger", icon: "file-import", title: t('settings.datasources.importDatasource'), color: "refresh" },
-            { name: "preview", icon: "info-circle", title: t('settings.common.showOutput'), color: "preview" }
-        ],
-        fields: [
-            { key: "id", hidden: true, noInput: true },
-            { key: "output", hidden: true, noInput: true },
-            { key: "name", icon: "heading", label: t('settings.fields.name'), placeholder: t('settings.datasources.placeholderName'), readonly: false, required: true, help: t('settings.repositories.helpName') },
-            { key: "schema", icon: "database", label: t('settings.datasources.schema'), type: "select", readonly: false, required: true, parent: "schemas" , values: 'datasource/schema', valueKey: 'name', labelKey: 'name', hidden: true },
-            { key: "cron", icon: "stopwatch", label: t('settings.fields.cronSchedule'), type: "cron", hidden: true, validator: cronValidator(t) },
-            // the datasource CRUD itself only exists on v1, but the form name list
-            // is a v2-only endpoint, so pin the lookup to v2 (see valuesApiVersion)
-            { key: "form", icon: "pen-to-square", label: t('settings.fields.form'), type: "select", parent: "formnames", values: 'config/formnames', valuesApiVersion: 2, valueKey: 'name', labelKey: 'name', readonly: false, required: true, hidden: true},
-            { key: "status", label: t('settings.fields.status'), noInput: true },
-            { key: "state", label: t('settings.fields.state'), noInput: true },
-            { key: "last_run", label: t('settings.fields.lastRun'), noInput: true },
-            { key: "extra_vars", type: "editor", label: t('settings.fields.extraVars'), hidden: true, lang:"yaml", style: editorStyle("40vh"), help: t('settings.datasources.extraVarsHelp') }
-        ]
-    },    
     schedules:{
         type: "schedule",
         label: t('settings.schedules.label'),
