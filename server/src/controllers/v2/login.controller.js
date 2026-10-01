@@ -9,7 +9,8 @@ import authConfig from '../../../config/auth.config.js';
 import appConfig from '../../../config/app.config.js';
 import logger from "../../lib/logger.js";
 import helpers from '../../lib/common.js';
-import { signHandoff } from '../../lib/ssoHandoff.js';
+import { signHandoff, openToken } from '../../lib/ssoHandoff.js';
+import { fetchAzureGroups, filterGroups } from '../../lib/azureGraph.js';
 import RestResult from "../../models/restResult.model.v2.js";
 import auth_oidc from "../../auth/auth_oidc.js";
 import i18n from "../../lib/i18n.js";
@@ -282,9 +283,9 @@ const errorHandler = async function(err,req, res,_next) {
  * 4. The backend uses passport to authenticate the user with the identity provider and redirects the user away to the identity provider (microsft, google, ...)
  * 5. The identity provider authenticates the user and redirects the user back to the callback url https://ansibleformsurl/auth/azureadoauth2/callback or https://ansibleformsurl/auth/oidc/callback
  * 6. The backend server receives the callback and uses passport to verify the returned payload.  it passes the payload to an authCallback function
- * 7. The authCallback function redirects the user back to the frontend with a token (/login?token=) azuread already passed a token, oidc has a raw payload and we create a manual token.
- * 8. The frontend uses the oauth2 token to grab more group information and filter the group information with a filter defined in the database with the identity provider
- * 9. The frontend redirects the user to the backend /auth/azureadaoath/login endpoint with the token and the group information
+ * 7. The authCallback function redirects the user back to the frontend with a HANDOFF token (/login?token=), signed by us : the claims the login needs, and for azuread the provider's access token sealed inside it (lib/ssoHandoff.js).
+ * 8. The frontend posts the handoff token to the backend /auth/azureadoauth2/login (or /auth/oidc/login) endpoint.
+ * 9. For azuread the backend opens the sealed access token and fetches the user's groups from Microsoft Graph, filtered with the provider's group filter (lib/azureGraph.js). For oidc the groups are a claim of the profile.
  * 10. The backend grabs more information from payload if needed (username,...) and assembles a user-object, the roles and options are added
  * 11. The backend converts the user object to json and signs it as a jwt token an returns it in the response
  * 12. The frontend grabs the token and stores it in the local storage, ready for jwt-bearer authentication
@@ -330,6 +331,20 @@ function verifyHandoff(token, type) {
 async function assertProviderEnabled(model, name) {
   const row = await model.isEnabled().catch(() => null);
   if (!row || !row.enable) throw new Error(`${name} login is not enabled`);
+  return row;
+}
+
+/**
+ * The Azure groups, by name, from Graph - with the access token the handoff carries
+ * sealed. A handoff without one (minted before 6.5.3) falls back to the groups claim and
+ * the client's list, as before.
+ */
+async function azureGroups(payload, bodyGroups, groupfilter) {
+  if (!payload.at) return ssoGroups(payload, bodyGroups, 'azuread');
+  const names = await fetchAzureGroups(openToken(payload.at), authConfig.azureGraphUrl);
+  const kept = filterGroups(names, groupfilter);
+  logger.debug(`azuread login: ${names.length} groups from Graph, ${kept.length} after the group filter`);
+  return kept;
 }
 
 /**
@@ -393,8 +408,8 @@ const azureadoauth2login = async function(req, res,_next) {
   try {
     logger.debug("Azure AD login")
     const payload = verifyHandoff(req.body.token, 'azuread')
-    await assertProviderEnabled(AzureAd, 'azuread')
-    const user = await extractAzureUser(payload, ssoGroups(payload, req.body.groups, 'azuread'))
+    const provider = await assertProviderEnabled(AzureAd, 'azuread')
+    const user = await extractAzureUser(payload, await azureGroups(payload, req.body.groups, provider.groupfilter))
     user.type = "azuread"
     const ro = await User.getRolesAndOptions(user.groups,user)
     user.roles = ro.roles

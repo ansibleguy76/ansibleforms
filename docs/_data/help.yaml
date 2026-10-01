@@ -355,7 +355,11 @@
     short: The Azure Graph API base URI
     default: https://graph.microsoft.com
     description: |
-      This variable is used to acquire data from the Azure AD API.      
+      The Microsoft Graph endpoint the server calls at an Azure AD login to read the user's
+      group membership (`/v1.0/me/transitiveMemberOf`). Since 6.5.3 that call is made by the
+      AnsibleForms server, not by the browser, so the server needs a route to it - behind an
+      egress proxy set `HTTPS_PROXY` and `NODE_USE_ENV_PROXY=1`. Change it for a national
+      cloud, e.g. `https://graph.microsoft.us`.
   - name: ALLOW_SCHEMA_CREATION
     type: number
     allowed: 0, 1
