@@ -534,7 +534,7 @@
       - `log` also names the extravars keys where what the client sent differs from what the
         server builds (never their values).
       - `enforce` : such a launch is refused with status 422 and the failing fields. A launch
-        that sends no `rawFormData` (the v1 API, or a REST call that leaves it out) is
+        that sends no `rawFormData` (a REST call that leaves it out) is
         refused as well, because its values cannot be checked. A valid
         launch runs the extravars and credentials the SERVER builds from the checked values,
         not the ones the client sent : computed fields (expressions, queries) are the

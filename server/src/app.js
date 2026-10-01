@@ -26,21 +26,6 @@ import "./auth/auth_jwt.js";
 
 // API route handlers
 // V1 routes (DEPRECATED - not following REST standards)
-import queryRoutes from "./routes/v1/query.routes.js";
-import expressionRoutes from "./routes/v1/expression.routes.js";
-import helpRoutes from "./routes/v1/help.routes.js";
-import profileRoutes from "./routes/v1/profile.routes.js";
-import loginRoutes from "./routes/v1/login.routes.js";
-import tokenRoutes from "./routes/v1/token.routes.js";
-import jobRoutes from "./routes/v1/job.routes.js";
-import userRoutes from "./routes/v1/user.routes.js";
-import groupRoutes from "./routes/v1/group.routes.js";
-import settingsRoutes from "./routes/v1/settings.routes.js";
-import credentialRoutes from "./routes/v1/credential.routes.js";
-import sshRoutes from "./routes/v1/ssh.routes.js";
-import logRoutes from "./routes/v1/log.routes.js";
-import repositoryRoutes from "./routes/v1/repository.routes.js";
-import configRoutes from "./routes/v1/config.routes.js";
 
 // V2 routes (CURRENT - REST standards compliant)
 import queryRoutesv2 from "./routes/v2/query.routes.js";
@@ -82,7 +67,6 @@ import mcpRoutes from "./mcp/router.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const swaggerDocumentV1 = JSON.parse(fs.readFileSync(path.join(__dirname, "swagger_v1.json"), "utf8"));
 const swaggerDocumentV2 = JSON.parse(fs.readFileSync(path.join(__dirname, "swagger_v2.json"), "utf8"));
 
 // a small custom middleware to check whether the user has access to routes
@@ -158,10 +142,6 @@ const load = async (app) => {
     customCssUrl: `${appConfig.baseUrl}/assets/css/swagger.css`,
     docExpansion: "none",
   };
-  // v1 docs
-  swaggerDocumentV1.basePath = `${appConfig.baseUrl}/api/v1`;
-  app.use(`/api/v1/docs`, cors(), swaggerUi.serveFiles(swaggerDocumentV1, swaggerOptions), swaggerUi.setup(swaggerDocumentV1, swaggerOptions));
-
   // v2 docs
   swaggerDocumentV2.basePath = `${appConfig.baseUrl}/api/v2`;
   app.use(`/api/v2/docs`, cors(), swaggerUi.serveFiles(swaggerDocumentV2, swaggerOptions), swaggerUi.setup(swaggerDocumentV2, swaggerOptions));
@@ -172,35 +152,6 @@ const load = async (app) => {
   // attributed, while a request refused by authobj or a permission guard is
   // recorded as 'denied' instead of vanishing before any model is reached.
   app.use(`/api`, auditMiddleware);
-
-  // ========== V1 API Routes (DEPRECATED) ==========
-
-  // api routes for querying
-  app.use(`/api/v1/query`, cors(), authobj, queryRoutes);
-  app.use(`/api/v1/expression`, cors(), authobj, expressionRoutes);
-
-  // api route for help
-  app.use(`/api/v1/help`, cors(), authobj, helpRoutes);
-
-  // api route for profile
-  app.use(`/api/v1/profile`, cors(), authobj, profileRoutes);
-
-  // api routes for authorization
-  app.use(`/api/v1/auth`, cors(), loginRoutes);
-  app.use(`/api/v1/token`, cors(), tokenRoutes);
-
-  // api routes for admin management
-  app.use(`/api/v1/job`, cors(), authobj, jobRoutes);
-  app.use(`/api/v1/user`, cors(), authobj, Middleware.checkSettingsMiddleware, userRoutes);
-  app.use(`/api/v1/group`, cors(), authobj, Middleware.checkSettingsMiddleware, groupRoutes);
-  app.use(`/api/v1/settings`, cors(), authobj, Middleware.checkSettingsMiddleware, settingsRoutes);
-  app.use(`/api/v1/credential`, cors(), authobj, Middleware.checkSettingsMiddleware, credentialRoutes);
-  app.use(`/api/v1/sshkey`, cors(), authobj, Middleware.checkSettingsMiddleware, sshRoutes);
-  app.use(`/api/v1/log`, cors(), authobj, Middleware.checkLogsMiddleware, logRoutes);
-  app.use(`/api/v1/repository`, cors(), authobj, Middleware.checkSettingsMiddleware, repositoryRoutes);
-
-  // routes for form config (extra middleware in the routes itself)
-  app.use(`/api/v1/config`, cors(), authobj, configRoutes);
 
   // ========== V2 API Routes (CURRENT) ==========
   

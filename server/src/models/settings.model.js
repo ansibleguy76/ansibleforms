@@ -89,9 +89,8 @@ Settings.resolveConfigInDatabase = function (settings) {
 Settings.update = async function (record) {
     logger.info(`Updating settings`)
     // Guard the chokepoint : a record with zero own properties renders an empty
-    // SET clause, which mysql2 turns into invalid SQL. The v1 legacy controller
-    // can reach here with a body of only unknown keys (the v2 controller
-    // pre-checks and returns 400). Log a warning and no-op instead of querying.
+    // SET clause, which mysql2 turns into invalid SQL. The controller pre-checks and
+    // returns 400 ; log a warning and no-op instead of querying for any other caller.
     const cols = Object.keys(record)
     if (cols.length === 0) {
       logger.warning("Settings.update called with an empty record, nothing to update")
@@ -132,9 +131,8 @@ Settings.setLogo = async function (logo) {
   await Settings.update({ logo })
 };
 // backstop against overwriting the config while the designer holds the lock.
-// The v2 controllers pre-check this and return a clean 423, but the v1 legacy
-// routes (e.g. PUT /api/v1/settings/importConfig) call the model directly and
-// have no such guard, so the check must also live here.
+// The controllers pre-check this and return a clean 423 ; the check also lives here so
+// no caller of the model can skip it.
 Settings.assertDesignerNotLocked = async function(){
   if (await Lock.isHeld()) {
     throw new Error("Configuration is locked by the designer. Please close the designer and try again.")

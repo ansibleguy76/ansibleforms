@@ -47,7 +47,7 @@
         },
         apiVersion: {
             type: [String, Number],
-            default: 1
+            default: 2
         }
     })
 
@@ -238,15 +238,7 @@
         const apiVersion = version || props.apiVersion;
         try {
             const result = await axios.get(`/api/v${apiVersion}/${type}/`, TokenStorage.getAuthentication());
-            if(apiVersion == 1) {
-                if(isFlat){
-                    const raw = Array.isArray(result.data.data.output) ? result.data.data.output : [];
-                    const deduped = removeDoubles ? Array.from(new Set(raw)) : raw;
-                    // v1 flat assumed array of primitive values (string/number)
-                    return deduped.map((val) => flatRow(val));
-                }
-                return result.data.data.output;
-            } else if (apiVersion == 2) {
+            if (apiVersion == 2) {
                 if(isFlat){
                     const records = Array.isArray(result.data.records) ? result.data.records : [];
                     if (records.length === 0) return [];
@@ -299,13 +291,7 @@
                     item.value = itemList.value.find(r => r[idKey] === itemId.value)
                 } else {
                     result = await axios.get(`/api/v${props.apiVersion}/${objectType}/${itemId.value}`, TokenStorage.getAuthentication())
-                    if (props.apiVersion == 1) {
-                        item.value = result.data.data.output;
-                    } else if (props.apiVersion == 2) {
-                        item.value = result.data;
-                    } else {
-                        throw new Error("Unsupported API version");
-                    }
+                    item.value = result.data;
                     for (const field of fields.value) {
                         if (field.type == 'checkbox') {
                             item.value[field.key] = !!item.value[field.key]
@@ -424,19 +410,9 @@
         var invalid = isInvalid.value
         if (!invalid) {
             try {
-                const result = await axios.post(`/api/v${props.apiVersion}/${objectType}/`, item.value, TokenStorage.getAuthentication())
-
-                if (props.apiVersion == 1) {
-                    if (result.data.status == "error") {
-                        toast.error(result.data.message + ", " + result.data.data.error);
-                    } else {
-                        toast.success(objectTitle('', t('settings.common.isCreated')));
-                        loadItems();
-                    }
-                } else if (props.apiVersion == 2) {
-                    toast.success(objectTitle('', t('settings.common.isCreated')));
-                    loadItems();
-                }
+                await axios.post(`/api/v${props.apiVersion}/${objectType}/`, item.value, TokenStorage.getAuthentication())
+                toast.success(objectTitle('', t('settings.common.isCreated')));
+                loadItems();
             }
             catch (err) {
                 toast.error(Helpers.parseAxiosResponseError(err, "Failed to save item"))
@@ -454,18 +430,9 @@
         }
         if (!invalid) {
             try {
-                const result = await axios.put(`/api/v${props.apiVersion}/${objectType}/${itemId.value}`, item.value, TokenStorage.getAuthentication())
-                if (props.apiVersion == 1) {
-                    if (result.data.status == "error") {
-                        toast.error(result.data.message + ", " + result.data.data.error);
-                    } else {
-                        toast.success(objectTitle('', t('settings.common.isUpdated')));
-                        loadItems();
-                    }
-                } else if (props.apiVersion == 2) {
-                    toast.success(objectTitle('', t('settings.common.isUpdated')));
-                    loadItems();
-                }
+                await axios.put(`/api/v${props.apiVersion}/${objectType}/${itemId.value}`, item.value, TokenStorage.getAuthentication())
+                toast.success(objectTitle('', t('settings.common.isUpdated')));
+                loadItems();
             } catch (err) {
                 toast.error(Helpers.parseAxiosResponseError(err, "Failed to update item"))
             }
@@ -475,25 +442,14 @@
     }
     async function removeItem() {
         try {
-            var result
             if(isFlat){
-                result = await axios.delete(`/api/v${props.apiVersion}/${objectType}?name=${encodeURIComponent(item.value.name)}`, TokenStorage.getAuthentication())
+                await axios.delete(`/api/v${props.apiVersion}/${objectType}?name=${encodeURIComponent(item.value.name)}`, TokenStorage.getAuthentication())
             }else{
-                result = await axios.delete(`/api/v${props.apiVersion}/${objectType}/${itemId.value}`, TokenStorage.getAuthentication())
+                await axios.delete(`/api/v${props.apiVersion}/${objectType}/${itemId.value}`, TokenStorage.getAuthentication())
             }
-            if (props.apiVersion == 1) {
-                if (result.data.status == "error") {
-                    toast.error(result.data.message + ", " + result.data.data.error);
-                } else {
-                    toast.success(objectTitle('', t('settings.common.isDeleted')));
-                    unselectItem();
-                    loadItems();
-                }
-            } else if (props.apiVersion == 2) {
-                toast.success(objectTitle('', t('settings.common.isDeleted')));
-                unselectItem();
-                loadItems();
-            }
+            toast.success(objectTitle('', t('settings.common.isDeleted')));
+            unselectItem();
+            loadItems();
         } catch (err) {
             toast.error(Helpers.parseAxiosResponseError(err, "Failed to delete item"))
         }

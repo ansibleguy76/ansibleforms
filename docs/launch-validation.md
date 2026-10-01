@@ -140,7 +140,7 @@ which forms compute values differently on the server - before anyone is affected
 - `rowErrors` - per list field, the failing rows (see [List rows](#list-rows-and-subforms));
 - `uploads` - file fields whose upload could not be verified.
 
-A launch that sends **no `rawFormData`** is refused too - the v1 API, or a REST call that
+A launch that sends **no `rawFormData`** is refused too - a REST call that
 leaves it out - because its values cannot be checked. Leaving it out would otherwise be the
 way around the check.
 

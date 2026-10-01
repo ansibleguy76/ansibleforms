@@ -18,11 +18,9 @@ Bootstrap is now used (instead of Bulma) and themes are now added (docs will fol
 
 The base config (`config.yaml`, or the database) holds the categories, roles and constants only. Every form is a file of its own in the forms folder (`FORMS_FOLDER_PATH`) or in a forms repository. The old single `forms.yaml` and forms inside the base config are no longer read since 7.0.0 - see the upgrade guide.
 
-## Introduction /api/v2/
+## The REST API
 
-The API will slowly be updated to v2.  The old v1 api will still be available, but the new v2 api will be the default.  The v2 api is more RESTful standard and has some improvements in the way data is returned, also using proper 40x error codes.  The v2 api is not yet fully implemented, but we I'm working on it.  As a user, this will make no difference.  As a developer, the new v2 api should feel more natural and easier to use.  The v2 api is not yet fully implemented, but we are working on it.
-
-More pagination and filtering will be added to the v2 api.  This is a long term plan.
+The REST API is `/api/v2/` (interactive docs at `/api/v2/docs`). API v1 was removed in 7.0.0.
 
 ## Introducing helm charts
 

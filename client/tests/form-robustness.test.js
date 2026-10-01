@@ -918,8 +918,8 @@ describe('a flat admin list identifies rows by value, not by position', () => {
 
   it('and no flat branch mints an index as an id any more', () => {
     expect(src).not.toMatch(/map\(\(val, idx\) => \(\{ id: idx/);
-    // both api versions have a flat/primitive branch and both must go through it
-    expect([...src.matchAll(/=> flatRow\(val\)/g)].length).toBe(2);
+    // the flat/primitive branch must go through it
+    expect([...src.matchAll(/=> flatRow\(val\)/g)].length).toBe(1);
   });
 
   it('a flat record is looked up by id rather than by array position', () => {

@@ -894,7 +894,7 @@ Job.getRawFormData = async function (user, id) {
  *     rawFormData next to arbitrary extravars would pass. Computed fields are the server's
  *     evaluation. A wizard form cannot be checked yet, so it is refused.
  *
- * A launch without rawFormData (the v1 API, or a raw REST call leaving it out) cannot be
+ * A launch without rawFormData (a raw REST call leaving it out) cannot be
  * validated, and with enforcement on that is itself a refusal : otherwise leaving it out
  * would be the way around the check.
  *
@@ -920,7 +920,7 @@ async function guardLaunch({ form, formConfig, formObj, user, rawFormData, extra
   const hasFields = (formObj?.fields || []).length > 0;
   let result;
   if (!hasRaw && hasFields) {
-    result = { ok: false, reason: 'no rawFormData was sent (v1 API or a raw REST call), so the field values cannot be validated' };
+    result = { ok: false, reason: 'no rawFormData was sent (a raw REST call), so the field values cannot be validated' };
   } else {
     try {
       result = await validateLaunch({

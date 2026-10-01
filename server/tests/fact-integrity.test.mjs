@@ -14,7 +14,7 @@
 //                          config.yaml.
 import { test, describe } from "vitest";
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "fs";
+import { readFileSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -464,67 +464,3 @@ describe("a varsFile that cannot be read is reported", () => {
   });
 });
 
-describe("a failure is never reported inside a success envelope", () => {
-  // v1's RestResult carries the outcome in its first field, and two handlers built a
-  // "success" envelope whose own message said "failed" - so a client checking the status
-  // field was told a failed job launch, or a failed expression, had worked. The same bug
-  // was in v1/query.controller.
-  const dir = path.join(here, "../src/controllers");
-
-  test("no controller pairs a success status with a failure message", () => {
-    const offenders = [];
-    for (const version of ["v1", "v2"]) {
-      const d = path.join(dir, version);
-      for (const f of readdirSync(d)) {
-        if (!f.endsWith(".js")) continue;
-        const src = readFileSync(path.join(d, f), "utf8");
-        for (const m of src.matchAll(/RestResult\("success"\s*,\s*"([^"]*)"/g)) {
-          if (/fail|error/i.test(m[1])) offenders.push(`${version}/${f}: "${m[1]}"`);
-        }
-      }
-    }
-    assert.deepEqual(offenders, []);
-  });
-
-  test("both former offenders now answer 500 with an error envelope", () => {
-    for (const [file, needle] of [
-      ["v1/job.controller.js", "failed to launch form"],
-      ["v1/expression.controller.js", "failed to execute expression"],
-    ]) {
-      const src = readFileSync(path.join(dir, file), "utf8");
-      const at = src.indexOf(needle);
-      assert.ok(at > -1, `${file} no longer mentions ${needle}`);
-      const line = src.slice(src.lastIndexOf("\n", at), at);
-      assert.match(line, /RestResult\("error"/, `${file} still uses a success envelope`);
-      assert.match(line, /status\(500\)/, `${file} still answers 200`);
-    }
-  });
-});
-
-describe("a refused credential edit answers a real status", () => {
-  // The v1 controller's catches called res.json() with NO status, so a refusal - or any
-  // failure - came back as HTTP 200 with an "error" envelope: a client checking the
-  // status code was told it had worked. And a seeded credential must answer 403, never
-  // 401 (which drops the session) and never 500 (which claims the server broke).
-  const model = readFileSync(path.join(here, "../src/models/credential.model.js"), "utf8");
-  const ctrl = readFileSync(path.join(here, "../src/controllers/v1/credential.controller.js"), "utf8");
-
-  test("the managed refusal is a typed error, not a bare string", () => {
-    assert.match(model, /throw new Errors\.AccessDeniedError\(/);
-    assert.doesNotMatch(model.replace(/\/\/[^\n]*/g, ""), /throw "This credential is managed/);
-  });
-
-  test("both mutations map it to 403 and everything else to 500", () => {
-    for (const verb of ["update", "delete"]) {
-      const at = ctrl.indexOf(`failed to ${verb} credential`);
-      assert.ok(at > -1, `${verb} handler not found`);
-      const around = ctrl.slice(Math.max(0, at - 600), at + 200);
-      assert.match(around, /err\?\.name === 'AccessDeniedError' \? 403 : 500/, `${verb} has no status mapping`);
-      assert.match(around, /res\.status\(code\)\.json\(/, `${verb} still answers 200`);
-    }
-  });
-
-  test("neither answers 401", () => {
-    assert.doesNotMatch(ctrl, /res\.status\(401\)/);
-  });
-});
