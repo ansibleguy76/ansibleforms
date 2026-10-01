@@ -68,7 +68,8 @@ function pushForminfoToExtravars(formObj, extravars, creds = {}) {
       extravars[`__${fieldName}__`] = formObj[fieldName];
     }
   }
-  // console.log(creds)
+  // the form schema spells it scm_branch ; the reserved key stayed __scmBranch__
+  if (extravars.__scmBranch__ === undefined && formObj.scm_branch !== undefined) extravars.__scmBranch__ = formObj.scm_branch;
   extravars["__credentials__"] = { ...extravars["__credentials__"], ...creds };
   // console.log(extravars)
 }
@@ -3277,4 +3278,4 @@ Awx.findInventoryByName = async function (awxName, name) {
 
 export default Job;
 // named export of the awx interaction functions (mainly for testing)
-export { Awx, stripReservedExtravars, setUserExtravars, guardLaunch, launchValidationMode };
+export { Awx, stripReservedExtravars, setUserExtravars, guardLaunch, launchValidationMode, pushForminfoToExtravars };

@@ -1375,7 +1375,7 @@
       "get": {
         "security": [ { "bearerAuth": [] } ], "tags": ["chat"],
         "summary": "Whether the chat assistant is on, and its provider and model (never the key)",
-        "responses": { "200": { "description": "{ enabled, provider, model, maxTurns, jobStatus }" }, "403": { "description": "allowChat is off" }, "404": { "description": "ENABLE_CHAT is off" } }
+        "responses": { "200": { "description": "{ enabled, provider, model, maxTurns, jobStatus, examples : a few of the user's chat forms }" }, "403": { "description": "allowChat is off" }, "404": { "description": "ENABLE_CHAT is off" } }
       }
     },
     "/chat/session": {

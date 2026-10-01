@@ -30,7 +30,7 @@ const handle = (fn) => async (req, res) => {
   }
 };
 
-router.get('/config', handle(() => service.config()));
+router.get('/config', handle((user) => service.config(user)));
 router.post('/session', handle((user) => service.openSession(user)));
 router.post('/message', handle((user, req) => service.message(user, req.body || {})));
 router.post('/approve', handle((user, req) => service.approve(user, req.body || {}, req.ip)));
