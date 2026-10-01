@@ -1,6 +1,6 @@
 {
   "name": "ansible-forms",
-  "version": "6.5.2",
+  "version": "7.0.0-beta",
   "type": "module",
   "engines": {
     "node": ">=24"
