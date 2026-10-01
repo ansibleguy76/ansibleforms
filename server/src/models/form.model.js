@@ -905,16 +905,9 @@ Form.validateForm = function(obj){
         try{
           var tmp=`${x}`
           var field
-          var tableField
           field = Helpers.friendlyAJVError(tmp,"fields","Field",obj.fields)
           if(field.changed){
             tmp = field.value
-            if(obj.fields[field.index].tableFields){
-              tableField = Helpers.friendlyAJVError(tmp,"tableFields","TableField",obj.fields[field.index].tableFields)
-              if(tableField.changed){
-                return tableField.value
-              }    
-            }
           }
         }catch(e){
           logger.error(e)
@@ -944,7 +937,6 @@ Form.validate = function(forms){
           var tmp=`${x}`
           var form
           var field
-          var tableField
           var category
           var role
           category = Helpers.friendlyAJVError(tmp,"categories","Category",forms.categories)
@@ -961,12 +953,6 @@ Form.validate = function(forms){
             field = Helpers.friendlyAJVError(tmp,"fields","Field",forms.forms[form.index].fields)
             if(field.changed){
               tmp = field.value
-              if(forms.forms[form.index].fields[field.index].tableFields){
-                tableField = Helpers.friendlyAJVError(tmp,"tableFields","TableField",forms.forms[form.index].fields[field.index].tableFields)
-                if(tableField.changed){
-                  return tableField.value
-                }    
-              }
             }
           }   
         }catch(e){

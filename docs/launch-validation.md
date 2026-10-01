@@ -275,7 +275,6 @@ relaunched by them.
   field values, so the server has nothing to validate. Under `enforce` a wizard launch is
   refused; a wizard form cannot set `launchValidation`. The MCP server cannot launch wizard
   forms either.
-- **`table` fields** (deprecated, removed in 7) are not checked per row.
 - **Placeholder resolution** in the browser is still its own copy of the server's; in rare
   edge cases (`__undefined__`, quotes inside expressions) the two could resolve a placeholder
   differently. `log` shows such differences.

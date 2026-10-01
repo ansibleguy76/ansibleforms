@@ -3078,112 +3078,6 @@
                 - name: Expressions
                   code: |
                     since expressions are so diverse, there is a separate section on expressions with examples.
-              - name: table
-                description: (deprecated) A table input field - use `list` + `subform` instead
-                extra: |
-                  **Deprecated since 6.2.0.** The `table` field is superseded by the [list](../list) field combined with a `subform`.  
-                  Existing `table` fields keep working but trigger a deprecation warning.  
-                  
-                  A table field allows you to manually add multi object arrays.  
-                  You can start from an empty list, but you can also retrieve existing data first using :  
-
-                  * **database query** : you can use the query and dbConfig property to query a mysql, mssql server, postgres, oracle or mongodb.
-                  * **expression** : you can use the expression property to create or retrieve data. in this case the output of the expression can be any type.    
-                examples:
-                - name: Table with default values
-                  code: |
-                    - type: table
-                      name: users
-                      label: Users
-                      default:
-                        - username: john_doe
-                          email: john@example.com
-                          active: true
-                        - username: jane_smith
-                          email: jane@example.com
-                          active: false
-                      showLoadButton: true
-                      showDownloadButton: true
-                      tableFields:
-                        - name: username
-                          type: text
-                          label: Username
-                          required: true
-                        - name: email
-                          type: text
-                          label: Email
-                          required: true
-                        - name: active
-                          type: checkbox
-                          label: Active
-                - name: Table from expression
-                  code: |
-                    - type: table
-                      name: member
-                      label: Add club members
-                      expression: "[{department:'HR',firstname:'Ansible',lastname:'Guy',age:46,food:'veggies',paid:true}]"
-                      allowInsert: true
-                      allowDelete: true
-                      insertMarker: isNewItem
-                      deleteMarker: isRemovedItem
-                      updateMarker: isUpdatedItem
-                      readonlyColumns:
-                      - department
-                      - firstname
-                      - lastname
-                      - paid
-                      required: true
-                      tableFields:
-                        - name: department
-                          label: Department
-                          type: enum
-                          from: another_expression_array_field
-                          columns: []
-                          valueColumn: column_holding_value
-                          previewColumn: column_as_preview
-                          pctColumns: []
-                          filterColumns: []
-                          outputObject: false
-                        - name: firstname
-                          label: First Name
-                          type: text
-                          required: true
-                          default: ""
-                          minLength: 2
-                          regex: 
-                            expression: "[a-zA-Z]*"
-                            description: Must be normal characters
-                          icon: user
-                        - name: lastname
-                          label: Last Name
-                          type: text
-                          required: true
-                          default: ""
-                          minLength: 5
-                        - name: age
-                          label: How old ?
-                          type: number
-                          required: true
-                          default: 12
-                          minValue: 12
-                          maxValue: 80
-                        - type: enum
-                          name: food
-                          label: Favorite food
-                          default: veggies
-                          values:
-                            - pasta
-                            - pizza
-                            - fries
-                            - steak
-                            - veggies
-                        - name: paid
-                          label: membership
-                          placeholder: Paid yet ?
-                          type: checkbox
-                          switch: true
-                          required: true
-                          default: true                                
               - name: list
                 description: A list of structured rows edited through a reusable subform (supersedes `table`)
                 extra: |
@@ -3427,7 +3321,7 @@
             type: string
             group: basic
             allowed: Free text
-            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, list, file, html, yaml
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, list, file, html, yaml
             short: Field label
             description: |
               A friendly name/label for the field.  Note: if not set, the field name is used as label, but not when type is html.
@@ -3447,7 +3341,7 @@
             type: string
             group: basic
             allowed: Free text
-            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, table, list, file, yaml
+            with_types: text, textarea, datetime, number, password, checkbox, radio, enum, expression, list, file, yaml
             short: Field help message
             description: |
               Some fields require additional help information.
@@ -3708,7 +3602,6 @@
               * `__none__` : select none
               * `__all__` : select all (if multiple is true)
               
-              For `table` fields, the default must be an array of objects matching the tableFields structure.
               For `yaml` fields, the default can be any valid YAML structure (object or array).
               For `list` fields, the default must be an array of objects matching the referenced subform's fields. Use it to pre-populate the list with existing rows on form load.
             changelog:
@@ -3721,7 +3614,7 @@
               - version: 4.0.5
                 type: added
                 description: A default can now hold placeholders like `$(other_field)`, and together with `evalDefault` be evaluated as javascript.           
-            with_types: text, textarea, number, expression, password, enum, radio, checkbox, datetime, table, yaml, list
+            with_types: text, textarea, number, expression, password, enum, radio, checkbox, datetime, yaml, list
           - name: evalDefault
             type: boolean
             group: data
@@ -4026,7 +3919,7 @@
                 **tip** : use the alias `local` (type='expression',runLocal=true,hide=true,output=false)  
                 **tip** : use the alias `local_out` (type='expression',runLocal=true,hide=true)  
                 **tip** : use the alias `credential` (type='expression',runLocal=true,hide=true,asCredential=true)  
-            with_types: enum, expression, table, html, yaml, list
+            with_types: enum, expression, html, yaml, list
             examples:
               - name: Get a list of users from a rest api
                 code: |
@@ -4068,7 +3961,7 @@
             type: boolean
             group: data
             default: false
-            with_types: enum, expression, table, yaml, list
+            with_types: enum, expression, yaml, list
             short: Run an expression locally
             description: |
               When running expressions, by default they are run remotely on the server.  
@@ -4122,7 +4015,7 @@
           - name: dbConfig
             type: string, array or object
             group: data
-            with_types: enum, expression, table, yaml, list
+            with_types: enum, expression, yaml, list
             short: A database connection 
             description: |
               When you want to query data from a database, you will need the proper connection information.  
@@ -4172,7 +4065,7 @@
             type: string
             group: data
             allowed: A valid sql query
-            with_types: expression, enum, table, yaml, list
+            with_types: expression, enum, yaml, list
             short: The query to select data from a database
             description: |
               This is typically a classic SELECT statement.  
@@ -4240,24 +4133,6 @@
               A `enum` field is by default a dropdown box.  However, you can change that behavior by setting this property.  
               The unselected values are on the left and the selected values on the right.  This works in combiniation with sticky.  
               PctColumns are disabled, due to the space it consumes horizontally.
-          - name: tableTitleAdd
-            type: string
-            group: visualization
-            version: 5.0.9
-            with_types: table
-            short: Optional title for the table add action
-            description: |
-              When you add a record in a table, the default title is `Add`.  
-              You can change this to something more meaningful by setting this property.
-          - name: tableTitleEdit
-            type: string
-            group: visualization
-            version: 5.0.9
-            with_types: table
-            short: Optional title for the table edit action
-            description: |
-              When you edit a record in a table, the default title is `Edit`.  
-              You can change this to something more meaningful by setting this property.
           - name: titleAdd
             type: string
             group: visualization
@@ -4422,7 +4297,7 @@
           - name: allowInsert
             type: boolean
             group: interaction
-            with_types: table, list
+            with_types: list
             default: true
             short: Allow table/list insert
             description: |
@@ -4431,14 +4306,14 @@
             type: boolean
             group: interaction
             default: true
-            with_types: table, list
+            with_types: list
             short: Allow table/list delete
             description: |
               A table can be used to modify existing data.  If you don't was recoreds to be deleted, set this property to false.
           - name: deleteMarker
             type: string
             group: output
-            with_types: table, list
+            with_types: list
             short: Adds an additional deletemarker field
             description: |
               When you remove a record in a table, it gets removed.  
@@ -4455,20 +4330,15 @@
             examples:
             - name: Mark delete record
               code: |
-                - type: table
+                - type: list
                   name: member
+                  subform: Member       # a form of type subform with the fields firstname and lastname
                   expression: "[{firstname:'ansible',lastname:'guy'}]"
                   deleteMarker: deleted
-                  tableFields:
-                    - name: firstname
-                      type: text
-                      icon: user
-                    - name: lastname
-                      type: text
           - name: insertMarker
             type: string
             group: output
-            with_types: table, list
+            with_types: list
             short: Adds an additional insertmarker field
             description: |
               When you add a record in a table, it simply gets added.  
@@ -4478,20 +4348,15 @@
             examples:
             - name: Mark new record
               code: |
-                - type: table
+                - type: list
                   name: member
+                  subform: Member       # a form of type subform with the fields firstname and lastname
                   expression: "[{firstname:'ansible',lastname:'guy'}]"
                   insertMarker: new
-                  tableFields:
-                    - name: firstname
-                      type: text
-                      icon: user
-                    - name: lastname
-                      type: text  
           - name: updateMarker
             type: string
             group: output
-            with_types: table, list
+            with_types: list
             short: Adds an additional updatemarker field
             version: 5.1.0
             description: |
@@ -4499,58 +4364,32 @@
             examples:
             - name: Mark updated record
               code: |
-                - type: table
+                - type: list
                   name: member
+                  subform: Member       # a form of type subform with the fields firstname and lastname
                   expression: "[{firstname:'ansible',lastname:'guy'}]"
                   updateMarker: updated
-                  tableFields:
-                    - name: firstname
-                      type: text
-                      icon: user
-                    - name: lastname
-                      type: text
-          - name: readonlyColumns
-            type: array
-            group: interaction
-            with_types: table
-            short: The readonly columns in table
-            description: |
-              With a tablefield, some fields might need to be readonly, like an `id` field for example.  
-              Use this property to set the readonly fields.
-          - name: insertColumns
-            type: array
-            group: interaction
-            with_types: table
-            short: The insert columns in table
-            version: 4.0.5
-            description: |
-              With a tablefield, you can choose which fields are visible during insert.  This way you can choose to hide certain fields.
-              Use this property to set the insert fields.
           - name: showLoadButton
             type: boolean
             group: interaction
-            with_types: table, yaml
+            with_types: list, yaml
             default: false
             version: 6.1.5
             short: Show load button for file import
             description: |
               Enables a "Load YAML" button that allows users to import data from .yml or .yaml files.
-              For table fields, the YAML file must contain a valid array of objects.
+              For list fields, the YAML file must contain a valid array of objects.
               For yaml fields, the file can contain any valid YAML structure.
-              Single objects are automatically wrapped in arrays for table fields.
+              Single objects are automatically wrapped in arrays for list fields.
             examples:
-            - name: Table with YAML import
+            - name: List with YAML import
               code: |
-                - type: table
+                - type: list
                   name: users
                   label: Users
+                  subform: User         # a form of type subform with the fields username and email
                   showLoadButton: true
                   showDownloadButton: true
-                  tableFields:
-                    - name: username
-                      type: text
-                    - name: email
-                      type: text
             - name: YAML field with file import
               code: |
                 - type: yaml
@@ -4563,7 +4402,7 @@
           - name: showDownloadButton
             type: boolean
             group: interaction
-            with_types: table, yaml
+            with_types: list, yaml
             default: false
             version: 6.1.5
             short: Show download button for file export
@@ -4608,375 +4447,6 @@
                   readonly: true
                   expression: fn.getServerConfig()
                   showDownloadButton: true              
-          - name: tableFields
-            type: array
-            group: basic
-            with_types: table
-            allowed: Tablefield object
-            objectLink: forms/form/formfield/tablefield
-            docsObjectLink: "/tablefields/"
-            short: (deprecated) The list of fields in a table
-            description: |
-              **Deprecated.** The `table` field and its `tableFields` are superseded by the [list](../formfields/list) field combined with a `subform`.  
-              Every table field has its own separated table fields.  The explanation of a tablefield requires a separate help.  
-              You can read about [tablefields here](/tablefields/). 
-          help:
-          - name: Tablefield
-            itemName: attribute
-            link: forms/form/formfield/tablefield
-            icon: fas,table
-            description: |
-              **Deprecated.** Tablefields are part of the deprecated `table` field. Use a `subform` of type `subform` with `list` fields instead.  
-              Each tablefield is a miniature form on it's own.  As you will see, many of the form fields are also usable here.
-            items: 
-            - name: name
-              type: string
-              group: basic
-              required: true
-              unique: true
-              allowed: Alfanumeric + underscore + dash
-              short: Field name
-              description: This attribute represents the name of the form field.
-            - name: type
-              type: string
-              group: basic
-              required: true
-              choices:
-                - name: text
-                  description: A text input field
-                - name: textarea
-                  description: A textarea input field                  
-                - name: number
-                  description: A number input field
-                - name: password
-                  description: A password masked input field
-                - name: checkbox
-                  description: A checkbox field
-                - name: datetime
-                  description: A datetime field                  
-                - name: enum
-                  description: A multi-column filterable dropdown box
-              short: Tablefield type
-              description: Other attributes might only be available for some tablefield types.
-              examples:
-              - name: Text
-                code: |
-                  - type: text
-                    name: username
-                    label: Username
-                    default: ansibleguy
-                    placeholder: type a username
-                    required: true
-                    minLength: 4
-                    maxLength: 10
-                    regex:
-                      expression: "^[a-zA-Z]*$"
-                      description: Must be alpha numeric
-                    icon: user
-                  # more examples at the bottom of this help page         
-            - name: dateType
-              type: string
-              version: 4.0.2
-              required: false
-              group: datetime
-              choices:
-                - name: date
-                  description: A single date
-                - name: datetime
-                  description: A date and time              
-                - name: time
-                  description: A time
-                - name: month
-                  description: A month
-                - name: year
-                  description: A year
-              short: DateType of the datetime picker
-              description: The datetime picker can pick several types
-              with_types: datetime
-            - name: convertToUtc
-              type: boolean
-              version: 6.1.4
-              group: datetime
-              required: false
-              default: false
-              short: Convert datetime to UTC
-              description: |
-                When enabled, the selected date/time will be converted to UTC timezone before being sent to Ansible.
-                When disabled, the date/time will be used as entered without timezone conversion (local time as ISO string without timezone info).
-                
-                **Important:** Only works when `dateType` is set to `datetime`. Has no effect for other dateTypes (date, year, month, week, time).
-                
-                **Use case:** If a user in GMT+2 timezone picks 14:00 with convertToUtc enabled, the field will show 14:00 but the output will be 12:00 UTC (timezone-aware conversion). Without conversion, the output would be 14:00 (server's local time).
-              with_types: datetime
-            - name: label
-              type: string
-              group: basic
-              allowed: Free text
-              short: Tablefield label
-              description: |
-                A friendly name/label for the tablefield
-            - name: placeholder
-              type: string
-              group: basic
-              allowed: Free text
-              short: In-field help value
-              description: |
-                Some form fields allow an in-field hint value.
-              with_types: text, textarea, number, password, checkbox, enum, datetime
-            - name: icon
-              type: string
-              group: visualization
-              allowed: Free fontawesome 6 icon
-              short: Field icon
-              description: |
-                Some tablefields can hold a nice looking icon.  The icon name is a free fontawesome 6 icon.
-                You can find more information at [www.fontawesome.com](https://www.fontawesome.com)
-              with_types: text, number, password, enum, datetime
-            - name: default
-              type: many
-              short: Default value
-              group: data
-              description: |
-                The type of the value depends on the field type.  
-                Can be `string`,`boolean`, `number`, `array` or `object`.
-                When using an `enum` field, you can use the following special values :
-                * `__auto__` : select the first
-                * `__none__` : select none
-                * `__all__` : select all (if multiple is true)
-              with_types: text, textarea, number, password, enum, checkbox, datetime
-            - name: required
-              type: boolean
-              default: false
-              group: validation
-              short: Required field
-              description: |
-                Makes the field required.
-            - name: minLength
-              type: number
-              group: validation
-              allowed: Integer > 0
-              short: Field minimum length
-              description: |
-                Forces a string-field to be at least x long.
-              with_types: text, expression, password
-            - name: maxLength
-              allowed: Integer > 0
-              type: number
-              group: validation
-              short: Field maximum length
-              description: |
-                Forces a string-field to be maximum x long.
-              with_types: text, expression, password
-            - name: minValue
-              allowed: Integer
-              group: validation
-              type: number
-              short: Field minimum value
-              description: |
-                Forces a number-field to not be lower than...
-              with_types: number
-            - name: maxValue
-              allowed: Integer
-              type: number
-              group: validation
-              short: Field maximum value
-              description: |
-                Forces a number-field to not be higher than...
-              with_types: number
-            - name: regex
-              type: object
-              group: validation
-              short: A regular expression validation
-              description: |
-                Enforces a validation where the current field must match a regular expression.
-                This field requires an object with 2 attributes:
-                * `expression` : The regular expression
-                * `description` : A validation message to show when the regex is not matched.
-              with_types: text, expression, password, datetime
-              examples:
-              - name: Validate email address
-                code: |
-                  regex:
-                    expression: "[a-z0-9]+@[a-z]+\.[a-z]{2,3}"
-                    description: Please type a valid email address
-              - name: Strong password
-                code: |
-                  regex:
-                    expression: "(?=^.{8,}$)(?=.*\d)(?=.*[!@#$%^&*]+)(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$"
-                    description: Must be complex (8 or longer ; uppercase ; lowercase ; numeric ; specials)              
-            - name: notIn
-              type: object
-              group: validation
-              short: A list validation (can not be in list)
-              version: 2.2.4
-              description: |
-                Enforces a validation where the current field can not be one of the values in a list (referencing another field).
-                This field requires an object with 2 attributes:
-                * `field` : The name of the field that holds the list
-                * `description` : A validation message to show when the validation is not met. (**new in v5.0.1** : can have placeholder)
-              with_types: text, expression, password, datetime
-              examples:
-              - name: Check if ip exists
-                code: |
-                  notIn:
-                    field: list_of_ips  # list_of_ips is an other expression array field
-                    description: This ip already exists            
-            - name: from
-              type: string
-              group: data
-              allowed: expression reference
-              with_types: enum
-              short: Datasource
-              description: |
-                In a table we can have an `enum` field.  The source of the data for this enum field must come from the main form.  
-                So this `from` field points to the expression field that holds the query data.
-            - name: sticky
-              type: boolean
-              default: false
-              group: visualization
-              with_types: enum
-              short: Make a dropdown box permanently visible
-              description: |
-                A `enum` field is by default a dropdown box.  However, you can change that behavior by setting this property.  
-                The dropbox looses it reactivity and becomes a fixed table.                
-            - name: horizontal
-              type: boolean
-              version: 4.0.3
-              default: false
-              group: visualization
-              with_types: enum
-              short: Converts a dropdown box to a horizontal selector
-              description: |
-                A `enum` field is by default a dropdown box.  However, you can change that behavior by setting this property.  
-                The unselected values are on the left and the selected values on the right.  This works in combiniation with sticky.  
-                PctColumns are disabled, due to the space it consumes horizontally.                
-            - name: in
-              type: object
-              version: 2.2.4
-              group: validation
-              short: A list validation (must be in list)
-              description: |
-                Enforces a validation where the current field must be one of the values in a list (referencing another field).
-                This field requires an object with 2 attributes:
-                * `field` : The name of the field that holds the list
-                * `description` : A validation message to show when the validation is not met. (**new in v5.0.1** : can have placeholder)
-              with_types: text, expression, password, datetime
-              examples:
-              - name: Check if ip is in range
-                code: |
-                  in:
-                    field: range_of_ips   # range_of_ips is an other expression array field
-                    description: This ip must be in the specified range              
-            - name: outputObject
-              type: boolean
-              default: false
-              group: data
-              short: Output the selection of an enum field as a full object.
-              description: |
-                When selecting from an `enum` field (dropdown), either the first column or  
-                the column defined in `valueColumn` is sent as an extravar.  
-                If you want the full selected record, use the property.  
-                  
-                **new in v4.0.20** : you can also use valueColumn: "*" to export all columns
-              with_types: enum
-            - name: columns
-              type: array
-              with_types: enum
-              group: visualization
-              short: The list of columns visible in the dropdown box
-              description: |
-                By default all properties are show in an `enum` field.  With this property you can choose which are visible.
-              examples:
-              - name: Show only wanted columns
-                code: |
-                  - name: users
-                    type: enum
-                    dbConfig: CMDB
-                    query: SELECT id, name, username, zip, city FROM users
-                    columns:
-                    - name
-                    - username
-            - name: pctColumns
-              type: array
-              with_types: enum
-              group: visualization
-              short: The list of columns that should visualized as a percentage-bar
-              description: |
-                By default all properties are show with its regular value.  
-                With a percentage it can be nice to visualize it as a graphical bar.  
-                The assumption is that the value is an integer between 0 and 100.
-              examples:
-              - name: Show usage
-                code: |
-                  - name: volumes
-                    type: enum
-                    dbConfig: CMDB
-                    query: SELECT id, name, used, total, (used/total*100) as used_pct FROM volumes
-                    columns:
-                    - name
-                    - used_pct
-                    pctColumns:
-                    - used_pct
-            - name: filterColumns
-              type: array
-              with_types: enum
-              group: interaction
-              short: The list of columns that you can filter on
-              description: |
-                By default the `previewColumn` or first visible column is used to filter on.  
-                With this property you can filter on the columns you want.
-              examples:
-              - name: Show usage
-                code: |
-                  - name: volumes
-                    type: enum
-                    dbConfig: CMDB
-                    query: SELECT id, name, title FROM volumes
-                    columns:
-                    - name
-                    - title
-                    filterColumns:
-                    - name
-                    - title  
-            - name: valueColumn
-              type: string
-              default: first column
-              group: data
-              with_types: enum
-              short: The column of a selected item that needs to exported as extravar
-              description: |
-                When you select an item in an `enum` field, by default the first column is used to send as extravar.  
-                By setting this property, you can change it to another field.  
-                This setting is ignored when `outputObject` is true.  
-                  
-                **new in v4.0.20** : setting value "*" will export all columns.
-              examples:
-              - name: Export name
-                code: |
-                  - name: users
-                    type: enum
-                    dbConfig: CMDB
-                    query: SELECT name, username FROM users
-                    columns:
-                    - name
-                    valueColumn: username
-            - name: previewColumn
-              type: string
-              default: first column
-              group: visualization
-              with_types: enum
-              short: The column of the selected item(s) that is shown in the dropdown-preview
-              description: |
-                When you select an item in an `enum` field, by default the first column is used as a preview.  
-                By setting this property you change the column to be used.  
-              examples:
-              - name: Export name
-                code: |
-                  - name: user
-                    type: enum
-                    dbConfig: CMDB
-                    query: SELECT id,name FROM users
-                    previewColumn: name
         - name: Approval point
           itemName: attribute
           link: forms/form/approval
@@ -5211,7 +4681,7 @@
     The expression attribute can be used on an :  
     - `enum` field, to fill the dropdown
     - `expression` field, to grab or maka any for of data
-    - `table` field, to fill the table field  
+    - `list` field, to fill the rows
 
     This javascript is evaluated either on the server side (default) or on the client side using the field property `runLocal`
 

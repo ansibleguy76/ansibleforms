@@ -54,7 +54,6 @@ export function buildFormOutput(fields, raw, opts = {}) {
       item.outputObject ||
       item.type === 'expression' ||
       item.type === 'file' ||
-      item.type === 'table' ||
       item.type === 'list' ||
       item.type === 'yaml' ||
       item.type === 'datetime' ||

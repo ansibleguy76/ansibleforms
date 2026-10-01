@@ -7,13 +7,13 @@ nav_order: 13
 
 # List Formfield
 
-A list field displays a table of rows where each row is created and edited through a dedicated **subform** pane (drilldown pattern). It supersedes the deprecated `table` field.
+A list field displays a table of rows where each row is created and edited through a dedicated **subform** pane (drilldown pattern). It replaced the `table` field, which was removed in 7.0.0.
 
 ## Key features
 
 - Each row is edited in a full-screen subform, giving access to every field type including nested lists.
 - The subform is declared as a separate top-level form of type `subform` and can be **reused across multiple list fields** in different forms (e.g. a single `Address` subform shared by customers, suppliers, orders…).
-- Supports the same marker properties as the `table` field (`insertMarker`, `updateMarker`, `deleteMarker`) so playbook idempotency patterns still work.
+- Supports marker properties (`insertMarker`, `updateMarker`, `deleteMarker`) so playbook idempotency patterns work.
 - When `allowDelete: false`, pre-existing rows are protected; only rows added in the current session (carrying the `insertMarker`) can be deleted.
 - The `columns` property controls which subform fields appear as columns in the summary table.
 - The output is always an array of objects. `model`, `output`, `outputObject` and `valueColumn` declared on subform fields are honoured when generating extravars.

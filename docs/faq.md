@@ -1216,7 +1216,7 @@ fields:
 ```
 
 {: .note }
-> The `list` field replaces the deprecated `table` field. The `subform` form type replaces the deprecated `tableFields`.
+> The `list` field and the `subform` form type replaced the `table` field and `tableFields`, which were removed in 7.0.0.
 
 ### How do I access parent form data inside a subform?
 
@@ -1310,9 +1310,7 @@ forms:
 
 ### How do I migrate from `table` / `tableFields` to `list` / `subform`?
 
-Migrate deprecated table fields (6.2.0+).
-
-The old `table` field and `tableFields` property still work but show deprecation warnings. To migrate:
+The `table` field and the `tableFields` property were deprecated in 6.2.0 and removed in 7.0.0. A form that still uses them fails validation. To migrate:
 
 1. Extract the columns from `tableFields` into a new `type: subform` form with regular `formfields`
 2. Replace the `table` field with a `list` field that references the subform via `subform: MySubformName`
@@ -1323,14 +1321,14 @@ forms:
   - name: Manage users
     type: ansible
     playbook: users.yml
-    tableFields:
-      - name: username
-        type: text
-      - name: email
-        type: text
     fields:
       - name: users
         type: table
+        tableFields:
+          - name: username
+            type: text
+          - name: email
+            type: text
 ```
 
 **After:**
@@ -1373,12 +1371,12 @@ forms:
 
       - name: members
         type: table
-    tableFields:
-      - name: department
-        type: enum
-        from: available_departments   # pulls choices from the parent field above
-      - name: firstname
-        type: text
+        tableFields:
+          - name: department
+            type: enum
+            from: available_departments   # pulls choices from the parent field above
+          - name: firstname
+            type: text
 ```
 
 **After — subform with `__parent__` expression:**
