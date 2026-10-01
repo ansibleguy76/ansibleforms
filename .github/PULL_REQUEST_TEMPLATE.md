@@ -1,5 +1,6 @@
 <!--
-Base branch is `main`. The TITLE must be a Conventional Commit - `feat: ...`, `fix: ...` -
+Base branch is `main` - or `release/6.x` for a fix 6.x needs (see CONTRIBUTING.md).
+The TITLE must be a Conventional Commit - `feat: ...`, `fix: ...` -
 because it becomes the squash commit and the CHANGELOG line. See CONTRIBUTING.md.
 Security problem? Do not open a PR or an issue - see SECURITY.md.
 -->

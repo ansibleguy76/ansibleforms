@@ -5,9 +5,14 @@ opening a pull request.
 
 ## Branches and pull requests
 
-There is one long-lived branch, `main`, and it is protected: everything reaches it through
-a pull request, and pull requests are **squash-merged**. Your intermediate commits can be
-as messy as you like — only the pull request title survives.
+There are two long-lived branches, both protected: everything reaches them through a pull
+request, and pull requests are **squash-merged**. Your intermediate commits can be as messy
+as you like — only the pull request title survives.
+
+| Branch | Holds | Releases |
+|---|---|---|
+| `main` | the next major (7) | `7.0.0-beta.N` until 7.0.0 is final |
+| `release/6.x` | the current major, fixes only | `6.5.x` patches |
 
 1. Branch from `main`, named `<type>/<short-description>`, for example
    `fix/ldap-group-filter` or `feat/constants-editor`.
@@ -15,6 +20,20 @@ as messy as you like — only the pull request title survives.
 3. Give it a [Conventional Commits](https://www.conventionalcommits.org/) title — see below.
 
 The branch is deleted automatically once it is merged.
+
+### A fix that 6.x needs too
+
+Fix it on `main` first. Once that is merged, bring the squash commit to the maintenance line:
+
+```bash
+git switch -c fix/<short-description>-6x origin/release/6.x
+git cherry-pick -x <the squash commit on main>
+```
+
+and open a pull request against `release/6.x` with the same `fix:` title. A fix that only
+makes sense on 6 (the code is gone on main) goes to `release/6.x` directly. Only fixes go to
+`release/6.x` - no features. A schema change there is appended to `patchVersion6` on both
+branches; the patches are idempotent, so applying it twice is safe.
 
 ### The title is the changelog
 

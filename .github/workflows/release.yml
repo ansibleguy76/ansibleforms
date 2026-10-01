@@ -1,10 +1,14 @@
 name: Release
 
-# release-please keeps ONE open pull request, "chore: release x.y.z", up to date with every
-# merge into main : it computes the next version from the Conventional Commit titles of the
-# squashed pull requests, bumps server/package.json and writes the CHANGELOG section.
-# Merging that pull request is the release : this same workflow then creates the tag and
-# the GitHub release, and publishes the image as x.y.z and latest.
+# release-please keeps ONE open pull request per release line, "chore: release x.y.z", up to
+# date with every merge into that line : it computes the next version from the Conventional
+# Commit titles of the squashed pull requests, bumps server/package.json and writes the
+# CHANGELOG section. Merging that pull request is the release : this same workflow then
+# creates the tag and the GitHub release, and publishes the image (see publish.yml for the
+# tags).
+#
+# Two lines : main (the next major) and release/<major>.x (patches for the current one).
+# Each branch has its own manifest and CHANGELOG ; the tags never collide (6.5.3, 7.0.0-beta.1).
 #
 # The token comes from a GitHub App (or PAT_TOKEN until the App exists), not GITHUB_TOKEN. A pull request opened with
 # GITHUB_TOKEN starts no workflows, so the release pull request would never get its
@@ -12,7 +16,7 @@ name: Release
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'release/**']
 
 permissions:
   contents: read
@@ -43,6 +47,21 @@ jobs:
           token: ${{ steps.app.outputs.token || secrets.PAT_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+          target-branch: ${{ github.ref_name }}
+
+      # A patch release on an older line would take GitHub's "Latest release" badge from the
+      # newer major. Give it back to the highest final version.
+      - name: Keep the Latest badge on the highest release
+        if: steps.rp.outputs.release_created == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token || secrets.PAT_TOKEN }}
+          TAG: ${{ steps.rp.outputs.tag_name }}
+        run: |
+          highest=$(gh api "repos/${{ github.repository }}/tags" --paginate --jq '.[].name' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1)
+          if [ -n "$highest" ] && [ "$highest" != "$TAG" ]; then
+            gh release edit "$highest" --repo "${{ github.repository }}" --latest
+            echo "Latest stays on $highest (released $TAG)"
+          fi
 
   publish:
     name: Publish

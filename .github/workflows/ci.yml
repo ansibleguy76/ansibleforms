@@ -11,9 +11,9 @@ name: CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, 'release/**']
   push:
-    branches: [main]
+    branches: [main, 'release/**']
   # Daily, because some things break with no commit at all and a PR-triggered run only
   # ever asks about changes. This repository has already had one: a retention test dated
   # its fixtures relative to a fixed day and measured them against the real clock, so it

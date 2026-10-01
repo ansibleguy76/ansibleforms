@@ -3,6 +3,24 @@
 This document tracks deprecated features that will be **removed in v7.0.0** (breaking changes).
 
 > **Note:** v7 will be the first major version to remove backward compatibility for these features.
+> It is developed on `main` and released as `7.0.0-beta.N`; 6.x gets patches from `release/6.x`.
+
+## At a glance
+
+| Removed in 7 | Replacement | Deprecated since |
+|---|---|---|
+| `forms.yaml`, forms in the base config | `config.yaml` + one file per form in `forms/` | 6.0.0 |
+| `FORMS_PATH` | `CONFIG_PATH` + `FORMS_FOLDER_PATH` | 6.0.0 |
+| `ENABLE_FORMS_YAML_IN_DATABASE` | `ENABLE_CONFIG_IN_DATABASE` | 6.0.0 |
+| the `table` field type (`tableFields`, `insertColumns`, `readonlyColumns`, `tableTitleAdd/Edit`) | a `list` field with a `subform` | 6.2.0 |
+| API v1 (`/api/v1/*`, including `/api/v1/auth` and `/api/v1/token`) | API v2 | 6.2.x |
+| `disableRelaunch` | `allowRelaunch: false` | 6.3.0 |
+| `noOutput` | `output: false` | 6.3.0 |
+| `enableLogin` (role option) | `allowLogin` | 6.3.0 |
+
+The sections below are the original notes per item. Two of their file references are out of
+date: `templates/forms.yaml.template` and `Repository.getFormsPath()` no longer exist. API v1
+can only go once the Datasources and Data Schemas pages have v2 endpoints.
 
 ---
 
