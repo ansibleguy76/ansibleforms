@@ -613,8 +613,7 @@ async function patchVersion6(messages, success, failed) {
   var sql;
 
   // The datasource tables (datasource_schemas, datasource, staging) were created here until
-  // 7.0.0 dropped datasources. An upgraded database keeps them - and the data schemas they
-  // filled - untouched, so a rollback to 6.x still works ; nothing reads them any more.
+  // 7.0.0 removed datasources ; patchVersion7 drops them.
 
   // In 6.0.0, we add oauth2 providers table
   buffer = fs.readFileSync(`${__dirname}/../db/create_oauth2_providers_table.sql`);
@@ -780,11 +779,21 @@ async function patchVersion6(messages, success, failed) {
 
 }
 
+// Patches for v7
+// 7.0.0 removed datasources : their tables go. staging first, it references datasource.
+// The data schemas an import filled are separate databases of the user's own and stay.
+async function patchVersion7(messages, success, failed) {
+  await checkPromise(dropTable("staging"), messages, success, failed);
+  await checkPromise(dropTable("datasource"), messages, success, failed);
+  await checkPromise(dropTable("datasource_schemas"), messages, success, failed);
+}
+
 // PATCHING : Patch All
 async function patchAll(messages, success, failed) {
   await checkPromise(patchVersion4(messages, success, failed), messages, success, failed);
   await checkPromise(patchVersion5(messages, success, failed), messages, success, failed);
   await checkPromise(patchVersion6(messages, success, failed), messages, success, failed);
+  await checkPromise(patchVersion7(messages, success, failed), messages, success, failed);
 }
 async function checkPromise(promise, messages, success, failed) {
   try {

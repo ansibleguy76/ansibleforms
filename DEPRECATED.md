@@ -18,7 +18,7 @@ replaces each item and how to move over while still on 6.5.
 | `disableRelaunch` | `allowRelaunch: false` | 6.3.0 |
 | `noOutput` | `output: false` | 6.3.0 |
 | `enableLogin` (role option) | `allowLogin` | 6.3.0 |
-| datasources and data schemas, the `ansibleguy76.ansibleforms` collection | none - an import runs as a playbook of your own | 7.0.0 |
+| datasources and data schemas (their tables are dropped), the `ansibleguy76.ansibleforms` collection | none - an import runs as a playbook of your own | 7.0.0 |
 
 6.x keeps getting patch releases from the `release/6.x` branch.
 

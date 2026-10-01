@@ -53,10 +53,11 @@ A column's `from` becomes an expression on `__parent__`.
 The datasource imports and their admin pages are gone, and so is the
 `ansibleguy76.ansibleforms` collection, whose modules only fed them.
 
-- Scheduled imports stop.
-- The data an import already wrote stays where it is: an upgrade drops no table and no
-  schema. A form that queries those tables through a credential keeps working.
-- To keep the data fresh, run the import as a playbook of your own, for example from a
+- Scheduled imports stop, and the upgrade drops the datasource definitions (the
+  `datasource`, `datasource_schemas` and `staging` tables). Note down what you need first.
+- The data schemas an import filled are databases of their own and stay. A form that
+  queries them through a credential keeps working.
+- To keep that data fresh, run the import as a playbook of your own, for example from a
   schedule.
 
 ### API v1
@@ -85,5 +86,5 @@ Pin `6` to stay on 6.x patches; switch to `next` to try 7.
 
 ## Rolling back
 
-7 drops no table, so a database used by 7 still works with 6.5. Take a backup before you
-upgrade anyway (**Settings → Backups**).
+Take a backup before you upgrade (**Settings → Backups**). 6.5 runs on a database upgraded
+to 7, but the datasource definitions 7 dropped only come back from that backup.

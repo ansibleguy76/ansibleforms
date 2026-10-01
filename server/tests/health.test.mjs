@@ -37,8 +37,7 @@ vi.mock("../src/models/schema.model.js", () => ({
   default: { isProvisioned: async () => true },
   // The real manifest shape : an empty one must not silently report 'complete'.
   // Two entries, so a finding can be attributed to the right one - and both are real
-  // patch names, because there is one patch function per MAJOR version (4, 5, 6) and
-  // no patchVersion7 exists.
+  // patch names, because there is one patch function per MAJOR version (4 to 7).
   SCHEMA_MANIFEST: {
     base: { tables: ["jobs", "settings"] },
     patches: {
