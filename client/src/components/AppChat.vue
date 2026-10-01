@@ -179,11 +179,13 @@ function onKey(e) {
 // read on every open : the chat may have been switched off since the page loaded (the
 // button then goes away), and whether it may read a job's status sets the welcome text
 const jobStatus = ref(false);
+const examples = ref([]); // a few of this user's chat forms, named in the welcome
 async function loadConfig() {
     try {
         const res = await axios.get('/api/v2/chat/config', TokenStorage.getAuthentication());
         if (!res.data?.enabled) store.chatEnabled = false;
         jobStatus.value = !!res.data?.jobStatus;
+        examples.value = Array.isArray(res.data?.examples) ? res.data.examples : [];
     } catch (err) {
         if (switchedOff(err)) store.chatEnabled = false;
     }
@@ -247,7 +249,12 @@ watch(visible, (shown) => {
 
             <div ref="scroller" class="card-body af-chat-body">
                 <template v-if="!entries.length">
-                    <p class="text-body-secondary small mb-1">{{ t('chat.intro') }}</p>
+                    <p class="text-body-secondary small mb-1">
+                        {{ t('chat.intro') }}
+                        <template v-if="examples.length">
+                            {{ t('chat.introExamples') }} <template v-for="(name, n) in examples" :key="name"><code>{{ name }}</code><span v-if="n < examples.length - 1">, </span></template>
+                        </template>
+                    </p>
                     <p class="text-body-secondary small">{{ jobStatus ? t('chat.introJobs') : t('chat.introRelaunch') }}</p>
                 </template>
                 <div v-for="(e, i) in entries" :key="i" class="mb-3">
@@ -397,6 +404,7 @@ watch(visible, (shown) => {
 .af-chat-assistant :deep(pre) { white-space: pre-wrap; }
 /* names and values : one calm colour that stands out from the text, not bootstrap's pink */
 .af-chat-assistant :deep(code),
+.af-chat-body > p code,
 .af-chat-list code { color: var(--bs-primary-text-emphasis); background: var(--bs-primary-bg-subtle); border: 1px solid var(--bs-primary-border-subtle); border-radius: .25rem; padding: 0 .3em; overflow-wrap: anywhere; }
 /* the card's lists : bullets in line with the text above them */
 .af-chat-list { margin: .25rem 0 0; padding-left: 1.1rem; }

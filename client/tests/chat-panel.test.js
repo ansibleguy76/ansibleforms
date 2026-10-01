@@ -36,6 +36,11 @@ describe('the chat panel', () => {
     expect(src).toMatch(/if \(switchedOff\(err\)\) \{ store\.chatEnabled = false; return; \}/);
   });
 
+  it('names a few of the user\'s own chat forms in the welcome, from the server', () => {
+    expect(src).toMatch(/examples\.value = Array\.isArray\(res\.data\?\.examples\) \? res\.data\.examples : \[\];/);
+    expect(src).toMatch(/v-if="examples\.length"/);
+  });
+
   it('follows a launched job by its status only - no job output in the chat', () => {
     expect(src).not.toMatch(/job\.output/);
     expect(src).toMatch(/proposal\.jobStatus = job\.status/);

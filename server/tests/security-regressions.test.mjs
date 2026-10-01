@@ -21,7 +21,7 @@ vi.mock("../src/models/db.model.js", () => ({
   },
 }));
 
-const { stripReservedExtravars } = await import("../src/models/job.model.js");
+const { stripReservedExtravars, pushForminfoToExtravars } = await import("../src/models/job.model.js");
 const Job = (await import("../src/models/job.model.js")).default;
 const Helpers = (await import("../src/lib/common.js")).default;
 
@@ -280,5 +280,18 @@ describe("changing a password requires the current one", () => {
   test("a refused attempt is audited", () => {
     assert.match(fn, /action: 'user\.password\.update'/);
     assert.match(fn, /outcome: 'denied'/);
+  });
+});
+
+describe("the form's scm_branch reaches AWX", () => {
+  // The schema and the designer write scm_branch ; the reserved key the AWX launch reads is
+  // __scmBranch__. The static property was silently dropped between the two.
+  test("scm_branch becomes __scmBranch__, and a field value still wins", () => {
+    const ev = {};
+    pushForminfoToExtravars({ name: "f", type: "awx", template: "t", scm_branch: "dev" }, ev);
+    assert.equal(ev.__scmBranch__, "dev");
+    const dyn = { __scmBranch__: "feature-1" };
+    pushForminfoToExtravars({ name: "f", type: "awx", template: "t", scm_branch: "dev" }, dyn);
+    assert.equal(dyn.__scmBranch__, "feature-1");
   });
 });

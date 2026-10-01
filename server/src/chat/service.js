@@ -9,6 +9,7 @@ import { complete as providerComplete } from './providers/index.js';
 import { openSession, getSession, dropSession, countTurn } from './sessions.js';
 import { takePlan, markLaunched, PlanError } from './plans.js';
 import { runTurn } from './turn.js';
+import { chatForms } from './forms.js';
 
 /**
  * The chat assistant, for one request. `deps` are the models the MCP server uses (Form,
@@ -30,15 +31,20 @@ export function createChatService({
   }
 
   return {
-    /** what the page may know : on or off, the provider and model - never the key */
-    async config() {
+    /**
+     * what the page may know : on or off, the provider and model - never the key - and a
+     * few of this user's chat forms, so the welcome names real examples
+     */
+    async config(user) {
       if (!enabled()) return { enabled: false };
       const settings = await loadSettings().catch(() => null);
       const ok = ChatSettings.isConfigured(settings);
-      return {
-        enabled: ok,
-        ...(ok ? { provider: settings.provider, model: settings.model, maxTurns: settings.max_turns, jobStatus: settings.allow_job_status !== 0 } : {}),
-      };
+      if (!ok) return { enabled: false };
+      let examples = [];
+      if (user) {
+        examples = await chatForms(createHandlers({ user, deps })).then((forms) => forms.slice(0, 3).map((f) => f.name)).catch(() => []);
+      }
+      return { enabled: true, provider: settings.provider, model: settings.model, maxTurns: settings.max_turns, jobStatus: settings.allow_job_status !== 0, examples };
     },
 
     async openSession(user) {
