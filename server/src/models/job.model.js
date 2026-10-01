@@ -843,7 +843,7 @@ Job.getRawFormData = async function (user, id) {
     if (!formObj) {
       throw new Errors.NotFoundError(`Form '${job.form}' not found or you don't have access to it`);
     }
-    logger.info(`Form loaded, checking disableRelaunch: ${formObj.disableRelaunch}, allowRelaunch: ${formObj.allowRelaunch}`);
+    logger.info(`Form loaded, checking allowRelaunch: ${formObj.allowRelaunch}`);
     
     assertRelaunchable(job, formObj, user);
     
@@ -894,7 +894,7 @@ Job.getRawFormData = async function (user, id) {
  *     rawFormData next to arbitrary extravars would pass. Computed fields are the server's
  *     evaluation. A wizard form cannot be checked yet, so it is refused.
  *
- * A launch without rawFormData (the v1 API, or a raw REST call leaving it out) cannot be
+ * A launch without rawFormData (a raw REST call leaving it out) cannot be
  * validated, and with enforcement on that is itself a refusal : otherwise leaving it out
  * would be the way around the check.
  *
@@ -920,7 +920,7 @@ async function guardLaunch({ form, formConfig, formObj, user, rawFormData, extra
   const hasFields = (formObj?.fields || []).length > 0;
   let result;
   if (!hasRaw && hasFields) {
-    result = { ok: false, reason: 'no rawFormData was sent (v1 API or a raw REST call), so the field values cannot be validated' };
+    result = { ok: false, reason: 'no rawFormData was sent (a raw REST call), so the field values cannot be validated' };
   } else {
     try {
       result = await validateLaunch({
@@ -1317,7 +1317,7 @@ Job.continue = async function ({ form, user, credentials = {}, extravars = {}, j
 };
 /**
  * Whether this user may relaunch this job of this form : the form allows it
- * (allowRelaunch, or the deprecated disableRelaunch) and the user's roles grant
+ * (allowRelaunch) and the user's roles grant
  * allowJobRelaunch. Shared by the plain replay, the raw form data read and the relaunch
  * with changes, so they can never disagree.
  */
@@ -1329,11 +1329,7 @@ function assertRelaunchable(job, formObj, user) {
   if (!seesAll && !(job.user === user?.username && (job.user_type ?? user?.type) === user?.type)) {
     throw new Errors.AccessDeniedError(`You can only relaunch your own jobs`);
   }
-  // Support deprecated 'disableRelaunch: true' — use 'allowRelaunch: false' instead
-  if (formObj.disableRelaunch !== undefined) {
-    logger.warning(`Form '${job.form}' uses deprecated 'disableRelaunch' property. Please use 'allowRelaunch: false' instead.`);
-  }
-  if (formObj.disableRelaunch === true || formObj.allowRelaunch === false) {
+  if (formObj.allowRelaunch === false) {
     throw new Errors.AccessDeniedError(`Form '${job.form}' has job relaunch disabled`);
   }
   if (!user?.options?.allowJobRelaunch) {

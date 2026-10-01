@@ -88,7 +88,6 @@ const LIVE = {
   // Settings.resolveConfigInDatabase reads these per config load. The config_source column
   // outranks them anyway, so this is only the fallback.
   ENABLE_CONFIG_IN_DATABASE: { key: 'enableConfigInDatabase', parse: v => v == 1 },
-  ENABLE_FORMS_YAML_IN_DATABASE: { key: 'enableFormsYamlInDatabase', parse: v => v == 1 },
   // form.model builds the ytt command from these on every render (line 141-162 - reachable
   // only with `grep -a`, that file holds a NUL byte)
   YTT_VARS_PREFIX: { key: 'yttVarsPrefix', parse: v => v },
@@ -103,7 +102,6 @@ const LIVE = {
   BACKUP_PATH: { key: 'backupPath', parse: v => v },
   CONFIG_PATH: { key: 'configPath', parse: v => v },
   FORMS_FOLDER_PATH: { key: 'formsFolderPath', parse: v => v },
-  FORMS_PATH: { key: 'formsPath', parse: v => v },
   FORMS_STAGING_PATH: { key: 'formsStagingPath', parse: v => v },
   VARS_FILES_PATH: { key: 'varsFilesPath', parse: v => v },
   REPO_PATH: { key: 'repoPath', parse: v => v },
@@ -190,7 +188,7 @@ const LIVE_CUSTOM = {
 // Restart-tier variables that point at a location holding data. A restart applies the new
 // value but does NOT move what is already there, which is the part worth warning about.
 export const RELOCATES = new Set([
-  'BACKUP_PATH', 'FORMS_BACKUP_PATH', 'CONFIG_PATH', 'FORMS_FOLDER_PATH', 'FORMS_PATH',
+  'BACKUP_PATH', 'FORMS_BACKUP_PATH', 'CONFIG_PATH', 'FORMS_FOLDER_PATH',
   'FORMS_STAGING_PATH', 'REPO_PATH', 'UPLOAD_PATH', 'VARS_FILES_PATH', 'LOG_PATH', 'LOCK_PATH',
 ]);
 

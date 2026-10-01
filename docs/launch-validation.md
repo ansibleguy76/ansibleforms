@@ -140,7 +140,7 @@ which forms compute values differently on the server - before anyone is affected
 - `rowErrors` - per list field, the failing rows (see [List rows](#list-rows-and-subforms));
 - `uploads` - file fields whose upload could not be verified.
 
-A launch that sends **no `rawFormData`** is refused too - the v1 API, or a REST call that
+A launch that sends **no `rawFormData`** is refused too - a REST call that
 leaves it out - because its values cannot be checked. Leaving it out would otherwise be the
 way around the check.
 
@@ -275,7 +275,6 @@ relaunched by them.
   field values, so the server has nothing to validate. Under `enforce` a wizard launch is
   refused; a wizard form cannot set `launchValidation`. The MCP server cannot launch wizard
   forms either.
-- **`table` fields** (deprecated, removed in 7) are not checked per row.
 - **Placeholder resolution** in the browser is still its own copy of the server's; in rare
   edge cases (`__undefined__`, quotes inside expressions) the two could resolve a placeholder
   differently. `log` shows such differences.

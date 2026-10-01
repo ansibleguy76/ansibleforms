@@ -37,8 +37,7 @@ vi.mock("../src/models/schema.model.js", () => ({
   default: { isProvisioned: async () => true },
   // The real manifest shape : an empty one must not silently report 'complete'.
   // Two entries, so a finding can be attributed to the right one - and both are real
-  // patch names, because there is one patch function per MAJOR version (4, 5, 6) and
-  // no patchVersion7 exists.
+  // patch names, because there is one patch function per MAJOR version (4 to 7).
   SCHEMA_MANIFEST: {
     base: { tables: ["jobs", "settings"] },
     patches: {
@@ -64,7 +63,6 @@ vi.mock("../src/services/cron.service.js", () => ({
       system: new Map([["nightlyBackup", { nextRun: () => new Date("2030-01-01T00:00:00Z") }]]),
       schedules: new Map(),
       repositories: new Map(),
-      datasources: new Map(),
     },
   },
 }));
@@ -95,7 +93,6 @@ beforeEach(async () => {
   appConfig.backupPath = path.join(tmpRoot, "backups");
   appConfig.lockPath = path.join(tmpRoot, "ansibleForms.lock");
   appConfig.configPath = path.join(tmpRoot, "config.yaml");
-  appConfig.formsPath = path.join(tmpRoot, "forms.yaml");
   appConfig.formsFolderPath = path.join(tmpRoot, "forms");
   appConfig.mysqldumpCommand = "mariadb-dump";
   // real directory : repositoriesCheck now asks whether each row has a working tree on disk

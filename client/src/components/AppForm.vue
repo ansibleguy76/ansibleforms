@@ -172,7 +172,7 @@ const defaults = ref({});                 // holds default info per field
 const dynamicFieldStatus = ref({});                 // holds the status of dynamics fields (running=currently being evaluated, variable=depends on others, fixed=only need 1-time lookup, default=has defaulted, undefined=trigger eval/query)
 const queryresults = ref({});                 // holds the results of dynamic dropdown boxes
 const queryerrors = ref({});                 // holds errors of dynamic dropdown boxes
-const fieldOptions = ref({});                 // holds a couple of fieldoptions for fast access (valueColumn,ignoreIncomplete, ...), only for expression,query and table
+const fieldOptions = ref({});                 // holds a couple of fieldoptions for fast access (valueColumn,ignoreIncomplete, ...), only for expression, query and list
 
 const warnings = ref([]);                 // holds form warnings.
 const showWarnings = ref(false);              // flag to show/hide warnings
@@ -878,7 +878,7 @@ function setFieldToDefault(fieldname) {
     }
 }
 
-// set dynamic field status, only for expressions and table
+// set dynamic field status, only for expressions and lists
 function setFieldStatus(fieldname, status, reeval = true) {
     // console.log(`[${fieldname}] ----> ${status}`)
     if (fieldOptions.value[fieldname]?.isDynamic) {
@@ -898,7 +898,7 @@ function setFieldStatus(fieldname, status, reeval = true) {
 // if 2 dependend fields (parent-child) both have defaults
 // hasDefaultDependencies used to re-admit a field that had fallen back to "default" while a
 // dependency was also stuck at "default" - a deliberate busy-loop, because nothing else
-// would re-trigger it. It was inert for enum/query/table (dynamicFieldDependentOf only ever
+// would re-trigger it. It was inert for enum/query (dynamicFieldDependentOf only ever
 // covered `expression` fields), and now that the map is complete it would fire on every tick
 // for those too. The readiness gate replaces it: a field waits instead of defaulting, and
 // when a dependency leaves "default" that status change already cascades a resetField
@@ -921,15 +921,6 @@ function initiateDefaults(fieldname = undefined) {
     })
 }
 
-// add warning for bad table values
-// a table is expecting a data format
-// we flag a warning if the data provided is missing columns
-function addTableWarnings(name, data) {
-    var c = (data.length > 1) ? "Columns" : "Column"
-    var i = (data.length > 1) ? "are" : "is"
-    warnings.value.push(`<span class="text-warning">Table '${name}' has missing data</span><br><span>${c} '${data}' ${i} missing.</span>`)
-}
-
 // add dynamic field dependency
 function addDynamicFieldDependency(fields, field, foundfield) {
     var columnRegex = /([^.]+)\..+/g;                                    // detect a "." in the field
@@ -941,7 +932,7 @@ function addDynamicFieldDependency(fields, field, foundfield) {
     if (fields.includes(foundfield)) {                         // does field xxx exist in our form ?
         // The forward map (what a field depends ON) is written here, from the very same
         // scan as the reverse map, so the two can never disagree. It used to be built by a
-        // separate pass that only looked at `expression` fields, leaving enum/query/table
+        // separate pass that only looked at `expression` fields, leaving enum/query
         // with no entry at all - which meant the loop could not answer "are my dependencies
         // ready?" for exactly the fields that need it most.
         if (!(field in dynamicFieldDependentOf.value)) {
@@ -1054,14 +1045,6 @@ function findVariableDependencies() {
             warnings.value.push(`<span class="text-warning">'${item.name}' has bad 'sameAs' validation</span><br><span>${item.sameAs} is not a valid field name</span>`)
         }
 
-        // table type is now deprecated in favour of list + subform
-        if (item.type == 'table') {
-            warnings.value.push(`<span class="text-warning">'${item.name}' uses the deprecated <b>table</b> field type</span><br><span>Migrate to a <b>list</b> field with a subform.</span>`)
-        }
-        // noOutput is deprecated in favour of output: false
-        if (item.noOutput !== undefined) {
-            warnings.value.push(`<span class="text-warning">'${item.name}' uses the deprecated <b>noOutput</b> property</span><br><span>Replace with <b>output: false</b>.</span>`)
-        }
 
         getPlaceholderMatches(fields, item.name, item.expression ?? item.query)
         getPlaceholderMatches(fields, item.name, item.default)
@@ -1190,7 +1173,7 @@ function replacePlaceholderInString(value, ignoreIncomplete = false, mode = 'raw
         var isObjectLiteral = false
 
         if (foundfield in form.value) {      // does field xxx exist in our form ?
-            if (fieldOptions.value[foundfield] && (["expression", "table", "list", "constant"].includes(fieldOptions.value[foundfield].type) || column.includes(".")) && ((typeof form.value[foundfield] == "object") || (Array.isArray(form.value[foundfield])))) {
+            if (fieldOptions.value[foundfield] && (["expression", "list", "constant"].includes(fieldOptions.value[foundfield].type) || column.includes(".")) && ((typeof form.value[foundfield] == "object") || (Array.isArray(form.value[foundfield])))) {
                 // For list fields, each row carries __output__ (buildFormOutput result with
                 // model/valueColumn applied). Use that for serialisation so parent expressions
                 // see the shaped output, not the raw storage fields.
@@ -1358,7 +1341,7 @@ function handleSubformSave() {
 // Build the output object for a subform row emitted to the parent list.
 // We intentionally keep the RAW per-field values here (only fields declared
 // in the subform). Internal fields (__user__, __parent__, constants, vars)
-// are filtered out. `model`, `noOutput`, `outputObject` and `valueColumn` are
+// are filtered out. `model`, `output`, `outputObject` and `valueColumn` are
 // applied at extravars generation time by `Helpers.buildFormOutput`, which
 // walks the whole form tree recursively. Keeping rows raw means they can
 // round-trip through Save -> Edit -> Save without losing data (e.g. full
@@ -1557,19 +1540,11 @@ function initForm() {
         type: "expression"
     };
 
-    // form-level deprecation warnings
-    if (props.currentForm.disableRelaunch !== undefined) {
-        warnings.value.push(`<span class="text-warning">Form uses the deprecated <b>disableRelaunch</b> property</span><br><span>Replace with <b>allowRelaunch: false</b>.</span>`)
-    }
-    if (props.currentForm.tableFields !== undefined) {
-        warnings.value.push(`<span class="text-warning">Form uses the deprecated <b>tableFields</b> property</span><br><span>Migrate to a <b>subform</b> with a <b>list</b> field.</span>`)
-    }
-
     // process aliases
     props.currentForm.fields.forEach((item) => {
         if (item.type == "local") {
             item.hide = item.hide ?? true;
-            item.output = item.output ?? (item.noOutput !== undefined ? !item.noOutput : false);
+            item.output = item.output ?? false;
             item.type = "expression";
             item.runLocal = true;
         }
@@ -1647,7 +1622,7 @@ function initForm() {
         fieldOptions.value[item.name]["evalDefault"] = item.evalDefault ?? false;
         fieldOptions.value[item.name]["hasDependencies"] = ("dependencies" in item)
         fieldOptions.value[item.name]["dependencyOk"] = false
-        if (["expression", "enum", "table", "html", "yaml", "list"].includes(item.type)) {
+        if (["expression", "enum", "html", "yaml", "list"].includes(item.type)) {
             fieldOptions.value[item.name]["isDynamic"] = !!(item.expression ?? item.query ?? item.value ?? false);
             fieldOptions.value[item.name]["valueColumn"] = item.valueColumn || "";
             fieldOptions.value[item.name]["placeholderColumn"] = item.placeholderColumn || "";
@@ -1664,10 +1639,10 @@ function initForm() {
             }
             // Check if we have initialData for this field
             if (item.name in prefillValues.value) {
-                // enum/query/table need their options loaded before a value can be checked
+                // enum/query need their options loaded before a value can be checked
                 // against them, so the loop applies those; html/expression/yaml recompute
                 // from their expression rather than being restored.
-                const needsOptionsFirst = ['enum', 'query', 'table'].includes(item.type) && (item.expression || item.query);
+                const needsOptionsFirst = ['enum', 'query'].includes(item.type) && (item.expression || item.query);
                 const isReactiveField = ((item.type === 'html' || item.type === 'expression' || item.type === 'yaml') && (item.expression || item.query));
 
                 if (!needsOptionsFirst && !isReactiveField) {
@@ -1679,15 +1654,11 @@ function initForm() {
                     prefillFlagged.value[item.name] = "computed field - re-evaluated instead of restored";
                     dynamicFieldStatus.value[item.name] = undefined;
                 } else {
-                    // For enum/query/table with expressions, set status to undefined so loop will load options first
+                    // For enum/query with expressions, set status to undefined so loop will load options first
                     dynamicFieldStatus.value[item.name] = undefined;
                 }
             } else {
                 form.value[item.name] = externalData.value[item.name] ?? getDefaultValue(item.name, item.default);
-            }
-            // Initialize table fields to empty array if no default
-            if (item.type == "table" && form.value[item.name] === undefined) {
-                form.value[item.name] = [];
             }
             // Same default for list fields.
             if (item.type == "list" && form.value[item.name] === undefined) {
@@ -1725,11 +1696,11 @@ function initForm() {
     // fetched for. Everything else is left to the loop, which applies each field's value the
     // moment that field's own dependencies have been evaluated. There is no "has no
     // dependencies" shortcut here any more: that test was only ever standing in for the
-    // readiness gate, and it read a map that was empty for enum/query/table anyway.
+    // readiness gate, and it read a map that was empty for enum/query anyway.
     props.currentForm.fields.forEach((item) => {
         if (!item?.name || !(item.name in prefillValues.value)) return;
         if (prefillApplied.value[item.name] || prefillFlagged.value[item.name]) return;
-        const needsOptionsFirst = ['enum', 'query', 'table'].includes(item.type) && (item.expression || item.query);
+        const needsOptionsFirst = ['enum', 'query'].includes(item.type) && (item.expression || item.query);
         const isComputed = ['expression', 'html', 'yaml'].includes(item.type) && (item.expression || item.query);
         if (isComputed) {
             prefillFlagged.value[item.name] = "computed field - re-evaluated instead of restored";
@@ -1817,8 +1788,6 @@ async function startDynamicFieldsLoop() {
                                         applyPrefill(item.name, { validateOptions: true });
                                     }
                                 }
-                                if (item.type == "table" && !defaults.value[item.name]) form.value[item.name] = [].concat(result);
-                                if (item.type == "table" && defaults.value[item.name]) form.value[item.name] = [].concat(defaults.value[item.name]);
                                 if (item.type == "list" && !defaults.value[item.name]) form.value[item.name] = [].concat(result);
                                 if (item.type == "list" && defaults.value[item.name]) form.value[item.name] = [].concat(defaults.value[item.name]);
 
@@ -1858,8 +1827,6 @@ async function startDynamicFieldsLoop() {
                                         applyPrefill(item.name, { validateOptions: true });
                                     }
                                 }
-                                if (item.type == "table" && !defaults.value[item.name]) form.value[item.name] = [].concat(restresult ?? []);
-                                if (item.type == "table" && defaults.value[item.name]) form.value[item.name] = [].concat(defaults.value[item.name] ?? []);
                                 if (item.type == "list" && !defaults.value[item.name]) form.value[item.name] = [].concat(restresult ?? []);
                                 if (item.type == "list" && defaults.value[item.name]) form.value[item.name] = [].concat(defaults.value[item.name] ?? []);
 
@@ -2321,36 +2288,6 @@ defineExpose({
                                 <div class="mb-3" @dblclick="clip(fieldOptions[field.name].expressionEval, true)"
                                     v-if="field.expression && fieldOptions[field.name].debug && dynamicFieldStatus[field.name] != 'fixed'">
                                     <pre v-highlightjs><code language="javascript">{{ fieldOptions[field.name].expressionEval }}</code></pre>
-                                </div>
-
-                                <div v-if="field.type == 'table' && field.tableFields">
-                                    <AppTableField v-show="!fieldOptions[field.name].viewable"
-                                        v-model="v$.form[field.name].$model" 
-                                        :tableFields="field.tableFields"
-                                        :allowInsert="field.allowInsert && true"
-                                        :allowDelete="field.allowDelete && true"
-                                        :deleteMarker="field.deleteMarker || ''"
-                                        :insertMarker="field.insertMarker || ''"
-                                        :updateMarker="field.updateMarker || ''"
-                                        :readonlyColumns="field.readonlyColumns || []"
-                                        :insertColumns="field.insertColumns || []"
-                                        :showLoadButton="field.showLoadButton === true"
-                                        :showDownloadButton="field.showDownloadButton === true"
-                                        :name="field.name"
-                                        :dynamicFieldStatus="dynamicFieldStatus" :form="form"
-                                        :hasError="v$.form[field.name].$invalid" :click="false"
-                                        tableClass="table" headClass="bg-primay-subtle"
-                                        :isLoading="!['fixed', 'variable'].includes(dynamicFieldStatus[field.name]) && (field.expression != undefined || field.query != undefined)"
-                                        :values="form[field.name] || []" @update:modelValue="evaluateDynamicFields(field.name)"
-                                        @warning="addTableWarnings(field.name, ...arguments)" 
-                                        :errors="getErrorsToDisplay(field.name)"
-                                        :help="typeof fieldHelp[field.name] === 'object' ? fieldHelp[field.name].value : fieldHelp[field.name]"
-                                    />
-                                    <!-- expression raw data -->
-                                    <div @dblclick="setExpressionFieldViewable(field.name, false)" v-if="fieldOptions[field.name].viewable"
-                                        class="card p-2 limit-height">
-                                        <VueJsonPretty :data="v$.form[field.name].$model" />
-                                    </div>                                    
                                 </div>
 
                                 <!-- TYPE = LIST (nested subform rows) -->

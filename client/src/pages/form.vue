@@ -239,7 +239,7 @@ const wizardParentData = computed(() => {
 });
 
 // Per-step output: fields shaped by buildFormOutput, then wrapped under
-// the step's `defaultModel` prefix. Honours per-field `model`/`noOutput`.
+// the step's `defaultModel` prefix. Honours per-field `model`/`output`.
 function buildWizardStepOutput(step) {
     if (!step?.subform?.fields) return {};
     const visMap = wizardVisibility[step.name] || {};
@@ -626,7 +626,7 @@ function buildMainStoreCtx() {
 /******************************** */
 
 // Build the output object for a subform draft, using the shared helper.
-// `model`, `noOutput`, `outputObject`, `valueColumn` on the subform's
+// `model`, `output`, `outputObject`, `valueColumn` on the subform's
 // fields are all honoured, and nested list fields recurse through their
 // own subform definitions.
 function buildSubformOutput(entry) {

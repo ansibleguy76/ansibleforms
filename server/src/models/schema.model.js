@@ -479,8 +479,7 @@ const SCHEMA_MANIFEST = {
   // tables the fresh install creates, so they must exist however the database was built
   base: {
     tables: ['groups', 'users', 'tokens', 'credentials', 'ldap', 'awx', 'jobs', 'job_output',
-             'settings', 'repositories', 'datasource_schemas', 'datasource', 'staging',
-             'schedule', 'audit', 'chat_settings'],
+             'settings', 'repositories', 'schedule', 'audit', 'chat_settings'],
   },
   patches: {
     patchVersion4: { columns: ['ldap.groups_search_base', 'ldap.groups_attribute', 'ldap.group_class',
@@ -498,7 +497,7 @@ const SCHEMA_MANIFEST = {
     // so everything 6.x adds is listed here, including all of 6.3.0. `indexes` is a
     // separate list from `columns` because the caller grades a missing index lower :
     // its absence is slow rather than broken.
-    patchVersion6: { tables: ['datasource_schemas', 'datasource', 'staging', 'oauth2_providers', 'stored_jobs',
+    patchVersion6: { tables: ['oauth2_providers', 'stored_jobs',
                               'audit', 'chat_settings'],
                      columns: ['oauth2_providers.tenant_id', 'jobs.raw_form_data', 'repositories.use_for_config',
                                'repositories.use_for_vars_files', 'jobs.pid', 'jobs.host', 'schedule.one_time_run',
@@ -591,7 +590,7 @@ async function patchVersion5(messages, success, failed) {
   // In 5.0.9, We add a scheduler
   buffer = fs.readFileSync(`${__dirname}/../db/create_schedule_table.sql`);
   sql = buffer.toString();
-  await checkPromise(addTable("schedule", sql), messages, success, failed); // add datasource_schemas table
+  await checkPromise(addTable("schedule", sql), messages, success, failed); // add schedule table
 
   // In 5.0.10, we add a new column to the jobs table, to store the awx artifacts
   await checkPromise(addColumn("jobs", "awx_artifacts", "longtext", true, "NULL"), messages, success, failed); // add awx_artifacts column
@@ -613,16 +612,8 @@ async function patchVersion6(messages, success, failed) {
   var buffer;
   var sql;
 
-  // temp install the datasource tables
-  buffer = fs.readFileSync(`${__dirname}/../db/create_datasource_schemas_table.sql`);
-  sql = buffer.toString();
-  await checkPromise(addTable("datasource_schemas", sql), messages, success, failed); // add datasource_schemas table
-  buffer = fs.readFileSync(`${__dirname}/../db/create_datasource_table.sql`);
-  sql = buffer.toString();
-  await checkPromise(addTable("datasource", sql), messages, success, failed); // add datasource table
-  buffer = fs.readFileSync(`${__dirname}/../db/create_staging_table.sql`);
-  sql = buffer.toString();
-  await checkPromise(addTable("staging", sql), messages, success, failed); // add staging table
+  // The datasource tables (datasource_schemas, datasource, staging) were created here until
+  // 7.0.0 removed datasources ; patchVersion7 drops them.
 
   // In 6.0.0, we add oauth2 providers table
   buffer = fs.readFileSync(`${__dirname}/../db/create_oauth2_providers_table.sql`);
@@ -788,11 +779,21 @@ async function patchVersion6(messages, success, failed) {
 
 }
 
+// Patches for v7
+// 7.0.0 removed datasources : their tables go. staging first, it references datasource.
+// The data schemas an import filled are separate databases of the user's own and stay.
+async function patchVersion7(messages, success, failed) {
+  await checkPromise(dropTable("staging"), messages, success, failed);
+  await checkPromise(dropTable("datasource"), messages, success, failed);
+  await checkPromise(dropTable("datasource_schemas"), messages, success, failed);
+}
+
 // PATCHING : Patch All
 async function patchAll(messages, success, failed) {
   await checkPromise(patchVersion4(messages, success, failed), messages, success, failed);
   await checkPromise(patchVersion5(messages, success, failed), messages, success, failed);
   await checkPromise(patchVersion6(messages, success, failed), messages, success, failed);
+  await checkPromise(patchVersion7(messages, success, failed), messages, success, failed);
 }
 async function checkPromise(promise, messages, success, failed) {
   try {

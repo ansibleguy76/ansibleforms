@@ -1244,8 +1244,8 @@ const importCandidates = ref([]);
 const importTarget = ref('');
 const importSkipped = ref(0);
 
-// the files the import can go into. The base file is deliberately absent : forms
-// in the base config are deprecated (see the deprecation warning above).
+// the files the import can go into. The base config is deliberately absent : since
+// 7.0.0 every form lives in a file of its own.
 const importFileOptions = computed(() => {
   const opts = files.value.filter(Boolean).map(f => ({ value: f, label: f }));
   if (importFileName.value && !files.value.includes(importFileName.value)) {
@@ -1407,7 +1407,7 @@ function doImport() {
 // Field properties editor
 const showFieldEditor = ref(false);
 const fieldEditorRows = ref([]);
-const fieldTypes = ['text','textarea','password','checkbox','enum','number','radio','expression','local','local_out','credential','table','list','datetime','html','file','yaml'];
+const fieldTypes = ['text','textarea','password','checkbox','enum','number','radio','expression','local','local_out','credential','list','datetime','html','file','yaml'];
 
 // Mirror of the per-type `oneOf` of a FIELD in server/schema/form_schema.json,
 // the same idea as forbiddenFormKeys one level up : a field type FORBIDS a set of
@@ -1416,23 +1416,22 @@ const fieldTypes = ['text','textarea','password','checkbox','enum','number','rad
 // remove it (eg an 'enum' turned into a 'text' keeps its `values`). A key is
 // listed here when EVERY schema branch that accepts the type forbids it.
 const forbiddenFieldKeys = {
-  text: ['accept', 'allowDelete', 'allowInsert', 'convertToUtc', 'dateType', 'dbConfig', 'deleteMarker', 'editable', 'expression', 'filterColumns', 'horizontal', 'insertMarker', 'isHtml', 'jq', 'maxSize', 'maxValue', 'minSize', 'minValue', 'multiple', 'outputObject', 'pctColumns', 'query', 'readonlyColumns', 'refresh', 'runLocal', 'showDownloadButton', 'showLoadButton', 'sticky', 'switch', 'tableTitleAdd', 'tableTitleEdit', 'titleAdd', 'titleEdit', 'updateMarker', 'values'],
-  textarea: ['accept', 'allowDelete', 'allowInsert', 'asCredential', 'convertToUtc', 'dateType', 'dbConfig', 'deleteMarker', 'editable', 'expression', 'filterColumns', 'hide', 'horizontal', 'icon', 'in', 'insertMarker', 'isHtml', 'jq', 'keydown', 'maxLength', 'maxSize', 'maxValue', 'minLength', 'minSize', 'minValue', 'multiple', 'notIn', 'outputObject', 'pctColumns', 'query', 'readonlyColumns', 'refresh', 'regex', 'runLocal', 'sameAs', 'showDownloadButton', 'showLoadButton', 'sticky', 'switch', 'tableTitleAdd', 'tableTitleEdit', 'titleAdd', 'titleEdit', 'updateMarker', 'values'],
-  password: ['accept', 'allowDelete', 'allowInsert', 'convertToUtc', 'dateType', 'dbConfig', 'deleteMarker', 'editable', 'expression', 'filterColumns', 'horizontal', 'insertMarker', 'isHtml', 'jq', 'maxSize', 'maxValue', 'minSize', 'minValue', 'multiple', 'outputObject', 'pctColumns', 'query', 'readonlyColumns', 'refresh', 'runLocal', 'showDownloadButton', 'showLoadButton', 'sticky', 'switch', 'tableTitleAdd', 'tableTitleEdit', 'titleAdd', 'titleEdit', 'updateMarker', 'values'],
-  checkbox: ['accept', 'allowDelete', 'allowInsert', 'asCredential', 'convertToUtc', 'dateType', 'dbConfig', 'deleteMarker', 'editable', 'expression', 'filterColumns', 'hide', 'horizontal', 'insertMarker', 'isHtml', 'jq', 'keydown', 'maxLength', 'maxSize', 'maxValue', 'minLength', 'minSize', 'minValue', 'multiple', 'outputObject', 'pctColumns', 'query', 'readonlyColumns', 'refresh', 'regex', 'runLocal', 'showDownloadButton', 'showLoadButton', 'sticky', 'tableTitleAdd', 'tableTitleEdit', 'titleAdd', 'titleEdit', 'updateMarker', 'values'],
-  enum: ['allowDelete', 'allowInsert', 'convertToUtc', 'dateType', 'deleteMarker', 'editable', 'hide', 'insertMarker', 'isHtml', 'keydown', 'maxLength', 'maxSize', 'maxValue', 'minLength', 'minSize', 'minValue', 'readonlyColumns', 'regex', 'showDownloadButton', 'showLoadButton', 'switch', 'tableTitleAdd', 'tableTitleEdit', 'titleAdd', 'titleEdit', 'updateMarker'],
-  number: ['accept', 'allowDelete', 'allowInsert', 'asCredential', 'convertToUtc', 'dateType', 'dbConfig', 'deleteMarker', 'editable', 'expression', 'filterColumns', 'hide', 'horizontal', 'insertMarker', 'isHtml', 'jq', 'maxLength', 'maxSize', 'minLength', 'minSize', 'multiple', 'outputObject', 'pctColumns', 'query', 'readonlyColumns', 'refresh', 'runLocal', 'showDownloadButton', 'showLoadButton', 'sticky', 'switch', 'tableTitleAdd', 'tableTitleEdit', 'titleAdd', 'titleEdit', 'updateMarker', 'values'],
-  radio: ['accept', 'allowDelete', 'allowInsert', 'asCredential', 'convertToUtc', 'dateType', 'dbConfig', 'deleteMarker', 'editable', 'expression', 'filterColumns', 'hide', 'horizontal', 'icon', 'insertMarker', 'isHtml', 'jq', 'keydown', 'maxLength', 'maxSize', 'maxValue', 'minLength', 'minSize', 'minValue', 'multiple', 'outputObject', 'pctColumns', 'query', 'readonlyColumns', 'refresh', 'regex', 'runLocal', 'showDownloadButton', 'showLoadButton', 'sticky', 'switch', 'tableTitleAdd', 'tableTitleEdit', 'titleAdd', 'titleEdit', 'updateMarker'],
-  expression: ['accept', 'allowDelete', 'allowInsert', 'deleteMarker', 'filterColumns', 'horizontal', 'insertMarker', 'keydown', 'maxSize', 'maxValue', 'minSize', 'minValue', 'multiple', 'outputObject', 'pctColumns', 'readonlyColumns', 'showDownloadButton', 'showLoadButton', 'sticky', 'switch', 'tableTitleAdd', 'tableTitleEdit', 'titleAdd', 'titleEdit', 'updateMarker'],
-  local: ['accept', 'allowDelete', 'allowInsert', 'dbConfig', 'deleteMarker', 'filterColumns', 'horizontal', 'insertMarker', 'keydown', 'maxSize', 'maxValue', 'minSize', 'minValue', 'multiple', 'outputObject', 'pctColumns', 'readonlyColumns', 'showDownloadButton', 'showLoadButton', 'sticky', 'switch', 'tableTitleAdd', 'tableTitleEdit', 'titleAdd', 'titleEdit', 'updateMarker'],
-  local_out: ['accept', 'allowDelete', 'allowInsert', 'dbConfig', 'deleteMarker', 'filterColumns', 'horizontal', 'insertMarker', 'keydown', 'maxSize', 'maxValue', 'minSize', 'minValue', 'multiple', 'outputObject', 'pctColumns', 'readonlyColumns', 'showDownloadButton', 'showLoadButton', 'sticky', 'switch', 'tableTitleAdd', 'tableTitleEdit', 'titleAdd', 'titleEdit', 'updateMarker'],
-  credential: ['accept', 'allowDelete', 'allowInsert', 'dbConfig', 'deleteMarker', 'filterColumns', 'horizontal', 'insertMarker', 'keydown', 'maxSize', 'maxValue', 'minSize', 'minValue', 'multiple', 'outputObject', 'pctColumns', 'readonlyColumns', 'showDownloadButton', 'showLoadButton', 'sticky', 'switch', 'tableTitleAdd', 'tableTitleEdit', 'titleAdd', 'titleEdit', 'updateMarker', 'values'],
-  table: ['accept', 'convertToUtc', 'dateType', 'editable', 'filterColumns', 'horizontal', 'icon', 'isHtml', 'keydown', 'maxLength', 'maxSize', 'maxValue', 'minLength', 'minSize', 'minValue', 'multiple', 'outputObject', 'pctColumns', 'refresh', 'regex', 'sticky', 'switch', 'values'],
-  list: ['accept', 'asCredential', 'convertToUtc', 'dateType', 'editable', 'horizontal', 'icon', 'in', 'isHtml', 'keydown', 'maxLength', 'maxSize', 'maxValue', 'minLength', 'minSize', 'minValue', 'multiple', 'notIn', 'outputObject', 'refresh', 'regex', 'sameAs', 'sticky', 'switch', 'tableFields', 'values'],
-  datetime: ['accept', 'columns', 'filterColumns', 'from', 'maxLength', 'maxSize', 'maxValue', 'minLength', 'minSize', 'minValue', 'outputObject', 'pctColumns', 'previewColumn', 'showDownloadButton', 'showLoadButton', 'switch', 'tableTitleAdd', 'tableTitleEdit', 'titleAdd', 'titleEdit', 'valueColumn', 'values'],
-  html: ['accept', 'allowDelete', 'allowInsert', 'asCredential', 'columns', 'convertToUtc', 'dateType', 'dbConfig', 'deleteMarker', 'editable', 'filterColumns', 'help', 'hide', 'horizontal', 'icon', 'in', 'insertColumns', 'insertMarker', 'isHtml', 'jq', 'keydown', 'maxLength', 'maxSize', 'maxValue', 'minLength', 'minSize', 'minValue', 'model', 'multiple', 'notIn', 'outputObject', 'pctColumns', 'placeholder', 'placeholderColumn', 'previewColumn', 'query', 'readonlyColumns', 'refresh', 'regex', 'required', 'sameAs', 'showDownloadButton', 'showLoadButton', 'size', 'sticky', 'switch', 'tableFields', 'tableTitleAdd', 'tableTitleEdit', 'updateMarker', 'validIf', 'validIfNot', 'valueColumn', 'values'],
-  file: ['allowDelete', 'allowInsert', 'asCredential', 'columns', 'convertToUtc', 'dateType', 'dbConfig', 'deleteMarker', 'editable', 'filterColumns', 'hide', 'horizontal', 'in', 'insertColumns', 'insertMarker', 'isHtml', 'jq', 'keydown', 'maxLength', 'maxValue', 'minLength', 'minValue', 'multiple', 'notIn', 'outputObject', 'pctColumns', 'placeholderColumn', 'previewColumn', 'query', 'readonlyColumns', 'refresh', 'runLocal', 'sameAs', 'showDownloadButton', 'showLoadButton', 'size', 'sticky', 'switch', 'tableFields', 'tableTitleAdd', 'tableTitleEdit', 'updateMarker', 'validIf', 'validIfNot', 'valueColumn', 'values'],
-  yaml: ['accept', 'allowDelete', 'allowInsert', 'asCredential', 'convertToUtc', 'dateType', 'deleteMarker', 'editable', 'filterColumns', 'horizontal', 'in', 'insertMarker', 'isHtml', 'keydown', 'maxLength', 'maxSize', 'maxValue', 'minLength', 'minSize', 'minValue', 'multiple', 'notIn', 'outputObject', 'pctColumns', 'readonlyColumns', 'regex', 'sameAs', 'sticky', 'switch', 'tableFields', 'tableTitleAdd', 'tableTitleEdit', 'titleAdd', 'titleEdit', 'updateMarker', 'values'],
+  text: ['accept', 'allowDelete', 'allowInsert', 'convertToUtc', 'dateType', 'dbConfig', 'deleteMarker', 'editable', 'expression', 'filterColumns', 'horizontal', 'insertMarker', 'isHtml', 'jq', 'maxSize', 'maxValue', 'minSize', 'minValue', 'multiple', 'outputObject', 'pctColumns', 'query', 'refresh', 'runLocal', 'showDownloadButton', 'showLoadButton', 'sticky', 'switch', 'titleAdd', 'titleEdit', 'updateMarker', 'values'],
+  textarea: ['accept', 'allowDelete', 'allowInsert', 'asCredential', 'convertToUtc', 'dateType', 'dbConfig', 'deleteMarker', 'editable', 'expression', 'filterColumns', 'hide', 'horizontal', 'icon', 'in', 'insertMarker', 'isHtml', 'jq', 'keydown', 'maxLength', 'maxSize', 'maxValue', 'minLength', 'minSize', 'minValue', 'multiple', 'notIn', 'outputObject', 'pctColumns', 'query', 'refresh', 'regex', 'runLocal', 'sameAs', 'showDownloadButton', 'showLoadButton', 'sticky', 'switch', 'titleAdd', 'titleEdit', 'updateMarker', 'values'],
+  password: ['accept', 'allowDelete', 'allowInsert', 'convertToUtc', 'dateType', 'dbConfig', 'deleteMarker', 'editable', 'expression', 'filterColumns', 'horizontal', 'insertMarker', 'isHtml', 'jq', 'maxSize', 'maxValue', 'minSize', 'minValue', 'multiple', 'outputObject', 'pctColumns', 'query', 'refresh', 'runLocal', 'showDownloadButton', 'showLoadButton', 'sticky', 'switch', 'titleAdd', 'titleEdit', 'updateMarker', 'values'],
+  checkbox: ['accept', 'allowDelete', 'allowInsert', 'asCredential', 'convertToUtc', 'dateType', 'dbConfig', 'deleteMarker', 'editable', 'expression', 'filterColumns', 'hide', 'horizontal', 'insertMarker', 'isHtml', 'jq', 'keydown', 'maxLength', 'maxSize', 'maxValue', 'minLength', 'minSize', 'minValue', 'multiple', 'outputObject', 'pctColumns', 'query', 'refresh', 'regex', 'runLocal', 'showDownloadButton', 'showLoadButton', 'sticky', 'titleAdd', 'titleEdit', 'updateMarker', 'values'],
+  enum: ['allowDelete', 'allowInsert', 'convertToUtc', 'dateType', 'deleteMarker', 'editable', 'hide', 'insertMarker', 'isHtml', 'keydown', 'maxLength', 'maxSize', 'maxValue', 'minLength', 'minSize', 'minValue', 'regex', 'showDownloadButton', 'showLoadButton', 'switch', 'titleAdd', 'titleEdit', 'updateMarker'],
+  number: ['accept', 'allowDelete', 'allowInsert', 'asCredential', 'convertToUtc', 'dateType', 'dbConfig', 'deleteMarker', 'editable', 'expression', 'filterColumns', 'hide', 'horizontal', 'insertMarker', 'isHtml', 'jq', 'maxLength', 'maxSize', 'minLength', 'minSize', 'multiple', 'outputObject', 'pctColumns', 'query', 'refresh', 'runLocal', 'showDownloadButton', 'showLoadButton', 'sticky', 'switch', 'titleAdd', 'titleEdit', 'updateMarker', 'values'],
+  radio: ['accept', 'allowDelete', 'allowInsert', 'asCredential', 'convertToUtc', 'dateType', 'dbConfig', 'deleteMarker', 'editable', 'expression', 'filterColumns', 'hide', 'horizontal', 'icon', 'insertMarker', 'isHtml', 'jq', 'keydown', 'maxLength', 'maxSize', 'maxValue', 'minLength', 'minSize', 'minValue', 'multiple', 'outputObject', 'pctColumns', 'query', 'refresh', 'regex', 'runLocal', 'showDownloadButton', 'showLoadButton', 'sticky', 'switch', 'titleAdd', 'titleEdit', 'updateMarker'],
+  expression: ['accept', 'allowDelete', 'allowInsert', 'deleteMarker', 'filterColumns', 'horizontal', 'insertMarker', 'keydown', 'maxSize', 'maxValue', 'minSize', 'minValue', 'multiple', 'outputObject', 'pctColumns', 'showDownloadButton', 'showLoadButton', 'sticky', 'switch', 'titleAdd', 'titleEdit', 'updateMarker'],
+  local: ['accept', 'allowDelete', 'allowInsert', 'dbConfig', 'deleteMarker', 'filterColumns', 'horizontal', 'insertMarker', 'keydown', 'maxSize', 'maxValue', 'minSize', 'minValue', 'multiple', 'outputObject', 'pctColumns', 'showDownloadButton', 'showLoadButton', 'sticky', 'switch', 'titleAdd', 'titleEdit', 'updateMarker'],
+  local_out: ['accept', 'allowDelete', 'allowInsert', 'dbConfig', 'deleteMarker', 'filterColumns', 'horizontal', 'insertMarker', 'keydown', 'maxSize', 'maxValue', 'minSize', 'minValue', 'multiple', 'outputObject', 'pctColumns', 'showDownloadButton', 'showLoadButton', 'sticky', 'switch', 'titleAdd', 'titleEdit', 'updateMarker'],
+  credential: ['accept', 'allowDelete', 'allowInsert', 'dbConfig', 'deleteMarker', 'filterColumns', 'horizontal', 'insertMarker', 'keydown', 'maxSize', 'maxValue', 'minSize', 'minValue', 'multiple', 'outputObject', 'pctColumns', 'showDownloadButton', 'showLoadButton', 'sticky', 'switch', 'titleAdd', 'titleEdit', 'updateMarker', 'values'],
+  list: ['accept', 'asCredential', 'convertToUtc', 'dateType', 'editable', 'horizontal', 'icon', 'in', 'isHtml', 'keydown', 'maxLength', 'maxSize', 'maxValue', 'minLength', 'minSize', 'minValue', 'multiple', 'notIn', 'outputObject', 'refresh', 'regex', 'sameAs', 'sticky', 'switch', 'values'],
+  datetime: ['accept', 'columns', 'filterColumns', 'from', 'maxLength', 'maxSize', 'maxValue', 'minLength', 'minSize', 'minValue', 'outputObject', 'pctColumns', 'previewColumn', 'showDownloadButton', 'showLoadButton', 'switch', 'titleAdd', 'titleEdit', 'valueColumn', 'values'],
+  html: ['accept', 'allowDelete', 'allowInsert', 'asCredential', 'columns', 'convertToUtc', 'dateType', 'dbConfig', 'deleteMarker', 'editable', 'filterColumns', 'help', 'hide', 'horizontal', 'icon', 'in', 'insertMarker', 'isHtml', 'jq', 'keydown', 'maxLength', 'maxSize', 'maxValue', 'minLength', 'minSize', 'minValue', 'model', 'multiple', 'notIn', 'outputObject', 'pctColumns', 'placeholder', 'placeholderColumn', 'previewColumn', 'query', 'refresh', 'regex', 'required', 'sameAs', 'showDownloadButton', 'showLoadButton', 'size', 'sticky', 'switch', 'updateMarker', 'validIf', 'validIfNot', 'valueColumn', 'values'],
+  file: ['allowDelete', 'allowInsert', 'asCredential', 'columns', 'convertToUtc', 'dateType', 'dbConfig', 'deleteMarker', 'editable', 'filterColumns', 'hide', 'horizontal', 'in', 'insertMarker', 'isHtml', 'jq', 'keydown', 'maxLength', 'maxValue', 'minLength', 'minValue', 'multiple', 'notIn', 'outputObject', 'pctColumns', 'placeholderColumn', 'previewColumn', 'query', 'refresh', 'runLocal', 'sameAs', 'showDownloadButton', 'showLoadButton', 'size', 'sticky', 'switch', 'updateMarker', 'validIf', 'validIfNot', 'valueColumn', 'values'],
+  yaml: ['accept', 'allowDelete', 'allowInsert', 'asCredential', 'convertToUtc', 'dateType', 'deleteMarker', 'editable', 'filterColumns', 'horizontal', 'in', 'insertMarker', 'isHtml', 'keydown', 'maxLength', 'maxSize', 'maxValue', 'minLength', 'minSize', 'minValue', 'multiple', 'notIn', 'outputObject', 'pctColumns', 'regex', 'sameAs', 'sticky', 'switch', 'titleAdd', 'titleEdit', 'updateMarker', 'values'],
 };
 
 // Same source, the other way round : these types need at least one of the listed
@@ -1448,7 +1447,6 @@ const requiredFieldKeys = {
   local: [['expression'], ['value']],
   local_out: [['expression'], ['value']],
   credential: [['expression']],
-  table: [['tableFields']],
   list: [['subform']],
   datetime: [['dateType']],
   html: [['expression']],
@@ -1660,7 +1658,7 @@ function addFieldRow() {
   fieldValuesIdx.value = null;
   fieldEditorRows.value.push({
     name: '', type: 'text', label: '', help: '', required: false, default: '', _defaultDisplay: '',
-    output: true, noOutput: false, values: [], _valuesSnapshot: fieldValuesSnapshot([]), _valuesAlias: false,
+    output: true, values: [], _valuesSnapshot: fieldValuesSnapshot([]), _valuesAlias: false,
   });
 }
 
@@ -1778,7 +1776,6 @@ function openFieldEditor() {
       required: item.get('required') === true,
       default: display,
       output: item.get('output') !== undefined ? item.get('output') !== false : true,
-      noOutput: item.get('noOutput') === true,
     };
   });
   showFieldEditor.value = true;
@@ -1846,13 +1843,7 @@ function applyFieldEditor() {
           }
         } else node.delete('default');
       }
-      if (row.noOutput) {
-        setDocValueIfChanged(node, 'noOutput', true);
-        node.delete('output');
-      } else {
-        node.delete('noOutput');
-        setDocValueIfChanged(node, 'output', row.output ? undefined : false);
-      }
+      setDocValueIfChanged(node, 'output', row.output ? undefined : false);
       // `values` is only rewritten when the values panel actually changed it :
       // an untouched list keeps its own nodes, comments included. A type that
       // forbids it is skipped here and cleaned up by the loop below.
@@ -3516,10 +3507,6 @@ function formnames(file) {
   );
 }
 
-const hasBaseForms = computed(() => {
-  return idmapping.value.some((item) => item.source === undefined);
-});
-
 async function loadAll() {
   await loadLock();
   await loadForms();
@@ -4377,7 +4364,7 @@ onBeforeUnmount(() => {
                     <input v-if="fieldTypeAllows(row.type, 'required')" type="checkbox" class="form-check-input" v-model="row.required" />
                   </td>
                   <td class="text-center align-middle">
-                    <input type="checkbox" class="form-check-input" v-model="row.output" :disabled="row.noOutput" />
+                    <input type="checkbox" class="form-check-input" v-model="row.output" />
                   </td>
                   <td class="text-center align-middle">
                     <button class="btn btn-sm btn-outline-danger" @click="removeFieldRow(i)"><FaIcon icon="trash" size="sm" /></button>
@@ -4490,17 +4477,6 @@ onBeforeUnmount(() => {
                 <font-awesome-icon :icon="lock.match ? 'lock' : 'unlock'" size="sm" class="me-1" />{{ lock.match ? t('designer.lockedByMe') : t('designer.startDesigner') }}
               </label>
             </div>
-            <popper v-if="hasBaseForms">
-              <button class="btn ms-2 btn-warning" type="button">
-                <font-awesome-icon icon="exclamation-triangle" size="sm" class="me-1" />
-                {{ t('designer.deprecationWarning') }}
-              </button>
-              <template #content>
-                {{ t('designer.deprecationMsg') }}<br />
-                {{ t('designer.deprecationAction') }}<br />
-                {{ t('designer.deprecationMove') }}
-              </template>
-            </popper>
           </template>
           <Transition appear>
             <div v-if="warnings.length > 0" class="ms-2">

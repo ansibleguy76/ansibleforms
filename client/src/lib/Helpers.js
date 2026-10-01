@@ -208,7 +208,7 @@ const Helpers = {
     return objClone;
   },
   // Build a field-driven output object (the same shape used for main-form
-  // extravars). Honours `noOutput`, `outputObject`, `valueColumn`, dotted
+  // extravars). Honours `output`, `outputObject`, `valueColumn`, dotted
   // `model` paths (including array indexes like `a.b[0].c`) and the datetime
   // month fix (0-11 -> 1-12). Pure function - returns a new object.
   //
@@ -223,7 +223,7 @@ const Helpers = {
   //   opts.subforms : optional array of subform definitions; used to resolve
   //                 `field.subform` (string name) to the subform object so
   //                 list rows are rebuilt recursively through the subform's
-  //                 fields (honours model/noOutput/outputObject per row)
+  //                 fields (honours model/output/outputObject per row)
   // the form engine shared with the server (@engine/output.js) - the server builds the
   // same extravars from the same code (MCP, LAUNCH_VALIDATION=enforce)
   buildFormOutput(fields, raw, opts = {}){
@@ -356,7 +356,7 @@ const Helpers = {
       if (!target || typeof target !== 'object' || !Array.isArray(fieldDefs)) return;
       for (const f of fieldDefs) {
         if (!f || !f.name) continue;
-        if (f.noOutput || f.output === false) continue;
+        if (f.output === false) continue;
         const paths = [].concat(f.model || f.name);
         if (f.type === 'password') {
           for (const p of paths) setAtPath(target, p, MASK);

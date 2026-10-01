@@ -48,7 +48,6 @@ AnsibleForms loads the config.yaml file in the following order (first match wins
 2. **FROM REPOSITORY (use_for_config)** : Repository with "use for config" switch enabled (new in 6.1.0)
 3. **FROM REPOSITORY (use_for_forms)** : Repository with "use for forms" switch enabled (backwards compatibility fallback)
 4. **FROM LOCAL FILE** : The local `config.yaml` file (CONFIG_PATH environment variable)
-5. **FROM LEGACY FILE** : The legacy `forms.yaml` file (FORMS_PATH environment variable)
 
 {: .warning }
 > **Note:** Only ONE repository should have "use for config" enabled. If multiple are enabled, a warning will be logged and the first one will be used.
@@ -247,7 +246,6 @@ AnsibleForms loads the config.yaml file in the following order (first match wins
 2. **FROM REPOSITORY (use_for_config)** - Repository with "use for config" switch enabled
 3. **FROM REPOSITORY (use_for_forms)** - Repository with "use for forms" switch enabled (backwards compatibility)
 4. **FROM LOCAL FILE** - The local `config.yaml` file (CONFIG_PATH environment variable)
-5. **FROM LEGACY FILE** - The legacy `forms.yaml` file (FORMS_PATH environment variable)
 
 {: .warning }
 > Only ONE repository should have "use for config" enabled. If multiple are enabled, a warning will be logged and the first one will be used.

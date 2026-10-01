@@ -29,7 +29,7 @@ describe('a save must not reorder the forms files', () => {
   });
 
   it('the display path may still sort alphabetically', () => {
-    const fn = designer.slice(designer.indexOf('function formnames'), designer.indexOf('const hasBaseForms'));
+    const fn = designer.slice(designer.indexOf('function formnames'), designer.indexOf('async function loadAll'));
     expect(fn).toContain('toLowerCase');
   });
 });

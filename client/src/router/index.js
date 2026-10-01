@@ -28,8 +28,6 @@ import chatSettings from "@/pages/admin/chat.vue"
 import mailSettings from "@/pages/admin/mailSettings.vue"
 import logo from "@/pages/admin/logo.vue"
 import repositories from "@/pages/admin/repositories.vue"
-import dataSchemas from "@/pages/admin/dataSchemas.vue"
-import datasources from "@/pages/admin/datasources.vue"
 import schedules from "@/pages/admin/schedules.vue"
 import storedJobs from "@/pages/admin/stored-jobs.vue"
 import settings from "@/pages/admin/settings.vue"
@@ -135,8 +133,6 @@ const routes = [
   { path: '/admin/mailSettings', name: "/admin/mailSettings", component: mailSettings, beforeEnter: checkSettings },
   { path: '/admin/logo', name: "/admin/logo", component: logo, beforeEnter: checkSettings },
   { path: '/admin/repositories', name: "/admin/repositories", component: repositories, beforeEnter: checkSettings },
-  { path: '/admin/dataSchemas', name: "/admin/dataSchemas", component: dataSchemas, beforeEnter: checkSettings },
-  { path: '/admin/datasources', name: "/admin/datasources", component: datasources, beforeEnter: checkSettings },
   { path: '/admin/schedules', name: "/admin/schedules", component: schedules, beforeEnter: allowScheduledJobs },
   { path: '/admin/stored-jobs', name: "/admin/stored-jobs", component: storedJobs, beforeEnter: allowStoredJobs },
   { path: '/admin/settings', name: "/admin/settings", component: settings, beforeEnter: checkSettings },

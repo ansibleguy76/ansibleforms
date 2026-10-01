@@ -664,10 +664,10 @@ describe('no rules builder can be taken down by a bad regex', () => {
   // Validation rules are built inside computeds, so a `new RegExp` that throws there
   // kills the whole component - blank form, console error, instead of one field's
   // message. AppForm was fixed first; the same construct existed unguarded in
-  // AppTableField (both halves) and unprotected against a malformed pattern in
+  // the table field (gone since 7.0.0) and unprotected against a malformed pattern in
   // AppAdminMulti and change-password. This test covers every site so a new one cannot
   // reintroduce it.
-  // AppForm and AppTableField build their rules from the shared engine since 6.4 ; the
+  // AppForm builds its rules from the shared engine since 6.4 ; the
   // engine's own guard is run in 'form field rules cannot take the whole form down'
   const sites = [
     ['src/components/AppAdminMulti.vue', 'field.regex.expression'],
@@ -698,7 +698,7 @@ describe('no rules builder can be taken down by a bad regex', () => {
     // a sweep, so a new unguarded site anywhere is caught
     const files = [
       'src/pages/login.vue', 'src/pages/logs.vue', 'src/pages/change-password.vue',
-      'src/components/AppForm.vue', 'src/components/AppTableField.vue', 'src/components/AppAdminMulti.vue',
+      'src/components/AppForm.vue', 'src/components/AppAdminMulti.vue',
       '../server/src/lib/formEngine/validate.js',
     ];
     const unguarded = [];
@@ -714,27 +714,6 @@ describe('no rules builder can be taken down by a bad regex', () => {
       }
     }
     expect(unguarded).toEqual([]);
-  });
-});
-
-describe('a table field does not mutate the array its parent owns', () => {
-  // `rows` WAS props.values - every splice/push/assign wrote straight into it. AppForm
-  // hands the same array object to form[name] AND defaults[name], both by reference, so
-  // deleting a row also mutated the defaults: when the field was later re-evaluated and
-  // "reset to its default", the deleted row never came back and the original prefill of a
-  // stored job was gone for the session. Every mutation already emits update:model-value,
-  // so the copy loses nothing.
-  const src = read('src/components/AppTableField.vue');
-
-  it('both assignments copy', () => {
-    const code = src.replace(/\/\/[^\n]*/g, '');
-    expect(code).not.toMatch(/rows\.value = newValues;/);
-    expect(code).not.toMatch(/rows\.value = props\.values;/);
-    expect([...code.matchAll(/rows\.value = Array\.isArray\([^)]*\) \? \[\.\.\./g)].length).toBe(2);
-  });
-
-  it('changes still reach the parent by emit', () => {
-    expect(src).toMatch(/emit\('update:model-value', rows\.value\)/);
   });
 });
 
@@ -777,7 +756,6 @@ describe('the file picker is always reset', () => {
   // the input kept its value: re-picking the SAME path fired no change event and the
   // button was dead until a different file was chosen
   it.each([
-    'src/components/AppTableField.vue',
     'src/components/AppListField.vue',
   ])('%s resets in a finally', (file) => {
     const src = read(file);
@@ -810,29 +788,6 @@ describe('dropdown positioning actually runs', () => {
     const at = src.indexOf('watch(() => props.containerSize');
     expect(at).toBeGreaterThan(-1);
     expect(src.slice(at, at + 240)).toMatch(/\{ deep: true \}/);
-  });
-});
-
-describe('an untouched row is not marked as updated', () => {
-  const src = read('src/components/AppTableField.vue');
-
-  it('the comparison uses what will be stored', () => {
-    // getEditedItemValues() flattens an enum+valueColumn value back to its primitive, and
-    // opening the edit pane inflates it - so comparing the live buffer meant
-    // {host:"web01"} vs {host:{name:"web01",...}} and an untouched row was written back
-    // flagged as changed, reaching the playbook as an update
-    const at = src.indexOf('const stored = getEditedItemValues();');
-    expect(at).toBeGreaterThan(-1);
-    const fn = src.slice(at, at + 700);
-    expect(fn).toMatch(/canonical\(original\) !== canonical\(stored\)/);
-    expect(fn).toMatch(/rows\.value\[editIndex\.value\] = stored;/);
-    expect(fn).not.toMatch(/JSON\.stringify\(original\) !== JSON\.stringify\(edited\)/);
-  });
-
-  it('the comparison ignores property order', () => {
-    const code = src.replace(/\/\/[^\n]*/g, '');
-    expect(code).toMatch(/function canonical\(value\)/);
-    expect(code).toMatch(/Object\.keys\(value\)\.sort\(\)/);
   });
 });
 
@@ -918,7 +873,7 @@ describe('a cron field is validated with the same check the editor uses', () => 
 
   it('every cron field uses the shared validator', () => {
     const cronFields = settings.split('\n').filter(l => /type:\s*"cron"/.test(l));
-    expect(cronFields.length).toBe(3);   // repositories, datasources, schedules
+    expect(cronFields.length).toBe(2);   // repositories, schedules
     for (const line of cronFields) {
       expect(line).toMatch(/validator: cronValidator\(t\)/);
       expect(line).not.toMatch(/regex:/);
@@ -963,8 +918,8 @@ describe('a flat admin list identifies rows by value, not by position', () => {
 
   it('and no flat branch mints an index as an id any more', () => {
     expect(src).not.toMatch(/map\(\(val, idx\) => \(\{ id: idx/);
-    // both api versions have a flat/primitive branch and both must go through it
-    expect([...src.matchAll(/=> flatRow\(val\)/g)].length).toBe(2);
+    // the flat/primitive branch must go through it
+    expect([...src.matchAll(/=> flatRow\(val\)/g)].length).toBe(1);
   });
 
   it('a flat record is looked up by id rather than by array position', () => {

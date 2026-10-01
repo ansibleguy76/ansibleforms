@@ -14,15 +14,13 @@ A whole bunch of packages are updated, so there might be some breaking changes i
 
 Bootstrap is now used (instead of Bulma) and themes are now added (docs will follow)
 
-## Deprecated forms in the forms.yaml file.
+## Forms live in their own files (7.0.0)
 
-The forms.yaml file used to be the sole source of truth for the forms.  Then forms in folder format were added.  Slowely it became clear that the forms.yaml file should basically be separated from the forms and only contain the categories, roles & constants.  From 5.1.0 onwards a deprecated message will appear when you use forms in the forms.yaml file.  In next releases, the forms.yaml file will be renamed to config.yaml, still supporting the forms.yaml fallback.  Later on the forms.yaml file will be removed and only the forms in the folder format will be supported.  This is a long term plan, so no need to panic.  Note that the forms.yaml can already be moved to the database.  Certainly in Kubernetes this is the preferred way to go.  
+The base config (`config.yaml`, or the database) holds the categories, roles and constants only. Every form is a file of its own in the forms folder (`FORMS_FOLDER_PATH`) or in a forms repository. The old single `forms.yaml` and forms inside the base config are no longer read since 7.0.0 - see the upgrade guide.
 
-## Introduction /api/v2/
+## The REST API
 
-The API will slowly be updated to v2.  The old v1 api will still be available, but the new v2 api will be the default.  The v2 api is more RESTful standard and has some improvements in the way data is returned, also using proper 40x error codes.  The v2 api is not yet fully implemented, but we I'm working on it.  As a user, this will make no difference.  As a developer, the new v2 api should feel more natural and easier to use.  The v2 api is not yet fully implemented, but we are working on it.
-
-More pagination and filtering will be added to the v2 api.  This is a long term plan.
+The REST API is `/api/v2/` (interactive docs at `/api/v2/docs`). API v1 was removed in 7.0.0.
 
 ## Introducing helm charts
 
@@ -30,7 +28,7 @@ A new helm chart repo is added
 
 # Deployment topology
 
-AnsibleForms is designed to run as a **single instance**. There is no support today for running multiple replicas behind a load balancer: schema migrations, the scheduler/cron loop, the job runner and datasource refresh all assume they are the only writer. Running more than one instance against the same database can cause migration races, duplicated scheduled jobs and corrupted job state. If you need HA, run a single active instance with restart-on-failure and back up the database + persistent volume.
+AnsibleForms is designed to run as a **single instance**. There is no support today for running multiple replicas behind a load balancer: schema migrations, the scheduler/cron loop, and the job runner all assume they are the only writer. Running more than one instance against the same database can cause migration races, duplicated scheduled jobs and corrupted job state. If you need HA, run a single active instance with restart-on-failure and back up the database + persistent volume.
 
 # Configuration / documentation
 [Go to the documentation website](https://ansibleforms.com)

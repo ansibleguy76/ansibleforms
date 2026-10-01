@@ -273,22 +273,14 @@ class Repository extends CrudModel {
       
       const repoPath = path.join(appConfig.repoPath, configRepositories[0].name)
       
-      // Check for config.yaml first (new way)
       const configPath = path.join(repoPath, "config.yaml")
       if(fs.existsSync(configPath)){
         logger.debug(`Found config.yaml in use_for_config repository: ${configRepositories[0].name}`)
         return configPath
       }
-      
-      // Fallback to forms.yaml (legacy)
-      const formsYamlPath = path.join(repoPath, "forms.yaml")
-      if(fs.existsSync(formsYamlPath)){
-        logger.debug(`Found forms.yaml (legacy) in use_for_config repository: ${configRepositories[0].name}`)
-        return formsYamlPath
-      }
-      
+
       // Config repo exists but no config file found
-      logger.warning(`Repository '${configRepositories[0].name}' is marked as use_for_config but no config.yaml or forms.yaml found`)
+      logger.warning(`Repository '${configRepositories[0].name}' is marked as use_for_config but has no config.yaml`)
       return ""
     }
     
@@ -306,17 +298,9 @@ class Repository extends CrudModel {
   for(const repo of repositories){
     var repoPath = path.join(appConfig.repoPath, repo.name)
     
-    // Check for config.yaml first (new way)
     const configPath = path.join(repoPath, "config.yaml")
     if(fs.existsSync(configPath)){
-      foundConfigs.push({ repo: repo.name, path: configPath, isLegacy: false })
-      continue // found config.yaml, no need to check forms.yaml
-    }
-    
-    // Fallback to forms.yaml (legacy)
-    const formsYamlPath = path.join(repoPath, "forms.yaml")
-    if(fs.existsSync(formsYamlPath)){
-      foundConfigs.push({ repo: repo.name, path: formsYamlPath, isLegacy: true })
+      foundConfigs.push({ repo: repo.name, path: configPath })
     }
   }
   
@@ -452,7 +436,7 @@ class Repository extends CrudModel {
     // also treat loose *.yaml at the repo root as content (root-served forms),
     // so seeding never overwrites a repo that already holds forms
     const rootYaml = fs.existsSync(repoDir) && fs.readdirSync(repoDir).some(f => /\.(yaml|yml)$/i.test(f))
-    const hasContent = rootYaml || fs.existsSync(path.join(repoDir, "config.yaml")) || fs.existsSync(path.join(repoDir, "forms.yaml")) || fs.existsSync(path.join(repoDir, "forms"))
+    const hasContent = rootYaml || fs.existsSync(path.join(repoDir, "config.yaml")) || fs.existsSync(path.join(repoDir, "forms"))
     if (hasContent) {
       return ""
     }

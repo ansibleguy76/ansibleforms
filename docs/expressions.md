@@ -35,7 +35,7 @@ The following examples run with the field property `runLocal: true`.
 They execute in the browser sandbox and can leverage the full JavaScript engine.
 
 {: .note }
-> **Tip**: Use the type `local` as an alias for `type: expression, runLocal: true, hide: true, noOutput: true`  
+> **Tip**: Use the type `local` as an alias for `type: expression, runLocal: true, hide: true, output: false`  
 > **Tip**: Use the type `local_out` as an alias for `type: expression, runLocal: true, hide: true`  
 
 

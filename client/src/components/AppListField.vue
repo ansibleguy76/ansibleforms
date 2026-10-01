@@ -140,7 +140,7 @@ function commit() {
     emit('update:modelValue', [...rows.value]);
 }
 
-// Markers (row state tracking) - same semantics as AppTableField. The names come from the
+// Markers (row state tracking). The names come from the
 // form engine (@engine listMarkers), which is also what puts them in the extravars : if
 // `allowDelete: false` or a delete/update marker is configured but no `insertMarker`,
 // freshly added rows get `__inserted__` so they stay removable.
@@ -194,7 +194,7 @@ function cellData(row, f) {
     if (type === 'checkbox' || typeof v === 'boolean') {
         return { kind: 'bool', value: !!v };
     }
-    if (type === 'list' || type === 'table' || Array.isArray(v)) {
+    if (type === 'list' || Array.isArray(v)) {
         if (Array.isArray(v)) {
             if (v.length === 0) return { kind: 'count', value: '0 items' };
             if (v.every(x => x == null || typeof x !== 'object')) {
@@ -312,7 +312,7 @@ function isDeleted(row) {
 }
 
 // When deletion is disabled, you can still delete rows you added in this
-// session (i.e. rows carrying the insertMarker). Mirrors AppTableField.
+// session (i.e. rows carrying the insertMarker).
 function canDelete(row) {
     if (allowDelete.value) return true;
     if (insertMarker.value && row && row[insertMarker.value]) return true;

@@ -37,7 +37,7 @@ const envGroupOrder = [
   // they render read-only with their reason - which is the point: an operator needs to
   // see that a seed is in force, and that is exactly why this page cannot be saved.
   { key: 'configuration', label: () => t('settings.settingsPage.tabConfiguration'), icon: 'right-left',
-    exact: ['ENABLE_CONFIG_IN_DATABASE', 'ENABLE_FORMS_YAML_IN_DATABASE', 'CONFIG_SEED_PATH', 'CONFIG_SEED_RELOAD_SECONDS', 'ALLOW_ENV_EDIT'] },
+    exact: ['ENABLE_CONFIG_IN_DATABASE', 'CONFIG_SEED_PATH', 'CONFIG_SEED_RELOAD_SECONDS', 'ALLOW_ENV_EDIT'] },
   { key: 'server', label: () => t('settings.settingsPage.envGroupServer'), icon: 'globe',
     // no BASE_URL : it is in OWNED_ELSEWHERE, which is filtered out before the groups are
     // consulted, so listing it here only claimed a variable this page never renders
@@ -56,7 +56,7 @@ const envGroupOrder = [
   { key: 'jobs', label: () => t('settings.settingsPage.envGroupJobs'), icon: 'fac,ansible',
     exact: ['ANSIBLE_PATH', 'PROCESS_MAX_BUFFER', 'REGEX_FILTER_JOB_OUTPUT', 'UPLOAD_PATH', 'UPLOAD_MAX_GB', 'VARS_FILES_PATH', 'AWX_API_PREFIX'] },
   { key: 'formsConfig', label: () => t('settings.settingsPage.envGroupFormsConfig'), icon: 'file-code',
-    exact: ['CONFIG_PATH', 'FORMS_FOLDER_PATH', 'FORMS_PATH', 'FORMS_STAGING_PATH', 'LOCK_PATH'] },
+    exact: ['CONFIG_PATH', 'FORMS_FOLDER_PATH', 'FORMS_STAGING_PATH', 'LOCK_PATH'] },
   { key: 'git', label: () => t('settings.settingsPage.envGroupGit'), icon: 'fab,git',
     prefix: ['GIT_'], exact: ['REPO_PATH', 'HOME_PATH'] },
   { key: 'ytt', label: () => t('settings.settingsPage.envGroupYtt'), icon: 'code',
@@ -127,7 +127,6 @@ const envGroups = computed(() => {
 const authenticated = ref(false);
 const item = ref({ url: '', forms_yaml: '', config_source: null });
 const originalItem = ref(null);
-const hasLegacy = ref(false);
 const showImportConfirm = ref(false);
 const showExportConfirm = ref(false);
 
@@ -246,24 +245,6 @@ async function exportConfigToFile() {
   }
 }
 
-async function checkLegacy() {
-  try {
-    const result = await axios.get('/api/v2/settings/legacyCheck', TokenStorage.getAuthentication());
-    hasLegacy.value = result.data?.hasLegacy || false;
-  } catch (err) {
-    hasLegacy.value = false;
-  }
-}
-
-async function convertLegacy() {
-  try {
-    const result = await axios.put('/api/v2/settings/convertLegacy', {}, TokenStorage.getAuthentication());
-    toast.success(result.data.message);
-    hasLegacy.value = false;
-  } catch (err) {
-    toast.error(Helpers.parseAxiosResponseError(err));
-  }
-}
 
 // The edited values, keyed by variable name. Seeded from what the server reports so
 // 'dirty' means 'differs from what is actually in effect', not 'has been touched'.
@@ -330,7 +311,7 @@ async function loadEnvironmentVariables() {
 onMounted(async () => {
     authenticated.value = !!(await Profile.load());
     if (!authenticated.value) return;
-    await Promise.all([loadItem(), loadEnvironmentVariables(), checkLegacy()]);
+    await Promise.all([loadItem(), loadEnvironmentVariables()]);
 });
 </script>
 <template>
@@ -442,7 +423,6 @@ onMounted(async () => {
                 <div class="mt-4 mb-2 d-flex align-items-center">
                   <BsButton icon="file-import" colorClass="secondary" @click="showImportConfirm = true">{{ t('settings.settingsPage.importToDatabase') }}</BsButton>
                   <BsButton icon="file-export" colorClass="secondary" cssClass="ms-3" @click="showExportConfirm = true">{{ t('settings.settingsPage.exportToFile') }}</BsButton>
-                  <BsButton v-if="hasLegacy" icon="exchange-alt" cssClass="ms-3 btn-convert-legacy" @click="convertLegacy()">{{ t('settings.settingsPage.convertLegacy') }}</BsButton>
                 </div>
               </template>
             </div>
@@ -541,15 +521,5 @@ onMounted(async () => {
   color: #fff;
   font-size: 0.65rem;
   filter: drop-shadow(0 0 1px rgba(0,0,0,0.5));
-}
-:deep(.btn-convert-legacy.btn) {
-  color: #c2640a;
-  border-color: #c2640a;
-  background-color: transparent;
-  &:hover {
-    color: #fff;
-    background-color: #c2640a;
-    border-color: #c2640a;
-  }
 }
 </style>

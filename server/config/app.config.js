@@ -36,7 +36,6 @@ var app_config = {
   // staging area for new forms in repository mode : they live here until a
   // 'Push to repo' assigns them to a chosen repository (issue #414)
   formsStagingPath: process.env.FORMS_STAGING_PATH || path.resolve(__dirname + "/../persistent/forms_staging"),
-  formsPath: process.env.FORMS_PATH || path.resolve(__dirname + "/../persistent/forms.yaml"), // DEPRECATED: use configPath + formsFolderPath instead
   nightlyBackupRetention: parseInt(process.env.NIGHTLY_BACKUP_RETENTION || "7", 10),
   // How long audit entries are kept. The trail is append only, so without a sweep
   // it grows for ever - set to 0 to disable the sweep and keep everything.
@@ -92,21 +91,7 @@ var app_config = {
   // artifacts; override via UPLOAD_MAX_GB. Set to 0 to disable the cap.
   uploadMaxGb: parseInt(process.env.UPLOAD_MAX_GB ?? "10", 10),
   enableDbQueryLogging: (process.env.ENABLE_DB_QUERY_LOGGING ?? 0) == 1,
-  // ENABLE_CONFIG_IN_DATABASE takes priority, falls back to deprecated ENABLE_FORMS_YAML_IN_DATABASE
-  enableConfigInDatabase: (() => {
-    if (process.env.ENABLE_CONFIG_IN_DATABASE !== undefined) {
-      return (process.env.ENABLE_CONFIG_IN_DATABASE ?? 0) == 1;
-    }
-    // Fall back to deprecated variable
-    return (process.env.ENABLE_FORMS_YAML_IN_DATABASE ?? 0) == 1;
-  })(),
-  // Deprecated: Use enableConfigInDatabase instead
-  enableFormsYamlInDatabase: (() => {
-    if (process.env.ENABLE_CONFIG_IN_DATABASE !== undefined) {
-      return (process.env.ENABLE_CONFIG_IN_DATABASE ?? 0) == 1;
-    }
-    return (process.env.ENABLE_FORMS_YAML_IN_DATABASE ?? 0) == 1;
-  })(),
+  enableConfigInDatabase: (process.env.ENABLE_CONFIG_IN_DATABASE ?? 0) == 1,
   processMaxBuffer: process.env.PROCESS_MAX_BUFFER || 1024 * 1024,
   adminUsername: process.env.ADMIN_USERNAME || "admin",
   adminPassword: process.env.ADMIN_PASSWORD || "AnsibleForms!123",

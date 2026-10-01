@@ -219,22 +219,6 @@ const saveConfig = async function(req, res) {
     }
 };
 
-const legacyCheck = function(req, res) {
-    try {
-      res.json(RestResult.single({ hasLegacy: Settings.hasLegacyFormsYaml() }));
-    } catch(err) {
-      res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedLegacyCheck'), Helpers.getError(err)));
-    }
-};
-
-const convertLegacy = function(req, res) {
-    try {
-      const message = Settings.convertFormsYaml();
-      res.json(RestResult.single({ message }));
-    } catch(err) {
-      res.status(500).json(RestResult.error(i18n.t(req, 'resources.failedConvertLegacy'), Helpers.getError(err)));
-    }
-};
 
 export default {
     find,
@@ -243,7 +227,5 @@ export default {
     importConfig,
     exportConfig,
     getConfig,
-    saveConfig,
-    legacyCheck,
-    convertLegacy
+    saveConfig
 };

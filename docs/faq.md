@@ -18,7 +18,6 @@ AnsibleForms is designed to run as a **single instance**. Running multiple repli
 - Schema migrations run at startup and assume they are the only writer.
 - The scheduler / cron loop is in-process; two instances would fire each scheduled job twice.
 - The job runner tracks state in memory and in the DB; concurrent runners can corrupt job state.
-- Datasource refresh is in-process and would duplicate work.
 
 **Recommendation:** run a single active instance with restart-on-failure (e.g. `restart: unless-stopped` in Docker / a Kubernetes Deployment with `replicas: 1`), and back up the database plus the persistent volume. If you need true HA, that would require a separate worker service to own migrations, scheduling and job execution — which does not exist yet.
 
@@ -117,7 +116,6 @@ Config loading (first match wins):
 2. Repository with "use for config" enabled
 3. Repository with "use for forms" enabled (backwards compatibility)
 4. Local CONFIG_PATH file
-5. Legacy forms.yaml file
 
 #### Additional Features
 
@@ -165,7 +163,7 @@ AnsibleForms supports relaunching jobs with pre-filled form data. When you click
 
 **Permission Control:**
 
-Forms can prevent relaunch using `allowRelaunch: false` (or the deprecated `disableRelaunch: true`):
+Forms can prevent relaunch using `allowRelaunch: false`:
 
 ```yaml
 - name: Production Deployment
@@ -182,7 +180,7 @@ roles:
 ```
 
 **Most Restrictive Logic:** Relaunch is only available if BOTH conditions are met:
-1. Form does NOT have `allowRelaunch: false` (or deprecated `disableRelaunch: true`)
+1. Form does NOT have `allowRelaunch: false`
 2. User role has `allowJobRelaunch: true` (or user is admin)
 
 **How it works:**
@@ -1217,7 +1215,7 @@ fields:
 ```
 
 {: .note }
-> The `list` field replaces the deprecated `table` field. The `subform` form type replaces the deprecated `tableFields`.
+> The `list` field and the `subform` form type replaced the `table` field and `tableFields`, which were removed in 7.0.0.
 
 ### How do I access parent form data inside a subform?
 
@@ -1311,9 +1309,7 @@ forms:
 
 ### How do I migrate from `table` / `tableFields` to `list` / `subform`?
 
-Migrate deprecated table fields (6.2.0+).
-
-The old `table` field and `tableFields` property still work but show deprecation warnings. To migrate:
+The `table` field and the `tableFields` property were deprecated in 6.2.0 and removed in 7.0.0. A form that still uses them fails validation. To migrate:
 
 1. Extract the columns from `tableFields` into a new `type: subform` form with regular `formfields`
 2. Replace the `table` field with a `list` field that references the subform via `subform: MySubformName`
@@ -1324,14 +1320,14 @@ forms:
   - name: Manage users
     type: ansible
     playbook: users.yml
-    tableFields:
-      - name: username
-        type: text
-      - name: email
-        type: text
     fields:
       - name: users
         type: table
+        tableFields:
+          - name: username
+            type: text
+          - name: email
+            type: text
 ```
 
 **After:**
@@ -1374,12 +1370,12 @@ forms:
 
       - name: members
         type: table
-    tableFields:
-      - name: department
-        type: enum
-        from: available_departments   # pulls choices from the parent field above
-      - name: firstname
-        type: text
+        tableFields:
+          - name: department
+            type: enum
+            from: available_departments   # pulls choices from the parent field above
+          - name: firstname
+            type: text
 ```
 
 **After — subform with `__parent__` expression:**

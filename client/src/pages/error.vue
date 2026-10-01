@@ -33,7 +33,7 @@ const errorMessageHtml = computed(() =>
                                 <router-link class="btn btn-sm btn-secondary ms-2" to="/logs">Logs</router-link>
                             </li>
                             <li>
-                                Make sure you have a valid config.yaml file (or legacy forms.yaml).<br>
+                                Make sure you have a valid config.yaml file.<br>
                                 Or make a repository to host your forms.
                                 <router-link class="btn btn-sm btn-success ms-2" to="/admin/repositories">Create repository</router-link>
                             </li>

@@ -64,38 +64,6 @@ const crudConfigs = {
     allowCache: true,
     cacheTTL: 3600
   },
-  datasource: {
-    table: 'AnsibleForms.datasource',
-    fields: [
-      { name: 'id', isKey: true },
-      { name: 'name', isNaturalKey: true, required: true },
-      { name: 'schema', required: true },
-      { name: 'extra_vars' },
-      { name: 'form' },
-      { name: 'cron' },
-      { name: 'output' },
-      { name: 'status' },
-      { name: 'state' },
-      { name: 'last_run' },
-      { name: 'queue_id' }
-    ],
-    allowCache: true,
-    cacheTTL: 3600
-  },
-  datasource_schemas: {
-    table: 'AnsibleForms.datasource_schemas',
-    fields: [
-      { name: 'id', isKey: true },
-      { name: 'name', isNaturalKey: true, required: true },
-      { name: 'description' },
-      { name: 'table_definitions' },
-      { name: 'output' },
-      { name: 'status' },
-      { name: 'path' }
-    ],
-    allowCache: true,
-    cacheTTL: 3600
-  },
   groups: {
     table: 'AnsibleForms.groups',
     fields: [

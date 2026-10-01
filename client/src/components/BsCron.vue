@@ -129,7 +129,7 @@ const isActivePreset = computed(() => {
 });
 
 // Validation, name normalisation and the field bounds live in config/cron.js : the SAVE
-// validator on the repositories, datasources and schedules pages needs exactly the same
+// validator on the repositories and schedules pages needs exactly the same
 // answer, and when it was a separate hand written regex the two disagreed - an inverted
 // range saved and then silently never fired, and a weekday NAME previewed here as valid
 // could not be saved at all. One implementation, two callers.

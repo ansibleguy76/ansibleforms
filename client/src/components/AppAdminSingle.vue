@@ -32,7 +32,7 @@
         settings: Object,
         apiVersion: {
             type: [String, Number],
-            default: 1
+            default: 2
         }
     });
 
@@ -91,13 +91,7 @@
                 `/api/v${props.apiVersion}/${objectType.value}/`,
                 TokenStorage.getAuthentication()
             );
-            if (props.apiVersion == 1) {
-                item.value = result.data.data.output;
-            } else if (props.apiVersion == 2) {
-                item.value = result.data;
-            } else {
-                throw new Error("Unsupported API version");
-            }
+            item.value = result.data;
             for(const field of fields.value){
                 if(field.type == 'checkbox'){
                     item.value[field.key] = !!item.value[field.key]; // convert to boolean
@@ -130,13 +124,9 @@
                 emit('saved', item.value);
                 loadItem();
             }catch(err){
-                if (props.apiVersion == 2) {
-                    const errorMessage = err.response?.data?.error || err.message;
-                    const errorDetail = err.response?.data?.details || "";
-                    toast.error(errorDetail ? `${errorMessage}: ${errorDetail}` : errorMessage);
-                } else {
-                    toast.error(Helpers.parseAxiosResponseError(err, "Failed to save item"));
-                }
+                const errorMessage = err.response?.data?.error || err.message;
+                const errorDetail = err.response?.data?.details || "";
+                toast.error(errorDetail ? `${errorMessage}: ${errorDetail}` : errorMessage);
             }
         } else {
             $v.value.item.$touch()

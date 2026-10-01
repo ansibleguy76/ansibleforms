@@ -1723,12 +1723,6 @@
                   "horizontal": {
                     "not": {}
                   },
-                  "tableTitleAdd": {
-                    "not": {}
-                  },
-                  "tableTitleEdit": {
-                    "not": {}
-                  },
                   "titleAdd": {
                     "not": {}
                   },
@@ -1763,9 +1757,6 @@
                     "not": {}
                   },
                   "switch": {
-                    "not": {}
-                  },
-                  "readonlyColumns": {
                     "not": {}
                   },
                   "values": {
@@ -1837,12 +1828,6 @@
                   "horizontal": {
                     "not": {}
                   },
-                  "tableTitleAdd": {
-                    "not": {}
-                  },
-                  "tableTitleEdit": {
-                    "not": {}
-                  },
                   "titleAdd": {
                     "not": {}
                   },
@@ -1912,9 +1897,6 @@
                   "switch": {
                     "not": {}
                   },
-                  "readonlyColumns": {
-                    "not": {}
-                  },
                   "values": {
                     "not": {}
                   },
@@ -1975,12 +1957,6 @@
                   "horizontal": {
                     "not": {}
                   },
-                  "tableTitleAdd": {
-                    "not": {}
-                  },
-                  "tableTitleEdit": {
-                    "not": {}
-                  },
                   "titleAdd": {
                     "not": {}
                   },
@@ -2033,9 +2009,6 @@
                     "not": {}
                   },
                   "updateMarker": {
-                    "not": {}
-                  },
-                  "readonlyColumns": {
                     "not": {}
                   },
                   "isHtml": {
@@ -2104,12 +2077,6 @@
                   "horizontal": {
                     "not": {}
                   },
-                  "tableTitleAdd": {
-                    "not": {}
-                  },
-                  "tableTitleEdit": {
-                    "not": {}
-                  },
                   "titleAdd": {
                     "not": {}
                   },
@@ -2162,9 +2129,6 @@
                     "not": {}
                   },
                   "updateMarker": {
-                    "not": {}
-                  },
-                  "readonlyColumns": {
                     "not": {}
                   },
                   "multiple": {
@@ -2239,12 +2203,6 @@
                   "horizontal": {
                     "not": {}
                   },
-                  "tableTitleAdd": {
-                    "not": {}
-                  },
-                  "tableTitleEdit": {
-                    "not": {}
-                  },
                   "titleAdd": {
                     "not": {}
                   },
@@ -2297,9 +2255,6 @@
                     "not": {}
                   },
                   "updateMarker": {
-                    "not": {}
-                  },
-                  "readonlyColumns": {
                     "not": {}
                   },
                   "multiple": {
@@ -2365,12 +2320,6 @@
                   "expression": {
                     "not": {}
                   },
-                  "tableTitleAdd": {
-                    "not": {}
-                  },
-                  "tableTitleEdit": {
-                    "not": {}
-                  },
                   "titleAdd": {
                     "not": {}
                   },
@@ -2402,9 +2351,6 @@
                     "not": {}
                   },
                   "updateMarker": {
-                    "not": {}
-                  },
-                  "readonlyColumns": {
                     "not": {}
                   },
                   "isHtml": {
@@ -2470,12 +2416,6 @@
                   "editable": {
                     "not": {}
                   },
-                  "tableTitleAdd": {
-                    "not": {}
-                  },
-                  "tableTitleEdit": {
-                    "not": {}
-                  },
                   "titleAdd": {
                     "not": {}
                   },
@@ -2501,9 +2441,6 @@
                     "not": {}
                   },
                   "updateMarker": {
-                    "not": {}
-                  },
-                  "readonlyColumns": {
                     "not": {}
                   },
                   "isHtml": {
@@ -2570,12 +2507,6 @@
                   "maxLength": {
                     "not": {}
                   },
-                  "tableTitleAdd": {
-                    "not": {}
-                  },
-                  "tableTitleEdit": {
-                    "not": {}
-                  },
                   "titleAdd": {
                     "not": {}
                   },
@@ -2607,9 +2538,6 @@
                     "not": {}
                   },
                   "updateMarker": {
-                    "not": {}
-                  },
-                  "readonlyColumns": {
                     "not": {}
                   },
                   "isHtml": {
@@ -2666,12 +2594,6 @@
                   "horizontal": {
                     "not": {}
                   },
-                  "tableTitleAdd": {
-                    "not": {}
-                  },
-                  "tableTitleEdit": {
-                    "not": {}
-                  },
                   "titleAdd": {
                     "not": {}
                   },
@@ -2706,9 +2628,6 @@
                     "not": {}
                   },
                   "updateMarker": {
-                    "not": {}
-                  },
-                  "readonlyColumns": {
                     "not": {}
                   },
                   "keydown": {
@@ -2764,12 +2683,6 @@
                   "horizontal": {
                     "not": {}
                   },
-                  "tableTitleAdd": {
-                    "not": {}
-                  },
-                  "tableTitleEdit": {
-                    "not": {}
-                  },
                   "titleAdd": {
                     "not": {}
                   },
@@ -2810,9 +2723,6 @@
                     "not": {}
                   },
                   "updateMarker": {
-                    "not": {}
-                  },
-                  "readonlyColumns": {
                     "not": {}
                   },
                   "keydown": {
@@ -2875,12 +2785,6 @@
                   "horizontal": {
                     "not": {}
                   },
-                  "tableTitleAdd": {
-                    "not": {}
-                  },
-                  "tableTitleEdit": {
-                    "not": {}
-                  },
                   "titleAdd": {
                     "not": {}
                   },
@@ -2915,9 +2819,6 @@
                     "not": {}
                   },
                   "updateMarker": {
-                    "not": {}
-                  },
-                  "readonlyColumns": {
                     "not": {}
                   },
                   "keydown": {
@@ -2987,12 +2888,6 @@
                   "maxValue": {
                     "not": {}
                   },
-                  "tableTitleAdd": {
-                    "not": {}
-                  },
-                  "tableTitleEdit": {
-                    "not": {}
-                  },
                   "accept": {
                     "not": {}
                   },
@@ -3050,12 +2945,6 @@
                   "updateMarker": {
                     "not": {}
                   },
-                  "readonlyColumns": {
-                    "not": {}
-                  },
-                  "insertColumns": {
-                    "not": {}
-                  },
                   "sticky": {
                     "not": {}
                   },
@@ -3101,9 +2990,6 @@
                   "switch": {
                     "not": {}
                   },
-                  "tableFields": {
-                    "not": {}
-                  },
                   "showLoadButton": {
                     "not": {}
                   },
@@ -3144,12 +3030,6 @@
                     "not": {}
                   },
                   "in": {
-                    "not": {}
-                  },
-                  "tableTitleAdd": {
-                    "not": {}
-                  },
-                  "tableTitleEdit": {
                     "not": {}
                   },
                   "minValue": {
@@ -3209,12 +3089,6 @@
                   "updateMarker": {
                     "not": {}
                   },
-                  "readonlyColumns": {
-                    "not": {}
-                  },
-                  "insertColumns": {
-                    "not": {}
-                  },
                   "sticky": {
                     "not": {}
                   },
@@ -3251,9 +3125,6 @@
                   "switch": {
                     "not": {}
                   },
-                  "tableFields": {
-                    "not": {}
-                  },
                   "showLoadButton": {
                     "not": {}
                   },
@@ -3285,12 +3156,6 @@
                     "not": {}
                   },
                   "maxLength": {
-                    "not": {}
-                  },
-                  "tableTitleAdd": {
-                    "not": {}
-                  },
-                  "tableTitleEdit": {
                     "not": {}
                   },
                   "titleAdd": {
@@ -3338,87 +3203,6 @@
                 },
                 "required": [
                   "dateType"
-                ]
-              },
-              {
-                "properties": {
-                  "type": {
-                    "enum": [
-                      "table"
-                    ]
-                  },
-                  "dateType": {
-                    "not": {}
-                  },
-                  "convertToUtc": {
-                    "not": {}
-                  },
-                  "values": {
-                    "not": {}
-                  },
-                  "regex": {
-                    "not": {}
-                  },
-                  "minValue": {
-                    "not": {}
-                  },
-                  "maxValue": {
-                    "not": {}
-                  },
-                  "minSize": {
-                    "not": {}
-                  },
-                  "maxSize": {
-                    "not": {}
-                  },
-                  "minLength": {
-                    "not": {}
-                  },
-                  "sticky": {
-                    "not": {}
-                  },
-                  "horizontal": {
-                    "not": {}
-                  },
-                  "editable": {
-                    "not": {}
-                  },
-                  "pctColumns": {
-                    "not": {}
-                  },
-                  "filterColumns": {
-                    "not": {}
-                  },
-                  "maxLength": {
-                    "not": {}
-                  },
-                  "multiple": {
-                    "not": {}
-                  },
-                  "accept": {
-                    "not": {}
-                  },
-                  "refresh": {
-                    "not": {}
-                  },
-                  "outputObject": {
-                    "not": {}
-                  },
-                  "keydown": {
-                    "not": {}
-                  },
-                  "isHtml": {
-                    "not": {}
-                  },
-                  "icon": {
-                    "not": {}
-                  },
-                  "switch": {
-                    "not": {}
-                  }
-                },
-                "required": [
-                  "tableFields"
                 ]
               },
               {
@@ -3491,9 +3275,6 @@
                   "switch": {
                     "not": {}
                   },
-                  "tableFields": {
-                    "not": {}
-                  },
                   "asCredential": {
                     "not": {}
                   },
@@ -3554,12 +3335,6 @@
                   "horizontal": {
                     "not": {}
                   },
-                  "tableTitleAdd": {
-                    "not": {}
-                  },
-                  "tableTitleEdit": {
-                    "not": {}
-                  },
                   "titleAdd": {
                     "not": {}
                   },
@@ -3587,9 +3362,6 @@
                   "updateMarker": {
                     "not": {}
                   },
-                  "readonlyColumns": {
-                    "not": {}
-                  },
                   "isHtml": {
                     "not": {}
                   },
@@ -3603,9 +3375,6 @@
                     "not": {}
                   },
                   "switch": {
-                    "not": {}
-                  },
-                  "tableFields": {
                     "not": {}
                   },
                   "sameAs": {
@@ -3680,12 +3449,6 @@
                   "horizontal": {
                     "not": {}
                   },
-                  "tableTitleAdd": {
-                    "not": {}
-                  },
-                  "tableTitleEdit": {
-                    "not": {}
-                  },
                   "titleAdd": {
                     "not": {}
                   },
@@ -3713,9 +3476,6 @@
                   "updateMarker": {
                     "not": {}
                   },
-                  "readonlyColumns": {
-                    "not": {}
-                  },
                   "isHtml": {
                     "not": {}
                   },
@@ -3729,9 +3489,6 @@
                     "not": {}
                   },
                   "switch": {
-                    "not": {}
-                  },
-                  "tableFields": {
                     "not": {}
                   },
                   "sameAs": {
@@ -3807,12 +3564,6 @@
                   "horizontal": {
                     "not": {}
                   },
-                  "tableTitleAdd": {
-                    "not": {}
-                  },
-                  "tableTitleEdit": {
-                    "not": {}
-                  },
                   "titleAdd": {
                     "not": {}
                   },
@@ -3840,9 +3591,6 @@
                   "updateMarker": {
                     "not": {}
                   },
-                  "readonlyColumns": {
-                    "not": {}
-                  },
                   "isHtml": {
                     "not": {}
                   },
@@ -3856,9 +3604,6 @@
                     "not": {}
                   },
                   "switch": {
-                    "not": {}
-                  },
-                  "tableFields": {
                     "not": {}
                   },
                   "sameAs": {
@@ -3909,7 +3654,6 @@
                   "local",
                   "local_out",
                   "credential",
-                  "table",
                   "list",
                   "datetime",
                   "html",
@@ -3972,9 +3716,6 @@
               "convertToUtc": {
                 "type": "boolean",
                 "default": false
-              },
-              "noOutput": {
-                "type": "boolean"
               },
               "output": {
                 "type": "boolean"
@@ -4146,12 +3887,6 @@
               "outputObject": {
                 "type": "boolean"
               },
-              "tableTitleAdd": {
-                "type": "string"
-              },
-              "tableTitleEdit": {
-                "type": "string"
-              },
               "titleAdd": {
                 "type": "string"
               },
@@ -4193,18 +3928,6 @@
               },
               "updateMarker": {
                 "type": "string"
-              },
-              "readonlyColumns": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              },
-              "insertColumns": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
               },
               "sticky": {
                 "type": "boolean"
@@ -4429,619 +4152,6 @@
               },
               "subform": {
                 "type": "string"
-              },
-              "tableFields": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "required": [
-                    "type",
-                    "name"
-                  ],
-                  "oneOf": [
-                    {
-                      "properties": {
-                        "type": {
-                          "enum": [
-                            "text",
-                            "password"
-                          ]
-                        },
-                        "dateType": {
-                          "not": {}
-                        },
-                        "convertToUtc": {
-                          "not": {}
-                        },
-                        "minValue": {
-                          "not": {}
-                        },
-                        "maxValue": {
-                          "not": {}
-                        },
-                        "values": {
-                          "not": {}
-                        },
-                        "from": {
-                          "not": {}
-                        },
-                        "sticky": {
-                          "not": {}
-                        },
-                        "horizontal": {
-                          "not": {}
-                        },
-                        "multiple": {
-                          "not": {}
-                        },
-                        "outputObject": {
-                          "not": {}
-                        },
-                        "columns": {
-                          "not": {}
-                        },
-                        "pctColumns": {
-                          "not": {}
-                        },
-                        "filterColumns": {
-                          "not": {}
-                        },
-                        "previewColumn": {
-                          "not": {}
-                        },
-                        "switch": {
-                          "not": {}
-                        },
-                        "valueColumn": {
-                          "not": {}
-                        }
-                      }
-                    },
-                    {
-                      "properties": {
-                        "type": {
-                          "enum": [
-                            "textarea"
-                          ]
-                        },
-                        "dateType": {
-                          "not": {}
-                        },
-                        "convertToUtc": {
-                          "not": {}
-                        },
-                        "minValue": {
-                          "not": {}
-                        },
-                        "maxValue": {
-                          "not": {}
-                        },
-                        "minLength": {
-                          "not": {}
-                        },
-                        "maxLength": {
-                          "not": {}
-                        },
-                        "regex": {
-                          "not": {}
-                        },
-                        "values": {
-                          "not": {}
-                        },
-                        "multiple": {
-                          "not": {}
-                        },
-                        "from": {
-                          "not": {}
-                        },
-                        "sticky": {
-                          "not": {}
-                        },
-                        "horizontal": {
-                          "not": {}
-                        },
-                        "outputObject": {
-                          "not": {}
-                        },
-                        "columns": {
-                          "not": {}
-                        },
-                        "icon": {
-                          "not": {}
-                        },
-                        "notIn": {
-                          "not": {}
-                        },
-                        "in": {
-                          "not": {}
-                        },
-                        "pctColumns": {
-                          "not": {}
-                        },
-                        "filterColumns": {
-                          "not": {}
-                        },
-                        "previewColumn": {
-                          "not": {}
-                        },
-                        "switch": {
-                          "not": {}
-                        },
-                        "valueColumn": {
-                          "not": {}
-                        }
-                      }
-                    },
-                    {
-                      "properties": {
-                        "type": {
-                          "enum": [
-                            "datetime"
-                          ]
-                        },
-                        "minValue": {
-                          "not": {}
-                        },
-                        "maxValue": {
-                          "not": {}
-                        },
-                        "minLength": {
-                          "not": {}
-                        },
-                        "maxLength": {
-                          "not": {}
-                        },
-                        "values": {
-                          "not": {}
-                        },
-                        "from": {
-                          "not": {}
-                        },
-                        "sticky": {
-                          "not": {}
-                        },
-                        "multiple": {
-                          "not": {}
-                        },
-                        "horizontal": {
-                          "not": {}
-                        },
-                        "outputObject": {
-                          "not": {}
-                        },
-                        "columns": {
-                          "not": {}
-                        },
-                        "pctColumns": {
-                          "not": {}
-                        },
-                        "filterColumns": {
-                          "not": {}
-                        },
-                        "previewColumn": {
-                          "not": {}
-                        },
-                        "switch": {
-                          "not": {}
-                        },
-                        "valueColumn": {
-                          "not": {}
-                        }
-                      },
-                      "required": [
-                        "dateType"
-                      ]
-                    },
-                    {
-                      "properties": {
-                        "type": {
-                          "enum": [
-                            "number"
-                          ]
-                        },
-                        "dateType": {
-                          "not": {}
-                        },
-                        "convertToUtc": {
-                          "not": {}
-                        },
-                        "minLength": {
-                          "not": {}
-                        },
-                        "maxLength": {
-                          "not": {}
-                        },
-                        "values": {
-                          "not": {}
-                        },
-                        "from": {
-                          "not": {}
-                        },
-                        "outputObject": {
-                          "not": {}
-                        },
-                        "columns": {
-                          "not": {}
-                        },
-                        "sticky": {
-                          "not": {}
-                        },
-                        "multiple": {
-                          "not": {}
-                        },
-                        "horizontal": {
-                          "not": {}
-                        },
-                        "pctColumns": {
-                          "not": {}
-                        },
-                        "filterColumns": {
-                          "not": {}
-                        },
-                        "previewColumn": {
-                          "not": {}
-                        },
-                        "switch": {
-                          "not": {}
-                        },
-                        "valueColumn": {
-                          "not": {}
-                        }
-                      }
-                    },
-                    {
-                      "properties": {
-                        "type": {
-                          "enum": [
-                            "checkbox"
-                          ]
-                        },
-                        "regex": {
-                          "not": {}
-                        },
-                        "minValue": {
-                          "not": {}
-                        },
-                        "maxValue": {
-                          "not": {}
-                        },
-                        "minLength": {
-                          "not": {}
-                        },
-                        "maxLength": {
-                          "not": {}
-                        },
-                        "values": {
-                          "not": {}
-                        },
-                        "from": {
-                          "not": {}
-                        },
-                        "sticky": {
-                          "not": {}
-                        },
-                        "multiple": {
-                          "not": {}
-                        },
-                        "horizontal": {
-                          "not": {}
-                        },
-                        "outputObject": {
-                          "not": {}
-                        },
-                        "columns": {
-                          "not": {}
-                        },
-                        "pctColumns": {
-                          "not": {}
-                        },
-                        "filterColumns": {
-                          "not": {}
-                        },
-                        "previewColumn": {
-                          "not": {}
-                        },
-                        "valueColumn": {
-                          "not": {}
-                        }
-                      }
-                    },
-                    {
-                      "properties": {
-                        "type": {
-                          "enum": [
-                            "enum"
-                          ]
-                        },
-                        "dateType": {
-                          "not": {}
-                        },
-                        "convertToUtc": {
-                          "not": {}
-                        },
-                        "regex": {
-                          "not": {}
-                        },
-                        "minValue": {
-                          "not": {}
-                        },
-                        "maxValue": {
-                          "not": {}
-                        },
-                        "minLength": {
-                          "not": {}
-                        },
-                        "maxLength": {
-                          "not": {}
-                        },
-                        "from": {
-                          "not": {}
-                        },
-                        "outputObject": {
-                          "not": {}
-                        },
-                        "columns": {
-                          "not": {}
-                        },
-                        "pctColumns": {
-                          "not": {}
-                        },
-                        "filterColumns": {
-                          "not": {}
-                        },
-                        "previewColumn": {
-                          "not": {}
-                        },
-                        "switch": {
-                          "not": {}
-                        },
-                        "valueColumn": {
-                          "not": {}
-                        }
-                      },
-                      "required": [
-                        "values"
-                      ]
-                    },
-                    {
-                      "properties": {
-                        "type": {
-                          "enum": [
-                            "enum"
-                          ]
-                        },
-                        "dateType": {
-                          "not": {}
-                        },
-                        "convertToUtc": {
-                          "not": {}
-                        },
-                        "regex": {
-                          "not": {}
-                        },
-                        "minValue": {
-                          "not": {}
-                        },
-                        "maxValue": {
-                          "not": {}
-                        },
-                        "minLength": {
-                          "not": {}
-                        },
-                        "maxLength": {
-                          "not": {}
-                        },
-                        "values": {
-                          "not": {}
-                        }
-                      },
-                      "required": [
-                        "from"
-                      ]
-                    }
-                  ],
-                  "properties": {
-                    "type": {
-                      "type": "string",
-                      "enum": [
-                        "text",
-                        "textarea",
-                        "password",
-                        "checkbox",
-                        "enum",
-                        "number",
-                        "datetime",
-                        "html"
-                      ]
-                    },
-                    "name": {
-                      "type": "string"
-                    },
-                    "label": {
-                      "type": "string"
-                    },
-                    "help": {
-                      "type": "string"
-                    },
-                    "placeholder": {
-                      "type": "string"
-                    },
-                    "from": {
-                      "type": "string"
-                    },
-                    "multiple": {
-                      "type": "boolean"
-                    },
-                    "sticky": {
-                      "type": "boolean"
-                    },
-                    "horizontal": {
-                      "type": "boolean"
-                    },
-                    "switch": {
-                      "type": "boolean"
-                    },
-                    "default": {
-                      "anyOf": [
-                        {
-                          "type": "string"
-                        },
-                        {
-                          "type": "boolean"
-                        },
-                        {
-                          "type": "array"
-                        },
-                        {
-                          "type": "integer"
-                        }
-                      ]
-                    },
-                    "required": {
-                      "type": "boolean",
-                      "default": false
-                    },
-                    "regex": {
-                      "type": "object",
-                      "required": [
-                        "expression",
-                        "description"
-                      ],
-                      "properties": {
-                        "expression": {
-                          "type": "string"
-                        },
-                        "description": {
-                          "type": "string"
-                        }
-                      }
-                    },
-                    "dateType": {
-                      "type": "string",
-                      "enum": [
-                        "date",
-                        "datetime",
-                        "year",
-                        "month",
-                        "time",
-                        "week"
-                      ]
-                    },
-                    "convertToUtc": {
-                      "type": "boolean",
-                      "default": false
-                    },
-                    "minValue": {
-                      "type": [
-                        "string",
-                        "integer"
-                      ]
-                    },
-                    "maxValue": {
-                      "type": "integer"
-                    },
-                    "minLength": {
-                      "type": "integer"
-                    },
-                    "maxLength": {
-                      "type": "integer"
-                    },
-                    "notIn": {
-                      "type": "object",
-                      "required": [
-                        "field",
-                        "description"
-                      ],
-                      "properties": {
-                        "field": {
-                          "type": "string",
-                          "pattern": "[A-Za-z0-9_\\-]+"
-                        },
-                        "description": {
-                          "type": "string"
-                        },
-                        "when": {
-                          "type": "string",
-                          "enum": [
-                            "add",
-                            "edit"
-                          ]
-                        }
-                      }
-                    },
-                    "in": {
-                      "type": "object",
-                      "required": [
-                        "field",
-                        "description"
-                      ],
-                      "properties": {
-                        "field": {
-                          "type": "string",
-                          "pattern": "[A-Za-z0-9_\\-]+"
-                        },
-                        "description": {
-                          "type": "string"
-                        },
-                        "when": {
-                          "type": "string",
-                          "enum": [
-                            "add",
-                            "edit"
-                          ]
-                        }
-                      }
-                    },
-                    "values": {
-                      "type": "array",
-                      "items": {
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "integer"
-                          },
-                          {
-                            "type": "boolean"
-                          }
-                        ]
-                      }
-                    },
-                    "icon": {
-                      "type": "string"
-                    },
-                    "columns": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      }
-                    },
-                    "pctColumns": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      }
-                    },
-                    "filterColumns": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      }
-                    },
-                    "valueColumn": {
-                      "type": "string"
-                    },
-                    "previewColumn": {
-                      "type": "string"
-                    },
-                    "outputObject": {
-                      "type": "boolean",
-                      "default": false
-                    }
-                  },
-                  "additionalProperties": false
-                }
               }
             },
             "additionalProperties": false
@@ -6815,12 +5925,6 @@
                     "horizontal": {
                       "not": {}
                     },
-                    "tableTitleAdd": {
-                      "not": {}
-                    },
-                    "tableTitleEdit": {
-                      "not": {}
-                    },
                     "titleAdd": {
                       "not": {}
                     },
@@ -6855,9 +5959,6 @@
                       "not": {}
                     },
                     "switch": {
-                      "not": {}
-                    },
-                    "readonlyColumns": {
                       "not": {}
                     },
                     "values": {
@@ -6929,12 +6030,6 @@
                     "horizontal": {
                       "not": {}
                     },
-                    "tableTitleAdd": {
-                      "not": {}
-                    },
-                    "tableTitleEdit": {
-                      "not": {}
-                    },
                     "titleAdd": {
                       "not": {}
                     },
@@ -7004,9 +6099,6 @@
                     "switch": {
                       "not": {}
                     },
-                    "readonlyColumns": {
-                      "not": {}
-                    },
                     "values": {
                       "not": {}
                     },
@@ -7067,12 +6159,6 @@
                     "horizontal": {
                       "not": {}
                     },
-                    "tableTitleAdd": {
-                      "not": {}
-                    },
-                    "tableTitleEdit": {
-                      "not": {}
-                    },
                     "titleAdd": {
                       "not": {}
                     },
@@ -7125,9 +6211,6 @@
                       "not": {}
                     },
                     "updateMarker": {
-                      "not": {}
-                    },
-                    "readonlyColumns": {
                       "not": {}
                     },
                     "isHtml": {
@@ -7196,12 +6279,6 @@
                     "horizontal": {
                       "not": {}
                     },
-                    "tableTitleAdd": {
-                      "not": {}
-                    },
-                    "tableTitleEdit": {
-                      "not": {}
-                    },
                     "titleAdd": {
                       "not": {}
                     },
@@ -7254,9 +6331,6 @@
                       "not": {}
                     },
                     "updateMarker": {
-                      "not": {}
-                    },
-                    "readonlyColumns": {
                       "not": {}
                     },
                     "multiple": {
@@ -7331,12 +6405,6 @@
                     "horizontal": {
                       "not": {}
                     },
-                    "tableTitleAdd": {
-                      "not": {}
-                    },
-                    "tableTitleEdit": {
-                      "not": {}
-                    },
                     "titleAdd": {
                       "not": {}
                     },
@@ -7389,9 +6457,6 @@
                       "not": {}
                     },
                     "updateMarker": {
-                      "not": {}
-                    },
-                    "readonlyColumns": {
                       "not": {}
                     },
                     "multiple": {
@@ -7457,12 +6522,6 @@
                     "expression": {
                       "not": {}
                     },
-                    "tableTitleAdd": {
-                      "not": {}
-                    },
-                    "tableTitleEdit": {
-                      "not": {}
-                    },
                     "titleAdd": {
                       "not": {}
                     },
@@ -7494,9 +6553,6 @@
                       "not": {}
                     },
                     "updateMarker": {
-                      "not": {}
-                    },
-                    "readonlyColumns": {
                       "not": {}
                     },
                     "isHtml": {
@@ -7562,12 +6618,6 @@
                     "editable": {
                       "not": {}
                     },
-                    "tableTitleAdd": {
-                      "not": {}
-                    },
-                    "tableTitleEdit": {
-                      "not": {}
-                    },
                     "titleAdd": {
                       "not": {}
                     },
@@ -7593,9 +6643,6 @@
                       "not": {}
                     },
                     "updateMarker": {
-                      "not": {}
-                    },
-                    "readonlyColumns": {
                       "not": {}
                     },
                     "isHtml": {
@@ -7662,12 +6709,6 @@
                     "maxLength": {
                       "not": {}
                     },
-                    "tableTitleAdd": {
-                      "not": {}
-                    },
-                    "tableTitleEdit": {
-                      "not": {}
-                    },
                     "titleAdd": {
                       "not": {}
                     },
@@ -7699,9 +6740,6 @@
                       "not": {}
                     },
                     "updateMarker": {
-                      "not": {}
-                    },
-                    "readonlyColumns": {
                       "not": {}
                     },
                     "isHtml": {
@@ -7758,12 +6796,6 @@
                     "horizontal": {
                       "not": {}
                     },
-                    "tableTitleAdd": {
-                      "not": {}
-                    },
-                    "tableTitleEdit": {
-                      "not": {}
-                    },
                     "titleAdd": {
                       "not": {}
                     },
@@ -7798,9 +6830,6 @@
                       "not": {}
                     },
                     "updateMarker": {
-                      "not": {}
-                    },
-                    "readonlyColumns": {
                       "not": {}
                     },
                     "keydown": {
@@ -7856,12 +6885,6 @@
                     "horizontal": {
                       "not": {}
                     },
-                    "tableTitleAdd": {
-                      "not": {}
-                    },
-                    "tableTitleEdit": {
-                      "not": {}
-                    },
                     "titleAdd": {
                       "not": {}
                     },
@@ -7902,9 +6925,6 @@
                       "not": {}
                     },
                     "updateMarker": {
-                      "not": {}
-                    },
-                    "readonlyColumns": {
                       "not": {}
                     },
                     "keydown": {
@@ -7967,12 +6987,6 @@
                     "horizontal": {
                       "not": {}
                     },
-                    "tableTitleAdd": {
-                      "not": {}
-                    },
-                    "tableTitleEdit": {
-                      "not": {}
-                    },
                     "titleAdd": {
                       "not": {}
                     },
@@ -8007,9 +7021,6 @@
                       "not": {}
                     },
                     "updateMarker": {
-                      "not": {}
-                    },
-                    "readonlyColumns": {
                       "not": {}
                     },
                     "keydown": {
@@ -8079,12 +7090,6 @@
                     "maxValue": {
                       "not": {}
                     },
-                    "tableTitleAdd": {
-                      "not": {}
-                    },
-                    "tableTitleEdit": {
-                      "not": {}
-                    },
                     "accept": {
                       "not": {}
                     },
@@ -8142,12 +7147,6 @@
                     "updateMarker": {
                       "not": {}
                     },
-                    "readonlyColumns": {
-                      "not": {}
-                    },
-                    "insertColumns": {
-                      "not": {}
-                    },
                     "sticky": {
                       "not": {}
                     },
@@ -8193,9 +7192,6 @@
                     "switch": {
                       "not": {}
                     },
-                    "tableFields": {
-                      "not": {}
-                    },
                     "showLoadButton": {
                       "not": {}
                     },
@@ -8236,12 +7232,6 @@
                       "not": {}
                     },
                     "in": {
-                      "not": {}
-                    },
-                    "tableTitleAdd": {
-                      "not": {}
-                    },
-                    "tableTitleEdit": {
                       "not": {}
                     },
                     "minValue": {
@@ -8301,12 +7291,6 @@
                     "updateMarker": {
                       "not": {}
                     },
-                    "readonlyColumns": {
-                      "not": {}
-                    },
-                    "insertColumns": {
-                      "not": {}
-                    },
                     "sticky": {
                       "not": {}
                     },
@@ -8343,9 +7327,6 @@
                     "switch": {
                       "not": {}
                     },
-                    "tableFields": {
-                      "not": {}
-                    },
                     "showLoadButton": {
                       "not": {}
                     },
@@ -8377,12 +7358,6 @@
                       "not": {}
                     },
                     "maxLength": {
-                      "not": {}
-                    },
-                    "tableTitleAdd": {
-                      "not": {}
-                    },
-                    "tableTitleEdit": {
                       "not": {}
                     },
                     "titleAdd": {
@@ -8430,87 +7405,6 @@
                   },
                   "required": [
                     "dateType"
-                  ]
-                },
-                {
-                  "properties": {
-                    "type": {
-                      "enum": [
-                        "table"
-                      ]
-                    },
-                    "dateType": {
-                      "not": {}
-                    },
-                    "convertToUtc": {
-                      "not": {}
-                    },
-                    "values": {
-                      "not": {}
-                    },
-                    "regex": {
-                      "not": {}
-                    },
-                    "minValue": {
-                      "not": {}
-                    },
-                    "maxValue": {
-                      "not": {}
-                    },
-                    "minSize": {
-                      "not": {}
-                    },
-                    "maxSize": {
-                      "not": {}
-                    },
-                    "minLength": {
-                      "not": {}
-                    },
-                    "sticky": {
-                      "not": {}
-                    },
-                    "horizontal": {
-                      "not": {}
-                    },
-                    "editable": {
-                      "not": {}
-                    },
-                    "pctColumns": {
-                      "not": {}
-                    },
-                    "filterColumns": {
-                      "not": {}
-                    },
-                    "maxLength": {
-                      "not": {}
-                    },
-                    "multiple": {
-                      "not": {}
-                    },
-                    "accept": {
-                      "not": {}
-                    },
-                    "refresh": {
-                      "not": {}
-                    },
-                    "outputObject": {
-                      "not": {}
-                    },
-                    "keydown": {
-                      "not": {}
-                    },
-                    "isHtml": {
-                      "not": {}
-                    },
-                    "icon": {
-                      "not": {}
-                    },
-                    "switch": {
-                      "not": {}
-                    }
-                  },
-                  "required": [
-                    "tableFields"
                   ]
                 },
                 {
@@ -8583,9 +7477,6 @@
                     "switch": {
                       "not": {}
                     },
-                    "tableFields": {
-                      "not": {}
-                    },
                     "asCredential": {
                       "not": {}
                     },
@@ -8646,12 +7537,6 @@
                     "horizontal": {
                       "not": {}
                     },
-                    "tableTitleAdd": {
-                      "not": {}
-                    },
-                    "tableTitleEdit": {
-                      "not": {}
-                    },
                     "titleAdd": {
                       "not": {}
                     },
@@ -8679,9 +7564,6 @@
                     "updateMarker": {
                       "not": {}
                     },
-                    "readonlyColumns": {
-                      "not": {}
-                    },
                     "isHtml": {
                       "not": {}
                     },
@@ -8695,9 +7577,6 @@
                       "not": {}
                     },
                     "switch": {
-                      "not": {}
-                    },
-                    "tableFields": {
                       "not": {}
                     },
                     "sameAs": {
@@ -8772,12 +7651,6 @@
                     "horizontal": {
                       "not": {}
                     },
-                    "tableTitleAdd": {
-                      "not": {}
-                    },
-                    "tableTitleEdit": {
-                      "not": {}
-                    },
                     "titleAdd": {
                       "not": {}
                     },
@@ -8805,9 +7678,6 @@
                     "updateMarker": {
                       "not": {}
                     },
-                    "readonlyColumns": {
-                      "not": {}
-                    },
                     "isHtml": {
                       "not": {}
                     },
@@ -8821,9 +7691,6 @@
                       "not": {}
                     },
                     "switch": {
-                      "not": {}
-                    },
-                    "tableFields": {
                       "not": {}
                     },
                     "sameAs": {
@@ -8899,12 +7766,6 @@
                     "horizontal": {
                       "not": {}
                     },
-                    "tableTitleAdd": {
-                      "not": {}
-                    },
-                    "tableTitleEdit": {
-                      "not": {}
-                    },
                     "titleAdd": {
                       "not": {}
                     },
@@ -8932,9 +7793,6 @@
                     "updateMarker": {
                       "not": {}
                     },
-                    "readonlyColumns": {
-                      "not": {}
-                    },
                     "isHtml": {
                       "not": {}
                     },
@@ -8948,9 +7806,6 @@
                       "not": {}
                     },
                     "switch": {
-                      "not": {}
-                    },
-                    "tableFields": {
                       "not": {}
                     },
                     "sameAs": {
@@ -9001,7 +7856,6 @@
                     "local",
                     "local_out",
                     "credential",
-                    "table",
                     "list",
                     "datetime",
                     "html",
@@ -9064,9 +7918,6 @@
                 "convertToUtc": {
                   "type": "boolean",
                   "default": false
-                },
-                "noOutput": {
-                  "type": "boolean"
                 },
                 "output": {
                   "type": "boolean"
@@ -9238,12 +8089,6 @@
                 "outputObject": {
                   "type": "boolean"
                 },
-                "tableTitleAdd": {
-                  "type": "string"
-                },
-                "tableTitleEdit": {
-                  "type": "string"
-                },
                 "titleAdd": {
                   "type": "string"
                 },
@@ -9285,18 +8130,6 @@
                 },
                 "updateMarker": {
                   "type": "string"
-                },
-                "readonlyColumns": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                "insertColumns": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
                 },
                 "sticky": {
                   "type": "boolean"
@@ -9521,619 +8354,6 @@
                 },
                 "subform": {
                   "type": "string"
-                },
-                "tableFields": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "required": [
-                      "type",
-                      "name"
-                    ],
-                    "oneOf": [
-                      {
-                        "properties": {
-                          "type": {
-                            "enum": [
-                              "text",
-                              "password"
-                            ]
-                          },
-                          "dateType": {
-                            "not": {}
-                          },
-                          "convertToUtc": {
-                            "not": {}
-                          },
-                          "minValue": {
-                            "not": {}
-                          },
-                          "maxValue": {
-                            "not": {}
-                          },
-                          "values": {
-                            "not": {}
-                          },
-                          "from": {
-                            "not": {}
-                          },
-                          "sticky": {
-                            "not": {}
-                          },
-                          "horizontal": {
-                            "not": {}
-                          },
-                          "multiple": {
-                            "not": {}
-                          },
-                          "outputObject": {
-                            "not": {}
-                          },
-                          "columns": {
-                            "not": {}
-                          },
-                          "pctColumns": {
-                            "not": {}
-                          },
-                          "filterColumns": {
-                            "not": {}
-                          },
-                          "previewColumn": {
-                            "not": {}
-                          },
-                          "switch": {
-                            "not": {}
-                          },
-                          "valueColumn": {
-                            "not": {}
-                          }
-                        }
-                      },
-                      {
-                        "properties": {
-                          "type": {
-                            "enum": [
-                              "textarea"
-                            ]
-                          },
-                          "dateType": {
-                            "not": {}
-                          },
-                          "convertToUtc": {
-                            "not": {}
-                          },
-                          "minValue": {
-                            "not": {}
-                          },
-                          "maxValue": {
-                            "not": {}
-                          },
-                          "minLength": {
-                            "not": {}
-                          },
-                          "maxLength": {
-                            "not": {}
-                          },
-                          "regex": {
-                            "not": {}
-                          },
-                          "values": {
-                            "not": {}
-                          },
-                          "multiple": {
-                            "not": {}
-                          },
-                          "from": {
-                            "not": {}
-                          },
-                          "sticky": {
-                            "not": {}
-                          },
-                          "horizontal": {
-                            "not": {}
-                          },
-                          "outputObject": {
-                            "not": {}
-                          },
-                          "columns": {
-                            "not": {}
-                          },
-                          "icon": {
-                            "not": {}
-                          },
-                          "notIn": {
-                            "not": {}
-                          },
-                          "in": {
-                            "not": {}
-                          },
-                          "pctColumns": {
-                            "not": {}
-                          },
-                          "filterColumns": {
-                            "not": {}
-                          },
-                          "previewColumn": {
-                            "not": {}
-                          },
-                          "switch": {
-                            "not": {}
-                          },
-                          "valueColumn": {
-                            "not": {}
-                          }
-                        }
-                      },
-                      {
-                        "properties": {
-                          "type": {
-                            "enum": [
-                              "datetime"
-                            ]
-                          },
-                          "minValue": {
-                            "not": {}
-                          },
-                          "maxValue": {
-                            "not": {}
-                          },
-                          "minLength": {
-                            "not": {}
-                          },
-                          "maxLength": {
-                            "not": {}
-                          },
-                          "values": {
-                            "not": {}
-                          },
-                          "from": {
-                            "not": {}
-                          },
-                          "sticky": {
-                            "not": {}
-                          },
-                          "multiple": {
-                            "not": {}
-                          },
-                          "horizontal": {
-                            "not": {}
-                          },
-                          "outputObject": {
-                            "not": {}
-                          },
-                          "columns": {
-                            "not": {}
-                          },
-                          "pctColumns": {
-                            "not": {}
-                          },
-                          "filterColumns": {
-                            "not": {}
-                          },
-                          "previewColumn": {
-                            "not": {}
-                          },
-                          "switch": {
-                            "not": {}
-                          },
-                          "valueColumn": {
-                            "not": {}
-                          }
-                        },
-                        "required": [
-                          "dateType"
-                        ]
-                      },
-                      {
-                        "properties": {
-                          "type": {
-                            "enum": [
-                              "number"
-                            ]
-                          },
-                          "dateType": {
-                            "not": {}
-                          },
-                          "convertToUtc": {
-                            "not": {}
-                          },
-                          "minLength": {
-                            "not": {}
-                          },
-                          "maxLength": {
-                            "not": {}
-                          },
-                          "values": {
-                            "not": {}
-                          },
-                          "from": {
-                            "not": {}
-                          },
-                          "outputObject": {
-                            "not": {}
-                          },
-                          "columns": {
-                            "not": {}
-                          },
-                          "sticky": {
-                            "not": {}
-                          },
-                          "multiple": {
-                            "not": {}
-                          },
-                          "horizontal": {
-                            "not": {}
-                          },
-                          "pctColumns": {
-                            "not": {}
-                          },
-                          "filterColumns": {
-                            "not": {}
-                          },
-                          "previewColumn": {
-                            "not": {}
-                          },
-                          "switch": {
-                            "not": {}
-                          },
-                          "valueColumn": {
-                            "not": {}
-                          }
-                        }
-                      },
-                      {
-                        "properties": {
-                          "type": {
-                            "enum": [
-                              "checkbox"
-                            ]
-                          },
-                          "regex": {
-                            "not": {}
-                          },
-                          "minValue": {
-                            "not": {}
-                          },
-                          "maxValue": {
-                            "not": {}
-                          },
-                          "minLength": {
-                            "not": {}
-                          },
-                          "maxLength": {
-                            "not": {}
-                          },
-                          "values": {
-                            "not": {}
-                          },
-                          "from": {
-                            "not": {}
-                          },
-                          "sticky": {
-                            "not": {}
-                          },
-                          "multiple": {
-                            "not": {}
-                          },
-                          "horizontal": {
-                            "not": {}
-                          },
-                          "outputObject": {
-                            "not": {}
-                          },
-                          "columns": {
-                            "not": {}
-                          },
-                          "pctColumns": {
-                            "not": {}
-                          },
-                          "filterColumns": {
-                            "not": {}
-                          },
-                          "previewColumn": {
-                            "not": {}
-                          },
-                          "valueColumn": {
-                            "not": {}
-                          }
-                        }
-                      },
-                      {
-                        "properties": {
-                          "type": {
-                            "enum": [
-                              "enum"
-                            ]
-                          },
-                          "dateType": {
-                            "not": {}
-                          },
-                          "convertToUtc": {
-                            "not": {}
-                          },
-                          "regex": {
-                            "not": {}
-                          },
-                          "minValue": {
-                            "not": {}
-                          },
-                          "maxValue": {
-                            "not": {}
-                          },
-                          "minLength": {
-                            "not": {}
-                          },
-                          "maxLength": {
-                            "not": {}
-                          },
-                          "from": {
-                            "not": {}
-                          },
-                          "outputObject": {
-                            "not": {}
-                          },
-                          "columns": {
-                            "not": {}
-                          },
-                          "pctColumns": {
-                            "not": {}
-                          },
-                          "filterColumns": {
-                            "not": {}
-                          },
-                          "previewColumn": {
-                            "not": {}
-                          },
-                          "switch": {
-                            "not": {}
-                          },
-                          "valueColumn": {
-                            "not": {}
-                          }
-                        },
-                        "required": [
-                          "values"
-                        ]
-                      },
-                      {
-                        "properties": {
-                          "type": {
-                            "enum": [
-                              "enum"
-                            ]
-                          },
-                          "dateType": {
-                            "not": {}
-                          },
-                          "convertToUtc": {
-                            "not": {}
-                          },
-                          "regex": {
-                            "not": {}
-                          },
-                          "minValue": {
-                            "not": {}
-                          },
-                          "maxValue": {
-                            "not": {}
-                          },
-                          "minLength": {
-                            "not": {}
-                          },
-                          "maxLength": {
-                            "not": {}
-                          },
-                          "values": {
-                            "not": {}
-                          }
-                        },
-                        "required": [
-                          "from"
-                        ]
-                      }
-                    ],
-                    "properties": {
-                      "type": {
-                        "type": "string",
-                        "enum": [
-                          "text",
-                          "textarea",
-                          "password",
-                          "checkbox",
-                          "enum",
-                          "number",
-                          "datetime",
-                          "html"
-                        ]
-                      },
-                      "name": {
-                        "type": "string"
-                      },
-                      "label": {
-                        "type": "string"
-                      },
-                      "help": {
-                        "type": "string"
-                      },
-                      "placeholder": {
-                        "type": "string"
-                      },
-                      "from": {
-                        "type": "string"
-                      },
-                      "multiple": {
-                        "type": "boolean"
-                      },
-                      "sticky": {
-                        "type": "boolean"
-                      },
-                      "horizontal": {
-                        "type": "boolean"
-                      },
-                      "switch": {
-                        "type": "boolean"
-                      },
-                      "default": {
-                        "anyOf": [
-                          {
-                            "type": "string"
-                          },
-                          {
-                            "type": "boolean"
-                          },
-                          {
-                            "type": "array"
-                          },
-                          {
-                            "type": "integer"
-                          }
-                        ]
-                      },
-                      "required": {
-                        "type": "boolean",
-                        "default": false
-                      },
-                      "regex": {
-                        "type": "object",
-                        "required": [
-                          "expression",
-                          "description"
-                        ],
-                        "properties": {
-                          "expression": {
-                            "type": "string"
-                          },
-                          "description": {
-                            "type": "string"
-                          }
-                        }
-                      },
-                      "dateType": {
-                        "type": "string",
-                        "enum": [
-                          "date",
-                          "datetime",
-                          "year",
-                          "month",
-                          "time",
-                          "week"
-                        ]
-                      },
-                      "convertToUtc": {
-                        "type": "boolean",
-                        "default": false
-                      },
-                      "minValue": {
-                        "type": [
-                          "string",
-                          "integer"
-                        ]
-                      },
-                      "maxValue": {
-                        "type": "integer"
-                      },
-                      "minLength": {
-                        "type": "integer"
-                      },
-                      "maxLength": {
-                        "type": "integer"
-                      },
-                      "notIn": {
-                        "type": "object",
-                        "required": [
-                          "field",
-                          "description"
-                        ],
-                        "properties": {
-                          "field": {
-                            "type": "string",
-                            "pattern": "[A-Za-z0-9_\\-]+"
-                          },
-                          "description": {
-                            "type": "string"
-                          },
-                          "when": {
-                            "type": "string",
-                            "enum": [
-                              "add",
-                              "edit"
-                            ]
-                          }
-                        }
-                      },
-                      "in": {
-                        "type": "object",
-                        "required": [
-                          "field",
-                          "description"
-                        ],
-                        "properties": {
-                          "field": {
-                            "type": "string",
-                            "pattern": "[A-Za-z0-9_\\-]+"
-                          },
-                          "description": {
-                            "type": "string"
-                          },
-                          "when": {
-                            "type": "string",
-                            "enum": [
-                              "add",
-                              "edit"
-                            ]
-                          }
-                        }
-                      },
-                      "values": {
-                        "type": "array",
-                        "items": {
-                          "anyOf": [
-                            {
-                              "type": "string"
-                            },
-                            {
-                              "type": "integer"
-                            },
-                            {
-                              "type": "boolean"
-                            }
-                          ]
-                        }
-                      },
-                      "icon": {
-                        "type": "string"
-                      },
-                      "columns": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        }
-                      },
-                      "pctColumns": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        }
-                      },
-                      "filterColumns": {
-                        "type": "array",
-                        "items": {
-                          "type": "string"
-                        }
-                      },
-                      "valueColumn": {
-                        "type": "string"
-                      },
-                      "previewColumn": {
-                        "type": "string"
-                      },
-                      "outputObject": {
-                        "type": "boolean",
-                        "default": false
-                      }
-                    },
-                    "additionalProperties": false
-                  }
                 }
               },
               "additionalProperties": false
