@@ -95,7 +95,6 @@ beforeEach(async () => {
   appConfig.backupPath = path.join(tmpRoot, "backups");
   appConfig.lockPath = path.join(tmpRoot, "ansibleForms.lock");
   appConfig.configPath = path.join(tmpRoot, "config.yaml");
-  appConfig.formsPath = path.join(tmpRoot, "forms.yaml");
   appConfig.formsFolderPath = path.join(tmpRoot, "forms");
   appConfig.mysqldumpCommand = "mariadb-dump";
   // real directory : repositoriesCheck now asks whether each row has a working tree on disk

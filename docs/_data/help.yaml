@@ -267,19 +267,6 @@
       When forms come from a git repository, a form created or edited in the designer is written
       here first and only lands in the repository once it is pushed. The loader reads this folder
       alongside the repository ones, so a staged form is usable immediately.
-  - name: FORMS_PATH
-    type: string
-    allowed: a valid file path
-    short: forms.yaml path (DEPRECATED)
-    default: "%PERSISTENT_FOLDER%/forms.yaml"
-    deprecated: true
-    description: | 
-      **DEPRECATED in v6.0.0** - Use CONFIG_PATH and FORMS_FOLDER_PATH instead.
-      
-      The forms.yaml file was the legacy configuration file that combined both configuration and forms.
-      Please migrate to the new structure:
-      - Configuration (categories, roles, constants) → config.yaml (CONFIG_PATH)
-      - Forms → individual files in forms/ folder (FORMS_FOLDER_PATH)
   - name: LOCK_PATH
     type: string
     allowed: a valid file path
@@ -609,24 +596,6 @@
       
       This gives the config.yaml in the database the highest priority in the loading order.
     version: 6.1.0
-  - name: ENABLE_FORMS_YAML_IN_DATABASE
-    type: number
-    allowed: 0, 1
-    choices:
-    - name: 0
-      description: Disables the config.yaml in database
-    - name: 1
-      description: Enables the config.yaml in database
-    default: 0
-    short: Enable the config.yaml in database (DEPRECATED)
-    description: | 
-      **DEPRECATED:** Use `ENABLE_CONFIG_IN_DATABASE` instead.
-      
-      If you use git repositories to store the forms, you can choose to store the master config.yaml in git as well.  
-      Or, you can choose to have the config.yaml in the database instead. Having a clean separation: master config.yaml in database, and the actual forms in git.
-      
-      This variable is maintained for backwards compatibility. If `ENABLE_CONFIG_IN_DATABASE` is set, it will take priority over this variable.
-    version: 5.0.3
   - name: GIT_CLONE_COMMAND
     type: string
     allowed: a valid git clone command
@@ -6212,7 +6181,6 @@
       2. Repository with "use for config" enabled
       3. Repository with "use for forms" enabled (backwards compatibility)
       4. Local CONFIG_PATH file
-      5. Legacy forms.yaml file
       
       ## Additional Features
       

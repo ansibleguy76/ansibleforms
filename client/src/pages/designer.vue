@@ -1244,8 +1244,8 @@ const importCandidates = ref([]);
 const importTarget = ref('');
 const importSkipped = ref(0);
 
-// the files the import can go into. The base file is deliberately absent : forms
-// in the base config are deprecated (see the deprecation warning above).
+// the files the import can go into. The base config is deliberately absent : since
+// 7.0.0 every form lives in a file of its own.
 const importFileOptions = computed(() => {
   const opts = files.value.filter(Boolean).map(f => ({ value: f, label: f }));
   if (importFileName.value && !files.value.includes(importFileName.value)) {
@@ -3509,10 +3509,6 @@ function formnames(file) {
   );
 }
 
-const hasBaseForms = computed(() => {
-  return idmapping.value.some((item) => item.source === undefined);
-});
-
 async function loadAll() {
   await loadLock();
   await loadForms();
@@ -4483,17 +4479,6 @@ onBeforeUnmount(() => {
                 <font-awesome-icon :icon="lock.match ? 'lock' : 'unlock'" size="sm" class="me-1" />{{ lock.match ? t('designer.lockedByMe') : t('designer.startDesigner') }}
               </label>
             </div>
-            <popper v-if="hasBaseForms">
-              <button class="btn ms-2 btn-warning" type="button">
-                <font-awesome-icon icon="exclamation-triangle" size="sm" class="me-1" />
-                {{ t('designer.deprecationWarning') }}
-              </button>
-              <template #content>
-                {{ t('designer.deprecationMsg') }}<br />
-                {{ t('designer.deprecationAction') }}<br />
-                {{ t('designer.deprecationMove') }}
-              </template>
-            </popper>
           </template>
           <Transition appear>
             <div v-if="warnings.length > 0" class="ms-2">

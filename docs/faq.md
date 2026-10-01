@@ -117,7 +117,6 @@ Config loading (first match wins):
 2. Repository with "use for config" enabled
 3. Repository with "use for forms" enabled (backwards compatibility)
 4. Local CONFIG_PATH file
-5. Legacy forms.yaml file
 
 #### Additional Features
 

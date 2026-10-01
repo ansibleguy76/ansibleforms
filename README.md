@@ -14,9 +14,9 @@ A whole bunch of packages are updated, so there might be some breaking changes i
 
 Bootstrap is now used (instead of Bulma) and themes are now added (docs will follow)
 
-## Deprecated forms in the forms.yaml file.
+## Forms live in their own files (7.0.0)
 
-The forms.yaml file used to be the sole source of truth for the forms.  Then forms in folder format were added.  Slowely it became clear that the forms.yaml file should basically be separated from the forms and only contain the categories, roles & constants.  From 5.1.0 onwards a deprecated message will appear when you use forms in the forms.yaml file.  In next releases, the forms.yaml file will be renamed to config.yaml, still supporting the forms.yaml fallback.  Later on the forms.yaml file will be removed and only the forms in the folder format will be supported.  This is a long term plan, so no need to panic.  Note that the forms.yaml can already be moved to the database.  Certainly in Kubernetes this is the preferred way to go.  
+The base config (`config.yaml`, or the database) holds the categories, roles and constants only. Every form is a file of its own in the forms folder (`FORMS_FOLDER_PATH`) or in a forms repository. The old single `forms.yaml` and forms inside the base config are no longer read since 7.0.0 - see the upgrade guide.
 
 ## Introduction /api/v2/
 

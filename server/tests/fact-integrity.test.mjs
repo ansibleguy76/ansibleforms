@@ -381,34 +381,30 @@ describe("the forms walk and the delete pass see the same files", () => {
   });
 });
 
-describe("a malformed forms block is reported, not fatal", () => {
-  // The base config's `forms:` is never schema validated, so whatever the yaml parsed to
-  // arrives raw. A trailing empty list item parses to null and `delete null.source` threw;
-  // a mapping made `for...of` throw. Neither was inside a try, so every forms endpoint
-  // answered 500 with a raw TypeError - measured on /config/formlist and the designer's
-  // /config. Both now return 200 with the problem in `errors`.
-  const src = readFileSync(path.join(here, "../src/models/form.model.js"), "utf8");
-  const block = src.slice(src.indexOf("var unvalidatedForms = unvalidatedBase.forms"), src.indexOf("// read extra form files"));
+describe("forms live in files only (7.0.0)", () => {
+  // The base config's `forms:` block (the old forms.yaml layout) is no longer read, and the
+  // designer save never writes a form into the base config again. Both must say so rather
+  // than lose a form silently.
+  const src = readFileSync(path.join(here, "../src/models/form.model.js"), "latin1");
+  const load = src.slice(src.indexOf("const unvalidatedBase = await getBaseConfig();"), src.indexOf("// read extra form files"));
+  const save = src.slice(src.indexOf("Form.save = async function"), src.indexOf("Form.save = async function") + 9000);
 
-  test("the slice really is the block, so these assertions are not vacuous", () => {
-    assert.match(block, /DEPRECATED/);
+  test("a forms section in the base config is reported, and none of it is loaded", () => {
+    assert.match(load, /unvalidatedBase\.forms/);
+    assert.match(load, /error\("The base config has a 'forms' section/);
+    assert.match(load, /var unvalidatedForms = \[\];/);
   });
 
-  test("a non-array forms section is rejected before it is iterated", () => {
-    assert.match(block, /!Array\.isArray\(unvalidatedForms\)/);
-    const guard = block.indexOf("Array.isArray");
-    const loop = block.indexOf("for(let f of unvalidatedForms)");
-    assert.ok(guard < loop, "the guard must come before the loop");
+  test("the save refuses a form without a file, and writes the base config without forms", () => {
+    assert.match(save, /Every form must be saved to a file in the forms folder/);
+    const refuse = save.indexOf("Every form must be saved");
+    const write = save.indexOf("yaml.stringify(formsConfig)");
+    assert.ok(refuse > -1 && write > refuse);
+    assert.match(save.slice(write - 200, write), /delete formsConfig\.forms/);
   });
 
-  test("entries that are not objects are filtered out", () => {
-    assert.match(block, /typeof f !== 'object'/);
-  });
-
-  test("both cases are surfaced to the user, not just logged", () => {
-    // error() pushes into the errors array the client renders
-    const errs = [...block.matchAll(/\berror\(/g)];
-    assert.equal(errs.length, 2, `expected both cases to report, found ${errs.length}`);
+  test("nothing reads forms.yaml or FORMS_PATH any more", () => {
+    assert.doesNotMatch(src, /appConfig\.formsPath|forms\.yaml\.template|legacyFormFile/);
   });
 });
 

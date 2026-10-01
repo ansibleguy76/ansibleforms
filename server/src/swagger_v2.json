@@ -469,54 +469,6 @@
         }
       }
     },
-    "/settings/legacyCheck": {
-      "get": {
-        "tags": ["settings"],
-        "summary": "Check for a legacy forms.yaml",
-        "description": "Returns whether this is a genuine legacy install: a forms.yaml is present and no config.yaml exists yet.",
-        "security": [ { "bearerAuth": [] } ],
-        "responses": {
-          "200": {
-            "description": "Legacy check performed successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "hasLegacy": { "type": "boolean", "description": "True when forms.yaml exists and config.yaml does not" }
-                  }
-                }
-              }
-            }
-          },
-          "500": { "description": "Failed to check for a legacy forms.yaml" }
-        }
-      }
-    },
-    "/settings/convertLegacy": {
-      "put": {
-        "tags": ["settings"],
-        "summary": "Convert forms.yaml to config.yaml",
-        "description": "Renames the legacy forms.yaml to config.yaml. Fails when there is no forms.yaml, or when a config.yaml already exists (it is never overwritten).",
-        "security": [ { "bearerAuth": [] } ],
-        "responses": {
-          "200": {
-            "description": "Legacy file converted successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": { "type": "string" }
-                  }
-                }
-              }
-            }
-          },
-          "500": { "description": "No forms.yaml to convert, config.yaml already exists, or the conversion failed" }
-        }
-      }
-    },
     "/config/mode": {
       "get": {
         "tags": ["config"],

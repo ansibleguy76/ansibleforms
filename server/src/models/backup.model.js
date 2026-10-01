@@ -70,7 +70,6 @@ async function describeBackup(folder) {
   const backupFolder = path.join(appConfig.backupPath, folder);
   const backupFile = path.join(backupFolder, 'ansibleforms.sql');
   const configYaml = path.join(backupFolder, path.basename(appConfig.configPath));
-  const formsYaml = path.join(backupFolder, path.basename(appConfig.formsPath));
   const formsDir = path.join(backupFolder, 'forms');
   const envFile = path.join(backupFolder, ENV_BACKUP_NAME);
   let description = '';
@@ -89,7 +88,6 @@ async function describeBackup(folder) {
     valid: backupFileExists && backupFileSize > 0,
     backupFileExists,
     configYamlExists: await fs.stat(configYaml).then(() => true).catch(() => false),
-    formsYamlExists: await fs.stat(formsYaml).then(() => true).catch(() => false),
     formsDirExists: await fs.stat(formsDir).then(() => true).catch(() => false),
     // Reported so an operator can SEE that this folder carries environment settings - it is
     // 0600 and credential-bearing (VAULT_TOKEN, a mail password), and it is restored only on
@@ -97,7 +95,6 @@ async function describeBackup(folder) {
     envFileExists: await fs.stat(envFile).then(() => true).catch(() => false),
     envFileSize: await getFileSize(envFile),
     configYamlSize: await getFileSize(configYaml),
-    formsYamlSize: await getFileSize(formsYaml),
     backupFileSize,
     formsDirFileCount: formsDirStats.fileCount,
     formsDirTotalSize: formsDirStats.totalSize
@@ -255,11 +252,6 @@ class BackupModel {
     const destConfigFile = path.join(backupFolder, path.basename(configFile));
     await copyFileIfExists(configFile, destConfigFile);
     
-    // Backup forms.yaml (legacy - for backward compatibility)
-    const legacyFormsFile = appConfig.formsPath;
-    const destLegacyFormsFile = path.join(backupFolder, path.basename(legacyFormsFile));
-    await copyFileIfExists(legacyFormsFile, destLegacyFormsFile);
-    
     // Backup the managed environment file. Everything the settings page writes lives here,
     // and without this a restore onto a fresh host silently loses all of it.
     //
@@ -327,11 +319,6 @@ class BackupModel {
     const configFile = appConfig.configPath;
     const configYamlBackup = path.join(restoreFolder, path.basename(configFile));
     await copyFileIfExists(configYamlBackup, configFile);
-    
-    // Restore forms.yaml (legacy - if it exists in backup)
-    const legacyFormsFile = appConfig.formsPath;
-    const formsYamlBackup = path.join(restoreFolder, path.basename(legacyFormsFile));
-    await copyFileIfExists(formsYamlBackup, legacyFormsFile);
     
     // Restore forms directory
     const formsDir = appConfig.formsFolderPath;
