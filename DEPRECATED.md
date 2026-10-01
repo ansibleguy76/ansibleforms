@@ -17,10 +17,11 @@ This document tracks deprecated features that will be **removed in v7.0.0** (bre
 | `disableRelaunch` | `allowRelaunch: false` | 6.3.0 |
 | `noOutput` | `output: false` | 6.3.0 |
 | `enableLogin` (role option) | `allowLogin` | 6.3.0 |
+| datasources and data schemas (admin pages, tables, import schedules) | none - a form queries the source itself | 7.0.0 |
+| the `ansibleguy76.ansibleforms` collection (`af_datasource_*` modules) | none - it only feeds datasources | 7.0.0 |
 
 The sections below are the original notes per item. Two of their file references are out of
-date: `templates/forms.yaml.template` and `Repository.getFormsPath()` no longer exist. API v1
-can only go once the Datasources and Data Schemas pages have v2 endpoints.
+date: `templates/forms.yaml.template` and `Repository.getFormsPath()` no longer exist.
 
 ---
 
