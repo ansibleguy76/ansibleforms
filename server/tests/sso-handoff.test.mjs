@@ -10,7 +10,7 @@ process.env.DB_USER ||= "test";
 process.env.DB_PASSWORD ||= "test";
 vi.mock("../src/models/db.model.js", () => ({ default: { do: async () => [] } }));
 
-const { signHandoff } = await import("../src/lib/ssoHandoff.js");
+const { signHandoff, sealToken, openToken } = await import("../src/lib/ssoHandoff.js");
 const authConfig = (await import("../config/auth.config.js")).default;
 
 // an Azure access token as passport hands it over : signed by Microsoft, not by us
@@ -26,11 +26,25 @@ describe("signHandoff", () => {
   test("signs the claims of an Azure token that carries exp, iat, nbf and iss", () => {
     const token = signHandoff(azureToken, "azuread");
     const claims = jwt.verify(token, authConfig.secret, { issuer: authConfig.jwtIssuer });
-    expect(claims).toMatchObject({ sso: "azuread", upn: "alice@example.com", name: "Alice", oid: "1234", groups: ["g1"] });
+    expect(claims).toMatchObject({ sso: "azuread", upn: "alice@example.com", name: "Alice", oid: "1234" });
+    // the access token travels sealed - never in the clear - and the bulky claims stay out
+    expect(claims.groups).toBeUndefined();
+    expect(claims.aud).toBeUndefined();
+    expect(token).not.toContain(azureToken.split(".")[2]);
+    expect(openToken(claims.at)).toBe(azureToken);
     // its own lifetime, from now - not the provider's
     expect(claims.iat).toBeGreaterThanOrEqual(now);
     expect(claims.exp - claims.iat).toBe(300);
     expect(claims.nbf).toBeUndefined();
+  });
+
+  test("a sealed token cannot be opened when tampered with", () => {
+    const sealed = sealToken("secret-access-token");
+    expect(openToken(sealed)).toBe("secret-access-token");
+    const bytes = Buffer.from(sealed, "base64url");
+    bytes[bytes.length - 1] ^= 1;
+    expect(() => openToken(bytes.toString("base64url"))).toThrow();
+    expect(() => openToken("")).toThrow();
   });
 
   test("an oidc profile object works as before", () => {

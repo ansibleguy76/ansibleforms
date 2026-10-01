@@ -57,30 +57,11 @@ function authOidc() {
    localStorage.setItem("authIssuer", "oidc");   // set cookie to oidc
    window.location.replace(`${BaseUrl}/api/v2/auth/oidc`) // redirect to oidc
 }
-function getGroupsAndLogin(token, url = `${azureGraphUrl.value}/v1.0/me/transitiveMemberOf`, type = 'azuread', allGroups = []) {
+function getGroupsAndLogin(token, url, type = 'azuread') {
    if (type === 'azuread') {
-      const config = {
-         headers: {
-            Authorization: `Bearer ${token}`
-         }
-      };
-
-      axios.get(url, config)
-         .then((res) => {
-            const groups = res.data.value.filter(x => x.displayName).map(x => x.displayName);
-            allGroups = allGroups.concat(groups);
-
-            if (res.data['@odata.nextLink']) {
-               // If there's a nextLink, make a recursive call to get the next page of data
-               getGroupsAndLogin(token, res.data['@odata.nextLink'], type, allGroups);
-            } else {
-               // No more nextLink, you have all the groups
-               tokenLogin(token, allGroups)
-            }
-         })
-         .catch((_err) => {
-            toast.error("Failed to get group membership");
-         });
+      // The token in the url is OUR handoff, not an Azure access token (6.3.0) : the server
+      // fetches the groups from Microsoft Graph itself at the login step (#548)
+      tokenLogin(token, [])
    }
    else {
     // OIDC branch for now => specify type in the future?
@@ -105,7 +86,7 @@ async function tokenLogin(token, allGroups, type = 'azuread') {
       console.error("Identity Provider Group filter is not a valid regular expression")
       validRegex = false
    }
-   if (validRegex && groupfilter) {
+   if (validRegex && groupfilter && type !== 'azuread') { // azuread : filtered by the server
       allGroups = allGroups.filter(x => x.match(regex))
    }
    const loginProvider = type === 'azuread' ? 'azureadoauth2' : 'oidc'
