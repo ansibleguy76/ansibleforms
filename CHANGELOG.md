@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [6.5.2](https://github.com/ansibleguy76/ansibleforms/compare/6.5.1...6.5.2) (2026-10-01)
+
+
+### Fixed
+
+* sidebar sections open one at a time, real examples in the chat welcome, scm_branch is sent to AWX ([#549](https://github.com/ansibleguy76/ansibleforms/issues/549)) ([1991e63](https://github.com/ansibleguy76/ansibleforms/commit/1991e6338940c6ce55fc3328abb8092d1c516c9c))
+* the Azure AD login reads the groups from Microsoft Graph on the server ([#552](https://github.com/ansibleguy76/ansibleforms/issues/552)) ([79ed42b](https://github.com/ansibleguy76/ansibleforms/commit/79ed42b6a5b61bedc69321df4e79d9fc847c8804))
+
 ## [6.5.1](https://github.com/ansibleguy76/ansibleforms/compare/6.5.0...6.5.1) (2026-09-30)
 
 
