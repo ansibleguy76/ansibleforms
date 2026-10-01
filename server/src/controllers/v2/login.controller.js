@@ -60,11 +60,7 @@ function auditLogin(req, outcome, type, reason, resolvedUsername) {
 }
 
 function hasValidLoginOption(user) {
-  // Support deprecated 'enableLogin' — use 'allowLogin' instead
-  if (user.options.enableLogin !== undefined) {
-    logger.warning(`Role option 'enableLogin' is deprecated. Please use 'allowLogin' instead.`);
-  }
-  if(user.options.allowLogin === false || user.options.enableLogin === false) {
+  if(user.options.allowLogin === false) {
     logger.warning(`Login is disabled for user '${user.username}' in the configuration (allowLogin option is set to false), please check your settings`)
     return false;
   } 

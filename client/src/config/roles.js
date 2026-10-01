@@ -118,8 +118,8 @@ export function roleToEditable(r) {
 //    explicit false would turn "no opinion" into "deny" and, for a user holding
 //    several roles, silently strip permissions granted by another role -- an
 //    admin who also matches a plain role would lose settings access.
-// Flags we don't know about (hand-written yaml, deprecated aliases like
-// enableLogin, the showExtraVars casing variant) are passed through untouched.
+// Flags we don't know about (hand-written yaml, the showExtraVars casing variant) are
+// passed through untouched.
 export function serializeRole(r) {
   const name = (r.name || '').trim();
   const isPublic = name === 'public';

@@ -16,7 +16,7 @@ A list field displays a table of rows where each row is created and edited throu
 - Supports the same marker properties as the `table` field (`insertMarker`, `updateMarker`, `deleteMarker`) so playbook idempotency patterns still work.
 - When `allowDelete: false`, pre-existing rows are protected; only rows added in the current session (carrying the `insertMarker`) can be deleted.
 - The `columns` property controls which subform fields appear as columns in the summary table.
-- The output is always an array of objects. `model`, `noOutput`, `outputObject` and `valueColumn` declared on subform fields are honoured when generating extravars.
+- The output is always an array of objects. `model`, `output`, `outputObject` and `valueColumn` declared on subform fields are honoured when generating extravars.
 
 ## Subform declaration
 

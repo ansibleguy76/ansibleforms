@@ -3973,9 +3973,6 @@
                 "type": "boolean",
                 "default": false
               },
-              "noOutput": {
-                "type": "boolean"
-              },
               "output": {
                 "type": "boolean"
               },
@@ -9064,9 +9061,6 @@
                 "convertToUtc": {
                   "type": "boolean",
                   "default": false
-                },
-                "noOutput": {
-                  "type": "boolean"
                 },
                 "output": {
                   "type": "boolean"

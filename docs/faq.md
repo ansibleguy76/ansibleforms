@@ -165,7 +165,7 @@ AnsibleForms supports relaunching jobs with pre-filled form data. When you click
 
 **Permission Control:**
 
-Forms can prevent relaunch using `allowRelaunch: false` (or the deprecated `disableRelaunch: true`):
+Forms can prevent relaunch using `allowRelaunch: false`:
 
 ```yaml
 - name: Production Deployment
@@ -182,7 +182,7 @@ roles:
 ```
 
 **Most Restrictive Logic:** Relaunch is only available if BOTH conditions are met:
-1. Form does NOT have `allowRelaunch: false` (or deprecated `disableRelaunch: true`)
+1. Form does NOT have `allowRelaunch: false`
 2. User role has `allowJobRelaunch: true` (or user is admin)
 
 **How it works:**

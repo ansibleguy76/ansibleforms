@@ -47,7 +47,7 @@ export function normalizeFields(fields) {
     const item = { ...f };
     if (item.type == "local") {
       item.hide = item.hide ?? true;
-      item.output = item.output ?? (item.noOutput !== undefined ? !item.noOutput : false);
+      item.output = item.output ?? false;
       item.type = "expression";
       item.runLocal = true;
     }

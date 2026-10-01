@@ -1660,7 +1660,7 @@ function addFieldRow() {
   fieldValuesIdx.value = null;
   fieldEditorRows.value.push({
     name: '', type: 'text', label: '', help: '', required: false, default: '', _defaultDisplay: '',
-    output: true, noOutput: false, values: [], _valuesSnapshot: fieldValuesSnapshot([]), _valuesAlias: false,
+    output: true, values: [], _valuesSnapshot: fieldValuesSnapshot([]), _valuesAlias: false,
   });
 }
 
@@ -1778,7 +1778,6 @@ function openFieldEditor() {
       required: item.get('required') === true,
       default: display,
       output: item.get('output') !== undefined ? item.get('output') !== false : true,
-      noOutput: item.get('noOutput') === true,
     };
   });
   showFieldEditor.value = true;
@@ -1846,13 +1845,7 @@ function applyFieldEditor() {
           }
         } else node.delete('default');
       }
-      if (row.noOutput) {
-        setDocValueIfChanged(node, 'noOutput', true);
-        node.delete('output');
-      } else {
-        node.delete('noOutput');
-        setDocValueIfChanged(node, 'output', row.output ? undefined : false);
-      }
+      setDocValueIfChanged(node, 'output', row.output ? undefined : false);
       // `values` is only rewritten when the values panel actually changed it :
       // an untouched list keeps its own nodes, comments included. A type that
       // forbids it is skipped here and cleaned up by the loop below.
@@ -4377,7 +4370,7 @@ onBeforeUnmount(() => {
                     <input v-if="fieldTypeAllows(row.type, 'required')" type="checkbox" class="form-check-input" v-model="row.required" />
                   </td>
                   <td class="text-center align-middle">
-                    <input type="checkbox" class="form-check-input" v-model="row.output" :disabled="row.noOutput" />
+                    <input type="checkbox" class="form-check-input" v-model="row.output" />
                   </td>
                   <td class="text-center align-middle">
                     <button class="btn btn-sm btn-outline-danger" @click="removeFieldRow(i)"><FaIcon icon="trash" size="sm" /></button>

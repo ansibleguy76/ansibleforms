@@ -1058,10 +1058,6 @@ function findVariableDependencies() {
         if (item.type == 'table') {
             warnings.value.push(`<span class="text-warning">'${item.name}' uses the deprecated <b>table</b> field type</span><br><span>Migrate to a <b>list</b> field with a subform.</span>`)
         }
-        // noOutput is deprecated in favour of output: false
-        if (item.noOutput !== undefined) {
-            warnings.value.push(`<span class="text-warning">'${item.name}' uses the deprecated <b>noOutput</b> property</span><br><span>Replace with <b>output: false</b>.</span>`)
-        }
 
         getPlaceholderMatches(fields, item.name, item.expression ?? item.query)
         getPlaceholderMatches(fields, item.name, item.default)
@@ -1358,7 +1354,7 @@ function handleSubformSave() {
 // Build the output object for a subform row emitted to the parent list.
 // We intentionally keep the RAW per-field values here (only fields declared
 // in the subform). Internal fields (__user__, __parent__, constants, vars)
-// are filtered out. `model`, `noOutput`, `outputObject` and `valueColumn` are
+// are filtered out. `model`, `output`, `outputObject` and `valueColumn` are
 // applied at extravars generation time by `Helpers.buildFormOutput`, which
 // walks the whole form tree recursively. Keeping rows raw means they can
 // round-trip through Save -> Edit -> Save without losing data (e.g. full
@@ -1558,9 +1554,6 @@ function initForm() {
     };
 
     // form-level deprecation warnings
-    if (props.currentForm.disableRelaunch !== undefined) {
-        warnings.value.push(`<span class="text-warning">Form uses the deprecated <b>disableRelaunch</b> property</span><br><span>Replace with <b>allowRelaunch: false</b>.</span>`)
-    }
     if (props.currentForm.tableFields !== undefined) {
         warnings.value.push(`<span class="text-warning">Form uses the deprecated <b>tableFields</b> property</span><br><span>Migrate to a <b>subform</b> with a <b>list</b> field.</span>`)
     }
@@ -1569,7 +1562,7 @@ function initForm() {
     props.currentForm.fields.forEach((item) => {
         if (item.type == "local") {
             item.hide = item.hide ?? true;
-            item.output = item.output ?? (item.noOutput !== undefined ? !item.noOutput : false);
+            item.output = item.output ?? false;
             item.type = "expression";
             item.runLocal = true;
         }
