@@ -5,8 +5,8 @@ For maintainers. Contributors only need [CONTRIBUTING.md](CONTRIBUTING.md).
 Everything below runs in GitHub Actions. Nothing is built or pushed from a laptop, and no
 version number or changelog line is ever typed by hand.
 
-There are two release lines: `main` (the next major, released as `7.0.0-beta.N`) and
-`release/6.x` (patches of the current one). Everything below works the same on both; each
+There are two release lines: `main` (the newest major, 7) and `release/6.x` (patches of
+the previous one). Everything below works the same on both; each
 branch has its own release pull request, manifest and `CHANGELOG.md`.
 
 ## How a release happens
@@ -34,15 +34,12 @@ feature PR ──squash──▶ main ──▶ release-please updates the open 
 
 ### The image tags
 
-| Release | Tags |
-|---|---|
-| `6.5.3` | `6.5.3`, and `6.5`, `6`, `latest` - each only while it is the highest of its kind |
-| `7.0.0-beta.2` | `7.0.0-beta.2`, `7-beta`, `next` - never `latest` |
-| release candidate | `6.5.3-rc.551.1`, `6-rc`, `latest-rc` |
-
-So a patch on 6 after 7.0.0 is out moves `6.5` and `6` but not `latest`, and re-publishing an
-old tag never moves anything backwards. `latest` reaches 7 with the final 7.0.0. The release
-workflow also keeps GitHub's "Latest release" badge on the highest final version.
+The tags and what they point to are listed once, for users, under
+[Image tags](docs/installation.md#image-tags). Do not repeat or change them elsewhere.
+publish.yml implements that list: `latest`, `<major>` and `<major>.<minor>` only move when
+the release is the highest of its kind, so a patch on an older line never moves them
+backwards. The release workflow also keeps GitHub's "Latest release" badge on the highest
+version.
 
 ### Changing the changelog wording before a release
 
@@ -100,14 +97,6 @@ Open the fix against `release/6.x` (see CONTRIBUTING.md: fix on main first, then
 cherry-pick). release-please keeps a "chore: release 6.5.x" pull request open on that
 branch; merging it releases and publishes, exactly like on main. Its config bumps the patch
 only, so a stray `feat:` cannot make a 6.6.0.
-
-## Starting and ending the 7 betas
-
-- The first 7 pull request on main sets `"prerelease": true`, `"versioning": "prerelease"`
-  and `"prerelease-type": "beta"` in `release-please-config.json`, and ends its description
-  with `Release-As: 7.0.0-beta.0`. Every later merge into main counts the beta up.
-- When 7 is ready: remove those three settings and merge a pull request ending with
-  `Release-As: 7.0.0`. Its publish moves `latest` to 7.
 
 ## Local scripts
 

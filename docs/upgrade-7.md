@@ -76,13 +76,8 @@ v2 answers with HTTP status codes (`400`, `403`, `404`, `422`) and a plain JSON 
 
 ## Image tags
 
-| Tag | Points to |
-|---|---|
-| `latest` | the newest final release - stays on 6.5 until 7.0.0 is final |
-| `6`, `6.5` | the newest 6.x / 6.5.x release |
-| `next`, `7-beta` | the newest 7.0.0 beta |
-
-Pin `6` to stay on 6.x patches; switch to `next` to try 7.
+`latest` moves to 7 with 7.0.0. To stay on 6, use the tag `6` (or `6.5`) instead of `latest`.
+All tags are listed under [Image tags](installation#image-tags).
 
 ## Rolling back
 
