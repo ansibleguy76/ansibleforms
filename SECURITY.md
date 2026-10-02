@@ -2,15 +2,14 @@
 
 ## Supported versions
 
-Security fixes go into the current major's latest patch release, and into the next major
-while it is in beta. Older releases are not patched — the fixes for [GHSA-g27f-cjvv-42rf](https://github.com/ansibleguy76/ansibleforms/security/advisories/GHSA-g27f-cjvv-42rf),
+Security fixes go into the newest release of 7 and of 6.5. Older releases are not patched — the fixes for [GHSA-g27f-cjvv-42rf](https://github.com/ansibleguy76/ansibleforms/security/advisories/GHSA-g27f-cjvv-42rf),
 [GHSA-56pr-p4x6-mwm6](https://github.com/ansibleguy76/ansibleforms/security/advisories/GHSA-56pr-p4x6-mwm6)
 and [GHSA-wcmj-wqvw-6c88](https://github.com/ansibleguy76/ansibleforms/security/advisories/GHSA-wcmj-wqvw-6c88)
 all shipped in 6.2.1 and were not backported.
 
 | Version | Supported |
 | ------- | --------- |
-| 7.0.0-beta | ✅ (pre-release) |
+| 7.x     | ✅        |
 | 6.5.x   | ✅        |
 | < 6.5   | ❌        |
 

@@ -11,7 +11,7 @@ as you like — only the pull request title survives.
 
 | Branch | Holds | Releases |
 |---|---|---|
-| `main` | the next major (7) | `7.0.0-beta.N` until 7.0.0 is final |
+| `main` | the newest major (7) | `7.x.y` |
 | `release/6.x` | the current major, fixes only | `6.5.x` patches |
 
 1. Branch from `main`, named `<type>/<short-description>`, for example
