@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [7.0.0](https://github.com/ansibleguy76/ansibleforms/compare/7.0.0-beta...7.0.0) (2026-10-02)
+
+
+### Fixed
+
+* a form that still uses what 7.0.0 removed says so in one line ([#559](https://github.com/ansibleguy76/ansibleforms/issues/559)) ([d68f3e2](https://github.com/ansibleguy76/ansibleforms/commit/d68f3e2dbab28c20db52780bfadb96e8a97d04c0))
+
 ## [7.0.0-beta](https://github.com/ansibleguy76/ansibleforms/compare/6.5.2...7.0.0-beta) (2026-10-01)
 
 
