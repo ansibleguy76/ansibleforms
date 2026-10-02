@@ -397,11 +397,12 @@ The image is published as `ansibleguy/ansibleforms` on Docker Hub and as
 | `7.0`, `6.5` | the newest release of that minor version |
 | `7.0.1`, `6.5.3` | exactly that release |
 | `7.1.0-rc.560.1` | a release candidate, built from a pull request to test it |
-| `latest-rc` | the newest release candidate |
+| `latest-rc` | the newest release candidate - or `latest`, when that is newer |
 
 `latest` only ever moves forward: a patch for an older major version (say 6.5.3, released
 after 7.0.0) moves `6` and `6.5`, never `latest`. To stay on a major version, use its
-number (`6`) instead of `latest`. A release candidate is for testing only.
+number (`6`) instead of `latest`. A release candidate is for testing only: once its fix is
+released, move to `latest` (or the version) yourself.
 
 ## Upgrade
 

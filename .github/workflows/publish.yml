@@ -5,7 +5,9 @@ name: Publish
 # for when a push failed half way. The tags are the list in docs/installation.md (Image
 # tags) - change that list and this together, never one of them :
 #   release 6.5.3     -> 6.5.3, 6.5, 6 and latest - each only while it is the highest of
-#                        its kind, so a patch on an older line never moves them backwards
+#                        its kind, so a patch on an older line never moves them backwards ;
+#                        a release that takes latest takes latest-rc too, so a test server
+#                        on latest-rc is never behind latest
 #   rc 6.5.3-rc.551.1 -> 6.5.3-rc.551.1 and latest-rc
 #
 # It pushes to GHCR always and to Docker Hub when the secret is there. Docker Hub stays
@@ -118,7 +120,7 @@ jobs:
             names="$VERSION"
             [ "$(highest "$minor\.")" = "$VERSION" ] && names="$names $minor"
             [ "$(highest "$major\.")" = "$VERSION" ] && names="$names $major"
-            [ "$(highest "")" = "$VERSION" ] && names="$names latest"
+            [ "$(highest "")" = "$VERSION" ] && names="$names latest latest-rc"
           fi
 
           tags=""
