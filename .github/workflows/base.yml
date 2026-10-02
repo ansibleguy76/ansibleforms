@@ -71,7 +71,7 @@ jobs:
       - name: Work out the tags
         id: tags
         run: |
-          ghcr="ghcr.io/${{ github.repository }}-base"
+          ghcr="ghcr.io/${GITHUB_REPOSITORY,,}-base"
           hub="${{ vars.DOCKERHUB_BASE_REPOSITORY || 'ansibleguy/ansibleforms-base' }}"
           date=$(date -u +%Y.%m.%d)
           # immutable per build : a same-day rebuild must not overwrite the earlier one.

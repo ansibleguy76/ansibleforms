@@ -300,7 +300,7 @@ spec:
       terminationGracePeriodSeconds: 120
       containers:
         - name: ansibleforms
-          image: ansibleguy76/ansibleforms:latest
+          image: ansibleguy/ansibleforms:latest
           env:
             - name: CONFIG_SEED_PATH
               value: /seed/seed.yaml
