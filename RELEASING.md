@@ -48,12 +48,20 @@ or `release-please--branches--release/6.x`) and push. Once the release exists, y
 
 ### Forcing a specific version
 
-Merge any pull request whose **description** ends with a `Release-As:` line. The squash
-commit carries the description as its body, and release-please then proposes that version:
+Set `"release-as"` in `release-please-config.json`, in a pull request with a `feat:` or `fix:`
+title, and merge it. release-please then proposes exactly that version. Remove the setting
+again in the next pull request after the release, or every later release is proposed as that
+same version.
 
+```json
+  "release-type": "simple",
+  "release-as": "7.0.0",
 ```
-Release-As: 7.0.0
-```
+
+A `Release-As:` line in the pull request description does **not** work reliably: GitHub
+appends `Co-authored-by` lines after it when it squashes, so it is no longer read as a
+footer. And a pull request with a hidden type (`ci:`, `docs:`, `chore:`) never opens a
+release on its own, whatever it says.
 
 ## Release candidates
 
