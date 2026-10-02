@@ -51,7 +51,7 @@ A column's `from` becomes an expression on `__parent__`.
 ### Datasources and data schemas
 
 The datasource imports and their admin pages are gone, and so is the
-`ansibleguy76.ansibleforms` collection, whose modules only fed them.
+AnsibleForms Galaxy collection, whose modules only fed them.
 
 - Scheduled imports stop, and the upgrade drops the datasource definitions (the
   `datasource`, `datasource_schemas` and `staging` tables). Note down what you need first.

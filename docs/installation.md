@@ -17,26 +17,25 @@ AnsibleForms can be installed in a few ways.
 * **Native install** : You install everything manually, install all dependencies, build the code, start the code
 * **Use Docker** : Use the pre-built docker image
   * **Single container** : Install MySql and spin-up the docker image with the correct environment variables
-  * **Docker Compose** : [Download the docker-compose project](https://github.com/ansibleguy76/ansibleforms-docker-v6) and use docker-compose to start both MySql and AnsibleForms.  
-  * **Kubernetes** : [Download the helm project](https://github.com/ansibleguy76/ansibleforms-helm) and use Kubernetes to start AnsibleForms
+  * **Docker Compose** : [Download the docker-compose project](https://github.com/OpusProjects/ansibleforms-docker-v6) and use docker-compose to start both MySql and AnsibleForms.  
+  * **Kubernetes** : [Download the helm project](https://github.com/OpusProjects/ansibleforms-helm) and use Kubernetes to start AnsibleForms
 
 {: .note }
 > **Recommendation** Out of experience, I recommend the use of the docker-image. It has all (many) dependencies installed and can be setup very quickly. For the old v5, use the old docker-compose project.
 
 ## Install using K8s
 
-To install AnsibleForms on Kubernetes using Helm, refer to the [ansibleforms-helm GitHub repository](https://github.com/ansibleguy76/ansibleforms-helm).  Just git clone, change the values.yaml or create your own values.yaml and overwrite.
+To install AnsibleForms on Kubernetes using Helm, refer to the [ansibleforms-helm GitHub repository](https://github.com/OpusProjects/ansibleforms-helm).  Just git clone, change the values.yaml or create your own values.yaml and overwrite.
 
 ## Install using Docker-Compose 
 
-The [docker-compose](https://github.com/ansibleguy76/ansibleforms-docker-v6), together with the environment variables should get you started.
+The [docker-compose](https://github.com/OpusProjects/ansibleforms-docker-v6), together with the environment variables should get you started.
 
 {: .warning }
 > **Note** You can also use Podman and Podman-Compose. The commands are similar (docker-> podman and docker-compose -> podman-compose)
 
 {: .warning }
-> **Note** Using docker and docker-compose for the first time, requires some basic linux skills and some knowledge about containers  
-> [Download this document](/assets/files/docker and ansibleforms.pdf) to get you kick-started with containers and Docker
+> **Note** Using docker and docker-compose for the first time, requires some basic linux skills and some knowledge about containers
 
 ### Prerequisites
 
@@ -64,7 +63,7 @@ cd /srv/apps
 sudo apt-get install -y git
 
 ‌sudo ‌git init
-sudo git clone https://github.com/ansibleguy76/ansibleforms-docker-v6.git
+sudo git clone https://github.com/OpusProjects/ansibleforms-docker-v6.git
 
 cd ansibleforms-docker-v6
 ```
@@ -181,7 +180,7 @@ If you don't want to go through the hassle of a dockerbuild.  Run a docker image
   
 If you want, you can use the latest build from docker hub (https://hub.docker.com/repository/docker/ansibleguy/ansibleforms)
 Note that we have deployed the solution in the `/app` folder inside the docker.  So if you want your `config.yml`, logs, certificates and playbooks reachable from within the docker image, you have to use a mount path or persistent volume and make sure it's mounted under `/app/dist/persistent`.  
-Make sure you have your environment variables set.  Most variables fall back to defaults, but the MySQL database connection is mandatory.  The image contains ansible and python3.  The below command is merely an example. An example of a config.yml you can find here (https://github.com/ansibleguy76/ansibleforms/tree/main/server/persistent).
+Make sure you have your environment variables set.  Most variables fall back to defaults, but the MySQL database connection is mandatory.  The image contains ansible and python3.  The below command is merely an example. An example of a config.yml you can find here (https://github.com/OpusProjects/ansibleforms/tree/main/server/persistent).
 
 ```bash
 docker run -p 8000:8000 -d -t --mount type=bind,source=/srv/apps/ansibleforms/server/persistent,target=/app/dist/persistent --name ansibleforms -e DB_HOST=192.168.0.1 -e DB_USER=root -e DB_PASSWORD=password ansibleguy/ansibleforms
@@ -241,7 +240,7 @@ cd /srv/apps
 # grab the code from github
 sudo yum install -y git
 sud o‌‌git init
-sudo git clone https://github.com/ansibleguy76/ansibleforms.git
+sudo git clone https://github.com/OpusProjects/ansibleforms.git
 
 # enter the app project
 cd ansibleforms
@@ -388,7 +387,7 @@ The default admin user is :
 ## Image tags
 
 The image is published as `ansibleguy/ansibleforms` on Docker Hub and as
-`ghcr.io/ansibleguy76/ansibleforms`, with these tags:
+`ghcr.io/opusprojects/ansibleforms`, with these tags:
 
 | Tag | Points to |
 |---|---|
