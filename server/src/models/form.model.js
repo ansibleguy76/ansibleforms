@@ -893,9 +893,30 @@ Form.validateConfig = function(obj){
 
   }
 }
+// What 7.0.0 removed, said in one line each : the schema alone answers a removed field type
+// with a page of "must match exactly one schema" (it tries every other type and reports why
+// each one does not fit), which hides the one thing to change.
+const REMOVED_IN_7 = 'removed in 7.0.0, see https://ansibleforms.com/upgrade-7'
+export function removedIn7(form){
+  const found = []
+  if (form && typeof form === 'object') {
+    if (form.disableRelaunch !== undefined) found.push(`Form '${form.name}' : disableRelaunch was ${REMOVED_IN_7} - use allowRelaunch: false`)
+    for (const f of Array.isArray(form.fields) ? form.fields : []) {
+      if (!f || typeof f !== 'object') continue
+      if (f.type === 'table' || f.tableFields !== undefined) found.push(`Field '${f.name}' : the table field was ${REMOVED_IN_7} - use a list field with a subform`)
+      if (f.noOutput !== undefined) found.push(`Field '${f.name}' : noOutput was ${REMOVED_IN_7} - use output: false`)
+    }
+  }
+  return found
+}
 Form.validateForm = function(obj){
   if(obj){
 
+    const removed = removedIn7(obj)
+    if (removed.length) {
+      logger.error(removed)
+      throw new Error(removed.join("\r\n"))
+    }
     logger.debug("validating form against schema")
     const validate = ajv.compile(formSchema)
     const valid = validate(obj)
