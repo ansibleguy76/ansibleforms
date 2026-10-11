@@ -76,7 +76,7 @@ export function searchPages(t, options) {
     {
       title: t('sidebar.categories'),
       section: t('nav.designer'),
-      icon: 'sitemap',
+      icon: 'folder-tree',
       link: '/designer/categories/visual',
     },
     // edited in the designer (its Visual tab), no longer a settings page

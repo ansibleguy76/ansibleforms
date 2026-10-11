@@ -758,7 +758,9 @@ class Repository extends CrudModel {
   // commit & push the working tree of a forms repository (issue #414) ; the
   // designer saves into the tree, this publishes those saves to the remote.
   // New forms staged in the designer are assigned to this repository first.
-  static async sync(name, triggeredBy) {
+  // The designer's playbooks and vars files are pushed the same way, from their
+  // repository (use_for_playbooks, use_for_vars_files), with their own message.
+  static async sync(name, triggeredBy, message = undefined) {
     var output, status, head, syncRepo = null
     // atomic check-and-set : refuse concurrent syncs of the same repository
     // (eg the settings page button while a designer push is in flight)
@@ -770,8 +772,8 @@ class Repository extends CrudModel {
       syncRepo = await Repository.withCredential(await Repository.findByName(name))
       // a forms repo (read+write forms) or the config-origin repo (so config
       // edits can be committed even when config lives in a separate repo)
-      if (!syncRepo.use_for_forms && !syncRepo.use_for_config) {
-        throw new Error(`Repository '${name}' is not a forms or config repository`)
+      if (!syncRepo.use_for_forms && !syncRepo.use_for_config && !syncRepo.use_for_playbooks && !syncRepo.use_for_vars_files) {
+        throw new Error(`Repository '${name}' is not a forms, config, playbooks or vars files repository`)
       }
       const repoDir = path.join(appConfig.repoPath, name)
       if (!fs.existsSync(repoDir)) {
@@ -781,8 +783,7 @@ class Repository extends CrudModel {
       // bind the new staged forms to this repository before committing (only a
       // forms repo receives staged forms ; a config-only repo just pushes config)
       if (syncRepo.use_for_forms) Repository.flushStagingInto(name)
-      const message = `Forms sync by ${triggeredBy || "AnsibleForms"}`
-      output = await Repo.sync(name, message)
+      output = await Repo.sync(name, message || `Forms sync by ${triggeredBy || "AnsibleForms"}`)
       status = "success"
     } catch (e) {
       output = e.message

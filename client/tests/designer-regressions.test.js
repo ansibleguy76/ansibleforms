@@ -1,6 +1,7 @@
 // Designer fixes that are structural rather than behavioural, so they are pinned by
 // reading the source. Each assertion was checked by putting the bug back.
 import { describe, it, expect } from 'vitest';
+import { DESIGNER_TABS, designerAddressExists } from '@/config/designerTabs';
 import { readFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -49,22 +50,24 @@ describe('the drag order does not survive a reload', () => {
   });
 });
 
-describe('adding a role in the designer', () => {
-  const fn = designer.slice(designer.indexOf('function doAddRole'), designer.indexOf('function parsedOrNull'));
+describe('the roles are edited in settings, not in the designer', () => {
+  // they are edited in Settings > Roles : the designer's copy, read at its start, must never
+  // go back over a role changed there meanwhile
+  const start = designer.indexOf('async function saveForms');
+  const fn = designer.slice(start, designer.indexOf('\n}\n', start));
 
   it('found the function, so these assertions are not vacuous', () => {
-    expect(fn).toContain('appendToSeqYaml');
+    expect(fn).toContain('assembleForms()');
   });
 
-  it("refuses the reserved name 'admin'", () => {
-    // the server derives isAdmin from the role NAME, so this would grant admin to
-    // whatever groups were typed in. The duplicate check only catches it when the
-    // config already has an admin role.
-    expect(fn).toMatch(/name === 'admin'/);
+  it('re-reads the stored roles before it assembles what it saves', () => {
+    const reread = fn.indexOf('roles.value = YAML.stringify((await Form.loadAll()).roles)');
+    expect(reread).toBeGreaterThan(-1);
+    expect(reread).toBeLessThan(fn.indexOf('assembleForms()'));
   });
 
-  it("still allows 'public', which the schema requires", () => {
-    expect(fn).not.toMatch(/name === 'public'/);
+  it('has no roles section any more', () => {
+    expect(designer).not.toMatch(/name: 'Roles'/);
   });
 });
 
@@ -253,5 +256,34 @@ describe('restoring a backup asks before discarding unsaved work', () => {
 
   it('the empty-selection guard still runs first, outside the confirmation', () => {
     expect(fn.indexOf('backupToRestore.value?.file')).toBeLessThan(fn.indexOf('withReloadConfirm('));
+  });
+});
+
+describe('the designer address names a section and a tab it has', () => {
+  // a section it no longer has (roles, users ...) or a tab its section does not have
+  // (/designer/playbooks/visual) is not found, never another section or tab instead
+  const names = [...designer.matchAll(/^ {4}name: '(\w+)',$/gm)].map((m) => m[1].toLowerCase());
+
+  it('lists exactly the sections of the menu', () => {
+    expect(Object.keys(DESIGNER_TABS).sort()).toEqual([...names].sort());
+  });
+  it('knows a section, its tabs and a form', () => {
+    expect(designerAddressExists({})).toBe(true);
+    expect(designerAddressExists({ view: 'playbooks' })).toBe(true);
+    expect(designerAddressExists({ view: 'playbooks', item: 'yaml' })).toBe(true);
+    expect(designerAddressExists({ view: 'varsfiles', item: 'visual' })).toBe(true);
+    expect(designerAddressExists({ view: 'forms', item: 'approval-demo' })).toBe(true);
+    expect(designerAddressExists({ view: 'forms', item: 'approval-demo', editor: 'preview' })).toBe(true);
+    expect(designerAddressExists({ view: 'forms', item: 'visual' })).toBe(true);
+  });
+  it('answers anything else as not found', () => {
+    expect(designerAddressExists({ item: 'roles' })).toBe(false);
+    expect(designerAddressExists({ view: 'roles' })).toBe(false);
+    expect(designerAddressExists({ view: 'playbooks', item: 'visual' })).toBe(false);
+    expect(designerAddressExists({ view: 'constants', item: 'preview' })).toBe(false);
+    expect(designerAddressExists({ view: 'varsfiles', item: 'site.yml' })).toBe(false);
+    expect(designerAddressExists({ view: 'varsfiles', item: 'yaml', editor: 'yaml' })).toBe(false);
+    expect(designerAddressExists({ view: 'forms', item: 'approval-demo', editor: 'other' })).toBe(false);
+    expect(designerAddressExists({ view: 'forms', item: 'yaml', editor: 'visual' })).toBe(false);
   });
 });

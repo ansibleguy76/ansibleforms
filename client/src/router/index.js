@@ -4,6 +4,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { JOBS_STATUS_SLUGS, ALL_JOBS } from '@/lib/jobsPath';
 import BaseUrl from '@/lib/BaseUrl';
+import { DESIGNER_TABS, designerAddressExists } from '@/config/designerTabs';
 
 // Pages load on first visit rather than up front: each becomes its own chunk, so the first
 // page view downloads the app shell and that page instead of the whole application.
@@ -81,9 +82,10 @@ const routes = [
   { path: '/forms', redirect: '/forms/all' },
   { path: '/forms/:category(.*)', name: '/forms', component: index },
   // a view at /designer/<view>, the form edited at /designer/forms/<form>, then the editor shown
-  // (/visual, /preview ; pages/designer.vue)
+  // (/visual, /preview ; pages/designer.vue). Only its sections : any other (a section it no
+  // longer has, as roles) is not found
   {
-    path: '/designer/:view?/:item?/:editor?',
+    path: `/designer/:view(${Object.keys(DESIGNER_TABS).join('|')})?/:item?/:editor?`,
     name: '/designer',
     component: designer,
     meta: { permission: 'showDesigner' },
@@ -364,12 +366,15 @@ async function designerSwitchedOffNow() {
   }
   return store.designerEnabled === false;
 }
-// the designer switched off for the instance : for everyone its address leads nowhere, the page
-// not found as any address that does not exist (the address kept), the switch read from the
-// server first when this tab has not read it yet (a link or a bookmark straight to /designer)
+// the designer switched off for the instance, or an address of a section it does not have : for
+// everyone the address leads nowhere, the page not found as any address that does not exist (the
+// address kept), the switch read from the server first when this tab has not read it yet (a link
+// or a bookmark straight to /designer)
 router.beforeEach(async (to) => {
   if (to.meta?.permission !== 'showDesigner') return true;
-  if (!(await designerSwitchedOffNow())) return true;
+  // a section it does not have (/designer/roles : the section went to Settings), or a tab its
+  // section does not have (/designer/playbooks/visual) : not found
+  if (designerAddressExists(to.params) && !(await designerSwitchedOffNow())) return true;
   return {
     name: '/unknown',
     params: { pathMatch: to.path.replace(/^\//, '').split('/') },
