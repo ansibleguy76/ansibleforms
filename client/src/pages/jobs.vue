@@ -1964,10 +1964,10 @@ onMounted(async () => {
 .custom-table.af-table td.af-col-end:not(:first-child):not(:last-child):has(+ .af-jobs-expand) {
   padding-right: 0.6rem;
 }
-/* the caret itself : muted as a row's 3-dot menu, the text's colour when hovered, the row's own
-   on a selected row */
+/* the caret itself : lighter than the row's text (already the secondary grey), the text's colour
+   when hovered, the row's own on a selected row */
 .custom-table td.af-jobs-expand svg {
-  color: var(--bs-secondary-color);
+  color: var(--bs-tertiary-color);
 }
 .custom-table td.af-jobs-expand:hover svg {
   color: var(--bs-body-color);
