@@ -1549,6 +1549,7 @@ export default {
     visualCredentialsHelp: 'Jede Extravar erhält die daneben genannten Anmeldedaten.',
     visualCredentialVar: 'Extravar',
     visualCredentialName: 'Anmeldedaten',
+    visualNoCredential: 'Keine',
     visualAddCredential: 'Anmeldedaten hinzufügen',
     // a form field's properties, one line each (the Visual tab, config/fieldProperties.js)
     fieldProp: {

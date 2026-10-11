@@ -1509,6 +1509,7 @@ export default {
     visualCredentialsHelp: '各 extravar には横に指定した認証情報が渡されます。',
     visualCredentialVar: 'Extravar',
     visualCredentialName: '認証情報',
+    visualNoCredential: 'なし',
     visualAddCredential: '認証情報を追加',
     // a form field's properties, one line each (the Visual tab, config/fieldProperties.js)
     fieldProp: {

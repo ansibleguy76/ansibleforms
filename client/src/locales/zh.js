@@ -1473,6 +1473,7 @@ export default {
     visualCredentialsHelp: '每个 extravar 获得旁边指定的凭据。',
     visualCredentialVar: 'Extravar',
     visualCredentialName: '凭据',
+    visualNoCredential: '无',
     visualAddCredential: '添加凭据',
     // a form field's properties, one line each (the Visual tab, config/fieldProperties.js)
     fieldProp: {

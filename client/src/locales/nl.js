@@ -1528,6 +1528,7 @@ export default {
     visualCredentialsHelp: 'Elke extravar krijgt de referentie die ernaast staat.',
     visualCredentialVar: 'Extravar',
     visualCredentialName: 'Referentie',
+    visualNoCredential: 'Geen',
     visualAddCredential: 'Referentie toevoegen',
     // a form field's properties, one line each (the Visual tab, config/fieldProperties.js)
     fieldProp: {

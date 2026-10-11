@@ -251,6 +251,7 @@ const textSettings = computed(() =>
       icon: 'key',
       show: allows('ansibleCredentials'),
       help: 'designer.helpAnsibleCreds',
+      choices: true,
     },
     {
       key: 'vaultCredentials',
@@ -258,6 +259,7 @@ const textSettings = computed(() =>
       icon: 'lock',
       show: allows('vaultCredentials'),
       help: 'designer.helpVaultCreds',
+      choices: true,
     },
     { key: 'tags', label: 'designer.formTags', icon: 'tags', show: allows('tags'), help: 'designer.helpTags' },
     { key: 'limit', label: 'designer.formLimit', icon: 'filter', show: allows('limit'), help: 'designer.helpLimit' },
@@ -768,7 +770,22 @@ defineExpose({
           <label class="form-label fw-bold">{{ t(x.label) }}</label>
           <div class="input-group">
             <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" :icon="x.icon" /></span>
+            <!-- a credential's name : picked from those the instance keeps, when it may read them -->
+            <select
+              v-if="x.choices && credentialNames.length"
+              class="form-select"
+              :value="setting(x.key)"
+              :disabled="locked"
+              @change="setText(x.key, $event.target.value)"
+            >
+              <option value="">{{ t('designer.visualNoCredential') }}</option>
+              <option v-if="setting(x.key) && !credentialNames.includes(setting(x.key))" :value="setting(x.key)">
+                {{ setting(x.key) }}
+              </option>
+              <option v-for="c in credentialNames" :key="c" :value="c">{{ c }}</option>
+            </select>
             <input
+              v-else
               class="form-control"
               :value="setting(x.key)"
               :disabled="locked"
@@ -1105,7 +1122,20 @@ defineExpose({
               </div>
               <div class="input-group">
                 <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="key" /></span>
+                <select
+                  v-if="credentialNames.length"
+                  class="form-select"
+                  :value="cred"
+                  :disabled="locked"
+                  :aria-label="t('designer.visualCredentialName')"
+                  @change="setNested('credentials', name, $event.target.value)"
+                >
+                  <option value="">{{ t('designer.visualNoCredential') }}</option>
+                  <option v-if="cred && !credentialNames.includes(cred)" :value="cred">{{ cred }}</option>
+                  <option v-for="c in credentialNames" :key="c" :value="c">{{ c }}</option>
+                </select>
                 <input
+                  v-else
                   class="form-control"
                   :value="cred"
                   :disabled="locked"

@@ -1530,6 +1530,7 @@ export default {
     visualCredentialsHelp: 'Cada extravar recibe la credencial indicada a su lado.',
     visualCredentialVar: 'Extravar',
     visualCredentialName: 'Credencial',
+    visualNoCredential: 'Ninguna',
     visualAddCredential: 'Añadir credencial',
     // a form field's properties, one line each (the Visual tab, config/fieldProperties.js)
     fieldProp: {
