@@ -5,6 +5,7 @@
 /*  opened from the groups list : a group seen at a sign-in or    */
 /*  named by a role, read only - its directory owns it - in tabs, */
 /*  the tab kept in the address ; a row of a tab opens its item : */
+/*  Details - its name and source, read only                      */
 /*  Users - the users seen in it at their last sign-in            */
 /*  Roles - the roles that name it                                */
 /*  Forms - the forms those roles open                            */
@@ -70,11 +71,12 @@ const formColumns = computed(() => [
 
 // ─── tabs ─────────────────────────────────────────────────────────────────────
 const tabs = computed(() => [
+  { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
   { key: 'users', label: t('settings.settingsPage.users'), icon: 'user', count: members.value.length },
   { key: 'roles', label: t('settings.settingsPage.roles'), icon: 'user-shield', count: groupRoles.value.length },
   { key: 'forms', label: t('settings.linked.forms'), icon: 'rectangle-list', count: groupForms.value.length },
 ]);
-const { activeTab, tabLink } = useRouteTab('users', (key) => tabs.value.some((x) => x.key === key));
+const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
 
 // the title : Groups › <name>, each step a link, and the open tab last
 const crumbs = computed(() => {
@@ -116,7 +118,7 @@ onMounted(async () => {
             >
               <FaIcon :icon="tab.icon" class="me-1" />
               {{ tab.label }}
-              <span class="badge af-tab-count ms-1">{{ tab.count }}</span>
+              <span v-if="tab.count !== undefined" class="badge af-tab-count ms-1">{{ tab.count }}</span>
             </a>
           </li>
         </ul>
@@ -127,14 +129,32 @@ onMounted(async () => {
           <span>{{ t('settings.directory.groupNotFound', { name: groupName, source: sourceName }) }}</span>
         </div>
         <template v-else-if="group">
-          <!-- where it comes from : its users are those seen in it -->
-          <div class="alert alert-secondary py-2">
-            <FaIcon icon="circle-info" class="me-2" />{{
-              t('settings.directory.groupReadOnlyNote', { source: sourceName })
-            }}
+          <!-- Details : where it comes from (its users are those seen in it), read only -->
+          <div v-if="activeTab === 'details'" class="af-group-details">
+            <div class="alert alert-secondary py-2">
+              <FaIcon icon="circle-info" class="me-2" />{{
+                t('settings.directory.groupReadOnlyNote', { source: sourceName })
+              }}
+            </div>
+            <BsInput
+              class="af-group-field"
+              :modelValue="group.name"
+              icon="users"
+              :isFloating="false"
+              :disabled="true"
+              :label="t('settings.fields.name')"
+            />
+            <BsInput
+              class="af-group-field"
+              :modelValue="sourceName"
+              icon="right-to-bracket"
+              :isFloating="false"
+              :disabled="true"
+              :label="t('settings.directory.source')"
+            />
           </div>
           <AppLinkedTable
-            v-if="activeTab === 'users'"
+            v-else-if="activeTab === 'users'"
             :columns="memberColumns"
             :rows="members"
             rowKey="username"
@@ -163,6 +183,13 @@ onMounted(async () => {
   </AppSettingsPage>
 </template>
 <style scoped>
+/* the wide fields' width of the settings pages, as a local group's */
+.af-group-field :deep(.input-group) {
+  max-width: 40rem;
+}
+.af-group-details {
+  padding-bottom: 0.5rem;
+}
 /* the count of a tab : small and grey, as the menus' badges */
 .af-tab-count {
   background: var(--bs-secondary-bg);

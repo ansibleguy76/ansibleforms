@@ -4,7 +4,7 @@
 /*  A secret store's page (/settings/secret-stores/<id>), opened from */
 /*  the secret stores' list : the steps of its dialog as tabs,    */
 /*  the tab kept in the url -                                     */
-/*    Store       its name and description                        */
+/*    Details     its name and description                        */
 /*    Type        HashiCorp Vault or CyberArk CCP, and whether a  */
 /*                Vault is a Vault Enterprise                     */
 /*    Connection  its address and how its certificate is checked  */
@@ -165,13 +165,13 @@ async function update(data) {
 // ─── tabs ─────────────────────────────────────────────────────────────────────
 // the dialog's steps : Store, Type, Connection, Credentials, Options
 const tabs = computed(() => [
-  { key: 'store', label: t('settings.secretStores.stepStore'), icon: 'vault' },
+  { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
   { key: 'type', label: t('settings.secretStores.stepType'), icon: 'shapes' },
   { key: 'connection', label: t('settings.secretStores.stepConnection'), icon: 'globe' },
   { key: 'credentials', label: t('settings.secretStores.stepAuth'), icon: 'key' },
   { key: 'options', label: t('settings.secretStores.stepOptions'), icon: 'sliders' },
 ]);
-const { activeTab, tabLink } = useRouteTab('store', (key) => tabs.value.some((x) => x.key === key));
+const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
 
 // the title : Secret stores › <name>, each step a link
 const pageCrumbs = computed(() => [
@@ -312,8 +312,8 @@ onMounted(async () => {
             <FaIcon icon="lock" class="me-2" />{{ t('settings.common.seedManagedNotice') }}
           </div>
           <fieldset :disabled="managed">
-            <!-- Store : what it is called -->
-            <template v-if="activeTab === 'store'">
+            <!-- Details : what it is called -->
+            <template v-if="activeTab === 'details'">
               <BsInput
                 class="af-store-field"
                 v-model="edit.name"

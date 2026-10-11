@@ -4,7 +4,7 @@
 /*  A repository's page (/settings/repositories/<name>), opened from */
 /*  the repositories' list : the steps of its dialog as tabs, the */
 /*  tab kept in the url -                                         */
-/*    Repository   its name, branch, uri, description, and where  */
+/*    Details      its name, branch, uri, description, and where  */
 /*                 it stands (status, head)                       */
 /*    Credentials  the credential git uses                        */
 /*    Usage        what the app reads from it                     */
@@ -200,13 +200,13 @@ onBeforeUnmount(() => clearInterval(poll));
 // ─── tabs ─────────────────────────────────────────────────────────────────────
 // the dialog's steps, and the last output
 const tabs = computed(() => [
-  { key: 'repository', label: t('settings.repositories.stepRepository'), icon: 'fab,git' },
+  { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
   { key: 'credentials', label: t('settings.repositories.stepCredentials'), icon: 'key' },
   { key: 'usage', label: t('settings.repositories.stepUsage'), icon: 'list-check' },
   { key: 'schedule', label: t('settings.repositories.stepSchedule'), icon: 'stopwatch' },
   { key: 'last-output', label: t('admin.lastOutput'), icon: 'terminal' },
 ]);
-const { activeTab, tabLink } = useRouteTab('repository', (key) => tabs.value.some((x) => x.key === key));
+const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
 
 // the title : Repositories › <name>, each step a link
 const pageCrumbs = computed(() => [
@@ -369,8 +369,8 @@ onMounted(async () => {
           <span>{{ t('settings.repositories.notFound', { name: repoName || '#' + repoId }) }}</span>
         </div>
         <div v-else-if="repo && edit" class="af-repo-tab">
-          <!-- Repository : what it is, and where it stands -->
-          <template v-if="activeTab === 'repository'">
+          <!-- Details : what it is, and where it stands -->
+          <template v-if="activeTab === 'details'">
             <!-- where it stands : its status and head, each a field of the column, read only -->
             <div class="mb-3">
               <div class="form-label fw-bold">{{ t('settings.fields.status') }}</div>

@@ -4,7 +4,7 @@
 /*  A credential's page (/settings/credentials/<id>), opened from    */
 /*  the credentials' list : the steps of its dialog as tabs, the  */
 /*  tab kept in the url -                                         */
-/*    Credential  its name and description                        */
+/*    Details     its name and description                        */
 /*    Type        SSH, Git, API, Database or CyberArk             */
 /*    Login       its user (a CyberArk's AppID, client            */
 /*                certificate and key)                            */
@@ -176,7 +176,7 @@ const usedByColumns = computed(() => [
 // then what uses it
 const tabs = computed(() =>
   [
-    { key: 'credential', label: t('settings.credentials.stepCredential'), icon: 'lock' },
+    { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
     { key: 'type', label: t('settings.credentials.stepType'), icon: 'shapes' },
     { key: 'login', label: t('settings.credentials.stepLogin'), icon: 'user' },
     !isCyberark.value && { key: 'store', label: t('settings.credentials.stepStore'), icon: 'vault' },
@@ -188,11 +188,11 @@ const tabs = computed(() =>
     { key: 'used-by', label: t('settings.linked.usedBy'), icon: 'link', count: usedBy.value.length },
   ].filter(Boolean),
 );
-const { activeTab, tabLink } = useRouteTab('credential', (key) =>
-  ['credential', 'type', 'login', 'store', 'connection', 'used-by'].includes(key),
+const { activeTab, tabLink } = useRouteTab('details', (key) =>
+  ['details', 'type', 'login', 'store', 'connection', 'used-by'].includes(key),
 );
 // a tab the type does not have (Connection of an API credential) : its first
-const shownTab = computed(() => (tabs.value.some((x) => x.key === activeTab.value) ? activeTab.value : 'credential'));
+const shownTab = computed(() => (tabs.value.some((x) => x.key === activeTab.value) ? activeTab.value : 'details'));
 
 // the title : Credentials › <name>, each step a link
 const pageCrumbs = computed(() => [
@@ -355,8 +355,8 @@ onMounted(async () => {
             <FaIcon icon="lock" class="me-2" />{{ t('settings.common.seedManagedNotice') }}
           </div>
           <fieldset :disabled="managed">
-            <!-- Credential : what it is called -->
-            <template v-if="shownTab === 'credential'">
+            <!-- Details : what it is called -->
+            <template v-if="shownTab === 'details'">
               <BsInput
                 class="af-credential-field"
                 v-model="edit.name"
