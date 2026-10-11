@@ -318,3 +318,24 @@ td.bs-dt-row-actions {
   padding-right: 0.9rem !important;
   text-align: right;
 }
+
+/* the caret of a row that unfolds its children (AppLinkedTable's children : a multistep job's
+   steps), in a column of its own as the jobs list's : narrow, a little room on each side, muted
+   until hovered, never an ellipsis */
+table th.af-expand-col,
+table td.af-expand-col {
+  width: 1.75rem;
+  padding-left: 0.25rem !important;
+  padding-right: 0.25rem !important;
+  text-overflow: clip;
+}
+table td.af-expand-col svg {
+  color: var(--bs-tertiary-color);
+}
+table td.af-expand-col:hover svg {
+  color: var(--bs-body-color);
+}
+/* a child row's first cell (a step under its job) : marked as the jobs list marks its steps */
+table td.af-child-row {
+  background-color: var(--bs-info-bg-subtle) !important;
+}

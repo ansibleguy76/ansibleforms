@@ -120,6 +120,7 @@ const {
   activity,
   loadUserLinks,
   jobColumns,
+  stepsOf,
   storedJobColumns,
   scheduleColumns,
   activityColumns,
@@ -385,6 +386,8 @@ onMounted(async () => {
         <AppLinkedTable
           v-else-if="user && activeTab === 'jobs'"
           :columns="jobColumns"
+          :children="stepsOf"
+          childrenBefore="form"
           :rows="jobs"
           :to="(j) => `/jobs/${j.id}`"
           :empty="t('settings.linked.noJob')"
