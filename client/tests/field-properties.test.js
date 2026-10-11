@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import YAML from 'yaml';
 import { fieldProperties } from '@/config/fieldProperties';
 import { fieldPropValue, setFieldProp, addFieldProp } from '@/lib/formDoc';
+import { readdirSync } from 'fs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const schema = JSON.parse(readFileSync(path.join(here, '../../server/schema/form_schema.json'), 'utf8'));
@@ -49,5 +50,17 @@ describe("a field's properties", () => {
     expect(setFieldProp(doc, node, by('dependencies'), '- name: b\n  values: [1]')).toBe('');
     expect(node.get('dependencies').toJSON()).toEqual([{ name: 'b', values: [1] }]);
     expect(setFieldProp(doc, node, by('dependencies'), ': : :')).not.toBe('');
+  });
+});
+
+describe("a field property's description", () => {
+  test('is there in every language', async () => {
+    const dir = path.join(here, '../src/locales');
+    for (const file of readdirSync(dir).filter((f) => f.endsWith('.js'))) {
+      const locale = (await import(path.join(dir, file))).default;
+      const described = locale?.designer?.fieldProp || {};
+      const missing = fieldProperties.map((p) => p.key).filter((k) => !String(described[k] || '').trim());
+      expect(missing, file).toEqual([]);
+    }
   });
 });

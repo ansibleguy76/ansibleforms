@@ -632,8 +632,8 @@ defineExpose({
           <label class="form-label fw-bold">{{ t('designer.formDescription') }}</label>
           <!-- a sentence or two : as tall as two lines, as the help below -->
           <textarea
-            class="form-control"
-            rows="2"
+            class="form-control af-text-box"
+            rows="3"
             :value="form.description"
             :disabled="locked"
             @change="setText('description', $event.target.value)"
@@ -642,7 +642,7 @@ defineExpose({
         <div class="af-form-span2">
           <label class="form-label fw-bold">{{ t('designer.helpText') }}</label>
           <textarea
-            class="form-control"
+            class="form-control af-text-box"
             rows="3"
             :value="setting('help')"
             :disabled="locked"
@@ -1382,7 +1382,7 @@ defineExpose({
               <div v-if="propError[f.uid + pr.key]" class="invalid-feedback d-block">
                 {{ propError[f.uid + pr.key] }}
               </div>
-              <div v-if="pr.short" class="form-text">{{ pr.short }}</div>
+              <div class="form-text">{{ t(`designer.fieldProp.${pr.key}`) }}</div>
             </div>
             <!-- what else its type takes : added from a list, its description beside each -->
             <div v-if="fieldsEditable && addableProps(f).length" class="af-field-values">
@@ -1396,7 +1396,7 @@ defineExpose({
               >
                 <option value="">{{ t('designer.visualAddProperty') }}</option>
                 <option v-for="pr in addableProps(f)" :key="pr.key" :value="pr.key">
-                  {{ pr.key }}{{ pr.short ? ' - ' + pr.short : '' }}
+                  {{ pr.key }} - {{ t(`designer.fieldProp.${pr.key}`) }}
                 </option>
               </select>
             </div>
@@ -1507,6 +1507,13 @@ defineExpose({
 }
 .af-prop-remove {
   font-size: 0.55rem;
+}
+/* the description and the help : the same height, three lines at the start, at most ten when
+   dragged taller (a line : 1.5em ; the box : its padding and border) */
+.af-text-box {
+  min-height: calc(3 * 1.5em + 0.75rem + 2px);
+  max-height: calc(10 * 1.5em + 0.75rem + 2px);
+  resize: vertical;
 }
 /* the form's switches : four columns of two, filled column by column, each column as wide as
    its longer label */
