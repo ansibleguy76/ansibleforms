@@ -1488,7 +1488,7 @@ export default {
     visualRequired: '必填',
     visualDuplicateField: '另一个字段使用了此名称。',
     visualNoName: '字段需要名称。',
-    visualFieldsHint: '名称、标签和必填位于每个字段的行中；其 ▸ 展开类型及该类型的所有属性。',
+    visualFieldsHint: '名称、类型、标签和必填位于每个字段的行中；其 ▸ 展开该类型的所有属性。',
     visualAddProperty: '添加属性…',
     visualRemoveProperty: '移除此属性',
     visualFieldDetails: '帮助、默认值、输出和取值',

@@ -1547,7 +1547,7 @@ export default {
     visualDuplicateField: 'Otro campo tiene este nombre.',
     visualNoName: 'Un campo necesita un nombre.',
     visualFieldsHint:
-      'Nombre, etiqueta y obligatorio están en la fila de cada campo; su ▸ despliega su tipo y cada propiedad que ese tipo admite.',
+      'Nombre, tipo, etiqueta y obligatorio están en la fila de cada campo; su ▸ despliega cada propiedad que admite su tipo.',
     visualAddProperty: 'Añadir propiedad…',
     visualRemoveProperty: 'Quitar esta propiedad',
     visualFieldDetails: 'Su ayuda, valor por defecto, salida y valores',

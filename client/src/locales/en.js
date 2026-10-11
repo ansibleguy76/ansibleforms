@@ -1524,7 +1524,7 @@ export default {
     visualDuplicateField: 'Another field has this name.',
     visualNoName: 'A field needs a name.',
     visualFieldsHint:
-      "Name, label and required are in each field's row; its ▸ unfolds its type and every property that type takes.",
+      "Name, type, label and required are in each field's row; its ▸ unfolds every property its type takes.",
     visualAddProperty: 'Add property…',
     visualRemoveProperty: 'Remove this property',
     visualFieldDetails: 'Its help, default, output and values',

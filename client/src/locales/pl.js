@@ -1539,7 +1539,7 @@ export default {
     visualDuplicateField: 'Inne pole ma tę nazwę.',
     visualNoName: 'Pole musi mieć nazwę.',
     visualFieldsHint:
-      'Nazwa, etykieta i wymagalność są w wierszu każdego pola; jego ▸ rozwija typ i każdą właściwość tego typu.',
+      'Nazwa, typ, etykieta i wymagalność są w wierszu każdego pola; jego ▸ rozwija każdą właściwość jego typu.',
     visualAddProperty: 'Dodaj właściwość…',
     visualRemoveProperty: 'Usuń tę właściwość',
     visualFieldDetails: 'Pomoc, wartość domyślna, wyjście i wartości',

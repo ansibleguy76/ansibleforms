@@ -1559,7 +1559,7 @@ export default {
     visualDuplicateField: 'Un autre champ porte ce nom.',
     visualNoName: "Un champ a besoin d'un nom.",
     visualFieldsHint:
-      "Le nom, le libellé et l'obligation sont dans la ligne de chaque champ ; son ▸ déplie son type et chaque propriété de ce type.",
+      "Le nom, le type, le libellé et l'obligation sont dans la ligne de chaque champ ; son ▸ déplie chaque propriété de son type.",
     visualAddProperty: 'Ajouter une propriété…',
     visualRemoveProperty: 'Retirer cette propriété',
     visualFieldDetails: 'Son aide, sa valeur par défaut, sa sortie et ses valeurs',

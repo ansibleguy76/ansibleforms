@@ -1545,7 +1545,7 @@ export default {
     visualDuplicateField: 'Een ander veld heeft deze naam.',
     visualNoName: 'Een veld heeft een naam nodig.',
     visualFieldsHint:
-      'Naam, label en verplicht staan in de rij van elk veld; zijn ▸ klapt zijn type en elke eigenschap van dat type open.',
+      'Naam, type, label en verplicht staan in de rij van elk veld; zijn ▸ klapt elke eigenschap van zijn type open.',
     visualAddProperty: 'Eigenschap toevoegen…',
     visualRemoveProperty: 'Deze eigenschap verwijderen',
     visualFieldDetails: 'Help, standaardwaarde, uitvoer en waarden',

@@ -603,7 +603,7 @@ defineExpose({
     <template v-else-if="form">
       <!-- ─── Form : edited in place ─── -->
       <div class="af-form-grid">
-        <!-- the name : two columns, its type beside it ; its description and help as wide -->
+        <!-- the name : a row of its own -->
         <div class="af-form-span2">
           <label class="form-label fw-bold">{{ t('designer.formName') }}</label>
           <div class="input-group">
@@ -617,7 +617,8 @@ defineExpose({
             />
           </div>
         </div>
-        <div>
+        <!-- the type : a row below the name, the settings it decides right after it -->
+        <div class="af-form-newrow">
           <label class="form-label fw-bold">{{ t('designer.formType') }}</label>
           <div class="input-group">
             <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="shapes" /></span>
@@ -626,84 +627,6 @@ defineExpose({
               <option v-for="ft in formTypes" :key="ft" :value="ft">{{ ft }}</option>
             </select>
           </div>
-        </div>
-        <div class="af-form-span2">
-          <label class="form-label fw-bold">{{ t('designer.formDescription') }}</label>
-          <!-- a sentence or two : as tall as two lines, as the help below -->
-          <textarea
-            class="form-control"
-            rows="2"
-            :value="form.description"
-            :disabled="locked"
-            @change="setText('description', $event.target.value)"
-          ></textarea>
-        </div>
-        <div class="af-form-span2">
-          <label class="form-label fw-bold">{{ t('designer.helpText') }}</label>
-          <textarea
-            class="form-control"
-            rows="3"
-            :value="setting('help')"
-            :disabled="locked"
-            @change="setText('help', $event.target.value)"
-          ></textarea>
-        </div>
-        <!-- its categories and roles : what it has, as pills to remove, and a list to add from -->
-        <div v-for="key in isSubform ? [] : ['categories', 'roles']" :key="key" class="af-form-wide">
-          <label class="form-label fw-bold">{{
-            key === 'categories' ? t('designer.visualCategories') : t('designer.visualRoles')
-          }}</label>
-          <div v-if="form[key] === null" class="text-body-secondary fst-italic">{{ t('designer.visualInYaml') }}</div>
-          <div v-else class="d-flex align-items-center flex-wrap gap-2">
-            <span v-for="v in form[key]" :key="v" class="badge rounded-pill af-form-pill">
-              {{ v }}
-              <button
-                type="button"
-                class="btn-close ms-1"
-                :disabled="locked"
-                :aria-label="t('common.delete')"
-                @click="removeFrom(key, v)"
-              ></button>
-            </span>
-            <span v-if="!form[key].length && key === 'categories'" class="text-body-secondary">Default</span>
-            <select
-              class="form-select form-select-sm af-form-add"
-              :disabled="locked || !(key === 'categories' ? categoryChoices : roleChoices).length"
-              :value="''"
-              @change="
-                addTo(key, $event.target.value);
-                $event.target.value = '';
-              "
-            >
-              <option value="">{{ t('designer.visualAdd') }}</option>
-              <option v-for="o in key === 'categories' ? categoryChoices : roleChoices" :key="o" :value="o">
-                {{ o }}
-              </option>
-            </select>
-          </div>
-        </div>
-        <!-- the rest of the settings : the texts, then AWX's instance groups, the order, the launch
-             validation, the help, the switches - only what the type allows -->
-        <div v-if="!isSubform">
-          <label class="form-label fw-bold">{{ t('designer.visualIcon') }}</label>
-          <div class="input-group">
-            <span class="input-group-text"
-              ><FaIcon :fixedwidth="true" :icon="form.icon || 'square'" :class="{ 'opacity-25': !form.icon }"
-            /></span>
-            <select
-              class="form-select"
-              :value="form.icon"
-              :disabled="locked"
-              @change="setText('icon', $event.target.value)"
-            >
-              <option value="">{{ t('designer.visualNoIcon') }}</option>
-              <option v-if="form.icon && !availableIcons.includes(form.icon)" :value="form.icon">
-                {{ form.icon }}
-              </option>
-              <option v-for="ic in availableIcons" :key="ic" :value="ic">{{ ic }}</option>
-            </select>
-          </div>
-          <div class="form-text">{{ t('designer.helpIcon') }}</div>
         </div>
         <div v-if="form.type === 'ansible'">
           <label class="form-label fw-bold">{{ t('designer.formPlaybook') }}</label>
@@ -779,6 +702,23 @@ defineExpose({
           </div>
           <div v-if="x.help" class="form-text">{{ t(x.help) }}</div>
         </div>
+        <div v-if="awx">
+          <label class="form-label fw-bold">{{ t('designer.formInstanceGroups') }}</label>
+          <div class="input-group">
+            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="layer-group" /></span>
+            <input
+              class="form-control"
+              :value="
+                Array.isArray(setting('instanceGroups'))
+                  ? setting('instanceGroups').join(', ')
+                  : setting('instanceGroups')
+              "
+              :disabled="locked"
+              @change="setInstanceGroups($event.target.value)"
+            />
+          </div>
+          <div class="form-text">{{ t('designer.helpInstanceGroups') }}</div>
+        </div>
         <!-- the user in the extravars : a choice, and the keys when only some -->
         <div v-if="allows('userExtravars')">
           <label class="form-label fw-bold">{{ t('designer.formUserExtravars') }}</label>
@@ -813,37 +753,6 @@ defineExpose({
           </div>
           <div class="form-text">{{ t('designer.formUserExtravarsHelp') }}</div>
         </div>
-        <div v-if="awx">
-          <label class="form-label fw-bold">{{ t('designer.formInstanceGroups') }}</label>
-          <div class="input-group">
-            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="layer-group" /></span>
-            <input
-              class="form-control"
-              :value="
-                Array.isArray(setting('instanceGroups'))
-                  ? setting('instanceGroups').join(', ')
-                  : setting('instanceGroups')
-              "
-              :disabled="locked"
-              @change="setInstanceGroups($event.target.value)"
-            />
-          </div>
-          <div class="form-text">{{ t('designer.helpInstanceGroups') }}</div>
-        </div>
-        <div v-if="allows('order')">
-          <label class="form-label fw-bold">{{ t('designer.formOrder') }}</label>
-          <div class="input-group">
-            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="arrow-down-1-9" /></span>
-            <input
-              type="number"
-              class="form-control"
-              :value="setting('order')"
-              :disabled="locked"
-              @change="setOrder($event.target.value)"
-            />
-          </div>
-          <div class="form-text">{{ t('designer.helpOrder') }}</div>
-        </div>
         <div v-if="allows('launchValidation')">
           <label class="form-label fw-bold">{{ t('designer.formLaunchValidation') }}</label>
           <div class="input-group">
@@ -860,6 +769,97 @@ defineExpose({
             </select>
           </div>
           <div class="form-text">{{ t('designer.formLaunchValidationHelp') }}</div>
+        </div>
+        <!-- what the form is : its description, its help, where it shows -->
+        <div class="af-form-span2 af-form-newrow">
+          <label class="form-label fw-bold">{{ t('designer.formDescription') }}</label>
+          <!-- a sentence or two : as tall as two lines, as the help below -->
+          <textarea
+            class="form-control"
+            rows="2"
+            :value="form.description"
+            :disabled="locked"
+            @change="setText('description', $event.target.value)"
+          ></textarea>
+        </div>
+        <div class="af-form-span2">
+          <label class="form-label fw-bold">{{ t('designer.helpText') }}</label>
+          <textarea
+            class="form-control"
+            rows="3"
+            :value="setting('help')"
+            :disabled="locked"
+            @change="setText('help', $event.target.value)"
+          ></textarea>
+        </div>
+        <!-- its categories and roles : what it has, as pills to remove, and a list to add from -->
+        <div v-for="key in isSubform ? [] : ['categories', 'roles']" :key="key" class="af-form-wide">
+          <label class="form-label fw-bold">{{
+            key === 'categories' ? t('designer.visualCategories') : t('designer.visualRoles')
+          }}</label>
+          <div v-if="form[key] === null" class="text-body-secondary fst-italic">{{ t('designer.visualInYaml') }}</div>
+          <div v-else class="d-flex align-items-center flex-wrap gap-2">
+            <span v-for="v in form[key]" :key="v" class="badge rounded-pill af-form-pill">
+              {{ v }}
+              <button
+                type="button"
+                class="btn-close ms-1"
+                :disabled="locked"
+                :aria-label="t('common.delete')"
+                @click="removeFrom(key, v)"
+              ></button>
+            </span>
+            <span v-if="!form[key].length && key === 'categories'" class="text-body-secondary">Default</span>
+            <select
+              class="form-select form-select-sm af-form-add"
+              :disabled="locked || !(key === 'categories' ? categoryChoices : roleChoices).length"
+              :value="''"
+              @change="
+                addTo(key, $event.target.value);
+                $event.target.value = '';
+              "
+            >
+              <option value="">{{ t('designer.visualAdd') }}</option>
+              <option v-for="o in key === 'categories' ? categoryChoices : roleChoices" :key="o" :value="o">
+                {{ o }}
+              </option>
+            </select>
+          </div>
+        </div>
+        <div v-if="!isSubform">
+          <label class="form-label fw-bold">{{ t('designer.visualIcon') }}</label>
+          <div class="input-group">
+            <span class="input-group-text"
+              ><FaIcon :fixedwidth="true" :icon="form.icon || 'square'" :class="{ 'opacity-25': !form.icon }"
+            /></span>
+            <select
+              class="form-select"
+              :value="form.icon"
+              :disabled="locked"
+              @change="setText('icon', $event.target.value)"
+            >
+              <option value="">{{ t('designer.visualNoIcon') }}</option>
+              <option v-if="form.icon && !availableIcons.includes(form.icon)" :value="form.icon">
+                {{ form.icon }}
+              </option>
+              <option v-for="ic in availableIcons" :key="ic" :value="ic">{{ ic }}</option>
+            </select>
+          </div>
+          <div class="form-text">{{ t('designer.helpIcon') }}</div>
+        </div>
+        <div v-if="allows('order')">
+          <label class="form-label fw-bold">{{ t('designer.formOrder') }}</label>
+          <div class="input-group">
+            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="arrow-down-1-9" /></span>
+            <input
+              type="number"
+              class="form-control"
+              :value="setting('order')"
+              :disabled="locked"
+              @change="setOrder($event.target.value)"
+            />
+          </div>
+          <div class="form-text">{{ t('designer.helpOrder') }}</div>
         </div>
         <!-- notifications : on or off ; on, who gets them, on which statuses and events -->
         <div v-if="allows('notifications')" class="af-form-span2">
@@ -1172,6 +1172,7 @@ defineExpose({
         <div class="af-cats-row af-cats-head">
           <span></span>
           <span>{{ t('designer.fieldName') }}</span>
+          <span>{{ t('designer.fieldType') }}</span>
           <span>{{ t('designer.fieldLabel') }}</span>
           <span class="text-center">{{ t('designer.visualRequired') }}</span>
           <span></span>
@@ -1200,6 +1201,20 @@ defineExpose({
                 spellcheck="false"
                 @change="change(() => setFieldText(f.node, 'name', $event.target.value.trim()))"
               />
+            </div>
+            <div class="input-group">
+              <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="shapes" /></span>
+              <select
+                class="form-select"
+                :value="f.type"
+                :disabled="!fieldsEditable"
+                :aria-label="t('designer.fieldType')"
+                @change="setRowType(f, $event.target.value)"
+              >
+                <!-- a type not in the list (a typo in the YAML) : offered, so it stays visible -->
+                <option v-if="!fieldTypes.includes(f.type)" :value="f.type">{{ f.type }}</option>
+                <option v-for="ft in fieldTypes" :key="ft" :value="ft">{{ ft }}</option>
+              </select>
             </div>
             <div class="input-group">
               <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="font" /></span>
@@ -1257,26 +1272,9 @@ defineExpose({
               </button>
             </div>
           </div>
-          <!-- the field's other properties : its type first, then help, default, output, values (when
-               its type has them), then the properties of its type it has, and those it may add -->
+          <!-- the field's other properties : help, default, output, values (when its type has them),
+               then the properties of its type it has, and those it may add -->
           <div v-if="open.has(f.uid)" class="af-field-details">
-            <div>
-              <label class="form-label fw-bold">{{ t('designer.fieldType') }}</label>
-              <div class="input-group">
-                <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="shapes" /></span>
-                <select
-                  class="form-select"
-                  :value="f.type"
-                  :disabled="!fieldsEditable"
-                  :aria-label="t('designer.fieldType')"
-                  @change="setRowType(f, $event.target.value)"
-                >
-                  <!-- a type not in the list (a typo in the YAML) : offered, so it stays visible -->
-                  <option v-if="!fieldTypes.includes(f.type)" :value="f.type">{{ f.type }}</option>
-                  <option v-for="ft in fieldTypes" :key="ft" :value="ft">{{ ft }}</option>
-                </select>
-              </div>
-            </div>
             <div>
               <label class="form-label fw-bold">{{ t('designer.fieldHelp') }}</label>
               <input
@@ -1423,6 +1421,14 @@ defineExpose({
 .af-form-span2 {
   grid-column: span 2;
 }
+/* starts a row of its own (the type under the name, the description after the run settings) ;
+   'span 2' alone is a start, so a wide one says both */
+.af-form-newrow {
+  grid-column: 1;
+}
+.af-form-span2.af-form-newrow {
+  grid-column: 1 / span 2;
+}
 /* a category or a role it has : a pill, its cross removes it */
 .af-form-pill {
   display: inline-flex;
@@ -1453,10 +1459,10 @@ defineExpose({
 .af-cats-row {
   display: grid;
   /* name and label share the room ; the last as wide as its buttons (two moves, the gap, Delete) */
-  grid-template-columns: 1.75rem minmax(10rem, 1fr) minmax(10rem, 1fr) 6.5rem 8rem;
+  grid-template-columns: 1.75rem minmax(10rem, 1fr) 11rem minmax(10rem, 1fr) 6.5rem 8rem;
   gap: 0.75rem;
   align-items: center;
-  min-width: 40rem;
+  min-width: 52rem;
 }
 .af-cats-head {
   font-weight: 700;
@@ -1469,8 +1475,8 @@ defineExpose({
 /* a field's other properties : under its row, past its caret, framed as a sub-part of it */
 .af-field-details {
   display: grid;
-  /* its type, help and default, then the output switch ; a wide one (values, YAML) on its own */
-  grid-template-columns: repeat(3, minmax(10rem, 1fr)) auto;
+  /* its help and default, then the output switch ; a wide one (values, YAML) on its own */
+  grid-template-columns: repeat(2, minmax(10rem, 1fr)) auto;
   gap: 0.75rem 1rem;
   margin: 0 0 0.5rem 2.5rem;
   padding: 0.75rem 1rem;

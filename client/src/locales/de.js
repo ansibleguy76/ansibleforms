@@ -1566,7 +1566,7 @@ export default {
     visualDuplicateField: 'Ein anderes Feld hat diesen Namen.',
     visualNoName: 'Ein Feld braucht einen Namen.',
     visualFieldsHint:
-      'Name, Bezeichnung und Pflicht stehen in der Zeile jedes Feldes; sein ▸ klappt seinen Typ und jede Eigenschaft dieses Typs auf.',
+      'Name, Typ, Bezeichnung und Pflicht stehen in der Zeile jedes Feldes; sein ▸ klappt jede Eigenschaft seines Typs auf.',
     visualAddProperty: 'Eigenschaft hinzufügen…',
     visualRemoveProperty: 'Diese Eigenschaft entfernen',
     visualFieldDetails: 'Hilfe, Standardwert, Ausgabe und Werte',

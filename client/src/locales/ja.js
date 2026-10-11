@@ -1526,7 +1526,7 @@ export default {
     visualDuplicateField: '別のフィールドがこの名前を使っています。',
     visualNoName: 'フィールドには名前が必要です。',
     visualFieldsHint:
-      '名前、ラベル、必須は各フィールドの行にあります。▸ で種類とその種類のすべてのプロパティを展開します。',
+      '名前、種類、ラベル、必須は各フィールドの行にあります。▸ でその種類のすべてのプロパティを展開します。',
     visualAddProperty: 'プロパティを追加…',
     visualRemoveProperty: 'このプロパティを削除',
     visualFieldDetails: 'ヘルプ、既定値、出力、値',

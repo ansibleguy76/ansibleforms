@@ -1544,7 +1544,7 @@ export default {
     visualDuplicateField: 'Un altro campo ha questo nome.',
     visualNoName: 'Un campo ha bisogno di un nome.',
     visualFieldsHint:
-      'Nome, etichetta e obbligatorio sono nella riga di ogni campo; il suo ▸ apre il suo tipo e ogni proprietà di quel tipo.',
+      'Nome, tipo, etichetta e obbligatorio sono nella riga di ogni campo; il suo ▸ apre ogni proprietà del suo tipo.',
     visualAddProperty: 'Aggiungi proprietà…',
     visualRemoveProperty: 'Rimuovi questa proprietà',
     visualFieldDetails: 'Aiuto, valore predefinito, output e valori',
