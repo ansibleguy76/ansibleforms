@@ -718,7 +718,7 @@ export default {
       envLabel: 'ラベルの文字',
       envLabelHelp: 'ロゴの横のラベル（PRODUCTION、TEST など）。空の場合はなし',
       envLabelShow: '環境ラベル',
-      envLabelShowHelp: 'ロゴの横に環境ラベルを表示',
+      envLabelShowHelp: 'ロゴの横に環境ラベルを表示します（例: Production）',
       envLabelPreview: 'プレビュー',
       envLabelColor: 'ラベルの色',
       banner: 'お知らせ',

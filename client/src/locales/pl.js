@@ -717,7 +717,7 @@ export default {
       envLabel: 'Tekst etykiety',
       envLabelHelp: 'Etykieta obok logo, np. PRODUKCJA lub TEST ; pusta, brak',
       envLabelShow: 'Etykieta środowiska',
-      envLabelShowHelp: 'Pokaż etykietę środowiska obok logo',
+      envLabelShowHelp: 'Pokaż etykietę środowiska obok logo, np. Produkcja',
       envLabelPreview: 'Podgląd',
       envLabelColor: 'Kolor etykiety',
       banner: 'Ogłoszenie',

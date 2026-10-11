@@ -719,7 +719,7 @@ export default {
       envLabel: 'Texto de la etiqueta',
       envLabelHelp: 'Una etiqueta junto al logotipo, como PRODUCCIÓN o TEST ; vacía, ninguna',
       envLabelShow: 'Etiqueta de entorno',
-      envLabelShowHelp: 'Mostrar la etiqueta de entorno junto al logotipo',
+      envLabelShowHelp: 'Mostrar una etiqueta de entorno junto al logotipo, p. ej. Producción',
       envLabelPreview: 'Vista previa',
       envLabelColor: 'Color de la etiqueta',
       banner: 'Anuncio',

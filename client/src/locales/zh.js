@@ -701,7 +701,7 @@ export default {
       envLabel: '标签文字',
       envLabelHelp: '显示在徽标旁的标签，例如 PRODUCTION 或 TEST；留空则不显示',
       envLabelShow: '环境标签',
-      envLabelShowHelp: '在徽标旁显示环境标签',
+      envLabelShowHelp: '在徽标旁显示环境标签，例如 Production',
       envLabelPreview: '预览',
       envLabelColor: '标签颜色',
       banner: '公告',

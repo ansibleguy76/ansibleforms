@@ -718,7 +718,7 @@ export default {
       envLabel: 'Labeltekst',
       envLabelHelp: 'Een label naast het logo, zoals PRODUCTIE of TEST ; leeg, geen',
       envLabelShow: 'Omgevingslabel',
-      envLabelShowHelp: 'Het omgevingslabel naast het logo tonen',
+      envLabelShowHelp: 'Een omgevingslabel naast het logo tonen, bijv. Productie',
       envLabelPreview: 'Voorbeeld',
       envLabelColor: 'Labelkleur',
       banner: 'Aankondiging',

@@ -725,7 +725,7 @@ export default {
       envLabel: "Texte de l'étiquette",
       envLabelHelp: 'Une étiquette à côté du logo, comme PRODUCTION ou TEST ; vide, aucune',
       envLabelShow: "Étiquette d'environnement",
-      envLabelShowHelp: "Afficher l'étiquette d'environnement à côté du logo",
+      envLabelShowHelp: "Afficher une étiquette d'environnement à côté du logo, p. ex. Production",
       envLabelPreview: 'Aperçu',
       envLabelColor: "Couleur de l'étiquette",
       banner: 'Annonce',

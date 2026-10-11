@@ -724,7 +724,7 @@ export default {
       envLabel: 'Labeltext',
       envLabelHelp: 'Ein Label neben dem Logo, z. B. PRODUKTION oder TEST ; leer, keines',
       envLabelShow: 'Umgebungslabel',
-      envLabelShowHelp: 'Das Umgebungslabel neben dem Logo anzeigen',
+      envLabelShowHelp: 'Ein Umgebungslabel neben dem Logo anzeigen, z. B. Produktion',
       envLabelPreview: 'Vorschau',
       envLabelColor: 'Labelfarbe',
       banner: 'Ankündigung',

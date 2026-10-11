@@ -721,7 +721,7 @@ export default {
       envLabel: "Text de l'etiqueta",
       envLabelHelp: 'Una etiqueta al costat del logotip, com PRODUCCIÓ o TEST ; buida, cap',
       envLabelShow: "Etiqueta d'entorn",
-      envLabelShowHelp: "Mostrar l'etiqueta d'entorn al costat del logotip",
+      envLabelShowHelp: "Mostrar una etiqueta d'entorn al costat del logotip, p. ex. Producció",
       envLabelPreview: 'Previsualització',
       envLabelColor: "Color de l'etiqueta",
       banner: 'Avís',

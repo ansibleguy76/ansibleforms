@@ -714,7 +714,7 @@ export default {
       envLabel: 'Label text',
       envLabelHelp: 'A label beside the logo, such as PRODUCTION or TEST. Leave empty for none',
       envLabelShow: 'Environment label',
-      envLabelShowHelp: 'Show the environment label beside the logo',
+      envLabelShowHelp: 'Show an environment label beside the logo, e.g. Production',
       envLabelPreview: 'Preview',
       envLabelColor: 'Label color',
       banner: 'Announcement',
