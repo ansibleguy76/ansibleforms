@@ -148,17 +148,6 @@ function createCategory() {
 }
 
 /**
- * Adds an empty subcategory under a category.
- *
- * Args:
- *   parent (object): the category.
- */
-function addSubcategory(parent) {
-  if (!parent.items) parent.items = [];
-  parent.items.push({ _uid: nextUid(), name: '', icon: DEFAULT_CATEGORY_ICON });
-}
-
-/**
  * Removes a category (and its subcategories) from the tree.
  *
  * Args:
@@ -272,7 +261,7 @@ defineExpose({ add: addCategory, locked });
       <span>{{ t('settings.settingsPage.noCategories') }}</span>
     </div>
     <!-- an outline, as Settings > Appearance > Links : a row per category, its standard fields,
-         its moves as one group of buttons, then Add subcategory and Delete -->
+         its moves as one group of buttons (→ makes it a subcategory), then Delete -->
     <div v-else class="af-cats">
       <div class="af-cats-row af-cats-head">
         <span>{{ t('settings.settingsPage.icon') }}</span>
@@ -332,16 +321,6 @@ defineExpose({ add: addCategory, locked });
           <button
             type="button"
             class="btn af-row-btn"
-            :class="editable(row) ? 'btn-outline-primary' : 'btn-outline-secondary'"
-            :disabled="!editable(row)"
-            :title="t('designer.addSubcategory')"
-            @click="addSubcategory(row.cat)"
-          >
-            <FaIcon icon="level-up-alt" class="fa-rotate-90" />
-          </button>
-          <button
-            type="button"
-            class="btn af-row-btn"
             :class="editable(row) ? 'btn-outline-danger' : 'btn-outline-secondary'"
             :disabled="!editable(row)"
             :title="t('common.delete')"
@@ -366,8 +345,8 @@ defineExpose({ add: addCategory, locked });
 }
 .af-cats-row {
   display: grid;
-  /* the last : as wide as its buttons (four 2.5rem moves, then Add subcategory and Delete) */
-  grid-template-columns: 14.5rem minmax(12rem, 1fr) 16rem;
+  /* the last : as wide as its buttons (four 2.5rem moves, the 0.5rem gap, Delete) */
+  grid-template-columns: 14.5rem minmax(12rem, 1fr) 13rem;
   gap: 0.75rem;
   align-items: center;
   min-width: 44rem;
