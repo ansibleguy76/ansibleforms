@@ -82,6 +82,13 @@ describe("what each type needs", () => {
     assert.equal(rows.at(-1).use_credentials, 0);
   });
 
+  test("a rundeck needs a token and a project name", async () => {
+    await assert.rejects(Runner.create({ name: "r", type: "rundeck", uri: "https://r", project: "af" }), /needs an API token/);
+    await assert.rejects(Runner.create({ name: "r", type: "rundeck", uri: "https://r", token: "t" }), /needs a project \(the project name\)/);
+    await Runner.create({ name: "r", type: "rundeck", uri: "https://r", token: "t", project: "af" });
+    assert.equal(rows.at(-1).project, "af");
+  });
+
   test("an unknown type is refused", async () => {
     await assert.rejects(Runner.create({ name: "z", type: "local", uri: "x" }), /Unknown runner type 'local'/);
   });

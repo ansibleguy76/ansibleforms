@@ -1,4 +1,4 @@
-// What the runners that follow a job on another system share (awx, semaphore) : the http
+// What the runners that follow a job on another system share (awx, semaphore, rundeck) : the http
 // client, the tolerance for that system not answering for a while, and ending a job when
 // contact is lost. Each runner keeps its own wording.
 import axios from "axios";
