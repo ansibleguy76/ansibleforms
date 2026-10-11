@@ -2453,8 +2453,8 @@
         description: |
           The runner that runs this form's job : a runner of type rte (a runtime environment
           container) for a playbook, a runner of type awx (AWX / Ansible Automation Platform /
-          Ascender), semaphore (Semaphore UI) or rundeck (Rundeck) for a template. Runners are
-          added under Connections > Runners.
+          Ascender), semaphore (Semaphore UI), rundeck (Rundeck) or jenkins (Jenkins) for a
+          template. Runners are added under Connections > Runners.
           Without this property the default runner of the matching type is used ; without a
           default the job fails and says how to add one. Since 7 AnsibleForms runs no
           playbook itself.
@@ -2478,6 +2478,15 @@
           AnsibleForms. `limit` becomes the node filter, `verbose` the DEBUG log level ; the
           AWX properties are not used. The job's output is shown as Rundeck logs it, its error
           lines in red ; once it comes from several nodes, each line starts with its `[node]`.
+
+          **Jenkins** : a form of type awx whose `runner` is a runner of type jenkins builds the
+          Jenkins job named by `template` - its name, or its path when it is in a folder
+          (`ops/deploy`), under the runner's folder when the runner has one. Only the job's own
+          parameters are sent, each from the form value or credential of the same name (a list
+          or an object as its json) ; other values stay in AnsibleForms. The build waits in
+          Jenkins' queue as any other (the job output says why), then its console is shown as
+          Jenkins writes it ; a result other than SUCCESS fails the job, an abort stops the
+          build. The AWX properties are not used.
         examples:
         - name: Run on the vmware runtime
           code: |
@@ -2503,6 +2512,12 @@
               type: awx
               template: ops/restart-service
               runner: rundeck-ops
+        - name: Build a Jenkins job
+          code: |
+            - name: Deploy
+              type: awx
+              template: ops/deploy-pipeline
+              runner: jenkins-ci
       - name: awx
         type: string
         with_types: awx

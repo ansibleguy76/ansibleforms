@@ -2545,21 +2545,21 @@
     "schemas": {
       "Runner": {
         "type": "object",
-        "description": "Where a job runs. type rte : a runtime environment container (AF_ROLE=rte) for playbooks. type awx : AWX / Ansible Automation Platform / Ascender for templates. type semaphore : Semaphore UI for templates, in one project. type rundeck : Rundeck jobs, in one project.",
+        "description": "Where a job runs. type rte : a runtime environment container (AF_ROLE=rte) for playbooks. type awx : AWX / Ansible Automation Platform / Ascender for templates. type semaphore : Semaphore UI for templates, in one project. type rundeck : Rundeck jobs, in one project. type jenkins : Jenkins jobs, signed in with a user and its API token, in a folder if any.",
         "required": ["name", "type", "uri"],
         "properties": {
           "name": { "type": "string", "example": "rte-vmware" },
-          "type": { "type": "string", "enum": ["rte", "awx", "semaphore", "rundeck"] },
+          "type": { "type": "string", "enum": ["rte", "awx", "semaphore", "rundeck", "jenkins"] },
           "description": { "type": "string" },
           "uri": { "type": "string", "example": "https://rte-vmware:8000" },
-          "token": { "type": "string", "description": "rte : its RTE_TOKEN. awx : an API token (or use_credentials). semaphore : an API token of a Semaphore user. rundeck : a user's API token" },
+          "token": { "type": "string", "description": "rte : its RTE_TOKEN. awx : an API token (or use_credentials). semaphore : an API token of a Semaphore user. rundeck : a user's API token. jenkins : the API token of the user in username" },
           "use_credentials": { "type": "boolean", "description": "awx : sign in with username and password instead of a token" },
           "username": { "type": "string" },
           "password": { "type": "string", "description": "Stored encrypted ; shown masked" },
           "ignore_certs": { "type": "boolean" },
           "ca_bundle": { "type": "string" },
           "is_default": { "type": "boolean", "description": "Used by playbook forms that name no runner" },
-          "project": { "type": "string", "nullable": true, "description": "semaphore : the id of the project its templates are in. rundeck : the name of the project its jobs are in" },
+          "project": { "type": "string", "nullable": true, "description": "semaphore : the id of the project its templates are in. rundeck : the name of the project its jobs are in. jenkins : the folder its jobs are in (ops, or ops/web), none for the top" },
           "flavour": { "type": "string", "enum": ["aap", "ascender"], "nullable": true, "description": "awx : which product it is, Ansible Automation Platform or Ascender ; none is AWX. Its uri may carry its API path (https://aap.example.com/api/controller/v2)" },
           "node_id": { "type": "string", "readOnly": true, "description": "rte : the RTE that registered this runner itself (RTE_REGISTER) ; empty when added by hand or by the config seed" },
           "state": { "type": "string", "enum": ["automatic", "unresponsive"], "readOnly": true, "description": "Only on a runner an RTE registered itself : automatic while that RTE writes its heartbeat, unresponsive once it stopped (removed by the worker after 10 minutes)" }

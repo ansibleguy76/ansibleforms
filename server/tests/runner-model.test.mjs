@@ -99,6 +99,15 @@ describe("what each type needs", () => {
     assert.equal(rows.at(-1).project, "af");
   });
 
+  test("a jenkins needs a user and its API token ; its folder is optional, and it is never a default", async () => {
+    await assert.rejects(Runner.create({ name: "j", type: "jenkins", uri: "https://j", token: "t" }), /needs a username/);
+    await assert.rejects(Runner.create({ name: "j", type: "jenkins", uri: "https://j", username: "af" }), /needs an API token/);
+    await Runner.create({ name: "j", type: "jenkins", uri: "https://j", username: "af", token: "t", is_default: 1 });
+    assert.equal(rows.at(-1).project ?? null, null);
+    assert.equal(rows.at(-1).is_default, 0);
+    assert.equal(rows.at(-1).use_credentials, 0);
+  });
+
   test("an unknown type is refused", async () => {
     await assert.rejects(Runner.create({ name: "z", type: "local", uri: "x" }), /Unknown runner type 'local'/);
   });

@@ -1032,6 +1032,14 @@ export default {
       projectHelp_rundeck: 'Der Name des Rundeck-Projekts mit den Jobs.',
       tokenHelp_semaphore: 'Ein API-Token eines Semaphore-Benutzers: Benutzermenü, API tokens.',
       tokenHelp_rundeck: 'Das API-Token eines Rundeck-Benutzers: Benutzerprofil, User API Tokens.',
+      kind_jenkins: 'Jenkins',
+      type_jenkins: 'Jenkins',
+      type_jenkinsHint: 'Jenkins-Jobs, für Vorlagenformulare, die ihn nennen',
+      uriHelp_jenkins:
+        'Die Jenkins-Adresse, z. B. https://jenkins.example.com, mit Pfad, wenn Jenkins unter einem läuft.',
+      projectHelp_jenkins: 'Der Ordner der Jobs (ops oder ops/web); leer für die Jobs auf oberster Ebene.',
+      tokenHelp_jenkins: 'Ein API-Token des Jenkins-Benutzers: Benutzermenü, Security, API Token.',
+      usernameHelp_jenkins: 'Der Jenkins-Benutzer, zu dem das API-Token gehört; die Jobs laufen als dieser Benutzer.',
       noDefaultHelp:
         'Nie ein Standard: Ein Vorlagen-Formular ohne Runner läuft auf dem Standard-AWX, daher nennt ein Formular diesen Runner mit runner: <name>.',
     },

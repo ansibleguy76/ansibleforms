@@ -39,6 +39,8 @@
 /*      (AWX : which product) - indented, with its label as title */
 /*  field.flush: a switch at the dialog's left edge, its help the */
 /*      full width under it                                       */
+/*  field.showWhen: (item) => Boolean - shown by a rule of its    */
+/*      own, instead of field.dependency                          */
 /*  field.help / field.placeholder / field.dialogLabel: a text,   */
 /*      or (item) => text, following the record shown (its type) */
 /*  field.onEdit: a password shown when editing too, as ******** ;*/
@@ -625,7 +627,11 @@ function showField(field) {
     if (other && noChoices(other)) return false;
   }
   let depShow = true;
-  if (field.dependency) {
+  // a field shown by a rule of its own (field.showWhen(item)) : the user of a Jenkins runner,
+  // or of an AWX signing in with a user and password
+  if (field.showWhen) {
+    depShow = !!field.showWhen(item.value);
+  } else if (field.dependency) {
     const depValue = item.value[field.dependency];
     if (Array.isArray(field.dependencyValues)) {
       depShow = field.dependencyValues.includes(depValue);

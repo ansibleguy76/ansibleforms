@@ -1247,6 +1247,13 @@ export default {
       projectHelp_rundeck: '包含作业的 Rundeck 项目的名称。',
       tokenHelp_semaphore: 'Semaphore 用户的 API 令牌：用户菜单中的 API tokens。',
       tokenHelp_rundeck: 'Rundeck 用户的 API 令牌：用户资料中的 User API Tokens。',
+      kind_jenkins: 'Jenkins',
+      type_jenkins: 'Jenkins',
+      type_jenkinsHint: 'Jenkins 作业,用于指定它的模板表单',
+      uriHelp_jenkins: 'Jenkins 地址,例如 https://jenkins.example.com;若 Jenkins 运行在某路径下,需包含该路径。',
+      projectHelp_jenkins: '作业所在的文件夹 (ops 或 ops/web);顶层作业留空。',
+      tokenHelp_jenkins: 'Jenkins 用户的 API 令牌: 用户菜单、Security、API Token。',
+      usernameHelp_jenkins: 'API 令牌所属的 Jenkins 用户;作业以该用户身份运行。',
       noDefaultHelp:
         '从不作为默认值：未指定运行器的模板表单在默认的 AWX 上运行，因此表单用 runner: <name> 指定此运行器。',
     },

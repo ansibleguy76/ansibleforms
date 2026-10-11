@@ -7,8 +7,9 @@ import awx from "./awx/index.js";
 import rte from "./rte.js";
 import semaphore from "./semaphore.js";
 import rundeck from "./rundeck.js";
+import jenkins from "./jenkins.js";
 
-export const RUNNERS = { awx, rte, semaphore, rundeck };
+export const RUNNERS = { awx, rte, semaphore, rundeck, jenkins };
 export const RUNNER_TYPES = Object.keys(RUNNERS);
 
 export function getRunner(type) {

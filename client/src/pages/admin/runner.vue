@@ -6,10 +6,12 @@
 /*  in the url -                                                  */
 /*    Details         its registration, name, description,        */
 /*                    whether it is the default of its kind       */
-/*    Type            RTE, AWX, AAP, Ascender, Semaphore, Rundeck */
+/*    Type            RTE, AWX, AAP, Ascender, Semaphore, Rundeck,*/
+/*                    Jenkins                                     */
 /*    Connection      its address (and project), how its          */
 /*                    certificate is checked                      */
-/*    Authentication  a token, or a user and password (AWX)       */
+/*    Authentication  a token, or a user and password (AWX), a    */
+/*                    user and its token (Jenkins)                */
 /*    Forms           the forms that run on it, by name or as the */
 /*                    default of its type                         */
 /*    Jobs            the jobs that ran on it, the latest first   */
@@ -64,6 +66,7 @@ const URI_EXAMPLE = {
   ascender: 'https://ascender.example.com/api/v2',
   semaphore: 'https://semaphore.example.com',
   rundeck: 'https://rundeck.example.com',
+  jenkins: 'https://jenkins.example.com',
 };
 
 /**
@@ -102,6 +105,9 @@ const hasProject = computed(() => PROJECT_RUNNER_KINDS.includes(edit.value?.kind
 // an AWX, an AAP or an Ascender take a token or a user and password ; the others a token
 const isAwxKind = computed(() => AWX_RUNNER_KINDS.includes(edit.value?.kind));
 const usesCredentials = computed(() => isAwxKind.value && !!edit.value?.use_credentials);
+// a Jenkins signs in with a user and that user's API token ; its folder (project) is optional
+const isJenkins = computed(() => edit.value?.kind === 'jenkins');
+const hasUsername = computed(() => usesCredentials.value || isJenkins.value);
 const dirty = computed(
   () => !!runner.value && EDITED.some((k) => String(edit.value[k] ?? '') !== String(editable(runner.value)[k] ?? '')),
 );
@@ -249,7 +255,7 @@ async function save() {
     project: PROJECT_RUNNER_KINDS.includes(e.kind) ? String(e.project || '').trim() : null,
     flavour: ['aap', 'ascender'].includes(e.kind) ? e.kind : null,
     use_credentials: usesCredentials.value ? 1 : 0,
-    username: usesCredentials.value ? e.username.trim() : runner.value.username,
+    username: hasUsername.value ? e.username.trim() : runner.value.username,
     ignore_certs: e.skip_verify ? 1 : 0,
     ca_bundle: !e.skip_verify && e.custom_ca ? e.ca_bundle : '',
   };
@@ -485,7 +491,7 @@ onMounted(async () => {
                 v-model="edit.project"
                 icon="folder"
                 :isFloating="false"
-                :required="true"
+                :required="!isJenkins"
                 :help="t(`settings.runners.projectHelp_${edit.kind}`)"
                 :label="t('settings.runners.project')"
               />
@@ -522,8 +528,8 @@ onMounted(async () => {
                 :label="t('settings.fields.caBundle')"
               />
             </template>
-            <!-- Authentication : an RTE's, a Semaphore's or a Rundeck's token ; an AWX's token, or
-                 a user and password -->
+            <!-- Authentication : an RTE's, a Semaphore's or a Rundeck's token, a Jenkins' user and
+                 its token ; an AWX's token, or a user and password -->
             <template v-else>
               <template v-if="isAwxKind">
                 <div
@@ -553,11 +559,13 @@ onMounted(async () => {
                 </div>
               </template>
               <BsInput
-                v-if="usesCredentials"
-                class="af-runner-field mt-3"
+                v-if="hasUsername"
+                class="af-runner-field"
+                :class="{ 'mt-3': usesCredentials }"
                 v-model="edit.username"
                 icon="user"
                 :isFloating="false"
+                :help="isJenkins ? t('settings.runners.usernameHelp_jenkins') : ''"
                 :label="t('settings.fields.username')"
               />
               <p v-if="hasProject" class="form-text mb-2">{{ t(`settings.runners.tokenHelp_${edit.kind}`) }}</p>

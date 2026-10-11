@@ -11,6 +11,9 @@ import { stripTrailingSlashes } from '../lib/url.js';
 export const RUNNER_FLAVOURS = ['aap', 'ascender'];
 // the runners that sign in with a token and launch in one project of their server
 const TOKEN_AND_PROJECT = ['semaphore', 'rundeck'];
+// the runners a form names, never a default : a template form that names no runner runs on the
+// default awx runner
+const NEVER_DEFAULT = ['semaphore', 'rundeck', 'jenkins'];
 import { NODE_DEAD_SECONDS } from '../lib/role.js';
 
 // the secret the api shows instead of a stored token ; sent back it means "unchanged"
@@ -37,7 +40,8 @@ class Runner extends CrudModel {
     if (typeof data.uri === 'string') data.uri = stripTrailingSlashes(data.uri.trim());
     // a semaphore or rundeck runner signs in with its token only : a user and password are
     // an awx runner's choice
-    if (TOKEN_AND_PROJECT.includes(data.type)) data.use_credentials = 0;
+    // (jenkins signs in with a user and its API token : username and token, no password)
+    if (TOKEN_AND_PROJECT.includes(data.type) || data.type === 'jenkins') data.use_credentials = 0;
     if (typeof data.project === 'string') data.project = data.project.trim() || null;
     // the flavour of an awx runner : 'aap', 'ascender', or none (AWX) - which product it is
     if (data.flavour !== undefined) {
@@ -57,6 +61,11 @@ class Runner extends CrudModel {
     if (TOKEN_AND_PROJECT.includes(row.type)) {
       if (!row.token) missing('an API token');
       if (!row.project) missing(row.type === 'semaphore' ? 'a project (the project id)' : 'a project (the project name)');
+    }
+    // a jenkins runner : a user and its API token ; its folder (project) is optional
+    if (row.type === 'jenkins') {
+      if (!row.username) missing('a username (the Jenkins user the API token is of)');
+      if (!row.token) missing('an API token');
     }
     if (row.type === 'awx') {
       if (row.use_credentials) {
@@ -92,9 +101,9 @@ class Runner extends CrudModel {
     CrudModel.assertRequired(this.modelName, data);
     data = this.normalize(data, opts);
     this.assertComplete(data);
-    // a semaphore or rundeck runner is never a default : no form falls back to one (a template
-    // form that names no runner runs on the default awx runner), a form names it
-    if (TOKEN_AND_PROJECT.includes(data.type)) data.is_default = 0;
+    // a semaphore, rundeck or jenkins runner is never a default : no form falls back to one (a
+    // template form that names no runner runs on the default awx runner), a form names it
+    if (NEVER_DEFAULT.includes(data.type)) data.is_default = 0;
     // The first runner of a type is its default : forms that name no runner need one, and
     // nobody should have to remember the tick. Not for the seed, which declares the flag
     // itself - setting it here would flip it back on every start.
@@ -113,7 +122,7 @@ class Runner extends CrudModel {
     data = this.normalize(data, opts);
     // the stored row decides what is missing : an update may send only what changed
     const current = await this.findById(id);
-    if (TOKEN_AND_PROJECT.includes({ ...current, ...data }.type)) data.is_default = 0;
+    if (NEVER_DEFAULT.includes({ ...current, ...data }.type)) data.is_default = 0;
     const merged = { ...current, ...data };
     this.assertComplete(merged);
     await this.assertDefaultAllowed(data, merged.type, opts);

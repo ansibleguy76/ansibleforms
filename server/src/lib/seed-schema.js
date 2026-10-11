@@ -96,15 +96,16 @@ const secretStoreItem = {
 };
 
 // Where a job runs : an RTE (type rte, `token` is its RTE_TOKEN), AWX/AAP/Ascender
-// (type awx : a token, or use_credentials with username and password), or Semaphore or
-// Rundeck (type semaphore / rundeck : a token and a project)
+// (type awx : a token, or use_credentials with username and password), Semaphore or
+// Rundeck (type semaphore / rundeck : a token and a project), or Jenkins (type jenkins : a
+// username, its API token, and a folder as project if any)
 const runnerItem = {
   type: "object",
   additionalProperties: false,
   required: ["name", "type", "uri"],
   properties: {
     name: str,
-    type: { type: "string", enum: ["rte", "awx", "semaphore", "rundeck"] },
+    type: { type: "string", enum: ["rte", "awx", "semaphore", "rundeck", "jenkins"] },
     description: str,
     uri: str,
     token: str,
@@ -116,7 +117,7 @@ const runnerItem = {
     is_default: bool,
     // an awx runner that is an AAP or an Ascender ; none is AWX
     flavour: { type: "string", enum: ["aap", "ascender"] },
-    // a semaphore runner's project id, a rundeck runner's project name
+    // a semaphore runner's project id, a rundeck runner's project name, a jenkins runner's folder
     project: str,
   },
 };

@@ -1274,6 +1274,13 @@ export default {
       projectHelp_rundeck: 'ジョブがある Rundeck プロジェクトの名前。',
       tokenHelp_semaphore: 'Semaphore ユーザーの API トークン：ユーザーメニューの API tokens。',
       tokenHelp_rundeck: 'Rundeck ユーザーの API トークン：ユーザープロファイルの User API Tokens。',
+      kind_jenkins: 'Jenkins',
+      type_jenkins: 'Jenkins',
+      type_jenkinsHint: 'Jenkins のジョブ。名前で指定するテンプレートフォーム用',
+      uriHelp_jenkins: 'Jenkins のアドレス (例: https://jenkins.example.com)。パスの下で動く場合はパスも含めます。',
+      projectHelp_jenkins: 'ジョブがあるフォルダー (ops、ops/web など)。最上位のジョブは空のまま。',
+      tokenHelp_jenkins: 'Jenkins ユーザーの API トークン: ユーザーメニュー、Security、API Token。',
+      usernameHelp_jenkins: 'API トークンの持ち主の Jenkins ユーザー。ジョブはこのユーザーとして実行されます。',
       noDefaultHelp:
         '既定にはなりません：ランナーを指定しないテンプレートのフォームは既定の AWX で実行されるため、フォームは runner: <name> でこのランナーを指定します。',
     },

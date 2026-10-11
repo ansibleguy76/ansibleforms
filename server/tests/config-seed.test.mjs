@@ -429,12 +429,13 @@ describe("runners are seedable", () => {
     assert.ok(keys.includes("runners"));
   });
 
-  test("semaphore and rundeck runners are seedable, with their project", () => {
+  test("semaphore, rundeck and jenkins runners are seedable, with their project", () => {
     assert.doesNotThrow(() => validateSeed({ runners: { items: [
       { name: "sem", type: "semaphore", uri: "https://semaphore:3000", token: "${SEMAPHORE_TOKEN}", project: "1" },
       { name: "rd", type: "rundeck", uri: "https://rundeck:4440", token: "${RUNDECK_TOKEN}", project: "af" },
+      { name: "ci", type: "jenkins", uri: "https://jenkins:8080", username: "af", token: "${JENKINS_TOKEN}", project: "ops" },
     ] } }));
-    assert.throws(() => validateSeed({ runners: { items: [{ name: "x", type: "jenkins", uri: "u" }] } }), /validation failed/);
+    assert.throws(() => validateSeed({ runners: { items: [{ name: "x", type: "gitlab", uri: "u" }] } }), /validation failed/);
   });
 
   test("a runner needs name, type and uri ; an unknown field is rejected", () => {
