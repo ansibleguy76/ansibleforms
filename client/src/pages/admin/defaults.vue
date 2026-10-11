@@ -80,6 +80,8 @@ const themeDirty = computed(
 // ─── the language : an environment variable ───────────────────────────────────
 const { envItems, envEdits, envDirty, envRestartPending, loadEnvironmentVariables, saveEnvironmentVariables } =
   useEnvVars(['DEFAULT_LANGUAGE']);
+// the language's help : said as the page's other defaults, translated
+const languageEnv = computed(() => envItems.value.map((e) => ({ ...e, hint: t('settings.interface.languageHelp') })));
 
 // leaving with a change unsaved asks first
 const dirty = computed(() => themeDirty.value || envDirty.value);
@@ -173,7 +175,7 @@ onMounted(async () => {
             </div>
           </div>
           <!-- the language : an environment variable -->
-          <template v-for="e in envItems" :key="e.name">
+          <template v-for="e in languageEnv" :key="e.name">
             <div class="mt-4"></div>
             <AppEnvField v-model="envEdits[e.name]" :e="e" />
           </template>
