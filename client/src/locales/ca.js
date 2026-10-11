@@ -718,6 +718,7 @@ export default {
       linkHoldsLinks: 'Un enllaç amb enllaços a dins es queda a la capçalera.',
       linkUrlOptional: 'Opcional per a un menú',
       linkNewTab: 'Pestanya nova',
+      linkMoves: 'Moure',
       linkUp: 'Pujar',
       linkDown: 'Baixar',
       linksHelp:

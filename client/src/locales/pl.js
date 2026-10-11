@@ -716,6 +716,7 @@ export default {
       linkHoldsLinks: 'Link z linkami w środku zostaje w nagłówku.',
       linkUrlOptional: 'Opcjonalny dla menu',
       linkNewTab: 'Nowa karta',
+      linkMoves: 'Przenieś',
       linkUp: 'W górę',
       linkDown: 'W dół',
       linksHelp:

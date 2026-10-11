@@ -716,6 +716,7 @@ export default {
       linkHoldsLinks: '中にリンクがあるリンクはヘッダーに残ります。',
       linkUrlOptional: 'メニューでは省略可',
       linkNewTab: '新しいタブ',
+      linkMoves: '移動',
       linkUp: '上へ',
       linkDown: '下へ',
       linksHelp:

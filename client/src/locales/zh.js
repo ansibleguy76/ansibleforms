@@ -700,6 +700,7 @@ export default {
       linkHoldsLinks: '包含其他链接的链接保留在页眉中。',
       linkUrlOptional: '菜单可不填',
       linkNewTab: '新标签页',
+      linkMoves: '移动',
       linkUp: '上移',
       linkDown: '下移',
       linksHelp:

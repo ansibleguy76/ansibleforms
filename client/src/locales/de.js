@@ -722,6 +722,7 @@ export default {
       linkHoldsLinks: 'Ein Link mit Links darin bleibt in der Kopfzeile.',
       linkUrlOptional: 'Optional für ein Menü',
       linkNewTab: 'Neuer Tab',
+      linkMoves: 'Verschieben',
       linkUp: 'Nach oben',
       linkDown: 'Nach unten',
       linksHelp:

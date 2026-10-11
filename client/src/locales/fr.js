@@ -722,6 +722,7 @@ export default {
       linkHoldsLinks: "Un lien qui contient des liens reste dans l'en-tête.",
       linkUrlOptional: 'Facultatif pour un menu',
       linkNewTab: 'Nouvel onglet',
+      linkMoves: 'Déplacer',
       linkUp: 'Monter',
       linkDown: 'Descendre',
       linksHelp:

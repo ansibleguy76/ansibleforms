@@ -712,6 +712,7 @@ export default {
       linkHoldsLinks: 'A link with links inside it stays in the header.',
       linkUrlOptional: 'Optional for a menu',
       linkNewTab: 'New tab',
+      linkMoves: 'Move',
       linkUp: 'Move up',
       linkDown: 'Move down',
       linksHelp:

@@ -718,6 +718,7 @@ export default {
       linkHoldsLinks: "Un collegamento con collegamenti al suo interno resta nell'intestazione.",
       linkUrlOptional: 'Facoltativo per un menu',
       linkNewTab: 'Nuova scheda',
+      linkMoves: 'Sposta',
       linkUp: 'Su',
       linkDown: 'Giù',
       linksHelp:

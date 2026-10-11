@@ -716,6 +716,7 @@ export default {
       linkHoldsLinks: 'Un enlace con enlaces dentro se queda en la cabecera.',
       linkUrlOptional: 'Opcional para un menú',
       linkNewTab: 'Nueva pestaña',
+      linkMoves: 'Mover',
       linkUp: 'Subir',
       linkDown: 'Bajar',
       linksHelp:

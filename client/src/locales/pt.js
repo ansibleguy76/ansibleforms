@@ -719,6 +719,7 @@ export default {
       linkHoldsLinks: 'Uma ligação com ligações dentro fica no cabeçalho.',
       linkUrlOptional: 'Opcional para um menu',
       linkNewTab: 'Novo separador',
+      linkMoves: 'Mover',
       linkUp: 'Subir',
       linkDown: 'Descer',
       linksHelp:

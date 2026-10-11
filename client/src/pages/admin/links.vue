@@ -453,47 +453,50 @@ onMounted(async () => {
                   :aria-label="t('settings.interface.linkNewTab')"
                 />
               </div>
-              <div class="d-flex gap-1 justify-content-end">
-                <!-- ← out of its menu, → inside the header link above -->
+              <div class="d-flex gap-2 justify-content-end">
+                <!-- the moves : one group of outlined buttons, as tall as the fields -->
+                <div class="btn-group" role="group" :aria-label="t('settings.interface.linkMoves')">
+                  <!-- ← out of its menu, → inside the header link above -->
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary af-link-btn"
+                    :disabled="!l.parent"
+                    :title="t('settings.interface.linkOutdent')"
+                    @click="outdentLink(i)"
+                  >
+                    <FaIcon icon="arrow-left" />
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary af-link-btn"
+                    :disabled="!canIndent(i)"
+                    :title="holdsLinks(l) ? t('settings.interface.linkHoldsLinks') : t('settings.interface.linkIndent')"
+                    @click="indentLink(i)"
+                  >
+                    <FaIcon icon="arrow-right" />
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary af-link-btn"
+                    :disabled="!canMove(i, -1)"
+                    :title="t('settings.interface.linkUp')"
+                    @click="moveLink(i, -1)"
+                  >
+                    <FaIcon icon="arrow-up" />
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-outline-secondary af-link-btn"
+                    :disabled="!canMove(i, 1)"
+                    :title="t('settings.interface.linkDown')"
+                    @click="moveLink(i, 1)"
+                  >
+                    <FaIcon icon="arrow-down" />
+                  </button>
+                </div>
                 <button
                   type="button"
-                  class="btn btn-sm btn-link px-1"
-                  :disabled="!l.parent"
-                  :title="t('settings.interface.linkOutdent')"
-                  @click="outdentLink(i)"
-                >
-                  <FaIcon icon="arrow-left" />
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-sm btn-link px-1"
-                  :disabled="!canIndent(i)"
-                  :title="holdsLinks(l) ? t('settings.interface.linkHoldsLinks') : t('settings.interface.linkIndent')"
-                  @click="indentLink(i)"
-                >
-                  <FaIcon icon="arrow-right" />
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-sm btn-link px-1"
-                  :disabled="!canMove(i, -1)"
-                  :title="t('settings.interface.linkUp')"
-                  @click="moveLink(i, -1)"
-                >
-                  <FaIcon icon="arrow-up" />
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-sm btn-link px-1"
-                  :disabled="!canMove(i, 1)"
-                  :title="t('settings.interface.linkDown')"
-                  @click="moveLink(i, 1)"
-                >
-                  <FaIcon icon="arrow-down" />
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-sm btn-link px-1 text-danger"
+                  class="btn btn-outline-danger af-link-btn"
                   :title="t('common.delete')"
                   @click="removeLink(i)"
                 >
@@ -525,14 +528,20 @@ onMounted(async () => {
 }
 .af-links-row {
   display: grid;
-  grid-template-columns: 14.5rem 12rem minmax(14rem, 1fr) 5rem 9rem;
+  grid-template-columns: 14.5rem 12rem minmax(14rem, 1fr) 5rem 15rem;
   gap: 0.75rem;
   align-items: center;
-  min-width: 52rem;
+  min-width: 58rem;
 }
 /* the column names : as a field's label on the settings pages (form-label fw-bold) */
 .af-links-head {
   font-weight: 700;
+}
+/* a row's buttons : square, as tall as its fields */
+.af-link-btn {
+  width: 2.5rem;
+  padding-left: 0;
+  padding-right: 0;
 }
 </style>
 <route lang="yaml">

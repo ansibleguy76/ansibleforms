@@ -716,6 +716,7 @@ export default {
       linkHoldsLinks: 'Een link met links erin blijft in de kop.',
       linkUrlOptional: 'Optioneel voor een menu',
       linkNewTab: 'Nieuw tabblad',
+      linkMoves: 'Verplaatsen',
       linkUp: 'Omhoog',
       linkDown: 'Omlaag',
       linksHelp:
