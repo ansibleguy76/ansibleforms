@@ -43,6 +43,15 @@ function registerAxiosInterceptor() {
         if (router.currentRoute.value?.name !== '/change-password') router.push({ name: '/change-password' });
         throw error;
       }
+      // the disclaimer not accepted yet : its dialog over the page, until it is accepted or
+      // declined (server/src/lib/middleware.js disclaimerGate). The refused request stays
+      // pending rather than failing : the page behind shows no error of its own, and accepting
+      // loads it again (AppDisclaimer)
+      if (error.response?.status === 403 && error.response?.data?.code === 'disclaimer_required') {
+        if (['/login', '/logout'].includes(router.currentRoute.value?.name)) throw error;
+        appStore.disclaimerOpen = true;
+        return new Promise(() => {});
+      }
       // Return any error which is not due to authentication back to the calling service
       if (error.response?.status !== 401) {
         throw error;
@@ -209,6 +218,8 @@ onMounted(async () => {
   <AppChat />
   <!-- asked when a page with unsaved changes is left (useUnsavedGuard) -->
   <AppUnsavedDialog />
+  <!-- the disclaimer, accepted once before anything else (Settings > Access > Disclaimer) -->
+  <AppDisclaimer v-if="appStore.disclaimerOpen" />
   <router-view v-if="isLoaded || route.name === '/schema' || route.name === '/login' || route.name === '/error'" />
   <div v-else class="d-flex justify-content-center align-items-center vh-100">
     <div class="text-center">

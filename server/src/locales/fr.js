@@ -24,6 +24,8 @@ export default {
     invalidCredentials: "Identifiants invalides",
     tooManyFailures: "Trop de connexions échouées : réessayez dans {minutes} minute(s)",
     passwordChangeRequired: "Changez d'abord votre mot de passe : c'est le mot de passe par défaut, public",
+    disclaimerRequired: "Acceptez d'abord l'avertissement",
+    disclaimerAccepted: "L'avertissement est accepté",
     loginDisabled: "Non authentifie, la connexion n'est pas activee pour cet utilisateur.",
     signInBlocked: "Non authentifié, un administrateur a bloqué la connexion de cet utilisateur.",
     azureFailed: "Echec de l'authentification Azure AD",

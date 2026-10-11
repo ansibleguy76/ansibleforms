@@ -24,6 +24,8 @@ export default {
     invalidCredentials: "凭据无效",
     tooManyFailures: "登录失败次数过多 : 请在 {minutes} 分钟后重试",
     passwordChangeRequired: "请先更改密码 : 这是公开的默认密码",
+    disclaimerRequired: "请先接受免责声明",
+    disclaimerAccepted: "已接受免责声明",
     loginDisabled: "未通过身份验证，此用户未启用登录。",
     signInBlocked: "未认证，管理员已阻止此用户登录。",
     azureFailed: "Azure AD 身份验证失败",

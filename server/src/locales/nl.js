@@ -24,6 +24,8 @@ export default {
     invalidCredentials: "Ongeldige inloggegevens",
     tooManyFailures: "Te veel mislukte aanmeldingen : probeer het over {minutes} minuut/minuten opnieuw",
     passwordChangeRequired: "Wijzig eerst uw wachtwoord : het is het publiek bekende standaardwachtwoord",
+    disclaimerRequired: "Accepteer eerst de disclaimer",
+    disclaimerAccepted: "De disclaimer is geaccepteerd",
     loginDisabled: "Niet geauthenticeerd, inloggen is niet ingeschakeld voor deze gebruiker.",
     signInBlocked: "Niet geauthenticeerd, een beheerder heeft het aanmelden van deze gebruiker geblokkeerd.",
     azureFailed: "Azure AD authenticatie mislukt",

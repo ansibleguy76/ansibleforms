@@ -97,6 +97,28 @@ Middleware.passwordChangeGate = (req, res, next) => {
   return res.status(403).json({ ...RestResult.error(i18n.t(req, 'auth.passwordChangeRequired')), code: 'password_change_required' });
 }
 
+// The disclaimer (Settings > Access > Disclaimer) : switched on, a user who has not accepted its
+// current version may read it and accept it (/api/v2/disclaimer), read their profile and follow
+// the live events ; everything else answers 403 with code disclaimer_required, which the client
+// turns into the disclaimer's dialog. An api token (a script, no one to click) passes. Mounted
+// after the password change gate, on every authenticated route.
+const DISCLAIMER_OPEN = ['/api/v2/disclaimer', '/api/v2/profile', '/api/v2/events'];
+Middleware.disclaimerGate = async (req, res, next) => {
+  const user = req?.user?.user;
+  if (!user || req.user.api) return next();
+  if (DISCLAIMER_OPEN.includes(req.baseUrl)) return next();
+  try {
+    // loaded here : the guards above must not pull the database layer in with them
+    const { default: Disclaimer } = await import("../models/disclaimer.model.js");
+    if (!(await Disclaimer.isRequired(user))) return next();
+  } catch (e) {
+    // a database before its patch (no table yet) : no disclaimer to wait for
+    logger.debug(`Could not read the disclaimer : ${e.message || e}`);
+    return next();
+  }
+  return res.status(403).json({ ...RestResult.error(i18n.t(req, 'auth.disclaimerRequired')), code: 'disclaimer_required' });
+}
+
 // The scope of the signed-in user (lib/resourceScope.js) for the rest of the request : what
 // their roles allow of the credentials, the secret stores and the runners. Resolving a
 // credential - a form query, fnCredentials, a launch - checks it. The roles of the

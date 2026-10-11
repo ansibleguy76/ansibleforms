@@ -253,6 +253,7 @@ CREATE TABLE `settings` (
   `env_label_show` tinyint(4) NOT NULL DEFAULT 1,
   `env_label_color` varchar(20) DEFAULT NULL,
   `banner_show` tinyint(4) NOT NULL DEFAULT 1,
+  `disclaimer_enabled` tinyint(4) NOT NULL DEFAULT 0,
   `forms_view` varchar(10) DEFAULT NULL,
   `default_timezone` varchar(64) DEFAULT NULL,
   `default_date_format` varchar(20) DEFAULT NULL,
@@ -474,6 +475,31 @@ CREATE TABLE `announcements` (
   `created_by` varchar(250) DEFAULT NULL,
   `created_at` datetime NOT NULL,
   PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- the disclaimer's versions and who accepted them : models/disclaimer.model.js
+-- (keep in sync with src/db/create_disclaimer_tables.sql)
+DROP TABLE IF EXISTS `disclaimer_versions`;
+CREATE TABLE `disclaimer_versions` (
+  `version` int(11) NOT NULL,
+  `title` varchar(200) NOT NULL,
+  `text` mediumtext NOT NULL,
+  `checkbox_label` varchar(200) NOT NULL,
+  `created_by` varchar(250) DEFAULT NULL,
+  `created_at` datetime NOT NULL,
+  PRIMARY KEY (`version`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+DROP TABLE IF EXISTS `disclaimer_acceptances`;
+CREATE TABLE `disclaimer_acceptances` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `username` varchar(250) NOT NULL,
+  `user_type` varchar(20) NOT NULL,
+  `version` int(11) NOT NULL,
+  `accepted_at` datetime NOT NULL,
+  `ip` varchar(64) DEFAULT NULL,
+  `user_agent` varchar(500) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_disclaimer_acceptances_user_version` (`username`, `user_type`, `version`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- enable foreign key checks

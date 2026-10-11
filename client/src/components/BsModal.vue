@@ -48,6 +48,7 @@ const props = defineProps({
   size: { type: String, default: 'xl' },
   dialogClass: { type: String, default: '' },
   footerClose: { type: Boolean, default: true },
+  closable: { type: Boolean, default: true },
 });
 
 // Bootstrap has modal-sm/-lg/-xl but no modal-md : the default width is the
@@ -57,7 +58,7 @@ const sizeClass = computed(() => (props.size && props.size !== 'md' ? `modal-${p
 // METHODS
 
 function backdropClick(e) {
-  if (e.target.id == uid) {
+  if (props.closable && e.target.id == uid) {
     emit('close');
   }
 }
@@ -82,6 +83,7 @@ function backdropClick(e) {
             <FaIcon v-if="icon" :icon="icon" class="me-2" :class="iconClass" /><slot name="title"></slot>
           </h5>
           <button
+            v-if="closable"
             type="button"
             class="btn-close"
             data-bs-dismiss="modal"

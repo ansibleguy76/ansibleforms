@@ -24,6 +24,8 @@ export default {
     invalidCredentials: "Les credencials no són vàlides",
     tooManyFailures: "Massa inicis de sessió fallits : torneu-ho a provar d'aquí a {minutes} minut(s)",
     passwordChangeRequired: "Canvieu primer la contrasenya : és la contrasenya per defecte, pública",
+    disclaimerRequired: "Primer accepta l'avís legal",
+    disclaimerAccepted: "L'avís legal s'ha acceptat",
     loginDisabled: "No autenticat, l'inici de sessió no està habilitat per a aquest usuari.",
     signInBlocked: "No autenticat, un administrador ha bloquejat l'inici de sessió d'aquest usuari.",
     azureFailed: "L'autenticació amb Azure AD ha fallat",

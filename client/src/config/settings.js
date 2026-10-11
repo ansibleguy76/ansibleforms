@@ -175,6 +175,9 @@ export function announcementLevelPill(t, level) {
   return `<span class="badge rounded-pill fw-semibold af-pill ${known[key]}"><span class="af-pill-label">${escapeHtml(t(`settings.interface.banner_${key}`))}</span></span>`;
 }
 
+// how a user signed in, as the disclaimer's acceptances name it
+const SIGN_IN_TYPES = { local: 'Local', ldap: 'LDAP', azuread: 'Entra ID', oidc: 'OpenID Connect' };
+
 // what a credential is for (its type), in the order the dialog offers them
 export const CREDENTIAL_TYPES = ['ssh', 'git', 'api', 'database', 'cyberark', 'smtp'];
 
@@ -2434,6 +2437,118 @@ export default function getSettings(t) {
           noInput: true,
           hideBelow: 1200,
           render: (v) => (v ? escapeHtml(v) : '–'),
+        },
+      ],
+    },
+    disclaimerVersions: {
+      // the page title is the menu entry's label (AppSidebar), so the two always match
+      pageTitle: t('sidebar.disclaimer'),
+      type: 'disclaimerversion',
+      label: t('settings.disclaimer.versionLabel'),
+      labelPlural: t('settings.disclaimer.tabVersions'),
+      description: t('settings.disclaimer.versionsDescription'),
+      icon: 'layer-group',
+      selectable: false,
+      // a record, never changed : opened, its text as it was agreed to
+      noCreate: true,
+      actions: [],
+      fields: [
+        { key: 'id', hidden: true, noInput: true, noTable: true },
+        { key: 'version', label: t('settings.disclaimer.version'), icon: 'hashtag', readonly: true },
+        { key: 'title', label: t('settings.disclaimer.title'), icon: 'heading', readonly: true },
+        {
+          key: 'text',
+          label: t('settings.disclaimer.text'),
+          type: 'textarea',
+          rows: 10,
+          icon: 'file-lines',
+          readonly: true,
+          noTable: true,
+        },
+        {
+          key: 'checkbox_label',
+          label: t('settings.disclaimer.checkbox'),
+          dialogLabel: t('settings.disclaimer.checkboxShort'),
+          icon: 'square-check',
+          noTable: true,
+          readonly: true,
+        },
+        { key: 'created_by', label: t('settings.disclaimer.publishedBy'), noInput: true },
+        {
+          key: 'created_at',
+          label: t('settings.disclaimer.publishedAt'),
+          type: 'datetime',
+          noInput: true,
+          render: (v) => (v ? Helpers.formatServerDate(v) : '–'),
+        },
+        { key: 'acceptances', label: t('settings.disclaimer.tabAcceptances'), noInput: true, align: 'end' },
+      ],
+    },
+    disclaimerAcceptances: {
+      // the page title is the menu entry's label (AppSidebar), so the two always match
+      pageTitle: t('sidebar.disclaimer'),
+      type: 'disclaimeracceptance',
+      label: t('settings.disclaimer.acceptance'),
+      labelPlural: t('settings.disclaimer.tabAcceptances'),
+      description: t('settings.disclaimer.acceptancesDescription'),
+      icon: 'user-check',
+      selectable: false,
+      // a record, never changed : no Add, no Edit, no Delete ; opened, shown in full
+      noCreate: true,
+      actions: [],
+      fields: [
+        { key: 'id', hidden: true, noInput: true, noTable: true },
+        { key: 'username', label: t('settings.disclaimer.user'), icon: 'user', readonly: true },
+        {
+          // how they signed in : local, LDAP or a single sign-on provider
+          key: 'user_type',
+          label: t('settings.disclaimer.signIn'),
+          noInput: true,
+          render: (v) => escapeHtml(SIGN_IN_TYPES[v] || v || '–'),
+        },
+        {
+          // the same, in the dialog : as the table says it
+          key: 'sign_in',
+          label: t('settings.disclaimer.signIn'),
+          icon: 'right-to-bracket',
+          noTable: true,
+          readonly: true,
+          initial: (r) => SIGN_IN_TYPES[r?.user_type] || r?.user_type || '',
+        },
+        { key: 'version', label: t('settings.disclaimer.version'), icon: 'hashtag', readonly: true },
+        {
+          key: 'accepted_at',
+          label: t('settings.disclaimer.acceptedAt'),
+          type: 'datetime',
+          noInput: true,
+          render: (v) => (v ? Helpers.formatServerDate(v) : '–'),
+        },
+        {
+          // the same, in the dialog : its date and time in the user's zone, as text
+          key: 'accepted',
+          label: t('settings.disclaimer.acceptedAt'),
+          icon: 'calendar',
+          noTable: true,
+          readonly: true,
+          initial: (r) => (r?.accepted_at ? Helpers.formatServerDate(r.accepted_at) : ''),
+        },
+        {
+          key: 'ip',
+          label: t('settings.disclaimer.ip'),
+          icon: 'network-wired',
+          readonly: true,
+          render: (v) => escapeHtml(v || '–'),
+        },
+        {
+          // in full in the dialog : the table cuts it
+          key: 'user_agent',
+          label: t('settings.disclaimer.browser'),
+          icon: 'globe',
+          type: 'textarea',
+          rows: 3,
+          readonly: true,
+          hideBelow: 1200,
+          render: (v) => escapeHtml(v || '–'),
         },
       ],
     },
