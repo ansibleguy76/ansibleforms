@@ -1002,6 +1002,22 @@ export default {
       passwordOnPage: 'Le mot de passe se change avec Changer le mot de passe, en haut à droite.',
       tokenOnPage_rte: 'Le RTE_TOKEN du RTE se change avec Changer le jeton, en haut à droite.',
       tokenOnPage_api: 'Le jeton API se change avec Changer le jeton, en haut à droite.',
+      kind_semaphore: 'Semaphore UI',
+      kind_rundeck: 'Rundeck',
+      type_semaphore: 'Semaphore',
+      type_semaphoreHint: 'Semaphore UI, pour les formulaires de modèle qui le nomment',
+      type_rundeck: 'Rundeck',
+      type_rundeckHint: 'Jobs Rundeck, pour les formulaires de modèle qui le nomment',
+      uriHelp_semaphore: "L'adresse de Semaphore UI, sans chemin, p. ex. https://semaphore.example.com.",
+      uriHelp_rundeck: "L'adresse de Rundeck, sans chemin, p. ex. https://rundeck.example.com.",
+      project: 'Projet',
+      projectHelp_semaphore:
+        "L'id du projet Semaphore qui contient les modèles : le nombre dans son adresse, /project/<id>.",
+      projectHelp_rundeck: 'Le nom du projet Rundeck qui contient les jobs.',
+      tokenHelp_semaphore: "Un jeton d'API d'un utilisateur Semaphore : menu de l'utilisateur, API tokens.",
+      tokenHelp_rundeck: "Le jeton d'API d'un utilisateur Rundeck : profil de l'utilisateur, User API Tokens.",
+      noDefaultHelp:
+        "Jamais un défaut : un formulaire de modèle qui ne nomme aucun runner s'exécute sur l'AWX par défaut, un formulaire nomme donc ce runner avec runner: <name>.",
     },
     disclaimer: {
       description:

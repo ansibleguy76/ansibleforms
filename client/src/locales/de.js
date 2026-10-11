@@ -1001,6 +1001,22 @@ export default {
       passwordOnPage: 'Das Passwort ändern Sie mit Passwort ändern, oben rechts.',
       tokenOnPage_rte: 'Das RTE_TOKEN des RTE ändern Sie mit Token ändern, oben rechts.',
       tokenOnPage_api: 'Das API-Token ändern Sie mit Token ändern, oben rechts.',
+      kind_semaphore: 'Semaphore UI',
+      kind_rundeck: 'Rundeck',
+      type_semaphore: 'Semaphore',
+      type_semaphoreHint: 'Semaphore UI, für Vorlagen-Formulare, die ihn nennen',
+      type_rundeck: 'Rundeck',
+      type_rundeckHint: 'Rundeck-Jobs, für Vorlagen-Formulare, die ihn nennen',
+      uriHelp_semaphore: 'Die Adresse von Semaphore UI, ohne Pfad, z. B. https://semaphore.example.com.',
+      uriHelp_rundeck: 'Die Adresse von Rundeck, ohne Pfad, z. B. https://rundeck.example.com.',
+      project: 'Projekt',
+      projectHelp_semaphore:
+        'Die ID des Semaphore-Projekts mit den Vorlagen: die Zahl in seiner Adresse, /project/<id>.',
+      projectHelp_rundeck: 'Der Name des Rundeck-Projekts mit den Jobs.',
+      tokenHelp_semaphore: 'Ein API-Token eines Semaphore-Benutzers: Benutzermenü, API tokens.',
+      tokenHelp_rundeck: 'Das API-Token eines Rundeck-Benutzers: Benutzerprofil, User API Tokens.',
+      noDefaultHelp:
+        'Nie ein Standard: Ein Vorlagen-Formular ohne Runner läuft auf dem Standard-AWX, daher nennt ein Formular diesen Runner mit runner: <name>.',
     },
     disclaimer: {
       description:

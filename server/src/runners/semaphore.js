@@ -75,6 +75,27 @@ async function findTemplate(http, runner, name) {
   return found;
 }
 
+/**
+ * The inventory a form names (`inventory:`) : its id when the name is a number, else the
+ * inventory of that exact name in the runner's project.
+ */
+async function findInventory(http, runner, name) {
+  const wanted = String(name).trim();
+  if (/^\d+$/.test(wanted)) return { id: Number(wanted), name: wanted };
+  const { data } = await http.get(`${projectPath(runner)}/inventory`, { params: { sort: "name", order: "asc" } });
+  const found = (Array.isArray(data) ? data : []).find((i) => i.name === wanted);
+  if (!found) throw new Errors.NotFoundError(`No inventory '${wanted}' in Semaphore project ${runner.project}`);
+  return found;
+}
+
+// What a template lets a task change. Since 2.10 a template says it (task_params) and
+// Semaphore SILENTLY ignores what it does not allow - a limit it ignores runs the playbook on
+// every host. A template from before has no task_params and takes them all.
+function allows(template, what) {
+  if (!template || !Object.prototype.hasOwnProperty.call(template, "task_params")) return true;
+  return !!template.task_params?.[what];
+}
+
 // the extra vars Semaphore passes to ansible-playbook : the form's values and its resolved
 // credentials, without AnsibleForms' own __x__ execution parameters
 function extraVars(extravars, credentials) {
@@ -95,11 +116,29 @@ async function launchTemplate(runner, extravars, credentials, jobid, counter) {
       environment: JSON.stringify(extraVars(extravars, credentials)),
       message: `AnsibleForms job ${jobid}`,
     };
+    // another inventory, or a limit, the template does not allow would be ignored : the job
+    // would run on other hosts than the form asked for, so it does not run
+    const refuse = (what, setting) => {
+      throw new Errors.BadRequestError(`template ${template.name} does not allow ${what} : switch on "${setting}" on the template in Semaphore`);
+    };
+    // a form's inventory : one name or id (an RTE form may list several ; Semaphore takes one)
+    const inventory = Array.isArray(extravars.__inventory__) ? extravars.__inventory__[0] : extravars.__inventory__;
+    if (inventory !== undefined && inventory !== null && String(inventory).trim() !== "") {
+      if (!allows(template, "allow_override_inventory")) refuse("another inventory", "Allow override inventory");
+      body.inventory_id = (await findInventory(http, runner, inventory)).id;
+    }
     // the ansible options : in `params` since Semaphore 2.10 (2.18 ignores them anywhere else),
-    // at the top for the versions before. verbose (debug) only works when the template allows it.
+    // at the top for the versions before
     const params = {};
-    if (extravars.__limit__) params.limit = String(extravars.__limit__).split(",").map((h) => h.trim()).filter(Boolean);
-    if (extravars.__verbose__) params.debug = true;
+    if (extravars.__limit__) {
+      if (!allows(template, "allow_override_limit")) refuse("a limit", "Allow override limit");
+      params.limit = String(extravars.__limit__).split(",").map((h) => h.trim()).filter(Boolean);
+    }
+    // verbose output is a nicety : without the template's leave the job runs, and says so
+    if (extravars.__verbose__) {
+      if (allows(template, "allow_debug")) params.debug = true;
+      else await Job.printJobOutput(`[WARNING]: template ${template.name} does not allow debug in Semaphore : the output is not verbose`, "stderr", jobid, ++counter);
+    }
     if (extravars.__check__) params.dry_run = true;
     if (extravars.__diff__) params.diff = true;
     if (Object.keys(params).length) {

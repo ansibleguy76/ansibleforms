@@ -82,6 +82,16 @@ describe("what each type needs", () => {
     assert.equal(rows.at(-1).use_credentials, 0);
   });
 
+  test("a semaphore or a rundeck is never a default : no form falls back to one", async () => {
+    await Runner.create({ name: "s1", type: "semaphore", uri: "https://s", token: "t", project: "1" });
+    assert.equal(rows.at(-1).is_default, 0, "not even the first of its type");
+    await Runner.create({ name: "r1", type: "rundeck", uri: "https://r", token: "t", project: "af", is_default: 1 });
+    assert.equal(rows.at(-1).is_default, 0, "not when asked");
+    const id = rows.at(-1).id;
+    await Runner.update({ is_default: 1 }, id);
+    assert.equal(rows.find((r) => r.id === id).is_default, 0, "not by an update");
+  });
+
   test("a rundeck needs a token and a project name", async () => {
     await assert.rejects(Runner.create({ name: "r", type: "rundeck", uri: "https://r", project: "af" }), /needs an API token/);
     await assert.rejects(Runner.create({ name: "r", type: "rundeck", uri: "https://r", token: "t" }), /needs a project \(the project name\)/);

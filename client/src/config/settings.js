@@ -189,9 +189,13 @@ export const RUNNER_FLAVOURS = [
   { value: 'ascender', label: 'Ascender' },
 ];
 
-// what a runner is, in the dialog : an RTE, or an awx runner of one of its flavours (none is
-// AWX) - stored as its type and flavour
-export const RUNNER_KINDS = ['rte', 'awx', 'aap', 'ascender'];
+// what a runner is, in the dialog : an RTE, an awx runner of one of its flavours (none is
+// AWX), a Semaphore UI or a Rundeck - stored as its type and flavour
+export const RUNNER_KINDS = ['rte', 'awx', 'aap', 'ascender', 'semaphore', 'rundeck'];
+// the kinds that are a type of their own, signed in with a token and launching in one project
+export const PROJECT_RUNNER_KINDS = ['semaphore', 'rundeck'];
+// the kinds of an awx runner : a token, or a user and password
+export const AWX_RUNNER_KINDS = ['awx', 'aap', 'ascender'];
 // an example address of each kind : an awx runner's with its API path (AAP 2.5+ behind its
 // gateway)
 const RUNNER_URI_EXAMPLE = {
@@ -199,6 +203,8 @@ const RUNNER_URI_EXAMPLE = {
   awx: 'https://awx.example.com/api/v2',
   aap: 'https://aap.example.com/api/controller/v2',
   ascender: 'https://ascender.example.com/api/v2',
+  semaphore: 'https://semaphore.example.com',
+  rundeck: 'https://rundeck.example.com',
 };
 
 /**
@@ -208,10 +214,11 @@ const RUNNER_URI_EXAMPLE = {
  *   r (object): the runner (type, flavour) ; none for a new one.
  *
  * Returns:
- *   string: rte, awx, aap or ascender.
+ *   string: rte, awx, aap, ascender, semaphore or rundeck.
  */
 export function runnerKind(r) {
   if (!r?.type || r.type === 'rte') return 'rte';
+  if (PROJECT_RUNNER_KINDS.includes(r.type)) return r.type;
   return ['aap', 'ascender'].includes(r.flavour) ? r.flavour : 'awx';
 }
 
@@ -1985,7 +1992,8 @@ export default function getSettings(t) {
       // for template forms (AWX, AAP or Ascender)
       defaultPicker: {
         key: 'is_default',
-        groupBy: (r) => (r?.type === 'rte' ? 'playbook' : 'template'),
+        // a Semaphore or Rundeck runner is no group's : a form that names no runner never runs on one
+        groupBy: (r) => (r?.type === 'rte' ? 'playbook' : r?.type === 'awx' ? 'template' : null),
         title: t('settings.runners.defaultsTitle'),
         editLabel: t('settings.runners.editDefaults'),
         groups: [
@@ -2021,10 +2029,13 @@ export default function getSettings(t) {
         // only when checked against one
         ignore_certs: !!skip_verify,
         ca_bundle: !skip_verify && custom_ca ? item.ca_bundle || '' : '',
-        // an RTE takes its token ; a user and password are an awx runner's choice only
-        ...(kind === 'rte' ? { use_credentials: false } : {}),
-        type: kind === 'rte' ? 'rte' : 'awx',
+        // an RTE, a Semaphore and a Rundeck take a token ; a user and password are an awx
+        // runner's choice only
+        ...(AWX_RUNNER_KINDS.includes(kind) ? {} : { use_credentials: false }),
+        type: kind === 'rte' || PROJECT_RUNNER_KINDS.includes(kind) ? kind : 'awx',
         flavour: ['aap', 'ascender'].includes(kind) ? kind : null,
+        // the project : a Semaphore's or a Rundeck's only
+        project: PROJECT_RUNNER_KINDS.includes(kind) ? String(item.project || '').trim() : null,
       }),
       // a runner has its own page (pages/admin/runner.vue) : its row and Edit open it, New the wizard
       openPage: (item) => `/settings/runners/${item.id}`,
@@ -2140,6 +2151,20 @@ export default function getSettings(t) {
           placeholder: (r) => RUNNER_URI_EXAMPLE[r.kind] || RUNNER_URI_EXAMPLE.rte,
         },
         {
+          // a Semaphore's project id, a Rundeck's project name
+          key: 'project',
+          step: 'connection',
+          icon: 'folder',
+          line: 1,
+          label: t('settings.runners.project'),
+          required: false,
+          hidden: true,
+          help: (r) =>
+            t(`settings.runners.projectHelp_${PROJECT_RUNNER_KINDS.includes(r.kind) ? r.kind : 'semaphore'}`),
+          dependency: 'kind',
+          dependencyValues: PROJECT_RUNNER_KINDS,
+        },
+        {
           // an AWX, AAP or Ascender : an API token, or a user and password - radio buttons
           key: 'use_credentials',
           step: 'authentication',
@@ -2150,14 +2175,14 @@ export default function getSettings(t) {
             { value: true, label: t('settings.runners.authUser'), hint: t('settings.runners.authUserHint') },
           ],
           initial: (r) => !!r?.use_credentials,
-          // an RTE : always its token
-          defaultMap: { rte: false },
+          // an RTE, a Semaphore, a Rundeck : always a token
+          defaultMap: { rte: false, semaphore: false, rundeck: false },
           columnType: 'checkbox',
           filterType: 'boolean',
           hidden: true,
           password_related: true,
           dependency: 'kind',
-          dependencyValues: ['awx', 'aap', 'ascender'],
+          dependencyValues: AWX_RUNNER_KINDS,
         },
         {
           key: 'token',
@@ -2171,8 +2196,11 @@ export default function getSettings(t) {
           type: 'password',
           required: false,
           hidden: true,
-          // an RTE's RTE_TOKEN, or an AWX's API token
-          help: (r) => t(`settings.runners.tokenHelp_${r.kind === 'rte' || !r.kind ? 'rte' : 'api'}`),
+          // an RTE's RTE_TOKEN, a Semaphore's or a Rundeck's user token, or an AWX's API token
+          help: (r) =>
+            t(
+              `settings.runners.tokenHelp_${r.kind === 'rte' || !r.kind ? 'rte' : PROJECT_RUNNER_KINDS.includes(r.kind) ? r.kind : 'api'}`,
+            ),
           dependency: 'use_credentials',
           negateDependency: true,
         },

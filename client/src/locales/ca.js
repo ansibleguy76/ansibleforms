@@ -1269,6 +1269,22 @@ export default {
       passwordOnPage: 'La contrasenya es canvia amb Canvia la contrasenya, a dalt a la dreta.',
       tokenOnPage_rte: 'El RTE_TOKEN del RTE es canvia amb Canvia el token, a dalt a la dreta.',
       tokenOnPage_api: "El token d'API es canvia amb Canvia el token, a dalt a la dreta.",
+      kind_semaphore: 'Semaphore UI',
+      kind_rundeck: 'Rundeck',
+      type_semaphore: 'Semaphore',
+      type_semaphoreHint: "Semaphore UI, per a formularis de plantilla que l'anomenen",
+      type_rundeck: 'Rundeck',
+      type_rundeckHint: "Jobs de Rundeck, per a formularis de plantilla que l'anomenen",
+      uriHelp_semaphore: "L'adreça de Semaphore UI, sense camí, p. ex. https://semaphore.example.com.",
+      uriHelp_rundeck: "L'adreça de Rundeck, sense camí, p. ex. https://rundeck.example.com.",
+      project: 'Projecte',
+      projectHelp_semaphore:
+        "L'id del projecte de Semaphore amb les plantilles: el número de la seva adreça, /project/<id>.",
+      projectHelp_rundeck: 'El nom del projecte de Rundeck amb els jobs.',
+      tokenHelp_semaphore: "Un token d'API d'un usuari de Semaphore: menú de l'usuari, API tokens.",
+      tokenHelp_rundeck: "El token d'API d'un usuari de Rundeck: perfil de l'usuari, User API Tokens.",
+      noDefaultHelp:
+        "Mai un predeterminat: un formulari de plantilla que no anomena cap runner s'executa a l'AWX predeterminat, així que un formulari anomena aquest runner amb runner: <name>.",
     },
     mail: {
       label: 'Configuració del correu',

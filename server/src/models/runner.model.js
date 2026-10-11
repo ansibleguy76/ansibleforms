@@ -92,10 +92,13 @@ class Runner extends CrudModel {
     CrudModel.assertRequired(this.modelName, data);
     data = this.normalize(data, opts);
     this.assertComplete(data);
+    // a semaphore or rundeck runner is never a default : no form falls back to one (a template
+    // form that names no runner runs on the default awx runner), a form names it
+    if (TOKEN_AND_PROJECT.includes(data.type)) data.is_default = 0;
     // The first runner of a type is its default : forms that name no runner need one, and
     // nobody should have to remember the tick. Not for the seed, which declares the flag
     // itself - setting it here would flip it back on every start.
-    if (!data.is_default && !opts.fromSeed && !(await this.findDefault(data.type))) {
+    else if (!data.is_default && !opts.fromSeed && !(await this.findDefault(data.type))) {
       data.is_default = 1;
     }
     await this.assertDefaultAllowed(data, data.type, opts);
@@ -110,6 +113,7 @@ class Runner extends CrudModel {
     data = this.normalize(data, opts);
     // the stored row decides what is missing : an update may send only what changed
     const current = await this.findById(id);
+    if (TOKEN_AND_PROJECT.includes({ ...current, ...data }.type)) data.is_default = 0;
     const merged = { ...current, ...data };
     this.assertComplete(merged);
     await this.assertDefaultAllowed(data, merged.type, opts);

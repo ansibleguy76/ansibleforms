@@ -994,6 +994,21 @@ export default {
       passwordOnPage: 'La password si cambia con Cambia password, in alto a destra.',
       tokenOnPage_rte: "L'RTE_TOKEN dell'RTE si cambia con Cambia token, in alto a destra.",
       tokenOnPage_api: 'Il token API si cambia con Cambia token, in alto a destra.',
+      kind_semaphore: 'Semaphore UI',
+      kind_rundeck: 'Rundeck',
+      type_semaphore: 'Semaphore',
+      type_semaphoreHint: 'Semaphore UI, per i form di template che lo nominano',
+      type_rundeck: 'Rundeck',
+      type_rundeckHint: 'Job di Rundeck, per i form di template che lo nominano',
+      uriHelp_semaphore: 'L’indirizzo di Semaphore UI, senza percorso, ad es. https://semaphore.example.com.',
+      uriHelp_rundeck: 'L’indirizzo di Rundeck, senza percorso, ad es. https://rundeck.example.com.',
+      project: 'Progetto',
+      projectHelp_semaphore: 'L’id del progetto Semaphore con i template: il numero nel suo indirizzo, /project/<id>.',
+      projectHelp_rundeck: 'Il nome del progetto Rundeck con i job.',
+      tokenHelp_semaphore: 'Un token API di un utente Semaphore: menu dell’utente, API tokens.',
+      tokenHelp_rundeck: 'Il token API di un utente Rundeck: profilo dell’utente, User API Tokens.',
+      noDefaultHelp:
+        'Mai un predefinito: un form di template che non nomina un runner gira sull’AWX predefinito, quindi un form nomina questo runner con runner: <name>.',
     },
     disclaimer: {
       description:

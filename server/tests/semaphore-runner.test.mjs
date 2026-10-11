@@ -80,6 +80,7 @@ const server = http.createServer((req, res) => {
     if (p === "/api/user") return json(200, { id: 1, username: "admin" });
     if (p === "/api/project/7") return json(200, { id: 7, name: "af" });
     if (p === "/api/project/7/templates") return json(200, templates);
+    if (p === "/api/project/7/inventory") return json(200, [{ id: 1, name: "localhost" }, { id: 2, name: "prod" }]);
     if ((m = p.match(/^\/api\/project\/7\/templates\/(\d+)$/))) {
       const t = templates.find((x) => x.id == m[1]);
       return t ? json(200, t) : json(404, { error: "not found" });
@@ -118,7 +119,14 @@ afterAll(() => server.close());
 beforeEach(() => {
   jobRow = { id: 5, status: "running" };
   outputs = [];
-  templates = [{ id: 3, name: "af-demo" }, { id: 4, name: "other" }];
+  // af-demo : a template from before task_params, it takes every override ; strict and loose
+  // say what they allow, as since Semaphore 2.10
+  templates = [
+    { id: 3, name: "af-demo" },
+    { id: 4, name: "other" },
+    { id: 5, name: "strict", task_params: null },
+    { id: 6, name: "loose", task_params: { allow_override_inventory: true, allow_override_limit: true, allow_debug: true } },
+  ];
   script = [["waiting"], ["running", "PLAY [localhost] ***", "\x1b[0;32mok: [localhost]\x1b[0m"], ["running", "TASK [Count] ***"], ["success", "PLAY RECAP ***"]];
   tasks = {};
   requests = [];
@@ -162,6 +170,38 @@ describe("a template on Semaphore", () => {
     await run({ __limit__: "web1, web2" });
     assert.deepEqual(launched().body.params.limit, ["web1", "web2"]);
     assert.equal(launched().body.limit, "web1,web2");
+  });
+
+  test("a form's inventory is the task's, by name or by id", { timeout: 20000 }, async () => {
+    await run({ __template__: "loose", __inventory__: "prod" });
+    assert.equal(launched().body.inventory_id, 2);
+    requests = [];
+    jobRow = { id: 5, status: "running" };
+    await run({ __template__: "loose", __inventory__: "1" });
+    assert.equal(launched().body.inventory_id, 1);
+  });
+
+  test("an unknown inventory fails the job before anything is launched", { timeout: 20000 }, async () => {
+    await assert.rejects(run({ __template__: "loose", __inventory__: "nope" }), (e) => e.jobEnded === true);
+    assert.equal(launched(), undefined);
+    assert.match(text(), /No inventory 'nope' in Semaphore project 7/);
+  });
+
+  test("an inventory or a limit the template does not allow is refused, not silently ignored", { timeout: 20000 }, async () => {
+    await assert.rejects(run({ __template__: "strict", __inventory__: "prod" }), (e) => e.jobEnded === true);
+    assert.match(text(), /template strict does not allow another inventory : switch on "Allow override inventory"/);
+    jobRow = { id: 5, status: "running" };
+    outputs = [];
+    await assert.rejects(run({ __template__: "strict", __limit__: "web1" }), (e) => e.jobEnded === true);
+    assert.match(text(), /template strict does not allow a limit : switch on "Allow override limit"/);
+    assert.equal(launched(), undefined, "the playbook never ran on hosts the form did not ask for");
+  });
+
+  test("verbose the template does not allow : a warning, and the job runs", { timeout: 20000 }, async () => {
+    await run({ __template__: "strict", __verbose__: true });
+    assert.equal(launched().body.debug, undefined);
+    assert.match(text(), /\[WARNING\]: template strict does not allow debug/);
+    assert.equal(jobRow.status, "success");
   });
 
   test("a numeric template is an id", { timeout: 20000 }, async () => {
