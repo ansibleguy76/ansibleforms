@@ -463,7 +463,7 @@ onMounted(async () => {
         <!-- Roles : the roles the user has, and how ; a row opens the role -->
         <template v-else-if="user && activeTab === 'roles'">
           <div class="af-table-frame">
-            <table class="table af-table">
+            <table v-fit-columns class="table af-table">
               <thead>
                 <tr>
                   <th>{{ t('settings.common.role') }}</th>
@@ -531,7 +531,7 @@ onMounted(async () => {
         <template v-else-if="user">
           <p v-if="!userGroups.length" class="text-muted small mb-0">{{ t('settings.users.noGroup') }}</p>
           <div v-else class="af-table-frame">
-            <table class="table af-table">
+            <table v-fit-columns class="table af-table">
               <thead>
                 <tr>
                   <th class="text-center bs-dt-select">

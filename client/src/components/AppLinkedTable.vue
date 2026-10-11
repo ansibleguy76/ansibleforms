@@ -73,7 +73,7 @@ function text(col, row) {
 <template>
   <p v-if="!rows.length" class="text-muted small mb-0">{{ empty }}</p>
   <div v-else class="af-table-frame">
-    <table class="table af-table" @mouseover="onCellHover">
+    <table v-fit-columns class="table af-table" @mouseover="onCellHover">
       <thead>
         <tr>
           <th v-for="col in columns" :key="col.key" :class="col.class">{{ col.label }}</th>

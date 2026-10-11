@@ -293,3 +293,16 @@
 .af-has-popover {
   cursor: help;
 }
+
+/* a record page's tables (v-fit-columns, directives/fitColumns.js) : one line per row, a cell too
+   long for its column ends in "…" ; a checkbox or a row menu is never cut */
+.af-fit th,
+.af-fit td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.af-fit .bs-dt-select,
+.af-fit .bs-dt-row-actions {
+  overflow: visible;
+}

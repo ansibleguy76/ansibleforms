@@ -314,7 +314,7 @@ onMounted(async () => {
         <template v-else-if="group && activeTab === 'roles'">
           <p v-if="!groupRoles.length" class="text-muted small mb-0">{{ t('settings.groups.noRole') }}</p>
           <div v-else class="af-table-frame">
-            <table class="table af-table">
+            <table v-fit-columns class="table af-table">
               <thead>
                 <tr>
                   <th>{{ t('settings.common.role') }}</th>
@@ -338,7 +338,7 @@ onMounted(async () => {
         <template v-else-if="group">
           <p v-if="!members.length" class="text-muted small mb-0">{{ t('settings.groups.noUsers') }}</p>
           <div v-else class="af-table-frame">
-            <table class="table af-table">
+            <table v-fit-columns class="table af-table">
               <thead>
                 <tr>
                   <th class="text-center bs-dt-select">

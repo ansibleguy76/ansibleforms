@@ -31,6 +31,7 @@ import router from '@/router';
 import { VueShowdownPlugin } from 'vue-showdown';
 import Popper from 'vue3-popper';
 import clickOutside from '@/directives/clickOutside';
+import fitColumns from '@/directives/fitColumns';
 import VueHighlightJS from '@/lib/Highlight.js';
 import VueJsonPretty from 'vue-json-pretty';
 import { VueDatePicker } from '@vuepic/vue-datepicker';
@@ -78,5 +79,7 @@ export function registerPlugins(app) {
     .component('popper', Popper)
     .component('VueJsonPretty', VueJsonPretty)
     .component('VueDatePicker', VueDatePicker)
-    .directive('click-outside', clickOutside);
+    .directive('click-outside', clickOutside)
+    // a record page's tables : one line per row, a cell too long ends in "…" (directives/fitColumns.js)
+    .directive('fit-columns', fitColumns);
 }

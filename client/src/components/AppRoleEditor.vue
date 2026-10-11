@@ -211,7 +211,7 @@ function removeUser(index) {
         {{ t('settings.settingsPage.roleNoUsers') }}
       </p>
       <div v-else class="af-table-frame">
-        <table class="table af-table af-role-members">
+        <table v-fit-columns class="table af-table af-role-members">
           <thead>
             <tr>
               <th class="text-center bs-dt-select">
@@ -325,7 +325,7 @@ function removeUser(index) {
     <template v-else-if="tab">
       <p v-if="role.groups.length === 0" class="text-muted small mb-0">{{ t('settings.settingsPage.roleNoGroups') }}</p>
       <div v-else class="af-table-frame">
-        <table class="table af-table af-role-members">
+        <table v-fit-columns class="table af-table af-role-members">
           <thead>
             <tr>
               <th class="text-center bs-dt-select">
