@@ -549,6 +549,12 @@ onMounted(async () => {
   padding-left: 0;
   padding-right: 0;
 }
+/* a move that may not be pressed : the light grey of the fields' borders and icons */
+.af-link-btn:disabled {
+  color: var(--af-field-icon);
+  border-color: var(--af-field-border);
+  opacity: 1;
+}
 </style>
 <route lang="yaml">
 meta:
