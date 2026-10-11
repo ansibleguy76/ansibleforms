@@ -1481,6 +1481,8 @@ export default {
     previewNotRun: 'これはプレビューです：フォームは実行されていません',
     visual: 'ビジュアル',
     runnerDefault: 'その種類の既定のランナー',
+    helpPlaybook: '実行する playbook。',
+    helpTemplate: '起動する AWX のジョブテンプレート。',
     helpInventory: 'ジョブを実行するインベントリ。',
     helpScmBranch: 'AWX がテンプレートに使うブランチ。',
     helpExecEnv: 'ジョブを実行する AWX の実行環境。',

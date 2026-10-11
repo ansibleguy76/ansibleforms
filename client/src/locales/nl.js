@@ -1500,6 +1500,8 @@ export default {
     previewNotRun: 'Dit is een voorbeeld : het formulier is niet uitgevoerd',
     visual: 'Visueel',
     runnerDefault: 'Standaard runner van zijn type',
+    helpPlaybook: 'Het playbook dat het uitvoert.',
+    helpTemplate: 'De AWX-jobtemplate die het start.',
     helpInventory: 'De inventaris waartegen zijn jobs draaien.',
     helpScmBranch: 'De branch die AWX voor de template gebruikt.',
     helpExecEnv: 'De AWX-uitvoeringsomgeving van zijn jobs.',

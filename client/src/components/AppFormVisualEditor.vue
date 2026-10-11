@@ -492,6 +492,26 @@ defineExpose({
             </select>
           </div>
         </div>
+        <div v-if="!isSubform">
+          <label class="form-label fw-bold">{{ t('designer.visualIcon') }}</label>
+          <div class="input-group">
+            <span class="input-group-text"
+              ><FaIcon :fixedwidth="true" :icon="form.icon || 'square'" :class="{ 'opacity-25': !form.icon }"
+            /></span>
+            <select
+              class="form-select"
+              :value="form.icon"
+              :disabled="locked"
+              @change="setText('icon', $event.target.value)"
+            >
+              <option value="">{{ t('designer.visualNoIcon') }}</option>
+              <option v-if="form.icon && !availableIcons.includes(form.icon)" :value="form.icon">
+                {{ form.icon }}
+              </option>
+              <option v-for="ic in availableIcons" :key="ic" :value="ic">{{ ic }}</option>
+            </select>
+          </div>
+        </div>
         <div class="af-form-wide">
           <label class="form-label fw-bold">{{ t('designer.formDescription') }}</label>
           <div class="input-group">
@@ -513,53 +533,6 @@ defineExpose({
             :disabled="locked"
             @change="setText('help', $event.target.value)"
           ></textarea>
-        </div>
-        <div v-if="form.type === 'ansible'">
-          <label class="form-label fw-bold">{{ t('designer.formPlaybook') }}</label>
-          <div class="input-group">
-            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="file-code" /></span>
-            <input
-              class="form-control"
-              :class="{ 'is-invalid': !form.playbook.trim() }"
-              :value="form.playbook"
-              :disabled="locked"
-              spellcheck="false"
-              @change="setText('playbook', $event.target.value)"
-            />
-          </div>
-        </div>
-        <div v-if="form.type === 'awx'">
-          <label class="form-label fw-bold">{{ t('designer.formTemplate') }}</label>
-          <div class="input-group">
-            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="file-code" /></span>
-            <input
-              class="form-control"
-              :class="{ 'is-invalid': !form.template.trim() }"
-              :value="form.template"
-              :disabled="locked"
-              @change="setText('template', $event.target.value)"
-            />
-          </div>
-        </div>
-        <div v-if="!isSubform">
-          <label class="form-label fw-bold">{{ t('designer.visualIcon') }}</label>
-          <div class="input-group">
-            <span class="input-group-text"
-              ><FaIcon :fixedwidth="true" :icon="form.icon || 'square'" :class="{ 'opacity-25': !form.icon }"
-            /></span>
-            <select
-              class="form-select"
-              :value="form.icon"
-              :disabled="locked"
-              @change="setText('icon', $event.target.value)"
-            >
-              <option value="">{{ t('designer.visualNoIcon') }}</option>
-              <option v-if="form.icon && !availableIcons.includes(form.icon)" :value="form.icon">
-                {{ form.icon }}
-              </option>
-              <option v-for="ic in availableIcons" :key="ic" :value="ic">{{ ic }}</option>
-            </select>
-          </div>
         </div>
         <!-- its categories and roles : what it has, as pills to remove, and a list to add from -->
         <div v-for="key in isSubform ? [] : ['categories', 'roles']" :key="key" class="af-form-wide">
@@ -597,6 +570,35 @@ defineExpose({
         </div>
         <!-- the rest of the settings : the texts, then AWX's instance groups, the order, the launch
              validation, the help, the switches - only what the type allows -->
+        <div v-if="form.type === 'ansible'">
+          <label class="form-label fw-bold">{{ t('designer.formPlaybook') }}</label>
+          <div class="input-group">
+            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="file-code" /></span>
+            <input
+              class="form-control"
+              :class="{ 'is-invalid': !form.playbook.trim() }"
+              :value="form.playbook"
+              :disabled="locked"
+              spellcheck="false"
+              @change="setText('playbook', $event.target.value)"
+            />
+          </div>
+          <div class="form-text">{{ t('designer.helpPlaybook') }}</div>
+        </div>
+        <div v-if="form.type === 'awx'">
+          <label class="form-label fw-bold">{{ t('designer.formTemplate') }}</label>
+          <div class="input-group">
+            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="file-code" /></span>
+            <input
+              class="form-control"
+              :class="{ 'is-invalid': !form.template.trim() }"
+              :value="form.template"
+              :disabled="locked"
+              @change="setText('template', $event.target.value)"
+            />
+          </div>
+          <div class="form-text">{{ t('designer.helpTemplate') }}</div>
+        </div>
         <!-- the runner : picked from the instance's, of the type the form needs ; typed when the
              list cannot be read -->
         <div v-if="runs">
@@ -917,15 +919,15 @@ defineExpose({
   </div>
 </template>
 <style scoped lang="scss">
-/* the form's fields : two short ones per line, a wide one (description, lists) on its own */
+/* the form's fields : three short ones per line, sharing the pane's width ; a wide one
+   (description, help, lists, options) on a line of its own */
 .af-form-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(14rem, 22rem));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem 1.5rem;
 }
 .af-form-wide {
   grid-column: 1 / -1;
-  max-width: 45.5rem;
 }
 /* a category or a role it has : a pill, its cross removes it */
 .af-form-pill {

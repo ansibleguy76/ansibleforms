@@ -1508,6 +1508,8 @@ export default {
     previewNotRun: 'Isto é uma pré-visualização : o formulário não foi executado',
     visual: 'Visual',
     runnerDefault: 'Runner predefinido do seu tipo',
+    helpPlaybook: 'O playbook que executa.',
+    helpTemplate: 'O template de trabalho AWX que lança.',
     helpInventory: 'O inventário sobre o qual os trabalhos são executados.',
     helpScmBranch: 'O ramo que o AWX usa para o template.',
     helpExecEnv: 'O ambiente de execução AWX dos seus trabalhos.',

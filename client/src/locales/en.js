@@ -1480,6 +1480,8 @@ export default {
     previewNotRun: 'This is a preview : the form was not run',
     visual: 'Visual',
     runnerDefault: 'Default runner of its type',
+    helpPlaybook: 'The playbook it runs.',
+    helpTemplate: 'The AWX job template it launches.',
     helpInventory: 'The inventory its jobs run against.',
     helpScmBranch: 'The branch AWX checks out for the template.',
     helpExecEnv: 'The AWX execution environment its jobs run in.',

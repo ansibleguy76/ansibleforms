@@ -1509,6 +1509,8 @@ export default {
     previewNotRun: "Això és una previsualització : el formulari no s'ha executat",
     visual: 'Visual',
     runnerDefault: 'Runner predeterminat del seu tipus',
+    helpPlaybook: 'El playbook que executa.',
+    helpTemplate: "La plantilla de tasca d'AWX que llança.",
     helpInventory: "L'inventari sobre el qual s'executen les tasques.",
     helpScmBranch: 'La branca que AWX fa servir per a la plantilla.',
     helpExecEnv: "L'entorn d'execució d'AWX de les seves tasques.",
