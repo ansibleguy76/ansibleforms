@@ -1444,6 +1444,7 @@ export default {
     previewRefresh: '刷新预览',
     previewNotRun: '这是预览：表单未执行',
     visual: '可视化',
+    visualOptions: '选项',
     visualForm: '表单',
     visualCategories: '类别',
     visualRoles: '角色',
@@ -1600,7 +1601,7 @@ export default {
     formLaunchValidation: '运行验证',
     formLaunchValidationHelp:
       '在服务器上检查此表单的每次运行。log：记录将被拒绝的内容。enforce：拒绝运行，并使用服务器构建的 extravars 运行。此设置与 LAUNCH_VALIDATION 中较严格者生效。',
-    formLaunchValidationDefault: '实例默认值（LAUNCH_VALIDATION）',
+    formLaunchValidationDefault: '实例默认',
     formAbortable: '可中止',
     formVerbose: '详细输出',
     formKeepExtravars: '保留 extravars',

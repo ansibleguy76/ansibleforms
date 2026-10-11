@@ -1479,6 +1479,7 @@ export default {
     previewRefresh: 'Refresh the preview',
     previewNotRun: 'This is a preview : the form was not run',
     visual: 'Visual',
+    visualOptions: 'Options',
     visualForm: 'Form',
     visualCategories: 'Categories',
     visualRoles: 'Roles',
@@ -1637,7 +1638,7 @@ export default {
     formLaunchValidation: 'Launch validation',
     formLaunchValidationHelp:
       'Check every launch of this form on the server. log: log what would be refused. enforce: refuse it, and run the extravars the server builds. The stricter of this and LAUNCH_VALIDATION wins.',
-    formLaunchValidationDefault: 'Instance default (LAUNCH_VALIDATION)',
+    formLaunchValidationDefault: 'Instance default',
     formAbortable: 'Abortable',
     formVerbose: 'Verbose',
     formKeepExtravars: 'Keep extravars',

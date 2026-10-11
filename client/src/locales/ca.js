@@ -1508,6 +1508,7 @@ export default {
     previewRefresh: 'Actualitza la previsualització',
     previewNotRun: "Això és una previsualització : el formulari no s'ha executat",
     visual: 'Visual',
+    visualOptions: 'Opcions',
     visualForm: 'Formulari',
     visualCategories: 'Categories',
     visualRoles: 'Rols',
@@ -1667,7 +1668,7 @@ export default {
     formLaunchValidation: 'Validació del llançament',
     formLaunchValidationHelp:
       "Comprova al servidor cada llançament d'aquest formulari. log: registra el que es rebutjaria. enforce: rebutja-ho, i executa les extravars que construeix el servidor. Preval el més estricte entre aquest valor i LAUNCH_VALIDATION.",
-    formLaunchValidationDefault: 'Valor predeterminat de la instància (LAUNCH_VALIDATION)',
+    formLaunchValidationDefault: 'Predeterminat de la instància',
     formAbortable: 'Avortable',
     formVerbose: 'Detallat',
     formKeepExtravars: 'Conserva les extravars',

@@ -643,6 +643,8 @@ defineExpose({
           </div>
           <div class="form-text">{{ t('designer.formLaunchValidationHelp') }}</div>
         </div>
+        <!-- the switches, under a title of their own as every field has -->
+        <label class="form-label fw-bold af-form-wide mb-0">{{ t('designer.visualOptions') }}</label>
         <div class="af-form-wide af-form-flags">
           <div v-for="x in flagSettings" :key="x.key" class="form-check form-switch">
             <input

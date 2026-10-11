@@ -1507,6 +1507,7 @@ export default {
     previewRefresh: 'Atualizar a pré-visualização',
     previewNotRun: 'Isto é uma pré-visualização : o formulário não foi executado',
     visual: 'Visual',
+    visualOptions: 'Opções',
     visualForm: 'Formulário',
     visualCategories: 'Categorias',
     visualRoles: 'Funções',
@@ -1667,7 +1668,7 @@ export default {
     formLaunchValidation: 'Validação ao iniciar',
     formLaunchValidationHelp:
       'Verificar no servidor cada início deste formulário. log: registar o que seria recusado. enforce: recusá-lo, e executar as extravars que o servidor constrói. Prevalece a mais restrita entre esta e LAUNCH_VALIDATION.',
-    formLaunchValidationDefault: 'Predefinição da instância (LAUNCH_VALIDATION)',
+    formLaunchValidationDefault: 'Predefinição da instância',
     formAbortable: 'Interrompível',
     formVerbose: 'Detalhado',
     formKeepExtravars: 'Manter extravars',

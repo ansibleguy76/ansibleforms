@@ -1498,6 +1498,7 @@ export default {
     previewRefresh: "Aggiorna l'anteprima",
     previewNotRun: "Questa è un'anteprima : il modulo non è stato eseguito",
     visual: 'Visuale',
+    visualOptions: 'Opzioni',
     visualForm: 'Modulo',
     visualCategories: 'Categorie',
     visualRoles: 'Ruoli',
@@ -1658,7 +1659,7 @@ export default {
     formLaunchValidation: "Validazione all'avvio",
     formLaunchValidationHelp:
       'Controlla ogni avvio di questo modulo sul server. log: registra ciò che verrebbe rifiutato. enforce: rifiutalo, ed esegui le extravars costruite dal server. Vale il più restrittivo tra questo e LAUNCH_VALIDATION.',
-    formLaunchValidationDefault: "Predefinito dell'istanza (LAUNCH_VALIDATION)",
+    formLaunchValidationDefault: "Predefinito dell'istanza",
     formAbortable: 'Annullabile',
     formVerbose: 'Dettagliato',
     formKeepExtravars: 'Mantieni extravars',

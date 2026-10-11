@@ -1494,6 +1494,7 @@ export default {
     previewRefresh: 'Odśwież podgląd',
     previewNotRun: 'To jest podgląd : formularz nie został uruchomiony',
     visual: 'Wizualny',
+    visualOptions: 'Opcje',
     visualForm: 'Formularz',
     visualCategories: 'Kategorie',
     visualRoles: 'Role',
@@ -1652,7 +1653,7 @@ export default {
     formLaunchValidation: 'Weryfikacja uruchomienia',
     formLaunchValidationHelp:
       'Sprawdzaj na serwerze każde uruchomienie tego formularza. log: zapisuj w dzienniku, co zostałoby odrzucone. enforce: odrzucaj je i uruchamiaj extravars zbudowane przez serwer. Obowiązuje bardziej restrykcyjne z tego ustawienia i LAUNCH_VALIDATION.',
-    formLaunchValidationDefault: 'Domyślne dla instancji (LAUNCH_VALIDATION)',
+    formLaunchValidationDefault: 'Domyślne instancji',
     formAbortable: 'Możliwość przerwania',
     formVerbose: 'Verbose',
     formKeepExtravars: 'Zachowaj extravars',

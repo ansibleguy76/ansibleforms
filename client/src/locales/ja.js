@@ -1480,6 +1480,7 @@ export default {
     previewRefresh: 'プレビューを更新',
     previewNotRun: 'これはプレビューです：フォームは実行されていません',
     visual: 'ビジュアル',
+    visualOptions: 'オプション',
     visualForm: 'フォーム',
     visualCategories: 'カテゴリ',
     visualRoles: 'ロール',
@@ -1638,7 +1639,7 @@ export default {
     formLaunchValidation: '起動時の検証',
     formLaunchValidationHelp:
       'このフォームのすべての起動をサーバーで確認します。log: 拒否される内容をログに記録します。enforce: 拒否し、サーバーが構築した extravars で実行します。この設定と LAUNCH_VALIDATION のうち、より厳しい方が優先されます。',
-    formLaunchValidationDefault: 'インスタンスの既定値 (LAUNCH_VALIDATION)',
+    formLaunchValidationDefault: 'インスタンスの既定',
     formAbortable: '中止可能',
     formVerbose: '詳細出力',
     formKeepExtravars: 'extravars を保持',

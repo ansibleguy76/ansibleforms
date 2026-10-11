@@ -1499,6 +1499,7 @@ export default {
     previewRefresh: 'Voorbeeld vernieuwen',
     previewNotRun: 'Dit is een voorbeeld : het formulier is niet uitgevoerd',
     visual: 'Visueel',
+    visualOptions: 'Opties',
     visualForm: 'Formulier',
     visualCategories: 'Categorieën',
     visualRoles: 'Rollen',
@@ -1659,7 +1660,7 @@ export default {
     formLaunchValidation: 'Launch-validatie',
     formLaunchValidationHelp:
       'Controleer elke start van dit formulier op de server. log: log wat geweigerd zou worden. enforce: weiger de start, en voer de extravars uit die de server opbouwt. De strengste van deze en LAUNCH_VALIDATION wint.',
-    formLaunchValidationDefault: 'Standaard van de instantie (LAUNCH_VALIDATION)',
+    formLaunchValidationDefault: 'Standaard van de instantie',
     formAbortable: 'Afbreekbaar',
     formVerbose: 'Uitgebreid',
     formKeepExtravars: 'Extravars behouden',

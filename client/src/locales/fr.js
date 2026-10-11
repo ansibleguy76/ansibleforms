@@ -1513,6 +1513,7 @@ export default {
     previewRefresh: "Rafraîchir l'aperçu",
     previewNotRun: "Ceci est un aperçu : le formulaire n'a pas été lancé",
     visual: 'Visuel',
+    visualOptions: 'Options',
     visualForm: 'Formulaire',
     visualCategories: 'Catégories',
     visualRoles: 'Rôles',
@@ -1673,7 +1674,7 @@ export default {
     formLaunchValidation: 'Validation au lancement',
     formLaunchValidationHelp:
       "Vérifier chaque lancement de ce formulaire sur le serveur. log : journaliser ce qui serait refusé. enforce : le refuser, et exécuter les extravars construites par le serveur. Le plus strict de ce réglage et de LAUNCH_VALIDATION l'emporte.",
-    formLaunchValidationDefault: "Valeur par défaut de l'instance (LAUNCH_VALIDATION)",
+    formLaunchValidationDefault: "Par défaut de l'instance",
     formAbortable: 'Annulable',
     formVerbose: 'Verbeux',
     formKeepExtravars: 'Conserver extravars',

@@ -1520,6 +1520,7 @@ export default {
     previewRefresh: 'Vorschau aktualisieren',
     previewNotRun: 'Dies ist eine Vorschau : das Formular wurde nicht ausgeführt',
     visual: 'Visuell',
+    visualOptions: 'Optionen',
     visualForm: 'Formular',
     visualCategories: 'Kategorien',
     visualRoles: 'Rollen',
@@ -1680,7 +1681,7 @@ export default {
     formLaunchValidation: 'Start-Validierung',
     formLaunchValidationHelp:
       'Jeden Start dieses Formulars auf dem Server prüfen. log: protokollieren, was abgelehnt würde. enforce: ablehnen, und die vom Server erstellten Extravars ausführen. Die strengere Einstellung von dieser und LAUNCH_VALIDATION gilt.',
-    formLaunchValidationDefault: 'Standard der Instanz (LAUNCH_VALIDATION)',
+    formLaunchValidationDefault: 'Standard der Instanz',
     formAbortable: 'Abbrechbar',
     formVerbose: 'Ausführlich',
     formKeepExtravars: 'Extravars behalten',
