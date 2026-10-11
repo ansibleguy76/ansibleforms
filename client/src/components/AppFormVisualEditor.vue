@@ -529,7 +529,8 @@ defineExpose({
               @change="setText(x.key, $event.target.value)"
             />
           </div>
-          <div v-if="x.help" class="form-text">{{ t(x.help) }}</div>
+          <!-- a help on two lines : its line breaks kept -->
+          <div v-if="x.help" class="form-text af-pre-line">{{ t(x.help) }}</div>
         </div>
         <div v-if="awx">
           <label class="form-label fw-bold">{{ t('designer.formInstanceGroups') }}</label>
@@ -842,6 +843,10 @@ defineExpose({
 }
 .af-field-values {
   grid-column: 1 / -1;
+}
+/* a help text written on two lines */
+.af-pre-line {
+  white-space: pre-line;
 }
 /* the form's switches : side by side, wrapping */
 .af-form-flags {

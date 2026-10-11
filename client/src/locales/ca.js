@@ -1654,7 +1654,7 @@ export default {
     formDescription: 'Descripció',
     formPlaybook: 'Playbook',
     formRunner: 'Runner',
-    formRunnerHelp: "El nom d'un runner (Connexions > Runners). Buit: el runner predeterminat del seu tipus.",
+    formRunnerHelp: "El nom d'un runner (Connexions > Runners).\nBuit: el runner predeterminat del seu tipus.",
     formTemplate: 'Plantilla',
     formInventory: 'Inventari',
     formTags: 'Etiquetes',

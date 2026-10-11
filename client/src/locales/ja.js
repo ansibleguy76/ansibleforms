@@ -1625,7 +1625,7 @@ export default {
     formDescription: '説明',
     formPlaybook: 'Playbook',
     formRunner: 'ランナー',
-    formRunnerHelp: 'ランナーの名前 (接続 > ランナー)。空: その種類の既定のランナー。',
+    formRunnerHelp: 'ランナーの名前 (接続 > ランナー)。\n空: その種類の既定のランナー。',
     formTemplate: 'テンプレート',
     formInventory: 'インベントリ',
     formTags: 'タグ',

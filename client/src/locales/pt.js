@@ -1654,7 +1654,7 @@ export default {
     formDescription: 'Descrição',
     formPlaybook: 'Playbook',
     formRunner: 'Runner',
-    formRunnerHelp: 'O nome de um runner (Ligações > Runners). Vazio: o runner predefinido do seu tipo.',
+    formRunnerHelp: 'O nome de um runner (Ligações > Runners).\nVazio: o runner predefinido do seu tipo.',
     formTemplate: 'Template',
     formInventory: 'Inventário',
     formTags: 'Tags',

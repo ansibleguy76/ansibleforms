@@ -1624,7 +1624,7 @@ export default {
     formDescription: 'Description',
     formPlaybook: 'Playbook',
     formRunner: 'Runner',
-    formRunnerHelp: 'The name of a runner (Connections > Runners). Empty: the default runner of its type.',
+    formRunnerHelp: 'The name of a runner (Connections > Runners).\nEmpty: the default runner of its type.',
     formTemplate: 'Template',
     formInventory: 'Inventory',
     formTags: 'Tags',

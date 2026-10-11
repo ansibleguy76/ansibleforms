@@ -1587,7 +1587,7 @@ export default {
     formDescription: '描述',
     formPlaybook: 'Playbook',
     formRunner: '运行器',
-    formRunnerHelp: '运行器的名称（连接 > 运行器）。留空：其类型的默认运行器。',
+    formRunnerHelp: '运行器的名称（连接 > 运行器）。\n留空：其类型的默认运行器。',
     formTemplate: '模板',
     formInventory: '清单',
     formTags: '标签（tags）',

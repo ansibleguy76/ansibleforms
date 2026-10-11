@@ -1646,7 +1646,7 @@ export default {
     formDescription: 'Beschrijving',
     formPlaybook: 'Playbook',
     formRunner: 'Runner',
-    formRunnerHelp: 'De naam van een runner (Connections > Runners). Leeg: de standaard runner van zijn type.',
+    formRunnerHelp: 'De naam van een runner (Connections > Runners).\nLeeg: de standaard runner van zijn type.',
     formTemplate: 'Sjabloon',
     formInventory: 'Inventaris',
     formTags: 'Tags',

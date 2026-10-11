@@ -1639,7 +1639,7 @@ export default {
     formDescription: 'Opis',
     formPlaybook: 'Playbook',
     formRunner: 'Runner',
-    formRunnerHelp: 'Nazwa runnera (Połączenia > Runnery). Puste: domyślny runner danego typu.',
+    formRunnerHelp: 'Nazwa runnera (Połączenia > Runnery).\nPuste: domyślny runner danego typu.',
     formTemplate: 'Szablon',
     formInventory: 'Inwentarz',
     formTags: 'Tagi',

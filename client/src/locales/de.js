@@ -1667,7 +1667,7 @@ export default {
     formDescription: 'Beschreibung',
     formPlaybook: 'Playbook',
     formRunner: 'Runner',
-    formRunnerHelp: 'Der Name eines Runners (Connections > Runners). Leer: der Standard-Runner seines Typs.',
+    formRunnerHelp: 'Der Name eines Runners (Connections > Runners).\nLeer: der Standard-Runner seines Typs.',
     formTemplate: 'Vorlage',
     formInventory: 'Inventar',
     formTags: 'Tags',
