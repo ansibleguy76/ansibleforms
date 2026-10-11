@@ -29,7 +29,9 @@ onMounted(async () => {
 </script>
 <template>
   <AppSettingsPage>
-    <div v-if="authenticated" class="flex-grow-1 d-flex flex-column">
+    <!-- min-width 0 : a flex item, it keeps the page's width instead of growing with its list (the
+         list's columns then fit the room, as every list's) -->
+    <div v-if="authenticated" class="flex-grow-1 d-flex flex-column af-mail-page">
       <div v-if="seeded" class="alert alert-secondary py-2 mx-4 mt-3 mb-0">
         <FaIcon icon="lock" class="me-2" />{{ t('settings.mailServers.fromSeed') }}
       </div>
@@ -37,3 +39,8 @@ onMounted(async () => {
     </div>
   </AppSettingsPage>
 </template>
+<style scoped>
+.af-mail-page {
+  min-width: 0;
+}
+</style>
