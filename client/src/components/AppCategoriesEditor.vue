@@ -346,8 +346,4 @@ defineExpose({ add: addCategory, locked });
   border-radius: 0.375rem;
   overflow: hidden;
 }
-/* the row's menu's column : narrow, its dots placed as every table's (bs-dt-row-actions) */
-.af-row-menu-col {
-  width: 3.5rem;
-}
 </style>

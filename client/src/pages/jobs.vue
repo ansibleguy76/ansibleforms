@@ -109,7 +109,7 @@ const durationSeconds = (j) => runSeconds(j, now.value);
 
 /**
  * The status column's width : its widest pill, in the language shown, with the cell's padding
- * (0.6rem each side, .custom-table), never narrower than its header.
+ * (0.9rem each side, as every table's), never narrower than its header.
  *
  * Returns:
  *   string: a CSS width in px.
@@ -117,23 +117,23 @@ const durationSeconds = (j) => runSeconds(j, now.value);
 function statusWidth() {
   const labels = ['running', 'approve', 'success', 'failed', 'aborted'].map((s) => t(`jobs.menu.${s}`));
   const rem = parseFloat(getComputedStyle(document.documentElement).fontSize || '16');
-  return `${Math.max(pxOf(pillWidth(labels, 1.2 * rem)), pxOf(headerWidth(t('jobs.status'))))}px`;
+  return `${Math.max(pxOf(pillWidth(labels, 1.8 * rem)), pxOf(headerWidth(t('jobs.status'))))}px`;
 }
 
 // ─── DataTable-style state (sort / column visibility) ─────────────────────
-// the table fits its frame (a fixed layout) : the short columns a width of their own, the form
-// and the user share the rest, a long value cut with an ellipsis (its full text in the tooltip)
+// the columns as wide as their values (v-fit-columns) : the short ones kept whole (keep), the form
+// and the user giving way when the room is short, a long value cut with an ellipsis (its full
+// text in the tooltip)
 const columnDefs = computed(() => [
   // a number : to the right, as every count
-  { key: 'id', label: t('jobs.id'), filterable: true, sortable: true, type: 'number', width: '4.5rem', align: 'end' },
+  { key: 'id', label: t('jobs.id'), filterable: true, sortable: true, type: 'number', keep: true, align: 'end' },
   { key: 'form', label: t('jobs.form'), filterable: true, sortable: true },
   {
     key: 'job_type',
     label: t('jobs.jobType'),
     filterable: true,
     sortable: true,
-    // as wide as its header, in the language shown
-    width: headerWidth(t('jobs.jobType')),
+    keep: true,
     render: (j) => j.job_type || 'ansible',
   },
   // as wide as its widest pill in the language shown (or its header) : no room kept for a
@@ -144,7 +144,7 @@ const columnDefs = computed(() => [
     label: t('jobs.startTime'),
     filterable: true,
     sortable: true,
-    width: '13.25rem',
+    keep: true,
     render: (j) => formatTime(j.start),
   },
   {
@@ -152,7 +152,7 @@ const columnDefs = computed(() => [
     label: t('jobs.endTime'),
     filterable: true,
     sortable: true,
-    width: '13.25rem',
+    keep: true,
     render: (j) => formatTime(j.end),
   },
   {
@@ -160,8 +160,7 @@ const columnDefs = computed(() => [
     key: 'duration',
     label: t('jobs.duration'),
     sortable: true,
-    // as wide as its header, in the language shown
-    width: headerWidth(t('jobs.duration')),
+    keep: true,
     render: (j) => formatDuration(durationSeconds(j)),
     type: 'number',
     // a length, read against the others : to the right, like any number of a table
@@ -1263,7 +1262,7 @@ onMounted(async () => {
                       [col.key]: true,
                       'text-end af-col-end': col.align === 'end',
                     }"
-                    :data-fit-keep="col.width || null"
+                    :data-fit-keep="col.width || (col.keep ? '' : null)"
                     :style="{ userSelect: 'none', whiteSpace: 'nowrap' }"
                     @click="col.sortable ? toggleSort(col.key) : undefined"
                   >
@@ -1280,7 +1279,7 @@ onMounted(async () => {
                 </template>
                 <!-- the room left, then the row's actions at the right -->
                 <th class="af-fit-spacer"></th>
-                <th class="action"></th>
+                <th class="af-row-menu-col"></th>
               </tr>
             </thead>
             <tbody>
@@ -1919,34 +1918,14 @@ onMounted(async () => {
   /* 20px lines : every row a whole 45px (12px padding twice, a 1px border). At 1.2 a row was
      44.19px, and the browser rounding each row's edges made one row in five a pixel taller */
   line-height: 1.25;
-  /* the columns are laid out by v-fit-columns : the short ones their own width, the form and the
-     user as wide as their values, a spacer the rest ; too narrow, the form and the user give way
-     with an ellipsis, as every table */
+  /* the columns are laid out by v-fit-columns, as every table's : the short ones kept whole, the
+     form and the user as wide as their values, a spacer the rest ; too narrow, the form and the
+     user give way down to 12 characters, then the frame scrolls sideways */
   table-layout: fixed;
   width: 100%;
-  /* the form and the user keep some room : on a screen too narrow for it the table scrolls
-     sideways in its frame, rather than cutting them to a letter */
-  min-width: 71rem;
-}
-/* (the frame hides its overflow for its rounded corners : this one scrolls it instead) */
-.af-table-frame:has(> .custom-table) {
-  overflow-x: auto;
 }
 .custom-table tbody td {
   white-space: nowrap;
-}
-/* nine columns : a little less room between them than the lists' (styles/tables.scss), the
-   first and last cells keeping theirs from the frame's edges */
-.custom-table.af-table th:not(:first-child):not(:last-child),
-.custom-table.af-table td:not(:first-child):not(:last-child) {
-  padding-left: 0.6rem;
-  padding-right: 0.6rem;
-}
-/* a column aligned to the right (the duration) : room before the next column's left-aligned
-   text, which would otherwise start right after it */
-.custom-table.af-table th.af-col-end:not(:first-child):not(:last-child),
-.custom-table.af-table td.af-col-end:not(:first-child):not(:last-child) {
-  padding-right: 1.5rem;
 }
 /* a value longer than its column : cut with an ellipsis, its full text in the tooltip */
 .custom-table tbody td:not(.bs-dt-row-actions),
@@ -1954,15 +1933,11 @@ onMounted(async () => {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.custom-table th.action {
-  /* the row's three dots, as the other tables' */
-  width: 3.5rem;
-}
 /* a right-aligned column right before the caret (the id) : the caret already keeps the number
    from the form, so only the cells' usual room after it, the caret then halfway between both */
 .custom-table.af-table th.af-col-end:not(:first-child):not(:last-child):has(+ .af-jobs-expand),
 .custom-table.af-table td.af-col-end:not(:first-child):not(:last-child):has(+ .af-jobs-expand) {
-  padding-right: 0.6rem;
+  padding-right: 0.9rem;
 }
 /* the caret itself : lighter than the row's text (already the secondary grey), the text's colour
    when hovered, the row's own on a selected row */

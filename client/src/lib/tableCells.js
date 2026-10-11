@@ -102,23 +102,6 @@ export function pillWidth(labels, padding, fallback = '10rem') {
 }
 
 /**
- * A column width that follows the table : a share of the room the other columns leave, never
- * more than a cap. A wide screen keeps the column at the cap (the table's spacer takes the
- * rest), a narrow one shrinks it, so the table never gets wider than its frame.
- *
- * Args:
- *   share (number): the share of the room left, 0 to 1 (the shared columns' together : 1 or less).
- *   cap (number): the most, in px.
- *   reserve (number): the px the other columns take (the checkbox, the counts, the row menu).
- *
- * Returns:
- *   Function: (tableWidth px) => a CSS width, for a BsDataTable column's width.
- */
-export function shareUpTo(share, cap, reserve = 0) {
-  return (tableWidth) => `${Math.round(Math.max(0, Math.min(cap, (tableWidth - reserve) * share)))}px`;
-}
-
-/**
  * A width in px, from a CSS width in px (headerWidth's).
  *
  * Args:
@@ -132,16 +115,18 @@ export function pxOf(width) {
 }
 
 /**
- * The width the longest of some values needs in a table's cell : each measured in a hidden cell
- * of a table like the lists', in its font and padding.
+ * The width the widest of some cells needs in a table : each measured in a hidden cell of a table
+ * like the lists', in its font and padding - as text, or as the html a column renders (a pill, a
+ * badge : their own padding counted).
  *
  * Args:
- *   texts (string[]): the values, as the cells show them.
+ *   values (string[]): the cells, as the table shows them.
+ *   html (boolean): the values are html (a column's render, escaped by it), not text.
  *
  * Returns:
  *   number: the widest one's width, in px (0 when nothing can be measured).
  */
-export function widestCell(texts) {
+export function widestCell(values, html = false) {
   if (typeof document === 'undefined' || !document.body) return 0;
   const table = document.createElement('table');
   table.className = 'table table-sm mb-0 bs-dt-table af-table';
@@ -151,8 +136,9 @@ export function widestCell(texts) {
   const td = table.querySelector('td');
   let widest = 0;
   // each text once ; a few hundred at most (a list's page or its filtered rows)
-  for (const text of [...new Set(texts)].slice(0, 500)) {
-    td.textContent = text;
+  for (const value of [...new Set(values)].slice(0, 500)) {
+    if (html) td.innerHTML = value;
+    else td.textContent = value;
     widest = Math.max(widest, td.getBoundingClientRect().width);
   }
   table.remove();

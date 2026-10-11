@@ -47,6 +47,19 @@ export function useUserLinks(who) {
 
   // a multistep job's steps stay under their job
   const jobs = computed(() => allJobs.value.filter((j) => !j.parent_id));
+  /**
+   * The steps of a multistep job, in their order ; null for another job.
+   *
+   * Args:
+   *   job (object): the job.
+   *
+   * Returns:
+   *   object[]|null: its steps.
+   */
+  function stepsOf(job) {
+    if (job.job_type !== 'multistep') return null;
+    return allJobs.value.filter((j) => j.parent_id === job.id).sort((a, b) => a.id - b.id);
+  }
   const storedJobs = computed(() =>
     who.value ? allStoredJobs.value.filter((j) => j.username === `${who.value.type}/${who.value.username}`) : [],
   );
@@ -120,7 +133,10 @@ export function useUserLinks(who) {
 
   const jobColumns = computed(() => [
     { key: 'id', label: t('settings.linked.job'), keep: true, class: 'text-end', value: (j) => `#${j.id}` },
-    { key: 'form', label: t('settings.fields.form') },
+    // a step : its own name, as the jobs list shows its steps under their job
+    { key: 'form', label: t('settings.fields.form'), value: (j) => (j.parent_id ? j.target : j.form) },
+    // its type, as the jobs list shows it (a job without one is a playbook's : ansible)
+    { key: 'job_type', label: t('jobs.jobType'), keep: true, value: (j) => j.job_type || 'ansible' },
     { key: 'status', label: t('settings.linked.status'), keep: true },
     { key: 'start', label: t('jobs.startTime'), keep: true, value: (j) => j.start && Time.format(j.start) },
     { key: 'end', label: t('jobs.endTime'), keep: true, value: (j) => j.end && Time.format(j.end) },
@@ -175,6 +191,7 @@ export function useUserLinks(who) {
 
   return {
     jobs,
+    stepsOf,
     storedJobs,
     schedules,
     activity,

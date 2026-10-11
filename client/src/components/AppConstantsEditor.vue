@@ -301,10 +301,6 @@ defineExpose({ add: addConstant, locked });
   </div>
 </template>
 <style scoped lang="scss">
-/* the row's menu's column : narrow, its dots placed as every table's (bs-dt-row-actions) */
-.af-row-menu-col {
-  width: 3.5rem;
-}
 /* the table in a frame of the fields' grey, its header bar the tables' */
 .af-visual-table {
   border: 1px solid var(--af-field-border);

@@ -51,7 +51,12 @@ export function useRouteTab(firstTab, isTab = () => true) {
     const params = { ...route.params };
     if (key && key !== first()) params.tab = key;
     else delete params.tab;
-    return { name: route.name, params, query: route.query };
+    // another tab than the address's starts on its first page : the page of a tab's table
+    // (?page, AppTablePager) is that tab's
+    const query = { ...route.query };
+    const current = route.params?.tab ? String(route.params.tab) : first();
+    if ((key || first()) !== current) delete query.page;
+    return { name: route.name, params, query };
   };
 
   // ------------------------------------------------------------------

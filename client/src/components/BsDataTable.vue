@@ -11,8 +11,9 @@
  *                           align?: 'end' (numbers : header, filter and cells to the right),
  *                           width?: a CSS width for the column, or (tableWidth px) => a CSS
  *                             width, to follow the table's width ; without one the column is
- *                             as wide as its longest value, never narrower than its header,
- *                             and when they do not all fit the widest share the room left
+ *                             as wide as its longest value (50 characters at most), never
+ *                             narrower than its header, and when they do not all fit the widest
+ *                             share the room left (v-fit-columns, as every table)
  *                           hideBelow?: a width in px - the column is left out while the table
  *                             is narrower, so the wide ones keep room on a small screen }]
  *  pageSize       Number  Initial page size (default 25) — a page size the user
@@ -44,7 +45,7 @@
 
  */
 
-import { ref, computed, watch, onMounted, onBeforeUnmount, useSlots } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Helpers from '@/lib/Helpers';
 import BsPagination from './BsPagination.vue';
@@ -52,10 +53,6 @@ import BsSearch from './BsSearch.vue';
 import BsColumnPicker from './BsColumnPicker.vue';
 import { parseNumberFilter, csvCell, htmlToText } from '@/lib/dataTable';
 import { headerWidth, widestCell } from '@/lib/tableCells';
-import { shareWidths } from '@/directives/fitColumns';
-
-// the air after a column that fits its values when the room allows, in px (2rem)
-const FIT_AIR = 32;
 
 const { t } = useI18n();
 
@@ -128,60 +125,48 @@ const visibleColumns = computed(() =>
 // rather than stretching (a count far from its neighbour), as every table of the app
 const spacer = computed(() => visibleColumns.value.length > 0);
 /**
- * A column's width : as given, or worked out from the table's width (a share up to a cap).
+ * A column's own width, when it has one : as given (a count's, a date's), or worked out from the
+ * table's width.
  *
  * Args:
  *   col (object): the column.
  *
  * Returns:
- *   string|null: a CSS width, or null for a share of what is left.
+ *   string|null: a CSS width, or null for a column that fits its values.
  */
 function colWidth(col) {
-  if (!col.width) return fitWidths.value[col.key] || null;
   if (typeof col.width === 'function') return col.width(tableWidth.value);
   return col.width || null;
 }
 
-/**
- * A CSS width in px : px as they are, rem at 16px, a share (%) of the table.
- *
- * Args:
- *   width (string|null): a column's width.
- *
- * Returns:
- *   number: px ; 0 for none.
- */
-function pxOf(width) {
-  if (!width) return 0;
-  const n = parseFloat(width);
-  if (String(width).endsWith('rem')) return n * 16;
-  if (String(width).endsWith('%')) return Number.isFinite(tableWidth.value) ? (n / 100) * tableWidth.value : 0;
-  return n || 0;
-}
-
-// a column without a width : as wide as its longest value, from the rows the table shows after
-// its search, never narrower than its header, and a little air after it when the room allows ;
-// when they do not all fit in the room the others leave (the checkbox, the row menu and their
-// own widths), the narrow ones keep their width and the widest share what is left
-// (directives/fitColumns.js shareWidths, as a record page's tables)
-const slots = useSlots();
-const fitWidths = computed(() => {
-  const fitted = visibleColumns.value.filter((c) => !c.width);
-  if (!fitted.length) return {};
-  let room = tableWidth.value - (props.selectable ? 44 : 0) - (slots['row-actions'] ? 56 : 0);
-  for (const c of visibleColumns.value) if (c.width) room -= pxOf(colWidth(c));
-  const natural = fitted.map((c) =>
-    Math.max(widestCell(filteredItems.value.map((i) => cellPlain(i, c))), pxOf(headerWidth(c.label))),
-  );
-  const shared = shareWidths(natural, room);
-  const total = natural.reduce((a, b) => a + b, 0);
-  const air = !shared && total + FIT_AIR * fitted.length <= room ? FIT_AIR : 0;
+// a column without a width : as wide as its widest cell over all the rows the search leaves
+// (not only the page shown : the columns keep their width from one page to the next), never
+// narrower than its header. The table is laid out by v-fit-columns (directives/fitColumns.js),
+// as every table of the app : these widths, a cap of 50 characters, the spacer after them.
+const naturalWidths = computed(() => {
   const out = {};
-  fitted.forEach((c, k) => {
-    out[c.key] = `${Math.round(Math.max(0, shared ? shared[k] : natural[k] + air))}px`;
-  });
+  for (const c of visibleColumns.value) {
+    if (c.width) continue;
+    // the cell as it shows (cellHtml) : a pill's or a badge's padding counted
+    const cells = widestCell(
+      filteredItems.value.map((i) => cellHtml(i, c)),
+      true,
+    );
+    // its header in full : its label, its sort icon, a right-aligned column's wider padding
+    const header = parseFloat(headerWidth(c.label, !!c.sortable, '8rem', c.align === 'end')) || 0;
+    out[c.key] = Math.max(cells, header);
+  }
   return out;
 });
+// what the columns are fitted to : refitted when it changes (v-fit-columns' key)
+const fitKey = computed(
+  () =>
+    JSON.stringify(naturalWidths.value) +
+    '|' +
+    visibleColumns.value.map((c) => `${c.key}:${colWidth(c) || ''}`).join(',') +
+    '|' +
+    pageItems.value.map((i) => i[props.idKey] ?? '').join(','),
+);
 
 function toggleColumn(key) {
   const s = new Set(hiddenColumns.value);
@@ -655,6 +640,7 @@ function exportCsv() {
     <div ref="tableBox" class="table-responsive" style="overflow: visible">
       <table
         :class="{ 'af-table': framed }"
+        v-fit-columns="fitKey"
         class="table table-sm table-hover mb-0 bs-dt-table"
         @mouseleave="onTableMouseup"
         @mouseup="onTableMouseup"
@@ -677,7 +663,9 @@ function exportCsv() {
               :key="col.key"
               :class="{ 'bs-dt-sortable': col.sortable, 'text-end': col.align === 'end' }"
               @click="col.sortable ? toggleSort(col.key) : undefined"
-              :style="{ userSelect: 'none', whiteSpace: 'nowrap', width: colWidth(col) }"
+              :data-fit-keep="colWidth(col)"
+              :data-fit-natural="colWidth(col) ? null : naturalWidths[col.key]"
+              :style="{ userSelect: 'none', whiteSpace: 'nowrap' }"
             >
               {{ col.label }}
               <span v-if="col.sortable" class="text-muted ms-1" style="font-size: 0.7em">
@@ -690,8 +678,8 @@ function exportCsv() {
               </span>
             </th>
             <!-- Row actions header -->
-            <th v-if="spacer" class="bs-dt-spacer"></th>
-            <th v-if="$slots['row-actions']" style="width: 3.5rem"></th>
+            <th v-if="spacer" class="bs-dt-spacer af-fit-spacer"></th>
+            <th v-if="$slots['row-actions']" class="af-row-menu-col"></th>
           </tr>
         </thead>
         <tbody>
@@ -731,7 +719,7 @@ function exportCsv() {
               </template>
               <span v-else v-html="cellHtml(item, col)" />
             </td>
-            <td v-if="spacer" class="bs-dt-spacer"></td>
+            <td v-if="spacer" class="bs-dt-spacer af-fit-spacer"></td>
             <td v-if="$slots['row-actions']" class="bs-dt-row-actions">
               <slot name="row-actions" :item="item" />
             </td>

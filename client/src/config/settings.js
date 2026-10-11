@@ -5,7 +5,7 @@ import YAML from 'yaml';
 import Helpers from '@/lib/Helpers';
 import { cronCell } from '@/lib/cronCell';
 import { cronValidationMessage } from './cron';
-import { headerWidth, PILL, shareUpTo, pxOf } from '@/lib/tableCells';
+import { PILL } from '@/lib/tableCells';
 import { formPath } from '@/lib/formsPath';
 
 // A cron field is validated with the SAME check the editor uses (config/cron.js), which
@@ -284,7 +284,6 @@ export default function getSettings(t) {
           noInput: true,
           sortable: true,
           filterable: true,
-          width: '12rem',
           render: (v, row) =>
             escapeHtml(sourceLabel(t, v || 'local')) +
             (row?.blocked
@@ -346,8 +345,6 @@ export default function getSettings(t) {
           label: t('sidebar.groups'),
           noInput: true,
           align: 'end',
-          // as wide as its header, in the language shown : the other columns take the room
-          width: headerWidth(t('sidebar.groups'), true, '8rem', true),
           filterable: false,
           filterType: 'number',
           sortValue: (row) => (row.group_ids || []).length,
@@ -359,7 +356,6 @@ export default function getSettings(t) {
           label: t('settings.settingsPage.roles'),
           noInput: true,
           align: 'end',
-          width: headerWidth(t('settings.settingsPage.roles'), true, '8rem', true),
           filterable: false,
           filterType: 'number',
           render: (v) => (v ? String(v) : '–'),
@@ -372,7 +368,6 @@ export default function getSettings(t) {
           noInput: true,
           hidden: true,
           align: 'end',
-          width: headerWidth(t('settings.storedJobs.labelPlural'), true, '8rem', true),
           filterable: false,
           filterType: 'number',
           render: (v) => (v ? String(v) : '–'),
@@ -383,7 +378,6 @@ export default function getSettings(t) {
           noInput: true,
           hidden: true,
           align: 'end',
-          width: headerWidth(t('settings.schedules.labelPlural'), true, '8rem', true),
           filterable: false,
           filterType: 'number',
           render: (v) => (v ? String(v) : '–'),
@@ -449,17 +443,7 @@ export default function getSettings(t) {
         },
         {
           key: 'name',
-          // room for a group's name : the table's spacer takes what is left (the checkbox, the
-          // source, the counts and the row menu are reserved)
-          width: shareUpTo(
-            0.4,
-            256,
-            44 +
-              56 +
-              128 +
-              pxOf(headerWidth(t('settings.users.labelPlural'), true, '8rem', true)) +
-              pxOf(headerWidth(t('settings.settingsPage.roles'), true, '8rem', true)),
-          ),
+          // as wide as the longest name (v-fit-columns), the spacer after the counts
           label: t('settings.fields.name'),
           sortable: true,
           required: true,
@@ -473,7 +457,6 @@ export default function getSettings(t) {
           noInput: true,
           sortable: true,
           filterable: true,
-          width: '8rem',
           render: (v) => escapeHtml(sourceLabel(t, v || 'local')),
         },
         // what the group is for, or who owns it
@@ -491,8 +474,6 @@ export default function getSettings(t) {
           label: t('settings.users.labelPlural'),
           noInput: true,
           align: 'end',
-          // as wide as its header, in the language shown : the other columns take the room
-          width: headerWidth(t('settings.users.labelPlural'), true, '8rem', true),
           filterable: false,
           filterType: 'number',
           // none : an en dash, as the other empty cells
@@ -504,7 +485,6 @@ export default function getSettings(t) {
           label: t('settings.settingsPage.roles'),
           noInput: true,
           align: 'end',
-          width: headerWidth(t('settings.settingsPage.roles'), true, '8rem', true),
           filterable: false,
           filterType: 'number',
           render: (v) => (v ? String(v) : '–'),
@@ -586,10 +566,8 @@ export default function getSettings(t) {
         {
           key: 'name',
           icon: 'heading',
-          // the short columns (branch, head, status) close together at a fixed width, the name a
-          // share and the description the rest ; on a narrow table the head, then the branch, are
-          // left out (hideBelow) so the description keeps its room
-          width: '22%',
+          // on a narrow table the head, then the branch, are left out (hideBelow) so the name and
+          // the description keep their room
           label: t('settings.fields.name'),
           placeholder: 'my_repo_name',
           readonly: false,
@@ -599,8 +577,6 @@ export default function getSettings(t) {
         {
           key: 'branch',
           icon: 'code-branch',
-          // a branch name : main, or a short feature branch
-          width: '10.5rem',
           // left out on a narrow table, after the head
           hideBelow: 740,
           label: t('settings.fields.branch'),
@@ -608,14 +584,12 @@ export default function getSettings(t) {
           readonly: false,
         },
         // a commit's 7 characters
-        { key: 'head', label: t('settings.fields.head'), noInput: true, width: '7.75rem', hideBelow: 900 },
+        { key: 'head', label: t('settings.fields.head'), noInput: true, hideBelow: 900 },
         // the last sync's status, as the audit log shows an outcome
         {
           key: 'status',
           label: t('settings.fields.status'),
           noInput: true,
-          // as wide as its pill
-          width: '8.25rem',
           render: (v) => statusPill(t, v),
         },
         {
@@ -843,7 +817,6 @@ export default function getSettings(t) {
           label: t('settings.oauth2.active'),
           type: 'checkbox',
           noInput: true,
-          width: '7rem',
         },
         {
           key: 'provider',
@@ -1048,8 +1021,6 @@ export default function getSettings(t) {
           key: 'cron',
           // the column : how it runs, its cron or once ; the dialog keeps the full title
           columnLabel: t('settings.schedules.stepSchedule'),
-          // room for a five-field cron (0 2 * * *) and One time run
-          width: '9rem',
           step: 'when',
           icon: 'stopwatch',
           label: t('settings.fields.cronSchedule'),
@@ -1082,7 +1053,6 @@ export default function getSettings(t) {
         // when it last ran, then when it runs next
         {
           key: 'last_run',
-          width: '14rem',
           // left out on a narrow table, so the name and the form keep their room (Next run says
           // more ; the Columns menu still shows it)
           hideBelow: 1200,
@@ -1096,7 +1066,6 @@ export default function getSettings(t) {
         {
           key: 'next_run',
           // a date with its time and zone, in full
-          width: '14rem',
           label: t('settings.schedules.nextRun'),
           type: 'datetime',
           noInput: true,
@@ -1105,7 +1074,6 @@ export default function getSettings(t) {
         // none yet (a schedule that never ran) : an en dash rather than an empty cell
         {
           key: 'status',
-          width: headerWidth(t('settings.fields.status')),
           label: t('settings.fields.status'),
           noInput: true,
           // the last run's outcome as a pill, as a job's status
@@ -1114,7 +1082,6 @@ export default function getSettings(t) {
         // none yet (a schedule that never ran) : an en dash rather than an empty cell
         {
           key: 'state',
-          width: headerWidth(t('settings.fields.state')),
           label: t('settings.fields.state'),
           noInput: true,
           // running blue, queued amber, idle grey
@@ -1225,8 +1192,6 @@ export default function getSettings(t) {
           key: 'created_at',
           // set by the database
           noInput: true,
-          // a date with its time and zone, in full, and room after it
-          width: '16rem',
           icon: 'calendar',
           label: t('settings.fields.createdAt'),
           type: 'datetime',
@@ -1251,7 +1216,6 @@ export default function getSettings(t) {
           dependency: 'never_expires',
           negateDependency: true,
           required: true,
-          width: '16rem',
           convertToUtc: true,
           icon: 'calendar',
           label: t('settings.fields.expiresAt'),
@@ -2062,8 +2026,6 @@ export default function getSettings(t) {
         },
         {
           key: 'is_default',
-          // a yes / no column : as wide as its header, in the language shown
-          width: headerWidth(t('settings.runners.isDefault')),
           label: t('settings.runners.isDefault'),
           help: t('settings.runners.isDefaultHelp'),
           type: 'checkbox',
@@ -2300,7 +2262,6 @@ export default function getSettings(t) {
           label: t('settings.mailServers.active'),
           type: 'checkbox',
           noInput: true,
-          width: '7rem',
         },
         { key: 'name', label: t('settings.fields.name'), required: true, icon: 'heading' },
         { key: 'description', label: t('settings.fields.description'), icon: 'info-circle', hidden: true },
@@ -2321,8 +2282,6 @@ export default function getSettings(t) {
           help: t('settings.mail.mailPortHelp'),
           initial: (r) => r?.port ?? 587,
           icon: 'arrows-alt-v',
-          // a number : as wide as its header, in the language shown
-          width: headerWidth(t('settings.mail.mailPort')),
         },
         {
           key: 'secure',
@@ -2332,8 +2291,6 @@ export default function getSettings(t) {
           label: t('settings.mail.useTls'),
           help: t('settings.mail.useTlsHelp'),
           initial: (r) => (r?.id ? !!r.secure : true),
-          // a yes / no column : as wide as its header
-          width: headerWidth(t('settings.mail.useTls')),
         },
         {
           key: 'from_address',

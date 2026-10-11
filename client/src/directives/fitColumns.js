@@ -12,22 +12,48 @@
 /*  with content (before a row menu) ; a table without one gives  */
 /*  that room to its last column with content.                    */
 /*                                                                */
+/*  A long column (a description) gets the room the others leave, */
+/*  its value ending in "…" when that is not enough ; none        */
+/*  shrinks below 12 characters, nor below its header : too       */
+/*  narrow a frame, the table grows past it and the frame scrolls */
+/*  sideways. A table can hand the widths it measured itself      */
+/*  (data-fit-natural, BsDataTable over all its rows, not only    */
+/*  the page shown).                                              */
+/*                                                                */
 /*  Measured again when the table's frame changes width and when  */
 /*  its rows change (a tab's rows loaded, a row removed).         */
 /*                                                                */
 /******************************************************************/
 
 // the columns that keep their own width : a row's checkbox, its menu
-const FIXED = [
-  'bs-dt-select',
-  'bs-dt-row-actions',
-  'af-role-remove-col',
-  'af-group-menu-col',
-  'af-jobs-select',
-  'action',
-];
-// the air after a column that gives way when everything fits, in px (2rem)
-const AIR = 32;
+const FIXED = ['bs-dt-select', 'bs-dt-row-actions', 'af-row-menu-col', 'af-jobs-select', 'af-expand-col'];
+// the least a column that gives way shrinks to, in characters : below it the table gets wider than
+// its frame, which scrolls sideways, rather than cutting a value to a letter or two
+const MIN_CHARS = 12;
+// the letters a character's average width is taken from
+const SAMPLE = 'abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ 0123456789';
+let measureContext = null;
+
+/**
+ * The width of some characters in a table's cells, their padding included.
+ *
+ * Args:
+ *   table (HTMLTableElement): the table.
+ *   chars (number): how many characters (MIN_CHARS).
+ *
+ * Returns:
+ *   number: the width, in px ; Infinity when it cannot be measured (no cap).
+ */
+function charsWidth(table, chars) {
+  const cell = table.tBodies[0]?.rows[0]?.cells[0] || table;
+  const style = getComputedStyle(cell);
+  measureContext = measureContext || document.createElement('canvas').getContext('2d');
+  if (!measureContext) return Infinity;
+  measureContext.font = style.font;
+  const perChar = measureContext.measureText(SAMPLE).width / SAMPLE.length;
+  const padding = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0);
+  return perChar > 0 ? Math.ceil(perChar * chars + padding) : Infinity;
+}
 
 /**
  * Whether a column keeps its own width : its header asks to (data-fit-keep), or it or its first
@@ -131,21 +157,46 @@ function fit(table) {
   // it names (data-fit-keep="13.25rem") has that one
   const natural = [...ths].map((th) => {
     if (th.classList.contains('af-fit-spacer')) return 0;
+    // a row's menu : 3.5rem in every table, as BsDataTable's lists (styles/tables.scss)
+    if (th.classList.contains('af-row-menu-col')) return pxOf('3.5rem');
+    // a caret's column : 1.75rem, as the jobs list's (styles/tables.scss)
+    if (th.classList.contains('af-expand-col')) return pxOf('1.75rem');
+    // a width measured by the table itself over all its rows, not only the page shown
+    // (BsDataTable : the columns keep their width from one page to the next)
+    if (th.hasAttribute('data-fit-natural')) return parseFloat(th.getAttribute('data-fit-natural')) || 0;
     return pxOf(th.getAttribute('data-fit-keep')) || Math.ceil(th.getBoundingClientRect().width);
+  });
+  // each header in full : its label, its sort icon and its padding - no column narrower
+  const headers = [...ths].map((th) => {
+    const range = document.createRange();
+    range.selectNodeContents(th);
+    const style = getComputedStyle(th);
+    return Math.ceil(
+      range.getBoundingClientRect().width +
+        (parseFloat(style.paddingLeft) || 0) +
+        (parseFloat(style.paddingRight) || 0),
+    );
   });
   table.style.width = '100%';
   table.style.tableLayout = 'fixed';
 
   const fixed = natural.map((_, i) => isFixed(table, i));
   const flex = natural.map((_, i) => i).filter((i) => !fixed[i]);
-  // the table's width : its frame's, or its own minimum when it has one (the jobs list scrolls
-  // sideways in its frame below it)
-  const width = Math.max(frame.clientWidth, parseFloat(getComputedStyle(table).minWidth) || 0);
+  // the room they share : the frame's width less the fixed columns'
+  const width = frame.clientWidth;
   const room = width - natural.reduce((sum, w, i) => sum + (fixed[i] ? w : 0), 0);
-  const shared = shareWidths(
+  let shared = shareWidths(
     flex.map((i) => natural[i]),
     room,
   );
+  // never narrower than MIN_CHARS characters (or its own width when less), nor than its header :
+  // too narrow a frame, the table grows past it and the frame scrolls sideways (.af-table-frame)
+  if (shared) {
+    const least = charsWidth(table, MIN_CHARS);
+    shared = shared.map((w, k) => Math.max(w, Math.min(natural[flex[k]], least), headers[flex[k]]));
+    const total = natural.reduce((sum, w, i) => sum + (fixed[i] ? w : 0), 0) + shared.reduce((a, b) => a + b, 0);
+    table.style.width = total > width ? `${total}px` : '100%';
+  }
   // all fit : each its own width, and the room left to the last column with content (a kept one
   // too : a duration at the far right) ; not to a checkbox or a row menu
   const content = natural.map((_, i) => i).filter((i) => !isControl(table, i));
@@ -154,11 +205,8 @@ function fit(table) {
   natural.forEach((w, i) => {
     if (fixed[i]) ths[i].style.width = i === takesRest ? '' : `${w}px`;
   });
-  // and, when the room allows, a little air after the columns that give way (a form's name)
-  const used = natural.reduce((a, b) => a + b, 0);
-  const air = !shared && used + AIR * flex.length <= width ? AIR : 0;
   flex.forEach((col, k) => {
-    if (!shared) ths[col].style.width = col === takesRest ? '' : `${natural[col] + air}px`;
+    if (!shared) ths[col].style.width = col === takesRest ? '' : `${natural[col]}px`;
     else ths[col].style.width = `${shared[k]}px`;
   });
 

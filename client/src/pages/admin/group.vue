@@ -22,6 +22,7 @@ import Profile from '@/lib/Profile';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { useRoleAssignments } from '@/composables/useRoleAssignments';
+import { usePagedRows } from '@/composables/usePagedRows';
 import { useFormLinks } from '@/composables/useFormLinks';
 import { formPath } from '@/lib/formsPath';
 
@@ -107,6 +108,8 @@ const formColumns = computed(() => [
   { key: 'through', label: t('settings.linked.throughRoles'), value: (f) => f.through.join(', ') },
   { key: 'description', label: t('settings.fields.description') },
 ]);
+// the rows of the page shown of the Users and Roles tables (their pager under them)
+const { paged, setPaged } = usePagedRows();
 const { activeTab, tabLink } = useRouteTab('details', (key) => tabs.value.some((x) => x.key === key));
 
 // the title : Groups › <name>, each step a link : Groups back to the list, the name to this page
@@ -324,7 +327,7 @@ onMounted(async () => {
               </thead>
               <tbody>
                 <tr
-                  v-for="r in groupRoles"
+                  v-for="r in paged('roles', groupRoles)"
                   :key="r.name"
                   role="button"
                   @click="router.push(`/settings/roles/${encodeURIComponent(r.name)}`)"
@@ -336,6 +339,7 @@ onMounted(async () => {
               </tbody>
             </table>
           </div>
+          <AppTablePager v-if="groupRoles.length" :items="groupRoles" @change="(r) => setPaged('roles', r)" />
         </template>
         <template v-else-if="group">
           <p v-if="!members.length" class="text-muted small mb-0">{{ t('settings.groups.noUsers') }}</p>
@@ -360,13 +364,13 @@ onMounted(async () => {
                   <th>{{ t('settings.fields.description') }}</th>
                   <th>{{ t('settings.fields.email') }}</th>
                   <th class="af-fit-spacer"></th>
-                  <th class="af-group-menu-col"></th>
+                  <th class="af-row-menu-col"></th>
                 </tr>
               </thead>
               <tbody>
                 <!-- a row opens the user's page, as every list ; its box and its menu do their own -->
                 <tr
-                  v-for="u in members"
+                  v-for="u in paged('users', members)"
                   :key="u.id"
                   role="button"
                   :class="{ 'bs-dt-selected': selectedUsers.includes(u.id) }"
@@ -415,6 +419,7 @@ onMounted(async () => {
               </tbody>
             </table>
           </div>
+          <AppTablePager v-if="members.length" :items="members" @change="(r) => setPaged('users', r)" />
         </template>
       </template>
       <template v-if="group" #actions>
@@ -457,10 +462,6 @@ onMounted(async () => {
 /* the details end a little above the card's edge : the card zeroes its last field's margin */
 .af-group-details {
   padding-bottom: 0.5rem;
-}
-/* the row menu's column : as narrow as the other tables' */
-.af-group-menu-col {
-  width: 3.5rem;
 }
 /* the count of a tab : small and grey, as the menus' badges */
 .af-tab-count {
