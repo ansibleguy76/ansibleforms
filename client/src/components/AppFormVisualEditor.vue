@@ -301,18 +301,19 @@ const runnerChoices = computed(() => {
   return runners.value.filter((r) => r.type === need).map((r) => r.name);
 });
 
-// the switches : true, or no key
+// the switches : true, or no key ; in the order of their columns (two to a column, the long
+// labels together, the short ones together)
 const flagSettings = computed(() =>
   [
     { key: 'showHelp', label: 'designer.showHelpByDefault', show: true },
-    { key: 'check', label: 'designer.formCheck', show: allows('check') },
-    { key: 'diff', label: 'designer.formDiff', show: allows('diff') },
-    { key: 'allowRelaunch', label: 'designer.formAllowRelaunch', show: allows('allowRelaunch') },
-    { key: 'abortable', label: 'designer.formAbortable', show: allows('abortable') },
     // a wizard's fields live in its steps : not offered in the chat
     { key: 'enableForChat', label: 'designer.formChat', show: allows('enableForChat') && !hasWizard.value },
-    { key: 'verbose', label: 'designer.formVerbose', show: allows('verbose') },
+    { key: 'allowRelaunch', label: 'designer.formAllowRelaunch', show: allows('allowRelaunch') },
     { key: 'keepExtravars', label: 'designer.formKeepExtravars', show: allows('keepExtravars') },
+    { key: 'check', label: 'designer.formCheck', show: allows('check') },
+    { key: 'diff', label: 'designer.formDiff', show: allows('diff') },
+    { key: 'abortable', label: 'designer.formAbortable', show: allows('abortable') },
+    { key: 'verbose', label: 'designer.formVerbose', show: allows('verbose') },
   ].filter((x) => x.show),
 );
 const hasWizard = computed(() => {
@@ -988,10 +989,13 @@ defineExpose({
 .af-field-values {
   grid-column: 1 / -1;
 }
-/* the form's switches : side by side, wrapping */
+/* the form's switches : four columns of two, filled column by column, each column as wide as
+   its longer label */
 .af-form-flags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 2rem;
+  display: grid;
+  grid-template-rows: repeat(2, auto);
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  gap: 0.5rem 2.5rem;
 }
 </style>
