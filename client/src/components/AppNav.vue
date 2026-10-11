@@ -74,15 +74,25 @@ function refreshApprovals() {
   });
 }
 useLiveEvent('jobs', refreshApprovals);
+// Settings > Appearance saved (here, in another tab, by another admin) : the announcement, the
+// label, the name and the Designer link follow at once
+useLiveEvent('appearance', () => State.loadAppConfig());
 // the designer lock on the Designer link, once a minute (the designer page itself refreshes
-// it every few seconds while it is open)
+// it every few seconds while it is open) ; and Settings > Appearance once a minute too, so an
+// open tab gets a new announcement and drops one whose end has passed (the server stops
+// sending it), as the label and the name changed meanwhile
 let lockTimer = null;
+let configTimer = null;
 onMounted(() => {
   refreshApprovals();
   State.refreshDesignerLock();
   lockTimer = setInterval(() => State.refreshDesignerLock(), 60000);
+  configTimer = setInterval(() => State.loadAppConfig(), 60000);
 });
-onBeforeUnmount(() => clearInterval(lockTimer));
+onBeforeUnmount(() => {
+  clearInterval(lockTimer);
+  clearInterval(configTimer);
+});
 
 // DATA
 

@@ -86,3 +86,35 @@ describe("hearing the other processes", () => {
     s.req.emit("close");
   });
 });
+
+describe("what a process does before its browsers hear a name", () => {
+  test("a hook runs before the event is sent, published here or heard from another process", async () => {
+    const order = [];
+    const s = fakeStream();
+    rows = [{ name: "live:appearance-test", version: 1 }];
+    Live.stream(s.req, s.res);
+    await vi.advanceTimersByTimeAsync(0);
+    Live.onLive("appearance-test", () => order.push(`hook (sent ${s.events().length})`));
+    // published here
+    Live.publish("appearance-test");
+    assert.deepEqual(order, ["hook (sent 0)"]);
+    assert.deepEqual(s.events(), ["appearance-test"]);
+    // heard from another process
+    rows = [{ name: "live:appearance-test", version: 2 }];
+    await Live.pollLive();
+    assert.deepEqual(order, ["hook (sent 0)", "hook (sent 1)"]);
+    assert.deepEqual(s.events(), ["appearance-test", "appearance-test"]);
+    s.req.emit("close");
+  });
+
+  test("a hook that throws does not keep the browsers from hearing it", () => {
+    const s = fakeStream();
+    Live.stream(s.req, s.res);
+    Live.onLive("appearance-throws", () => {
+      throw new Error("boom");
+    });
+    Live.publish("appearance-throws");
+    assert.deepEqual(s.events(), ["appearance-throws"]);
+    s.req.emit("close");
+  });
+});

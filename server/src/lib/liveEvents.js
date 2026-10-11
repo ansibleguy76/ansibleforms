@@ -28,6 +28,7 @@ const POLL_MS = 1000;
 const HEARTBEAT_MS = 15000;
 
 const clients = new Set(); // the open streams of this process : { res }
+const hooks = new Map(); // name -> [fn] : run on this process before its browsers hear the name
 const pending = new Map(); // name -> timer of a coalesced publish
 const lastSent = new Map(); // name -> when this process last published it
 let seen = null; // 'live:*' name -> version, as last read
@@ -42,6 +43,14 @@ let pollTimer = null;
  *   name (string): what changed.
  */
 function broadcast(name) {
+  // this process first forgets what it cached of it (a browser re-reads at once)
+  for (const fn of hooks.get(name) || []) {
+    try {
+      fn();
+    } catch (e) {
+      logger.debug(`Live events : a hook of '${name}' failed : ${e.message || e}`);
+    }
+  }
   const frame = `event: changed\ndata: ${JSON.stringify({ name })}\n\n`;
   for (const client of clients) {
     try {
@@ -80,6 +89,20 @@ export function publish(name) {
     timer.unref?.();
     pending.set(name, timer);
   }
+}
+
+/**
+ * Runs a function on this process whenever a name is sent to its browsers - published here or
+ * heard from another process - before they hear it : a cache of what changed is dropped first,
+ * so the re-read they make gets the new value.
+ *
+ * Args:
+ *   name (string): what changed - 'appearance'.
+ *   fn (function): what to do, synchronous.
+ */
+export function onLive(name, fn) {
+  if (!hooks.has(name)) hooks.set(name, []);
+  hooks.get(name).push(fn);
 }
 
 // ─── hearing the other processes ────────────────────────────────────────────

@@ -4,6 +4,7 @@ import logger from "../../lib/logger.js";
 import logConfig from "../../../config/log.config.js";
 import appConfig from "../../../config/app.config.js";
 import ChatSettings from "../../models/chatSettings.model.js";
+import { onLive } from "../../lib/liveEvents.js";
 const router = express.Router();
 
 // /config is an unauthenticated bootstrap endpoint the SPA hits on every load,
@@ -56,12 +57,13 @@ async function chatEnabled() {
 }
 
 /**
- * Forgets the cached defaults : a settings save shows at once (on this node ; the others within
- * CACHE_TTL_MS).
+ * Forgets the cached defaults : a settings save shows at once, on this node and - through the
+ * 'appearance' live event - on the others whose browsers watch.
  */
 export function forgetAppDefaults() {
   defaultsCache = { value: undefined, fetchedAt: 0 };
 }
+onLive("appearance", forgetAppDefaults);
 
 /**
  * The announcement while it runs : none once its end date has passed.
