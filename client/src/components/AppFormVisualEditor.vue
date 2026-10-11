@@ -617,8 +617,8 @@ defineExpose({
             />
           </div>
         </div>
-        <!-- the type : a row of its own, below the name -->
-        <div class="af-form-newrow">
+        <!-- the type : a row of its own, below the name, as wide -->
+        <div class="af-form-span2 af-form-newrow">
           <label class="form-label fw-bold">{{ t('designer.formType') }}</label>
           <div class="input-group">
             <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="shapes" /></span>
