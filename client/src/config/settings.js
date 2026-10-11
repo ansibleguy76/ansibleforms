@@ -289,12 +289,23 @@ export default function getSettings(t) {
           label: t('sidebar.groups'),
           noInput: true,
           align: 'end',
-          // narrow, beside the row menu : the other columns take the room
-          width: '8.5rem',
+          // as wide as its header, in the language shown : the other columns take the room
+          width: headerWidth(t('sidebar.groups'), true, '8rem', true),
           filterable: false,
           filterType: 'number',
           sortValue: (row) => (row.group_ids || []).length,
           render: (v) => String((v || []).length),
+        },
+        // how many roles the user has, public included (the server counts them, lib/roleCounts.js)
+        {
+          key: 'role_count',
+          label: t('settings.settingsPage.roles'),
+          noInput: true,
+          align: 'end',
+          width: headerWidth(t('settings.settingsPage.roles'), true, '8rem', true),
+          filterable: false,
+          filterType: 'number',
+          render: (v) => (v ? String(v) : '–'),
         },
       ],
     },
@@ -371,11 +382,22 @@ export default function getSettings(t) {
           label: t('settings.users.labelPlural'),
           noInput: true,
           align: 'end',
-          // narrow, beside the row menu : the other columns take the room
-          width: '7rem',
+          // as wide as its header, in the language shown : the other columns take the room
+          width: headerWidth(t('settings.users.labelPlural'), true, '8rem', true),
           filterable: false,
           filterType: 'number',
           // none : an en dash, as the other empty cells
+          render: (v) => (v ? String(v) : '–'),
+        },
+        // how many roles name the group (the server counts them, lib/roleCounts.js)
+        {
+          key: 'role_count',
+          label: t('settings.settingsPage.roles'),
+          noInput: true,
+          align: 'end',
+          width: headerWidth(t('settings.settingsPage.roles'), true, '8rem', true),
+          filterable: false,
+          filterType: 'number',
           render: (v) => (v ? String(v) : '–'),
         },
       ],

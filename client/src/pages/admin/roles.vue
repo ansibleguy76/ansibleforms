@@ -1,4 +1,5 @@
 <script setup>
+import { headerWidth } from '@/lib/tableCells';
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import Profile from '@/lib/Profile';
@@ -143,6 +144,8 @@ const tableItems = computed(() =>
     required: role._required,
     // the public role is everyone's : no count
     users: role._public ? null : roleUserCount(role),
+    // the groups it names, of every provider (local, LDAP, SSO) ; public's : none to name
+    groups: role._public ? null : role.groups.length,
   })),
 );
 const columns = computed(() => [
@@ -172,12 +175,24 @@ const columns = computed(() => [
   {
     key: 'users',
     label: t('settings.settingsPage.users'),
-    width: '7rem',
+    // as wide as its header, in the language shown
+    width: headerWidth(t('settings.settingsPage.users'), true, '8rem', true),
     align: 'end',
     sortable: true,
     filterable: false,
     sortValue: (row) => (row.users === null ? Number.MAX_SAFE_INTEGER : row.users),
     // none : an en dash, as the other empty cells
+    render: (v) => (v === null ? escapeHtml(t('settings.settingsPage.roleUsersAll')) : v ? String(v) : '–'),
+  },
+  // how many groups it names ; public, everyone's, names none : All, as its users
+  {
+    key: 'groups',
+    label: t('settings.settingsPage.groups'),
+    width: headerWidth(t('settings.settingsPage.groups'), true, '8rem', true),
+    align: 'end',
+    sortable: true,
+    filterable: false,
+    sortValue: (row) => (row.groups === null ? Number.MAX_SAFE_INTEGER : row.groups),
     render: (v) => (v === null ? escapeHtml(t('settings.settingsPage.roleUsersAll')) : v ? String(v) : '–'),
   },
 ]);
