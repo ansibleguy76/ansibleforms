@@ -24,7 +24,7 @@ const titleCrumbs = computed(() => [
   { title: t('health.title'), icon: 'heart-pulse', to: tabLink('checks') },
   activeTab.value === 'information'
     ? { title: t('health.sectionInfo'), icon: 'circle-info', to: tabLink('information') }
-    : { title: t('health.sectionChecks'), icon: 'heart-pulse', to: tabLink('checks') },
+    : { title: t('health.sectionChecks'), icon: 'list-check', to: tabLink('checks') },
 ]);
 
 // the check keys come from the server (see health.model.js) and are turned into
@@ -126,7 +126,7 @@ onMounted(async () => {
               href="#"
               @click.prevent="activeTab = 'checks'"
             >
-              <FaIcon icon="heart-pulse" class="me-1" />
+              <FaIcon icon="list-check" class="me-1" />
               {{ t('health.sectionChecks') }}
               <span v-if="attention" class="badge ms-1" :class="summary.error ? 'text-bg-danger' : 'text-bg-warning'">{{
                 attention
