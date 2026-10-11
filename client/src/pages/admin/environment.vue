@@ -157,6 +157,8 @@ onMounted(async () => {
 /* the label's preview : the header's background, its logo, the label 20px from it, as there */
 .af-label-preview {
   display: inline-flex;
+  /* a little room under it : the card's other pages end on a line of help text, lighter */
+  margin-bottom: 0.5rem;
   align-items: center;
   padding: 0.75rem 1.25rem;
   border: 1px solid var(--bs-border-color);
