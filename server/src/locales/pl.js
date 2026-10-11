@@ -24,6 +24,8 @@ export default {
     invalidCredentials: "Nieprawidłowe dane logowania",
     tooManyFailures: "Zbyt wiele nieudanych logowań : spróbuj ponownie za {minutes} min",
     passwordChangeRequired: "Najpierw zmień hasło : to publicznie znane hasło domyślne",
+    disclaimerRequired: "Najpierw zaakceptuj zastrzeżenie",
+    disclaimerAccepted: "Zastrzeżenie zostało zaakceptowane",
     loginDisabled: "Brak uwierzytelnienia, logowanie nie jest włączone dla tego użytkownika.",
     signInBlocked: "Brak uwierzytelnienia, administrator zablokował logowanie tego użytkownika.",
     azureFailed: "Uwierzytelnianie Azure AD nie powiodło się",

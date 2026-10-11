@@ -57,6 +57,7 @@ import secretStoreRoutesv2 from "./routes/v2/secretStore.routes.js";
 import runnerRoutesv2 from "./routes/v2/runner.routes.js";
 import mailServerRoutesv2 from "./routes/v2/mailServer.routes.js";
 import announcementRoutesv2 from "./routes/v2/announcement.routes.js";
+import disclaimerRoutesv2, { disclaimerSettingsRouter, disclaimerAcceptanceRouter } from "./routes/v2/disclaimer.routes.js";
 import eventsRoutesv2 from "./routes/v2/events.routes.js";
 import knownhostsRoutes from "./routes/v2/knownhosts.routes.js";
 import scheduleRoutes from "./routes/v2/schedule.routes.js";
@@ -160,7 +161,7 @@ const load = async (app) => {
   // is used as a middleware.  Every route will check the token for validity
   // the token, then the gate of a user who still has the default password : every
   // authenticated route mounts both
-  const authobj = [passport.authenticate("jwt", { session: false }), Middleware.passwordChangeGate];
+  const authobj = [passport.authenticate("jwt", { session: false }), Middleware.passwordChangeGate, Middleware.disclaimerGate];
 
   // api docs for v1 and v2
   // note : the swagger paths must include the base url (subpath hosting, issue #106)
@@ -258,6 +259,11 @@ const load = async (app) => {
   app.use(`/api/v2/mailserver`, cors(), authobj, Middleware.checkSettingsMiddleware, mailServerRoutesv2);
   // Settings > Appearance > Announcements
   app.use(`/api/v2/announcement`, cors(), authobj, Middleware.checkSettingsMiddleware, announcementRoutesv2);
+  // the disclaimer : read and accepted by every signed-in user, edited and its acceptances read
+  // in Settings > Access > Disclaimer
+  app.use(`/api/v2/disclaimer`, cors(), authobj, disclaimerRoutesv2);
+  app.use(`/api/v2/disclaimersettings`, cors(), authobj, Middleware.checkSettingsMiddleware, disclaimerSettingsRouter);
+  app.use(`/api/v2/disclaimeracceptance`, cors(), authobj, Middleware.checkSettingsMiddleware, disclaimerAcceptanceRouter);
   app.use(`/api/v2/knownhosts`, cors(), authobj, Middleware.checkSettingsMiddleware, knownhostsRoutes);
   // allowScheduledJobs for everything ; allowPlannedJobs only for creating a one-time run
   app.use(`/api/v2/schedule`, cors(), authobj, Middleware.checkScheduleOrPlannedJobsMiddleware, Middleware.resourceScope, scheduleRoutes);

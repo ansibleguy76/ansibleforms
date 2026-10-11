@@ -86,6 +86,12 @@ export function searchPages(t, options) {
       icon: 'sliders-h',
       link: '/designer/constants/visual',
     },
+    {
+      title: t('sidebar.disclaimer'),
+      section: settings,
+      icon: 'file-signature',
+      link: '/settings/disclaimer',
+    },
     { title: t('sidebar.users'), section: settings, icon: 'user', link: '/settings/users' },
     {
       title: t('sidebar.groups'),

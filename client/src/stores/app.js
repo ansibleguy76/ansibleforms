@@ -65,6 +65,9 @@ export const useAppStore = defineStore('app', () => {
   // under the header offers a reload, and can be dismissed for the rest of this visit
   const newVersionAvailable = ref(false);
   const newVersionDismissed = ref(false);
+  // the server waits for the disclaimer's acceptance (App.vue's response interceptor, code
+  // disclaimer_required) : its dialog shows over the page (AppDisclaimer)
+  const disclaimerOpen = ref(false);
 
   // const doubleCount = computed(() => count.value * 2)
   // function increment() {
@@ -98,6 +101,7 @@ export const useAppStore = defineStore('app', () => {
     timezone,
     dateFormat,
     newVersionAvailable,
+    disclaimerOpen,
     newVersionDismissed,
   };
 });

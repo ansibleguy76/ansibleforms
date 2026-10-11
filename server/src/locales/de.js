@@ -24,6 +24,8 @@ export default {
     invalidCredentials: "Ungueltige Zugangsdaten",
     tooManyFailures: "Zu viele fehlgeschlagene Anmeldungen : versuchen Sie es in {minutes} Minute(n) erneut",
     passwordChangeRequired: "Ändern Sie zuerst Ihr Passwort : es ist das öffentlich bekannte Standardpasswort",
+    disclaimerRequired: "Akzeptieren Sie zuerst den Haftungsausschluss",
+    disclaimerAccepted: "Der Haftungsausschluss ist akzeptiert",
     loginDisabled: "Nicht authentifiziert, Login ist fuer diesen Benutzer nicht aktiviert.",
     signInBlocked: "Nicht authentifiziert, ein Administrator hat die Anmeldung dieses Benutzers gesperrt.",
     azureFailed: "Azure AD Authentifizierung fehlgeschlagen",

@@ -99,12 +99,16 @@ function userToJwt(user,expiryDays){
   // {"username":"administrator","type":"local","roles":["public","admin"]}
 
   var tokenExpiresIn
+  // an api token (a script's, asked with expiryDays) : no one to accept the disclaimer, so it
+  // passes its gate (Middleware.disclaimerGate)
+  var api = false
 
   if(expiryDays && (user?.options["extendedTokenExpiration"] ?? false) && !isNaN(expiryDays)){  
     // bounded : an api token lives API_TOKEN_MAX_DAYS at most, and a password change or a
     // logout of its session ends it sooner (lib/tokenRevocation.js)
     const days = Math.min(Math.max(1, Math.floor(Number(expiryDays))), authConfig.apiTokenMaxDays)
     tokenExpiresIn = `${days}d`
+    api = true
     logger.info(`Extended token expiration (${days} days) requested for ${user.username}`)
   }else{
     tokenExpiresIn = authConfig.jwtExpiration
@@ -113,7 +117,7 @@ function userToJwt(user,expiryDays){
   // we create 2 jwt tokens (accesstoken and refresh token)
   // the session : both tokens and every refresh of them carry it, so a logout ends them all
   const sid = newSessionId()
-  const token = jwt.sign({user,access:true,sid}, authConfig.secret,{ expiresIn: tokenExpiresIn, issuer: authConfig.jwtIssuer});
+  const token = jwt.sign(api ? {user,access:true,sid,api:true} : {user,access:true,sid}, authConfig.secret,{ expiresIn: tokenExpiresIn, issuer: authConfig.jwtIssuer});
   const refreshtoken = jwt.sign({user,refresh:true,sid}, authConfig.secret,{ expiresIn: authConfig.jwtRefreshExpiration, issuer: authConfig.jwtIssuer});
   logger.debug(JSON.stringify(user))
   // we store the tokens in the database, to later verify a refresh token action

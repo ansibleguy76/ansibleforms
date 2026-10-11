@@ -24,6 +24,8 @@ export default {
     invalidCredentials: "Credenziali non valide",
     tooManyFailures: "Troppi accessi non riusciti : riprova tra {minutes} minuto/i",
     passwordChangeRequired: "Cambia prima la password : è la password predefinita pubblica",
+    disclaimerRequired: "Accetta prima il disclaimer",
+    disclaimerAccepted: "Il disclaimer è accettato",
     loginDisabled: "Non autenticato, login non abilitato per questo utente.",
     signInBlocked: "Non autenticato, un amministratore ha bloccato l'accesso di questo utente.",
     azureFailed: "Autenticazione Azure AD non riuscita",

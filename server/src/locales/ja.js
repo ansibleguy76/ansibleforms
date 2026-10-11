@@ -24,6 +24,8 @@ export default {
     invalidCredentials: "認証情報が無効です",
     tooManyFailures: "ログインの失敗が多すぎます : {minutes} 分後にもう一度お試しください",
     passwordChangeRequired: "先にパスワードを変更してください : 公開されている既定のパスワードです",
+    disclaimerRequired: "先に免責事項に同意してください",
+    disclaimerAccepted: "免責事項に同意しました",
     loginDisabled: "認証されていません。このユーザーはログインが有効になっていません。",
     signInBlocked: "認証されていません。管理者がこのユーザーのサインインをブロックしました。",
     azureFailed: "Azure AD 認証に失敗しました",

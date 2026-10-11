@@ -24,6 +24,8 @@ export default {
     invalidCredentials: "Credenciales no válidas",
     tooManyFailures: "Demasiados inicios de sesión fallidos : inténtelo de nuevo en {minutes} minuto(s)",
     passwordChangeRequired: "Cambie primero su contraseña : es la contraseña predeterminada pública",
+    disclaimerRequired: "Acepta primero el aviso legal",
+    disclaimerAccepted: "El aviso legal está aceptado",
     loginDisabled: "No autenticado, el inicio de sesión no está habilitado para este usuario.",
     signInBlocked: "No autenticado, un administrador bloqueó el inicio de sesión de este usuario.",
     azureFailed: "La autenticación con Azure AD ha fallado",

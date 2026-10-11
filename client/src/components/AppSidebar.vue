@@ -65,6 +65,8 @@ const sections = computed(() =>
       // to group them, and permissions belong next to users and groups.
       title: t('sidebar.sections.access'),
       items: [
+        // what everyone accepts once before using the app, and who did
+        { title: t('sidebar.disclaimer'), icon: 'file-signature', link: '/settings/disclaimer' },
         { title: t('sidebar.users'), icon: 'user', link: '/settings/users' },
         { title: t('sidebar.groups'), icon: 'users', link: '/settings/groups' },
         // 'user-shield' not 'users' : groups already own the people icon, and

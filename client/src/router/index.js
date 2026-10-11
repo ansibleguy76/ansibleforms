@@ -42,6 +42,7 @@ const linksPage = () => import('@/pages/admin/links.vue');
 const namePage = () => import('@/pages/admin/name.vue');
 const environmentPage = () => import('@/pages/admin/environment.vue');
 const announcementsPage = () => import('@/pages/admin/announcements.vue');
+const disclaimerPage = () => import('@/pages/admin/disclaimer.vue');
 const repositories = () => import('@/pages/admin/repositories.vue');
 const repository = () => import('@/pages/admin/repository.vue');
 const schedules = () => import('@/pages/admin/schedules.vue');
@@ -187,6 +188,13 @@ const routes = [
     meta: { permission: 'showSettings' },
   },
   { path: '/settings/ldap/:tab?', name: '/settings/ldap', component: ldap, meta: { permission: 'showSettings' } },
+  // the disclaimer users accept once, and who accepted it
+  {
+    path: '/settings/disclaimer/:tab?',
+    name: '/settings/disclaimer',
+    component: disclaimerPage,
+    meta: { permission: 'showSettings' },
+  },
   {
     path: '/settings/chat/:tab?',
     name: '/settings/chat',

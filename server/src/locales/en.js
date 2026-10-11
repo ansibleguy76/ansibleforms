@@ -24,6 +24,8 @@ export default {
     invalidCredentials: "Invalid credentials",
     tooManyFailures: "Too many failed logins : try again in {minutes} minute(s)",
     passwordChangeRequired: "Change your password first : it is the public default password",
+    disclaimerRequired: "Accept the disclaimer first",
+    disclaimerAccepted: "The disclaimer is accepted",
     loginDisabled: "Not authenticated, login is not enabled for this user.",
     signInBlocked: "Not authenticated, an administrator blocked the sign-in of this user.",
     azureFailed: "Azure AD authentication failed",

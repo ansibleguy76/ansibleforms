@@ -175,6 +175,9 @@ export function announcementLevelPill(t, level) {
   return `<span class="badge rounded-pill fw-semibold af-pill ${known[key]}"><span class="af-pill-label">${escapeHtml(t(`settings.interface.banner_${key}`))}</span></span>`;
 }
 
+// how a user signed in, as the disclaimer's acceptances name it
+const SIGN_IN_TYPES = { local: 'Local', ldap: 'LDAP', azuread: 'Entra ID', oidc: 'OpenID Connect' };
+
 // what a credential is for (its type), in the order the dialog offers them
 export const CREDENTIAL_TYPES = ['ssh', 'git', 'api', 'database', 'cyberark', 'smtp'];
 
@@ -2434,6 +2437,46 @@ export default function getSettings(t) {
           noInput: true,
           hideBelow: 1200,
           render: (v) => (v ? escapeHtml(v) : '–'),
+        },
+      ],
+    },
+    disclaimerAcceptances: {
+      // the page title is the menu entry's label (AppSidebar), so the two always match
+      pageTitle: t('sidebar.disclaimer'),
+      type: 'disclaimeracceptance',
+      label: t('settings.disclaimer.acceptance'),
+      labelPlural: t('settings.disclaimer.tabAcceptances'),
+      description: t('settings.disclaimer.acceptancesDescription'),
+      icon: 'file-signature',
+      selectable: false,
+      // a record, never changed : no Add, no Edit, no Delete
+      noCreate: true,
+      actions: [],
+      fields: [
+        { key: 'id', hidden: true, noInput: true, noTable: true },
+        { key: 'username', label: t('settings.disclaimer.user'), noInput: true },
+        {
+          // how they signed in : local, LDAP or a single sign-on provider
+          key: 'user_type',
+          label: t('settings.disclaimer.signIn'),
+          noInput: true,
+          render: (v) => escapeHtml(SIGN_IN_TYPES[v] || v || '–'),
+        },
+        { key: 'version', label: t('settings.disclaimer.version'), noInput: true },
+        {
+          key: 'accepted_at',
+          label: t('settings.disclaimer.acceptedAt'),
+          type: 'datetime',
+          noInput: true,
+          render: (v) => (v ? Helpers.formatServerDate(v) : '–'),
+        },
+        { key: 'ip', label: t('settings.disclaimer.ip'), noInput: true, render: (v) => escapeHtml(v || '–') },
+        {
+          key: 'user_agent',
+          label: t('settings.disclaimer.browser'),
+          noInput: true,
+          hideBelow: 1200,
+          render: (v) => escapeHtml(v || '–'),
         },
       ],
     },
