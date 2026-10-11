@@ -100,6 +100,10 @@ function backToJobs() {
 // to the top when a job opens or closes : the page scrolls in #app, below the header
 watch(isJobPage, () => document.getElementById('app')?.scrollTo({ top: 0 }));
 
+// where a multistep job's caret goes : before the form, or after the checkbox when the form is
+// hidden (the column picker)
+const caretBefore = computed(() => (visibleColumns.value.some((c) => c.key === 'form') ? 'form' : null));
+
 // how long a job ran (lib/jobTime.js), a running one counted up with the page's clock
 const durationSeconds = (j) => runSeconds(j, now.value);
 
@@ -1248,26 +1252,32 @@ onMounted(async () => {
                     @change="togglePage()"
                   />
                 </th>
-                <!-- a multistep job's caret : a column of its own, the ids never moved by it -->
-                <th class="af-jobs-expand" data-fit-keep="1.5rem"></th>
-                <th
-                  v-for="col in visibleColumns"
-                  :key="col.key"
-                  :class="{ 'is-clickable': col.sortable, [col.key]: true, 'text-end af-col-end': col.align === 'end' }"
-                  :data-fit-keep="col.width || null"
-                  :style="{ userSelect: 'none', whiteSpace: 'nowrap' }"
-                  @click="col.sortable ? toggleSort(col.key) : undefined"
-                >
-                  {{ col.label }}
-                  <span v-if="col.sortable" class="text-muted ms-1" style="font-size: 0.7em">
-                    <template v-if="sortKey === col.key">
-                      <font-awesome-icon :icon="sortDir === 1 ? 'sort-up' : 'sort-down'" />
-                    </template>
-                    <template v-else>
-                      <font-awesome-icon icon="sort" class="opacity-25" />
-                    </template>
-                  </span>
-                </th>
+                <!-- a multistep job's caret : a column of its own, the ids never moved by it, just
+                     before the form (after the checkbox when the form is hidden) -->
+                <th v-if="!caretBefore" class="af-jobs-expand" data-fit-keep="1.5rem"></th>
+                <template v-for="col in visibleColumns" :key="col.key">
+                  <th v-if="col.key === caretBefore" class="af-jobs-expand" data-fit-keep="1.5rem"></th>
+                  <th
+                    :class="{
+                      'is-clickable': col.sortable,
+                      [col.key]: true,
+                      'text-end af-col-end': col.align === 'end',
+                    }"
+                    :data-fit-keep="col.width || null"
+                    :style="{ userSelect: 'none', whiteSpace: 'nowrap' }"
+                    @click="col.sortable ? toggleSort(col.key) : undefined"
+                  >
+                    {{ col.label }}
+                    <span v-if="col.sortable" class="text-muted ms-1" style="font-size: 0.7em">
+                      <template v-if="sortKey === col.key">
+                        <font-awesome-icon :icon="sortDir === 1 ? 'sort-up' : 'sort-down'" />
+                      </template>
+                      <template v-else>
+                        <font-awesome-icon icon="sort" class="opacity-25" />
+                      </template>
+                    </span>
+                  </th>
+                </template>
                 <!-- the room left, then the row's actions at the right -->
                 <th class="af-fit-spacer"></th>
                 <th class="action"></th>
@@ -1288,9 +1298,11 @@ onMounted(async () => {
                       @change="toggleSelected(j.id)"
                     />
                   </td>
-                  <!-- a multistep job's caret : right while its steps are folded, down once they show ;
-                       its cell unfolds them, another job's opens it as the rest of the row -->
+                  <!-- a multistep job's caret (before the form, or here when it is hidden) : right
+                       while its steps are folded, down once they show ; its cell unfolds them,
+                       another job's opens it as the rest of the row -->
                   <td
+                    v-if="!caretBefore"
                     class="af-jobs-expand text-center"
                     role="button"
                     @click="j.job_type == 'multistep' ? toggleCollapse(j.id) : openRow(j)"
@@ -1302,6 +1314,18 @@ onMounted(async () => {
                     />
                   </td>
                   <template v-for="col in visibleColumns" :key="col.key">
+                    <td
+                      v-if="col.key === caretBefore"
+                      class="af-jobs-expand text-center"
+                      role="button"
+                      @click="j.job_type == 'multistep' ? toggleCollapse(j.id) : openRow(j)"
+                    >
+                      <font-awesome-icon
+                        v-if="j.job_type == 'multistep'"
+                        :icon="collapsed[j.id] ? 'angle-down' : 'angle-right'"
+                        fixed-width
+                      />
+                    </td>
                     <!-- its number, to the right as every count -->
                     <td v-if="col.key === 'id'" role="button" class="text-end af-col-end" @click="openRow(j)">
                       {{ j.id }}
@@ -1401,8 +1425,14 @@ onMounted(async () => {
                 <template v-for="c in childJobs(j.id)" :key="c.id">
                   <tr :class="jobBackground(c)">
                     <td class="table-info" role="button" @click="getJob(c.id)"></td>
-                    <td class="table-info af-jobs-expand" role="button" @click="getJob(c.id)"></td>
+                    <td v-if="!caretBefore" class="af-jobs-expand" role="button" @click="getJob(c.id)"></td>
                     <template v-for="col in visibleColumns" :key="col.key">
+                      <td
+                        v-if="col.key === caretBefore"
+                        class="af-jobs-expand"
+                        role="button"
+                        @click="getJob(c.id)"
+                      ></td>
                       <!-- a step's number under its job's -->
                       <td v-if="col.key === 'id'" role="button" class="text-end af-col-end" @click="getJob(c.id)">
                         {{ c.id }}
