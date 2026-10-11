@@ -254,11 +254,14 @@ const Helpers = {
 
   // Deep-merge `src` into `dst` (mutates dst, returns it). Plain objects
   // recurse; arrays / scalars overwrite. Used by the wizard to combine
-  // per-step outputs into a single extravars object.
+  // per-step outputs into a single extravars object. A key that reaches the
+  // prototype (a JSON '__proto__' is an own key, as constructor and prototype)
+  // is left out : merged, it would change every object of the page.
   deepMerge(dst, src) {
     if (src == null || typeof src !== 'object' || Array.isArray(src)) return src;
     if (dst == null || typeof dst !== 'object' || Array.isArray(dst)) dst = {};
     for (const [k, v] of Object.entries(src)) {
+      if (k === '__proto__' || k === 'constructor' || k === 'prototype') continue;
       if (
         v &&
         typeof v === 'object' &&
