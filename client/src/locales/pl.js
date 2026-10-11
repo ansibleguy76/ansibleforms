@@ -1338,6 +1338,8 @@ export default {
       addSubcategory: 'Dodaj podkategorię',
       moveUp: 'Przenieś w górę',
       moveDown: 'Przenieś w dół',
+      indentConstant: 'Umieść pod kluczem powyżej',
+      outdentConstant: 'Wyjmij spod jego klucza',
       indentCategory: 'Zagnieźdź pod kategorią powyżej',
       outdentCategory: 'Przenieś poza kategorię nadrzędną',
       categoryPathsChanged:

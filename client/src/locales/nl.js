@@ -1342,6 +1342,8 @@ export default {
       addSubcategory: 'Subcategorie toevoegen',
       moveUp: 'Omhoog',
       moveDown: 'Omlaag',
+      indentConstant: 'Onder de sleutel erboven zetten',
+      outdentConstant: 'Onder zijn sleutel vandaan halen',
       indentCategory: 'Onder de categorie erboven nesten',
       outdentCategory: 'Uit de bovenliggende categorie halen',
       categoryPathsChanged:

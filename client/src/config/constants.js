@@ -138,3 +138,137 @@ export function flattenConstants(arr, depth = 0) {
   }
   return result;
 }
+
+// ─── moving a key in the tree (the designer's visual editor, its ← → ↑ ↓) ───────────────────
+// A key holds either a value or subkeys. ↑ ↓ move it among its own ; → puts it under the key
+// above it, which then holds subkeys - only a key with subkeys or an empty value, never one
+// with a value (it would be lost) ; ← takes it out, right after the key it was under.
+
+/**
+ * Where a key is : its list, its position, the key it is under and that key's list.
+ *
+ * Args:
+ *   tree (object[]): the keys.
+ *   target (object): the key.
+ *
+ * Returns:
+ *   object|null: { list, index, parent, parentList }, or null when it is not in the tree.
+ */
+function locateConstant(tree, target, parent = null, parentList = null) {
+  const list = tree || [];
+  const index = list.indexOf(target);
+  if (index >= 0) return { list, index, parent, parentList };
+  for (const row of list) {
+    if (row.children && row.children.length > 0) {
+      const hit = locateConstant(row.children, target, row, list);
+      if (hit) return hit;
+    }
+  }
+  return null;
+}
+
+/**
+ * Whether a key may move one place up or down among its own.
+ *
+ * Args:
+ *   tree (object[]): the keys.
+ *   target (object): the key.
+ *   step (number): -1 up, 1 down.
+ *
+ * Returns:
+ *   boolean: true when it may.
+ */
+export function canMoveConstant(tree, target, step) {
+  const at = locateConstant(tree, target);
+  return !!at && at.index + step >= 0 && at.index + step < at.list.length;
+}
+
+/**
+ * Moves a key one place up or down among its own.
+ *
+ * Args:
+ *   tree (object[]): the keys.
+ *   target (object): the key.
+ *   step (number): -1 up, 1 down.
+ *
+ * Returns:
+ *   boolean: true when it moved.
+ */
+export function moveConstant(tree, target, step) {
+  if (!canMoveConstant(tree, target, step)) return false;
+  const { list, index } = locateConstant(tree, target);
+  list.splice(index + step, 0, list.splice(index, 1)[0]);
+  return true;
+}
+
+/**
+ * Whether → may put a key under the key above it : one with subkeys, or with no value yet.
+ *
+ * Args:
+ *   tree (object[]): the keys.
+ *   target (object): the key.
+ *
+ * Returns:
+ *   boolean: true when it may.
+ */
+export function canIndentConstant(tree, target) {
+  const at = locateConstant(tree, target);
+  if (!at || at.index === 0) return false;
+  const above = at.list[at.index - 1];
+  const holdsKeys = above.children && above.children.length > 0;
+  return holdsKeys || String(above.value ?? '').trim() === '';
+}
+
+/**
+ * Puts a key under the key above it, last of its subkeys.
+ *
+ * Args:
+ *   tree (object[]): the keys.
+ *   target (object): the key.
+ *
+ * Returns:
+ *   boolean: true when it moved.
+ */
+export function indentConstant(tree, target) {
+  if (!canIndentConstant(tree, target)) return false;
+  const { list, index } = locateConstant(tree, target);
+  const above = list[index - 1];
+  list.splice(index, 1);
+  if (!above.children) above.children = [];
+  above.value = '';
+  above.children.push(target);
+  return true;
+}
+
+/**
+ * Whether ← may take a key out of the key it is under.
+ *
+ * Args:
+ *   tree (object[]): the keys.
+ *   target (object): the key.
+ *
+ * Returns:
+ *   boolean: true when it may.
+ */
+export function canOutdentConstant(tree, target) {
+  const at = locateConstant(tree, target);
+  return !!at && !!at.parent;
+}
+
+/**
+ * Takes a key out of the key it is under, right after that key.
+ *
+ * Args:
+ *   tree (object[]): the keys.
+ *   target (object): the key.
+ *
+ * Returns:
+ *   boolean: true when it moved.
+ */
+export function outdentConstant(tree, target) {
+  if (!canOutdentConstant(tree, target)) return false;
+  const { list, index, parent, parentList } = locateConstant(tree, target);
+  list.splice(index, 1);
+  parentList.splice(parentList.indexOf(parent) + 1, 0, target);
+  return true;
+}

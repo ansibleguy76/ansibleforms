@@ -1350,6 +1350,8 @@ export default {
       addSubcategory: 'Adicionar subcategoria',
       moveUp: 'Mover para cima',
       moveDown: 'Mover para baixo',
+      indentConstant: 'Colocá-la sob a chave acima',
+      outdentConstant: 'Tirá-la de baixo da sua chave',
       indentCategory: 'Colocar dentro da categoria acima',
       outdentCategory: 'Retirar da categoria-mãe',
       categoryPathsChanged:

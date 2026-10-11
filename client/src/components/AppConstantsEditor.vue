@@ -1,9 +1,11 @@
 <script setup>
 /******************************************************************/
 /*                                                                */
-/*  The constants as a table : the designer's visual editor of    */
-/*  its constants, beside their YAML, on the same text (saved     */
-/*  with the designer's Save).                                    */
+/*  The constants as an outline, as the categories : the          */
+/*  designer's visual editor of its constants, beside their YAML, */
+/*  on the same text (saved with the designer's Save). A key's    */
+/*  ← → ↑ ↓ move it ; → puts it under the key above (then holding */
+/*  subkeys, not a value).                                        */
 /*                                                                */
 /*  @props:                                                       */
 /*      modelValue: String - the constants' YAML (a map)          */
@@ -22,6 +24,12 @@ import {
   flattenConstants,
   constantValueError,
   constantValueRows,
+  canMoveConstant,
+  moveConstant,
+  canIndentConstant,
+  indentConstant,
+  canOutdentConstant,
+  outdentConstant,
 } from '@/config/constants';
 
 const props = defineProps({
@@ -154,18 +162,6 @@ function createConstant() {
 }
 
 /**
- * Adds an empty subkey under a row : the row then holds subkeys, not a value.
- *
- * Args:
- *   parent (object): the row.
- */
-function addSubconstant(parent) {
-  if (!parent.children) parent.children = [];
-  parent.value = '';
-  parent.children.push({ _uid: nextUid(), key: '', value: '', children: [] });
-}
-
-/**
  * Removes a row (and its subkeys).
  *
  * Args:
@@ -182,6 +178,47 @@ function removeConstant(target, list = constants.value) {
     return true;
   }
   return list.some((item) => item.children && removeConstant(target, item.children));
+}
+
+/**
+ * A row's moves, as the buttons show them : ← out from under its key, → under the key above, ↑ ↓
+ * among its own ; each pressable or not.
+ *
+ * Args:
+ *   row (object): the row.
+ *
+ * Returns:
+ *   object[]: [{ icon, title, can, run }].
+ */
+function moves(row) {
+  const ok = !locked.value;
+  const tree = constants.value;
+  return [
+    {
+      icon: 'arrow-left',
+      title: t('settings.settingsPage.outdentConstant'),
+      can: ok && canOutdentConstant(tree, row),
+      run: () => outdentConstant(tree, row),
+    },
+    {
+      icon: 'arrow-right',
+      title: t('settings.settingsPage.indentConstant'),
+      can: ok && canIndentConstant(tree, row),
+      run: () => indentConstant(tree, row),
+    },
+    {
+      icon: 'arrow-up',
+      title: t('settings.settingsPage.moveUp'),
+      can: ok && canMoveConstant(tree, row, -1),
+      run: () => moveConstant(tree, row, -1),
+    },
+    {
+      icon: 'arrow-down',
+      title: t('settings.settingsPage.moveDown'),
+      can: ok && canMoveConstant(tree, row, 1),
+      run: () => moveConstant(tree, row, 1),
+    },
+  ];
 }
 
 // the designer's toolbar adds a row (its + button)
@@ -223,88 +260,99 @@ defineExpose({ add: addConstant, locked });
       <FaIcon icon="sliders-h" class="empty-state-icon" />
       <span>{{ t('settings.settingsPage.noConstants') }}</span>
     </div>
-    <div v-else class="af-visual-table">
-      <table class="table af-table config-table mb-0">
-        <thead>
-          <tr>
-            <th>{{ t('settings.settingsPage.key') }}</th>
-            <th>{{ t('settings.settingsPage.value') }}</th>
-            <th class="af-row-menu-col"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="entry in flatConstants" :key="entry.row._uid">
-            <td>
-              <div class="d-flex align-items-center" :style="{ paddingLeft: entry.depth * 1.5 + 'rem' }">
-                <FaIcon
-                  v-if="entry.depth > 0"
-                  icon="level-up-alt"
-                  class="text-muted fa-rotate-90 flex-shrink-0 me-2"
-                  style="font-size: 0.75rem"
-                />
-                <input class="form-control form-control-sm" v-model="entry.row.key" :disabled="locked" />
-              </div>
-            </td>
-            <td>
-              <!-- a textarea : a list or a map is written as YAML, on several lines -->
-              <textarea
-                v-if="!isParent(entry.row)"
-                class="form-control form-control-sm"
-                :rows="constantValueRows(entry.row.value)"
-                v-model="entry.row.value"
-                :disabled="locked"
-                :placeholder="t('settings.settingsPage.constantValuePlaceholder')"
-              ></textarea>
-              <span v-else class="text-muted fst-italic small">{{
-                t('settings.settingsPage.subkeyCount', entry.row.children.length)
-              }}</span>
-            </td>
-            <td class="bs-dt-row-actions">
-              <!-- the row's menu, as every table's : add a key after it, add a subkey, then delete, last -->
-              <div v-if="!locked" class="dropdown">
-                <a
-                  role="button"
-                  class="bs-dt-row-menu px-2"
-                  data-bs-toggle="dropdown"
-                  data-bs-popper-config='{"strategy":"fixed"}'
-                  @click.stop
-                >
-                  <FaIcon icon="ellipsis-vertical" />
-                </a>
-                <ul class="dropdown-menu dropdown-menu-end">
-                  <li>
-                    <a class="dropdown-item" href="#" @click.prevent="addConstant({ row: entry.row })">
-                      <FaIcon icon="plus" class="me-2" />{{ t('settings.settingsPage.addKey') }}
-                    </a>
-                  </li>
-                  <li><hr class="dropdown-divider" /></li>
-                  <li>
-                    <a class="dropdown-item" href="#" @click.prevent="addSubconstant(entry.row)">
-                      <FaIcon icon="level-up-alt" class="me-2 fa-rotate-90" />{{
-                        t('settings.settingsPage.addSubconstant')
-                      }}
-                    </a>
-                  </li>
-                  <li><hr class="dropdown-divider" /></li>
-                  <li>
-                    <a class="dropdown-item text-danger" href="#" @click.prevent="removeConstant(entry.row)">
-                      <FaIcon icon="trash" class="me-2" />{{ t('common.delete') }}
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <!-- an outline, as the categories : a row per key, its standard fields, its moves as one
+         group of buttons (→ puts it under the key above), then Delete -->
+    <div v-else class="af-cats">
+      <div class="af-cats-row af-cats-head">
+        <span>{{ t('settings.settingsPage.key') }}</span>
+        <span>{{ t('settings.settingsPage.value') }}</span>
+        <span></span>
+      </div>
+      <div v-for="entry in flatConstants" :key="entry.row._uid" class="af-cats-row">
+        <!-- the key, indented with its depth (the nested icon before a subkey) -->
+        <div class="d-flex align-items-center" :style="{ paddingLeft: entry.depth * 1.5 + 'rem' }">
+          <FaIcon
+            v-if="entry.depth > 0"
+            icon="level-up-alt"
+            class="text-muted me-2 fa-rotate-90"
+            style="font-size: 0.75rem"
+          />
+          <div class="input-group flex-grow-1">
+            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="key" /></span>
+            <input
+              class="form-control"
+              v-model="entry.row.key"
+              :disabled="locked"
+              :aria-label="t('settings.settingsPage.key')"
+            />
+          </div>
+        </div>
+        <!-- a textarea : a list or a map is written as YAML, on several lines ; a key with
+             subkeys has no value, it says how many it holds -->
+        <textarea
+          v-if="!isParent(entry.row)"
+          class="form-control"
+          :rows="constantValueRows(entry.row.value)"
+          v-model="entry.row.value"
+          :disabled="locked"
+          :placeholder="t('settings.settingsPage.constantValuePlaceholder')"
+          :aria-label="t('settings.settingsPage.value')"
+        ></textarea>
+        <span v-else class="text-muted fst-italic small align-self-center">{{
+          t('settings.settingsPage.subkeyCount', entry.row.children.length)
+        }}</span>
+        <div class="d-flex gap-2 justify-content-end">
+          <div class="btn-group" role="group" :aria-label="t('settings.interface.linkMoves')">
+            <button
+              v-for="m in moves(entry.row)"
+              :key="m.icon"
+              type="button"
+              class="btn af-row-btn"
+              :class="m.can ? 'btn-outline-primary' : 'btn-outline-secondary'"
+              :disabled="!m.can"
+              :title="m.title"
+              @click="m.run()"
+            >
+              <FaIcon :icon="m.icon" />
+            </button>
+          </div>
+          <button
+            type="button"
+            class="btn af-row-btn"
+            :class="!locked ? 'btn-outline-danger' : 'btn-outline-secondary'"
+            :disabled="locked"
+            :title="t('common.delete')"
+            @click="removeConstant(entry.row)"
+          >
+            <FaIcon icon="trash" />
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 <style scoped lang="scss">
-/* the table in a frame of the fields' grey, its header bar the tables' */
-.af-visual-table {
-  border: 1px solid var(--af-field-border);
-  border-radius: 0.375rem;
-  overflow: hidden;
+/* the outline : one row each, the same columns for the header line, as the categories' ; a pane
+   narrower than them scrolls sideways rather than squeezing the fields */
+.af-cats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+.af-cats-row {
+  display: grid;
+  /* the key and the value as wide as each other ; the last as wide as its buttons (four 2.5rem
+     moves, the 0.5rem gap, Delete) */
+  grid-template-columns: minmax(14rem, 1fr) minmax(14rem, 1fr) 13rem;
+  gap: 0.75rem;
+  /* a value on several lines : the key and the buttons at its top */
+  align-items: start;
+  min-width: 44rem;
+}
+/* the column names : as a field's label */
+.af-cats-head {
+  font-weight: 700;
 }
 </style>

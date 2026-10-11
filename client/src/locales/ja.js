@@ -1324,6 +1324,8 @@ export default {
       addSubcategory: 'サブカテゴリを追加',
       moveUp: '上へ移動',
       moveDown: '下へ移動',
+      indentConstant: '上のキーの下に入れる',
+      outdentConstant: '親キーから出す',
       indentCategory: '上のカテゴリの下に入れる',
       outdentCategory: '親カテゴリから出す',
       categoryPathsChanged:

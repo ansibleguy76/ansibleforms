@@ -1351,6 +1351,8 @@ export default {
       addSubcategory: 'Afegeix una subcategoria',
       moveUp: 'Mou amunt',
       moveDown: 'Mou avall',
+      indentConstant: 'Posar-la sota la clau de dalt',
+      outdentConstant: 'Treure-la de sota la seva clau',
       indentCategory: 'Niua sota la categoria de dalt',
       outdentCategory: 'Treu-la de la categoria pare',
       categoryPathsChanged:

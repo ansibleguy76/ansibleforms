@@ -1294,6 +1294,8 @@ export default {
       addSubcategory: '添加子类别',
       moveUp: '上移',
       moveDown: '下移',
+      indentConstant: '放到上方的键下',
+      outdentConstant: '从所属键中移出',
       indentCategory: '嵌套到上方类别下',
       outdentCategory: '移出其父类别',
       categoryPathsChanged: '以下类别路径已不存在：{paths}。引用它们的表单在更新之前不会显示在任何类别下。',
