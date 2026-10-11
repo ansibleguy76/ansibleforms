@@ -1964,6 +1964,17 @@ onMounted(async () => {
 .custom-table.af-table td.af-col-end:not(:first-child):not(:last-child):has(+ .af-jobs-expand) {
   padding-right: 0.6rem;
 }
+/* the caret itself : muted as a row's 3-dot menu, the text's colour when hovered, the row's own
+   on a selected row */
+.custom-table td.af-jobs-expand svg {
+  color: var(--bs-secondary-color);
+}
+.custom-table td.af-jobs-expand:hover svg {
+  color: var(--bs-body-color);
+}
+.custom-table tr.table-selected td.af-jobs-expand svg {
+  color: inherit;
+}
 /* the caret column of a multistep job : as wide as the caret and a little room on each side
    (1.75rem : the caret's 1.25rem and its padding), and never an ellipsis
    (an icon is not cut) ; over the table's own cell padding */
