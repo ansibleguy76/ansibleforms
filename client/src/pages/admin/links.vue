@@ -528,7 +528,8 @@ onMounted(async () => {
 }
 .af-links-row {
   display: grid;
-  grid-template-columns: 14.5rem 12rem minmax(14rem, 1fr) 5rem 15rem;
+  /* the last : as wide as its buttons (four 2.5rem moves, the 0.5rem gap, delete), no wider */
+  grid-template-columns: 14.5rem 12rem minmax(14rem, 1fr) 5rem 13rem;
   gap: 0.75rem;
   align-items: center;
   min-width: 58rem;
