@@ -550,8 +550,12 @@ onMounted(async () => {
             <!-- searching : the matches of every tab, each under its tab's name -->
             <!-- a line between the tabs' matches, and one under each tab's name, from side to side of
                  the card ; under it the space between fields -->
-            <hr v-if="searching && gIdx > 0" class="my-4 af-search-line" />
-            <h6 v-if="searching" class="fw-bold text-body-secondary af-search-tab">
+            <hr v-if="searching && gIdx > 0" class="mt-4 mb-0 af-search-line" />
+            <h6
+              v-if="searching"
+              class="fw-bold text-body-secondary af-search-tab"
+              :class="{ 'af-search-first': gIdx === 0 }"
+            >
               <FaIcon :icon="group.icon" class="me-1" />{{ group.label }}
             </h6>
             <!-- The editable, database-backed settings live with their subject rather than
@@ -720,9 +724,19 @@ onMounted(async () => {
   border-color: var(--bs-border-color);
 }
 .af-search-tab {
-  padding: 0 var(--bs-card-spacer-x) 0.75rem;
+  /* as much space above the name as under it, between the two lines : its icon and its text one
+     centred line */
+  display: flex;
+  align-items: center;
+  line-height: 1.2;
+  /* the pixel of the line above given back, so both sides measure the same */
+  padding: calc(0.75rem + 1px) var(--bs-card-spacer-x) 0.75rem;
   margin-bottom: 1.5rem;
   border-bottom: 1px solid var(--bs-border-color);
+}
+/* the first : the card's own padding above it */
+.af-search-tab.af-search-first {
+  padding-top: 0;
 }
 /* the variables' fields one width, as on the other settings pages (AppEnvField) : across the
    whole card, a number or a yes / no sat far from its label. A tab holding a long value (a
