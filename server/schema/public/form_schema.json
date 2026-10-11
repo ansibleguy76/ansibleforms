@@ -111,6 +111,7 @@
           "properties": {
             "type": {
               "enum": [
+                "template",
                 "awx"
               ]
             },
@@ -1334,6 +1335,7 @@
                 "properties": {
                   "type": {
                     "enum": [
+                      "template",
                       "awx"
                     ]
                   },
@@ -1360,6 +1362,7 @@
                 "type": "string",
                 "enum": [
                   "ansible",
+                  "template",
                   "awx"
                 ]
               },
@@ -1531,6 +1534,7 @@
           "type": "string",
           "enum": [
             "ansible",
+            "template",
             "awx",
             "multistep",
             "subform"
@@ -4328,6 +4332,7 @@
             "properties": {
               "type": {
                 "enum": [
+                  "template",
                   "awx"
                 ]
               },
@@ -5551,6 +5556,7 @@
                   "properties": {
                     "type": {
                       "enum": [
+                        "template",
                         "awx"
                       ]
                     },
@@ -5577,6 +5583,7 @@
                   "type": "string",
                   "enum": [
                     "ansible",
+                    "template",
                     "awx"
                   ]
                 },
@@ -5748,6 +5755,7 @@
             "type": "string",
             "enum": [
               "ansible",
+              "template",
               "awx",
               "multistep",
               "subform"

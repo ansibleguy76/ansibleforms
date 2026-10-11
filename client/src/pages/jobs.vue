@@ -114,6 +114,27 @@ const durationSeconds = (j) => runSeconds(j, now.value);
  * Returns:
  *   string: a CSS width in px.
  */
+/**
+ * A job's type as the list and its page say it : a template job by where it ran (awx, aap,
+ * ascender, semaphore, rundeck, jenkins - its runner's kind), the others by their type.
+ *
+ * Args:
+ *   j (object): the job (job_type, runner_kind).
+ *
+ * Returns:
+ *   string: the type shown.
+ */
+function jobTypeLabel(j) {
+  if (j?.job_type === 'awx') return j.runner_kind || 'awx';
+  return j?.job_type || 'ansible';
+}
+/**
+ * Whether a job has AWX artifacts to show : a template job that ran on an AWX, AAP or Ascender
+ * (or a runner since removed) ; Semaphore, Rundeck and Jenkins have none.
+ */
+function hasArtifacts(j) {
+  return j?.job_type === 'awx' && !['semaphore', 'rundeck', 'jenkins'].includes(j.runner_kind);
+}
 function statusWidth() {
   const labels = ['running', 'approve', 'success', 'failed', 'aborted'].map((s) => t(`jobs.menu.${s}`));
   const rem = parseFloat(getComputedStyle(document.documentElement).fontSize || '16');
@@ -134,7 +155,8 @@ const columnDefs = computed(() => [
     filterable: true,
     sortable: true,
     keep: true,
-    render: (j) => j.job_type || 'ansible',
+    // a template job : where it ran (jenkins, semaphore, aap ...), its runner's kind
+    render: (j) => jobTypeLabel(j),
   },
   // as wide as its widest pill in the language shown (or its header) : no room kept for a
   // longer translation
@@ -390,7 +412,7 @@ const steps = computed(() =>
 const dataShown = computed(() => {
   if (!job.value) return null;
   if (showExtraVars.value) return { value: job.value.extravars ?? {} };
-  if (showArtifacts.value && job.value.job_type == 'awx') return { value: job.value.awx_artifacts ?? {} };
+  if (showArtifacts.value && hasArtifacts(job.value)) return { value: job.value.awx_artifacts ?? {} };
   return null;
 });
 // the outputs (the job's, and the current step's) : the toolbar folds or unfolds them all
@@ -1482,7 +1504,7 @@ onMounted(async () => {
               <div class="af-job-heading">
                 <h3 class="af-job-number">{{ job.form || t('jobs.jobTitle', { id: '#' + jobId }) }}</h3>
                 <AppStatusPill :status="job.status" />
-                <AppStatusPill :label="job.job_type || 'ansible'" tone="grey" />
+                <AppStatusPill :label="jobTypeLabel(job)" tone="grey" />
               </div>
               <dl class="af-job-facts">
                 <!-- an ansible job : the hosts it ran on (its limit, else its inventories, else the
@@ -1579,7 +1601,7 @@ onMounted(async () => {
                     {{ showExtraVars ? t('jobs.hideExtravars') : t('jobs.showExtravars') }}
                   </button>
                   <button
-                    v-if="store.profile.options?.showArtifacts && job.job_type == 'awx'"
+                    v-if="store.profile.options?.showArtifacts && hasArtifacts(job)"
                     type="button"
                     class="af-tool-btn"
                     :class="{ active: showArtifacts }"

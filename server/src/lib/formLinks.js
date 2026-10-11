@@ -4,8 +4,9 @@
 // step names ; what names none runs on the default runner of the type it needs (an
 // ansible job a playbook : rte, an awx job a template : awx), as runners/orchestrator.js.
 
-// the runner type each job type needs, as runners/orchestrator.js NEEDS
-const DEFAULT_TYPE = { ansible: 'rte', awx: 'awx' };
+// the runner type each form type needs, as runners/orchestrator.js NEEDS (a template form, or
+// awx its old name, a template runner)
+const DEFAULT_TYPE = { ansible: 'rte', template: 'awx', awx: 'awx' };
 
 /**
  * Where one form or one step runs : the runner it names, or the type of the default it takes.

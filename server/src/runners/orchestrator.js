@@ -7,6 +7,7 @@ import mysql from "../models/db.model.js";
 import Job from "../models/job.model.js";
 import Runner from "../models/runner.model.js";
 import { getRunner } from "./index.js";
+import { runnerKind } from "../lib/jobTypes.js";
 
 function getTimestamp() {
   return moment.utc(Date.now()).format("YYYY-MM-DD HH:mm:ss");
@@ -99,6 +100,8 @@ export async function dispatch({ jobId, jobType, extravars, credentialMap, appro
     return false;
   }
   // remembered on the job : an abort knows where to send the cancel
-  await mysql.do("UPDATE AnsibleForms.`jobs` SET runner=? WHERE id=?", [runner.row?.name || null, jobId]);
+  // and what it is (jenkins, aap ...) : the jobs list says where the job ran, whatever becomes
+  // of the runner later
+  await mysql.do("UPDATE AnsibleForms.`jobs` SET runner=?, runner_kind=? WHERE id=?", [runner.row?.name || null, runnerKind(runner.row), jobId]);
   return runner.impl.launch({ jobId, jobType, extravars, credentialMap, runner: runner.row });
 }

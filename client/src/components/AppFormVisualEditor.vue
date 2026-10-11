@@ -29,7 +29,14 @@ import axios from 'axios';
 import { useI18n } from 'vue-i18n';
 import { toast } from 'vue-sonner';
 import YAML from 'yaml';
-import { fieldTypes, formTypes, forbiddenFormKeys, fieldTypeAllows } from '@/config/formFields';
+import {
+  fieldTypes,
+  formTypes,
+  forbiddenFormKeys,
+  fieldTypeAllows,
+  TEMPLATE_FORM_TYPES,
+  TEMPLATE_RUNNER_TYPES,
+} from '@/config/formFields';
 import { fieldProperties } from '@/config/fieldProperties';
 import { availableIcons } from '@/config/icons';
 import {
@@ -224,8 +231,9 @@ function removeFrom(key, value) {
 function allows(key) {
   return !(forbiddenFormKeys[form.value?.type] || []).includes(key);
 }
-const awx = computed(() => form.value?.type === 'awx');
-const runs = computed(() => ['ansible', 'awx'].includes(form.value?.type));
+// a template form (or awx, its old name)
+const awx = computed(() => TEMPLATE_FORM_TYPES.includes(form.value?.type));
+const runs = computed(() => form.value?.type === 'ansible' || awx.value);
 // the text settings : the key, its label, its icon, when it shows, its help
 const textSettings = computed(() =>
   [
@@ -314,8 +322,9 @@ onMounted(async () => {
 });
 const runnerChoices = computed(() => {
   if (!runners.value) return null;
-  const need = form.value?.type === 'awx' ? 'awx' : 'rte';
-  return runners.value.filter((r) => r.type === need).map((r) => r.name);
+  // a template form : any runner that runs templates (AWX, Semaphore, Rundeck, Jenkins)
+  const needs = awx.value ? TEMPLATE_RUNNER_TYPES : ['rte'];
+  return runners.value.filter((r) => needs.includes(r.type)).map((r) => r.name);
 });
 
 // ─── notifications, approval, credentials : nested, each edited a key at a time ───
@@ -760,7 +769,7 @@ defineExpose({
           </div>
           <div class="form-text">{{ t('designer.helpPlaybook') }}</div>
         </div>
-        <div v-if="form.type === 'awx'">
+        <div v-if="awx">
           <label class="form-label fw-bold">{{ t('designer.formTemplate') }}</label>
           <div class="input-group">
             <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="file-code" /></span>
