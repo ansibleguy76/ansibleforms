@@ -455,6 +455,16 @@ defineExpose({
             />
           </div>
         </div>
+        <div class="af-form-wide">
+          <label class="form-label fw-bold">{{ t('designer.helpText') }}</label>
+          <textarea
+            class="form-control"
+            rows="3"
+            :value="setting('help')"
+            :disabled="locked"
+            @change="setText('help', $event.target.value)"
+          ></textarea>
+        </div>
         <div v-if="form.type === 'ansible'">
           <label class="form-label fw-bold">{{ t('designer.formPlaybook') }}</label>
           <div class="input-group">
@@ -632,16 +642,6 @@ defineExpose({
             </select>
           </div>
           <div class="form-text">{{ t('designer.formLaunchValidationHelp') }}</div>
-        </div>
-        <div class="af-form-wide">
-          <label class="form-label fw-bold">{{ t('designer.helpText') }}</label>
-          <textarea
-            class="form-control"
-            rows="3"
-            :value="setting('help')"
-            :disabled="locked"
-            @change="setText('help', $event.target.value)"
-          ></textarea>
         </div>
         <div class="af-form-wide af-form-flags">
           <div v-for="x in flagSettings" :key="x.key" class="form-check form-switch">
