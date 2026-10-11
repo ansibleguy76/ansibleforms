@@ -964,6 +964,7 @@ export default {
       text: 'Tekst',
       textHelp: 'Na co zgadzają się użytkownicy. Zwykły tekst: podziały wierszy są zachowane.',
       checkbox: 'Etykieta pola wyboru',
+      checkboxShort: 'Pole wyboru',
       checkboxHelp: 'Co użytkownicy zaznaczają, zanim mogą zaakceptować.',
       checkboxDefault: 'Przeczytałem i akceptuję te warunki.',
       missing: 'Zastrzeżenie wymaga tytułu, tekstu i etykiety pola wyboru.',

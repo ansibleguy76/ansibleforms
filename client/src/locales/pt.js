@@ -969,6 +969,7 @@ export default {
       text: 'Texto',
       textHelp: 'Aquilo com que os utilizadores concordam. Texto simples: as quebras de linha são mantidas.',
       checkbox: 'Texto da caixa',
+      checkboxShort: 'Caixa',
       checkboxHelp: 'O que os utilizadores marcam antes de poderem aceitar.',
       checkboxDefault: 'Li e aceito estes termos.',
       missing: 'Um aviso legal precisa de um título, um texto e o texto da caixa.',

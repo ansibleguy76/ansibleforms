@@ -1037,6 +1037,7 @@ export default {
       text: 'Texte',
       textHelp: 'Ce que les utilisateurs acceptent. Texte brut : les retours à la ligne sont conservés.',
       checkbox: 'Libellé de la case',
+      checkboxShort: 'Case',
       checkboxHelp: 'Ce que les utilisateurs cochent avant de pouvoir accepter.',
       checkboxDefault: "J'ai lu et j'accepte ces conditions.",
       missing: 'Un avertissement nécessite un titre, un texte et le libellé de sa case.',

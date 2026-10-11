@@ -1027,6 +1027,7 @@ export default {
       text: 'Tekst',
       textHelp: 'Waarmee gebruikers akkoord gaan. Platte tekst: regeleinden blijven behouden.',
       checkbox: 'Label van het selectievakje',
+      checkboxShort: 'Selectievakje',
       checkboxHelp: 'Wat gebruikers aanvinken voordat ze kunnen accepteren.',
       checkboxDefault: 'Ik heb deze voorwaarden gelezen en ga ermee akkoord.',
       missing: 'Een disclaimer heeft een titel, een tekst en het label van het selectievakje nodig.',

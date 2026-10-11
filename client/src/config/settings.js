@@ -2468,6 +2468,7 @@ export default function getSettings(t) {
         {
           key: 'checkbox_label',
           label: t('settings.disclaimer.checkbox'),
+          dialogLabel: t('settings.disclaimer.checkboxShort'),
           icon: 'square-check',
           noTable: true,
           readonly: true,

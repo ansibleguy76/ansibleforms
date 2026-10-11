@@ -970,6 +970,7 @@ export default {
       text: 'Text',
       textHelp: 'El que accepten els usuaris. Text pla: es conserven els salts de línia.',
       checkbox: 'Text de la casella',
+      checkboxShort: 'Casella',
       checkboxHelp: 'El que marquen els usuaris abans de poder acceptar.',
       checkboxDefault: 'He llegit i accepto aquestes condicions.',
       missing: 'Un avís legal necessita un títol, un text i el text de la casella.',

@@ -1029,6 +1029,7 @@ export default {
       text: 'Testo',
       textHelp: 'Ciò che gli utenti accettano. Testo semplice: gli a capo vengono mantenuti.',
       checkbox: 'Etichetta della casella',
+      checkboxShort: 'Casella',
       checkboxHelp: 'Ciò che gli utenti spuntano prima di poter accettare.',
       checkboxDefault: 'Ho letto e accetto queste condizioni.',
       missing: "Un disclaimer richiede un titolo, un testo e l'etichetta della casella.",

@@ -958,6 +958,7 @@ export default {
       text: '本文',
       textHelp: 'ユーザーが同意する内容。プレーンテキストで、改行は保持されます。',
       checkbox: 'チェックボックスのラベル',
+      checkboxShort: 'チェックボックス',
       checkboxHelp: '同意する前にユーザーがチェックする内容。',
       checkboxDefault: 'これらの条件を読み、同意します。',
       missing: '免責事項にはタイトル、本文、チェックボックスのラベルが必要です。',

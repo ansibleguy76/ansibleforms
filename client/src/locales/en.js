@@ -1016,6 +1016,7 @@ export default {
       text: 'Text',
       textHelp: 'What users agree to. Plain text: line breaks are kept.',
       checkbox: 'Checkbox label',
+      checkboxShort: 'Checkbox',
       checkboxHelp: 'What users tick before they can accept.',
       checkboxDefault: 'I have read and agree to these terms.',
       missing: 'A disclaimer needs a title, a text and a checkbox label.',

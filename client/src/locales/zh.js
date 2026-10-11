@@ -934,6 +934,7 @@ export default {
       text: '正文',
       textHelp: '用户同意的内容。纯文本：保留换行。',
       checkbox: '复选框文字',
+      checkboxShort: '复选框',
       checkboxHelp: '用户在接受前勾选的内容。',
       checkboxDefault: '我已阅读并同意这些条款。',
       missing: '免责声明需要标题、正文和复选框文字。',

@@ -1037,6 +1037,7 @@ export default {
       text: 'Text',
       textHelp: 'Dem die Benutzer zustimmen. Reiner Text: Zeilenumbrüche bleiben erhalten.',
       checkbox: 'Text des Kontrollkästchens',
+      checkboxShort: 'Kontrollkästchen',
       checkboxHelp: 'Was die Benutzer ankreuzen, bevor sie akzeptieren können.',
       checkboxDefault: 'Ich habe diese Bedingungen gelesen und stimme ihnen zu.',
       missing: 'Ein Haftungsausschluss braucht einen Titel, einen Text und den Text des Kontrollkästchens.',

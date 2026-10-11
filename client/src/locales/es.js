@@ -1030,6 +1030,7 @@ export default {
       text: 'Texto',
       textHelp: 'Lo que aceptan los usuarios. Texto plano: se conservan los saltos de línea.',
       checkbox: 'Texto de la casilla',
+      checkboxShort: 'Casilla',
       checkboxHelp: 'Lo que marcan los usuarios antes de poder aceptar.',
       checkboxDefault: 'He leído y acepto estas condiciones.',
       missing: 'Un aviso legal necesita un título, un texto y el texto de la casilla.',
