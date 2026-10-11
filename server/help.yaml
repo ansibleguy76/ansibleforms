@@ -2461,12 +2461,15 @@
 
           **Semaphore** : a form of type awx whose `runner` is a runner of type semaphore runs
           the Semaphore template named by `template` (its name, or its id) in the runner's
-          project. The form's values and its resolved `credentials` are its extra vars ; `limit`,
-          `check`, `diff` and `verbose` are passed on (`verbose` only when the template allows
-          debug in Semaphore). `inventory`, `awxCredentials`,
-          `executionEnvironment`, `instanceGroups` and `scm_branch` are AWX's and are not used :
-          the template's own inventory and keys are. Name the runner on the form : a template
-          form without `runner` goes to the default awx runner.
+          project. The form's values and its resolved `credentials` are its extra vars ; `check`
+          and `diff` are passed on. `inventory` (a name or an id) runs it on another of the
+          project's inventories - with that inventory's key - and `limit` on fewer hosts : both
+          need "Allow override inventory" / "Allow override limit" on the template in
+          Semaphore, and without it the job fails rather than run on other hosts than the form
+          asked for. `verbose` needs "Allow debug" ; without it the output is not verbose.
+          `awxCredentials`, `executionEnvironment`, `instanceGroups` and `scm_branch` are AWX's
+          and are not used. Name the runner on the form : a template form without `runner` goes
+          to the default awx runner.
 
           **Rundeck** : a form of type awx whose `runner` is a runner of type rundeck runs the
           Rundeck job named by `template` - `group/name`, a bare `name`, or the job's uuid - in

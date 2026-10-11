@@ -991,6 +991,22 @@ export default {
       passwordOnPage: 'Het wachtwoord wijzigt u met Wachtwoord wijzigen, rechtsboven.',
       tokenOnPage_rte: 'Het RTE_TOKEN van de RTE wijzigt u met Token wijzigen, rechtsboven.',
       tokenOnPage_api: 'Het API-token wijzigt u met Token wijzigen, rechtsboven.',
+      kind_semaphore: 'Semaphore UI',
+      kind_rundeck: 'Rundeck',
+      type_semaphore: 'Semaphore',
+      type_semaphoreHint: 'Semaphore UI, voor sjabloonformulieren die hem noemen',
+      type_rundeck: 'Rundeck',
+      type_rundeckHint: 'Rundeck-jobs, voor sjabloonformulieren die hem noemen',
+      uriHelp_semaphore: 'Het adres van Semaphore UI, zonder pad, bv. https://semaphore.example.com.',
+      uriHelp_rundeck: 'Het adres van Rundeck, zonder pad, bv. https://rundeck.example.com.',
+      project: 'Project',
+      projectHelp_semaphore:
+        'Het id van het Semaphore-project met de sjablonen: het getal in zijn adres, /project/<id>.',
+      projectHelp_rundeck: 'De naam van het Rundeck-project met de jobs.',
+      tokenHelp_semaphore: 'Een API-token van een Semaphore-gebruiker: menu van de gebruiker, API tokens.',
+      tokenHelp_rundeck: 'Het API-token van een Rundeck-gebruiker: profiel van de gebruiker, User API Tokens.',
+      noDefaultHelp:
+        'Nooit een standaard: een sjabloonformulier dat geen runner noemt draait op de standaard-AWX, dus een formulier noemt deze runner met runner: <name>.',
     },
     disclaimer: {
       description:

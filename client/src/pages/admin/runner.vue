@@ -6,9 +6,9 @@
 /*  in the url -                                                  */
 /*    Details         its registration, name, description,        */
 /*                    whether it is the default of its kind       */
-/*    Type            RTE, AWX, AAP or Ascender                   */
-/*    Connection      its address and how its certificate is     */
-/*                    checked                                     */
+/*    Type            RTE, AWX, AAP, Ascender, Semaphore, Rundeck */
+/*    Connection      its address (and project), how its          */
+/*                    certificate is checked                      */
 /*    Authentication  a token, or a user and password (AWX)       */
 /*    Forms           the forms that run on it, by name or as the */
 /*                    default of its type                         */
@@ -25,7 +25,7 @@ import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import Helpers from '@/lib/Helpers';
 import { useAppStore } from '@/stores/app';
-import { RUNNER_KINDS, runnerKind, registrationPill } from '@/config/settings';
+import { RUNNER_KINDS, PROJECT_RUNNER_KINDS, AWX_RUNNER_KINDS, runnerKind, registrationPill } from '@/config/settings';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { useFormLinks } from '@/composables/useFormLinks';
@@ -49,6 +49,7 @@ const EDITED = [
   'description',
   'kind',
   'uri',
+  'project',
   'use_credentials',
   'username',
   'skip_verify',
@@ -61,6 +62,8 @@ const URI_EXAMPLE = {
   awx: 'https://awx.example.com/api/v2',
   aap: 'https://aap.example.com/api/controller/v2',
   ascender: 'https://ascender.example.com/api/v2',
+  semaphore: 'https://semaphore.example.com',
+  rundeck: 'https://rundeck.example.com',
 };
 
 /**
@@ -79,6 +82,7 @@ function editable(record) {
     description: record.description ?? '',
     kind: runnerKind(record),
     uri: record.uri ?? '',
+    project: record.project ?? '',
     use_credentials: !!record.use_credentials,
     username: record.username ?? '',
     skip_verify: !!record.ignore_certs,
@@ -93,8 +97,11 @@ const managed = computed(() => !!runner.value?.managed);
 const appStore = useAppStore();
 const readOnly = computed(() => managed.value || !appStore.isAdmin);
 const isRte = computed(() => edit.value?.kind === 'rte');
-// an RTE takes its token ; an AWX, an AAP or an Ascender a token or a user and password
-const usesCredentials = computed(() => !isRte.value && !!edit.value?.use_credentials);
+// a Semaphore or a Rundeck : a project on its server, signed in with a token
+const hasProject = computed(() => PROJECT_RUNNER_KINDS.includes(edit.value?.kind));
+// an AWX, an AAP or an Ascender take a token or a user and password ; the others a token
+const isAwxKind = computed(() => AWX_RUNNER_KINDS.includes(edit.value?.kind));
+const usesCredentials = computed(() => isAwxKind.value && !!edit.value?.use_credentials);
 const dirty = computed(
   () => !!runner.value && EDITED.some((k) => String(edit.value[k] ?? '') !== String(editable(runner.value)[k] ?? '')),
 );
@@ -217,7 +224,9 @@ const crumbs = computed(() => {
   return tab ? [...pageCrumbs.value, { title: tab.label, icon: tab.icon, to: tabLink(tab.key) }] : pageCrumbs.value;
 });
 
-// the forms it is the default for : playbook forms (an RTE), template forms (the others)
+// the forms it is the default for : playbook forms (an RTE), template forms (an awx runner) ; a
+// Semaphore or a Rundeck is never one, a form names it
+const canBeDefault = computed(() => ['rte', 'awx'].includes(runner.value?.type));
 const defaultFor = computed(() =>
   runner.value?.type === 'rte' ? t('settings.runners.default_playbook') : t('settings.runners.default_template'),
 );
@@ -236,7 +245,8 @@ async function save() {
     name: e.name.trim(),
     description: e.description.trim(),
     uri: e.uri.trim(),
-    type: e.kind === 'rte' ? 'rte' : 'awx',
+    type: e.kind === 'rte' || PROJECT_RUNNER_KINDS.includes(e.kind) ? e.kind : 'awx',
+    project: PROJECT_RUNNER_KINDS.includes(e.kind) ? String(e.project || '').trim() : null,
     flavour: ['aap', 'ascender'].includes(e.kind) ? e.kind : null,
     use_credentials: usesCredentials.value ? 1 : 0,
     username: usesCredentials.value ? e.username.trim() : runner.value.username,
@@ -417,7 +427,11 @@ onMounted(async () => {
                 :isFloating="false"
                 :label="t('settings.fields.description')"
               />
-              <div class="mb-3">
+              <div v-if="!canBeDefault" class="mb-3">
+                <div class="form-label fw-bold">{{ t('settings.runners.isDefault') }}</div>
+                <div class="form-text mt-0">{{ t('settings.runners.noDefaultHelp') }}</div>
+              </div>
+              <div v-else class="mb-3">
                 <label class="form-label fw-bold d-block" for="af-runner-default">{{
                   t('settings.runners.isDefault')
                 }}</label>
@@ -436,7 +450,7 @@ onMounted(async () => {
                 <div class="form-text">{{ t('settings.runners.defaultHelp', { forms: defaultFor }) }}</div>
               </div>
             </template>
-            <!-- Type : RTE, AWX, AAP or Ascender, each its label and a few grey words -->
+            <!-- Type : RTE, AWX, AAP, Ascender, Semaphore or Rundeck, each its label and a few grey words -->
             <template v-else-if="activeTab === 'type'">
               <div v-for="kind in RUNNER_KINDS" :key="kind" class="form-check af-short-check">
                 <input
@@ -464,6 +478,16 @@ onMounted(async () => {
                 :required="true"
                 :help="t(`settings.runners.uriHelp_${edit.kind}`)"
                 :label="t('settings.fields.uri')"
+              />
+              <BsInput
+                v-if="hasProject"
+                class="af-runner-field"
+                v-model="edit.project"
+                icon="folder"
+                :isFloating="false"
+                :required="true"
+                :help="t(`settings.runners.projectHelp_${edit.kind}`)"
+                :label="t('settings.runners.project')"
               />
               <div class="form-check form-switch mb-3">
                 <input
@@ -498,9 +522,10 @@ onMounted(async () => {
                 :label="t('settings.fields.caBundle')"
               />
             </template>
-            <!-- Authentication : an RTE's token ; an AWX's token, or a user and password -->
+            <!-- Authentication : an RTE's, a Semaphore's or a Rundeck's token ; an AWX's token, or
+                 a user and password -->
             <template v-else>
-              <template v-if="!isRte">
+              <template v-if="isAwxKind">
                 <div
                   v-for="opt in [
                     {
@@ -535,7 +560,8 @@ onMounted(async () => {
                 :isFloating="false"
                 :label="t('settings.fields.username')"
               />
-              <p class="form-text mb-0" :class="{ 'mt-3': !isRte && !usesCredentials }">
+              <p v-if="hasProject" class="form-text mb-2">{{ t(`settings.runners.tokenHelp_${edit.kind}`) }}</p>
+              <p class="form-text mb-0" :class="{ 'mt-3': isAwxKind && !usesCredentials }">
                 {{
                   usesCredentials
                     ? t('settings.runners.passwordOnPage')

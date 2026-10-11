@@ -994,6 +994,22 @@ export default {
       passwordOnPage: 'La contraseña se cambia con Cambiar contraseña, arriba a la derecha.',
       tokenOnPage_rte: 'El RTE_TOKEN del RTE se cambia con Cambiar token, arriba a la derecha.',
       tokenOnPage_api: 'El token de API se cambia con Cambiar token, arriba a la derecha.',
+      kind_semaphore: 'Semaphore UI',
+      kind_rundeck: 'Rundeck',
+      type_semaphore: 'Semaphore',
+      type_semaphoreHint: 'Semaphore UI, para formularios de plantilla que lo nombran',
+      type_rundeck: 'Rundeck',
+      type_rundeckHint: 'Jobs de Rundeck, para formularios de plantilla que lo nombran',
+      uriHelp_semaphore: 'La dirección de Semaphore UI, sin ruta, p. ej. https://semaphore.example.com.',
+      uriHelp_rundeck: 'La dirección de Rundeck, sin ruta, p. ej. https://rundeck.example.com.',
+      project: 'Proyecto',
+      projectHelp_semaphore:
+        'El id del proyecto de Semaphore con las plantillas: el número en su dirección, /project/<id>.',
+      projectHelp_rundeck: 'El nombre del proyecto de Rundeck con los jobs.',
+      tokenHelp_semaphore: 'Un token de API de un usuario de Semaphore: menú del usuario, API tokens.',
+      tokenHelp_rundeck: 'El token de API de un usuario de Rundeck: perfil del usuario, User API Tokens.',
+      noDefaultHelp:
+        'Nunca un predeterminado: un formulario de plantilla que no nombra ningún runner se ejecuta en el AWX predeterminado, así que un formulario nombra este runner con runner: <name>.',
     },
     disclaimer: {
       description:
