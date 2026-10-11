@@ -514,15 +514,14 @@ defineExpose({
         </div>
         <div class="af-form-wide">
           <label class="form-label fw-bold">{{ t('designer.formDescription') }}</label>
-          <div class="input-group">
-            <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="align-left" /></span>
-            <input
-              class="form-control"
-              :value="form.description"
-              :disabled="locked"
-              @change="setText('description', $event.target.value)"
-            />
-          </div>
+          <!-- a sentence or two : as tall as two lines, as the help below -->
+          <textarea
+            class="form-control"
+            rows="2"
+            :value="form.description"
+            :disabled="locked"
+            @change="setText('description', $event.target.value)"
+          ></textarea>
         </div>
         <div class="af-form-wide">
           <label class="form-label fw-bold">{{ t('designer.helpText') }}</label>
