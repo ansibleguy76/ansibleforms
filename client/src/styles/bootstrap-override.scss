@@ -623,3 +623,11 @@
   border-color: var(--af-field-border);
   opacity: 1;
 }
+
+// a dropdown's chosen text too long for its box : '...' at its end, in every browser (Chrome only
+// cuts it) ; the full text is in its tooltip where a page puts it there
+.form-select {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
