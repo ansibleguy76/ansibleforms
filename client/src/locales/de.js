@@ -318,7 +318,7 @@ export default {
     description:
       'Wer was geändert hat und ob es erlaubt war. Einträge werden nur angefügt und können hier nicht bearbeitet oder gelöscht werden.',
     time: 'Zeit',
-    actor: 'Akteur',
+    actor: 'Benutzer',
     action: 'Aktion',
     target: 'Ziel',
     outcome: 'Ergebnis',

@@ -314,7 +314,7 @@ export default {
     description:
       '誰が何を変更したか、それが許可されていたかを示します。エントリは追記のみで、ここから編集や削除はできません。',
     time: '時刻',
-    actor: '実行者',
+    actor: 'ユーザー',
     action: '操作',
     target: '対象',
     outcome: '結果',

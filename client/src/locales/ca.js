@@ -316,7 +316,7 @@ export default {
     description:
       "Qui ha canviat què, i si estava permès. Les entrades només es poden afegir i no es poden editar ni suprimir des d'aquí.",
     time: 'Hora',
-    actor: 'Actor',
+    actor: 'Usuari',
     action: 'Acció',
     target: 'Objectiu',
     outcome: 'Resultat',

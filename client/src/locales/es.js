@@ -314,7 +314,7 @@ export default {
     description:
       'Quién cambió qué y si estaba permitido. Las entradas son de solo adición y no se pueden editar ni eliminar desde aquí.',
     time: 'Hora',
-    actor: 'Autor',
+    actor: 'Usuario',
     action: 'Acción',
     target: 'Objetivo',
     outcome: 'Resultado',

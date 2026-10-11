@@ -314,7 +314,7 @@ export default {
     description:
       'Who changed what, and whether it was allowed. Entries are append-only and cannot be edited or deleted from here.',
     time: 'Time',
-    actor: 'Actor',
+    actor: 'User',
     action: 'Action',
     target: 'Target',
     outcome: 'Outcome',

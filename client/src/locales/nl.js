@@ -314,7 +314,7 @@ export default {
     description:
       'Wie wat heeft gewijzigd en of het mocht. Vermeldingen worden alleen toegevoegd en kunnen hier niet worden gewijzigd of verwijderd.',
     time: 'Tijd',
-    actor: 'Actor',
+    actor: 'Gebruiker',
     action: 'Actie',
     target: 'Doel',
     outcome: 'Resultaat',

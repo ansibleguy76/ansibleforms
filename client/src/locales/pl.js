@@ -314,7 +314,7 @@ export default {
     description:
       'Kto co zmienił i czy było to dozwolone. Wpisy można tylko dopisywać, nie można ich tutaj edytować ani usuwać.',
     time: 'Czas',
-    actor: 'Wykonawca',
+    actor: 'Użytkownik',
     action: 'Akcja',
     target: 'Cel',
     outcome: 'Wynik',

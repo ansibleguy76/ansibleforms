@@ -319,7 +319,7 @@ export default {
     description:
       'Qui a changé quoi, et si cela a été autorisé. Les entrées sont en ajout seul et ne peuvent pas être modifiées ni supprimées ici.',
     time: 'Heure',
-    actor: 'Auteur',
+    actor: 'Utilisateur',
     action: 'Action',
     target: 'Cible',
     outcome: 'Résultat',

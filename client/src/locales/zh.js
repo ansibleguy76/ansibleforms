@@ -311,7 +311,7 @@ export default {
     title: '审计日志',
     description: '谁修改了什么，以及是否被允许。条目只能追加，无法在此编辑或删除。',
     time: '时间',
-    actor: '执行者',
+    actor: '用户',
     action: '操作',
     target: '目标',
     outcome: '结果',

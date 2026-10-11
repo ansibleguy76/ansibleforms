@@ -317,7 +317,7 @@ export default {
     description:
       'Chi ha modificato cosa e se era consentito. Le voci sono solo in aggiunta e non possono essere modificate o eliminate da qui.',
     time: 'Ora',
-    actor: 'Autore',
+    actor: 'Utente',
     action: 'Azione',
     target: 'Destinazione',
     outcome: 'Esito',
