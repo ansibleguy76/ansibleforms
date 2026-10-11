@@ -69,13 +69,6 @@
     /* in rem : the header's smaller font made 1em narrower than the rows' checkbox */
     width: calc(1.25rem + 1rem + 0.5rem);
   }
-  /* the row menu's dots (BsDataTable's row-actions) : as far from the right edge as the first
-     column is from the left one */
-  td.bs-dt-row-actions {
-    padding-left: 0.5rem;
-    padding-right: 1.25rem;
-    text-align: right;
-  }
 
   /* the header : a grey bar of small uppercase labels, their capitals centred whatever the
      font, 16px around them */
@@ -311,4 +304,17 @@ table.af-fit th.af-fit-spacer,
 table.af-fit td.af-fit-spacer {
   /* over any table's own cell padding (the jobs list's narrower one) */
   padding: 0 !important;
+}
+
+/* a row's 3-dot menu, in every table (BsDataTable's lists, the jobs list, a record page's tabs,
+   the config editors) : its column 3.5rem wide (the header af-row-menu-col), the dots to the right
+   with the cells' usual room around them - 14px from the frame's edge everywhere */
+th.af-row-menu-col,
+td.bs-dt-row-actions {
+  width: 3.5rem;
+}
+td.bs-dt-row-actions {
+  padding-left: 0.9rem !important;
+  padding-right: 0.9rem !important;
+  text-align: right;
 }

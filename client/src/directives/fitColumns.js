@@ -18,14 +18,7 @@
 /******************************************************************/
 
 // the columns that keep their own width : a row's checkbox, its menu
-const FIXED = [
-  'bs-dt-select',
-  'bs-dt-row-actions',
-  'af-role-remove-col',
-  'af-group-menu-col',
-  'af-jobs-select',
-  'action',
-];
+const FIXED = ['bs-dt-select', 'bs-dt-row-actions', 'af-row-menu-col', 'af-jobs-select'];
 // the air after a column that gives way when everything fits, in px (2rem)
 const AIR = 32;
 
@@ -131,6 +124,8 @@ function fit(table) {
   // it names (data-fit-keep="13.25rem") has that one
   const natural = [...ths].map((th) => {
     if (th.classList.contains('af-fit-spacer')) return 0;
+    // a row's menu : 3.5rem in every table, as BsDataTable's lists (styles/tables.scss)
+    if (th.classList.contains('af-row-menu-col')) return pxOf('3.5rem');
     return pxOf(th.getAttribute('data-fit-keep')) || Math.ceil(th.getBoundingClientRect().width);
   });
   table.style.width = '100%';

@@ -691,7 +691,7 @@ function exportCsv() {
             </th>
             <!-- Row actions header -->
             <th v-if="spacer" class="bs-dt-spacer"></th>
-            <th v-if="$slots['row-actions']" style="width: 3.5rem"></th>
+            <th v-if="$slots['row-actions']" class="af-row-menu-col"></th>
           </tr>
         </thead>
         <tbody>

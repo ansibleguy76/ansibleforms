@@ -227,7 +227,7 @@ function removeUser(index) {
               <th>{{ t('settings.settingsPage.provider') }}</th>
               <th>{{ t('settings.settingsPage.roleMemberFrom') }}</th>
               <th class="af-fit-spacer"></th>
-              <th class="af-role-remove-col"></th>
+              <th class="af-row-menu-col"></th>
             </tr>
           </thead>
           <tbody>
@@ -343,7 +343,7 @@ function removeUser(index) {
               <th>{{ t('settings.settingsPage.name') }}</th>
               <th>{{ t('settings.settingsPage.provider') }}</th>
               <th class="af-fit-spacer"></th>
-              <th class="af-role-remove-col"></th>
+              <th class="af-row-menu-col"></th>
             </tr>
           </thead>
           <tbody>
@@ -432,9 +432,6 @@ function removeUser(index) {
 .af-role-name :deep(input),
 .af-role-description :deep(input) {
   max-width: 40rem;
-}
-.af-role-remove-col {
-  width: 3.5rem;
 }
 .af-role-tabs .nav-link {
   cursor: pointer;

@@ -360,7 +360,7 @@ onMounted(async () => {
                   <th>{{ t('settings.fields.description') }}</th>
                   <th>{{ t('settings.fields.email') }}</th>
                   <th class="af-fit-spacer"></th>
-                  <th class="af-group-menu-col"></th>
+                  <th class="af-row-menu-col"></th>
                 </tr>
               </thead>
               <tbody>
@@ -457,10 +457,6 @@ onMounted(async () => {
 /* the details end a little above the card's edge : the card zeroes its last field's margin */
 .af-group-details {
   padding-bottom: 0.5rem;
-}
-/* the row menu's column : as narrow as the other tables' */
-.af-group-menu-col {
-  width: 3.5rem;
 }
 /* the count of a tab : small and grey, as the menus' badges */
 .af-tab-count {

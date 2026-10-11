@@ -1280,7 +1280,7 @@ onMounted(async () => {
                 </template>
                 <!-- the room left, then the row's actions at the right -->
                 <th class="af-fit-spacer"></th>
-                <th class="action"></th>
+                <th class="af-row-menu-col"></th>
               </tr>
             </thead>
             <tbody>
@@ -1953,10 +1953,6 @@ onMounted(async () => {
 .custom-table thead th {
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.custom-table th.action {
-  /* the row's three dots, as the other tables' */
-  width: 3.5rem;
 }
 /* a right-aligned column right before the caret (the id) : the caret already keeps the number
    from the form, so only the cells' usual room after it, the caret then halfway between both */
