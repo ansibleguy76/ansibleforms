@@ -116,6 +116,19 @@ export function formatProviderEntry(entry) {
 // options are materialized with their EFFECTIVE value (the default the server
 // would apply), not with false : showing them as off would misreport the live
 // permissions of the role.
+/**
+ * A role's list of names as the editors keep it : its strings, trimmed, none empty.
+ *
+ * Args:
+ *   list (any): the list from the yaml.
+ *
+ * Returns:
+ *   string[]: the names.
+ */
+function listOf(list) {
+  return Array.isArray(list) ? list.map((x) => String(x ?? '').trim()).filter(Boolean) : [];
+}
+
 export function roleToEditable(r) {
   const defaults = roleOptionDefaults(r.name);
   const options = { ...defaults };
@@ -134,6 +147,11 @@ export function roleToEditable(r) {
     description: typeof r.description === 'string' ? r.description : '',
     groups: (r.groups || []).map(parseProviderEntry),
     users: (r.users || []).map(parseProviderEntry),
+    // what the role may use (lib/resourceScope.js) : the credentials (regexes), the secret
+    // stores and the runners, by name ; kept as they are, none when the role lists none
+    credentials: listOf(r.credentials),
+    secretStores: listOf(r.secretStores),
+    runners: listOf(r.runners),
     options,
     // Remembered so serializeRole can tell a flag the admin actually has an
     // opinion about from one that merely shows its default. See serializeRole.
@@ -182,6 +200,12 @@ export function serializeRole(r) {
   role.groups = isPublic ? [] : clean(r.groups);
   const users = isPublic ? [] : clean(r.users);
   if (users.length) role.users = users;
+  // what the role may use : written when it lists any. Left out, the role limits nothing - so
+  // dropping them (as a save once did) widened what its users may use
+  for (const key of ['credentials', 'secretStores', 'runners']) {
+    const list = listOf(r[key]);
+    if (list.length) role[key] = list;
+  }
   // The baseline MUST be derived from the role's CURRENT name, never from a copy
   // taken when it was loaded : roleOptionDefaults branches on `admin`, so a role
   // renamed across that boundary would be compared against the wrong defaults.
