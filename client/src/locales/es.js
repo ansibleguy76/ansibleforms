@@ -711,15 +711,15 @@ export default {
       linkIcon: 'Icono',
       linkLabel: 'Etiqueta',
       linkUrl: 'Dirección',
-      linkInside: 'Dentro de',
+      linkIndent: 'Ponerlo dentro del enlace de arriba',
+      linkOutdent: 'Sacarlo a la cabecera',
       linkHoldsLinks: 'Un enlace con enlaces dentro se queda en la cabecera.',
       linkUrlOptional: 'Opcional para un menú',
-      linkInHeader: 'En la cabecera',
       linkNewTab: 'Nueva pestaña',
       linkUp: 'Subir',
       linkDown: 'Bajar',
       linksHelp:
-        'Tus propios enlaces, como máximo {max} en la cabecera tras los integrados. Un enlace puede ir dentro de otro, que se abre entonces como menú. Una dirección es un sitio (https://…) o una página de la aplicación (/forms/all).',
+        'Tus propios enlaces, como máximo {max} en la cabecera tras los integrados. → pone un enlace dentro del de arriba, que se abre entonces como menú; ← lo vuelve a sacar. Una dirección es un sitio (https://…) o una página de la aplicación (/forms/all).',
       linksTooMany:
         'Como máximo {max} enlaces en la cabecera y {inside} dentro de cada uno. Pon los demás dentro de uno o quítalos.',
       nameDescription: 'El nombre de la aplicación, en la pestaña del navegador y en la página de inicio de sesión.',

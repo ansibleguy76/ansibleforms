@@ -714,15 +714,15 @@ export default {
       linkIcon: 'Ícone',
       linkLabel: 'Etiqueta',
       linkUrl: 'Endereço',
-      linkInside: 'Dentro de',
+      linkIndent: 'Colocá-la dentro da ligação acima',
+      linkOutdent: 'Tirá-la para o cabeçalho',
       linkHoldsLinks: 'Uma ligação com ligações dentro fica no cabeçalho.',
       linkUrlOptional: 'Opcional para um menu',
-      linkInHeader: 'No cabeçalho',
       linkNewTab: 'Novo separador',
       linkUp: 'Subir',
       linkDown: 'Descer',
       linksHelp:
-        'As suas ligações, no máximo {max} no cabeçalho após as integradas. Uma ligação pode ficar dentro de outra, que abre então como menu. Um endereço é um site (https://…) ou uma página da aplicação (/forms/all).',
+        'As suas ligações, no máximo {max} no cabeçalho após as integradas. → coloca uma ligação dentro da que está acima, que abre então como menu; ← volta a tirá-la. Um endereço é um site (https://…) ou uma página da aplicação (/forms/all).',
       linksTooMany:
         'No máximo {max} ligações no cabeçalho e {inside} dentro de cada uma. Coloque as outras dentro de uma ou remova-as.',
       nameDescription: 'O nome da aplicação, no separador do navegador e na página de início de sessão.',

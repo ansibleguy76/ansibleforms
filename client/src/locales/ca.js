@@ -713,15 +713,15 @@ export default {
       linkIcon: 'Icona',
       linkLabel: 'Etiqueta',
       linkUrl: 'Adreça',
-      linkInside: 'Dins de',
+      linkIndent: "Posar-lo dins de l'enllaç de dalt",
+      linkOutdent: 'Treure-lo a la capçalera',
       linkHoldsLinks: 'Un enllaç amb enllaços a dins es queda a la capçalera.',
       linkUrlOptional: 'Opcional per a un menú',
-      linkInHeader: 'A la capçalera',
       linkNewTab: 'Pestanya nova',
       linkUp: 'Pujar',
       linkDown: 'Baixar',
       linksHelp:
-        "Els teus enllaços, com a màxim {max} a la capçalera després dels integrats. Un enllaç pot anar dins d'un altre, que llavors s'obre com a menú. Una adreça és un lloc (https://…) o una pàgina de l'aplicació (/forms/all).",
+        "Els teus enllaços, com a màxim {max} a la capçalera després dels integrats. → posa un enllaç dins del de dalt, que llavors s'obre com a menú; ← el torna a treure. Una adreça és un lloc (https://…) o una pàgina de l'aplicació (/forms/all).",
       linksTooMany:
         "Com a màxim {max} enllaços a la capçalera i {inside} dins de cadascun. Posa'n els altres dins d'un o treu-los.",
       nameDescription: "El nom de l'aplicació, a la pestanya del navegador i a la pàgina d'inici de sessió.",

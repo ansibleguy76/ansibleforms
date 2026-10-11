@@ -711,15 +711,15 @@ export default {
       linkIcon: 'アイコン',
       linkLabel: 'ラベル',
       linkUrl: 'アドレス',
-      linkInside: '親リンク',
+      linkIndent: '上のリンクの中に入れる',
+      linkOutdent: 'ヘッダーに戻す',
       linkHoldsLinks: '中にリンクがあるリンクはヘッダーに残ります。',
       linkUrlOptional: 'メニューでは省略可',
-      linkInHeader: 'ヘッダー',
       linkNewTab: '新しいタブ',
       linkUp: '上へ',
       linkDown: '下へ',
       linksHelp:
-        '独自のリンク（ヘッダーには組み込みリンクの後に最大 {max} 件）。リンクは別のリンクの中に置けます。その場合、親リンクはメニューとして開きます。アドレスはサイト（https://…）またはアプリのページ（/forms/all）。',
+        '独自のリンク（ヘッダーには組み込みリンクの後に最大 {max} 件）。→ でリンクを上のリンクの中に入れ（そのリンクはメニューとして開きます）、← で戻します。アドレスはサイト（https://…）またはアプリのページ（/forms/all）。',
       linksTooMany:
         'ヘッダーには最大 {max} 件、各リンクの中には最大 {inside} 件です。他のリンクはどれかの中に入れるか削除してください。',
       nameDescription: 'アプリケーションの名前。ブラウザーのタブとサインインページに表示されます。',

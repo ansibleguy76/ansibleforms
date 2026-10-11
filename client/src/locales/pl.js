@@ -711,15 +711,15 @@ export default {
       linkIcon: 'Ikona',
       linkLabel: 'Etykieta',
       linkUrl: 'Adres',
-      linkInside: 'Wewnątrz',
+      linkIndent: 'Umieść w linku powyżej',
+      linkOutdent: 'Wyjmij do nagłówka',
       linkHoldsLinks: 'Link z linkami w środku zostaje w nagłówku.',
       linkUrlOptional: 'Opcjonalny dla menu',
-      linkInHeader: 'W nagłówku',
       linkNewTab: 'Nowa karta',
       linkUp: 'W górę',
       linkDown: 'W dół',
       linksHelp:
-        'Własne linki, najwyżej {max} w nagłówku po wbudowanych. Link może być w innym, który wtedy otwiera się jako menu. Adres to witryna (https://…) lub strona aplikacji (/forms/all).',
+        'Własne linki, najwyżej {max} w nagłówku po wbudowanych. → umieszcza link w tym powyżej, który wtedy otwiera się jako menu; ← wyjmuje go z powrotem. Adres to witryna (https://…) lub strona aplikacji (/forms/all).',
       linksTooMany:
         'Najwyżej {max} linków w nagłówku i {inside} w każdym. Umieść pozostałe w jednym z nich lub je usuń.',
       nameDescription: 'Nazwa aplikacji, na karcie przeglądarki i na stronie logowania.',

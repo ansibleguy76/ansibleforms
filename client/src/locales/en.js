@@ -707,15 +707,15 @@ export default {
       linkIcon: 'Icon',
       linkLabel: 'Label',
       linkUrl: 'Address',
-      linkInside: 'Inside',
+      linkIndent: 'Put it inside the link above',
+      linkOutdent: 'Take it out to the header',
       linkHoldsLinks: 'A link with links inside it stays in the header.',
       linkUrlOptional: 'Optional for a menu',
-      linkInHeader: 'In the header',
       linkNewTab: 'New tab',
       linkUp: 'Move up',
       linkDown: 'Move down',
       linksHelp:
-        'Your own links, at most {max} in the header after the built-in ones. A link can sit inside another, which then opens as a menu. An address is a site (https://…) or a page of the app (/forms/all).',
+        'Your own links, at most {max} in the header after the built-in ones. → puts a link inside the one above it, which then opens as a menu; ← takes it back out. An address is a site (https://…) or a page of the app (/forms/all).',
       linksTooMany:
         'At most {max} links in the header itself, and {inside} inside each. Put the others inside one, or remove them.',
       nameDescription: 'The name of the application, in the browser tab and on the sign-in page.',

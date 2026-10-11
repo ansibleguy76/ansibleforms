@@ -9,10 +9,12 @@
 /*      link, its page, its api.                                  */
 /*    Custom : the instance's own links (a wiki, a runbook, a     */
 /*      support portal) - a label, an address, an icon, a new tab */
-/*      or not, in the header itself or inside another of them,   */
-/*      which is then a menu in the header (one level). Kept in   */
-/*      the settings row ; the server keeps only http(s) sites    */
-/*      and pages of the app.                                     */
+/*      or not. An outline, as the designer's categories : → puts */
+/*      a link inside the header link above it (then a menu in    */
+/*      the header, one level), ← takes it back out, ↑ ↓ move it  */
+/*      (a menu with what is inside it). Kept in the settings     */
+/*      row ; the server keeps only http(s) sites and pages of    */
+/*      the app.                                                  */
 /*                                                                */
 /******************************************************************/
 import { ref, computed, onMounted } from 'vue';
@@ -127,21 +129,6 @@ function holdsLinks(link) {
 }
 
 /**
- * The links a link may go inside : those in the header itself, but itself.
- *
- * Args:
- *   link (object): the link.
- *
- * Returns:
- *   Array: [{ id, label }].
- */
-function parentsFor(link) {
-  return own.value.header_links
-    .filter((l) => !l.parent && l.id !== link.id)
-    .map((l) => ({ id: l.id, label: l.label.trim() || '…' }));
-}
-
-/**
  * Whether an address may be a header link : an http or https site, or a page of the app (one
  * leading slash, not two ; no backslash or space). The server checks it again.
  *
@@ -189,18 +176,125 @@ function addLink() {
   own.value.header_links.push({ id: newId(), label: '', url: 'https://', icon: 'link', newTab: true, parent: '' });
 }
 
+// ─── the outline : a menu's links follow it ─────────────────────────────────
+// The list keeps a menu's links right after it (the server sends them so) : what a link is
+// inside is where it sits.
+
 /**
- * Moves a link one place up or down : the header shows them in this order.
+ * The rows a link moves with : itself, and the links inside it.
+ *
+ * Args:
+ *   index (number): the link.
+ *
+ * Returns:
+ *   number: how many rows, from index.
+ */
+function blockSize(index) {
+  const list = own.value.header_links;
+  const id = list[index].id;
+  let end = index + 1;
+  while (end < list.length && list[end].parent === id) end++;
+  return end - index;
+}
+
+/**
+ * Whether a link may move one place up or down : a link in the header past the next one (and
+ * its links) ; a link inside one within its menu only.
+ *
+ * Args:
+ *   index (number): the link.
+ *   step (number): -1 up, 1 down.
+ *
+ * Returns:
+ *   boolean: true when it may.
+ */
+function canMove(index, step) {
+  const list = own.value.header_links;
+  const link = list[index];
+  if (link.parent) {
+    const next = list[index + step];
+    return !!next && next.parent === link.parent;
+  }
+  if (step < 0) return index > 0;
+  return index + blockSize(index) < list.length;
+}
+
+/**
+ * Moves a link one place up or down : the header shows them in this order. A link in the header
+ * moves with the links inside it, past the whole of the next one ; a link inside one, within
+ * its menu.
  *
  * Args:
  *   index (number): the link.
  *   step (number): -1 up, 1 down.
  */
 function moveLink(index, step) {
+  if (!canMove(index, step)) return;
   const list = own.value.header_links;
-  const to = index + step;
-  if (to < 0 || to >= list.length) return;
-  [list[index], list[to]] = [list[to], list[index]];
+  if (list[index].parent) {
+    const to = index + step;
+    [list[index], list[to]] = [list[to], list[index]];
+    return;
+  }
+  const block = list.splice(index, blockSize(index));
+  if (step < 0) {
+    // before the link in the header above (its own first row)
+    let to = index - 1;
+    while (to > 0 && list[to].parent) to--;
+    list.splice(to, 0, ...block);
+  } else {
+    // after the next link in the header and the links inside it
+    const after = index + blockSize(index);
+    list.splice(after, 0, ...block);
+  }
+}
+
+/**
+ * Whether → may put a link inside the header link above it : a link in the header, not the
+ * first, that holds no links itself (one level).
+ *
+ * Args:
+ *   index (number): the link.
+ *
+ * Returns:
+ *   boolean: true when it may.
+ */
+function canIndent(index) {
+  const link = own.value.header_links[index];
+  return index > 0 && !link.parent && !holdsLinks(link);
+}
+
+/**
+ * Puts a link inside the header link above it : the last of that link's menu.
+ *
+ * Args:
+ *   index (number): the link.
+ */
+function indentLink(index) {
+  if (!canIndent(index)) return;
+  const list = own.value.header_links;
+  let top = index - 1;
+  while (top > 0 && list[top].parent) top--;
+  list[index].parent = list[top].id;
+}
+
+/**
+ * Takes a link out of its menu, to the header : right after that menu, so the links below it
+ * stay inside.
+ *
+ * Args:
+ *   index (number): the link.
+ */
+function outdentLink(index) {
+  const list = own.value.header_links;
+  const link = list[index];
+  if (!link.parent) return;
+  const parent = link.parent;
+  let end = index + 1;
+  while (end < list.length && list[end].parent === parent) end++;
+  const [moved] = list.splice(index, 1);
+  moved.parent = '';
+  list.splice(end - 1, 0, moved);
 }
 
 /**
@@ -298,7 +392,6 @@ onMounted(async () => {
               <span>{{ t('settings.interface.linkIcon') }}</span>
               <span>{{ t('settings.interface.linkLabel') }}</span>
               <span>{{ t('settings.interface.linkUrl') }}</span>
-              <span>{{ t('settings.interface.linkInside') }}</span>
               <span class="text-center">{{ t('settings.interface.linkNewTab') }}</span>
               <span></span>
             </div>
@@ -342,21 +435,6 @@ onMounted(async () => {
                   spellcheck="false"
                 />
               </div>
-              <!-- where it sits : in the header itself, or inside one of the header's links (which
-                   then opens as a menu) ; a link that holds others stays in the header -->
-              <div class="input-group">
-                <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="sitemap" /></span>
-                <select
-                  v-model="l.parent"
-                  class="form-select"
-                  :disabled="holdsLinks(l)"
-                  :title="holdsLinks(l) ? t('settings.interface.linkHoldsLinks') : undefined"
-                  :aria-label="t('settings.interface.linkInside')"
-                >
-                  <option value="">{{ t('settings.interface.linkInHeader') }}</option>
-                  <option v-for="p in parentsFor(l)" :key="p.id" :value="p.id">{{ p.label }}</option>
-                </select>
-              </div>
               <div class="form-check form-switch d-flex justify-content-center mb-0">
                 <input
                   v-model="l.newTab"
@@ -367,10 +445,29 @@ onMounted(async () => {
                 />
               </div>
               <div class="d-flex gap-1 justify-content-end">
+                <!-- ← out of its menu, → inside the header link above -->
                 <button
                   type="button"
                   class="btn btn-sm btn-link px-1"
-                  :disabled="i === 0"
+                  :disabled="!l.parent"
+                  :title="t('settings.interface.linkOutdent')"
+                  @click="outdentLink(i)"
+                >
+                  <FaIcon icon="arrow-left" />
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-link px-1"
+                  :disabled="!canIndent(i)"
+                  :title="holdsLinks(l) ? t('settings.interface.linkHoldsLinks') : t('settings.interface.linkIndent')"
+                  @click="indentLink(i)"
+                >
+                  <FaIcon icon="arrow-right" />
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-link px-1"
+                  :disabled="!canMove(i, -1)"
                   :title="t('settings.interface.linkUp')"
                   @click="moveLink(i, -1)"
                 >
@@ -379,7 +476,7 @@ onMounted(async () => {
                 <button
                   type="button"
                   class="btn btn-sm btn-link px-1"
-                  :disabled="i === own.header_links.length - 1"
+                  :disabled="!canMove(i, 1)"
                   :title="t('settings.interface.linkDown')"
                   @click="moveLink(i, 1)"
                 >
@@ -414,13 +511,15 @@ onMounted(async () => {
   flex-direction: column;
   gap: 0.5rem;
   overflow-x: auto;
+  /* a little room under the last row, as under the Environment page's preview */
+  padding-bottom: 0.5rem;
 }
 .af-links-row {
   display: grid;
-  grid-template-columns: 14.5rem 12rem minmax(14rem, 1fr) 13rem 5rem 6rem;
+  grid-template-columns: 14.5rem 12rem minmax(14rem, 1fr) 5rem 9rem;
   gap: 0.75rem;
   align-items: center;
-  min-width: 67.5rem;
+  min-width: 52rem;
 }
 /* a link inside another : indented under it within its column, a corner arrow before it */
 .af-link-nested > :first-child {

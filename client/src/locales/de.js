@@ -717,15 +717,15 @@ export default {
       linkIcon: 'Symbol',
       linkLabel: 'Bezeichnung',
       linkUrl: 'Adresse',
-      linkInside: 'Innerhalb von',
+      linkIndent: 'In den Link darüber legen',
+      linkOutdent: 'In die Kopfzeile herausnehmen',
       linkHoldsLinks: 'Ein Link mit Links darin bleibt in der Kopfzeile.',
       linkUrlOptional: 'Optional für ein Menü',
-      linkInHeader: 'In der Kopfzeile',
       linkNewTab: 'Neuer Tab',
       linkUp: 'Nach oben',
       linkDown: 'Nach unten',
       linksHelp:
-        'Eigene Links, höchstens {max} in der Kopfzeile nach den integrierten. Ein Link kann in einem anderen liegen, der sich dann als Menü öffnet. Eine Adresse ist eine Website (https://…) oder eine Seite der App (/forms/all).',
+        'Eigene Links, höchstens {max} in der Kopfzeile nach den integrierten. → legt einen Link in den darüber, der sich dann als Menü öffnet; ← nimmt ihn wieder heraus. Eine Adresse ist eine Website (https://…) oder eine Seite der App (/forms/all).',
       linksTooMany:
         'Höchstens {max} Links in der Kopfzeile und {inside} in jedem. Lege die anderen in einen davon oder entferne sie.',
       nameDescription: 'Der Name der Anwendung, im Browser-Tab und auf der Anmeldeseite.',

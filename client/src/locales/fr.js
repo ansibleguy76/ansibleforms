@@ -717,15 +717,15 @@ export default {
       linkIcon: 'Icône',
       linkLabel: 'Libellé',
       linkUrl: 'Adresse',
-      linkInside: 'Dans',
+      linkIndent: 'Le placer dans le lien au-dessus',
+      linkOutdent: "Le sortir dans l'en-tête",
       linkHoldsLinks: "Un lien qui contient des liens reste dans l'en-tête.",
       linkUrlOptional: 'Facultatif pour un menu',
-      linkInHeader: "Dans l'en-tête",
       linkNewTab: 'Nouvel onglet',
       linkUp: 'Monter',
       linkDown: 'Descendre',
       linksHelp:
-        "Vos propres liens, {max} au plus dans l'en-tête après les intégrés. Un lien peut se trouver dans un autre, qui s'ouvre alors comme un menu. Une adresse est un site (https://…) ou une page de l'application (/forms/all).",
+        "Vos propres liens, {max} au plus dans l'en-tête après les intégrés. → place un lien dans celui du dessus, qui s'ouvre alors comme un menu ; ← l'en ressort. Une adresse est un site (https://…) ou une page de l'application (/forms/all).",
       linksTooMany:
         "Au plus {max} liens dans l'en-tête et {inside} dans chacun. Placez les autres dans l'un d'eux ou supprimez-les.",
       nameDescription: "Le nom de l'application, dans l'onglet du navigateur et sur la page de connexion.",
