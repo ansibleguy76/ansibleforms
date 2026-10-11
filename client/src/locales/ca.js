@@ -701,7 +701,7 @@ export default {
       tabDefaults: 'Valors predeterminats',
       tabHeader: 'Capçalera',
       designer: 'Dissenyador',
-      designerHelp: 'Mostra el dissenyador a la capçalera',
+      designerHelp: "Mostra l'enllaç del Dissenyador a la capçalera",
       description:
         "Com es veu l'aplicació per a tothom per defecte: el tema i el seu color, l'idioma i si es mostra el dissenyador. L'elecció pròpia d'un usuari preval.",
     },

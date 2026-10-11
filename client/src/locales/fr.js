@@ -705,7 +705,7 @@ export default {
       tabDefaults: 'Valeurs par défaut',
       tabHeader: 'En-tête',
       designer: 'Designer',
-      designerHelp: "Afficher le designer dans l'en-tête",
+      designerHelp: "Afficher le lien Designer dans l'en-tête",
       description:
         "L'apparence de l'application pour tous par défaut : le thème et sa couleur, la langue et l'affichage du designer. Le choix d'un utilisateur l'emporte.",
     },

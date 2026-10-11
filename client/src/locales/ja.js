@@ -699,7 +699,7 @@ export default {
       tabDefaults: '既定値',
       tabHeader: 'ヘッダー',
       designer: 'デザイナー',
-      designerHelp: 'ヘッダーにデザイナーを表示',
+      designerHelp: 'ヘッダーにデザイナーのリンクを表示',
       description:
         'すべてのユーザーに対するアプリの既定の見た目：テーマとその色、言語、デザイナーの表示。ユーザー自身の選択が優先されます。',
     },

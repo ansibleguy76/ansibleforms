@@ -699,7 +699,7 @@ export default {
       tabDefaults: 'Standaardwaarden',
       tabHeader: 'Koptekst',
       designer: 'Designer',
-      designerHelp: 'De designer in de koptekst tonen',
+      designerHelp: 'De Designer-link in de koptekst tonen',
       description:
         'Hoe de app er standaard voor iedereen uitziet: het thema en de kleur, de taal en of de designer zichtbaar is. De eigen keuze van een gebruiker gaat voor.',
     },
