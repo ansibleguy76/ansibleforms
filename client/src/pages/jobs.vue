@@ -10,6 +10,7 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import YAML from 'yaml';
 import Time from '@/lib/Time';
+import { durationSeconds as runSeconds, formatDuration } from '@/lib/jobTime';
 import { useLiveEvent } from '@/composables/useLiveEvent';
 import { useFollowOutput } from '@/composables/useFollowOutput';
 import BsColumnPicker from '@/components/BsColumnPicker.vue';
@@ -87,34 +88,8 @@ function backToJobs() {
 // to the top when a job opens or closes : the page scrolls in #app, below the header
 watch(isJobPage, () => document.getElementById('app')?.scrollTo({ top: 0 }));
 
-/**
- * How long a job ran, from its start to its end : 6s, 2m 05s, 1h 02m 05s ; none while it has
- * no end (running, waiting).
- *
- * Args:
- *   j (object): the job.
- *
- * Returns:
- *   number|null: the seconds, or null.
- */
-function durationSeconds(j) {
-  if (!j.start) return null;
-  // a job still running : to now, counting up with the page's clock
-  if (!j.end && j.status !== 'running') return null;
-  const end = j.end ? new Date(j.end) : now.value;
-  const s = Math.round((end - new Date(j.start)) / 1000);
-  return Number.isFinite(s) && s >= 0 ? s : null;
-}
-function formatDuration(seconds) {
-  if (seconds == null) return '–';
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const sec = seconds % 60;
-  const two = (n) => String(n).padStart(2, '0');
-  if (h) return `${h}h ${two(m)}m ${two(sec)}s`;
-  if (m) return `${m}m ${two(sec)}s`;
-  return `${sec}s`;
-}
+// how long a job ran (lib/jobTime.js), a running one counted up with the page's clock
+const durationSeconds = (j) => runSeconds(j, now.value);
 
 // ─── DataTable-style state (sort / column visibility) ─────────────────────
 // the table fits its frame (a fixed layout) : the short columns a width of their own, the form

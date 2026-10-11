@@ -655,7 +655,6 @@ export default {
       namesIt: 'Wskazuje go',
       asDefault: 'Jako domyślny runner',
       job: 'Zadanie',
-      started: 'Rozpoczęte',
       status: 'Status',
       kind: 'Rodzaj',
       secretStore: 'Magazyn sekretów',

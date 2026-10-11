@@ -6,7 +6,8 @@
 /*  the widest share what is left fairly and a cell too long for  */
 /*  its column ends in "…", its whole text on hover. A checkbox   */
 /*  or a row menu column keeps its own width. When everything     */
-/*  fits, the last column takes the room left, as before.         */
+/*  fits, the column whose header has data-fit-grow (a job's      */
+/*  form) takes the room left, else the last one.                 */
 /*                                                                */
 /*  Measured again when the table's frame changes width and when  */
 /*  its rows change (a tab's rows loaded, a row removed).         */
@@ -17,8 +18,8 @@
 const FIXED = ['bs-dt-select', 'bs-dt-row-actions', 'af-role-remove-col', 'af-group-menu-col'];
 
 /**
- * Whether a column keeps its own width : its header or its first row's cell is a checkbox or
- * a row menu.
+ * Whether a column keeps its own width : its header asks to (data-fit-keep), or it or its first
+ * row's cell is a checkbox or a row menu.
  *
  * Args:
  *   table (HTMLTableElement): the table.
@@ -29,6 +30,8 @@ const FIXED = ['bs-dt-select', 'bs-dt-row-actions', 'af-role-remove-col', 'af-gr
  */
 function isFixed(table, index) {
   const th = table.tHead?.rows[0]?.cells[index];
+  // a column asking to keep its width (a date, a status : never cut)
+  if (th?.hasAttribute('data-fit-keep')) return true;
   const td = table.tBodies[0]?.rows[0]?.cells[index];
   return [th, td].some((cell) => cell && FIXED.some((c) => cell.classList.contains(c)));
 }
@@ -85,6 +88,8 @@ function fit(table) {
 
   const fixed = natural.map((_, i) => isFixed(table, i));
   const flex = natural.map((_, i) => i).filter((i) => !fixed[i]);
+  // the column that takes the room left when everything fits : the one asking, else the last
+  const grow = flex.find((i) => ths[i].hasAttribute('data-fit-grow')) ?? flex[flex.length - 1];
   const room = frame.clientWidth - natural.reduce((sum, w, i) => sum + (fixed[i] ? w : 0), 0);
   const shared = shareWidths(
     flex.map((i) => natural[i]),
@@ -94,8 +99,8 @@ function fit(table) {
     if (fixed[i]) ths[i].style.width = `${w}px`;
   });
   flex.forEach((col, k) => {
-    // all fit : each its own width, the last one the rest
-    if (!shared) ths[col].style.width = k === flex.length - 1 ? '' : `${natural[col]}px`;
+    // all fit : each its own width, the growing one the rest
+    if (!shared) ths[col].style.width = col === grow ? '' : `${natural[col]}px`;
     else ths[col].style.width = `${shared[k]}px`;
   });
 

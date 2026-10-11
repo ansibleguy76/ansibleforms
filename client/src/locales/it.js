@@ -657,7 +657,6 @@ export default {
       namesIt: 'Lo nomina',
       asDefault: 'Come runner predefinito',
       job: 'Job',
-      started: 'Avviato',
       status: 'Stato',
       kind: 'Tipo',
       secretStore: 'Archivio segreti',

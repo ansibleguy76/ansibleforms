@@ -655,7 +655,6 @@ export default {
       namesIt: 'Lo nombra',
       asDefault: 'Como runner por defecto',
       job: 'Trabajo',
-      started: 'Iniciado',
       status: 'Estado',
       kind: 'Tipo',
       secretStore: 'Almacén de secretos',

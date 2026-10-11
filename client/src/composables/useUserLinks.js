@@ -18,6 +18,7 @@ import { useI18n } from 'vue-i18n';
 import Helpers from '@/lib/Helpers';
 // a job's times as the jobs page shows them (the server sends them in its own zone)
 import Time from '@/lib/Time';
+import { durationSeconds, formatDuration } from '@/lib/jobTime';
 import { cronCell } from '@/lib/cronCell';
 
 // the latest jobs and audit entries a tab shows
@@ -118,10 +119,20 @@ export function useUserLinks(who) {
   }
 
   const jobColumns = computed(() => [
-    { key: 'id', label: t('settings.linked.job'), value: (j) => `#${j.id}` },
-    { key: 'form', label: t('settings.fields.form') },
-    { key: 'status', label: t('settings.linked.status') },
-    { key: 'start', label: t('settings.linked.started'), value: (j) => j.start && Time.format(j.start) },
+    { key: 'id', label: t('settings.linked.job'), keep: true, class: 'text-end', value: (j) => `#${j.id}` },
+    { key: 'form', label: t('settings.fields.form'), grow: true },
+    { key: 'status', label: t('settings.linked.status'), keep: true },
+    { key: 'start', label: t('jobs.startTime'), keep: true, value: (j) => j.start && Time.format(j.start) },
+    { key: 'end', label: t('jobs.endTime'), keep: true, value: (j) => j.end && Time.format(j.end) },
+    // how long it ran, as the jobs page says it (a running one : until the tab was loaded), to the
+    // right as a number
+    {
+      key: 'duration',
+      label: t('jobs.duration'),
+      keep: true,
+      class: 'text-end',
+      value: (j) => formatDuration(durationSeconds(j)),
+    },
   ]);
   const storedJobColumns = computed(() => [
     { key: 'name', label: t('settings.fields.name') },

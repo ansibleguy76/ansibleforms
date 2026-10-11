@@ -654,7 +654,6 @@ export default {
       namesIt: '指定',
       asDefault: 'デフォルトのランナーとして',
       job: 'ジョブ',
-      started: '開始',
       status: 'ステータス',
       kind: '種類',
       secretStore: 'シークレットストア',

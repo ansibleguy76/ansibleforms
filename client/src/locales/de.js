@@ -661,7 +661,6 @@ export default {
       namesIt: 'Nennt ihn',
       asDefault: 'Als Standard-Runner',
       job: 'Job',
-      started: 'Gestartet',
       status: 'Status',
       kind: 'Art',
       secretStore: 'Secret Store',

@@ -638,7 +638,6 @@ export default {
       namesIt: '指定',
       asDefault: '作为默认运行器',
       job: '作业',
-      started: '开始',
       status: '状态',
       kind: '类型',
       secretStore: '密钥存储',

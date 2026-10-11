@@ -651,7 +651,6 @@ export default {
       namesIt: 'Names it',
       asDefault: 'As the default runner',
       job: 'Job',
-      started: 'Started',
       status: 'Status',
       kind: 'Kind',
       secretStore: 'Secret store',

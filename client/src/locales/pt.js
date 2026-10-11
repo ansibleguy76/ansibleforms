@@ -657,7 +657,6 @@ export default {
       namesIt: 'Nomeia-o',
       asDefault: 'Como runner predefinido',
       job: 'Trabalho',
-      started: 'Iniciado',
       status: 'Estado',
       kind: 'Tipo',
       secretStore: 'Cofre de segredos',

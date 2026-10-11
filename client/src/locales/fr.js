@@ -661,7 +661,6 @@ export default {
       namesIt: 'Le nomme',
       asDefault: 'Comme runner par défaut',
       job: 'Job',
-      started: 'Démarré',
       status: 'Statut',
       kind: 'Type',
       secretStore: 'Coffre de secrets',

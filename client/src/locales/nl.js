@@ -655,7 +655,6 @@ export default {
       namesIt: 'Noemt hem',
       asDefault: 'Als standaardrunner',
       job: 'Job',
-      started: 'Gestart',
       status: 'Status',
       kind: 'Soort',
       secretStore: 'Secret store',

@@ -657,7 +657,6 @@ export default {
       namesIt: 'El nomena',
       asDefault: 'Com a runner per defecte',
       job: 'Treball',
-      started: 'Iniciat',
       status: 'Estat',
       kind: 'Tipus',
       secretStore: 'Magatzem de secrets',
