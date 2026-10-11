@@ -730,7 +730,7 @@ onMounted(async () => {
   align-items: center;
   line-height: 1.2;
   /* the pixel of the line above given back, so both sides measure the same */
-  padding: calc(0.75rem + 1px) var(--bs-card-spacer-x) 0.75rem;
+  padding: calc(0.75rem + 3px) var(--bs-card-spacer-x) calc(0.75rem + 2px);
   margin-bottom: 1.5rem;
   border-bottom: 1px solid var(--bs-border-color);
 }
