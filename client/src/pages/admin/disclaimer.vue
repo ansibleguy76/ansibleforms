@@ -32,7 +32,7 @@ const title = computed(() => t('sidebar.disclaimer'));
 const pageTabs = computed(() => [
   { key: 'general', label: t('settings.common.tabGeneral'), icon: 'sliders' },
   { key: 'versions', label: t('settings.disclaimer.tabVersions'), icon: 'layer-group' },
-  { key: 'acceptances', label: t('settings.disclaimer.tabAcceptances'), icon: 'file-signature' },
+  { key: 'acceptances', label: t('settings.disclaimer.tabAcceptances'), icon: 'user-check' },
 ]);
 const { activeTab, tabLink } = useRouteTab('general', (key) => ['general', 'versions', 'acceptances'].includes(key));
 // the lists of the tabs : Versions, Acceptances

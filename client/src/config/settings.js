@@ -2491,7 +2491,7 @@ export default function getSettings(t) {
       label: t('settings.disclaimer.acceptance'),
       labelPlural: t('settings.disclaimer.tabAcceptances'),
       description: t('settings.disclaimer.acceptancesDescription'),
-      icon: 'file-signature',
+      icon: 'user-check',
       selectable: false,
       // a record, never changed : no Add, no Edit, no Delete ; opened, shown in full
       noCreate: true,
