@@ -1522,6 +1522,7 @@ export default {
     visualFields: 'Velden',
     visualFieldsInYaml:
       'De velden van dit formulier kunnen hier niet worden getoond (een alias, of geen lijst): bewerk ze op het YAML-tabblad.',
+    visualStepsInYaml: 'De stappen van dit formulier bewerk je op het YAML-tabblad.',
     visualNoFields: 'Nog geen velden. Voeg er een toe met + in de werkbalk.',
     visualRequired: 'Verplicht',
     visualDuplicateField: 'Een ander veld heeft deze naam.',

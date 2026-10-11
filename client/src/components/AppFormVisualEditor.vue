@@ -134,6 +134,7 @@ const form = computed(() => {
     playbook: str('playbook'),
     template: str('template'),
     icon: str('icon'),
+    multistep: type === 'multistep',
     categories: formList(d, 'categories'),
     roles: formList(d, 'roles'),
   };
@@ -750,6 +751,10 @@ defineExpose({
       <h6 class="fw-bold mt-4 mb-2">{{ t('designer.visualFields') }}</h6>
       <!-- what is edited here, and where the rest is -->
       <p class="form-text mt-0 mb-2">{{ t('designer.visualFieldsHint') }}</p>
+      <!-- a multistep form's steps, a wizard's : only in the YAML, said rather than left looking empty -->
+      <div v-if="form.multistep || hasWizard" class="alert alert-info py-2" role="alert">
+        <FaIcon icon="circle-info" class="me-2" />{{ t('designer.visualStepsInYaml') }}
+      </div>
       <div v-if="fieldsMode === 'alias' || fieldsMode === 'unreadable'" class="alert alert-info py-2" role="alert">
         <FaIcon icon="circle-info" class="me-2" />{{ t('designer.visualFieldsInYaml') }}
       </div>

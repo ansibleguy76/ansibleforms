@@ -1516,6 +1516,7 @@ export default {
     visualAdd: 'Dodaj…',
     visualFields: 'Pola',
     visualFieldsInYaml: 'Pól tego formularza nie można tu pokazać (alias lub nie lista): edytuj je w karcie YAML.',
+    visualStepsInYaml: 'Kroki tego formularza edytujesz w karcie YAML.',
     visualNoFields: 'Brak pól. Dodaj pole przyciskiem + na pasku narzędzi.',
     visualRequired: 'Wymagane',
     visualDuplicateField: 'Inne pole ma tę nazwę.',

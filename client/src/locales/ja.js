@@ -1503,6 +1503,7 @@ export default {
     visualFields: 'フィールド',
     visualFieldsInYaml:
       'このフォームのフィールドはここでは表示できません（エイリアス、またはリストではありません）。YAML タブで編集してください。',
+    visualStepsInYaml: 'このフォームのステップは YAML タブで編集します。',
     visualNoFields: 'フィールドはまだありません。ツールバーの + で追加してください。',
     visualRequired: '必須',
     visualDuplicateField: '別のフィールドがこの名前を使っています。',

@@ -1543,6 +1543,7 @@ export default {
     visualFields: 'Felder',
     visualFieldsInYaml:
       'Die Felder dieses Formulars können hier nicht angezeigt werden (ein Alias oder keine Liste): bearbeite sie im YAML-Tab.',
+    visualStepsInYaml: 'Die Schritte dieses Formulars werden im YAML-Tab bearbeitet.',
     visualNoFields: 'Noch keine Felder. Füge eines mit + in der Werkzeugleiste hinzu.',
     visualRequired: 'Pflichtfeld',
     visualDuplicateField: 'Ein anderes Feld hat diesen Namen.',

@@ -1531,6 +1531,7 @@ export default {
     visualFields: 'Camps',
     visualFieldsInYaml:
       "Els camps d'aquest formulari no es poden mostrar aquí (un àlies, o no és una llista): edita'ls a la pestanya YAML.",
+    visualStepsInYaml: "Els passos d'aquest formulari s'editen a la pestanya YAML.",
     visualNoFields: "Encara no hi ha camps. Afegeix-ne un amb + a la barra d'eines.",
     visualRequired: 'Obligatori',
     visualDuplicateField: 'Un altre camp té aquest nom.',

@@ -1536,6 +1536,7 @@ export default {
     visualFields: 'Champs',
     visualFieldsInYaml:
       "Les champs de ce formulaire ne peuvent pas être affichés ici (un alias, ou pas une liste) : modifiez-les dans l'onglet YAML.",
+    visualStepsInYaml: "Les étapes de ce formulaire se modifient dans l'onglet YAML.",
     visualNoFields: "Aucun champ pour le moment. Ajoutez-en un avec + dans la barre d'outils.",
     visualRequired: 'Obligatoire',
     visualDuplicateField: 'Un autre champ porte ce nom.',

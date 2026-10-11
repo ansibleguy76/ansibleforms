@@ -1466,6 +1466,7 @@ export default {
     visualAdd: '添加…',
     visualFields: '字段',
     visualFieldsInYaml: '此表单的字段无法在此显示（别名或不是列表）：请在 YAML 标签页中编辑。',
+    visualStepsInYaml: '此表单的步骤在 YAML 标签页中编辑。',
     visualNoFields: '还没有字段。使用工具栏中的 + 添加。',
     visualRequired: '必填',
     visualDuplicateField: '另一个字段使用了此名称。',

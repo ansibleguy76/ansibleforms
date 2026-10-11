@@ -1530,6 +1530,7 @@ export default {
     visualFields: 'Campos',
     visualFieldsInYaml:
       'Os campos deste formulário não podem ser mostrados aqui (um alias, ou não é uma lista): edite-os no separador YAML.',
+    visualStepsInYaml: 'Os passos deste formulário editam-se no separador YAML.',
     visualNoFields: 'Ainda não há campos. Adicione um com + na barra de ferramentas.',
     visualRequired: 'Obrigatório',
     visualDuplicateField: 'Outro campo tem este nome.',

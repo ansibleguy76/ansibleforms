@@ -1521,6 +1521,7 @@ export default {
     visualFields: 'Campi',
     visualFieldsInYaml:
       'I campi di questo modulo non possono essere mostrati qui (un alias, o non è una lista): modificali nella scheda YAML.',
+    visualStepsInYaml: 'I passaggi di questo modulo si modificano nella scheda YAML.',
     visualNoFields: 'Ancora nessun campo. Aggiungine uno con + nella barra degli strumenti.',
     visualRequired: 'Obbligatorio',
     visualDuplicateField: 'Un altro campo ha questo nome.',

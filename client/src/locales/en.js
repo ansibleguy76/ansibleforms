@@ -1501,6 +1501,7 @@ export default {
     visualAdd: 'Add…',
     visualFields: 'Fields',
     visualFieldsInYaml: "This form's fields can't be shown here (an alias, or not a list): edit them in the YAML tab.",
+    visualStepsInYaml: "This form's steps are edited in the YAML tab.",
     visualNoFields: 'No fields yet. Add one with + in the toolbar.',
     visualRequired: 'Required',
     visualDuplicateField: 'Another field has this name.',
