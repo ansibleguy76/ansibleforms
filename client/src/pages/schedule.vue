@@ -66,7 +66,11 @@ const dirty = computed(
     !!schedule.value && EDITED.some((k) => String(edit.value[k] ?? '') !== String(editable(schedule.value)[k] ?? '')),
 );
 // leaving with the schedule changed and unsaved asks first
-useUnsavedGuard(dirty, () => t('settings.common.unsavedChanges'));
+useUnsavedGuard(
+  dirty,
+  () => t('settings.common.unsavedChanges'),
+  () => save(),
+);
 
 const running = computed(() => ['running', 'queued'].includes(schedule.value?.state));
 const cronError = computed(() =>

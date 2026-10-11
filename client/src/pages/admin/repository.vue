@@ -121,7 +121,11 @@ const dirty = computed(() => {
   );
 });
 // leaving with the repository changed and unsaved asks first
-useUnsavedGuard(dirty, () => t('settings.common.unsavedChanges'));
+useUnsavedGuard(
+  dirty,
+  () => t('settings.common.unsavedChanges'),
+  () => save(),
+);
 
 const running = computed(() => repo.value?.status === 'running');
 // git's output, a line each (the trailing newline adds none)

@@ -63,7 +63,11 @@ const dirty = computed(
   () => !!server.value && EDITED.some((k) => String(edit.value[k] ?? '') !== String(editable(server.value)[k] ?? '')),
 );
 // leaving with the server changed and unsaved asks first
-useUnsavedGuard(dirty, () => t('settings.common.unsavedChanges'));
+useUnsavedGuard(
+  dirty,
+  () => t('settings.common.unsavedChanges'),
+  () => save(),
+);
 
 // the smtp credentials it can log in with, none first (a relay without a login)
 const credentials = ref([]);

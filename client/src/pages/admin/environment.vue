@@ -11,6 +11,8 @@ import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
 import { PILL } from '@/lib/tableCells';
+import Theme from '@/lib/Theme';
+import { useAppStore } from '@/stores/app';
 import { useSettingsRow } from '@/composables/useSettingsRow';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 
@@ -38,22 +40,22 @@ function labelOf(row) {
   };
 }
 const { edit: look, dirty, load, save } = useSettingsRow(labelOf);
-useUnsavedGuard(dirty, () => t('settings.common.unsavedChanges'));
+useUnsavedGuard(
+  dirty,
+  () => t('settings.common.unsavedChanges'),
+  () => save(`${title.value} ${t('settings.common.isUpdated')}`),
+);
 
-// the header as it is (its background, its logo's image) : the preview shows it so
-const headerLook = ref({ background: '', logo: '' });
-
-/**
- * Reads the header's background and logo, for the preview.
- */
-function readHeaderLook() {
-  const header = document.querySelector('nav.af-header');
-  const logo = header?.querySelector('.af-brand img');
-  headerLook.value = {
-    background: header ? getComputedStyle(header).backgroundColor : '',
-    logo: logo ? logo.currentSrc || logo.src : '',
-  };
-}
+// the header's logo, as the header picks it (BsNavBar) : the uploaded one, else the theme's own
+// (the default upload is the light theme's, so it never stands in for the dark and colour
+// themes'). Worked out from the theme, so the preview follows a theme switched while the page
+// is open ; its background is the header's own variable (styles below), which follows alike
+const store = useAppStore();
+const previewLogo = computed(() => {
+  if (!store.logoIsDefault && store.customLogo) return store.customLogo;
+  const theme = store.theme || Theme.load();
+  return `img/logo_${theme === 'dark' || theme === 'light' ? theme : 'color'}.svg`;
+});
 
 const title = computed(() => t('sidebar.environment'));
 
@@ -61,7 +63,6 @@ onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
   await load();
-  readHeaderLook();
 });
 </script>
 <template>
@@ -100,13 +101,20 @@ onMounted(async () => {
           class="af-interface-field mt-4"
           :isFloating="false"
           icon="tag"
+          :disabled="!look.env_label_show"
           v-model="look.env_label"
           :label="t('settings.interface.envLabel')"
           :help="t('settings.interface.envLabelHelp')"
         />
-        <!-- its colour : round swatches, as the Color theme's -->
+        <!-- its colour : round swatches, as the Color theme's ; switched off, the text, the
+             colour and the preview are greyed out and kept as they are -->
         <label class="form-label fw-bold mt-4 d-block">{{ t('settings.interface.envLabelColor') }}</label>
-        <div class="d-flex flex-wrap gap-2 ms-1" role="radiogroup" :aria-label="t('settings.interface.envLabelColor')">
+        <div
+          class="d-flex flex-wrap gap-2 ms-1"
+          :class="{ 'af-off': !look.env_label_show }"
+          role="radiogroup"
+          :aria-label="t('settings.interface.envLabelColor')"
+        >
           <button
             v-for="c in LABEL_COLORS"
             :key="c"
@@ -116,6 +124,7 @@ onMounted(async () => {
             :title="c"
             role="radio"
             :aria-checked="look.env_label_color === c"
+            :disabled="!look.env_label_show"
             @click="look.env_label_color = c"
           >
             <FaIcon v-if="look.env_label_color === c" icon="check" class="settings-swatch-check" />
@@ -123,12 +132,11 @@ onMounted(async () => {
         </div>
         <!-- the preview : the header's logo and the label, as the header shows them -->
         <label class="form-label fw-bold mt-4 d-block">{{ t('settings.interface.envLabelPreview') }}</label>
-        <div class="af-label-preview" :style="{ backgroundColor: headerLook.background }">
-          <img v-if="headerLook.logo" :src="headerLook.logo" class="af-label-preview-logo" alt="" />
+        <div class="af-label-preview" :class="{ 'af-off': !look.env_label_show }">
+          <img :src="previewLogo" class="af-label-preview-logo" alt="" />
           <span
             class="badge rounded-pill fw-semibold af-pill af-label-preview-pill"
             :class="PILL[look.env_label_color] || PILL.grey"
-            :style="{ opacity: look.env_label_show ? 1 : 0.35 }"
           >
             <span class="af-pill-label">{{ look.env_label || 'PRODUCTION' }}</span>
           </span>
@@ -154,8 +162,10 @@ onMounted(async () => {
     0 0 0 2px var(--bs-body-bg),
     0 0 0 4px var(--bs-body-color);
 }
-/* the label's preview : the header's background, its logo, the label 20px from it, as there */
+/* the label's preview : the header's background (the current theme's, live), its logo, the
+   label 20px from it, as there */
 .af-label-preview {
+  background-color: var(--af-bg-navbar);
   display: inline-flex;
   /* a little room under it : the card's other pages end on a line of help text, lighter */
   margin-bottom: 0.5rem;
@@ -176,6 +186,14 @@ onMounted(async () => {
 /* its letters apart, as the header's (AppEnvLabel) */
 .af-label-preview-pill .af-pill-label {
   letter-spacing: 0.06em;
+}
+/* switched off : the swatches and the preview greyed out, as a disabled field (its title stays) */
+.af-off {
+  opacity: 0.5;
+}
+.af-off .settings-color-swatch {
+  cursor: default;
+  pointer-events: none;
 }
 </style>
 <route lang="yaml">

@@ -148,17 +148,6 @@ function createCategory() {
 }
 
 /**
- * Adds an empty subcategory under a category.
- *
- * Args:
- *   parent (object): the category.
- */
-function addSubcategory(parent) {
-  if (!parent.items) parent.items = [];
-  parent.items.push({ _uid: nextUid(), name: '', icon: DEFAULT_CATEGORY_ICON });
-}
-
-/**
  * Removes a category (and its subcategories) from the tree.
  *
  * Args:
@@ -175,6 +164,60 @@ function removeCategory(cat, list = categories.value) {
     return true;
   }
   return list.some((item) => item.items && removeCategory(cat, item.items));
+}
+
+/**
+ * Whether a row may be changed : not the default category, not a locked tree.
+ *
+ * Args:
+ *   row (object): { cat, depth }.
+ *
+ * Returns:
+ *   boolean: true when it may.
+ */
+function editable(row) {
+  return !locked.value && !isDefaultCategory(row.cat, row.depth);
+}
+
+/**
+ * A row's moves, as the buttons show them : ← out a level, → into the category above, ↑ ↓ among
+ * its own ; each pressable or not.
+ *
+ * Args:
+ *   row (object): { cat, depth }.
+ *
+ * Returns:
+ *   object[]: [{ icon, title, can, run }].
+ */
+function moves(row) {
+  const ok = editable(row);
+  const cats = categories.value;
+  return [
+    {
+      icon: 'arrow-left',
+      title: t('settings.settingsPage.outdentCategory'),
+      can: ok && canOutdent(cats, row.cat),
+      run: () => outdentCategory(cats, row.cat),
+    },
+    {
+      icon: 'arrow-right',
+      title: t('settings.settingsPage.indentCategory'),
+      can: ok && canIndent(cats, row.cat),
+      run: () => indentCategory(cats, row.cat),
+    },
+    {
+      icon: 'arrow-up',
+      title: t('settings.settingsPage.moveUp'),
+      can: ok && canMoveUp(cats, row.cat),
+      run: () => moveCategoryUp(cats, row.cat),
+    },
+    {
+      icon: 'arrow-down',
+      title: t('settings.settingsPage.moveDown'),
+      can: ok && canMoveDown(cats, row.cat),
+      run: () => moveCategoryDown(cats, row.cat),
+    },
+  ];
 }
 
 // the designer's toolbar adds a row (its + button)
@@ -217,133 +260,99 @@ defineExpose({ add: addCategory, locked });
       <FaIcon icon="sitemap" class="empty-state-icon" />
       <span>{{ t('settings.settingsPage.noCategories') }}</span>
     </div>
-    <div v-else class="af-visual-table">
-      <table class="table af-table config-table mb-0">
-        <thead>
-          <tr>
-            <th>{{ t('settings.settingsPage.name') }}</th>
-            <th>{{ t('settings.settingsPage.icon') }}</th>
-            <th class="af-row-menu-col"></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="row in flatCats" :key="row.cat._uid">
-            <td>
-              <div class="d-flex align-items-center" :style="{ paddingLeft: row.depth * 1.5 + 'rem' }">
-                <FaIcon
-                  v-if="row.depth > 0"
-                  icon="level-up-alt"
-                  class="text-muted me-2 fa-rotate-90"
-                  style="font-size: 0.75rem"
-                />
-                <input
-                  class="form-control form-control-sm"
-                  v-model="row.cat.name"
-                  :disabled="isDefaultCategory(row.cat, row.depth) || locked"
-                />
-              </div>
-            </td>
-            <td>
-              <div class="d-flex align-items-center gap-2">
-                <FaIcon :icon="row.cat.icon || 'question'" class="text-muted" />
-                <select
-                  class="form-select form-select-sm"
-                  v-model="row.cat.icon"
-                  :disabled="isDefaultCategory(row.cat, row.depth) || locked"
-                >
-                  <!-- a hand-written icon not in the list : offered, so it stays visible -->
-                  <option v-if="row.cat.icon && !availableIcons.includes(row.cat.icon)" :value="row.cat.icon">
-                    {{ row.cat.icon }}
-                  </option>
-                  <option v-for="ic in availableIcons" :key="ic" :value="ic">{{ ic }}</option>
-                </select>
-              </div>
-            </td>
-            <td class="bs-dt-row-actions">
-              <!-- the row's menu, as every table's : add a category after it or under it, move it
-                   (a move that cannot apply greyed), then delete, last -->
-              <div v-if="!isDefaultCategory(row.cat, row.depth) && !locked" class="dropdown">
-                <a
-                  role="button"
-                  class="bs-dt-row-menu px-2"
-                  data-bs-toggle="dropdown"
-                  data-bs-popper-config='{"strategy":"fixed"}'
-                  @click.stop
-                >
-                  <FaIcon icon="ellipsis-vertical" />
-                </a>
-                <ul class="dropdown-menu dropdown-menu-end">
-                  <li>
-                    <a class="dropdown-item" href="#" @click.prevent="addCategory({ cat: row.cat })">
-                      <FaIcon icon="plus" class="me-2" />{{ t('designer.addCategory') }}
-                    </a>
-                  </li>
-                  <li>
-                    <a class="dropdown-item" href="#" @click.prevent="addSubcategory(row.cat)">
-                      <FaIcon icon="level-up-alt" class="me-2 fa-rotate-90" />{{ t('designer.addSubcategory') }}
-                    </a>
-                  </li>
-                  <li><hr class="dropdown-divider" /></li>
-                  <li>
-                    <a
-                      class="dropdown-item"
-                      :class="{ disabled: !canMoveUp(categories, row.cat) }"
-                      href="#"
-                      @click.prevent="moveCategoryUp(categories, row.cat)"
-                    >
-                      <FaIcon icon="chevron-up" class="me-2" />{{ t('settings.settingsPage.moveUp') }}
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      class="dropdown-item"
-                      :class="{ disabled: !canMoveDown(categories, row.cat) }"
-                      href="#"
-                      @click.prevent="moveCategoryDown(categories, row.cat)"
-                    >
-                      <FaIcon icon="chevron-down" class="me-2" />{{ t('settings.settingsPage.moveDown') }}
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      class="dropdown-item"
-                      :class="{ disabled: !canIndent(categories, row.cat) }"
-                      href="#"
-                      @click.prevent="indentCategory(categories, row.cat)"
-                    >
-                      <FaIcon icon="indent" class="me-2" />{{ t('settings.settingsPage.indentCategory') }}
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      class="dropdown-item"
-                      :class="{ disabled: !canOutdent(categories, row.cat) }"
-                      href="#"
-                      @click.prevent="outdentCategory(categories, row.cat)"
-                    >
-                      <FaIcon icon="outdent" class="me-2" />{{ t('settings.settingsPage.outdentCategory') }}
-                    </a>
-                  </li>
-                  <li><hr class="dropdown-divider" /></li>
-                  <li>
-                    <a class="dropdown-item text-danger" href="#" @click.prevent="removeCategory(row.cat)">
-                      <FaIcon icon="trash" class="me-2" />{{ t('common.delete') }}
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+    <!-- an outline, as Settings > Appearance > Links : a row per category, its standard fields,
+         its moves as one group of buttons (→ makes it a subcategory), then Delete -->
+    <div v-else class="af-cats">
+      <div class="af-cats-row af-cats-head">
+        <span>{{ t('settings.settingsPage.icon') }}</span>
+        <span>{{ t('settings.settingsPage.name') }}</span>
+        <span></span>
+      </div>
+      <div v-for="row in flatCats" :key="row.cat._uid" class="af-cats-row">
+        <!-- the icon, indented with its depth (the nested icon before a subcategory) -->
+        <div class="d-flex align-items-center" :style="{ paddingLeft: row.depth * 1.5 + 'rem' }">
+          <FaIcon
+            v-if="row.depth > 0"
+            icon="level-up-alt"
+            class="text-muted me-2 fa-rotate-90"
+            style="font-size: 0.75rem"
+          />
+          <div class="input-group flex-grow-1">
+            <span class="input-group-text"><FaIcon :fixedwidth="true" :icon="row.cat.icon || 'question'" /></span>
+            <select
+              class="form-select"
+              v-model="row.cat.icon"
+              :disabled="isDefaultCategory(row.cat, row.depth) || locked"
+              :aria-label="t('settings.settingsPage.icon')"
+            >
+              <!-- a hand-written icon not in the list : offered, so it stays visible -->
+              <option v-if="row.cat.icon && !availableIcons.includes(row.cat.icon)" :value="row.cat.icon">
+                {{ row.cat.icon }}
+              </option>
+              <option v-for="ic in availableIcons" :key="ic" :value="ic">{{ ic }}</option>
+            </select>
+          </div>
+        </div>
+        <div class="input-group">
+          <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="font" /></span>
+          <input
+            class="form-control"
+            v-model="row.cat.name"
+            :disabled="isDefaultCategory(row.cat, row.depth) || locked"
+            :aria-label="t('settings.settingsPage.name')"
+          />
+        </div>
+        <!-- the default category and a locked tree : no actions -->
+        <div class="d-flex gap-2 justify-content-end">
+          <div class="btn-group" role="group" :aria-label="t('settings.interface.linkMoves')">
+            <button
+              v-for="m in moves(row)"
+              :key="m.icon"
+              type="button"
+              class="btn af-row-btn"
+              :class="m.can ? 'btn-outline-primary' : 'btn-outline-secondary'"
+              :disabled="!m.can"
+              :title="m.title"
+              @click="m.run()"
+            >
+              <FaIcon :icon="m.icon" />
+            </button>
+          </div>
+          <button
+            type="button"
+            class="btn af-row-btn"
+            :class="editable(row) ? 'btn-outline-danger' : 'btn-outline-secondary'"
+            :disabled="!editable(row)"
+            :title="t('common.delete')"
+            @click="removeCategory(row.cat)"
+          >
+            <FaIcon icon="trash" />
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 <style scoped lang="scss">
-/* the table in a frame of the fields' grey, its header bar the tables' */
-.af-visual-table {
-  border: 1px solid var(--af-field-border);
-  border-radius: 0.375rem;
-  overflow: hidden;
+/* the outline : one row each, the same columns for the header line, as Settings > Appearance >
+   Links ; a pane narrower than them scrolls sideways rather than squeezing the fields */
+.af-cats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+.af-cats-row {
+  display: grid;
+  /* the last : as wide as its buttons (four 2.5rem moves, the 0.5rem gap, Delete) */
+  grid-template-columns: 14.5rem minmax(12rem, 1fr) 13rem;
+  gap: 0.75rem;
+  align-items: center;
+  min-width: 44rem;
+}
+/* the column names : as a field's label */
+.af-cats-head {
+  font-weight: 700;
 }
 </style>

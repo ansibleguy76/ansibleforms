@@ -553,7 +553,7 @@ const SCHEMA_MANIFEST = {
                                'chat_settings.credential',
                                'users.description', 'schedule.raw_form_data', 'users.blocked', 'settings.favicon',
                                'settings.app_name', 'settings.env_label', 'settings.env_label_show', 'settings.env_label_color',
-                               'settings.banner_message', 'settings.banner_level', 'settings.banner_until',
+                               'settings.banner_show', 'settings.banner_message', 'settings.banner_level', 'settings.banner_until',
                                'settings.forms_view', 'settings.default_timezone', 'settings.default_date_format', 'settings.header_links'] },
   },
 };
@@ -920,6 +920,8 @@ async function patchVersion7(messages, success, failed) {
   }
   // the environment label shown or not (Settings > Appearance > Environment) : shown
   await checkPromise(addColumn("settings", "env_label_show", "tinyint(4)", false, "1"), messages, success, failed);
+  // the announcement shown or not (Settings > Appearance > Announcement) : shown
+  await checkPromise(addColumn("settings", "banner_show", "tinyint(4)", false, "1"), messages, success, failed);
   await checkPromise(copyAwxToRunners(), messages, success, failed);
   await checkPromise(addColumn("jobs", "job_log", "longtext", true, "NULL"), messages, success, failed);
 

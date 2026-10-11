@@ -109,7 +109,11 @@ const dirty = computed(
     EDITED.some((k) => String(edit.value[k] ?? '') !== String(editable(credential.value)[k] ?? '')),
 );
 // leaving with the credential changed and unsaved asks first
-useUnsavedGuard(dirty, () => t('settings.common.unsavedChanges'));
+useUnsavedGuard(
+  dirty,
+  () => t('settings.common.unsavedChanges'),
+  () => save(),
+);
 
 /**
  * Loads the credential and the secret stores it can read from.
