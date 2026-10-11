@@ -53,7 +53,13 @@ export function searchPages(t, options) {
       icon: 'toolbox',
       link: '/settings/general',
     },
+    { title: t('sidebar.defaults'), section: settings, icon: 'display', link: '/settings/defaults' },
     { title: t('sidebar.logo'), section: settings, icon: 'image', link: '/settings/logo' },
+    { title: t('sidebar.icon'), section: settings, icon: 'bookmark', link: '/settings/icon' },
+    { title: t('sidebar.name'), section: settings, icon: 'font', link: '/settings/name' },
+    { title: t('sidebar.links'), section: settings, icon: 'link', link: '/settings/links' },
+    { title: t('sidebar.environment'), section: settings, icon: 'tag', link: '/settings/environment' },
+    { title: t('sidebar.announcement'), section: settings, icon: 'bullhorn', link: '/settings/announcement' },
     {
       title: t('sidebar.status'),
       section: settings,

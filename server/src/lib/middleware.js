@@ -1,5 +1,6 @@
 import RestResult from "../models/restResult.model.v2.js";
 import i18n from "./i18n.js";
+import appConfig from "../../config/app.config.js";
 import logger from "./logger.js";
 import { scopeFromRoles, runWithScope } from "./resourceScope.js";
 
@@ -42,7 +43,9 @@ Middleware.checkAdminMiddleware = permissionGuard(u => u.roles.includes("admin")
 
 Middleware.checkSettingsMiddleware = permissionGuard(u => u.options.showSettings, 'errors.noSettingsAccess')
 
-Middleware.checkDesignerMiddleware = permissionGuard(u => u.options.showDesigner, 'errors.noDesignerAccess')
+// the designer : switched on for the instance (SHOW_DESIGNER, read at every request so a change
+// applies at once, without signing in again) and the user's own showDesigner option
+Middleware.checkDesignerMiddleware = permissionGuard(u => appConfig.showDesigner && u.options.showDesigner, 'errors.noDesignerAccess')
 
 Middleware.checkLogsMiddleware = permissionGuard(u => u.options.showLogs, 'errors.noLogsAccess')
 

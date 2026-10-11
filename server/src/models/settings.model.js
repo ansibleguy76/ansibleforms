@@ -60,7 +60,175 @@ var Settings=function(settings){
     if(settings.default_theme_color !== undefined){
       this.default_theme_color = settings.default_theme_color || null;
     }
+    // Settings > Appearance : each kept to what the page offers, an empty value none
+    const text = (v, max) => (v === null || v === undefined || String(v).trim() === '' ? null : String(v).trim().slice(0, max));
+    const oneOf = (v, allowed) => (allowed.includes(v) ? v : null);
+    if(settings.app_name !== undefined){
+      this.app_name = text(settings.app_name, 100);
+    }
+    if(settings.env_label !== undefined){
+      this.env_label = text(settings.env_label, 40);
+    }
+    // the label shown or not : kept while hidden, so it comes back as it was
+    if(settings.env_label_show !== undefined){
+      this.env_label_show = settings.env_label_show === false || settings.env_label_show === 0 || settings.env_label_show === '0' ? 0 : 1;
+    }
+    if(settings.env_label_color !== undefined){
+      this.env_label_color = oneOf(settings.env_label_color, LABEL_COLORS);
+    }
+    if(settings.banner_message !== undefined){
+      this.banner_message = text(settings.banner_message, 500);
+    }
+    if(settings.banner_level !== undefined){
+      this.banner_level = oneOf(settings.banner_level, BANNER_LEVELS);
+    }
+    if(settings.banner_until !== undefined){
+      const until = settings.banner_until ? new Date(settings.banner_until) : null;
+      this.banner_until = until && !isNaN(until.getTime()) ? until.toISOString().slice(0, 19).replace('T', ' ') : null;
+    }
+    if(settings.forms_view !== undefined){
+      this.forms_view = oneOf(settings.forms_view, FORMS_VIEWS);
+    }
+    // the time zone dates show in : UTC, the browser's own, or a zone name (Europe/Madrid)
+    if(settings.default_timezone !== undefined){
+      this.default_timezone = validTimezone(settings.default_timezone);
+    }
+    // the date format dates show in (Settings > Appearance > Defaults)
+    if(settings.default_date_format !== undefined){
+      this.default_date_format = oneOf(settings.default_date_format, DATE_FORMATS);
+    }
+    // the header's own links (Settings > Appearance > Links > Custom), kept as JSON ; none : null
+    if(settings.header_links !== undefined){
+      const links = validHeaderLinks(settings.header_links);
+      this.header_links = links.length ? JSON.stringify(links) : null;
+    }
 };
+// the most links the header takes, and the longest label : it has room for a few short ones
+// the most links in the header itself, the most inside one of them, the longest label : the
+// header has room for a few short ones
+export const MAX_HEADER_LINKS = 5;
+export const MAX_NESTED_LINKS = 10;
+const MAX_LINK_LABEL = 30;
+/**
+ * The header's own links, as Settings > Appearance > Links keeps them : each an id, a label, an
+ * http or https address or a path of the app (/forms/all), a Font Awesome icon's name, whether
+ * it opens in a new tab, and the link it sits inside (parent : another link's id) or none - in
+ * the header itself. A link with links inside it is a menu in the header ; its own address is
+ * then optional (the first entry of its menu when it has one). One level only : a link inside
+ * a link that is itself inside one, or inside one that is not there, goes to the header.
+ *
+ * A link without a label, or with an address that is not a site or a page of the app
+ * (javascript:, data:, //host), is left out - so is a menu left with nothing to open.
+ *
+ * Args:
+ *   value (Array|string|null): the links, or their JSON.
+ *
+ * Returns:
+ *   Array: the valid links in their order, at most MAX_HEADER_LINKS in the header and
+ *     MAX_NESTED_LINKS inside each.
+ */
+export function validHeaderLinks(value){
+  let list = value;
+  if(typeof list === 'string'){
+    try { list = JSON.parse(list); } catch { return []; }
+  }
+  if(!Array.isArray(list)) return [];
+  // ------------------------------------------------------------------
+  // each link as it may be kept : an id of its own, an address only when valid
+  // ------------------------------------------------------------------
+  const seen = new Set();
+  const items = [];
+  list.forEach((item, index) => {
+    if(!item || typeof item !== 'object') return;
+    const label = String(item.label ?? '').trim().slice(0, MAX_LINK_LABEL);
+    if(!label) return;
+    const url = String(item.url ?? '').trim();
+    if(url && !isLinkUrl(url)) return;
+    let id = /^[a-z0-9]{1,16}$/.test(String(item.id ?? '')) ? String(item.id) : `l${index}`;
+    while(seen.has(id)) id = `${id}x`;
+    seen.add(id);
+    const icon = /^[a-z0-9-]{1,40}$/.test(String(item.icon ?? '')) ? String(item.icon) : 'link';
+    const parent = /^[a-z0-9]{1,16}$/.test(String(item.parent ?? '')) ? String(item.parent) : null;
+    items.push({ id, label, url, icon, newTab: !!item.newTab, parent });
+  });
+  // ------------------------------------------------------------------
+  // one level : inside a link of the header, else in the header itself
+  // ------------------------------------------------------------------
+  const byId = new Map(items.map((l) => [l.id, l]));
+  // first inside a link that is there and is not itself ...
+  for(const l of items){
+    if(l.parent && (!byId.has(l.parent) || l.parent === l.id)) l.parent = null;
+  }
+  // ... then only one level : inside a link that is inside another, it goes to the header
+  const nested = new Set(items.filter((l) => l.parent).map((l) => l.id));
+  for(const l of items){
+    if(l.parent && nested.has(l.parent)) l.parent = null;
+  }
+  // ------------------------------------------------------------------
+  // what opens something : a link inside needs an address, one in the header an address or
+  // links inside it ; then the limits
+  // ------------------------------------------------------------------
+  const inside = (top) => items.filter((l) => l.parent === top.id && l.url);
+  const kept = [];
+  let tops = 0;
+  for(const l of items.filter((x) => !x.parent)){
+    const children = inside(l).slice(0, MAX_NESTED_LINKS);
+    if(!l.url && !children.length) continue;
+    if(tops >= MAX_HEADER_LINKS) break;
+    tops++;
+    kept.push({ id: l.id, label: l.label, url: l.url, icon: l.icon, newTab: l.newTab, parent: null });
+    for(const c of children) kept.push({ id: c.id, label: c.label, url: c.url, icon: c.icon, newTab: c.newTab, parent: l.id });
+  }
+  return kept;
+}
+/**
+ * Whether an address may be a header link : http or https with a host, or a path of the app
+ * (one leading slash, not two : //host is another site ; no backslash : browsers read /\\host
+ * as //host).
+ *
+ * Args:
+ *   url (string): the address.
+ *
+ * Returns:
+ *   boolean: true when it may.
+ */
+export function isLinkUrl(url){
+  if(!url || url.length > 500 || /[\s\\]/.test(url)) return false;
+  if(/^\/(?!\/)/.test(url)) return true;
+  try {
+    const u = new URL(url);
+    return (u.protocol === 'http:' || u.protocol === 'https:') && !!u.hostname;
+  } catch {
+    return false;
+  }
+}
+/**
+ * A default time zone as Settings > Appearance > Defaults keeps it : UTC, browser (each
+ * browser's own zone) or a zone name this server knows ; anything else is none.
+ *
+ * Args:
+ *   value (string): the zone asked for.
+ *
+ * Returns:
+ *   string|null: the zone, or null.
+ */
+export function validTimezone(value){
+  if(!value || typeof value !== 'string') return null;
+  if(value === 'UTC' || value === 'browser') return value;
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: value });
+    return value.slice(0, 64);
+  } catch {
+    return null;
+  }
+}
+// what Settings > Appearance offers : the environment label's colours (the app's
+// pill tones), the announcement's levels, the forms list's views
+export const LABEL_COLORS = ['blue', 'green', 'amber', 'orange', 'red', 'grey'];
+export const BANNER_LEVELS = ['info', 'warning', 'danger'];
+export const FORMS_VIEWS = ['tiles', 'list'];
+// the date formats offered, as dayjs writes them : digits and separators only
+export const DATE_FORMATS = ['YYYY-MM-DD', 'DD/MM/YYYY', 'MM/DD/YYYY', 'DD.MM.YYYY'];
 // Resolve whether the ACTIVE config lives in the database, from a findFormsYaml record.
 //
 // Precedence is the same everywhere in the app: the ENVIRONMENT first, then the database,
@@ -129,6 +297,15 @@ Settings.setLogo = async function (logo) {
   // reuse the race-safe single-row upsert in Settings.update (same fresh-install
   // empty-table case), rather than duplicating the COUNT-then-INSERT pattern.
   await Settings.update({ logo })
+};
+// the website icon (browser tab) : a data url, or null for the bundled one
+Settings.getFavicon = function () {
+  return mysql.do("SELECT favicon FROM AnsibleForms.`settings` limit 1;")
+    .then((res) => (res.length > 0 && res[0].favicon) ? res[0].favicon : null)
+};
+Settings.setFavicon = async function (favicon) {
+  logger.info(`Updating the website icon`)
+  await Settings.update({ favicon })
 };
 // backstop against overwriting the config while the designer holds the lock.
 // The controllers pre-check this and return a clean 423 ; the check also lives here so
@@ -352,10 +529,26 @@ Settings.findUrl = function () {
 // endpoint blocks the SPA from rendering even the login page, so a MySQL outage
 // must cost one connectTimeout, not one per setting.
 Settings.findAppDefaults = function () {
-  return mysql.do("SELECT default_language, default_theme, default_theme_color FROM AnsibleForms.`settings` LIMIT 1")
-    .then((res) => (res.length > 0)
-      ? { language: res[0].default_language || null, theme: res[0].default_theme || null, color: res[0].default_theme_color || null }
-      : { language: null, theme: null, color: null })
+  return mysql.do("SELECT default_language, default_theme, default_theme_color, app_name, env_label, env_label_show, env_label_color, banner_message, banner_level, banner_until, forms_view, default_timezone, default_date_format, header_links FROM AnsibleForms.`settings` LIMIT 1")
+    .then((res) => {
+      const r = res[0] || {};
+      return {
+        language: r.default_language || null,
+        theme: r.default_theme || null,
+        color: r.default_theme_color || null,
+        // Settings > Appearance
+        appName: r.app_name || null,
+        // hidden (the switch off) : none
+        envLabel: r.env_label_show === 0 ? null : r.env_label || null,
+        envLabelColor: r.env_label_color || null,
+        banner: r.banner_message ? { message: r.banner_message, level: r.banner_level || 'info', until: r.banner_until || null } : null,
+        formsView: r.forms_view || null,
+        timezone: r.default_timezone || null,
+        dateFormat: r.default_date_format || null,
+        // only for who is signed in (GET /api/v2/app/links), never the public /config
+        headerLinks: validHeaderLinks(r.header_links),
+      };
+    })
 }
 Settings.findFormsYaml = function () {
 

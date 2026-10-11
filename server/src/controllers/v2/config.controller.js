@@ -17,6 +17,7 @@ import appConfig from "../../../config/app.config.js";
 
 import { fileURLToPath } from 'url';
 import { bump } from '../../lib/epochs.js';
+import { publish } from '../../lib/liveEvents.js';
 import Errors from '../../lib/errors.js';
 import { formLinks } from '../../lib/formLinks.js';
 import yaml from 'yaml';
@@ -188,6 +189,8 @@ const saveEnv = async function(req,res){
       detail: { changed: names, restartRequired: restart },
     })
     logger.notice(`Environment settings updated : ${names.join(', ')}`)
+    // a variable the header shows (the Designer's link) : every open tab re-reads it at once
+    publish('appearance')
     return res.json(RestResult.single({ message: i18n.t(req, 'config.envVarsSaved'), changed: names, restartRequired: restart }))
   }catch(err){
     logger.error(helpers.getError(err))

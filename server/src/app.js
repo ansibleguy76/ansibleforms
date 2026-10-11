@@ -60,7 +60,7 @@ import eventsRoutesv2 from "./routes/v2/events.routes.js";
 import knownhostsRoutes from "./routes/v2/knownhosts.routes.js";
 import scheduleRoutes from "./routes/v2/schedule.routes.js";
 import storedJobsRoutes from "./routes/v2/stored-jobs.routes.js";
-import appRoutes from "./routes/v2/app.routes.js";
+import appRoutes, { linksRouter as appLinksRoutes } from "./routes/v2/app.routes.js";
 import backupRoutes from "./routes/v2/backup.routes.js";
 import groupRoutesv2 from "./routes/v2/group.routes.js";
 import settingsRoutesv2 from "./routes/v2/settings.routes.js";
@@ -69,6 +69,7 @@ import auditRoutesv2 from "./routes/v2/audit.routes.js";
 import directoryRoutesv2 from "./routes/v2/directory.routes.js";
 import auditMiddleware from "./lib/auditMiddleware.js";
 import logoRoutesv2 from "./routes/v2/logo.routes.js";
+import faviconRoutesv2 from "./routes/v2/favicon.routes.js";
 import sshRoutesv2 from "./routes/v2/ssh.routes.js";
 import logRoutesv2 from "./routes/v2/log.routes.js";
 import repositoryRoutesv2 from "./routes/v2/repository.routes.js";
@@ -227,6 +228,8 @@ const load = async (app) => {
   app.use(`/api/v2/token`, cors(), authLimiter, tokenRoutesv2);
 
   // api routes for the vue3 app
+  // the header's own links : signed in only, before the public /api/v2/app
+  app.use(`/api/v2/app/links`, cors(), authobj, appLinksRoutes);
   app.use(`/api/v2/app`, cors(), appRoutes);
 
   // api routes for admin management
@@ -242,6 +245,8 @@ const load = async (app) => {
   app.use(`/api/v2/directory`, cors(), authobj, Middleware.checkSettingsMiddleware, directoryRoutesv2);
   // custom logo ; reading is public (header and login page), changing it is guarded in the routes
   app.use(`/api/v2/logo`, cors(), logoRoutesv2);
+  // the website icon : the same rules as the logo (public to read, settings to change)
+  app.use(`/api/v2/favicon`, cors(), faviconRoutesv2);
   app.use(`/api/v2/sshkey`, cors(), authobj, Middleware.checkSettingsMiddleware, sshRoutesv2);
   app.use(`/api/v2/ldap`, cors(), authobj, Middleware.checkSettingsMiddleware, ldapRoutes);
   app.use(`/api/v2/chatsettings`, cors(), authobj, Middleware.checkSettingsMiddleware, chatSettingsRoutes);

@@ -4,6 +4,7 @@ import Form from '@/lib/Form';
 import Helpers from '@/lib/Helpers';
 import { useRoute, useRouter } from 'vue-router';
 import { formsPath, categoryFromPath, formPath } from '@/lib/formsPath';
+import { useAppStore } from '@/stores/app';
 
 const { t } = useI18n();
 
@@ -13,6 +14,15 @@ const formConfig = ref({});
 const loading = ref(true);
 const search = ref('');
 const viewMode = ref('tiles'); // 'tiles' or 'list'
+const store = useAppStore();
+// the view for whoever has not chosen one (Settings > Appearance > Defaults), once it is known
+watch(
+  () => store.formsView,
+  (v) => {
+    const chosen = Helpers.getCookie('forms_view_mode');
+    if (!chosen && (v === 'tiles' || v === 'list')) viewMode.value = v;
+  },
+);
 
 const route = useRoute();
 const router = useRouter();
@@ -156,6 +166,8 @@ onMounted(async () => {
   // restore view mode from cookie if present
   const vm = Helpers.getCookie('forms_view_mode');
   if (vm && (vm === 'tiles' || vm === 'list')) viewMode.value = vm;
+  // none chosen : the view Settings > Appearance > Defaults sets for everyone
+  else if (store.formsView === 'tiles' || store.formsView === 'list') viewMode.value = store.formsView;
 });
 </script>
 <template>

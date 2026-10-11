@@ -132,7 +132,7 @@ const Helpers = {
   // Those convert exactly. A string WITHOUT a zone cannot be placed in time, so its wall
   // clock is shown as written (reading it with dayjs() would silently take the browser's zone
   // - a backup folder named ...20260726002146 once displayed as 02:21 that way).
-  // Returns ONLY a `YYYY-MM-DD HH:MM:SS` string or ''. It never echoes its input back,
+  // Returns ONLY a date and time string (its date in the picked format) or ''. It never echoes its input back,
   // because BsDataTable treats a column `render()` result as trusted HTML (cellHtml does
   // not escape it) - a pass-through formatter in that slot would be an injection sink.
   formatServerDate(value) {
@@ -141,7 +141,7 @@ const Helpers = {
     const text = String(value);
     if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})$/.test(text)) return Time.format(text);
     const m = /^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})/.exec(text);
-    return m ? `${m[1]} ${m[2]}` : '';
+    return m ? Time.wallClock(m[1], m[2]) : '';
   },
   humanFileSize(size) {
     if (size == undefined) return 'Not a number';

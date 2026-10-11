@@ -10,6 +10,8 @@
 /*            a form, /form)                                      */
 /*            indicator : { icon, class, title } - a small icon   */
 /*            on the link's icon, with its tooltip                */
+/*            href, newTab : an instance's own link (Settings >   */
+/*            Appearance > Links) - a site, or a page of the app  */
 /*                                                                */
 /******************************************************************/
 
@@ -29,8 +31,13 @@ const props = defineProps({
   },
 });
 
+// an own link to a page of the app (/forms/all) : the router's, unless it opens a new tab
+const internal = computed(() => (props.link.href?.startsWith('/') ? props.link.href : null));
+
 // on its page, a page below it, or a path it is also the link of (link.also)
 const active = computed(() => {
+  // an own link : active on its own page of the app only, never for another site
+  if (props.link.href) return !!internal.value && route.path === props.link.href.split(/[?#]/)[0];
   const path = route.path;
   const { link, also = [] } = props.link;
   if (path == link || (path.includes(link) && link !== '/')) return true;
@@ -39,7 +46,25 @@ const active = computed(() => {
 </script>
 <template>
   <li class="nav-item">
-    <router-link :to="link.link" class="nav-link icon-link" :class="{ active, 'link-body-emphasis': !active }">
+    <!-- an own link to a site, or to a page of the app in a new tab : a plain link -->
+    <a
+      v-if="link.href && (!internal || link.newTab)"
+      :href="link.href"
+      :target="link.newTab ? '_blank' : '_self'"
+      :rel="link.newTab ? 'noopener noreferrer' : undefined"
+      class="nav-link icon-link link-body-emphasis"
+      :title="link.title"
+    >
+      <span class="af-nav-link-icon"><font-awesome-icon :icon="link.icon" /></span>
+      <span class="af-nav-text">{{ link.title }}</span>
+    </a>
+    <router-link
+      v-else
+      :to="link.href || link.link"
+      class="nav-link icon-link"
+      :class="{ active, 'link-body-emphasis': !active }"
+      :title="link.title"
+    >
       <span class="af-nav-link-icon" :class="{ 'af-has-indicator': link.indicator }">
         <font-awesome-icon :icon="link.icon" />
         <!-- a small state icon on the link's icon (the designer lock), explained by its tooltip -->
@@ -53,7 +78,7 @@ const active = computed(() => {
           ><font-awesome-icon :icon="link.indicator.icon"
         /></span>
       </span>
-      {{ link.title }}
+      <span class="af-nav-text">{{ link.title }}</span>
       <span v-if="link.badge && link.badge > 0" class="badge rounded-pill bg-danger ms-2 align-middle">{{
         link.badge
       }}</span>

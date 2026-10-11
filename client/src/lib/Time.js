@@ -6,6 +6,9 @@
 // default, how the jobs page always showed its times), 'browser' (this browser's own zone)
 // or an IANA zone name ('Europe/Madrid').
 //
+// The date part follows the date format picked (Profile > Preferences, else Settings >
+// Appearance > Defaults) : 2026-10-11, 11/10/2026, 10/11/2026 or 11.10.2026.
+//
 // A time is shown with its zone's short name after it (2026-10-12 09:00:00 CEST), so a date
 // on any page says which clock it is on. A date alone (a pattern without hours) has none.
 //
@@ -23,6 +26,11 @@ dayjs.extend(timezone);
 export const BROWSER = 'browser';
 const STORAGE_KEY = 'af_timezone';
 const DEFAULT_FORMAT = 'YYYY-MM-DD HH:mm:ss';
+const DATE_STORAGE_KEY = 'af_date_format';
+const ISO_DATE = 'YYYY-MM-DD';
+// the date formats offered (the server keeps the same, models/settings.model.js) : digits and
+// separators only, so a formatted date never carries markup
+export const DATE_FORMATS = ['YYYY-MM-DD', 'DD/MM/YYYY', 'MM/DD/YYYY', 'DD.MM.YYYY'];
 // The locales asked for a zone's short name, in order : each knows the names of its own
 // region only (en-US says EDT but GMT+2 for Madrid, en-GB says CEST, en-IN IST, en-AU AEDT).
 // The first real name wins ; a zone none of them names (Tokyo, Sao Paulo) keeps its offset.
@@ -56,6 +64,63 @@ const Time = {
   zone() {
     const pref = Time.preference();
     return pref === BROWSER ? Time.browserZone() : pref;
+  },
+  // the date format picked : the store's (the profile's, else the app's default), else ISO
+  datePattern() {
+    let pattern;
+    try {
+      pattern = useAppStore().dateFormat;
+    } catch {
+      try {
+        pattern = localStorage.getItem(DATE_STORAGE_KEY);
+      } catch {
+        pattern = null;
+      }
+    }
+    return DATE_FORMATS.includes(pattern) ? pattern : ISO_DATE;
+  },
+  // whether this browser chose its date format (the profile) : else the app's default applies
+  hasOwnDateFormat() {
+    try {
+      return DATE_FORMATS.includes(localStorage.getItem(DATE_STORAGE_KEY));
+    } catch {
+      return false;
+    }
+  },
+  setDateFormat(value) {
+    const pattern = DATE_FORMATS.includes(value) ? value : ISO_DATE;
+    try {
+      useAppStore().dateFormat = pattern;
+    } catch {
+      // no active store : the stored value below is read instead
+    }
+    try {
+      localStorage.setItem(DATE_STORAGE_KEY, pattern);
+    } catch {
+      // storage unavailable : the choice holds for this visit
+    }
+  },
+  /**
+   * A wall clock written without a zone (2026-07-26 00:21:46), its date in the picked format.
+   *
+   * Args:
+   *   date (string): YYYY-MM-DD.
+   *   time (string): HH:mm:ss.
+   *
+   * Returns:
+   *   string: the date and time, or '' when the date is not one.
+   */
+  wallClock(date, time) {
+    const d = dayjs(date);
+    return d.isValid() ? `${d.format(Time.datePattern())} ${time}` : '';
+  },
+  // whether this browser chose its zone (the profile) : else the app's default applies
+  hasOwnPreference() {
+    try {
+      return !!localStorage.getItem(STORAGE_KEY);
+    } catch {
+      return false;
+    }
   },
   setPreference(value) {
     try {
@@ -127,6 +192,8 @@ const Time = {
     if (value === null || value === undefined || value === '') return '';
     const d = dayjs(value);
     if (!d.isValid()) return '';
+    // the date part in the picked format
+    pattern = pattern.replace(ISO_DATE, Time.datePattern());
     const withZone = /[Hh]/.test(pattern);
     try {
       const zone = Time.zone();

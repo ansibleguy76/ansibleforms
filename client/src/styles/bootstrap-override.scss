@@ -105,6 +105,17 @@
   --af-field-border: #b6bec6;
 }
 
+// The icon in a field's grey box (BsInput's, a settings row's, a dialog's) : the grey of the
+// field's border, in every theme - one rule, whatever class the box was given (text-gray-500
+// or none)
+:root {
+  --af-field-icon: var(--af-field-border);
+}
+.input-group > .input-group-text,
+.input-group > .input-group-text.text-gray-500 {
+  color: var(--af-field-icon);
+}
+
 // A job's output : the page's subtle grey, and its line numbers' column a shade darker ; in
 // the dark theme a terminal's black, its line numbers' column a near black
 :root {
@@ -566,4 +577,34 @@
     flex: 1 1 0;
     width: auto;
   }
+}
+
+// ─── colour swatches : the Color theme's (Interface), the environment label's (Environment) ───
+/* a colour to pick : a round swatch, the chosen one ringed and ticked */
+.settings-color-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition:
+    transform 0.15s,
+    border-color 0.15s;
+}
+.settings-color-swatch:hover {
+  transform: scale(1.15);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+.settings-color-swatch-active {
+  border-color: var(--bs-body-color);
+  box-shadow: 0 0 0 2px var(--bs-body-bg);
+}
+.settings-swatch-check {
+  color: #fff;
+  font-size: 0.65rem;
+  filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.5));
 }

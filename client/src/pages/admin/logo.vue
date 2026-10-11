@@ -14,6 +14,24 @@ const fileInput = ref(null);
 const selectedFile = ref(null);
 const preview = ref(null);
 const busy = ref(false);
+// the size the current logo shows at in the header (BsNavBar : at most 200 x 33 px, its ratio
+// kept), measured there ; null until it is drawn
+const headerSize = ref(null);
+// the image the header shows : the uploaded logo, or the default one of the theme
+const headerSrc = ref(null);
+
+/**
+ * Measures the logo of the header, once its image is loaded (a new one after an upload).
+ */
+async function measureHeaderLogo() {
+  await nextTick();
+  const img = document.querySelector('.af-brand img.logo');
+  if (!img) return;
+  if (!img.complete) await new Promise((resolve) => img.addEventListener('load', resolve, { once: true }));
+  headerSrc.value = img.currentSrc || img.src;
+  const box = img.getBoundingClientRect();
+  headerSize.value = box.width > 0 ? { width: Math.round(box.width), height: Math.round(box.height) } : null;
+}
 
 // keep in sync with the server (logo.controller.js) ; the server re-validates
 // the type with magic-byte sniffing and enforces the size limit anyway
@@ -61,6 +79,7 @@ async function upload() {
     preview.value = null;
     fileInput.value.value = '';
     await State.loadLogo();
+    await measureHeaderLogo();
   } catch (err) {
     const error = err.response?.data?.error || err.message;
     const details = err.response?.data?.details;
@@ -76,6 +95,7 @@ async function removeLogo() {
     await axios.delete(`/api/v2/logo`);
     toast.success(t('logo.removed'));
     await State.loadLogo();
+    await measureHeaderLogo();
   } catch (err) {
     const error = err.response?.data?.error || err.message;
     const details = err.response?.data?.details;
@@ -87,6 +107,7 @@ async function removeLogo() {
 
 onMounted(async () => {
   authenticated.value = !!(await Profile.load());
+  await measureHeaderLogo();
 });
 </script>
 <template>
@@ -100,22 +121,22 @@ onMounted(async () => {
           @click="upload()"
           >{{ t('logo.uploadButton') }}</BsButton
         >
-        <BsButton
-          v-if="store.customLogo && !store.logoIsDefault"
-          cssClass="ms-3"
-          icon="trash"
-          :disabled="busy"
-          @click="removeLogo()"
-          >{{ t('logo.remove') }}</BsButton
-        >
+        <BsButton v-if="store.customLogo && !store.logoIsDefault" icon="trash" :disabled="busy" @click="removeLogo()">{{
+          t('logo.remove')
+        }}</BsButton>
       </template>
       <template #default>
         <div class="row">
           <div class="col-md-6">
             <label class="form-label fw-bold mb-2">{{ t('logo.current') }}</label>
             <div class="logo-display-box">
-              <img v-if="store.customLogo" :src="store.customLogo" class="logo-preview" />
-              <span v-else class="text-muted fst-italic">{{ t('logo.default') }}</span>
+              <!-- the image of the header, the default one of the theme too -->
+              <img v-if="headerSrc" :src="headerSrc" class="logo-preview" alt="" />
+            </div>
+            <!-- which one it is, as on the icon page, and its size in the header -->
+            <div class="form-text">
+              {{ store.logoIsDefault ? t('logo.default') : t('logo.custom') }}
+              <template v-if="headerSize"> · {{ t('logo.headerSize', headerSize) }}</template>
             </div>
           </div>
           <div v-if="preview" class="col-md-6">

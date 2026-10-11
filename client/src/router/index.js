@@ -36,6 +36,12 @@ const mcpSettings = () => import('@/pages/admin/mcp.vue');
 const mailSettings = () => import('@/pages/admin/mailSettings.vue');
 const mailServer = () => import('@/pages/admin/mail-server.vue');
 const logo = () => import('@/pages/admin/logo.vue');
+const favicon = () => import('@/pages/admin/favicon.vue');
+const defaultsPage = () => import('@/pages/admin/defaults.vue');
+const linksPage = () => import('@/pages/admin/links.vue');
+const namePage = () => import('@/pages/admin/name.vue');
+const environmentPage = () => import('@/pages/admin/environment.vue');
+const announcementPage = () => import('@/pages/admin/announcement.vue');
 const repositories = () => import('@/pages/admin/repositories.vue');
 const repository = () => import('@/pages/admin/repository.vue');
 const schedules = () => import('@/pages/admin/schedules.vue');
@@ -58,6 +64,7 @@ const directoryUser = () => import('@/pages/admin/directory-user.vue');
 const backups = () => import('@/pages/admin/backups.vue');
 
 import TokenStorage from '@/lib/TokenStorage.js';
+import { designerSwitchedOffNow } from '@/stores/app';
 
 // Every route that needs a role option says which, as `meta.permission` : the one guard below
 // checks it, and the left menus and the header search read it from the route a link resolves to
@@ -198,6 +205,35 @@ const routes = [
     meta: { permission: 'showSettings' },
   },
   { path: '/settings/logo/:tab?', name: '/settings/logo', component: logo, meta: { permission: 'showSettings' } },
+  // Settings > Appearance : the website icon, and the theme and language by default
+  { path: '/settings/icon', name: '/settings/icon', component: favicon, meta: { permission: 'showSettings' } },
+  {
+    path: '/settings/defaults',
+    name: '/settings/defaults',
+    component: defaultsPage,
+    meta: { permission: 'showSettings' },
+  },
+  // Settings > Appearance : the app's name, the header's links, the label beside the logo, the
+  // announcement
+  { path: '/settings/name', name: '/settings/name', component: namePage, meta: { permission: 'showSettings' } },
+  {
+    path: '/settings/links/:tab?',
+    name: '/settings/links',
+    component: linksPage,
+    meta: { permission: 'showSettings' },
+  },
+  {
+    path: '/settings/environment',
+    name: '/settings/environment',
+    component: environmentPage,
+    meta: { permission: 'showSettings' },
+  },
+  {
+    path: '/settings/announcement',
+    name: '/settings/announcement',
+    component: announcementPage,
+    meta: { permission: 'showSettings' },
+  },
   {
     path: '/settings/repositories',
     name: '/settings/repositories',
@@ -295,5 +331,19 @@ export function permissionGuard(to) {
   return TokenStorage.getPayload()?.user?.options?.[permission] ? true : { name: '/' };
 }
 router.beforeEach(permissionGuard);
+// the designer switched off for the instance : for everyone its address leads nowhere, the page
+// not found as any address that does not exist (the address kept), the switch read from the
+// server first when this tab has not read it yet (a link or a bookmark straight to /designer)
+router.beforeEach(async (to) => {
+  if (to.meta?.permission !== 'showDesigner') return true;
+  if (!(await designerSwitchedOffNow())) return true;
+  return {
+    name: '/unknown',
+    params: { pathMatch: to.path.replace(/^\//, '').split('/') },
+    query: to.query,
+    hash: to.hash,
+    replace: true,
+  };
+});
 
 export default router;

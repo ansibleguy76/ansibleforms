@@ -40,10 +40,23 @@ const sections = computed(() =>
       title: t('sidebar.sections.system'),
       items: [
         { title: t('sidebar.ansibleForms'), icon: 'toolbox', link: '/settings/general' },
-        { title: t('sidebar.logo'), icon: 'image', link: '/settings/logo' },
         { title: t('sidebar.status'), icon: 'heart-pulse', link: '/settings/status' },
         // the database backups : the instance's own data, so with the instance
         { title: t('sidebar.backups'), icon: 'database', link: '/settings/backups' },
+      ],
+    },
+    {
+      // How the instance looks : its defaults, its name, the logo in the top bar, the icon in the
+      // browser tab, the header's links, the label beside the logo, the announcement
+      title: t('sidebar.sections.appearance'),
+      items: [
+        { title: t('sidebar.defaults'), icon: 'display', link: '/settings/defaults' },
+        { title: t('sidebar.name'), icon: 'font', link: '/settings/name' },
+        { title: t('sidebar.logo'), icon: 'image', link: '/settings/logo' },
+        { title: t('sidebar.icon'), icon: 'bookmark', link: '/settings/icon' },
+        { title: t('sidebar.links'), icon: 'link', link: '/settings/links' },
+        { title: t('sidebar.environment'), icon: 'tag', link: '/settings/environment' },
+        { title: t('sidebar.announcement'), icon: 'bullhorn', link: '/settings/announcement' },
       ],
     },
     {

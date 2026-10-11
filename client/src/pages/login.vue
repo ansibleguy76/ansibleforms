@@ -204,6 +204,9 @@ onMounted(() => {
   }
   State.loadVersion();
   State.loadLogo();
+  State.loadFavicon();
+  // the name in the browser tab and under the logo, the environment's label
+  State.loadAppConfig();
 });
 </script>
 
@@ -222,6 +225,11 @@ onMounted(() => {
           <img v-else-if="currentTheme === 'dark'" :src="'img/logo_dark.svg'" alt="AnsibleForms" />
           <!-- the color theme's white logo is made for its colored header : the card is white -->
           <img v-else :src="'img/logo_light.svg'" alt="AnsibleForms" />
+        </div>
+        <!-- which instance : its name and its environment (Settings > Appearance) -->
+        <div v-if="store.appName || store.envLabel" class="login-instance">
+          <span v-if="store.appName" class="login-app-name">{{ store.appName }}</span>
+          <AppEnvLabel />
         </div>
         <h5 class="card-title login-title">Please sign in</h5>
         <BsInput
@@ -321,6 +329,21 @@ onMounted(() => {
 }
 
 /* centered under the logo, with more room above it (the logo's margin) than below it */
+/* which instance : its name and its environment's label, between the logo and the title */
+.login-instance {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.login-app-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+.login-instance :deep(.af-env-label) {
+  margin: 0;
+}
 .login-title {
   text-align: center;
   margin-bottom: 1rem;

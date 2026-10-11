@@ -23,7 +23,8 @@ import Helpers from '@/lib/Helpers';
 import TokenStorage from '@/lib/TokenStorage';
 import Profile from '@/lib/Profile';
 import { languages, fallbackLanguage } from '@/config/languages';
-import Time from '@/lib/Time';
+import dayjs from 'dayjs';
+import Time, { DATE_FORMATS } from '@/lib/Time';
 
 // INIT
 
@@ -280,6 +281,12 @@ const timezone = computed({
   get: () => store.timezone || 'UTC',
   set: (value) => Time.setPreference(value),
 });
+// the date format dates show in : the app's default until the user picks one (lib/Time.js)
+const dateFormat = computed({
+  get: () => Time.datePattern(),
+  set: (value) => Time.setDateFormat(value),
+});
+const dateFormats = DATE_FORMATS;
 const browserZone = Time.browserZone();
 const allZones = Time.zones().filter((z) => z !== 'UTC');
 // the time now as AnsibleForms shows it in the picked zone, under the picker : it ticks
@@ -402,7 +409,8 @@ async function changePassword() {
 
         <!-- ===================== preferences ===================== -->
         <template v-else-if="currentView === 'preferences'">
-          <div class="card mb-3">
+          <!-- every preference in one card, as Settings > Appearance > Defaults -->
+          <div class="card">
             <div class="card-body">
               <label class="form-label fw-bold">{{ t('profilePage.language') }}</label>
               <div class="input-group af-field">
@@ -430,11 +438,7 @@ async function changePassword() {
                 </ul>
               </div>
               <div class="form-text">{{ t('profilePage.languageHint') }}</div>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-body">
-              <label class="form-label fw-bold">{{ t('profilePage.theme') }}</label>
+              <label class="form-label fw-bold mt-4">{{ t('profilePage.theme') }}</label>
               <div class="af-choice-grid af-field">
                 <button
                   v-for="th in Theme.themes()"
@@ -462,11 +466,7 @@ async function changePassword() {
                 </button>
               </div>
               <div class="form-text">{{ t('profilePage.themeHint') }}</div>
-            </div>
-          </div>
-          <div class="card mt-3">
-            <div class="card-body">
-              <label class="form-label fw-bold">{{ t('profilePage.formsView') }}</label>
+              <label class="form-label fw-bold mt-4">{{ t('profilePage.formsView') }}</label>
               <div class="af-choice-grid af-field">
                 <button
                   v-for="m in [
@@ -483,11 +483,7 @@ async function changePassword() {
                 </button>
               </div>
               <div class="form-text">{{ t('profilePage.formsViewHint') }}</div>
-            </div>
-          </div>
-          <div class="card mt-3">
-            <div class="card-body">
-              <label class="form-label fw-bold">{{ t('profilePage.timezone') }}</label>
+              <label class="form-label fw-bold mt-4">{{ t('profilePage.timezone') }}</label>
               <div class="input-group af-field">
                 <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="clock" /></span>
                 <select v-model="timezone" class="form-select" :aria-label="t('profilePage.timezone')">
@@ -499,7 +495,16 @@ async function changePassword() {
                 </select>
               </div>
               <div class="form-text">{{ t('profilePage.timezoneHint') }}</div>
-              <!-- the time now in the picked zone : how dates read across the app -->
+              <!-- the date format : how the date part of every date reads -->
+              <label class="form-label fw-bold mt-4">{{ t('profilePage.dateFormat') }}</label>
+              <div class="input-group af-field">
+                <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="calendar" /></span>
+                <select v-model="dateFormat" class="form-select" :aria-label="t('profilePage.dateFormat')">
+                  <option v-for="f in dateFormats" :key="f" :value="f">{{ dayjs(now).format(f) }} ({{ f }})</option>
+                </select>
+              </div>
+              <div class="form-text">{{ t('profilePage.dateFormatHint') }}</div>
+              <!-- the time now in the picked zone and format : how dates read across the app -->
               <div class="af-tz-now mt-3">
                 <span class="af-tz-now-icon"><FaIcon icon="clock" /></span>
                 <span class="d-flex flex-column">
