@@ -5025,7 +5025,6 @@ onBeforeUnmount(() => {
                       :title="t('designer.validate')"
                     />
                     <BsButton
-                      :colorClass="!isValid || !isDirty || busyOrTemplated ? 'secondary' : 'orange'"
                       icon="save"
                       :isIconButton="true"
                       @click="saveForms"
@@ -5081,7 +5080,6 @@ onBeforeUnmount(() => {
                       :title="t('designer.validate')"
                     />
                     <BsButton
-                      :colorClass="!isValid || !isDirty || busyOrTemplated ? 'secondary' : 'orange'"
                       icon="save"
                       :isIconButton="true"
                       @click="saveForms"

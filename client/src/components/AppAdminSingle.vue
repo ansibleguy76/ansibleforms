@@ -334,13 +334,9 @@ defineExpose({
         @click="doEmit(action.name)"
         >{{ action.title }}</BsButton
       >
-      <BsButton
-        icon="save"
-        :colorClass="(isDirty && !isManaged) || extraDirty ? 'primary' : 'secondary'"
-        :disabled="(!isDirty || isManaged) && !extraDirty"
-        @click="saveAll()"
-        >{{ t('settings.common.save') }}</BsButton
-      >
+      <BsButton icon="save" :disabled="(!isDirty || isManaged) && !extraDirty" @click="saveAll()">{{
+        t('settings.common.save')
+      }}</BsButton>
     </template>
     <!-- in tabs : each tab its slot, then its toggles and its rows -->
     <template v-if="tabs.length" #default>

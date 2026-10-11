@@ -674,13 +674,7 @@ onMounted(async () => {
       <template #actions>
         <!-- one button : a tab can now hold both database-backed settings and environment
            variables, so Save applies whichever of the two is pending -->
-        <BsButton
-          icon="save"
-          :colorClass="anyDirty ? 'primary' : 'secondary'"
-          :disabled="!anyDirty"
-          @click="saveActiveTab()"
-          >{{ t('settings.common.save') }}</BsButton
-        >
+        <BsButton icon="save" :disabled="!anyDirty" @click="saveActiveTab()">{{ t('settings.common.save') }}</BsButton>
       </template>
     </AppSettings>
 

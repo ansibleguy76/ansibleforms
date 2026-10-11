@@ -1540,13 +1540,7 @@ defineExpose({
       </div>
     </template>
     <template #footer>
-      <BsButton
-        icon="save"
-        :colorClass="defaultDirty ? 'primary' : 'secondary'"
-        :disabled="!defaultDirty"
-        @click="saveDefaults()"
-        >{{ t('settings.common.save') }}</BsButton
-      >
+      <BsButton icon="save" :disabled="!defaultDirty" @click="saveDefaults()">{{ t('settings.common.save') }}</BsButton>
     </template>
   </BsModal>
   <!-- a password (typed twice) or a client secret (once) : the shared Change password dialog -->

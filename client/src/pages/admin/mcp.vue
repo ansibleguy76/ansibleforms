@@ -155,13 +155,9 @@ onMounted(async () => {
       </template>
       <!-- Save : the switches of the General tab only -->
       <template v-if="activeTab === 'general'" #actions>
-        <BsButton
-          icon="save"
-          :colorClass="envDirty ? 'primary' : 'secondary'"
-          :disabled="!envDirty"
-          @click="saveEnvironmentVariables()"
-          >{{ t('settings.common.save') }}</BsButton
-        >
+        <BsButton icon="save" :disabled="!envDirty" @click="saveEnvironmentVariables()">{{
+          t('settings.common.save')
+        }}</BsButton>
       </template>
       <template #default>
         <!-- GENERAL : the switch, and the options waiting for it while the server is off -->

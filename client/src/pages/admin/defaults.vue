@@ -142,9 +142,7 @@ onMounted(async () => {
       :description="t('settings.interface.description')"
     >
       <template #actions>
-        <BsButton icon="save" :colorClass="dirty ? 'primary' : 'secondary'" :disabled="!dirty" @click="save()">{{
-          t('settings.common.save')
-        }}</BsButton>
+        <BsButton icon="save" :disabled="!dirty" @click="save()">{{ t('settings.common.save') }}</BsButton>
       </template>
       <template #default>
         <div v-if="envRestartPending.length" class="alert alert-warning py-2">

@@ -193,9 +193,7 @@ onMounted(async () => {
         <BsButton icon="eye" :disabled="!edit.text.trim()" @click="previewOpen = true">{{
           t('settings.disclaimer.preview')
         }}</BsButton>
-        <BsButton icon="save" :colorClass="dirty ? 'primary' : 'secondary'" :disabled="!dirty" @click="save()">{{
-          t('settings.common.save')
-        }}</BsButton>
+        <BsButton icon="save" :disabled="!dirty" @click="save()">{{ t('settings.common.save') }}</BsButton>
       </template>
       <template #default>
         <!-- on or off ; off, its text is kept, greyed out -->

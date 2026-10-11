@@ -103,13 +103,9 @@ onMounted(async () => {
         <AppEnvField v-for="e in envItems" :key="e.name" v-model="envEdits[e.name]" :e="e" :asSwitch="true" />
       </template>
       <template #actions>
-        <BsButton
-          icon="save"
-          :colorClass="envDirty ? 'primary' : 'secondary'"
-          :disabled="!envDirty"
-          @click="saveEnvironmentVariables()"
-          >{{ t('settings.common.save') }}</BsButton
-        >
+        <BsButton icon="save" :disabled="!envDirty" @click="saveEnvironmentVariables()">{{
+          t('settings.common.save')
+        }}</BsButton>
       </template>
     </AppSettings>
   </AppSettingsPage>

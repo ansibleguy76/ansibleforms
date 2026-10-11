@@ -74,13 +74,9 @@ onMounted(async () => {
       :description="t('settings.interface.environmentDescription')"
     >
       <template #actions>
-        <BsButton
-          icon="save"
-          :colorClass="dirty ? 'primary' : 'secondary'"
-          :disabled="!dirty"
-          @click="save(`${title} ${t('settings.common.isUpdated')}`)"
-          >{{ t('settings.common.save') }}</BsButton
-        >
+        <BsButton icon="save" :disabled="!dirty" @click="save(`${title} ${t('settings.common.isUpdated')}`)">{{
+          t('settings.common.save')
+        }}</BsButton>
       </template>
       <template #default>
         <!-- the label beside the logo, and its colour (a pill, shown as the header shows it) -->
