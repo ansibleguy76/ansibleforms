@@ -38,7 +38,8 @@ const envGroupOrder = [
     key: 'configuration',
     label: () => t('settings.settingsPage.tabConfiguration'),
     icon: 'right-left',
-    exact: ['ENABLE_CONFIG_IN_DATABASE', 'CONFIG_SEED_PATH', 'CONFIG_SEED_RELOAD_SECONDS'],
+    // config.yaml's path with the rest of where the configuration comes from
+    exact: ['CONFIG_PATH', 'ENABLE_CONFIG_IN_DATABASE', 'CONFIG_SEED_PATH', 'CONFIG_SEED_RELOAD_SECONDS'],
   },
   {
     key: 'server',
@@ -106,7 +107,10 @@ const envGroupOrder = [
     key: 'jobs',
     label: () => t('settings.settingsPage.envGroupJobs'),
     icon: 'fac,ansible',
+    // the forms' folders with the jobs' : where the forms that launch them live
     exact: [
+      'FORMS_FOLDER_PATH',
+      'FORMS_STAGING_PATH',
       'JOBS_LIST_SIZE',
       'RTE_QUEUE_MINUTES',
       'REGEX_FILTER_JOB_OUTPUT',
@@ -116,12 +120,6 @@ const envGroupOrder = [
       'AWX_API_PREFIX',
       'AWX_LOST_MINUTES',
     ],
-  },
-  {
-    key: 'forms',
-    label: () => t('settings.settingsPage.envGroupFormsConfig'),
-    icon: 'file-code',
-    exact: ['CONFIG_PATH', 'FORMS_FOLDER_PATH', 'FORMS_STAGING_PATH'],
   },
   {
     key: 'git',

@@ -1363,7 +1363,6 @@ export default {
       envGroupBackups: 'Còpies de seguretat',
       envGroupAuthentication: 'Autenticació',
       envGroupJobs: 'Tasques',
-      envGroupFormsConfig: 'Formularis',
       envOverridden: "Definit a l'entorn, així que no es pot canviar aquí.",
       envSecretUnchanged: 'Deixa-ho en blanc per mantenir el valor actual',
       envRestartRequired: "Els canvis desats tenen efecte després d'un reinici.",

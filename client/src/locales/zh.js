@@ -1302,7 +1302,6 @@ export default {
       envGroupBackups: '备份',
       envGroupAuthentication: '身份验证',
       envGroupJobs: '作业',
-      envGroupFormsConfig: '表单',
       envOverridden: '已在环境变量中设置，因此无法在此处更改。',
       envSecretUnchanged: '留空则保留当前值',
       envRestartRequired: '保存的更改在重启后生效。',

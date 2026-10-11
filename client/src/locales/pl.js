@@ -1352,7 +1352,6 @@ export default {
       envGroupBackups: 'Kopie zapasowe',
       envGroupAuthentication: 'Uwierzytelnianie',
       envGroupJobs: 'Zadania',
-      envGroupFormsConfig: 'Formularze',
       envOverridden: 'Ustawione w środowisku, więc nie można tego tutaj zmienić.',
       envSecretUnchanged: 'Pozostaw puste, aby zachować bieżącą wartość',
       envRestartRequired: 'Zapisane zmiany zaczną obowiązywać po ponownym uruchomieniu.',

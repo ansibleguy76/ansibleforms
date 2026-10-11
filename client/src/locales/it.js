@@ -1354,7 +1354,6 @@ export default {
       envGroupBackups: 'Backup',
       envGroupAuthentication: 'Autenticazione',
       envGroupJobs: 'Processi',
-      envGroupFormsConfig: 'Moduli',
       envOverridden: "Impostata nell'ambiente, non modificabile qui.",
       envSecretUnchanged: 'Lascia vuoto per mantenere il valore attuale',
       envRestartRequired: 'Le modifiche salvate si applicano dopo un riavvio.',

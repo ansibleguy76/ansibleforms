@@ -1334,7 +1334,6 @@ export default {
       envGroupBackups: 'バックアップ',
       envGroupAuthentication: '認証',
       envGroupJobs: 'ジョブ',
-      envGroupFormsConfig: 'フォーム',
       envOverridden: '環境で設定されているため、ここでは変更できません。',
       envSecretUnchanged: '現在の値を維持する場合は空欄のままにしてください',
       envRestartRequired: '保存した変更は再起動後に反映されます。',

@@ -1336,7 +1336,6 @@ export default {
       envGroupBackups: 'Backups',
       envGroupAuthentication: 'Authentication',
       envGroupJobs: 'Jobs',
-      envGroupFormsConfig: 'Forms',
       envOverridden: 'Set in the environment, so it cannot be changed here.',
       envSecretUnchanged: 'Leave blank to keep the current value',
       envRestartRequired: 'Saved changes take effect after a restart.',

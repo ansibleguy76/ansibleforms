@@ -1354,7 +1354,6 @@ export default {
       envGroupBackups: 'Back-ups',
       envGroupAuthentication: 'Authenticatie',
       envGroupJobs: 'Taken',
-      envGroupFormsConfig: 'Formulieren',
       envOverridden: 'Ingesteld in de omgeving en hier niet aanpasbaar.',
       envSecretUnchanged: 'Laat leeg om de huidige waarde te behouden',
       envRestartRequired: 'Opgeslagen wijzigingen gelden na een herstart.',

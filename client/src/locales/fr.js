@@ -1367,7 +1367,6 @@ export default {
       envGroupBackups: 'Sauvegardes',
       envGroupAuthentication: 'Authentification',
       envGroupJobs: 'Tâches',
-      envGroupFormsConfig: 'Formulaires',
       envOverridden: "Définie dans l'environnement, non modifiable ici.",
       envSecretUnchanged: 'Laisser vide pour conserver la valeur actuelle',
       envRestartRequired: 'Les modifications prennent effet après un redémarrage.',
