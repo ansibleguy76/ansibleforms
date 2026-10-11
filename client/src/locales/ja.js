@@ -610,6 +610,8 @@ export default {
       stepGroup: 'グループ',
       deleteUser: 'ユーザーを削除',
       noGroup: 'まだグループがありません。',
+      noStoredJob: '保存されたジョブはまだありません。',
+      noSchedule: '計画されたジョブはまだありません。ユーザーのスケジュールは「後で実行」で計画したジョブです。',
       removeFromUser: 'ユーザーから削除',
       keepOneGroup: 'ユーザーには少なくとも1つのグループが必要です',
       inEveryGroup: 'ユーザーはすでにすべてのグループに所属しています。',

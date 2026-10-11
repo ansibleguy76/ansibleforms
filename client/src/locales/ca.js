@@ -613,6 +613,9 @@ export default {
       stepGroup: 'Grup',
       deleteUser: "Suprimeix l'usuari",
       noGroup: 'Encara sense grup.',
+      noStoredJob: 'Encara sense treballs desats.',
+      noSchedule:
+        "Encara sense treballs planificats: les programacions d'un usuari són els treballs que planifica amb Executa més tard.",
       removeFromUser: "Treu de l'usuari",
       keepOneGroup: 'Un usuari conserva almenys un grup',
       inEveryGroup: "L'usuari ja és a tots els grups.",

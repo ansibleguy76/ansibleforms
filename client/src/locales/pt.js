@@ -613,6 +613,9 @@ export default {
       stepGroup: 'Grupo',
       deleteUser: 'Eliminar utilizador',
       noGroup: 'Ainda sem grupo.',
+      noStoredJob: 'Ainda sem trabalhos guardados.',
+      noSchedule:
+        'Ainda sem trabalhos planeados: os agendamentos de um utilizador são os trabalhos que planeia com Executar mais tarde.',
       removeFromUser: 'Remover do utilizador',
       keepOneGroup: 'Um utilizador mantém pelo menos um grupo',
       inEveryGroup: 'O utilizador já está em todos os grupos.',

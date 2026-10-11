@@ -609,6 +609,8 @@ export default {
       stepGroup: 'Group',
       deleteUser: 'Delete user',
       noGroup: 'No group yet.',
+      noStoredJob: 'No stored job yet.',
+      noSchedule: "No planned job yet: a user's schedules are the jobs they plan with Run later.",
       removeFromUser: 'Remove from user',
       keepOneGroup: 'A user keeps at least one group',
       inEveryGroup: 'The user is in every group already.',

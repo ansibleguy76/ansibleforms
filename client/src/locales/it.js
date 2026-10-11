@@ -614,6 +614,9 @@ export default {
       stepGroup: 'Gruppo',
       deleteUser: 'Elimina utente',
       noGroup: 'Nessun gruppo ancora.',
+      noStoredJob: 'Nessun job salvato ancora.',
+      noSchedule:
+        'Nessun job pianificato ancora: le pianificazioni di un utente sono i job che pianifica con Esegui piu tardi.',
       removeFromUser: "Rimuovi dall'utente",
       keepOneGroup: 'Un utente mantiene almeno un gruppo',
       inEveryGroup: "L'utente è già in ogni gruppo.",

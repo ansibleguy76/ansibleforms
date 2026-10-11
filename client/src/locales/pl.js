@@ -611,6 +611,8 @@ export default {
       stepGroup: 'Grupa',
       deleteUser: 'Usuń użytkownika',
       noGroup: 'Brak grupy.',
+      noStoredJob: 'Brak zapisanych zadań.',
+      noSchedule: 'Brak zaplanowanych zadań: harmonogramy użytkownika to zadania zaplanowane przez Uruchom później.',
       removeFromUser: 'Usuń z użytkownika',
       keepOneGroup: 'Użytkownik zachowuje co najmniej jedną grupę',
       inEveryGroup: 'Użytkownik jest już w każdej grupie.',

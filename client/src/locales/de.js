@@ -618,6 +618,9 @@ export default {
       stepGroup: 'Gruppe',
       deleteUser: 'Benutzer loeschen',
       noGroup: 'Noch keine Gruppe.',
+      noStoredJob: 'Noch kein gespeicherter Job.',
+      noSchedule:
+        'Noch kein geplanter Job: die Zeitpläne eines Benutzers sind die Jobs, die er mit Spaeter ausfuehren plant.',
       removeFromUser: 'Vom Benutzer entfernen',
       keepOneGroup: 'Ein Benutzer behält mindestens eine Gruppe',
       inEveryGroup: 'Der Benutzer ist bereits in jeder Gruppe.',

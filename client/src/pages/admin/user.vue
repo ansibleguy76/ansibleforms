@@ -2,13 +2,15 @@
 /******************************************************************/
 /*                                                                */
 /*  A local user's page (/settings/users/<id>), opened from the   */
-/*  users list, in three tabs, the tab kept in the address        */
-/*  (/groups, /roles) ; a row of a tab opens its item :           */
+/*  users list, in five tabs, the tab kept in the address         */
+/*  (/groups, /roles...) ; a row of a tab opens its item :        */
 /*  Details - username, description, email                        */
 /*  Groups - the groups it belongs to : Add group, and a row's    */
 /*           menu or the checkboxes remove one, never the last    */
 /*  Roles - the roles it has, and how (by name, through a group,  */
 /*          public as everyone's)                                 */
+/*  Stored jobs - the form values it stored to run again          */
+/*  Schedules - the jobs it planned with Run later                */
 /*  Change password and Delete top right, as the list's row menu  */
 /*  has them.                                                     */
 /*                                                                */
@@ -19,6 +21,7 @@ import axios from 'axios';
 import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 import Profile from '@/lib/Profile';
+import Helpers from '@/lib/Helpers';
 import { useUnsavedGuard } from '@/composables/useUnsavedGuard';
 import { useRouteTab } from '@/composables/useRouteTab';
 import { useRoleAssignments } from '@/composables/useRoleAssignments';
@@ -94,12 +97,51 @@ async function update(data) {
   }
 }
 
+// ─── Stored jobs and schedules ────────────────────────────────────────────────
+// what the user keeps to run : the form values it stored (their user written type/name), and the
+// jobs it planned with Run later (the schedules that run as it : their owner) ; a schedule an
+// admin made runs as no one, and is nobody's here. A row opens the stored job or the schedule.
+const storedJobs = ref([]);
+const schedules = ref([]);
+const userStoredJobs = computed(() =>
+  user.value ? storedJobs.value.filter((j) => j.username === `local/${user.value.username}`) : [],
+);
+const userSchedules = computed(() => {
+  if (!user.value) return [];
+  return schedules.value.filter((s) => {
+    try {
+      const owner = s.owner ? JSON.parse(s.owner) : null;
+      return owner?.type === 'local' && owner.username === user.value.username;
+    } catch {
+      return false;
+    }
+  });
+});
+
+/**
+ * Loads every stored job and schedule : the tabs keep the user's. Either may be refused (the
+ * stored jobs or the schedules switched off) : its tab stays empty.
+ */
+async function loadJobs() {
+  const [j, s] = await Promise.allSettled([axios.get('/api/v2/stored-jobs/'), axios.get('/api/v2/schedule/')]);
+  storedJobs.value = j.status === 'fulfilled' ? j.value.data.records || j.value.data || [] : [];
+  schedules.value = s.status === 'fulfilled' ? s.value.data.records || s.value.data || [] : [];
+}
+
 // ─── tabs ─────────────────────────────────────────────────────────────────────
-// Details (username, description, email), Groups, Roles ; the tab kept in the url
+// Details (username, description, email), Groups, Roles, Stored jobs, Schedules ; the tab kept
+// in the url
 const tabs = computed(() => [
   { key: 'details', label: t('settings.common.tabDetails'), icon: 'sliders' },
-  { key: 'groups', label: t('settings.settingsPage.groups'), icon: 'users' },
-  { key: 'roles', label: t('settings.settingsPage.roles'), icon: 'user-shield' },
+  { key: 'groups', label: t('settings.settingsPage.groups'), icon: 'users', count: userGroups.value.length },
+  { key: 'roles', label: t('settings.settingsPage.roles'), icon: 'user-shield', count: userRoles.value.length },
+  {
+    key: 'stored-jobs',
+    label: t('settings.storedJobs.labelPlural'),
+    icon: 'floppy-disk',
+    count: userStoredJobs.value.length,
+  },
+  { key: 'schedules', label: t('settings.schedules.labelPlural'), icon: 'clock', count: userSchedules.value.length },
 ]);
 
 // ─── Roles ────────────────────────────────────────────────────────────────────
@@ -255,7 +297,7 @@ async function deleteUser() {
 onMounted(async () => {
   authenticated.value = !!(await Profile.load());
   if (!authenticated.value) return;
-  await Promise.all([load(), loadRoles()]);
+  await Promise.all([load(), loadRoles(), loadJobs()]);
   // opened from the list's Add to group : the dialog open at once, the url left clean
   if (route.query.add && user.value) {
     // in every group already : the dialog says so, its Save off
@@ -313,8 +355,7 @@ onMounted(async () => {
             >
               <FaIcon :icon="tab.icon" class="me-1" />
               {{ tab.label }}
-              <span v-if="tab.key === 'groups'" class="badge af-tab-count ms-1">{{ userGroups.length }}</span>
-              <span v-if="tab.key === 'roles'" class="badge af-tab-count ms-1">{{ userRoles.length }}</span>
+              <span v-if="tab.count !== undefined" class="badge af-tab-count ms-1">{{ tab.count }}</span>
             </a>
           </li>
         </ul>
@@ -373,6 +414,62 @@ onMounted(async () => {
                   <td class="af-row-open">{{ r.name }}</td>
                   <td>{{ givenBy(r) }}</td>
                   <td>{{ r.description || '–' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
+        <!-- Stored jobs : the form values it stored ; a row opens the stored job -->
+        <template v-else-if="user && activeTab === 'stored-jobs'">
+          <p v-if="!userStoredJobs.length" class="text-muted small mb-0">{{ t('settings.users.noStoredJob') }}</p>
+          <div v-else class="af-table-frame">
+            <table class="table af-table">
+              <thead>
+                <tr>
+                  <th>{{ t('settings.fields.name') }}</th>
+                  <th>{{ t('settings.fields.form') }}</th>
+                  <th>{{ t('settings.fields.description') }}</th>
+                  <th>{{ t('settings.fields.expiresAt') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="j in userStoredJobs" :key="j.id" role="button" @click="router.push(`/jobs/stored/${j.id}`)">
+                  <td class="af-row-open">{{ j.name }}</td>
+                  <td>{{ j.form_name }}</td>
+                  <td>{{ j.description || '–' }}</td>
+                  <!-- none : it never expires -->
+                  <td>
+                    {{ j.expires_at ? Helpers.formatServerDate(j.expires_at) : t('settings.storedJobs.neverExpires') }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </template>
+        <!-- Schedules : the jobs it planned with Run later ; a row opens the schedule -->
+        <template v-else-if="user && activeTab === 'schedules'">
+          <p v-if="!userSchedules.length" class="text-muted small mb-0">{{ t('settings.users.noSchedule') }}</p>
+          <div v-else class="af-table-frame">
+            <table class="table af-table">
+              <thead>
+                <tr>
+                  <th>{{ t('settings.fields.name') }}</th>
+                  <th>{{ t('settings.fields.form') }}</th>
+                  <th>{{ t('settings.schedules.runAt') }}</th>
+                  <th>{{ t('settings.schedules.scheduleState') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="s in userSchedules"
+                  :key="s.id"
+                  role="button"
+                  @click="router.push(`/jobs/schedules/${s.id}`)"
+                >
+                  <td class="af-row-open">{{ s.name }}</td>
+                  <td>{{ s.form || '–' }}</td>
+                  <td>{{ s.run_at ? Helpers.formatServerDate(s.run_at) : '–' }}</td>
+                  <td>{{ s.state ? t(`settings.schedules.state_${s.state}`) : '–' }}</td>
                 </tr>
               </tbody>
             </table>

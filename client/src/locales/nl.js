@@ -612,6 +612,9 @@ export default {
       stepGroup: 'Groep',
       deleteUser: 'Gebruiker verwijderen',
       noGroup: 'Nog geen groep.',
+      noStoredJob: 'Nog geen opgeslagen job.',
+      noSchedule:
+        "Nog geen geplande job: de schema's van een gebruiker zijn de jobs die hij plant met Later uitvoeren.",
       removeFromUser: 'Van gebruiker verwijderen',
       keepOneGroup: 'Een gebruiker houdt minstens één groep',
       inEveryGroup: 'De gebruiker zit al in elke groep.',

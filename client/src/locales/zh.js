@@ -601,6 +601,8 @@ export default {
       stepGroup: '组',
       deleteUser: '删除用户',
       noGroup: '尚无组。',
+      noStoredJob: '尚无已保存的作业。',
+      noSchedule: '尚无计划的作业：用户的计划是其通过“稍后运行”安排的作业。',
       removeFromUser: '从用户中移除',
       keepOneGroup: '用户至少保留一个组',
       inEveryGroup: '该用户已在所有组中。',
