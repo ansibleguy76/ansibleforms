@@ -1664,8 +1664,7 @@ export default {
     formVerbose: 'Uitgebreid',
     formKeepExtravars: 'Extravars behouden',
     formUserExtravars: 'Gebruikersgegevens naar het playbook',
-    formUserExtravarsHelp:
-      'De sleutels van ansibleforms_user die het playbook krijgt. Standaard: EXTRAVARS_USER_FIELDS.',
+    formUserExtravarsHelp: 'De sleutels van ansibleforms_user die het playbook krijgt.',
     userExtravarsDefault: 'Standaard van de instantie',
     userExtravarsAll: 'Alle: de hele gebruiker',
     userExtravarsNone: 'Geen: geen gebruiker',

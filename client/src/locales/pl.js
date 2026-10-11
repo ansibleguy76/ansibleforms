@@ -1657,7 +1657,7 @@ export default {
     formVerbose: 'Verbose',
     formKeepExtravars: 'Zachowaj extravars',
     formUserExtravars: 'Dane użytkownika wysyłane do playbooka',
-    formUserExtravarsHelp: 'Klucze ansibleforms_user, które dostaje playbook. Domyślnie: EXTRAVARS_USER_FIELDS.',
+    formUserExtravarsHelp: 'Klucze ansibleforms_user, które dostaje playbook.',
     userExtravarsDefault: 'Domyślne instancji',
     userExtravarsAll: 'Wszystkie: cały użytkownik',
     userExtravarsNone: 'Żadne: bez użytkownika',

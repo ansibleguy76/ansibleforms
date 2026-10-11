@@ -1643,7 +1643,7 @@ export default {
     formVerbose: '詳細出力',
     formKeepExtravars: 'extravars を保持',
     formUserExtravars: 'playbook に送るユーザー情報',
-    formUserExtravarsHelp: 'playbook が受け取る ansibleforms_user のキー。既定：EXTRAVARS_USER_FIELDS。',
+    formUserExtravarsHelp: 'playbook が受け取る ansibleforms_user のキー。',
     userExtravarsDefault: 'インスタンスの既定',
     userExtravarsAll: 'すべて：ユーザー全体',
     userExtravarsNone: 'なし：ユーザーなし',

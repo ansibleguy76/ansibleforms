@@ -1605,7 +1605,7 @@ export default {
     formVerbose: '详细输出',
     formKeepExtravars: '保留 extravars',
     formUserExtravars: '发送给 playbook 的用户数据',
-    formUserExtravarsHelp: 'playbook 接收的 ansibleforms_user 键。默认：EXTRAVARS_USER_FIELDS。',
+    formUserExtravarsHelp: 'playbook 接收的 ansibleforms_user 键。',
     userExtravarsDefault: '实例默认',
     userExtravarsAll: '全部：整个用户',
     userExtravarsNone: '无：不发送用户',

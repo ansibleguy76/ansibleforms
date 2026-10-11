@@ -1672,7 +1672,7 @@ export default {
     formVerbose: 'Detallat',
     formKeepExtravars: 'Conserva les extravars',
     formUserExtravars: "Dades de l'usuari enviades al playbook",
-    formUserExtravarsHelp: "Les claus d'ansibleforms_user que rep el playbook. Predeterminat: EXTRAVARS_USER_FIELDS.",
+    formUserExtravarsHelp: "Les claus d'ansibleforms_user que rep el playbook.",
     userExtravarsDefault: 'Predeterminat de la instància',
     userExtravarsAll: "Totes: l'usuari sencer",
     userExtravarsNone: 'Cap: sense usuari',
