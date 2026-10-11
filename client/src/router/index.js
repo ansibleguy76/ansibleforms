@@ -37,7 +37,11 @@ const mailSettings = () => import('@/pages/admin/mailSettings.vue');
 const mailServer = () => import('@/pages/admin/mail-server.vue');
 const logo = () => import('@/pages/admin/logo.vue');
 const favicon = () => import('@/pages/admin/favicon.vue');
-const interfacePage = () => import('@/pages/admin/interface.vue');
+const defaultsPage = () => import('@/pages/admin/defaults.vue');
+const linksPage = () => import('@/pages/admin/links.vue');
+const namePage = () => import('@/pages/admin/name.vue');
+const environmentPage = () => import('@/pages/admin/environment.vue');
+const announcementPage = () => import('@/pages/admin/announcement.vue');
 const repositories = () => import('@/pages/admin/repositories.vue');
 const repository = () => import('@/pages/admin/repository.vue');
 const schedules = () => import('@/pages/admin/schedules.vue');
@@ -204,9 +208,25 @@ const routes = [
   // Settings > Appearance : the website icon, and the theme and language by default
   { path: '/settings/icon', name: '/settings/icon', component: favicon, meta: { permission: 'showSettings' } },
   {
-    path: '/settings/interface/:tab?',
-    name: '/settings/interface',
-    component: interfacePage,
+    path: '/settings/defaults',
+    name: '/settings/defaults',
+    component: defaultsPage,
+    meta: { permission: 'showSettings' },
+  },
+  // Settings > Appearance : the app's name, the header's links, the label beside the logo, the
+  // announcement
+  { path: '/settings/name', name: '/settings/name', component: namePage, meta: { permission: 'showSettings' } },
+  { path: '/settings/links', name: '/settings/links', component: linksPage, meta: { permission: 'showSettings' } },
+  {
+    path: '/settings/environment',
+    name: '/settings/environment',
+    component: environmentPage,
+    meta: { permission: 'showSettings' },
+  },
+  {
+    path: '/settings/announcement',
+    name: '/settings/announcement',
+    component: announcementPage,
     meta: { permission: 'showSettings' },
   },
   {

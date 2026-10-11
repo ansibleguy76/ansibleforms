@@ -207,8 +207,8 @@ function envHelp(e) {
 // (the designer lock is in the database since 7). ANSIBLE_PATH and
 // PROCESS_MAX_BUFFER are read by an RTE only : since 7 the app runs no playbook itself.
 // the MCP server's switch and options (Settings > Connections > MCP) and the chat assistant's
-// switch (Settings > Connections > Chat assistant) ; the default language and the designer's
-// switch (Settings > Appearance > Interface)
+// switch (Settings > Connections > Chat assistant) ; the default language (Settings > Appearance >
+// Defaults) and the designer's switch (Settings > Appearance > Links)
 const OWNED_ELSEWHERE =
   /^(VAULT|RTE|MCP)_|^(ENABLE_(MCP|CHAT|SSO)|SSO_AUTO_LOGIN|BASE_URL|AF_ROLE|LOCK_PATH|ANSIBLE_PATH|PROCESS_MAX_BUFFER|DEFAULT_LANGUAGE|SHOW_DESIGNER)$/;
 
@@ -282,7 +282,7 @@ async function saveSettings() {
     return false;
   }
   try {
-    // the theme and its colour are Settings > Appearance > Interface's
+    // the theme and its colour are Settings > Appearance > Defaults's
     const { url, config_source, default_language } = item.value;
     await axios.put('/api/v2/settings/', { url, config_source, default_language });
     toast.success(t('settings.settingsPage.label') + ' ' + t('settings.common.isUpdated'));

@@ -33,7 +33,7 @@ export const useAppStore = defineStore('app', () => {
   const chatEnabled = ref(false); // ENABLE_CHAT and a configured provider (/api/v2/app/config)
   const designerEnabled = ref(true); // SHOW_DESIGNER : the designer there at all (/api/v2/app/config)
   const appConfigLoaded = ref(false); // /api/v2/app/config read at least once (State.loadAppConfig)
-  // Settings > Appearance > Interface (/api/v2/app/config) : the name in the browser tab and on
+  // Settings > Appearance (/api/v2/app/config) : the name in the browser tab and on
   // the sign-in page, the label beside the logo and its colour, the announcement under the
   // header ({ message, level, until } while it runs), the forms list's view for everyone
   const appName = ref(null);

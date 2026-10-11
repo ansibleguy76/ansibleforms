@@ -245,7 +245,7 @@ CREATE TABLE `settings` (
   `logo` longtext DEFAULT NULL,
   -- the website icon (browser tab), a data url ; NULL : the bundled one
   `favicon` longtext DEFAULT NULL,
-  -- Settings > Appearance > Interface : the name in the browser tab and on the sign-in page,
+  -- Settings > Appearance : the name in the browser tab and on the sign-in page,
   -- the label beside the logo (PRODUCTION) and its colour, an announcement under the header
   -- until a date, the forms list's view and the time zone for everyone
   `app_name` varchar(100) DEFAULT NULL,

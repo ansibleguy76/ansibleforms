@@ -161,7 +161,11 @@ export default {
     mail: 'Mail',
     logo: 'Logo',
     icon: 'Icona',
-    interface: 'Interfaccia',
+    defaults: 'Valori predefiniti',
+    links: 'Collegamenti',
+    name: 'Nome',
+    environment: 'Ambiente',
+    announcement: 'Annuncio',
     groups: 'Gruppi',
     users: 'Utenti',
     ldap: 'LDAP',
@@ -696,15 +700,17 @@ export default {
       noUse: 'Niente usa questa credenziale.',
       latest: 'Gli ultimi {n}.',
     },
-    // Settings > Appearance > Interface
+    // Settings > Appearance
     interface: {
-      tabDefaults: 'Valori predefiniti',
-      tabLinks: 'Collegamenti',
-      tabEnvironment: 'Ambiente',
-      tabAnnouncement: 'Annuncio',
+      description: "L'aspetto predefinito dell'app per tutti. La scelta di un utente prevale.",
+      linksDescription: "I collegamenti dell'intestazione per tutti, come quello del Designer.",
+      nameDescription: "Il nome dell'applicazione, nella scheda del browser e nella pagina di accesso.",
+      environmentDescription:
+        "Un'etichetta accanto al logo che indica di quale istanza si tratta, come PRODUZIONE o TEST.",
+      announcementDescription:
+        "Un messaggio sotto l'intestazione per tutti, come una finestra di manutenzione, fino alla data scelta.",
       designer: 'Designer',
       designerHelp: "Mostra il link Designer nell'intestazione",
-      tabName: 'Nome',
       formsView: 'Vista dei moduli predefinita',
       formsViewHelp: 'Come la pagina dei moduli li mostra, per gli utenti che non hanno scelto la propria',
       formsView_tiles: 'Riquadri',
@@ -720,7 +726,9 @@ export default {
       envLabelColor: "Colore dell'etichetta",
       banner: 'Annuncio',
       bannerHelp: "Un messaggio sotto l'intestazione per tutti, come una finestra di manutenzione ; vuoto, nessuno",
-      bannerLevel: 'Livello',
+      bannerLevel: 'Tipo',
+      bannerLevelHelp:
+        "Imposta il colore e l'icona dell'annuncio: blu per info, ambra per un avviso, rosso per un pericolo",
       banner_info: 'Info',
       banner_warning: 'Avviso',
       banner_danger: 'Pericolo',
@@ -729,8 +737,6 @@ export default {
       bannerClose: 'Chiudi',
       appName: "Nome dell'applicazione",
       appNameHelp: 'Mostrato nella scheda del browser e nella pagina di accesso ; vuoto, Ansible Forms',
-      description:
-        "L'aspetto dell'app per tutti: il tema, la lingua, il fuso orario, l'intestazione e il nome. La scelta di un utente prevale sui valori predefiniti.",
     },
     users: {
       label: 'Utente',

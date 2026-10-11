@@ -60,7 +60,7 @@ var Settings=function(settings){
     if(settings.default_theme_color !== undefined){
       this.default_theme_color = settings.default_theme_color || null;
     }
-    // Settings > Appearance > Interface : each kept to what the page offers, an empty value none
+    // Settings > Appearance : each kept to what the page offers, an empty value none
     const text = (v, max) => (v === null || v === undefined || String(v).trim() === '' ? null : String(v).trim().slice(0, max));
     const oneOf = (v, allowed) => (allowed.includes(v) ? v : null);
     if(settings.app_name !== undefined){
@@ -95,7 +95,7 @@ var Settings=function(settings){
     }
 };
 /**
- * A default time zone as Settings > Appearance > Interface keeps it : UTC, browser (each
+ * A default time zone as Settings > Appearance > Defaults keeps it : UTC, browser (each
  * browser's own zone) or a zone name this server knows ; anything else is none.
  *
  * Args:
@@ -114,7 +114,7 @@ export function validTimezone(value){
     return null;
   }
 }
-// what Settings > Appearance > Interface offers : the environment label's colours (the app's
+// what Settings > Appearance offers : the environment label's colours (the app's
 // pill tones), the announcement's levels, the forms list's views
 export const LABEL_COLORS = ['blue', 'green', 'amber', 'orange', 'red', 'grey'];
 export const BANNER_LEVELS = ['info', 'warning', 'danger'];
@@ -426,7 +426,7 @@ Settings.findAppDefaults = function () {
         language: r.default_language || null,
         theme: r.default_theme || null,
         color: r.default_theme_color || null,
-        // Settings > Appearance > Interface
+        // Settings > Appearance
         appName: r.app_name || null,
         // hidden (the switch off) : none
         envLabel: r.env_label_show === 0 ? null : r.env_label || null,

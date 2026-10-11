@@ -911,14 +911,14 @@ async function patchVersion7(messages, success, failed) {
   await checkPromise(addColumn("users", "blocked", "tinyint(4)", false, "0"), messages, success, failed);
   // the website icon (Settings > Appearance > Icon), a data url like the logo
   await checkPromise(addColumn("settings", "favicon", "longtext", true, "NULL"), messages, success, failed);
-  // Settings > Appearance > Interface : the name, the environment label, the announcement and
+  // Settings > Appearance : the name, the environment label, the announcement and
   // the forms list's view and the time zone for everyone
   for (const [name, type] of [["app_name", "varchar(100)"], ["env_label", "varchar(40)"], ["env_label_color", "varchar(20)"],
     ["banner_message", "text"], ["banner_level", "varchar(10)"], ["banner_until", "datetime"], ["forms_view", "varchar(10)"],
     ["default_timezone", "varchar(64)"]]) {
     await checkPromise(addColumn("settings", name, type, true, "NULL"), messages, success, failed);
   }
-  // the environment label shown or not (Settings > Appearance > Interface > Environment) : shown
+  // the environment label shown or not (Settings > Appearance > Environment) : shown
   await checkPromise(addColumn("settings", "env_label_show", "tinyint(4)", false, "1"), messages, success, failed);
   await checkPromise(copyAwxToRunners(), messages, success, failed);
   await checkPromise(addColumn("jobs", "job_log", "longtext", true, "NULL"), messages, success, failed);

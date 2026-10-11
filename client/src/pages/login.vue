@@ -226,7 +226,7 @@ onMounted(() => {
           <!-- the color theme's white logo is made for its colored header : the card is white -->
           <img v-else :src="'img/logo_light.svg'" alt="AnsibleForms" />
         </div>
-        <!-- which instance : its name and its environment (Settings > Appearance > Interface) -->
+        <!-- which instance : its name and its environment (Settings > Appearance) -->
         <div v-if="store.appName || store.envLabel" class="login-instance">
           <span v-if="store.appName" class="login-app-name">{{ store.appName }}</span>
           <AppEnvLabel />

@@ -163,7 +163,11 @@ export default {
     mail: 'Courriel',
     logo: 'Logo',
     icon: 'Icône',
-    interface: 'Interface',
+    defaults: 'Valeurs par défaut',
+    links: 'Liens',
+    name: 'Nom',
+    environment: 'Environnement',
+    announcement: 'Annonce',
     groups: 'Groupes',
     users: 'Utilisateurs',
     ldap: 'LDAP',
@@ -700,15 +704,17 @@ export default {
       noUse: "Rien n'utilise cet identifiant.",
       latest: 'Les {n} derniers.',
     },
-    // Settings > Appearance > Interface
+    // Settings > Appearance
     interface: {
-      tabDefaults: 'Valeurs par défaut',
-      tabLinks: 'Liens',
-      tabEnvironment: 'Environnement',
-      tabAnnouncement: 'Annonce',
+      description: "L'apparence par défaut de l'application pour tous. Le choix propre d'un utilisateur l'emporte.",
+      linksDescription: "Les liens de l'en-tête pour tous, comme celui du Designer.",
+      nameDescription: "Le nom de l'application, dans l'onglet du navigateur et sur la page de connexion.",
+      environmentDescription:
+        "Une étiquette à côté du logo qui indique de quelle instance il s'agit, comme PRODUCTION ou TEST.",
+      announcementDescription:
+        "Un message sous l'en-tête pour tous, comme une fenêtre de maintenance, jusqu'à la date choisie.",
       designer: 'Designer',
       designerHelp: "Afficher le lien Designer dans l'en-tête",
-      tabName: 'Nom',
       formsView: 'Vue des formulaires par défaut',
       formsViewHelp: 'Comment la page des formulaires les affiche, pour les utilisateurs sans choix propre',
       formsView_tiles: 'Tuiles',
@@ -724,7 +730,9 @@ export default {
       envLabelColor: "Couleur de l'étiquette",
       banner: 'Annonce',
       bannerHelp: "Un message sous l'en-tête pour tous, comme une fenêtre de maintenance ; vide, aucun",
-      bannerLevel: 'Niveau',
+      bannerLevel: 'Type',
+      bannerLevelHelp:
+        "Définit la couleur et l'icône de l'annonce : bleu pour une info, ambre pour un avertissement, rouge pour un danger",
       banner_info: 'Info',
       banner_warning: 'Avertissement',
       banner_danger: 'Danger',
@@ -733,8 +741,6 @@ export default {
       bannerClose: 'Fermer',
       appName: "Nom de l'application",
       appNameHelp: "Affiché dans l'onglet du navigateur et sur la page de connexion ; vide, Ansible Forms",
-      description:
-        "L'apparence de l'application pour tous : le thème, la langue, le fuseau horaire, l'en-tête et le nom. Le choix propre d'un utilisateur l'emporte sur les valeurs par défaut.",
     },
     users: {
       label: 'Utilisateur',

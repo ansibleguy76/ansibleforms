@@ -2,7 +2,7 @@
 /******************************************************************/
 /*                                                                */
 /*  The announcement under the header (Maintenance Sunday 22:00)  */
-/*  : Settings > Appearance > Interface > Announcement, in its    */
+/*  : Settings > Appearance > Announcement, in its                */
 /*  level's colour, until its end date (the server stops sending  */
 /*  it).                                                          */
 /*  Closed, it stays closed for this tab's session - until the    */

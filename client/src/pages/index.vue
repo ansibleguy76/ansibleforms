@@ -15,7 +15,7 @@ const loading = ref(true);
 const search = ref('');
 const viewMode = ref('tiles'); // 'tiles' or 'list'
 const store = useAppStore();
-// the view for whoever has not chosen one (Settings > Appearance > Interface), once it is known
+// the view for whoever has not chosen one (Settings > Appearance > Defaults), once it is known
 watch(
   () => store.formsView,
   (v) => {
@@ -166,7 +166,7 @@ onMounted(async () => {
   // restore view mode from cookie if present
   const vm = Helpers.getCookie('forms_view_mode');
   if (vm && (vm === 'tiles' || vm === 'list')) viewMode.value = vm;
-  // none chosen : the view Settings > Appearance > Interface sets for everyone
+  // none chosen : the view Settings > Appearance > Defaults sets for everyone
   else if (store.formsView === 'tiles' || store.formsView === 'list') viewMode.value = store.formsView;
 });
 </script>

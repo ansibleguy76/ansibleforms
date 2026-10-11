@@ -2,8 +2,8 @@
 /******************************************************************/
 /*                                                                */
 /*  The environment label beside the logo (PRODUCTION, TEST...) : */
-/*  Settings > Appearance > Interface > Environment, a pill in    */
-/*  the colour chosen there. Nothing without one.                 */
+/*  Settings > Appearance > Environment, a pill in the colour     */
+/*  chosen there. Nothing without one.                            */
 /*                                                                */
 /******************************************************************/
 import { computed } from 'vue';
@@ -26,5 +26,9 @@ const tone = computed(() => PILL[store.envLabelColor] || PILL.grey);
   margin-left: -1rem;
   margin-right: 1rem;
   align-self: center;
+}
+/* its letters a little apart : a word in capitals, read at a glance */
+.af-env-label .af-pill-label {
+  letter-spacing: 0.06em;
 }
 </style>

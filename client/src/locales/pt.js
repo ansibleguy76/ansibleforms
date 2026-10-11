@@ -160,7 +160,11 @@ export default {
     mail: 'Correio',
     logo: 'Logótipo',
     icon: 'Ícone',
-    interface: 'Interface',
+    defaults: 'Predefinições',
+    links: 'Ligações',
+    name: 'Nome',
+    environment: 'Ambiente',
+    announcement: 'Anúncio',
     groups: 'Grupos',
     users: 'Utilizadores',
     ldap: 'LDAP',
@@ -696,15 +700,17 @@ export default {
       noUse: 'Nada usa esta credencial.',
       latest: 'Os últimos {n}.',
     },
-    // Settings > Appearance > Interface
+    // Settings > Appearance
     interface: {
-      tabDefaults: 'Predefinições',
-      tabLinks: 'Ligações',
-      tabEnvironment: 'Ambiente',
-      tabAnnouncement: 'Anúncio',
+      description:
+        'Como a aplicação se apresenta a todos por predefinição. A escolha própria de um utilizador prevalece.',
+      linksDescription: 'As ligações do cabeçalho para todos, como a do Designer.',
+      nameDescription: 'O nome da aplicação, no separador do navegador e na página de início de sessão.',
+      environmentDescription: 'Uma etiqueta junto ao logótipo que indica que instância é, como PRODUÇÃO ou TEST.',
+      announcementDescription:
+        'Uma mensagem sob o cabeçalho para todos, como uma janela de manutenção, até à data escolhida.',
       designer: 'Designer',
       designerHelp: 'Mostrar a ligação do Designer no cabeçalho',
-      tabName: 'Nome',
       formsView: 'Vista de formulários predefinida',
       formsViewHelp: 'Como a página de formulários os mostra, para utilizadores sem escolha própria',
       formsView_tiles: 'Mosaicos',
@@ -720,7 +726,9 @@ export default {
       envLabelColor: 'Cor da etiqueta',
       banner: 'Anúncio',
       bannerHelp: 'Uma mensagem sob o cabeçalho para todos, como uma janela de manutenção ; vazia, nenhuma',
-      bannerLevel: 'Nível',
+      bannerLevel: 'Tipo',
+      bannerLevelHelp:
+        'Define a cor e o ícone do anúncio: azul para informação, âmbar para um aviso, vermelho para perigo',
       banner_info: 'Informação',
       banner_warning: 'Aviso',
       banner_danger: 'Perigo',
@@ -729,8 +737,6 @@ export default {
       bannerClose: 'Fechar',
       appName: 'Nome da aplicação',
       appNameHelp: 'Mostrado no separador do navegador e na página de início de sessão ; vazio, Ansible Forms',
-      description:
-        'Como a aplicação se apresenta a todos: o tema, o idioma, o fuso horário, o cabeçalho e o nome. A escolha própria de um utilizador prevalece.',
     },
     users: {
       label: 'Utilizador',

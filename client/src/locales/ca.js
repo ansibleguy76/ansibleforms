@@ -160,7 +160,11 @@ export default {
     mail: 'Correu',
     logo: 'Logotip',
     icon: 'Icona',
-    interface: 'Interfície',
+    defaults: 'Valors predeterminats',
+    links: 'Enllaços',
+    name: 'Nom',
+    environment: 'Entorn',
+    announcement: 'Avís',
     groups: 'Grups',
     users: 'Usuaris',
     ldap: 'LDAP',
@@ -696,15 +700,16 @@ export default {
       noUse: 'Res no fa servir aquesta credencial.',
       latest: 'Els darrers {n}.',
     },
-    // Settings > Appearance > Interface
+    // Settings > Appearance
     interface: {
-      tabDefaults: 'Valors predeterminats',
-      tabLinks: 'Enllaços',
-      tabEnvironment: 'Entorn',
-      tabAnnouncement: 'Avís',
+      description: "Com es veu l'aplicació per a tothom per defecte. L'elecció pròpia d'un usuari preval.",
+      linksDescription: 'Els enllaços de la capçalera per a tothom, com el del Dissenyador.',
+      nameDescription: "El nom de l'aplicació, a la pestanya del navegador i a la pàgina d'inici de sessió.",
+      environmentDescription: 'Una etiqueta al costat del logotip que indica quina instància és, com PRODUCCIÓ o TEST.',
+      announcementDescription:
+        'Un missatge sota la capçalera per a tothom, com una finestra de manteniment, fins a la data que triïs.',
       designer: 'Dissenyador',
       designerHelp: "Mostra l'enllaç del Dissenyador a la capçalera",
-      tabName: 'Nom',
       formsView: 'Vista de formularis predeterminada',
       formsViewHelp:
         "Com mostra la pàgina de formularis els seus formularis, per als usuaris que no n'han triat la seva",
@@ -721,7 +726,9 @@ export default {
       envLabelColor: "Color de l'etiqueta",
       banner: 'Avís',
       bannerHelp: 'Un missatge sota la capçalera per a tothom, com una finestra de manteniment ; buit, cap',
-      bannerLevel: 'Nivell',
+      bannerLevel: 'Tipus',
+      bannerLevelHelp:
+        "Defineix el color i la icona de l'avís: blau per a informació, ambre per a una advertència, vermell per a perill",
       banner_info: 'Informació',
       banner_warning: 'Advertència',
       banner_danger: 'Perill',
@@ -730,8 +737,6 @@ export default {
       bannerClose: 'Tancar',
       appName: "Nom de l'aplicació",
       appNameHelp: "Es mostra a la pestanya del navegador i a la pàgina d'inici de sessió ; buit, Ansible Forms",
-      description:
-        "Com es veu l'aplicació per a tothom: el tema, l'idioma, la zona horària, la capçalera i el nom. L'elecció pròpia d'un usuari preval sobre els valors predeterminats.",
     },
     users: {
       label: 'Usuari',

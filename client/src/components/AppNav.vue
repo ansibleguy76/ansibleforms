@@ -147,7 +147,7 @@ const menu = computed(() => {
   if (!store?.profile?.options?.showSettings) {
     m = m.filter((m) => m.link != '/settings/general');
   }
-  // the designer : switched on for the instance (Settings > Appearance > Interface) and for the user
+  // the designer : switched on for the instance (Settings > Appearance > Links) and for the user
   if (!store?.profile?.options?.showDesigner || !store.designerEnabled) {
     m = m.filter((m) => m.link != '/designer');
   }
@@ -370,7 +370,7 @@ const buildMismatch = computed(() => {
       </BsNavItem>
     </ul>
   </BsNavBar>
-  <!-- the announcement of Settings > Appearance > Interface > Announcement -->
+  <!-- the announcement of Settings > Appearance > Announcement -->
   <AppAnnouncement />
   <!-- the server runs a newer build than this tab (a tab opened before an upgrade, issue #660) :
        offer a reload, never reload by itself, so nothing typed in a form is lost -->

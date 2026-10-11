@@ -158,7 +158,11 @@ export default {
     mail: 'E-mail',
     logo: 'Logo',
     icon: 'Pictogram',
-    interface: 'Interface',
+    defaults: 'Standaardwaarden',
+    links: 'Links',
+    name: 'Naam',
+    environment: 'Omgeving',
+    announcement: 'Aankondiging',
     groups: 'Groepen',
     users: 'Gebruikers',
     ldap: 'LDAP',
@@ -694,15 +698,16 @@ export default {
       noUse: 'Niets gebruikt deze referentie.',
       latest: 'De laatste {n}.',
     },
-    // Settings > Appearance > Interface
+    // Settings > Appearance
     interface: {
-      tabDefaults: 'Standaardwaarden',
-      tabLinks: 'Links',
-      tabEnvironment: 'Omgeving',
-      tabAnnouncement: 'Aankondiging',
+      description: 'Hoe de app er standaard voor iedereen uitziet. De eigen keuze van een gebruiker gaat voor.',
+      linksDescription: 'De links van de kop voor iedereen, zoals die van de Designer.',
+      nameDescription: 'De naam van de applicatie, in het browsertabblad en op de aanmeldpagina.',
+      environmentDescription: 'Een label naast het logo dat aangeeft welke instantie dit is, zoals PRODUCTIE of TEST.',
+      announcementDescription:
+        'Een bericht onder de kop voor iedereen, zoals een onderhoudsvenster, tot een gekozen datum.',
       designer: 'Designer',
       designerHelp: 'De Designer-link in de koptekst tonen',
-      tabName: 'Naam',
       formsView: 'Standaard formulierweergave',
       formsViewHelp: 'Hoe de formulierenpagina de formulieren toont, voor gebruikers zonder eigen keuze',
       formsView_tiles: 'Tegels',
@@ -718,7 +723,9 @@ export default {
       envLabelColor: 'Labelkleur',
       banner: 'Aankondiging',
       bannerHelp: 'Een bericht onder de kop voor iedereen, zoals een onderhoudsvenster ; leeg, geen',
-      bannerLevel: 'Niveau',
+      bannerLevel: 'Type',
+      bannerLevelHelp:
+        'Bepaalt de kleur en het pictogram van de aankondiging: blauw voor info, oranje voor een waarschuwing, rood voor gevaar',
       banner_info: 'Info',
       banner_warning: 'Waarschuwing',
       banner_danger: 'Gevaar',
@@ -727,8 +734,6 @@ export default {
       bannerClose: 'Sluiten',
       appName: 'Applicatienaam',
       appNameHelp: 'Getoond in het browsertabblad en op de aanmeldpagina ; leeg, Ansible Forms',
-      description:
-        'Hoe de app er voor iedereen uitziet: het thema, de taal, de tijdzone, de kop en de naam. De eigen keuze van een gebruiker gaat voor.',
     },
     users: {
       label: 'Gebruiker',

@@ -162,7 +162,11 @@ export default {
     mail: 'Mail',
     logo: 'Logo',
     icon: 'Symbol',
-    interface: 'Oberfläche',
+    defaults: 'Standardwerte',
+    links: 'Links',
+    name: 'Name',
+    environment: 'Umgebung',
+    announcement: 'Ankündigung',
     groups: 'Gruppen',
     users: 'Benutzer',
     ldap: 'LDAP',
@@ -700,15 +704,16 @@ export default {
       noUse: 'Nichts verwendet diese Anmeldeinformation.',
       latest: 'Die letzten {n}.',
     },
-    // Settings > Appearance > Interface
+    // Settings > Appearance
     interface: {
-      tabDefaults: 'Standardwerte',
-      tabLinks: 'Links',
-      tabEnvironment: 'Umgebung',
-      tabAnnouncement: 'Ankündigung',
+      description: 'Wie die App standardmäßig für alle aussieht. Die eigene Wahl eines Benutzers hat Vorrang.',
+      linksDescription: 'Die Links der Kopfzeile für alle, z. B. der des Designers.',
+      nameDescription: 'Der Name der Anwendung, im Browser-Tab und auf der Anmeldeseite.',
+      environmentDescription: 'Ein Label neben dem Logo, das die Instanz kennzeichnet, z. B. PRODUKTION oder TEST.',
+      announcementDescription:
+        'Eine Nachricht unter der Kopfzeile für alle, z. B. ein Wartungsfenster, bis zu einem gewählten Datum.',
       designer: 'Designer',
       designerHelp: 'Den Designer-Link in der Kopfzeile anzeigen',
-      tabName: 'Name',
       formsView: 'Standard-Formularansicht',
       formsViewHelp: 'Wie die Formularseite ihre Formulare zeigt, für Benutzer ohne eigene Wahl',
       formsView_tiles: 'Kacheln',
@@ -724,7 +729,9 @@ export default {
       envLabelColor: 'Labelfarbe',
       banner: 'Ankündigung',
       bannerHelp: 'Eine Nachricht unter der Kopfzeile für alle, z. B. ein Wartungsfenster ; leer, keine',
-      bannerLevel: 'Stufe',
+      bannerLevel: 'Typ',
+      bannerLevelHelp:
+        'Legt Farbe und Symbol der Ankündigung fest: blau für Info, gelb für eine Warnung, rot für Gefahr',
       banner_info: 'Info',
       banner_warning: 'Warnung',
       banner_danger: 'Gefahr',
@@ -733,8 +740,6 @@ export default {
       bannerClose: 'Schließen',
       appName: 'Anwendungsname',
       appNameHelp: 'Im Browser-Tab und auf der Anmeldeseite angezeigt ; leer, Ansible Forms',
-      description:
-        'Wie die App für alle aussieht: Design, Sprache, Zeitzone, Kopfzeile und Name. Die eigene Wahl eines Benutzers hat Vorrang vor den Standards.',
     },
     users: {
       label: 'Benutzer',

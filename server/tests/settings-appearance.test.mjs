@@ -1,4 +1,4 @@
-// Settings > Appearance > Interface : what a settings save keeps of the name, the environment
+// Settings > Appearance : what a settings save keeps of the name, the environment
 // label, the announcement and the forms list's view (models/settings.model.js) - each to what the
 // page offers, an empty value none - and the announcement shown only while it runs.
 import { test, expect, vi } from "vitest";
