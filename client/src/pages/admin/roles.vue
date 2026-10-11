@@ -175,9 +175,6 @@ const columns = computed(() => [
   {
     key: 'description',
     label: t('settings.fields.description'),
-    // as wide as the longest description, as long as there is room : the counts beside it, the
-    // table's spacer after them
-    fit: true,
     sortable: true,
     filterable: true,
     render: (v) => (v ? escapeHtml(v) : '–'),

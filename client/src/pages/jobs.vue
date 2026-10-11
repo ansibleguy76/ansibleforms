@@ -43,6 +43,18 @@ function toggleOutput(key) {
 const isLoading = ref(false);
 const jobId = ref(null);
 const displayedJobs = ref([]);
+// what the list's columns are fitted to (v-fit-columns) : its jobs and their status, the columns
+// shown, the steps unfolded - not a running job's duration, which changes every second
+const fitKey = computed(
+  () =>
+    displayedJobs.value.map((j) => `${j.id}:${j.status}`).join(',') +
+    '|' +
+    visibleColumns.value.map((c) => c.key).join(',') +
+    '|' +
+    Object.keys(collapsed.value || {})
+      .filter((k) => collapsed.value[k])
+      .join(','),
+);
 const showExtraVars = ref(false);
 const showArtifacts = ref(false);
 const viewAsYaml = ref(false);
@@ -95,7 +107,8 @@ const durationSeconds = (j) => runSeconds(j, now.value);
 // the table fits its frame (a fixed layout) : the short columns a width of their own, the form
 // and the user share the rest, a long value cut with an ellipsis (its full text in the tooltip)
 const columnDefs = computed(() => [
-  { key: 'id', label: t('jobs.id'), filterable: true, sortable: true, type: 'number', width: '4.5rem' },
+  // a number : to the right, as every count
+  { key: 'id', label: t('jobs.id'), filterable: true, sortable: true, type: 'number', width: '4.5rem', align: 'end' },
   { key: 'form', label: t('jobs.form'), filterable: true, sortable: true },
   {
     key: 'job_type',
@@ -1204,7 +1217,9 @@ onMounted(async () => {
         </template>
         <!-- the list : table and pager framed like the other tables, running to the card's edges -->
         <div v-if="!isJobPage" class="af-table-frame">
-          <table class="custom-table af-table table-sm">
+          <!-- the columns fit their values, a spacer after them (directives/fitColumns.js) ; refitted
+               when the rows change, not at every tick of a running job's duration -->
+          <table v-fit-columns="fitKey" class="custom-table af-table table-sm">
             <thead>
               <tr class="text-start">
                 <!-- tick every job of the page that can be deleted -->
@@ -1222,7 +1237,8 @@ onMounted(async () => {
                   v-for="col in visibleColumns"
                   :key="col.key"
                   :class="{ 'is-clickable': col.sortable, [col.key]: true, 'text-end af-col-end': col.align === 'end' }"
-                  :style="{ userSelect: 'none', whiteSpace: 'nowrap', width: col.width || null }"
+                  :data-fit-keep="col.width || null"
+                  :style="{ userSelect: 'none', whiteSpace: 'nowrap' }"
                   @click="col.sortable ? toggleSort(col.key) : undefined"
                 >
                   {{ col.label }}
@@ -1235,7 +1251,8 @@ onMounted(async () => {
                     </template>
                   </span>
                 </th>
-                <!-- the row's actions, at the right -->
+                <!-- the room left, then the row's actions at the right -->
+                <th class="af-fit-spacer"></th>
                 <th class="action"></th>
               </tr>
             </thead>
@@ -1258,17 +1275,18 @@ onMounted(async () => {
                     <td
                       v-if="col.key === 'id'"
                       role="button"
-                      class="text-start"
+                      class="text-end af-col-end"
                       @click="j.job_type == 'multistep' ? toggleCollapse(j.id) : openRow(j)"
                     >
-                      <!-- one line : the number where every job's is, a multistep's caret at the cell's end -->
-                      <span class="d-flex align-items-center">
+                      <!-- one line, to the right : the number, then a multistep's caret in a slot every
+                           row keeps, so the numbers line up -->
+                      <span class="d-flex align-items-center justify-content-end">
                         <span>{{ j.id }}</span>
                         <font-awesome-icon
-                          v-if="j.job_type == 'multistep'"
                           :icon="collapsed[j.id] ? 'angle-down' : 'angle-right'"
                           fixed-width
-                          class="ms-auto"
+                          class="ms-1"
+                          :class="{ invisible: j.job_type != 'multistep' }"
                         />
                       </span>
                     </td>
@@ -1290,6 +1308,7 @@ onMounted(async () => {
                       {{ cellText(j, col) }}
                     </td>
                   </template>
+                  <td class="af-fit-spacer"></td>
                   <!-- the row's menu, as every table's : what can be done with the job, Delete last -->
                   <td class="bs-dt-row-actions">
                     <div class="dropdown">
@@ -1367,7 +1386,13 @@ onMounted(async () => {
                   <tr :class="jobBackground(c)">
                     <td class="table-info" role="button" @click="getJob(c.id)"></td>
                     <template v-for="col in visibleColumns" :key="col.key">
-                      <td v-if="col.key === 'id'" role="button" class="text-end" @click="getJob(c.id)">{{ c.id }}</td>
+                      <!-- a step's number under its job's, the caret's slot kept -->
+                      <td v-if="col.key === 'id'" role="button" class="text-end af-col-end" @click="getJob(c.id)">
+                        <span class="d-flex align-items-center justify-content-end">
+                          <span>{{ c.id }}</span>
+                          <font-awesome-icon icon="angle-right" fixed-width class="ms-1 invisible" />
+                        </span>
+                      </td>
                       <td
                         v-else-if="col.key === 'form'"
                         role="button"
@@ -1390,6 +1415,7 @@ onMounted(async () => {
                         {{ cellText(c, col) }}
                       </td>
                     </template>
+                    <td class="af-fit-spacer"></td>
                     <td role="button" @click="getJob(c.id)"></td>
                   </tr>
                 </template>
@@ -1398,7 +1424,7 @@ onMounted(async () => {
               <tr v-if="!isLoading && parentJobs.length === 0" class="af-empty-row">
                 <!-- as much room under the text as above it : the message centred between the
                    table's header and its frame -->
-                <td :colspan="visibleColumns.length + 2" class="text-center text-body-secondary py-4">
+                <td :colspan="visibleColumns.length + 3" class="text-center text-body-secondary py-4">
                   <FaIcon icon="circle-info" class="me-2" />{{ emptyMessage }}
                 </td>
               </tr>
@@ -1849,8 +1875,9 @@ onMounted(async () => {
   /* 20px lines : every row a whole 45px (12px padding twice, a 1px border). At 1.2 a row was
      44.19px, and the browser rounding each row's edges made one row in five a pixel taller */
   line-height: 1.25;
-  /* the table fits its frame : the short columns their own width (columnDefs), the form and
-     the user share the rest */
+  /* the columns are laid out by v-fit-columns : the short ones their own width, the form and the
+     user as wide as their values, a spacer the rest ; too narrow, the form and the user give way
+     with an ellipsis, as every table */
   table-layout: fixed;
   width: 100%;
   /* the form and the user keep some room : on a screen too narrow for it the table scrolls

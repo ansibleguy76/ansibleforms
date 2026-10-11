@@ -479,8 +479,6 @@ export default function getSettings(t) {
         // what the group is for, or who owns it
         {
           key: 'description',
-          // as wide as the longest description, as long as there is room
-          fit: true,
           label: t('settings.fields.description'),
           sortable: true,
           required: false,

@@ -5,7 +5,8 @@
 /*  is as wide as its longest cell ; when they do not all fit,    */
 /*  the widest share what is left fairly and a cell too long for  */
 /*  its column ends in "…", its whole text on hover. A checkbox   */
-/*  or a row menu column keeps its own width. When everything     */
+/*  or a row menu column keeps its own width, as a column with    */
+/*  data-fit-keep (its width when it names one). When everything  */
 /*  fits, the spacer column takes the room left : an empty        */
 /*  <th class="af-fit-spacer"> and <td> after the last column     */
 /*  with content (before a row menu) ; a table without one gives  */
@@ -17,7 +18,14 @@
 /******************************************************************/
 
 // the columns that keep their own width : a row's checkbox, its menu
-const FIXED = ['bs-dt-select', 'bs-dt-row-actions', 'af-role-remove-col', 'af-group-menu-col'];
+const FIXED = [
+  'bs-dt-select',
+  'bs-dt-row-actions',
+  'af-role-remove-col',
+  'af-group-menu-col',
+  'af-jobs-select',
+  'action',
+];
 // the air after a column that gives way when everything fits, in px (2rem)
 const AIR = 32;
 
@@ -89,6 +97,23 @@ export function shareWidths(natural, room) {
 }
 
 /**
+ * A CSS width in px : px as they are, rem at the page's font size ; 0 for none or another unit.
+ *
+ * Args:
+ *   width (string|null): the width (13.25rem, 120px).
+ *
+ * Returns:
+ *   number: px.
+ */
+function pxOf(width) {
+  const n = parseFloat(width);
+  if (!Number.isFinite(n)) return 0;
+  if (String(width).endsWith('rem')) return n * parseFloat(getComputedStyle(document.documentElement).fontSize || '16');
+  if (String(width).endsWith('px')) return n;
+  return 0;
+}
+
+/**
  * Lays a table out : measures its columns at their natural width, then gives them their widths.
  *
  * Args:
@@ -102,16 +127,21 @@ function fit(table) {
   for (const th of ths) th.style.width = '';
   table.style.tableLayout = 'auto';
   table.style.width = 'max-content';
-  // a spacer has no width of its own : it only takes the room left
-  const natural = [...ths].map((th) =>
-    th.classList.contains('af-fit-spacer') ? 0 : Math.ceil(th.getBoundingClientRect().width),
-  );
+  // a spacer has no width of its own : it only takes the room left ; a column kept at a width
+  // it names (data-fit-keep="13.25rem") has that one
+  const natural = [...ths].map((th) => {
+    if (th.classList.contains('af-fit-spacer')) return 0;
+    return pxOf(th.getAttribute('data-fit-keep')) || Math.ceil(th.getBoundingClientRect().width);
+  });
   table.style.width = '100%';
   table.style.tableLayout = 'fixed';
 
   const fixed = natural.map((_, i) => isFixed(table, i));
   const flex = natural.map((_, i) => i).filter((i) => !fixed[i]);
-  const room = frame.clientWidth - natural.reduce((sum, w, i) => sum + (fixed[i] ? w : 0), 0);
+  // the table's width : its frame's, or its own minimum when it has one (the jobs list scrolls
+  // sideways in its frame below it)
+  const width = Math.max(frame.clientWidth, parseFloat(getComputedStyle(table).minWidth) || 0);
+  const room = width - natural.reduce((sum, w, i) => sum + (fixed[i] ? w : 0), 0);
   const shared = shareWidths(
     flex.map((i) => natural[i]),
     room,
@@ -126,7 +156,7 @@ function fit(table) {
   });
   // and, when the room allows, a little air after the columns that give way (a form's name)
   const used = natural.reduce((a, b) => a + b, 0);
-  const air = !shared && used + AIR * flex.length <= frame.clientWidth ? AIR : 0;
+  const air = !shared && used + AIR * flex.length <= width ? AIR : 0;
   flex.forEach((col, k) => {
     if (!shared) ths[col].style.width = col === takesRest ? '' : `${natural[col] + air}px`;
     else ths[col].style.width = `${shared[k]}px`;
@@ -176,8 +206,10 @@ export default {
       table._fitObserver.observe(table.parentElement);
     }
   },
-  // its rows changed
-  updated(table) {
+  // its rows changed ; a table that gives a key (v-fit-columns="key") only when its key did, so
+  // a page that redraws every second (a running job's duration) is not measured every second
+  updated(table, binding) {
+    if (binding.value !== undefined && binding.value === binding.oldValue) return;
     schedule(table);
   },
   unmounted(table) {

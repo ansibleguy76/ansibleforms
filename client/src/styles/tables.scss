@@ -310,5 +310,6 @@
    classes twice : the first and last cells' padding rules must not reach it) */
 .af-table.af-fit th.af-fit-spacer,
 .af-table.af-fit td.af-fit-spacer {
-  padding: 0;
+  /* over any table's own cell padding (the jobs list's narrower one) */
+  padding: 0 !important;
 }
