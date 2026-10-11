@@ -117,8 +117,10 @@ describe("editing environment variables", () => {
         assert.equal(Env.classify(name), "live", name);
       }
       for (const name of ["RTE_MAX_JOBS", "RTE_TOKEN", "RTE_URL"]) assert.equal(Env.classify(name), "rte", name);
+      // which process this is : never from this page
+      assert.equal(Env.classify("AF_ROLE"), "refused");
       // how the process itself starts : still at the next start
-      for (const name of ["PORT", "HTTPS", "BASE_URL", "AF_ROLE", "DB_HOST", "DB_PASSWORD"]) {
+      for (const name of ["PORT", "HTTPS", "BASE_URL", "DB_HOST", "DB_PASSWORD"]) {
         assert.equal(Env.classify(name), "restart", name);
       }
     } finally {

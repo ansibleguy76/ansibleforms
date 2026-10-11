@@ -30,15 +30,15 @@ const envGroupOrder = [
   // and it belongs beside the import/export actions that move the configuration between disk
   // and database. The database `config_source` column stays as a fallback for instances that
   // set it before 6.3.0, but nothing writes it any more - one control, one store.
-  // CONFIG_SEED_PATH and ALLOW_ENV_EDIT sit here because both answer "where does the
-  // configuration come from". Both are refused (see REFUSED in lib/envSettings.js), so
-  // they render read-only with their reason - which is the point: an operator needs to
-  // see that a seed is in force, and that is exactly why this page cannot be saved.
+  // CONFIG_SEED_PATH sits here because it answers "where does the configuration come
+  // from". It is refused (see REFUSED in lib/envSettings.js), so it renders read-only with
+  // its reason - which is the point: an operator needs to see that a seed is in force.
+  // ALLOW_ENV_EDIT is not shown : switched off, every variable says so in its own row.
   {
     key: 'configuration',
     label: () => t('settings.settingsPage.tabConfiguration'),
     icon: 'right-left',
-    exact: ['ENABLE_CONFIG_IN_DATABASE', 'CONFIG_SEED_PATH', 'CONFIG_SEED_RELOAD_SECONDS', 'ALLOW_ENV_EDIT'],
+    exact: ['ENABLE_CONFIG_IN_DATABASE', 'CONFIG_SEED_PATH', 'CONFIG_SEED_RELOAD_SECONDS'],
   },
   {
     key: 'server',
@@ -46,7 +46,7 @@ const envGroupOrder = [
     icon: 'globe',
     // no BASE_URL : it is in OWNED_ELSEWHERE, which is filtered out before the groups are
     // consulted, so listing it here only claimed a variable this page never renders
-    exact: ['NODE_ENV', 'PORT', 'HTTPS', 'HTTPS_KEY', 'HTTPS_CERT', 'TRUST_PROXY', 'API_BODY_LIMIT_MB'],
+    exact: ['PORT', 'HTTPS', 'HTTPS_KEY', 'HTTPS_CERT', 'TRUST_PROXY', 'API_BODY_LIMIT_MB'],
   },
   {
     key: 'database',
@@ -84,8 +84,8 @@ const envGroupOrder = [
     key: 'authentication',
     label: () => t('settings.settingsPage.envGroupAuthentication'),
     icon: 'user-shield',
-    prefix: ['ADMIN_', 'ACCESS_TOKEN_', 'LOGIN_', 'AUTH_', 'PASSWORD_'],
-    exact: ['REINIT_ADMIN', 'AZURE_GRAPH_URI', 'API_TOKEN_MAX_DAYS'],
+    prefix: ['ACCESS_TOKEN_', 'LOGIN_', 'AUTH_', 'PASSWORD_'],
+    exact: ['AZURE_GRAPH_URI', 'API_TOKEN_MAX_DAYS'],
   },
   {
     key: 'security',
@@ -108,6 +108,7 @@ const envGroupOrder = [
     icon: 'fac,ansible',
     exact: [
       'JOBS_LIST_SIZE',
+      'RTE_QUEUE_MINUTES',
       'REGEX_FILTER_JOB_OUTPUT',
       'UPLOAD_PATH',
       'UPLOAD_MAX_GB',
@@ -133,8 +134,13 @@ const envGroupOrder = [
     key: 'ytt',
     label: () => t('settings.settingsPage.envGroupYtt'),
     icon: 'code',
-    prefix: ['YTT_'],
-    exact: ['USE_YTT'],
+    // by name : YTT_LIB_DATA_<name> is a prefix, not a variable, and is not shown
+    exact: [
+      'USE_YTT',
+      'YTT_ALLOW_SYMLINK_DESTINATIONS',
+      'YTT_DANGEROUS_ALLOW_ALL_SYMLINK_DESTINATIONS',
+      'YTT_VARS_PREFIX',
+    ],
   },
   // LOG_RETENTION_DAYS is Retention's, with the other retentions
   {
@@ -203,14 +209,18 @@ function envHelp(e) {
 // Showing it on a page of editable settings would only offer an edit that cannot work; it is
 // reported as a fact on the Status page instead.
 // AF_ROLE and RTE_* describe which process this is and where its RTE lives : set in
-// the environment of the container, not edited from inside the app. LOCK_PATH is no longer read
-// (the designer lock is in the database since 7). ANSIBLE_PATH and
+// the environment of the container, not edited from inside the app - but RTE_QUEUE_MINUTES, how
+// long the app's job waits for a busy RTE, which the app reads (Jobs). ANSIBLE_PATH and
 // PROCESS_MAX_BUFFER are read by an RTE only : since 7 the app runs no playbook itself.
 // the MCP server's switch and options (Settings > Connections > MCP) and the chat assistant's
 // switch (Settings > Connections > Chat assistant) ; the default language (Settings > Appearance >
-// Defaults) and the designer's switch (Settings > Appearance > Links)
+// Defaults) and the designer's switch (Settings > Appearance > Links).
+// The local admin's first start (ADMIN_USERNAME, ADMIN_PASSWORD, REINIT_ADMIN) : the account is
+// the Users page's once it exists. NODE_ENV and ALLOW_ENV_EDIT decide how the process boots and
+// whether this page writes at all (it says so when it does not) : the deployment's.
+// YTT_LIB_DATA_<name> is a prefix, not a variable : documented, nothing to show.
 const OWNED_ELSEWHERE =
-  /^(VAULT|RTE|MCP)_|^(ENABLE_(MCP|CHAT|SSO)|SSO_AUTO_LOGIN|BASE_URL|AF_ROLE|LOCK_PATH|ANSIBLE_PATH|PROCESS_MAX_BUFFER|DEFAULT_LANGUAGE|SHOW_DESIGNER)$/;
+  /^(VAULT|MCP)_|^RTE_(?!QUEUE_MINUTES$)|^(ENABLE_(MCP|CHAT|SSO)|SSO_AUTO_LOGIN|BASE_URL|AF_ROLE|ANSIBLE_PATH|PROCESS_MAX_BUFFER|DEFAULT_LANGUAGE|SHOW_DESIGNER|ADMIN_USERNAME|ADMIN_PASSWORD|REINIT_ADMIN|NODE_ENV|ALLOW_ENV_EDIT|YTT_LIB_DATA_\{dynamic\})$/;
 
 const envGroups = computed(() => {
   if (!env.value || !Array.isArray(env.value)) return [];

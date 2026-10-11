@@ -115,7 +115,6 @@ beforeEach(async () => {
   tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), "af-health-test-"));
   queries.length = 0;
   appConfig.backupPath = path.join(tmpRoot, "backups");
-  appConfig.lockPath = path.join(tmpRoot, "ansibleForms.lock");
   appConfig.configPath = path.join(tmpRoot, "config.yaml");
   appConfig.formsFolderPath = path.join(tmpRoot, "forms");
   appConfig.mysqldumpCommand = "mariadb-dump";

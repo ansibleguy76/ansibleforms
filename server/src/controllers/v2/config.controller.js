@@ -208,8 +208,6 @@ const saveEnv = async function(req,res){
 // too, for the same reason : PASSWORD_MIN_LENGTH is a number, and it was hidden as a secret.
 const SECRET_ENV_NAME = /_PASSWORD$|_SECRET$|_TOKEN$/;
 const MASK = "*** NOT REVEALED ***";
-// the local admin's first start : not shown on the settings page (see env)
-const BOOTSTRAP_ONLY = new Set(['ADMIN_USERNAME', 'ADMIN_PASSWORD', 'REINIT_ADMIN']);
 // the state an unset secret is in : the page says it instead of the mask
 const SECRET_STATES = { ENCRYPTION_SECRET: 'default', ACCESS_TOKEN_SECRET: 'random' };
 
@@ -268,11 +266,7 @@ const env = async function(req,res){
     help = envSection.items
     const managed = await EnvSettings.readManaged()
     // cleanup a bit (hide passwords and secrets and set default values)
-    // Not on the page at all : the local admin's first start (ADMIN_USERNAME, ADMIN_PASSWORD and
-    // REINIT_ADMIN create it, or create it again). Read-only there, the password masked and the
-    // username out of date once the account is renamed, they said nothing an admin can use :
-    // the account is the Users page's. Documented still, for docker-compose and kubernetes.
-    var env = help.filter(x => !BOOTSTRAP_ONLY.has(x.name)).map(x => {
+    var env = help.map(x => {
       var item={}
       item.name = x.name
       if(process.env[x.name]){

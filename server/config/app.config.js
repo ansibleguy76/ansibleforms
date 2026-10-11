@@ -104,7 +104,6 @@ var app_config = {
   yttAllowSymlinkDestinations: process.env.YTT_ALLOW_SYMLINK_DESTINATIONS || "",
   yttLibData: {},
   yttVarsPrefix: process.env.YTT_VARS_PREFIX || "",
-  lockPath: process.env.LOCK_PATH || path.resolve(__dirname + "/../persistent/ansibleForms.lock"),
   helpPath: path.resolve(__dirname + "/../help.yaml"),
   encryptionSecret: ((process.env.ENCRYPTION_SECRET || "undefinedvOVH6sdmpNWjRRIqCc7rdxs") + "vOVH6sdmpNWjRRIqCc7rdxs01lwHzfr3").substring(0, 32),
   // without ENCRYPTION_SECRET the key above is the fallback in this public source : index.js

@@ -303,15 +303,6 @@
       When forms come from a git repository, a form created or edited in the designer is written
       here first and only lands in the repository once it is pushed. The loader reads this folder
       alongside the repository ones, so a staged form is usable immediately.
-  - name: LOCK_PATH
-    type: string
-    allowed: a valid file path
-    short: Designer lock file path (deprecated)
-    hint: No longer used - the designer lock is kept in the database.
-    default: "%PERSISTENT_FOLDER%/ansibleForms.lock"
-    description: |
-      Deprecated since 7.0.0 and ignored : the designer lock (who is editing the forms) is kept
-      in the database, so every app node sees the same lock. Removed in 8.0.0.
   - name: FORMS_BACKUP_PATH
     version: 4.0.3
     type: string
