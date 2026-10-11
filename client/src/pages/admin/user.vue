@@ -455,8 +455,8 @@ onMounted(async () => {
                 <tr>
                   <th>{{ t('settings.fields.name') }}</th>
                   <th>{{ t('settings.fields.form') }}</th>
+                  <th>{{ t('settings.schedules.cronShort') }}</th>
                   <th>{{ t('settings.schedules.runAt') }}</th>
-                  <th>{{ t('settings.schedules.scheduleState') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -468,8 +468,9 @@ onMounted(async () => {
                 >
                   <td class="af-row-open">{{ s.name }}</td>
                   <td>{{ s.form || '–' }}</td>
+                  <!-- a one-time run has no cron : its Run at says when -->
+                  <td class="font-monospace">{{ s.cron || '–' }}</td>
                   <td>{{ s.run_at ? Helpers.formatServerDate(s.run_at) : '–' }}</td>
-                  <td>{{ s.state ? t(`settings.schedules.state_${s.state}`) : '–' }}</td>
                 </tr>
               </tbody>
             </table>
