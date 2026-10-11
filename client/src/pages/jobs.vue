@@ -1233,6 +1233,8 @@ onMounted(async () => {
                     @change="togglePage()"
                   />
                 </th>
+                <!-- a multistep job's caret : a column of its own, the ids never moved by it -->
+                <th class="af-jobs-expand" data-fit-keep="2rem"></th>
                 <th
                   v-for="col in visibleColumns"
                   :key="col.key"
@@ -1271,25 +1273,23 @@ onMounted(async () => {
                       @change="toggleSelected(j.id)"
                     />
                   </td>
+                  <!-- a multistep job's caret : right while its steps are folded, down once they show ;
+                       its cell unfolds them, another job's opens it as the rest of the row -->
+                  <td
+                    class="af-jobs-expand text-center"
+                    role="button"
+                    @click="j.job_type == 'multistep' ? toggleCollapse(j.id) : openRow(j)"
+                  >
+                    <font-awesome-icon
+                      v-if="j.job_type == 'multistep'"
+                      :icon="collapsed[j.id] ? 'angle-down' : 'angle-right'"
+                      fixed-width
+                    />
+                  </td>
                   <template v-for="col in visibleColumns" :key="col.key">
-                    <td
-                      v-if="col.key === 'id'"
-                      role="button"
-                      class="text-end af-col-end"
-                      @click="j.job_type == 'multistep' ? toggleCollapse(j.id) : openRow(j)"
-                    >
-                      <!-- one line, to the right : a multistep's caret before its number, so every
-                           number ends at the same place ; right while its steps are folded, down once
-                           they show -->
-                      <span class="d-flex align-items-center justify-content-end">
-                        <font-awesome-icon
-                          v-if="j.job_type == 'multistep'"
-                          :icon="collapsed[j.id] ? 'angle-down' : 'angle-right'"
-                          fixed-width
-                          class="me-1"
-                        />
-                        <span>{{ j.id }}</span>
-                      </span>
+                    <!-- its number, to the right as every count -->
+                    <td v-if="col.key === 'id'" role="button" class="text-end af-col-end" @click="openRow(j)">
+                      {{ j.id }}
                     </td>
                     <td v-else-if="col.key === 'status'" role="button" class="text-start" @click="openRow(j)">
                       <AppStatusPill :status="j.status" />
@@ -1386,6 +1386,7 @@ onMounted(async () => {
                 <template v-for="c in childJobs(j.id)" :key="c.id">
                   <tr :class="jobBackground(c)">
                     <td class="table-info" role="button" @click="getJob(c.id)"></td>
+                    <td class="table-info af-jobs-expand" role="button" @click="getJob(c.id)"></td>
                     <template v-for="col in visibleColumns" :key="col.key">
                       <!-- a step's number under its job's -->
                       <td v-if="col.key === 'id'" role="button" class="text-end af-col-end" @click="getJob(c.id)">
@@ -1422,7 +1423,7 @@ onMounted(async () => {
               <tr v-if="!isLoading && parentJobs.length === 0" class="af-empty-row">
                 <!-- as much room under the text as above it : the message centred between the
                    table's header and its frame -->
-                <td :colspan="visibleColumns.length + 3" class="text-center text-body-secondary py-4">
+                <td :colspan="visibleColumns.length + 4" class="text-center text-body-secondary py-4">
                   <FaIcon icon="circle-info" class="me-2" />{{ emptyMessage }}
                 </td>
               </tr>
@@ -1911,6 +1912,13 @@ onMounted(async () => {
 .custom-table th.action {
   /* the row's three dots, as the other tables' */
   width: 3.5rem;
+}
+/* the caret column of a multistep job : as wide as the caret, no room of its own around it, and
+   never an ellipsis (an icon is not cut) */
+.custom-table.af-table .af-jobs-expand {
+  padding-left: 0;
+  padding-right: 0;
+  text-overflow: clip;
 }
 /* the checkbox column : as wide as a checkbox and the first cell's padding */
 .custom-table .af-jobs-select {
