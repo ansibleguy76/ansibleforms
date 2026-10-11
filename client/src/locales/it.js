@@ -1657,8 +1657,7 @@ export default {
     formAllowRelaunch: 'Consenti rilancio',
     formChat: "Offri nell'assistente chat",
     formLaunchValidation: "Validazione all'avvio",
-    formLaunchValidationHelp:
-      'Controlla ogni avvio di questo modulo sul server. log: registra ciò che verrebbe rifiutato. enforce: rifiutalo, ed esegui le extravars costruite dal server. Vale il più restrittivo tra questo e LAUNCH_VALIDATION.',
+    formLaunchValidationHelp: 'Ogni avvio: log segnala, enforce rifiuta.',
     formLaunchValidationDefault: "Predefinito dell'istanza",
     formAbortable: 'Annullabile',
     formVerbose: 'Dettagliato',

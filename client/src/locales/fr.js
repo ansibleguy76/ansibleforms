@@ -1672,8 +1672,7 @@ export default {
     formAllowRelaunch: 'Autoriser le relancement',
     formChat: "Proposer dans l'assistant de chat",
     formLaunchValidation: 'Validation au lancement',
-    formLaunchValidationHelp:
-      "Vérifier chaque lancement de ce formulaire sur le serveur. log : journaliser ce qui serait refusé. enforce : le refuser, et exécuter les extravars construites par le serveur. Le plus strict de ce réglage et de LAUNCH_VALIDATION l'emporte.",
+    formLaunchValidationHelp: 'Chaque lancement : log signale, enforce refuse.',
     formLaunchValidationDefault: "Par défaut de l'instance",
     formAbortable: 'Annulable',
     formVerbose: 'Verbeux',

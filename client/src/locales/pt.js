@@ -1666,8 +1666,7 @@ export default {
     formAllowRelaunch: 'Permitir relançar',
     formChat: 'Disponibilizar no assistente de chat',
     formLaunchValidation: 'Validação ao iniciar',
-    formLaunchValidationHelp:
-      'Verificar no servidor cada início deste formulário. log: registar o que seria recusado. enforce: recusá-lo, e executar as extravars que o servidor constrói. Prevalece a mais restrita entre esta e LAUNCH_VALIDATION.',
+    formLaunchValidationHelp: 'Cada lançamento: log regista, enforce recusa.',
     formLaunchValidationDefault: 'Predefinição da instância',
     formAbortable: 'Interrompível',
     formVerbose: 'Detalhado',

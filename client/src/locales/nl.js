@@ -1658,8 +1658,7 @@ export default {
     formAllowRelaunch: 'Herstart toestaan',
     formChat: 'Aanbieden in de chat-assistent',
     formLaunchValidation: 'Launch-validatie',
-    formLaunchValidationHelp:
-      'Controleer elke start van dit formulier op de server. log: log wat geweigerd zou worden. enforce: weiger de start, en voer de extravars uit die de server opbouwt. De strengste van deze en LAUNCH_VALIDATION wint.',
+    formLaunchValidationHelp: 'Elke start: log meldt, enforce weigert.',
     formLaunchValidationDefault: 'Standaard van de instantie',
     formAbortable: 'Afbreekbaar',
     formVerbose: 'Uitgebreid',

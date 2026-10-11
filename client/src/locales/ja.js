@@ -1637,8 +1637,7 @@ export default {
     formAllowRelaunch: '再起動を許可',
     formChat: 'チャットアシスタントで提供',
     formLaunchValidation: '起動時の検証',
-    formLaunchValidationHelp:
-      'このフォームのすべての起動をサーバーで確認します。log: 拒否される内容をログに記録します。enforce: 拒否し、サーバーが構築した extravars で実行します。この設定と LAUNCH_VALIDATION のうち、より厳しい方が優先されます。',
+    formLaunchValidationHelp: '起動ごとに確認：log は記録、enforce は拒否。',
     formLaunchValidationDefault: 'インスタンスの既定',
     formAbortable: '中止可能',
     formVerbose: '詳細出力',

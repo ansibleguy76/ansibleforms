@@ -1666,8 +1666,7 @@ export default {
     formAllowRelaunch: 'Permet rellançar',
     formChat: "Ofereix-lo a l'assistent de xat",
     formLaunchValidation: 'Validació del llançament',
-    formLaunchValidationHelp:
-      "Comprova al servidor cada llançament d'aquest formulari. log: registra el que es rebutjaria. enforce: rebutja-ho, i executa les extravars que construeix el servidor. Preval el més estricte entre aquest valor i LAUNCH_VALIDATION.",
+    formLaunchValidationHelp: 'Cada llançament: log informa, enforce rebutja.',
     formLaunchValidationDefault: 'Predeterminat de la instància',
     formAbortable: 'Avortable',
     formVerbose: 'Detallat',

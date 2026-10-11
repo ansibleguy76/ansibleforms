@@ -1651,8 +1651,7 @@ export default {
     formAllowRelaunch: 'Zezwalaj na ponowne uruchomienie',
     formChat: 'Oferuj w asystencie czatu',
     formLaunchValidation: 'Weryfikacja uruchomienia',
-    formLaunchValidationHelp:
-      'Sprawdzaj na serwerze każde uruchomienie tego formularza. log: zapisuj w dzienniku, co zostałoby odrzucone. enforce: odrzucaj je i uruchamiaj extravars zbudowane przez serwer. Obowiązuje bardziej restrykcyjne z tego ustawienia i LAUNCH_VALIDATION.',
+    formLaunchValidationHelp: 'Każde uruchomienie: log zgłasza, enforce odrzuca.',
     formLaunchValidationDefault: 'Domyślne instancji',
     formAbortable: 'Możliwość przerwania',
     formVerbose: 'Verbose',

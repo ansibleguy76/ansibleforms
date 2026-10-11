@@ -1636,8 +1636,7 @@ export default {
     formAllowRelaunch: 'Allow relaunch',
     formChat: 'Offer in the chat assistant',
     formLaunchValidation: 'Launch validation',
-    formLaunchValidationHelp:
-      'Check every launch of this form on the server. log: log what would be refused. enforce: refuse it, and run the extravars the server builds. The stricter of this and LAUNCH_VALIDATION wins.',
+    formLaunchValidationHelp: 'Each launch checked: log reports, enforce refuses.',
     formLaunchValidationDefault: 'Instance default',
     formAbortable: 'Abortable',
     formVerbose: 'Verbose',

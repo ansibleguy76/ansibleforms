@@ -1599,8 +1599,7 @@ export default {
     formAllowRelaunch: '允许重新运行',
     formChat: '在聊天助手中提供',
     formLaunchValidation: '运行验证',
-    formLaunchValidationHelp:
-      '在服务器上检查此表单的每次运行。log：记录将被拒绝的内容。enforce：拒绝运行，并使用服务器构建的 extravars 运行。此设置与 LAUNCH_VALIDATION 中较严格者生效。',
+    formLaunchValidationHelp: '每次启动均检查：log 记录，enforce 拒绝。',
     formLaunchValidationDefault: '实例默认',
     formAbortable: '可中止',
     formVerbose: '详细输出',

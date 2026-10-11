@@ -1679,8 +1679,7 @@ export default {
     formAllowRelaunch: 'Neustart erlauben',
     formChat: 'Im Chat-Assistenten anbieten',
     formLaunchValidation: 'Start-Validierung',
-    formLaunchValidationHelp:
-      'Jeden Start dieses Formulars auf dem Server prüfen. log: protokollieren, was abgelehnt würde. enforce: ablehnen, und die vom Server erstellten Extravars ausführen. Die strengere Einstellung von dieser und LAUNCH_VALIDATION gilt.',
+    formLaunchValidationHelp: 'Jeder Start: log meldet, enforce lehnt ab.',
     formLaunchValidationDefault: 'Standard der Instanz',
     formAbortable: 'Abbrechbar',
     formVerbose: 'Ausführlich',
