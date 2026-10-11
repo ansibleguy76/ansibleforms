@@ -1254,9 +1254,9 @@ onMounted(async () => {
                 </th>
                 <!-- a multistep job's caret : a column of its own, the ids never moved by it, just
                      before the form (after the checkbox when the form is hidden) -->
-                <th v-if="!caretBefore" class="af-jobs-expand" data-fit-keep="1.5rem"></th>
+                <th v-if="!caretBefore" class="af-jobs-expand" data-fit-keep="1.75rem"></th>
                 <template v-for="col in visibleColumns" :key="col.key">
-                  <th v-if="col.key === caretBefore" class="af-jobs-expand" data-fit-keep="1.5rem"></th>
+                  <th v-if="col.key === caretBefore" class="af-jobs-expand" data-fit-keep="1.75rem"></th>
                   <th
                     :class="{
                       'is-clickable': col.sortable,
@@ -1964,12 +1964,12 @@ onMounted(async () => {
 .custom-table.af-table td.af-col-end:not(:first-child):not(:last-child):has(+ .af-jobs-expand) {
   padding-right: 0.6rem;
 }
-/* the caret column of a multistep job : as wide as the caret and a little room after it (a
-   touch more than the id's before it, the caret then reads with its form), and never an ellipsis
+/* the caret column of a multistep job : as wide as the caret and a little room on each side
+   (1.75rem : the caret's 1.25rem and its padding), and never an ellipsis
    (an icon is not cut) ; over the table's own cell padding */
 .custom-table.af-table th.af-jobs-expand:not(:first-child):not(:last-child),
 .custom-table.af-table td.af-jobs-expand:not(:first-child):not(:last-child) {
-  padding-left: 0;
+  padding-left: 0.25rem;
   padding-right: 0.25rem;
   text-overflow: clip;
 }
