@@ -954,18 +954,19 @@ export default function getSettings(t) {
         },
         {
           key: 'cron',
-          // the column : a short title, the dialog keeps the full one
-          columnLabel: t('settings.schedules.cronShort'),
-          // room for a five-field cron (0 2 * * *)
-          width: '7.5rem',
+          // the column : how it runs, its cron or once ; the dialog keeps the full title
+          columnLabel: t('settings.schedules.stepSchedule'),
+          // room for a five-field cron (0 2 * * *) and One time run
+          width: '9rem',
           step: 'when',
           icon: 'stopwatch',
           label: t('settings.fields.cronSchedule'),
           type: 'cron',
           // a recurring schedule needs its cron ; hidden (one time run), it is not checked
           required: true,
-          // in the table : hovering the cron says it in words, in the app's language
-          render: cronCell,
+          // in the table : hovering the cron says it in words, in the app's language ; a one-time
+          // run has none, it runs once
+          render: (v, row) => (row?.one_time_run ? escapeHtml(t('settings.schedules.oneTimeRun')) : cronCell(v)),
           validator: cronValidator(t),
           negateDependency: true,
           dependency: 'one_time_run',
@@ -990,6 +991,9 @@ export default function getSettings(t) {
         {
           key: 'last_run',
           width: '14rem',
+          // left out on a narrow table, so the name and the form keep their room (Next run says
+          // more ; the Columns menu still shows it)
+          hideBelow: 1200,
           label: t('settings.fields.lastRun'),
           type: 'datetime',
           noInput: true,
