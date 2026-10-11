@@ -488,3 +488,80 @@ export function addFieldProp(doc, node, prop) {
   }[prop.kind];
   node.set(prop.key, typeof start === 'object' ? doc.createNode(start) : start);
 }
+
+// ─── the form's nested settings : notifications, approval, credentials ────────
+
+/**
+ * A nested setting of the form as plain data : undefined when it is not there, null when it is
+ * no map (an alias, a list : edited in the YAML).
+ *
+ * Args:
+ *   doc (object): the form's YAML document.
+ *   key (string): 'notifications', 'approval' or 'credentials'.
+ *
+ * Returns:
+ *   object|null|undefined: its keys and values.
+ */
+export function formObject(doc, key) {
+  const node = doc.get(key, true);
+  if (node === undefined || node === null) return undefined;
+  if (!YAML.isMap(node)) return null;
+  return node.toJSON() || {};
+}
+
+/**
+ * Sets or removes a nested setting as a whole (its switch) : on, it starts as given ; off, it
+ * goes.
+ *
+ * Args:
+ *   doc (object): the form's YAML document.
+ *   key (string): the setting.
+ *   start (object|undefined): what it starts as, or undefined to remove it.
+ */
+export function setFormObject(doc, key, start) {
+  if (start === undefined) doc.delete(key);
+  else if (!doc.has(key)) doc.set(key, doc.createNode(start));
+}
+
+/**
+ * Sets one key inside a nested setting, keeping the rest of it (and its comments) : an empty
+ * text or list removes the key, unless the schema requires it.
+ *
+ * Args:
+ *   doc (object): the form's YAML document.
+ *   key (string): the setting.
+ *   sub (string): the key inside it.
+ *   value (any): the value ; undefined removes it.
+ */
+export function setFormIn(doc, key, sub, value) {
+  const map = doc.get(key, true);
+  if (!YAML.isMap(map)) return;
+  if (value === undefined) {
+    map.delete(sub);
+    return;
+  }
+  if (typeof value === 'object') map.set(sub, doc.createNode(value));
+  else setKey(map, sub, value);
+}
+
+/**
+ * Renames or removes a credential of the form (a key of its credentials map), keeping its
+ * place ; the map goes when its last one does.
+ *
+ * Args:
+ *   doc (object): the form's YAML document.
+ *   from (string): the extravar's name now.
+ *   to (string|undefined): its new name, or undefined to remove it.
+ */
+export function renameFormCredential(doc, from, to) {
+  const map = doc.get('credentials', true);
+  if (!YAML.isMap(map)) return;
+  const pair = map.items.find((p) => YAML.isScalar(p.key) && String(p.key.value) === from);
+  if (!pair) return;
+  if (to === undefined) map.items.splice(map.items.indexOf(pair), 1);
+  else pair.key = doc.createNode(to);
+  if (!map.items.length) doc.delete('credentials');
+}
+
+// an email as the schema takes it (server/schema/form_schema.json, /email)
+export const EMAIL = /^[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,64}$/;

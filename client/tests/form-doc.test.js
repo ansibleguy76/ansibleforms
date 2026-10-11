@@ -22,6 +22,11 @@ import {
   setFieldOutput,
   fieldValuesText,
   setFieldValues,
+  formObject,
+  setFormObject,
+  setFormIn,
+  renameFormCredential,
+  EMAIL,
 } from '@/lib/formDoc';
 
 const FORM = `# the form
@@ -197,5 +202,43 @@ describe('the rest, edited in place', () => {
     expect(setFieldValues(doc, env.node, 'a: 1')).not.toBe('');
     expect(setFieldValues(doc, env.node, '')).toBe('');
     expect(env.node.has('values')).toBe(false);
+  });
+});
+
+describe("the form's nested settings", () => {
+  test('notifications : on with its recipients, a key at a time, off', () => {
+    const doc = parse();
+    expect(formObject(doc, 'notifications')).toBeUndefined();
+    setFormObject(doc, 'notifications', { recipients: [] });
+    setFormIn(doc, 'notifications', 'recipients', ['ops@example.com']);
+    setFormIn(doc, 'notifications', 'onStatus', ['failed']);
+    expect(formObject(doc, 'notifications')).toEqual({ recipients: ['ops@example.com'], onStatus: ['failed'] });
+    setFormIn(doc, 'notifications', 'onStatus', undefined);
+    expect(formObject(doc, 'notifications')).toEqual({ recipients: ['ops@example.com'] });
+    setFormObject(doc, 'notifications', undefined);
+    expect(doc.has('notifications')).toBe(false);
+    expect(doc.toString()).toContain('# the form');
+  });
+
+  test('approval : its message, its roles', () => {
+    const doc = parse();
+    setFormObject(doc, 'approval', { message: '', roles: [] });
+    setFormIn(doc, 'approval', 'message', 'Please approve');
+    setFormIn(doc, 'approval', 'roles', ['admin']);
+    expect(formObject(doc, 'approval')).toEqual({ message: 'Please approve', roles: ['admin'] });
+  });
+
+  test('credentials : renamed in place, removed, the map gone with the last', () => {
+    const doc = parse('name: X\ntype: ansible\ncredentials:\n  db: mysql # the db\n  api: token\n');
+    renameFormCredential(doc, 'db', 'database');
+    expect(doc.toString()).toContain('database: mysql # the db');
+    renameFormCredential(doc, 'database', undefined);
+    renameFormCredential(doc, 'api', undefined);
+    expect(doc.has('credentials')).toBe(false);
+  });
+
+  test('an email as the schema takes it', () => {
+    expect(EMAIL.test('ops@example.com')).toBe(true);
+    expect(EMAIL.test('ops@')).toBe(false);
   });
 });

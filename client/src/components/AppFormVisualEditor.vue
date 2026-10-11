@@ -54,6 +54,11 @@ import {
   fieldPropValue,
   setFieldProp,
   addFieldProp,
+  formObject,
+  setFormObject,
+  setFormIn,
+  renameFormCredential,
+  EMAIL,
 } from '@/lib/formDoc';
 
 const props = defineProps({
@@ -304,6 +309,93 @@ const runnerChoices = computed(() => {
   if (!runners.value) return null;
   const need = form.value?.type === 'awx' ? 'awx' : 'rte';
   return runners.value.filter((r) => r.type === need).map((r) => r.name);
+});
+
+// ─── notifications, approval, credentials : nested, each edited a key at a time ───
+const STATUSES = ['any', 'success', 'failed', 'aborted', 'warning'];
+const EVENTS = ['any', 'launch', 'relaunch', 'delete', 'approve', 'reject'];
+/**
+ * A nested setting as data (undefined : not there ; null : not a map, in the YAML).
+ *
+ * Args:
+ *   key (string): 'notifications', 'approval' or 'credentials'.
+ *
+ * Returns:
+ *   object|null|undefined: its keys.
+ */
+function nested(key) {
+  rev.value;
+  return doc.value ? formObject(doc.value, key) : undefined;
+}
+/**
+ * Switches a nested setting on (as it starts : what the schema requires of it) or off.
+ *
+ * Args:
+ *   key (string): the setting.
+ *   on (boolean): on or off.
+ */
+function toggleNested(key, on) {
+  const start = { notifications: { recipients: [] }, approval: { message: '', roles: [] }, credentials: {} }[key];
+  change((d) => setFormObject(d, key, on ? start : undefined));
+}
+/**
+ * Sets one key of a nested setting : an empty list or text removes it, but what the schema
+ * requires (the recipients, the approval's message and roles).
+ *
+ * Args:
+ *   key (string): the setting.
+ *   sub (string): the key in it.
+ *   value (any): its value.
+ */
+function setNested(key, sub, value) {
+  const required = { notifications: ['recipients'], approval: ['message', 'roles'] }[key] || [];
+  const empty = value === '' || (Array.isArray(value) && !value.length);
+  change((d) => setFormIn(d, key, sub, empty && !required.includes(sub) ? undefined : value));
+}
+// an email typed that the schema would refuse : said, not added
+const emailError = ref('');
+/**
+ * Adds an email to a list of a nested setting (the notifications' recipients, the approval's).
+ *
+ * Args:
+ *   key (string): the setting.
+ *   sub (string): the list.
+ *   input (HTMLInputElement): the field it was typed in, emptied once added.
+ */
+function addEmail(key, sub, input) {
+  const email = input.value.trim();
+  if (!email) return;
+  if (!EMAIL.test(email)) {
+    emailError.value = key + sub;
+    return;
+  }
+  emailError.value = '';
+  const list = nested(key)?.[sub] || [];
+  if (!list.includes(email)) setNested(key, sub, [...list, email]);
+  input.value = '';
+}
+/**
+ * Adds a credential under a name not taken yet (credential, credential2...).
+ */
+function addCredential() {
+  const taken = Object.keys(nested('credentials') || {});
+  let name = 'credential';
+  for (let i = 2; taken.includes(name); i++) name = `credential${i}`;
+  change((d) => {
+    if (!d.has('credentials')) setFormObject(d, 'credentials', {});
+    setFormIn(d, 'credentials', name, '');
+  });
+}
+// the credentials' names the instance keeps, offered as the values (the list needs the
+// settings' permission : without it, typed)
+const credentialNames = ref([]);
+onMounted(async () => {
+  try {
+    const res = await axios.get('/api/v2/credential/');
+    credentialNames.value = (res.data?.records || res.data || []).map((c) => c?.name).filter(Boolean);
+  } catch {
+    credentialNames.value = [];
+  }
 });
 
 // the switches : true, or no key ; in the order of their columns (two to a column, the long
@@ -769,6 +861,280 @@ defineExpose({
           </div>
           <div class="form-text">{{ t('designer.formLaunchValidationHelp') }}</div>
         </div>
+        <!-- notifications : on or off ; on, who gets them, on which statuses and events -->
+        <div v-if="allows('notifications')" class="af-form-span2">
+          <label class="form-label fw-bold af-switch-title" for="af-notif">{{
+            t('designer.visualNotifications')
+          }}</label>
+          <div class="form-check form-switch mb-0">
+            <input
+              id="af-notif"
+              class="form-check-input"
+              type="checkbox"
+              role="switch"
+              :checked="nested('notifications') !== undefined"
+              :disabled="locked || nested('notifications') === null"
+              @change="toggleNested('notifications', $event.target.checked)"
+            />
+          </div>
+          <div class="form-text">{{ t('designer.visualNotificationsHelp') }}</div>
+          <div v-if="nested('notifications') === null" class="text-body-secondary fst-italic">
+            {{ t('designer.visualInYaml') }}
+          </div>
+          <div v-else-if="nested('notifications')" class="af-nested">
+            <div>
+              <label class="form-label fw-bold">{{ t('designer.visualRecipients') }}</label>
+              <div class="d-flex align-items-center flex-wrap gap-2">
+                <span
+                  v-for="r in nested('notifications').recipients || []"
+                  :key="r"
+                  class="badge rounded-pill af-form-pill"
+                >
+                  {{ r }}
+                  <button
+                    type="button"
+                    class="btn-close ms-1"
+                    :disabled="locked"
+                    :aria-label="t('common.delete')"
+                    @click="
+                      setNested(
+                        'notifications',
+                        'recipients',
+                        nested('notifications').recipients.filter((x) => x !== r),
+                      )
+                    "
+                  ></button>
+                </span>
+                <input
+                  type="email"
+                  class="form-control form-control-sm af-form-add"
+                  :class="{ 'is-invalid': emailError === 'notificationsrecipients' }"
+                  :placeholder="t('designer.visualAddEmail')"
+                  :disabled="locked"
+                  @keydown.enter.prevent="addEmail('notifications', 'recipients', $event.target)"
+                  @change="addEmail('notifications', 'recipients', $event.target)"
+                />
+              </div>
+            </div>
+            <div>
+              <label class="form-label fw-bold">{{ t('designer.visualOnStatus') }}</label>
+              <div class="d-flex flex-wrap gap-3">
+                <div v-for="st in STATUSES" :key="st" class="form-check mb-0">
+                  <input
+                    :id="'af-st-' + st"
+                    class="form-check-input"
+                    type="checkbox"
+                    :checked="(nested('notifications').onStatus || []).includes(st)"
+                    :disabled="locked"
+                    @change="
+                      setNested(
+                        'notifications',
+                        'onStatus',
+                        STATUSES.filter((x) =>
+                          x === st ? $event.target.checked : (nested('notifications').onStatus || []).includes(x),
+                        ),
+                      )
+                    "
+                  />
+                  <label class="form-check-label" :for="'af-st-' + st">{{ st }}</label>
+                </div>
+              </div>
+            </div>
+            <div>
+              <label class="form-label fw-bold">{{ t('designer.visualOnEvent') }}</label>
+              <div class="d-flex flex-wrap gap-3">
+                <div v-for="ev in EVENTS" :key="ev" class="form-check mb-0">
+                  <input
+                    :id="'af-ev-' + ev"
+                    class="form-check-input"
+                    type="checkbox"
+                    :checked="(nested('notifications').onEvent || []).includes(ev)"
+                    :disabled="locked"
+                    @change="
+                      setNested(
+                        'notifications',
+                        'onEvent',
+                        EVENTS.filter((x) =>
+                          x === ev ? $event.target.checked : (nested('notifications').onEvent || []).includes(x),
+                        ),
+                      )
+                    "
+                  />
+                  <label class="form-check-label" :for="'af-ev-' + ev">{{ ev }}</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- approval : on or off ; on, its title, message, the roles that approve, who is told -->
+        <div v-if="allows('approval')" class="af-form-span2">
+          <label class="form-label fw-bold af-switch-title" for="af-appr">{{ t('designer.visualApproval') }}</label>
+          <div class="form-check form-switch mb-0">
+            <input
+              id="af-appr"
+              class="form-check-input"
+              type="checkbox"
+              role="switch"
+              :checked="nested('approval') !== undefined"
+              :disabled="locked || nested('approval') === null"
+              @change="toggleNested('approval', $event.target.checked)"
+            />
+          </div>
+          <div class="form-text">{{ t('designer.visualApprovalHelp') }}</div>
+          <div v-if="nested('approval') === null" class="text-body-secondary fst-italic">
+            {{ t('designer.visualInYaml') }}
+          </div>
+          <div v-else-if="nested('approval')" class="af-nested">
+            <div>
+              <label class="form-label fw-bold">{{ t('designer.visualApprovalTitle') }}</label>
+              <input
+                class="form-control"
+                :value="nested('approval').title || ''"
+                :disabled="locked"
+                @change="setNested('approval', 'title', $event.target.value.trim())"
+              />
+            </div>
+            <div>
+              <label class="form-label fw-bold">{{ t('designer.visualApprovalMessage') }}</label>
+              <textarea
+                class="form-control"
+                rows="2"
+                :class="{ 'is-invalid': !String(nested('approval').message || '').trim() }"
+                :value="nested('approval').message || ''"
+                :disabled="locked"
+                @change="setNested('approval', 'message', $event.target.value)"
+              ></textarea>
+            </div>
+            <div>
+              <label class="form-label fw-bold">{{ t('designer.visualApprovers') }}</label>
+              <div class="d-flex align-items-center flex-wrap gap-2">
+                <span v-for="r in nested('approval').roles || []" :key="r" class="badge rounded-pill af-form-pill">
+                  {{ r }}
+                  <button
+                    type="button"
+                    class="btn-close ms-1"
+                    :disabled="locked"
+                    :aria-label="t('common.delete')"
+                    @click="
+                      setNested(
+                        'approval',
+                        'roles',
+                        nested('approval').roles.filter((x) => x !== r),
+                      )
+                    "
+                  ></button>
+                </span>
+                <select
+                  class="form-select form-select-sm af-form-add"
+                  :disabled="locked"
+                  :value="''"
+                  @change="
+                    setNested('approval', 'roles', [...(nested('approval').roles || []), $event.target.value]);
+                    $event.target.value = '';
+                  "
+                >
+                  <option value="">{{ t('designer.visualAdd') }}</option>
+                  <option
+                    v-for="o in roleOptions.filter((x) => !(nested('approval').roles || []).includes(x))"
+                    :key="o"
+                    :value="o"
+                  >
+                    {{ o }}
+                  </option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="form-label fw-bold">{{ t('designer.visualApprovalNotify') }}</label>
+              <div class="d-flex align-items-center flex-wrap gap-2">
+                <span
+                  v-for="r in nested('approval').notifications || []"
+                  :key="r"
+                  class="badge rounded-pill af-form-pill"
+                >
+                  {{ r }}
+                  <button
+                    type="button"
+                    class="btn-close ms-1"
+                    :disabled="locked"
+                    :aria-label="t('common.delete')"
+                    @click="
+                      setNested(
+                        'approval',
+                        'notifications',
+                        nested('approval').notifications.filter((x) => x !== r),
+                      )
+                    "
+                  ></button>
+                </span>
+                <input
+                  type="email"
+                  class="form-control form-control-sm af-form-add"
+                  :class="{ 'is-invalid': emailError === 'approvalnotifications' }"
+                  :placeholder="t('designer.visualAddEmail')"
+                  :disabled="locked"
+                  @keydown.enter.prevent="addEmail('approval', 'notifications', $event.target)"
+                  @change="addEmail('approval', 'notifications', $event.target)"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- credentials : an extravar's name, the credential it gets -->
+        <div v-if="allows('credentials')" class="af-form-span2">
+          <label class="form-label fw-bold">{{ t('designer.visualCredentials') }}</label>
+          <div class="form-text mt-0 mb-2">{{ t('designer.visualCredentialsHelp') }}</div>
+          <div v-if="nested('credentials') === null" class="text-body-secondary fst-italic">
+            {{ t('designer.visualInYaml') }}
+          </div>
+          <template v-else>
+            <div v-for="(cred, name) in nested('credentials') || {}" :key="name" class="af-cred-row">
+              <div class="input-group">
+                <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="code" /></span>
+                <input
+                  class="form-control"
+                  :value="name"
+                  :disabled="locked"
+                  spellcheck="false"
+                  :aria-label="t('designer.visualCredentialVar')"
+                  @change="
+                    $event.target.value.trim() &&
+                    !Object.keys(nested('credentials')).includes($event.target.value.trim()) &&
+                    change((d) => renameFormCredential(d, name, $event.target.value.trim()))
+                  "
+                />
+              </div>
+              <div class="input-group">
+                <span class="input-group-text text-gray-500"><FaIcon :fixedwidth="true" icon="key" /></span>
+                <input
+                  class="form-control"
+                  :value="cred"
+                  :disabled="locked"
+                  list="af-credential-names"
+                  spellcheck="false"
+                  :aria-label="t('designer.visualCredentialName')"
+                  @change="setNested('credentials', name, $event.target.value.trim())"
+                />
+              </div>
+              <button
+                type="button"
+                class="btn af-row-btn"
+                :class="locked ? 'btn-outline-secondary' : 'btn-outline-danger'"
+                :disabled="locked"
+                :title="t('common.delete')"
+                @click="change((d) => renameFormCredential(d, name, undefined))"
+              >
+                <FaIcon icon="trash" />
+              </button>
+            </div>
+            <datalist id="af-credential-names">
+              <option v-for="c in credentialNames" :key="c" :value="c"></option>
+            </datalist>
+            <BsButton icon="plus" :disabled="locked" @click="addCredential()">{{
+              t('designer.visualAddCredential')
+            }}</BsButton>
+          </template>
+        </div>
         <!-- the switches, under a title of their own as every field has -->
         <label class="form-label fw-bold af-form-wide mb-0">{{ t('designer.visualOptions') }}</label>
         <div class="af-form-wide af-form-flags">
@@ -1117,6 +1483,22 @@ defineExpose({
 .af-prop-key {
   font-weight: 600;
   color: var(--bs-body-color);
+}
+/* a nested setting on (notifications, approval) : its keys under its switch, framed as a part
+   of it */
+.af-nested {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-left: 2px solid var(--af-field-border);
+}
+/* a credential : its extravar's name, the credential, Delete */
+.af-cred-row {
+  display: grid;
+  grid-template-columns: minmax(10rem, 1fr) minmax(10rem, 1fr) auto;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 .af-prop-remove {
   font-size: 0.55rem;
